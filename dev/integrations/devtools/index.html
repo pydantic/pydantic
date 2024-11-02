@@ -2916,6 +2916,9 @@ which should be easier to read than <code>print</code> as well as giving informa
 is on and what value was printed.</p>
 <p>Pydantic integrates with <em>devtools</em> by implementing the <code>__pretty__</code> method on most public classes.</p>
 <p>In particular <code>debug()</code> is useful when inspecting models:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.8 and above</label><label for="__tabbed_1_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
 
@@ -2950,6 +2953,44 @@ is on and what value was printed.</p>
 <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">should be much easier read than:</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;user:&#39;</span><span class="p">,</span> <span class="n">user</span><span class="p">)</span>
 </code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+
+<span class="kn">from</span> <span class="nn">devtools</span> <span class="kn">import</span> <span class="n">debug</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+
+<span class="k">class</span> <span class="nc">Address</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">street</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">country</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">lat</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">lng</span><span class="p">:</span> <span class="nb">float</span>
+
+
+<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">signup_ts</span><span class="p">:</span> <span class="n">datetime</span>
+    <span class="n">friends</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+    <span class="n">address</span><span class="p">:</span> <span class="n">Address</span>
+
+
+<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span>
+    <span class="nb">id</span><span class="o">=</span><span class="s1">&#39;123&#39;</span><span class="p">,</span>
+    <span class="n">name</span><span class="o">=</span><span class="s1">&#39;John Doe&#39;</span><span class="p">,</span>
+    <span class="n">signup_ts</span><span class="o">=</span><span class="s1">&#39;2019-06-01 12:22&#39;</span><span class="p">,</span>
+    <span class="n">friends</span><span class="o">=</span><span class="p">[</span><span class="mi">1234</span><span class="p">,</span> <span class="mi">4567</span><span class="p">,</span> <span class="mi">7890</span><span class="p">],</span>
+    <span class="n">address</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">street</span><span class="o">=</span><span class="s1">&#39;Testing&#39;</span><span class="p">,</span> <span class="n">country</span><span class="o">=</span><span class="s1">&#39;uk&#39;</span><span class="p">,</span> <span class="n">lat</span><span class="o">=</span><span class="mf">51.5</span><span class="p">,</span> <span class="n">lng</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+<span class="p">)</span>
+<span class="n">debug</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">should be much easier read than:</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;user:&#39;</span><span class="p">,</span> <span class="n">user</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Will output in your terminal:</p>
 <div class="highlight">
 <pre><code><!-- DO NOT EDIT MANUALLY: Generated by tests/test_docs.py::test_docs_devtools_example for use in docs -->

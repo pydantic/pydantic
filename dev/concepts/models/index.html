@@ -3705,6 +3705,9 @@ Models possess the following methods and attributes:</p>
 </div>
 <h2 id="nested-models">Nested models<a class="headerlink" href="#nested-models" title="Permanent link">&para;</a></h2>
 <p>More complex hierarchical data structures can be defined using models themselves as types in annotations.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:3"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.8 and above</label><label for="__tabbed_1_2">Python 3.9 and above</label><label for="__tabbed_1_3">Python 3.10 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
@@ -3738,6 +3741,77 @@ Models possess the following methods and attributes:</p>
 <span class="sd">}</span>
 <span class="sd">&quot;&quot;&quot;</span>
 </code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+
+<span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">count</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+<span class="k">class</span> <span class="nc">Bar</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">apple</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;x&#39;</span>
+    <span class="n">banana</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;y&#39;</span>
+
+
+<span class="k">class</span> <span class="nc">Spam</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">foo</span><span class="p">:</span> <span class="n">Foo</span>
+    <span class="n">bars</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Bar</span><span class="p">]</span>
+
+
+<span class="n">m</span> <span class="o">=</span> <span class="n">Spam</span><span class="p">(</span><span class="n">foo</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;count&#39;</span><span class="p">:</span> <span class="mi">4</span><span class="p">},</span> <span class="n">bars</span><span class="o">=</span><span class="p">[{</span><span class="s1">&#39;apple&#39;</span><span class="p">:</span> <span class="s1">&#39;x1&#39;</span><span class="p">},</span> <span class="p">{</span><span class="s1">&#39;apple&#39;</span><span class="p">:</span> <span class="s1">&#39;x2&#39;</span><span class="p">}])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">foo=Foo(count=4, size=None) bars=[Bar(apple=&#39;x1&#39;, banana=&#39;y&#39;), Bar(apple=&#39;x2&#39;, banana=&#39;y&#39;)]</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">{</span>
+<span class="sd">    &#39;foo&#39;: {&#39;count&#39;: 4, &#39;size&#39;: None},</span>
+<span class="sd">    &#39;bars&#39;: [{&#39;apple&#39;: &#39;x1&#39;, &#39;banana&#39;: &#39;y&#39;}, {&#39;apple&#39;: &#39;x2&#39;, &#39;banana&#39;: &#39;y&#39;}],</span>
+<span class="sd">}</span>
+<span class="sd">&quot;&quot;&quot;</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+
+<span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">count</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">size</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+<span class="k">class</span> <span class="nc">Bar</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">apple</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;x&#39;</span>
+    <span class="n">banana</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;y&#39;</span>
+
+
+<span class="k">class</span> <span class="nc">Spam</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">foo</span><span class="p">:</span> <span class="n">Foo</span>
+    <span class="n">bars</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Bar</span><span class="p">]</span>
+
+
+<span class="n">m</span> <span class="o">=</span> <span class="n">Spam</span><span class="p">(</span><span class="n">foo</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;count&#39;</span><span class="p">:</span> <span class="mi">4</span><span class="p">},</span> <span class="n">bars</span><span class="o">=</span><span class="p">[{</span><span class="s1">&#39;apple&#39;</span><span class="p">:</span> <span class="s1">&#39;x1&#39;</span><span class="p">},</span> <span class="p">{</span><span class="s1">&#39;apple&#39;</span><span class="p">:</span> <span class="s1">&#39;x2&#39;</span><span class="p">}])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">foo=Foo(count=4, size=None) bars=[Bar(apple=&#39;x1&#39;, banana=&#39;y&#39;), Bar(apple=&#39;x2&#39;, banana=&#39;y&#39;)]</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">{</span>
+<span class="sd">    &#39;foo&#39;: {&#39;count&#39;: 4, &#39;size&#39;: None},</span>
+<span class="sd">    &#39;bars&#39;: [{&#39;apple&#39;: &#39;x1&#39;, &#39;banana&#39;: &#39;y&#39;}, {&#39;apple&#39;: &#39;x2&#39;, &#39;banana&#39;: &#39;y&#39;}],</span>
+<span class="sd">}</span>
+<span class="sd">&quot;&quot;&quot;</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Self-referencing models are supported. For more details, see  the documentation related to
 <a href="../forward_annotations/#self-referencing-or-recursive-models">forward annotations</a>.</p>
 <h2 id="rebuilding-model-schema">Rebuilding model schema<a class="headerlink" href="#rebuilding-model-schema" title="Permanent link">&para;</a></h2>
@@ -3797,6 +3871,9 @@ to the model field names. One common application of this functionality is integr
 <p>To do this, set the <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.from_attributes"><code>from_attributes</code></a> config value to <code>True</code>
 (see the documentation on <a href="../config/">Configuration</a> for more details).</p>
 <p>The example here uses <a href="https://www.sqlalchemy.org/">SQLAlchemy</a>, but the same approach should work for any ORM.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.8 and above</label><label for="__tabbed_2_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
 
 <span class="kn">from</span> <span class="nn">sqlalchemy</span> <span class="kn">import</span> <span class="n">ARRAY</span><span class="p">,</span> <span class="n">String</span>
@@ -3839,10 +3916,58 @@ to the model field names. One common application of this functionality is integr
 <span class="nb">print</span><span class="p">(</span><span class="n">co_model</span><span class="p">)</span>
 <span class="c1">#&gt; id=123 public_key=&#39;foobar&#39; domains=[&#39;example.com&#39;, &#39;foobar.com&#39;]</span>
 </code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">sqlalchemy</span> <span class="kn">import</span> <span class="n">ARRAY</span><span class="p">,</span> <span class="n">String</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.orm</span> <span class="kn">import</span> <span class="n">DeclarativeBase</span><span class="p">,</span> <span class="n">Mapped</span><span class="p">,</span> <span class="n">mapped_column</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">StringConstraints</span>
+
+
+<span class="k">class</span> <span class="nc">Base</span><span class="p">(</span><span class="n">DeclarativeBase</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+
+<span class="k">class</span> <span class="nc">CompanyOrm</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s1">&#39;companies&#39;</span>
+
+    <span class="nb">id</span><span class="p">:</span> <span class="n">Mapped</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">(</span><span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">public_key</span><span class="p">:</span> <span class="n">Mapped</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">(</span>
+        <span class="n">String</span><span class="p">(</span><span class="mi">20</span><span class="p">),</span> <span class="n">index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">unique</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+    <span class="n">domains</span><span class="p">:</span> <span class="n">Mapped</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">(</span><span class="n">ARRAY</span><span class="p">(</span><span class="n">String</span><span class="p">(</span><span class="mi">255</span><span class="p">)))</span>
+
+
+<span class="k">class</span> <span class="nc">CompanyModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">from_attributes</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">public_key</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">StringConstraints</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">20</span><span class="p">)]</span>
+    <span class="n">domains</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">StringConstraints</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">)]]</span>
+
+
+<span class="n">co_orm</span> <span class="o">=</span> <span class="n">CompanyOrm</span><span class="p">(</span>
+    <span class="nb">id</span><span class="o">=</span><span class="mi">123</span><span class="p">,</span>
+    <span class="n">public_key</span><span class="o">=</span><span class="s1">&#39;foobar&#39;</span><span class="p">,</span>
+    <span class="n">domains</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;example.com&#39;</span><span class="p">,</span> <span class="s1">&#39;foobar.com&#39;</span><span class="p">],</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">co_orm</span><span class="p">)</span>
+<span class="c1">#&gt; &lt;__main__.CompanyOrm object at 0x0123456789ab&gt;</span>
+<span class="n">co_model</span> <span class="o">=</span> <span class="n">CompanyModel</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">co_orm</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">co_model</span><span class="p">)</span>
+<span class="c1">#&gt; id=123 public_key=&#39;foobar&#39; domains=[&#39;example.com&#39;, &#39;foobar.com&#39;]</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <h3 id="nested-attributes">Nested attributes<a class="headerlink" href="#nested-attributes" title="Permanent link">&para;</a></h3>
 <p>When using attributes to parse models, model instances will be created from both top-level attributes and
 deeper-nested attributes as appropriate.</p>
 <p>Here is an example demonstrating the principle:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.8 and above</label><label for="__tabbed_3_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
@@ -3885,12 +4010,60 @@ deeper-nested attributes as appropriate.</p>
 <span class="sd">name=&#39;Anna&#39; age=20.0 pets=[Pet(name=&#39;Bones&#39;, species=&#39;dog&#39;), Pet(name=&#39;Orion&#39;, species=&#39;cat&#39;)]</span>
 <span class="sd">&quot;&quot;&quot;</span>
 </code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
+
+
+<span class="k">class</span> <span class="nc">PetCls</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">species</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">species</span> <span class="o">=</span> <span class="n">species</span>
+
+
+<span class="k">class</span> <span class="nc">PersonCls</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">age</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">pets</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">PetCls</span><span class="p">]):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">age</span> <span class="o">=</span> <span class="n">age</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pets</span> <span class="o">=</span> <span class="n">pets</span>
+
+
+<span class="k">class</span> <span class="nc">Pet</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">from_attributes</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">species</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="k">class</span> <span class="nc">Person</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">from_attributes</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">age</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">pets</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Pet</span><span class="p">]</span>
+
+
+<span class="n">bones</span> <span class="o">=</span> <span class="n">PetCls</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;Bones&#39;</span><span class="p">,</span> <span class="n">species</span><span class="o">=</span><span class="s1">&#39;dog&#39;</span><span class="p">)</span>
+<span class="n">orion</span> <span class="o">=</span> <span class="n">PetCls</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;Orion&#39;</span><span class="p">,</span> <span class="n">species</span><span class="o">=</span><span class="s1">&#39;cat&#39;</span><span class="p">)</span>
+<span class="n">anna</span> <span class="o">=</span> <span class="n">PersonCls</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;Anna&#39;</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">pets</span><span class="o">=</span><span class="p">[</span><span class="n">bones</span><span class="p">,</span> <span class="n">orion</span><span class="p">])</span>
+<span class="n">anna_model</span> <span class="o">=</span> <span class="n">Person</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">anna</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">anna_model</span><span class="p">)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">name=&#39;Anna&#39; age=20.0 pets=[Pet(name=&#39;Bones&#39;, species=&#39;dog&#39;), Pet(name=&#39;Orion&#39;, species=&#39;cat&#39;)]</span>
+<span class="sd">&quot;&quot;&quot;</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <h2 id="error-handling">Error handling<a class="headerlink" href="#error-handling" title="Permanent link">&para;</a></h2>
 <p>Pydantic will raise a <a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.ValidationError"><code>ValidationError</code></a> exception whenever it finds an error in the data it's validating.</p>
 <p>A single exception will be raised regardless of the number of errors found, and that validation error
 will contain information about all of the errors and how they happened.</p>
 <p>See <a href="../../errors/errors/">Error Handling</a> for details on standard and custom errors.</p>
 <p>As a demonstration:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">Python 3.8 and above</label><label for="__tabbed_4_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
@@ -3918,6 +4091,36 @@ will contain information about all of the errors and how they happened.</p>
 <span class="sd">      Input should be a valid number, unable to parse string as a number [type=float_parsing, input_value=&#39;not a float&#39;, input_type=str]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">list_of_ints</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+    <span class="n">a_float</span><span class="p">:</span> <span class="nb">float</span>
+
+
+<span class="n">data</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+    <span class="n">list_of_ints</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;bad&#39;</span><span class="p">],</span>
+    <span class="n">a_float</span><span class="o">=</span><span class="s1">&#39;not a float&#39;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">Model</span><span class="p">(</span><span class="o">**</span><span class="n">data</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    2 validation errors for Model</span>
+<span class="sd">    list_of_ints.2</span>
+<span class="sd">      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value=&#39;bad&#39;, input_type=str]</span>
+<span class="sd">    a_float</span>
+<span class="sd">      Input should be a valid number, unable to parse string as a number [type=float_parsing, input_value=&#39;not a float&#39;, input_type=str]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <h2 id="validating-data">Validating data<a class="headerlink" href="#validating-data" title="Permanent link">&para;</a></h2>
 <p>Pydantic provides three methods on models classes for parsing data:</p>
 <ul>
@@ -3929,6 +4132,9 @@ will contain information about all of the errors and how they happened.</p>
   Learn more about JSON parsing in the <a href="../json/">JSON</a> section of the docs.</li>
 <li><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_validate_strings"><code>model_validate_strings()</code></a>: this takes a dictionary (can be nested) with string keys and values and validates the data in JSON mode so that said strings can be coerced into the correct types.</li>
 </ul>
+<div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">Python 3.8 and above</label><label for="__tabbed_5_2">Python 3.10 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
 
@@ -3999,6 +4205,80 @@ will contain information about all of the errors and how they happened.</p>
 <span class="sd">      Input should be a valid datetime, invalid datetime separator, expected `T`, `t`, `_` or space [type=datetime_parsing, input_value=&#39;2024-04-01&#39;, input_type=str]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+
+<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;John Doe&#39;</span>
+    <span class="n">signup_ts</span><span class="p">:</span> <span class="n">datetime</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+<span class="n">m</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">model_validate</span><span class="p">({</span><span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="mi">123</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;James&#39;</span><span class="p">})</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+<span class="c1">#&gt; id=123 name=&#39;James&#39; signup_ts=None</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">User</span><span class="o">.</span><span class="n">model_validate</span><span class="p">([</span><span class="s1">&#39;not&#39;</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;dict&#39;</span><span class="p">])</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for User</span>
+<span class="sd">      Input should be a valid dictionary or instance of User [type=model_type, input_value=[&#39;not&#39;, &#39;a&#39;, &#39;dict&#39;], input_type=list]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<span class="n">m</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">model_validate_json</span><span class="p">(</span><span class="s1">&#39;{&quot;id&quot;: 123, &quot;name&quot;: &quot;James&quot;}&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+<span class="c1">#&gt; id=123 name=&#39;James&#39; signup_ts=None</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">m</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">model_validate_json</span><span class="p">(</span><span class="s1">&#39;{&quot;id&quot;: 123, &quot;name&quot;: 123}&#39;</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for User</span>
+<span class="sd">    name</span>
+<span class="sd">      Input should be a valid string [type=string_type, input_value=123, input_type=int]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">m</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">model_validate_json</span><span class="p">(</span><span class="s1">&#39;invalid JSON&#39;</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for User</span>
+<span class="sd">      Invalid JSON: expected value at line 1 column 1 [type=json_invalid, input_value=&#39;invalid JSON&#39;, input_type=str]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<span class="n">m</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">model_validate_strings</span><span class="p">({</span><span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="s1">&#39;123&#39;</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;James&#39;</span><span class="p">})</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+<span class="c1">#&gt; id=123 name=&#39;James&#39; signup_ts=None</span>
+
+<span class="n">m</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">model_validate_strings</span><span class="p">(</span>
+    <span class="p">{</span><span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="s1">&#39;123&#39;</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;James&#39;</span><span class="p">,</span> <span class="s1">&#39;signup_ts&#39;</span><span class="p">:</span> <span class="s1">&#39;2024-04-01T12:00:00&#39;</span><span class="p">}</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+<span class="c1">#&gt; id=123 name=&#39;James&#39; signup_ts=datetime.datetime(2024, 4, 1, 12, 0)</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">m</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">model_validate_strings</span><span class="p">(</span>
+        <span class="p">{</span><span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="s1">&#39;123&#39;</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;James&#39;</span><span class="p">,</span> <span class="s1">&#39;signup_ts&#39;</span><span class="p">:</span> <span class="s1">&#39;2024-04-01&#39;</span><span class="p">},</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for User</span>
+<span class="sd">    signup_ts</span>
+<span class="sd">      Input should be a valid datetime, invalid datetime separator, expected `T`, `t`, `_` or space [type=datetime_parsing, input_value=&#39;2024-04-01&#39;, input_type=str]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>If you want to validate serialized data in a format other than JSON, you should load the data into a dictionary yourself and
 then pass it to <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_validate"><code>model_validate</code></a>.</p>
 <div class="admonition note">
@@ -4014,7 +4294,7 @@ our recommendation for now is to use either use <code>model_validate_json(json.d
 <p>If you're passing in an instance of a model to <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_validate"><code>model_validate</code></a>, you will want to consider setting
 <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.revalidate_instances"><code>revalidate_instances</code></a> in the model's config.
 If you don't set this value, then validation will be skipped on model instances. See the below example:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1"><img alt="❌" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.0.3/assets/svg/274c.svg" title=":x:" /> <code>revalidate_instances='never'</code></label><label for="__tabbed_1_2"><img alt="✅" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.0.3/assets/svg/2705.svg" title=":white_check_mark:" /> <code>revalidate_instances='always'</code></label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="6:2"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1"><img alt="❌" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.0.3/assets/svg/274c.svg" title=":x:" /> <code>revalidate_instances='never'</code></label><label for="__tabbed_6_2"><img alt="✅" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.0.3/assets/svg/2705.svg" title=":white_check_mark:" /> <code>revalidate_instances='always'</code></label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
@@ -4117,6 +4397,9 @@ not stored in <code>__pydantic_extra__</code> or <code>__dict__</code> on the in
 available since Python 3.12. Progress can be tracked in <a href="https://github.com/pydantic/pydantic/issues/9782">this issue</a>.</p>
 </div>
 <p>Here is an example using a generic Pydantic model to create an easily-reused HTTP response payload wrapper:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="7:3"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><input id="__tabbed_7_3" name="__tabbed_7" type="radio" /><div class="tabbed-labels"><label for="__tabbed_7_1">Python 3.8 and above</label><label for="__tabbed_7_2">Python 3.9 and above</label><label for="__tabbed_7_3">Python 3.10 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Generic</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">TypeVar</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
@@ -4158,6 +4441,95 @@ available since Python 3.12. Progress can be tracked in <a href="https://github.
 <li>Refers to step 2 described above.</li>
 <li>Refers to step 3 described above.</li>
 </ol>
+</div>
+<div class="tabbed-block">
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Generic</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">TypeVar</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+<span class="n">DataT</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;DataT&#39;</span><span class="p">)</span>  <span class="c1"># (1)!</span>
+
+
+<span class="k">class</span> <span class="nc">DataModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">numbers</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+    <span class="n">people</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+
+
+<span class="k">class</span> <span class="nc">Response</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">Generic</span><span class="p">[</span><span class="n">DataT</span><span class="p">]):</span>  <span class="c1"># (2)!</span>
+    <span class="n">data</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DataT</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># (3)!</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">Response</span><span class="p">[</span><span class="nb">int</span><span class="p">](</span><span class="n">data</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+<span class="c1">#&gt; data=1</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">Response</span><span class="p">[</span><span class="nb">str</span><span class="p">](</span><span class="n">data</span><span class="o">=</span><span class="s1">&#39;value&#39;</span><span class="p">))</span>
+<span class="c1">#&gt; data=&#39;value&#39;</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">Response</span><span class="p">[</span><span class="nb">str</span><span class="p">](</span><span class="n">data</span><span class="o">=</span><span class="s1">&#39;value&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;data&#39;: &#39;value&#39;}</span>
+
+<span class="n">data</span> <span class="o">=</span> <span class="n">DataModel</span><span class="p">(</span><span class="n">numbers</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">people</span><span class="o">=</span><span class="p">[])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">Response</span><span class="p">[</span><span class="n">DataModel</span><span class="p">](</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;data&#39;: {&#39;numbers&#39;: [1, 2, 3], &#39;people&#39;: []}}</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">Response</span><span class="p">[</span><span class="nb">int</span><span class="p">](</span><span class="n">data</span><span class="o">=</span><span class="s1">&#39;value&#39;</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for Response[int]</span>
+<span class="sd">    data</span>
+<span class="sd">      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value=&#39;value&#39;, input_type=str]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+<ol>
+<li>Refers to step 1 described above.</li>
+<li>Refers to step 2 described above.</li>
+<li>Refers to step 3 described above.</li>
+</ol>
+</div>
+<div class="tabbed-block">
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Generic</span><span class="p">,</span> <span class="n">TypeVar</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+<span class="n">DataT</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;DataT&#39;</span><span class="p">)</span>  <span class="c1"># (1)!</span>
+
+
+<span class="k">class</span> <span class="nc">DataModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">numbers</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+    <span class="n">people</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+
+
+<span class="k">class</span> <span class="nc">Response</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">Generic</span><span class="p">[</span><span class="n">DataT</span><span class="p">]):</span>  <span class="c1"># (2)!</span>
+    <span class="n">data</span><span class="p">:</span> <span class="n">DataT</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># (3)!</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">Response</span><span class="p">[</span><span class="nb">int</span><span class="p">](</span><span class="n">data</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+<span class="c1">#&gt; data=1</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">Response</span><span class="p">[</span><span class="nb">str</span><span class="p">](</span><span class="n">data</span><span class="o">=</span><span class="s1">&#39;value&#39;</span><span class="p">))</span>
+<span class="c1">#&gt; data=&#39;value&#39;</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">Response</span><span class="p">[</span><span class="nb">str</span><span class="p">](</span><span class="n">data</span><span class="o">=</span><span class="s1">&#39;value&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;data&#39;: &#39;value&#39;}</span>
+
+<span class="n">data</span> <span class="o">=</span> <span class="n">DataModel</span><span class="p">(</span><span class="n">numbers</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">people</span><span class="o">=</span><span class="p">[])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">Response</span><span class="p">[</span><span class="n">DataModel</span><span class="p">](</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;data&#39;: {&#39;numbers&#39;: [1, 2, 3], &#39;people&#39;: []}}</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">Response</span><span class="p">[</span><span class="nb">int</span><span class="p">](</span><span class="n">data</span><span class="o">=</span><span class="s1">&#39;value&#39;</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for Response[int]</span>
+<span class="sd">    data</span>
+<span class="sd">      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value=&#39;value&#39;, input_type=str]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+<ol>
+<li>Refers to step 1 described above.</li>
+<li>Refers to step 2 described above.</li>
+<li>Refers to step 3 described above.</li>
+</ol>
+</div>
+</div>
+</div>
 <p>Any <a href="../config/">configuration</a>, <a href="../validators/">validation</a> or <a href="../serialization/">serialization</a> logic
 set on the generic model will also be applied to the parametrized classes, in the same way as when inheriting from
 a model class. Any custom methods or attributes will also be inherited.</p>
@@ -4215,6 +4587,9 @@ superclass:</p>
 </code></pre></div>
 <p>If the name of the concrete subclasses is important, you can also override the default name generation
 by overriding the <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_parametrized_name"><code>model_parametrized_name()</code></a> method:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="8:2"><input checked="checked" id="__tabbed_8_1" name="__tabbed_8" type="radio" /><input id="__tabbed_8_2" name="__tabbed_8" type="radio" /><div class="tabbed-labels"><label for="__tabbed_8_1">Python 3.8 and above</label><label for="__tabbed_8_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Generic</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">TypeVar</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
@@ -4235,6 +4610,31 @@ by overriding the <a class="autorefs autorefs-internal" href="../../api/base_mod
 <span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">Response</span><span class="p">[</span><span class="nb">str</span><span class="p">](</span><span class="n">data</span><span class="o">=</span><span class="s1">&#39;a&#39;</span><span class="p">)))</span>
 <span class="c1">#&gt; StrResponse(data=&#39;a&#39;)</span>
 </code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Generic</span><span class="p">,</span> <span class="n">TypeVar</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+<span class="n">DataT</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;DataT&#39;</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">Response</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">Generic</span><span class="p">[</span><span class="n">DataT</span><span class="p">]):</span>
+    <span class="n">data</span><span class="p">:</span> <span class="n">DataT</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">model_parametrized_name</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">type</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="o">...</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">params</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="vm">__name__</span><span class="o">.</span><span class="n">title</span><span class="p">()</span><span class="si">}</span><span class="s1">Response&#39;</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">Response</span><span class="p">[</span><span class="nb">int</span><span class="p">](</span><span class="n">data</span><span class="o">=</span><span class="mi">1</span><span class="p">)))</span>
+<span class="c1">#&gt; IntResponse(data=1)</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">Response</span><span class="p">[</span><span class="nb">str</span><span class="p">](</span><span class="n">data</span><span class="o">=</span><span class="s1">&#39;a&#39;</span><span class="p">)))</span>
+<span class="c1">#&gt; StrResponse(data=&#39;a&#39;)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>You can use parametrized generic models as types in other models:</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Generic</span><span class="p">,</span> <span class="n">TypeVar</span>
 
@@ -4690,6 +5090,9 @@ This includes extending a base model with extra fields.</p>
 The root value can be passed to the model <code>__init__</code> or <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_validate"><code>model_validate</code></a>
 via the first and only argument.</p>
 <p>Here's an example of how this works:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="9:2"><input checked="checked" id="__tabbed_9_1" name="__tabbed_9" type="radio" /><input id="__tabbed_9_2" name="__tabbed_9" type="radio" /><div class="tabbed-labels"><label for="__tabbed_9_1">Python 3.8 and above</label><label for="__tabbed_9_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">RootModel</span>
@@ -4716,8 +5119,40 @@ via the first and only argument.</p>
 <span class="nb">print</span><span class="p">(</span><span class="n">PetsByName</span><span class="o">.</span><span class="n">model_validate</span><span class="p">({</span><span class="s1">&#39;Otis&#39;</span><span class="p">:</span> <span class="s1">&#39;dog&#39;</span><span class="p">,</span> <span class="s1">&#39;Milo&#39;</span><span class="p">:</span> <span class="s1">&#39;cat&#39;</span><span class="p">}))</span>
 <span class="c1">#&gt; root={&#39;Otis&#39;: &#39;dog&#39;, &#39;Milo&#39;: &#39;cat&#39;}</span>
 </code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">RootModel</span>
+
+<span class="n">Pets</span> <span class="o">=</span> <span class="n">RootModel</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span>
+<span class="n">PetsByName</span> <span class="o">=</span> <span class="n">RootModel</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">Pets</span><span class="p">([</span><span class="s1">&#39;dog&#39;</span><span class="p">,</span> <span class="s1">&#39;cat&#39;</span><span class="p">]))</span>
+<span class="c1">#&gt; root=[&#39;dog&#39;, &#39;cat&#39;]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">Pets</span><span class="p">([</span><span class="s1">&#39;dog&#39;</span><span class="p">,</span> <span class="s1">&#39;cat&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">model_dump_json</span><span class="p">())</span>
+<span class="c1">#&gt; [&quot;dog&quot;,&quot;cat&quot;]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">Pets</span><span class="o">.</span><span class="n">model_validate</span><span class="p">([</span><span class="s1">&#39;dog&#39;</span><span class="p">,</span> <span class="s1">&#39;cat&#39;</span><span class="p">]))</span>
+<span class="c1">#&gt; root=[&#39;dog&#39;, &#39;cat&#39;]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">Pets</span><span class="o">.</span><span class="n">model_json_schema</span><span class="p">())</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">{&#39;items&#39;: {&#39;type&#39;: &#39;string&#39;}, &#39;title&#39;: &#39;RootModel[List[str]]&#39;, &#39;type&#39;: &#39;array&#39;}</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">PetsByName</span><span class="p">({</span><span class="s1">&#39;Otis&#39;</span><span class="p">:</span> <span class="s1">&#39;dog&#39;</span><span class="p">,</span> <span class="s1">&#39;Milo&#39;</span><span class="p">:</span> <span class="s1">&#39;cat&#39;</span><span class="p">}))</span>
+<span class="c1">#&gt; root={&#39;Otis&#39;: &#39;dog&#39;, &#39;Milo&#39;: &#39;cat&#39;}</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">PetsByName</span><span class="p">({</span><span class="s1">&#39;Otis&#39;</span><span class="p">:</span> <span class="s1">&#39;dog&#39;</span><span class="p">,</span> <span class="s1">&#39;Milo&#39;</span><span class="p">:</span> <span class="s1">&#39;cat&#39;</span><span class="p">})</span><span class="o">.</span><span class="n">model_dump_json</span><span class="p">())</span>
+<span class="c1">#&gt; {&quot;Otis&quot;:&quot;dog&quot;,&quot;Milo&quot;:&quot;cat&quot;}</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">PetsByName</span><span class="o">.</span><span class="n">model_validate</span><span class="p">({</span><span class="s1">&#39;Otis&#39;</span><span class="p">:</span> <span class="s1">&#39;dog&#39;</span><span class="p">,</span> <span class="s1">&#39;Milo&#39;</span><span class="p">:</span> <span class="s1">&#39;cat&#39;</span><span class="p">}))</span>
+<span class="c1">#&gt; root={&#39;Otis&#39;: &#39;dog&#39;, &#39;Milo&#39;: &#39;cat&#39;}</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>If you want to access items in the <code>root</code> field directly or to iterate over the items, you can implement
 custom <code>__iter__</code> and <code>__getitem__</code> functions, as shown in the following example.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="10:2"><input checked="checked" id="__tabbed_10_1" name="__tabbed_10" type="radio" /><input id="__tabbed_10_2" name="__tabbed_10" type="radio" /><div class="tabbed-labels"><label for="__tabbed_10_1">Python 3.8 and above</label><label for="__tabbed_10_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">RootModel</span>
@@ -4739,7 +5174,34 @@ custom <code>__iter__</code> and <code>__getitem__</code> functions, as shown in
 <span class="nb">print</span><span class="p">([</span><span class="n">pet</span> <span class="k">for</span> <span class="n">pet</span> <span class="ow">in</span> <span class="n">pets</span><span class="p">])</span>
 <span class="c1">#&gt; [&#39;dog&#39;, &#39;cat&#39;]</span>
 </code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">RootModel</span>
+
+
+<span class="k">class</span> <span class="nc">Pets</span><span class="p">(</span><span class="n">RootModel</span><span class="p">):</span>
+    <span class="n">root</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">[</span><span class="n">item</span><span class="p">]</span>
+
+
+<span class="n">pets</span> <span class="o">=</span> <span class="n">Pets</span><span class="o">.</span><span class="n">model_validate</span><span class="p">([</span><span class="s1">&#39;dog&#39;</span><span class="p">,</span> <span class="s1">&#39;cat&#39;</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">pets</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="c1">#&gt; dog</span>
+<span class="nb">print</span><span class="p">([</span><span class="n">pet</span> <span class="k">for</span> <span class="n">pet</span> <span class="ow">in</span> <span class="n">pets</span><span class="p">])</span>
+<span class="c1">#&gt; [&#39;dog&#39;, &#39;cat&#39;]</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>You can also create subclasses of the parametrized root model directly:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="11:2"><input checked="checked" id="__tabbed_11_1" name="__tabbed_11" type="radio" /><input id="__tabbed_11_2" name="__tabbed_11" type="radio" /><div class="tabbed-labels"><label for="__tabbed_11_1">Python 3.8 and above</label><label for="__tabbed_11_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">RootModel</span>
@@ -4755,6 +5217,24 @@ custom <code>__iter__</code> and <code>__getitem__</code> functions, as shown in
 <span class="nb">print</span><span class="p">(</span><span class="n">my_pets</span><span class="o">.</span><span class="n">describe</span><span class="p">())</span>
 <span class="c1">#&gt; Pets: dog, cat</span>
 </code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">RootModel</span>
+
+
+<span class="k">class</span> <span class="nc">Pets</span><span class="p">(</span><span class="n">RootModel</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]):</span>
+    <span class="k">def</span> <span class="nf">describe</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;Pets: </span><span class="si">{</span><span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span>
+
+
+<span class="n">my_pets</span> <span class="o">=</span> <span class="n">Pets</span><span class="o">.</span><span class="n">model_validate</span><span class="p">([</span><span class="s1">&#39;dog&#39;</span><span class="p">,</span> <span class="s1">&#39;cat&#39;</span><span class="p">])</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">my_pets</span><span class="o">.</span><span class="n">describe</span><span class="p">())</span>
+<span class="c1">#&gt; Pets: dog, cat</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <h2 id="faux-immutability">Faux immutability<a class="headerlink" href="#faux-immutability" title="Permanent link">&para;</a></h2>
 <p>Models can be configured to be immutable via <code>model_config['frozen'] = True</code>. When this is set, attempting to change the
 values of instance attributes will raise errors. See the <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.frozen">API reference</a> for more details.</p>
@@ -4877,6 +5357,9 @@ argument to <code>dataclasses.field</code>.</p>
 <p>Pydantic also supports the use of a <a href="#fields-with-dynamic-default-values"><code>default_factory</code></a> for non-hashable default
 values, but it is not required. In the event that the default value is not hashable, Pydantic will deepcopy the default
 value when creating each instance of the model:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="12:2"><input checked="checked" id="__tabbed_12_1" name="__tabbed_12" type="radio" /><input id="__tabbed_12_2" name="__tabbed_12" type="radio" /><div class="tabbed-labels"><label for="__tabbed_12_1">Python 3.8 and above</label><label for="__tabbed_12_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
@@ -4895,6 +5378,27 @@ value when creating each instance of the model:</p>
 <span class="nb">print</span><span class="p">(</span><span class="n">m2</span><span class="o">.</span><span class="n">item_counts</span><span class="p">)</span>
 <span class="c1">#&gt; [{}]</span>
 </code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">item_counts</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[{}]</span>
+
+
+<span class="n">m1</span> <span class="o">=</span> <span class="n">Model</span><span class="p">()</span>
+<span class="n">m1</span><span class="o">.</span><span class="n">item_counts</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;a&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m1</span><span class="o">.</span><span class="n">item_counts</span><span class="p">)</span>
+<span class="c1">#&gt; [{&#39;a&#39;: 1}]</span>
+
+<span class="n">m2</span> <span class="o">=</span> <span class="n">Model</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m2</span><span class="o">.</span><span class="n">item_counts</span><span class="p">)</span>
+<span class="c1">#&gt; [{}]</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <h2 id="fields-with-dynamic-default-values">Fields with dynamic default values<a class="headerlink" href="#fields-with-dynamic-default-values" title="Permanent link">&para;</a></h2>
 <p>When declaring a field with a default value, you may want it to be dynamic (i.e. different for each model).
 To do this, you may want to use a <code>default_factory</code>.</p>
@@ -5069,6 +5573,9 @@ it is just syntactic sugar for getting an attribute and either comparing it or d
 coercion.</p>
 <p>In this example, note that the ID of the list changes after the class is constructed because it has been
 copied during validation:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="13:2"><input checked="checked" id="__tabbed_13_1" name="__tabbed_13" type="radio" /><input id="__tabbed_13_2" name="__tabbed_13" type="radio" /><div class="tabbed-labels"><label for="__tabbed_13_1">Python 3.8 and above</label><label for="__tabbed_13_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
@@ -5093,6 +5600,33 @@ copied during validation:</p>
 <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;id(c1.arr) == id(c2.arr):&#39;</span><span class="p">,</span> <span class="nb">id</span><span class="p">(</span><span class="n">c1</span><span class="o">.</span><span class="n">arr</span><span class="p">)</span> <span class="o">==</span> <span class="nb">id</span><span class="p">(</span><span class="n">c2</span><span class="o">.</span><span class="n">arr</span><span class="p">))</span>
 <span class="c1">#&gt; id(c1.arr) == id(c2.arr): False</span>
 </code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+
+<span class="k">class</span> <span class="nc">C1</span><span class="p">:</span>
+    <span class="n">arr</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_arr</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">arr</span> <span class="o">=</span> <span class="n">in_arr</span>
+
+
+<span class="k">class</span> <span class="nc">C2</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">arr</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+
+
+<span class="n">arr_orig</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
+
+
+<span class="n">c1</span> <span class="o">=</span> <span class="n">C1</span><span class="p">(</span><span class="n">arr_orig</span><span class="p">)</span>
+<span class="n">c2</span> <span class="o">=</span> <span class="n">C2</span><span class="p">(</span><span class="n">arr</span><span class="o">=</span><span class="n">arr_orig</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;id(c1.arr) == id(c2.arr):&#39;</span><span class="p">,</span> <span class="nb">id</span><span class="p">(</span><span class="n">c1</span><span class="o">.</span><span class="n">arr</span><span class="p">)</span> <span class="o">==</span> <span class="nb">id</span><span class="p">(</span><span class="n">c2</span><span class="o">.</span><span class="n">arr</span><span class="p">))</span>
+<span class="c1">#&gt; id(c1.arr) == id(c2.arr): False</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>There are some situations where Pydantic does not copy attributes, such as when passing models &mdash; we use the
@@ -5147,6 +5681,9 @@ The extra fields will then be stored in <code>BaseModel.__pydantic_extra__</code
 </code></pre></div>
 <p>By default, no validation will be applied to these extra items, but you can set a type for the values by overriding
 the type annotation for <code>__pydantic_extra__</code>:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="14:2"><input checked="checked" id="__tabbed_14_1" name="__tabbed_14" type="radio" /><input id="__tabbed_14_2" name="__tabbed_14" type="radio" /><div class="tabbed-labels"><label for="__tabbed_14_1">Python 3.8 and above</label><label for="__tabbed_14_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
@@ -5177,9 +5714,44 @@ the type annotation for <code>__pydantic_extra__</code>:</p>
 <span class="k">assert</span> <span class="n">m</span><span class="o">.</span><span class="n">__pydantic_extra__</span> <span class="o">==</span> <span class="p">{</span><span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">}</span>
 </code></pre></div>
 <ol>
-<li>The <code>= Field(init=False)</code> does not have any effect at runtime, but prevents the <code>__pydantic_extra__</code> field from
-being treated as an argument to the model's <code>__init__</code> method by type-checkers.</li>
+<li>The <code>= Field(init=False)</code> does not have any effect at runtime, but prevents the <code>__pydantic_extra__</code> field from</li>
 </ol>
+</div>
+<div class="tabbed-block">
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">__pydantic_extra__</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">init</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>  <span class="c1"># (1)!</span>
+
+    <span class="n">x</span><span class="p">:</span> <span class="nb">int</span>
+
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">extra</span><span class="o">=</span><span class="s1">&#39;allow&#39;</span><span class="p">)</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s1">&#39;a&#39;</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for Model</span>
+<span class="sd">    y</span>
+<span class="sd">      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value=&#39;a&#39;, input_type=str]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s1">&#39;2&#39;</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">m</span><span class="o">.</span><span class="n">x</span> <span class="o">==</span> <span class="mi">1</span>
+<span class="k">assert</span> <span class="n">m</span><span class="o">.</span><span class="n">y</span> <span class="o">==</span> <span class="mi">2</span>
+<span class="k">assert</span> <span class="n">m</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()</span> <span class="o">==</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">}</span>
+<span class="k">assert</span> <span class="n">m</span><span class="o">.</span><span class="n">__pydantic_extra__</span> <span class="o">==</span> <span class="p">{</span><span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">}</span>
+</code></pre></div>
+<ol>
+<li>The <code>= Field(init=False)</code> does not have any effect at runtime, but prevents the <code>__pydantic_extra__</code> field from</li>
+</ol>
+</div>
+</div>
+</div>
+<p>being treated as an argument to the model's <code>__init__</code> method by type-checkers.</p>
 <p>The same configurations apply to <code>TypedDict</code> and <code>dataclass</code>' except the config is controlled by setting the
 <code>__pydantic_config__</code> attribute of the class to a valid <code>ConfigDict</code>.</p>
 

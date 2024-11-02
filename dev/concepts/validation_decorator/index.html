@@ -3331,6 +3331,9 @@ keyword parameters of a function:</p>
 <p>The <a href="../fields/"><code>Field()</code> function</a> can also be used with the decorator to provide extra information about
 the field and validations. In general it should be used in a type hint with <a href="../types/#composing-types-via-annotated">Annotated</a>,
 unless <code>default_factory</code> is specified, in which case it should be used as the default value of the field:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.8 and above</label><label for="__tabbed_1_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 
 <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
@@ -3362,7 +3365,46 @@ unless <code>default_factory</code> is specified, in which case it should be use
 <span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">when</span><span class="p">()))</span>
 <span class="c1">#&gt; &lt;class &#39;datetime.datetime&#39;&gt;</span>
 </code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">validate_call</span>
+
+
+<span class="nd">@validate_call</span>
+<span class="k">def</span> <span class="nf">how_many</span><span class="p">(</span><span class="n">num</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">gt</span><span class="o">=</span><span class="mi">10</span><span class="p">)]):</span>
+    <span class="k">return</span> <span class="n">num</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">how_many</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for how_many</span>
+<span class="sd">    0</span>
+<span class="sd">      Input should be greater than 10 [type=greater_than, input_value=1, input_type=int]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+
+<span class="nd">@validate_call</span>
+<span class="k">def</span> <span class="nf">when</span><span class="p">(</span><span class="n">dt</span><span class="p">:</span> <span class="n">datetime</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">)):</span>
+    <span class="k">return</span> <span class="n">dt</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">when</span><span class="p">()))</span>
+<span class="c1">#&gt; &lt;class &#39;datetime.datetime&#39;&gt;</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p><a href="../fields/#field-aliases">Aliases</a> can be used with the decorator as normal:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.8 and above</label><label for="__tabbed_2_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">Field</span><span class="p">,</span> <span class="n">validate_call</span>
@@ -3375,6 +3417,23 @@ unless <code>default_factory</code> is specified, in which case it should be use
 
 <span class="n">how_many</span><span class="p">(</span><span class="n">number</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
 </code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">Field</span><span class="p">,</span> <span class="n">validate_call</span>
+
+
+<span class="nd">@validate_call</span>
+<span class="k">def</span> <span class="nf">how_many</span><span class="p">(</span><span class="n">num</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">gt</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="s1">&#39;number&#39;</span><span class="p">)]):</span>
+    <span class="k">return</span> <span class="n">num</span>
+
+
+<span class="n">how_many</span><span class="p">(</span><span class="n">number</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <h2 id="accessing-the-original-function">Accessing the original function<a class="headerlink" href="#accessing-the-original-function" title="Permanent link">&para;</a></h2>
 <p>The original function which was decorated can still be accessed by using the <code>raw_function</code> attribute.
 This is useful if in some scenarios you trust your input arguments and want to call the function in the most efficient way (see <a href="#performance">notes on performance</a> below):</p>

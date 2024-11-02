@@ -2986,6 +2986,9 @@ In the below example, we query the <a href="https://jsonplaceholder.typicode.com
 </code></pre></div>
 <p>The <a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic.type_adapter.TypeAdapter"><code>TypeAdapter</code></a> tool from Pydantic often comes in quite
 handy when working with HTTP requests. Consider a similar example where we are validating a list of users:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.8 and above</label><label for="__tabbed_1_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pprint</span> <span class="kn">import</span> <span class="n">pprint</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
 
@@ -3025,6 +3028,49 @@ handy when working with HTTP requests. Consider a similar example where we are v
 <ol>
 <li>Note, we're querying the <code>/users/</code> endpoint here to get a list of users.</li>
 </ol>
+</div>
+<div class="tabbed-block">
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pprint</span> <span class="kn">import</span> <span class="n">pprint</span>
+
+<span class="kn">import</span> <span class="nn">httpx</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">EmailStr</span><span class="p">,</span> <span class="n">TypeAdapter</span>
+
+
+<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">email</span><span class="p">:</span> <span class="n">EmailStr</span>
+
+
+<span class="n">url</span> <span class="o">=</span> <span class="s1">&#39;https://jsonplaceholder.typicode.com/users/&#39;</span>  <span class="c1"># (1)!</span>
+
+<span class="n">response</span> <span class="o">=</span> <span class="n">httpx</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+<span class="n">response</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+
+<span class="n">users_list_adapter</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="nb">list</span><span class="p">[</span><span class="n">User</span><span class="p">])</span>
+
+<span class="n">users</span> <span class="o">=</span> <span class="n">users_list_adapter</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">())</span>
+<span class="n">pprint</span><span class="p">([</span><span class="n">u</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">users</span><span class="p">])</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">[&#39;Leanne Graham&#39;,</span>
+<span class="sd"> &#39;Ervin Howell&#39;,</span>
+<span class="sd"> &#39;Clementine Bauch&#39;,</span>
+<span class="sd"> &#39;Patricia Lebsack&#39;,</span>
+<span class="sd"> &#39;Chelsey Dietrich&#39;,</span>
+<span class="sd"> &#39;Mrs. Dennis Schulist&#39;,</span>
+<span class="sd"> &#39;Kurtis Weissnat&#39;,</span>
+<span class="sd"> &#39;Nicholas Runolfsdottir V&#39;,</span>
+<span class="sd"> &#39;Glenna Reichert&#39;,</span>
+<span class="sd"> &#39;Clementina DuBuque&#39;]</span>
+<span class="sd">&quot;&quot;&quot;</span>
+</code></pre></div>
+<ol>
+<li>Note, we're querying the <code>/users/</code> endpoint here to get a list of users.</li>
+</ol>
+</div>
+</div>
+</div>
 <!-- TODO: httpx, flask, Django rest framework, FastAPI -->
 
 

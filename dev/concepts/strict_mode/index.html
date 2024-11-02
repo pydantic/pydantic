@@ -3270,6 +3270,9 @@ through the use of <code>TypeAdapter</code>:</p>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div></p>
 <p>This also works with the <code>TypeAdapter.validate_json</code> and <code>BaseModel.model_validate_json</code> methods:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.8 and above</label><label for="__tabbed_1_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">json</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
 <span class="kn">from</span> <span class="nn">uuid</span> <span class="kn">import</span> <span class="n">UUID</span>
@@ -3320,6 +3323,60 @@ through the use of <code>TypeAdapter</code>:</p>
 <span class="sd">      Input should be a valid integer [type=int_type, input_value=&#39;1&#39;, input_type=str]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">from</span> <span class="nn">uuid</span> <span class="kn">import</span> <span class="n">UUID</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">TypeAdapter</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">TypeAdapter</span><span class="p">(</span><span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span><span class="o">.</span><span class="n">validate_json</span><span class="p">(</span><span class="s1">&#39;[&quot;1&quot;, 2, &quot;3&quot;]&#39;</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    2 validation errors for list[int]</span>
+<span class="sd">    0</span>
+<span class="sd">      Input should be a valid integer [type=int_type, input_value=&#39;1&#39;, input_type=str]</span>
+<span class="sd">    2</span>
+<span class="sd">      Input should be a valid integer [type=int_type, input_value=&#39;3&#39;, input_type=str]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">x</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">y</span><span class="p">:</span> <span class="n">UUID</span>
+
+
+<span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="s1">&#39;12345678-1234-1234-1234-123456789012&#39;</span><span class="p">}</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">Model</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+    <span class="c1"># Neither x nor y are valid in strict mode from python:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    2 validation errors for Model</span>
+<span class="sd">    x</span>
+<span class="sd">      Input should be a valid integer [type=int_type, input_value=&#39;1&#39;, input_type=str]</span>
+<span class="sd">    y</span>
+<span class="sd">      Input should be an instance of UUID [type=is_instance_of, input_value=&#39;12345678-1234-1234-1234-123456789012&#39;, input_type=str]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<span class="n">json_data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">Model</span><span class="o">.</span><span class="n">model_validate_json</span><span class="p">(</span><span class="n">json_data</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+    <span class="c1"># From JSON, x is still not valid in strict mode, but y is:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for Model</span>
+<span class="sd">    x</span>
+<span class="sd">      Input should be a valid integer [type=int_type, input_value=&#39;1&#39;, input_type=str]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <h2 id="strict-mode-with-field">Strict mode with <code>Field</code><a class="headerlink" href="#strict-mode-with-field" title="Permanent link">&para;</a></h2>
 <p>For individual fields on a model, you can <a href="../../api/fields/#pydantic.fields.Field">set <code>strict=True</code> on the field</a>.
 This will cause strict-mode validation to be used for that field, even when the validation methods are called without
@@ -3377,6 +3434,9 @@ This will cause strict-mode validation to be used for that field, even when the 
 <h3 id="using-field-as-an-annotation">Using <code>Field</code> as an annotation<a class="headerlink" href="#using-field-as-an-annotation" title="Permanent link">&para;</a></h3>
 <p>Note that <code>Field(strict=True)</code> (or with any other keyword arguments) can be used as an annotation if necessary, e.g.,
 when working with <code>TypedDict</code>:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.8 and above</label><label for="__tabbed_2_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span><span class="p">,</span> <span class="n">TypedDict</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">Field</span><span class="p">,</span> <span class="n">TypeAdapter</span><span class="p">,</span> <span class="n">ValidationError</span>
@@ -3396,6 +3456,31 @@ when working with <code>TypedDict</code>:</p>
 <span class="sd">      Input should be a valid integer [type=int_type, input_value=&#39;1&#39;, input_type=str]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">TypedDict</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">Field</span><span class="p">,</span> <span class="n">TypeAdapter</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+
+<span class="k">class</span> <span class="nc">MyDict</span><span class="p">(</span><span class="n">TypedDict</span><span class="p">):</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">)]</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">MyDict</span><span class="p">)</span><span class="o">.</span><span class="n">validate_python</span><span class="p">({</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="s1">&#39;1&#39;</span><span class="p">})</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for typed-dict</span>
+<span class="sd">    x</span>
+<span class="sd">      Input should be a valid integer [type=int_type, input_value=&#39;1&#39;, input_type=str]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <h2 id="strict-mode-with-annotated-strict">Strict mode with <code>Annotated[..., Strict()]</code><a class="headerlink" href="#strict-mode-with-annotated-strict" title="Permanent link">&para;</a></h2>
 <details class="api">
 <summary>API Documentation</summary>
@@ -3404,6 +3489,9 @@ when working with <code>TypedDict</code>:</p>
 <p>Pydantic also provides the <a href="../../api/types/#pydantic.types.Strict"><code>Strict</code></a> class, which is intended for use as
 metadata with <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Annotated"><code>typing.Annotated</code></a> class; this annotation indicates that the annotated field should be validated in
 strict mode:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.8 and above</label><label for="__tabbed_3_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Strict</span><span class="p">,</span> <span class="n">ValidationError</span>
@@ -3426,6 +3514,33 @@ strict mode:</p>
 <span class="sd">      Input should be a valid boolean [type=bool_type, input_value=&#39;True&#39;, input_type=str]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Strict</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+
+<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">is_active</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="n">Strict</span><span class="p">()]</span>
+
+
+<span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;David&#39;</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="mi">33</span><span class="p">,</span> <span class="n">is_active</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;David&#39;</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="mi">33</span><span class="p">,</span> <span class="n">is_active</span><span class="o">=</span><span class="s1">&#39;True&#39;</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for User</span>
+<span class="sd">    is_active</span>
+<span class="sd">      Input should be a valid boolean [type=bool_type, input_value=&#39;True&#39;, input_type=str]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>This is, in fact, the method used to implement some of the strict-out-of-the-box types provided by Pydantic,
 such as <a href="../../api/types/#pydantic.types.StrictInt"><code>StrictInt</code></a>.</p>
 <h2 id="strict-mode-with-configdict">Strict mode with <code>ConfigDict</code><a class="headerlink" href="#strict-mode-with-configdict" title="Permanent link">&para;</a></h2>

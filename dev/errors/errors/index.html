@@ -3081,6 +3081,9 @@ contain information about all the errors and how they happened.</p>
 <p>The first item in the <code>loc</code> list will be the field where the error occurred, and if the field is a
 <a href="../../concepts/models/#nested-models">sub-model</a>, subsequent items will be present to indicate the nested location of the error.</p>
 <p>As a demonstration:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.8 and above</label><label for="__tabbed_1_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">conint</span>
@@ -3174,6 +3177,102 @@ contain information about all the errors and how they happened.</p>
 <span class="sd">    ]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">conint</span>
+
+
+<span class="k">class</span> <span class="nc">Location</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">lat</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span>
+    <span class="n">lng</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">10.1</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">is_required</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">gt_int</span><span class="p">:</span> <span class="n">conint</span><span class="p">(</span><span class="n">gt</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
+    <span class="n">list_of_ints</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">a_float</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">recursive_model</span><span class="p">:</span> <span class="n">Location</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+<span class="n">data</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+    <span class="n">list_of_ints</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;bad&#39;</span><span class="p">],</span>
+    <span class="n">a_float</span><span class="o">=</span><span class="s1">&#39;not a float&#39;</span><span class="p">,</span>
+    <span class="n">recursive_model</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;lat&#39;</span><span class="p">:</span> <span class="mf">4.2</span><span class="p">,</span> <span class="s1">&#39;lng&#39;</span><span class="p">:</span> <span class="s1">&#39;New York&#39;</span><span class="p">},</span>
+    <span class="n">gt_int</span><span class="o">=</span><span class="mi">21</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">Model</span><span class="p">(</span><span class="o">**</span><span class="n">data</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    5 validation errors for Model</span>
+<span class="sd">    is_required</span>
+<span class="sd">      Field required [type=missing, input_value={&#39;list_of_ints&#39;: [&#39;1&#39;, 2,...ew York&#39;}, &#39;gt_int&#39;: 21}, input_type=dict]</span>
+<span class="sd">    gt_int</span>
+<span class="sd">      Input should be greater than 42 [type=greater_than, input_value=21, input_type=int]</span>
+<span class="sd">    list_of_ints.2</span>
+<span class="sd">      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value=&#39;bad&#39;, input_type=str]</span>
+<span class="sd">    a_float</span>
+<span class="sd">      Input should be a valid number, unable to parse string as a number [type=float_parsing, input_value=&#39;not a float&#39;, input_type=str]</span>
+<span class="sd">    recursive_model.lng</span>
+<span class="sd">      Input should be a valid number, unable to parse string as a number [type=float_parsing, input_value=&#39;New York&#39;, input_type=str]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">Model</span><span class="p">(</span><span class="o">**</span><span class="n">data</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">errors</span><span class="p">())</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    [</span>
+<span class="sd">        {</span>
+<span class="sd">            &#39;type&#39;: &#39;missing&#39;,</span>
+<span class="sd">            &#39;loc&#39;: (&#39;is_required&#39;,),</span>
+<span class="sd">            &#39;msg&#39;: &#39;Field required&#39;,</span>
+<span class="sd">            &#39;input&#39;: {</span>
+<span class="sd">                &#39;list_of_ints&#39;: [&#39;1&#39;, 2, &#39;bad&#39;],</span>
+<span class="sd">                &#39;a_float&#39;: &#39;not a float&#39;,</span>
+<span class="sd">                &#39;recursive_model&#39;: {&#39;lat&#39;: 4.2, &#39;lng&#39;: &#39;New York&#39;},</span>
+<span class="sd">                &#39;gt_int&#39;: 21,</span>
+<span class="sd">            },</span>
+<span class="sd">            &#39;url&#39;: &#39;https://errors.pydantic.dev/2/v/missing&#39;,</span>
+<span class="sd">        },</span>
+<span class="sd">        {</span>
+<span class="sd">            &#39;type&#39;: &#39;greater_than&#39;,</span>
+<span class="sd">            &#39;loc&#39;: (&#39;gt_int&#39;,),</span>
+<span class="sd">            &#39;msg&#39;: &#39;Input should be greater than 42&#39;,</span>
+<span class="sd">            &#39;input&#39;: 21,</span>
+<span class="sd">            &#39;ctx&#39;: {&#39;gt&#39;: 42},</span>
+<span class="sd">            &#39;url&#39;: &#39;https://errors.pydantic.dev/2/v/greater_than&#39;,</span>
+<span class="sd">        },</span>
+<span class="sd">        {</span>
+<span class="sd">            &#39;type&#39;: &#39;int_parsing&#39;,</span>
+<span class="sd">            &#39;loc&#39;: (&#39;list_of_ints&#39;, 2),</span>
+<span class="sd">            &#39;msg&#39;: &#39;Input should be a valid integer, unable to parse string as an integer&#39;,</span>
+<span class="sd">            &#39;input&#39;: &#39;bad&#39;,</span>
+<span class="sd">            &#39;url&#39;: &#39;https://errors.pydantic.dev/2/v/int_parsing&#39;,</span>
+<span class="sd">        },</span>
+<span class="sd">        {</span>
+<span class="sd">            &#39;type&#39;: &#39;float_parsing&#39;,</span>
+<span class="sd">            &#39;loc&#39;: (&#39;a_float&#39;,),</span>
+<span class="sd">            &#39;msg&#39;: &#39;Input should be a valid number, unable to parse string as a number&#39;,</span>
+<span class="sd">            &#39;input&#39;: &#39;not a float&#39;,</span>
+<span class="sd">            &#39;url&#39;: &#39;https://errors.pydantic.dev/2/v/float_parsing&#39;,</span>
+<span class="sd">        },</span>
+<span class="sd">        {</span>
+<span class="sd">            &#39;type&#39;: &#39;float_parsing&#39;,</span>
+<span class="sd">            &#39;loc&#39;: (&#39;recursive_model&#39;, &#39;lng&#39;),</span>
+<span class="sd">            &#39;msg&#39;: &#39;Input should be a valid number, unable to parse string as a number&#39;,</span>
+<span class="sd">            &#39;input&#39;: &#39;New York&#39;,</span>
+<span class="sd">            &#39;url&#39;: &#39;https://errors.pydantic.dev/2/v/float_parsing&#39;,</span>
+<span class="sd">        },</span>
+<span class="sd">    ]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <h3 id="custom-errors">Custom Errors<a class="headerlink" href="#custom-errors" title="Permanent link">&para;</a></h3>
 <p>In your custom data types or validators you should use <code>ValueError</code> or <code>AssertionError</code> to raise errors.</p>
 <p>See <a href="../../concepts/validators/">validators</a> for more details on use of the <code>@validator</code> decorator.</p>
@@ -3253,6 +3352,9 @@ contain information about all the errors and how they happened.</p>
 </ul>
 <h3 id="customize-error-messages">Customize error messages<a class="headerlink" href="#customize-error-messages" title="Permanent link">&para;</a></h3>
 <p>You can customize error messages by creating a custom error handler.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.8 and above</label><label for="__tabbed_2_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span>
 
 <span class="kn">from</span> <span class="nn">pydantic_core</span> <span class="kn">import</span> <span class="n">ErrorDetails</span>
@@ -3310,10 +3412,73 @@ contain information about all the errors and how they happened.</p>
 <span class="sd">    ]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic_core</span> <span class="kn">import</span> <span class="n">ErrorDetails</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">HttpUrl</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+<span class="n">CUSTOM_MESSAGES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;int_parsing&#39;</span><span class="p">:</span> <span class="s1">&#39;This is not an integer! 🤦&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;url_scheme&#39;</span><span class="p">:</span> <span class="s1">&#39;Hey, use the right URL scheme! I wanted </span><span class="si">{expected_schemes}</span><span class="s1">.&#39;</span><span class="p">,</span>
+<span class="p">}</span>
+
+
+<span class="k">def</span> <span class="nf">convert_errors</span><span class="p">(</span>
+    <span class="n">e</span><span class="p">:</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">custom_messages</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">ErrorDetails</span><span class="p">]:</span>
+    <span class="n">new_errors</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ErrorDetails</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">error</span> <span class="ow">in</span> <span class="n">e</span><span class="o">.</span><span class="n">errors</span><span class="p">():</span>
+        <span class="n">custom_message</span> <span class="o">=</span> <span class="n">custom_messages</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">error</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">custom_message</span><span class="p">:</span>
+            <span class="n">ctx</span> <span class="o">=</span> <span class="n">error</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;ctx&#39;</span><span class="p">)</span>
+            <span class="n">error</span><span class="p">[</span><span class="s1">&#39;msg&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">custom_message</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">ctx</span><span class="p">)</span> <span class="k">if</span> <span class="n">ctx</span> <span class="k">else</span> <span class="n">custom_message</span>
+            <span class="p">)</span>
+        <span class="n">new_errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">new_errors</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">a</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">b</span><span class="p">:</span> <span class="n">HttpUrl</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">Model</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="s1">&#39;wrong&#39;</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="s1">&#39;ftp://example.com&#39;</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="n">errors</span> <span class="o">=</span> <span class="n">convert_errors</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">CUSTOM_MESSAGES</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">errors</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    [</span>
+<span class="sd">        {</span>
+<span class="sd">            &#39;type&#39;: &#39;int_parsing&#39;,</span>
+<span class="sd">            &#39;loc&#39;: (&#39;a&#39;,),</span>
+<span class="sd">            &#39;msg&#39;: &#39;This is not an integer! 🤦&#39;,</span>
+<span class="sd">            &#39;input&#39;: &#39;wrong&#39;,</span>
+<span class="sd">            &#39;url&#39;: &#39;https://errors.pydantic.dev/2/v/int_parsing&#39;,</span>
+<span class="sd">        },</span>
+<span class="sd">        {</span>
+<span class="sd">            &#39;type&#39;: &#39;url_scheme&#39;,</span>
+<span class="sd">            &#39;loc&#39;: (&#39;b&#39;,),</span>
+<span class="sd">            &#39;msg&#39;: &quot;Hey, use the right URL scheme! I wanted &#39;http&#39; or &#39;https&#39;.&quot;,</span>
+<span class="sd">            &#39;input&#39;: &#39;ftp://example.com&#39;,</span>
+<span class="sd">            &#39;ctx&#39;: {&#39;expected_schemes&#39;: &quot;&#39;http&#39; or &#39;https&#39;&quot;},</span>
+<span class="sd">            &#39;url&#39;: &#39;https://errors.pydantic.dev/2/v/url_scheme&#39;,</span>
+<span class="sd">        },</span>
+<span class="sd">    ]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>A common use case would be to translate error messages. For example, in the above example,
 we could translate the error messages replacing the <code>CUSTOM_MESSAGES</code> dictionary with a
 dictionary of translations.</p>
 <p>Another example is customizing the way that the <code>'loc'</code> value of an error is represented.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:3"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><input id="__tabbed_3_3" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.8 and above</label><label for="__tabbed_3_2">Python 3.9 and above</label><label for="__tabbed_3_3">Python 3.10 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
@@ -3384,6 +3549,153 @@ dictionary of translations.</p>
 <li>By default, <code>e.errors()</code> produces a List of errors with <code>loc</code> values that take the form of tuples.</li>
 <li>With our custom <code>loc_to_dot_sep</code> function, we've modified the form of the <code>loc</code> representation.</li>
 </ol>
+</div>
+<div class="tabbed-block">
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+
+<span class="k">def</span> <span class="nf">loc_to_dot_sep</span><span class="p">(</span><span class="n">loc</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="o">...</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">loc</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">path</span> <span class="o">+=</span> <span class="s1">&#39;.&#39;</span>
+            <span class="n">path</span> <span class="o">+=</span> <span class="n">x</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">path</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39;[</span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s1">]&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Unexpected type&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">path</span>
+
+
+<span class="k">def</span> <span class="nf">convert_errors</span><span class="p">(</span><span class="n">e</span><span class="p">:</span> <span class="n">ValidationError</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+    <span class="n">new_errors</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">errors</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">error</span> <span class="ow">in</span> <span class="n">new_errors</span><span class="p">:</span>
+        <span class="n">error</span><span class="p">[</span><span class="s1">&#39;loc&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">loc_to_dot_sep</span><span class="p">(</span><span class="n">error</span><span class="p">[</span><span class="s1">&#39;loc&#39;</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">new_errors</span>
+
+
+<span class="k">class</span> <span class="nc">TestNestedModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">key</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">value</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="k">class</span> <span class="nc">TestModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">items</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">TestNestedModel</span><span class="p">]</span>
+
+
+<span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;items&#39;</span><span class="p">:</span> <span class="p">[{</span><span class="s1">&#39;key&#39;</span><span class="p">:</span> <span class="s1">&#39;foo&#39;</span><span class="p">,</span> <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="s1">&#39;bar&#39;</span><span class="p">},</span> <span class="p">{</span><span class="s1">&#39;key&#39;</span><span class="p">:</span> <span class="s1">&#39;baz&#39;</span><span class="p">}]}</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">TestModel</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">errors</span><span class="p">())</span>  <span class="c1"># (1)!</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    [</span>
+<span class="sd">        {</span>
+<span class="sd">            &#39;type&#39;: &#39;missing&#39;,</span>
+<span class="sd">            &#39;loc&#39;: (&#39;items&#39;, 1, &#39;value&#39;),</span>
+<span class="sd">            &#39;msg&#39;: &#39;Field required&#39;,</span>
+<span class="sd">            &#39;input&#39;: {&#39;key&#39;: &#39;baz&#39;},</span>
+<span class="sd">            &#39;url&#39;: &#39;https://errors.pydantic.dev/2/v/missing&#39;,</span>
+<span class="sd">        }</span>
+<span class="sd">    ]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">pretty_errors</span> <span class="o">=</span> <span class="n">convert_errors</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">pretty_errors</span><span class="p">)</span>  <span class="c1"># (2)!</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    [</span>
+<span class="sd">        {</span>
+<span class="sd">            &#39;type&#39;: &#39;missing&#39;,</span>
+<span class="sd">            &#39;loc&#39;: &#39;items[1].value&#39;,</span>
+<span class="sd">            &#39;msg&#39;: &#39;Field required&#39;,</span>
+<span class="sd">            &#39;input&#39;: {&#39;key&#39;: &#39;baz&#39;},</span>
+<span class="sd">            &#39;url&#39;: &#39;https://errors.pydantic.dev/2/v/missing&#39;,</span>
+<span class="sd">        }</span>
+<span class="sd">    ]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+<ol>
+<li>By default, <code>e.errors()</code> produces a List of errors with <code>loc</code> values that take the form of tuples.</li>
+<li>With our custom <code>loc_to_dot_sep</code> function, we've modified the form of the <code>loc</code> representation.</li>
+</ol>
+</div>
+<div class="tabbed-block">
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+
+<span class="k">def</span> <span class="nf">loc_to_dot_sep</span><span class="p">(</span><span class="n">loc</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">loc</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">path</span> <span class="o">+=</span> <span class="s1">&#39;.&#39;</span>
+            <span class="n">path</span> <span class="o">+=</span> <span class="n">x</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">path</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39;[</span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s1">]&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Unexpected type&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">path</span>
+
+
+<span class="k">def</span> <span class="nf">convert_errors</span><span class="p">(</span><span class="n">e</span><span class="p">:</span> <span class="n">ValidationError</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+    <span class="n">new_errors</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">errors</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">error</span> <span class="ow">in</span> <span class="n">new_errors</span><span class="p">:</span>
+        <span class="n">error</span><span class="p">[</span><span class="s1">&#39;loc&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">loc_to_dot_sep</span><span class="p">(</span><span class="n">error</span><span class="p">[</span><span class="s1">&#39;loc&#39;</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">new_errors</span>
+
+
+<span class="k">class</span> <span class="nc">TestNestedModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">key</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">value</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="k">class</span> <span class="nc">TestModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">items</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">TestNestedModel</span><span class="p">]</span>
+
+
+<span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;items&#39;</span><span class="p">:</span> <span class="p">[{</span><span class="s1">&#39;key&#39;</span><span class="p">:</span> <span class="s1">&#39;foo&#39;</span><span class="p">,</span> <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="s1">&#39;bar&#39;</span><span class="p">},</span> <span class="p">{</span><span class="s1">&#39;key&#39;</span><span class="p">:</span> <span class="s1">&#39;baz&#39;</span><span class="p">}]}</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">TestModel</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">errors</span><span class="p">())</span>  <span class="c1"># (1)!</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    [</span>
+<span class="sd">        {</span>
+<span class="sd">            &#39;type&#39;: &#39;missing&#39;,</span>
+<span class="sd">            &#39;loc&#39;: (&#39;items&#39;, 1, &#39;value&#39;),</span>
+<span class="sd">            &#39;msg&#39;: &#39;Field required&#39;,</span>
+<span class="sd">            &#39;input&#39;: {&#39;key&#39;: &#39;baz&#39;},</span>
+<span class="sd">            &#39;url&#39;: &#39;https://errors.pydantic.dev/2/v/missing&#39;,</span>
+<span class="sd">        }</span>
+<span class="sd">    ]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">pretty_errors</span> <span class="o">=</span> <span class="n">convert_errors</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">pretty_errors</span><span class="p">)</span>  <span class="c1"># (2)!</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    [</span>
+<span class="sd">        {</span>
+<span class="sd">            &#39;type&#39;: &#39;missing&#39;,</span>
+<span class="sd">            &#39;loc&#39;: &#39;items[1].value&#39;,</span>
+<span class="sd">            &#39;msg&#39;: &#39;Field required&#39;,</span>
+<span class="sd">            &#39;input&#39;: {&#39;key&#39;: &#39;baz&#39;},</span>
+<span class="sd">            &#39;url&#39;: &#39;https://errors.pydantic.dev/2/v/missing&#39;,</span>
+<span class="sd">        }</span>
+<span class="sd">    ]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+<ol>
+<li>By default, <code>e.errors()</code> produces a List of errors with <code>loc</code> values that take the form of tuples.</li>
+<li>With our custom <code>loc_to_dot_sep</code> function, we've modified the form of the <code>loc</code> representation.</li>
+</ol>
+</div>
+</div>
+</div>
 
 
 

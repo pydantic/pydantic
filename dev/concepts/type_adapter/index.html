@@ -2971,6 +2971,9 @@ which can be used for type validation, serialization, and JSON schema generation
 <p>A <a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic.type_adapter.TypeAdapter"><code>TypeAdapter</code></a> instance exposes some of the functionality from
 <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel"><code>BaseModel</code></a> instance methods for types that do not have such methods
 (such as dataclasses, primitive types, and more):</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.8 and above</label><label for="__tabbed_1_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
 
 <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">TypedDict</span>
@@ -3003,6 +3006,41 @@ which can be used for type validation, serialization, and JSON schema generation
 <span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">user_list_adapter</span><span class="o">.</span><span class="n">dump_json</span><span class="p">(</span><span class="n">user_list</span><span class="p">)))</span>
 <span class="c1">#&gt; b&#39;[{&quot;name&quot;:&quot;Fred&quot;,&quot;id&quot;:3}]&#39;</span>
 </code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">TypedDict</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">TypeAdapter</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+
+<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">TypedDict</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
+
+
+<span class="n">user_list_adapter</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="nb">list</span><span class="p">[</span><span class="n">User</span><span class="p">])</span>
+<span class="n">user_list</span> <span class="o">=</span> <span class="n">user_list_adapter</span><span class="o">.</span><span class="n">validate_python</span><span class="p">([{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;Fred&#39;</span><span class="p">,</span> <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="s1">&#39;3&#39;</span><span class="p">}])</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">user_list</span><span class="p">))</span>
+<span class="c1">#&gt; [{&#39;name&#39;: &#39;Fred&#39;, &#39;id&#39;: 3}]</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">user_list_adapter</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span>
+        <span class="p">[{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;Fred&#39;</span><span class="p">,</span> <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="s1">&#39;wrong&#39;</span><span class="p">,</span> <span class="s1">&#39;other&#39;</span><span class="p">:</span> <span class="s1">&#39;no&#39;</span><span class="p">}]</span>
+    <span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for list[typed-dict]</span>
+<span class="sd">    0.id</span>
+<span class="sd">      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value=&#39;wrong&#39;, input_type=str]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">user_list_adapter</span><span class="o">.</span><span class="n">dump_json</span><span class="p">(</span><span class="n">user_list</span><span class="p">)))</span>
+<span class="c1">#&gt; b&#39;[{&quot;name&quot;:&quot;Fred&quot;,&quot;id&quot;:3}]&#39;</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <div class="admonition info">
 <p class="admonition-title"><code>dump_json</code> returns <code>bytes</code></p>
 <p><code>TypeAdapter</code>'s <code>dump_json</code> methods returns a <code>bytes</code> object, unlike the corresponding method for <code>BaseModel</code>, <code>model_dump_json</code>, which returns a <code>str</code>.
@@ -3023,6 +3061,9 @@ in a more ad-hoc way. This function behaves similarly to
 but works with arbitrary Pydantic-compatible types.</p>
 <p>This is especially useful when you want to parse results into a type that is not a direct subclass of
 <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel"><code>BaseModel</code></a>. For example:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.8 and above</label><label for="__tabbed_2_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">TypeAdapter</span>
@@ -3041,6 +3082,27 @@ but works with arbitrary Pydantic-compatible types.</p>
 <span class="nb">print</span><span class="p">(</span><span class="n">items</span><span class="p">)</span>
 <span class="c1">#&gt; [Item(id=1, name=&#39;My Item&#39;)]</span>
 </code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">TypeAdapter</span>
+
+
+<span class="k">class</span> <span class="nc">Item</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="c1"># `item_data` could come from an API call, eg., via something like:</span>
+<span class="c1"># item_data = requests.get(&#39;https://my-api.com/items&#39;).json()</span>
+<span class="n">item_data</span> <span class="o">=</span> <span class="p">[{</span><span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;My Item&#39;</span><span class="p">}]</span>
+
+<span class="n">items</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="nb">list</span><span class="p">[</span><span class="n">Item</span><span class="p">])</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="n">item_data</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">items</span><span class="p">)</span>
+<span class="c1">#&gt; [Item(id=1, name=&#39;My Item&#39;)]</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p><a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic.type_adapter.TypeAdapter"><code>TypeAdapter</code></a> is capable of parsing data into any of the types Pydantic can
 handle as fields of a <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel"><code>BaseModel</code></a>.</p>
 <div class="admonition info">

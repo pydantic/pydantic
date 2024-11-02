@@ -3035,6 +3035,9 @@ in validation inputs. For example, this can happen when validating ORM instances
 attributes.</p>
 <p>Rather than raising a <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#RecursionError"><code>RecursionError</code></a> while attempting to validate data with cyclic references, Pydantic is able
 to detect the cyclic reference and raise an appropriate <a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.ValidationError"><code>ValidationError</code></a>:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.8 and above</label><label for="__tabbed_1_2">Python 3.10 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
@@ -3063,9 +3066,45 @@ to detect the cyclic reference and raise an appropriate <a class="autorefs autor
 <span class="sd">      Recursion error - cyclic reference detected [type=recursion_loop, input_value={&#39;a&#39;: {&#39;b&#39;: {...}}}, input_type=dict]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+
+<span class="k">class</span> <span class="nc">ModelA</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">b</span><span class="p">:</span> <span class="s1">&#39;Optional[ModelB]&#39;</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+<span class="k">class</span> <span class="nc">ModelB</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">a</span><span class="p">:</span> <span class="n">ModelA</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+<span class="n">cyclic_data</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">cyclic_data</span><span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="n">cyclic_data</span><span class="p">}</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">cyclic_data</span><span class="p">)</span>
+<span class="c1">#&gt; {&#39;a&#39;: {&#39;b&#39;: {...}}}</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">ModelB</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">cyclic_data</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for ModelB</span>
+<span class="sd">    a.b</span>
+<span class="sd">      Recursion error - cyclic reference detected [type=recursion_loop, input_value={&#39;a&#39;: {&#39;b&#39;: {...}}}, input_type=dict]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Because this error is raised without actually exceeding the maximum recursion depth, you can catch and
 handle the raised <a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.ValidationError"><code>ValidationError</code></a> without needing to worry about the limited
 remaining recursion depth:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.8 and above</label><label for="__tabbed_2_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">contextlib</span> <span class="kn">import</span> <span class="n">contextmanager</span>
 <span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">field</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">List</span>
@@ -3117,6 +3156,62 @@ remaining recursion depth:</p>
 <span class="nb">print</span><span class="p">(</span><span class="n">Node</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">node_data</span><span class="p">))</span>
 <span class="c1">#&gt; id=1 children=[Node(id=2, children=[Node(id=3, children=[])])]</span>
 </code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">contextlib</span> <span class="kn">import</span> <span class="n">contextmanager</span>
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">field</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Iterator</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">field_validator</span>
+
+
+<span class="k">def</span> <span class="nf">is_recursion_validation_error</span><span class="p">(</span><span class="n">exc</span><span class="p">:</span> <span class="n">ValidationError</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="n">errors</span> <span class="o">=</span> <span class="n">exc</span><span class="o">.</span><span class="n">errors</span><span class="p">()</span>
+    <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">errors</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">errors</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;recursion_loop&#39;</span>
+
+
+<span class="nd">@contextmanager</span>
+<span class="k">def</span> <span class="nf">suppress_recursion_validation_error</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="kc">None</span><span class="p">]:</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">yield</span>
+    <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">is_recursion_validation_error</span><span class="p">(</span><span class="n">exc</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">exc</span>
+
+
+<span class="k">class</span> <span class="nc">Node</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">children</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="s1">&#39;Node&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+
+    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;children&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;wrap&#39;</span><span class="p">)</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">drop_cyclic_references</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">children</span><span class="p">,</span> <span class="n">h</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">h</span><span class="p">(</span><span class="n">children</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span>
+                <span class="n">is_recursion_validation_error</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">children</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>
+            <span class="p">):</span>
+                <span class="k">raise</span> <span class="n">exc</span>
+
+            <span class="n">value_without_cyclic_refs</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">children</span><span class="p">:</span>
+                <span class="k">with</span> <span class="n">suppress_recursion_validation_error</span><span class="p">():</span>
+                    <span class="n">value_without_cyclic_refs</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">h</span><span class="p">([</span><span class="n">child</span><span class="p">]))</span>
+            <span class="k">return</span> <span class="n">h</span><span class="p">(</span><span class="n">value_without_cyclic_refs</span><span class="p">)</span>
+
+
+<span class="c1"># Create data with cyclic references representing the graph 1 -&gt; 2 -&gt; 3 -&gt; 1</span>
+<span class="n">node_data</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;children&#39;</span><span class="p">:</span> <span class="p">[{</span><span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;children&#39;</span><span class="p">:</span> <span class="p">[{</span><span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">}]}]}</span>
+<span class="n">node_data</span><span class="p">[</span><span class="s1">&#39;children&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;children&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;children&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">node_data</span><span class="p">]</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">Node</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">node_data</span><span class="p">))</span>
+<span class="c1">#&gt; id=1 children=[Node(id=2, children=[Node(id=3, children=[])])]</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Similarly, if Pydantic encounters a recursive reference during <em>serialization</em>, rather than waiting
 for the maximum recursion depth to be exceeded, a <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#ValueError"><code>ValueError</code></a> is raised immediately:</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">TypeAdapter</span>
@@ -3135,6 +3230,9 @@ for the maximum recursion depth to be exceeded, a <a class="autorefs autorefs-ex
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
 <p>This can also be handled if desired:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.8 and above</label><label for="__tabbed_3_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">field</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span>
 
@@ -3199,6 +3297,75 @@ for the maximum recursion depth to be exceeded, a <a class="autorefs autorefs-ex
 <span class="sd">}</span>
 <span class="sd">&quot;&quot;&quot;</span>
 </code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">field</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">SerializerFunctionWrapHandler</span><span class="p">,</span>
+    <span class="n">TypeAdapter</span><span class="p">,</span>
+    <span class="n">field_serializer</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">pydantic.dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
+
+
+<span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">NodeReference</span><span class="p">:</span>
+    <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
+
+
+<span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">Node</span><span class="p">(</span><span class="n">NodeReference</span><span class="p">):</span>
+    <span class="n">children</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="s1">&#39;Node&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+
+    <span class="nd">@field_serializer</span><span class="p">(</span><span class="s1">&#39;children&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;wrap&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">serialize</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">children</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="s1">&#39;Node&#39;</span><span class="p">],</span> <span class="n">handler</span><span class="p">:</span> <span class="n">SerializerFunctionWrapHandler</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Serialize a list of nodes, handling circular references by excluding the children.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">handler</span><span class="p">(</span><span class="n">children</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">str</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;Circular reference&#39;</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">exc</span>
+
+            <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">children</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">serialized</span> <span class="o">=</span> <span class="n">handler</span><span class="p">([</span><span class="n">node</span><span class="p">])</span>
+                <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="nb">str</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;Circular reference&#39;</span><span class="p">):</span>
+                        <span class="k">raise</span> <span class="n">exc</span>
+                    <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">node</span><span class="o">.</span><span class="n">id</span><span class="p">})</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">serialized</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">result</span>
+
+
+<span class="c1"># Create a cyclic graph:</span>
+<span class="n">nodes</span> <span class="o">=</span> <span class="p">[</span><span class="n">Node</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">Node</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="mi">2</span><span class="p">),</span> <span class="n">Node</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="mi">3</span><span class="p">)]</span>
+<span class="n">nodes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">children</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nodes</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<span class="n">nodes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">children</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nodes</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+<span class="n">nodes</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">children</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nodes</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">nodes</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="c1">#&gt; Node(id=1, children=[Node(id=2, children=[Node(id=3, children=[...])])])</span>
+
+<span class="c1"># Serialize the cyclic graph:</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">TypeAdapter</span><span class="p">(</span><span class="n">Node</span><span class="p">)</span><span class="o">.</span><span class="n">dump_python</span><span class="p">(</span><span class="n">nodes</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">{</span>
+<span class="sd">    &#39;id&#39;: 1,</span>
+<span class="sd">    &#39;children&#39;: [{&#39;id&#39;: 2, &#39;children&#39;: [{&#39;id&#39;: 3, &#39;children&#39;: [{&#39;id&#39;: 1}]}]}],</span>
+<span class="sd">}</span>
+<span class="sd">&quot;&quot;&quot;</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 
 
 
