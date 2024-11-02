@@ -74,7 +74,7 @@ def test_list(mode, value, expected):
             assert ta.validate_json(value, experimental_allow_partial=True) == expected
 
 
-def test_dict(mode, value, expected):
+def test_dict():
     ta = TypeAdapter(Dict[str, Annotated[int, Ge(10)]])
     eap = dict(experimental_allow_partial=True)
 
