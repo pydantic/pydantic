@@ -326,7 +326,7 @@ except ValidationError as e:
     """
 ```
 
-1. The list validator for `b` doesn't get the `allow_partial` instruction passed down to it by the model validtor so it doesn't know to ignore errors in the last element of the input.
+1. The list validator for `b` doesn't get the `allow_partial` instruction passed down to it by the model validator so it doesn't know to ignore errors in the last element of the input.
 
 #### Some invalid but complete JSON will be accepted
 
