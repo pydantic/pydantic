@@ -47,7 +47,6 @@ pydantic/*.so
 .mypy-configs/
 
 # Other files and folders
-.python-version
 .DS_Store
 .auto-format
 /sandbox/
