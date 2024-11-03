@@ -169,10 +169,9 @@ Partial validation can be enabled when using the three validation methods on `Ty
 
 ```python
 from typing import List
-from typing_extensions import Annotated
 
 from annotated_types import MinLen
-from typing_extensions import NotRequired, TypedDict
+from typing_extensions import Annotated, NotRequired, TypedDict
 
 from pydantic import TypeAdapter
 
@@ -255,9 +254,9 @@ To avoid these errors breaking partial validation, Pydantic will ignore ALL erro
 
 ```py title="Errors in last element ignored"
 from typing import List
-from typing_extensions import Annotated
 
 from annotated_types import MinLen
+from typing_extensions import Annotated
 
 from pydantic import BaseModel, TypeAdapter
 
@@ -300,9 +299,9 @@ But partial validation won't work at all in this example because `BaseModel` doe
 
 ```py
 from typing import List
-from typing_extensions import Annotated
 
 from annotated_types import MinLen
+from typing_extensions import Annotated
 
 from pydantic import BaseModel, TypeAdapter, ValidationError
 
@@ -335,10 +334,8 @@ The way [jiter](https://github.com/pydantic/jiter) (the JSON parser used by Pyda
 This means that some invalid JSON will be accepted by Pydantic when using `experimental_allow_partial`, e.g.:
 
 ```py
-from typing_extensions import Annotated
-
 from annotated_types import MinLen
-from typing_extensions import TypedDict
+from typing_extensions import Annotated, TypedDict
 
 from pydantic import TypeAdapter
 
@@ -374,9 +371,9 @@ This means clearly invalid data will pass validation if the errors is in the las
 
 ```py
 from typing import List
-from typing_extensions import Annotated
 
 from annotated_types import Ge
+from typing_extensions import Annotated
 
 from pydantic import TypeAdapter
 
