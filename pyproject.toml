@@ -49,7 +49,7 @@ classifiers = [
 requires-python = '>=3.8'
 dependencies = [
     "typing-extensions>=4.12.2",
-    'annotated-types>=0.6.0',
+    "annotated-types>=0.6.0",
     "pydantic-core @ git+https://github.com/pydantic/pydantic-core.git@allow_partial",
 ]
 dynamic = ['version', 'readme']
