@@ -176,7 +176,7 @@ from typing_extensions import Annotated, NotRequired, TypedDict
 from pydantic import TypeAdapter
 
 
-class Foobar(TypedDict): # (1)!
+class Foobar(TypedDict):  # (1)!
     a: int
     b: NotRequired[float]
     c: NotRequired[Annotated[str, MinLen(5)]]
