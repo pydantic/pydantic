@@ -1242,6 +1242,105 @@ to help you monitor and understand your
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#partial-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Partial Validation
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Partial Validation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#how-partial-validation-works" class="md-nav__link">
+    <span class="md-ellipsis">
+      How Partial Validation Works
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="How Partial Validation Works">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-partial-json-parsing" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Partial JSON parsing
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-ignore-errors-in-last" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Ignore errors in the last element of the input
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#limitations-of-partial-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Limitations of Partial Validation
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Limitations of Partial Validation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#typeadapter-only" class="md-nav__link">
+    <span class="md-ellipsis">
+      TypeAdapter only
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#types-supported" class="md-nav__link">
+    <span class="md-ellipsis">
+      Types supported
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#some-invalid-but-complete-json-will-be-accepted" class="md-nav__link">
+    <span class="md-ellipsis">
+      Some invalid but complete JSON will be accepted
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#any-error-in-the-last-field-of-the-input-will-be-ignored" class="md-nav__link">
+    <span class="md-ellipsis">
+      Any error in the last field of the input will be ignored
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -3028,6 +3127,105 @@ to help you monitor and understand your
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#partial-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Partial Validation
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Partial Validation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#how-partial-validation-works" class="md-nav__link">
+    <span class="md-ellipsis">
+      How Partial Validation Works
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="How Partial Validation Works">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-partial-json-parsing" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Partial JSON parsing
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-ignore-errors-in-last" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Ignore errors in the last element of the input
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#limitations-of-partial-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Limitations of Partial Validation
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Limitations of Partial Validation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#typeadapter-only" class="md-nav__link">
+    <span class="md-ellipsis">
+      TypeAdapter only
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#types-supported" class="md-nav__link">
+    <span class="md-ellipsis">
+      Types supported
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#some-invalid-but-complete-json-will-be-accepted" class="md-nav__link">
+    <span class="md-ellipsis">
+      Some invalid but complete JSON will be accepted
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#any-error-in-the-last-field-of-the-input-will-be-ignored" class="md-nav__link">
+    <span class="md-ellipsis">
+      Any error in the last field of the input will be ignored
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -3257,6 +3455,463 @@ Just as an example, consider the <code>UserIn</code> and <code>UserOut</code> pa
 The approach you choose should really depend on your use case.
 You will have to compare verbosity, performance, ease of returning meaningful errors to your users, etc. to choose the right pattern.
 Just be mindful of abusing advanced patterns like the pipeline API just because you can.</p>
+<h2 id="partial-validation">Partial Validation<a class="headerlink" href="#partial-validation" title="Permanent link">&para;</a></h2>
+<p>Pydantic v2.10.0 introduces experimental support for "partial validation".</p>
+<p>This allows you to validate an incomplete JSON string, or a Python object representing incomplete input data.</p>
+<p>Partial validation is particularly helpful when processing the output of an LLM, where the model streams structured responses, and you may wish to begin validating the stream while you're still receiving data (e.g. to show partial data to users).</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Partial validation is an experimental feature and may change in future versions of Pydantic. The current implementation should be considered a proof of concept at this time and has a number of <a href="#limitations-of-partial-validation">limitations</a>.</p>
+</div>
+<p>Partial validation can be enabled when using the three validation methods on <code>TypeAdapter</code>: <a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic.type_adapter.TypeAdapter.validate_json"><code>TypeAdapter.validate_json()</code></a>, <a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic.type_adapter.TypeAdapter.validate_python"><code>TypeAdapter.validate_python()</code></a>, and <a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic.type_adapter.TypeAdapter.validate_strings"><code>TypeAdapter.validate_strings()</code></a>. This allows you to parse and validation incomplete JSON, but also to validate Python objects created by parsing incomplete data of any format.</p>
+<p><code>experiment_allow_partial</code> in action:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:3"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><input id="__tabbed_3_3" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.8 and above</label><label for="__tabbed_3_2">Python 3.9 and above</label><label for="__tabbed_3_3">Python 3.11 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
+
+<span class="kn">from</span> <span class="nn">annotated_types</span> <span class="kn">import</span> <span class="n">MinLen</span>
+<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span><span class="p">,</span> <span class="n">NotRequired</span><span class="p">,</span> <span class="n">TypedDict</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">TypeAdapter</span>
+
+
+<span class="k">class</span> <span class="nc">Foobar</span><span class="p">(</span><span class="n">TypedDict</span><span class="p">):</span>  <span class="c1"># (1)!</span>
+    <span class="n">a</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">b</span><span class="p">:</span> <span class="n">NotRequired</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span>
+    <span class="n">c</span><span class="p">:</span> <span class="n">NotRequired</span><span class="p">[</span><span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">MinLen</span><span class="p">(</span><span class="mi">5</span><span class="p">)]]</span>
+
+
+<span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">List</span><span class="p">[</span><span class="n">Foobar</span><span class="p">])</span>
+
+<span class="n">v</span> <span class="o">=</span> <span class="n">ta</span><span class="o">.</span><span class="n">validate_json</span><span class="p">(</span><span class="s1">&#39;[{&quot;a&quot;: 1, &quot;b&quot;&#39;</span><span class="p">,</span> <span class="n">experimental_allow_partial</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># (2)!</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+<span class="c1">#&gt; [{&#39;a&#39;: 1}]</span>
+
+<span class="n">v</span> <span class="o">=</span> <span class="n">ta</span><span class="o">.</span><span class="n">validate_json</span><span class="p">(</span>
+    <span class="s1">&#39;[{&quot;a&quot;: 1, &quot;b&quot;: 1.0, &quot;c&quot;: &quot;abcd&#39;</span><span class="p">,</span> <span class="n">experimental_allow_partial</span><span class="o">=</span><span class="kc">True</span>  <span class="c1"># (3)!</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+<span class="c1">#&gt; [{&#39;a&#39;: 1, &#39;b&#39;: 1.0}]</span>
+
+<span class="n">v</span> <span class="o">=</span> <span class="n">ta</span><span class="o">.</span><span class="n">validate_json</span><span class="p">(</span>
+    <span class="s1">&#39;[{&quot;b&quot;: 1.0, &quot;c&quot;: &quot;abcde&quot;&#39;</span><span class="p">,</span> <span class="n">experimental_allow_partial</span><span class="o">=</span><span class="kc">True</span>  <span class="c1"># (4)!</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+<span class="c1">#&gt; []</span>
+
+<span class="n">v</span> <span class="o">=</span> <span class="n">ta</span><span class="o">.</span><span class="n">validate_json</span><span class="p">(</span>
+    <span class="s1">&#39;[{&quot;a&quot;: 1, &quot;b&quot;: 1.0, &quot;c&quot;: &quot;abcde&quot;},{&quot;a&quot;: &#39;</span><span class="p">,</span> <span class="n">experimental_allow_partial</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+<span class="c1">#&gt; [{&#39;a&#39;: 1, &#39;b&#39;: 1.0, &#39;c&#39;: &#39;abcde&#39;}]</span>
+
+<span class="n">v</span> <span class="o">=</span> <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">([{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}],</span> <span class="n">experimental_allow_partial</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># (5)!</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+<span class="c1">#&gt; [{&#39;a&#39;: 1}]</span>
+
+<span class="n">v</span> <span class="o">=</span> <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span>
+    <span class="p">[{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">:</span> <span class="s1">&#39;abcd&#39;</span><span class="p">}],</span> <span class="n">experimental_allow_partial</span><span class="o">=</span><span class="kc">True</span>  <span class="c1"># (6)!</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+<span class="c1">#&gt; [{&#39;a&#39;: 1, &#39;b&#39;: 1.0}]</span>
+</code></pre></div>
+<ol>
+<li>The TypedDict <code>Foobar</code> has three field, but only <code>a</code> is required, that means that a valid instance of <code>Foobar</code> can be created even if the <code>b</code> and <code>c</code> fields are missing.</li>
+<li>Parsing JSON, the input is valid JSON up to the point where the string is truncated.</li>
+<li>In this case truncation of the input means the value of <code>c</code> (<code>abcd</code>) is invalid as input to <code>c</code> field, hence it's omitted.</li>
+<li>The <code>a</code> field is required, so validation on the only item in the list fails and is dropped.</li>
+<li>Partial validation also works with Python objects, it should have the same semantics as with JSON except of course you can't have a genuinely "incomplete" Python object.</li>
+<li>The same as above but with a Python object, <code>c</code> is dropped as it's not required and failed validation.</li>
+</ol>
+</div>
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">annotated_types</span> <span class="kn">import</span> <span class="n">MinLen</span>
+<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">NotRequired</span><span class="p">,</span> <span class="n">TypedDict</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">TypeAdapter</span>
+
+
+<span class="k">class</span> <span class="nc">Foobar</span><span class="p">(</span><span class="n">TypedDict</span><span class="p">):</span>  <span class="c1"># (1)!</span>
+    <span class="n">a</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">b</span><span class="p">:</span> <span class="n">NotRequired</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span>
+    <span class="n">c</span><span class="p">:</span> <span class="n">NotRequired</span><span class="p">[</span><span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">MinLen</span><span class="p">(</span><span class="mi">5</span><span class="p">)]]</span>
+
+
+<span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="nb">list</span><span class="p">[</span><span class="n">Foobar</span><span class="p">])</span>
+
+<span class="n">v</span> <span class="o">=</span> <span class="n">ta</span><span class="o">.</span><span class="n">validate_json</span><span class="p">(</span><span class="s1">&#39;[{&quot;a&quot;: 1, &quot;b&quot;&#39;</span><span class="p">,</span> <span class="n">experimental_allow_partial</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># (2)!</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+<span class="c1">#&gt; [{&#39;a&#39;: 1}]</span>
+
+<span class="n">v</span> <span class="o">=</span> <span class="n">ta</span><span class="o">.</span><span class="n">validate_json</span><span class="p">(</span>
+    <span class="s1">&#39;[{&quot;a&quot;: 1, &quot;b&quot;: 1.0, &quot;c&quot;: &quot;abcd&#39;</span><span class="p">,</span> <span class="n">experimental_allow_partial</span><span class="o">=</span><span class="kc">True</span>  <span class="c1"># (3)!</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+<span class="c1">#&gt; [{&#39;a&#39;: 1, &#39;b&#39;: 1.0}]</span>
+
+<span class="n">v</span> <span class="o">=</span> <span class="n">ta</span><span class="o">.</span><span class="n">validate_json</span><span class="p">(</span>
+    <span class="s1">&#39;[{&quot;b&quot;: 1.0, &quot;c&quot;: &quot;abcde&quot;&#39;</span><span class="p">,</span> <span class="n">experimental_allow_partial</span><span class="o">=</span><span class="kc">True</span>  <span class="c1"># (4)!</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+<span class="c1">#&gt; []</span>
+
+<span class="n">v</span> <span class="o">=</span> <span class="n">ta</span><span class="o">.</span><span class="n">validate_json</span><span class="p">(</span>
+    <span class="s1">&#39;[{&quot;a&quot;: 1, &quot;b&quot;: 1.0, &quot;c&quot;: &quot;abcde&quot;},{&quot;a&quot;: &#39;</span><span class="p">,</span> <span class="n">experimental_allow_partial</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+<span class="c1">#&gt; [{&#39;a&#39;: 1, &#39;b&#39;: 1.0, &#39;c&#39;: &#39;abcde&#39;}]</span>
+
+<span class="n">v</span> <span class="o">=</span> <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">([{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}],</span> <span class="n">experimental_allow_partial</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># (5)!</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+<span class="c1">#&gt; [{&#39;a&#39;: 1}]</span>
+
+<span class="n">v</span> <span class="o">=</span> <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span>
+    <span class="p">[{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">:</span> <span class="s1">&#39;abcd&#39;</span><span class="p">}],</span> <span class="n">experimental_allow_partial</span><span class="o">=</span><span class="kc">True</span>  <span class="c1"># (6)!</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+<span class="c1">#&gt; [{&#39;a&#39;: 1, &#39;b&#39;: 1.0}]</span>
+</code></pre></div>
+<ol>
+<li>The TypedDict <code>Foobar</code> has three field, but only <code>a</code> is required, that means that a valid instance of <code>Foobar</code> can be created even if the <code>b</code> and <code>c</code> fields are missing.</li>
+<li>Parsing JSON, the input is valid JSON up to the point where the string is truncated.</li>
+<li>In this case truncation of the input means the value of <code>c</code> (<code>abcd</code>) is invalid as input to <code>c</code> field, hence it's omitted.</li>
+<li>The <code>a</code> field is required, so validation on the only item in the list fails and is dropped.</li>
+<li>Partial validation also works with Python objects, it should have the same semantics as with JSON except of course you can't have a genuinely "incomplete" Python object.</li>
+<li>The same as above but with a Python object, <code>c</code> is dropped as it's not required and failed validation.</li>
+</ol>
+</div>
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">annotated_types</span> <span class="kn">import</span> <span class="n">MinLen</span>
+<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">TypedDict</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span><span class="p">,</span> <span class="n">NotRequired</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">TypeAdapter</span>
+
+
+<span class="k">class</span> <span class="nc">Foobar</span><span class="p">(</span><span class="n">TypedDict</span><span class="p">):</span>  <span class="c1"># (1)!</span>
+    <span class="n">a</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">b</span><span class="p">:</span> <span class="n">NotRequired</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span>
+    <span class="n">c</span><span class="p">:</span> <span class="n">NotRequired</span><span class="p">[</span><span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">MinLen</span><span class="p">(</span><span class="mi">5</span><span class="p">)]]</span>
+
+
+<span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="nb">list</span><span class="p">[</span><span class="n">Foobar</span><span class="p">])</span>
+
+<span class="n">v</span> <span class="o">=</span> <span class="n">ta</span><span class="o">.</span><span class="n">validate_json</span><span class="p">(</span><span class="s1">&#39;[{&quot;a&quot;: 1, &quot;b&quot;&#39;</span><span class="p">,</span> <span class="n">experimental_allow_partial</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># (2)!</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+<span class="c1">#&gt; [{&#39;a&#39;: 1}]</span>
+
+<span class="n">v</span> <span class="o">=</span> <span class="n">ta</span><span class="o">.</span><span class="n">validate_json</span><span class="p">(</span>
+    <span class="s1">&#39;[{&quot;a&quot;: 1, &quot;b&quot;: 1.0, &quot;c&quot;: &quot;abcd&#39;</span><span class="p">,</span> <span class="n">experimental_allow_partial</span><span class="o">=</span><span class="kc">True</span>  <span class="c1"># (3)!</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+<span class="c1">#&gt; [{&#39;a&#39;: 1, &#39;b&#39;: 1.0}]</span>
+
+<span class="n">v</span> <span class="o">=</span> <span class="n">ta</span><span class="o">.</span><span class="n">validate_json</span><span class="p">(</span>
+    <span class="s1">&#39;[{&quot;b&quot;: 1.0, &quot;c&quot;: &quot;abcde&quot;&#39;</span><span class="p">,</span> <span class="n">experimental_allow_partial</span><span class="o">=</span><span class="kc">True</span>  <span class="c1"># (4)!</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+<span class="c1">#&gt; []</span>
+
+<span class="n">v</span> <span class="o">=</span> <span class="n">ta</span><span class="o">.</span><span class="n">validate_json</span><span class="p">(</span>
+    <span class="s1">&#39;[{&quot;a&quot;: 1, &quot;b&quot;: 1.0, &quot;c&quot;: &quot;abcde&quot;},{&quot;a&quot;: &#39;</span><span class="p">,</span> <span class="n">experimental_allow_partial</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+<span class="c1">#&gt; [{&#39;a&#39;: 1, &#39;b&#39;: 1.0, &#39;c&#39;: &#39;abcde&#39;}]</span>
+
+<span class="n">v</span> <span class="o">=</span> <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">([{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}],</span> <span class="n">experimental_allow_partial</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># (5)!</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+<span class="c1">#&gt; [{&#39;a&#39;: 1}]</span>
+
+<span class="n">v</span> <span class="o">=</span> <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span>
+    <span class="p">[{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">:</span> <span class="s1">&#39;abcd&#39;</span><span class="p">}],</span> <span class="n">experimental_allow_partial</span><span class="o">=</span><span class="kc">True</span>  <span class="c1"># (6)!</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+<span class="c1">#&gt; [{&#39;a&#39;: 1, &#39;b&#39;: 1.0}]</span>
+</code></pre></div>
+<ol>
+<li>The TypedDict <code>Foobar</code> has three field, but only <code>a</code> is required, that means that a valid instance of <code>Foobar</code> can be created even if the <code>b</code> and <code>c</code> fields are missing.</li>
+<li>Parsing JSON, the input is valid JSON up to the point where the string is truncated.</li>
+<li>In this case truncation of the input means the value of <code>c</code> (<code>abcd</code>) is invalid as input to <code>c</code> field, hence it's omitted.</li>
+<li>The <code>a</code> field is required, so validation on the only item in the list fails and is dropped.</li>
+<li>Partial validation also works with Python objects, it should have the same semantics as with JSON except of course you can't have a genuinely "incomplete" Python object.</li>
+<li>The same as above but with a Python object, <code>c</code> is dropped as it's not required and failed validation.</li>
+</ol>
+</div>
+</div>
+</div>
+<h3 id="how-partial-validation-works">How Partial Validation Works<a class="headerlink" href="#how-partial-validation-works" title="Permanent link">&para;</a></h3>
+<p>Partial validation follows the zen of Pydantic — it makes no guarantees about what the input data might have been, but it does guarantee to return a valid instance of the type you required, or raise a validation error.</p>
+<p>To do this, the <code>experimental_allow_partial</code> flag enables two pieces of behavior:</p>
+<h4 id="1-partial-json-parsing">1. Partial JSON parsing<a class="headerlink" href="#1-partial-json-parsing" title="Permanent link">&para;</a></h4>
+<p>The <a href="https://github.com/pydantic/jiter">jiter</a> JSON parser used by Pydantic already supports parsing partial JSON,
+<code>experimental_allow_partial</code> is simply passed to jiter via the <code>allow_partial</code> argument.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If you just want pure JSON parsing with support for partial JSON, you can use the <a href="https://pypi.org/project/jiter/"><code>jiter</code></a> Python library directly, or pass the <code>allow_partial</code> argument when calling <a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.from_json"><code>pydantic_core.from_json</code></a>.</p>
+</div>
+<h4 id="2-ignore-errors-in-last">2. Ignore errors in the last element of the input<a class="headerlink" href="#2-ignore-errors-in-last" title="Permanent link">&para;</a></h4>
+<p>Only having access to part of the input data means errors can commonly occur in the last element of the input data.</p>
+<p>For example:</p>
+<ul>
+<li>if a string has a constraint <code>MinLen(5)</code>, when you only see part of the input, validation might fail because part of the string is missing (e.g. <code>{"name": "Sam</code> instead of <code>{"name": "Samuel"}</code>)</li>
+<li>if an <code>int</code> field has a constraint <code>Ge(10)</code>, when you only see part of the input, validation might fail because the number is too small (e.g. <code>1</code> instead of <code>10</code>)</li>
+<li>if a <code>TypedDict</code> field has 3 required fields, but the partial input only has two of the fields, validation would fail because some field are missing</li>
+<li>etc. etc. — there are lost more cases like this</li>
+</ul>
+<p>The point is that if you only see part of some valid input data, validation errors can often occur in the last element of a sequence or last value of mapping.</p>
+<p>To avoid these errors breaking partial validation, Pydantic will ignore ALL errors in the last element of the input data.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">Python 3.8 and above</label><label for="__tabbed_4_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-py highlight"><span class="filename">Errors in last element ignored</span><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
+
+<span class="kn">from</span> <span class="nn">annotated_types</span> <span class="kn">import</span> <span class="n">MinLen</span>
+<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">TypeAdapter</span>
+
+
+<span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">a</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">b</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">MinLen</span><span class="p">(</span><span class="mi">5</span><span class="p">)]</span>
+
+
+<span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">List</span><span class="p">[</span><span class="n">MyModel</span><span class="p">])</span>
+<span class="n">v</span> <span class="o">=</span> <span class="n">ta</span><span class="o">.</span><span class="n">validate_json</span><span class="p">(</span>
+    <span class="s1">&#39;[{&quot;a&quot;: 1, &quot;b&quot;: &quot;12345&quot;}, {&quot;a&quot;: 1,&#39;</span><span class="p">,</span>
+    <span class="n">experimental_allow_partial</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+<span class="c1">#&gt; [MyModel(a=1, b=&#39;12345&#39;)]</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-py highlight"><span class="filename">Errors in last element ignored</span><pre><span></span><code><span class="kn">from</span> <span class="nn">annotated_types</span> <span class="kn">import</span> <span class="n">MinLen</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">TypeAdapter</span>
+
+
+<span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">a</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">b</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">MinLen</span><span class="p">(</span><span class="mi">5</span><span class="p">)]</span>
+
+
+<span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="nb">list</span><span class="p">[</span><span class="n">MyModel</span><span class="p">])</span>
+<span class="n">v</span> <span class="o">=</span> <span class="n">ta</span><span class="o">.</span><span class="n">validate_json</span><span class="p">(</span>
+    <span class="s1">&#39;[{&quot;a&quot;: 1, &quot;b&quot;: &quot;12345&quot;}, {&quot;a&quot;: 1,&#39;</span><span class="p">,</span>
+    <span class="n">experimental_allow_partial</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+<span class="c1">#&gt; [MyModel(a=1, b=&#39;12345&#39;)]</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<h3 id="limitations-of-partial-validation">Limitations of Partial Validation<a class="headerlink" href="#limitations-of-partial-validation" title="Permanent link">&para;</a></h3>
+<h4 id="typeadapter-only">TypeAdapter only<a class="headerlink" href="#typeadapter-only" title="Permanent link">&para;</a></h4>
+<p>You can only pass <code>experiment_allow_partial</code> to <a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic.type_adapter.TypeAdapter"><code>TypeAdapter</code></a> methods, it's not yet supported via other Pydantic entry points like <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel"><code>BaseModel</code></a>.</p>
+<h4 id="types-supported">Types supported<a class="headerlink" href="#types-supported" title="Permanent link">&para;</a></h4>
+<p>Right now only a subset of collection validators know how to handle partial validation:</p>
+<ul>
+<li><code>list</code></li>
+<li><code>set</code></li>
+<li><code>frozenset</code></li>
+<li><code>dict</code> (as in <code>dict[X, Y]</code>)</li>
+<li><code>TypedDict</code> — only non-required fields may be missing, e.g. via <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.NotRequired"><code>NotRequired</code></a> or <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.TypedDict.__total__"><code>total=False</code></a>)</li>
+</ul>
+<p>While you can use <code>experimental_allow_partial</code> while validating against types that include other collection validators, those types will be validated "all or nothing", and partial validation will not work on more nested types.</p>
+<p>E.g. in the <a href="#2-ignore-errors-in-last">above</a> example partial validation works although the second item in the list is dropped completely since <code>BaseModel</code> doesn't (yet) support partial validation.</p>
+<p>But partial validation won't work at all in the follow example because <code>BaseModel</code> doesn't support partial validation so it doesn't forward the <code>allow_partial</code> instruction down to the list validator in <code>b</code>:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">Python 3.8 and above</label><label for="__tabbed_5_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
+
+<span class="kn">from</span> <span class="nn">annotated_types</span> <span class="kn">import</span> <span class="n">MinLen</span>
+<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">TypeAdapter</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+
+<span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">a</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">b</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">MinLen</span><span class="p">(</span><span class="mi">5</span><span class="p">)]]</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># (1)!</span>
+
+
+<span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">MyModel</span><span class="p">)</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">v</span> <span class="o">=</span> <span class="n">ta</span><span class="o">.</span><span class="n">validate_json</span><span class="p">(</span>
+        <span class="s1">&#39;{&quot;a&quot;: 1, &quot;b&quot;: [&quot;12345&quot;, &quot;12&#39;</span><span class="p">,</span> <span class="n">experimental_allow_partial</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for MyModel</span>
+<span class="sd">    b.1</span>
+<span class="sd">      String should have at least 5 characters [type=string_too_short, input_value=&#39;12&#39;, input_type=str]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+<ol>
+<li>The list validator for <code>b</code> doesn't get the <code>allow_partial</code> instruction passed down to it by the model validator so it doesn't know to ignore errors in the last element of the input.</li>
+</ol>
+</div>
+<div class="tabbed-block">
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">annotated_types</span> <span class="kn">import</span> <span class="n">MinLen</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">TypeAdapter</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+
+<span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">a</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">b</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">MinLen</span><span class="p">(</span><span class="mi">5</span><span class="p">)]]</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># (1)!</span>
+
+
+<span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">MyModel</span><span class="p">)</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">v</span> <span class="o">=</span> <span class="n">ta</span><span class="o">.</span><span class="n">validate_json</span><span class="p">(</span>
+        <span class="s1">&#39;{&quot;a&quot;: 1, &quot;b&quot;: [&quot;12345&quot;, &quot;12&#39;</span><span class="p">,</span> <span class="n">experimental_allow_partial</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for MyModel</span>
+<span class="sd">    b.1</span>
+<span class="sd">      String should have at least 5 characters [type=string_too_short, input_value=&#39;12&#39;, input_type=str]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+<ol>
+<li>The list validator for <code>b</code> doesn't get the <code>allow_partial</code> instruction passed down to it by the model validator so it doesn't know to ignore errors in the last element of the input.</li>
+</ol>
+</div>
+</div>
+</div>
+<h4 id="some-invalid-but-complete-json-will-be-accepted">Some invalid but complete JSON will be accepted<a class="headerlink" href="#some-invalid-but-complete-json-will-be-accepted" title="Permanent link">&para;</a></h4>
+<p>The way <a href="https://github.com/pydantic/jiter">jiter</a> (the JSON parser used by Pydantic) works means it's currently not possible to differentiate between complete JSON like <code>{"a": 1, "b": "12"}</code> and incomplete JSON like <code>{"a": 1, "b": "12</code>.</p>
+<p>This means that some invalid JSON will be accepted by Pydantic when using <code>experimental_allow_partial</code>, e.g.:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="6:2"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">Python 3.8 and above</label><label for="__tabbed_6_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">annotated_types</span> <span class="kn">import</span> <span class="n">MinLen</span>
+<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span><span class="p">,</span> <span class="n">TypedDict</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">TypeAdapter</span>
+
+
+<span class="k">class</span> <span class="nc">Foobar</span><span class="p">(</span><span class="n">TypedDict</span><span class="p">,</span> <span class="n">total</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="n">a</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">b</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">MinLen</span><span class="p">(</span><span class="mi">5</span><span class="p">)]</span>
+
+
+<span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">Foobar</span><span class="p">)</span>
+
+<span class="n">v</span> <span class="o">=</span> <span class="n">ta</span><span class="o">.</span><span class="n">validate_json</span><span class="p">(</span>
+    <span class="s1">&#39;{&quot;a&quot;: 1, &quot;b&quot;: &quot;12&#39;</span><span class="p">,</span> <span class="n">experimental_allow_partial</span><span class="o">=</span><span class="kc">True</span>  <span class="c1"># (1)!</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+<span class="c1">#&gt; {&#39;a&#39;: 1}</span>
+
+<span class="n">v</span> <span class="o">=</span> <span class="n">ta</span><span class="o">.</span><span class="n">validate_json</span><span class="p">(</span>
+    <span class="s1">&#39;{&quot;a&quot;: 1, &quot;b&quot;: &quot;12&quot;}&#39;</span><span class="p">,</span> <span class="n">experimental_allow_partial</span><span class="o">=</span><span class="kc">True</span>  <span class="c1"># (2)!</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+<span class="c1">#&gt; {&#39;a&#39;: 1}</span>
+</code></pre></div>
+<ol>
+<li>This will pass validation as expected although the last field will be omitted as it failed validation.</li>
+<li>This will also pass validation since the binary representation of the JSON data passed to pydantic-core is indistinguishable from the previous case.</li>
+</ol>
+</div>
+<div class="tabbed-block">
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">annotated_types</span> <span class="kn">import</span> <span class="n">MinLen</span>
+<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">TypedDict</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">TypeAdapter</span>
+
+
+<span class="k">class</span> <span class="nc">Foobar</span><span class="p">(</span><span class="n">TypedDict</span><span class="p">,</span> <span class="n">total</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="n">a</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">b</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">MinLen</span><span class="p">(</span><span class="mi">5</span><span class="p">)]</span>
+
+
+<span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">Foobar</span><span class="p">)</span>
+
+<span class="n">v</span> <span class="o">=</span> <span class="n">ta</span><span class="o">.</span><span class="n">validate_json</span><span class="p">(</span>
+    <span class="s1">&#39;{&quot;a&quot;: 1, &quot;b&quot;: &quot;12&#39;</span><span class="p">,</span> <span class="n">experimental_allow_partial</span><span class="o">=</span><span class="kc">True</span>  <span class="c1"># (1)!</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+<span class="c1">#&gt; {&#39;a&#39;: 1}</span>
+
+<span class="n">v</span> <span class="o">=</span> <span class="n">ta</span><span class="o">.</span><span class="n">validate_json</span><span class="p">(</span>
+    <span class="s1">&#39;{&quot;a&quot;: 1, &quot;b&quot;: &quot;12&quot;}&#39;</span><span class="p">,</span> <span class="n">experimental_allow_partial</span><span class="o">=</span><span class="kc">True</span>  <span class="c1"># (2)!</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+<span class="c1">#&gt; {&#39;a&#39;: 1}</span>
+</code></pre></div>
+<ol>
+<li>This will pass validation as expected although the last field will be omitted as it failed validation.</li>
+<li>This will also pass validation since the binary representation of the JSON data passed to pydantic-core is indistinguishable from the previous case.</li>
+</ol>
+</div>
+</div>
+</div>
+<h4 id="any-error-in-the-last-field-of-the-input-will-be-ignored">Any error in the last field of the input will be ignored<a class="headerlink" href="#any-error-in-the-last-field-of-the-input-will-be-ignored" title="Permanent link">&para;</a></h4>
+<p>As described <a href="#2-ignore-errors-in-last">above</a>, many errors can result from truncating the input. Rather than trying to specifically ignore errors that could result from truncation, Pydantic ignores all errors in the last element of the input in partial validation mode.</p>
+<p>This means clearly invalid data will pass validation if the error is in the last field of the input:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="7:2"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><div class="tabbed-labels"><label for="__tabbed_7_1">Python 3.8 and above</label><label for="__tabbed_7_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
+
+<span class="kn">from</span> <span class="nn">annotated_types</span> <span class="kn">import</span> <span class="n">Ge</span>
+<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">TypeAdapter</span>
+
+<span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">List</span><span class="p">[</span><span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Ge</span><span class="p">(</span><span class="mi">10</span><span class="p">)]])</span>
+<span class="n">v</span> <span class="o">=</span> <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">([</span><span class="mi">20</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="n">experimental_allow_partial</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># (1)!</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+<span class="c1">#&gt; [20, 30]</span>
+
+<span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span>
+
+<span class="n">v</span> <span class="o">=</span> <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;wrong&#39;</span><span class="p">],</span> <span class="n">experimental_allow_partial</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># (2)!</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+<span class="c1">#&gt; [1, 2]</span>
+</code></pre></div>
+<ol>
+<li>As you would expect, this will pass validation since Pydantic correctly ignores the error in the (truncated) last item.</li>
+<li>This will also pass validation since the error in the last item is ignored.</li>
+</ol>
+</div>
+<div class="tabbed-block">
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">annotated_types</span> <span class="kn">import</span> <span class="n">Ge</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">TypeAdapter</span>
+
+<span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="nb">list</span><span class="p">[</span><span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Ge</span><span class="p">(</span><span class="mi">10</span><span class="p">)]])</span>
+<span class="n">v</span> <span class="o">=</span> <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">([</span><span class="mi">20</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="n">experimental_allow_partial</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># (1)!</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+<span class="c1">#&gt; [20, 30]</span>
+
+<span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span>
+
+<span class="n">v</span> <span class="o">=</span> <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;wrong&#39;</span><span class="p">],</span> <span class="n">experimental_allow_partial</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># (2)!</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+<span class="c1">#&gt; [1, 2]</span>
+</code></pre></div>
+<ol>
+<li>As you would expect, this will pass validation since Pydantic correctly ignores the error in the (truncated) last item.</li>
+<li>This will also pass validation since the error in the last item is ignored.</li>
+</ol>
+</div>
+</div>
+</div>
 
 
 
@@ -3317,7 +3972,7 @@ Just be mindful of abusing advanced patterns like the pipeline API just because 
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.10.0a1", "pydantic-core==2.25.1", "pydantic-extra-types==2.10.0"]
+    window.mkdocs_run_deps = ["pydantic==2.10.0a1", "pydantic-core==2.26.0", "pydantic-extra-types==2.10.0"]
     </script>
 
               </article>
