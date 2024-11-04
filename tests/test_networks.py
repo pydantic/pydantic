@@ -167,7 +167,7 @@ def validate_url(s):
 def test_any_url_parts():
     url = validate_url('http://example.org')
     assert str(url) == 'http://example.org/'
-    assert repr(url) == "Url('http://example.org/')"
+    assert repr(url) == "AnyUrl('http://example.org/')"
     assert url.scheme == 'http'
     assert url.host == 'example.org'
     assert url.port == 80
@@ -176,7 +176,7 @@ def test_any_url_parts():
 def test_url_repr():
     url = validate_url('http://user:password@example.org:1234/the/path/?query=here#fragment=is;this=bit')
     assert str(url) == 'http://user:password@example.org:1234/the/path/?query=here#fragment=is;this=bit'
-    assert repr(url) == "Url('http://user:password@example.org:1234/the/path/?query=here#fragment=is;this=bit')"
+    assert repr(url) == "AnyUrl('http://user:password@example.org:1234/the/path/?query=here#fragment=is;this=bit')"
     assert url.scheme == 'http'
     assert url.username == 'user'
     assert url.password == 'password'

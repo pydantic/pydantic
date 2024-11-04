@@ -182,6 +182,7 @@ class _BaseUrl:
 
         e.g. `fragment` in `https://user:pass@host:port/path?query#fragment`
         """
+        return self._url.fragment
 
     def unicode_string(self) -> str:
         """The URL as a unicode string, unlike `__str__()` this will not punycode encode the host.
@@ -196,7 +197,7 @@ class _BaseUrl:
         return str(self._url)
 
     def __repr__(self) -> str:
-        return f'{self.__class__.__name__}({str(self._url)})'
+        return f"{self.__class__.__name__}('{str(self._url)}')"
 
     def __deepcopy__(self, memo: dict) -> Self:
         return self.__class__(self._url)
@@ -246,7 +247,9 @@ class _BaseUrl:
     def __get_pydantic_core_schema__(cls, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         if issubclass(cls, source):
             return core_schema.no_info_after_validator_function(
-                lambda x: source(x), schema=core_schema.url_schema(**cls._constraints.defined_constraints)
+                lambda x: source(x),
+                schema=core_schema.url_schema(**cls._constraints.defined_constraints),
+                serialization=core_schema.to_string_ser_schema(),
             )
         else:
             schema = handler(source)
@@ -334,7 +337,7 @@ class _BaseMultiHostUrl:
         return str(self._url)
 
     def __repr__(self) -> str:
-        return f'{self.__class__.__name__}({str(self._url)})'
+        return f"{self.__class__.__name__}('{str(self._url)}')"
 
     def __deepcopy__(self, memo: dict) -> Self:
         return self.__class__(self._url)
@@ -389,7 +392,11 @@ class _BaseMultiHostUrl:
     @classmethod
     def __get_pydantic_core_schema__(cls, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         if issubclass(cls, source):
-            return core_schema.multi_host_url_schema(**cls._constraints.defined_constraints)
+            return core_schema.no_info_after_validator_function(
+                lambda x: source(x),
+                schema=core_schema.multi_host_url_schema(**cls._constraints.defined_constraints),
+                serialization=core_schema.to_string_ser_schema(),
+            )
         else:
             schema = handler(source)
             # TODO: this logic is used in types.py as well in the _check_annotated_type function, should we move that to somewhere more central?
@@ -607,7 +614,7 @@ class PostgresDsn(_BaseMultiHostUrl):
 
     # the repr() method for a url will display all properties of the url
     print(repr(m.url))
-    #> Url('http://www.example.com/')
+    #> HttpUrl('http://www.example.com/')
     print(m.url.scheme)
     #> http
     print(m.url.host)
@@ -636,7 +643,7 @@ class PostgresDsn(_BaseMultiHostUrl):
         db
           Assertion failed, database must be provided
         assert (None)
-         +  where None = MultiHostUrl('postgres://user:pass@localhost:5432').path [type=assertion_error, input_value='postgres://user:pass@localhost:5432', input_type=str]
+         +  where None = PostgresDsn('postgres://user:pass@localhost:5432').path [type=assertion_error, input_value='postgres://user:pass@localhost:5432', input_type=str]
         '''
     ```
     """
