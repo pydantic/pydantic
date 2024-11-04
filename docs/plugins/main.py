@@ -94,7 +94,14 @@ def add_changelog() -> None:
 def add_mkdocs_run_deps() -> None:
     # set the pydantic, pydantic-core, pydantic-extra-types versions to configure for running examples in the browser
     pyproject_toml = (PROJECT_ROOT / 'pyproject.toml').read_text()
-    pydantic_core_version = re.search(r'pydantic-core==(.+?)["\']', pyproject_toml).group(1)
+    m = re.search(r'pydantic-core==(.+?)["\']', pyproject_toml)
+    if not m:
+        logger.info(
+            "Could not find pydantic-core version in pyproject.toml, this is expected if you're using a git ref"
+        )
+        return
+
+    pydantic_core_version = m.group(1)
 
     version_py = (PROJECT_ROOT / 'pydantic' / 'version.py').read_text()
     pydantic_version = re.search(r'^VERSION ?= (["\'])(.+)\1', version_py, flags=re.M).group(2)
