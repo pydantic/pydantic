@@ -231,11 +231,9 @@ pub(crate) fn infer_to_python_known(
                 PyList::new_bound(py, items).into_py(py)
             }
             ObType::Complex => {
-                let dict = value.downcast::<PyDict>()?;
-                let new_dict = PyDict::new_bound(py);
-                let _ = new_dict.set_item("real", dict.get_item("real")?);
-                let _ = new_dict.set_item("imag", dict.get_item("imag")?);
-                new_dict.into_py(py)
+                let v = value.downcast::<PyComplex>()?;
+                let complex_str = type_serializers::complex::complex_to_str(v);
+                complex_str.into_py(py)
             }
             ObType::Path => value.str()?.into_py(py),
             ObType::Pattern => value.getattr(intern!(py, "pattern"))?.into_py(py),
@@ -286,11 +284,9 @@ pub(crate) fn infer_to_python_known(
                 iter.into_py(py)
             }
             ObType::Complex => {
-                let dict = value.downcast::<PyDict>()?;
-                let new_dict = PyDict::new_bound(py);
-                let _ = new_dict.set_item("real", dict.get_item("real")?);
-                let _ = new_dict.set_item("imag", dict.get_item("imag")?);
-                new_dict.into_py(py)
+                let v = value.downcast::<PyComplex>()?;
+                let complex_str = type_serializers::complex::complex_to_str(v);
+                complex_str.into_py(py)
             }
             ObType::Unknown => {
                 if let Some(fallback) = extra.fallback {
@@ -422,10 +418,8 @@ pub(crate) fn infer_serialize_known<S: Serializer>(
         ObType::Bool => serialize!(bool),
         ObType::Complex => {
             let v = value.downcast::<PyComplex>().map_err(py_err_se_err)?;
-            let mut map = serializer.serialize_map(Some(2))?;
-            map.serialize_entry(&"real", &v.real())?;
-            map.serialize_entry(&"imag", &v.imag())?;
-            map.end()
+            let complex_str = type_serializers::complex::complex_to_str(v);
+            Ok(serializer.collect_str::<String>(&complex_str)?)
         }
         ObType::Float | ObType::FloatSubclass => {
             let v = value.extract::<f64>().map_err(py_err_se_err)?;
@@ -672,7 +666,7 @@ pub(crate) fn infer_json_key_known<'a>(
             }
             Ok(Cow::Owned(key_build.finish()))
         }
-        ObType::List | ObType::Set | ObType::Frozenset | ObType::Dict | ObType::Generator | ObType::Complex => {
+        ObType::List | ObType::Set | ObType::Frozenset | ObType::Dict | ObType::Generator => {
             py_err!(PyTypeError; "`{}` not valid as object key", ob_type)
         }
         ObType::Dataclass | ObType::PydanticSerializable => {
@@ -688,6 +682,10 @@ pub(crate) fn infer_json_key_known<'a>(
         ObType::Path => {
             // FIXME it would be nice to have a "PyCow" which carries ownership of the Python type too
             Ok(Cow::Owned(key.str()?.to_string_lossy().into_owned()))
+        }
+        ObType::Complex => {
+            let v = key.downcast::<PyComplex>()?;
+            Ok(type_serializers::complex::complex_to_str(v).into())
         }
         ObType::Pattern => Ok(Cow::Owned(
             key.getattr(intern!(key.py(), "pattern"))?
