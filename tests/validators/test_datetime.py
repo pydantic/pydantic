@@ -38,10 +38,13 @@ from ..conftest import Err, PyAndJson
         (Decimal('1654646400.1234568'), datetime(2022, 6, 8, 0, 0, 0, 123457, tzinfo=timezone.utc)),
         ('1654646400.1234568', datetime(2022, 6, 8, 0, 0, 0, 123457, tzinfo=timezone.utc)),
         (253_402_300_800_000, Err('should be a valid datetime, dates after 9999 are not supported as unix timestamps')),
-        (-20_000_000_000, Err('should be a valid datetime, dates before 1600 are not supported as unix timestamps')),
+        (
+            -80_000_000_000_000,
+            Err('should be a valid datetime, dates before 0000 are not supported as unix timestamps'),
+        ),
         (float('nan'), Err('Input should be a valid datetime, NaN values not permitted [type=datetime_parsing,')),
         (float('inf'), Err('Input should be a valid datetime, dates after 9999')),
-        (float('-inf'), Err('Input should be a valid datetime, dates before 1600')),
+        (float('-inf'), Err('Input should be a valid datetime, dates before 0000')),
         ('-', Err('Input should be a valid datetime or date, input is too short [type=datetime_from_date_parsing,')),
         ('+', Err('Input should be a valid datetime or date, input is too short [type=datetime_from_date_parsing,')),
         (
