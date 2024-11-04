@@ -103,6 +103,10 @@ class _BaseUrl:
         if isinstance(url, Url):
             self._url = url
         else:
+            # TODO: this doesn't actually enforce constraints on subclasses, we should either:
+            # Fully commit to validating on __init__ for Pydantic types
+            # imo, we should not do this, the maintenance burden is VERY high here
+            # OR, we should warn that validation does not occur on __init__ and standardize this across types
             assert isinstance(url, str)
             self._url = Url(url)
 
@@ -250,8 +254,14 @@ class _BaseUrl:
     @classmethod
     def __get_pydantic_core_schema__(cls, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         if issubclass(cls, source):
-            return core_schema.no_info_after_validator_function(
-                lambda x: source(x),
+
+            def wrap_val(value, handler):
+                if isinstance(value, source):
+                    return source(handler(value._url))
+                return source(handler(value))
+
+            return core_schema.no_info_wrap_validator_function(
+                wrap_val,
                 schema=core_schema.url_schema(**cls._constraints.defined_constraints),
                 serialization=core_schema.to_string_ser_schema(),
             )
@@ -275,6 +285,10 @@ class _BaseMultiHostUrl:
         if isinstance(url, MultiHostUrl):
             self._url = url
         else:
+            # TODO: this doesn't actually enforce constraints on subclasses, we should either:
+            # Fully commit to validating on __init__ for Pydantic types
+            # imo, we should not do this, the maintenance burden is VERY high here
+            # OR, we should warn that validation does not occur on __init__ and standardize this across types
             assert isinstance(url, str)
             self._url = MultiHostUrl(url)
 
@@ -400,8 +414,14 @@ class _BaseMultiHostUrl:
     @classmethod
     def __get_pydantic_core_schema__(cls, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         if issubclass(cls, source):
-            return core_schema.no_info_after_validator_function(
-                lambda x: source(x),
+
+            def wrap_val(value, handler):
+                if isinstance(value, source):
+                    return source(handler(value._url))
+                return source(handler(value))
+
+            return core_schema.no_info_wrap_validator_function(
+                wrap_val,
                 schema=core_schema.multi_host_url_schema(**cls._constraints.defined_constraints),
                 serialization=core_schema.to_string_ser_schema(),
             )
