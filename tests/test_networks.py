@@ -24,6 +24,7 @@ from pydantic import (
     RedisDsn,
     SnowflakeDsn,
     Strict,
+    TypeAdapter,
     UrlConstraints,
     ValidationError,
     WebsocketUrl,
@@ -1030,3 +1031,16 @@ def test_name_email_serialization():
 
     obj = json.loads(m.model_dump_json())
     Model(email=obj['email'])
+
+
+def test_specialized_urls() -> None:
+    ta = TypeAdapter(HttpUrl)
+
+    http_url = ta.validate_python('http://example.com/something')
+    assert str(http_url) == 'http://example.com/something'
+    assert repr(http_url) == "HttpUrl('http://example.com/something')"
+    assert http_url.__class__ == HttpUrl
+    assert http_url.host == 'example.com'
+    assert http_url.path == '/something'
+    assert http_url.username is None
+    assert http_url.password is None
