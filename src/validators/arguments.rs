@@ -188,6 +188,9 @@ impl Validator for ArgumentsValidator {
         input: &(impl Input<'py> + ?Sized),
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
+        // this validator does not yet support partial validation, disable it to avoid incorrect results
+        state.allow_partial = false;
+
         let args = input.validate_args()?;
 
         let mut output_args: Vec<PyObject> = Vec::with_capacity(self.positional_params_count);

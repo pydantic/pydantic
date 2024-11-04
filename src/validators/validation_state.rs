@@ -23,16 +23,19 @@ pub struct ValidationState<'a, 'py> {
     // `model_fields_set` attached to a model. `model_fields_set` includes extra fields
     // when extra='allow', whereas this tally does not.
     pub fields_set_count: Option<usize>,
+    // True if `allow_partial=true` and we're validating the last element of a sequence or mapping.
+    pub allow_partial: bool,
     // deliberately make Extra readonly
     extra: Extra<'a, 'py>,
 }
 
 impl<'a, 'py> ValidationState<'a, 'py> {
-    pub fn new(extra: Extra<'a, 'py>, recursion_guard: &'a mut RecursionState) -> Self {
+    pub fn new(extra: Extra<'a, 'py>, recursion_guard: &'a mut RecursionState, allow_partial: bool) -> Self {
         Self {
             recursion_guard, // Don't care about exactness unless doing union validation
             exactness: None,
             fields_set_count: None,
+            allow_partial,
             extra,
         }
     }
@@ -51,6 +54,10 @@ impl<'a, 'py> ValidationState<'a, 'py> {
 
     pub fn extra(&self) -> &'_ Extra<'a, 'py> {
         &self.extra
+    }
+
+    pub fn enumerate_last_partial<I>(&self, iter: impl Iterator<Item = I>) -> impl Iterator<Item = (usize, bool, I)> {
+        EnumerateLastPartial::new(iter, self.allow_partial)
     }
 
     pub fn strict_or(&self, default: bool) -> bool {
@@ -115,5 +122,39 @@ impl std::ops::DerefMut for ValidationStateWithReboundExtra<'_, '_, '_> {
 impl Drop for ValidationStateWithReboundExtra<'_, '_, '_> {
     fn drop(&mut self) {
         std::mem::swap(&mut self.state.extra, &mut self.old_extra);
+    }
+}
+
+/// Similar to `iter.enumerate()` but also returns a bool indicating if we're at the last element.
+pub struct EnumerateLastPartial<I: Iterator> {
+    iter: I,
+    index: usize,
+    next_item: Option<I::Item>,
+    allow_partial: bool,
+}
+impl<I: Iterator> EnumerateLastPartial<I> {
+    pub fn new(mut iter: I, allow_partial: bool) -> Self {
+        let next_item = iter.next();
+        Self {
+            iter,
+            index: 0,
+            next_item,
+            allow_partial,
+        }
+    }
+}
+
+impl<I: Iterator> Iterator for EnumerateLastPartial<I> {
+    type Item = (usize, bool, I::Item);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let a = std::mem::replace(&mut self.next_item, self.iter.next())?;
+        let i = self.index;
+        self.index += 1;
+        Some((i, self.allow_partial && self.next_item.is_none(), a))
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iter.size_hint()
     }
 }
