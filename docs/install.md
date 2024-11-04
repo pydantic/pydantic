@@ -14,7 +14,7 @@ Installation is as simple as:
 
 Pydantic has a few dependencies:
 
-* [`pydantic-core`](https://pypi.org/project/pydantic-core/): Core validation logic for _pydantic_ written in Rust.
+* [`pydantic-core`](https://pypi.org/project/pydantic-core/): Core validation logic for Pydantic written in Rust.
 * [`typing-extensions`](https://pypi.org/project/typing-extensions/): Backport of the standard library [typing][] module.
 * [`annotated-types`](https://pypi.org/project/annotated-types/): Reusable constraint types to use with [`typing.Annotated`][].
 
