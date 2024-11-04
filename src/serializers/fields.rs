@@ -53,7 +53,7 @@ impl SerField {
         }
     }
 
-    pub fn get_key_py<'py>(&'py self, py: Python<'py>, extra: &Extra) -> &Bound<'py, PyAny> {
+    pub fn get_key_py<'py>(&self, py: Python<'py>, extra: &Extra) -> &Bound<'py, PyAny> {
         if extra.by_alias {
             if let Some(ref alias_py) = self.alias_py {
                 return alias_py.bind(py);

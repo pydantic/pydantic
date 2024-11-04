@@ -12,7 +12,7 @@ use crate::lookup_key::{LookupPath, PathItem};
 
 /// Used to store individual items of the error location, e.g. a string for key/field names
 /// or a number for array indices.
-#[derive(Clone)]
+#[derive(Clone, Eq, PartialEq)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub enum LocItem {
     /// string type key, used to identify items from a dict or anything that implements `__getitem__`

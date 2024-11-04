@@ -128,7 +128,9 @@ pub(crate) fn validate_iter_to_vec<'py>(
 ) -> ValResult<Vec<PyObject>> {
     let mut output: Vec<PyObject> = Vec::with_capacity(capacity);
     let mut errors: Vec<ValLineError> = Vec::new();
-    for (index, item_result) in iter.enumerate() {
+
+    for (index, is_last_partial, item_result) in state.enumerate_last_partial(iter) {
+        state.allow_partial = is_last_partial;
         let item = item_result.map_err(|e| any_next_error!(py, e, max_length_check.input, index))?;
         match validator.validate(py, item.borrow_input(), state) {
             Ok(item) => {
@@ -137,9 +139,11 @@ pub(crate) fn validate_iter_to_vec<'py>(
             }
             Err(ValError::LineErrors(line_errors)) => {
                 max_length_check.incr()?;
-                errors.extend(line_errors.into_iter().map(|err| err.with_outer_location(index)));
-                if fail_fast {
-                    break;
+                if !is_last_partial {
+                    errors.extend(line_errors.into_iter().map(|err| err.with_outer_location(index)));
+                    if fail_fast {
+                        return Err(ValError::LineErrors(errors));
+                    }
                 }
             }
             Err(ValError::Omit) => (),
@@ -197,7 +201,9 @@ pub(crate) fn validate_iter_to_set<'py>(
     fail_fast: bool,
 ) -> ValResult<()> {
     let mut errors: Vec<ValLineError> = Vec::new();
-    for (index, item_result) in iter.enumerate() {
+
+    for (index, is_last_partial, item_result) in state.enumerate_last_partial(iter) {
+        state.allow_partial = is_last_partial;
         let item = item_result.map_err(|e| any_next_error!(py, e, input, index))?;
         match validator.validate(py, item.borrow_input(), state) {
             Ok(item) => {
@@ -220,13 +226,15 @@ pub(crate) fn validate_iter_to_set<'py>(
                 }
             }
             Err(ValError::LineErrors(line_errors)) => {
-                errors.extend(line_errors.into_iter().map(|err| err.with_outer_location(index)));
+                if !is_last_partial {
+                    errors.extend(line_errors.into_iter().map(|err| err.with_outer_location(index)));
+                }
             }
             Err(ValError::Omit) => (),
             Err(err) => return Err(err),
         }
         if fail_fast && !errors.is_empty() {
-            break;
+            return Err(ValError::LineErrors(errors));
         }
     }
 
