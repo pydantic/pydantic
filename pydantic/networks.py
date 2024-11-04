@@ -9,7 +9,7 @@ from importlib.metadata import version
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from typing import TYPE_CHECKING, Any, ClassVar
 
-from pydantic_core import MultiHostUrl, PydanticCustomError, Url, core_schema
+from pydantic_core import MultiHostHost, MultiHostUrl, PydanticCustomError, Url, core_schema
 from typing_extensions import Annotated, Self, TypeAlias
 
 from pydantic.errors import PydanticUserError
@@ -95,17 +95,159 @@ class UrlConstraints(_fields.PydanticMetadata):
         return {field.name: getattr(self, field.name) for field in fields(self)}
 
 
-# TODO: there's a lot of repeated code in these two base classes - should we consolidate, or does that up
-# the complexity enough that it's not worth saving a few lines?
-
-
-class _BaseUrl(Url):
+class _BaseUrl:
     _constraints: ClassVar[UrlConstraints] = UrlConstraints()
+    _url: Url
+
+    def __init__(self, url: Url) -> None:
+        self._url = url
+
+    @property
+    def scheme(self) -> str:
+        """The scheme part of the URL.
+
+        e.g. `https` in `https://user:pass@host:port/path?query#fragment`
+        """
+        return self._url.scheme
+
+    @property
+    def username(self) -> str | None:
+        """The username part of the URL, or `None`.
+
+        e.g. `user` in `https://user:pass@host:port/path?query#fragment`
+        """
+        return self._url.username
+
+    @property
+    def password(self) -> str | None:
+        """The password part of the URL, or `None`.
+
+        e.g. `pass` in `https://user:pass@host:port/path?query#fragment`
+        """
+        return self._url.password
+
+    @property
+    def host(self) -> str | None:
+        """The host part of the URL, or `None`.
+
+        If the URL must be punycode encoded, this is the encoded host, e.g if the input URL is `https://£££.com`,
+        `host` will be `xn--9aaa.com`
+        """
+        return self._url.host
+
+    def unicode_host(self) -> str | None:
+        """The host part of the URL as a unicode string, or `None`.
+
+        e.g. `host` in `https://user:pass@host:port/path?query#fragment`
+
+        If the URL must be punycode encoded, this is the decoded host, e.g if the input URL is `https://£££.com`,
+        `unicode_host()` will be `£££.com`
+        """
+        return self._url.unicode_host()
+
+    @property
+    def port(self) -> int | None:
+        """The port part of the URL, or `None`.
+
+        e.g. `port` in `https://user:pass@host:port/path?query#fragment`
+        """
+        return self._url.port
+
+    @property
+    def path(self) -> str | None:
+        """The path part of the URL, or `None`.
+
+        e.g. `/path` in `https://user:pass@host:port/path?query#fragment`
+        """
+        return self._url.path
+
+    @property
+    def query(self) -> str | None:
+        """The query part of the URL, or `None`.
+
+        e.g. `query` in `https://user:pass@host:port/path?query#fragment`
+        """
+        return self._url.query
+
+    def query_params(self) -> list[tuple[str, str]]:
+        """The query part of the URL as a list of key-value pairs.
+
+        e.g. `[('foo', 'bar')]` in `https://user:pass@host:port/path?foo=bar#fragment`
+        """
+        return self._url.query_params()
+
+    @property
+    def fragment(self) -> str | None:
+        """The fragment part of the URL, or `None`.
+
+        e.g. `fragment` in `https://user:pass@host:port/path?query#fragment`
+        """
+
+    def unicode_string(self) -> str:
+        """The URL as a unicode string, unlike `__str__()` this will not punycode encode the host.
+
+        If the URL must be punycode encoded, this is the decoded string, e.g if the input URL is `https://£££.com`,
+        `unicode_string()` will be `https://£££.com`
+        """
+        return self._url.unicode_string()
+
+    def __str__(self) -> str:
+        """The URL as a string, this will punycode encode the host if required."""
+        return str(self._url)
+
+    def __repr__(self) -> str:
+        return f'{self.__class__.__name__}({str(self._url)})'
+
+    def __deepcopy__(self, memo: dict) -> Self:
+        return self.__class__(self._url)
+
+    @classmethod
+    def build(
+        cls,
+        *,
+        scheme: str,
+        username: str | None = None,
+        password: str | None = None,
+        host: str,
+        port: int | None = None,
+        path: str | None = None,
+        query: str | None = None,
+        fragment: str | None = None,
+    ) -> Self:
+        """Build a new `Url` instance from its component parts.
+
+        Args:
+            scheme: The scheme part of the URL.
+            username: The username part of the URL, or omit for no username.
+            password: The password part of the URL, or omit for no password.
+            host: The host part of the URL.
+            port: The port part of the URL, or omit for no port.
+            path: The path part of the URL, or omit for no path.
+            query: The query part of the URL, or omit for no query.
+            fragment: The fragment part of the URL, or omit for no fragment.
+
+        Returns:
+            An instance of URL
+        """
+        return cls(
+            Url.build(
+                scheme=scheme,
+                username=username,
+                password=password,
+                host=host,
+                port=port,
+                path=path,
+                query=query,
+                fragment=fragment,
+            )
+        )
 
     @classmethod
     def __get_pydantic_core_schema__(cls, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         if issubclass(cls, source):
-            return core_schema.url_schema(**cls._constraints.defined_constraints)
+            return core_schema.no_info_after_validator_function(
+                lambda x: source(x), schema=core_schema.url_schema(**cls._constraints.defined_constraints)
+            )
         else:
             schema = handler(source)
             # TODO: this logic is used in types.py as well in the _check_annotated_type function, should we move that to somewhere more central?
@@ -118,8 +260,131 @@ class _BaseUrl(Url):
             return schema
 
 
-class _BaseMultiHostUrl(MultiHostUrl):
+class _BaseMultiHostUrl:
     _constraints: ClassVar[UrlConstraints] = UrlConstraints()
+    _url: MultiHostUrl
+
+    def __init__(self, url: MultiHostUrl) -> None:
+        self._url = url
+
+    @property
+    def scheme(self) -> str:
+        """The scheme part of the URL.
+
+        e.g. `https` in `https://foo.com,bar.com/path?query#fragment`
+        """
+        return self._url.scheme
+
+    @property
+    def path(self) -> str | None:
+        """The path part of the URL, or `None`.
+
+        e.g. `/path` in `https://foo.com,bar.com/path?query#fragment`
+        """
+        return self._url.path
+
+    @property
+    def query(self) -> str | None:
+        """The query part of the URL, or `None`.
+
+        e.g. `query` in `https://foo.com,bar.com/path?query#fragment`
+        """
+        return self._url.query
+
+    def query_params(self) -> list[tuple[str, str]]:
+        """The query part of the URL as a list of key-value pairs.
+
+        e.g. `[('foo', 'bar')]` in `https://foo.com,bar.com/path?query#fragment`
+        """
+        return self._url.query_params()
+
+    @property
+    def fragment(self) -> str | None:
+        """The fragment part of the URL, or `None`.
+
+        e.g. `fragment` in `https://foo.com,bar.com/path?query#fragment`
+        """
+        return self._url.fragment
+
+    def hosts(self) -> list[MultiHostHost]:
+        '''The hosts of the `MultiHostUrl` as [`MultiHostHost`][pydantic_core.MultiHostHost] typed dicts.
+
+        ```py
+        from pydantic_core import MultiHostUrl
+
+        mhu = MultiHostUrl('https://foo.com:123,foo:bar@bar.com/path')
+        print(mhu.hosts())
+        """
+        [
+            {'username': None, 'password': None, 'host': 'foo.com', 'port': 123},
+            {'username': 'foo', 'password': 'bar', 'host': 'bar.com', 'port': 443}
+        ]
+        ```
+        Returns:
+            A list of dicts, each representing a host.
+        '''
+        return self._url.hosts()
+
+    def unicode_string(self) -> str:
+        """The URL as a unicode string, unlike `__str__()` this will not punycode encode the hosts."""
+        return self._url.unicode_string()
+
+    def __str__(self) -> str:
+        """The URL as a string, this will punycode encode the host if required."""
+        return str(self._url)
+
+    def __repr__(self) -> str:
+        return f'{self.__class__.__name__}({str(self._url)})'
+
+    def __deepcopy__(self, memo: dict) -> Self:
+        return self.__class__(self._url)
+
+    @classmethod
+    def build(
+        cls,
+        *,
+        scheme: str,
+        hosts: list[MultiHostHost] | None = None,
+        username: str | None = None,
+        password: str | None = None,
+        host: str | None = None,
+        port: int | None = None,
+        path: str | None = None,
+        query: str | None = None,
+        fragment: str | None = None,
+    ) -> Self:
+        """Build a new `MultiHostUrl` instance from its component parts.
+
+        This method takes either `hosts` - a list of `MultiHostHost` typed dicts, or the individual components
+        `username`, `password`, `host` and `port`.
+
+        Args:
+            scheme: The scheme part of the URL.
+            hosts: Multiple hosts to build the URL from.
+            username: The username part of the URL.
+            password: The password part of the URL.
+            host: The host part of the URL.
+            port: The port part of the URL.
+            path: The path part of the URL.
+            query: The query part of the URL, or omit for no query.
+            fragment: The fragment part of the URL, or omit for no fragment.
+
+        Returns:
+            An instance of `MultiHostUrl`
+        """
+        return cls(
+            MultiHostUrl.build(
+                scheme=scheme,
+                hosts=hosts,
+                username=username,
+                password=password,
+                host=host,
+                port=port,
+                path=path,
+                query=query,
+                fragment=fragment,
+            )
+        )
 
     @classmethod
     def __get_pydantic_core_schema__(cls, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
@@ -162,7 +427,7 @@ class AnyUrl(_BaseUrl):
     @property
     def host(self) -> str:
         """The required URL host."""
-        ...
+        return self._url.host  # type: ignore
 
 
 class AnyHttpUrl(_BaseUrl):
@@ -177,7 +442,7 @@ class AnyHttpUrl(_BaseUrl):
     @property
     def host(self) -> str:
         """The required URL host."""
-        ...
+        return self._url.host  # type: ignore
 
 
 class HttpUrl(_BaseUrl):
@@ -263,7 +528,7 @@ class HttpUrl(_BaseUrl):
     @property
     def host(self) -> str:
         """The required URL host."""
-        ...
+        return self._url.host  # type: ignore
 
 
 class AnyWebsocketUrl(_BaseUrl):
@@ -278,7 +543,7 @@ class AnyWebsocketUrl(_BaseUrl):
     @property
     def host(self) -> str:
         """The required URL host."""
-        ...
+        return self._url.host  # type: ignore
 
 
 class WebsocketUrl(_BaseUrl):
@@ -294,7 +559,7 @@ class WebsocketUrl(_BaseUrl):
     @property
     def host(self) -> str:
         """The required URL host."""
-        ...
+        return self._url.host  # type: ignore
 
 
 class FileUrl(_BaseUrl):
@@ -394,7 +659,7 @@ class PostgresDsn(_BaseMultiHostUrl):
     @property
     def host(self) -> str:
         """The required URL host."""
-        ...
+        return self._url.host  # type: ignore
 
 
 class CockroachDsn(_BaseUrl):
@@ -417,7 +682,7 @@ class CockroachDsn(_BaseUrl):
     @property
     def host(self) -> str:
         """The required URL host."""
-        ...
+        return self._url.host  # type: ignore
 
 
 class AmqpDsn(_BaseUrl):
@@ -450,7 +715,7 @@ class RedisDsn(_BaseUrl):
     @property
     def host(self) -> str:
         """The required URL host."""
-        ...
+        return self._url.host  # type: ignore
 
 
 class MongoDsn(_BaseMultiHostUrl):
@@ -518,7 +783,7 @@ class MySQLDsn(_BaseUrl):
     @property
     def host(self) -> str:
         """The required URL host."""
-        ...
+        return self._url.host  # type: ignore
 
 
 class MariaDBDsn(_BaseUrl):
@@ -538,7 +803,7 @@ class MariaDBDsn(_BaseUrl):
     @property
     def host(self) -> str:
         """The required URL host."""
-        ...
+        return self._url.host  # type: ignore
 
 
 class ClickHouseDsn(_BaseUrl):
@@ -559,7 +824,7 @@ class ClickHouseDsn(_BaseUrl):
     @property
     def host(self) -> str:
         """The required URL host."""
-        ...
+        return self._url.host  # type: ignore
 
 
 class SnowflakeDsn(_BaseUrl):
@@ -578,7 +843,7 @@ class SnowflakeDsn(_BaseUrl):
     @property
     def host(self) -> str:
         """The required URL host."""
-        ...
+        return self._url.host  # type: ignore
 
 
 def import_email_validator() -> None:
