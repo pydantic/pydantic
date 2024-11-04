@@ -99,8 +99,12 @@ class _BaseUrl:
     _constraints: ClassVar[UrlConstraints] = UrlConstraints()
     _url: Url
 
-    def __init__(self, url: Url) -> None:
-        self._url = url
+    def __init__(self, url: str | Url) -> None:
+        if isinstance(url, Url):
+            self._url = url
+        else:
+            assert isinstance(url, str)
+            self._url = Url(url)
 
     @property
     def scheme(self) -> str:
@@ -267,8 +271,12 @@ class _BaseMultiHostUrl:
     _constraints: ClassVar[UrlConstraints] = UrlConstraints()
     _url: MultiHostUrl
 
-    def __init__(self, url: MultiHostUrl) -> None:
-        self._url = url
+    def __init__(self, url: str | MultiHostUrl) -> None:
+        if isinstance(url, MultiHostUrl):
+            self._url = url
+        else:
+            assert isinstance(url, str)
+            self._url = MultiHostUrl(url)
 
     @property
     def scheme(self) -> str:
