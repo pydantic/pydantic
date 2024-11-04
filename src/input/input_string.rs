@@ -303,4 +303,12 @@ impl<'py> ValidatedDict<'py> for StringMappingDict<'py> {
                 .map(|(key, val)| Ok((StringMapping::new_key(key)?, StringMapping::new_value(val)?))),
         ))
     }
+
+    fn last_key(&self) -> Option<Self::Key<'_>> {
+        self.0
+            .keys()
+            .iter()
+            .last()
+            .and_then(|key| StringMapping::new_key(key).ok())
+    }
 }

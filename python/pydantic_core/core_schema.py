@@ -2840,7 +2840,7 @@ def typed_dict_field(
 
     Args:
         schema: The schema to use for the field
-        required: Whether the field is required
+        required: Whether the field is required, otherwise uses the value from `total` on the typed dict
         validation_alias: The alias(es) to use to find the field in the validation data
         serialization_alias: The alias to use as a key when serializing
         serialization_exclude: Whether to exclude the field when serializing
@@ -2916,7 +2916,7 @@ def typed_dict_schema(
         ref: optional unique identifier of the schema, used to reference the schema in other places
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         extra_behavior: The extra behavior to use for the typed dict
-        total: Whether the typed dict is total
+        total: Whether the typed dict is total, otherwise uses `typed_dict_total` from config
         populate_by_name: Whether the typed dict should populate by name
         serialization: Custom serialization schema
     """

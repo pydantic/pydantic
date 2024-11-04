@@ -823,6 +823,21 @@ impl<'py> ValidatedDict<'py> for GenericPyMapping<'_, 'py> {
             Self::GetAttr(obj, _) => Ok(consumer.consume_iterator(iterate_attributes(obj)?)),
         }
     }
+
+    fn last_key(&self) -> Option<Self::Key<'_>> {
+        match self {
+            Self::Dict(dict) => dict.keys().iter().last(),
+            // see https://github.com/pydantic/pydantic-core/pull/1512#discussion_r1826057970
+            Self::Mapping(mapping) => mapping
+                .call_method0(intern!(mapping.py(), "keys"))
+                .ok()?
+                .iter()
+                .ok()?
+                .last()?
+                .ok(),
+            Self::GetAttr(_, _) => None,
+        }
+    }
 }
 
 /// Container for all the collections (sized iterable containers) types, which

@@ -516,6 +516,10 @@ impl<'py, 'data> ValidatedDict<'py> for &'_ JsonObject<'data> {
     ) -> ValResult<R> {
         Ok(consumer.consume_iterator(LazyIndexMap::iter(self).map(|(k, v)| Ok((k.as_ref(), v)))))
     }
+
+    fn last_key(&self) -> Option<Self::Key<'_>> {
+        self.keys().last().map(AsRef::as_ref)
+    }
 }
 
 impl<'a, 'py, 'data> ValidatedList<'py> for &'a JsonArray<'data> {
