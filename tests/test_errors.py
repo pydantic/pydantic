@@ -551,7 +551,7 @@ def test_validation_error_cause_contents():
         s2.validate_python('anything')
 
     cause_group = exc_info.value.__cause__
-    assert isinstance(cause_group, BaseExceptionGroup)
+    assert isinstance(cause_group, BaseExceptionGroup)  # noqa: F821,RUF100  # gated on 3.11+ above
     assert len(cause_group.exceptions) == 1
 
     cause = cause_group.exceptions[0]
@@ -576,7 +576,7 @@ def test_validation_error_cause_contents():
     with pytest.raises(ValidationError) as exc_info:
         s3.validate_python('anything')
 
-    assert isinstance(exc_info.value.__cause__, BaseExceptionGroup)
+    assert isinstance(exc_info.value.__cause__, BaseExceptionGroup)  # noqa: F821,RUF100  # gated on 3.11+ above
     assert len(exc_info.value.__cause__.exceptions) == 1
     cause = exc_info.value.__cause__.exceptions[0]
     assert cause.__notes__ and cause.__notes__[-1].startswith('\nPydantic: ')
@@ -585,7 +585,7 @@ def test_validation_error_cause_contents():
     assert isinstance(subcause, ValidationError)
 
     cause_group = subcause.__cause__
-    assert isinstance(cause_group, BaseExceptionGroup)
+    assert isinstance(cause_group, BaseExceptionGroup)  # noqa: F821,RUF100  # gated on 3.11+ above
     assert len(cause_group.exceptions) == 1
 
     cause = cause_group.exceptions[0]
