@@ -33,22 +33,10 @@ impl TypeSerializer for ComplexSerializer {
     ) -> PyResult<PyObject> {
         let py = value.py();
         match value.downcast::<PyComplex>() {
-            Ok(py_complex) => match extra.mode {
-                SerMode::Json => {
-                    let re = py_complex.real();
-                    let im = py_complex.imag();
-                    let mut s = format!("{im}j");
-                    if re != 0.0 {
-                        let mut sign = "";
-                        if im >= 0.0 {
-                            sign = "+";
-                        }
-                        s = format!("{re}{sign}{s}");
-                    }
-                    Ok(s.into_py(py))
-                }
-                _ => Ok(value.into_py(py)),
-            },
+            Ok(py_complex) => Ok(match extra.mode {
+                SerMode::Json => complex_to_str(py_complex).into_py(py),
+                _ => value.into_py(py),
+            }),
             Err(_) => {
                 extra.warnings.on_fallback_py(self.get_name(), value, extra)?;
                 infer_to_python(value, include, exclude, extra)
@@ -70,16 +58,7 @@ impl TypeSerializer for ComplexSerializer {
     ) -> Result<S::Ok, S::Error> {
         match value.downcast::<PyComplex>() {
             Ok(py_complex) => {
-                let re = py_complex.real();
-                let im = py_complex.imag();
-                let mut s = format!("{im}j");
-                if re != 0.0 {
-                    let mut sign = "";
-                    if im >= 0.0 {
-                        sign = "+";
-                    }
-                    s = format!("{re}{sign}{s}");
-                }
+                let s = complex_to_str(py_complex);
                 Ok(serializer.collect_str::<String>(&s)?)
             }
             Err(_) => {
@@ -92,4 +71,18 @@ impl TypeSerializer for ComplexSerializer {
     fn get_name(&self) -> &str {
         "complex"
     }
+}
+
+pub fn complex_to_str(py_complex: &Bound<'_, PyComplex>) -> String {
+    let re = py_complex.real();
+    let im = py_complex.imag();
+    let mut s = format!("{im}j");
+    if re != 0.0 {
+        let mut sign = "";
+        if im >= 0.0 {
+            sign = "+";
+        }
+        s = format!("{re}{sign}{s}");
+    }
+    s
 }

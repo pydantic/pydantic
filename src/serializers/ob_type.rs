@@ -252,6 +252,8 @@ impl ObTypeLookup {
             ObType::Url
         } else if ob_type == self.multi_host_url {
             ObType::MultiHostUrl
+        } else if ob_type == self.complex {
+            ObType::Complex
         } else if ob_type == self.uuid_object.as_ptr() as usize {
             ObType::Uuid
         } else if is_pydantic_serializable(op_value) {
