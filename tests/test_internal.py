@@ -222,3 +222,8 @@ def test_schema_is_valid():
 )
 def test_decimal_digits_calculation(decimal: Decimal, decimal_places: int, digits: int) -> None:
     assert _extract_decimal_digits_info(decimal) == (decimal_places, digits)
+
+
+def test_decimal_digits_calculation_type_error() -> None:
+    with pytest.raises(TypeError, match='Unable to extract decimal digits info from supplied value NaN'):
+        _extract_decimal_digits_info(Decimal.from_float(float('nan')))

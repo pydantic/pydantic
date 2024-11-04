@@ -1806,9 +1806,18 @@ def test_enum_with_no_cases() -> None:
     'kwargs,type_,a',
     [
         ({'pattern': '^foo$'}, int, 1),
-        ({'gt': 0}, conlist(int, min_length=4), [1, 2, 3, 4, 5]),
-        ({'gt': 0}, conset(int, min_length=4), {1, 2, 3, 4, 5}),
-        ({'gt': 0}, confrozenset(int, min_length=4), frozenset({1, 2, 3, 4, 5})),
+        *[
+            ({constraint_name: 0}, conlist(int, min_length=4), [1, 2, 3, 4, 5])
+            for constraint_name in ['gt', 'lt', 'ge', 'le', 'multiple_of']
+        ]
+        + [
+            ({constraint_name: 0}, conset(int, min_length=4), {1, 2, 3, 4, 5})
+            for constraint_name in ['gt', 'lt', 'ge', 'le', 'multiple_of']
+        ]
+        + [
+            ({constraint_name: 0}, confrozenset(int, min_length=4), frozenset({1, 2, 3, 4, 5}))
+            for constraint_name in ['gt', 'lt', 'ge', 'le', 'multiple_of']
+        ],
     ],
 )
 def test_invalid_schema_constraints(kwargs, type_, a):
@@ -1822,11 +1831,35 @@ def test_invalid_schema_constraints(kwargs, type_, a):
         Foo(a=a)
 
 
-def test_invalid_decimal_constraint():
+@pytest.mark.parametrize(
+    'kwargs',
+    [
+        {'max_length': 5},
+        {'min_length': 5},
+    ],
+)
+def test_invalid_decimal_constraint(kwargs):
     class Foo(BaseModel):
-        a: Decimal = Field('foo', title='A title', description='A description', max_length=5)
+        a: Decimal = Field(title='A title', description='A description', **kwargs)
 
-    with pytest.raises(TypeError, match="Unable to apply constraint 'max_length' to supplied value 1.0"):
+    constraint_name = list(kwargs.keys())[0]
+    with pytest.raises(TypeError, match=f"Unable to apply constraint '{constraint_name}' to supplied value 1.0"):
+        Foo(a=Decimal('1.0'))
+
+
+@pytest.mark.parametrize(
+    'kwargs',
+    [
+        {'max_digits': 5},
+        {'decimal_places': 5},
+    ],
+)
+def test_decimal_type_error(kwargs):
+    class Foo(BaseModel):
+        a: float = Field(title='A title', description='A description', **kwargs)
+
+    constraint_name = list(kwargs.keys())[0]
+    with pytest.raises(TypeError, match=f"Unable to apply constraint '{constraint_name}' to supplied value 1.0"):
         Foo(a=1.0)
 
 

@@ -371,10 +371,11 @@ def _extract_decimal_digits_info(decimal: Decimal) -> tuple[int, int]:
 
 
 def max_digits_validator(x: Any, max_digits: Any) -> Any:
-    _, num_digits = _extract_decimal_digits_info(x)
-    _, normalized_num_digits = _extract_decimal_digits_info(x.normalize())
-
     try:
+        if not isinstance(x, Decimal):
+            raise TypeError(f'Expected Decimal, received {type(x).__name__}')
+        _, num_digits = _extract_decimal_digits_info(x)
+        _, normalized_num_digits = _extract_decimal_digits_info(x.normalize())
         if (num_digits > max_digits) and (normalized_num_digits > max_digits):
             raise PydanticKnownError(
                 'decimal_max_digits',
@@ -386,10 +387,11 @@ def max_digits_validator(x: Any, max_digits: Any) -> Any:
 
 
 def decimal_places_validator(x: Any, decimal_places: Any) -> Any:
-    decimal_places_, _ = _extract_decimal_digits_info(x)
-    normalized_decimal_places, _ = _extract_decimal_digits_info(x.normalize())
-
     try:
+        if not isinstance(x, Decimal):
+            raise TypeError(f'Expected Decimal, received {type(x).__name__}')
+        decimal_places_, _ = _extract_decimal_digits_info(x)
+        normalized_decimal_places, _ = _extract_decimal_digits_info(x.normalize())
         if (decimal_places_ > decimal_places) and (normalized_decimal_places > decimal_places):
             raise PydanticKnownError(
                 'decimal_max_places',
