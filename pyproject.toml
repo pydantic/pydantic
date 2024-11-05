@@ -157,7 +157,6 @@ mypy = [
 memray = ["pytest-memray; python_version < '3.13' and platform_system != 'Windows'"]
 
 all = [
-  { include-group = "email" },
   { include-group = "docs" },
   { include-group = "linting" },
   { include-group = "testing" },
@@ -186,6 +185,9 @@ addopts = [
 markers = [
     'skip_json_schema_validation: Disable JSON Schema validation.',
 ]
+
+[tool.uv]
+default-groups = ["dev"]
 
 # configuring https://github.com/pydantic/hooky
 [tool.hooky]
