@@ -45,6 +45,7 @@ jobs:
       uses: astral-sh/setup-uv@v3
       with:
         enable-cache: true
+        python-version: '3.12'
 
     - name: install dependencies
       # Unlike the docs build, we don't use mkdocs_material-insiders
