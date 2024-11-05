@@ -335,6 +335,7 @@ class TypeAdapter(Generic[T]):
         strict: bool | None = None,
         from_attributes: bool | None = None,
         context: dict[str, Any] | None = None,
+        experimental_allow_partial: bool = False,
     ) -> T:
         """Validate a Python object against the model.
 
@@ -343,6 +344,8 @@ class TypeAdapter(Generic[T]):
             strict: Whether to strictly check types.
             from_attributes: Whether to extract data from object attributes.
             context: Additional context to pass to the validator.
+            experimental_allow_partial: **Experimental** whether to enable
+                [partial validation](../concepts/experimental.md#partial-validation), e.g. to process streams.
 
         !!! note
             When using `TypeAdapter` with a Pydantic `dataclass`, the use of the `from_attributes`
@@ -351,11 +354,23 @@ class TypeAdapter(Generic[T]):
         Returns:
             The validated object.
         """
-        return self.validator.validate_python(object, strict=strict, from_attributes=from_attributes, context=context)
+        return self.validator.validate_python(
+            object,
+            strict=strict,
+            from_attributes=from_attributes,
+            context=context,
+            allow_partial=experimental_allow_partial,
+        )
 
     @_frame_depth(1)
     def validate_json(
-        self, data: str | bytes, /, *, strict: bool | None = None, context: dict[str, Any] | None = None
+        self,
+        data: str | bytes,
+        /,
+        *,
+        strict: bool | None = None,
+        context: dict[str, Any] | None = None,
+        experimental_allow_partial: bool = False,
     ) -> T:
         """Usage docs: https://docs.pydantic.dev/2.10/concepts/json/#json-parsing
 
@@ -365,25 +380,41 @@ class TypeAdapter(Generic[T]):
             data: The JSON data to validate against the model.
             strict: Whether to strictly check types.
             context: Additional context to use during validation.
+            experimental_allow_partial: **Experimental** whether to enable
+                [partial validation](../concepts/experimental.md#partial-validation), e.g. to process streams.
 
         Returns:
             The validated object.
         """
-        return self.validator.validate_json(data, strict=strict, context=context)
+        return self.validator.validate_json(
+            data, strict=strict, context=context, allow_partial=experimental_allow_partial
+        )
 
     @_frame_depth(1)
-    def validate_strings(self, obj: Any, /, *, strict: bool | None = None, context: dict[str, Any] | None = None) -> T:
+    def validate_strings(
+        self,
+        obj: Any,
+        /,
+        *,
+        strict: bool | None = None,
+        context: dict[str, Any] | None = None,
+        experimental_allow_partial: bool = False,
+    ) -> T:
         """Validate object contains string data against the model.
 
         Args:
             obj: The object contains string data to validate.
             strict: Whether to strictly check types.
             context: Additional context to use during validation.
+            experimental_allow_partial: **Experimental** whether to enable
+                [partial validation](../concepts/experimental.md#partial-validation), e.g. to process streams.
 
         Returns:
             The validated object.
         """
-        return self.validator.validate_strings(obj, strict=strict, context=context)
+        return self.validator.validate_strings(
+            obj, strict=strict, context=context, allow_partial=experimental_allow_partial
+        )
 
     @_frame_depth(1)
     def get_default_value(self, *, strict: bool | None = None, context: dict[str, Any] | None = None) -> Some[T] | None:
