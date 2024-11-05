@@ -421,11 +421,16 @@ impl Validator for ModelFieldsValidator {
         let new_extra = match &self.extra_behavior {
             ExtraBehavior::Allow => {
                 let non_extra_data = PyDict::new_bound(py);
-                self.fields.iter().for_each(|f| {
-                    let popped_value = PyAnyMethods::get_item(&**new_data, &f.name).unwrap();
-                    new_data.del_item(&f.name).unwrap();
-                    non_extra_data.set_item(&f.name, popped_value).unwrap();
-                });
+                self.fields.iter().try_for_each(|f| -> PyResult<()> {
+                    let Some(popped_value) = new_data.get_item(&f.name)? else {
+                        // field not present in __dict__ for some reason; let the rest of the
+                        // validation pipeline handle it later
+                        return Ok(());
+                    };
+                    new_data.del_item(&f.name)?;
+                    non_extra_data.set_item(&f.name, popped_value)?;
+                    Ok(())
+                })?;
                 let new_extra = new_data.copy()?;
                 new_data.clear();
                 new_data.update(non_extra_data.as_mapping())?;
