@@ -99,11 +99,6 @@ class UrlConstraints(_fields.PydanticMetadata):
         return {field.name: getattr(self, field.name) for field in fields(self)}
 
 
-@lru_cache
-def _build_type_adapter(cls: type[_BaseUrl | _BaseMultiHostUrl]) -> TypeAdapter:
-    return TypeAdapter(cls)
-
-
 class _BaseUrl:
     _constraints: ClassVar[UrlConstraints] = UrlConstraints()
     _url: _CoreUrl
@@ -438,6 +433,11 @@ class _BaseMultiHostUrl:
             for constraint_key, constraint_value in cls._constraints.defined_constraints.items():
                 schema[constraint_key] = constraint_value
             return schema
+
+
+@lru_cache
+def _build_type_adapter(cls: type[_BaseUrl | _BaseMultiHostUrl]) -> TypeAdapter:
+    return TypeAdapter(cls)
 
 
 class AnyUrl(_BaseUrl):
