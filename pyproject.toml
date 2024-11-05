@@ -103,7 +103,7 @@ substitutions = [
 ]
 
 [dependency-groups]
-email = [
+dev = [
     "email-validator>=2.0.0",
 ]
 docs = [
