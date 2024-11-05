@@ -136,11 +136,3 @@ help:
 .PHONY: update-v1  ## Update V1 namespace
 update-v1:
 	uv run ./update_v1.sh
-
-.PHONY: cf-pages-build  # Build the docs for GitHub Pages
-cf-pages-build:
-	curl -LsSf https://astral.sh/uv/install.sh | sh
-	${HOME}/.cargo/bin/uv python install 3.12
-	${HOME}/.cargo/bin/uv sync --group docs
-	${HOME}/.cargo/bin/uv run python -c 'import docs.plugins.main'
-	${HOME}/.cargo/bin/uv run --no-sync mkdocs build
