@@ -176,6 +176,7 @@ class PlainValidator:
     Example:
         ```py
         from typing import Union
+
         from typing_extensions import Annotated
 
         from pydantic import BaseModel, PlainValidator
