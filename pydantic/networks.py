@@ -103,8 +103,8 @@ class _BaseUrl:
     _constraints: ClassVar[UrlConstraints] = UrlConstraints()
     _url: _CoreUrl
 
-    def __init__(self, url: str | _CoreUrl) -> None:
-        self._url = _build_type_adapter(self.__class__).validate_python(str(url))
+    def __init__(self, url: str | _CoreUrl | _BaseUrl) -> None:
+        self._url = _build_type_adapter(self.__class__).validate_python(url)
 
     @property
     def scheme(self) -> str:
@@ -256,6 +256,8 @@ class _BaseUrl:
             def wrap_val(value, handler):
                 if isinstance(value, source):
                     return value
+                if isinstance(value, _BaseUrl):
+                    value = str(value)
                 core_url = handler(value)
                 instance = source.__new__(source)
                 instance._url = core_url
@@ -282,8 +284,8 @@ class _BaseMultiHostUrl:
     _constraints: ClassVar[UrlConstraints] = UrlConstraints()
     _url: _CoreMultiHostUrl
 
-    def __init__(self, url: str | _CoreMultiHostUrl) -> None:
-        self._url = _build_type_adapter(self.__class__).validate_python(str(url))
+    def __init__(self, url: str | _CoreMultiHostUrl | _BaseMultiHostUrl) -> None:
+        self._url = _build_type_adapter(self.__class__).validate_python(url)
 
     @property
     def scheme(self) -> str:
@@ -413,6 +415,8 @@ class _BaseMultiHostUrl:
             def wrap_val(value, handler):
                 if isinstance(value, source):
                     return value
+                if isinstance(value, _BaseMultiHostUrl):
+                    value = str(value)
                 core_url = handler(value)
                 instance = source.__new__(source)
                 instance._url = core_url
