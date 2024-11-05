@@ -1036,17 +1036,17 @@ def test_validate_assignment():
             self.__pydantic_extra__ = None
 
     v = SchemaValidator(
-        {
-            'type': 'model',
-            'cls': MyModel,
-            'schema': {
-                'type': 'model-fields',
-                'fields': {
-                    'field_a': {'type': 'model-field', 'schema': {'type': 'str'}},
-                    'field_b': {'type': 'model-field', 'schema': {'type': 'int'}},
+        core_schema.model_schema(
+            MyModel,
+            core_schema.model_fields_schema(
+                {
+                    'field_a': core_schema.model_field(core_schema.str_schema()),
+                    'field_b': core_schema.model_field(core_schema.int_schema()),
                 },
-            },
-        }
+                extra_behavior='allow',
+            ),
+            extra_behavior='allow',
+        )
     )
 
     m = MyModel()
@@ -1062,6 +1062,12 @@ def test_validate_assignment():
 
     v.validate_assignment(m, 'field_b', '322', from_attributes=True)
     assert m.field_b == 322
+
+    # try deleting a field
+    del m.field_b
+    # assignment to `field_a` should not care about `field_b` missing
+    v.validate_assignment(m, 'field_a', 'hello world', from_attributes=True)
+    assert m.field_a == 'hello world'
 
 
 def test_validate_assignment_function():
