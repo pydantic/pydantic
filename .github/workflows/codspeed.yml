@@ -20,10 +20,12 @@ jobs:
         uses: astral-sh/setup-uv@v3
         with:
           enable-cache: true
-          python-version: '3.12'
+
+      - name: Set up Python 3.12
+        run: uv python install 3.12
 
       - name: install deps
-        run: uv sync --group testing --group testing-extra --extra email --frozen
+        run: uv sync --python 3.12 --group testing --group testing-extra --extra email --frozen
 
       - name: Run CodSpeed benchmarks
         uses: CodSpeedHQ/action@v3

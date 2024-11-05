@@ -45,13 +45,15 @@ jobs:
       uses: astral-sh/setup-uv@v3
       with:
         enable-cache: true
-        python-version: '3.12'
+
+    - name: Set up Python 3.12
+      run: uv python install 3.12
 
     - name: install dependencies
       # Unlike the docs build, we don't use mkdocs_material-insiders
       # Because the secret for accessing the library is not accessible from forks, but we still want to run
       # this job on public CI runs.
-      run: uv sync --group docs
+      run: uv sync --python 3.12 --group docs
 
     - run: uv run python -c 'import docs.plugins.main'
 
@@ -77,12 +79,14 @@ jobs:
         uses: astral-sh/setup-uv@v3
         with:
           enable-cache: true
-          python-version: '3.12'
+
+      - name: Set up Python 3.12
+        run: uv python install 3.12
 
       - name: install deps
         run: |
-          uv venv
-          uv sync --group testing --group testing-extra --group memray
+          uv venv --python 3.12
+          uv sync --python 3.12 --group testing --group testing-extra --group memray
 
       - name: test
         run: uv run pytest --ignore=tests/mypy/ --ignore=tests/test_docs.py --memray
@@ -188,10 +192,12 @@ jobs:
         uses: astral-sh/setup-uv@v3
         with:
           enable-cache: true
-          python-version: '3.12'
+
+      - name: Set up Python 3.12
+        run: uv python install 3.12
 
       - name: install deps
-        run: uv sync --group testing
+        run: uv sync --python 3.12 --group testing
 
       - name: install example plugin
         run: uv add ./tests/plugin --no-sync
@@ -275,10 +281,12 @@ jobs:
       uses: astral-sh/setup-uv@v3
       with:
         enable-cache: true
-        python-version: '3.12'
+
+    - name: Set up Python 3.12
+      run: uv python install 3.12
 
     - name: install deps
-      run: uv sync --group mypy
+      run: uv sync --python 3.12 --group mypy
 
     - name: install Pyright
       run: npm install -g pyright@1.1.384  # keep this in sync with .pre-commit-config.yaml
