@@ -263,6 +263,8 @@ class _BaseUrl:
         if issubclass(cls, source):
 
             def wrap_val(value, handler):
+                if isinstance(value, source):
+                    return value
                 core_url = handler(value)
                 instance = source.__new__(source)
                 instance._url = core_url
@@ -427,6 +429,8 @@ class _BaseMultiHostUrl:
         if issubclass(cls, source):
 
             def wrap_val(value, handler):
+                if isinstance(value, source):
+                    return value
                 core_url = handler(value)
                 instance = source.__new__(source)
                 instance._url = core_url

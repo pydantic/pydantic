@@ -1044,3 +1044,12 @@ def test_specialized_urls() -> None:
     assert http_url.path == '/something'
     assert http_url.username is None
     assert http_url.password is None
+
+    http_url2 = ta.validate_python(http_url)
+    assert str(http_url2) == 'http://example.com/something'
+    assert repr(http_url2) == "HttpUrl('http://example.com/something')"
+    assert http_url2.__class__ == HttpUrl
+    assert http_url2.host == 'example.com'
+    assert http_url2.path == '/something'
+    assert http_url2.username is None
+    assert http_url2.password is None
