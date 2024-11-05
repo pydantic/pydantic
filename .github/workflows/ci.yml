@@ -27,8 +27,6 @@ jobs:
         with:
           enable-cache: true
 
-      - name: Set up Python ${{ matrix.python-version }}
-        run: uv python install ${{ matrix.python-version }}
 
       - name: install
         run: uv sync --python ${{ matrix.python-version }} --group linting
