@@ -22,8 +22,6 @@ jobs:
         with:
           enable-cache: true
 
-      - name: Set up Python 3.12
-        run: uv python install 3.12
 
       - name: install
         run: uv sync --python 3.12 --group linting 
