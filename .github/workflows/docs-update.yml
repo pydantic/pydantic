@@ -22,8 +22,11 @@ jobs:
         with:
           enable-cache: true
 
+      - name: Set up Python 3.12
+        run: uv python install 3.12
+
       - name: install
-        run: uv sync --group linting --extra email
+        run: uv sync --python 3.12 --group linting --extra email
 
       - uses: pre-commit/action@v3.0.1
         with:
@@ -41,8 +44,11 @@ jobs:
         with:
           enable-cache: true
 
+      - name: Set up Python 3.12
+        run: uv python install 3.12
+
       - name: install deps
-        run: uv sync --group testing --extra email
+        run: uv sync --python 3.12 --group testing --extra email
 
       - run: 'uv run python -c "import pydantic.version; print(pydantic.version.version_info())"'
 
@@ -68,9 +74,12 @@ jobs:
         with:
           enable-cache: true
 
+      - name: Set up Python 3.12
+        run: uv python install 3.12
+
       - name: install
         run: |
-          uv sync --group docs
+          uv sync --python 3.12 --group docs
           uv run python -m pip install --extra-index-url https://pydantic:${PPPR_TOKEN}@pppr.pydantic.dev/simple/ mkdocs-material
         env:
           PPPR_TOKEN: ${{ secrets.PPPR_TOKEN }}

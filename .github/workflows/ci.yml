@@ -27,8 +27,11 @@ jobs:
         with:
           enable-cache: true
 
+      - name: Set up Python ${{ matrix.python-version }}
+        run: uv python install ${{ matrix.python-version }}
+
       - name: install
-        run: uv sync --group linting
+        run: uv sync --python ${{ matrix.python-version }} --group linting --extra email
 
       - uses: pre-commit/action@v3.0.1
         with:
@@ -86,7 +89,7 @@ jobs:
       - name: install deps
         run: |
           uv venv --python 3.12
-          uv sync --python 3.12 --group testing --group testing-extra --group memray
+          uv sync --group testing --extra email --group testing-extra --group memray
 
       - name: test
         run: uv run pytest --ignore=tests/mypy/ --ignore=tests/test_docs.py --memray
@@ -135,8 +138,11 @@ jobs:
       with:
         enable-cache: true
 
+    - name: Set up Python ${{ matrix.python-version }}
+      run: uv python install ${{ matrix.python-version }}
+
     - name: install deps
-      run: uv sync --group testing --extra timezone
+      run: uv sync --python ${{ matrix.python-version }} --group testing --extra timezone --extra email
 
     - run: 'uv run python -c "import pydantic.version; print(pydantic.version.version_info())"'
 
@@ -151,7 +157,7 @@ jobs:
         CONTEXT: ${{ runner.os }}-py${{ matrix.python-version }}-without-deps
 
     - name: install extra deps
-      run: uv sync --group testing --group testing-extra --extra timezone
+      run: uv sync --group testing --group testing-extra --extra timezone --extra email
 
     - name: test with deps
       run: make test
