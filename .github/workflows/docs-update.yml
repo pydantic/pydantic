@@ -26,7 +26,7 @@ jobs:
         run: uv python install 3.12
 
       - name: install
-        run: uv sync --python 3.12 --group linting --extra email
+        run: uv sync --python 3.12 --group linting 
 
       - uses: pre-commit/action@v3.0.1
         with:

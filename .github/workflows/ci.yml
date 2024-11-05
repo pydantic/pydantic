@@ -31,7 +31,7 @@ jobs:
         run: uv python install ${{ matrix.python-version }}
 
       - name: install
-        run: uv sync --python ${{ matrix.python-version }} --group linting --extra email
+        run: uv sync --python ${{ matrix.python-version }} --group linting
 
       - uses: pre-commit/action@v3.0.1
         with:
@@ -142,7 +142,7 @@ jobs:
       run: uv python install ${{ matrix.python-version }}
 
     - name: install deps
-      run: uv sync --python ${{ matrix.python-version }} --group testing --extra timezone --extra email
+      run: uv sync --python ${{ matrix.python-version }} --group testing --extra timezone
 
     - run: 'uv run python -c "import pydantic.version; print(pydantic.version.version_info())"'
 
@@ -157,7 +157,7 @@ jobs:
         CONTEXT: ${{ runner.os }}-py${{ matrix.python-version }}-without-deps
 
     - name: install extra deps
-      run: uv sync --group testing --group testing-extra --extra timezone --extra email
+      run: uv sync --group testing --group testing-extra --extra timezone
 
     - name: test with deps
       run: make test
