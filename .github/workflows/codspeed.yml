@@ -21,8 +21,9 @@ jobs:
         with:
           enable-cache: true
 
-      - name: Set up Python 3.12
-        run: uv python install 3.12
+      - uses: actions/setup-python@v3
+        with:
+          python-version: "3.12"
 
       - name: install deps
         run: uv sync --python 3.12 --group testing --group testing-extra --extra email --frozen
