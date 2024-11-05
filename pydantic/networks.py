@@ -5,7 +5,7 @@ from __future__ import annotations as _annotations
 import dataclasses as _dataclasses
 import re
 from dataclasses import fields
-from functools import cached_property
+from functools import lru_cache
 from importlib.metadata import version
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from typing import TYPE_CHECKING, Any, ClassVar
@@ -99,16 +99,17 @@ class UrlConstraints(_fields.PydanticMetadata):
         return {field.name: getattr(self, field.name) for field in fields(self)}
 
 
+@lru_cache
+def _build_type_adapter(cls: type[_BaseUrl | _BaseMultiHostUrl]) -> TypeAdapter:
+    return TypeAdapter(cls)
+
+
 class _BaseUrl:
     _constraints: ClassVar[UrlConstraints] = UrlConstraints()
     _url: _CoreUrl
 
-    @cached_property
-    def _validator(self) -> TypeAdapter:
-        return TypeAdapter(self.__class__)
-
     def __init__(self, url: str | _CoreUrl) -> None:
-        self._url = self._validator.validate_python(str(url))
+        self._url = _build_type_adapter(self.__class__).validate_python(str(url))
 
     @property
     def scheme(self) -> str:
@@ -286,12 +287,8 @@ class _BaseMultiHostUrl:
     _constraints: ClassVar[UrlConstraints] = UrlConstraints()
     _url: _CoreMultiHostUrl
 
-    @cached_property
-    def _validator(self) -> TypeAdapter:
-        return TypeAdapter(self.__class__)
-
     def __init__(self, url: str | _CoreMultiHostUrl) -> None:
-        self._url = self._validator.validate_python(str(url))
+        self._url = _build_type_adapter(self.__class__).validate_python(str(url))
 
     @property
     def scheme(self) -> str:
