@@ -137,7 +137,7 @@ testing = [
     "pytest-examples",
     "faker>=18.13.0",
     "pytest-benchmark>=4.0.0",
-    "pytest-codspeed>=3.0.0",
+    "pytest-codspeed>=2.2.1",
     "packaging>=23.2",
     "jsonschema>=4.23.0",
 ]
