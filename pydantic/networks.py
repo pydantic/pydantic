@@ -5,11 +5,14 @@ from __future__ import annotations as _annotations
 import dataclasses as _dataclasses
 import re
 from dataclasses import fields
+from functools import cached_property
 from importlib.metadata import version
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from typing import TYPE_CHECKING, Any, ClassVar
 
-from pydantic_core import MultiHostHost, MultiHostUrl, PydanticCustomError, Url, core_schema
+from pydantic_core import MultiHostHost, PydanticCustomError, core_schema
+from pydantic_core import MultiHostUrl as _CoreMultiHostUrl
+from pydantic_core import Url as _CoreUrl
 from typing_extensions import Annotated, Self, TypeAlias
 
 from pydantic.errors import PydanticUserError
@@ -18,6 +21,7 @@ from ._internal import _fields, _repr, _schema_generation_shared
 from ._migration import getattr_migration
 from .annotated_handlers import GetCoreSchemaHandler
 from .json_schema import JsonSchemaValue
+from .type_adapter import TypeAdapter
 
 if TYPE_CHECKING:
     import email_validator
@@ -97,18 +101,19 @@ class UrlConstraints(_fields.PydanticMetadata):
 
 class _BaseUrl:
     _constraints: ClassVar[UrlConstraints] = UrlConstraints()
-    _url: Url
+    _url: _CoreUrl
 
-    def __init__(self, url: str | Url) -> None:
-        if isinstance(url, Url):
-            self._url = url
+    @cached_property
+    def _validator(self) -> TypeAdapter:
+        return TypeAdapter(self.__class__)
+
+    def __init__(self, url: str | _CoreUrl) -> None:
+        if isinstance(url, self.__class__):
+            self._url = url._url
+        elif isinstance(url, _CoreUrl):
+            self._url = self._validator.validate_python(str(url))
         else:
-            # TODO: this doesn't actually enforce constraints on subclasses, we should either:
-            # Fully commit to validating on __init__ for Pydantic types
-            # imo, we should not do this, the maintenance burden is VERY high here
-            # OR, we should warn that validation does not occur on __init__ and standardize this across types
-            assert isinstance(url, str)
-            self._url = Url(url)
+            self._url = self._validator.validate_python(url)
 
     @property
     def scheme(self) -> str:
@@ -205,7 +210,7 @@ class _BaseUrl:
         return str(self._url)
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}('{str(self._url)}')"
+        return f'{self.__class__.__name__}({str(self._url)!r})'
 
     def __deepcopy__(self, memo: dict) -> Self:
         return self.__class__(self._url)
@@ -239,7 +244,7 @@ class _BaseUrl:
             An instance of URL
         """
         return cls(
-            Url.build(
+            _CoreUrl.build(
                 scheme=scheme,
                 username=username,
                 password=password,
@@ -252,13 +257,16 @@ class _BaseUrl:
         )
 
     @classmethod
-    def __get_pydantic_core_schema__(cls, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+    def __get_pydantic_core_schema__(
+        cls, source: type[_BaseUrl], handler: GetCoreSchemaHandler
+    ) -> core_schema.CoreSchema:
         if issubclass(cls, source):
 
             def wrap_val(value, handler):
-                if isinstance(value, source):
-                    return source(handler(value._url))
-                return source(handler(value))
+                core_url = handler(value)
+                instance = source.__new__(source)
+                instance._url = core_url
+                return instance
 
             return core_schema.no_info_wrap_validator_function(
                 wrap_val,
@@ -279,18 +287,19 @@ class _BaseUrl:
 
 class _BaseMultiHostUrl:
     _constraints: ClassVar[UrlConstraints] = UrlConstraints()
-    _url: MultiHostUrl
+    _url: _CoreMultiHostUrl
 
-    def __init__(self, url: str | MultiHostUrl) -> None:
-        if isinstance(url, MultiHostUrl):
-            self._url = url
+    @cached_property
+    def _validator(self) -> TypeAdapter:
+        return TypeAdapter(self.__class__)
+
+    def __init__(self, url: str | _CoreMultiHostUrl) -> None:
+        if isinstance(url, self.__class__):
+            self._url = url._url
+        elif isinstance(url, _CoreMultiHostUrl):
+            self._url = self._validator.validate_python(str(url))
         else:
-            # TODO: this doesn't actually enforce constraints on subclasses, we should either:
-            # Fully commit to validating on __init__ for Pydantic types
-            # imo, we should not do this, the maintenance burden is VERY high here
-            # OR, we should warn that validation does not occur on __init__ and standardize this across types
-            assert isinstance(url, str)
-            self._url = MultiHostUrl(url)
+            self._url = self._validator.validate_python(url)
 
     @property
     def scheme(self) -> str:
@@ -359,7 +368,7 @@ class _BaseMultiHostUrl:
         return str(self._url)
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}('{str(self._url)}')"
+        return f'{self.__class__.__name__}({str(self._url)!r})'
 
     def __deepcopy__(self, memo: dict) -> Self:
         return self.__class__(self._url)
@@ -398,7 +407,7 @@ class _BaseMultiHostUrl:
             An instance of `MultiHostUrl`
         """
         return cls(
-            MultiHostUrl.build(
+            _CoreMultiHostUrl.build(
                 scheme=scheme,
                 hosts=hosts,
                 username=username,
@@ -412,13 +421,16 @@ class _BaseMultiHostUrl:
         )
 
     @classmethod
-    def __get_pydantic_core_schema__(cls, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+    def __get_pydantic_core_schema__(
+        cls, source: type[_BaseMultiHostUrl], handler: GetCoreSchemaHandler
+    ) -> core_schema.CoreSchema:
         if issubclass(cls, source):
 
             def wrap_val(value, handler):
-                if isinstance(value, source):
-                    return source(handler(value._url))
-                return source(handler(value))
+                core_url = handler(value)
+                instance = source.__new__(source)
+                instance._url = core_url
+                return instance
 
             return core_schema.no_info_wrap_validator_function(
                 wrap_val,
