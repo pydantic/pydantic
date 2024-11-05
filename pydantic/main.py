@@ -690,7 +690,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             # Due to the way generic classes are built, it's possible that an invalid schema may be temporarily
             # set on generic classes. I think we could resolve this to ensure that we get proper schema caching
             # for generics, but for simplicity for now, we just always rebuild if the class has a generic origin.
-            if not cls.__pydantic_generic_metadata__['origin']:
+            if cls.__pydantic_generic_metadata__['origin']:
                 return cls.__pydantic_core_schema__
 
         return handler(source)
