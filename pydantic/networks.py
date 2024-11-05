@@ -108,12 +108,7 @@ class _BaseUrl:
         return TypeAdapter(self.__class__)
 
     def __init__(self, url: str | _CoreUrl) -> None:
-        if isinstance(url, self.__class__):
-            self._url = url._url
-        elif isinstance(url, _CoreUrl):
-            self._url = self._validator.validate_python(str(url))
-        else:
-            self._url = self._validator.validate_python(url)
+        self._url = self._validator.validate_python(str(url))
 
     @property
     def scheme(self) -> str:
@@ -296,12 +291,7 @@ class _BaseMultiHostUrl:
         return TypeAdapter(self.__class__)
 
     def __init__(self, url: str | _CoreMultiHostUrl) -> None:
-        if isinstance(url, self.__class__):
-            self._url = url._url
-        elif isinstance(url, _CoreMultiHostUrl):
-            self._url = self._validator.validate_python(str(url))
-        else:
-            self._url = self._validator.validate_python(url)
+        self._url = self._validator.validate_python(str(url))
 
     @property
     def scheme(self) -> str:
