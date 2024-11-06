@@ -114,7 +114,6 @@ class DefaultTestingModel(BaseModel):
     b: int = ...
 # MYPY: error: Incompatible types in assignment (expression has type "EllipsisType", variable has type "int")  [assignment]
     c: int = Field(...)
-# MYPY: error: Incompatible types in assignment (expression has type "EllipsisType", variable has type "int")  [assignment]
     d: Union[int, str]
     e = ...
 # MYPY: error: Untyped fields disallowed  [pydantic-field]
@@ -176,7 +175,6 @@ response = Response[Model](data=1, error=None)
 
 class AliasModel(BaseModel):
     x: str = Field(..., alias='y')
-# MYPY: error: Incompatible types in assignment (expression has type "EllipsisType", variable has type "str")  [assignment]
     z: int
 
 
@@ -187,7 +185,6 @@ x_alias = 'y'
 
 class DynamicAliasModel(BaseModel):
     x: str = Field(..., alias=x_alias)
-# MYPY: error: Incompatible types in assignment (expression has type "EllipsisType", variable has type "str")  [assignment]
     z: int
 
 
@@ -196,7 +193,6 @@ DynamicAliasModel(y='y', z='1')
 
 class DynamicAliasModel2(BaseModel):
     x: str = Field(..., alias=x_alias)
-# MYPY: error: Incompatible types in assignment (expression has type "EllipsisType", variable has type "str")  [assignment]
     z: int
 
     class Config:
@@ -210,7 +206,6 @@ DynamicAliasModel2(x='y', z=1)
 
 class KwargsDynamicAliasModel(BaseModel, populate_by_name=True):
     x: str = Field(..., alias=x_alias)
-# MYPY: error: Incompatible types in assignment (expression has type "EllipsisType", variable has type "str")  [assignment]
     z: int
 
 
@@ -233,7 +228,6 @@ AliasGeneratorModel(z=1)
 
 class AliasGeneratorModel2(BaseModel):
     x: int = Field(..., alias='y')
-# MYPY: error: Incompatible types in assignment (expression has type "EllipsisType", variable has type "int")  [assignment]
 
     class Config:  # type: ignore[pydantic-alias]
 # MYPY: error: Unused "type: ignore" comment  [unused-ignore]
@@ -262,7 +256,6 @@ KwargsAliasGeneratorModel(z=1)
 
 class KwargsAliasGeneratorModel2(BaseModel, alias_generator=lambda x: x + '_'):
     x: int = Field(..., alias='y')
-# MYPY: error: Incompatible types in assignment (expression has type "EllipsisType", variable has type "int")  [assignment]
 
 
 KwargsAliasGeneratorModel2(x=1)
