@@ -34,3 +34,6 @@ class Model(BaseModel):
     # Different error code for mypy (see https://github.com/python/mypy/issues/17986):
     f11: list[str] = Field(default_factory=new_list)  # type: ignore[arg-type]  # pyright: ignore[reportAssignmentType]
     f12: int = Field(default_factory=list)  # type: ignore[assignment]  # pyright: ignore[reportAssignmentType]
+
+    # Do not error on the ellipsis:
+    f13: int = Field(...)
