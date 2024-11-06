@@ -39,6 +39,7 @@
 * Recommend against using `Ellipsis` (...) with `Field` by @Viicos in [#10661](https://github.com/pydantic/pydantic/pull/10661)
 * Migrate to subclassing instead of annotated approach for pydantic url types by @sydney-runkle in [#10662](https://github.com/pydantic/pydantic/pull/10662)
 * Change JSON schema generation of `Literal`s and `Enums` by @Viicos in [#10692](https://github.com/pydantic/pydantic/pull/10692)
+* Simplify unions involving `Any` or `Never` when replacing type variables by @Viicos in [#10338](https://github.com/pydantic/pydantic/pull/10338)
 * Do not require padding when decoding `base64` bytes by @bschoenmaeckers in [pydantic/pydantic-core#1448](https://github.com/pydantic/pydantic-core/pull/1448)
 * Support dates all the way to 1BC by @changhc in [pydantic/speedate#77](https://github.com/pydantic/speedate/pull/77)
 
@@ -60,7 +61,6 @@
 * Fix `IncEx` type alias definition by @Viicos in [#10339](https://github.com/pydantic/pydantic/pull/10339)
 * Do not error when trying to evaluate annotations of private attributes by @Viicos in [#10358](https://github.com/pydantic/pydantic/pull/10358)
 * Fix nested type statement by @kc0506 in [#10369](https://github.com/pydantic/pydantic/pull/10369)
-* Simplify unions involving `Any` or `Never` when replacing type variables by @Viicos in [#10338](https://github.com/pydantic/pydantic/pull/10338)
 * Improve typing of `ModelMetaclass.mro` by @Viicos in [#10372](https://github.com/pydantic/pydantic/pull/10372)
 * Fix class access of deprecated `computed_field`s by @Viicos in [#10391](https://github.com/pydantic/pydantic/pull/10391)
 * Make sure `inspect.iscoroutinefunction` works on coroutines decorated with `@validate_call` by @MovisLi in [#10374](https://github.com/pydantic/pydantic/pull/10374)
