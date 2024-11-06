@@ -3864,18 +3864,16 @@ will still be used if the matching environment variable is not set.)</p>
 <li>
 <p>The environment variable name is overridden using <code>alias</code>. In this case, the environment variable
    <code>my_api_key</code> will be used for both validation and serialization instead of <code>api_key</code>.</p>
-</li>
-</ol>
 <p>Check the <a href="../fields/#field-aliases"><code>Field</code> documentation</a> for more information.</p>
-<ol>
-<li>
-<p>The <code>AliasChoices</code> class allows to have multiple environment variable names for a single field.
-   The first environment variable that is found will be used.</p>
-<p>Check the <a href="../alias/#aliaspath-and-aliaschoices"><code>AliasChoices</code></a> for more information.</p>
 </li>
 <li>
-<p>The <code>ImportString</code> class allows to import an object from a string.
-   In this case, the environment variable <code>special_function</code> will be read and the function <code>math.cos</code> will be imported.</p>
+<p>The <a class="autorefs autorefs-internal" href="../../api/aliases/#pydantic.aliases.AliasChoices"><code>AliasChoices</code></a> class allows to have multiple environment variable names for a single field.
+   The first environment variable that is found will be used.</p>
+<p>Check the <a href="../alias/#aliaspath-and-aliaschoices">documentation on alias choices</a> for more information.</p>
+</li>
+<li>
+<p>The <a class="autorefs autorefs-internal" href="../../api/types/#pydantic.types.ImportString"><code>ImportString</code></a> class allows to import an object from a string.
+   In this case, the environment variable <code>special_function</code> will be read and the function <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/math.html#math.cos"><code>math.cos</code></a> will be imported.</p>
 </li>
 <li>
 <p>The <code>env_prefix</code> config setting allows to set a prefix for all environment variables.</p>
