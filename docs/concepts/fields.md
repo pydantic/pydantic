@@ -822,7 +822,7 @@ Read more about JSON schema customization / modification with fields in the [Cus
 
 The [`computed_field`][pydantic.fields.computed_field] decorator can be used to include [`property`][] or
 [`cached_property`][functools.cached_property] attributes when serializing a model or dataclass.
-The property will also be taken into account in the JSON Schema.
+The property will also be taken into account in the JSON Schema (in serialization mode).
 
 !!! note
     Properties can be useful for fields that are computed from other fields, or for fields that
@@ -831,7 +831,40 @@ The property will also be taken into account in the JSON Schema.
     However, note that Pydantic will *not* perform any additional logic on the wrapped property
     (validation, cache invalidation, etc.).
 
-Here's an example:
+Here's an example of the JSON schema (in serialization mode) generated for a model with a computed field:
+
+```py
+from pydantic import BaseModel, computed_field
+
+
+class Box(BaseModel):
+    width: float
+    height: float
+    depth: float
+
+    @computed_field
+    @property  # (1)!
+    def volume(self) -> float:
+        return self.width * self.height * self.depth
+
+
+print(Box.model_json_schema(mode='serialization'))
+"""
+{
+    'properties': {
+        'width': {'title': 'Width', 'type': 'number'},
+        'height': {'title': 'Height', 'type': 'number'},
+        'depth': {'title': 'Depth', 'type': 'number'},
+        'volume': {'readOnly': True, 'title': 'Volume', 'type': 'number'},
+    },
+    'required': ['width', 'height', 'depth', 'volume'],
+    'title': 'Box',
+    'type': 'object',
+}
+"""
+```
+
+Here's an example using the `model_dump` method with a computed field:
 
 ```py
 from pydantic import BaseModel, computed_field
