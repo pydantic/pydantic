@@ -24,6 +24,7 @@
 * Add runtime validation of `@validate_call` callable argument by @Viicos in [#10627](https://github.com/pydantic/pydantic/pull/10627)
 * Add `experimental_allow_partial` support by @samuelcolvin in [#10748](https://github.com/pydantic/pydantic/pull/10748)
 * Support default factories taking validated data as an argument by @Viicos in [#10678](https://github.com/pydantic/pydantic/pull/10678)
+* Allow subclassing `ValidationError` and `PydanticCustomError` by @Youssefares in [pydantic/pydantic-core#1413](https://github.com/pydantic/pydantic-core/pull/1413) - see release blog post for usage details.
 
 #### Changes
 
@@ -37,6 +38,8 @@
 * Warn if configuration is specified on the `@dataclass` decorator and with the `__pydantic_config__` attribute by @sydney-runkle in [#10406](https://github.com/pydantic/pydantic/pull/10406)
 * Migrate to subclassing instead of annotated approach for pydantic url types by @sydney-runkle in [#10662](https://github.com/pydantic/pydantic/pull/10662)
 * Change JSON schema generation of `Literal`s and `Enums` by @Viicos in [#10692](https://github.com/pydantic/pydantic/pull/10692)
+* Do not require padding when decoding `base64` bytes by @bschoenmaeckers in [pydantic/pydantic-core#1448](https://github.com/pydantic/pydantic-core/pull/1448)
+* Support dates all the way to 1BC by @changhc in [pydantic/speedate#77](https://github.com/pydantic/speedate/pull/77)
 
 #### Performance
 
@@ -92,6 +95,10 @@
 * Allow any mapping in `BaseModel.model_copy()` by @Viicos in [#10751](https://github.com/pydantic/pydantic/pull/10751)
 * Fix `isinstance` behavior for urls by @sydney-runkle in [#10766](https://github.com/pydantic/pydantic/pull/10766)
 * Ensure `cached_property` can be set on Pydantic models by @Viicos in [#10774](https://github.com/pydantic/pydantic/pull/10774)
+* Fix equality checks for primitives in literals by @sydney-runkle in [pydantic/pydantic-core#1459](https://github.com/pydantic/pydantic-core/pull/1459)
+* Properly enforce `host_required` for URLs by @Viicos in [pydantic/pydantic-core#1488](https://github.com/pydantic/pydantic-core/pull/1488)
+* Fix when `coerce_numbers_to_str` enabled and string has invalid unicode character by @andrey-berenda in [pydantic/pydantic-core#1515](https://github.com/pydantic/pydantic-core/pull/1515)
+* Fix serializing `complex` values in `Enum`s by @changhc in [pydantic/pydantic-core#1524](https://github.com/pydantic/pydantic-core/pull/1524)
 
 ### New Contributors
 
