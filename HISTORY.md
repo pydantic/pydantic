@@ -98,7 +98,7 @@
 * Ensure `cached_property` can be set on Pydantic models by @Viicos in [#10774](https://github.com/pydantic/pydantic/pull/10774)
 * Fix equality checks for primitives in literals by @sydney-runkle in [pydantic/pydantic-core#1459](https://github.com/pydantic/pydantic-core/pull/1459)
 * Properly enforce `host_required` for URLs by @Viicos in [pydantic/pydantic-core#1488](https://github.com/pydantic/pydantic-core/pull/1488)
-* Fix when `coerce_numbers_to_str` enabled and string has invalid unicode character by @andrey-berenda in [pydantic/pydantic-core#1515](https://github.com/pydantic/pydantic-core/pull/1515)
+* Fix when `coerce_numbers_to_str` enabled and string has invalid Unicode character by @andrey-berenda in [pydantic/pydantic-core#1515](https://github.com/pydantic/pydantic-core/pull/1515)
 * Fix serializing `complex` values in `Enum`s by @changhc in [pydantic/pydantic-core#1524](https://github.com/pydantic/pydantic-core/pull/1524)
 
 ### New Contributors
