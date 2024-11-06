@@ -8,6 +8,7 @@ import types
 import typing
 import warnings
 from copy import copy, deepcopy
+from functools import cached_property
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -909,8 +910,14 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             self._check_frozen(name, value)
 
             attr = getattr(self.__class__, name, None)
+            # NOTE: We currently special case properties and `cached_property`, but we might need
+            # to generalize this to all data/non-data descriptors at some point. For non-data descriptors
+            # (such as `cached_property`), it isn't obvious though. `cached_property` caches the value
+            # to the instance's `__dict__`, but other non-data descriptors might do things differently.
             if isinstance(attr, property):
                 attr.__set__(self, value)
+            elif isinstance(attr, cached_property):
+                self.__dict__[name] = value
             elif self.model_config.get('validate_assignment', None):
                 self.__pydantic_validator__.validate_assignment(self, name, value)
             elif self.model_config.get('extra') != 'allow' and name not in self.__pydantic_fields__:
