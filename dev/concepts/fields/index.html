@@ -4249,7 +4249,7 @@ arguments to the <code>deprecated</code> decorator. This might land in a future 
 </details>
 <p>The <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.computed_field"><code>computed_field</code></a> decorator can be used to include <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#property"><code>property</code></a> or
 <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functools.html#functools.cached_property"><code>cached_property</code></a> attributes when serializing a model or dataclass.
-The property will also be taken into account in the JSON Schema.</p>
+The property will also be taken into account in the JSON Schema (in serialization mode).</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Properties can be useful for fields that are computed from other fields, or for fields that
@@ -4257,7 +4257,37 @@ are expensive to be computed (and thus, are cached if using <a class="autorefs a
 <p>However, note that Pydantic will <em>not</em> perform any additional logic on the wrapped property
 (validation, cache invalidation, etc.).</p>
 </div>
-<p>Here's an example:</p>
+<p>Here's an example of the JSON schema (in serialization mode) generated for a model with a computed field:</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">computed_field</span>
+
+
+<span class="k">class</span> <span class="nc">Box</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">width</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">height</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">depth</span><span class="p">:</span> <span class="nb">float</span>
+
+    <span class="nd">@computed_field</span>
+    <span class="nd">@property</span>  <span class="c1"># (1)!</span>
+    <span class="k">def</span> <span class="nf">volume</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">width</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">depth</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">Box</span><span class="o">.</span><span class="n">model_json_schema</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;serialization&#39;</span><span class="p">))</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">{</span>
+<span class="sd">    &#39;properties&#39;: {</span>
+<span class="sd">        &#39;width&#39;: {&#39;title&#39;: &#39;Width&#39;, &#39;type&#39;: &#39;number&#39;},</span>
+<span class="sd">        &#39;height&#39;: {&#39;title&#39;: &#39;Height&#39;, &#39;type&#39;: &#39;number&#39;},</span>
+<span class="sd">        &#39;depth&#39;: {&#39;title&#39;: &#39;Depth&#39;, &#39;type&#39;: &#39;number&#39;},</span>
+<span class="sd">        &#39;volume&#39;: {&#39;readOnly&#39;: True, &#39;title&#39;: &#39;Volume&#39;, &#39;type&#39;: &#39;number&#39;},</span>
+<span class="sd">    },</span>
+<span class="sd">    &#39;required&#39;: [&#39;width&#39;, &#39;height&#39;, &#39;depth&#39;, &#39;volume&#39;],</span>
+<span class="sd">    &#39;title&#39;: &#39;Box&#39;,</span>
+<span class="sd">    &#39;type&#39;: &#39;object&#39;,</span>
+<span class="sd">}</span>
+<span class="sd">&quot;&quot;&quot;</span>
+</code></pre></div>
+<p>Here's an example using the <code>model_dump</code> method with a computed field:</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">computed_field</span>
 
 
