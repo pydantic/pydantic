@@ -36,6 +36,7 @@
 * Relax protected namespace config default by @sydney-runkle in [#10441](https://github.com/pydantic/pydantic/pull/10441) - see release blog post for more details.
 * Revalidate parametrized generics if instance's origin is subclass of OG class by @sydney-runkle in [#10666](https://github.com/pydantic/pydantic/pull/10666)
 * Warn if configuration is specified on the `@dataclass` decorator and with the `__pydantic_config__` attribute by @sydney-runkle in [#10406](https://github.com/pydantic/pydantic/pull/10406)
+* Recommend against using `Ellipsis` (...) with `Field` by @Viicos in [#10661](https://github.com/pydantic/pydantic/pull/10661)
 * Migrate to subclassing instead of annotated approach for pydantic url types by @sydney-runkle in [#10662](https://github.com/pydantic/pydantic/pull/10662)
 * Change JSON schema generation of `Literal`s and `Enums` by @Viicos in [#10692](https://github.com/pydantic/pydantic/pull/10692)
 * Do not require padding when decoding `base64` bytes by @bschoenmaeckers in [pydantic/pydantic-core#1448](https://github.com/pydantic/pydantic-core/pull/1448)
