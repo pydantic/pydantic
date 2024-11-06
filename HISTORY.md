@@ -21,7 +21,7 @@
 * Add support for `propertyNames` in JSON schema by @FlorianSW in [#10478](https://github.com/pydantic/pydantic/pull/10478)
 * Adding `__replace__` protocol for Python 3.13+ support by @sydney-runkle in [#10596](https://github.com/pydantic/pydantic/pull/10596)
 * Expose public `sort` method for JSON schema generation by @sydney-runkle in [#10595](https://github.com/pydantic/pydantic/pull/10595)
-* Add runtime validation of `@validate_call` callable argument by @Viicos in [#10627](https://github.com/pydantic/pydantic/pull/10627)
+* Add runtime validation of `@validate_call` callable argument by @kc0506 in [#10627](https://github.com/pydantic/pydantic/pull/10627)
 * Add `experimental_allow_partial` support by @samuelcolvin in [#10748](https://github.com/pydantic/pydantic/pull/10748)
 * Support default factories taking validated data as an argument by @Viicos in [#10678](https://github.com/pydantic/pydantic/pull/10678)
 * Allow subclassing `ValidationError` and `PydanticCustomError` by @Youssefares in [pydantic/pydantic-core#1413](https://github.com/pydantic/pydantic-core/pull/1413) - see release blog post for usage details.
@@ -52,7 +52,6 @@
 #### Fixes
 
 * Remove guarding check on `computed_field` with `field_serializer` by @nix010 in [#10390](https://github.com/pydantic/pydantic/pull/10390)
-* Do not check for `str` when using `has_instance_in_type` by @Viicos in [#10317](https://github.com/pydantic/pydantic/pull/10317)
 * Fix `Predicate` issue in `v2.9.0` by @sydney-runkle in [#10321](https://github.com/pydantic/pydantic/pull/10321)
 * Fixing `annotated-types` bound by @sydney-runkle in [#10327](https://github.com/pydantic/pydantic/pull/10327)
 * Turn `tzdata` install requirement into optional `timezone` dependency by @jakob-keller in [#10331](https://github.com/pydantic/pydantic/pull/10331)
@@ -74,9 +73,7 @@
 * Inline references if possible when generating schema for `json_schema_input_type` by @Viicos in [#10439](https://github.com/pydantic/pydantic/pull/10439)
 * Fix recursive arguments in `Representation` by @Viicos in [#10480](https://github.com/pydantic/pydantic/pull/10480)
 * Fix representation for builtin function types by @kschwab in [#10479](https://github.com/pydantic/pydantic/pull/10479)
-* Simplify `dataclass` check in `modify_model_json_schema` by @Viicos in [#10503](https://github.com/pydantic/pydantic/pull/10503)
 * Add python validators for decimal constraints (`max_digits` and `decimal_places`) by @sydney-runkle in [#10506](https://github.com/pydantic/pydantic/pull/10506)
-* Fix handling of `Literal` in `has_instance_in_type` by @Viicos in [#10514](https://github.com/pydantic/pydantic/pull/10514)
 * Only fetch `__pydantic_core_schema__` from the current class during schema generation by @Viicos in [#10518](https://github.com/pydantic/pydantic/pull/10518)
 * Fix `stacklevel` on deprecation warnings for `BaseModel` by @sydney-runkle in [#10520](https://github.com/pydantic/pydantic/pull/10520)
 * Fix warning `stacklevel` in `BaseModel.__init__` by @Viicos in [#10526](https://github.com/pydantic/pydantic/pull/10526)
