@@ -1349,6 +1349,11 @@ See [this post](https://docs.pydantic.dev/blog/pydantic-v2-alpha/) for more deta
 
 <!-- package description limit -->
 
+## v1.10.19 (2024-11-06)
+
+* Add warning when v2 model is nested in v1 model by @sydney-runkle in https://github.com/pydantic/pydantic/pull/10432
+* Fix deprecation warning in V1 `isinstance` check by @alicederyn in https://github.com/pydantic/pydantic/pull/10645
+
 ## v1.10.18 (2024-08-22)
 
 * Eval type fix in V1 by @sydney-runkle in https://github.com/pydantic/pydantic/pull/9751
