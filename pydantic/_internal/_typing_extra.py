@@ -29,9 +29,10 @@ else:
 
 @lru_cache(maxsize=None)
 def _get_typing_objects_by_name_of(name: str) -> tuple[Any, ...]:
+    """Get the member named `name` from both `typing` and `typing-extensions` (if it exists)."""
     result = tuple(getattr(module, name) for module in (typing, typing_extensions) if hasattr(module, name))
     if not result:
-        raise ValueError(f'Neither typing nor typing_extensions has an object called {name!r}')
+        raise ValueError(f'Neither `typing` nor `typing_extensions` has an object called {name!r}')
     return result
 
 
@@ -39,6 +40,7 @@ def _get_typing_objects_by_name_of(name: str) -> tuple[Any, ...]:
 # but it doesn't seem to improve performance. This also requires `obj` to be hashable, which
 # might not be always the case:
 def _is_typing_name(obj: object, name: str) -> bool:
+    """Return whether `obj` is the member of the typing modules (includes the `typing-extensions` one) named `name`."""
     # Using `any()` is slower:
     for thing in _get_typing_objects_by_name_of(name):
         if obj is thing:
@@ -197,24 +199,24 @@ def is_paramspec(tp: Any, /) -> bool:
     return isinstance(tp, _PARAMSPEC_TYPES)
 
 
-_TYPEALIASTYPES: tuple[type[typing_extensions.TypeAliasType], ...] = (typing_extensions.TypeAliasType,)
+_TYPE_ALIAS_TYPES: tuple[type[typing_extensions.TypeAliasType], ...] = (typing_extensions.TypeAliasType,)
 if sys.version_info >= (3, 12):
-    _TYPEALIASTYPES = (*_TYPEALIASTYPES, typing.TypeAliasType)
+    _TYPE_ALIAS_TYPES = (*_TYPE_ALIAS_TYPES, typing.TypeAliasType)
 
 
-def is_typealiastype(tp: Any, /) -> TypeIs[typing_extensions.TypeAliasType]:
+def is_type_alias_type(tp: Any, /) -> TypeIs[typing_extensions.TypeAliasType]:
     """Return whether the provided argument is an instance of `TypeAliasType`.
 
     ```python test="skip" lint="skip"
     type Int = int
-    is_typealiastype(Int)
+    is_type_alias_type(Int)
     #> True
     Str = TypeAliasType('Str', str)
-    is_typealiastype(Str)
+    is_type_alias_type(Str)
     #> True
     ```
     """
-    return isinstance(tp, _TYPEALIASTYPES)
+    return isinstance(tp, _TYPE_ALIAS_TYPES)
 
 
 def is_classvar(tp: Any, /) -> bool:
@@ -356,7 +358,7 @@ def is_namedtuple(tp: Any, /) -> bool:
     The class can be created using `typing.NamedTuple` or `collections.namedtuple`.
     Parametrized generic classes are *not* assumed to be named tuples.
     """
-    from ._utils import lenient_issubclass
+    from ._utils import lenient_issubclass  # circ. import
 
     return lenient_issubclass(tp, tuple) and hasattr(tp, '_fields')
 
@@ -394,7 +396,7 @@ else:
         return isinstance(tp, (types.GenericAlias, typing._GenericAlias))  # pyright: ignore[reportAttributeAccessIssue]
 
 
-# Ideally, we should avoid relying on the private `typing` constructs:
+# TODO: Ideally, we should avoid relying on the private `typing` constructs:
 
 if sys.version_info < (3, 9):
     WithArgsTypes: tuple[Any, ...] = (typing._GenericAlias,)  # pyright: ignore[reportAttributeAccessIssue]

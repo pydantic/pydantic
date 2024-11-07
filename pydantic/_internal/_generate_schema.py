@@ -932,7 +932,7 @@ class GenerateSchema:
             return self._sequence_schema(Any)
         elif obj in DICT_TYPES:
             return self._dict_schema(Any, Any)
-        elif _typing_extra.is_typealiastype(obj):
+        elif _typing_extra.is_type_alias_type(obj):
             return self._type_alias_type_schema(obj)
         elif obj is type:
             return self._type_schema()
@@ -996,7 +996,7 @@ class GenerateSchema:
         if from_property is not None:
             return from_property
 
-        if _typing_extra.is_typealiastype(origin):
+        if _typing_extra.is_type_alias_type(origin):
             return self._type_alias_type_schema(obj)
         elif _typing_extra.origin_is_union(origin):
             return self._union_schema(obj)
@@ -1612,7 +1612,7 @@ class GenerateSchema:
 
         if _typing_extra.is_any(type_param):
             return self._type_schema()
-        elif _typing_extra.is_typealiastype(type_param):
+        elif _typing_extra.is_type_alias_type(type_param):
             return self.generate_schema(typing.Type[type_param.__value__])
         elif isinstance(type_param, typing.TypeVar):
             if type_param.__bound__:

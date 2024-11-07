@@ -16,7 +16,7 @@ from typing_extensions import TypeGuard, get_args, get_origin
 
 from . import _repr
 from ._core_metadata import CoreMetadata
-from ._typing_extra import is_generic_alias, is_typealiastype
+from ._typing_extra import is_generic_alias, is_type_alias_type
 
 AnyFunctionSchema = Union[
     core_schema.AfterValidatorFunctionSchema,
@@ -86,7 +86,7 @@ def get_type_ref(type_: type[Any], args_override: tuple[type[Any], ...] | None =
         args = generic_metadata['args'] or args
 
     module_name = getattr(origin, '__module__', '<No __module__>')
-    if is_typealiastype(origin):
+    if is_type_alias_type(origin):
         type_ref = f'{module_name}.{origin.__name__}:{id(origin)}'
     else:
         try:
