@@ -1224,13 +1224,13 @@ class GenerateSchema:
         if not field_info.evaluated:
             # TODO Can we use field_info.apply_typevars_map here?
             try:
-                evaluated = _typing_extra.eval_type(field_info.annotation, *self._types_namespace)
+                evaluated_type = _typing_extra.eval_type(field_info.annotation, *self._types_namespace)
             except NameError as e:
                 raise PydanticUndefinedAnnotation.from_name_error(e) from e
-            evaluated = replace_types(evaluated, self._typevars_map)
+            evaluated_type = replace_types(evaluated_type, self._typevars_map)
             field_info.evaluated = True
-            if not has_instance_in_type(evaluated, PydanticRecursiveRef):
-                new_field_info = FieldInfo.from_annotation(evaluated)
+            if not has_instance_in_type(evaluated_type, PydanticRecursiveRef):
+                new_field_info = FieldInfo.from_annotation(evaluated_type)
                 field_info.annotation = new_field_info.annotation
 
                 # Handle any field info attributes that may have been obtained from now-resolved annotations
