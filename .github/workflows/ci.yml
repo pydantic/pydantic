@@ -78,7 +78,7 @@ jobs:
           enable-cache: true
 
       - name: install deps
-        run: uv sync --python 3.12 --group testing--group testing-extra --group memray
+        run: uv sync --python 3.12 --group testing --group testing-extra --group memray
 
       - name: test
         run: uv run pytest --ignore=tests/mypy/ --ignore=tests/test_docs.py --memray
