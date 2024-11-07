@@ -31,9 +31,10 @@ class Model(BaseModel):
     f9: dict[str, str] = Field(default_factory=dict)
     f10: int = Field(default_factory=lambda: 123)
 
-    # Different error code for mypy (see https://github.com/python/mypy/issues/17986):
+    # Note: mypy may require a different error code for `f12` (see https://github.com/python/mypy/issues/17986).
+    # Seems like this is not the case anymore. But could pop up at any time.
     f11: list[str] = Field(default_factory=new_list)  # type: ignore[arg-type]  # pyright: ignore[reportAssignmentType]
-    f12: int = Field(default_factory=list)  # type: ignore[assignment]  # pyright: ignore[reportAssignmentType]
+    f12: int = Field(default_factory=list)  # type: ignore[arg-type]  # pyright: ignore[reportAssignmentType]
 
     # Do not error on the ellipsis:
     f13: int = Field(...)
