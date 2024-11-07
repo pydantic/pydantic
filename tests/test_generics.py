@@ -2773,7 +2773,7 @@ def test_serialize_unsubstituted_typevars_bound_default_supported() -> None:
 @pytest.mark.parametrize(
     'type_var',
     [
-        TypingExtensionsTypeVar('ErrorDataT', default=BaseModel),
+        TypingExtensionsTypeVar('ErrorDataT', default=BaseModel, bound=BaseModel),
         TypeVar('ErrorDataT', BaseModel, str),
     ],
     ids=['default', 'constraint'],
@@ -2836,10 +2836,99 @@ def test_serialize_unsubstituted_typevars_variants(
     }
 
 
+def test_serialize_typevars_default_and_bound_with_user_model() -> None:
+    class MyErrorDetails(BaseModel):
+        bar: str
+
+    class ExtendedMyErrorDetails(MyErrorDetails):
+        foo: str
+
+    class MoreExtendedMyErrorDetails(ExtendedMyErrorDetails):
+        suu: str
+
+    type_var = TypingExtensionsTypeVar('type_var', bound=MyErrorDetails, default=ExtendedMyErrorDetails)
+
+    class Error(BaseModel, Generic[type_var]):
+        message: str
+        details: type_var
+
+    # bound small parent model
+    sample_error = Error[MyErrorDetails](
+        message='We just had an error',
+        details=MyErrorDetails(foo='var', bar='baz', suu='suu'),
+    )
+
+    assert sample_error.details.model_dump() == {
+        'bar': 'baz',
+    }
+    assert sample_error.model_dump() == {
+        'message': 'We just had an error',
+        'details': {
+            'bar': 'baz',
+        },
+    }
+
+    # default middle child model
+    sample_error = Error(
+        message='We just had an error',
+        details=MoreExtendedMyErrorDetails(foo='var', bar='baz', suu='suu'),
+    )
+
+    assert sample_error.details.model_dump() == {
+        'foo': 'var',
+        'bar': 'baz',
+        'suu': 'suu',
+    }
+    assert sample_error.model_dump() == {
+        'message': 'We just had an error',
+        'details': {'foo': 'var', 'bar': 'baz'},
+    }
+
+    # bound big child model
+    sample_error = Error[MoreExtendedMyErrorDetails](
+        message='We just had an error',
+        details=MoreExtendedMyErrorDetails(foo='var', bar='baz', suu='suu'),
+    )
+
+    assert sample_error.details.model_dump() == {
+        'foo': 'var',
+        'bar': 'baz',
+        'suu': 'suu',
+    }
+    assert sample_error.model_dump() == {
+        'message': 'We just had an error',
+        'details': {
+            'foo': 'var',
+            'bar': 'baz',
+            'suu': 'suu',
+        },
+    }
+
+
+def test_typevars_default_model_validation_error() -> None:
+    class MyErrorDetails(BaseModel):
+        bar: str
+
+    class ExtendedMyErrorDetails(MyErrorDetails):
+        foo: str
+
+    type_var = TypingExtensionsTypeVar('type_var', bound=MyErrorDetails, default=ExtendedMyErrorDetails)
+
+    class Error(BaseModel, Generic[type_var]):
+        message: str
+        details: type_var
+
+    with pytest.raises(ValidationError):
+        Error(
+            message='We just had an error',
+            details=MyErrorDetails(foo='var', bar='baz'),
+        )
+
+
 def test_mix_default_and_constraints() -> None:
     T = TypingExtensionsTypeVar('T', str, int, default=str)
 
-    msg = 'Pydantic does not support mixing more than one of TypeVar bounds, constraints and defaults'
+    msg = 'Pydantic does not support mixing more than one of TypeVar constraints and default/bound'
     with pytest.raises(NotImplementedError, match=msg):
 
         class _(BaseModel, Generic[T]):

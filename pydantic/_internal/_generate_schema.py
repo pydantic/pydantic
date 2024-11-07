@@ -1896,20 +1896,21 @@ class GenerateSchema:
 
         bound = typevar.__bound__
         constraints = typevar.__constraints__
+        typevar_default_value = getattr(typevar, '__default__', None)
 
         try:
             typevar_has_default = typevar.has_default()  # type: ignore
         except AttributeError:
             # could still have a default if it's an old version of typing_extensions.TypeVar
-            typevar_has_default = getattr(typevar, '__default__', None) is not None
+            typevar_has_default = typevar_default_value is not None
 
-        if (bound is not None) + (len(constraints) != 0) + typevar_has_default > 1:
+        if len(constraints) != 0 and (bound is not None or typevar_has_default):
             raise NotImplementedError(
-                'Pydantic does not support mixing more than one of TypeVar bounds, constraints and defaults'
+                'Pydantic does not support mixing more than one of TypeVar constraints and default/bound'
             )
 
         if typevar_has_default:
-            return self.generate_schema(typevar.__default__)  # type: ignore
+            return self.generate_schema(typevar_default_value)
         elif constraints:
             return self._union_schema(typing.Union[constraints])  # type: ignore
         elif bound:
