@@ -22,9 +22,8 @@ jobs:
         with:
           enable-cache: true
 
-
       - name: install
-        run: uv sync --python 3.12 --group linting 
+        run: uv sync --python 3.12 --group linting
 
       - uses: pre-commit/action@v3.0.1
         with:
@@ -41,9 +40,6 @@ jobs:
         uses: astral-sh/setup-uv@v3
         with:
           enable-cache: true
-
-      - name: Set up Python 3.12
-        run: uv python install 3.12
 
       - name: install deps
         run: uv sync --python 3.12 --group testing --extra email
@@ -71,9 +67,6 @@ jobs:
         uses: astral-sh/setup-uv@v3
         with:
           enable-cache: true
-
-      - name: Set up Python 3.12
-        run: uv python install 3.12
 
       - name: install
         run: |
