@@ -116,6 +116,8 @@ jobs:
     env:
       OS: ${{ matrix.os }}
       DEPS: yes
+      UV_PYTHON: ${{ matrix.python-version }}
+      UV_PYTHON_PREFERENCE: only-managed
 
     runs-on: ${{ matrix.os }}
 
@@ -128,7 +130,7 @@ jobs:
         enable-cache: true
 
     - name: install deps
-      run: uv sync --python ${{ matrix.python-version }} --group testing --extra timezone
+      run: uv sync --group testing --extra timezone
 
     - run: 'uv run python -c "import pydantic.version; print(pydantic.version.version_info())"'
 
@@ -143,7 +145,7 @@ jobs:
         CONTEXT: ${{ runner.os }}-py${{ matrix.python-version }}-without-deps
 
     - name: install extra deps
-      run: uv sync --python ${{ matrix.python-version }} --group testing --group testing-extra --extra timezone
+      run: uv sync --group testing --group testing-extra --extra timezone
 
     - name: test with deps
       run: make test
