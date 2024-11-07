@@ -45,7 +45,9 @@ class BeforeModelValidator(BaseModel):
 
 
 class WrapModelValidator(BaseModel):
-    @model_validator(mode='wrap')  # type: ignore[arg-type]  # pyright: ignore[reportArgumentType]
+    # mypy randomly does not catch the type error here (https://github.com/python/mypy/issues/18125)
+    # so we also ignore the `unused-ignore` code:
+    @model_validator(mode='wrap')  # type: ignore[arg-type, unused-ignore]  # pyright: ignore[reportArgumentType]
     def no_classmethod(cls, value: Any, handler: ModelWrapValidatorHandler[Self]) -> Self: ...
 
     @model_validator(mode='wrap')  # type: ignore[arg-type]  # pyright: ignore[reportArgumentType]
