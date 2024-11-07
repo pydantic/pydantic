@@ -87,7 +87,7 @@ jobs:
       - name: install deps
         run: |
           uv venv --python 3.12
-          uv sync --group testing --extra email --group testing-extra --group memray
+          uv sync --group testing--group testing-extra --group memray
 
       - name: test
         run: uv run pytest --ignore=tests/mypy/ --ignore=tests/test_docs.py --memray
