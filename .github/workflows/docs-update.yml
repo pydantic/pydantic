@@ -42,7 +42,7 @@ jobs:
           enable-cache: true
 
       - name: install deps
-        run: uv sync --python 3.12 --group testing --extra email
+        run: uv sync --python 3.12 --group testing
 
       - run: 'uv run python -c "import pydantic.version; print(pydantic.version.version_info())"'
 
