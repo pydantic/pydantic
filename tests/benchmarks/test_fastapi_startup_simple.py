@@ -91,7 +91,7 @@ def test_fastapi_startup_perf(benchmark: Callable[[Callable[[], Any]], None]):
 
 
 if __name__ == '__main__':
-    # run with `pdm run tests/benchmarks/test_fastapi_startup_simple.py`
+    # run with `uv run tests/benchmarks/test_fastapi_startup_simple.py`
     import cProfile
     import sys
     import time

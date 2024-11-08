@@ -22,16 +22,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: pdm-project/setup-pdm@v4
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v3
         with:
-          python-version: ${{ matrix.python-version }}
-          cache: true
-          allow-python-prereleases: true
+          enable-cache: true
 
       - name: install
-        run: |
-          pdm venv create --with-pip --force $PYTHON
-          pdm install -G linting -G email
+        run: uv sync --python ${{ matrix.python-version }} --group linting
 
       - uses: pre-commit/action@v3.0.1
         with:
@@ -44,20 +41,18 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - uses: pdm-project/setup-pdm@v4
+    - name: Setup uv
+      uses: astral-sh/setup-uv@v3
       with:
-        # cloudflare pages build uses python 3.12, see `/.python-version`
-        python-version: '3.12'
+        enable-cache: true
 
     - name: install dependencies
       # Unlike the docs build, we don't use mkdocs_material-insiders
       # Because the secret for accessing the library is not accessible from forks, but we still want to run
       # this job on public CI runs.
-      run: |
-        pdm venv create --with-pip --force $PYTHON
-        pdm install -G docs
+      run: uv sync --python 3.12 --group docs
 
-    - run: pdm run python -c 'import docs.plugins.main'
+    - run: uv run python -c 'import docs.plugins.main'
 
     # Adding local symlinks gets nice source locations like
     #   pydantic_core/core_schema.py
@@ -69,7 +64,7 @@ jobs:
         ln -s .venv/lib/python*/site-packages/pydantic_settings pydantic_settings
         ln -s .venv/lib/python*/site-packages/pydantic_extra_types pydantic_extra_types
 
-    - run: pdm run mkdocs build
+    - run: uv run mkdocs build
 
   test-memray:
     name: test memray
@@ -77,19 +72,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: pdm-project/setup-pdm@v4
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v3
         with:
-          python-version: '3.12'
-          cache: true
+          enable-cache: true
 
       - name: install deps
-        run: |
-          pdm venv create --with-pip --force $PYTHON
-          pdm install -G testing -G testing-extra -G email -G memray
-          pdm add pytest-memray
+        run: uv sync --python 3.12 --group testing --group testing-extra --group memray
 
       - name: test
-        run: pdm run pytest --ignore=tests/mypy/ --ignore=tests/test_docs.py --memray
+        run: uv run pytest --ignore=tests/mypy/ --ignore=tests/test_docs.py --memray
 
   test:
     name: test ${{ matrix.os }} / ${{ matrix.python-version }}
@@ -124,26 +116,23 @@ jobs:
     env:
       OS: ${{ matrix.os }}
       DEPS: yes
+      UV_PYTHON: ${{ matrix.python-version }}
+      UV_PYTHON_PREFERENCE: only-managed
 
     runs-on: ${{ matrix.os }}
 
     steps:
     - uses: actions/checkout@v4
 
-    - uses: pdm-project/setup-pdm@v4
+    - name: Setup uv
+      uses: astral-sh/setup-uv@v3
       with:
-        python-version: ${{ matrix.python-version }}
-        cache: true
-        allow-python-prereleases: true
+        enable-cache: true
 
     - name: install deps
-      run: |
-        pdm venv create --with-pip --force $PYTHON
-        pdm install -G testing -G email -G timezone
+      run: uv sync --group testing --extra timezone
 
-    - run: pdm info && pdm list
-
-    - run: 'pdm run python -c "import pydantic.version; print(pydantic.version.version_info())"'
+    - run: 'uv run python -c "import pydantic.version; print(pydantic.version.version_info())"'
 
     - run: mkdir coverage
 
@@ -156,7 +145,7 @@ jobs:
         CONTEXT: ${{ runner.os }}-py${{ matrix.python-version }}-without-deps
 
     - name: install extra deps
-      run: pdm install -G testing-extra -G email -G timezone
+      run: uv sync --group testing --group testing-extra --extra timezone
 
     - name: test with deps
       run: make test
@@ -192,27 +181,26 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pdm-project/setup-pdm@v4
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v3
         with:
-          python-version: '3.12'
-          cache: true
+          enable-cache: true
 
       - name: install deps
-        run: |
-          pdm venv create --with-pip --force $PYTHON
-          pdm install -G testing
+        run: uv sync --python 3.12 --group testing
 
       - name: install example plugin
-        run: pdm add ./tests/plugin
+        run: uv add ./tests/plugin --no-sync
 
-      - run: pdm run pytest ./tests/plugin
+      - run: uv run pytest tests/plugin
         env:
           TEST_PLUGIN: 1
 
-      # uninstalling is necessary to avoid creating a pdm cache shared with other jobs
+      # uninstalling is necessary because cache is shared with other jobs
       # which includes the plugin
       - name: uninstall example plugin
-        run: pdm remove ./tests/plugin
+        run: uv remove example_plugin --no-sync
 
   test-mypy:
     name: mypy ${{ matrix.mypy-version }} / ${{ matrix.python-version }}
@@ -240,27 +228,22 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - uses: pdm-project/setup-pdm@v4
+    - name: Setup uv
+      uses: astral-sh/setup-uv@v3
       with:
-        python-version: ${{ matrix.python-version }}
-        cache: true
-        allow-python-prereleases: true
+        enable-cache: true
 
     - name: install deps
-      run: |
-        pdm venv create --with-pip --force $PYTHON
-        pdm install -G testing -G mypy
+      run: uv sync --python ${{ matrix.python-version }} --group testing --group mypy
 
     - name: install mypy
       if: steps.cache.outputs.cache-hit != 'true'
-      run: |
-        pdm remove -G mypy mypy && pdm add -dG mypy mypy==${{ matrix.mypy-version }}
-        pdm list
+      run: uv pip install 'mypy==${{ matrix.mypy-version }}.*'
 
     - run: mkdir coverage
 
     - name: run mypy tests
-      run: pdm run coverage run -m pytest tests/mypy --test-mypy
+      run: uv run coverage run -m pytest tests/mypy --test-mypy
       env:
         COVERAGE_FILE: coverage/.coverage.linux-py${{ matrix.python-version }}-mypy${{ matrix.mypy-version }}
         CONTEXT: linux-py${{ matrix.python-version }}-mypy${{ matrix.mypy-version }}
@@ -283,15 +266,13 @@ jobs:
       with:
         node-version: '20'
 
-    - uses: pdm-project/setup-pdm@v4
+    - name: Setup uv
+      uses: astral-sh/setup-uv@v3
       with:
-        python-version: '3.12'
-        cache: true
+        enable-cache: true
 
     - name: install deps
-      run: |
-        pdm venv create --force $PYTHON
-        pdm install -G mypy
+      run: uv sync --python 3.12 --group mypy
 
     - name: install Pyright
       run: npm install -g pyright@1.1.384  # keep this in sync with .pre-commit-config.yaml
@@ -379,21 +360,17 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - uses: pdm-project/setup-pdm@v4
+    - name: Setup uv
+      uses: astral-sh/setup-uv@v3
       with:
-        python-version: ${{ matrix.python-version }}
-        cache: true
-        allow-python-prereleases: true
+        enable-cache: true
 
     - name: install deps
-      run: |
-        pdm venv create --with-pip --force $PYTHON
-        pdm install -G testing -G email
+      run: uv sync --python ${{ matrix.python-version }} --group testing
 
     - name: install typing-extensions
-      run: |
-        pdm remove typing-extensions && pdm add 'typing-extensions @ git+https://github.com/python/typing_extensions.git'
-        pdm list
+      run: uv pip install 'typing-extensions @ git+https://github.com/python/typing_extensions.git'
+
     - name: test
       run: make test
 

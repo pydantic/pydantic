@@ -16,17 +16,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: pdm-project/setup-pdm@v4
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v3
         with:
-          python-version: '3.12'
-          cache: true
+          enable-cache: true
+
+      - uses: actions/setup-python@v3
+        with:
+          python-version: "3.12"
 
       - name: install deps
-        run: |
-          pdm venv create --with-pip --force $PYTHON
-          pdm install -G testing -G testing-extra -G email
+        run: uv sync --python 3.12 --group testing --group testing-extra --extra email --frozen
 
       - name: Run CodSpeed benchmarks
         uses: CodSpeedHQ/action@v3
         with:
-          run: pdm run pytest ./tests/benchmarks --codspeed
+          run: uv run pytest ./tests/benchmarks --codspeed

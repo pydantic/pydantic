@@ -550,7 +550,7 @@ def run_benchmark(
 
 
 if __name__ == '__main__':
-    # run with `pdm run tests/benchmarks/test_basemodel_eq_performance.py`
+    # run with `uv run tests/benchmarks/test_basemodel_eq_performance.py`
     import argparse
     import pathlib
 
