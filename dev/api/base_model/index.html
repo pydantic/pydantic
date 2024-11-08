@@ -5704,7 +5704,7 @@ is set to <code>'allow'</code>.</p>
         <span class="n">_generics</span><span class="o">.</span><span class="n">check_parameters_count</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">typevar_values</span><span class="p">)</span>
 
         <span class="c1"># Build map from generic typevars to passed params</span>
-        <span class="n">typevars_map</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">_typing_extra</span><span class="o">.</span><span class="n">TypeVarType</span><span class="p">,</span> <span class="nb">type</span><span class="p">[</span><span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+        <span class="n">typevars_map</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">TypeVar</span><span class="p">,</span> <span class="nb">type</span><span class="p">[</span><span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
             <span class="nb">zip</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">__pydantic_generic_metadata__</span><span class="p">[</span><span class="s1">&#39;parameters&#39;</span><span class="p">],</span> <span class="n">typevar_values</span><span class="p">)</span>
         <span class="p">)</span>
 

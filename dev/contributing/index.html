@@ -3333,10 +3333,9 @@ to build the docs.</p>
 <p>You'll need the following prerequisites:</p>
 <ul>
 <li>Any Python version between <strong>Python 3.9 and 3.12</strong></li>
-<li><strong>virtualenv</strong> or other virtual environment tool</li>
+<li><a href="https://docs.astral.sh/uv/getting-started/installation/"><strong>uv</strong></a> or other virtual environment tool</li>
 <li><strong>git</strong></li>
 <li><strong>make</strong></li>
-<li><a href="https://pdm.fming.dev/latest/#installation"><strong>PDM</strong></a></li>
 </ul>
 <h3 id="installation-and-setup">Installation and setup<a class="headerlink" href="#installation-and-setup" title="Permanent link">&para;</a></h3>
 <p>Fork the repository on GitHub and clone your fork locally.</p>
@@ -3344,13 +3343,13 @@ to build the docs.</p>
 git<span class="w"> </span>clone<span class="w"> </span>git@github.com:&lt;your<span class="w"> </span>username&gt;/pydantic.git
 <span class="nb">cd</span><span class="w"> </span>pydantic
 
-<span class="c1"># Install PDM and pre-commit</span>
+<span class="c1"># Install UV and pre-commit</span>
 <span class="c1"># We use pipx here, for other options see:</span>
-<span class="c1"># https://pdm.fming.dev/latest/#installation</span>
+<span class="c1"># https://docs.astral.sh/uv/getting-started/installation/</span>
 <span class="c1"># https://pre-commit.com/#install</span>
 <span class="c1"># To get pipx itself:</span>
 <span class="c1"># https://pypa.github.io/pipx/</span>
-pipx<span class="w"> </span>install<span class="w"> </span>pdm
+pipx<span class="w"> </span>install<span class="w"> </span>uv
 pipx<span class="w"> </span>install<span class="w"> </span>pre-commit
 
 <span class="c1"># Install pydantic, dependencies, test dependencies and doc dependencies</span>
@@ -3382,7 +3381,7 @@ You can find directions on how to install the required dependencies <a href="htt
 <div class="language-bash highlight"><pre><span></span><code><span class="c1"># Build documentation</span>
 make<span class="w"> </span>docs
 <span class="c1"># If you have changed the documentation, make sure it builds successfully.</span>
-<span class="c1"># You can also use `pdm run mkdocs serve` to serve the documentation at localhost:8000</span>
+<span class="c1"># You can also use `uv run mkdocs serve` to serve the documentation at localhost:8000</span>
 </code></pre></div>
 <p>If this isn't working due to issues with the imaging plugin, try commenting out the <code>social</code> plugin line in <code>mkdocs.yml</code> and running <code>make docs</code> again.</p>
 <h4 id="updating-the-documentation">Updating the documentation<a class="headerlink" href="#updating-the-documentation" title="Permanent link">&para;</a></h4>
