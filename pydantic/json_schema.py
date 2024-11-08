@@ -19,7 +19,6 @@ import re
 import warnings
 from collections import defaultdict
 from copy import deepcopy
-from dataclasses import is_dataclass
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
@@ -309,7 +308,7 @@ class GenerateJsonSchema:
             TypeError: If no method has been defined for generating a JSON schema for a given pydantic core schema type.
         """
         mapping: dict[CoreSchemaOrFieldType, Callable[[CoreSchemaOrField], JsonSchemaValue]] = {}
-        core_schema_types: list[CoreSchemaOrFieldType] = _typing_extra.all_literal_values(
+        core_schema_types: list[CoreSchemaOrFieldType] = _typing_extra.literal_values(
             CoreSchemaOrFieldType  # type: ignore
         )
         for key in core_schema_types:
@@ -1663,6 +1662,8 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
+        from ._internal._dataclasses import is_builtin_dataclass
+
         cls = schema['cls']
         config: ConfigDict = getattr(cls, '__pydantic_config__', cast('ConfigDict', {}))
 
@@ -1672,7 +1673,7 @@ class GenerateJsonSchema:
         self._update_class_schema(json_schema, cls, config)
 
         # Dataclass-specific handling of description
-        if is_dataclass(cls) and not hasattr(cls, '__pydantic_validator__'):
+        if is_builtin_dataclass(cls):
             # vanilla dataclass; don't use cls.__doc__ as it will contain the class signature by default
             description = None
         else:

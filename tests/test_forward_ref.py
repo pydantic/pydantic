@@ -576,19 +576,25 @@ def test_class_var_as_string(create_module):
         # language=Python
         """
 from __future__ import annotations
-from typing import ClassVar
+from typing import ClassVar, ClassVar as CV
+from typing_extensions import Annotated
 from pydantic import BaseModel
 
 class Model(BaseModel):
     a: ClassVar[int]
     _b: ClassVar[int]
     _c: ClassVar[Forward]
+    _d: Annotated[ClassVar[int], ...]
+    _e: CV[int]
+    _f: Annotated[CV[int], ...]
+    # Doesn't work as of today:
+    # _g: CV[Forward]
 
 Forward = int
 """
     )
 
-    assert module.Model.__class_vars__ == {'a', '_b', '_c'}
+    assert module.Model.__class_vars__ == {'a', '_b', '_c', '_d', '_e', '_f'}
     assert module.Model.__private_attributes__ == {}
 
 

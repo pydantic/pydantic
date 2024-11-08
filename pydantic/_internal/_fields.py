@@ -20,7 +20,6 @@ from ._docs_extraction import extract_docstrings_from_cls
 from ._import_utils import import_cached_base_model, import_cached_field_info
 from ._namespace_utils import NsResolver
 from ._repr import Representation
-from ._typing_extra import get_cls_type_hints, is_classvar, is_finalvar
 from ._utils import can_be_positional
 
 if TYPE_CHECKING:
@@ -110,7 +109,7 @@ def collect_model_fields(  # noqa: C901
         if model_fields := getattr(base, '__pydantic_fields__', None):
             parent_fields_lookup.update(model_fields)
 
-    type_hints = get_cls_type_hints(cls, ns_resolver=ns_resolver, lenient=True)
+    type_hints = _typing_extra.get_cls_type_hints(cls, ns_resolver=ns_resolver, lenient=True)
 
     # https://docs.python.org/3/howto/annotations.html#accessing-the-annotations-dict-of-an-object-in-python-3-9-and-older
     # annotations is only used for finding fields in parent classes
@@ -156,7 +155,7 @@ def collect_model_fields(  # noqa: C901
                         f" `model_config['protected_namespaces'] = {valid_namespaces}`.",
                         UserWarning,
                     )
-        if is_classvar(ann_type):
+        if _typing_extra.is_classvar_annotation(ann_type):
             class_vars.add(ann_name)
             continue
         if _is_finalvar_with_default_val(ann_type, getattr(cls, ann_name, PydanticUndefined)):
@@ -260,7 +259,7 @@ def _warn_on_nested_alias_in_annotation(ann_type: type[Any], ann_name: str) -> N
 def _is_finalvar_with_default_val(type_: type[Any], val: Any) -> bool:
     FieldInfo = import_cached_field_info()
 
-    if not is_finalvar(type_):
+    if not _typing_extra.is_finalvar(type_):
         return False
     elif val is PydanticUndefined:
         return False
@@ -299,7 +298,7 @@ def collect_dataclass_fields(
     # although we do it manually as stdlib dataclasses already have annotations
     # collected in each class:
     for base in reversed(cls.__mro__):
-        if not _typing_extra.is_dataclass(base):
+        if not dataclasses.is_dataclass(base):
             continue
 
         with ns_resolver.push(base):
@@ -312,7 +311,7 @@ def collect_dataclass_fields(
                 globalns, localns = ns_resolver.types_namespace
                 ann_type = _typing_extra.eval_type(dataclass_field.type, globalns, localns, lenient=True)
 
-                if is_classvar(ann_type):
+                if _typing_extra.is_classvar_annotation(ann_type):
                     continue
 
                 if (
