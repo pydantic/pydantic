@@ -206,6 +206,9 @@ class _BaseUrl:
     def __deepcopy__(self, memo: dict) -> Self:
         return self.__class__(self._url)
 
+    def __eq__(self, other: Any) -> bool:
+        return (self._url == other._url) and (self.__class__ == other.__class__)
+
     @classmethod
     def build(
         cls,
@@ -358,6 +361,9 @@ class _BaseMultiHostUrl:
 
     def __deepcopy__(self, memo: dict) -> Self:
         return self.__class__(self._url)
+
+    def __eq__(self, other: Any) -> bool:
+        return (self._url == other._url) and (self.__class__ == other.__class__)
 
     @classmethod
     def build(

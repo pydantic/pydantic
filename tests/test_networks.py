@@ -1053,3 +1053,11 @@ def test_specialized_urls() -> None:
     assert http_url2.path == '/something'
     assert http_url2.username is None
     assert http_url2.password is None
+
+
+def test_url_equality() -> None:
+    # works for descendants of _BaseUrl and _BaseMultiHostUrl
+    assert HttpUrl('http://example.com/something') == HttpUrl('http://example.com/something')
+    assert PostgresDsn('postgres://user:pass@localhost:5432/app') == PostgresDsn(
+        'postgres://user:pass@localhost:5432/app'
+    )
