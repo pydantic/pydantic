@@ -42,7 +42,7 @@ jobs:
           enable-cache: true
 
       - name: install deps
-        run: uv sync --python 3.12 --group testing --extra email
+        run: uv sync --python 3.12 --group testing
 
       - run: 'uv run python -c "import pydantic.version; print(pydantic.version.version_info())"'
 
@@ -71,7 +71,7 @@ jobs:
       - name: install
         run: |
           uv sync --python 3.12 --group docs
-          uv run python -m pip install --extra-index-url https://pydantic:${PPPR_TOKEN}@pppr.pydantic.dev/simple/ mkdocs-material
+          uv pip install --default-index https://pydantic:${PPPR_TOKEN}@pppr.pydantic.dev/simple/ mkdocs-material
         env:
           PPPR_TOKEN: ${{ secrets.PPPR_TOKEN }}
 

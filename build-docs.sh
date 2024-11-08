@@ -9,7 +9,6 @@ set -x
 python3 -V
 
 python3 -m pip install --user uv
-python3 -m uv pip install --group docs
 python3 -m uv sync --python 3.12 --group docs --frozen
 python3 -m uv run python -c 'import docs.plugins.main'
 
