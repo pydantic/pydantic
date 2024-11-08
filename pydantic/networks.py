@@ -363,7 +363,7 @@ class _BaseMultiHostUrl:
         return self.__class__(self._url)
 
     def __eq__(self, other: Any) -> bool:
-        return (self._url == other._url) and (self.__class__ == other.__class__)
+        return self.__class__ is other.__class__ and self._url == other._url
 
     @classmethod
     def build(
