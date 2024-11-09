@@ -365,7 +365,7 @@ class TypeAdapter(Generic[T]):
     @_frame_depth(1)
     def validate_json(
         self,
-        data: str | bytes,
+        data: str | bytes | bytearray,
         /,
         *,
         strict: bool | None = None,
