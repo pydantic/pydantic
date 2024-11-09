@@ -5645,7 +5645,8 @@ model as is. You can override this behaviour by setting
 <span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s1">&#39;a&#39;</span><span class="p">)</span>
 <span class="k">assert</span> <span class="n">m</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()</span> <span class="o">==</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
 </code></pre></div>
-<p>If you want this to raise an error, you can achieve this via <code>model_config</code>:</p>
+<p>If you want this to raise an error, you can set the <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.extra"><code>extra</code></a> configuration
+value to <code>'forbid'</code>:</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
@@ -5665,7 +5666,7 @@ model as is. You can override this behaviour by setting
 <span class="sd">      Extra inputs are not permitted [type=extra_forbidden, input_value=&#39;a&#39;, input_type=str]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
-<p>To instead preserve any extra data provided, you can set <code>extra='allow'</code>.
+<p>To instead preserve any extra data provided, you can set <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.extra"><code>extra</code></a> to <code>'allow'</code>.
 The extra fields will then be stored in <code>BaseModel.__pydantic_extra__</code>:</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
 
@@ -5751,7 +5752,7 @@ the type annotation for <code>__pydantic_extra__</code>:</p>
 </div>
 </div>
 </div>
-<p>being treated as an argument to the model's <code>__init__</code> method by type-checkers.</p>
+<p>being included as a parameter to the model's <code>__init__</code> method by type checkers.</p>
 <p>The same configurations apply to <code>TypedDict</code> and <code>dataclass</code>' except the config is controlled by setting the
 <code>__pydantic_config__</code> attribute of the class to a valid <code>ConfigDict</code>.</p>
 
