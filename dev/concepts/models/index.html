@@ -5041,17 +5041,17 @@ This includes extending a base model with extra fields.</p>
 <span class="nb">print</span><span class="p">(</span><span class="n">BarModel</span><span class="o">.</span><span class="n">model_fields</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
 <span class="c1">#&gt; dict_keys([&#39;foo&#39;, &#39;bar&#39;, &#39;apple&#39;, &#39;banana&#39;])</span>
 </code></pre></div>
-<p>You can also add validators by passing a dict to the <code>__validators__</code> argument.</p>
+<p>You can also add validators by passing a dictionary to the <code>__validators__</code> argument.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">create_model</span><span class="p">,</span> <span class="n">field_validator</span>
 
 
-<span class="k">def</span> <span class="nf">username_alphanumeric</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">alphanum</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
     <span class="k">assert</span> <span class="n">v</span><span class="o">.</span><span class="n">isalnum</span><span class="p">(),</span> <span class="s1">&#39;must be alphanumeric&#39;</span>
     <span class="k">return</span> <span class="n">v</span>
 
 
 <span class="n">validators</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s1">&#39;username_validator&#39;</span><span class="p">:</span> <span class="n">field_validator</span><span class="p">(</span><span class="s1">&#39;username&#39;</span><span class="p">)(</span><span class="n">username_alphanumeric</span><span class="p">)</span>
+    <span class="s1">&#39;username_validator&#39;</span><span class="p">:</span> <span class="n">field_validator</span><span class="p">(</span><span class="s1">&#39;username&#39;</span><span class="p">)(</span><span class="n">alphanum</span><span class="p">)</span>  <span class="c1"># (1)!</span>
 <span class="p">}</span>
 
 <span class="n">UserModel</span> <span class="o">=</span> <span class="n">create_model</span><span class="p">(</span>
@@ -5072,12 +5072,17 @@ This includes extending a base model with extra fields.</p>
 <span class="sd">      Assertion failed, must be alphanumeric [type=assertion_error, input_value=&#39;scolvi%n&#39;, input_type=str]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
+<ol>
+<li>Make sure that the validators names do not clash with any of the field names as
+   internally, Pydantic gathers all members into a namespace and mimics the normal
+   creation of a class using the <a href="https://docs.python.org/3/library/types.html#dynamic-type-creation"><code>types</code> module utilities</a>.</li>
+</ol>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>To pickle a dynamically created model:</p>
 <ul>
 <li>the model must be defined globally</li>
-<li>it must provide <code>__module__</code></li>
+<li>the <code>__module__</code> argument must be provided</li>
 </ul>
 </div>
 <h2 id="rootmodel-and-custom-root-types"><code>RootModel</code> and custom root types<a class="headerlink" href="#rootmodel-and-custom-root-types" title="Permanent link">&para;</a></h2>
