@@ -1730,7 +1730,8 @@ m = Model(x=1, y='a')
 assert m.model_dump() == {'x': 1}
 ```
 
-If you want this to raise an error, you can achieve this via `model_config`:
+If you want this to raise an error, you can set the [`extra`][pydantic.ConfigDict.extra] configuration
+value to `'forbid'`:
 
 ```py
 from pydantic import BaseModel, ConfigDict, ValidationError
@@ -1753,7 +1754,7 @@ except ValidationError as exc:
     """
 ```
 
-To instead preserve any extra data provided, you can set `extra='allow'`.
+To instead preserve any extra data provided, you can set [`extra`][pydantic.ConfigDict.extra] to `'allow'`.
 The extra fields will then be stored in `BaseModel.__pydantic_extra__`:
 
 ```py
@@ -1805,7 +1806,7 @@ assert m.__pydantic_extra__ == {'y': 2}
 ```
 
 1. The `= Field(init=False)` does not have any effect at runtime, but prevents the `__pydantic_extra__` field from
-being treated as an argument to the model's `__init__` method by type-checkers.
+   being included as a parameter to the model's `__init__` method by type checkers.
 
 The same configurations apply to `TypedDict` and `dataclass`' except the config is controlled by setting the
 `__pydantic_config__` attribute of the class to a valid `ConfigDict`.
