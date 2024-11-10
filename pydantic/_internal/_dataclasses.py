@@ -6,7 +6,7 @@ import dataclasses
 import typing
 import warnings
 from functools import partial, wraps
-from typing import Any, Callable, ClassVar
+from typing import Any, ClassVar
 
 from pydantic_core import (
     ArgsKwargs,
@@ -29,18 +29,10 @@ from ._schema_generation_shared import CallbackGetCoreSchemaHandler
 from ._signature import generate_pydantic_signature
 
 if typing.TYPE_CHECKING:
-    from dataclasses import Field
+    from _typeshed import DataclassInstance as StandardDataclass
 
     from ..config import ConfigDict
     from ..fields import FieldInfo
-
-    class StandardDataclass(typing.Protocol):
-        __dataclass_fields__: ClassVar[dict[str, Field[Any]]]
-        __dataclass_params__: ClassVar[Any]  # in reality `dataclasses._DataclassParams`
-        __post_init__: ClassVar[Callable[..., None]]
-
-        def __init__(self, *args: object, **kwargs: object) -> None:
-            pass
 
     class PydanticDataclass(StandardDataclass, typing.Protocol):
         """A protocol containing attributes only available once a class has been decorated as a Pydantic dataclass.

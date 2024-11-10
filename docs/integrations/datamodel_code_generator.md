@@ -91,8 +91,8 @@ class Pet(BaseModel):
 
 
 class Person(BaseModel):
-    first_name: str = Field(..., description="The person's first name.")
-    last_name: str = Field(..., description="The person's last name.")
+    first_name: str = Field(description="The person's first name.")
+    last_name: str = Field(description="The person's last name.")
     age: conint(ge=0) | None = Field(None, description='Age in years.')
     pets: list[Pet] | None = None
     comment: Any | None = None

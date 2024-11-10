@@ -1,6 +1,7 @@
 import random
 import sys
 from abc import ABC, abstractmethod
+from functools import cached_property, lru_cache, singledispatchmethod
 from typing import Any, Callable, ClassVar, Generic, List, Tuple, TypeVar
 
 import pytest
@@ -21,13 +22,6 @@ from pydantic import (
 )
 from pydantic.alias_generators import to_camel
 from pydantic.errors import PydanticUserError
-
-try:
-    from functools import cached_property, lru_cache, singledispatchmethod
-except ImportError:
-    cached_property = None
-    lru_cache = None
-    singledispatchmethod = None
 
 
 def test_computed_fields_get():
@@ -181,7 +175,6 @@ def test_computed_fields_del():
     assert user.model_dump() == {'first': '', 'last': '', 'fullname': ' '}
 
 
-@pytest.mark.skipif(cached_property is None, reason='cached_property not available')
 def test_cached_property():
     class Model(BaseModel):
         minimum: int = Field(alias='min')
@@ -211,6 +204,13 @@ def test_cached_property():
     assert rect.model_dump() == {'minimum': 10, 'maximum': 10_000, 'random_number': first_n}
     assert rect.model_dump(by_alias=True) == {'min': 10, 'max': 10_000, 'the magic number': first_n}
     assert rect.model_dump(by_alias=True, exclude={'random_number'}) == {'min': 10, 'max': 10000}
+
+    # `cached_property` is a non-data descriptor, assert that you can assign a value to it:
+    rect2 = Model(min=1, max=1)
+    rect2.cached_property_2 = 1
+    rect2._cached_property_3 = 2
+    assert rect2.cached_property_2 == 1
+    assert rect2._cached_property_3 == 2
 
 
 def test_properties_and_computed_fields():
@@ -257,7 +257,6 @@ def test_computed_fields_repr():
     assert repr(Model(x=2)) == 'Model(x=2, triple=6)'
 
 
-@pytest.mark.skipif(singledispatchmethod is None, reason='singledispatchmethod not available')
 def test_functools():
     class Model(BaseModel, frozen=True):
         x: int

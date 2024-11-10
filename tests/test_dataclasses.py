@@ -1379,13 +1379,13 @@ def test_discriminated_union_basemodel_instance_value():
         'required': ['sub'],
         '$defs': {
             'A': {
-                'properties': {'l': {'const': 'a', 'enum': ['a'], 'title': 'L', 'type': 'string'}},
+                'properties': {'l': {'const': 'a', 'title': 'L', 'type': 'string'}},
                 'required': ['l'],
                 'title': 'A',
                 'type': 'object',
             },
             'B': {
-                'properties': {'l': {'const': 'b', 'enum': ['b'], 'title': 'L', 'type': 'string'}},
+                'properties': {'l': {'const': 'b', 'title': 'L', 'type': 'string'}},
                 'required': ['l'],
                 'title': 'B',
                 'type': 'object',
@@ -2855,7 +2855,7 @@ def test_disallow_init_false_and_init_var_true() -> None:
 
         @pydantic.dataclasses.dataclass
         class Foo:
-            bar: str = Field(..., init=False, init_var=True)
+            bar: str = Field(init=False, init_var=True)
 
 
 def test_annotations_valid_for_field_inheritance() -> None:

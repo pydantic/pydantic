@@ -431,7 +431,7 @@ def test_forward_ref_with_field(create_module):
         Foo = ForwardRef('Foo')
 
         class Foo(BaseModel):
-            c: List[Foo] = Field(..., gt=0)
+            c: List[Foo] = Field(gt=0)
 
         with pytest.raises(TypeError, match=re.escape("Unable to apply constraint 'gt' to supplied value []")):
             Foo(c=[Foo(c=[])])
@@ -446,7 +446,7 @@ from pydantic import BaseModel, Field
 
 
 class Spec(BaseModel):
-    spec_fields: list[str] = Field(..., alias="fields")
+    spec_fields: list[str] = Field(alias="fields")
     filter: str | None = None
     sort: str | None
 
@@ -558,13 +558,13 @@ def test_discriminated_union_forward_ref(create_module):
             'Cat': {
                 'title': 'Cat',
                 'type': 'object',
-                'properties': {'type': {'const': 'cat', 'enum': ['cat'], 'title': 'Type', 'type': 'string'}},
+                'properties': {'type': {'const': 'cat', 'title': 'Type', 'type': 'string'}},
                 'required': ['type'],
             },
             'Dog': {
                 'title': 'Dog',
                 'type': 'object',
-                'properties': {'type': {'const': 'dog', 'enum': ['dog'], 'title': 'Type', 'type': 'string'}},
+                'properties': {'type': {'const': 'dog', 'title': 'Type', 'type': 'string'}},
                 'required': ['type'],
             },
         },
@@ -576,19 +576,25 @@ def test_class_var_as_string(create_module):
         # language=Python
         """
 from __future__ import annotations
-from typing import ClassVar
+from typing import ClassVar, ClassVar as CV
+from typing_extensions import Annotated
 from pydantic import BaseModel
 
 class Model(BaseModel):
     a: ClassVar[int]
     _b: ClassVar[int]
     _c: ClassVar[Forward]
+    _d: Annotated[ClassVar[int], ...]
+    _e: CV[int]
+    _f: Annotated[CV[int], ...]
+    # Doesn't work as of today:
+    # _g: CV[Forward]
 
 Forward = int
 """
     )
 
-    assert module.Model.__class_vars__ == {'a', '_b', '_c'}
+    assert module.Model.__class_vars__ == {'a', '_b', '_c', '_d', '_e', '_f'}
     assert module.Model.__private_attributes__ == {}
 
 

@@ -906,17 +906,16 @@ if TYPE_CHECKING:
 else:
 
     class ImportString:
-        """A type that can be used to import a type from a string.
+        """A type that can be used to import a Python object from a string.
 
         `ImportString` expects a string and loads the Python object importable at that dotted path.
-        Attributes of modules may be separated from the module by `:` or `.`, e.g. if `'math:cos'` was provided,
-        the resulting field value would be the function`cos`. If a `.` is used and both an attribute and submodule
+        Attributes of modules may be separated from the module by `:` or `.`, e.g. if `'math:cos'` is provided,
+        the resulting field value would be the function `cos`. If a `.` is used and both an attribute and submodule
         are present at the same path, the module will be preferred.
 
         On model instantiation, pointers will be evaluated and imported. There is
         some nuance to this behavior, demonstrated in the examples below.
 
-        **Good behavior:**
         ```py
         import math
 
@@ -971,7 +970,7 @@ else:
 
         Serializing an `ImportString` type to json is also possible.
 
-        ```py lint="skip"
+        ```py
         from pydantic import BaseModel, ImportString
 
         class ImportThings(BaseModel):
@@ -2477,9 +2476,11 @@ class EncodedBytes:
         return field_schema
 
     def __get_pydantic_core_schema__(self, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+        schema = handler(source)
+        _check_annotated_type(schema['type'], 'bytes', self.__class__.__name__)
         return core_schema.with_info_after_validator_function(
             function=self.decode,
-            schema=core_schema.bytes_schema(),
+            schema=schema,
             serialization=core_schema.plain_serializer_function_ser_schema(function=self.encode),
         )
 
@@ -2510,7 +2511,7 @@ class EncodedBytes:
 
 
 @_dataclasses.dataclass(**_internal_dataclass.slots_true)
-class EncodedStr(EncodedBytes):
+class EncodedStr:
     """A str type that is encoded and decoded using the specified encoder.
 
     `EncodedStr` needs an encoder that implements `EncoderProtocol` to operate.
@@ -2564,14 +2565,25 @@ class EncodedStr(EncodedBytes):
     ```
     """
 
+    encoder: type[EncoderProtocol]
+
+    def __get_pydantic_json_schema__(
+        self, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+    ) -> JsonSchemaValue:
+        field_schema = handler(core_schema)
+        field_schema.update(type='string', format=self.encoder.get_json_format())
+        return field_schema
+
     def __get_pydantic_core_schema__(self, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+        schema = handler(source)
+        _check_annotated_type(schema['type'], 'str', self.__class__.__name__)
         return core_schema.with_info_after_validator_function(
             function=self.decode_str,
-            schema=super(EncodedStr, self).__get_pydantic_core_schema__(source=source, handler=handler),  # noqa: UP008
+            schema=schema,
             serialization=core_schema.plain_serializer_function_ser_schema(function=self.encode_str),
         )
 
-    def decode_str(self, data: bytes, _: core_schema.ValidationInfo) -> str:
+    def decode_str(self, data: str, _: core_schema.ValidationInfo) -> str:
         """Decode the data using the specified encoder.
 
         Args:
@@ -2580,7 +2592,7 @@ class EncodedStr(EncodedBytes):
         Returns:
             The decoded data.
         """
-        return data.decode()
+        return self.encoder.decode(data.encode()).decode()
 
     def encode_str(self, value: str) -> str:
         """Encode the data using the specified encoder.
@@ -2591,7 +2603,7 @@ class EncodedStr(EncodedBytes):
         Returns:
             The encoded data.
         """
-        return super(EncodedStr, self).encode(value=value.encode()).decode()  # noqa: UP008
+        return self.encoder.encode(value.encode()).decode()  # noqa: UP008
 
     def __hash__(self) -> int:
         return hash(self.encoder)
@@ -2691,7 +2703,7 @@ Warning:
     these methods are considered legacy implementation, and thus, Pydantic v2.10+ now uses the modern
     [`base64.b64encode`][base64.b64encode] and [`base64.b64decode`][base64.b64decode] functions.
 
-    See the [`Base64Bytes`](#pydantic.types.Base64Bytes) type for more information on how to
+    See the [`Base64Bytes`][pydantic.types.Base64Bytes] type for more information on how to
     replicate the old behavior with the legacy encoders / decoders.
 
 ```py

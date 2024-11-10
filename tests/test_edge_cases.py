@@ -24,13 +24,14 @@ from typing import (
 
 import pytest
 from dirty_equals import HasRepr, IsStr
-from pydantic_core import ErrorDetails, InitErrorDetails, PydanticSerializationError, core_schema
-from typing_extensions import Annotated, Literal, TypedDict, get_args
+from pydantic_core import ErrorDetails, InitErrorDetails, PydanticSerializationError, PydanticUndefined, core_schema
+from typing_extensions import Annotated, Literal, TypeAliasType, TypedDict, get_args
 
 from pydantic import (
     BaseModel,
     ConfigDict,
     GetCoreSchemaHandler,
+    PrivateAttr,
     PydanticDeprecatedSince20,
     PydanticSchemaGenerationError,
     RootModel,
@@ -647,15 +648,15 @@ def test_advanced_exclude():
 def test_advanced_exclude_by_alias():
     class SubSubModel(BaseModel):
         a: str
-        aliased_b: str = Field(..., alias='b_alias')
+        aliased_b: str = Field(alias='b_alias')
 
     class SubModel(BaseModel):
-        aliased_c: str = Field(..., alias='c_alias')
-        aliased_d: List[SubSubModel] = Field(..., alias='d_alias')
+        aliased_c: str = Field(alias='c_alias')
+        aliased_d: List[SubSubModel] = Field(alias='d_alias')
 
     class Model(BaseModel):
-        aliased_e: str = Field(..., alias='e_alias')
-        aliased_f: SubModel = Field(..., alias='f_alias')
+        aliased_e: str = Field(alias='e_alias')
+        aliased_f: SubModel = Field(alias='f_alias')
 
     m = Model(
         e_alias='e',
@@ -1394,7 +1395,61 @@ def test_type_on_annotation():
     assert Model.model_fields.keys() == set('abcdefg')
 
 
-def test_annotated_inside_type():
+def test_type_union():
+    class Model(BaseModel):
+        a: Type[Union[str, bytes]]
+        b: Type[Union[Any, str]]
+
+    m = Model(a=bytes, b=int)
+    assert m.model_dump() == {'a': bytes, 'b': int}
+    assert m.a == bytes
+
+
+def test_type_on_none():
+    class Model(BaseModel):
+        a: Type[None]
+
+    Model(a=type(None))
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a=None)
+
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'is_subclass_of',
+            'loc': ('a',),
+            'msg': 'Input should be a subclass of NoneType',
+            'input': None,
+            'ctx': {'class': 'NoneType'},
+        }
+    ]
+
+
+def test_type_on_typealias():
+    Float = TypeAliasType('Float', float)
+
+    class MyFloat(float): ...
+
+    adapter = TypeAdapter(Type[Float])
+
+    adapter.validate_python(float)
+    adapter.validate_python(MyFloat)
+
+    with pytest.raises(ValidationError) as exc_info:
+        adapter.validate_python(str)
+
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'is_subclass_of',
+            'loc': (),
+            'msg': 'Input should be a subclass of float',
+            'input': str,
+            'ctx': {'class': 'float'},
+        }
+    ]
+
+
+def test_type_on_annotated():
     class Model(BaseModel):
         a: Type[Annotated[int, ...]]
 
@@ -1414,7 +1469,7 @@ def test_annotated_inside_type():
     ]
 
 
-def test_assign_type():
+def test_type_assign():
     class Parent:
         def echo(self):
             return 'parent'
@@ -1437,10 +1492,10 @@ def test_assign_type():
         Model(v=Different)
     assert exc_info.value.errors(include_url=False) == [
         {
-            'ctx': {'class': 'test_assign_type.<locals>.Parent'},
-            'input': HasRepr("<class 'tests.test_edge_cases.test_assign_type.<locals>.Different'>"),
+            'ctx': {'class': Parent.__qualname__},
+            'input': HasRepr(repr(Different)),
             'loc': ('v',),
-            'msg': 'Input should be a subclass of test_assign_type.<locals>.Parent',
+            'msg': f'Input should be a subclass of {Parent.__qualname__}',
             'type': 'is_subclass_of',
         }
     ]
@@ -1507,7 +1562,7 @@ def test_validated_optional_subfields():
 
 def test_optional_field_constraints():
     class MyModel(BaseModel):
-        my_int: Optional[int] = Field(..., ge=3)
+        my_int: Optional[int] = Field(ge=3)
 
     with pytest.raises(ValidationError) as exc_info:
         MyModel(my_int=2)
@@ -1843,6 +1898,24 @@ def test_required_optional():
         },
         {'input': {'nullable1': 'some text'}, 'loc': ('nullable2',), 'msg': 'Field required', 'type': 'missing'},
     ]
+
+
+def test_ellipsis_forward_ref_annotated() -> None:
+    """This previously resulted in the ellipsis being used as a default value."""
+
+    class Model(BaseModel):
+        f: 'Forward'
+
+    Forward = Annotated[int, Field(...)]
+
+    assert Model.model_fields['f'].default is PydanticUndefined
+
+
+def test_private_attr_ellipsis() -> None:
+    class Model(BaseModel):
+        _a: int = PrivateAttr(...)
+
+    assert not hasattr(Model(), '_a')
 
 
 def test_required_any():
@@ -2236,7 +2309,7 @@ def test_iter_coverage():
 def test_frozen_config_and_field():
     class Foo(BaseModel):
         model_config = ConfigDict(frozen=False, validate_assignment=True)
-        a: str = Field(...)
+        a: str
 
     assert Foo.model_fields['a'].metadata == []
 
@@ -2246,7 +2319,7 @@ def test_frozen_config_and_field():
 
     class Bar(BaseModel):
         model_config = ConfigDict(validate_assignment=True)
-        a: str = Field(..., frozen=True)
+        a: str = Field(frozen=True)
         c: Annotated[str, Field(frozen=True)]
 
     assert Bar.model_fields['a'].frozen
@@ -2618,16 +2691,6 @@ def test_union_literal_with_other_type(literal_type, other_type, data, json_valu
     assert m.model_dump_json() == f'{{"value":{json_value},"value_types_reversed":{json_value_reversed}}}'
 
 
-def test_type_union():
-    class Model(BaseModel):
-        a: Type[Union[str, bytes]]
-        b: Type[Union[Any, str]]
-
-    m = Model(a=bytes, b=int)
-    assert m.model_dump() == {'a': bytes, 'b': int}
-    assert m.a == bytes
-
-
 def test_model_repr_before_validation():
     log = []
 
@@ -2735,7 +2798,7 @@ def test_recursive_root_models_in_discriminated_union():
         '$defs': {
             'Model1': {
                 'properties': {
-                    'kind': {'const': '1', 'default': '1', 'enum': ['1'], 'title': 'Kind', 'type': 'string'},
+                    'kind': {'const': '1', 'default': '1', 'title': 'Kind', 'type': 'string'},
                     'two': {'anyOf': [{'$ref': '#/$defs/Model2'}, {'type': 'null'}]},
                 },
                 'required': ['two'],
@@ -2744,7 +2807,7 @@ def test_recursive_root_models_in_discriminated_union():
             },
             'Model2': {
                 'properties': {
-                    'kind': {'const': '2', 'default': '2', 'enum': ['2'], 'title': 'Kind', 'type': 'string'},
+                    'kind': {'const': '2', 'default': '2', 'title': 'Kind', 'type': 'string'},
                     'one': {'anyOf': [{'$ref': '#/$defs/Model1'}, {'type': 'null'}]},
                 },
                 'required': ['one'],

@@ -157,7 +157,7 @@ Models possess the following methods and attributes:
 * [`model_extra`][pydantic.main.BaseModel.model_extra]: The extra fields set during validation.
 * [`model_fields_set`][pydantic.main.BaseModel.model_fields_set]: The set of fields which were explicitly provided when the model was initialized.
 * [`model_parametrized_name()`][pydantic.main.BaseModel.model_parametrized_name]: Computes the class name for parametrizations of generic classes.
-* [`model_post_init()`][pydantic.main.BaseModel.model_post_init]: Performs additional actions after the model is initialized and all field validators are applied.
+* [`model_post_init()`][pydantic.main.BaseModel.model_post_init]: Performs additional actions after the model is instantiated and all field validators are applied.
 * [`model_rebuild()`][pydantic.main.BaseModel.model_rebuild]: Rebuilds the model schema, which also supports building recursive generic models.
     See [Rebuilding model schema](#rebuilding-model-schema).
 
@@ -207,13 +207,14 @@ print(m.model_dump())
 """
 ```
 
-Self-referencing models are supported. For more details, see [postponed annotations](postponed_annotations.md#self-referencing-or-recursive-models).
+Self-referencing models are supported. For more details, see  the documentation related to
+[forward annotations](forward_annotations.md#self-referencing-or-recursive-models).
 
 ## Rebuilding model schema
 
 When you define a model class in your code, Pydantic will analyze the body of the class to collect a variety of information
 required to perform validation and serialization, gathered in a core schema. Notably, the model's type annotations are evaluated to
-understand the valid types for each field (more information can be found in the [Architecture](../architecture.md) documentation).
+understand the valid types for each field (more information can be found in the [Architecture](../internals/architecture.md) documentation).
 However, it might be the case that annotations refer to symbols not defined when the model class is being created.
 To circumvent this issue, the [`model_rebuild()`][pydantic.main.BaseModel.model_rebuild] method can be used:
 
@@ -254,9 +255,7 @@ print(Foo.model_json_schema())
 ```
 
 1. `Bar` is not yet defined when the `Foo` class is being created. For this reason,
-   a [string annotation](https://typing.readthedocs.io/en/latest/spec/annotations.html#string-annotations)
-   is being used. Alternatively, postponed annotations can be used with the `from __future__ import annotations` import
-   (see [PEP 563](https://peps.python.org/pep-0563/)).
+    a [forward annotation](forward_annotations.md) is being used.
 
 Pydantic tries to determine when this is necessary automatically and error if it wasn't done, but you may want to
 call [`model_rebuild()`][pydantic.main.BaseModel.model_rebuild] proactively when dealing with recursive models or generics.
@@ -773,12 +772,6 @@ Order(id=1, product=ResponseModel[Product](content=Product(name='Apple', price=0
 """
 ```
 
-!!! tip
-    When using a parametrized generic model as a type in another model (like `product: ResponseModel[Product]`),
-    make sure to parametrize said generic model when you initialize the model instance
-    (like `response = ResponseModel[Product](content=product)`). If you don't, a [`ValidationError`][pydantic_core.ValidationError]
-    will be raised, as Pydantic doesn't infer the type of the generic model based on the data passed to it.
-
 Using the same type variable in nested models allows you to enforce typing relationships at different points in your model:
 
 ```py
@@ -802,18 +795,19 @@ nested = InnerT[int](inner=1)
 print(OuterT[int](outer=1, nested=nested))
 #> outer=1 nested=InnerT[int](inner=1)
 try:
-    nested = InnerT[str](inner='a')
-    print(OuterT[int](outer='a', nested=nested))
+    print(OuterT[int](outer='a', nested=InnerT(inner='a')))  # (1)!
 except ValidationError as e:
     print(e)
     """
     2 validation errors for OuterT[int]
     outer
       Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='a', input_type=str]
-    nested
-      Input should be a valid dictionary or instance of InnerT[int] [type=model_type, input_value=InnerT[str](inner='a'), input_type=InnerT[str]]
+    nested.inner
+      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='a', input_type=str]
     """
 ```
+
+1. The `OuterT` model is parametrized with `int`, but the data associated with the the `T` annotations during validation is of type `str`, leading to validation errors.
 
 !!! warning
     While it may not raise an error, we strongly advise against using parametrized generics in [`isinstance()`](https://docs.python.org/3/library/functions.html#isinstance) checks.
@@ -826,6 +820,68 @@ except ValidationError as e:
     class MyIntModel(MyGenericModel[int]): ...
 
     isinstance(my_model, MyIntModel)
+    ```
+
+!!! note "Implementation Details"
+    When using nested generic models, Pydantic sometimes performs revalidation in an attempt to produce the most intuitive validation result.
+    Specifically, if you have a field of type `GenericModel[SomeType]` and you validate data like `GenericModel[SomeCompatibleType]` against this field,
+    we will inspect the data, recognize that the input data is sort of a "loose" subclass of `GenericModel`, and revalidate the contained `SomeCompatibleType` data.
+
+    This adds some validation overhead, but makes things more intuitive for cases like that shown below.
+
+    ```py
+    from typing import Any, Generic, TypeVar
+
+    from pydantic import BaseModel
+
+    T = TypeVar('T')
+
+
+    class GenericModel(BaseModel, Generic[T]):
+        a: T
+
+
+    class Model(BaseModel):
+        inner: GenericModel[Any]
+
+
+    print(repr(Model.model_validate(Model(inner=GenericModel[int](a=1)))))
+    #> Model(inner=GenericModel[Any](a=1))
+    ```
+
+    Note, validation will still fail if you, for example are validating against `GenericModel[int]` and pass in an instance `GenericModel[str](a='not an int')`.
+
+    It's also worth noting that this pattern will re-trigger any custom validation as well, like additional model validators and the like.
+    Validators will be called once on the first pass, validating directly against `GenericModel[Any]`. That validation fails, as `GenericModel[int]` is not a subclass of `GenericModel[Any]`. This relates to the warning above about the complications of using parametrized generics in `isinstance()` and `issubclass()` checks.
+    Then, the validators will be called again on the second pass, during more lax force-revalidation phase, which succeeds.
+    To better understand this consequence, see below:
+
+    ```py test="skip"
+    from typing import Any, Generic, Self, TypeVar
+
+    from pydantic import BaseModel, model_validator
+
+    T = TypeVar('T')
+
+
+    class GenericModel(BaseModel, Generic[T]):
+        a: T
+
+        @model_validator(mode='after')
+        def validate_after(self: Self) -> Self:
+            print('after validator running custom validation...')
+            return self
+
+
+    class Model(BaseModel):
+        inner: GenericModel[Any]
+
+
+    m = Model.model_validate(Model(inner=GenericModel[int](a=1)))
+    #> after validator running custom validation...
+    #> after validator running custom validation...
+    print(repr(m))
+    #> Model(inner=GenericModel[Any](a=1))
     ```
 
 ### Validation of unparametrized type variables
@@ -1097,12 +1153,12 @@ from pydantic import BaseModel, Field, create_model
 
 DynamicModel = create_model(
     'DynamicModel',
-    foo=(str, Field(..., description='foo description', alias='FOO')),
+    foo=(str, Field(description='foo description', alias='FOO')),
 )
 
 
 class StaticModel(BaseModel):
-    foo: str = Field(..., description='foo description', alias='FOO')
+    foo: str = Field(description='foo description', alias='FOO')
 ```
 
 The special keyword arguments `__config__` and `__base__` can be used to customize the new model.
@@ -1129,19 +1185,19 @@ print(BarModel.model_fields.keys())
 #> dict_keys(['foo', 'bar', 'apple', 'banana'])
 ```
 
-You can also add validators by passing a dict to the `__validators__` argument.
+You can also add validators by passing a dictionary to the `__validators__` argument.
 
 ```py rewrite_assert="false"
 from pydantic import ValidationError, create_model, field_validator
 
 
-def username_alphanumeric(cls, v):
+def alphanum(cls, v):
     assert v.isalnum(), 'must be alphanumeric'
     return v
 
 
 validators = {
-    'username_validator': field_validator('username')(username_alphanumeric)
+    'username_validator': field_validator('username')(alphanum)  # (1)!
 }
 
 UserModel = create_model(
@@ -1163,11 +1219,16 @@ except ValidationError as e:
     """
 ```
 
+1. Make sure that the validators names do not clash with any of the field names as
+   internally, Pydantic gathers all members into a namespace and mimics the normal
+   creation of a class using the [`types` module utilities](https://docs.python.org/3/library/types.html#dynamic-type-creation).
+
+
 !!! note
     To pickle a dynamically created model:
 
     - the model must be defined globally
-    - it must provide `__module__`
+    - the `__module__` argument must be provided
 
 ## `RootModel` and custom root types
 
@@ -1360,12 +1421,8 @@ print(error_locations)
 
 ## Required fields
 
-To declare a field as required, you may declare it using an annotation, or an annotation in combination with a `Field` specification.
-You may also use `Ellipsis`/`...` to emphasize that a field is required, especially when using the `Field` constructor.
-
-The [`Field`](fields.md) function is primarily used to configure settings like `alias` or `description` for an attribute.
-The constructor supports `Ellipsis`/`...` as the sole positional argument.
-This is used as a way to indicate that said field is mandatory, though it's the type hint that enforces this requirement.
+To declare a field as required, you may declare it using an annotation, or an annotation in combination with a
+[`Field`][pydantic.Field] function (without specifying any `default` or `default_factory` argument).
 
 ```py
 from pydantic import BaseModel, Field
@@ -1373,12 +1430,13 @@ from pydantic import BaseModel, Field
 
 class Model(BaseModel):
     a: int
-    b: int = ...
+    b: int = Field(alias='B')
     c: int = Field(..., alias='C')
 ```
 
-Here `a`, `b` and `c` are all required. However, this use of `b: int = ...` does not work properly with
-[mypy](../integrations/mypy.md), and as of **v1.0** should be avoided in most cases.
+Here `a`, `b` and `c` are all required. The field `c` uses the [ellipsis][Ellipsis] as a default argument,
+emphasizing on the fact that it is required. However, the usage of the [ellipsis][Ellipsis] is discouraged
+as it doesn't play well with type checkers.
 
 !!! note
     In Pydantic V1, fields annotated with `Optional` or `Any` would be given an implicit default of `None` even if no
@@ -1677,7 +1735,8 @@ m = Model(x=1, y='a')
 assert m.model_dump() == {'x': 1}
 ```
 
-If you want this to raise an error, you can achieve this via `model_config`:
+If you want this to raise an error, you can set the [`extra`][pydantic.ConfigDict.extra] configuration
+value to `'forbid'`:
 
 ```py
 from pydantic import BaseModel, ConfigDict, ValidationError
@@ -1700,7 +1759,7 @@ except ValidationError as exc:
     """
 ```
 
-To instead preserve any extra data provided, you can set `extra='allow'`.
+To instead preserve any extra data provided, you can set [`extra`][pydantic.ConfigDict.extra] to `'allow'`.
 The extra fields will then be stored in `BaseModel.__pydantic_extra__`:
 
 ```py
@@ -1752,7 +1811,7 @@ assert m.__pydantic_extra__ == {'y': 2}
 ```
 
 1. The `= Field(init=False)` does not have any effect at runtime, but prevents the `__pydantic_extra__` field from
-being treated as an argument to the model's `__init__` method by type-checkers.
+   being included as a parameter to the model's `__init__` method by type checkers.
 
 The same configurations apply to `TypedDict` and `dataclass`' except the config is controlled by setting the
 `__pydantic_config__` attribute of the class to a valid `ConfigDict`.

@@ -12,10 +12,11 @@ from typing import (
 
 from pydantic_core import CoreSchema, core_schema
 from pydantic_core import validate_core_schema as _validate_core_schema
-from typing_extensions import TypeAliasType, TypeGuard, get_args, get_origin
+from typing_extensions import TypeGuard, get_args, get_origin
 
 from . import _repr
-from ._typing_extra import is_generic_alias
+from ._core_metadata import CoreMetadata
+from ._typing_extra import is_generic_alias, is_type_alias_type
 
 AnyFunctionSchema = Union[
     core_schema.AfterValidatorFunctionSchema,
@@ -43,10 +44,6 @@ _LIST_LIKE_SCHEMA_WITH_ITEMS_TYPES = {'list', 'set', 'frozenset'}
 TAGGED_UNION_TAG_KEY = 'pydantic.internal.tagged_union_tag'
 """
 Used in a `Tag` schema to specify the tag used for a discriminated union.
-"""
-HAS_INVALID_SCHEMAS_METADATA_KEY = 'pydantic.internal.invalid'
-"""Used to mark a schema that is invalid because it refers to a definition that was not yet defined when the
-schema was first encountered.
 """
 
 
@@ -89,7 +86,7 @@ def get_type_ref(type_: type[Any], args_override: tuple[type[Any], ...] | None =
         args = generic_metadata['args'] or args
 
     module_name = getattr(origin, '__module__', '<No __module__>')
-    if isinstance(origin, TypeAliasType):
+    if is_type_alias_type(origin):
         type_ref = f'{module_name}.{origin.__name__}:{id(origin)}'
     else:
         try:
@@ -146,10 +143,7 @@ def define_expected_missing_refs(
     expected_missing_refs = allowed_missing_refs.difference(refs)
     if expected_missing_refs:
         definitions: list[core_schema.CoreSchema] = [
-            # TODO: Replace this with a (new) CoreSchema that, if present at any level, makes validation fail
-            #   Issue: https://github.com/pydantic/pydantic-core/issues/619
-            core_schema.none_schema(ref=ref, metadata={HAS_INVALID_SCHEMAS_METADATA_KEY: True})
-            for ref in expected_missing_refs
+            core_schema.invalid_schema(ref=ref) for ref in expected_missing_refs
         ]
         return core_schema.definitions_schema(schema, definitions)
     return None
@@ -160,11 +154,11 @@ def collect_invalid_schemas(schema: core_schema.CoreSchema) -> bool:
 
     def _is_schema_valid(s: core_schema.CoreSchema, recurse: Recurse) -> core_schema.CoreSchema:
         nonlocal invalid
-        if 'metadata' in s:
-            metadata = s['metadata']
-            if HAS_INVALID_SCHEMAS_METADATA_KEY in metadata:
-                invalid = metadata[HAS_INVALID_SCHEMAS_METADATA_KEY]
-                return s
+
+        if s['type'] == 'invalid':
+            invalid = True
+            return s
+
         return recurse(s, _is_schema_valid)
 
     walk_core_schema(schema, _is_schema_valid, copy=False)
@@ -487,11 +481,11 @@ def simplify_schema_references(schema: core_schema.CoreSchema) -> core_schema.Co
             return False
         if 'metadata' in s:
             metadata = s['metadata']
-            for k in (
-                'pydantic_js_functions',
-                'pydantic_js_annotation_functions',
+            for k in [
+                *CoreMetadata.__annotations__.keys(),
                 'pydantic.internal.union_discriminator',
-            ):
+                'pydantic.internal.tagged_union_tag',
+            ]:
                 if k in metadata:
                     # we need to keep this as a ref
                     return False

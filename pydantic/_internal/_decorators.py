@@ -17,6 +17,7 @@ from ._core_utils import get_type_ref
 from ._internal_dataclass import slots_true
 from ._namespace_utils import GlobalsNamespace, MappingNamespace
 from ._typing_extra import get_function_type_hints
+from ._utils import can_be_positional
 
 if TYPE_CHECKING:
     from ..fields import ComputedFieldInfo
@@ -803,12 +804,8 @@ def count_positional_required_params(sig: Signature) -> int:
         # First argument is the value being validated/serialized, and can have a default value
         # (e.g. `float`, which has signature `(x=0, /)`). We assume other parameters (the info arg
         # for instance) should be required, and thus without any default value.
-        and (param.default is Parameter.empty or param == parameters[0])
+        and (param.default is Parameter.empty or param is parameters[0])
     )
-
-
-def can_be_positional(param: Parameter) -> bool:
-    return param.kind in (Parameter.POSITIONAL_ONLY, Parameter.POSITIONAL_OR_KEYWORD)
 
 
 def ensure_property(f: Any) -> Any:

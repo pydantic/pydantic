@@ -20,7 +20,10 @@ print(user)
 #> name='John Doe'
 ```
 
-You can also use `default_factory` to define a callable that will be called to generate a default value.
+!!! note
+    If you use the [`Optional`][typing.Optional] annotation, it doesn't mean that the field has a default value of `None`!
+
+You can also use `default_factory` (but not both at the same time) to define a callable that will be called to generate a default value.
 
 ```py
 from uuid import uuid4
@@ -32,11 +35,25 @@ class User(BaseModel):
     id: str = Field(default_factory=lambda: uuid4().hex)
 ```
 
-!!! info
-    The `default` and `default_factory` parameters are mutually exclusive.
+The default factory can also take a single required argument, in which the case the already validated data will be passed as a dictionary.
 
-!!! note
-    If you use `typing.Optional`, it doesn't mean that the field has a default value of `None`!
+```py
+from pydantic import BaseModel, EmailStr, Field
+
+
+class User(BaseModel):
+    email: EmailStr
+    username: str = Field(default_factory=lambda data: data['email'])
+
+
+user = User(email='user@example.com')
+print(user.username)
+#> user@example.com
+```
+
+The `data` argument will *only* contain the already validated data, based on the [order of model fields](./models.md#field-ordering)
+(the above example would fail if `username` were to be defined before `email`).
+
 
 ## Using `Annotated`
 
@@ -65,9 +82,9 @@ For validation and serialization, you can define an alias for a field.
 
 There are three ways to define an alias:
 
-* `Field(..., alias='foo')`
-* `Field(..., validation_alias='foo')`
-* `Field(..., serialization_alias='foo')`
+* `Field(alias='foo')`
+* `Field(validation_alias='foo')`
+* `Field(serialization_alias='foo')`
 
 The `alias` parameter is used for both validation _and_ serialization. If you want to use
 _different_ aliases for validation and serialization respectively, you can use the`validation_alias`
@@ -80,7 +97,7 @@ from pydantic import BaseModel, Field
 
 
 class User(BaseModel):
-    name: str = Field(..., alias='username')
+    name: str = Field(alias='username')
 
 
 user = User(username='johndoe')  # (1)!
@@ -107,7 +124,7 @@ from pydantic import BaseModel, Field
 
 
 class User(BaseModel):
-    name: str = Field(..., validation_alias='username')
+    name: str = Field(validation_alias='username')
 
 
 user = User(username='johndoe')  # (1)!
@@ -127,7 +144,7 @@ from pydantic import BaseModel, Field
 
 
 class User(BaseModel):
-    name: str = Field(..., serialization_alias='username')
+    name: str = Field(serialization_alias='username')
 
 
 user = User(name='johndoe')  # (1)!
@@ -158,7 +175,7 @@ print(user.model_dump(by_alias=True))  # (2)!
 
 
     class User(BaseModel):
-        name: str = Field(..., alias='username')
+        name: str = Field(alias='username')
 
 
     user = User(username='johndoe')  # (1)!
@@ -177,7 +194,7 @@ print(user.model_dump(by_alias=True))  # (2)!
     class User(BaseModel):
         model_config = ConfigDict(populate_by_name=True)
 
-        name: str = Field(..., alias='username')
+        name: str = Field(alias='username')
 
 
     user = User(name='johndoe')  # (1)!
@@ -195,7 +212,7 @@ print(user.model_dump(by_alias=True))  # (2)!
     class User(BaseModel):
         model_config = ConfigDict(populate_by_name=True)
 
-        name: str = Field(..., alias=str('username'))  # noqa: UP018
+        name: str = Field(alias=str('username'))  # noqa: UP018
 
 
     user = User(name='johndoe')  # (1)!
@@ -219,7 +236,7 @@ print(user.model_dump(by_alias=True))  # (2)!
 
 
     class MyModel(BaseModel):
-        my_field: int = Field(..., validation_alias='myValidationAlias')
+        my_field: int = Field(validation_alias='myValidationAlias')
     ```
     with:
     ```py
@@ -805,7 +822,7 @@ Read more about JSON schema customization / modification with fields in the [Cus
 
 The [`computed_field`][pydantic.fields.computed_field] decorator can be used to include [`property`][] or
 [`cached_property`][functools.cached_property] attributes when serializing a model or dataclass.
-The property will also be taken into account in the JSON Schema.
+The property will also be taken into account in the JSON Schema (in serialization mode).
 
 !!! note
     Properties can be useful for fields that are computed from other fields, or for fields that
@@ -814,7 +831,40 @@ The property will also be taken into account in the JSON Schema.
     However, note that Pydantic will *not* perform any additional logic on the wrapped property
     (validation, cache invalidation, etc.).
 
-Here's an example:
+Here's an example of the JSON schema (in serialization mode) generated for a model with a computed field:
+
+```py
+from pydantic import BaseModel, computed_field
+
+
+class Box(BaseModel):
+    width: float
+    height: float
+    depth: float
+
+    @computed_field
+    @property  # (1)!
+    def volume(self) -> float:
+        return self.width * self.height * self.depth
+
+
+print(Box.model_json_schema(mode='serialization'))
+"""
+{
+    'properties': {
+        'width': {'title': 'Width', 'type': 'number'},
+        'height': {'title': 'Height', 'type': 'number'},
+        'depth': {'title': 'Depth', 'type': 'number'},
+        'volume': {'readOnly': True, 'title': 'Volume', 'type': 'number'},
+    },
+    'required': ['width', 'height', 'depth', 'volume'],
+    'title': 'Box',
+    'type': 'object',
+}
+"""
+```
+
+Here's an example using the `model_dump` method with a computed field:
 
 ```py
 from pydantic import BaseModel, computed_field

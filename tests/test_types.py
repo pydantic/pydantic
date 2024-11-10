@@ -392,7 +392,7 @@ def test_constrained_list_item_type_fails():
 
 def test_conlist():
     class Model(BaseModel):
-        foo: List[int] = Field(..., min_length=2, max_length=4)
+        foo: List[int] = Field(min_length=2, max_length=4)
         bar: conlist(str, min_length=1, max_length=4) = None
 
     assert Model(foo=[1, 2], bar=['spoon']).model_dump() == {'foo': [1, 2], 'bar': ['spoon']}
@@ -607,7 +607,7 @@ def test_constrained_set_item_type_fails():
 
 def test_conset():
     class Model(BaseModel):
-        foo: Set[int] = Field(..., min_length=2, max_length=4)
+        foo: Set[int] = Field(min_length=2, max_length=4)
         bar: conset(str, min_length=1, max_length=4) = None
 
     assert Model(foo=[1, 2], bar=['spoon']).model_dump() == {'foo': {1, 2}, 'bar': {'spoon'}}
@@ -656,7 +656,7 @@ def test_conset_not_required():
 
 def test_confrozenset():
     class Model(BaseModel):
-        foo: FrozenSet[int] = Field(..., min_length=2, max_length=4)
+        foo: FrozenSet[int] = Field(min_length=2, max_length=4)
         bar: confrozenset(str, min_length=1, max_length=4) = None
 
     m = Model(foo=[1, 2], bar=['spoon'])
@@ -2809,7 +2809,7 @@ def test_strict_bytes():
 
 def test_strict_bytes_max_length():
     class Model(BaseModel):
-        u: StrictBytes = Field(..., max_length=5)
+        u: StrictBytes = Field(max_length=5)
 
     assert Model(u=b'foo').u == b'foo'
 
@@ -2842,7 +2842,7 @@ def test_strict_str():
 
 def test_strict_str_max_length():
     class Model(BaseModel):
-        u: StrictStr = Field(..., max_length=5)
+        u: StrictStr = Field(max_length=5)
 
     assert Model(u='foo').u == 'foo'
 
@@ -3085,11 +3085,11 @@ def test_uuid_strict() -> None:
         model_config = ConfigDict(strict=True)
 
     class StrictByField(BaseModel):
-        a: UUID1 = Field(..., strict=True)
-        b: UUID3 = Field(..., strict=True)
-        c: UUID4 = Field(..., strict=True)
-        d: UUID5 = Field(..., strict=True)
-        e: uuid.UUID = Field(..., strict=True)
+        a: UUID1 = Field(strict=True)
+        b: UUID3 = Field(strict=True)
+        c: UUID4 = Field(strict=True)
+        d: UUID5 = Field(strict=True)
+        e: uuid.UUID = Field(strict=True)
 
     a = uuid.UUID('7fb48116-ca6b-11ed-a439-3274d3adddac')  # uuid1
     b = uuid.UUID('6fa459ea-ee8a-3ca4-894e-db77e160355e')  # uuid3
@@ -4206,7 +4206,7 @@ def test_compiled_pattern_in_field(use_field):
     if use_field:
 
         class Foobar(BaseModel):
-            str_regex: str = Field(..., pattern=field_pattern)
+            str_regex: str = Field(pattern=field_pattern)
     else:
 
         class Foobar(BaseModel):
@@ -5295,20 +5295,20 @@ def test_none_literal():
         'title': 'Model',
         'type': 'object',
         'properties': {
-            'my_none': {'const': None, 'enum': [None], 'title': 'My None', 'type': 'null'},
+            'my_none': {'const': None, 'title': 'My None', 'type': 'null'},
             'my_none_list': {
-                'items': {'const': None, 'enum': [None], 'type': 'null'},
+                'items': {'const': None, 'type': 'null'},
                 'title': 'My None List',
                 'type': 'array',
             },
             'my_none_dict': {
-                'additionalProperties': {'const': None, 'enum': [None], 'type': 'null'},
+                'additionalProperties': {'const': None, 'type': 'null'},
                 'title': 'My None Dict',
                 'type': 'object',
             },
             'my_json_none': {
                 'contentMediaType': 'application/json',
-                'contentSchema': {'const': None, 'enum': [None], 'type': 'null'},
+                'contentSchema': {'const': None, 'type': 'null'},
                 'title': 'My Json None',
                 'type': 'string',
             },
@@ -6918,9 +6918,9 @@ def test_constraints_on_str_like() -> None:
         pytest.param(True, FailFast(), id='fail-fast-default'),
         pytest.param(True, FailFast(True), id='fail-fast-true'),
         pytest.param(False, FailFast(False), id='fail-fast-false'),
-        pytest.param(False, Field(...), id='field-default'),
-        pytest.param(True, Field(..., fail_fast=True), id='field-true'),
-        pytest.param(False, Field(..., fail_fast=False), id='field-false'),
+        pytest.param(False, Field(), id='field-default'),
+        pytest.param(True, Field(fail_fast=True), id='field-true'),
+        pytest.param(False, Field(fail_fast=False), id='field-false'),
     ],
 )
 def test_fail_fast(tp, fail_fast, decl) -> None:
@@ -7045,3 +7045,17 @@ def test_annotated_metadata_any_order() -> None:
         BeforeValidatorBeforeLe(v=366)
     except ValueError as ex:
         assert 'datetime.timedelta(days=365)' in str(ex)
+
+
+@pytest.mark.parametrize('base64_type', [Base64Bytes, Base64Str, Base64UrlBytes, Base64UrlStr])
+def test_base64_with_invalid_min_length(base64_type) -> None:
+    """Check that an error is raised when the length of the base64 type's value is less or more than the min_length and max_length."""
+
+    class Model(BaseModel):
+        base64_value: base64_type = Field(min_length=3, max_length=5)  # type: ignore
+
+    with pytest.raises(ValidationError):
+        Model(**{'base64_value': b''})
+
+    with pytest.raises(ValidationError):
+        Model(**{'base64_value': b'123456'})

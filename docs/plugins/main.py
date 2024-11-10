@@ -40,8 +40,29 @@ def on_pre_build(config: Config) -> None:
     """
     Before the build starts.
     """
+    import mkdocs_redirects.plugin
+
     add_changelog()
     add_mkdocs_run_deps()
+
+    # work around for very unfortunate bug in mkdocs-redirects:
+    # https://github.com/mkdocs/mkdocs-redirects/issues/65
+    mkdocs_redirects.plugin.HTML_TEMPLATE = """
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Redirecting...</title>
+    <link rel="canonical" href="{url}">
+    <!-- remove problematic tag here -->
+    <script>var anchor=window.location.hash.substr(1);location.href="{url}"+(anchor?"#"+anchor:"")</script>
+    <meta http-equiv="refresh" content="0; url={url}">
+</head>
+<body>
+Redirecting...
+</body>
+</html>
+"""
 
 
 def on_files(files: Files, config: Config) -> Files:
@@ -94,13 +115,20 @@ def add_changelog() -> None:
 def add_mkdocs_run_deps() -> None:
     # set the pydantic, pydantic-core, pydantic-extra-types versions to configure for running examples in the browser
     pyproject_toml = (PROJECT_ROOT / 'pyproject.toml').read_text()
-    pydantic_core_version = re.search(r'pydantic-core==(.+?)["\']', pyproject_toml).group(1)
+    m = re.search(r'pydantic-core==(.+?)["\']', pyproject_toml)
+    if not m:
+        logger.info(
+            "Could not find pydantic-core version in pyproject.toml, this is expected if you're using a git ref"
+        )
+        return
+
+    pydantic_core_version = m.group(1)
 
     version_py = (PROJECT_ROOT / 'pydantic' / 'version.py').read_text()
     pydantic_version = re.search(r'^VERSION ?= (["\'])(.+)\1', version_py, flags=re.M).group(2)
 
-    pdm_lock = (PROJECT_ROOT / 'pdm.lock').read_text()
-    pydantic_extra_types_version = re.search(r'name = "pydantic-extra-types"\nversion = "(.+?)"', pdm_lock).group(1)
+    uv_lock = (PROJECT_ROOT / 'uv.lock').read_text()
+    pydantic_extra_types_version = re.search(r'name = "pydantic-extra-types"\nversion = "(.+?)"', uv_lock).group(1)
 
     mkdocs_run_deps = json.dumps(
         [
@@ -162,7 +190,7 @@ def upgrade_python(markdown: str) -> str:
         else:
             return '\n\n'.join(output)
 
-    return re.sub(r'^(``` *py.*?)\n(.+?)^```(\s+(?:^\d+\. .+?\n)+)', add_tabs, markdown, flags=re.M | re.S)
+    return re.sub(r'^(``` *py.*?)\n(.+?)^```(\s+(?:^\d+\. .+?\n)*)', add_tabs, markdown, flags=re.M | re.S)
 
 
 def _upgrade_code(code: str, min_version: int) -> str:

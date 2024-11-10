@@ -8,6 +8,7 @@ import types
 import typing
 import warnings
 from copy import copy, deepcopy
+from functools import cached_property
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -326,7 +327,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                     fields_values[name] = values.pop(name)
                     fields_set.add(name)
                 elif not field.is_required():
-                    fields_values[name] = field.get_default(call_default_factory=True)
+                    fields_values[name] = field.get_default(call_default_factory=True, validated_data=fields_values)
         if _fields_set is None:
             _fields_set = fields_set
 
@@ -351,7 +352,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         return m
 
-    def model_copy(self, *, update: dict[str, Any] | None = None, deep: bool = False) -> Self:
+    def model_copy(self, *, update: Mapping[str, Any] | None = None, deep: bool = False) -> Self:
         """Usage docs: https://docs.pydantic.dev/2.10/concepts/serialization/#model_copy
 
         Returns a copy of the model.
@@ -759,7 +760,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         _generics.check_parameters_count(cls, typevar_values)
 
         # Build map from generic typevars to passed params
-        typevars_map: dict[_typing_extra.TypeVarType, type[Any]] = dict(
+        typevars_map: dict[TypeVar, type[Any]] = dict(
             zip(cls.__pydantic_generic_metadata__['parameters'], typevar_values)
         )
 
@@ -909,8 +910,14 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             self._check_frozen(name, value)
 
             attr = getattr(self.__class__, name, None)
+            # NOTE: We currently special case properties and `cached_property`, but we might need
+            # to generalize this to all data/non-data descriptors at some point. For non-data descriptors
+            # (such as `cached_property`), it isn't obvious though. `cached_property` caches the value
+            # to the instance's `__dict__`, but other non-data descriptors might do things differently.
             if isinstance(attr, property):
                 attr.__set__(self, value)
+            elif isinstance(attr, cached_property):
+                self.__dict__[name] = value
             elif self.model_config.get('validate_assignment', None):
                 self.__pydantic_validator__.validate_assignment(self, name, value)
             elif self.model_config.get('extra') != 'allow' and name not in self.__pydantic_fields__:

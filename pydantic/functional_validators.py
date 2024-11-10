@@ -12,7 +12,7 @@ from pydantic_core import PydanticUndefined, core_schema
 from pydantic_core import core_schema as _core_schema
 from typing_extensions import Annotated, Literal, Self, TypeAlias
 
-from ._internal import _core_metadata, _decorators, _generics, _internal_dataclass
+from ._internal import _decorators, _generics, _internal_dataclass
 from .annotated_handlers import GetCoreSchemaHandler
 from .errors import PydanticUserError
 
@@ -134,7 +134,7 @@ class BeforeValidator:
                 input_schema = handler.resolve_ref_schema(input_schema)
             except LookupError:
                 pass
-        metadata = _core_metadata.build_metadata_dict(js_input_core_schema=input_schema)
+        metadata = {'pydantic_js_input_core_schema': input_schema} if input_schema is not None else {}
 
         info_arg = _inspect_validator(self.func, 'before')
         if info_arg:
@@ -163,7 +163,7 @@ class PlainValidator:
 
     A metadata class that indicates that a validation should be applied **instead** of the inner validation logic.
 
-    !!! note:
+    !!! note
         Before v2.9, `PlainValidator` wasn't always compatible with JSON Schema generation for `mode='validation'`.
         You can now use the `json_schema_input_type` argument to specify the input type of the function
         to be used in the JSON schema when `mode='validation'` (the default). See the example below for more details.
@@ -176,6 +176,7 @@ class PlainValidator:
     Example:
         ```py
         from typing import Union
+
         from typing_extensions import Annotated
 
         from pydantic import BaseModel, PlainValidator
@@ -234,8 +235,7 @@ class PlainValidator:
             input_schema = handler.resolve_ref_schema(input_schema)
         except LookupError:
             pass
-
-        metadata = _core_metadata.build_metadata_dict(js_input_core_schema=input_schema)
+        metadata = {'pydantic_js_input_core_schema': input_schema} if input_schema is not None else {}
 
         info_arg = _inspect_validator(self.func, 'plain')
         if info_arg:
@@ -319,7 +319,7 @@ class WrapValidator:
                 input_schema = handler.resolve_ref_schema(input_schema)
             except LookupError:
                 pass
-        metadata = _core_metadata.build_metadata_dict(js_input_core_schema=input_schema)
+        metadata = {'pydantic_js_input_core_schema': input_schema} if input_schema is not None else {}
 
         info_arg = _inspect_validator(self.func, 'wrap')
         if info_arg:
@@ -835,7 +835,7 @@ else:
         @classmethod
         def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
             original_schema = handler(source)
-            metadata = _core_metadata.build_metadata_dict(js_annotation_functions=[lambda _c, h: h(original_schema)])
+            metadata = {'pydantic_js_annotation_functions': [lambda _c, h: h(original_schema)]}
             return core_schema.any_schema(
                 metadata=metadata,
                 serialization=core_schema.wrap_serializer_function_ser_schema(

@@ -1511,7 +1511,7 @@ def test_model_export_exclusion_inheritance():
     class Parent(BaseModel):
         model_config = ConfigDict(fields={'a': {'exclude': ...}, 's': {'exclude': {'s1'}}})
         a: int
-        b: int = Field(..., exclude=...)
+        b: int = Field(exclude=...)
         c: int
         d: int
         s: Sub = Sub()
@@ -1776,8 +1776,38 @@ def test_default_factory_parse():
     assert repr(parsed) == 'Outer(inner_1=Inner(val=0), inner_2=Inner(val=0))'
 
 
+def test_default_factory_validated_data_arg() -> None:
+    class Model(BaseModel):
+        a: int = 1
+        b: int = Field(default_factory=lambda data: data['a'])
+
+    model = Model()
+    assert model.b == 1
+
+    class InvalidModel(BaseModel):
+        a: int = Field(default_factory=lambda data: data['b'])
+        b: int
+
+    with pytest.raises(KeyError):
+        InvalidModel(b=2)
+
+
+def test_default_factory_validated_data_arg_not_required() -> None:
+    def fac(data: Optional[Dict[str, Any]] = None):
+        if data is not None:
+            return data['a']
+        return 3
+
+    class Model(BaseModel):
+        a: int = 1
+        b: int = Field(default_factory=fac)
+
+    model = Model()
+    assert model.b == 3
+
+
 def test_reuse_same_field():
-    required_field = Field(...)
+    required_field = Field()
 
     class Model1(BaseModel):
         required: str = required_field
@@ -1952,7 +1982,7 @@ def test_new_union_origin():
 )
 @pytest.mark.parametrize(
     'value',
-    [None, Field(...)],
+    [None, Field()],
     ids=['none', 'field'],
 )
 def test_frozen_field_decl_without_default_val(ann, value):

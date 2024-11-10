@@ -75,7 +75,7 @@ class MainModel(BaseModel):
     foo_bar: FooBar
     gender: Annotated[Union[Gender, None], Field(alias='Gender')] = None
     snap: int = Field(
-        42,
+        default=42,
         title='The Snap',
         description='this is the value of snap',
         gt=30,
@@ -410,7 +410,7 @@ try:
     # this won't work since `PositiveInt` takes precedence over the
     # constraints defined in `Field`, meaning they're ignored
     class Model(BaseModel):
-        foo: PositiveInt = Field(..., lt=10)
+        foo: PositiveInt = Field(lt=10)
 
 except ValueError as e:
     print(e)
@@ -422,7 +422,7 @@ except ValueError as e:
 class ModelB(BaseModel):
     # Here both constraints will be applied and the schema
     # will be generated correctly
-    foo: int = Field(..., gt=0, lt=10)
+    foo: int = Field(gt=0, lt=10)
 
 
 print(ModelB.model_json_schema())
@@ -634,11 +634,11 @@ from typing_extensions import Annotated, TypeAlias
 from pydantic import Field, TypeAdapter
 
 ExternalType: TypeAlias = Annotated[
-    int, Field(..., json_schema_extra={'key1': 'value1'})
+    int, Field(json_schema_extra={'key1': 'value1'})
 ]
 
 ta = TypeAdapter(
-    Annotated[ExternalType, Field(..., json_schema_extra={'key2': 'value2'})]
+    Annotated[ExternalType, Field(json_schema_extra={'key2': 'value2'})]
 )
 print(json.dumps(ta.json_schema(), indent=2))
 """
@@ -650,43 +650,9 @@ print(json.dumps(ta.json_schema(), indent=2))
 """
 ```
 
-If you would prefer for the last of your `json_schema_extra` specifications to override the previous ones,
-you can use a `callable` to make more significant changes, including adding or removing keys, or modifying values.
-You can use this pattern if you'd like to mimic the behavior of the `json_schema_extra` overrides present
-in Pydantic v2.8 and earlier:
-
-```py
-import json
-
-from typing_extensions import Annotated, TypeAlias
-
-from pydantic import Field, TypeAdapter
-from pydantic.json_schema import JsonDict
-
-ExternalType: TypeAlias = Annotated[
-    int, Field(..., json_schema_extra={'key1': 'value1', 'key2': 'value2'})
-]
-
-
-def finalize_schema(s: JsonDict) -> None:
-    s.pop('key1')
-    s['key2'] = s['key2'] + '-final'
-    s['key3'] = 'value3-final'
-
-
-ta = TypeAdapter(
-    Annotated[ExternalType, Field(..., json_schema_extra=finalize_schema)]
-)
-print(json.dumps(ta.json_schema(), indent=2))
-"""
-{
-  "key2": "value2-final",
-  "key3": "value3-final",
-  "type": "integer"
-}
-"""
-```
-
+!!! note
+    We no longer (and never fully did) support composing a mix of `dict` and `callable` type `json_schema_extra` specifications.
+    If this is a requirement for your use case, please [open a pydantic issue](https://github.com/pydantic/pydantic/issues/new/choose) and explain your situation - we'd be happy to reconsider this decision when presented with a compelling case.
 
 ### `WithJsonSchema` annotation
 

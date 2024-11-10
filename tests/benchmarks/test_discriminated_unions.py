@@ -22,7 +22,7 @@ class LeafState(BaseModel):
     state_type: Literal['leaf']
 
 
-AnyState = Annotated[Union[NestedState, LoopState, LeafState], Field(..., discriminator='state_type')]
+AnyState = Annotated[Union[NestedState, LoopState, LeafState], Field(discriminator='state_type')]
 
 
 @pytest.mark.benchmark

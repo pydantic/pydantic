@@ -19,7 +19,6 @@ import re
 import warnings
 from collections import defaultdict
 from copy import deepcopy
-from dataclasses import is_dataclass
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
@@ -57,7 +56,7 @@ from ._internal import (
     _typing_extra,
 )
 from .annotated_handlers import GetJsonSchemaHandler
-from .config import JsonDict, JsonSchemaExtraCallable, JsonValue
+from .config import JsonDict, JsonValue
 from .errors import PydanticInvalidForJsonSchema, PydanticSchemaGenerationError, PydanticUserError
 
 if TYPE_CHECKING:
@@ -91,26 +90,6 @@ for validation inputs, or that will be matched by serialization outputs.
 """
 
 _MODE_TITLE_MAPPING: dict[JsonSchemaMode, str] = {'validation': 'Input', 'serialization': 'Output'}
-
-
-@deprecated(
-    '`update_json_schema` is deprecated, use a simple `my_dict.update(update_dict)` call instead.',
-    category=None,
-)
-def update_json_schema(schema: JsonSchemaValue, updates: dict[str, Any]) -> JsonSchemaValue:
-    """Update a JSON schema in-place by providing a dictionary of updates.
-
-    This function sets the provided key-value pairs in the schema and returns the updated schema.
-
-    Args:
-        schema: The JSON schema to update.
-        updates: A dictionary of key-value pairs to set in the schema.
-
-    Returns:
-        The updated JSON schema.
-    """
-    schema.update(updates)
-    return schema
 
 
 JsonSchemaWarningKind = Literal['skipped-choice', 'non-serializable-default', 'skipped-discriminator']
@@ -329,7 +308,7 @@ class GenerateJsonSchema:
             TypeError: If no method has been defined for generating a JSON schema for a given pydantic core schema type.
         """
         mapping: dict[CoreSchemaOrFieldType, Callable[[CoreSchemaOrField], JsonSchemaValue]] = {}
-        core_schema_types: list[CoreSchemaOrFieldType] = _typing_extra.all_literal_values(
+        core_schema_types: list[CoreSchemaOrFieldType] = _typing_extra.literal_values(
             CoreSchemaOrFieldType  # type: ignore
         )
         for key in core_schema_types:
@@ -451,6 +430,10 @@ class GenerateJsonSchema:
 
         Returns:
             The generated JSON schema.
+
+        TODO: the nested function definitions here seem like bad practice, I'd like to unpack these
+        in a future PR. It'd be great if we could shorten the call stack a bit for JSON schema generation,
+        and I think there's potential for that here.
         """
         # If a schema with the same CoreRef has been handled, just return a reference to it
         # Note that this assumes that it will _never_ be the case that the same CoreRef is used
@@ -460,9 +443,6 @@ class GenerateJsonSchema:
             core_mode_ref = (core_ref, self.mode)
             if core_mode_ref in self.core_to_defs_refs and self.core_to_defs_refs[core_mode_ref] in self.definitions:
                 return {'$ref': self.core_to_json_refs[core_mode_ref]}
-
-        # Generate the JSON schema, accounting for the json_schema_override and core_schema_override
-        metadata_handler = _core_metadata.CoreMetadataHandler(schema)
 
         def populate_defs(core_schema: CoreSchema, json_schema: JsonSchemaValue) -> JsonSchemaValue:
             if 'ref' in core_schema:
@@ -519,7 +499,38 @@ class GenerateJsonSchema:
 
         current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(self, handler_func)
 
-        for js_modify_function in metadata_handler.metadata.get('pydantic_js_functions', ()):
+        metadata = cast(_core_metadata.CoreMetadata, schema.get('metadata', {}))
+
+        # TODO: I dislike that we have to wrap these basic dict updates in callables, is there any way around this?
+
+        if js_updates := metadata.get('pydantic_js_updates'):
+
+            def js_updates_handler_func(
+                schema_or_field: CoreSchemaOrField,
+                current_handler: GetJsonSchemaHandler = current_handler,
+            ) -> JsonSchemaValue:
+                json_schema = {**current_handler(schema_or_field), **js_updates}
+                return json_schema
+
+            current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(self, js_updates_handler_func)
+
+        if js_extra := metadata.get('pydantic_js_extra'):
+
+            def js_extra_handler_func(
+                schema_or_field: CoreSchemaOrField,
+                current_handler: GetJsonSchemaHandler = current_handler,
+            ) -> JsonSchemaValue:
+                json_schema = current_handler(schema_or_field)
+                if isinstance(js_extra, dict):
+                    json_schema.update(to_jsonable_python(js_extra))
+                elif callable(js_extra):
+                    # similar to typing issue in _update_class_schema when we're working with callable js extra
+                    js_extra(json_schema)  # type: ignore
+                return json_schema
+
+            current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(self, js_extra_handler_func)
+
+        for js_modify_function in metadata.get('pydantic_js_functions', ()):
 
             def new_handler_func(
                 schema_or_field: CoreSchemaOrField,
@@ -537,7 +548,7 @@ class GenerateJsonSchema:
 
             current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(self, new_handler_func)
 
-        for js_modify_function in metadata_handler.metadata.get('pydantic_js_annotation_functions', ()):
+        for js_modify_function in metadata.get('pydantic_js_annotation_functions', ()):
 
             def new_handler_func(
                 schema_or_field: CoreSchemaOrField,
@@ -589,6 +600,12 @@ class GenerateJsonSchema:
             return value
 
     # ### Schema generation methods
+
+    def invalid_schema(self, schema: core_schema.InvalidSchema) -> JsonSchemaValue:
+        """Placeholder - should never be called."""
+
+        raise RuntimeError('Cannot generate schema for invalid_schema. This is a bug! Please report it.')
+
     def any_schema(self, schema: core_schema.AnySchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches any value.
 
@@ -754,7 +771,7 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        if self._config.ser_json_timedelta in {'milliseconds_float', 'seconds_float'}:
+        if self._config.ser_json_timedelta == 'float':
             return {'type': 'number'}
         return {'type': 'string', 'format': 'duration'}
 
@@ -771,9 +788,11 @@ class GenerateJsonSchema:
         # jsonify the expected values
         expected = [to_jsonable_python(v) for v in expected]
 
-        result: dict[str, Any] = {'enum': expected}
+        result: dict[str, Any] = {}
         if len(expected) == 1:
             result['const'] = expected[0]
+        else:
+            result['enum'] = expected
 
         types = {type(e) for e in expected}
         if types == {str}:
@@ -811,8 +830,6 @@ class GenerateJsonSchema:
         expected = [to_jsonable_python(v.value) for v in schema['members']]
 
         result['enum'] = expected
-        if len(expected) == 1:
-            result['const'] = expected[0]
 
         types = {type(e) for e in expected}
         if isinstance(enum_type, str) or types == {str}:
@@ -992,7 +1009,7 @@ class GenerateJsonSchema:
         """
         json_schema: JsonSchemaValue = {'type': 'object'}
 
-        keys_schema = self.resolve_schema_to_update(
+        keys_schema = self.resolve_ref_schema(
             self.generate_inner(schema['keys_schema']).copy() if 'keys_schema' in schema else {}
         )
         keys_pattern = keys_schema.pop('pattern', None)
@@ -1024,8 +1041,9 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        metadata = _core_metadata.CoreMetadataHandler(schema).metadata
-        if self._mode == 'validation' and (input_schema := metadata.get('pydantic_js_input_core_schema')):
+        if self._mode == 'validation' and (
+            input_schema := schema.get('metadata', {}).get('pydantic_js_input_core_schema')
+        ):
             return self.generate_inner(input_schema)
 
         return self.generate_inner(schema['schema'])
@@ -1050,8 +1068,9 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        metadata = _core_metadata.CoreMetadataHandler(schema).metadata
-        if self._mode == 'validation' and (input_schema := metadata.get('pydantic_js_input_core_schema')):
+        if self._mode == 'validation' and (
+            input_schema := schema.get('metadata', {}).get('pydantic_js_input_core_schema')
+        ):
             return self.generate_inner(input_schema)
 
         return self.handle_invalid_for_json_schema(
@@ -1067,8 +1086,9 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        metadata = _core_metadata.CoreMetadataHandler(schema).metadata
-        if self._mode == 'validation' and (input_schema := metadata.get('pydantic_js_input_core_schema')):
+        if self._mode == 'validation' and (
+            input_schema := schema.get('metadata', {}).get('pydantic_js_input_core_schema')
+        ):
             return self.generate_inner(input_schema)
 
         return self.generate_inner(schema['schema'])
@@ -1245,7 +1265,7 @@ class GenerateJsonSchema:
                 alias_is_present_on_all_choices = True
                 for choice in one_of_choices:
                     try:
-                        choice = self.resolve_schema_to_update(choice)
+                        choice = self.resolve_ref_schema(choice)
                     except RuntimeError as exc:
                         # TODO: fixme - this is a workaround for the fact that we can't always resolve refs
                         # for tagged union choices at this point in the schema gen process, we might need to do
@@ -1332,15 +1352,10 @@ class GenerateJsonSchema:
         with self._config_wrapper_stack.push(config):
             json_schema = self._named_required_fields_schema(named_required_fields)
 
-        json_schema_extra = config.get('json_schema_extra')
-        extra = schema.get('extra_behavior')
-        if extra is None:
-            extra = config.get('extra', 'ignore')
-
         if cls is not None:
-            title = config.get('title') or cls.__name__
-            json_schema = self._update_class_schema(json_schema, title, extra, cls, json_schema_extra)
+            self._update_class_schema(json_schema, cls, config)
         else:
+            extra = config.get('extra')
             if extra == 'forbid':
                 json_schema['additionalProperties'] = False
             elif extra == 'allow':
@@ -1457,13 +1472,56 @@ class GenerateJsonSchema:
         # because it could lead to inconsistent refs handling, etc.
         cls = cast('type[BaseModel]', schema['cls'])
         config = cls.model_config
-        title = config.get('title')
 
         with self._config_wrapper_stack.push(config):
             json_schema = self.generate_inner(schema['schema'])
 
+        self._update_class_schema(json_schema, cls, config)
+
+        return json_schema
+
+    def _update_class_schema(self, json_schema: JsonSchemaValue, cls: type[Any], config: ConfigDict) -> None:
+        """Update json_schema with the following, extracted from `config` and `cls`:
+
+        * title
+        * description
+        * additional properties
+        * json_schema_extra
+        * deprecated
+
+        Done in place, hence there's no return value as the original json_schema is mutated.
+        No ref resolving is involved here, as that's not appropriate for simple updates.
+        """
+        from .main import BaseModel
+        from .root_model import RootModel
+
+        if config_title := config.get('title'):
+            json_schema.setdefault('title', config_title)
+        elif model_title_generator := config.get('model_title_generator'):
+            title = model_title_generator(cls)
+            if not isinstance(title, str):
+                raise TypeError(f'model_title_generator {model_title_generator} must return str, not {title.__class__}')
+            json_schema.setdefault('title', title)
+        if 'title' not in json_schema:
+            json_schema['title'] = cls.__name__
+
+        # BaseModel and dataclasses; don't use cls.__doc__ as it will contain the verbose class signature by default
+        docstring = None if cls is BaseModel or dataclasses.is_dataclass(cls) else cls.__doc__
+
+        if docstring:
+            json_schema.setdefault('description', inspect.cleandoc(docstring))
+        elif issubclass(cls, RootModel) and (root_description := cls.__pydantic_fields__['root'].description):
+            json_schema.setdefault('description', root_description)
+
+        extra = config.get('extra')
+        if 'additionalProperties' not in json_schema:
+            if extra == 'allow':
+                json_schema['additionalProperties'] = True
+            elif extra == 'forbid':
+                json_schema['additionalProperties'] = False
+
         json_schema_extra = config.get('json_schema_extra')
-        if cls.__pydantic_root_model__:
+        if issubclass(cls, BaseModel) and cls.__pydantic_root_model__:
             root_json_schema_extra = cls.model_fields['root'].json_schema_extra
             if json_schema_extra and root_json_schema_extra:
                 raise ValueError(
@@ -1473,44 +1531,18 @@ class GenerateJsonSchema:
             if root_json_schema_extra:
                 json_schema_extra = root_json_schema_extra
 
-        json_schema = self._update_class_schema(json_schema, title, config.get('extra', None), cls, json_schema_extra)
-
-        return json_schema
-
-    def _update_class_schema(
-        self,
-        json_schema: JsonSchemaValue,
-        title: str | None,
-        extra: Literal['allow', 'ignore', 'forbid'] | None,
-        cls: type[Any],
-        json_schema_extra: JsonDict | JsonSchemaExtraCallable | None,
-    ) -> JsonSchemaValue:
-        if '$ref' in json_schema:
-            schema_to_update = self.get_schema_from_definitions(JsonRef(json_schema['$ref'])) or json_schema
-        else:
-            schema_to_update = json_schema
-
-        if title is not None:
-            # referenced_schema['title'] = title
-            schema_to_update.setdefault('title', title)
-
-        if 'additionalProperties' not in schema_to_update:
-            if extra == 'allow':
-                schema_to_update['additionalProperties'] = True
-            elif extra == 'forbid':
-                schema_to_update['additionalProperties'] = False
-
         if isinstance(json_schema_extra, (staticmethod, classmethod)):
             # In older versions of python, this is necessary to ensure staticmethod/classmethods are callable
             json_schema_extra = json_schema_extra.__get__(cls)
 
         if isinstance(json_schema_extra, dict):
-            schema_to_update.update(json_schema_extra)
+            json_schema.update(json_schema_extra)
         elif callable(json_schema_extra):
+            # FIXME: why are there type ignores here? We support two signatures for json_schema_extra callables...
             if len(inspect.signature(json_schema_extra).parameters) > 1:
-                json_schema_extra(schema_to_update, cls)  # type: ignore
+                json_schema_extra(json_schema, cls)  # type: ignore
             else:
-                json_schema_extra(schema_to_update)  # type: ignore
+                json_schema_extra(json_schema)  # type: ignore
         elif json_schema_extra is not None:
             raise ValueError(
                 f"model_config['json_schema_extra']={json_schema_extra} should be a dict, callable, or None"
@@ -1519,9 +1551,7 @@ class GenerateJsonSchema:
         if hasattr(cls, '__deprecated__'):
             json_schema['deprecated'] = True
 
-        return json_schema
-
-    def resolve_schema_to_update(self, json_schema: JsonSchemaValue) -> JsonSchemaValue:
+    def resolve_ref_schema(self, json_schema: JsonSchemaValue) -> JsonSchemaValue:
         """Resolve a JsonSchemaValue to the non-ref schema if it is a $ref schema.
 
         Args:
@@ -1530,14 +1560,14 @@ class GenerateJsonSchema:
         Returns:
             The resolved schema.
         """
-        if '$ref' in json_schema:
-            schema_to_update = self.get_schema_from_definitions(JsonRef(json_schema['$ref']))
-            if schema_to_update is None:
-                raise RuntimeError(f'Cannot update undefined schema for $ref={json_schema["$ref"]}')
-            return self.resolve_schema_to_update(schema_to_update)
-        else:
-            schema_to_update = json_schema
-        return schema_to_update
+        if '$ref' not in json_schema:
+            return json_schema
+
+        ref = json_schema['$ref']
+        schema_to_update = self.get_schema_from_definitions(JsonRef(ref))
+        if schema_to_update is None:
+            raise RuntimeError(f'Cannot update undefined schema for $ref={ref}')
+        return self.resolve_ref_schema(schema_to_update)
 
     def model_fields_schema(self, schema: core_schema.ModelFieldsSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a schema that defines a model's fields.
@@ -1558,7 +1588,7 @@ class GenerateJsonSchema:
         json_schema = self._named_required_fields_schema(named_required_fields)
         extras_schema = schema.get('extras_schema', None)
         if extras_schema is not None:
-            schema_to_update = self.resolve_schema_to_update(json_schema)
+            schema_to_update = self.resolve_ref_schema(json_schema)
             schema_to_update['additionalProperties'] = self.generate_inner(extras_schema)
         return json_schema
 
@@ -1632,18 +1662,18 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
+        from ._internal._dataclasses import is_builtin_dataclass
+
         cls = schema['cls']
         config: ConfigDict = getattr(cls, '__pydantic_config__', cast('ConfigDict', {}))
-        title = config.get('title') or cls.__name__
 
         with self._config_wrapper_stack.push(config):
             json_schema = self.generate_inner(schema['schema']).copy()
 
-        json_schema_extra = config.get('json_schema_extra')
-        json_schema = self._update_class_schema(json_schema, title, config.get('extra', None), cls, json_schema_extra)
+        self._update_class_schema(json_schema, cls, config)
 
         # Dataclass-specific handling of description
-        if is_dataclass(cls) and not hasattr(cls, '__pydantic_validator__'):
+        if is_builtin_dataclass(cls):
             # vanilla dataclass; don't use cls.__doc__ as it will contain the class signature by default
             description = None
         else:
@@ -1662,8 +1692,7 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        metadata = _core_metadata.CoreMetadataHandler(schema).metadata
-        prefer_positional = metadata.get('pydantic_js_prefer_positional_arguments')
+        prefer_positional = schema.get('metadata', {}).get('pydantic_js_prefer_positional_arguments')
 
         arguments = schema['arguments_schema']
         kw_only_arguments = [a for a in arguments if a.get('mode') == 'keyword_only']

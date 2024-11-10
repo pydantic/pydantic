@@ -24,6 +24,7 @@ from pydantic import (
     RedisDsn,
     SnowflakeDsn,
     Strict,
+    TypeAdapter,
     UrlConstraints,
     ValidationError,
     WebsocketUrl,
@@ -107,7 +108,6 @@ except ImportError:
         'http://example.org/path#fragment',
         'http://example.org/path?query#',
         'http://example.org/path?query#fragment',
-        'file://localhost/foo/bar',
     ],
 )
 def test_any_url_success(value):
@@ -168,7 +168,7 @@ def validate_url(s):
 def test_any_url_parts():
     url = validate_url('http://example.org')
     assert str(url) == 'http://example.org/'
-    assert repr(url) == "Url('http://example.org/')"
+    assert repr(url) == "AnyUrl('http://example.org/')"
     assert url.scheme == 'http'
     assert url.host == 'example.org'
     assert url.port == 80
@@ -177,7 +177,7 @@ def test_any_url_parts():
 def test_url_repr():
     url = validate_url('http://user:password@example.org:1234/the/path/?query=here#fragment=is;this=bit')
     assert str(url) == 'http://user:password@example.org:1234/the/path/?query=here#fragment=is;this=bit'
-    assert repr(url) == "Url('http://user:password@example.org:1234/the/path/?query=here#fragment=is;this=bit')"
+    assert repr(url) == "AnyUrl('http://user:password@example.org:1234/the/path/?query=here#fragment=is;this=bit')"
     assert url.scheme == 'http'
     assert url.username == 'user'
     assert url.password == 'password'
@@ -908,6 +908,8 @@ def test_json():
         ('FOO bar   <foobar@example.com> ', 'FOO bar', 'foobar@example.com'),
         (' Whatever <foobar@example.com>', 'Whatever', 'foobar@example.com'),
         ('Whatever < foobar@example.com>', 'Whatever', 'foobar@example.com'),
+        ('Whatever <foobar@example.com >', 'Whatever', 'foobar@example.com'),
+        ('Whatever < foobar@example.com >', 'Whatever', 'foobar@example.com'),
         ('<FOOBAR@example.com> ', 'FOOBAR', 'FOOBAR@example.com'),
         ('ñoñó@example.com', 'ñoñó', 'ñoñó@example.com'),
         ('我買@example.com', '我買', '我買@example.com'),
@@ -1029,3 +1031,33 @@ def test_name_email_serialization():
 
     obj = json.loads(m.model_dump_json())
     Model(email=obj['email'])
+
+
+def test_specialized_urls() -> None:
+    ta = TypeAdapter(HttpUrl)
+
+    http_url = ta.validate_python('http://example.com/something')
+    assert str(http_url) == 'http://example.com/something'
+    assert repr(http_url) == "HttpUrl('http://example.com/something')"
+    assert http_url.__class__ == HttpUrl
+    assert http_url.host == 'example.com'
+    assert http_url.path == '/something'
+    assert http_url.username is None
+    assert http_url.password is None
+
+    http_url2 = ta.validate_python(http_url)
+    assert str(http_url2) == 'http://example.com/something'
+    assert repr(http_url2) == "HttpUrl('http://example.com/something')"
+    assert http_url2.__class__ == HttpUrl
+    assert http_url2.host == 'example.com'
+    assert http_url2.path == '/something'
+    assert http_url2.username is None
+    assert http_url2.password is None
+
+
+def test_url_equality() -> None:
+    # works for descendants of _BaseUrl and _BaseMultiHostUrl
+    assert HttpUrl('http://example.com/something') == HttpUrl('http://example.com/something')
+    assert PostgresDsn('postgres://user:pass@localhost:5432/app') == PostgresDsn(
+        'postgres://user:pass@localhost:5432/app'
+    )

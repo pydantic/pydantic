@@ -1496,6 +1496,29 @@ except ValidationError as exc:
     #> 'multiple_of'
 ```
 
+## `needs_python_object`
+
+This type of error is raised when validation is attempted from a format that cannot be converted to a Python object.
+For example, we cannot check `isinstance` or `issubclass` from JSON:
+
+```py
+import json
+from typing import Type
+
+from pydantic import BaseModel, ValidationError
+
+
+class Model(BaseModel):
+    bm: Type[BaseModel]
+
+
+try:
+    Model.model_validate_json(json.dumps({'bm': 'not a basemodel class'}))
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'needs_python_object'
+```
+
 ## `no_such_attribute`
 
 This error is raised when `validate_assignment=True` in the config, and you attempt to assign a value to an attribute
@@ -1997,7 +2020,7 @@ class WhiteCat(BaseModel):
 
 
 class Model(BaseModel):
-    cat: Union[BlackCat, WhiteCat] = Field(..., discriminator='pet_type')
+    cat: Union[BlackCat, WhiteCat] = Field(discriminator='pet_type')
 
 
 try:
@@ -2026,7 +2049,7 @@ class WhiteCat(BaseModel):
 
 
 class Model(BaseModel):
-    cat: Union[BlackCat, WhiteCat] = Field(..., discriminator='pet_type')
+    cat: Union[BlackCat, WhiteCat] = Field(discriminator='pet_type')
 
 
 try:
