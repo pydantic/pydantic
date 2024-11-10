@@ -388,7 +388,15 @@ class TypeAdapter(Generic[T]):
             data, strict=strict, context=context, allow_partial=experimental_allow_partial
         )
 
-    def validate_strings(self, obj: Any, /, *, strict: bool | None = None, context: dict[str, Any] | None = None, experimental_allow_partial: bool = False,) -> T:
+    def validate_strings(
+        self,
+        obj: Any,
+        /,
+        *,
+        strict: bool | None = None,
+        context: dict[str, Any] | None = None,
+        experimental_allow_partial: bool = False,
+    ) -> T:
         """Validate object contains string data against the model.
 
         Args:
