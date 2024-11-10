@@ -522,6 +522,25 @@ except PydanticUserError as exc_info:
     assert exc_info.code == 'removed-kwargs'
 ```
 
+## Circular reference schema {#circular-reference-schema}
+
+This error is raised when a circular reference is found that would otherwise result in an infinite recursion.
+
+For example, this is a valid type alias:
+
+```py test="skip" lint="skip" upgrade="skip"
+type A = list[A] | None
+```
+
+while these are not:
+
+```py test="skip" lint="skip" upgrade="skip"
+type A = A
+
+type B = C
+type C = B
+```
+
 ## JSON schema invalid type {#invalid-for-json-schema}
 
 This error is raised when Pydantic fails to generate a JSON schema for some `CoreSchema`.
