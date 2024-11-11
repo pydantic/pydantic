@@ -106,6 +106,7 @@ substitutions = [
 dev = [
     "coverage[toml]",
     "pytz",
+    "tzdata",
     "dirty-equals",
     "eval-type-backport",
     "pytest",
