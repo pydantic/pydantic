@@ -178,6 +178,10 @@ jobs:
   test-plugin:
     name: test pydantic plugin
     runs-on: ubuntu-latest
+
+    env:
+      UV_FREEZE: ''
+
     steps:
       - uses: actions/checkout@v4
 
@@ -189,7 +193,7 @@ jobs:
         run: uv sync --python 3.12
 
       - name: install example plugin
-        run: uv add ./tests/plugin
+        run: uv add ./tests/plugin --no-sync
 
       - run: uv run pytest tests/plugin
         env:
@@ -198,7 +202,7 @@ jobs:
       # uninstalling is necessary because cache is shared with other jobs
       # which includes the plugin
       - name: uninstall example plugin
-        run: uv remove example_plugin
+        run: uv remove example_plugin --no-sync
 
   test-mypy:
     name: mypy ${{ matrix.mypy-version }} / ${{ matrix.python-version }}
