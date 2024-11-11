@@ -12,10 +12,10 @@ class Model(BaseModel):
 
 def func(model: Model) -> None:
     model.model_dump(
-        include={'a': {1: True}},  # type: ignore[arg-type]
+        include={'a': {1: True}},
     )
     model.model_dump(
-        include={'a': {'__all__': True}},  # type: ignore[arg-type]
+        include={'a': {'__all__': True}},
     )
     model.model_dump(
         include={'a': {1: {'a'}}},
@@ -24,7 +24,7 @@ def func(model: Model) -> None:
         include={'a': {1, 2}},
     )
 
-    # Invalid cases:
+    # Invalid cases, should fail but the `IncEx` alias uses `bool` due to mypy limitations:
     model.model_dump(
-        include={'a': {1: False}},  # type: ignore[arg-type]  # pyright: ignore[reportArgumentType]
+        include={'a': {1: False}},
     )
