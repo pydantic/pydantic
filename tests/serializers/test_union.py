@@ -948,6 +948,43 @@ def test_union_of_unions_of_models_with_tagged_union_invalid_variant(
             assert m in str(w[0].message)
 
 
+def test_mixed_union_models_and_other_types() -> None:
+    s = SchemaSerializer(
+        core_schema.union_schema(
+            [
+                core_schema.tagged_union_schema(
+                    discriminator='type_',
+                    choices={
+                        'cat': core_schema.model_schema(
+                            cls=ModelCat,
+                            schema=core_schema.model_fields_schema(
+                                fields={
+                                    'type_': core_schema.model_field(core_schema.literal_schema(['cat'])),
+                                },
+                            ),
+                        ),
+                        'dog': core_schema.model_schema(
+                            cls=ModelDog,
+                            schema=core_schema.model_fields_schema(
+                                fields={
+                                    'type_': core_schema.model_field(core_schema.literal_schema(['dog'])),
+                                },
+                            ),
+                        ),
+                    },
+                ),
+                core_schema.str_schema(),
+            ]
+        )
+    )
+
+    assert s.to_python(ModelCat(type_='cat'), warnings='error') == {'type_': 'cat'}
+    assert s.to_python(ModelDog(type_='dog'), warnings='error') == {'type_': 'dog'}
+    # note, this fails as ModelCat and ModelDog (discriminator warnings, etc), but the warnings
+    # don't bubble up to this level :)
+    assert s.to_python('a string', warnings='error') == 'a string'
+
+
 @pytest.mark.parametrize(
     'input,expected',
     [
@@ -1000,3 +1037,28 @@ def test_union_of_unions_of_models_with_tagged_union_json_serialization(
     )
 
     assert s.to_json(input, warnings='error') == expected
+
+
+def test_discriminated_union_ser_with_typed_dict() -> None:
+    v = SchemaSerializer(
+        core_schema.tagged_union_schema(
+            {
+                'a': core_schema.typed_dict_schema(
+                    {
+                        'type': core_schema.typed_dict_field(core_schema.literal_schema(['a'])),
+                        'a': core_schema.typed_dict_field(core_schema.int_schema()),
+                    }
+                ),
+                'b': core_schema.typed_dict_schema(
+                    {
+                        'type': core_schema.typed_dict_field(core_schema.literal_schema(['b'])),
+                        'b': core_schema.typed_dict_field(core_schema.str_schema()),
+                    }
+                ),
+            },
+            discriminator='type',
+        )
+    )
+
+    assert v.to_python({'type': 'a', 'a': 1}, warnings='error') == {'type': 'a', 'a': 1}
+    assert v.to_python({'type': 'b', 'b': 'foo'}, warnings='error') == {'type': 'b', 'b': 'foo'}
