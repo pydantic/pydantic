@@ -3,28 +3,15 @@ from __future__ import annotations as _annotations
 import functools
 import inspect
 from functools import partial
-from types import BuiltinFunctionType, BuiltinMethodType, FunctionType, LambdaType, MethodType
-from typing import Any, Awaitable, Callable, Union, get_args
+from typing import Any, Awaitable, Callable
 
 import pydantic_core
 
 from ..config import ConfigDict
 from ..plugin._schema_validator import create_schema_validator
 from ._config import ConfigWrapper
+from ._generate_schema import GenerateSchema, ValidateCallSupportedTypes
 from ._namespace_utils import MappingNamespace, NsResolver, ns_for_function
-
-# Note: This does not play very well with type checkers. For example,
-# `a: LambdaType = lambda x: x` will raise a type error by Pyright.
-ValidateCallSupportedTypes = Union[
-    LambdaType,
-    FunctionType,
-    MethodType,
-    BuiltinFunctionType,
-    BuiltinMethodType,
-    functools.partial,
-]
-
-VALIDATE_CALL_SUPPORTED_TYPES = get_args(ValidateCallSupportedTypes)
 
 
 def extract_function_name(func: ValidateCallSupportedTypes) -> str:
@@ -70,8 +57,6 @@ class ValidateCallWrapper:
         validate_return: bool,
         parent_namespace: MappingNamespace | None,
     ) -> None:
-        from ._generate_schema import GenerateSchema
-
         if isinstance(function, partial):
             schema_type = function.func
             module = function.func.__module__
