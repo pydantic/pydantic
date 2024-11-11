@@ -15,7 +15,7 @@ install:
 	pip install -U pip wheel pre-commit
 	pip install -r tests/requirements.txt
 	pip install -r tests/requirements-linting.txt
-	pip install -e .
+	pip install -v -e .
 	pre-commit install
 
 .PHONY: install-rust-coverage
