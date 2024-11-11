@@ -22,13 +22,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup uv
-        uses: astral-sh/setup-uv@v3
+      - uses: astral-sh/setup-uv@v3
         with:
           enable-cache: true
 
       - name: install
-        run: uv sync --python ${{ matrix.python-version }} --group linting
+        run: uv sync --frozen --python ${{ matrix.python-version }} --group linting --all-extras
 
       - uses: pre-commit/action@v3.0.1
         with:
@@ -72,13 +71,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup uv
-        uses: astral-sh/setup-uv@v3
+      - uses: astral-sh/setup-uv@v3
         with:
           enable-cache: true
 
       - name: install deps
-        run: uv sync --python 3.12 --group testing --group testing-extra --group memray
+        run: uv sync --python 3.12 --group testing-extra
 
       - name: test
         run: uv run pytest --ignore=tests/mypy/ --ignore=tests/test_docs.py --memray
@@ -130,7 +128,7 @@ jobs:
         enable-cache: true
 
     - name: install deps
-      run: uv sync --group testing --extra timezone
+      run: uv sync
 
     - run: 'uv run python -c "import pydantic.version; print(pydantic.version.version_info())"'
 
@@ -145,7 +143,7 @@ jobs:
         CONTEXT: ${{ runner.os }}-py${{ matrix.python-version }}-without-deps
 
     - name: install extra deps
-      run: uv sync --group testing --group testing-extra --extra timezone
+      run: uv sync --group testing-extra --all-extras
 
     - name: test with deps
       run: make test
@@ -182,13 +180,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup uv
-        uses: astral-sh/setup-uv@v3
+      - uses: astral-sh/setup-uv@v3
         with:
           enable-cache: true
 
       - name: install deps
-        run: uv sync --python 3.12 --group testing
+        run: uv sync --frozen --python 3.12
 
       - name: install example plugin
         run: uv add ./tests/plugin --no-sync
@@ -234,7 +231,7 @@ jobs:
         enable-cache: true
 
     - name: install deps
-      run: uv sync --python ${{ matrix.python-version }} --group testing --group mypy
+      run: uv sync --frozen --python ${{ matrix.python-version }} --group typechecking --all-extras
 
     - name: install mypy
       if: steps.cache.outputs.cache-hit != 'true'
@@ -266,13 +263,12 @@ jobs:
       with:
         node-version: '20'
 
-    - name: Setup uv
-      uses: astral-sh/setup-uv@v3
+    - uses: astral-sh/setup-uv@v3
       with:
         enable-cache: true
 
     - name: install deps
-      run: uv sync --python 3.12 --group mypy
+      run: uv sync --frozen --python 3.12 --group typechecking
 
     - name: install Pyright
       run: npm install -g pyright@1.1.384  # keep this in sync with .pre-commit-config.yaml
@@ -360,13 +356,12 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Setup uv
-      uses: astral-sh/setup-uv@v3
+    - uses: astral-sh/setup-uv@v3
       with:
         enable-cache: true
 
     - name: install deps
-      run: uv sync --python ${{ matrix.python-version }} --group testing
+      run: uv sync --frozen --python ${{ matrix.python-version }}
 
     - name: install typing-extensions
       run: uv pip install 'typing-extensions @ git+https://github.com/python/typing_extensions.git'
