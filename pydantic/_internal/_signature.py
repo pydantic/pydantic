@@ -13,6 +13,15 @@ if TYPE_CHECKING:
     from ..fields import FieldInfo
 
 
+# Copied over from stdlib dataclasses
+class _HAS_DEFAULT_FACTORY_CLASS:
+    def __repr__(self):
+        return '<factory>'
+
+
+_HAS_DEFAULT_FACTORY = _HAS_DEFAULT_FACTORY_CLASS()
+
+
 def _field_name_for_signature(field_name: str, field_info: FieldInfo) -> str:
     """Extract the correct name to use for the field when generating a signature.
 
@@ -112,9 +121,18 @@ def _generate_signature_parameters(  # noqa: C901 (ignore complexity, could use 
                     use_var_kw = True
                     continue
 
-            kwargs = {} if field.is_required() else {'default': field.get_default(call_default_factory=False)}
+            if field.is_required():
+                default = Parameter.empty
+            elif field.default_factory is not None:
+                # Mimics stdlib dataclasses:
+                default = _HAS_DEFAULT_FACTORY
+            else:
+                default = field.default
             merged_params[param_name] = Parameter(
-                param_name, Parameter.KEYWORD_ONLY, annotation=field.rebuild_annotation(), **kwargs
+                param_name,
+                Parameter.KEYWORD_ONLY,
+                annotation=field.rebuild_annotation(),
+                default=default,
             )
 
     if config_wrapper.extra == 'allow':

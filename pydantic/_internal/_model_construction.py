@@ -36,7 +36,7 @@ from ._typing_extra import (
     is_classvar_annotation,
     parent_frame_namespace,
 )
-from ._utils import ClassAttribute, SafeGetItemProxy
+from ._utils import LazyClassAttribute, SafeGetItemProxy
 
 if typing.TYPE_CHECKING:
     from ..fields import ComputedFieldInfo, FieldInfo, ModelPrivateAttr
@@ -686,9 +686,16 @@ def complete_model_class(
     cls.__pydantic_complete__ = True
 
     # set __signature__ attr only for model class, but not for its instances
-    cls.__signature__ = ClassAttribute(
+    # (because instances can define `__call__`, and `inspect.signature` shouldn't
+    # use the `__signature__` attribute and instead generate from `__call__`).
+    cls.__signature__ = LazyClassAttribute(
         '__signature__',
-        generate_pydantic_signature(init=cls.__init__, fields=cls.__pydantic_fields__, config_wrapper=config_wrapper),
+        partial(
+            generate_pydantic_signature,
+            init=cls.__init__,
+            fields=cls.__pydantic_fields__,
+            config_wrapper=config_wrapper,
+        ),
     )
     return True
 

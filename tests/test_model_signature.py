@@ -25,11 +25,12 @@ def test_model_signature():
     class Model(BaseModel):
         a: float = Field(title='A')
         b: int = Field(10)
+        c: int = Field(default_factory=lambda: 1)
 
     sig = signature(Model)
     assert sig != signature(BaseModel)
-    assert _equals(map(str, sig.parameters.values()), ('a: float', 'b: int = 10'))
-    assert _equals(str(sig), '(*, a: float, b: int = 10) -> None')
+    assert _equals(map(str, sig.parameters.values()), ('a: float', 'b: int = 10', 'c: int = <factory>'))
+    assert _equals(str(sig), '(*, a: float, b: int = 10, c: int = <factory>) -> None')
 
 
 def test_generic_model_signature():
