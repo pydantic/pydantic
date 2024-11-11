@@ -3,13 +3,19 @@ import gc
 import pickle
 from typing import Optional, Type
 
-import cloudpickle
 import pytest
 
 import pydantic
 from pydantic import BaseModel, PositiveFloat, ValidationError
 from pydantic._internal._model_construction import _PydanticWeakRef
 from pydantic.config import ConfigDict
+
+try:
+    import cloudpickle
+except ImportError:
+    cloudpickle = None
+
+pytestmark = pytest.mark.skipif(cloudpickle is None, reason='cloudpickle is not installed')
 
 
 class IntWrapper:
