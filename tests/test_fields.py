@@ -146,6 +146,18 @@ def test_computed_field_raises_correct_attribute_error():
         Model().invalid_field
 
 
+def test_property_visible_when_extra_present():
+    class Model(BaseModel):
+        model_config = ConfigDict(extra='allow')
+
+        @property
+        def test_prop(self) -> str:
+            return 'test'
+    
+    instance = Model.model_validate({'extra': 'extra_value'})
+
+    assert instance.test_prop == 'test'
+
 @pytest.mark.parametrize('number', (1, 42, 443, 11.11, 0.553))
 def test_coerce_numbers_to_str_field_option(number):
     class Model(BaseModel):
