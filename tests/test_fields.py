@@ -153,7 +153,7 @@ def test_property_visible_when_extra_present():
         @property
         def test_prop(self) -> str:
             return 'test'
-    
+
     instance = Model.model_validate({'extra': 'extra_value'})
 
     assert instance.test_prop == 'test'
