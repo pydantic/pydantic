@@ -422,19 +422,32 @@ impl TaggedUnionSerializer {
     fn get_discriminator_value(&self, value: &Bound<'_, PyAny>, extra: &Extra) -> Option<Py<PyAny>> {
         let py = value.py();
         let discriminator_value = match &self.discriminator {
-            Discriminator::LookupKey(lookup_key) => lookup_key
-                .simple_py_get_attr(value)
-                .ok()
-                .and_then(|opt| opt.map(|(_, bound)| bound.to_object(py))),
+            Discriminator::LookupKey(lookup_key) => {
+                // we're pretty lax here, we allow either dict[key] or object.key, as we very well could
+                // be doing a discriminator lookup on a typed dict, and there's no good way to check that
+                // at this point. we could be more strict and only do this in lax mode...
+                let getattr_result = match value.is_instance_of::<PyDict>() {
+                    true => {
+                        let value_dict = value.downcast::<PyDict>().unwrap();
+                        lookup_key.py_get_dict_item(value_dict).ok()
+                    }
+                    false => lookup_key.simple_py_get_attr(value).ok(),
+                };
+                getattr_result.and_then(|opt| opt.map(|(_, bound)| bound.to_object(py)))
+            }
             Discriminator::Function(func) => func.call1(py, (value,)).ok(),
         };
         if discriminator_value.is_none() {
             let value_str = truncate_safe_repr(value, None);
-            extra.warnings.custom_warning(
-                format!(
-                    "Failed to get discriminator value for tagged union serialization with value `{value_str}` - defaulting to left to right union serialization."
-                )
-            );
+
+            // If extra.check is SerCheck::None, we're in a top-level union. We should thus raise this warning
+            if extra.check == SerCheck::None {
+                extra.warnings.custom_warning(
+                    format!(
+                        "Failed to get discriminator value for tagged union serialization with value `{value_str}` - defaulting to left to right union serialization."
+                    )
+                );
+            }
         }
         discriminator_value
     }
