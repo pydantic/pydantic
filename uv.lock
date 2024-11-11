@@ -1154,6 +1154,15 @@ wheels = [
 ]
 
 [[package]]
+name = "nodeenv"
+version = "1.9.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/43/16/fc88b08840de0e0a72a2f9d8c6bae36be573e475a6326ae854bcc549fc45/nodeenv-1.9.1.tar.gz", hash = "sha256:6ec12890a2dab7946721edbfbcd91f3319c6ccc9aec47be7c7e6b7011ee6645f", size = 47437 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d2/1d/1b658dbd2b9fa9c4c9f32accbfc0205d532c8c6194dc0f2a4c0428e7128a/nodeenv-1.9.1-py2.py3-none-any.whl", hash = "sha256:ba11c9782d29c27c70ffbdda2d7415098754709be8a7056d79a737cd901155c9", size = 22314 },
+]
+
+[[package]]
 name = "packaging"
 version = "24.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1314,7 +1323,7 @@ wheels = [
 
 [[package]]
 name = "pydantic"
-version = "2.10.0a1"
+version = "2.10.0b1"
 source = { editable = "." }
 dependencies = [
     { name = "annotated-types" },
@@ -1352,11 +1361,12 @@ all = [
     { name = "packaging" },
     { name = "pydantic-extra-types" },
     { name = "pydantic-settings" },
+    { name = "pyright" },
     { name = "pytest" },
     { name = "pytest-benchmark" },
     { name = "pytest-codspeed" },
     { name = "pytest-examples" },
-    { name = "pytest-memray", marker = "python_full_version < '3.13' and platform_system != 'Windows'" },
+    { name = "pytest-memray", marker = "python_full_version < '3.13' and platform_python_implementation == 'CPython' and platform_system != 'Windows'" },
     { name = "pytest-mock" },
     { name = "pytest-pretty" },
     { name = "pytz" },
@@ -1365,9 +1375,24 @@ all = [
     { name = "ruff" },
     { name = "sqlalchemy" },
     { name = "tomli" },
+    { name = "tzdata", marker = "platform_system == 'Windows'" },
 ]
 dev = [
-    { name = "email-validator" },
+    { name = "coverage", extra = ["toml"] },
+    { name = "dirty-equals" },
+    { name = "eval-type-backport" },
+    { name = "faker" },
+    { name = "jsonschema" },
+    { name = "packaging" },
+    { name = "pytest" },
+    { name = "pytest-benchmark" },
+    { name = "pytest-codspeed" },
+    { name = "pytest-examples" },
+    { name = "pytest-memray", marker = "python_full_version < '3.13' and platform_python_implementation == 'CPython' and platform_system != 'Windows'" },
+    { name = "pytest-mock" },
+    { name = "pytest-pretty" },
+    { name = "pytz" },
+    { name = "tzdata", marker = "platform_system == 'Windows'" },
 ]
 docs = [
     { name = "autoflake" },
@@ -1379,43 +1404,25 @@ docs = [
     { name = "mkdocstrings-python" },
     { name = "pydantic-extra-types" },
     { name = "pydantic-settings" },
-    { name = "pytest-examples" },
     { name = "pyupgrade" },
     { name = "requests" },
     { name = "tomli" },
 ]
 linting = [
     { name = "eval-type-backport" },
+    { name = "pyright" },
     { name = "ruff" },
-]
-memray = [
-    { name = "pytest-memray", marker = "python_full_version < '3.13' and platform_system != 'Windows'" },
-]
-mypy = [
-    { name = "mypy" },
-    { name = "pydantic-settings" },
-]
-testing = [
-    { name = "cloudpickle" },
-    { name = "coverage", extra = ["toml"] },
-    { name = "dirty-equals" },
-    { name = "eval-type-backport" },
-    { name = "faker" },
-    { name = "jsonschema" },
-    { name = "packaging" },
-    { name = "pytest" },
-    { name = "pytest-benchmark" },
-    { name = "pytest-codspeed" },
-    { name = "pytest-examples" },
-    { name = "pytest-mock" },
-    { name = "pytest-pretty" },
-    { name = "pytz" },
 ]
 testing-extra = [
     { name = "ansi2html" },
+    { name = "cloudpickle" },
     { name = "devtools" },
     { name = "greenlet", marker = "python_full_version < '3.13'" },
     { name = "sqlalchemy" },
+]
+typechecking = [
+    { name = "mypy" },
+    { name = "pydantic-settings" },
 ]
 
 [package.metadata]
@@ -1432,13 +1439,13 @@ all = [
     { name = "ansi2html" },
     { name = "autoflake" },
     { name = "cloudpickle" },
-    { name = "coverage", extras = ["toml"] },
+    { name = "coverage", extras = ["toml"], specifier = ">=7" },
     { name = "devtools" },
-    { name = "dirty-equals" },
+    { name = "dirty-equals", specifier = ">=0.8.0" },
     { name = "eval-type-backport" },
-    { name = "eval-type-backport", specifier = ">=0.1.3" },
+    { name = "eval-type-backport", specifier = ">=0.2.0" },
     { name = "faker", specifier = ">=18.13.0" },
-    { name = "greenlet", marker = "python_full_version < '3.13'", specifier = ">=3.0.0rc3" },
+    { name = "greenlet", marker = "python_full_version < '3.13'" },
     { name = "jsonschema", specifier = ">=4.23.0" },
     { name = "mike" },
     { name = "mkdocs" },
@@ -1449,24 +1456,40 @@ all = [
     { name = "mypy", specifier = "==1.12.1" },
     { name = "packaging", specifier = ">=23.2" },
     { name = "pydantic-extra-types", git = "https://github.com/pydantic/pydantic-extra-types.git?rev=main" },
-    { name = "pydantic-settings", specifier = ">=2.0b1" },
-    { name = "pydantic-settings", specifier = ">=2.0.0" },
+    { name = "pydantic-settings" },
+    { name = "pyright", specifier = "==1.1.384" },
     { name = "pytest", specifier = ">=8.2.2" },
     { name = "pytest-benchmark", specifier = ">=4.0.0" },
     { name = "pytest-codspeed", specifier = ">=2.2.1" },
-    { name = "pytest-examples" },
     { name = "pytest-examples", specifier = ">=0.0.13" },
-    { name = "pytest-memray", marker = "python_full_version < '3.13' and platform_system != 'Windows'" },
-    { name = "pytest-mock" },
-    { name = "pytest-pretty" },
-    { name = "pytz" },
+    { name = "pytest-memray", marker = "python_full_version < '3.13' and platform_python_implementation == 'CPython' and platform_system != 'Windows'", specifier = ">=1.7.0" },
+    { name = "pytest-mock", specifier = ">=3.14.0" },
+    { name = "pytest-pretty", specifier = ">=1.2.0" },
+    { name = "pytz", specifier = ">=2024" },
     { name = "pyupgrade" },
     { name = "requests" },
-    { name = "ruff", specifier = "==0.5.6" },
-    { name = "sqlalchemy", specifier = ">=2.0" },
+    { name = "ruff" },
+    { name = "sqlalchemy" },
     { name = "tomli" },
+    { name = "tzdata", marker = "platform_system == 'Windows'", specifier = ">=2024" },
 ]
-dev = [{ name = "email-validator", specifier = ">=2.0.0" }]
+dev = [
+    { name = "coverage", extras = ["toml"], specifier = ">=7" },
+    { name = "dirty-equals", specifier = ">=0.8.0" },
+    { name = "eval-type-backport", specifier = ">=0.2.0" },
+    { name = "faker", specifier = ">=18.13.0" },
+    { name = "jsonschema", specifier = ">=4.23.0" },
+    { name = "packaging", specifier = ">=23.2" },
+    { name = "pytest", specifier = ">=8.2.2" },
+    { name = "pytest-benchmark", specifier = ">=4.0.0" },
+    { name = "pytest-codspeed", specifier = ">=2.2.1" },
+    { name = "pytest-examples", specifier = ">=0.0.13" },
+    { name = "pytest-memray", marker = "python_full_version < '3.13' and platform_python_implementation == 'CPython' and platform_system != 'Windows'", specifier = ">=1.7.0" },
+    { name = "pytest-mock", specifier = ">=3.14.0" },
+    { name = "pytest-pretty", specifier = ">=1.2.0" },
+    { name = "pytz", specifier = ">=2024" },
+    { name = "tzdata", marker = "platform_system == 'Windows'", specifier = ">=2024" },
+]
 docs = [
     { name = "autoflake" },
     { name = "mike" },
@@ -1476,42 +1499,26 @@ docs = [
     { name = "mkdocs-redirects" },
     { name = "mkdocstrings-python" },
     { name = "pydantic-extra-types", git = "https://github.com/pydantic/pydantic-extra-types.git?rev=main" },
-    { name = "pydantic-settings", specifier = ">=2.0b1" },
-    { name = "pytest-examples", specifier = ">=0.0.13" },
+    { name = "pydantic-settings" },
     { name = "pyupgrade" },
     { name = "requests" },
     { name = "tomli" },
 ]
 linting = [
-    { name = "eval-type-backport", specifier = ">=0.1.3" },
-    { name = "ruff", specifier = "==0.5.6" },
-]
-memray = [{ name = "pytest-memray", marker = "python_full_version < '3.13' and platform_system != 'Windows'" }]
-mypy = [
-    { name = "mypy", specifier = "==1.12.1" },
-    { name = "pydantic-settings", specifier = ">=2.0.0" },
-]
-testing = [
-    { name = "cloudpickle" },
-    { name = "coverage", extras = ["toml"] },
-    { name = "dirty-equals" },
     { name = "eval-type-backport" },
-    { name = "faker", specifier = ">=18.13.0" },
-    { name = "jsonschema", specifier = ">=4.23.0" },
-    { name = "packaging", specifier = ">=23.2" },
-    { name = "pytest", specifier = ">=8.2.2" },
-    { name = "pytest-benchmark", specifier = ">=4.0.0" },
-    { name = "pytest-codspeed", specifier = ">=2.2.1" },
-    { name = "pytest-examples" },
-    { name = "pytest-mock" },
-    { name = "pytest-pretty" },
-    { name = "pytz" },
+    { name = "pyright", specifier = "==1.1.384" },
+    { name = "ruff" },
 ]
 testing-extra = [
     { name = "ansi2html" },
+    { name = "cloudpickle" },
     { name = "devtools" },
-    { name = "greenlet", marker = "python_full_version < '3.13'", specifier = ">=3.0.0rc3" },
-    { name = "sqlalchemy", specifier = ">=2.0" },
+    { name = "greenlet", marker = "python_full_version < '3.13'" },
+    { name = "sqlalchemy" },
+]
+typechecking = [
+    { name = "mypy", specifier = "==1.12.1" },
+    { name = "pydantic-settings" },
 ]
 
 [[package]]
@@ -1684,6 +1691,19 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/83/08/13f3bce01b2061f2bbd582c9df82723de943784cf719a35ac886c652043a/pyparsing-3.1.4.tar.gz", hash = "sha256:f86ec8d1a83f11977c9a6ea7598e8c27fc5cddfa5b07ea2241edbbde1d7bc032", size = 900231 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/e5/0c/0e3c05b1c87bb6a1c76d281b0f35e78d2d80ac91b5f8f524cebf77f51049/pyparsing-3.1.4-py3-none-any.whl", hash = "sha256:a6a7ee4235a3f944aa1fa2249307708f893fe5717dc603503c6c7969c070fb7c", size = 104100 },
+]
+
+[[package]]
+name = "pyright"
+version = "1.1.384"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "nodeenv" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/84/00/a23114619f9d005f4b0f35e037c76cee029174d090a6f73a355749c74f4a/pyright-1.1.384.tar.gz", hash = "sha256:25e54d61f55cbb45f1195ff89c488832d7a45d59f3e132f178fdf9ef6cafc706", size = 21956 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/6d/4a/e7f4d71d194ba675f3577d11eebe4e17a592c4d1c3f9986d4b321ba3c809/pyright-1.1.384-py3-none-any.whl", hash = "sha256:f0b6f4db2da38f27aeb7035c26192f034587875f751b847e9ad42ed0c704ac9e", size = 18578 },
 ]
 
 [[package]]

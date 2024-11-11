@@ -26,9 +26,11 @@ AnyState = Annotated[Union[NestedState, LoopState, LeafState], Field(discriminat
 
 
 @pytest.mark.benchmark
-def test_schema_build() -> None:
-    adapter = TypeAdapter(AnyState)
-    assert adapter.core_schema['schema']['type'] == 'tagged-union'
+def test_schema_build(benchmark) -> None:
+    @benchmark
+    def run():
+        adapter = TypeAdapter(AnyState)
+        assert adapter.core_schema['schema']['type'] == 'tagged-union'
 
 
 any_state_adapter = TypeAdapter(AnyState)
@@ -42,8 +44,10 @@ def build_nested_state(n):
 
 
 @pytest.mark.benchmark
-def test_efficiency_with_highly_nested_examples() -> None:
+def test_efficiency_with_highly_nested_examples(benchmark) -> None:
     # can go much higher, but we keep it reasonably low here for a proof of concept
-    for i in range(1, 12):
-        very_nested_input = build_nested_state(i)
-        any_state_adapter.validate_python(very_nested_input)
+    @benchmark
+    def run():
+        for i in range(1, 12):
+            very_nested_input = build_nested_state(i)
+            any_state_adapter.validate_python(very_nested_input)
