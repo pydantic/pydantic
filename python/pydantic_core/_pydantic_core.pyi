@@ -253,7 +253,9 @@ class SchemaValidator:
             `None` if the schema has no default value, otherwise a [`Some`][pydantic_core.Some] containing the default.
         """
 
-_IncEx: TypeAlias = set[int] | set[str] | Mapping[int, _IncEx | Literal[True]] | Mapping[str, _IncEx | Literal[True]]
+# In reality, `bool` should be replaced by `Literal[True]` but mypy fails to correctly apply bidirectional type inference
+# (e.g. when using `{'a': {'b': True}}`).
+_IncEx: TypeAlias = set[int] | set[str] | Mapping[int, _IncEx | bool] | Mapping[str, _IncEx | bool]
 
 @final
 class SchemaSerializer:
