@@ -106,7 +106,8 @@ substitutions = [
 dev = [
     "coverage[toml]",
     "pytz",
-    "tzdata",
+    # weird failures on windows without tzdata
+    "tzdata; platform_system == 'Windows'",
     "dirty-equals",
     "eval-type-backport",
     "pytest",
@@ -114,7 +115,7 @@ dev = [
     "pytest-pretty",
     "pytest-examples",
     # TODO remove python version constraint once memray supports 3.13
-    "pytest-memray; python_version < '3.13' and platform_system != 'Windows'",
+    "pytest-memray; platform_python_implementation == 'CPython' and python_version < '3.13' and platform_system != 'Windows'",
     "faker",
     "pytest-benchmark",
     "pytest-codspeed",
