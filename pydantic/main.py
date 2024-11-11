@@ -62,6 +62,7 @@ if TYPE_CHECKING:
 
     from ._internal._namespace_utils import MappingNamespace
     from ._internal._utils import AbstractSetIntStr, MappingIntStrAny
+    from ._internal._validate_call import ValidateCallInfo
     from .deprecated.parse import Protocol as DeprecatedParseProtocol
     from .fields import ComputedFieldInfo, FieldInfo, ModelPrivateAttr
 else:
@@ -171,6 +172,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     __pydantic_computed_fields__: ClassVar[Dict[str, ComputedFieldInfo]]  # noqa: UP006
     """A dictionary of computed field names and their corresponding [`ComputedFieldInfo`][pydantic.fields.ComputedFieldInfo] objects."""
+
+    __pydantic_validate_calls__: ClassVar[Dict[str, ValidateCallInfo]] = {}  # noqa: UP006
+    """Metadata containing functions decorated with [`validate_call`][pydantic.validate_call_decorator.validate_call]; not inherited by subclasses."""
 
     __pydantic_extra__: dict[str, Any] | None = _model_construction.NoInitField(init=False)
     """A dictionary containing extra values, if [`extra`][pydantic.config.ConfigDict.extra] is set to `'allow'`."""
