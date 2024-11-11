@@ -51,7 +51,6 @@ dependencies = [
     'typing-extensions>=4.12.2',
     'annotated-types>=0.6.0',
     'pydantic-core==2.26.0',
-    "example-plugin",
 ]
 dynamic = ['version', 'readme']
 
@@ -105,23 +104,23 @@ substitutions = [
 
 [dependency-groups]
 dev = [
-    "coverage[toml]",
-    "pytz",
+    "coverage[toml]>=7",
+    "pytz>=2024",
     # weird failures on windows without tzdata
-    "tzdata; platform_system == 'Windows'",
-    "dirty-equals",
-    "eval-type-backport",
-    "pytest",
-    "pytest-mock",
-    "pytest-pretty",
-    "pytest-examples",
+    "tzdata>=2024; platform_system == 'Windows'",
+    "dirty-equals>=0.8.0",
+    "eval-type-backport>=0.2.0",
+    "pytest>=8.2.2",
+    "pytest-mock>=3.14.0",
+    "pytest-pretty>=1.2.0",
+    "pytest-examples>=0.0.13",
+    "faker>=18.13.0",
+    "pytest-benchmark>=4.0.0",
+    "pytest-codspeed>=2.2.1",
     # TODO remove python version constraint once memray supports 3.13
-    "pytest-memray; platform_python_implementation == 'CPython' and python_version < '3.13' and platform_system != 'Windows'",
-    "faker",
-    "pytest-benchmark",
-    "pytest-codspeed",
-    "packaging",
-    "jsonschema",
+    "pytest-memray>=1.7.0; platform_python_implementation == 'CPython' and python_version < '3.13' and platform_system != 'Windows'",
+    "packaging>=23.2",
+    "jsonschema>=4.23.0",
 ]
 docs = [
     "autoflake",
@@ -187,9 +186,6 @@ markers = [
 
 [tool.uv]
 default-groups = ["dev"]
-
-[tool.uv.sources]
-example-plugin = { path = "tests/plugin" }
 
 # configuring https://github.com/pydantic/hooky
 [tool.hooky]

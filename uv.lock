@@ -532,11 +532,6 @@ wheels = [
 ]
 
 [[package]]
-name = "example-plugin"
-version = "0.1.0"
-source = { directory = "tests/plugin" }
-
-[[package]]
 name = "exceptiongroup"
 version = "1.2.2"
 source = { registry = "https://pypi.org/simple" }
@@ -1332,7 +1327,6 @@ version = "2.10.0b1"
 source = { editable = "." }
 dependencies = [
     { name = "annotated-types" },
-    { name = "example-plugin" },
     { name = "pydantic-core" },
     { name = "typing-extensions" },
 ]
@@ -1435,7 +1429,6 @@ typechecking = [
 requires-dist = [
     { name = "annotated-types", specifier = ">=0.6.0" },
     { name = "email-validator", marker = "extra == 'email'", specifier = ">=2.0.0" },
-    { name = "example-plugin", directory = "tests/plugin" },
     { name = "pydantic-core", specifier = "==2.26.0" },
     { name = "typing-extensions", specifier = ">=4.12.2" },
     { name = "tzdata", marker = "python_full_version >= '3.9' and sys_platform == 'win32' and extra == 'timezone'" },
@@ -1446,13 +1439,14 @@ all = [
     { name = "ansi2html" },
     { name = "autoflake" },
     { name = "cloudpickle" },
-    { name = "coverage", extras = ["toml"] },
+    { name = "coverage", extras = ["toml"], specifier = ">=7" },
     { name = "devtools" },
-    { name = "dirty-equals" },
+    { name = "dirty-equals", specifier = ">=0.8.0" },
     { name = "eval-type-backport" },
-    { name = "faker" },
+    { name = "eval-type-backport", specifier = ">=0.2.0" },
+    { name = "faker", specifier = ">=18.13.0" },
     { name = "greenlet", marker = "python_full_version < '3.13'" },
-    { name = "jsonschema" },
+    { name = "jsonschema", specifier = ">=4.23.0" },
     { name = "mike" },
     { name = "mkdocs" },
     { name = "mkdocs-exclude" },
@@ -1460,41 +1454,41 @@ all = [
     { name = "mkdocs-redirects" },
     { name = "mkdocstrings-python" },
     { name = "mypy", specifier = "==1.12.1" },
-    { name = "packaging" },
+    { name = "packaging", specifier = ">=23.2" },
     { name = "pydantic-extra-types", git = "https://github.com/pydantic/pydantic-extra-types.git?rev=main" },
     { name = "pydantic-settings" },
     { name = "pyright", specifier = "==1.1.384" },
-    { name = "pytest" },
-    { name = "pytest-benchmark" },
-    { name = "pytest-codspeed" },
-    { name = "pytest-examples" },
-    { name = "pytest-memray", marker = "python_full_version < '3.13' and platform_python_implementation == 'CPython' and platform_system != 'Windows'" },
-    { name = "pytest-mock" },
-    { name = "pytest-pretty" },
-    { name = "pytz" },
+    { name = "pytest", specifier = ">=8.2.2" },
+    { name = "pytest-benchmark", specifier = ">=4.0.0" },
+    { name = "pytest-codspeed", specifier = ">=2.2.1" },
+    { name = "pytest-examples", specifier = ">=0.0.13" },
+    { name = "pytest-memray", marker = "python_full_version < '3.13' and platform_python_implementation == 'CPython' and platform_system != 'Windows'", specifier = ">=1.7.0" },
+    { name = "pytest-mock", specifier = ">=3.14.0" },
+    { name = "pytest-pretty", specifier = ">=1.2.0" },
+    { name = "pytz", specifier = ">=2024" },
     { name = "pyupgrade" },
     { name = "requests" },
     { name = "ruff" },
     { name = "sqlalchemy" },
     { name = "tomli" },
-    { name = "tzdata", marker = "platform_system == 'Windows'" },
+    { name = "tzdata", marker = "platform_system == 'Windows'", specifier = ">=2024" },
 ]
 dev = [
-    { name = "coverage", extras = ["toml"] },
-    { name = "dirty-equals" },
-    { name = "eval-type-backport" },
-    { name = "faker" },
-    { name = "jsonschema" },
-    { name = "packaging" },
-    { name = "pytest" },
-    { name = "pytest-benchmark" },
-    { name = "pytest-codspeed" },
-    { name = "pytest-examples" },
-    { name = "pytest-memray", marker = "python_full_version < '3.13' and platform_python_implementation == 'CPython' and platform_system != 'Windows'" },
-    { name = "pytest-mock" },
-    { name = "pytest-pretty" },
-    { name = "pytz" },
-    { name = "tzdata", marker = "platform_system == 'Windows'" },
+    { name = "coverage", extras = ["toml"], specifier = ">=7" },
+    { name = "dirty-equals", specifier = ">=0.8.0" },
+    { name = "eval-type-backport", specifier = ">=0.2.0" },
+    { name = "faker", specifier = ">=18.13.0" },
+    { name = "jsonschema", specifier = ">=4.23.0" },
+    { name = "packaging", specifier = ">=23.2" },
+    { name = "pytest", specifier = ">=8.2.2" },
+    { name = "pytest-benchmark", specifier = ">=4.0.0" },
+    { name = "pytest-codspeed", specifier = ">=2.2.1" },
+    { name = "pytest-examples", specifier = ">=0.0.13" },
+    { name = "pytest-memray", marker = "python_full_version < '3.13' and platform_python_implementation == 'CPython' and platform_system != 'Windows'", specifier = ">=1.7.0" },
+    { name = "pytest-mock", specifier = ">=3.14.0" },
+    { name = "pytest-pretty", specifier = ">=1.2.0" },
+    { name = "pytz", specifier = ">=2024" },
+    { name = "tzdata", marker = "platform_system == 'Windows'", specifier = ">=2024" },
 ]
 docs = [
     { name = "autoflake" },
