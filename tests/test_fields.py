@@ -158,6 +158,7 @@ def test_property_visible_when_extra_present():
 
     assert instance.test_prop == 'test'
 
+
 @pytest.mark.parametrize('number', (1, 42, 443, 11.11, 0.553))
 def test_coerce_numbers_to_str_field_option(number):
     class Model(BaseModel):

@@ -1314,7 +1314,7 @@ wheels = [
 
 [[package]]
 name = "pydantic"
-version = "2.10.0a1"
+version = "2.10.0b1"
 source = { editable = "." }
 dependencies = [
     { name = "annotated-types" },
