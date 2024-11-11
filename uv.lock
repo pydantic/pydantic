@@ -532,6 +532,11 @@ wheels = [
 ]
 
 [[package]]
+name = "example-plugin"
+version = "0.1.0"
+source = { directory = "tests/plugin" }
+
+[[package]]
 name = "exceptiongroup"
 version = "1.2.2"
 source = { registry = "https://pypi.org/simple" }
@@ -1327,6 +1332,7 @@ version = "2.10.0b1"
 source = { editable = "." }
 dependencies = [
     { name = "annotated-types" },
+    { name = "example-plugin" },
     { name = "pydantic-core" },
     { name = "typing-extensions" },
 ]
@@ -1429,6 +1435,7 @@ typechecking = [
 requires-dist = [
     { name = "annotated-types", specifier = ">=0.6.0" },
     { name = "email-validator", marker = "extra == 'email'", specifier = ">=2.0.0" },
+    { name = "example-plugin", directory = "tests/plugin" },
     { name = "pydantic-core", specifier = "==2.26.0" },
     { name = "typing-extensions", specifier = ">=4.12.2" },
     { name = "tzdata", marker = "python_full_version >= '3.9' and sys_platform == 'win32' and extra == 'timezone'" },

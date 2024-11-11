@@ -51,6 +51,7 @@ dependencies = [
     'typing-extensions>=4.12.2',
     'annotated-types>=0.6.0',
     'pydantic-core==2.26.0',
+    "example-plugin",
 ]
 dynamic = ['version', 'readme']
 
@@ -186,6 +187,9 @@ markers = [
 
 [tool.uv]
 default-groups = ["dev"]
+
+[tool.uv.sources]
+example-plugin = { path = "tests/plugin" }
 
 # configuring https://github.com/pydantic/hooky
 [tool.hooky]

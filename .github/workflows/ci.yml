@@ -182,23 +182,16 @@ jobs:
       - uses: actions/checkout@v4
 
       - uses: astral-sh/setup-uv@v3
-        with:
-          enable-cache: true
 
       - name: install deps
         run: uv sync --python 3.12
 
       - name: install example plugin
-        run: unset UV_FREEZE && uv add ./tests/plugin --no-sync
+        run: uv pip install ./tests/plugin
 
       - run: uv run pytest tests/plugin
         env:
           TEST_PLUGIN: 1
-
-      # uninstalling is necessary because cache is shared with other jobs
-      # which includes the plugin
-      - name: uninstall example plugin
-        run: unset UV_FREEZE && uv remove example_plugin --no-sync
 
   test-mypy:
     name: mypy ${{ matrix.mypy-version }} / ${{ matrix.python-version }}
