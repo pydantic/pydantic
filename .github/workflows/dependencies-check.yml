@@ -23,7 +23,7 @@ jobs:
         mode: first-last
 
   test:
-    name: test py${{ matrix.python-version }} on ${{ matrix.PYTHON_DEPENDENCY_CASE }}
+    name: Test py${{ matrix.python-version }} on ${{ matrix.PYTHON_DEPENDENCY_CASE }}
 
     needs:
     - find_dependency_cases
@@ -39,8 +39,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: set up python
-      uses: actions/setup-python@v5
+    - uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
 

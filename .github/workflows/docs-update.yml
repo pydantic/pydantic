@@ -18,13 +18,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup uv
-        uses: astral-sh/setup-uv@v3
+      - uses: astral-sh/setup-uv@v3
         with:
           enable-cache: true
 
-      - name: install
-        run: uv sync --python 3.12 --group linting
+      - name: Install dependencies
+        run: uv sync --python 3.12 --group linting --all-extras
 
       - uses: pre-commit/action@v3.0.1
         with:
@@ -37,12 +36,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup uv
-        uses: astral-sh/setup-uv@v3
+      - uses: astral-sh/setup-uv@v3
         with:
           enable-cache: true
 
-      - name: install deps
+      - name: Install dependencies
         run: uv sync --python 3.12 --group testing-extra
 
       - run: 'uv run python -c "import pydantic.version; print(pydantic.version.version_info())"'
@@ -56,12 +54,12 @@ jobs:
     timeout-minutes: 30
 
     steps:
-      - name: checkout docs-site
+      - name: Checkout docs-site
         uses: actions/checkout@v4
         with:
           ref: docs-site
 
-      - name: checkout current branch
+      - name: Checkout current branch
         uses: actions/checkout@v4
 
       - uses: astral-sh/setup-uv@v3
@@ -80,7 +78,7 @@ jobs:
       #   pydantic_core/core_schema.py
       # instead of
       #   .venv/lib/python3.10/site-packages/pydantic_core/core_schema.py
-      - name: prepare shortcuts for extra modules
+      - name: Prepare shortcuts for extra modules
         run: |
           ln -s .venv/lib/python*/site-packages/pydantic_core pydantic_core
           ln -s .venv/lib/python*/site-packages/pydantic_settings pydantic_settings

@@ -1,4 +1,4 @@
-name: Upload Previews
+name: Upload previews
 
 on:
   workflow_run:

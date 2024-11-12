@@ -1,4 +1,4 @@
-name: Cherry Pick
+name: Cherry pick
 
 on:
   pull_request_target:

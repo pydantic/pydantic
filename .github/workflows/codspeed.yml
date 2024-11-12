@@ -14,19 +14,14 @@ env:
 
 jobs:
   codspeed-profiling:
-    name: codspeed profiling
+    name: CodSpeed profiling
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup uv
-        uses: astral-sh/setup-uv@v3
+      - uses: astral-sh/setup-uv@v3
         with:
           enable-cache: true
-
-      - uses: actions/setup-python@v3
-        with:
-          python-version: "3.12"
 
       - name: install deps
         run: uv sync --python 3.12 --group testing-extra --extra email --frozen

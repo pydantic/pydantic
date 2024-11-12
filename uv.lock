@@ -1,7 +1,8 @@
 version = 1
 requires-python = ">=3.8"
 resolution-markers = [
-    "python_full_version < '3.9' or (python_full_version < '3.12' and sys_platform != 'win32')",
+    "python_full_version < '3.9' or (python_full_version < '3.12' and platform_system != 'Windows' and sys_platform != 'win32')",
+    "python_full_version >= '3.9' and python_full_version < '3.12' and platform_system == 'Windows' and sys_platform != 'win32'",
     "python_full_version >= '3.12' and sys_platform != 'win32'",
     "python_full_version >= '3.9' and python_full_version < '3.12' and sys_platform == 'win32'",
     "python_full_version >= '3.12' and sys_platform == 'win32'",
@@ -45,8 +46,8 @@ name = "astunparse"
 version = "1.6.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "six", marker = "python_full_version < '3.9' or (python_full_version < '3.12' and sys_platform != 'win32')" },
-    { name = "wheel", marker = "python_full_version < '3.9' or (python_full_version < '3.12' and sys_platform != 'win32')" },
+    { name = "six", marker = "python_full_version < '3.9' or (python_full_version < '3.12' and platform_system != 'Windows' and sys_platform != 'win32')" },
+    { name = "wheel", marker = "python_full_version < '3.9' or (python_full_version < '3.12' and platform_system != 'Windows' and sys_platform != 'win32')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/f3/af/4182184d3c338792894f34a62672919db7ca008c89abee9b564dd34d8029/astunparse-1.6.3.tar.gz", hash = "sha256:5ad93a8456f0d084c3456d059fd9a92cce667963232cbf763eac3bc5b7940872", size = 18290 }
 wheels = [
@@ -756,7 +757,7 @@ name = "linkify-it-py"
 version = "2.0.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "uc-micro-py" },
+    { name = "uc-micro-py", marker = "python_full_version < '3.9' or python_full_version >= '3.12' or platform_system != 'Windows' or sys_platform == 'win32'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/2a/ae/bb56c6828e4797ba5a4821eec7c43b8bf40f69cda4d4f5f8c8a2810ec96a/linkify-it-py-2.0.3.tar.gz", hash = "sha256:68cda27e162e9215c17d786649d1da0021a451bdc436ef9e0fa0ba5234b9b048", size = 27946 }
 wheels = [
@@ -789,10 +790,10 @@ wheels = [
 
 [package.optional-dependencies]
 linkify = [
-    { name = "linkify-it-py" },
+    { name = "linkify-it-py", marker = "python_full_version < '3.9' or python_full_version >= '3.12' or platform_system != 'Windows' or sys_platform == 'win32'" },
 ]
 plugins = [
-    { name = "mdit-py-plugins" },
+    { name = "mdit-py-plugins", marker = "python_full_version < '3.9' or python_full_version >= '3.12' or platform_system != 'Windows' or sys_platform == 'win32'" },
 ]
 
 [[package]]
@@ -858,7 +859,7 @@ name = "mdit-py-plugins"
 version = "0.4.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "markdown-it-py" },
+    { name = "markdown-it-py", marker = "python_full_version < '3.9' or python_full_version >= '3.12' or platform_system != 'Windows' or sys_platform == 'win32'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/19/03/a2ecab526543b152300717cf232bb4bb8605b6edb946c845016fa9c9c9fd/mdit_py_plugins-0.4.2.tar.gz", hash = "sha256:5f2cd1fdb606ddf152d37ec30e46101a60512bc0e5fa1a7002c36647b09e26b5", size = 43542 }
 wheels = [
@@ -879,9 +880,9 @@ name = "memray"
 version = "1.14.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "jinja2" },
-    { name = "rich" },
-    { name = "textual" },
+    { name = "jinja2", marker = "python_full_version < '3.9' or python_full_version >= '3.12' or platform_system != 'Windows' or sys_platform == 'win32'" },
+    { name = "rich", marker = "python_full_version < '3.9' or python_full_version >= '3.12' or platform_system != 'Windows' or sys_platform == 'win32'" },
+    { name = "textual", marker = "python_full_version < '3.9' or python_full_version >= '3.12' or platform_system != 'Windows' or sys_platform == 'win32'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/f8/e8/725ac54c543d43479c32be1d7d49ea75b5f46fbe5f77262332cd51e301dc/memray-1.14.0.tar.gz", hash = "sha256:b5d8874b7b215551f0ae9fa8aef3f2f52321a6460dc0141aaf9374709e6b0eb7", size = 1024807 }
 wheels = [
@@ -1336,7 +1337,7 @@ email = [
     { name = "email-validator" },
 ]
 timezone = [
-    { name = "tzdata", marker = "python_full_version >= '3.9' and sys_platform == 'win32'" },
+    { name = "tzdata", marker = "python_full_version >= '3.9' and platform_system == 'Windows'" },
 ]
 
 [package.dev-dependencies]
@@ -1366,7 +1367,7 @@ all = [
     { name = "pytest-benchmark" },
     { name = "pytest-codspeed" },
     { name = "pytest-examples" },
-    { name = "pytest-memray", marker = "python_full_version < '3.13' and platform_python_implementation == 'CPython' and platform_system != 'Windows'" },
+    { name = "pytest-memray", marker = "platform_python_implementation == 'CPython' and platform_system != 'Windows'" },
     { name = "pytest-mock" },
     { name = "pytest-pretty" },
     { name = "pytz" },
@@ -1388,7 +1389,7 @@ dev = [
     { name = "pytest-benchmark" },
     { name = "pytest-codspeed" },
     { name = "pytest-examples" },
-    { name = "pytest-memray", marker = "python_full_version < '3.13' and platform_python_implementation == 'CPython' and platform_system != 'Windows'" },
+    { name = "pytest-memray", marker = "platform_python_implementation == 'CPython' and platform_system != 'Windows'" },
     { name = "pytest-mock" },
     { name = "pytest-pretty" },
     { name = "pytz" },
@@ -1423,6 +1424,7 @@ testing-extra = [
 typechecking = [
     { name = "mypy" },
     { name = "pydantic-settings" },
+    { name = "pyright" },
 ]
 
 [package.metadata]
@@ -1431,7 +1433,7 @@ requires-dist = [
     { name = "email-validator", marker = "extra == 'email'", specifier = ">=2.0.0" },
     { name = "pydantic-core", specifier = "==2.26.0" },
     { name = "typing-extensions", specifier = ">=4.12.2" },
-    { name = "tzdata", marker = "python_full_version >= '3.9' and sys_platform == 'win32' and extra == 'timezone'" },
+    { name = "tzdata", marker = "python_full_version >= '3.9' and platform_system == 'Windows' and extra == 'timezone'" },
 ]
 
 [package.metadata.requires-dev]
@@ -1439,56 +1441,55 @@ all = [
     { name = "ansi2html" },
     { name = "autoflake" },
     { name = "cloudpickle" },
-    { name = "coverage", extras = ["toml"], specifier = ">=7" },
+    { name = "coverage", extras = ["toml"] },
     { name = "devtools" },
-    { name = "dirty-equals", specifier = ">=0.8.0" },
+    { name = "dirty-equals" },
     { name = "eval-type-backport" },
-    { name = "eval-type-backport", specifier = ">=0.2.0" },
-    { name = "faker", specifier = ">=18.13.0" },
+    { name = "faker" },
     { name = "greenlet", marker = "python_full_version < '3.13'" },
-    { name = "jsonschema", specifier = ">=4.23.0" },
+    { name = "jsonschema" },
     { name = "mike" },
     { name = "mkdocs" },
     { name = "mkdocs-exclude" },
     { name = "mkdocs-material", extras = ["imaging"] },
     { name = "mkdocs-redirects" },
     { name = "mkdocstrings-python" },
-    { name = "mypy", specifier = "==1.12.1" },
-    { name = "packaging", specifier = ">=23.2" },
+    { name = "mypy" },
+    { name = "packaging" },
     { name = "pydantic-extra-types", git = "https://github.com/pydantic/pydantic-extra-types.git?rev=main" },
     { name = "pydantic-settings" },
-    { name = "pyright", specifier = "==1.1.384" },
-    { name = "pytest", specifier = ">=8.2.2" },
-    { name = "pytest-benchmark", specifier = ">=4.0.0" },
-    { name = "pytest-codspeed", specifier = ">=2.2.1" },
-    { name = "pytest-examples", specifier = ">=0.0.13" },
-    { name = "pytest-memray", marker = "python_full_version < '3.13' and platform_python_implementation == 'CPython' and platform_system != 'Windows'", specifier = ">=1.7.0" },
-    { name = "pytest-mock", specifier = ">=3.14.0" },
-    { name = "pytest-pretty", specifier = ">=1.2.0" },
-    { name = "pytz", specifier = ">=2024" },
+    { name = "pyright" },
+    { name = "pytest" },
+    { name = "pytest-benchmark" },
+    { name = "pytest-codspeed" },
+    { name = "pytest-examples" },
+    { name = "pytest-memray", marker = "platform_python_implementation == 'CPython' and platform_system != 'Windows'" },
+    { name = "pytest-mock" },
+    { name = "pytest-pretty" },
+    { name = "pytz" },
     { name = "pyupgrade" },
     { name = "requests" },
     { name = "ruff" },
     { name = "sqlalchemy" },
     { name = "tomli" },
-    { name = "tzdata", marker = "platform_system == 'Windows'", specifier = ">=2024" },
+    { name = "tzdata", marker = "platform_system == 'Windows'" },
 ]
 dev = [
-    { name = "coverage", extras = ["toml"], specifier = ">=7" },
-    { name = "dirty-equals", specifier = ">=0.8.0" },
-    { name = "eval-type-backport", specifier = ">=0.2.0" },
-    { name = "faker", specifier = ">=18.13.0" },
-    { name = "jsonschema", specifier = ">=4.23.0" },
-    { name = "packaging", specifier = ">=23.2" },
-    { name = "pytest", specifier = ">=8.2.2" },
-    { name = "pytest-benchmark", specifier = ">=4.0.0" },
-    { name = "pytest-codspeed", specifier = ">=2.2.1" },
-    { name = "pytest-examples", specifier = ">=0.0.13" },
-    { name = "pytest-memray", marker = "python_full_version < '3.13' and platform_python_implementation == 'CPython' and platform_system != 'Windows'", specifier = ">=1.7.0" },
-    { name = "pytest-mock", specifier = ">=3.14.0" },
-    { name = "pytest-pretty", specifier = ">=1.2.0" },
-    { name = "pytz", specifier = ">=2024" },
-    { name = "tzdata", marker = "platform_system == 'Windows'", specifier = ">=2024" },
+    { name = "coverage", extras = ["toml"] },
+    { name = "dirty-equals" },
+    { name = "eval-type-backport" },
+    { name = "faker" },
+    { name = "jsonschema" },
+    { name = "packaging" },
+    { name = "pytest" },
+    { name = "pytest-benchmark" },
+    { name = "pytest-codspeed" },
+    { name = "pytest-examples" },
+    { name = "pytest-memray", marker = "platform_python_implementation == 'CPython' and platform_system != 'Windows'" },
+    { name = "pytest-mock" },
+    { name = "pytest-pretty" },
+    { name = "pytz" },
+    { name = "tzdata", marker = "platform_system == 'Windows'" },
 ]
 docs = [
     { name = "autoflake" },
@@ -1506,7 +1507,7 @@ docs = [
 ]
 linting = [
     { name = "eval-type-backport" },
-    { name = "pyright", specifier = "==1.1.384" },
+    { name = "pyright" },
     { name = "ruff" },
 ]
 testing-extra = [
@@ -1517,8 +1518,9 @@ testing-extra = [
     { name = "sqlalchemy" },
 ]
 typechecking = [
-    { name = "mypy", specifier = "==1.12.1" },
+    { name = "mypy" },
     { name = "pydantic-settings" },
+    { name = "pyright" },
 ]
 
 [[package]]
@@ -1770,8 +1772,8 @@ name = "pytest-memray"
 version = "1.7.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "memray" },
-    { name = "pytest" },
+    { name = "memray", marker = "python_full_version < '3.9' or python_full_version >= '3.12' or platform_system != 'Windows' or sys_platform == 'win32'" },
+    { name = "pytest", marker = "python_full_version < '3.9' or python_full_version >= '3.12' or platform_system != 'Windows' or sys_platform == 'win32'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/4b/33/31536fa35fae6b040f7bb31375c6b95d025eb38e16416c23c0daa36bcb1f/pytest_memray-1.7.0.tar.gz", hash = "sha256:c18fa907d2210b42f4096c093e2d3416dfc002dcaa450ef3f9ba819bc3dd8f5f", size = 240564 }
 wheels = [
@@ -2279,9 +2281,9 @@ name = "textual"
 version = "0.73.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "markdown-it-py", extra = ["linkify", "plugins"] },
-    { name = "rich" },
-    { name = "typing-extensions" },
+    { name = "markdown-it-py", extra = ["linkify", "plugins"], marker = "python_full_version < '3.9' or python_full_version >= '3.12' or platform_system != 'Windows' or sys_platform == 'win32'" },
+    { name = "rich", marker = "python_full_version < '3.9' or python_full_version >= '3.12' or platform_system != 'Windows' or sys_platform == 'win32'" },
+    { name = "typing-extensions", marker = "python_full_version < '3.9' or python_full_version >= '3.12' or platform_system != 'Windows' or sys_platform == 'win32'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/d8/e9/4939bf72d4a7d1a37aa5d55ad4438594a9d5e59875195dd89e9d8c14a9a9/textual-0.73.0.tar.gz", hash = "sha256:ccd1e873370577f557dfdf2b3411f2a4f68b57d4365f9d83a00d084afb15f5a6", size = 1291992 }
 wheels = [
