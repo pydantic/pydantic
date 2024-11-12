@@ -309,8 +309,8 @@ class TypeAdapter(Generic[T]):
         if not force and self._pydantic_complete:
             return None
         else:
-            if '_core_schema' in self.__dict__:
-                delattr(self, '_core_schema')  # delete cached value to ensure full rebuild happens
+            if 'core_schema' in self.__dict__:
+                delattr(self, 'core_schema')  # delete cached value to ensure full rebuild happens
 
             if _types_namespace is not None:
                 rebuild_ns = _types_namespace
