@@ -235,7 +235,7 @@ print(v)
 4. The `a` field is required, so validation on the only item in the list fails and is dropped.
 5. Partial validation also works with Python objects, it should have the same semantics as with JSON except of course you can't have a genuinely "incomplete" Python object.
 6. The same as above but with a Python object, `c` is dropped as it's not required and failed validation.
-7. The `trailing-strings` mode allows for trailing strings in the input, in this case the input is valid JSON up to the point where the string is truncated, so the last string is included.
+7. The `trailing-strings` mode allows for incomplete strings at the end of partial JSON to be included in the output, in this case the input is valid JSON up to the point where the string is truncated, so the last string is included.
 
 ### How Partial Validation Works
 
