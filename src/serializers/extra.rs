@@ -198,6 +198,10 @@ impl<'a> Extra<'a> {
     pub fn serialize_infer<'py>(&'py self, value: &'py Bound<'py, PyAny>) -> super::infer::SerializeInfer<'py> {
         super::infer::SerializeInfer::new(value, None, None, self)
     }
+
+    pub(crate) fn model_type_name(&self) -> Option<Bound<'a, PyString>> {
+        self.model.and_then(|model| model.get_type().name().ok())
+    }
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]

@@ -62,53 +62,36 @@ class ModelB:
 @pytest.fixture(scope='module')
 def model_serializer() -> SchemaSerializer:
     return SchemaSerializer(
-        {
-            'type': 'union',
-            'choices': [
-                {
-                    'type': 'model',
-                    'cls': ModelA,
-                    'schema': {
-                        'type': 'model-fields',
-                        'fields': {
-                            'a': {'type': 'model-field', 'schema': {'type': 'bytes'}},
-                            'b': {
-                                'type': 'model-field',
-                                'schema': {
-                                    'type': 'float',
-                                    'serialization': {
-                                        'type': 'format',
-                                        'formatting_string': '0.1f',
-                                        'when_used': 'unless-none',
-                                    },
-                                },
-                            },
-                        },
-                    },
-                },
-                {
-                    'type': 'model',
-                    'cls': ModelB,
-                    'schema': {
-                        'type': 'model-fields',
-                        'fields': {
-                            'c': {'type': 'model-field', 'schema': {'type': 'bytes'}},
-                            'd': {
-                                'type': 'model-field',
-                                'schema': {
-                                    'type': 'float',
-                                    'serialization': {
-                                        'type': 'format',
-                                        'formatting_string': '0.2f',
-                                        'when_used': 'unless-none',
-                                    },
-                                },
-                            },
-                        },
-                    },
-                },
+        core_schema.union_schema(
+            [
+                core_schema.model_schema(
+                    ModelA,
+                    core_schema.model_fields_schema(
+                        {
+                            'a': core_schema.model_field(core_schema.bytes_schema()),
+                            'b': core_schema.model_field(
+                                core_schema.float_schema(
+                                    serialization=core_schema.format_ser_schema('0.1f', when_used='unless-none')
+                                )
+                            ),
+                        }
+                    ),
+                ),
+                core_schema.model_schema(
+                    ModelB,
+                    core_schema.model_fields_schema(
+                        {
+                            'c': core_schema.model_field(core_schema.bytes_schema()),
+                            'd': core_schema.model_field(
+                                core_schema.float_schema(
+                                    serialization=core_schema.format_ser_schema('0.2f', when_used='unless-none')
+                                )
+                            ),
+                        }
+                    ),
+                ),
             ],
-        }
+        )
     )
 
 
@@ -780,6 +763,70 @@ def test_tagged_union_with_aliases() -> None:
     model_b = ModelB(field=1)
     assert s.to_python(model_a) == {'field': 1, 'TAG': 'a'}
     assert s.to_python(model_b) == {'field': 1, 'TAG': 'b'}
+
+
+def test_union_model_wrap_serializer():
+    def wrap_serializer(value, handler):
+        return handler(value)
+
+    class Data:
+        pass
+
+    class ModelA:
+        a: Data
+
+    class ModelB:
+        a: Data
+
+    model_serializer = SchemaSerializer(
+        core_schema.union_schema(
+            [
+                core_schema.model_schema(
+                    ModelA,
+                    core_schema.model_fields_schema(
+                        {
+                            'a': core_schema.model_field(
+                                core_schema.model_schema(
+                                    Data,
+                                    core_schema.model_fields_schema({}),
+                                )
+                            ),
+                        },
+                    ),
+                    serialization=core_schema.wrap_serializer_function_ser_schema(wrap_serializer),
+                ),
+                core_schema.model_schema(
+                    ModelB,
+                    core_schema.model_fields_schema(
+                        {
+                            'a': core_schema.model_field(
+                                core_schema.model_schema(
+                                    Data,
+                                    core_schema.model_fields_schema({}),
+                                )
+                            ),
+                        },
+                    ),
+                    serialization=core_schema.wrap_serializer_function_ser_schema(wrap_serializer),
+                ),
+            ],
+        )
+    )
+
+    input_value = ModelA()
+    input_value.a = Data()
+
+    assert model_serializer.to_python(input_value) == {'a': {}}
+    assert model_serializer.to_python(input_value, mode='json') == {'a': {}}
+    assert model_serializer.to_json(input_value) == b'{"a":{}}'
+
+    # add some additional attribute, should be ignored & not break serialization
+
+    input_value.a._a = 'foo'
+
+    assert model_serializer.to_python(input_value) == {'a': {}}
+    assert model_serializer.to_python(input_value, mode='json') == {'a': {}}
+    assert model_serializer.to_json(input_value) == b'{"a":{}}'
 
 
 class ModelDog:
