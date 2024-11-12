@@ -232,6 +232,7 @@ class NsResolver:
         """The current global and local namespaces to be used for annotations evaluation."""
         if not self._types_stack:
             # TODO do we want to merge `self._parent_ns` here?
+            # TODO: this might be relevant for fixing namespace bugs with TypeAdapters...
             return self._base_ns_tuple
 
         typ = self._types_stack[-1]

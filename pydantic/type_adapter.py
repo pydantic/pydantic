@@ -224,7 +224,8 @@ class TypeAdapter(Generic[T]):
         )
         globalns: _namespace_utils.GlobalsNamespace = sys._getframe(max(self._parent_depth - 1, 1)).f_globals.copy()
         ns_resolver = _namespace_utils.NsResolver(
-            namespaces_tuple=_namespace_utils.NamespacesTuple(locals=localns, globals=globalns)
+            namespaces_tuple=_namespace_utils.NamespacesTuple(locals=localns, globals=globalns),
+            parent_namespace=localns,
         )
         self._init_core_attrs(ns_resolver=ns_resolver, force=False)
 
@@ -323,7 +324,11 @@ class TypeAdapter(Generic[T]):
             else:
                 rebuild_ns = {}
 
-            ns_resolver = _namespace_utils.NsResolver(parent_namespace=rebuild_ns)
+            ns_resolver = _namespace_utils.NsResolver(
+                # TODO: need to figure this out for bugs with TypeAdapters...
+                # _namespace_utils.NamespacesTuple(locals=rebuild_ns, globals=rebuild_ns),
+                parent_namespace=rebuild_ns,
+            )
             return self._init_core_attrs(ns_resolver=ns_resolver, force=True)
 
     def validate_python(
