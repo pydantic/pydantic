@@ -179,6 +179,13 @@ impl FunctionPlainSerializer {
             .expect("fallback_serializer unexpectedly none")
             .as_ref()
     }
+
+    fn retry_with_lax_check(&self) -> bool {
+        self.fallback_serializer
+            .as_ref()
+            .map_or(false, |f| f.retry_with_lax_check())
+            || self.return_serializer.retry_with_lax_check()
+    }
 }
 
 fn on_error(py: Python, err: PyErr, function_name: &str, extra: &Extra) -> PyResult<()> {
@@ -270,6 +277,10 @@ macro_rules! function_type_serializer {
 
             fn get_name(&self) -> &str {
                 &self.name
+            }
+
+            fn retry_with_lax_check(&self) -> bool {
+                self.retry_with_lax_check()
             }
         }
     };
@@ -408,6 +419,10 @@ impl FunctionWrapSerializer {
 
     fn get_fallback_serializer(&self) -> &CombinedSerializer {
         self.serializer.as_ref()
+    }
+
+    fn retry_with_lax_check(&self) -> bool {
+        self.serializer.retry_with_lax_check() || self.return_serializer.retry_with_lax_check()
     }
 }
 

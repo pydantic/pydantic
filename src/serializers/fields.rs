@@ -200,7 +200,15 @@ impl GeneralFieldsSerializer {
                     };
                     output_dict.set_item(key, value)?;
                 } else if field_extra.check == SerCheck::Strict {
-                    return Err(PydanticSerializationUnexpectedValue::new_err(None));
+                    let type_name = field_extra.model_type_name();
+                    return Err(PydanticSerializationUnexpectedValue::new_err(Some(format!(
+                        "Unexpected field `{key}`{for_type_name}",
+                        for_type_name = if let Some(type_name) = type_name {
+                            format!(" for type `{type_name}`")
+                        } else {
+                            String::new()
+                        },
+                    ))));
                 }
             }
         }
@@ -212,22 +220,15 @@ impl GeneralFieldsSerializer {
             && self.required_fields > used_req_fields
         {
             let required_fields = self.required_fields;
-            let type_name = match extra.model {
-                Some(model) => model
-                    .get_type()
-                    .qualname()
-                    .ok()
-                    .unwrap_or_else(|| PyString::new_bound(py, "<unknown python object>"))
-                    .to_string(),
-                None => "<unknown python object>".to_string(),
-            };
+            let type_name = extra.model_type_name();
             let field_value = match extra.model {
                 Some(model) => truncate_safe_repr(model, Some(100)),
                 None => "<unknown python object>".to_string(),
             };
 
             Err(PydanticSerializationUnexpectedValue::new_err(Some(format!(
-                "Expected {required_fields} fields but got {used_req_fields} for type `{type_name}` with value `{field_value}` - serialized value may not be as expected."
+                "Expected {required_fields} fields but got {used_req_fields}{for_type_name} with value `{field_value}` - serialized value may not be as expected.",
+                for_type_name = if let Some(type_name) = type_name { format!(" for type `{type_name}`") } else { String::new() },
             ))))
         } else {
             Ok(output_dict)
