@@ -222,7 +222,7 @@ class TypeAdapter(Generic[T]):
         localns: _namespace_utils.MappingNamespace = (
             _typing_extra.parent_frame_namespace(parent_depth=self._parent_depth) or {}
         )
-        globalns: _namespace_utils.GlobalsNamespace = sys._getframe(max(self._parent_depth - 1, 1)).f_globals.copy()
+        globalns: _namespace_utils.GlobalsNamespace = sys._getframe(max(self._parent_depth - 1, 1)).f_globals
         ns_resolver = _namespace_utils.NsResolver(
             namespaces_tuple=_namespace_utils.NamespacesTuple(locals=localns, globals=globalns),
             parent_namespace=localns,
@@ -324,10 +324,11 @@ class TypeAdapter(Generic[T]):
             else:
                 rebuild_ns = {}
 
+            # we have to manually fetch globals here because there's no type on the stack for the NsResolver
+            # and so we skip the globalns = get_module_ns_of(typ) call that would normally happen
+            globalns = sys._getframe(max(_parent_namespace_depth - 1, 1)).f_globals
             ns_resolver = _namespace_utils.NsResolver(
-                # TODO: need to figure this out for bugs with TypeAdapters...
-                # _namespace_utils.NamespacesTuple(locals=rebuild_ns, globals=rebuild_ns),
-                parent_namespace=rebuild_ns,
+                namespaces_tuple=_namespace_utils.NamespacesTuple(globalns, {}), parent_namespace=rebuild_ns
             )
             return self._init_core_attrs(ns_resolver=ns_resolver, force=True)
 
