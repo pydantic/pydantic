@@ -240,7 +240,7 @@ class GenerateJsonSchema:
         ref_template: The format string to use when generating reference names.
 
     Raises:
-        JsonSchemaError: If the instance of the class is inadvertently re-used after generating a schema.
+        JsonSchemaError: If the instance of the class is inadvertently reused after generating a schema.
     """
 
     schema_dialect = 'https://json-schema.org/draft/2020-12/schema'
@@ -281,7 +281,7 @@ class GenerateJsonSchema:
         # store the error raised and re-throw it if we end up needing that def
         self._core_defs_invalid_for_json_schema: dict[DefsRef, PydanticInvalidForJsonSchema] = {}
 
-        # This changes to True after generating a schema, to prevent issues caused by accidental re-use
+        # This changes to True after generating a schema, to prevent issues caused by accidental reuse
         # of a single instance of a schema generator
         self._used = False
 

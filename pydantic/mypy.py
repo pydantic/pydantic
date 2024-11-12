@@ -315,7 +315,7 @@ class PydanticModelField:
                 self.type = modified_type
 
         if self.type is not None and self.info.self_type is not None:
-            # In general, it is not safe to call `expand_type()` during semantic analyzis,
+            # In general, it is not safe to call `expand_type()` during semantic analysis,
             # however this plugin is called very late, so all types should be fully ready.
             # Also, it is tricky to avoid eager expansion of Self types here (e.g. because
             # we serialize attributes).
