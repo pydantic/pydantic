@@ -1,13 +1,12 @@
 import datetime
 from dataclasses import dataclass
-from typing import Dict, Generic, List, Tuple, TypeVar, Union
+from typing import Dict, Generic, List, Sequence, Tuple, TypeVar, Union
 
 import pytest
 from annotated_types import MaxLen
 from typing_extensions import Annotated, Literal, TypeAliasType
 
-from pydantic import BaseModel, Field, ValidationError
-from pydantic.type_adapter import TypeAdapter
+from pydantic import BaseModel, Field, PydanticUserError, TypeAdapter, ValidationError
 
 T = TypeVar('T')
 
@@ -388,3 +387,59 @@ def test_type_alias_to_type_with_ref():
             'type': 'literal_error',
         }
     ]
+
+
+def test_intermediate_type_aliases() -> None:
+    # https://github.com/pydantic/pydantic/issues/8984
+    MySeq = TypeAliasType('MySeq', Sequence[T], type_params=(T,))
+    MyIntSeq = TypeAliasType('MyIntSeq', MySeq[int])
+
+    class MyModel(BaseModel):
+        my_int_seq: MyIntSeq
+
+    assert MyModel(my_int_seq=range(1, 4)).my_int_seq == [1, 2, 3]
+
+    assert MyModel.model_json_schema() == {
+        '$defs': {'MySeq_int_': {'items': {'type': 'integer'}, 'type': 'array'}},
+        'properties': {'my_int_seq': {'$ref': '#/$defs/MySeq_int_'}},
+        'required': ['my_int_seq'],
+        'title': 'MyModel',
+        'type': 'object',
+    }
+
+
+def test_intermediate_type_aliases_json_type() -> None:
+    JSON = TypeAliasType('JSON', Union[str, int, bool, 'JSONSeq', 'JSONObj', None])
+    JSONObj = TypeAliasType('JSONObj', Dict[str, JSON])
+    JSONSeq = TypeAliasType('JSONSeq', List[JSON])
+    MyJSONAlias1 = TypeAliasType('MyJSONAlias1', JSON)
+    MyJSONAlias2 = TypeAliasType('MyJSONAlias2', MyJSONAlias1)
+    JSONs = TypeAliasType('JSONs', List[MyJSONAlias2])
+
+    adapter = TypeAdapter(JSONs)
+
+    assert adapter.validate_python([{'a': 1}, 2, '3', [4, 5], True, None]) == [{'a': 1}, 2, '3', [4, 5], True, None]
+
+
+def test_intermediate_type_aliases_chain() -> None:
+    A = TypeAliasType('A', int)
+    B = TypeAliasType('B', A)
+    C = TypeAliasType('C', B)
+    D = TypeAliasType('D', C)
+    E = TypeAliasType('E', D)
+
+    TypeAdapter(E)
+
+
+def test_circular_type_aliases() -> None:
+    A = TypeAliasType('A', 'C')
+    B = TypeAliasType('B', A)
+    C = TypeAliasType('C', B)
+
+    with pytest.raises(PydanticUserError) as exc_info:
+
+        class MyModel(BaseModel):
+            a: C
+
+    assert exc_info.value.code == 'circular-reference-schema'
+    assert exc_info.value.message.startswith('tests.test_type_alias_type.C')
