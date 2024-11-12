@@ -6894,6 +6894,7 @@ def test_python_re_respects_flags() -> None:
     assert Model(a='abc').a == 'abc'
 
 
+@pytest.mark.skipif(not email_validator, reason='email_validator not installed')
 def test_constraints_on_str_like() -> None:
     """See https://github.com/pydantic/pydantic/issues/8577 for motivation."""
 

@@ -17,10 +17,12 @@ from copy import copy, deepcopy
 from decimal import Decimal
 from enum import Enum
 from fractions import Fraction
+from functools import partial
 from inspect import Parameter, _ParameterKind, signature
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from itertools import chain
 from operator import attrgetter
+from types import BuiltinFunctionType, BuiltinMethodType, FunctionType, LambdaType, MethodType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -97,7 +99,6 @@ from ._mock_val_ser import MockCoreSchema
 from ._namespace_utils import NamespacesTuple, NsResolver
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
 from ._utils import lenient_issubclass, smart_deepcopy
-from ._validate_call import VALIDATE_CALL_SUPPORTED_TYPES, ValidateCallSupportedTypes
 
 if TYPE_CHECKING:
     from ..fields import ComputedFieldInfo, FieldInfo
@@ -147,6 +148,19 @@ MAPPING_TYPES = [
     typing.Counter,
 ]
 DEQUE_TYPES: list[type] = [collections.deque, typing.Deque]
+
+# Note: This does not play very well with type checkers. For example,
+# `a: LambdaType = lambda x: x` will raise a type error by Pyright.
+ValidateCallSupportedTypes = Union[
+    LambdaType,
+    FunctionType,
+    MethodType,
+    BuiltinFunctionType,
+    BuiltinMethodType,
+    partial,
+]
+
+VALIDATE_CALL_SUPPORTED_TYPES = get_args(ValidateCallSupportedTypes)
 
 _mode_to_validator: dict[
     FieldValidatorModes, type[BeforeValidator | AfterValidator | PlainValidator | WrapValidator]

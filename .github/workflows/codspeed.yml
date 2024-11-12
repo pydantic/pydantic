@@ -9,6 +9,9 @@ on:
   # performance analysis in order to generate initial data.
   workflow_dispatch:
 
+env:
+  UV_FROZEN: true
+
 jobs:
   codspeed-profiling:
     name: codspeed profiling
@@ -26,7 +29,7 @@ jobs:
           python-version: "3.12"
 
       - name: install deps
-        run: uv sync --python 3.12 --group testing --group testing-extra --extra email --frozen
+        run: uv sync --python 3.12 --group testing-extra --extra email --frozen
 
       - name: Run CodSpeed benchmarks
         uses: CodSpeedHQ/action@v3

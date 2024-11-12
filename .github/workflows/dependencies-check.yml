@@ -5,6 +5,9 @@ on:
   - cron: '43 3 * * 6,3'
   workflow_dispatch: {}
 
+env:
+  UV_FROZEN: true
+
 jobs:
   find_dependency_cases:
     runs-on: ubuntu-latest
@@ -41,7 +44,8 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - run: pip install uv && uv sync --all-extras
+    - run: pip install uv
+    - run: uv sync --all-extras
 
     - run: uv pip install ${{ matrix.PYTHON_DEPENDENCY_CASE }}
 

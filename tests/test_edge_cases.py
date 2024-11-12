@@ -8,6 +8,7 @@ from decimal import Decimal
 from enum import Enum, auto
 from typing import (
     Any,
+    Callable,
     Dict,
     ForwardRef,
     FrozenSet,
@@ -2889,3 +2890,13 @@ class A(BaseModel):
     )
     A = globs['A']
     assert A(a=1).a == 1
+
+
+def test_method_descriptors_default() -> None:
+    class SomeModel(BaseModel):
+        @staticmethod
+        def default_int_factory() -> int: ...
+
+        int_factory: Callable[[], int] = Field(default=default_int_factory)
+
+    assert SomeModel.model_fields['int_factory'].default is SomeModel.default_int_factory

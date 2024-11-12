@@ -986,6 +986,7 @@ def test_import_email_validator_not_installed(mocker):
         import_email_validator()
 
 
+@pytest.mark.skipif(not email_validator, reason='email_validator not installed')
 def test_import_email_validator_invalid_version(mocker):
     mocker.patch('pydantic.networks.version', return_value='1.0.0')
     with pytest.raises(
