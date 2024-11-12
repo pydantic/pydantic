@@ -166,9 +166,34 @@ Partial validation can be enabled when using the three validation methods on `Ty
 The `experimental_allow_partial` flag can be passed to these methods to enable partial validation.
 It can take the following values (and is `False`, by default):
 
-* `True` or `'on'` - enable partial validation, but don't support trailing strings
 * `False` or `'off'` - disable partial validation
+* `True` or `'on'` - enable partial validation, but don't support trailing strings
 * `'trailing-strings'` - enable partial validation and support trailing strings
+
+!!! info "`'trailing-strings'` mode"
+    `'trailing-strings'` mode allows for trailing incomplete strings at the end of partial JSON to be included in the output.
+    For example, if you're validating against the following model:
+
+    ```python
+    from typing import TypedDict
+
+
+    class Model(TypedDict):
+        a: str
+        b: str
+    ```
+
+    Then the following JSON input would be considered valid, despite the incomplete string at the end:
+
+    ```json
+    '{"a": "hello", "b": "wor'
+    ```
+
+    And would be validated as:
+
+    ```python test="skip" lint="skip"
+    {'a': 'hello', 'b': 'wor'}
+    ```
 
 `experiment_allow_partial` in action:
 
