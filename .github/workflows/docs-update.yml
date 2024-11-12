@@ -10,6 +10,7 @@ on:
 
 env:
   COLUMNS: 150
+  UV_FROZEN: true
 
 jobs:
   lint:
@@ -42,7 +43,7 @@ jobs:
           enable-cache: true
 
       - name: install deps
-        run: uv sync --python 3.12 --group testing
+        run: uv sync --python 3.12 --group testing-extra
 
       - run: 'uv run python -c "import pydantic.version; print(pydantic.version.version_info())"'
 
@@ -63,15 +64,13 @@ jobs:
       - name: checkout current branch
         uses: actions/checkout@v4
 
-      - name: Setup uv
-        uses: astral-sh/setup-uv@v3
+      - uses: astral-sh/setup-uv@v3
         with:
           enable-cache: true
 
-      - name: install
-        run: |
-          uv sync --python 3.12 --group docs
-          uv pip install --default-index https://pydantic:${PPPR_TOKEN}@pppr.pydantic.dev/simple/ mkdocs-material
+      - run: uv sync --python 3.12 --group docs
+
+      - run: uv pip install --default-index https://pydantic:${PPPR_TOKEN}@pppr.pydantic.dev/simple/ mkdocs-material
         env:
           PPPR_TOKEN: ${{ secrets.PPPR_TOKEN }}
 

@@ -3,29 +3,15 @@ from __future__ import annotations as _annotations
 import functools
 import inspect
 from functools import partial
-from types import BuiltinFunctionType, BuiltinMethodType, FunctionType, LambdaType, MethodType
-from typing import Any, Awaitable, Callable, Union, get_args
+from typing import Any, Awaitable, Callable
 
 import pydantic_core
 
 from ..config import ConfigDict
 from ..plugin._schema_validator import create_schema_validator
-from . import _generate_schema
 from ._config import ConfigWrapper
+from ._generate_schema import GenerateSchema, ValidateCallSupportedTypes
 from ._namespace_utils import MappingNamespace, NsResolver, ns_for_function
-
-# Note: This does not play very well with type checkers. For example,
-# `a: LambdaType = lambda x: x` will raise a type error by Pyright.
-ValidateCallSupportedTypes = Union[
-    LambdaType,
-    FunctionType,
-    MethodType,
-    BuiltinFunctionType,
-    BuiltinMethodType,
-    functools.partial,
-]
-
-VALIDATE_CALL_SUPPORTED_TYPES = get_args(ValidateCallSupportedTypes)
 
 
 def extract_function_name(func: ValidateCallSupportedTypes) -> str:
@@ -82,7 +68,7 @@ class ValidateCallWrapper:
         ns_resolver = NsResolver(namespaces_tuple=ns_for_function(schema_type, parent_namespace=parent_namespace))
 
         config_wrapper = ConfigWrapper(config)
-        gen_schema = _generate_schema.GenerateSchema(config_wrapper, ns_resolver)
+        gen_schema = GenerateSchema(config_wrapper, ns_resolver)
         schema = gen_schema.clean_schema(gen_schema.generate_schema(function))
         core_config = config_wrapper.core_config(title=qualname)
 
@@ -99,7 +85,7 @@ class ValidateCallWrapper:
         if validate_return:
             signature = inspect.signature(function)
             return_type = signature.return_annotation if signature.return_annotation is not signature.empty else Any
-            gen_schema = _generate_schema.GenerateSchema(config_wrapper, ns_resolver)
+            gen_schema = GenerateSchema(config_wrapper, ns_resolver)
             schema = gen_schema.clean_schema(gen_schema.generate_schema(return_type))
             validator = create_schema_validator(
                 schema,

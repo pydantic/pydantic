@@ -34,6 +34,5 @@ repos:
     name: Typecheck
     entry: uv run pyright pydantic
     types: [python]
-    language: node
+    language: system
     pass_filenames: false
-    additional_dependencies: ["pyright@1.1.384"]  # keep this in sync with .github/workflows/ci.yml
