@@ -160,6 +160,7 @@ class TypeAdapter(Generic[T]):
         self.core_schema: CoreSchema
         self.validator: SchemaValidator | PluggableSchemaValidator
         self.serializer: SchemaSerializer
+        self.pydantic_complete: bool = False
 
         localns: _namespace_utils.MappingNamespace = (
             _typing_extra.parent_frame_namespace(parent_depth=self._parent_depth) or {}
@@ -237,7 +238,7 @@ class TypeAdapter(Generic[T]):
         """
         if not force and self._defer_build:
             _mock_val_ser.set_type_adapter_mocks(self, str(self._type))
-            self._pydantic_complete = False
+            self.pydantic_complete = False
             return False
 
         try:
@@ -268,7 +269,7 @@ class TypeAdapter(Generic[T]):
             self.core_schema = self.core_schema.rebuild()  # type: ignore[assignment]
             self._init_core_attrs(ns_resolver=ns_resolver, force=True)
 
-        self._pydantic_complete = True
+        self.pydantic_complete = True
         return True
 
     @property
@@ -306,7 +307,7 @@ class TypeAdapter(Generic[T]):
             Returns `None` if the schema is already "complete" and rebuilding was not required.
             If rebuilding _was_ required, returns `True` if rebuilding was successful, otherwise `False`.
         """
-        if not force and self._pydantic_complete:
+        if not force and self.pydantic_complete:
             return None
 
         if _types_namespace is not None:
