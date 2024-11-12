@@ -299,6 +299,11 @@ def test_nullable():
     assert v.validate_python(None, allow_partial=True) is None
     assert v.validate_python(['ab', 'cd'], allow_partial=True) == ['ab', 'cd']
     assert v.validate_python(['ab', 'c'], allow_partial=True) == ['ab']
+    assert v.validate_json('["ab", "cd"]', allow_partial=True) == ['ab', 'cd']
+    assert v.validate_json('["ab", "cd', allow_partial=True) == ['ab']
+    assert v.validate_json('["ab", "cd', allow_partial='trailing-strings') == ['ab', 'cd']
+    assert v.validate_json('["ab", "c', allow_partial=True) == ['ab']
+    assert v.validate_json('["ab", "c', allow_partial='trailing-strings') == ['ab']
 
 
 @pytest.mark.parametrize(
@@ -311,3 +316,23 @@ def test_json(json_nested_type):
     assert v.validate_python(['{"a": 1}', '{"b": 2}'], allow_partial=True) == snapshot([{'a': 1}, {'b': 2}])
     assert v.validate_python(['{"a": 1}', 'xxx'], allow_partial=True) == snapshot([{'a': 1}])
     assert v.validate_python(['{"a": 1}', '{"b": 2'], allow_partial=True) == snapshot([{'a': 1}, {'b': 2}])
+    assert v.validate_json('["{\\"a\\": 1}", "{\\"b\\": 2}', allow_partial='trailing-strings') == snapshot(
+        [{'a': 1}, {'b': 2}]
+    )
+    assert v.validate_json('["{\\"a\\": 1}", "{\\"b\\": 2', allow_partial='trailing-strings') == snapshot(
+        [{'a': 1}, {'b': 2}]
+    )
+
+
+def test_json_trailing_strings():
+    v = SchemaValidator(core_schema.list_schema(core_schema.json_schema()))
+    assert v.validate_python(['{"a": 1}', '{"b": "x'], allow_partial=True) == snapshot([{'a': 1}, {}])
+    assert v.validate_python(['{"a": 1}', '{"b": "x'], allow_partial='trailing-strings') == snapshot(
+        [{'a': 1}, {'b': 'x'}]
+    )
+
+    assert v.validate_json('["{\\"a\\": 1}", "{\\"b\\": 2}"]') == snapshot([{'a': 1}, {'b': 2}])
+    assert v.validate_json('["{\\"a\\": 1}", "{\\"b\\": 2, \\"c\\": \\"x', allow_partial=True) == snapshot([{'a': 1}])
+    assert v.validate_json(
+        '["{\\"a\\": 1}", "{\\"b\\": 2, \\"c\\": \\"x', allow_partial='trailing-strings'
+    ) == snapshot([{'a': 1}, {'b': 2, 'c': 'x'}])

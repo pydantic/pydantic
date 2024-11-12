@@ -3,7 +3,7 @@ use std::cmp::Ordering;
 use std::ops::Rem;
 use std::str::FromStr;
 
-use jiter::{JsonArray, JsonValue, StringCacheMode};
+use jiter::{JsonArray, JsonValue, PartialMode, StringCacheMode};
 use num_bigint::BigInt;
 
 use pyo3::exceptions::PyTypeError;
@@ -128,9 +128,13 @@ pub(crate) fn validate_iter_to_vec<'py>(
 ) -> ValResult<Vec<PyObject>> {
     let mut output: Vec<PyObject> = Vec::with_capacity(capacity);
     let mut errors: Vec<ValLineError> = Vec::new();
+    let allow_partial = state.allow_partial;
 
     for (index, is_last_partial, item_result) in state.enumerate_last_partial(iter) {
-        state.allow_partial = is_last_partial;
+        state.allow_partial = match is_last_partial {
+            true => allow_partial,
+            false => PartialMode::Off,
+        };
         let item = item_result.map_err(|e| any_next_error!(py, e, max_length_check.input, index))?;
         match validator.validate(py, item.borrow_input(), state) {
             Ok(item) => {
@@ -202,8 +206,13 @@ pub(crate) fn validate_iter_to_set<'py>(
 ) -> ValResult<()> {
     let mut errors: Vec<ValLineError> = Vec::new();
 
+    let allow_partial = state.allow_partial;
+
     for (index, is_last_partial, item_result) in state.enumerate_last_partial(iter) {
-        state.allow_partial = is_last_partial;
+        state.allow_partial = match is_last_partial {
+            true => allow_partial,
+            false => PartialMode::Off,
+        };
         let item = item_result.map_err(|e| any_next_error!(py, e, input, index))?;
         match validator.validate(py, item.borrow_input(), state) {
             Ok(item) => {
