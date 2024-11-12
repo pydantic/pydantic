@@ -6,7 +6,7 @@ import dataclasses
 import warnings
 from copy import copy
 from functools import lru_cache
-from inspect import Parameter, signature
+from inspect import Parameter, ismethoddescriptor, signature
 from typing import TYPE_CHECKING, Any, Callable, Pattern
 
 from pydantic_core import PydanticUndefined
@@ -216,6 +216,13 @@ def collect_model_fields(  # noqa: C901
                     field_info = FieldInfo_.from_annotation(ann_type)
         else:
             _warn_on_nested_alias_in_annotation(ann_type, ann_name)
+            if isinstance(default, FieldInfo_) and ismethoddescriptor(default.default):
+                # the `getattr` call above triggers a call to `__get__` for descriptors, so we do
+                # the same if the `= field(default=...)` form is used. Note that we only do this
+                # for method descriptors for now, we might want to extend this to any descriptor
+                # in the future (by simply checking for `hasattr(default.default, '__get__')`).
+                default.default = default.default.__get__(None, cls)
+
             field_info = FieldInfo_.from_annotated_attribute(ann_type, default)
             # attributes which are fields are removed from the class namespace:
             # 1. To match the behaviour of annotation-only fields

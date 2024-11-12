@@ -332,7 +332,7 @@ class TypeAdapter(Generic[T]):
         strict: bool | None = None,
         from_attributes: bool | None = None,
         context: dict[str, Any] | None = None,
-        experimental_allow_partial: bool = False,
+        experimental_allow_partial: bool | Literal['off', 'on', 'trailing-strings'] = False,
     ) -> T:
         """Validate a Python object against the model.
 
@@ -343,6 +343,9 @@ class TypeAdapter(Generic[T]):
             context: Additional context to pass to the validator.
             experimental_allow_partial: **Experimental** whether to enable
                 [partial validation](../concepts/experimental.md#partial-validation), e.g. to process streams.
+                * False / 'off': Default behavior, no partial validation.
+                * True / 'on': Enable partial validation.
+                * 'trailing-strings': Enable partial validation and allow trailing strings in the input.
 
         !!! note
             When using `TypeAdapter` with a Pydantic `dataclass`, the use of the `from_attributes`
@@ -366,7 +369,7 @@ class TypeAdapter(Generic[T]):
         *,
         strict: bool | None = None,
         context: dict[str, Any] | None = None,
-        experimental_allow_partial: bool = False,
+        experimental_allow_partial: bool | Literal['off', 'on', 'trailing-strings'] = False,
     ) -> T:
         """Usage docs: https://docs.pydantic.dev/2.10/concepts/json/#json-parsing
 
@@ -378,6 +381,9 @@ class TypeAdapter(Generic[T]):
             context: Additional context to use during validation.
             experimental_allow_partial: **Experimental** whether to enable
                 [partial validation](../concepts/experimental.md#partial-validation), e.g. to process streams.
+                * False / 'off': Default behavior, no partial validation.
+                * True / 'on': Enable partial validation.
+                * 'trailing-strings': Enable partial validation and allow trailing strings in the input.
 
         Returns:
             The validated object.
@@ -393,7 +399,7 @@ class TypeAdapter(Generic[T]):
         *,
         strict: bool | None = None,
         context: dict[str, Any] | None = None,
-        experimental_allow_partial: bool = False,
+        experimental_allow_partial: bool | Literal['off', 'on', 'trailing-strings'] = False,
     ) -> T:
         """Validate object contains string data against the model.
 
@@ -403,6 +409,9 @@ class TypeAdapter(Generic[T]):
             context: Additional context to use during validation.
             experimental_allow_partial: **Experimental** whether to enable
                 [partial validation](../concepts/experimental.md#partial-validation), e.g. to process streams.
+                * False / 'off': Default behavior, no partial validation.
+                * True / 'on': Enable partial validation.
+                * 'trailing-strings': Enable partial validation and allow trailing strings in the input.
 
         Returns:
             The validated object.
