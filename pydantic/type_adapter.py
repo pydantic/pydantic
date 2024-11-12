@@ -191,7 +191,7 @@ class TypeAdapter(Generic[T]):
             `BaseModel` uses its own `__module__` to find out where it was defined
             and then looks for symbols to resolve forward references in those globals.
             On the other hand, `TypeAdapter` can be initialized with arbitrary objects,
-            including type aliases, where `__module__` (always `typing.py`) is not useful.
+            which may not be types and thus do not have a `__module__` available.
             So instead we look at the globals in our parent stack frame.
 
             It is expected that the `ns_resolver` passed to this function will have the correct
