@@ -68,8 +68,6 @@ Changelog = 'https://docs.pydantic.dev/latest/changelog/'
 dev = [
     'coverage[toml]',
     'pytz',
-    # weird failures on windows without tzdata
-    'tzdata; platform_system == "Windows"',
     'dirty-equals',
     'eval-type-backport',
     'pytest',

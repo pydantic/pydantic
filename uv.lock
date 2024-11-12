@@ -1376,7 +1376,6 @@ all = [
     { name = "ruff" },
     { name = "sqlalchemy" },
     { name = "tomli" },
-    { name = "tzdata", marker = "platform_system == 'Windows'" },
 ]
 dev = [
     { name = "coverage", extra = ["toml"] },
@@ -1393,7 +1392,6 @@ dev = [
     { name = "pytest-mock" },
     { name = "pytest-pretty" },
     { name = "pytz" },
-    { name = "tzdata", marker = "platform_system == 'Windows'" },
 ]
 docs = [
     { name = "autoflake" },
@@ -1472,7 +1470,6 @@ all = [
     { name = "ruff" },
     { name = "sqlalchemy" },
     { name = "tomli" },
-    { name = "tzdata", marker = "platform_system == 'Windows'" },
 ]
 dev = [
     { name = "coverage", extras = ["toml"] },
@@ -1489,7 +1486,6 @@ dev = [
     { name = "pytest-mock" },
     { name = "pytest-pretty" },
     { name = "pytz" },
-    { name = "tzdata", marker = "platform_system == 'Windows'" },
 ]
 docs = [
     { name = "autoflake" },

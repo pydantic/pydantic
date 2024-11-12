@@ -127,13 +127,13 @@ jobs:
         enable-cache: true
 
     - name: Install dependencies
-      run: uv sync
+      run: uv sync --extra timezone
 
     - run: 'uv run python -c "import pydantic.version; print(pydantic.version.version_info())"'
 
     - run: mkdir coverage
 
-    - name: Test without extra dependencies
+    - name: Test without email-validator
       # speed up by skipping this step on pypy
       if: "!startsWith(matrix.python-version, 'pypy')"
       run: make test
@@ -144,7 +144,7 @@ jobs:
     - name: Install extra dependencies
       run: uv sync --group testing-extra --all-extras
 
-    - name: Test with extra dependencies
+    - name: Test with all extra dependencies
       run: make test
       env:
         COVERAGE_FILE: coverage/.coverage.${{ runner.os }}-py${{ matrix.python-version }}-with-deps
