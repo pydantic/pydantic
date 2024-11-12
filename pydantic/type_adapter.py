@@ -308,26 +308,24 @@ class TypeAdapter(Generic[T]):
         """
         if not force and self._pydantic_complete:
             return None
+
+        if 'core_schema' in self.__dict__:
+            delattr(self, 'core_schema')  # delete cached value to ensure full rebuild happens
+
+        if _types_namespace is not None:
+            rebuild_ns = _types_namespace
+        elif _parent_namespace_depth > 0:
+            rebuild_ns = _typing_extra.parent_frame_namespace(parent_depth=_parent_namespace_depth, force=True) or {}
         else:
-            if 'core_schema' in self.__dict__:
-                delattr(self, 'core_schema')  # delete cached value to ensure full rebuild happens
+            rebuild_ns = {}
 
-            if _types_namespace is not None:
-                rebuild_ns = _types_namespace
-            elif _parent_namespace_depth > 0:
-                rebuild_ns = (
-                    _typing_extra.parent_frame_namespace(parent_depth=_parent_namespace_depth, force=True) or {}
-                )
-            else:
-                rebuild_ns = {}
-
-            # we have to manually fetch globals here because there's no type on the stack for the NsResolver
-            # and so we skip the globalns = get_module_ns_of(typ) call that would normally happen
-            globalns = sys._getframe(max(_parent_namespace_depth - 1, 1)).f_globals
-            ns_resolver = _namespace_utils.NsResolver(
-                namespaces_tuple=_namespace_utils.NamespacesTuple(globalns, {}), parent_namespace=rebuild_ns
-            )
-            return self._init_core_attrs(ns_resolver=ns_resolver, force=True)
+        # we have to manually fetch globals here because there's no type on the stack for the NsResolver
+        # and so we skip the globalns = get_module_ns_of(typ) call that would normally happen
+        globalns = sys._getframe(max(_parent_namespace_depth - 1, 1)).f_globals
+        ns_resolver = _namespace_utils.NsResolver(
+            namespaces_tuple=_namespace_utils.NamespacesTuple(globalns, {}), parent_namespace=rebuild_ns
+        )
+        return self._init_core_attrs(ns_resolver=ns_resolver, force=True)
 
     def validate_python(
         self,
