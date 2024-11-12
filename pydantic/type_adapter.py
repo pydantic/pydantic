@@ -118,6 +118,7 @@ class TypeAdapter(Generic[T]):
             config: Configuration for the `TypeAdapter`, should be a dictionary conforming to [`ConfigDict`][pydantic.config.ConfigDict].
             _parent_depth: Depth at which to search the for the parent namespace used for schema building.
                 We also use this as a reference level to find the global namespace (_parent_depth - 1).
+                Defaults to 2 because we expect to reference the frame that called the `TypeAdapter` constructor.
             module: The module that passes to plugin if provided.
 
         !!! note
