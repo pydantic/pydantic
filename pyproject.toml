@@ -109,3 +109,6 @@ require_change_file = false
 [tool.pyright]
 include = ['pydantic_core', 'tests/test_typing.py']
 reportUnnecessaryTypeIgnoreComment = true
+
+[tool.inline-snapshot.shortcuts]
+fix = ["create", "fix"]

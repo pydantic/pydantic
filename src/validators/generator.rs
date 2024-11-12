@@ -67,7 +67,7 @@ impl Validator for GeneratorValidator {
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         // this validator does not yet support partial validation, disable it to avoid incorrect results
-        state.allow_partial = false;
+        state.allow_partial = false.into();
 
         let iterator = input.validate_iter()?.into_static();
         let validator = self.item_validator.as_ref().map(|v| {
@@ -282,7 +282,7 @@ impl InternalValidator {
             self_instance: self.self_instance.as_ref().map(|data| data.bind(py)),
             cache_str: self.cache_str,
         };
-        let mut state = ValidationState::new(extra, &mut self.recursion_guard, false);
+        let mut state = ValidationState::new(extra, &mut self.recursion_guard, false.into());
         state.exactness = self.exactness;
         let result = self
             .validator
@@ -317,7 +317,7 @@ impl InternalValidator {
             self_instance: self.self_instance.as_ref().map(|data| data.bind(py)),
             cache_str: self.cache_str,
         };
-        let mut state = ValidationState::new(extra, &mut self.recursion_guard, false);
+        let mut state = ValidationState::new(extra, &mut self.recursion_guard, false.into());
         state.exactness = self.exactness;
         let result = self.validator.validate(py, input, &mut state).map_err(|e| {
             ValidationError::from_val_error(

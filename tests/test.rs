@@ -129,7 +129,7 @@ json_input = '{"a": "something"}'
             let json_input = locals.get_item("json_input").unwrap().unwrap();
             let binding = SchemaValidator::py_new(py, &schema, None)
                 .unwrap()
-                .validate_json(py, &json_input, None, None, None, false)
+                .validate_json(py, &json_input, None, None, None, false.into())
                 .unwrap();
             let validation_result: Bound<'_, PyAny> = binding.extract(py).unwrap();
             let repr = format!("{}", validation_result.repr().unwrap());

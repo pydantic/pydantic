@@ -146,7 +146,7 @@ impl Validator for DataclassArgsValidator {
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         // this validator does not yet support partial validation, disable it to avoid incorrect results
-        state.allow_partial = false;
+        state.allow_partial = false.into();
 
         let args = input.validate_dataclass_args(&self.dataclass_name)?;
 

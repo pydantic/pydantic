@@ -1,7 +1,7 @@
 use pyo3::prelude::*;
 use pyo3::types::PyString;
 
-use jiter::StringCacheMode;
+use jiter::{PartialMode, StringCacheMode};
 
 use crate::recursion_guard::{ContainsRecursionState, RecursionState};
 use crate::tools::new_py_string;
@@ -24,13 +24,13 @@ pub struct ValidationState<'a, 'py> {
     // when extra='allow', whereas this tally does not.
     pub fields_set_count: Option<usize>,
     // True if `allow_partial=true` and we're validating the last element of a sequence or mapping.
-    pub allow_partial: bool,
+    pub allow_partial: PartialMode,
     // deliberately make Extra readonly
     extra: Extra<'a, 'py>,
 }
 
 impl<'a, 'py> ValidationState<'a, 'py> {
-    pub fn new(extra: Extra<'a, 'py>, recursion_guard: &'a mut RecursionState, allow_partial: bool) -> Self {
+    pub fn new(extra: Extra<'a, 'py>, recursion_guard: &'a mut RecursionState, allow_partial: PartialMode) -> Self {
         Self {
             recursion_guard, // Don't care about exactness unless doing union validation
             exactness: None,
@@ -130,10 +130,10 @@ pub struct EnumerateLastPartial<I: Iterator> {
     iter: I,
     index: usize,
     next_item: Option<I::Item>,
-    allow_partial: bool,
+    allow_partial: PartialMode,
 }
 impl<I: Iterator> EnumerateLastPartial<I> {
-    pub fn new(mut iter: I, allow_partial: bool) -> Self {
+    pub fn new(mut iter: I, allow_partial: PartialMode) -> Self {
         let next_item = iter.next();
         Self {
             iter,
@@ -151,7 +151,7 @@ impl<I: Iterator> Iterator for EnumerateLastPartial<I> {
         let a = std::mem::replace(&mut self.next_item, self.iter.next())?;
         let i = self.index;
         self.index += 1;
-        Some((i, self.allow_partial && self.next_item.is_none(), a))
+        Some((i, self.allow_partial.is_active() && self.next_item.is_none(), a))
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {

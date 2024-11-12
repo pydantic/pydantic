@@ -109,9 +109,10 @@ where
     fn consume_iterator(self, iterator: impl Iterator<Item = ValResult<(Key, Value)>>) -> ValResult<PyObject> {
         let output = PyDict::new_bound(self.py);
         let mut errors: Vec<ValLineError> = Vec::new();
+        let allow_partial = self.state.allow_partial;
 
         for (_, is_last_partial, item_result) in self.state.enumerate_last_partial(iterator) {
-            self.state.allow_partial = false;
+            self.state.allow_partial = false.into();
             let (key, value) = item_result?;
             let output_key = match self.key_validator.validate(self.py, key.borrow_input(), self.state) {
                 Ok(value) => Some(value),
@@ -125,7 +126,10 @@ where
                 Err(ValError::Omit) => continue,
                 Err(err) => return Err(err),
             };
-            self.state.allow_partial = is_last_partial;
+            self.state.allow_partial = match is_last_partial {
+                true => allow_partial,
+                false => false.into(),
+            };
             let output_value = match self.value_validator.validate(self.py, value.borrow_input(), self.state) {
                 Ok(value) => value,
                 Err(ValError::LineErrors(line_errors)) => {

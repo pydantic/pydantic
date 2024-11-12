@@ -1,7 +1,8 @@
+use std::collections::VecDeque;
+
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyTuple};
-use std::collections::VecDeque;
 
 use crate::build_tools::is_strict;
 use crate::errors::{py_err_string, ErrorType, ErrorTypeDefaults, ValError, ValLineError, ValResult};
@@ -273,7 +274,7 @@ impl Validator for TupleValidator {
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         // this validator does not yet support partial validation, disable it to avoid incorrect results
-        state.allow_partial = false;
+        state.allow_partial = false.into();
 
         let collection = input.validate_tuple(state.strict_or(self.strict))?.unpack(state);
         let actual_length = collection.len();
