@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, List
 
 import pytest
 
@@ -149,14 +149,27 @@ def test_computed_field_raises_correct_attribute_error():
 def test_property_visible_when_extra_present():
     class Model(BaseModel):
         model_config = ConfigDict(extra='allow')
-
+    
+        columns: List[str]
+    
         @property
-        def test_prop(self) -> str:
-            return 'test'
-
-    instance = Model.model_validate({'extra': 'extra_value'})
-
-    assert instance.test_prop == 'test'
+        def queried_columns(self) -> List[str]:
+            return [c for c in self.columns if c.startswith('query')]
+    
+    
+    class SubModel(Model):
+        pass
+    
+    
+    instance = SubModel.model_validate(
+        dict(
+            columns=['query_1', 'query_2', 'other'],
+            test='extra_value',
+        ))
+    
+    assert instance.queried_columns == ['query_1', 'query_2']
+    assert instance.__getattribute__('queried_columns') == ['query_1', 'query_2']
+    assert instance.__getattr__('queried_columns') == ['query_1', 'query_2']
 
 
 @pytest.mark.parametrize('number', (1, 42, 443, 11.11, 0.553))
