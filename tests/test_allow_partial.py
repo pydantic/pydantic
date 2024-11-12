@@ -19,7 +19,7 @@ from .conftest import Err
         ('json', '{"a": 1, "b": "b", "c": [3, "4"]}', {'a': 1, 'b': 'b', 'c': (3, '4')}),
         ('json', '{"a": 1, "b": "b", "c": [3]}', {'a': 1, 'b': 'b'}),
         ('json', '{"a": 1, "b": "b", "c": [3', {'a': 1, 'b': 'b'}),
-        ('json', '{"a": 1, "b": "b', {'a': 1, 'b': 'b'}),
+        ('json', '{"a": 1, "b": "b', {'a': 1}),
         ('json', '{"a": 1, "b": ', {'a': 1}),
         ('python', {'a': 1, 'c': (3,), 'b': 'b'}, Err(r'c\.1\s+Field required')),
         ('json', '{"a": 1, "c": [3], "b": "b"}', Err(r'c\.1\s+Field required')),

@@ -163,6 +163,13 @@ Partial validation is particularly helpful when processing the output of an LLM,
 
 Partial validation can be enabled when using the three validation methods on `TypeAdapter`: [`TypeAdapter.validate_json()`][pydantic.TypeAdapter.validate_json], [`TypeAdapter.validate_python()`][pydantic.TypeAdapter.validate_python], and [`TypeAdapter.validate_strings()`][pydantic.TypeAdapter.validate_strings]. This allows you to parse and validation incomplete JSON, but also to validate Python objects created by parsing incomplete data of any format.
 
+The `experimental_allow_partial` flag can be passed to these methods to enable partial validation.
+It can take the following values (and is `False`, by default):
+
+* `True` or `'on'` - enable partial validation, but don't support trailing strings
+* `False` or `'off'` - disable partial validation
+* `'trailing-strings'` - enable partial validation and support trailing strings
+
 `experiment_allow_partial` in action:
 
 ```python
@@ -213,6 +220,12 @@ v = ta.validate_python(
 )
 print(v)
 #> [{'a': 1, 'b': 1.0}]
+
+v = ta.validate_json(
+    '[{"a": 1, "b": 1.0, "c": "abcdefg}]', experimental_allow_partial='trailing-strings'  # (7)!
+)
+print(v)
+#> [{'a': 1, 'b': 1.0, 'c': 'abcdefg'}]
 ```
 
 1. The TypedDict `Foobar` has three field, but only `a` is required, that means that a valid instance of `Foobar` can be created even if the `b` and `c` fields are missing.
@@ -221,6 +234,7 @@ print(v)
 4. The `a` field is required, so validation on the only item in the list fails and is dropped.
 5. Partial validation also works with Python objects, it should have the same semantics as with JSON except of course you can't have a genuinely "incomplete" Python object.
 6. The same as above but with a Python object, `c` is dropped as it's not required and failed validation.
+7. The `trailing-strings` mode allows for trailing strings in the input, in this case the input is valid JSON up to the point where the string is truncated, so the last string is included.
 
 ### How Partial Validation Works
 
