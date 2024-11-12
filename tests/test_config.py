@@ -559,7 +559,7 @@ def test_config_validation_error_cause():
         Foo(foo=4)
     # Confirm python error attached as a cause, and error location specified in a note:
     assert exc_info.value.__cause__ is not None
-    assert isinstance(exc_info.value.__cause__, ExceptionGroup)
+    assert isinstance(exc_info.value.__cause__, ExceptionGroup)  # noqa: F821
     assert len(exc_info.value.__cause__.exceptions) == 1
     src_exc = exc_info.value.__cause__.exceptions[0]
     assert repr(src_exc) == "AssertionError('Must be greater than 5\\nassert 4 > 5')"
