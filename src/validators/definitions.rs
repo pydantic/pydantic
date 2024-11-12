@@ -76,7 +76,7 @@ impl Validator for DefinitionRefValidator {
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         // this validator does not yet support partial validation, disable it to avoid incorrect results
-        state.allow_partial = false;
+        state.allow_partial = false.into();
 
         self.definition.read(|validator| {
             let validator = validator.unwrap();

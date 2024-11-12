@@ -11,7 +11,6 @@ use crate::build_tools::{schema_or_config_same, ExtraBehavior};
 use crate::errors::{ErrorTypeDefaults, ValError, ValLineError, ValResult};
 use crate::input::{Arguments, BorrowInput, Input, KeywordArgs, PositionalArgs, ValidationMatch};
 use crate::lookup_key::LookupKey;
-
 use crate::tools::SchemaDict;
 
 use super::validation_state::ValidationState;
@@ -189,7 +188,7 @@ impl Validator for ArgumentsValidator {
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         // this validator does not yet support partial validation, disable it to avoid incorrect results
-        state.allow_partial = false;
+        state.allow_partial = false.into();
 
         let args = input.validate_args()?;
 

@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 
 use enum_dispatch::enum_dispatch;
-use jiter::StringCacheMode;
+use jiter::{PartialMode, StringCacheMode};
 
 use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
@@ -165,7 +165,7 @@ impl SchemaValidator {
     }
 
     #[allow(clippy::too_many_arguments)]
-    #[pyo3(signature = (input, *, strict=None, from_attributes=None, context=None, self_instance=None, allow_partial=false))]
+    #[pyo3(signature = (input, *, strict=None, from_attributes=None, context=None, self_instance=None, allow_partial=PartialMode::Off))]
     pub fn validate_python(
         &self,
         py: Python,
@@ -174,7 +174,7 @@ impl SchemaValidator {
         from_attributes: Option<bool>,
         context: Option<&Bound<'_, PyAny>>,
         self_instance: Option<&Bound<'_, PyAny>>,
-        allow_partial: bool,
+        allow_partial: PartialMode,
     ) -> PyResult<PyObject> {
         self._validate(
             py,
@@ -207,7 +207,7 @@ impl SchemaValidator {
             from_attributes,
             context,
             self_instance,
-            false,
+            false.into(),
         ) {
             Ok(_) => Ok(true),
             Err(ValError::InternalErr(err)) => Err(err),
@@ -217,7 +217,7 @@ impl SchemaValidator {
         }
     }
 
-    #[pyo3(signature = (input, *, strict=None, context=None, self_instance=None, allow_partial=false))]
+    #[pyo3(signature = (input, *, strict=None, context=None, self_instance=None, allow_partial=PartialMode::Off))]
     pub fn validate_json(
         &self,
         py: Python,
@@ -225,7 +225,7 @@ impl SchemaValidator {
         strict: Option<bool>,
         context: Option<&Bound<'_, PyAny>>,
         self_instance: Option<&Bound<'_, PyAny>>,
-        allow_partial: bool,
+        allow_partial: PartialMode,
     ) -> PyResult<PyObject> {
         let r = match json::validate_json_bytes(input) {
             Ok(v_match) => self._validate_json(
@@ -242,14 +242,14 @@ impl SchemaValidator {
         r.map_err(|e| self.prepare_validation_err(py, e, InputType::Json))
     }
 
-    #[pyo3(signature = (input, *, strict=None, context=None, allow_partial=false))]
+    #[pyo3(signature = (input, *, strict=None, context=None, allow_partial=PartialMode::Off))]
     pub fn validate_strings(
         &self,
         py: Python,
         input: Bound<'_, PyAny>,
         strict: Option<bool>,
         context: Option<&Bound<'_, PyAny>>,
-        allow_partial: bool,
+        allow_partial: PartialMode,
     ) -> PyResult<PyObject> {
         let t = InputType::String;
         let string_mapping = StringMapping::new_value(input).map_err(|e| self.prepare_validation_err(py, e, t))?;
@@ -283,7 +283,7 @@ impl SchemaValidator {
         };
 
         let guard = &mut RecursionState::default();
-        let mut state = ValidationState::new(extra, guard, false);
+        let mut state = ValidationState::new(extra, guard, false.into());
         self.validator
             .validate_assignment(py, &obj, field_name, &field_value, &mut state)
             .map_err(|e| self.prepare_validation_err(py, e, InputType::Python))
@@ -306,7 +306,7 @@ impl SchemaValidator {
             cache_str: self.cache_str,
         };
         let recursion_guard = &mut RecursionState::default();
-        let mut state = ValidationState::new(extra, recursion_guard, false);
+        let mut state = ValidationState::new(extra, recursion_guard, false.into());
         let r = self.validator.default_value(py, None::<i64>, &mut state);
         match r {
             Ok(maybe_default) => match maybe_default {
@@ -352,7 +352,7 @@ impl SchemaValidator {
         from_attributes: Option<bool>,
         context: Option<&Bound<'py, PyAny>>,
         self_instance: Option<&Bound<'py, PyAny>>,
-        allow_partial: bool,
+        allow_partial: PartialMode,
     ) -> ValResult<PyObject> {
         let mut recursion_guard = RecursionState::default();
         let mut state = ValidationState::new(
@@ -379,7 +379,7 @@ impl SchemaValidator {
         strict: Option<bool>,
         context: Option<&Bound<'_, PyAny>>,
         self_instance: Option<&Bound<'_, PyAny>>,
-        allow_partial: bool,
+        allow_partial: PartialMode,
     ) -> ValResult<PyObject> {
         let json_value = jiter::JsonValue::parse_with_config(json_data, true, allow_partial)
             .map_err(|e| json::map_json_err(input, e, json_data))?;
@@ -430,7 +430,7 @@ impl<'py> SelfValidator<'py> {
         let mut state = ValidationState::new(
             Extra::new(strict, None, None, None, InputType::Python, true.into()),
             &mut recursion_guard,
-            false,
+            false.into(),
         );
         match self.validator.validator.validate(py, schema, &mut state) {
             Ok(schema_obj) => Ok(schema_obj.into_bound(py)),

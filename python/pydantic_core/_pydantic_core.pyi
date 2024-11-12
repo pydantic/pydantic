@@ -96,7 +96,7 @@ class SchemaValidator:
         from_attributes: bool | None = None,
         context: Any | None = None,
         self_instance: Any | None = None,
-        allow_partial: bool = False,
+        allow_partial: bool | Literal['off', 'on', 'trailing-strings'] = False,
     ) -> Any:
         """
         Validate a Python object against the schema and return the validated object.
@@ -113,6 +113,7 @@ class SchemaValidator:
                 validation from the `__init__` method of a model.
             allow_partial: Whether to allow partial validation; if `True` errors in the last element of sequences
                 and mappings are ignored.
+                `'trailing-strings'` means any final unfinished JSON string is included in the result.
 
         Raises:
             ValidationError: If validation fails.
@@ -146,7 +147,7 @@ class SchemaValidator:
         strict: bool | None = None,
         context: Any | None = None,
         self_instance: Any | None = None,
-        allow_partial: bool = False,
+        allow_partial: bool | Literal['off', 'on', 'trailing-strings'] = False,
     ) -> Any:
         """
         Validate JSON data directly against the schema and return the validated Python object.
@@ -166,6 +167,7 @@ class SchemaValidator:
             self_instance: An instance of a model set attributes on from validation.
             allow_partial: Whether to allow partial validation; if `True` incomplete JSON will be parsed successfully
                 and errors in the last element of sequences and mappings are ignored.
+                `'trailing-strings'` means any final unfinished JSON string is included in the result.
 
         Raises:
             ValidationError: If validation fails or if the JSON data is invalid.
@@ -180,7 +182,7 @@ class SchemaValidator:
         *,
         strict: bool | None = None,
         context: Any | None = None,
-        allow_partial: bool = False,
+        allow_partial: bool | Literal['off', 'on', 'trailing-strings'] = False,
     ) -> Any:
         """
         Validate a string against the schema and return the validated Python object.
@@ -196,6 +198,7 @@ class SchemaValidator:
                 [`info.context`][pydantic_core.core_schema.ValidationInfo.context].
             allow_partial: Whether to allow partial validation; if `True` errors in the last element of sequences
                 and mappings are ignored.
+                `'trailing-strings'` means any final unfinished JSON string is included in the result.
 
         Raises:
             ValidationError: If validation fails or if the JSON data is invalid.
@@ -433,6 +436,7 @@ def from_json(
             `all/True` means cache all strings, `keys` means cache only dict keys, `none/False` means no caching.
         allow_partial: Whether to allow partial deserialization, if `True` JSON data is returned if the end of the
             input is reached before the full object is deserialized, e.g. `["aa", "bb", "c` would return `['aa', 'bb']`.
+            `'trailing-strings'` means any final unfinished JSON string is included in the result.
 
     Raises:
         ValueError: If deserialization fails.
