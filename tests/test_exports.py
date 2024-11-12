@@ -14,12 +14,14 @@ import pydantic
 @pytest.mark.filterwarnings('ignore::DeprecationWarning')
 @pytest.mark.parametrize('attr', dir(pydantic))
 def test_init_export(attr) -> None:
+    pydantic = importlib.reload(importlib.import_module('pydantic'))
     getattr(pydantic, attr)
 
 
 @pytest.mark.filterwarnings('ignore::DeprecationWarning')
 @pytest.mark.parametrize('attr', dir(pydantic))
 def test_init_export_direct_import(create_module, attr) -> None:
+    del sys.modules['pydantic']
     module = create_module(f'from pydantic import {attr}')
     assert hasattr(module, attr)
 
