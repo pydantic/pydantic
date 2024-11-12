@@ -209,12 +209,6 @@ class TypeAdapter(Generic[T]):
         self._config = config
         self._parent_depth = _parent_depth
 
-        if module is None:
-            f = sys._getframe(1)
-            self._module_name = cast(str, f.f_globals.get('__name__', ''))
-        else:
-            self._module_name = module
-
         self.core_schema: CoreSchema
         self.validator: SchemaValidator | PluggableSchemaValidator
         self.serializer: SchemaSerializer
@@ -222,12 +216,15 @@ class TypeAdapter(Generic[T]):
         localns: _namespace_utils.MappingNamespace = (
             _typing_extra.parent_frame_namespace(parent_depth=self._parent_depth) or {}
         )
-        globalns: _namespace_utils.GlobalsNamespace = sys._getframe(max(self._parent_depth - 1, 1)).f_globals
-        ns_resolver = _namespace_utils.NsResolver(
-            namespaces_tuple=_namespace_utils.NamespacesTuple(locals=localns, globals=globalns),
-            parent_namespace=localns,
+        globalns: _namespace_utils.MappingNamespace = sys._getframe(max(self._parent_depth - 1, 1)).f_globals
+        self._module_name = module or cast(str, globalns.get('__name__', ''))
+        self._init_core_attrs(
+            ns_resolver=_namespace_utils.NsResolver(
+                namespaces_tuple=_namespace_utils.NamespacesTuple(locals=localns, globals=globalns),
+                parent_namespace=localns,
+            ),
+            force=False,
         )
-        self._init_core_attrs(ns_resolver=ns_resolver, force=False)
 
     def _init_core_attrs(self, ns_resolver: _namespace_utils.NsResolver, force: bool) -> bool:
         """Initialize the core schema, validator, and serializer for the type.
