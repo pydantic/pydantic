@@ -23,6 +23,11 @@ jobs:
         with:
           enable-cache: true
 
+      # Using this action is still necessary for CodSpeed to work:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
       - name: install deps
         run: uv sync --python 3.12 --group testing-extra --extra email --frozen
 
