@@ -222,7 +222,8 @@ print(v)
 #> [{'a': 1, 'b': 1.0}]
 
 v = ta.validate_json(
-    '[{"a": 1, "b": 1.0, "c": "abcdefg}]', experimental_allow_partial='trailing-strings'  # (7)!
+    '[{"a": 1, "b": 1.0, "c": "abcdefg',
+    experimental_allow_partial='trailing-strings',  # (7)!
 )
 print(v)
 #> [{'a': 1, 'b': 1.0, 'c': 'abcdefg'}]
