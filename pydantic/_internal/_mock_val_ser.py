@@ -130,18 +130,18 @@ def set_type_adapter_mocks(adapter: TypeAdapter, type_repr: str) -> None:
 
         return handler
 
-    adapter.core_schema = MockCoreSchema(  # type: ignore[reportAssignmentType]
+    adapter.core_schema = MockCoreSchema(  # pyright: ignore[reportAttributeAccessIssue]
         undefined_type_error_message,
         code='class-not-fully-defined',
         attempt_rebuild=attempt_rebuild_fn(lambda ta: ta.core_schema),
     )
-    adapter.validator = MockValSer(  # type: ignore[reportAssignmentType]
+    adapter.validator = MockValSer(  # pyright: ignore[reportAttributeAccessIssue]
         undefined_type_error_message,
         code='class-not-fully-defined',
         val_or_ser='validator',
         attempt_rebuild=attempt_rebuild_fn(lambda ta: ta.validator),
     )
-    adapter.serializer = MockValSer(  # type: ignore[reportAssignmentType]
+    adapter.serializer = MockValSer(  # pyright: ignore[reportAttributeAccessIssue]
         undefined_type_error_message,
         code='class-not-fully-defined',
         val_or_ser='serializer',
@@ -171,18 +171,18 @@ def set_model_mocks(cls: type[BaseModel], cls_name: str, undefined_name: str = '
 
         return handler
 
-    cls.__pydantic_core_schema__ = MockCoreSchema(  # type: ignore[reportAssignmentType]
+    cls.__pydantic_core_schema__ = MockCoreSchema(  # pyright: ignore[reportAttributeAccessIssue]
         undefined_type_error_message,
         code='class-not-fully-defined',
         attempt_rebuild=attempt_rebuild_fn(lambda c: c.__pydantic_core_schema__),
     )
-    cls.__pydantic_validator__ = MockValSer(  # type: ignore[reportAssignmentType]
+    cls.__pydantic_validator__ = MockValSer(  # pyright: ignore[reportAttributeAccessIssue]
         undefined_type_error_message,
         code='class-not-fully-defined',
         val_or_ser='validator',
         attempt_rebuild=attempt_rebuild_fn(lambda c: c.__pydantic_validator__),
     )
-    cls.__pydantic_serializer__ = MockValSer(  # type: ignore[reportAssignmentType]
+    cls.__pydantic_serializer__ = MockValSer(  # pyright: ignore[reportAttributeAccessIssue]
         undefined_type_error_message,
         code='class-not-fully-defined',
         val_or_ser='serializer',
@@ -216,18 +216,18 @@ def set_dataclass_mocks(
 
         return handler
 
-    cls.__pydantic_core_schema__ = MockCoreSchema(  # type: ignore[reportAssignmentType]
+    cls.__pydantic_core_schema__ = MockCoreSchema(  # pyright: ignore[reportAttributeAccessIssue]
         undefined_type_error_message,
         code='class-not-fully-defined',
         attempt_rebuild=attempt_rebuild_fn(lambda c: c.__pydantic_core_schema__),
     )
-    cls.__pydantic_validator__ = MockValSer(  # type: ignore[reportAssignmentType]
+    cls.__pydantic_validator__ = MockValSer(  # pyright: ignore[reportAttributeAccessIssue]
         undefined_type_error_message,
         code='class-not-fully-defined',
         val_or_ser='validator',
         attempt_rebuild=attempt_rebuild_fn(lambda c: c.__pydantic_validator__),
     )
-    cls.__pydantic_serializer__ = MockValSer(  # type: ignore[reportAssignmentType]
+    cls.__pydantic_serializer__ = MockValSer(  # pyright: ignore[reportAttributeAccessIssue]
         undefined_type_error_message,
         code='class-not-fully-defined',
         val_or_ser='validator',
