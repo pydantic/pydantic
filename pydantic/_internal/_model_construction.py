@@ -694,7 +694,8 @@ def complete_model_class(
             generate_pydantic_signature,
             init=cls.__init__,
             fields=cls.__pydantic_fields__,
-            config_wrapper=config_wrapper,
+            populate_by_name=config_wrapper.populate_by_name,
+            extra=config_wrapper.extra,
         ),
     )
     return True

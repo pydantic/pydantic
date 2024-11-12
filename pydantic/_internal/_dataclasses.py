@@ -146,7 +146,8 @@ def complete_dataclass(
     sig = generate_pydantic_signature(
         init=original_init,
         fields=cls.__pydantic_fields__,  # type: ignore
-        config_wrapper=config_wrapper,
+        populate_by_name=config_wrapper.populate_by_name,
+        extra=config_wrapper.extra,
         is_dataclass=True,
     )
 

@@ -299,23 +299,23 @@ class ValueItems(_repr.Representation):
 
 if typing.TYPE_CHECKING:
 
-    def LazyClassAttribute(name: str, value_fetcher: Callable[[], T]) -> T: ...
+    def LazyClassAttribute(name: str, get_value: Callable[[], T]) -> T: ...
 
 else:
 
     class LazyClassAttribute:
-        """A descriptor exposing an attribute only on class access.
+        """A descriptor exposing an attribute only accessible on a class (hidden from instances).
 
         The attribute is lazily computed and cached during the first access.
         """
 
-        def __init__(self, name: str, value_fetcher: Callable[[], Any]) -> None:
+        def __init__(self, name: str, get_value: Callable[[], Any]) -> None:
             self.name = name
-            self.value_fetcher = value_fetcher
+            self.get_value = get_value
 
         @cached_property
         def value(self) -> Any:
-            return self.value_fetcher()
+            return self.get_value()
 
         def __get__(self, instance: Any, owner: type[Any]) -> None:
             if instance is None:
