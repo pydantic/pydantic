@@ -38,58 +38,6 @@ P = ParamSpec('P')
 TypeAdapterT = TypeVar('TypeAdapterT', bound='TypeAdapter')
 
 
-def _get_schema(
-    type_: Any, config_wrapper: _config.ConfigWrapper, ns_resolver: _namespace_utils.NsResolver
-) -> CoreSchema:
-    """`BaseModel` uses its own `__module__` to find out where it was defined
-    and then looks for symbols to resolve forward references in those globals.
-    On the other hand this function can be called with arbitrary objects,
-    including type aliases, where `__module__` (always `typing.py`) is not useful.
-    So instead we look at the globals in our parent stack frame.
-
-    This works for the case where this function is called in a module that
-    has the target of forward references in its scope, but
-    does not always work for more complex cases.
-
-    For example, take the following:
-
-    a.py
-    ```python
-    from typing import Dict, List
-
-    IntList = List[int]
-    OuterDict = Dict[str, 'IntList']
-    ```
-
-    b.py
-    ```python test="skip"
-    from a import OuterDict
-
-    from pydantic import TypeAdapter
-
-    IntList = int  # replaces the symbol the forward reference is looking for
-    v = TypeAdapter(OuterDict)
-    v({'x': 1})  # should fail but doesn't
-    ```
-
-    If `OuterDict` were a `BaseModel`, this would work because it would resolve
-    the forward reference within the `a.py` namespace.
-    But `TypeAdapter(OuterDict)` can't determine what module `OuterDict` came from.
-
-    In other words, the assumption that _all_ forward references exist in the
-    module we are being called from is not technically always true.
-    Although most of the time it is and it works fine for recursive models and such,
-    `BaseModel`'s behavior isn't perfect either and _can_ break in similar ways,
-    so there is no right or wrong between the two.
-
-    But at the very least this behavior is _subtly_ different from `BaseModel`'s.
-    """
-    gen = _generate_schema.GenerateSchema(config_wrapper, ns_resolver=ns_resolver)
-    schema = gen.generate_schema(type_)
-    schema = gen.clean_schema(schema)
-    return schema
-
-
 def _getattr_no_parents(obj: Any, attribute: str) -> Any:
     """Returns the attribute value without attempting to look up attributes from parent types."""
     if hasattr(obj, '__dict__'):
@@ -237,6 +185,55 @@ class TypeAdapter(Generic[T]):
 
         Returns:
             `True` if the core schema, validator, and serializer were successfully initialized, otherwise `False`.
+
+        Notes on namespace management, and subtle differences from `BaseModel`:
+
+            `BaseModel` uses its own `__module__` to find out where it was defined
+            and then looks for symbols to resolve forward references in those globals.
+            On the other hand, `TypeAdapter` can be initialized with arbitrary objects,
+            including type aliases, where `__module__` (always `typing.py`) is not useful.
+            So instead we look at the globals in our parent stack frame.
+            
+            It is expected that the `ns_resolver` passed to this function will have the correct
+            namespace for the type we're adapting. See `TypeAdapter.__init__` and `TypeAdapter.rebuild`
+            for various ways to construct this namespace.
+
+            This works for the case where this function is called in a module that
+            has the target of forward references in its scope, but
+            does not always work for more complex cases.
+
+            For example, take the following:
+
+            a.py
+            ```python
+            from typing import Dict, List
+
+            IntList = List[int]
+            OuterDict = Dict[str, 'IntList']
+            ```
+
+            b.py
+            ```python test="skip"
+            from a import OuterDict
+
+            from pydantic import TypeAdapter
+
+            IntList = int  # replaces the symbol the forward reference is looking for
+            v = TypeAdapter(OuterDict)
+            v({'x': 1})  # should fail but doesn't
+            ```
+
+            If `OuterDict` were a `BaseModel`, this would work because it would resolve
+            the forward reference within the `a.py` namespace.
+            But `TypeAdapter(OuterDict)` can't determine what module `OuterDict` came from.
+
+            In other words, the assumption that _all_ forward references exist in the
+            module we are being called from is not technically always true.
+            Although most of the time it is and it works fine for recursive models and such,
+            `BaseModel`'s behavior isn't perfect either and _can_ break in similar ways,
+            so there is no right or wrong between the two.
+
+            But at the very least this behavior is _subtly_ different from `BaseModel`'s.
         """
         if not force and self._defer_build:
             _mock_val_ser.set_type_adapter_mocks(self, str(self._type))
@@ -251,7 +248,10 @@ class TypeAdapter(Generic[T]):
             config_wrapper = _config.ConfigWrapper(self._config)
             core_config = config_wrapper.core_config(None)
 
-            self.core_schema = _get_schema(self._type, config_wrapper, ns_resolver=ns_resolver)
+            schema_generator = _generate_schema.GenerateSchema(config_wrapper, ns_resolver=ns_resolver)
+            intermediate_core_schema = schema_generator.generate_schema(self._type)
+            self.core_schema = schema_generator.clean_schema(intermediate_core_schema)
+
             self.validator = create_schema_validator(
                 schema=self.core_schema,
                 schema_type=self._type,
