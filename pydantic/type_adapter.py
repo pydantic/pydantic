@@ -23,6 +23,7 @@ from pydantic.main import BaseModel, IncEx
 
 from ._internal import _config, _generate_schema, _mock_val_ser, _namespace_utils, _typing_extra, _utils
 from .config import ConfigDict
+from .errors import PydanticUndefinedAnnotation
 from .json_schema import (
     DEFAULT_REF_TEMPLATE,
     GenerateJsonSchema,
@@ -177,19 +178,26 @@ class TypeAdapter(Generic[T]):
             force=False,
         )
 
-    def _init_core_attrs(self, ns_resolver: _namespace_utils.NsResolver, force: bool) -> bool:
+    def _init_core_attrs(
+        self, ns_resolver: _namespace_utils.NsResolver, force: bool, raise_errors: bool = False
+    ) -> bool:
         """Initialize the core schema, validator, and serializer for the type.
-
-        If `force` is set to `False` and `_defer_build` is `True`, the core schema, validator, and serializer will be set to mocks.
 
         Args:
             ns_resolver: The namespace resolver to use when building the core schema for the adapted type.
-            force: Whether to force the initialization of the core schema, validator, and serializer.
+            force: Whether to force the construction of the core schema, validator, and serializer.
+                If `force` is set to `False` and `_defer_build` is `True`, the core schema, validator, and serializer will be set to mocks.
+            raise_errors: Whether to raise errors if initializing any of the core attrs fails.
 
         Returns:
             `True` if the core schema, validator, and serializer were successfully initialized, otherwise `False`.
 
+        Raises:
+            PydanticUndefinedAnnotation: If `PydanticUndefinedAnnotation` occurs in`__get_pydantic_core_schema__`
+                and `raise_errors=True`.
+
         Notes on namespace management, and subtle differences from `BaseModel`:
+            This method is very similar to `_model_construction.complete_model_class`, used for finalizing `BaseModel` subclasses.
 
             `BaseModel` uses its own `__module__` to find out where it was defined
             and then looks for symbols to resolve forward references in those globals.
@@ -247,13 +255,36 @@ class TypeAdapter(Generic[T]):
             self.core_schema = _getattr_no_parents(self._type, '__pydantic_core_schema__')
             self.validator = _getattr_no_parents(self._type, '__pydantic_validator__')
             self.serializer = _getattr_no_parents(self._type, '__pydantic_serializer__')
+
+            # TODO: we don't go through the rebuild logic here directly because we don't want
+            # to repeat all of the namespace fetching logic that we've already done
+            # so we simply skip to the block below that does the actual schema generation
+            if (
+                isinstance(self.core_schema, _mock_val_ser.MockCoreSchema)
+                or isinstance(self.validator, _mock_val_ser.MockValSer)
+                or isinstance(self.serializer, _mock_val_ser.MockValSer)
+            ):
+                raise AttributeError()
         except AttributeError:
             config_wrapper = _config.ConfigWrapper(self._config)
-            core_config = config_wrapper.core_config(None)
 
             schema_generator = _generate_schema.GenerateSchema(config_wrapper, ns_resolver=ns_resolver)
-            intermediate_core_schema = schema_generator.generate_schema(self._type)
-            self.core_schema = schema_generator.clean_schema(intermediate_core_schema)
+
+            try:
+                core_schema = schema_generator.generate_schema(self._type)
+            except PydanticUndefinedAnnotation:
+                if raise_errors:
+                    raise
+                _mock_val_ser.set_type_adapter_mocks(self, str(self._type))
+                return False
+
+            try:
+                self.core_schema = schema_generator.clean_schema(core_schema)
+            except schema_generator.CollectedInvalid:
+                _mock_val_ser.set_type_adapter_mocks(self, str(self._type))
+                return False
+
+            core_config = config_wrapper.core_config(None)
 
             self.validator = create_schema_validator(
                 schema=self.core_schema,
@@ -265,11 +296,6 @@ class TypeAdapter(Generic[T]):
                 plugin_settings=config_wrapper.plugin_settings,
             )
             self.serializer = SchemaSerializer(self.core_schema, core_config)
-
-        # TODO: I think we should move this to the rebuild pattern?
-        if isinstance(self.core_schema, _mock_val_ser.MockCoreSchema):
-            self.core_schema = self.core_schema.rebuild()  # type: ignore[assignment]
-            self._init_core_attrs(ns_resolver=ns_resolver, force=True)
 
         self.pydantic_complete = True
         return True
@@ -292,8 +318,9 @@ class TypeAdapter(Generic[T]):
         self,
         *,
         force: bool = False,
+        raise_errors: bool = True,
         _parent_namespace_depth: int = 2,
-        _types_namespace: dict[str, Any] | None = None,
+        _types_namespace: _namespace_utils.MappingNamespace | None = None,
     ) -> bool | None:
         """Try to rebuild the pydantic-core schema for the adapter's type.
 
@@ -302,6 +329,7 @@ class TypeAdapter(Generic[T]):
 
         Args:
             force: Whether to force the rebuilding of the type adapter's schema, defaults to `False`.
+            raise_errors: Whether to raise errors, defaults to `True`.
             _parent_namespace_depth: The depth level of the parent namespace, defaults to 2.
             _types_namespace: The types namespace, defaults to `None`.
 
@@ -325,7 +353,7 @@ class TypeAdapter(Generic[T]):
         ns_resolver = _namespace_utils.NsResolver(
             namespaces_tuple=_namespace_utils.NamespacesTuple(globalns, {}), parent_namespace=rebuild_ns
         )
-        return self._init_core_attrs(ns_resolver=ns_resolver, force=True)
+        return self._init_core_attrs(ns_resolver=ns_resolver, force=True, raise_errors=raise_errors)
 
     def validate_python(
         self,
