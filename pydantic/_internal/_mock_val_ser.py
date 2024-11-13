@@ -17,7 +17,6 @@ if TYPE_CHECKING:
 
 ValSer = TypeVar('ValSer', bound=Union[SchemaValidator, PluggableSchemaValidator, SchemaSerializer])
 T = TypeVar('T')
-R = TypeVar('R')
 
 
 class MockCoreSchema(Mapping[str, Any]):
@@ -112,11 +111,16 @@ class MockValSer(Generic[ValSer]):
 
 
 def _attempt_rebuild_fn(
-    cls_: T, attr_fn: Callable[[T], R], rebuild_fn: Callable[[T], Callable[..., bool | None]]
-) -> Callable[[], R | None]:
-    def handler() -> R | None:
+    cls_: T, attr_name: str, rebuild_fn: Callable[[T], Callable[..., bool | None]]
+) -> Callable[[], Any | None]:
+    """Attempt to rebuild the core schema associated with cls_ and return the new value of the core schema attr, if successful.
+
+    Ex: this function could call cls_.model_rebuild() if `cls_` were a `BaseModel` subclass, then attempt to fetch the value of `cls_.__pydantic_core_schema__`.
+    """
+
+    def handler() -> Any | None:
         if rebuild_fn(cls_)(raise_errors=False, _parent_namespace_depth=5) is not False:
-            return attr_fn(cls_)
+            return getattr(cls_, attr_name)
         return None
 
     return handler
@@ -131,13 +135,12 @@ class CoreAttrLookup(TypedDict):
 def _set_mocks(
     cls_: T, rebuild_fn: Callable[[T], Callable[..., bool | None]], core_attr_lookup: CoreAttrLookup, error_message: str
 ) -> None:
+    """Set core schema, schema validator, and schema serializer to mock core types on cls_."""
     core_schema_attr = core_attr_lookup['core_schema']
     core_schema = MockCoreSchema(
         error_message,
         code='class-not-fully-defined',
-        attempt_rebuild=_attempt_rebuild_fn(
-            cls_=cls_, attr_fn=lambda x: getattr(x, core_schema_attr), rebuild_fn=rebuild_fn
-        ),
+        attempt_rebuild=_attempt_rebuild_fn(cls_=cls_, attr_name=core_schema_attr, rebuild_fn=rebuild_fn),
     )
     setattr(cls_, core_schema_attr, core_schema)
 
@@ -146,9 +149,7 @@ def _set_mocks(
         error_message,
         code='class-not-fully-defined',
         val_or_ser='validator',
-        attempt_rebuild=_attempt_rebuild_fn(
-            cls_=cls_, attr_fn=lambda x: getattr(x, validator_attr), rebuild_fn=rebuild_fn
-        ),
+        attempt_rebuild=_attempt_rebuild_fn(cls_=cls_, attr_name=validator_attr, rebuild_fn=rebuild_fn),
     )
     setattr(cls_, validator_attr, validator)
 
@@ -157,9 +158,7 @@ def _set_mocks(
         error_message,
         code='class-not-fully-defined',
         val_or_ser='serializer',
-        attempt_rebuild=_attempt_rebuild_fn(
-            cls_=cls_, attr_fn=lambda x: getattr(x, serializer_attr), rebuild_fn=rebuild_fn
-        ),
+        attempt_rebuild=_attempt_rebuild_fn(cls_=cls_, attr_name=serializer_attr, rebuild_fn=rebuild_fn),
     )
     setattr(cls_, serializer_attr, serializer)
 
