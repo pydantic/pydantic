@@ -18,7 +18,7 @@ from pydantic._internal._core_utils import _WalkCoreSchema, pretty_print_core_sc
 from pydantic._internal._typing_extra import get_origin, is_new_type, literal_values
 from pydantic._internal._utils import (
     BUILTIN_COLLECTIONS,
-    ClassAttribute,
+    LazyClassAttribute,
     ValueItems,
     all_identical,
     deep_update,
@@ -368,7 +368,7 @@ def test_undefined_copy():
 
 def test_class_attribute():
     class Foo:
-        attr = ClassAttribute('attr', 'foo')
+        attr = LazyClassAttribute('attr', lambda: 'foo')
 
     assert Foo.attr == 'foo'
 
