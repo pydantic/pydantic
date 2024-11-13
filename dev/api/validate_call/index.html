@@ -20,7 +20,7 @@
       
       
       <link rel="icon" href="../../favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.42">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.44">
     
     
       
@@ -3178,7 +3178,7 @@ to help you monitor and understand your
     <span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="n">function</span><span class="p">:</span> <span class="n">AnyCallableT</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AnyCallableT</span><span class="p">:</span>
         <span class="n">_check_function_type</span><span class="p">(</span><span class="n">function</span><span class="p">)</span>
         <span class="n">validate_call_wrapper</span> <span class="o">=</span> <span class="n">_validate_call</span><span class="o">.</span><span class="n">ValidateCallWrapper</span><span class="p">(</span>
-            <span class="n">cast</span><span class="p">(</span><span class="n">_validate_call</span><span class="o">.</span><span class="n">ValidateCallSupportedTypes</span><span class="p">,</span> <span class="n">function</span><span class="p">),</span> <span class="n">config</span><span class="p">,</span> <span class="n">validate_return</span><span class="p">,</span> <span class="n">parent_namespace</span>
+            <span class="n">cast</span><span class="p">(</span><span class="n">_generate_schema</span><span class="o">.</span><span class="n">ValidateCallSupportedTypes</span><span class="p">,</span> <span class="n">function</span><span class="p">),</span> <span class="n">config</span><span class="p">,</span> <span class="n">validate_return</span><span class="p">,</span> <span class="n">parent_namespace</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">_validate_call</span><span class="o">.</span><span class="n">update_wrapper_attributes</span><span class="p">(</span><span class="n">function</span><span class="p">,</span> <span class="n">validate_call_wrapper</span><span class="o">.</span><span class="fm">__call__</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
 
@@ -3259,7 +3259,7 @@ to help you monitor and understand your
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.10.0b1", "pydantic-core==2.26.0", "pydantic-extra-types==2.10.0"]
+    window.mkdocs_run_deps = ["pydantic==2.10.0b1", "pydantic-core==2.27.0", "pydantic-extra-types==2.10.0"]
     </script>
 
               </article>

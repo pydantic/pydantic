@@ -20,7 +20,7 @@
       
       
       <link rel="icon" href="../../favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.42">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.44">
     
     
       
@@ -1301,6 +1301,15 @@ to help you monitor and understand your
   <a href="#creating-cli-applications" class="md-nav__link">
     <span class="md-ellipsis">
       Creating CLI Applications
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mutually-exclusive-groups" class="md-nav__link">
+    <span class="md-ellipsis">
+      Mutually Exclusive Groups
     </span>
   </a>
   
@@ -3501,6 +3510,15 @@ to help you monitor and understand your
 </li>
         
           <li class="md-nav__item">
+  <a href="#mutually-exclusive-groups" class="md-nav__link">
+    <span class="md-ellipsis">
+      Mutually Exclusive Groups
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#customizing-the-cli-experience" class="md-nav__link">
     <span class="md-ellipsis">
       Customizing the CLI Experience
@@ -4657,6 +4675,41 @@ defined) after instantiation:</p>
 <p>The alias generator for kebab case does not propagate to subcommands or submodels and will have to be manually set
 in these cases.</p>
 </div>
+<h3 id="mutually-exclusive-groups">Mutually Exclusive Groups<a class="headerlink" href="#mutually-exclusive-groups" title="Permanent link">&para;</a></h3>
+<p>CLI mutually exclusive groups can be created by inheriting from the <code>CliMutuallyExclusiveGroup</code> class.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>A <code>CliMutuallyExclusiveGroup</code> cannot be used in a union or contain nested models.</p>
+</div>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+<span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="n">CliApp</span><span class="p">,</span> <span class="n">CliMutuallyExclusiveGroup</span><span class="p">,</span> <span class="n">SettingsError</span>
+
+
+<span class="k">class</span> <span class="nc">Circle</span><span class="p">(</span><span class="n">CliMutuallyExclusiveGroup</span><span class="p">):</span>
+    <span class="n">radius</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">diameter</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">perimeter</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+<span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">circle</span><span class="p">:</span> <span class="n">Circle</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">CliApp</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+        <span class="n">Settings</span><span class="p">,</span>
+        <span class="n">cli_args</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;--circle.radius=1&#39;</span><span class="p">,</span> <span class="s1">&#39;--circle.diameter=2&#39;</span><span class="p">],</span>
+        <span class="n">cli_exit_on_error</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span>
+<span class="k">except</span> <span class="n">SettingsError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    error parsing CLI: argument --circle.diameter: not allowed with argument --circle.radius</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
 <h3 id="customizing-the-cli-experience">Customizing the CLI Experience<a class="headerlink" href="#customizing-the-cli-experience" title="Permanent link">&para;</a></h3>
 <p>The below flags can be used to customise the CLI experience to your needs.</p>
 <h4 id="change-the-displayed-program-name">Change the Displayed Program Name<a class="headerlink" href="#change-the-displayed-program-name" title="Permanent link">&para;</a></h4>
@@ -5613,7 +5666,7 @@ need to add your own custom sources, <code>settings_customise_sources</code> mak
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.10.0b1", "pydantic-core==2.26.0", "pydantic-extra-types==2.10.0"]
+    window.mkdocs_run_deps = ["pydantic==2.10.0b1", "pydantic-core==2.27.0", "pydantic-extra-types==2.10.0"]
     </script>
 
               </article>

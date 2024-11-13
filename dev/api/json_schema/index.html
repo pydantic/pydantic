@@ -20,7 +20,7 @@
       
       
       <link rel="icon" href="../../favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.42">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.44">
     
     
       
@@ -5024,7 +5024,7 @@ this value can be modified on subclasses to easily control which warnings are em
             </td>
             <td>
               <div class="doc-md-description">
-                <p>If the instance of the class is inadvertently re-used after generating a schema.</p>
+                <p>If the instance of the class is inadvertently reused after generating a schema.</p>
               </div>
             </td>
           </tr>
@@ -5099,7 +5099,7 @@ this value can be modified on subclasses to easily control which warnings are em
     <span class="c1"># store the error raised and re-throw it if we end up needing that def</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_core_defs_invalid_for_json_schema</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">DefsRef</span><span class="p">,</span> <span class="n">PydanticInvalidForJsonSchema</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
 
-    <span class="c1"># This changes to True after generating a schema, to prevent issues caused by accidental re-use</span>
+    <span class="c1"># This changes to True after generating a schema, to prevent issues caused by accidental reuse</span>
     <span class="c1"># of a single instance of a schema generator</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_used</span> <span class="o">=</span> <span class="kc">False</span>
 </code></pre></div></td></tr></table></div>
@@ -15029,7 +15029,7 @@ If <code>False</code>, fields will be serialized according to their attribute na
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.10.0b1", "pydantic-core==2.26.0", "pydantic-extra-types==2.10.0"]
+    window.mkdocs_run_deps = ["pydantic==2.10.0b1", "pydantic-core==2.27.0", "pydantic-extra-types==2.10.0"]
     </script>
 
               </article>

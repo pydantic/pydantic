@@ -20,7 +20,7 @@
       
       
       <link rel="icon" href="../../favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.42">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.44">
     
     
       
@@ -2612,6 +2612,15 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
+  <a href="#circular-reference-schema" class="md-nav__link">
+    <span class="md-ellipsis">
+      Circular reference schema
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#invalid-for-json-schema" class="md-nav__link">
     <span class="md-ellipsis">
       JSON schema invalid type
@@ -3506,6 +3515,15 @@ to help you monitor and understand your
   <a href="#removed-kwargs" class="md-nav__link">
     <span class="md-ellipsis">
       Keyword arguments removed
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#circular-reference-schema" class="md-nav__link">
+    <span class="md-ellipsis">
+      Circular reference schema
     </span>
   </a>
   
@@ -4656,6 +4674,17 @@ by annotating it as a <code>ClassVar</code>:</p>
 <span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;removed-kwargs&#39;</span>
 </code></pre></div>
+<h2 id="circular-reference-schema">Circular reference schema<a class="headerlink" href="#circular-reference-schema" title="Permanent link">&para;</a></h2>
+<p>This error is raised when a circular reference is found that would otherwise result in an infinite recursion.</p>
+<p>For example, this is a valid type alias:</p>
+<div class="language-py highlight"><pre><span></span><code><span class="nb">type</span> <span class="n">A</span> <span class="o">=</span> <span class="nb">list</span><span class="p">[</span><span class="n">A</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span>
+</code></pre></div>
+<p>while these are not:</p>
+<div class="language-py highlight"><pre><span></span><code><span class="nb">type</span> <span class="n">A</span> <span class="o">=</span> <span class="n">A</span>
+
+<span class="nb">type</span> <span class="n">B</span> <span class="o">=</span> <span class="n">C</span>
+<span class="nb">type</span> <span class="n">C</span> <span class="o">=</span> <span class="n">B</span>
+</code></pre></div>
 <h2 id="invalid-for-json-schema">JSON schema invalid type<a class="headerlink" href="#invalid-for-json-schema" title="Permanent link">&para;</a></h2>
 <p>This error is raised when Pydantic fails to generate a JSON schema for some <code>CoreSchema</code>.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ImportString</span><span class="p">,</span> <span class="n">PydanticUserError</span>
@@ -5465,7 +5494,7 @@ overlapping with other parameters (unless <a class="autorefs autorefs-external" 
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.10.0b1", "pydantic-core==2.26.0", "pydantic-extra-types==2.10.0"]
+    window.mkdocs_run_deps = ["pydantic==2.10.0b1", "pydantic-core==2.27.0", "pydantic-extra-types==2.10.0"]
     </script>
 
               </article>

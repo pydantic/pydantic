@@ -20,7 +20,7 @@
       
       
       <link rel="icon" href="../../favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.42">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.44">
     
     
       
@@ -3464,6 +3464,31 @@ Just be mindful of abusing advanced patterns like the pipeline API just because 
 <p>Partial validation is an experimental feature and may change in future versions of Pydantic. The current implementation should be considered a proof of concept at this time and has a number of <a href="#limitations-of-partial-validation">limitations</a>.</p>
 </div>
 <p>Partial validation can be enabled when using the three validation methods on <code>TypeAdapter</code>: <a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic.type_adapter.TypeAdapter.validate_json"><code>TypeAdapter.validate_json()</code></a>, <a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic.type_adapter.TypeAdapter.validate_python"><code>TypeAdapter.validate_python()</code></a>, and <a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic.type_adapter.TypeAdapter.validate_strings"><code>TypeAdapter.validate_strings()</code></a>. This allows you to parse and validation incomplete JSON, but also to validate Python objects created by parsing incomplete data of any format.</p>
+<p>The <code>experimental_allow_partial</code> flag can be passed to these methods to enable partial validation.
+It can take the following values (and is <code>False</code>, by default):</p>
+<ul>
+<li><code>False</code> or <code>'off'</code> - disable partial validation</li>
+<li><code>True</code> or <code>'on'</code> - enable partial validation, but don't support trailing strings</li>
+<li><code>'trailing-strings'</code> - enable partial validation and support trailing strings</li>
+</ul>
+<div class="admonition info">
+<p class="admonition-title"><code>'trailing-strings'</code> mode</p>
+<p><code>'trailing-strings'</code> mode allows for trailing incomplete strings at the end of partial JSON to be included in the output.
+For example, if you're validating against the following model:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TypedDict</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">TypedDict</span><span class="p">):</span>
+    <span class="n">a</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">b</span><span class="p">:</span> <span class="nb">str</span>
+</code></pre></div>
+<p>Then the following JSON input would be considered valid, despite the incomplete string at the end:</p>
+<div class="language-json highlight"><pre><span></span><code><span class="err">&#39;</span><span class="p">{</span><span class="nt">&quot;a&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;hello&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;b&quot;</span><span class="p">:</span><span class="w"> </span><span class="err">&quot;wor&#39;</span>
+</code></pre></div>
+<p>And would be validated as:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="s1">&#39;wor&#39;</span><span class="p">}</span>
+</code></pre></div>
+</div>
 <p><code>experiment_allow_partial</code> in action:</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="3:3"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><input id="__tabbed_3_3" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.8 and above</label><label for="__tabbed_3_2">Python 3.9 and above</label><label for="__tabbed_3_3">Python 3.11 and above</label></div>
 <div class="tabbed-content">
@@ -3515,6 +3540,13 @@ Just be mindful of abusing advanced patterns like the pipeline API just because 
 <span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
 <span class="c1">#&gt; [{&#39;a&#39;: 1, &#39;b&#39;: 1.0}]</span>
+
+<span class="n">v</span> <span class="o">=</span> <span class="n">ta</span><span class="o">.</span><span class="n">validate_json</span><span class="p">(</span>
+    <span class="s1">&#39;[{&quot;a&quot;: 1, &quot;b&quot;: 1.0, &quot;c&quot;: &quot;abcdefg&#39;</span><span class="p">,</span>
+    <span class="n">experimental_allow_partial</span><span class="o">=</span><span class="s1">&#39;trailing-strings&#39;</span><span class="p">,</span>  <span class="c1"># (7)!</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+<span class="c1">#&gt; [{&#39;a&#39;: 1, &#39;b&#39;: 1.0, &#39;c&#39;: &#39;abcdefg&#39;}]</span>
 </code></pre></div>
 <ol>
 <li>The TypedDict <code>Foobar</code> has three field, but only <code>a</code> is required, that means that a valid instance of <code>Foobar</code> can be created even if the <code>b</code> and <code>c</code> fields are missing.</li>
@@ -3523,6 +3555,7 @@ Just be mindful of abusing advanced patterns like the pipeline API just because 
 <li>The <code>a</code> field is required, so validation on the only item in the list fails and is dropped.</li>
 <li>Partial validation also works with Python objects, it should have the same semantics as with JSON except of course you can't have a genuinely "incomplete" Python object.</li>
 <li>The same as above but with a Python object, <code>c</code> is dropped as it's not required and failed validation.</li>
+<li>The <code>trailing-strings</code> mode allows for incomplete strings at the end of partial JSON to be included in the output, in this case the input is valid JSON up to the point where the string is truncated, so the last string is included.</li>
 </ol>
 </div>
 <div class="tabbed-block">
@@ -3572,6 +3605,13 @@ Just be mindful of abusing advanced patterns like the pipeline API just because 
 <span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
 <span class="c1">#&gt; [{&#39;a&#39;: 1, &#39;b&#39;: 1.0}]</span>
+
+<span class="n">v</span> <span class="o">=</span> <span class="n">ta</span><span class="o">.</span><span class="n">validate_json</span><span class="p">(</span>
+    <span class="s1">&#39;[{&quot;a&quot;: 1, &quot;b&quot;: 1.0, &quot;c&quot;: &quot;abcdefg&#39;</span><span class="p">,</span>
+    <span class="n">experimental_allow_partial</span><span class="o">=</span><span class="s1">&#39;trailing-strings&#39;</span><span class="p">,</span>  <span class="c1"># (7)!</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+<span class="c1">#&gt; [{&#39;a&#39;: 1, &#39;b&#39;: 1.0, &#39;c&#39;: &#39;abcdefg&#39;}]</span>
 </code></pre></div>
 <ol>
 <li>The TypedDict <code>Foobar</code> has three field, but only <code>a</code> is required, that means that a valid instance of <code>Foobar</code> can be created even if the <code>b</code> and <code>c</code> fields are missing.</li>
@@ -3580,6 +3620,7 @@ Just be mindful of abusing advanced patterns like the pipeline API just because 
 <li>The <code>a</code> field is required, so validation on the only item in the list fails and is dropped.</li>
 <li>Partial validation also works with Python objects, it should have the same semantics as with JSON except of course you can't have a genuinely "incomplete" Python object.</li>
 <li>The same as above but with a Python object, <code>c</code> is dropped as it's not required and failed validation.</li>
+<li>The <code>trailing-strings</code> mode allows for incomplete strings at the end of partial JSON to be included in the output, in this case the input is valid JSON up to the point where the string is truncated, so the last string is included.</li>
 </ol>
 </div>
 <div class="tabbed-block">
@@ -3629,6 +3670,13 @@ Just be mindful of abusing advanced patterns like the pipeline API just because 
 <span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
 <span class="c1">#&gt; [{&#39;a&#39;: 1, &#39;b&#39;: 1.0}]</span>
+
+<span class="n">v</span> <span class="o">=</span> <span class="n">ta</span><span class="o">.</span><span class="n">validate_json</span><span class="p">(</span>
+    <span class="s1">&#39;[{&quot;a&quot;: 1, &quot;b&quot;: 1.0, &quot;c&quot;: &quot;abcdefg&#39;</span><span class="p">,</span>
+    <span class="n">experimental_allow_partial</span><span class="o">=</span><span class="s1">&#39;trailing-strings&#39;</span><span class="p">,</span>  <span class="c1"># (7)!</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+<span class="c1">#&gt; [{&#39;a&#39;: 1, &#39;b&#39;: 1.0, &#39;c&#39;: &#39;abcdefg&#39;}]</span>
 </code></pre></div>
 <ol>
 <li>The TypedDict <code>Foobar</code> has three field, but only <code>a</code> is required, that means that a valid instance of <code>Foobar</code> can be created even if the <code>b</code> and <code>c</code> fields are missing.</li>
@@ -3637,6 +3685,7 @@ Just be mindful of abusing advanced patterns like the pipeline API just because 
 <li>The <code>a</code> field is required, so validation on the only item in the list fails and is dropped.</li>
 <li>Partial validation also works with Python objects, it should have the same semantics as with JSON except of course you can't have a genuinely "incomplete" Python object.</li>
 <li>The same as above but with a Python object, <code>c</code> is dropped as it's not required and failed validation.</li>
+<li>The <code>trailing-strings</code> mode allows for incomplete strings at the end of partial JSON to be included in the output, in this case the input is valid JSON up to the point where the string is truncated, so the last string is included.</li>
 </ol>
 </div>
 </div>
@@ -3972,7 +4021,7 @@ Just be mindful of abusing advanced patterns like the pipeline API just because 
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.10.0b1", "pydantic-core==2.26.0", "pydantic-extra-types==2.10.0"]
+    window.mkdocs_run_deps = ["pydantic==2.10.0b1", "pydantic-core==2.27.0", "pydantic-extra-types==2.10.0"]
     </script>
 
               </article>
