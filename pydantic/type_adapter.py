@@ -218,10 +218,8 @@ class TypeAdapter(Generic[T]):
         self.serializer: SchemaSerializer
         self.pydantic_complete: bool = False
 
-        localns: _namespace_utils.MappingNamespace = (
-            _typing_extra.parent_frame_namespace(parent_depth=self._parent_depth) or {}
-        )
-        globalns: _namespace_utils.MappingNamespace = sys._getframe(max(self._parent_depth - 1, 1)).f_globals
+        localns = _typing_extra.parent_frame_namespace(parent_depth=self._parent_depth) or {}
+        globalns = sys._getframe(max(self._parent_depth - 1, 1)).f_globals
         self._module_name = module or cast(str, globalns.get('__name__', ''))
         self._init_core_attrs(
             ns_resolver=_namespace_utils.NsResolver(
