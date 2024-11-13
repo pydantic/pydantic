@@ -84,8 +84,6 @@ class TypeAdapter(Generic[T]):
 
         Here, we collect some notes on namespace management, and subtle differences from `BaseModel`:
 
-        This method is very similar to `_model_construction.complete_model_class`, used for finalizing `BaseModel` subclasses.
-
         `BaseModel` uses its own `__module__` to find out where it was defined
         and then looks for symbols to resolve forward references in those globals.
         On the other hand, `TypeAdapter` can be initialized with arbitrary objects,
