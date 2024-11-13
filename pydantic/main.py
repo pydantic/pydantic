@@ -1013,13 +1013,16 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                     and self.__pydantic_extra__ == other.__pydantic_extra__
                 ):
                     return False
-
+                _comparable_dict = {
+                    k: self.model_fields[k].get_comparable(v) if k in self.model_fields else v
+                    for k, v in self.__dict__.items()
+                }
                 # We only want to compare pydantic fields but ignoring fields is costly.
                 # We'll perform a fast check first, and fallback only when needed
                 # See GH-7444 and GH-7825 for rationale and a performance benchmark
 
                 # First, do the fast (and sometimes faulty) __dict__ comparison
-                if self.__dict__ == other.__dict__:
+                if _comparable_dict == other.__dict__:
                     # If the check above passes, then pydantic fields are equal, we can return early
                     return True
 

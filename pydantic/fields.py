@@ -60,6 +60,7 @@ class _FromFieldInfoInputs(typing_extensions.TypedDict, total=False):
     description: str | None
     examples: list[Any] | None
     exclude: bool | None
+    compare_as: Callable[[Any, Any], bool] | None
     gt: annotated_types.SupportsGt | None
     ge: annotated_types.SupportsGe | None
     lt: annotated_types.SupportsLt | None
@@ -92,6 +93,20 @@ class _FieldInfoInputs(_FromFieldInfoInputs, total=False):
     default: Any
 
 
+class _Comparable:
+    def __init__(self, value: Any, compare_as: Callable[[Any, Any], bool]):
+        self.value = value
+        self.compare_as = compare_as
+
+    def __eq__(self, other: Any) -> bool:
+        return self.compare_as(self.value, other)
+
+
+class _DefaultComparable:
+    def __call__(self, value: Any, other: Any):
+        return value == other
+
+
 class FieldInfo(_repr.Representation):
     """This class holds information about a field.
 
@@ -116,6 +131,7 @@ class FieldInfo(_repr.Representation):
         description: The description of the field.
         examples: List of examples of the field.
         exclude: Whether to exclude the field from the model serialization.
+        compare_as: Callable that will be used to compare this field with another.
         discriminator: Field name or Discriminator for discriminating the type in a tagged union.
         deprecated: A deprecation message, an instance of `warnings.deprecated` or the `typing_extensions.deprecated` backport,
             or a boolean. If `True`, a default deprecation message will be emitted when accessing the field.
@@ -141,6 +157,7 @@ class FieldInfo(_repr.Representation):
     description: str | None
     examples: list[Any] | None
     exclude: bool | None
+    compare_as: Callable[[Any, Any], bool] | None
     discriminator: str | types.Discriminator | None
     deprecated: Deprecated | str | bool | None
     json_schema_extra: JsonDict | Callable[[JsonDict], None] | None
@@ -165,6 +182,7 @@ class FieldInfo(_repr.Representation):
         'description',
         'examples',
         'exclude',
+        'compare_as',
         'discriminator',
         'deprecated',
         'json_schema_extra',
@@ -233,6 +251,7 @@ class FieldInfo(_repr.Representation):
         self.description = kwargs.pop('description', None)
         self.examples = kwargs.pop('examples', None)
         self.exclude = kwargs.pop('exclude', None)
+        self.compare_as = kwargs.pop('compare_as', None)
         self.discriminator = kwargs.pop('discriminator', None)
         # For compatibility with FastAPI<=0.110.0, we preserve the existing value if it is not overridden
         self.deprecated = kwargs.pop('deprecated', getattr(self, 'deprecated', None))
@@ -569,6 +588,9 @@ class FieldInfo(_repr.Representation):
             return 'deprecated' if self.deprecated else None
         return self.deprecated if isinstance(self.deprecated, str) else self.deprecated.message
 
+    def get_comparable(self, value: Any) -> _Comparable:
+        return _Comparable(value=value, compare_as=self.compare_as or _DefaultComparable())
+
     @overload
     def get_default(self, *, call_default_factory: Literal[True], validated_data: dict[str, Any]) -> Any: ...
 
@@ -697,6 +719,7 @@ _DefaultValues = {
     'description': None,
     'examples': None,
     'exclude': None,
+    'compare_as': None,
     'discriminator': None,
     'json_schema_extra': None,
     'frozen': None,
@@ -739,6 +762,7 @@ def Field(
     description: str | None = _Unset,
     examples: list[Any] | None = _Unset,
     exclude: bool | None = _Unset,
+    compare_as: Callable[[Any, Any], bool] | None = _Unset,
     discriminator: str | types.Discriminator | None = _Unset,
     deprecated: Deprecated | str | bool | None = _Unset,
     json_schema_extra: JsonDict | Callable[[JsonDict], None] | None = _Unset,
@@ -778,6 +802,7 @@ def Field(
     description: str | None = _Unset,
     examples: list[Any] | None = _Unset,
     exclude: bool | None = _Unset,
+    compare_as: Callable[[Any, Any], bool] | None = _Unset,
     discriminator: str | types.Discriminator | None = _Unset,
     deprecated: Deprecated | str | bool | None = _Unset,
     json_schema_extra: JsonDict | Callable[[JsonDict], None] | None = _Unset,
@@ -817,6 +842,7 @@ def Field(
     description: str | None = _Unset,
     examples: list[Any] | None = _Unset,
     exclude: bool | None = _Unset,
+    compare_as: Callable[[Any, Any], bool] | None = _Unset,
     discriminator: str | types.Discriminator | None = _Unset,
     deprecated: Deprecated | str | bool | None = _Unset,
     json_schema_extra: JsonDict | Callable[[JsonDict], None] | None = _Unset,
@@ -855,6 +881,7 @@ def Field(  # No default set
     description: str | None = _Unset,
     examples: list[Any] | None = _Unset,
     exclude: bool | None = _Unset,
+    compare_as: Callable[[Any, Any], bool] | None = _Unset,
     discriminator: str | types.Discriminator | None = _Unset,
     deprecated: Deprecated | str | bool | None = _Unset,
     json_schema_extra: JsonDict | Callable[[JsonDict], None] | None = _Unset,
@@ -894,6 +921,7 @@ def Field(  # noqa: C901
     description: str | None = _Unset,
     examples: list[Any] | None = _Unset,
     exclude: bool | None = _Unset,
+    compare_as: Callable[[Any, Any], bool] | None = _Unset,
     discriminator: str | types.Discriminator | None = _Unset,
     deprecated: Deprecated | str | bool | None = _Unset,
     json_schema_extra: JsonDict | Callable[[JsonDict], None] | None = _Unset,
@@ -944,6 +972,7 @@ def Field(  # noqa: C901
         description: Human-readable description.
         examples: Example values for this field.
         exclude: Whether to exclude the field from the model serialization.
+        compare_as: Callable that will be used to compare this field with another.
         discriminator: Field name or Discriminator for discriminating the type in a tagged union.
         deprecated: A deprecation message, an instance of `warnings.deprecated` or the `typing_extensions.deprecated` backport,
             or a boolean. If `True`, a default deprecation message will be emitted when accessing the field.
@@ -1061,6 +1090,7 @@ def Field(  # noqa: C901
         description=description,
         examples=examples,
         exclude=exclude,
+        compare_as=compare_as,
         discriminator=discriminator,
         deprecated=deprecated,
         json_schema_extra=json_schema_extra,

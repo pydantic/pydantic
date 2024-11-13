@@ -2610,6 +2610,41 @@ def test_equality_delegation():
     assert MyModel(foo='bar') == ANY
 
 
+def test_customizable_eq():
+    class NdArray:
+        def __init__(self, obj: List[Any]):
+            self.obj = obj
+
+        def __eq__(self, other):
+            raise ValueError('The truth value of an array is ambiguous. Use compare_as at Field')
+
+        def __iter__(self):
+            return iter(self.obj)
+
+    class MyModel(BaseModel):
+        foo: NdArray
+
+        model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    with pytest.raises(ValueError, match='The truth value of an array is ambiguous. Use compare_as at Field'):
+        assert MyModel(foo=NdArray([1, 2, 3])) == MyModel(foo=NdArray([1, 2, 3]))
+
+    # Use compare_as
+    class MyModelWithCompareAs(BaseModel):
+        foo: NdArray = Field(compare_as=lambda arr1, arr2: all(x == y for x, y in zip(arr1, arr2)))
+
+        model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    class MyNestedModel(BaseModel):
+        bar: MyModelWithCompareAs
+
+    assert MyModelWithCompareAs(foo=NdArray([1, 2, 3])) == MyModelWithCompareAs(foo=NdArray([1, 2, 3]))
+
+    assert MyNestedModel(bar=MyModelWithCompareAs(foo=NdArray([1, 2, 3]))) == MyNestedModel(
+        bar=MyModelWithCompareAs(foo=NdArray([1, 2, 3]))
+    )
+
+
 def test_recursion_loop_error():
     class Model(BaseModel):
         x: List['Model']
