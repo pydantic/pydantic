@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+from functools import partial
 from typing import TYPE_CHECKING, Any, Callable, Generic, Iterator, Mapping, TypeVar, Union
 
 from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator
-from typing_extensions import Literal
+from typing_extensions import Literal, TypedDict
 
 from ..errors import PydanticErrorCodes, PydanticUserError
 from ..plugin._schema_validator import PluggableSchemaValidator
@@ -16,6 +17,7 @@ if TYPE_CHECKING:
 
 ValSer = TypeVar('ValSer', bound=Union[SchemaValidator, PluggableSchemaValidator, SchemaSerializer])
 T = TypeVar('T')
+R = TypeVar('R')
 
 
 class MockCoreSchema(Mapping[str, Any]):
@@ -109,6 +111,59 @@ class MockValSer(Generic[ValSer]):
         return None
 
 
+def _attempt_rebuild_fn(
+    cls_: T, attr_fn: Callable[[T], R], rebuild_fn: Callable[[T], Callable[..., bool | None]]
+) -> Callable[[], R | None]:
+    def handler() -> R | None:
+        if rebuild_fn(cls_)(raise_errors=False, _parent_namespace_depth=5) is not False:
+            return attr_fn(cls_)
+        return None
+
+    return handler
+
+
+class CoreAttrLookup(TypedDict):
+    core_schema: str
+    validator: str
+    serializer: str
+
+
+def _set_mocks(
+    cls_: T, rebuild_fn: Callable[[T], Callable[..., bool | None]], core_attr_lookup: CoreAttrLookup, error_message: str
+) -> None:
+    core_schema_attr = core_attr_lookup['core_schema']
+    core_schema = MockCoreSchema(
+        error_message,
+        code='class-not-fully-defined',
+        attempt_rebuild=_attempt_rebuild_fn(
+            cls_=cls_, attr_fn=lambda x: getattr(x, core_schema_attr), rebuild_fn=rebuild_fn
+        ),
+    )
+    setattr(cls_, core_schema_attr, core_schema)
+
+    validator_attr = core_attr_lookup['validator']
+    validator = MockValSer(
+        error_message,
+        code='class-not-fully-defined',
+        val_or_ser='validator',
+        attempt_rebuild=_attempt_rebuild_fn(
+            cls_=cls_, attr_fn=lambda x: getattr(x, validator_attr), rebuild_fn=rebuild_fn
+        ),
+    )
+    setattr(cls_, validator_attr, validator)
+
+    serializer_attr = core_attr_lookup['serializer']
+    serializer = MockValSer(
+        error_message,
+        code='class-not-fully-defined',
+        val_or_ser='serializer',
+        attempt_rebuild=_attempt_rebuild_fn(
+            cls_=cls_, attr_fn=lambda x: getattr(x, serializer_attr), rebuild_fn=rebuild_fn
+        ),
+    )
+    setattr(cls_, serializer_attr, serializer)
+
+
 def set_type_adapter_mocks(adapter: TypeAdapter, type_repr: str) -> None:
     """Set `core_schema`, `validator` and `serializer` to mock core types on a type adapter instance.
 
@@ -116,36 +171,14 @@ def set_type_adapter_mocks(adapter: TypeAdapter, type_repr: str) -> None:
         adapter: The type adapter instance to set the mocks on
         type_repr: Name of the type used in the adapter, used in error messages
     """
-    undefined_type_error_message = (
-        f'`TypeAdapter[{type_repr}]` is not fully defined; you should define `{type_repr}` and all referenced types,'
-        f' then call `.rebuild()` on the instance.'
-    )
-
-    def attempt_rebuild_fn(attr_fn: Callable[[TypeAdapter], T]) -> Callable[[], T | None]:
-        def handler() -> T | None:
-            if adapter.rebuild(_parent_namespace_depth=5) is not False:
-                return attr_fn(adapter)
-            else:
-                return None
-
-        return handler
-
-    adapter.core_schema = MockCoreSchema(  # pyright: ignore[reportAttributeAccessIssue]
-        undefined_type_error_message,
-        code='class-not-fully-defined',
-        attempt_rebuild=attempt_rebuild_fn(lambda ta: ta.core_schema),
-    )
-    adapter.validator = MockValSer(  # pyright: ignore[reportAttributeAccessIssue]
-        undefined_type_error_message,
-        code='class-not-fully-defined',
-        val_or_ser='validator',
-        attempt_rebuild=attempt_rebuild_fn(lambda ta: ta.validator),
-    )
-    adapter.serializer = MockValSer(  # pyright: ignore[reportAttributeAccessIssue]
-        undefined_type_error_message,
-        code='class-not-fully-defined',
-        val_or_ser='serializer',
-        attempt_rebuild=attempt_rebuild_fn(lambda ta: ta.serializer),
+    _set_mocks(
+        cls_=adapter,
+        rebuild_fn=lambda ta: ta.rebuild,
+        core_attr_lookup={'core_schema': 'core_schema', 'validator': 'validator', 'serializer': 'serializer'},
+        error_message=(
+            f'`TypeAdapter[{type_repr}]` is not fully defined; you should define `{type_repr}` and all referenced types,'
+            f' then call `.rebuild()` on the instance.'
+        ),
     )
 
 
@@ -157,36 +190,18 @@ def set_model_mocks(cls: type[BaseModel], cls_name: str, undefined_name: str = '
         cls_name: Name of the model class, used in error messages
         undefined_name: Name of the undefined thing, used in error messages
     """
-    undefined_type_error_message = (
-        f'`{cls_name}` is not fully defined; you should define {undefined_name},'
-        f' then call `{cls_name}.model_rebuild()`.'
-    )
-
-    def attempt_rebuild_fn(attr_fn: Callable[[type[BaseModel]], T]) -> Callable[[], T | None]:
-        def handler() -> T | None:
-            if cls.model_rebuild(raise_errors=False, _parent_namespace_depth=5) is not False:
-                return attr_fn(cls)
-            else:
-                return None
-
-        return handler
-
-    cls.__pydantic_core_schema__ = MockCoreSchema(  # pyright: ignore[reportAttributeAccessIssue]
-        undefined_type_error_message,
-        code='class-not-fully-defined',
-        attempt_rebuild=attempt_rebuild_fn(lambda c: c.__pydantic_core_schema__),
-    )
-    cls.__pydantic_validator__ = MockValSer(  # pyright: ignore[reportAttributeAccessIssue]
-        undefined_type_error_message,
-        code='class-not-fully-defined',
-        val_or_ser='validator',
-        attempt_rebuild=attempt_rebuild_fn(lambda c: c.__pydantic_validator__),
-    )
-    cls.__pydantic_serializer__ = MockValSer(  # pyright: ignore[reportAttributeAccessIssue]
-        undefined_type_error_message,
-        code='class-not-fully-defined',
-        val_or_ser='serializer',
-        attempt_rebuild=attempt_rebuild_fn(lambda c: c.__pydantic_serializer__),
+    _set_mocks(
+        cls_=cls,
+        rebuild_fn=lambda bm: bm.model_rebuild,
+        core_attr_lookup={
+            'core_schema': '__pydantic_core_schema__',
+            'validator': '__pydantic_validator__',
+            'serializer': '__pydantic_serializer__',
+        },
+        error_message=(
+            f'`{cls_name}` is not fully defined; you should define {undefined_name},'
+            f' then call `{cls_name}.model_rebuild()`.'
+        ),
     )
 
 
@@ -202,34 +217,16 @@ def set_dataclass_mocks(
     """
     from ..dataclasses import rebuild_dataclass
 
-    undefined_type_error_message = (
-        f'`{cls_name}` is not fully defined; you should define {undefined_name},'
-        f' then call `pydantic.dataclasses.rebuild_dataclass({cls_name})`.'
-    )
-
-    def attempt_rebuild_fn(attr_fn: Callable[[type[PydanticDataclass]], T]) -> Callable[[], T | None]:
-        def handler() -> T | None:
-            if rebuild_dataclass(cls, raise_errors=False, _parent_namespace_depth=5) is not False:
-                return attr_fn(cls)
-            else:
-                return None
-
-        return handler
-
-    cls.__pydantic_core_schema__ = MockCoreSchema(  # pyright: ignore[reportAttributeAccessIssue]
-        undefined_type_error_message,
-        code='class-not-fully-defined',
-        attempt_rebuild=attempt_rebuild_fn(lambda c: c.__pydantic_core_schema__),
-    )
-    cls.__pydantic_validator__ = MockValSer(  # pyright: ignore[reportAttributeAccessIssue]
-        undefined_type_error_message,
-        code='class-not-fully-defined',
-        val_or_ser='validator',
-        attempt_rebuild=attempt_rebuild_fn(lambda c: c.__pydantic_validator__),
-    )
-    cls.__pydantic_serializer__ = MockValSer(  # pyright: ignore[reportAttributeAccessIssue]
-        undefined_type_error_message,
-        code='class-not-fully-defined',
-        val_or_ser='serializer',
-        attempt_rebuild=attempt_rebuild_fn(lambda c: c.__pydantic_serializer__),
+    _set_mocks(
+        cls_=cls,
+        rebuild_fn=lambda d: partial(rebuild_dataclass, cls=d),
+        core_attr_lookup={
+            'core_schema': '__pydantic_core_schema__',
+            'validator': '__pydantic_validator__',
+            'serializer': '__pydantic_serializer__',
+        },
+        error_message=(
+            f'`{cls_name}` is not fully defined; you should define {undefined_name},'
+            f' then call `pydantic.dataclasses.rebuild_dataclass({cls_name})`.'
+        ),
     )
