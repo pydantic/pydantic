@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, Callable, Generic, Iterator, Mapping, Typ
 from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator
 from typing_extensions import Literal, TypedDict
 
+from ..dataclasses import rebuild_dataclass
 from ..errors import PydanticErrorCodes, PydanticUserError
 from ..plugin._schema_validator import PluggableSchemaValidator
 
@@ -122,74 +123,86 @@ class CoreAttrLookup(TypedDict):
 class MockFactory(Generic[MockContainer]):
     """Factory for creating `MockCoreSchema`, `MockValSer` and `MockValSer` instances for a given type."""
 
-    __slots__ = '_obj', '_error_message', '_rebuild', '_core_attr_lookup'
+    __slots__ = '_rebuild', '_core_attr_lookup'
 
     def __init__(
         self,
-        obj: MockContainer,
-        error_message: str,
         rebuild: Callable[[MockContainer], Callable[..., bool | None]],
         core_attr_lookup: CoreAttrLookup,
     ) -> None:
-        self._obj = obj
-        self._error_message = error_message
         self._rebuild = rebuild
         self._core_attr_lookup = core_attr_lookup
 
-    def _attempt_rebuild_fn(
-        self, attr_fn: Callable[[MockContainer], RebuildReturnType]
-    ) -> Callable[[], RebuildReturnType | None]:
-        def attempt_rebuild() -> RebuildReturnType | None:
-            if self._rebuild(self._obj)(_parent_namespace_depth=5) is not False:
-                return attr_fn(self._obj)
+    def mock_core_schema(self, obj: MockContainer, error_message: str) -> MockCoreSchema:
+        def attempt_rebuild() -> CoreSchema | None:
+            if self._rebuild(obj)(_parent_namespace_depth=5) is not False:
+                return getattr(obj, self._core_attr_lookup['core_schema'])
             return None
 
-        return attempt_rebuild
-
-    def mock_core_schema(self) -> MockCoreSchema:
         return MockCoreSchema(
-            self._error_message,
+            error_message=error_message,
             code='class-not-fully-defined',
-            attempt_rebuild=self._attempt_rebuild_fn(lambda x: getattr(x, self._core_attr_lookup['core_schema'])),
+            attempt_rebuild=attempt_rebuild,
         )
 
-    def mock_schema_validator(self) -> MockValSer:
+    def mock_schema_validator(self, obj: MockContainer, error_message: str) -> MockValSer:
+        def attempt_rebuild() -> ValidatorOrSerializer | None:
+            if self._rebuild(obj)(_parent_namespace_depth=5) is not False:
+                return getattr(obj, self._core_attr_lookup['validator'])
+            return None
+
         return MockValSer(
-            self._error_message,
+            error_message=error_message,
             code='class-not-fully-defined',
             val_or_ser='validator',
-            attempt_rebuild=self._attempt_rebuild_fn(lambda x: getattr(x, self._core_attr_lookup['validator'])),
+            attempt_rebuild=attempt_rebuild,
         )
 
-    def mock_schema_serializer(self) -> MockValSer:
+    def mock_schema_serializer(self, obj: MockContainer, error_message: str) -> MockValSer:
+        def attempt_rebuild() -> ValidatorOrSerializer | None:
+            if self._rebuild(obj)(_parent_namespace_depth=5) is not False:
+                return getattr(obj, self._core_attr_lookup['serializer'])
+            return None
+
         return MockValSer(
-            self._error_message,
+            error_message=error_message,
             code='class-not-fully-defined',
             val_or_ser='serializer',
-            attempt_rebuild=self._attempt_rebuild_fn(lambda x: getattr(x, self._core_attr_lookup['serializer'])),
+            attempt_rebuild=attempt_rebuild,
         )
 
-    def set_mocks(self) -> None:
-        setattr(self._obj, self._core_attr_lookup['core_schema'], self.mock_core_schema())
-        setattr(self._obj, self._core_attr_lookup['validator'], self.mock_schema_validator())
-        setattr(self._obj, self._core_attr_lookup['serializer'], self.mock_schema_serializer())
+    def set_mocks(self, obj: MockContainer, error_message: str) -> None:
+        setattr(obj, self._core_attr_lookup['core_schema'], self.mock_core_schema(obj, error_message))
+        setattr(obj, self._core_attr_lookup['validator'], self.mock_schema_validator(obj, error_message))
+        setattr(obj, self._core_attr_lookup['serializer'], self.mock_schema_serializer(obj, error_message))
 
 
-type_adapter_attr_lookup: CoreAttrLookup = {
-    'core_schema': 'core_schema',
-    'validator': 'validator',
-    'serializer': 'serializer',
-}
-model_attr_lookup: CoreAttrLookup = {
-    'core_schema': '__pydantic_core_schema__',
-    'validator': '__pydantic_validator__',
-    'serializer': '__pydantic_serializer__',
-}
-dataclass_attr_lookup: CoreAttrLookup = {
-    'core_schema': '__pydantic_core_schema__',
-    'validator': '__pydantic_validator__',
-    'serializer': '__pydantic_serializer__',
-}
+type_adapter_mock_factory = MockFactory[TypeAdapter](
+    rebuild=lambda ta: partial(ta.rebuild, raise_errors=False),
+    core_attr_lookup={
+        'core_schema': 'core_schema',
+        'validator': 'validator',
+        'serializer': 'serializer',
+    },
+)
+
+model_mock_factory = MockFactory[type[BaseModel]](
+    rebuild=lambda c: partial(c.model_rebuild, raise_errors=False),
+    core_attr_lookup={
+        'core_schema': '__pydantic_core_schema__',
+        'validator': '__pydantic_validator__',
+        'serializer': '__pydantic_serializer__',
+    },
+)
+
+dataclass_mock_factory = MockFactory[type[PydanticDataclass]](
+    rebuild=lambda c: partial(rebuild_dataclass, cls=c, raise_errors=False),
+    core_attr_lookup={
+        'core_schema': '__pydantic_core_schema__',
+        'validator': '__pydantic_validator__',
+        'serializer': '__pydantic_serializer__',
+    },
+)
 
 
 def set_type_adapter_mocks(adapter: TypeAdapter, type_repr: str) -> None:
@@ -199,16 +212,13 @@ def set_type_adapter_mocks(adapter: TypeAdapter, type_repr: str) -> None:
         adapter: The type adapter instance to set the mocks on
         type_repr: Name of the type used in the adapter, used in error messages
     """
-    mock_factory = MockFactory[TypeAdapter](
+    type_adapter_mock_factory.set_mocks(
         obj=adapter,
         error_message=(
             f'`TypeAdapter[{type_repr}]` is not fully defined; you should define `{type_repr}` and all referenced types,'
             f' then call `.rebuild()` on the instance.'
         ),
-        rebuild=lambda ta: partial(ta.rebuild, raise_errors=False),
-        core_attr_lookup=type_adapter_attr_lookup,
     )
-    mock_factory.set_mocks()
 
 
 def set_model_mocks(cls: type[BaseModel], cls_name: str, undefined_name: str = 'all referenced types') -> None:
@@ -219,16 +229,13 @@ def set_model_mocks(cls: type[BaseModel], cls_name: str, undefined_name: str = '
         cls_name: Name of the model class, used in error messages
         undefined_name: Name of the undefined thing, used in error messages
     """
-    mock_factory = MockFactory[type[BaseModel]](
+    model_mock_factory.set_mocks(
         obj=cls,
         error_message=(
             f'`{cls_name}` is not fully defined; you should define {undefined_name},'
             f' then call `{cls_name}.model_rebuild()`.'
         ),
-        rebuild=lambda c: partial(c.model_rebuild, raise_errors=False),
-        core_attr_lookup=model_attr_lookup,
     )
-    mock_factory.set_mocks()
 
 
 def set_dataclass_mocks(
@@ -241,15 +248,10 @@ def set_dataclass_mocks(
         cls_name: Name of the model class, used in error messages
         undefined_name: Name of the undefined thing, used in error messages
     """
-    from ..dataclasses import rebuild_dataclass
-
-    mock_factory = MockFactory[type[PydanticDataclass]](
+    dataclass_mock_factory.set_mocks(
         obj=cls,
         error_message=(
             f'`{cls_name}` is not fully defined; you should define {undefined_name},'
             f' then call `pydantic.dataclasses.rebuild_dataclass({cls_name})`.'
         ),
-        rebuild=lambda c: partial(rebuild_dataclass, cls=c, raise_errors=False),
-        core_attr_lookup=dataclass_attr_lookup,
     )
-    mock_factory.set_mocks()
