@@ -1,3 +1,34 @@
+## v2.10.0b2 (2024-11-13)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.10.0b2)
+
+### What's Changed
+
+#### Packaging
+
+* Replaced pdm with uv by @frfahim in [#10727](https://github.com/pydantic/pydantic/pull/10727)
+
+#### New Features
+
+* Add `trailing-strings` support to `experimental_allow_partial` by @sydney-runkle in [#10825](https://github.com/pydantic/pydantic/pull/10825)
+* Add `rebuild()` method for `TypeAdapter` and simplify `defer_build` patterns by @sydney-runkle in [#10537](https://github.com/pydantic/pydantic/pull/10537)
+
+#### Fixes
+
+* Refactor `_typing_extra` module by @Viicos in [#10725](https://github.com/pydantic/pydantic/pull/10725)
+* Support intuitive equality for urls by @sydney-runkle in [#10798](https://github.com/pydantic/pydantic/pull/10798)
+* Add `bytearray` to `TypeAdapter.validate_json` signature by @samuelcolvin in [#10802](https://github.com/pydantic/pydantic/pull/10802)
+* Ensure class access of method descriptors is performed when used as a default with `Field` by @Viicos in [#10816](https://github.com/pydantic/pydantic/pull/10816)
+* Fix circular import with `validate_call` by @sydney-runkle in [#10807](https://github.com/pydantic/pydantic/pull/10807)
+* Fix error when using type aliases referencing other type aliases by @Viicos in [#10809](https://github.com/pydantic/pydantic/pull/10809)
+* Fix `IncEx` type alias to be compatible with mypy by @Viicos in [#10813](https://github.com/pydantic/pydantic/pull/10813)
+* Make `__signature__` a lazy property, do not deepcopy defaults by @Viicos in [#10818](https://github.com/pydantic/pydantic/pull/10818)
+* Make `__signature__` lazy for dataclasses, too by @sydney-runkle in [#10832](https://github.com/pydantic/pydantic/pull/10832)
+
+### New Contributors
+
+* @frfahim made their first contribution in [#10727](https://github.com/pydantic/pydantic/pull/10727)
+
 ## v2.10.0b1 (2024-11-06)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.10.0b1)
