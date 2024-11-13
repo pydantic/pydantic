@@ -170,7 +170,7 @@ class DequeValidator:
             items_schema = handler.generate_schema(self.item_source_type)
 
         # if we have a MaxLen annotation might as well set that as the default maxlen on the deque
-        # this lets us re-use existing metadata annotations to let users set the maxlen on a dequeue
+        # this lets us reuse existing metadata annotations to let users set the maxlen on a dequeue
         # that e.g. comes from JSON
         coerce_instance_wrap = partial(
             core_schema.no_info_wrap_validator_function,

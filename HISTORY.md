@@ -2157,7 +2157,7 @@ Thank you to pydantic's sponsors: @matin, @tiangolo, @chdsbd, @jorgecarleitao, a
 * In examples, type nullable fields as `Optional`, so that these are valid mypy annotations, [#1248](https://github.com/pydantic/pydantic/pull/1248) by @kokes
 * Make `pattern_validator()` accept pre-compiled `Pattern` objects. Fix `str_validator()` return type to `str`, [#1237](https://github.com/pydantic/pydantic/pull/1237) by @adamgreg
 * Document how to manage Generics and inheritance, [#1229](https://github.com/pydantic/pydantic/pull/1229) by @esadruhn
-* `update_forward_refs()` method of BaseModel now copies `__dict__` of class module instead of modyfying it, [#1228](https://github.com/pydantic/pydantic/pull/1228) by @paul-ilyin
+* `update_forward_refs()` method of BaseModel now copies `__dict__` of class module instead of modifying it, [#1228](https://github.com/pydantic/pydantic/pull/1228) by @paul-ilyin
 * Support instance methods and class methods with `@validate_arguments`, [#1222](https://github.com/pydantic/pydantic/pull/1222) by @samuelcolvin
 * Add `default_factory` argument to `Field` to create a dynamic default value by passing a zero-argument callable, [#1210](https://github.com/pydantic/pydantic/pull/1210) by @prettywood
 * add support for `NewType` of `List`, `Optional`, etc, [#1207](https://github.com/pydantic/pydantic/pull/1207) by @Kazy
@@ -2619,7 +2619,7 @@ Thank you to pydantic's sponsors: @matin, @tiangolo, @chdsbd, @jorgecarleitao, a
 * add `UUID1`, `UUID3`, `UUID4` and `UUID5` types [#167](https://github.com/pydantic/pydantic/pull/167), thanks @Gr1N
 * modify some inconsistent docstrings and annotations [#173](https://github.com/pydantic/pydantic/pull/173), thanks @YannLuo
 * fix type annotations for exotic types [#171](https://github.com/pydantic/pydantic/pull/171), thanks @Gr1N
-* re-use type validators in exotic types [#171](https://github.com/pydantic/pydantic/pull/171)
+* Reuse type validators in exotic types [#171](https://github.com/pydantic/pydantic/pull/171)
 * scheduled monthly requirements updates [#168](https://github.com/pydantic/pydantic/pull/168)
 * add `Decimal`, `ConstrainedDecimal` and `condecimal` types [#170](https://github.com/pydantic/pydantic/pull/170), thanks @Gr1N
 

@@ -160,7 +160,7 @@ assert ta.json_schema(mode='serialization') == {'type': 'string'}
 
 #### Generics
 
-You can use type variables within `Annotated` to make re-usable modifications to types:
+You can use type variables within `Annotated` to make reusable modifications to types:
 
 ```python
 from typing import Any, List, Sequence, TypeVar
@@ -731,7 +731,7 @@ class Owner(Generic[ItemType]):
                         lambda data: Owner(
                             name=data['name'], item=data['item']
                         ),
-                        # note that we re-use the same schema here as below
+                        # note that we reuse the same schema here as below
                         python_schema,
                     ),
                 ]

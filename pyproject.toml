@@ -35,12 +35,8 @@ classifiers = [
     'Programming Language :: Python :: 3.13',
     'Intended Audience :: Developers',
     'Intended Audience :: Information Technology',
-    'Intended Audience :: System Administrators',
     'License :: OSI Approved :: MIT License',
-    'Operating System :: Unix',
-    'Operating System :: POSIX :: Linux',
-    'Environment :: Console',
-    'Environment :: MacOS X',
+    'Operating System :: OS Independent',
     'Framework :: Hypothesis',
     'Framework :: Pydantic',
     'Topic :: Software Development :: Libraries :: Python Modules',
@@ -58,7 +54,7 @@ dynamic = ['version', 'readme']
 email = ['email-validator>=2.0.0']
 timezone = [
     # See: https://docs.python.org/3/library/zoneinfo.html#data-sources
-    'tzdata; python_version >= "3.9" and sys_platform == "win32"',
+    'tzdata; python_version >= "3.9" and platform_system == "Windows"',
 ]
 
 [project.urls]
@@ -67,6 +63,65 @@ Documentation = 'https://docs.pydantic.dev'
 Funding = 'https://github.com/sponsors/samuelcolvin'
 Source = 'https://github.com/pydantic/pydantic'
 Changelog = 'https://docs.pydantic.dev/latest/changelog/'
+
+[dependency-groups]
+dev = [
+    'coverage[toml]',
+    'pytz',
+    'dirty-equals',
+    'eval-type-backport',
+    'pytest',
+    'pytest-mock',
+    'pytest-pretty',
+    'pytest-examples',
+    'faker',
+    'pytest-benchmark',
+    'pytest-codspeed',
+    'pytest-memray; platform_python_implementation == "CPython" and platform_system != "Windows"',
+    'packaging',
+    'jsonschema',
+]
+docs = [
+    'autoflake',
+    'mkdocs',
+    'mkdocs-exclude',
+    'mkdocs-material[imaging]',
+    'mkdocs-redirects',
+    'mkdocstrings-python',
+    'tomli',
+    'pyupgrade',
+    'mike',
+    'pydantic-settings',
+    'pydantic-extra-types @ git+https://github.com/pydantic/pydantic-extra-types.git@main',
+    'requests',
+]
+linting = [
+    'eval-type-backport',
+    'ruff',
+    'pyright',
+]
+testing-extra = [
+    'cloudpickle',
+    # used when generate devtools docs example
+    'ansi2html',
+    'devtools',
+    # used in docs tests
+    'sqlalchemy',
+    'greenlet; python_version < "3.13"',
+]
+typechecking = [
+    'mypy',
+    'pyright',
+    'pydantic-settings',
+]
+
+all = [
+  { include-group = 'dev' },
+  { include-group = 'docs' },
+  { include-group = 'linting' },
+  { include-group = 'testing-extra' },
+  { include-group = 'typechecking' },
+]
 
 [tool.hatch.version]
 path = 'pydantic/version.py'
@@ -90,77 +145,16 @@ include = [
 content-type = 'text/markdown'
 # construct the PyPI readme from README.md and HISTORY.md
 fragments = [
-    {path = "README.md"},
+    {path = 'README.md'},
     {text = "\n## Changelog\n\n"},
-    {path = "HISTORY.md", pattern = "(.+?)<!-- package description limit -->"},
+    {path = 'HISTORY.md', pattern = '(.+?)<!-- package description limit -->'},
     {text = "\n... see [here](https://docs.pydantic.dev/changelog/#v0322-2019-08-17) for earlier changes.\n"},
 ]
-# convert GitHuB issue/PR numbers and handles to links
+# convert GitHub issue/PR numbers and handles to links
 substitutions = [
     {pattern = '(\s+)#(\d+)', replacement = '\1[#\2](https://github.com/pydantic/pydantic/issues/\2)'},
     {pattern = '(\s+)@([\w\-]+)', replacement = '\1[@\2](https://github.com/\2)'},
     {pattern = '@@', replacement = '@'},
-]
-
-[dependency-groups]
-dev = [
-    "coverage[toml]>=7",
-    "pytz>=2024",
-    # weird failures on windows without tzdata
-    "tzdata>=2024; platform_system == 'Windows'",
-    "dirty-equals>=0.8.0",
-    "eval-type-backport>=0.2.0",
-    "pytest>=8.2.2",
-    "pytest-mock>=3.14.0",
-    "pytest-pretty>=1.2.0",
-    "pytest-examples>=0.0.13",
-    "faker>=18.13.0",
-    "pytest-benchmark>=4.0.0",
-    "pytest-codspeed>=2.2.1",
-    # TODO remove python version constraint once memray supports 3.13
-    "pytest-memray>=1.7.0; platform_python_implementation == 'CPython' and python_version < '3.13' and platform_system != 'Windows'",
-    "packaging>=23.2",
-    "jsonschema>=4.23.0",
-]
-docs = [
-    "autoflake",
-    "mkdocs",
-    "mkdocs-exclude",
-    "mkdocs-material[imaging]",
-    "mkdocs-redirects",
-    "mkdocstrings-python",
-    "tomli",
-    "pyupgrade",
-    "mike",
-    "pydantic-settings",
-    "pydantic-extra-types @ git+https://github.com/pydantic/pydantic-extra-types.git@main",
-    "requests",
-]
-linting = [
-    "eval-type-backport",
-    "ruff",
-    "pyright==1.1.384",
-]
-testing-extra = [
-    "cloudpickle",
-    # used when generate devtools docs example
-    "ansi2html",
-    "devtools",
-    # used in docs tests
-    "sqlalchemy",
-    "greenlet; python_version < '3.13'",
-]
-typechecking = [
-    "mypy==1.12.1",
-    "pydantic-settings",
-]
-
-all = [
-  { include-group = "dev" },
-  { include-group = "docs" },
-  { include-group = "linting" },
-  { include-group = "testing-extra" },
-  { include-group = "typechecking" },
 ]
 
 [tool.pytest.ini_options]
@@ -169,10 +163,6 @@ xfail_strict = true
 filterwarnings = [
     'error',
     'ignore:path is deprecated.*:DeprecationWarning:',
-    # Work around https://github.com/pytest-dev/pytest/issues/10977 for Python 3.12
-    'ignore:(ast\.Str|ast\.NameConstant|ast\.Num|Attribute s) is deprecated and will be removed.*:DeprecationWarning:',
-    # pytest-examples needs to remove `co_lnotab` in favor of `co_lines`.
-    'ignore:co_lnotab is deprecated, use co_lines instead.:DeprecationWarning:',
 ]
 addopts = [
     '--benchmark-columns', 'min,mean,stddev,outliers,rounds,iterations',
@@ -185,7 +175,7 @@ markers = [
 ]
 
 [tool.uv]
-default-groups = ["dev"]
+default-groups = ['dev']
 
 # configuring https://github.com/pydantic/hooky
 [tool.hooky]

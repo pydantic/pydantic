@@ -1,4 +1,4 @@
-name: release notes
+name: Release notes
 
 on:
   pull_request_target:

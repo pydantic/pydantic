@@ -1,6 +1,6 @@
 repos:
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v4.3.0
+  rev: v5.0.0
   hooks:
   - id: no-commit-to-branch  # prevent direct commits to main branch
   - id: check-yaml
@@ -10,7 +10,7 @@ repos:
   - id: trailing-whitespace
 
 - repo: https://github.com/codespell-project/codespell
-  rev: v2.2.4
+  rev: v2.3.0
   hooks:
   - id: codespell
     additional_dependencies:
