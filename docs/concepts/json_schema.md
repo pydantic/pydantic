@@ -1210,8 +1210,8 @@ print(json.dumps(Person.model_json_schema(), indent=2))
 Types, custom field types, and constraints (like `max_length`) are mapped to the corresponding spec formats in the
 following priority order (when there is an equivalent available):
 
-1. [JSON Schema Core](http://json-schema.org/latest/json-schema-core.html#rfc.section.4.3.1)
-2. [JSON Schema Validation](http://json-schema.org/latest/json-schema-validation.html)
+1. [JSON Schema Core](https://json-schema.org/draft/2020-12/json-schema-core)
+2. [JSON Schema Validation](https://json-schema.org/draft/2020-12/json-schema-validation)
 3. [OpenAPI Data Types](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#data-types)
 4. The standard `format` JSON field is used to define Pydantic extensions for more complex `string` sub-types.
 
