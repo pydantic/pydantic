@@ -27,6 +27,7 @@ from ._mock_val_ser import set_dataclass_mocks
 from ._namespace_utils import NsResolver
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
 from ._signature import generate_pydantic_signature
+from ._utils import LazyClassAttribute
 
 if typing.TYPE_CHECKING:
     from _typeshed import DataclassInstance as StandardDataclass
@@ -142,16 +143,21 @@ def complete_dataclass(
         typevars_map=typevars_map,
     )
 
-    # This needs to be called before we change the __init__
-    sig = generate_pydantic_signature(
-        init=original_init,
-        fields=cls.__pydantic_fields__,  # type: ignore
-        populate_by_name=config_wrapper.populate_by_name,
-        extra=config_wrapper.extra,
-        is_dataclass=True,
+    # set __signature__ attr only for model class, but not for its instances
+    # (because instances can define `__call__`, and `inspect.signature` shouldn't
+    # use the `__signature__` attribute and instead generate from `__call__`).
+    cls.__signature__ = LazyClassAttribute(
+        '__signature__',
+        partial(
+            generate_pydantic_signature,
+            # It's' important that we reference the original_init here
+            init=original_init,
+            fields=cls.__pydantic_fields__,  # type: ignore
+            populate_by_name=config_wrapper.populate_by_name,
+            extra=config_wrapper.extra,
+            is_dataclass=True,
+        ),
     )
-
-    cls.__signature__ = sig  # type: ignore
     get_core_schema = getattr(cls, '__get_pydantic_core_schema__', None)
     try:
         if get_core_schema:
