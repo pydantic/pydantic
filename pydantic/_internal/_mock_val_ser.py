@@ -230,6 +230,6 @@ def set_dataclass_mocks(
     cls.__pydantic_serializer__ = MockValSer(  # pyright: ignore[reportAttributeAccessIssue]
         undefined_type_error_message,
         code='class-not-fully-defined',
-        val_or_ser='validator',
+        val_or_ser='serializer',
         attempt_rebuild=attempt_rebuild_fn(lambda c: c.__pydantic_serializer__),
     )
