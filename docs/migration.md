@@ -369,7 +369,28 @@ See the [`ConfigDict` API reference][pydantic.config.ConfigDict] for more detail
     * The new `@field_validator` decorator does not have the `each_item` keyword argument; validators you want to
         apply to items within a generic container should be added by annotating the type argument. See
         [validators in Annotated metadata](concepts/types.md#composing-types-via-annotated) for details.
-        This looks like `List[Annotated[int, Field(ge=0)]]`
+        This looks like `List[Annotated[int, Field(ge=0)]]`. In case you have a more sophisticated validator, you could use the `BeforeValidator` or `AfterValidator` as below:
+      ```python
+      from typing import Annotated, List
+
+      from pydantic import AfterValidator, BaseModel
+      
+      
+      def check_positive(id):
+          if id > 0:
+              raise ValueError("id must not be positive")
+          return id
+      
+      
+      class Foo(BaseModel):
+          id: List[Annotated[int, AfterValidator(check_positive)]]
+      
+      
+      try:
+          f = Foo(id=[-1, 1])
+      except ValueError as e:
+          print(e)
+      ```
     * Even if you keep using the deprecated `@validator` decorator, you can no longer add the `field` or
         `config` arguments to the signature of validator functions. If you need access to these, you'll need
         to migrate to `@field_validator` — see the [next section](#changes-to-validators-allowed-signatures)
