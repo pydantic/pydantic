@@ -26,7 +26,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/github-script@v6
+      - uses: actions/github-script@v7
         id: fetch-branch-names
         name: Fetch branch names
         with:
@@ -90,7 +90,7 @@ jobs:
             console.log('Combined: ' + combined);
             return combined
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -118,7 +118,7 @@ jobs:
           git push origin $COMBINE_BRANCH_NAME
 
       # Creates a PR with the new combined branch
-      - uses: actions/github-script@v6
+      - uses: actions/github-script@v7
         name: Create Combined Pull Request
         env:
           PRS_STRING: ${{ steps.fetch-branch-names.outputs.prs-string }}

@@ -14,14 +14,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: set up python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: 3.9
 
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         id: cache
         with:
           path: |
@@ -54,19 +54,26 @@ jobs:
       - name: check dist
         run: make check-dist
 
+      - name: install node for pyright
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - run: npm install -g pyright
+
       - run: make pyright
 
   docs-build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: set up python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.10'
 
-    - uses: actions/cache@v3
+    - uses: actions/cache@v4
       id: cache
       with:
         path: ${{ env.pythonLocation }}
@@ -86,23 +93,23 @@ jobs:
       run: make docs
 
     - name: Store docs site
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: docs
         path: site
-  
+
   test-memray:
     name: test memray
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: set up python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.10'
 
-    - uses: actions/cache@v3
+    - uses: actions/cache@v4
       id: cache
       with:
         path: ${{ env.pythonLocation }}
@@ -139,14 +146,14 @@ jobs:
       OS: ubuntu
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: set up python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
 
-    - uses: actions/cache@v3
+    - uses: actions/cache@v4
       id: cache
       with:
         path: ${{ env.pythonLocation }}
@@ -183,7 +190,7 @@ jobs:
         path: coverage
         include-hidden-files: true
 
-# We cannot use tracing on 3.12 without Cython 3+, which makes the coverage useless.
+# We cannot use tracing on 3.12/3.13 without Cython 3+, which makes the coverage useless.
 # However, we can at least make sure tests run to completion on a cythonized build.
   test-linux-compiled-notrace:
     name: test py${{ matrix.python-version }} on linux compiled without tracing
@@ -191,20 +198,20 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.12']
+        python-version: ['3.12', '3.13']
     env:
       PYTHON: ${{ matrix.python-version }}
       OS: ubuntu
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: set up python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
 
-    - uses: actions/cache@v3
+    - uses: actions/cache@v4
       id: cache
       with:
         path: ${{ env.pythonLocation }}
@@ -240,7 +247,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-13, macos-latest, windows-latest]
-        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12']
+        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
         exclude:
           # Python 3.7, 3.8, and 3.9 are not available on macOS 14
           - os: macos-13
@@ -261,14 +268,14 @@ jobs:
       DEPS: yes
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: set up python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
 
-    - uses: actions/cache@v3
+    - uses: actions/cache@v4
       id: cache
       with:
         path: ${{ env.pythonLocation }}
@@ -318,10 +325,10 @@ jobs:
         mypy-version: ['0.910', '0.921', '0.931', '0.942', '0.950', '0.960']
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: set up python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.10'
 
@@ -356,9 +363,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.8'
 
@@ -376,7 +383,7 @@ jobs:
       - run: coverage html --show-contexts --title "pydantic coverage for ${{ github.sha }}"
 
       - name: Store coverage html
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: coverage-html
           path: htmlcov
@@ -385,10 +392,10 @@ jobs:
     name: test fastAPI
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: set up python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.10'
 
@@ -404,7 +411,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu , macos , windows]
-        python-version: ['7', '8', '9', '10', '11', '12']
+        python-version: ['7', '8', '9', '10', '11', '12', '13']
         include:
         - os: ubuntu
           platform: linux
@@ -413,15 +420,15 @@ jobs:
 
     runs-on: ${{ matrix.os }}-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: set up python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
-        python-version: '3.8'
+        python-version: '3.10'
 
     - name: install
-      run: pip install -U twine setuptools wheel cibuildwheel==2.17.0
+      run: pip install -U twine setuptools wheel cibuildwheel==2.21.3
 
     - name: build sdist
       if: matrix.os == 'ubuntu' && matrix.python-version == '9'
@@ -452,7 +459,7 @@ jobs:
         twine check dist/*
 
     - name: Store dist artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: pypi_files
         path: dist
@@ -484,10 +491,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: get dist artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: pypi_files
           path: dist
@@ -515,15 +522,15 @@ jobs:
 
     steps:
       - name: checkout docs-site
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: docs-site
 
       - name: checkout current branch
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: set up python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
@@ -556,10 +563,10 @@ jobs:
       id-token: write
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: get dist artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: pypi_files
           path: dist
