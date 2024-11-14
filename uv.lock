@@ -1522,7 +1522,7 @@ typechecking = [
 [[package]]
 name = "pydantic-core"
 version = "2.27.0"
-source = { git = "https://github.com/MarkusSintonen/pydantic-core.git?rev=schema-gather#1a3071e570663357a554d9b52baa6b3eef88df14" }
+source = { git = "https://github.com/MarkusSintonen/pydantic-core.git?rev=schema-gather#5c9c9e9b16797c28e14b705a7d8fa7f510de71ae" }
 dependencies = [
     { name = "typing-extensions" },
 ]
