@@ -125,8 +125,7 @@ def set_type_adapter_mocks(adapter: TypeAdapter) -> None:
         def handler() -> T | None:
             if adapter.rebuild(raise_errors=False, _parent_namespace_depth=5) is not False:
                 return attr_fn(adapter)
-            else:
-                return None
+            return None
 
         return handler
 
@@ -165,8 +164,7 @@ def set_model_mocks(cls: type[BaseModel], undefined_name: str = 'all referenced 
         def handler() -> T | None:
             if cls.model_rebuild(raise_errors=False, _parent_namespace_depth=5) is not False:
                 return attr_fn(cls)
-            else:
-                return None
+            return None
 
         return handler
 
@@ -207,8 +205,7 @@ def set_dataclass_mocks(cls: type[PydanticDataclass], undefined_name: str = 'all
         def handler() -> T | None:
             if rebuild_dataclass(cls, raise_errors=False, _parent_namespace_depth=5) is not False:
                 return attr_fn(cls)
-            else:
-                return None
+            return None
 
         return handler
 
