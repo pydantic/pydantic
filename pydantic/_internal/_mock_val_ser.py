@@ -109,13 +109,13 @@ class MockValSer(Generic[ValSer]):
         return None
 
 
-def set_type_adapter_mocks(adapter: TypeAdapter, type_repr: str) -> None:
+def set_type_adapter_mocks(adapter: TypeAdapter) -> None:
     """Set `core_schema`, `validator` and `serializer` to mock core types on a type adapter instance.
 
     Args:
         adapter: The type adapter instance to set the mocks on
-        type_repr: Name of the type used in the adapter, used in error messages
     """
+    type_repr = str(adapter._type)
     undefined_type_error_message = (
         f'`TypeAdapter[{type_repr}]` is not fully defined; you should define `{type_repr}` and all referenced types,'
         f' then call `.rebuild()` on the instance.'
@@ -149,17 +149,16 @@ def set_type_adapter_mocks(adapter: TypeAdapter, type_repr: str) -> None:
     )
 
 
-def set_model_mocks(cls: type[BaseModel], cls_name: str, undefined_name: str = 'all referenced types') -> None:
+def set_model_mocks(cls: type[BaseModel], undefined_name: str = 'all referenced types') -> None:
     """Set `__pydantic_core_schema__`, `__pydantic_validator__` and `__pydantic_serializer__` to mock core types on a model.
 
     Args:
         cls: The model class to set the mocks on
-        cls_name: Name of the model class, used in error messages
         undefined_name: Name of the undefined thing, used in error messages
     """
     undefined_type_error_message = (
-        f'`{cls_name}` is not fully defined; you should define {undefined_name},'
-        f' then call `{cls_name}.model_rebuild()`.'
+        f'`{cls.__name__}` is not fully defined; you should define {undefined_name},'
+        f' then call `{cls.__name__}.model_rebuild()`.'
     )
 
     def attempt_rebuild_fn(attr_fn: Callable[[type[BaseModel]], T]) -> Callable[[], T | None]:
@@ -190,21 +189,18 @@ def set_model_mocks(cls: type[BaseModel], cls_name: str, undefined_name: str = '
     )
 
 
-def set_dataclass_mocks(
-    cls: type[PydanticDataclass], cls_name: str, undefined_name: str = 'all referenced types'
-) -> None:
+def set_dataclass_mocks(cls: type[PydanticDataclass], undefined_name: str = 'all referenced types') -> None:
     """Set `__pydantic_validator__` and `__pydantic_serializer__` to `MockValSer`s on a dataclass.
 
     Args:
         cls: The model class to set the mocks on
-        cls_name: Name of the model class, used in error messages
         undefined_name: Name of the undefined thing, used in error messages
     """
     from ..dataclasses import rebuild_dataclass
 
     undefined_type_error_message = (
-        f'`{cls_name}` is not fully defined; you should define {undefined_name},'
-        f' then call `pydantic.dataclasses.rebuild_dataclass({cls_name})`.'
+        f'`{cls.__name__}` is not fully defined; you should define {undefined_name},'
+        f' then call `pydantic.dataclasses.rebuild_dataclass({cls.__name__})`.'
     )
 
     def attempt_rebuild_fn(attr_fn: Callable[[type[PydanticDataclass]], T]) -> Callable[[], T | None]:

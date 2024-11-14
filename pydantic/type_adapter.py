@@ -246,7 +246,7 @@ class TypeAdapter(Generic[T]):
                 and `raise_errors=True`.
         """
         if not force and self._defer_build:
-            _mock_val_ser.set_type_adapter_mocks(self, str(self._type))
+            _mock_val_ser.set_type_adapter_mocks(self)
             self.pydantic_complete = False
             return False
 
@@ -274,13 +274,13 @@ class TypeAdapter(Generic[T]):
             except PydanticUndefinedAnnotation:
                 if raise_errors:
                     raise
-                _mock_val_ser.set_type_adapter_mocks(self, str(self._type))
+                _mock_val_ser.set_type_adapter_mocks(self)
                 return False
 
             try:
                 self.core_schema = schema_generator.clean_schema(core_schema)
             except schema_generator.CollectedInvalid:
-                _mock_val_ser.set_type_adapter_mocks(self, str(self._type))
+                _mock_val_ser.set_type_adapter_mocks(self)
                 return False
 
             core_config = config_wrapper.core_config(None)
