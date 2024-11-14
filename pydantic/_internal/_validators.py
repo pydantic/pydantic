@@ -311,7 +311,7 @@ def multiple_of_validator(x: Any, multiple_of: Any) -> Any:
 
 # TODO: we have a sort of hacky way of supporting min_length and max_length for path like types as a consequence
 # of prior design that supported out of order metadata injection during core schema generation, which we have since abandoned
-# see:
+# see: https://github.com/pydantic/pydantic/pull/10846/
 
 
 def min_length_validator(x: Any, min_length: Any) -> Any:
