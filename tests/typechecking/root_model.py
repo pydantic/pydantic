@@ -1,3 +1,5 @@
+from typing import Final
+
 from typing_extensions import assert_type
 
 from pydantic import RootModel
@@ -17,3 +19,8 @@ class StrRootModel(RootModel[str]):
 str_root_model = StrRootModel(root='a')
 
 assert_type(str_root_model.root, str)
+
+
+class A(RootModel[str]):
+    # `a` is final and thus should not be considered to be a field of this root model
+    a: Final = 1

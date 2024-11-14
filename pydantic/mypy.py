@@ -728,10 +728,6 @@ class PydanticModelTransformer:
             # The dataclasses plugin now asserts this cannot happen, but I'd rather not error if it does..
             return None
 
-        # x: ClassVar[int] is not a field
-        if node.is_classvar:
-            return PydanticModelClassVar(lhs.name)
-
         # x: InitVar[int] is not supported in BaseModel
         node_type = get_proper_type(node.type)
         if isinstance(node_type, Instance) and node_type.type.fullname == 'dataclasses.InitVar':
@@ -739,9 +735,6 @@ class PydanticModelTransformer:
                 'InitVar is not supported in BaseModel',
                 node,
             )
-
-        has_default = self.get_has_default(stmt)
-        strict = self.get_strict(stmt)
 
         if sym.type is None and node.is_final and node.is_inferred:
             # This follows the logic from the dataclasses plugin. The following comment is taken verbatim:
@@ -760,6 +753,13 @@ class PydanticModelTransformer:
                     stmt,
                 )
                 node.type = AnyType(TypeOfAny.from_error)
+
+        # x: ClassVar[int] and x: Final[...] are not considered as fields
+        if node.is_classvar or node.is_final:
+            return PydanticModelClassVar(lhs.name)
+
+        has_default = self.get_has_default(stmt)
+        strict = self.get_strict(stmt)
 
         alias, has_dynamic_alias = self.get_alias_info(stmt)
         if has_dynamic_alias and not model_config.populate_by_name and self.plugin_config.warn_required_dynamic_aliases:
