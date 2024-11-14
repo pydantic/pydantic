@@ -41,7 +41,7 @@ from typing import (
 import pydantic_core
 from pydantic_core import CoreSchema, PydanticOmit, core_schema, to_jsonable_python
 from pydantic_core.core_schema import ComputedField
-from typing_extensions import Annotated, Literal, TypeAlias, assert_never, deprecated, final
+from typing_extensions import Annotated, Literal, TypeAlias, TypedDict, assert_never, deprecated, final
 
 from pydantic.warnings import PydanticDeprecatedSince26, PydanticDeprecatedSince29
 
@@ -99,6 +99,11 @@ A type alias representing the kinds of warnings that can be emitted during JSON 
 See [`GenerateJsonSchema.render_warning_message`][pydantic.json_schema.GenerateJsonSchema.render_warning_message]
 for more details.
 """
+
+
+class JsonSchemaOverride(TypedDict, total=False):
+    nullable: bool | None
+    required: bool | None
 
 
 class PydanticJsonSchemaWarning(UserWarning):
@@ -513,6 +518,28 @@ class GenerateJsonSchema:
                 return json_schema
 
             current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(self, js_updates_handler_func)
+
+        if js_override := metadata.get('pydantic_js_override'):
+
+            def js_override_handler_func(
+                schema_or_field: CoreSchemaOrField,
+                current_handler: GetJsonSchemaHandler = current_handler,
+            ) -> JsonSchemaValue:
+                json_schema = current_handler(schema_or_field)
+                if 'nullable' in js_override and js_override['nullable'] is False:
+                    for union_type in ['anyOf', 'oneOf', 'allOf']:
+                        if union_type in json_schema:
+                            for i, item in enumerate(json_schema[union_type]):
+                                if 'type' in item and item['type'] == 'null':
+                                    del json_schema[union_type][i]
+                                    break
+                            if len(json_schema[union_type]) == 1:
+                                json_schema = json_schema[union_type][0]
+                                break
+
+                return json_schema
+
+            current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(self, js_override_handler_func)
 
         if js_extra := metadata.get('pydantic_js_extra'):
 
@@ -1630,6 +1657,11 @@ class GenerateJsonSchema:
         if self.mode == 'serialization' and self._config.json_schema_serialization_defaults_required:
             return not field.get('serialization_exclude')
         else:
+            if 'metadata' in field and 'pydantic_js_override' in field['metadata']:
+                required = field['metadata']['pydantic_js_override'].get('required')
+                if isinstance(required, bool):
+                    return required
+
             if field['type'] == 'typed-dict-field':
                 return field.get('required', total)
             else:

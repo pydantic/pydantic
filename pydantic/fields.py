@@ -23,7 +23,7 @@ from ._internal._namespace_utils import GlobalsNamespace, MappingNamespace
 from .aliases import AliasChoices, AliasPath
 from .config import JsonDict
 from .errors import PydanticUserError
-from .json_schema import PydanticJsonSchemaWarning
+from .json_schema import JsonSchemaOverride, PydanticJsonSchemaWarning
 from .warnings import PydanticDeprecatedSince20
 
 if typing.TYPE_CHECKING:
@@ -75,6 +75,7 @@ class _FromFieldInfoInputs(typing_extensions.TypedDict, total=False):
     union_mode: Literal['smart', 'left_to_right'] | None
     discriminator: str | types.Discriminator | None
     deprecated: Deprecated | str | bool | None
+    json_schema_override: JsonSchemaOverride | None
     json_schema_extra: JsonDict | Callable[[JsonDict], None] | None
     frozen: bool | None
     validate_default: bool | None
@@ -119,6 +120,7 @@ class FieldInfo(_repr.Representation):
         discriminator: Field name or Discriminator for discriminating the type in a tagged union.
         deprecated: A deprecation message, an instance of `warnings.deprecated` or the `typing_extensions.deprecated` backport,
             or a boolean. If `True`, a default deprecation message will be emitted when accessing the field.
+        json_schema_override: Override properties for the field in the generated JSON schema.
         json_schema_extra: A dict or callable to provide extra JSON schema properties.
         frozen: Whether the field is frozen.
         validate_default: Whether to validate the default value of the field.
@@ -143,6 +145,7 @@ class FieldInfo(_repr.Representation):
     exclude: bool | None
     discriminator: str | types.Discriminator | None
     deprecated: Deprecated | str | bool | None
+    json_schema_override: JsonSchemaOverride | None
     json_schema_extra: JsonDict | Callable[[JsonDict], None] | None
     frozen: bool | None
     validate_default: bool | None
@@ -167,6 +170,7 @@ class FieldInfo(_repr.Representation):
         'exclude',
         'discriminator',
         'deprecated',
+        'json_schema_override',
         'json_schema_extra',
         'frozen',
         'validate_default',
@@ -237,6 +241,7 @@ class FieldInfo(_repr.Representation):
         # For compatibility with FastAPI<=0.110.0, we preserve the existing value if it is not overridden
         self.deprecated = kwargs.pop('deprecated', getattr(self, 'deprecated', None))
         self.repr = kwargs.pop('repr', True)
+        self.json_schema_override = kwargs.pop('json_schema_override', None)
         self.json_schema_extra = kwargs.pop('json_schema_extra', None)
         self.validate_default = kwargs.pop('validate_default', None)
         self.frozen = kwargs.pop('frozen', None)
@@ -450,6 +455,17 @@ class FieldInfo(_repr.Representation):
         metadata = {}
         for field_info in field_infos:
             attributes_set = field_info._attributes_set.copy()
+
+            try:
+                json_schema_override = attributes_set.pop('json_schema_override')
+                existing_json_schema_override = merged_field_info_kwargs.get('json_schema_override')
+                if isinstance(json_schema_override, dict) and isinstance(existing_json_schema_override, dict):
+                    merged_field_info_kwargs['json_schema_override'] = {
+                        **json_schema_override,
+                        **existing_json_schema_override,
+                    }
+            except KeyError:
+                pass
 
             try:
                 json_schema_extra = attributes_set.pop('json_schema_extra')
@@ -698,6 +714,7 @@ _DefaultValues = {
     'examples': None,
     'exclude': None,
     'discriminator': None,
+    'json_schema_override': None,
     'json_schema_extra': None,
     'frozen': None,
     'validate_default': None,
@@ -741,6 +758,7 @@ def Field(
     exclude: bool | None = _Unset,
     discriminator: str | types.Discriminator | None = _Unset,
     deprecated: Deprecated | str | bool | None = _Unset,
+    json_schema_override: JsonSchemaOverride | None = _Unset,
     json_schema_extra: JsonDict | Callable[[JsonDict], None] | None = _Unset,
     frozen: bool | None = _Unset,
     validate_default: bool | None = _Unset,
@@ -780,6 +798,7 @@ def Field(
     exclude: bool | None = _Unset,
     discriminator: str | types.Discriminator | None = _Unset,
     deprecated: Deprecated | str | bool | None = _Unset,
+    json_schema_override: JsonSchemaOverride | None = _Unset,
     json_schema_extra: JsonDict | Callable[[JsonDict], None] | None = _Unset,
     frozen: bool | None = _Unset,
     validate_default: bool | None = _Unset,
@@ -819,6 +838,7 @@ def Field(
     exclude: bool | None = _Unset,
     discriminator: str | types.Discriminator | None = _Unset,
     deprecated: Deprecated | str | bool | None = _Unset,
+    json_schema_override: JsonSchemaOverride | None = _Unset,
     json_schema_extra: JsonDict | Callable[[JsonDict], None] | None = _Unset,
     frozen: bool | None = _Unset,
     validate_default: bool | None = _Unset,
@@ -857,6 +877,7 @@ def Field(  # No default set
     exclude: bool | None = _Unset,
     discriminator: str | types.Discriminator | None = _Unset,
     deprecated: Deprecated | str | bool | None = _Unset,
+    json_schema_override: JsonSchemaOverride | None = _Unset,
     json_schema_extra: JsonDict | Callable[[JsonDict], None] | None = _Unset,
     frozen: bool | None = _Unset,
     validate_default: bool | None = _Unset,
@@ -896,6 +917,7 @@ def Field(  # noqa: C901
     exclude: bool | None = _Unset,
     discriminator: str | types.Discriminator | None = _Unset,
     deprecated: Deprecated | str | bool | None = _Unset,
+    json_schema_override: JsonSchemaOverride | None = _Unset,
     json_schema_extra: JsonDict | Callable[[JsonDict], None] | None = _Unset,
     frozen: bool | None = _Unset,
     validate_default: bool | None = _Unset,
@@ -947,6 +969,7 @@ def Field(  # noqa: C901
         discriminator: Field name or Discriminator for discriminating the type in a tagged union.
         deprecated: A deprecation message, an instance of `warnings.deprecated` or the `typing_extensions.deprecated` backport,
             or a boolean. If `True`, a default deprecation message will be emitted when accessing the field.
+        json_schema_override: A dict to override the JSON schema properties for this field.
         json_schema_extra: A dict or callable to provide extra JSON schema properties.
         frozen: Whether the field is frozen. If true, attempts to change the value on an instance will raise an error.
         validate_default: If `True`, apply validation to the default value every time you create an instance.
@@ -1063,6 +1086,7 @@ def Field(  # noqa: C901
         exclude=exclude,
         discriminator=discriminator,
         deprecated=deprecated,
+        json_schema_override=json_schema_override,
         json_schema_extra=json_schema_extra,
         frozen=frozen,
         pattern=pattern,
@@ -1227,6 +1251,7 @@ class ComputedFieldInfo:
         deprecated: A deprecation message, an instance of `warnings.deprecated` or the `typing_extensions.deprecated` backport,
             or a boolean. If `True`, a default deprecation message will be emitted when accessing the field.
         examples: Example values of the computed field to include in the serialization JSON schema.
+        json_schema_override: A dict to override the JSON schema properties for this field.
         json_schema_extra: A dict or callable to provide extra JSON schema properties.
         repr: A boolean indicating whether to include the field in the __repr__ output.
     """
@@ -1241,6 +1266,7 @@ class ComputedFieldInfo:
     description: str | None
     deprecated: Deprecated | str | bool | None
     examples: list[Any] | None
+    json_schema_override: JsonSchemaOverride | None
     json_schema_extra: JsonDict | typing.Callable[[JsonDict], None] | None
     repr: bool
 
@@ -1281,6 +1307,7 @@ def computed_field(
     description: str | None = None,
     deprecated: Deprecated | str | bool | None = None,
     examples: list[Any] | None = None,
+    json_schema_override: JsonSchemaOverride | None = None,
     json_schema_extra: JsonDict | typing.Callable[[JsonDict], None] | None = None,
     repr: bool = True,
     return_type: Any = PydanticUndefined,
@@ -1302,6 +1329,7 @@ def computed_field(
     description: str | None = None,
     deprecated: Deprecated | str | bool | None = None,
     examples: list[Any] | None = None,
+    json_schema_override: JsonSchemaOverride | None = None,
     json_schema_extra: JsonDict | typing.Callable[[JsonDict], None] | None = None,
     repr: bool | None = None,
     return_type: Any = PydanticUndefined,
@@ -1436,6 +1464,7 @@ def computed_field(
             to be emitted when accessing the field. Or a boolean. This will automatically be set if the property is decorated with the
             `deprecated` decorator.
         examples: Example values to use when including this computed field in JSON Schema
+        json_schema_override: A dict to override the JSON schema properties for this field.
         json_schema_extra: A dict or callable to provide extra JSON schema properties.
         repr: whether to include this computed field in model repr.
             Default is `False` for private properties and `True` for public properties.
@@ -1477,6 +1506,7 @@ def computed_field(
             description,
             deprecated,
             examples,
+            json_schema_override,
             json_schema_extra,
             repr_,
         )

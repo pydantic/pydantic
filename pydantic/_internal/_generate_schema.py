@@ -60,7 +60,7 @@ from ..annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
 from ..config import ConfigDict, JsonDict, JsonEncoder, JsonSchemaExtraCallable
 from ..errors import PydanticSchemaGenerationError, PydanticUndefinedAnnotation, PydanticUserError
 from ..functional_validators import AfterValidator, BeforeValidator, FieldValidatorModes, PlainValidator, WrapValidator
-from ..json_schema import JsonSchemaValue
+from ..json_schema import JsonSchemaOverride, JsonSchemaValue
 from ..version import version_short
 from ..warnings import PydanticDeprecatedSince20
 from . import _core_utils, _decorators, _discriminated_union, _known_annotated_metadata, _typing_extra
@@ -260,7 +260,7 @@ def apply_each_item_validators(
 
 def _extract_json_schema_info_from_field_info(
     info: FieldInfo | ComputedFieldInfo,
-) -> tuple[JsonDict | None, JsonDict | JsonSchemaExtraCallable | None]:
+) -> tuple[JsonDict | None, JsonDict | JsonSchemaExtraCallable | None, JsonSchemaOverride | None]:
     json_schema_updates = {
         'title': info.title,
         'description': info.description,
@@ -268,7 +268,7 @@ def _extract_json_schema_info_from_field_info(
         'examples': to_jsonable_python(info.examples),
     }
     json_schema_updates = {k: v for k, v in json_schema_updates.items() if v is not None}
-    return (json_schema_updates or None, info.json_schema_extra)
+    return (json_schema_updates or None, info.json_schema_extra, info.json_schema_override)
 
 
 JsonEncoders = Dict[Type[Any], JsonEncoder]
@@ -1287,10 +1287,15 @@ class GenerateSchema:
         )
         self._apply_field_title_generator_to_field_info(self._config_wrapper, field_info, name)
 
-        pydantic_js_updates, pydantic_js_extra = _extract_json_schema_info_from_field_info(field_info)
+        pydantic_js_updates, pydantic_js_extra, pydantic_js_override = _extract_json_schema_info_from_field_info(
+            field_info
+        )
         core_metadata: dict[str, Any] = {}
         update_core_metadata(
-            core_metadata, pydantic_js_updates=pydantic_js_updates, pydantic_js_extra=pydantic_js_extra
+            core_metadata,
+            pydantic_js_updates=pydantic_js_updates,
+            pydantic_js_override=pydantic_js_override,
+            pydantic_js_extra=pydantic_js_extra,
         )
 
         alias_generator = self._config_wrapper.alias_generator
@@ -1950,11 +1955,12 @@ class GenerateSchema:
             )
         self._apply_field_title_generator_to_field_info(self._config_wrapper, d.info, d.cls_var_name)
 
-        pydantic_js_updates, pydantic_js_extra = _extract_json_schema_info_from_field_info(d.info)
+        pydantic_js_updates, pydantic_js_extra, pydantic_js_override = _extract_json_schema_info_from_field_info(d.info)
         core_metadata: dict[str, Any] = {}
         update_core_metadata(
             core_metadata,
             pydantic_js_updates={'readOnly': True, **(pydantic_js_updates if pydantic_js_updates else {})},
+            pydantic_js_override=pydantic_js_override,
             pydantic_js_extra=pydantic_js_extra,
         )
         return core_schema.computed_field(
@@ -2105,10 +2111,15 @@ class GenerateSchema:
             for field_metadata in metadata.metadata:
                 schema = self._apply_single_annotation_json_schema(schema, field_metadata)
 
-            pydantic_js_updates, pydantic_js_extra = _extract_json_schema_info_from_field_info(metadata)
+            pydantic_js_updates, pydantic_js_extra, pydantic_js_override = _extract_json_schema_info_from_field_info(
+                metadata
+            )
             core_metadata = schema.setdefault('metadata', {})
             update_core_metadata(
-                core_metadata, pydantic_js_updates=pydantic_js_updates, pydantic_js_extra=pydantic_js_extra
+                core_metadata,
+                pydantic_js_updates=pydantic_js_updates,
+                pydantic_js_override=pydantic_js_override,
+                pydantic_js_extra=pydantic_js_extra,
             )
         return schema
 

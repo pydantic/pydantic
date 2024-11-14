@@ -7,6 +7,7 @@ if TYPE_CHECKING:
     from pydantic_core import CoreSchema
 
     from ..config import JsonDict, JsonSchemaExtraCallable
+    from ..fields import JsonSchemaOverride
     from ._schema_generation_shared import (
         GetJsonSchemaFunction,
     )
@@ -23,6 +24,7 @@ class CoreMetadata(TypedDict, total=False):
         pydantic_js_input_core_schema: Schema associated with the input value for the associated
             custom validation function. Only applies to before, plain, and wrap validators.
         pydantic_js_udpates: key / value pair updates to apply to the JSON schema for a type.
+        pydantic_js_override: key / value pair overrides to apply to the JSON schema.
         pydantic_js_extra: WIP, either key/value pair updates to apply to the JSON schema, or a custom callable.
 
     TODO: Perhaps we should move this structure to pydantic-core. At the moment, though,
@@ -39,6 +41,7 @@ class CoreMetadata(TypedDict, total=False):
     pydantic_js_prefer_positional_arguments: bool
     pydantic_js_input_core_schema: CoreSchema
     pydantic_js_updates: JsonDict
+    pydantic_js_override: JsonSchemaOverride
     pydantic_js_extra: JsonDict | JsonSchemaExtraCallable
 
 
@@ -49,6 +52,7 @@ def update_core_metadata(
     pydantic_js_functions: list[GetJsonSchemaFunction] | None = None,
     pydantic_js_annotation_functions: list[GetJsonSchemaFunction] | None = None,
     pydantic_js_updates: JsonDict | None = None,
+    pydantic_js_override: JsonSchemaOverride | None = None,
     pydantic_js_extra: JsonDict | JsonSchemaExtraCallable | None = None,
 ) -> None:
     from ..json_schema import PydanticJsonSchemaWarning
@@ -75,6 +79,12 @@ def update_core_metadata(
             core_metadata['pydantic_js_updates'] = {**existing_updates, **pydantic_js_updates}
         else:
             core_metadata['pydantic_js_updates'] = pydantic_js_updates
+
+    if pydantic_js_override:
+        if (existing_override := core_metadata.get('pydantic_js_override')) is not None:
+            core_metadata['pydantic_js_override'] = {**existing_override, **pydantic_js_override}
+        else:
+            core_metadata['pydantic_js_override'] = pydantic_js_override
 
     if pydantic_js_extra is not None:
         existing_pydantic_js_extra = core_metadata.get('pydantic_js_extra')
