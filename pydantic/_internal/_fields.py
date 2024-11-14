@@ -117,7 +117,7 @@ def collect_model_fields(  # noqa: C901
     fields: dict[str, FieldInfo] = {}
 
     class_vars: set[str] = set()
-    for ann_name, ann_type in type_hints.items():
+    for ann_name, (ann_type, evaluated) in type_hints.items():
         if ann_name == 'model_config':
             # We never want to treat `model_config` as a field
             # Note: we may need to change this logic if/when we introduce a `BareModel` class with no
@@ -202,6 +202,7 @@ def collect_model_fields(  # noqa: C901
         except AttributeError:
             if ann_name in annotations:
                 field_info = FieldInfo_.from_annotation(ann_type)
+                field_info.evaluated = evaluated
             else:
                 # if field has no default value and is not in __annotations__ this means that it is
                 # defined in a base class and we can take it from there
@@ -214,6 +215,8 @@ def collect_model_fields(  # noqa: C901
                     # generated thanks to models not being fully defined while initializing recursive models.
                     # Nothing stops us from just creating a new FieldInfo for this type hint, so we do this.
                     field_info = FieldInfo_.from_annotation(ann_type)
+                    field_info.evaluated = evaluated
+
         else:
             _warn_on_nested_alias_in_annotation(ann_type, ann_name)
             if isinstance(default, FieldInfo_) and ismethoddescriptor(default.default):
@@ -224,6 +227,7 @@ def collect_model_fields(  # noqa: C901
                 default.default = default.default.__get__(None, cls)
 
             field_info = FieldInfo_.from_annotated_attribute(ann_type, default)
+            field_info.evaluated = evaluated
             # attributes which are fields are removed from the class namespace:
             # 1. To match the behaviour of annotation-only fields
             # 2. To avoid false positives in the NameError check above
@@ -316,7 +320,7 @@ def collect_dataclass_fields(
                     continue
 
                 globalns, localns = ns_resolver.types_namespace
-                ann_type = _typing_extra.eval_type(dataclass_field.type, globalns, localns, lenient=True)
+                ann_type, _ = _typing_extra.try_eval_type(dataclass_field.type, globalns, localns)
 
                 if _typing_extra.is_classvar_annotation(ann_type):
                     continue
