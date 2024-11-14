@@ -482,6 +482,54 @@ class GenerateSchema:
             },
         )
 
+    def _path_schema(self, tp: Any, path_type: Any) -> CoreSchema:
+        if tp is os.PathLike and path_type not in {str, bytes, Any}:
+            # TODO: maybe custom code here?
+            raise PydanticUserError(
+                '`os.PathLike` can only be used with `str`, `bytes` or `Any`', code='schema-for-unknown-type'
+            )
+
+        path_constructor = pathlib.PurePath if tp is os.PathLike else tp
+        constrained_schema = core_schema.bytes_schema() if (path_type is bytes) else core_schema.str_schema()
+
+        def path_validator(input_value: str | bytes) -> os.PathLike[Any]:  # type: ignore
+            try:
+                if path_type is bytes:
+                    if isinstance(input_value, bytes):
+                        try:
+                            input_value = input_value.decode()
+                        except UnicodeDecodeError as e:
+                            raise PydanticCustomError('bytes_type', 'Input must be valid bytes') from e
+                    else:
+                        raise PydanticCustomError('bytes_type', 'Input must be bytes')
+                elif not isinstance(input_value, str):
+                    raise PydanticCustomError('path_type', 'Input is not a valid path')
+
+                return path_constructor(input_value)  # type: ignore
+            except TypeError as e:
+                raise PydanticCustomError('path_type', 'Input is not a valid path') from e
+
+        instance_schema = core_schema.json_or_python_schema(
+            json_schema=core_schema.no_info_after_validator_function(path_validator, constrained_schema),
+            python_schema=core_schema.is_instance_schema(tp),
+        )
+
+        schema = core_schema.lax_or_strict_schema(
+            lax_schema=core_schema.union_schema(
+                [
+                    instance_schema,
+                    core_schema.no_info_after_validator_function(path_validator, constrained_schema),
+                ],
+                custom_error_type='path_type',
+                custom_error_message=f'Input is not a valid path for {tp}',
+                strict=True,
+            ),
+            strict_schema=instance_schema,
+            serialization=core_schema.to_string_ser_schema(),
+            metadata={'pydantic_js_functions': [lambda source, handler: {**handler(source), 'format': 'path'}]},
+        )
+        return schema
+
     def _fraction_schema(self) -> CoreSchema:
         """Support for [`fractions.Fraction`][fractions.Fraction]."""
         from ._validators import fraction_validator
@@ -946,6 +994,8 @@ class GenerateSchema:
             return self._sequence_schema(Any)
         elif obj in DICT_TYPES:
             return self._dict_schema(Any, Any)
+        elif obj in PATH_TYPES:
+            return self._path_schema(obj, Any)
         elif _typing_extra.is_type_alias_type(obj):
             return self._type_alias_type_schema(obj)
         elif obj is type:
@@ -1024,6 +1074,8 @@ class GenerateSchema:
             return self._frozenset_schema(self._get_first_arg_or_any(obj))
         elif origin in DICT_TYPES:
             return self._dict_schema(*self._get_first_two_args_or_any(obj))
+        elif origin in PATH_TYPES:
+            return self._path_schema(origin, self._get_first_arg_or_any(obj))
         elif is_typeddict(origin):
             return self._typed_dict_schema(obj, origin)
         elif origin in (typing.Type, type):
@@ -1988,7 +2040,6 @@ class GenerateSchema:
         from ._std_types_schema import (
             deque_schema_prepare_pydantic_annotations,
             mapping_like_prepare_pydantic_annotations,
-            path_schema_prepare_pydantic_annotations,
         )
 
         # Check for hashability
@@ -2003,9 +2054,7 @@ class GenerateSchema:
         # not always called from match_type, but sometimes from _apply_annotations
         obj_origin = get_origin(obj) or obj
 
-        if obj_origin in PATH_TYPES:
-            return path_schema_prepare_pydantic_annotations(obj, annotations)
-        elif obj_origin in DEQUE_TYPES:
+        if obj_origin in DEQUE_TYPES:
             return deque_schema_prepare_pydantic_annotations(obj, annotations)
         elif obj_origin in MAPPING_TYPES:
             return mapping_like_prepare_pydantic_annotations(obj, annotations)

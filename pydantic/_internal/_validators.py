@@ -6,6 +6,7 @@ Import of this module is deferred since it contains imports of many standard lib
 from __future__ import annotations as _annotations
 
 import math
+import pathlib
 import re
 import typing
 from decimal import Decimal
@@ -308,6 +309,11 @@ def multiple_of_validator(x: Any, multiple_of: Any) -> Any:
         raise TypeError(f"Unable to apply constraint 'multiple_of' to supplied value {x}")
 
 
+# TODO: we have a sort of hacky way of supporting min_length and max_length for path like types as a consequence
+# of prior design that supported out of order metadata injection during core schema generation, which we have since abandoned
+# see:
+
+
 def min_length_validator(x: Any, min_length: Any) -> Any:
     try:
         if not (len(x) >= min_length):
@@ -316,6 +322,15 @@ def min_length_validator(x: Any, min_length: Any) -> Any:
             )
         return x
     except TypeError:
+        if isinstance(x, pathlib.PurePath):
+            try:
+                if not (len(str(x)) >= min_length):
+                    raise PydanticKnownError(
+                        'too_short', {'field_type': 'Value', 'min_length': min_length, 'actual_length': len(str(x))}
+                    )
+                return x
+            except TypeError:
+                ...
         raise TypeError(f"Unable to apply constraint 'min_length' to supplied value {x}")
 
 
@@ -328,6 +343,16 @@ def max_length_validator(x: Any, max_length: Any) -> Any:
             )
         return x
     except TypeError:
+        if isinstance(x, pathlib.PurePath):
+            try:
+                if len(str(x)) > max_length:
+                    raise PydanticKnownError(
+                        'too_long',
+                        {'field_type': 'Value', 'max_length': max_length, 'actual_length': len(str(x))},
+                    )
+                return x
+            except TypeError:
+                ...
         raise TypeError(f"Unable to apply constraint 'max_length' to supplied value {x}")
 
 
