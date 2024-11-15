@@ -1221,12 +1221,16 @@ class GenerateSchema:
     ) -> _CommonField:
         # Update FieldInfo annotation if appropriate:
         FieldInfo = import_cached_field_info()
-        if has_instance_in_type(field_info.annotation, (ForwardRef, str)):
-            # TODO Can we use field_info.apply_typevars_map here? Shouldn't we use lenient=False?
-            evaluated = _typing_extra.eval_type(field_info.annotation, *self._types_namespace, lenient=True)
-            evaluated = replace_types(evaluated, self._typevars_map)
-            if evaluated is not field_info.annotation and not has_instance_in_type(evaluated, PydanticRecursiveRef):
-                new_field_info = FieldInfo.from_annotation(evaluated)
+        if not field_info.evaluated:
+            # TODO Can we use field_info.apply_typevars_map here?
+            try:
+                evaluated_type = _typing_extra.eval_type(field_info.annotation, *self._types_namespace)
+            except NameError as e:
+                raise PydanticUndefinedAnnotation.from_name_error(e) from e
+            evaluated_type = replace_types(evaluated_type, self._typevars_map)
+            field_info.evaluated = True
+            if not has_instance_in_type(evaluated_type, PydanticRecursiveRef):
+                new_field_info = FieldInfo.from_annotation(evaluated_type)
                 field_info.annotation = new_field_info.annotation
 
                 # Handle any field info attributes that may have been obtained from now-resolved annotations
@@ -1349,12 +1353,13 @@ class GenerateSchema:
                 return maybe_schema
 
             origin: TypeAliasType = get_origin(obj) or obj
-
-            annotation = origin.__value__
             typevars_map = get_standard_typevars_map(obj)
 
             with self._ns_resolver.push(origin):
-                annotation = _typing_extra.eval_type(annotation, *self._types_namespace, lenient=True)
+                try:
+                    annotation = _typing_extra.eval_type(origin.__value__, *self._types_namespace)
+                except NameError as e:
+                    raise PydanticUndefinedAnnotation.from_name_error(e) from e
                 annotation = replace_types(annotation, typevars_map)
                 schema = self.generate_schema(annotation)
                 assert schema['type'] != 'definitions'
