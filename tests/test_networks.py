@@ -7,6 +7,7 @@ from typing_extensions import Annotated
 
 from pydantic import (
     AmqpDsn,
+    AnyHttpUrl,
     AnyUrl,
     BaseModel,
     ClickHouseDsn,
@@ -1062,3 +1063,12 @@ def test_url_equality() -> None:
     assert PostgresDsn('postgres://user:pass@localhost:5432/app') == PostgresDsn(
         'postgres://user:pass@localhost:5432/app'
     )
+
+
+def test_url_subclasses_any_url() -> None:
+    http_url = AnyHttpUrl('https://localhost')
+    assert isinstance(http_url, AnyUrl)
+    assert isinstance(http_url, AnyHttpUrl)
+
+    url = TypeAdapter(AnyUrl).validate_python(http_url)
+    assert url is http_url
