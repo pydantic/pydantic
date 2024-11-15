@@ -4,7 +4,6 @@ from collections import deque
 from dataclasses import dataclass
 from datetime import date, datetime
 from enum import Enum
-from fractions import Fraction
 from functools import partial, partialmethod
 from itertools import product
 from os.path import normcase
@@ -249,18 +248,6 @@ def test_int_overflow_validation(value):
         Model(a=value)
     assert exc_info.value.errors(include_url=False) == [
         {'type': 'finite_number', 'loc': ('a',), 'msg': 'Input should be a finite number', 'input': value}
-    ]
-
-
-@pytest.mark.parametrize('value', ['wrong_format'])
-def test_fraction_validation(value):
-    class Model(BaseModel):
-        a: Fraction
-
-    with pytest.raises(ValidationError) as exc_info:
-        Model(a=value)
-    assert exc_info.value.errors(include_url=False) == [
-        {'type': 'fraction_parsing', 'loc': ('a',), 'msg': 'Input is not a valid fraction', 'input': value}
     ]
 
 

@@ -224,6 +224,10 @@ def test_decimal_digits_calculation(decimal: Decimal, decimal_places: int, digit
     assert _extract_decimal_digits_info(decimal) == (decimal_places, digits)
 
 
-def test_decimal_digits_calculation_type_error() -> None:
-    with pytest.raises(TypeError, match='Unable to extract decimal digits info from supplied value NaN'):
-        _extract_decimal_digits_info(Decimal.from_float(float('nan')))
+@pytest.mark.parametrize(
+    'value',
+    [Decimal.from_float(float('nan')), 1.0],
+)
+def test_decimal_digits_calculation_type_error(value) -> None:
+    with pytest.raises(TypeError, match=f'Unable to extract decimal digits info from supplied value {value}'):
+        _extract_decimal_digits_info(value)
