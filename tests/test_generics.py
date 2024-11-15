@@ -110,7 +110,7 @@ def test_double_parameterize_error():
 
 
 def test_value_validation():
-    T = TypingExtensionsTypeVar('T', bound=Dict[Any, Any], default=Dict[Any, Any])
+    T = TypeVar('T', bound=Dict[Any, Any])
 
     class Response(BaseModel, Generic[T]):
         data: T
@@ -814,7 +814,7 @@ def test_partial_specification_instantiation():
 
 def test_partial_specification_instantiation_bounded():
     AT = TypeVar('AT')
-    BT = TypingExtensionsTypeVar('BT', bound=int, default=int)
+    BT = TypeVar('BT', bound=int)
 
     class Model(BaseModel, Generic[AT, BT]):
         a: AT
@@ -854,8 +854,8 @@ def test_typevar_parametrization():
         a: AT
         b: BT
 
-    CT = TypingExtensionsTypeVar('CT', bound=int, default=int)
-    DT = TypingExtensionsTypeVar('DT', bound=int, default=int)
+    CT = TypeVar('CT', bound=int)
+    DT = TypeVar('DT', bound=int)
 
     with pytest.raises(ValidationError) as exc_info:
         Model[CT, DT](a='a', b='b')
@@ -1504,7 +1504,7 @@ def test_generic_with_referenced_generic_type_bound():
 
 
 def test_generic_with_referenced_generic_union_type_bound():
-    T = TypingExtensionsTypeVar('T', bound=Union[str, int], default=Union[str, int])
+    T = TypeVar('T', bound=Union[str, int])
 
     class ModelWithType(BaseModel, Generic[T]):
         some_type: Type[T]
@@ -2367,7 +2367,7 @@ def test_construct_other_generic_model_with_validation():
 
 
 def test_generic_enum_bound():
-    T = TypingExtensionsTypeVar('T', bound=Enum, default=Enum)
+    T = TypeVar('T', bound=Enum)
 
     class MyEnum(Enum):
         a = 1
@@ -2419,13 +2419,13 @@ def test_generic_enum_bound():
 
 
 def test_generic_intenum_bound():
+    T = TypeVar('T', bound=IntEnum)
+
     class MyEnum(IntEnum):
         a = 1
 
     class OtherEnum(IntEnum):
         b = 2
-
-    T = TypingExtensionsTypeVar('T', bound=MyEnum, default=IntEnum)
 
     class Model(BaseModel, Generic[T]):
         x: T
@@ -2773,7 +2773,7 @@ def test_serialize_unsubstituted_typevars_bound_default_supported() -> None:
 @pytest.mark.parametrize(
     'type_var',
     [
-        TypingExtensionsTypeVar('ErrorDataT', default=BaseModel, bound=BaseModel),
+        TypingExtensionsTypeVar('ErrorDataT', default=BaseModel),
         TypeVar('ErrorDataT', BaseModel, str),
     ],
     ids=['default', 'constraint'],
@@ -2846,11 +2846,11 @@ def test_serialize_typevars_default_and_bound_with_user_model() -> None:
     class MoreExtendedMyErrorDetails(ExtendedMyErrorDetails):
         suu: str
 
-    type_var = TypingExtensionsTypeVar('type_var', bound=MyErrorDetails, default=ExtendedMyErrorDetails)
+    T = TypingExtensionsTypeVar('T', bound=MyErrorDetails, default=ExtendedMyErrorDetails)
 
-    class Error(BaseModel, Generic[type_var]):
+    class Error(BaseModel, Generic[T]):
         message: str
-        details: type_var
+        details: T
 
     # bound small parent model
     sample_error = Error[MyErrorDetails](
@@ -2912,11 +2912,11 @@ def test_typevars_default_model_validation_error() -> None:
     class ExtendedMyErrorDetails(MyErrorDetails):
         foo: str
 
-    type_var = TypingExtensionsTypeVar('type_var', bound=MyErrorDetails, default=ExtendedMyErrorDetails)
+    T = TypingExtensionsTypeVar('T', bound=MyErrorDetails, default=ExtendedMyErrorDetails)
 
-    class Error(BaseModel, Generic[type_var]):
+    class Error(BaseModel, Generic[T]):
         message: str
-        details: type_var
+        details: T
 
     with pytest.raises(ValidationError):
         Error(
