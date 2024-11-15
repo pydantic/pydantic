@@ -138,7 +138,6 @@ include = [
     '/Makefile',
     '/pydantic',
     '/tests',
-    '/requirements',
 ]
 
 [tool.hatch.metadata.hooks.fancy-pypi-readme]
