@@ -588,7 +588,6 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         config = {**cls.model_config, 'defer_build': False}
         return _model_construction.complete_model_class(
             cls,
-            cls.__name__,
             _config.ConfigWrapper(config, check=False),
             raise_errors=raise_errors,
             ns_resolver=ns_resolver,

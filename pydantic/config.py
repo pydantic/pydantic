@@ -756,6 +756,8 @@ class ConfigDict(TypedDict, total=False):
     This can be useful to avoid the overhead of building models which are only
     used nested within other models, or when you want to manually define type namespace via
     [`Model.model_rebuild(_types_namespace=...)`][pydantic.BaseModel.model_rebuild].
+
+    Since v2.10, this setting also applies to pydantic dataclasses and TypeAdapter instances.
     """
 
     plugin_settings: dict[str, object] | None
