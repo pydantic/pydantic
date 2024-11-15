@@ -475,10 +475,14 @@ class AnyUrl(_BaseUrl):
     @property
     def host(self) -> str:
         """The required URL host."""
-        return self._url.host  # type: ignore
+        return self._url.host  # pyright: ignore[reportReturnType]
 
 
-class AnyHttpUrl(_BaseUrl):
+# Note: all single host urls inherit from `AnyUrl` to preserve compatibility with pre-v2.10 code
+# Where urls were annotated variants of `AnyUrl`, which was an alias to `pydantic_core.Url`
+
+
+class AnyHttpUrl(AnyUrl):
     """A type that will accept any http or https URL.
 
     * TLD not required
@@ -487,13 +491,8 @@ class AnyHttpUrl(_BaseUrl):
 
     _constraints = UrlConstraints(host_required=True, allowed_schemes=['http', 'https'])
 
-    @property
-    def host(self) -> str:
-        """The required URL host."""
-        return self._url.host  # type: ignore
 
-
-class HttpUrl(_BaseUrl):
+class HttpUrl(AnyUrl):
     """A type that will accept any http or https URL.
 
     * TLD not required
@@ -573,13 +572,8 @@ class HttpUrl(_BaseUrl):
 
     _constraints = UrlConstraints(max_length=2083, allowed_schemes=['http', 'https'], host_required=True)
 
-    @property
-    def host(self) -> str:
-        """The required URL host."""
-        return self._url.host  # type: ignore
 
-
-class AnyWebsocketUrl(_BaseUrl):
+class AnyWebsocketUrl(AnyUrl):
     """A type that will accept any ws or wss URL.
 
     * TLD not required
@@ -588,13 +582,8 @@ class AnyWebsocketUrl(_BaseUrl):
 
     _constraints = UrlConstraints(allowed_schemes=['ws', 'wss'], host_required=True)
 
-    @property
-    def host(self) -> str:
-        """The required URL host."""
-        return self._url.host  # type: ignore
 
-
-class WebsocketUrl(_BaseUrl):
+class WebsocketUrl(AnyUrl):
     """A type that will accept any ws or wss URL.
 
     * TLD not required
@@ -610,7 +599,7 @@ class WebsocketUrl(_BaseUrl):
         return self._url.host  # type: ignore
 
 
-class FileUrl(_BaseUrl):
+class FileUrl(AnyUrl):
     """A type that will accept any file URL.
 
     * Host not required
@@ -618,8 +607,13 @@ class FileUrl(_BaseUrl):
 
     _constraints = UrlConstraints(allowed_schemes=['file'])
 
+    @property
+    def host(self) -> str | None:  # pyright: ignore[reportIncompatibleMethodOverride]
+        """The host part of the URL, or `None`."""
+        return self._url.host
 
-class FtpUrl(_BaseUrl):
+
+class FtpUrl(AnyUrl):
     """A type that will accept ftp URL.
 
     * TLD not required
@@ -627,6 +621,11 @@ class FtpUrl(_BaseUrl):
     """
 
     _constraints = UrlConstraints(allowed_schemes=['ftp'], host_required=True)
+
+    @property
+    def host(self) -> str | None:  # pyright: ignore[reportIncompatibleMethodOverride]
+        """The host part of the URL, or `None`."""
+        return self._url.host
 
 
 class PostgresDsn(_BaseMultiHostUrl):
@@ -707,10 +706,10 @@ class PostgresDsn(_BaseMultiHostUrl):
     @property
     def host(self) -> str:
         """The required URL host."""
-        return self._url.host  # type: ignore
+        return self._url.host  # pyright: ignore[reportAttributeAccessIssue]
 
 
-class CockroachDsn(_BaseUrl):
+class CockroachDsn(AnyUrl):
     """A type that will accept any Cockroach DSN.
 
     * User info required
@@ -727,13 +726,8 @@ class CockroachDsn(_BaseUrl):
         ],
     )
 
-    @property
-    def host(self) -> str:
-        """The required URL host."""
-        return self._url.host  # type: ignore
 
-
-class AmqpDsn(_BaseUrl):
+class AmqpDsn(AnyUrl):
     """A type that will accept any AMQP DSN.
 
     * User info required
@@ -743,8 +737,13 @@ class AmqpDsn(_BaseUrl):
 
     _constraints = UrlConstraints(allowed_schemes=['amqp', 'amqps'])
 
+    @property
+    def host(self) -> str | None:  # pyright: ignore[reportIncompatibleMethodOverride]
+        """The host part of the URL, or `None`."""
+        return self._url.host
 
-class RedisDsn(_BaseUrl):
+
+class RedisDsn(AnyUrl):
     """A type that will accept any Redis DSN.
 
     * User info required
@@ -760,11 +759,6 @@ class RedisDsn(_BaseUrl):
         host_required=True,
     )
 
-    @property
-    def host(self) -> str:
-        """The required URL host."""
-        return self._url.host  # type: ignore
-
 
 class MongoDsn(_BaseMultiHostUrl):
     """A type that will accept any MongoDB DSN.
@@ -778,7 +772,7 @@ class MongoDsn(_BaseMultiHostUrl):
     _constraints = UrlConstraints(allowed_schemes=['mongodb', 'mongodb+srv'], default_port=27017)
 
 
-class KafkaDsn(_BaseUrl):
+class KafkaDsn(AnyUrl):
     """A type that will accept any Kafka DSN.
 
     * User info required
@@ -805,7 +799,7 @@ class NatsDsn(_BaseMultiHostUrl):
     )
 
 
-class MySQLDsn(_BaseUrl):
+class MySQLDsn(AnyUrl):
     """A type that will accept any MySQL DSN.
 
     * User info required
@@ -828,13 +822,8 @@ class MySQLDsn(_BaseUrl):
         host_required=True,
     )
 
-    @property
-    def host(self) -> str:
-        """The required URL host."""
-        return self._url.host  # type: ignore
 
-
-class MariaDBDsn(_BaseUrl):
+class MariaDBDsn(AnyUrl):
     """A type that will accept any MariaDB DSN.
 
     * User info required
@@ -848,13 +837,8 @@ class MariaDBDsn(_BaseUrl):
         host_required=True,
     )
 
-    @property
-    def host(self) -> str:
-        """The required URL host."""
-        return self._url.host  # type: ignore
 
-
-class ClickHouseDsn(_BaseUrl):
+class ClickHouseDsn(AnyUrl):
     """A type that will accept any ClickHouse DSN.
 
     * User info required
@@ -869,13 +853,8 @@ class ClickHouseDsn(_BaseUrl):
         host_required=True,
     )
 
-    @property
-    def host(self) -> str:
-        """The required URL host."""
-        return self._url.host  # type: ignore
 
-
-class SnowflakeDsn(_BaseUrl):
+class SnowflakeDsn(AnyUrl):
     """A type that will accept any Snowflake DSN.
 
     * User info required
@@ -887,11 +866,6 @@ class SnowflakeDsn(_BaseUrl):
         allowed_schemes=['snowflake'],
         host_required=True,
     )
-
-    @property
-    def host(self) -> str:
-        """The required URL host."""
-        return self._url.host  # type: ignore
 
 
 def import_email_validator() -> None:
