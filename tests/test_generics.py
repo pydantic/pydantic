@@ -110,7 +110,7 @@ def test_double_parameterize_error():
 
 
 def test_value_validation():
-    T = TypeVar('T', bound=Dict[Any, Any])
+    T = TypingExtensionsTypeVar('T', bound=Dict[Any, Any], default=Dict[Any, Any])
 
     class Response(BaseModel, Generic[T]):
         data: T
@@ -814,7 +814,7 @@ def test_partial_specification_instantiation():
 
 def test_partial_specification_instantiation_bounded():
     AT = TypeVar('AT')
-    BT = TypeVar('BT', bound=int)
+    BT = TypingExtensionsTypeVar('BT', bound=int, default=int)
 
     class Model(BaseModel, Generic[AT, BT]):
         a: AT
@@ -854,8 +854,8 @@ def test_typevar_parametrization():
         a: AT
         b: BT
 
-    CT = TypeVar('CT', bound=int)
-    DT = TypeVar('DT', bound=int)
+    CT = TypingExtensionsTypeVar('CT', bound=int, default=int)
+    DT = TypingExtensionsTypeVar('DT', bound=int, default=int)
 
     with pytest.raises(ValidationError) as exc_info:
         Model[CT, DT](a='a', b='b')
@@ -1504,7 +1504,7 @@ def test_generic_with_referenced_generic_type_bound():
 
 
 def test_generic_with_referenced_generic_union_type_bound():
-    T = TypeVar('T', bound=Union[str, int])
+    T = TypingExtensionsTypeVar('T', bound=Union[str, int], default=Union[str, int])
 
     class ModelWithType(BaseModel, Generic[T]):
         some_type: Type[T]
@@ -2367,7 +2367,7 @@ def test_construct_other_generic_model_with_validation():
 
 
 def test_generic_enum_bound():
-    T = TypeVar('T', bound=Enum)
+    T = TypingExtensionsTypeVar('T', bound=Enum, default=Enum)
 
     class MyEnum(Enum):
         a = 1
@@ -2419,13 +2419,13 @@ def test_generic_enum_bound():
 
 
 def test_generic_intenum_bound():
-    T = TypeVar('T', bound=IntEnum)
-
     class MyEnum(IntEnum):
         a = 1
 
     class OtherEnum(IntEnum):
         b = 2
+
+    T = TypingExtensionsTypeVar('T', bound=MyEnum, default=IntEnum)
 
     class Model(BaseModel, Generic[T]):
         x: T
@@ -2923,16 +2923,6 @@ def test_typevars_default_model_validation_error() -> None:
             message='We just had an error',
             details=MyErrorDetails(foo='var', bar='baz'),
         )
-
-
-def test_mix_default_and_constraints() -> None:
-    T = TypingExtensionsTypeVar('T', str, int, default=str)
-
-    msg = 'Pydantic does not support mixing more than one of TypeVar constraints and default/bound'
-    with pytest.raises(NotImplementedError, match=msg):
-
-        class _(BaseModel, Generic[T]):
-            x: T
 
 
 def test_generic_with_not_required_in_typed_dict() -> None:

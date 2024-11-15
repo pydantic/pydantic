@@ -1892,35 +1892,27 @@ class GenerateSchema:
         )
 
     def _unsubstituted_typevar_schema(self, typevar: typing.TypeVar) -> core_schema.CoreSchema:
-        assert isinstance(typevar, typing.TypeVar)
-
-        bound = typevar.__bound__
-        constraints = typevar.__constraints__
-        typevar_default_value = getattr(typevar, '__default__', None)
-
         try:
-            typevar_has_default = typevar.has_default()  # type: ignore
+            has_default = typevar.has_default()
         except AttributeError:
-            # could still have a default if it's an old version of typing_extensions.TypeVar
-            typevar_has_default = typevar_default_value is not None
+            # Happens if using `typing.TypeVar` on Python < 3.13
+            pass
+        else:
+            if has_default:
+                return self.generate_schema(getattr(typevar, '__default__', None))
 
-        if len(constraints) != 0 and (bound is not None or typevar_has_default):
-            raise NotImplementedError(
-                'Pydantic does not support mixing more than one of TypeVar constraints and default/bound'
-            )
+        if typevar.__constraints__:
+            return self._union_schema(typing.Union[typevar.__constraints__])
 
-        if typevar_has_default:
-            return self.generate_schema(typevar_default_value)
-        elif constraints:
-            return self._union_schema(typing.Union[constraints])  # type: ignore
-        elif bound:
-            schema = self.generate_schema(bound)
+        if typevar.__bound__:
+            schema = self.generate_schema(typevar.__bound__)
             schema['serialization'] = core_schema.wrap_serializer_function_ser_schema(
-                lambda x, h: h(x), schema=core_schema.any_schema()
+                lambda x, h: h(x),
+                schema=core_schema.any_schema(),
             )
             return schema
-        else:
-            return core_schema.any_schema()
+
+        return core_schema.any_schema()
 
     def _computed_field_schema(
         self,
