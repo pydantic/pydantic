@@ -1899,7 +1899,7 @@ class GenerateSchema:
             pass
         else:
             if has_default:
-                return self.generate_schema(getattr(typevar, '__default__', None))
+                return self.generate_schema(typevar.__default__)
 
         if typevar.__constraints__:
             return self._union_schema(typing.Union[typevar.__constraints__])
