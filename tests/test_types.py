@@ -1807,15 +1807,15 @@ def test_enum_with_no_cases() -> None:
     [
         ({'pattern': '^foo$'}, int, 1),
         *[
-            ({constraint_name: 0}, list[int], [1, 2, 3, 4, 5])
+            ({constraint_name: 0}, List[int], [1, 2, 3, 4, 5])
             for constraint_name in ['gt', 'lt', 'ge', 'le', 'multiple_of']
         ]
         + [
-            ({constraint_name: 0}, set[int], {1, 2, 3, 4, 5})
+            ({constraint_name: 0}, Set[int], {1, 2, 3, 4, 5})
             for constraint_name in ['gt', 'lt', 'ge', 'le', 'multiple_of']
         ]
         + [
-            ({constraint_name: 0}, frozenset[int], frozenset({1, 2, 3, 4, 5}))
+            ({constraint_name: 0}, FrozenSet[int], frozenset({1, 2, 3, 4, 5}))
             for constraint_name in ['gt', 'lt', 'ge', 'le', 'multiple_of']
         ]
         + [({constraint_name: 0}, Decimal, Decimal('1.0')) for constraint_name in ['max_length', 'min_length']]
