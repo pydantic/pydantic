@@ -317,6 +317,10 @@ def _get_first_non_null(a: Any, b: Any) -> Any:
     return a if a is not None else b
 
 
+SCHEMA_CACHE: dict[int, core_schema.CoreSchema] = {}
+CACHE_HITS = 0
+
+
 class GenerateSchema:
     """Generate core schema for a Pydantic model, dataclass and types like `str`, `datetime`, ... ."""
 
@@ -1266,6 +1270,20 @@ class GenerateSchema:
                     source_type,
                     annotations + validators_from_decorators,
                 )
+                field_info_cache_key = field_info.cache_key
+                if field_info_cache_key is not None:
+                    cache_key = hash((field_info_cache_key, self._config_wrapper.use_enum_values))
+                    schema = SCHEMA_CACHE.get(cache_key)
+                else:
+                    cache_key = None
+                    schema = None
+                if schema is None:
+                    schema = self._apply_annotations(
+                        source_type,
+                        annotations + validators_from_decorators,
+                    )
+                    if cache_key is not None:
+                        SCHEMA_CACHE.setdefault(cache_key, schema)
 
         # This V1 compatibility shim should eventually be removed
         # push down any `each_item=True` validators

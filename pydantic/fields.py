@@ -92,6 +92,43 @@ class _FieldInfoInputs(_FromFieldInfoInputs, total=False):
     default: Any
 
 
+import datetime
+from decimal import Decimal
+from uuid import UUID
+from fractions import Fraction
+
+CACHEABLE_TYPES = {
+    str,
+    bytes,
+    int,
+    float,
+    bool,
+    complex,
+    object,
+    typing.Any,
+    typing_extensions.Any,
+    datetime.datetime,
+    datetime.time,
+    datetime.timedelta,
+    Decimal,
+    UUID,
+    Fraction,
+}
+
+CACHEABLE_METADATA_TYPES = {
+    types.Strict,
+    types.Strict,
+    annotated_types.Gt,
+    annotated_types.Ge,
+    annotated_types.Lt,
+    annotated_types.Le,
+    annotated_types.MultipleOf,
+    annotated_types.MinLen,
+    annotated_types.MaxLen,
+    types.FailFast,
+}
+
+
 class FieldInfo(_repr.Representation):
     """This class holds information about a field.
 
@@ -682,6 +719,26 @@ class FieldInfo(_repr.Representation):
                 value = getattr(self, s)
                 if value is not None and value is not PydanticUndefined:
                     yield s, value
+
+    @property
+    def cache_key(self) -> int | None:
+        if not self.evaluated or self.discriminator is not None or self.annotation not in CACHEABLE_TYPES:
+            return None
+
+        cache_value = [self.annotation]
+
+        for meta in self.metadata:
+            if isinstance(meta, type):
+                if meta not in CACHEABLE_METADATA_TYPES:
+                    return None
+                cache_value.append(hash(meta))
+            else:
+                tp = meta.__class__
+                if tp not in CACHEABLE_METADATA_TYPES:
+                    return None
+                cache_value.append(hash((tp, meta)))
+
+        return hash(tuple(cache_value))
 
 
 class _EmptyKwargs(typing_extensions.TypedDict):
