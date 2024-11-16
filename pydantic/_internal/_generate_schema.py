@@ -1291,15 +1291,15 @@ class GenerateSchema:
         )
         self._apply_field_title_generator_to_field_info(self._config_wrapper, field_info, name)
 
-        pydantic_js_updates, pydantic_js_extra, pydantic_js_override = _extract_json_schema_info_from_field_info(
+        pydantic_js_updates, pydantic_js_extra, pydantic_js_schema_override = _extract_json_schema_info_from_field_info(
             field_info
         )
         core_metadata: dict[str, Any] = {}
         update_core_metadata(
             core_metadata,
             pydantic_js_updates=pydantic_js_updates,
-            pydantic_js_override=pydantic_js_override,
             pydantic_js_extra=pydantic_js_extra,
+            pydantic_js_schema_override=pydantic_js_schema_override,
         )
 
         alias_generator = self._config_wrapper.alias_generator
@@ -1960,13 +1960,15 @@ class GenerateSchema:
             )
         self._apply_field_title_generator_to_field_info(self._config_wrapper, d.info, d.cls_var_name)
 
-        pydantic_js_updates, pydantic_js_extra, pydantic_js_override = _extract_json_schema_info_from_field_info(d.info)
+        pydantic_js_updates, pydantic_js_extra, pydantic_js_schema_override = _extract_json_schema_info_from_field_info(
+            d.info
+        )
         core_metadata: dict[str, Any] = {}
         update_core_metadata(
             core_metadata,
             pydantic_js_updates={'readOnly': True, **(pydantic_js_updates if pydantic_js_updates else {})},
-            pydantic_js_override=pydantic_js_override,
             pydantic_js_extra=pydantic_js_extra,
+            pydantic_js_schema_override=pydantic_js_schema_override,
         )
         return core_schema.computed_field(
             d.cls_var_name, return_schema=return_type_schema, alias=d.info.alias, metadata=core_metadata
@@ -2116,15 +2118,15 @@ class GenerateSchema:
             for field_metadata in metadata.metadata:
                 schema = self._apply_single_annotation_json_schema(schema, field_metadata)
 
-            pydantic_js_updates, pydantic_js_extra, pydantic_js_override = _extract_json_schema_info_from_field_info(
-                metadata
+            pydantic_js_updates, pydantic_js_extra, pydantic_js_schema_override = (
+                _extract_json_schema_info_from_field_info(metadata)
             )
             core_metadata = schema.setdefault('metadata', {})
             update_core_metadata(
                 core_metadata,
                 pydantic_js_updates=pydantic_js_updates,
-                pydantic_js_override=pydantic_js_override,
                 pydantic_js_extra=pydantic_js_extra,
+                pydantic_js_schema_override=pydantic_js_schema_override,
             )
         return schema
 
