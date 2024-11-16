@@ -1806,9 +1806,20 @@ def test_enum_with_no_cases() -> None:
     'kwargs,type_,a',
     [
         ({'pattern': '^foo$'}, int, 1),
-        ({'gt': 0}, conlist(int, min_length=4), [1, 2, 3, 4, 5]),
-        ({'gt': 0}, conset(int, min_length=4), {1, 2, 3, 4, 5}),
-        ({'gt': 0}, confrozenset(int, min_length=4), frozenset({1, 2, 3, 4, 5})),
+        *[
+            ({constraint_name: 0}, List[int], [1, 2, 3, 4, 5])
+            for constraint_name in ['gt', 'lt', 'ge', 'le', 'multiple_of']
+        ]
+        + [
+            ({constraint_name: 0}, Set[int], {1, 2, 3, 4, 5})
+            for constraint_name in ['gt', 'lt', 'ge', 'le', 'multiple_of']
+        ]
+        + [
+            ({constraint_name: 0}, FrozenSet[int], frozenset({1, 2, 3, 4, 5}))
+            for constraint_name in ['gt', 'lt', 'ge', 'le', 'multiple_of']
+        ]
+        + [({constraint_name: 0}, Decimal, Decimal('1.0')) for constraint_name in ['max_length', 'min_length']]
+        + [({constraint_name: 0}, float, 1.0) for constraint_name in ['max_digits', 'decimal_places']],
     ],
 )
 def test_invalid_schema_constraints(kwargs, type_, a):
@@ -1822,12 +1833,15 @@ def test_invalid_schema_constraints(kwargs, type_, a):
         Foo(a=a)
 
 
-def test_invalid_decimal_constraint():
-    class Foo(BaseModel):
-        a: Decimal = Field('foo', title='A title', description='A description', max_length=5)
+def test_fraction_validation():
+    class Model(BaseModel):
+        a: Fraction
 
-    with pytest.raises(TypeError, match="Unable to apply constraint 'max_length' to supplied value 1.0"):
-        Foo(a=1.0)
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a='wrong_format')
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'fraction_parsing', 'loc': ('a',), 'msg': 'Input is not a valid fraction', 'input': 'wrong_format'}
+    ]
 
 
 @pytest.mark.skipif(not email_validator, reason='email_validator not installed')
