@@ -126,7 +126,7 @@ def complete_dataclass(
     cls.__pydantic_config__ = config_wrapper.config_dict  # type: ignore
 
     if not _force_build and config_wrapper.defer_build:
-        set_dataclass_mocks(cls, cls.__name__)
+        set_dataclass_mocks(cls)
         return False
 
     if hasattr(cls, '__post_init_post_parse__'):
@@ -174,7 +174,7 @@ def complete_dataclass(
     except PydanticUndefinedAnnotation as e:
         if raise_errors:
             raise
-        set_dataclass_mocks(cls, cls.__name__, f'`{e.name}`')
+        set_dataclass_mocks(cls, f'`{e.name}`')
         return False
 
     core_config = config_wrapper.core_config(title=cls.__name__)
@@ -182,7 +182,7 @@ def complete_dataclass(
     try:
         schema = gen_schema.clean_schema(schema)
     except gen_schema.CollectedInvalid:
-        set_dataclass_mocks(cls, cls.__name__, 'all referenced types')
+        set_dataclass_mocks(cls)
         return False
 
     # We are about to set all the remaining required properties expected for this cast;
