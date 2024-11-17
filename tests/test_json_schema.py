@@ -4811,6 +4811,52 @@ def test_model_with_schema_extra_callable_instance_method():
         assert Model.model_json_schema() == {'title': 'Model', 'type': 'override'}
 
 
+def test_json_schema_override_field_nullable():
+    class Model(BaseModel):
+        a: str | None = Field(..., json_schema_override={'nullable': False})
+        b: str | int | None = Field(..., json_schema_override={'nullable': False})
+
+    json_schema = Model.model_json_schema()
+    assert Model.model_json_schema()['properties']['a'] == {'type': 'string'}
+    assert json_schema['properties']['b']['anyOf'] == [{'type': 'string'}, {'type': 'integer'}]
+
+
+def test_json_schema_override_field_required_true():
+    class Model(BaseModel):
+        a: str = Field(default='test', json_schema_override={'required': True})
+        b: str | int | None = Field(default='test')
+
+    json_schema = Model.model_json_schema()
+    assert json_schema['required'] == ['a']
+
+
+def test_json_schema_override_field_required_false():
+    class Model(BaseModel):
+        a: str = Field(json_schema_override={'required': False})
+
+    json_schema = Model.model_json_schema()
+    assert 'required' not in json_schema
+
+    class ModelTwoFields(BaseModel):
+        a: str = Field(json_schema_override={'required': False})
+        b: str
+
+    json_schema = ModelTwoFields.model_json_schema()
+    assert json_schema['required'] == ['b']
+
+
+def test_json_schema_override_field_default():
+    class Model(BaseModel):
+        a: str | None = Field(default=None, json_schema_override={'default': 'test2'})
+        b: str | None = Field(default='test', json_schema_override={'default': None})
+        c: bool = Field(default=True, json_schema_override={'default': False})
+
+    json_schema = Model.model_json_schema()
+    assert json_schema['properties']['a']['default'] == 'test2'
+    assert json_schema['properties']['b']['default'] is None
+    assert json_schema['properties']['c']['default'] is False
+
+
 def test_serialization_validation_interaction():
     class Inner(BaseModel):
         x: Json[int]

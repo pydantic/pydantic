@@ -619,6 +619,7 @@ class GenerateJsonSchema:
                     if pydantic_js_schema_override := metadata.get('pydantic_js_schema_override'):
                         nullable = pydantic_js_schema_override.get('nullable')
                         required = pydantic_js_schema_override.get('required')
+                        default_value = pydantic_js_schema_override.get('default')
 
                         if nullable is True:
                             self.emit_warning(
@@ -632,15 +633,7 @@ class GenerateJsonSchema:
                             json_schema = self._update_required_field(json_schema, field_name, required)
 
                         if 'default' in pydantic_js_schema_override:
-                            try:
-                                default_value = self.encode_default(pydantic_js_schema_override['default'])
-                                json_schema = self._update_field_default(json_schema, field_name, default_value)
-                            except pydantic_core.PydanticSerializationError:
-                                self.emit_warning(
-                                    'non-serializable-default',
-                                    f'Default value provided for json schema override {pydantic_js_schema_override["default"]} \
-                                        is not JSON serializable; excluding default from JSON schema',
-                                )
+                            json_schema = self._update_field_default(json_schema, field_name, default_value)
 
         return json_schema
 
@@ -660,21 +653,35 @@ class GenerateJsonSchema:
         return json_schema
 
     def _update_required_field(self, json_schema: JsonSchemaValue, field_name: str, required: bool) -> JsonSchemaValue:
-        if required is None or 'required' not in json_schema:
+        if required is None:
             return json_schema
 
-        if required:
-            if field_name not in json_schema['required']:
-                json_schema['required'].append(field_name)
-        else:
-            if field_name in json_schema['required']:
+        if required is False:
+            if 'required' in json_schema and field_name in json_schema['required']:
                 json_schema['required'].remove(field_name)
+                if len(json_schema['required']) == 0:
+                    del json_schema['required']
+        else:
+            if 'required' not in json_schema:
+                json_schema['required'] = [field_name]
+            else:
+                json_schema['required'].append(field_name)
+
         return json_schema
 
     def _update_field_default(
         self, json_schema: JsonSchemaValue, field_name: str, default_value: Any
     ) -> JsonSchemaValue:
         if 'properties' not in json_schema or field_name not in json_schema['properties']:
+            return json_schema
+        try:
+            default_value = self.encode_default(default_value)
+        except pydantic_core.PydanticSerializationError:
+            self.emit_warning(
+                'non-serializable-default',
+                f'Default value provided for json schema override {default_value} \
+                    is not JSON serializable; excluding default from JSON schema',
+            )
             return json_schema
 
         json_schema['properties'][field_name]['default'] = default_value
