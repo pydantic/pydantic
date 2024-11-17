@@ -104,6 +104,7 @@ for more details.
 class JsonSchemaOverride(TypedDict, total=False):
     nullable: bool | None
     required: bool | None
+    default: Any | None
 
 
 class PydanticJsonSchemaWarning(UserWarning):
@@ -378,6 +379,80 @@ class GenerateJsonSchema:
         self._used = True
         return json_schemas_map, self.sort(json_schema['$defs'])  # type: ignore
 
+    def check_and_apply_schema_overrides(self, schema: CoreSchema, json_schema: JsonSchemaValue) -> JsonSchemaValue:
+        sub_schema = schema.get('schema', None)
+        if sub_schema is None:
+            return json_schema
+
+        fields = sub_schema.get('fields', None)
+
+        if fields is not None and isinstance(fields, dict):
+            for field_name, field in fields.items():
+                if metadata := cast(_core_metadata.CoreMetadata, field.get('metadata')):
+                    if pydantic_js_schema_override := metadata.get('pydantic_js_schema_override'):
+                        nullable = pydantic_js_schema_override.get('nullable')
+                        required = pydantic_js_schema_override.get('required')
+
+                        if nullable is True:
+                            self.emit_warning(
+                                'skipped-choice',
+                                f'Nullable field {field_name} in schema override cannot be set to True; skipping',
+                            )
+                        elif nullable is False:
+                            json_schema = self._make_field_non_nullable(json_schema, field_name)
+
+                        if required is not None:
+                            json_schema = self._update_required_field(json_schema, field_name, required)
+
+                        if 'default' in pydantic_js_schema_override:
+                            try:
+                                default_value = self.encode_default(pydantic_js_schema_override['default'])
+                                json_schema = self._update_field_default(json_schema, field_name, default_value)
+                            except pydantic_core.PydanticSerializationError:
+                                self.emit_warning(
+                                    'non-serializable-default',
+                                    f'Default value provided for json schema override {pydantic_js_schema_override["default"]} \
+                                        is not JSON serializable; excluding default from JSON schema',
+                                )
+
+        return json_schema
+
+    def _make_field_non_nullable(self, json_schema: JsonSchemaValue, field_name: str) -> JsonSchemaValue:
+        if 'properties' not in json_schema or field_name not in json_schema['properties']:
+            return json_schema
+
+        for union_type in ['anyOf', 'oneOf', 'allOf']:
+            if union_type in json_schema['properties'][field_name]:
+                for i, item in enumerate(json_schema['properties'][field_name][union_type]):
+                    if 'type' in item and item['type'] == 'null':
+                        del json_schema['properties'][field_name][union_type][i]
+                        break
+                if len(json_schema['properties'][field_name][union_type]) == 1:
+                    json_schema['properties'][field_name] = json_schema['properties'][field_name][union_type][0]
+                    break
+        return json_schema
+
+    def _update_required_field(self, json_schema: JsonSchemaValue, field_name: str, required: bool) -> JsonSchemaValue:
+        if required is None or 'required' not in json_schema:
+            return json_schema
+
+        if required:
+            if field_name not in json_schema['required']:
+                json_schema['required'].append(field_name)
+        else:
+            if field_name in json_schema['required']:
+                json_schema['required'].remove(field_name)
+        return json_schema
+
+    def _update_field_default(
+        self, json_schema: JsonSchemaValue, field_name: str, default_value: Any
+    ) -> JsonSchemaValue:
+        if 'properties' not in json_schema or field_name not in json_schema['properties']:
+            return json_schema
+
+        json_schema['properties'][field_name]['default'] = default_value
+        return json_schema
+
     def generate(self, schema: CoreSchema, mode: JsonSchemaMode = 'validation') -> JsonSchemaValue:
         """Generates a JSON schema for a specified schema in a specified mode.
 
@@ -419,6 +494,7 @@ class GenerateJsonSchema:
             json_schema['$defs'] = self.definitions
 
         json_schema = definitions_remapping.remap_json_schema(json_schema)
+        json_schema = self.check_and_apply_schema_overrides(schema, json_schema)
 
         # For now, we will not set the $schema key. However, if desired, this can be easily added by overriding
         # this method and adding the following line after a call to super().generate(schema):
@@ -518,28 +594,6 @@ class GenerateJsonSchema:
                 return json_schema
 
             current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(self, js_updates_handler_func)
-
-        if js_override := metadata.get('pydantic_js_override'):
-
-            def js_override_handler_func(
-                schema_or_field: CoreSchemaOrField,
-                current_handler: GetJsonSchemaHandler = current_handler,
-            ) -> JsonSchemaValue:
-                json_schema = current_handler(schema_or_field)
-                if 'nullable' in js_override and js_override['nullable'] is False:
-                    for union_type in ['anyOf', 'oneOf', 'allOf']:
-                        if union_type in json_schema:
-                            for i, item in enumerate(json_schema[union_type]):
-                                if 'type' in item and item['type'] == 'null':
-                                    del json_schema[union_type][i]
-                                    break
-                            if len(json_schema[union_type]) == 1:
-                                json_schema = json_schema[union_type][0]
-                                break
-
-                return json_schema
-
-            current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(self, js_override_handler_func)
 
         if js_extra := metadata.get('pydantic_js_extra'):
 
@@ -1657,11 +1711,6 @@ class GenerateJsonSchema:
         if self.mode == 'serialization' and self._config.json_schema_serialization_defaults_required:
             return not field.get('serialization_exclude')
         else:
-            if 'metadata' in field and 'pydantic_js_override' in field['metadata']:
-                required = field['metadata']['pydantic_js_override'].get('required')
-                if isinstance(required, bool):
-                    return required
-
             if field['type'] == 'typed-dict-field':
                 return field.get('required', total)
             else:
