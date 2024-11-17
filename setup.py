@@ -75,14 +75,11 @@ ext_modules = None
 if not any(arg in sys.argv for arg in ['clean', 'check']) and 'SKIP_CYTHON' not in os.environ:
     try:
         from Cython.Build import cythonize
-        from Cython.Compiler.Version import version as cy_version
     except ImportError:
         pass
     else:
-        if tuple(int(_) for _ in cy_version.split(".")) > (3,):
-            raise RuntimeError("Cython 3+ is not supported.")
         # For cython test coverage install with `make build-trace`
-        compiler_directives = {}
+        compiler_directives = {'annotation_typing': False}
         if 'CYTHON_TRACE' in sys.argv:
             if sys.version_info >= (3, 12):
                 raise RuntimeError("Cython 0.x does not support tracing for Python 3.12+.")

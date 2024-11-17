@@ -443,7 +443,7 @@ jobs:
         CIBW_BUILD: 'cp3${{ matrix.python-version }}-*'
         CIBW_SKIP: '*-win32'
         CIBW_PLATFORM: '${{ matrix.platform || matrix.os }}'
-        CIBW_BEFORE_BUILD: 'pip install -U "cython<3"'
+        CIBW_BEFORE_BUILD: 'pip install -U cython'
         CIBW_TEST_REQUIRES: 'pytest==6.2.5 pytest-mock==3.6.1'
         CIBW_TEST_COMMAND: 'pytest {project}/tests'
         CIBW_MANYLINUX_X86_64_IMAGE: 'manylinux2014'
