@@ -120,7 +120,7 @@ class FieldInfo(_repr.Representation):
         discriminator: Field name or Discriminator for discriminating the type in a tagged union.
         deprecated: A deprecation message, an instance of `warnings.deprecated` or the `typing_extensions.deprecated` backport,
             or a boolean. If `True`, a default deprecation message will be emitted when accessing the field.
-        json_schema_override: Override properties for the field in the generated JSON schema.
+        json_schema_override: A dict to override properties for the field in the generated JSON schema.
         json_schema_extra: A dict or callable to provide extra JSON schema properties.
         frozen: Whether the field is frozen.
         validate_default: Whether to validate the default value of the field.
