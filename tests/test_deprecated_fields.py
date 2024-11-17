@@ -263,7 +263,7 @@ if sys.version_info >= (3, 13):
 
     WarningsDeprecated: TypeAlias = warnings.deprecated
 else:
-    WarningsDeprecated: TypeAlias = None
+    WarningsDeprecated: TypeAlias = str
 
 
 @pytest.mark.parametrize(
