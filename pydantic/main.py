@@ -223,7 +223,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 stacklevel=2,
             )
 
-    def _check_input_for_deprecated_fields(self, **data: Any) -> None:
+    def _check_input_for_deprecated_fields(self, /, **data: Any) -> None:
         for k in data.keys():
             if (field := self.model_fields.get(k)) is not None and field.deprecation_message is not None:
                 warnings.warn(field.deprecation_message, builtins.DeprecationWarning, stacklevel=3)
