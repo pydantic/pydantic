@@ -2,6 +2,7 @@
 
 from __future__ import annotations as _annotations
 
+import builtins
 import operator
 import sys
 import types
@@ -211,6 +212,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         """
         # `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks
         __tracebackhide__ = True
+        self._check_input_for_deprecated_fields(**data)
+
         validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
         if self is not validated_self:
             warnings.warn(
@@ -219,6 +222,11 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 'See the `model_validator` docs (https://docs.pydantic.dev/latest/concepts/validators/#model-validators) for more details.',
                 stacklevel=2,
             )
+
+    def _check_input_for_deprecated_fields(self, **data: Any) -> None:
+        for k in data.keys():
+            if (field := self.model_fields.get(k)) is not None and field.deprecation_message is not None:
+                warnings.warn(field.deprecation_message, builtins.DeprecationWarning, stacklevel=3)
 
     # The following line sets a flag that we use to determine when `__init__` gets overridden by the user
     __init__.__pydantic_base_init__ = True  # pyright: ignore[reportFunctionMemberAccess]

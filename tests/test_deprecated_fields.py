@@ -1,8 +1,9 @@
 import importlib.metadata
+import sys
 
 import pytest
 from packaging.version import Version
-from typing_extensions import Annotated, Self, deprecated
+from typing_extensions import Annotated, Self, TypeAlias, deprecated
 
 from pydantic import BaseModel, Field, computed_field, field_validator, model_validator
 
@@ -24,7 +25,8 @@ def test_deprecated_fields():
         'type': 'object',
     }
 
-    instance = Model(a=1, b=1, c=1)
+    with pytest.warns(DeprecationWarning):
+        instance = Model(a=1, b=1, c=1)
 
     pytest.warns(DeprecationWarning, lambda: instance.a, match='^$')
 
@@ -55,7 +57,8 @@ def test_deprecated_fields_deprecated_class():
         'type': 'object',
     }
 
-    instance = Model(a=1)
+    with pytest.warns(DeprecationWarning):
+        instance = Model(a=1)
 
     pytest.warns(DeprecationWarning, lambda: instance.a, match='^$')
     pytest.warns(DeprecationWarning, lambda: instance.b, match='^This is deprecated$')
@@ -71,7 +74,8 @@ def test_deprecated_fields_field_validator():
         def validate_x(cls, v: int) -> int:
             return v * 2
 
-    instance = Model(x=1)
+    with pytest.warns(DeprecationWarning):
+        instance = Model(x=1)
 
     with pytest.warns(DeprecationWarning):
         assert instance.x == 2
@@ -97,7 +101,8 @@ def test_deprecated_fields_validate_assignment():
 
         model_config = {'validate_assignment': True}
 
-    instance = Model(x=1)
+    with pytest.warns(DeprecationWarning):
+        instance = Model(x=1)
 
     with pytest.warns(DeprecationWarning):
         assert instance.x == 1
@@ -226,7 +231,8 @@ def test_deprecated_with_boolean() -> None:
         'type': 'object',
     }
 
-    instance = Model(a=1, b=1)
+    with pytest.warns(DeprecationWarning):
+        instance = Model(a=1, b=1)
 
     pytest.warns(DeprecationWarning, lambda: instance.a, match='deprecated')
 
@@ -250,3 +256,53 @@ def test_computed_field_deprecated_subclass() -> None:
 
     class Sub(Base):
         pass
+
+
+if sys.version_info >= (3, 13):
+    import warnings
+
+    WarningsDeprecated: TypeAlias = warnings.deprecated
+else:
+    WarningsDeprecated: TypeAlias = None
+
+
+@pytest.mark.parametrize(
+    'msg,expected',
+    [
+        (True, 'deprecated'),
+        (False, None),
+        ('', ''),
+        ('foobar', 'foobar'),
+        (None, None),
+        pytest.param(
+            deprecated('typealias.deprecated'),
+            'typealias.deprecated',
+            marks=pytest.mark.skipif(
+                Version(importlib.metadata.version('typing_extensions')) < Version('4.9'),
+                reason='`deprecated` type annotation requires typing_extensions>=4.9',
+            ),
+        ),
+        pytest.param(
+            WarningsDeprecated('warnings.deprecated'),
+            'warnings.deprecated',
+            marks=pytest.mark.skipif(sys.version_info < (3, 13), reason='`warnings.deprecated` requires python>=3.13'),
+        ),
+    ],
+)
+def test_model_init_deprecated_field(msg, expected) -> None:
+    warning_msg_b = 'warning for field b'
+
+    class Model(BaseModel):
+        a: Annotated[int, Field(deprecated=msg)]
+        # if data is not given for this field, no warning should be raised
+        b: Annotated[int, Field(deprecated=warning_msg_b)] = 2
+
+    if expected is None:
+        Model(a=1)
+        with pytest.warns(DeprecationWarning, match=f'^{warning_msg_b}$'):
+            Model(a=1, b=2)
+    else:
+        with pytest.warns(DeprecationWarning, match=f'^{expected}$'):
+            Model(a=1)
+        with pytest.warns(DeprecationWarning, match=f'^({expected})|({warning_msg_b})$'):
+            Model(a=1, b=2)
