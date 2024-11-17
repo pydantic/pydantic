@@ -169,6 +169,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     This replaces `Model.__fields__` from Pydantic V1.
     """
 
+    __pydantic_setattr_handlers__: ClassVar[Dict[str, Callable[[BaseModel, Any], None]]]  # noqa: UP006
+    """__setattr__ handlers. Used to speed up __setattr__."""
+
     __pydantic_computed_fields__: ClassVar[Dict[str, ComputedFieldInfo]]  # noqa: UP006
     """A dictionary of computed field names and their corresponding [`ComputedFieldInfo`][pydantic.fields.ComputedFieldInfo] objects."""
 
@@ -890,53 +893,64 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                         raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
 
         def __setattr__(self, name: str, value: Any) -> None:
-            if name in self.__class_vars__:
-                raise AttributeError(
-                    f'{name!r} is a ClassVar of `{self.__class__.__name__}` and cannot be set on an instance. '
-                    f'If you want to set a value on the class, use `{self.__class__.__name__}.{name} = value`.'
-                )
-            elif not _fields.is_valid_field_name(name):
-                if self.__pydantic_private__ is None or name not in self.__private_attributes__:
-                    _object_setattr(self, name, value)
-                else:
-                    attribute = self.__private_attributes__[name]
-                    if hasattr(attribute, '__set__'):
-                        attribute.__set__(self, value)  # type: ignore
-                    else:
-                        self.__pydantic_private__[name] = value
+            if (fast_memo_handler := self.__pydantic_setattr_handlers__.get(name)) is not None:
+                fast_memo_handler(self, value)
                 return
 
-            self._check_frozen(name, value)
+            if (fast_memo_handler := self._setattr_handler(name, value)) is not None:
+                fast_memo_handler(self, value)  # call here to not memo on possibly unknown fields
+                self.__pydantic_setattr_handlers__[name] = fast_memo_handler
 
-            attr = getattr(self.__class__, name, None)
+        def _setattr_handler(self, name: str, value: Any) -> Callable[[BaseModel, Any], None] | None:
+            """Returns a handler for setting an attribute on the model instance. This handler can be memoized to
+            the class. Gives None when memoization is not safe, then the attribute is set directly.
+            """
+            cls = self.__class__
+            if name in cls.__class_vars__:
+                raise AttributeError(
+                    f'{name!r} is a ClassVar of `{cls.__name__}` and cannot be set on an instance. '
+                    f'If you want to set a value on the class, use `{cls.__name__}.{name} = value`.'
+                )
+            elif not _fields.is_valid_field_name(name):
+                if (attribute := cls.__private_attributes__.get(name)) is not None:
+                    if hasattr(attribute, '__set__'):
+                        return lambda m, val: attribute.__set__(m, val)
+                    else:
+                        return lambda m, val: m.__pydantic_private__.__setitem__(name, val)
+                else:
+                    return lambda m, val: _object_setattr(m, name, val)
+
+            cls._check_frozen(name, value)
+
+            attr = getattr(cls, name, None)
             # NOTE: We currently special case properties and `cached_property`, but we might need
             # to generalize this to all data/non-data descriptors at some point. For non-data descriptors
             # (such as `cached_property`), it isn't obvious though. `cached_property` caches the value
             # to the instance's `__dict__`, but other non-data descriptors might do things differently.
             if isinstance(attr, property):
-                attr.__set__(self, value)
+                return lambda m, val: attr.__set__(m, val)
             elif isinstance(attr, cached_property):
-                self.__dict__[name] = value
-            elif self.model_config.get('validate_assignment', None):
-                self.__pydantic_validator__.validate_assignment(self, name, value)
-            elif self.model_config.get('extra') != 'allow' and name not in self.__pydantic_fields__:
+                return lambda m, val: m.__dict__.__setitem__(name, val)
+            elif cls.model_config.get('validate_assignment'):
+                return lambda m, val: m.__pydantic_validator__.validate_assignment(m, name, val)
+            elif cls.model_config.get('extra') != 'allow' and name not in cls.__pydantic_fields__:
                 # TODO - matching error
-                raise ValueError(f'"{self.__class__.__name__}" object has no field "{name}"')
-            elif self.model_config.get('extra') == 'allow' and name not in self.__pydantic_fields__:
-                if self.model_extra and name in self.model_extra:
-                    self.__pydantic_extra__[name] = value  # type: ignore
+                raise ValueError(f'"{cls.__name__}" object has no field "{name}"')
+            elif cls.model_config.get('extra') == 'allow' and name not in cls.__pydantic_fields__:
+                if attr is None:
+                    # attribute does not exist, so put it in extra
+                    self.__pydantic_extra__[name] = value
+                    return None  # Can not return memoized handler with possibly freeform attr names
                 else:
-                    try:
-                        getattr(self, name)
-                    except AttributeError:
-                        # attribute does not already exist on instance, so put it in extra
-                        self.__pydantic_extra__[name] = value  # type: ignore
-                    else:
-                        # attribute _does_ already exist on instance, and was not in extra, so update it
-                        _object_setattr(self, name, value)
+                    # attribute _does_ exist, and was not in extra, so update it
+                    return lambda m, val: _object_setattr(m, name, val)
             else:
-                self.__dict__[name] = value
-                self.__pydantic_fields_set__.add(name)
+                # Normal model field
+                def handler(m: BaseModel, val: Any) -> None:
+                    m.__dict__[name] = val
+                    m.__pydantic_fields_set__.add(name)
+
+                return handler
 
         def __delattr__(self, item: str) -> Any:
             if item in self.__private_attributes__:
@@ -964,10 +978,11 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 except AttributeError:
                     raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
 
-    def _check_frozen(self, name: str, value: Any) -> None:
-        if self.model_config.get('frozen', None):
+    @classmethod
+    def _check_frozen(cls, name: str, value: Any) -> None:
+        if cls.model_config.get('frozen', None):
             typ = 'frozen_instance'
-        elif getattr(self.__pydantic_fields__.get(name), 'frozen', False):
+        elif getattr(cls.__pydantic_fields__.get(name), 'frozen', False):
             typ = 'frozen_field'
         else:
             return
@@ -976,7 +991,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             'loc': (name,),
             'input': value,
         }
-        raise pydantic_core.ValidationError.from_exception_data(self.__class__.__name__, [error])
+        raise pydantic_core.ValidationError.from_exception_data(cls.__name__, [error])
 
     def __getstate__(self) -> dict[Any, Any]:
         private = self.__pydantic_private__
