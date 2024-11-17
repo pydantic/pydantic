@@ -159,19 +159,9 @@ def complete_dataclass(
             is_dataclass=True,
         ),
     )
-    get_core_schema = getattr(cls, '__get_pydantic_core_schema__', None)
+
     try:
-        if get_core_schema:
-            schema = get_core_schema(
-                cls,
-                CallbackGetCoreSchemaHandler(
-                    partial(gen_schema.generate_schema, from_dunder_get_core_schema=False),
-                    gen_schema,
-                    ref_mode='unpack',
-                ),
-            )
-        else:
-            schema = gen_schema.generate_schema(cls, from_dunder_get_core_schema=False)
+        schema = gen_schema.generate_schema(cls)
     except PydanticUndefinedAnnotation as e:
         if raise_errors:
             raise

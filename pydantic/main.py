@@ -46,7 +46,7 @@ from ._internal import (
 )
 from ._migration import getattr_migration
 from .aliases import AliasChoices, AliasPath
-from .annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
+from .annotated_handlers import GetJsonSchemaHandler
 from .config import ConfigDict
 from .errors import PydanticUndefinedAnnotation, PydanticUserError
 from .json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema, JsonSchemaMode, JsonSchemaValue, model_json_schema
@@ -684,30 +684,6 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         # `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks
         __tracebackhide__ = True
         return cls.__pydantic_validator__.validate_strings(obj, strict=strict, context=context)
-
-    @classmethod
-    def __get_pydantic_core_schema__(cls, source: type[BaseModel], handler: GetCoreSchemaHandler, /) -> CoreSchema:
-        """Hook into generating the model's CoreSchema.
-
-        Args:
-            source: The class we are generating a schema for.
-                This will generally be the same as the `cls` argument if this is a classmethod.
-            handler: A callable that calls into Pydantic's internal CoreSchema generation logic.
-
-        Returns:
-            A `pydantic-core` `CoreSchema`.
-        """
-        # Only use the cached value from this _exact_ class; we don't want one from a parent class
-        # This is why we check `cls.__dict__` and don't use `cls.__pydantic_core_schema__` or similar.
-        schema = cls.__dict__.get('__pydantic_core_schema__')
-        if schema is not None and not isinstance(schema, _mock_val_ser.MockCoreSchema):
-            # Due to the way generic classes are built, it's possible that an invalid schema may be temporarily
-            # set on generic classes. I think we could resolve this to ensure that we get proper schema caching
-            # for generics, but for simplicity for now, we just always rebuild if the class has a generic origin.
-            if not cls.__pydantic_generic_metadata__['origin']:
-                return cls.__pydantic_core_schema__
-
-        return handler(source)
 
     @classmethod
     def __get_pydantic_json_schema__(

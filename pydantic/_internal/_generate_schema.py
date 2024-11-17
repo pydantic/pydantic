@@ -71,7 +71,6 @@ from ._core_utils import (
     define_expected_missing_refs,
     get_ref,
     get_type_ref,
-    is_function_with_inner_schema,
     is_list_like_schema_with_items_schema,
     simplify_schema_references,
     validate_core_schema,
@@ -575,14 +574,11 @@ class GenerateSchema:
     def generate_schema(
         self,
         obj: Any,
-        from_dunder_get_core_schema: bool = True,
     ) -> core_schema.CoreSchema:
         """Generate core schema.
 
         Args:
             obj: The object to generate core schema for.
-            from_dunder_get_core_schema: Whether to generate schema from either the
-                `__get_pydantic_core_schema__` function or `__pydantic_core_schema__` property.
 
         Returns:
             The generated core schema.
@@ -599,12 +595,7 @@ class GenerateSchema:
                 - If `typing.TypedDict` is used instead of `typing_extensions.TypedDict` on Python < 3.12.
                 - If `__modify_schema__` method is used instead of `__get_pydantic_json_schema__`.
         """
-        schema: CoreSchema | None = None
-
-        if from_dunder_get_core_schema:
-            from_property = self._generate_schema_from_property(obj, obj)
-            if from_property is not None:
-                schema = from_property
+        schema = self._generate_schema_from_get_schema_method(obj, obj)
 
         if schema is None:
             schema = self._generate_schema_inner(obj)
@@ -624,6 +615,24 @@ class GenerateSchema:
         with self.defs.get_schema_or_ref(cls) as (model_ref, maybe_schema):
             if maybe_schema is not None:
                 return maybe_schema
+
+            schema = cls.__dict__.get('__pydantic_core_schema__')
+            if (
+                schema is not None
+                and not isinstance(schema, MockCoreSchema)
+                # Due to the way generic classes are built, it's possible that an invalid schema may be temporarily
+                # set on generic classes. Probably we could resolve this to ensure that we get proper schema caching
+                # for generics, but for simplicity for now, we just always rebuild if the class has a generic origin:
+                and not cls.__pydantic_generic_metadata__['origin']
+            ):
+                # TODO __get_validators__ compat
+                schema = self._unpack_refs_defs(schema)
+                ref = get_ref(schema)
+                if ref:
+                    self.defs.definitions[ref] = schema
+                    return core_schema.definition_reference_schema(ref)
+                else:
+                    return schema
 
             fields = getattr(cls, '__pydantic_fields__', {})
             decorators = cls.__pydantic_decorators__
@@ -735,71 +744,24 @@ class GenerateSchema:
             raise PydanticUserError('`typing.Self` is invalid in this context', code='invalid-self-type')
         return obj
 
-    def _generate_schema_from_property(self, obj: Any, source: Any) -> core_schema.CoreSchema | None:
-        """Try to generate schema from either the `__get_pydantic_core_schema__` function or
-        `__pydantic_core_schema__` property.
-
-        Note: `__get_pydantic_core_schema__` takes priority so it can
-        decide whether to use a `__pydantic_core_schema__` attribute, or generate a fresh schema.
-        """
-        # avoid calling `__get_pydantic_core_schema__` if we've already visited this object
-        if _typing_extra.is_self(obj):
-            obj = self._resolve_self_type(obj)
-        with self.defs.get_schema_or_ref(obj) as (_, maybe_schema):
-            if maybe_schema is not None:
-                return maybe_schema
+    def _generate_schema_from_get_schema_method(self, obj: Any, source: Any) -> core_schema.CoreSchema | None:
         if obj is source:
             ref_mode = 'unpack'
         else:
             ref_mode = 'to-def'
 
-        schema: CoreSchema
-
         if (get_schema := getattr(obj, '__get_pydantic_core_schema__', None)) is not None:
             schema = get_schema(
                 source, CallbackGetCoreSchemaHandler(self._generate_schema_inner, self, ref_mode=ref_mode)
             )
-        elif (
-            hasattr(obj, '__dict__')
-            # In some cases (e.g. a stdlib dataclass subclassing a Pydantic dataclass),
-            # doing an attribute access to get the schema will result in the parent schema
-            # being fetched. Thus, only look for the current obj's dict:
-            and (existing_schema := obj.__dict__.get('__pydantic_core_schema__')) is not None
-            and not isinstance(existing_schema, MockCoreSchema)
-        ):
-            schema = existing_schema
-        elif (validators := getattr(obj, '__get_validators__', None)) is not None:
-            from pydantic.v1 import BaseModel as BaseModelV1
+            schema = self._unpack_refs_defs(schema)
 
-            if issubclass(obj, BaseModelV1):
-                warn(
-                    f'Mixing V1 models and V2 models (or constructs, like `TypeAdapter`) is not supported. Please upgrade `{obj.__name__}` to V2.',
-                    UserWarning,
-                )
-            else:
-                warn(
-                    '`__get_validators__` is deprecated and will be removed, use `__get_pydantic_core_schema__` instead.',
-                    PydanticDeprecatedSince20,
-                )
-            schema = core_schema.chain_schema([core_schema.with_info_plain_validator_function(v) for v in validators()])
-        else:
-            # we have no existing schema information on the property, exit early so that we can go generate a schema
-            return None
-
-        schema = self._unpack_refs_defs(schema)
-
-        if is_function_with_inner_schema(schema):
-            ref = schema['schema'].pop('ref', None)  # pyright: ignore[reportCallIssue, reportArgumentType]
-            if ref:
-                schema['ref'] = ref
-        else:
             ref = get_ref(schema)
-
-        if ref:
-            self.defs.definitions[ref] = schema
-            return core_schema.definition_reference_schema(ref)
-
-        return schema
+            if ref:
+                self.defs.definitions[ref] = schema
+                return core_schema.definition_reference_schema(ref)
+            else:
+                return schema
 
     def _resolve_forward_ref(self, obj: Any) -> Any:
         # we assume that types_namespace has the target of forward references in its scope,
@@ -859,6 +821,9 @@ class GenerateSchema:
         return args[0], args[1]
 
     def _generate_schema_inner(self, obj: Any) -> core_schema.CoreSchema:
+        if _typing_extra.is_self(obj):
+            obj = self._resolve_self_type(obj)
+
         if _typing_extra.is_annotated(obj):
             return self._annotated_schema(obj)
 
@@ -1004,9 +969,9 @@ class GenerateSchema:
         if _typing_extra.is_namedtuple(origin):
             return self._namedtuple_schema(obj, origin)
 
-        from_property = self._generate_schema_from_property(origin, obj)
-        if from_property is not None:
-            return from_property
+        schema = self._generate_schema_from_get_schema_method(origin, obj)
+        if schema is not None:
+            return schema
 
         if _typing_extra.is_type_alias_type(origin):
             return self._type_alias_type_schema(obj)
@@ -1735,6 +1700,16 @@ class GenerateSchema:
             if maybe_schema is not None:
                 return maybe_schema
 
+            schema = dataclass.__dict__.get('__pydantic_core_schema__')
+            if schema is not None and not isinstance(schema, MockCoreSchema):
+                schema = self._unpack_refs_defs(schema)
+                ref = get_ref(schema)
+                if ref:
+                    self.defs.definitions[ref] = schema
+                    return core_schema.definition_reference_schema(ref)
+                else:
+                    return schema
+
             typevars_map = get_standard_typevars_map(dataclass)
             if origin is not None:
                 dataclass = origin
@@ -2043,11 +2018,12 @@ class GenerateSchema:
         pydantic_js_annotation_functions: list[GetJsonSchemaFunction] = []
 
         def inner_handler(obj: Any) -> CoreSchema:
-            from_property = self._generate_schema_from_property(obj, source_type)
-            if from_property is None:
+            # TODO can obj be != source? if not, then just call self.generate_schema
+            schema = self._generate_schema_from_get_schema_method(obj, source_type)
+
+            if schema is None:
                 schema = self._generate_schema_inner(obj)
-            else:
-                schema = from_property
+
             metadata_js_function = _extract_get_pydantic_json_schema(obj)
             if metadata_js_function is not None:
                 metadata_schema = resolve_original_schema(schema, self.defs.definitions)
@@ -2458,7 +2434,7 @@ class _Definitions:
         self.definitions: dict[str, core_schema.CoreSchema] = {}
 
     @contextmanager
-    def get_schema_or_ref(self, tp: Any) -> Iterator[tuple[str, None] | tuple[str, CoreSchema]]:
+    def get_schema_or_ref(self, tp: type[Any] | TypeAliasType) -> Iterator[tuple[str, None] | tuple[str, CoreSchema]]:
         """Get a definition for `tp` if one exists.
 
         If a definition exists, a tuple of `(ref_string, CoreSchema)` is returned.
