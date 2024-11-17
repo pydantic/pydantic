@@ -711,7 +711,7 @@ See the [Serialization] section for more details.
 
 The `deprecated` parameter can be used to mark a field as being deprecated. Doing so will result in:
 
-* a runtime deprecation warning emitted when accessing the field.
+* a runtime deprecation warning emitted when accessing the field or explicitly assigning values to the field at model instantiation.
 * `"deprecated": true` being set in the generated JSON schema.
 
 You can set the `deprecated` parameter as one of:
