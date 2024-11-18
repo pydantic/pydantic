@@ -26,6 +26,7 @@ from ._internal import (
     _generate_schema,
     _mock_val_ser,
     _namespace_utils,
+    _repr,
     _schema_generation_shared,
     _typing_extra,
     _utils,
