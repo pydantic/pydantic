@@ -420,7 +420,7 @@ from pydantic import BaseModel, Field
 
 
 class Item(BaseModel):
-    a: int  | None = Field(json_schema_override={'nullable': False})
+    a: int | None = Field(json_schema_override={'nullable': False})
     b: int | None = Field(default=1, json_schema_override={'required': True})
 
 print(json.dumps(Item.model_json_schema(), indent=2))
