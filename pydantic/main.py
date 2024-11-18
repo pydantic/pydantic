@@ -170,7 +170,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     """
 
     __pydantic_setattr_handlers__: ClassVar[Dict[str, Callable[[BaseModel, Any], None]]]  # noqa: UP006
-    """__setattr__ handlers. Used to speed up __setattr__."""
+    """__setattr__ handlers. Memoizing the setattr handlers leads to a dramatic performance improvement in `__setattr__`"""
 
     __pydantic_computed_fields__: ClassVar[Dict[str, ComputedFieldInfo]]  # noqa: UP006
     """A dictionary of computed field names and their corresponding [`ComputedFieldInfo`][pydantic.fields.ComputedFieldInfo] objects."""
@@ -893,17 +893,20 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                         raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
 
         def __setattr__(self, name: str, value: Any) -> None:
-            if (fast_memo_handler := self.__pydantic_setattr_handlers__.get(name)) is not None:
-                fast_memo_handler(self, value)
+            if (setattr_handler := self.__pydantic_setattr_handlers__.get(name)) is not None:
+                setattr_handler(self, value)
                 return
 
-            if (fast_memo_handler := self._setattr_handler(name, value)) is not None:
-                fast_memo_handler(self, value)  # call here to not memo on possibly unknown fields
-                self.__pydantic_setattr_handlers__[name] = fast_memo_handler
+            if (setattr_handler := self._setattr_handler(name, value)) is not None:
+                setattr_handler(self, value)  # call here to not memo on possibly unknown fields
+                self.__pydantic_setattr_handlers__[name] = setattr_handler  # memoize the handler for faster access
 
         def _setattr_handler(self, name: str, value: Any) -> Callable[[BaseModel, Any], None] | None:
-            """Returns a handler for setting an attribute on the model instance. This handler can be memoized to
-            the class. Gives None when memoization is not safe, then the attribute is set directly.
+            """Get a handler for setting an attribute on the model instance.
+
+            Returns:
+                A handler for setting an attribute on the model instance. Used for memoization of the handler.
+                Gives None when memoization is not safe, then the attribute is set directly.
             """
             cls = self.__class__
             if name in cls.__class_vars__:
