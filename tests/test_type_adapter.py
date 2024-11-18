@@ -581,3 +581,14 @@ def test_defer_build_raise_errors() -> None:
 
     ta.rebuild(raise_errors=True)
     assert not isinstance(ta.core_schema, _mock_val_ser.MockCoreSchema)
+
+
+@dataclass
+class SimpleDataclass:
+    x: int
+
+
+@pytest.mark.parametrize('type_,repr_', [(int, 'int'), (List[int], 'List[int]'), (SimpleDataclass, 'SimpleDataclass')])
+def test_ta_repr(type_: Any, repr_: str) -> None:
+    ta = TypeAdapter(type_)
+    assert repr(ta) == f'TypeAdapter[{repr_}]'
