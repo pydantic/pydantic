@@ -330,7 +330,7 @@ def min_length_validator(x: Any, min_length: Any) -> Any:
                     )
                 return x
             except TypeError:
-                ...
+                pass
         raise TypeError(f"Unable to apply constraint 'min_length' to supplied value {x}")
 
 
@@ -352,7 +352,7 @@ def max_length_validator(x: Any, max_length: Any) -> Any:
                     )
                 return x
             except TypeError:
-                ...
+                pass
         raise TypeError(f"Unable to apply constraint 'max_length' to supplied value {x}")
 
 
