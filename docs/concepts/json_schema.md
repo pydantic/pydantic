@@ -398,7 +398,7 @@ print(json.dumps(User.model_json_schema(), indent=2))
 """
 ```
 
-#### Overriding field level json schema
+#### Overriding field level JSON schema
 Pydantic allows you to override the JSON schema for individual fields using the `json_schema_override parameter` in
 the [`Field`][pydantic.fields.Field] function. This can be useful when you need to customize the schema
 representation of a field beyond what Pydantic generates by default.
@@ -408,8 +408,8 @@ function. This dictionary will be merged with the automatically generated schema
 
 Supported overrides:
 
-* `nullable`: Indicates whether the field can be `null`. If set to `False` to make it non-nullable in the json schema.
-* `required`: Can be used to set a field as required `True` or `False` in json schema, irrespective of whether a default
+* `nullable`: Indicates whether the field can be `null`. If set to `False` to make it non-nullable in the JSON schema.
+* `required`: Can be used to set a field as required `True` or `False` in JSON schema, irrespective of whether a default
   has been set or not
 * `default`: Specifies a default value for the field in the JSON schema. This can be different from the default value used during model instantiation.
 
