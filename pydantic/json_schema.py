@@ -665,7 +665,8 @@ class GenerateJsonSchema:
             if 'required' not in json_schema:
                 json_schema['required'] = [field_name]
             else:
-                json_schema['required'].append(field_name)
+                if field_name not in json_schema['required']:
+                    json_schema['required'].append(field_name)
 
         return json_schema
 

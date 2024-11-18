@@ -812,6 +812,7 @@ Some field parameters are used exclusively to customize the generated JSON schem
 * `description`
 * `examples`
 * `json_schema_extra`
+* `json_schema_override`
 
 Read more about JSON schema customization / modification with fields in the [Customizing JSON Schema] section of the JSON schema docs.
 

@@ -331,6 +331,7 @@ Some field parameters are used exclusively to customize the generated JSON Schem
 * `examples`: The examples of the field.
 * `json_schema_extra`: Extra JSON Schema properties to be added to the field.
 * `field_title_generator`: A function that programmatically sets the field's title, based on its name and info.
+* `json_schema_override`: Override the default generation of json schema to allow field specific customizations.
 
 Here's an example:
 
@@ -392,6 +393,61 @@ print(json.dumps(User.model_json_schema(), indent=2))
     "password"
   ],
   "title": "User",
+  "type": "object"
+}
+"""
+```
+
+#### Overriding field level json schema
+Pydantic allows you to override the JSON schema for individual fields using the `json_schema_override parameter` in
+the [`Field`][pydantic.fields.Field] function. This can be useful when you need to customize the schema
+representation of a field beyond what Pydantic generates by default.
+
+To use `json_schema_override`, pass a dictionary with the desired schema attributes to the [`Field`][pydantic.fields.Field]
+function. This dictionary will be merged with the automatically generated schema.
+
+Supported overrides:
+
+* `nullable`: Indicates whether the field can be `null`. If set to `False` to make it non-nullable in the json schema.
+* `required`: Can be used to set a field as required `True` or `False` in json schema, irrespective of whether a default
+  has been set or not
+* `default`: Specifies a default value for the field in the JSON schema. This can be different from the default value used during model instantiation.
+
+```py output="json"
+import json
+
+from pydantic import BaseModel, Field
+
+
+class Item(BaseModel):
+    a: int  | None = Field(json_schema_override={'nullable': False})
+    b: int | None = Field(default=1, json_schema_override={'required': True})
+
+print(json.dumps(Item.model_json_schema(), indent=2))
+"""
+{
+  "properties": {
+    "a": {
+      "type": "integer"
+    },
+    "b": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": 1,
+      "title": "B"
+    }
+  },
+  "required": [
+    "a",
+    "b"
+  ],
+  "title": "Item",
   "type": "object"
 }
 """
