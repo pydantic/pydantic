@@ -159,7 +159,7 @@ def get_schema_or_set_mocks(
                 ),
             )
         else:
-            schema = gen_schema.generate_schema(schema_type, from_dunder_get_core_schema=False)
+            schema = gen_schema.generate_schema(schema_type, from_dunder_get_core_schema=True)
     except PydanticUndefinedAnnotation as e:
         if raise_errors:
             raise
@@ -171,3 +171,5 @@ def get_schema_or_set_mocks(
     except gen_schema.CollectedInvalid:
         set_mocks(schema_container)
         return None
+
+    return schema

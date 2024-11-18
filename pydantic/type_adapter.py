@@ -288,6 +288,8 @@ class TypeAdapter(Generic[T]):
             if schema is None:
                 return False
 
+            self.core_schema = schema
+
             core_config = config_wrapper.core_config(None)
 
             self.validator = create_schema_validator(
