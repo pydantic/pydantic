@@ -317,6 +317,9 @@ class TypeAdapter(Generic[T]):
             return type_.model_config
         return getattr(type_, '__pydantic_config__', None)
 
+    def __repr__(self) -> str:
+        return f'TypeAdapter[{_repr.display_as_type(self._type)}]'
+
     def rebuild(
         self,
         *,
