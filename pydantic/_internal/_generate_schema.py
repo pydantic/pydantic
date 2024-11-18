@@ -64,11 +64,10 @@ from ..functional_validators import AfterValidator, BeforeValidator, FieldValida
 from ..json_schema import JsonSchemaValue
 from ..version import version_short
 from ..warnings import PydanticDeprecatedSince20
-from . import _core_utils, _decorators, _discriminated_union, _known_annotated_metadata, _typing_extra
+from . import _decorators, _discriminated_union, _known_annotated_metadata, _typing_extra
 from ._config import ConfigWrapper, ConfigWrapperStack
 from ._core_metadata import CoreMetadata, update_core_metadata
 from ._core_utils import (
-    TAGGED_UNION_TAG_KEY,
     get_type_ref,
     is_function_with_inner_schema,
     is_list_like_schema_with_items_schema,
@@ -536,9 +535,23 @@ class GenerateSchema:
             return schema
 
     def clean_schema(self, schema: CoreSchema, *, deep_copy: bool) -> CoreSchema:
-        """Cleans the schema contents by substituting definition-refs and discriminators. Given schema must be the
-        one just given by generate_schema. Does in place substituting to the schema by mutating it for performance
+        """Cleans the schema contents by substituting definition-refs and deferred discriminators. Given schema must be
+        the one just given by generate_schema. Does in place substituting to the schema by mutating it for performance
         reasons. Use deep_copy to avoid mutating the original schema.
+
+        Example for substituting definition-refs:
+        Input:
+        {"type": "definition-ref", "schema_ref": "Xyz"}
+        Definitions:
+        {"Xyz": {"type": "string", "ref": "Xyz"}}
+        Output:
+        {"type": "string", "ref": "Xyz"}
+
+        Example for substituting discriminators:
+        Input:
+        {'type': 'definition-ref', 'schema_ref': 'Xyz', 'metadata': {'pydantic_internal_union_discriminator': 'foo'}}
+        Output:
+        {'type': 'tagged-union', 'choices': {'bar': {'type': 'definition-ref', 'schema_ref': 'Xyz'}}, 'discriminator': 'foo'}
         """
         schema = deepcopy(schema) if deep_copy else schema
         schema = self.defs.finalize_schema_defs_inplace(schema)
@@ -1303,8 +1316,8 @@ class GenerateSchema:
         else:
             choices_with_tags: list[CoreSchema | tuple[CoreSchema, str]] = []
             for choice in choices:
-                tag = choice.get('metadata', {}).get(_core_utils.TAGGED_UNION_TAG_KEY)
-                if tag is not None:
+                metadata: CoreMetadata = choice.get('metadata', {})  # pyright: ignore[reportAssignmentType]
+                if (tag := metadata.get('pydantic_internal_tagged_union_tag')) is not None:
                     choices_with_tags.append((choice, tag))
                 else:
                     choices_with_tags.append(choice)
@@ -2390,15 +2403,11 @@ def _common_field(
     }
 
 
-class CollectedInvalid(Exception):
+class CollectedInvalidSchema(Exception):
     pass
 
 
-_NOT_INLINABLE_META_KEYS: set[str] = {
-    *CoreMetadata.__annotations__.keys(),
-    _discriminated_union.CORE_SCHEMA_METADATA_DISCRIMINATOR_PLACEHOLDER_KEY,
-    TAGGED_UNION_TAG_KEY,
-}
+_NOT_INLINABLE_META_KEYS: set[str] = {*CoreMetadata.__annotations__.keys()}
 
 
 class _Definitions:
@@ -2424,13 +2433,13 @@ class _Definitions:
         if self._unpacked_definitions:
             definitions = {**self._unpacked_definitions, **definitions}
 
-        discriminator_meta_key = _discriminated_union.CORE_SCHEMA_METADATA_DISCRIMINATOR_PLACEHOLDER_KEY
+        discriminator_meta_key = 'pydantic_internal_union_discriminator'
         find_meta_with_keys = {discriminator_meta_key} if self.used_deferred_discriminators else None
 
         try:
             gather_res = gather_schemas_for_cleaning(schema, definitions, find_meta_with_keys)
         except GatherInvalidDefinitionError as e:
-            raise CollectedInvalid() from e
+            raise CollectedInvalidSchema() from e
 
         if (schema_ref := schema.get('ref')) is not None and schema_ref in gather_res['recursive_refs']:
             schema = self.reference_schema(schema)  # self schema referenced recursively
@@ -2448,7 +2457,9 @@ class _Definitions:
         if self.used_deferred_discriminators:
             for apply_to_schema in (gather_res['schemas_with_meta_keys'] or {})[discriminator_meta_key]:
                 discriminator = apply_to_schema['metadata'][discriminator_meta_key]  # type: ignore
-                applied = _discriminated_union.apply_discriminator(apply_to_schema, discriminator, remaining_defs)
+                applied = _discriminated_union.apply_discriminator(
+                    apply_to_schema.copy(), discriminator, remaining_defs
+                )
                 # Mutate the schema directly to have the discriminator applied
                 apply_to_schema.clear()  # type: ignore
                 apply_to_schema.update(applied)  # type: ignore

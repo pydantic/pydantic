@@ -41,6 +41,12 @@ class CoreMetadata(TypedDict, total=False):
     pydantic_js_updates: JsonDict
     pydantic_js_extra: JsonDict | JsonSchemaExtraCallable
 
+    pydantic_internal_tagged_union_tag: str
+    """Used internally to specify the tag used for a discriminated union."""
+
+    pydantic_internal_union_discriminator: str
+    """Used internally to specify discriminator for a discriminated union when its built deferred."""
+
 
 def update_core_metadata(
     core_metadata: Any,

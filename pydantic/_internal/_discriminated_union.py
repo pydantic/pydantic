@@ -6,12 +6,11 @@ from pydantic_core import CoreSchema, core_schema
 
 from ..errors import PydanticUserError
 from . import _core_utils
+from ._core_metadata import CoreMetadata
 from ._core_utils import CoreSchemaField
 
 if TYPE_CHECKING:
     from ..types import Discriminator
-
-CORE_SCHEMA_METADATA_DISCRIMINATOR_PLACEHOLDER_KEY = 'pydantic.internal.union_discriminator'
 
 
 class MissingDefinitionForUnionRef(Exception):
@@ -25,8 +24,11 @@ class MissingDefinitionForUnionRef(Exception):
 
 
 def set_discriminator_in_metadata(schema: CoreSchema, discriminator: Any) -> None:
-    # These are gathered for schema cleaning in pydantic-core
-    schema.setdefault('metadata', {})[CORE_SCHEMA_METADATA_DISCRIMINATOR_PLACEHOLDER_KEY] = discriminator
+    """Sets the discriminator in the metadata of the schema. Used for deferred discriminator application.
+    These are gathered for schema cleaning in pydantic-core.
+    """
+    metadata: CoreMetadata = schema.setdefault('metadata', {})  # pyright: ignore[reportAssignmentType]
+    metadata['pydantic_internal_union_discriminator'] = discriminator
 
 
 def apply_discriminator(
@@ -188,7 +190,7 @@ class _ApplyInferredDiscriminator:
             # was flattened by pydantic_core.
             # However, it still may make sense to apply the discriminator to this schema,
             # as a way to get discriminated-union-style error messages, so we allow this here.
-            schema = core_schema.union_schema([schema.copy()])
+            schema = core_schema.union_schema([schema])
 
         # Reverse the choices list before extending the stack so that they get handled in the order they occur
         choices_schemas = [v[0] if isinstance(v, tuple) else v for v in schema['choices'][::-1]]

@@ -36,7 +36,7 @@ from annotated_types import BaseMetadata, MaxLen, MinLen
 from pydantic_core import CoreSchema, PydanticCustomError, core_schema
 from typing_extensions import Annotated, Literal, Protocol, TypeAlias, TypeAliasType, deprecated
 
-from ._internal import _core_utils, _fields, _internal_dataclass, _typing_extra, _utils, _validators
+from ._internal import _core_metadata, _fields, _internal_dataclass, _typing_extra, _utils, _validators
 from ._migration import getattr_migration
 from .annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
 from .errors import PydanticUserError
@@ -2913,9 +2913,9 @@ class Tag:
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
         schema = handler(source_type)
-        metadata = schema.setdefault('metadata', {})
+        metadata: _core_metadata.CoreMetadata = schema.setdefault('metadata', {})  # pyright: ignore[reportAssignmentType]
         assert isinstance(metadata, dict)
-        metadata[_core_utils.TAGGED_UNION_TAG_KEY] = self.tag
+        metadata['pydantic_internal_tagged_union_tag'] = self.tag
         return schema
 
 
@@ -3034,10 +3034,9 @@ class Discriminator:
             tag = None
             if isinstance(choice, tuple):
                 choice, tag = choice
-            metadata = choice.get('metadata')
+            metadata: _core_metadata.CoreMetadata | None = choice.get('metadata')  # pyright: ignore[reportAssignmentType]
             if metadata is not None:
-                metadata_tag = metadata.get(_core_utils.TAGGED_UNION_TAG_KEY)
-                if metadata_tag is not None:
+                if (metadata_tag := metadata.get('pydantic_internal_tagged_union_tag')) is not None:
                     tag = metadata_tag
             if tag is None:
                 raise PydanticUserError(

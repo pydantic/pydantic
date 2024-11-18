@@ -127,11 +127,10 @@ class CallbackGetCoreSchemaHandler(GetCoreSchemaHandler):
 
 
 def get_existing_core_schema(obj: Any) -> core_schema.CoreSchema | None:
+    # Only use the cached value from this _exact_ class; we don't want one from a parent class
+    # This is why we check `cls.__dict__` and don't use `cls.__pydantic_core_schema__` or similar.
     if (
         hasattr(obj, '__dict__')
-        # In some cases (e.g. a stdlib dataclass subclassing a Pydantic dataclass),
-        # doing an attribute access to get the schema will result in the parent schema
-        # being fetched. Thus, only look for the current obj's dict:
         and (existing_schema := obj.__dict__.get('__pydantic_core_schema__')) is not None
         and not isinstance(existing_schema, MockCoreSchema)
     ):
