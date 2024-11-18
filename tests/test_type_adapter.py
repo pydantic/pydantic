@@ -591,4 +591,4 @@ class SimpleDataclass:
 @pytest.mark.parametrize('type_,repr_', [(int, 'int'), (List[int], 'List[int]'), (SimpleDataclass, 'SimpleDataclass')])
 def test_ta_repr(type_: Any, repr_: str) -> None:
     ta = TypeAdapter(type_)
-    assert repr(ta) == f'TypeAdapter({repr_})'
+    assert repr(ta) == f'TypeAdapter[{repr_}]'
