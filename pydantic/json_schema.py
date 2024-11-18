@@ -312,6 +312,9 @@ class GenerateJsonSchema:
             CoreSchemaOrFieldType  # type: ignore
         )
         for key in core_schema_types:
+            if key == 'invalid':
+                continue  # TODO remove once 'invalid' schema is removed from pydantic-core
+
             method_name = f"{key.replace('-', '_')}_schema"
             try:
                 mapping[key] = getattr(self, method_name)
