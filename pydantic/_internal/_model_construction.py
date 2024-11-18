@@ -16,7 +16,7 @@ from typing import Any, Callable, Generic, Literal, NoReturn, TypeVar, cast
 from pydantic_core import PydanticUndefined, SchemaSerializer
 from typing_extensions import TypeAliasType, dataclass_transform, deprecated, get_args
 
-from ..errors import PydanticUndefinedAnnotation, PydanticUserError
+from ..errors import PydanticUserError
 from ..plugin._schema_validator import create_schema_validator
 from ..warnings import GenericBeforeBaseModelWarning, PydanticDeprecatedSince20
 from ._config import ConfigWrapper
@@ -27,7 +27,7 @@ from ._generics import PydanticGenericMetadata, get_model_typevars_map
 from ._import_utils import import_cached_base_model, import_cached_field_info
 from ._mock_val_ser import set_model_mocks
 from ._namespace_utils import NsResolver
-from ._schema_generation_shared import CallbackGetCoreSchemaHandler
+from ._schema_generation_shared import get_schema_or_set_mocks
 from ._signature import generate_pydantic_signature
 from ._typing_extra import (
     _make_forward_ref,
@@ -645,27 +645,18 @@ def complete_model_class(
         typevars_map,
     )
 
-    handler = CallbackGetCoreSchemaHandler(
-        partial(gen_schema.generate_schema, from_dunder_get_core_schema=False),
-        gen_schema,
-        ref_mode='unpack',
+    schema = get_schema_or_set_mocks(
+        schema_container=cls,
+        schema_type=cls,
+        set_mocks=set_model_mocks,
+        gen_schema=gen_schema,
+        raise_errors=raise_errors,
+        get_schema=getattr(cls, '__get_pydantic_core_schema__', None),
     )
-
-    try:
-        schema = cls.__get_pydantic_core_schema__(cls, handler)
-    except PydanticUndefinedAnnotation as e:
-        if raise_errors:
-            raise
-        set_model_mocks(cls, f'`{e.name}`')
+    if schema is None:
         return False
 
     core_config = config_wrapper.core_config(title=cls.__name__)
-
-    try:
-        schema = gen_schema.clean_schema(schema)
-    except gen_schema.CollectedInvalid:
-        set_model_mocks(cls)
-        return False
 
     # debug(schema)
     cls.__pydantic_core_schema__ = schema

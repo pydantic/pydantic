@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from functools import partial
 from typing import TYPE_CHECKING, Any, Callable
 
 from pydantic_core import core_schema
@@ -124,3 +125,49 @@ class CallbackGetCoreSchemaHandler(GetCoreSchemaHandler):
         elif maybe_ref_schema['type'] == 'definitions':
             return self.resolve_ref_schema(maybe_ref_schema['schema'])
         return maybe_ref_schema
+
+
+def get_schema_or_set_mocks(
+    schema_container: Any,
+    schema_type: Any,
+    set_mocks: Callable[..., None],  # we use a ... here bc optionality is handled by the caller
+    gen_schema: GenerateSchema,
+    raise_errors: bool,
+    get_schema: Callable[[Any, GetCoreSchemaHandler], core_schema.CoreSchema] | None = None,
+) -> core_schema.CoreSchema | None:
+    """Get and return the core schema associated with `schema_type`.
+    If the schema is not found and `raise_errors` is `False`, set mocks on `schema_container` and return `None`.
+
+    Args:
+        schema_container: The container to set mocks on if the schema is not found (either a model, dataclass, or TypeAdapter instance).
+        schema_type: The type to get the schema for (a model, dataclass, or TypeAdapter's embedded type).
+        set_mocks: The function to set mocks on `schema_container`.
+        gen_schema: The `GenerateSchema` instance to use to generate the schema.
+        raise_errors: Whether to raise errors if the schema cannot be generated.
+        get_schema: The optional `__get_pydantic_core_schema__` method to use to get the schema, with priority over `gen_schema`.
+    """
+    from ..errors import PydanticUndefinedAnnotation
+
+    try:
+        if get_schema:
+            schema = get_schema(
+                schema_type,
+                CallbackGetCoreSchemaHandler(
+                    partial(gen_schema.generate_schema, from_dunder_get_core_schema=False),
+                    gen_schema,
+                    ref_mode='unpack',
+                ),
+            )
+        else:
+            schema = gen_schema.generate_schema(schema_type, from_dunder_get_core_schema=False)
+    except PydanticUndefinedAnnotation as e:
+        if raise_errors:
+            raise
+        set_mocks(schema_container, f'`{e.name}`')
+        return None
+
+    try:
+        schema = gen_schema.clean_schema(schema)
+    except gen_schema.CollectedInvalid:
+        set_mocks(schema_container)
+        return None

@@ -16,7 +16,6 @@ from pydantic_core import (
 )
 from typing_extensions import TypeGuard
 
-from ..errors import PydanticUndefinedAnnotation
 from ..plugin._schema_validator import PluggableSchemaValidator, create_schema_validator
 from ..warnings import PydanticDeprecatedSince20
 from . import _config, _decorators
@@ -25,7 +24,7 @@ from ._generate_schema import GenerateSchema
 from ._generics import get_standard_typevars_map
 from ._mock_val_ser import set_dataclass_mocks
 from ._namespace_utils import NsResolver
-from ._schema_generation_shared import CallbackGetCoreSchemaHandler
+from ._schema_generation_shared import get_schema_or_set_mocks
 from ._signature import generate_pydantic_signature
 from ._utils import LazyClassAttribute
 
@@ -158,32 +157,18 @@ def complete_dataclass(
             is_dataclass=True,
         ),
     )
-    get_core_schema = getattr(cls, '__get_pydantic_core_schema__', None)
-    try:
-        if get_core_schema:
-            schema = get_core_schema(
-                cls,
-                CallbackGetCoreSchemaHandler(
-                    partial(gen_schema.generate_schema, from_dunder_get_core_schema=False),
-                    gen_schema,
-                    ref_mode='unpack',
-                ),
-            )
-        else:
-            schema = gen_schema.generate_schema(cls, from_dunder_get_core_schema=False)
-    except PydanticUndefinedAnnotation as e:
-        if raise_errors:
-            raise
-        set_dataclass_mocks(cls, f'`{e.name}`')
+    schema = get_schema_or_set_mocks(
+        schema_container=cls,
+        schema_type=cls,
+        set_mocks=set_dataclass_mocks,
+        gen_schema=gen_schema,
+        raise_errors=raise_errors,
+        get_schema=getattr(cls, '__get_pydantic_core_schema__', None),
+    )
+    if schema is None:
         return False
 
     core_config = config_wrapper.core_config(title=cls.__name__)
-
-    try:
-        schema = gen_schema.clean_schema(schema)
-    except gen_schema.CollectedInvalid:
-        set_dataclass_mocks(cls)
-        return False
 
     # We are about to set all the remaining required properties expected for this cast;
     # __pydantic_decorators__ and __pydantic_fields__ should already be set

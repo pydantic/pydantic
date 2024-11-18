@@ -109,15 +109,17 @@ class MockValSer(Generic[ValSer]):
         return None
 
 
-def set_type_adapter_mocks(adapter: TypeAdapter) -> None:
+def set_type_adapter_mocks(adapter: TypeAdapter, undefined_name: str | None = None) -> None:
     """Set `core_schema`, `validator` and `serializer` to mock core types on a type adapter instance.
 
     Args:
-        adapter: The type adapter instance to set the mocks on
+        adapter: The type adapter instance on which to set the mocks
+        undefined_name: Name of the undefined thing, used in error messages
     """
-    type_repr = str(adapter._type)
+    if undefined_name is None:
+        undefined_name = str(adapter._type)
     undefined_type_error_message = (
-        f'`TypeAdapter[{type_repr}]` is not fully defined; you should define `{type_repr}` and all referenced types,'
+        f'`{adapter!r}` is not fully defined; you should define `{undefined_name}` and all referenced types,'
         f' then call `.rebuild()` on the instance.'
     )
 

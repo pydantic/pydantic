@@ -21,9 +21,16 @@ from typing_extensions import ParamSpec, is_typeddict
 from pydantic.errors import PydanticUserError
 from pydantic.main import BaseModel, IncEx
 
-from ._internal import _config, _generate_schema, _mock_val_ser, _namespace_utils, _typing_extra, _utils
+from ._internal import (
+    _config,
+    _generate_schema,
+    _mock_val_ser,
+    _namespace_utils,
+    _schema_generation_shared,
+    _typing_extra,
+    _utils,
+)
 from .config import ConfigDict
-from .errors import PydanticUndefinedAnnotation
 from .json_schema import (
     DEFAULT_REF_TEMPLATE,
     GenerateJsonSchema,
@@ -267,20 +274,17 @@ class TypeAdapter(Generic[T]):
         except AttributeError:
             config_wrapper = _config.ConfigWrapper(self._config)
 
-            schema_generator = _generate_schema.GenerateSchema(config_wrapper, ns_resolver=ns_resolver)
+            gen_schema = _generate_schema.GenerateSchema(config_wrapper, ns_resolver=ns_resolver)
 
-            try:
-                core_schema = schema_generator.generate_schema(self._type)
-            except PydanticUndefinedAnnotation:
-                if raise_errors:
-                    raise
-                _mock_val_ser.set_type_adapter_mocks(self)
-                return False
-
-            try:
-                self.core_schema = schema_generator.clean_schema(core_schema)
-            except schema_generator.CollectedInvalid:
-                _mock_val_ser.set_type_adapter_mocks(self)
+            schema = _schema_generation_shared.get_schema_or_set_mocks(
+                schema_container=self,
+                schema_type=self._type,
+                set_mocks=_mock_val_ser.set_type_adapter_mocks,
+                gen_schema=gen_schema,
+                raise_errors=raise_errors,
+                get_schema=None,
+            )
+            if schema is None:
                 return False
 
             core_config = config_wrapper.core_config(None)
