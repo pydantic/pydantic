@@ -21,7 +21,7 @@ from typing_extensions import ParamSpec, is_typeddict
 from pydantic.errors import PydanticUserError
 from pydantic.main import BaseModel, IncEx
 
-from ._internal import _config, _generate_schema, _mock_val_ser, _namespace_utils, _typing_extra, _utils
+from ._internal import _config, _generate_schema, _mock_val_ser, _namespace_utils, _repr, _typing_extra, _utils
 from .config import ConfigDict
 from .errors import PydanticUndefinedAnnotation
 from .json_schema import (
@@ -312,6 +312,9 @@ class TypeAdapter(Generic[T]):
         if _utils.lenient_issubclass(type_, BaseModel):
             return type_.model_config
         return getattr(type_, '__pydantic_config__', None)
+
+    def __repr__(self) -> str:
+        return f'TypeAdapter[{_repr.display_as_type(self._type)}]'
 
     def rebuild(
         self,
