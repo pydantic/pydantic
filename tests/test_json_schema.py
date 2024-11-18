@@ -4813,8 +4813,8 @@ def test_model_with_schema_extra_callable_instance_method():
 
 def test_json_schema_override_field_nullable():
     class Model(BaseModel):
-        a: str | None = Field(..., json_schema_override={'nullable': False})
-        b: str | int | None = Field(..., json_schema_override={'nullable': False})
+        a: Optional[str] = Field(..., json_schema_override={'nullable': False})
+        b: Optional[Union[str, int]] = Field(..., json_schema_override={'nullable': False})
 
     json_schema = Model.model_json_schema()
     assert Model.model_json_schema()['properties']['a'] == {'type': 'string'}
@@ -4824,7 +4824,7 @@ def test_json_schema_override_field_nullable():
 def test_json_schema_override_field_required_true():
     class Model(BaseModel):
         a: str = Field(default='test', json_schema_override={'required': True})
-        b: str | int | None = Field(default='test')
+        b: Optional[Union[str, int]] = Field(default='test')
 
     json_schema = Model.model_json_schema()
     assert json_schema['required'] == ['a']
@@ -4847,8 +4847,8 @@ def test_json_schema_override_field_required_false():
 
 def test_json_schema_override_field_default():
     class Model(BaseModel):
-        a: str | None = Field(default=None, json_schema_override={'default': 'test2'})
-        b: str | None = Field(default='test', json_schema_override={'default': None})
+        a: Optional[str] = Field(default=None, json_schema_override={'default': 'test2'})
+        b: Optional[str] = Field(default='test', json_schema_override={'default': None})
         c: bool = Field(default=True, json_schema_override={'default': False})
 
     json_schema = Model.model_json_schema()
