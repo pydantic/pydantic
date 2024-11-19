@@ -1317,7 +1317,7 @@ class GenerateSchema:
             choices_with_tags: list[CoreSchema | tuple[CoreSchema, str]] = []
             for choice in choices:
                 metadata: CoreMetadata = choice.get('metadata', {})  # pyright: ignore[reportAssignmentType]
-                if (tag := metadata.get('pydantic_internal_tagged_union_tag')) is not None:
+                if (tag := metadata.get('pydantic_internal_union_tag')) is not None:
                     choices_with_tags.append((choice, tag))
                 else:
                     choices_with_tags.append(choice)

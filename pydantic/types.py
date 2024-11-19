@@ -2915,7 +2915,7 @@ class Tag:
         schema = handler(source_type)
         metadata: _core_metadata.CoreMetadata = schema.setdefault('metadata', {})  # pyright: ignore[reportAssignmentType]
         assert isinstance(metadata, dict)
-        metadata['pydantic_internal_tagged_union_tag'] = self.tag
+        metadata['pydantic_internal_union_tag'] = self.tag
         return schema
 
 
@@ -3036,7 +3036,7 @@ class Discriminator:
                 choice, tag = choice
             metadata = cast('_core_metadata.CoreMetadata | None', choice.get('metadata'))
             if metadata is not None:
-                if (metadata_tag := metadata.get('pydantic_internal_tagged_union_tag')) is not None:
+                if (metadata_tag := metadata.get('pydantic_internal_union_tag')) is not None:
                     tag = metadata_tag
             if tag is None:
                 raise PydanticUserError(
