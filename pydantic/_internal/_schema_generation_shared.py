@@ -8,7 +8,6 @@ from pydantic_core import core_schema
 from typing_extensions import Literal
 
 from ..annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
-from ._mock_val_ser import MockCoreSchema
 
 if TYPE_CHECKING:
     from ..json_schema import GenerateJsonSchema, JsonSchemaValue
@@ -124,15 +123,3 @@ class CallbackGetCoreSchemaHandler(GetCoreSchemaHandler):
         elif maybe_ref_schema['type'] == 'definitions':
             return self.resolve_ref_schema(maybe_ref_schema['schema'])
         return maybe_ref_schema
-
-
-def get_existing_core_schema(obj: Any) -> core_schema.CoreSchema | None:
-    # Only use the cached value from this _exact_ class; we don't want one from a parent class
-    # This is why we check `cls.__dict__` and don't use `cls.__pydantic_core_schema__` or similar.
-    if (
-        hasattr(obj, '__dict__')
-        and (existing_schema := obj.__dict__.get('__pydantic_core_schema__')) is not None
-        and not isinstance(existing_schema, MockCoreSchema)
-    ):
-        return existing_schema
-    return None

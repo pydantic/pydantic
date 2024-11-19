@@ -443,3 +443,7 @@ def test_circular_type_aliases() -> None:
 
     assert exc_info.value.code == 'circular-reference-schema'
     assert exc_info.value.message.startswith('tests.test_type_alias_type.C')
+
+
+def test_foobar():
+    TypeAdapter(TypeAliasType('A', str))

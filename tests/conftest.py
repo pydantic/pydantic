@@ -18,8 +18,7 @@ from _pytest.assertion.rewrite import AssertionRewritingHook
 from jsonschema import Draft202012Validator, SchemaError
 from pydantic_core import core_schema
 
-from pydantic._internal._generate_schema import GenerateSchema
-from pydantic._internal._schema_generation_shared import get_existing_core_schema
+from pydantic._internal._generate_schema import GenerateSchema, get_existing_core_schema
 from pydantic.json_schema import GenerateJsonSchema
 
 

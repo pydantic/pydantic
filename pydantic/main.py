@@ -36,13 +36,13 @@ from ._internal import (
     _decorators,
     _fields,
     _forward_ref,
+    _generate_schema,
     _generics,
     _import_utils,
     _mock_val_ser,
     _model_construction,
     _namespace_utils,
     _repr,
-    _schema_generation_shared,
     _typing_extra,
     _utils,
 )
@@ -684,7 +684,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         Returns:
             A `pydantic-core` `CoreSchema`.
         """
-        if (schema := _schema_generation_shared.get_existing_core_schema(cls)) is not None:
+        if (schema := _generate_schema.get_existing_core_schema(cls)) is not None:
             return schema
         return handler(source)
 

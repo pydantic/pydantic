@@ -64,7 +64,7 @@ from ..functional_validators import AfterValidator, BeforeValidator, FieldValida
 from ..json_schema import JsonSchemaValue
 from ..version import version_short
 from ..warnings import PydanticDeprecatedSince20
-from . import _decorators, _discriminated_union, _known_annotated_metadata, _typing_extra
+from . import _decorators, _discriminated_union, _known_annotated_metadata, _mock_val_ser, _typing_extra
 from ._config import ConfigWrapper, ConfigWrapperStack
 from ._core_metadata import CoreMetadata, update_core_metadata
 from ._core_utils import (
@@ -93,7 +93,7 @@ from ._forward_ref import PydanticRecursiveRef
 from ._generics import get_standard_typevars_map, has_instance_in_type, replace_types
 from ._import_utils import import_cached_base_model, import_cached_field_info
 from ._namespace_utils import NamespacesTuple, NsResolver
-from ._schema_generation_shared import CallbackGetCoreSchemaHandler, get_existing_core_schema
+from ._schema_generation_shared import CallbackGetCoreSchemaHandler
 from ._utils import lenient_issubclass
 
 if TYPE_CHECKING:
@@ -543,9 +543,9 @@ class GenerateSchema:
         Input:
         {"type": "definition-ref", "schema_ref": "Xyz"}
         Definitions:
-        {"Xyz": {"type": "string", "ref": "Xyz"}}
+        {"Xyz": {"type": "str", "ref": "Xyz"}}
         Output:
-        {"type": "string", "ref": "Xyz"}
+        {"type": "str", "ref": "Xyz"}
 
         Example for substituting discriminators:
         Input:
@@ -2581,3 +2581,15 @@ class _ModelTypeStack:
             return self._stack[-1]
         else:
             return None
+
+
+def get_existing_core_schema(obj: Any) -> core_schema.CoreSchema | None:
+    # Only use the cached value from this _exact_ class; we don't want one from a parent class
+    # This is why we check `cls.__dict__` and don't use `cls.__pydantic_core_schema__` or similar.
+    if (
+        hasattr(obj, '__dict__')
+        and (existing_schema := obj.__dict__.get('__pydantic_core_schema__')) is not None
+        and not isinstance(existing_schema, _mock_val_ser.MockCoreSchema)
+    ):
+        return existing_schema
+    return None

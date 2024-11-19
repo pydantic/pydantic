@@ -3034,7 +3034,7 @@ class Discriminator:
             tag = None
             if isinstance(choice, tuple):
                 choice, tag = choice
-            metadata: _core_metadata.CoreMetadata | None = choice.get('metadata')  # pyright: ignore[reportAssignmentType]
+            metadata = cast(_core_metadata.CoreMetadata | None, choice.get('metadata'))
             if metadata is not None:
                 if (metadata_tag := metadata.get('pydantic_internal_tagged_union_tag')) is not None:
                     tag = metadata_tag

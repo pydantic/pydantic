@@ -22,8 +22,11 @@ class CoreMetadata(TypedDict, total=False):
             prefer positional over keyword arguments for an 'arguments' schema.
         pydantic_js_input_core_schema: Schema associated with the input value for the associated
             custom validation function. Only applies to before, plain, and wrap validators.
-        pydantic_js_udpates: key / value pair updates to apply to the JSON schema for a type.
+        pydantic_js_updates: key / value pair updates to apply to the JSON schema for a type.
         pydantic_js_extra: WIP, either key/value pair updates to apply to the JSON schema, or a custom callable.
+        pydantic_internal_tagged_union_tag: Used internally to specify the tag used for a discriminated union.
+        pydantic_internal_union_discriminator: Used internally to specify discriminator for a discriminated union
+            when its built deferred.
 
     TODO: Perhaps we should move this structure to pydantic-core. At the moment, though,
     it's easier to iterate on if we leave it in pydantic until we feel there is a semi-stable API.
@@ -40,12 +43,8 @@ class CoreMetadata(TypedDict, total=False):
     pydantic_js_input_core_schema: CoreSchema
     pydantic_js_updates: JsonDict
     pydantic_js_extra: JsonDict | JsonSchemaExtraCallable
-
     pydantic_internal_tagged_union_tag: str
-    """Used internally to specify the tag used for a discriminated union."""
-
     pydantic_internal_union_discriminator: str
-    """Used internally to specify discriminator for a discriminated union when its built deferred."""
 
 
 def update_core_metadata(

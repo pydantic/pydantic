@@ -1,6 +1,6 @@
 from __future__ import annotations as _annotations
 
-from typing import TYPE_CHECKING, Any, Hashable, Sequence
+from typing import TYPE_CHECKING, Any, Hashable, Sequence, cast
 
 from pydantic_core import CoreSchema, core_schema
 
@@ -27,7 +27,7 @@ def set_discriminator_in_metadata(schema: CoreSchema, discriminator: Any) -> Non
     """Sets the discriminator in the metadata of the schema. Used for deferred discriminator application.
     These are gathered for schema cleaning in pydantic-core.
     """
-    metadata: CoreMetadata = schema.setdefault('metadata', {})  # pyright: ignore[reportAssignmentType]
+    metadata = cast(CoreMetadata, schema.setdefault('metadata', {}))
     metadata['pydantic_internal_union_discriminator'] = discriminator
 
 
