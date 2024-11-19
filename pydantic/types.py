@@ -1086,7 +1086,7 @@ if TYPE_CHECKING:
 
 else:
 
-    class AwareDatetime:
+    class AwareDatetime(datetime):
         """A datetime that requires timezone info."""
 
         @classmethod
@@ -1105,7 +1105,7 @@ else:
         def __repr__(self) -> str:
             return 'AwareDatetime'
 
-    class NaiveDatetime:
+    class NaiveDatetime(datetime):
         """A datetime that doesn't require timezone info."""
 
         @classmethod
