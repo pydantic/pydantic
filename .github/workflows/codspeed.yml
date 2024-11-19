@@ -59,7 +59,7 @@ jobs:
           path: pydantic-core
 
       - name: install pydantic-core with profiling symbols
-        run: uv run bash -c "cd ../pydantic-core && make build-pgo"
+        run: uv run bash -c "cd pydantic-core && make build-pgo"
         env:
           CARGO_PROFILE_RELEASE_DEBUG: "line-tables-only"
 
