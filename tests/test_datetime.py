@@ -44,12 +44,12 @@ def past_datetime_type(request):
     return request.param
 
 
-@pytest.fixture(scope='module', params=[AwareDatetime, Annotated[datetime, AwareDatetime()]])
+@pytest.fixture(scope='module', params=[AwareDatetime, Annotated[datetime, AwareDatetime(year=1)]])
 def aware_datetime_type(request):
     return request.param
 
 
-@pytest.fixture(scope='module', params=[NaiveDatetime, Annotated[datetime, NaiveDatetime()]])
+@pytest.fixture(scope='module', params=[NaiveDatetime, Annotated[datetime, NaiveDatetime(year=1)]])
 def naive_datetime_type(request):
     return request.param
 
