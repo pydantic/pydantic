@@ -29,7 +29,6 @@ node_modules/
 /worktree/
 
 /.editorconfig
-/.pdm-python
 /*.lcov
 /*.profdata
 /*.profraw
