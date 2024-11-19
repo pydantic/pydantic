@@ -114,7 +114,7 @@ class CallbackGetCoreSchemaHandler(GetCoreSchemaHandler):
         """
         if maybe_ref_schema['type'] == 'definition-ref':
             ref = maybe_ref_schema['schema_ref']
-            definition = self._generate_schema.defs.get_def(ref)
+            definition = self._generate_schema.defs.get_from_ref(ref)
             if definition is None:
                 raise LookupError(
                     f'Could not find a ref for {ref}.'

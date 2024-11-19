@@ -2058,14 +2058,14 @@ class GenerateSchema:
         new_ref: str | None = None
         if ref is not None:
             new_ref = ref + f'_{repr(metadata)}'
-            if (existing := self.defs.get_def(new_ref)) is not None:  # type: ignore
+            if (existing := self.defs.get_from_ref(new_ref)) is not None:  # type: ignore
                 return existing
         elif schema['type'] == 'definition-ref':
             ref = schema['schema_ref']
-            if (referenced_schema := self.defs.get_def(ref)) is not None:
+            if (referenced_schema := self.defs.get_from_ref(ref)) is not None:
                 schema = referenced_schema
                 new_ref = ref + f'_{repr(metadata)}'
-                if (existing := self.defs.get_def(new_ref)) is not None:
+                if (existing := self.defs.get_from_ref(new_ref)) is not None:
                     return existing
 
         maybe_updated_schema = _known_annotated_metadata.apply_known_metadata(
@@ -2417,10 +2417,10 @@ class _Definitions:
         self.used_deferred_discriminators = False
         self._recursively_seen: set[str] = set()
         self._definitions: dict[str, CoreSchema] = {}
-        # Def schema instances of another model, not to be exposed via get_def
+        # Def schema instances of another model, not to be exposed via get_from_ref
         self._unpacked_definitions: dict[str, CoreSchema] = {}
 
-    def get_def(self, ref: str) -> CoreSchema | None:
+    def get_from_ref(self, ref: str) -> CoreSchema | None:
         return self._definitions.get(ref)
 
     def reference_schema(self, schema: CoreSchema) -> core_schema.DefinitionReferenceSchema:
@@ -2538,7 +2538,7 @@ class _Definitions:
 
 def resolve_original_schema(schema: CoreSchema, definitions: _Definitions) -> CoreSchema | None:
     if schema['type'] == 'definition-ref':
-        return definitions.get_def(schema['schema_ref'])
+        return definitions.get_from_ref(schema['schema_ref'])
     elif schema['type'] == 'definitions':
         return schema['schema']
     else:
