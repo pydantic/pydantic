@@ -25,7 +25,6 @@ from ._generate_schema import GenerateSchema
 from ._generics import get_standard_typevars_map
 from ._mock_val_ser import set_dataclass_mocks
 from ._namespace_utils import NsResolver
-from ._schema_generation_shared import CallbackGetCoreSchemaHandler
 from ._signature import generate_pydantic_signature
 from ._utils import LazyClassAttribute
 
