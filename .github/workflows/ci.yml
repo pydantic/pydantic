@@ -219,31 +219,29 @@ jobs:
         with:
           path: pydantic-core
 
-      - name: set up python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.13'
-
       - name: install rust stable
         uses: dtolnay/rust-toolchain@stable
 
       - name: cache rust
         uses: Swatinem/rust-cache@v2
 
+      - name: install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
       - name: install deps
         run: |
-          pip install pdm maturin
-          pdm venv create --with-pip
-          pdm install -G testing -G email
-          pdm run pip install maturin
-          pdm run bash -c 'cd ../pydantic-core && make build-dev'
+          uv sync --python 3.13 --extra timezone
+          uv pip install maturin pip
+          uv run bash -c 'cd ../pydantic-core && make build-dev'
         working-directory: pydantic
 
-      - run: pdm info && pdm list
+      - run: uv --version && uv pip list
         working-directory: pydantic
         # Run pytest with lax xfail because we often add tests to pydantic
         # which xfail on a pending release of pydantic-core
-      - run: pdm run pytest --override-ini=xfail_strict=False
+      - run: uv run pytest --override-ini=xfail_strict=False
         working-directory: pydantic
         env:
           PYDANTIC_PRIVATE_ALLOW_UNHANDLED_SCHEMA_TYPES: 1
