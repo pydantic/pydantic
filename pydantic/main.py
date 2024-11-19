@@ -86,10 +86,10 @@ def _model_field_setattr_handler(model: BaseModel, name: str, val: Any) -> None:
     model.__pydantic_fields_set__.add(name)
 
 
-SIMPLE_SETATTR_HANDLERS: Mapping[str, Callable[[BaseModel, str, Any], None]] = {
+_SIMPLE_SETATTR_HANDLERS: Mapping[str, Callable[[BaseModel, str, Any], None]] = {
     'model_field': _model_field_setattr_handler,
-    'validate_assignment': lambda model, name, val: model.__pydantic_validator__.validate_assignment(model, name, val),  # type: ignore
-    'private': lambda model, name, val: model.__pydantic_private__.__setitem__(name, val),  # type: ignore
+    'validate_assignment': lambda model, name, val: model.__pydantic_validator__.validate_assignment(model, name, val),  # pyright: ignore[reportAssignmentType]
+    'private': lambda model, name, val: model.__pydantic_private__.__setitem__(name, val),  # pyright: ignore[reportOptionalMemberAccess]
     'cached_property': lambda model, name, val: model.__dict__.__setitem__(name, val),
     'extra_known': lambda model, name, val: _object_setattr(model, name, val),
 }
@@ -909,16 +909,18 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         def __setattr__(self, name: str, value: Any) -> None:
             if (setattr_handler := self.__pydantic_setattr_handlers__.get(name)) is not None:
                 setattr_handler(self, name, value)
+            # if None is returned from _setattr_handler, the attribute was set directly
             elif (setattr_handler := self._setattr_handler(name, value)) is not None:
                 setattr_handler(self, name, value)  # call here to not memo on possibly unknown fields
                 self.__pydantic_setattr_handlers__[name] = setattr_handler  # memoize the handler for faster access
 
-        def _setattr_handler(self, name: str, value: Any) -> Callable[[BaseModel, Any, Any], None] | None:
+        def _setattr_handler(self, name: str, value: Any) -> Callable[[BaseModel, str, Any], None] | None:
             """Get a handler for setting an attribute on the model instance.
 
             Returns:
                 A handler for setting an attribute on the model instance. Used for memoization of the handler.
-                Gives None when memoization is not safe, then the attribute is set directly.
+                Memoizing the handlers leads to a dramatic performance improvement in `__setattr__`
+                Returns `None` when memoization is not safe, then the attribute is set directly.
             """
             cls = self.__class__
             if name in cls.__class_vars__:
@@ -931,7 +933,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                     if hasattr(attribute, '__set__'):
                         return lambda model, _name, val: attribute.__set__(model, val)
                     else:
-                        return SIMPLE_SETATTR_HANDLERS['private']
+                        return _SIMPLE_SETATTR_HANDLERS['private']
                 else:
                     _object_setattr(self, name, value)
                     return None  # Can not return memoized handler with possibly freeform attr names
@@ -946,9 +948,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             if isinstance(attr, property):
                 return lambda model, _name, val: attr.__set__(model, val)
             elif isinstance(attr, cached_property):
-                return SIMPLE_SETATTR_HANDLERS['cached_property']
+                return _SIMPLE_SETATTR_HANDLERS['cached_property']
             elif cls.model_config.get('validate_assignment'):
-                return SIMPLE_SETATTR_HANDLERS['validate_assignment']
+                return _SIMPLE_SETATTR_HANDLERS['validate_assignment']
             elif name not in cls.__pydantic_fields__:
                 if cls.model_config.get('extra') != 'allow':
                     # TODO - matching error
@@ -959,10 +961,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                     return None  # Can not return memoized handler with possibly freeform attr names
                 else:
                     # attribute _does_ exist, and was not in extra, so update it
-                    return SIMPLE_SETATTR_HANDLERS['extra_known']
+                    return _SIMPLE_SETATTR_HANDLERS['extra_known']
             else:
-                # Normal model field
-                return SIMPLE_SETATTR_HANDLERS['model_field']
+                return _SIMPLE_SETATTR_HANDLERS['model_field']
 
         def __delattr__(self, item: str) -> Any:
             if item in self.__private_attributes__:
