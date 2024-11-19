@@ -2922,8 +2922,9 @@ def test_setattr_handler_memo_does_not_inherit() -> None:
 
     m1.a = 2
     assert 'a' in Model1.__pydantic_setattr_handlers__
-    assert Model1.__pydantic_setattr_handlers__['a'] is not handler2
+    assert Model1.__pydantic_setattr_handlers__['a'] is handler2
     assert Model2.__pydantic_setattr_handlers__['a'] is handler2
+    assert m1.a == 2 and m2.a == 11
 
 
 def test_setattr_handler_does_not_memoize_unknown_field() -> None:

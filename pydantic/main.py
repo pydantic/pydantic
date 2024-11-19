@@ -81,6 +81,20 @@ IncEx: TypeAlias = Union[Set[int], Set[str], Mapping[int, Union['IncEx', bool]],
 _object_setattr = _model_construction.object_setattr
 
 
+def _model_field_setattr_handler(model: BaseModel, name: str, val: Any) -> None:
+    model.__dict__[name] = val
+    model.__pydantic_fields_set__.add(name)
+
+
+SIMPLE_SETATTR_HANDLERS: Mapping[str, Callable[[BaseModel, str, Any], None]] = {
+    'model_field': _model_field_setattr_handler,
+    'validate_assignment': lambda model, name, val: model.__pydantic_validator__.validate_assignment(model, name, val),  # type: ignore
+    'private': lambda model, name, val: model.__pydantic_private__.__setitem__(name, val),  # type: ignore
+    'cached_property': lambda model, name, val: model.__dict__.__setitem__(name, val),
+    'extra_known': lambda model, name, val: _object_setattr(model, name, val),
+}
+
+
 class BaseModel(metaclass=_model_construction.ModelMetaclass):
     """Usage docs: https://docs.pydantic.dev/2.10/concepts/models/
 
@@ -169,7 +183,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     This replaces `Model.__fields__` from Pydantic V1.
     """
 
-    __pydantic_setattr_handlers__: ClassVar[Dict[str, Callable[[BaseModel, Any], None]]]  # noqa: UP006
+    __pydantic_setattr_handlers__: ClassVar[Dict[str, Callable[[BaseModel, str, Any], None]]]  # noqa: UP006
     """`__setattr__` handlers. Memoizing the handlers leads to a dramatic performance improvement in `__setattr__`"""
 
     __pydantic_computed_fields__: ClassVar[Dict[str, ComputedFieldInfo]]  # noqa: UP006
@@ -894,12 +908,12 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         def __setattr__(self, name: str, value: Any) -> None:
             if (setattr_handler := self.__pydantic_setattr_handlers__.get(name)) is not None:
-                setattr_handler(self, value)
+                setattr_handler(self, name, value)
             elif (setattr_handler := self._setattr_handler(name, value)) is not None:
-                setattr_handler(self, value)  # call here to not memo on possibly unknown fields
+                setattr_handler(self, name, value)  # call here to not memo on possibly unknown fields
                 self.__pydantic_setattr_handlers__[name] = setattr_handler  # memoize the handler for faster access
 
-        def _setattr_handler(self, name: str, value: Any) -> Callable[[BaseModel, Any], None] | None:
+        def _setattr_handler(self, name: str, value: Any) -> Callable[[BaseModel, Any, Any], None] | None:
             """Get a handler for setting an attribute on the model instance.
 
             Returns:
@@ -915,9 +929,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             elif not _fields.is_valid_field_name(name):
                 if (attribute := cls.__private_attributes__.get(name)) is not None:
                     if hasattr(attribute, '__set__'):
-                        return lambda m, val: attribute.__set__(m, val)
+                        return lambda model, _name, val: attribute.__set__(model, val)
                     else:
-                        return lambda m, val: m.__pydantic_private__.__setitem__(name, val)
+                        return SIMPLE_SETATTR_HANDLERS['private']
                 else:
                     _object_setattr(self, name, value)
                     return None  # Can not return memoized handler with possibly freeform attr names
@@ -930,11 +944,11 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             # (such as `cached_property`), it isn't obvious though. `cached_property` caches the value
             # to the instance's `__dict__`, but other non-data descriptors might do things differently.
             if isinstance(attr, property):
-                return lambda m, val: attr.__set__(m, val)
+                return lambda model, _name, val: attr.__set__(model, val)
             elif isinstance(attr, cached_property):
-                return lambda m, val: m.__dict__.__setitem__(name, val)
+                return SIMPLE_SETATTR_HANDLERS['cached_property']
             elif cls.model_config.get('validate_assignment'):
-                return lambda m, val: m.__pydantic_validator__.validate_assignment(m, name, val)
+                return SIMPLE_SETATTR_HANDLERS['validate_assignment']
             elif name not in cls.__pydantic_fields__:
                 if cls.model_config.get('extra') != 'allow':
                     # TODO - matching error
@@ -945,14 +959,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                     return None  # Can not return memoized handler with possibly freeform attr names
                 else:
                     # attribute _does_ exist, and was not in extra, so update it
-                    return lambda m, val: _object_setattr(m, name, val)
+                    return SIMPLE_SETATTR_HANDLERS['extra_known']
             else:
                 # Normal model field
-                def handler(m: BaseModel, val: Any) -> None:
-                    m.__dict__[name] = val
-                    m.__pydantic_fields_set__.add(name)
-
-                return handler
+                return SIMPLE_SETATTR_HANDLERS['model_field']
 
         def __delattr__(self, item: str) -> Any:
             if item in self.__private_attributes__:
