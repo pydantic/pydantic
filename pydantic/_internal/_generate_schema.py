@@ -625,7 +625,6 @@ class GenerateSchema:
                 # for generics, but for simplicity for now, we just always rebuild if the class has a generic origin:
                 and not cls.__pydantic_generic_metadata__['origin']
             ):
-                # TODO __get_validators__ compat
                 schema = self._unpack_refs_defs(schema)
                 ref = get_ref(schema)
                 if ref:
@@ -745,12 +744,11 @@ class GenerateSchema:
         return obj
 
     def _generate_schema_from_get_schema_method(self, obj: Any, source: Any) -> core_schema.CoreSchema | None:
-        if obj is source:
-            ref_mode = 'unpack'
-        else:
-            ref_mode = 'to-def'
-
         if (get_schema := getattr(obj, '__get_pydantic_core_schema__', None)) is not None:
+            if obj is source:
+                ref_mode = 'unpack'
+            else:
+                ref_mode = 'to-def'
             schema = get_schema(
                 source, CallbackGetCoreSchemaHandler(self._generate_schema_inner, self, ref_mode=ref_mode)
             )
@@ -762,6 +760,21 @@ class GenerateSchema:
                 return core_schema.definition_reference_schema(ref)
             else:
                 return schema
+
+        if (validators := getattr(obj, '__get_validators__', None)) is not None:
+            from pydantic.v1 import BaseModel as BaseModelV1
+
+            if issubclass(obj, BaseModelV1):
+                warn(
+                    f'Mixing V1 models and V2 models (or constructs, like `TypeAdapter`) is not supported. Please upgrade `{obj.__name__}` to V2.',
+                    UserWarning,
+                )
+            else:
+                warn(
+                    '`__get_validators__` is deprecated and will be removed, use `__get_pydantic_core_schema__` instead.',
+                    PydanticDeprecatedSince20,
+                )
+            return core_schema.chain_schema([core_schema.with_info_plain_validator_function(v) for v in validators()])
 
     def _resolve_forward_ref(self, obj: Any) -> Any:
         # we assume that types_namespace has the target of forward references in its scope,
