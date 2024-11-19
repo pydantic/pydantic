@@ -59,7 +59,7 @@ jobs:
           path: pydantic-core
 
       - name: install pydantic-core with profiling symbols
-        run:
+        run: |
           uv pip install pip
           uv run bash -c "cd pydantic-core && pip install -r tests/requirements.txt && pip uninstall pytest-speed && make build-pgo"
         env:
