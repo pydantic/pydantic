@@ -70,8 +70,7 @@ impl BuildSerializer for FormatSerializer {
     ) -> PyResult<CombinedSerializer> {
         let py = schema.py();
         let formatting_string: Bound<'_, PyString> = schema.get_as_req(intern!(py, "formatting_string"))?;
-        let formatting_string = formatting_string.to_str()?;
-        if formatting_string.is_empty() {
+        if formatting_string.is_empty()? {
             ToStringSerializer::build(schema, config, definitions)
         } else {
             Ok(Self {
@@ -79,7 +78,7 @@ impl BuildSerializer for FormatSerializer {
                     .import_bound(intern!(py, "builtins"))?
                     .getattr(intern!(py, "format"))?
                     .into_py(py),
-                formatting_string: PyString::new_bound(py, formatting_string).into(),
+                formatting_string: formatting_string.unbind(),
                 when_used: WhenUsed::new(schema, WhenUsed::JsonUnlessNone)?,
             }
             .into())
