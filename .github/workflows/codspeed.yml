@@ -31,12 +31,14 @@ jobs:
       - id: core-version
         name: resolve pydantic-core tag
         run: |
+          set -uex -o pipefail
+
           echo core-ref=$(python -c "
           import re
           import tomllib
 
           pyproject_toml = tomllib.loads(open('pyproject.toml').read())
-          core = next(d for d in pyproject_toml['dependecies'] if d.startswith('pydantic-core'))
+          core = next(d for d in pyproject_toml['project']['dependecies'] if d.startswith('pydantic-core'))
 
           if (result := re.search(r'==(.+)', core)) is not None:
             print(f'v{result.group(1)}')
@@ -57,8 +59,7 @@ jobs:
           path: pydantic-core
 
       - name: install pydantic-core with profiling symbols
-        run: uv run --python 3.12 make build-pgo
-        working-directory: pydantic-core
+        run: uv run --python 3.12 --directory pydantic-core make build-pgo
         env:
           CARGO_PROFILE_RELEASE_DEBUG: "line-tables-only"
 
