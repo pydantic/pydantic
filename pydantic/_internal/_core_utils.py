@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 from collections import defaultdict
 from typing import Any, Callable, Hashable, TypeVar, Union
+from weakref import WeakKeyDictionary
 
 from pydantic_core import CoreSchema, core_schema
 from pydantic_core import validate_core_schema as _validate_core_schema
@@ -66,12 +67,34 @@ def is_list_like_schema_with_items_schema(
     return schema['type'] in _LIST_LIKE_SCHEMA_WITH_ITEMS_TYPES
 
 
+class _TypeRefCache(WeakKeyDictionary):
+    def __setitem__(self, key: Any, value: Any) -> None:
+        if (size := len(self)) >= 1000:
+            for remove_key in [*self.keys()][: size // 10]:  # remove first 10% of the cache (FIFO)
+                del self[remove_key]
+        super().__setitem__(key, value)
+
+
+_TYPE_REF_CACHE = _TypeRefCache()
+
+
 def get_type_ref(type_: type[Any], args_override: tuple[type[Any], ...] | None = None) -> str:
     """Produces the ref to be used for this type by pydantic_core's core schemas.
 
     This `args_override` argument was added for the purpose of creating valid recursive references
     when creating generic models without needing to create a concrete class.
     """
+    if isinstance(type_, type) and not args_override:
+        if (cached := _TYPE_REF_CACHE.get(type_)) is not None:
+            return cached
+        ref = _get_type_ref(type_)
+        _TYPE_REF_CACHE[type_] = ref
+        return ref
+    else:
+        return _get_type_ref(type_, args_override)
+
+
+def _get_type_ref(type_: type[Any], args_override: tuple[type[Any], ...] | None = None) -> str:
     origin = get_origin(type_) or type_
 
     args = get_args(type_) if is_generic_alias(type_) else (args_override or ())
