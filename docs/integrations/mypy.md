@@ -5,7 +5,7 @@ features that improve its ability to type-check your code.
 
 For example, consider the following script:
 
-```py test="skip" linenums="1"
+```python test="skip" linenums="1"
 from datetime import datetime
 from typing import List, Optional
 

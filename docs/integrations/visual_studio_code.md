@@ -129,13 +129,13 @@ Below are several techniques to achieve it.
 
 You can disable the errors for a specific line using a comment of:
 
-```py
+```python
 # type: ignore
 ```
 
 or (to be specific to pylance/pyright):
 
-```py
+```python
 # pyright: ignore
 ```
 
@@ -260,7 +260,7 @@ in a model that is "frozen".
 
 Pylance/pyright requires `default` to be a keyword argument to `Field` in order to infer that the field is optional.
 
-```py
+```python
 from pydantic import BaseModel, Field
 
 

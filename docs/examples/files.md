@@ -179,7 +179,7 @@ Jane Doe,25,jane@example.com
 
 Here's how we validate that data:
 
-```py test="skip"
+```python test="skip"
 import csv
 
 from pydantic import BaseModel, EmailStr, PositiveInt
@@ -213,7 +213,7 @@ email = "john@example.com"
 
 Here's how we validate that data:
 
-```py test="skip"
+```python test="skip"
 import tomllib
 
 from pydantic import BaseModel, EmailStr, PositiveInt

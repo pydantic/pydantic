@@ -31,7 +31,7 @@ print(repr(user))
 The [`TypeAdapter`][pydantic.type_adapter.TypeAdapter] tool from Pydantic often comes in quite
 handy when working with HTTP requests. Consider a similar example where we are validating a list of users:
 
-```py test="skip"
+```python test="skip"
 from pprint import pprint
 from typing import List
 

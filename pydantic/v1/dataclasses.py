@@ -12,7 +12,7 @@ with validation triggered at initialization
 
 The tricky part if for stdlib dataclasses that are converted after into pydantic ones e.g.
 
-```py
+```python
 @dataclasses.dataclass
 class M:
     x: int
@@ -22,7 +22,7 @@ ValidatedM = pydantic.dataclasses.dataclass(M)
 
 We indeed still want to support equality, hashing, repr, ... as if it was the stdlib one!
 
-```py
+```python
 assert isinstance(ValidatedM(x=1), M)
 assert ValidatedM(x=1) == M(x=1)
 ```

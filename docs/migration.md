@@ -188,7 +188,7 @@ to help ease migration, but calling them will emit `DeprecationWarning`s.
 If you'd still like to use said arguments, you can use [this workaround](https://github.com/pydantic/pydantic/issues/8825#issuecomment-1946206415).
 * JSON serialization of non-string key values is generally done with `str(key)`, leading to some changes in behavior such as the following:
 
-```py
+```python
 from typing import Dict, Optional
 
 from pydantic import BaseModel as V2BaseModel
@@ -218,7 +218,7 @@ print(v2_model.model_dump_json())
 * `model_dump_json()` results are compacted in order to save space, and don't always exactly match that of `json.dumps()` output.
 That being said, you can easily modify the separators used in `json.dumps()` results in order to align the two outputs:
 
-```py
+```python
 import json
 from typing import List
 
@@ -677,7 +677,7 @@ The following table describes the behavior of field annotations in V2:
     Any default value if provided makes a field not required.
 
 Here is a code example demonstrating the above:
-```py
+```python
 from typing import Optional
 
 from pydantic import BaseModel, ValidationError
@@ -838,7 +838,7 @@ Some of the URL validation differs slightly from the previous behavior in V1.
 One notable difference is that the new `Url` types append slashes to the validated version if no path is included,
 even if a slash is not specified in the argument to a `Url` type constructor. See the example below for this behavior:
 
-```py
+```python
 from pydantic import AnyUrl
 
 assert str(AnyUrl(url='https://google.com')) == 'https://google.com/'
@@ -854,7 +854,7 @@ If you still want to use the old behavior without the appended slash, take a loo
 
 The `Constrained*` classes were _removed_, and you should replace them by `Annotated[<type>, Field(...)]`, for example:
 
-```py test="skip"
+```python test="skip"
 from pydantic import BaseModel, ConstrainedInt
 
 
@@ -868,7 +868,7 @@ class Model(BaseModel):
 
 ...becomes:
 
-```py
+```python
 from typing_extensions import Annotated
 
 from pydantic import BaseModel, Field

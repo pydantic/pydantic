@@ -1089,7 +1089,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             """This signature is included purely to help type-checkers check arguments to class declaration, which
             provides a way to conveniently set model_config key/value pairs.
 
-            ```py
+            ```python
             from pydantic import BaseModel
 
             class MyModel(BaseModel, extra='allow'): ...
@@ -1378,7 +1378,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         If you need `include` or `exclude`, use:
 
-        ```py
+        ```python
         data = self.model_dump(include=include, exclude=exclude, round_trip=True)
         data = {**data, **(update or {})}
         copied = self.model_validate(data)
