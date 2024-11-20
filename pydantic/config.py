@@ -598,17 +598,17 @@ class ConfigDict(TypedDict, total=False):
     """Whether to validate default values during validation. Defaults to `False`."""
 
     validate_return: bool
-    """whether to validate the return value from call validators. Defaults to `False`."""
+    """Whether to validate the return value from call validators. Defaults to `False`."""
 
     protected_namespaces: tuple[str | Pattern[str], ...]
     """
     A `tuple` of strings and/or patterns that prevent models from having fields with names that conflict with them.
     For strings, we match on a prefix basis. Ex, if 'dog' is in the protected namespace, 'dog_name' will be protected.
     For patterns, we match on the entire field name. Ex, if `re.compile(r'^dog$')` is in the protected namespace, 'dog' will be protected, but 'dog_name' will not be.
-    Defaults to `('model_validate', 'model_dump')`).
+    Defaults to `('model_validate', 'model_dump',)`.
 
     The reason we've selected these is to prevent collisions with other validation / dumping formats
-    in the future - ex, model_validate_{some_newly_supported_format}.
+    in the future - ex, `model_validate_{some_newly_supported_format}`.
 
     Before v2.10, Pydantic used `('model_',)` as the default value for this setting to
     prevent collisions between model attributes and `BaseModel`'s own methods. This was changed
