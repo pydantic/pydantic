@@ -67,7 +67,7 @@ BUILTIN_COLLECTIONS: set[type[Any]] = {
 def can_be_positional(param: Parameter) -> bool:
     """Return whether the parameter accepts a positional argument.
 
-    ```python test="skip" lint="skip"
+    ```python {test="skip" lint="skip"}
     def func(a, /, b, *, c):
         pass
 

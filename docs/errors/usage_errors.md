@@ -80,7 +80,7 @@ The `__modify_schema__` method is no longer supported in V2. You should use the 
 
 The `__modify_schema__` used to receive a single argument representing the JSON schema. See the example below:
 
-```py title="Old way"
+```python {title="Old way"}
 from pydantic import BaseModel, PydanticUserError
 
 try:
@@ -98,7 +98,7 @@ The new method `__get_pydantic_json_schema__` receives two arguments: the first 
 and the second a callable `handler` that receives a `CoreSchema` as parameter, and returns a JSON schema. See the example
 below:
 
-```py title="New way"
+```python {title="New way"}
 from typing import Any, Dict
 
 from pydantic_core import CoreSchema
@@ -528,13 +528,13 @@ This error is raised when a circular reference is found that would otherwise res
 
 For example, this is a valid type alias:
 
-```py test="skip" lint="skip" upgrade="skip"
+```python {test="skip" lint="skip" upgrade="skip"}
 type A = list[A] | None
 ```
 
 while these are not:
 
-```py test="skip" lint="skip" upgrade="skip"
+```python {test="skip" lint="skip" upgrade="skip"}
 type A = A
 
 type B = C
@@ -904,7 +904,7 @@ except PydanticUserError as exc_info:
 
 Valid field serializer signatures are:
 
-```py test="skip" lint="skip" upgrade="skip"
+```python {test="skip" lint="skip" upgrade="skip"}
 from pydantic import FieldSerializationInfo, SerializerFunctionWrapHandler, field_serializer
 
 # an instance method with the default mode or `mode='plain'`
@@ -963,7 +963,7 @@ except PydanticUserError as exc_info:
 
 Valid model serializer signatures are:
 
-```py test="skip" lint="skip" upgrade="skip"
+```python {test="skip" lint="skip" upgrade="skip"}
 from pydantic import SerializerFunctionWrapHandler, SerializationInfo, model_serializer
 
 # an instance method with the default mode or `mode='plain'`
@@ -1087,7 +1087,7 @@ except PydanticUserError as exc_info:
 Because type annotations are evaluated *after* assignments, you might get unexpected results when using a type annotation name
 that clashes with one of your fields. We raise an error in the following case:
 
-```py test="skip"
+```python {test="skip"}
 from datetime import date
 
 from pydantic import BaseModel, Field
@@ -1099,7 +1099,7 @@ class Model(BaseModel):
 
 As a workaround, you can either use an alias or change your import:
 
-```py lint="skip"
+```python {lint="skip"}
 import datetime
 # Or `from datetime import date as _date`
 
@@ -1117,7 +1117,7 @@ while any of the fields have `init=False` set.
 
 Thus, you may not do something like the following:
 
-```py test="skip"
+```python {test="skip"}
 from pydantic import ConfigDict, Field
 from pydantic.dataclasses import dataclass
 
@@ -1138,7 +1138,7 @@ This combination is not allowed.
 
 The `init=False` and `init_var=True` settings are mutually exclusive. Doing so results in the `PydanticUserError` shown in the example below.
 
-```py test="skip"
+```python {test="skip"}
 from pydantic import Field
 from pydantic.dataclasses import dataclass
 

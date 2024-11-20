@@ -63,13 +63,13 @@ by importing through `pydantic.v1`.
 For example, you can use the `BaseModel` class from Pydantic V1 instead of the
 Pydantic V2 `pydantic.BaseModel` class:
 
-```python test="skip" lint="skip" upgrade="skip"
+```python {test="skip" lint="skip" upgrade="skip"}
 from pydantic.v1 import BaseModel
 ```
 
 You can also import functions that have been removed from Pydantic V2, such as `lenient_isinstance`:
 
-```python test="skip" lint="skip" upgrade="skip"
+```python {test="skip" lint="skip" upgrade="skip"}
 from pydantic.v1.utils import lenient_isinstance
 ```
 
@@ -85,13 +85,13 @@ features, take the following steps:
 1. Replace `pydantic<2` with `pydantic>=1.10.17`
 2. Find and replace all occurrences of:
 
-```python test="skip" lint="skip" upgrade="skip"
+```python {test="skip" lint="skip" upgrade="skip"}
 from pydantic.<module> import <object>
 ```
 
 with:
 
-```python test="skip" lint="skip" upgrade="skip"
+```python {test="skip" lint="skip" upgrade="skip"}
 from pydantic.v1.<module> import <object>
 ```
 
@@ -100,7 +100,7 @@ Here's how you can import `pydantic`'s v1 features based on your version of `pyd
 === "`pydantic>=1.10.17,<3`"
     As of `v1.10.17` the `.v1` namespace is available in V1, allowing imports as below:
 
-    ```python test="skip" lint="skip" upgrade="skip"
+    ```python {test="skip" lint="skip" upgrade="skip"}
     from pydantic.v1.fields import ModelField
     ```
 
@@ -108,7 +108,7 @@ Here's how you can import `pydantic`'s v1 features based on your version of `pyd
     All versions of Pydantic V1 and V2 support the following import pattern, in case you don't
     know which version of Pydantic you are using:
 
-    ```python test="skip" lint="skip" upgrade="skip"
+    ```python {test="skip" lint="skip" upgrade="skip"}
     try:
         from pydantic.v1.fields import ModelField
     except ImportError:
@@ -382,7 +382,7 @@ See the [`ConfigDict` API reference][pydantic.config.ConfigDict] for more detail
     To avoid this, you can use the `validate_default` argument in the `Field` function. When set to `True`, it mimics the behavior of `always=True` in Pydantic v1. However, the new way of using `validate_default` is encouraged as it provides more flexibility and control.
 
 
-```python test="skip"
+```python {test="skip"}
 from pydantic import BaseModel, validator
 
 
@@ -740,7 +740,7 @@ print(adapter.json_schema())
 Due to limitations of inferring generic types with common type checkers, to get proper typing in some scenarios, you
 may need to explicitly specify the generic parameter:
 
-```python test="skip"
+```python {test="skip"}
 from pydantic import TypeAdapter
 
 adapter = TypeAdapter[str | int](str | int)
@@ -854,7 +854,7 @@ If you still want to use the old behavior without the appended slash, take a loo
 
 The `Constrained*` classes were _removed_, and you should replace them by `Annotated[<type>, Field(...)]`, for example:
 
-```py test="skip"
+```python {test="skip"}
 from pydantic import BaseModel, ConstrainedInt
 
 

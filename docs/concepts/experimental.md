@@ -191,7 +191,7 @@ It can take the following values (and is `False`, by default):
 
     And would be validated as:
 
-    ```python test="skip" lint="skip"
+    ```python {test="skip" lint="skip"}
     {'a': 'hello', 'b': 'wor'}
     ```
 
@@ -291,7 +291,7 @@ The point is that if you only see part of some valid input data, validation erro
 
 To avoid these errors breaking partial validation, Pydantic will ignore ALL errors in the last element of the input data.
 
-```py title="Errors in last element ignored"
+```python {title="Errors in last element ignored"}
 from typing import List
 
 from annotated_types import MinLen

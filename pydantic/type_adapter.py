@@ -109,7 +109,7 @@ class TypeAdapter(Generic[T]):
         ```
 
         b.py
-        ```python test="skip"
+        ```python {test="skip"}
         from a import OuterDict
 
         from pydantic import TypeAdapter

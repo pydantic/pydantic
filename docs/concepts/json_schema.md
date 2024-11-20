@@ -42,7 +42,7 @@ Use the following functions to generate JSON schema:
 
 Here's an example of generating JSON schema from a `BaseModel`:
 
-```py output="json"
+```python {output="json"}
 import json
 from enum import Enum
 from typing import Union
@@ -180,7 +180,7 @@ print(adapter.json_schema())
 You can also generate JSON schemas for combinations of [`BaseModel`s][pydantic.main.BaseModel]
 and [`TypeAdapter`s][pydantic.type_adapter.TypeAdapter], as shown in this example:
 
-```py output="json"
+```python {output="json"}
 import json
 from typing import Union
 
@@ -334,7 +334,7 @@ Some field parameters are used exclusively to customize the generated JSON Schem
 
 Here's an example:
 
-```py output="json"
+```python {output="json"}
 import json
 
 from pydantic import BaseModel, EmailStr, Field, SecretStr
@@ -445,7 +445,7 @@ print(ModelB.model_json_schema())
 
 You can specify JSON schema modifications via the [`Field`][pydantic.fields.Field] constructor via [`typing.Annotated`][] as well:
 
-```py output="json"
+```python {output="json"}
 import json
 from uuid import uuid4
 
@@ -548,7 +548,7 @@ You can pass a `dict` or a `Callable` to `json_schema_extra`.
 
 You can pass a `dict` to `json_schema_extra` to add extra information to the JSON schema:
 
-```py output="json"
+```python {output="json"}
 import json
 
 from pydantic import BaseModel, ConfigDict
@@ -587,7 +587,7 @@ print(json.dumps(Model.model_json_schema(), indent=2))
 
 You can pass a `Callable` to `json_schema_extra` to modify the JSON schema with a function:
 
-```py output="json"
+```python {output="json"}
 import json
 
 from pydantic import BaseModel, Field
@@ -676,7 +676,7 @@ would otherwise raise an error when producing a JSON schema because the [`PlainV
 is a `Callable`. However, by using the [`WithJsonSchema`][pydantic.json_schema.WithJsonSchema]
 annotation, we can override the generated JSON schema for the custom `MyInt` type:
 
-```py output="json"
+```python {output="json"}
 import json
 
 from typing_extensions import Annotated
@@ -1039,7 +1039,7 @@ Modifying this method only affects the JSON schema - it doesn't affect the core 
 
 Here's an example of modifying the generated JSON schema:
 
-```py output="json"
+```python {output="json"}
 import json
 from typing import Any
 
@@ -1225,7 +1225,7 @@ The field schema mapping from Python or Pydantic to JSON schema is done as follo
 You can also generate a top-level JSON schema that only includes a list of models and related
 sub-models in its `$defs`:
 
-```py output="json"
+```python {output="json"}
 import json
 
 from pydantic import BaseModel
@@ -1450,7 +1450,7 @@ The definitions are always stored under the key `$defs`, but a specified prefix 
 
 This is useful if you need to extend or modify the JSON schema default definitions location. For example, with OpenAPI:
 
-```py output="json"
+```python {output="json"}
 import json
 
 from pydantic import BaseModel

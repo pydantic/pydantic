@@ -742,7 +742,7 @@ print(Model.model_json_schema()['properties']['deprecated_field'])
     You can only use the `deprecated` decorator in this way if you have
     `typing_extensions` >= 4.9.0 installed.
 
-```py test="skip"
+```python {test="skip"}
 import importlib.metadata
 
 from packaging.version import Version

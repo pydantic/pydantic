@@ -60,7 +60,7 @@ of the resultant model instance will conform to the field types defined on the m
     - The [Type System Guides](https://typing.readthedocs.io/en/latest/guides/index.html)
     - The [mypy documentation](https://mypy.readthedocs.io/en/latest/)
 
-```py group="basic-model"
+```python {group="basic-model"}
 from pydantic import BaseModel
 
 
@@ -76,7 +76,7 @@ In this example, `User` is a model with two fields:
 
 The model can then be instantiated:
 
-```py group="basic-model"
+```python {group="basic-model"}
 user = User(id='123')
 ```
 
@@ -86,7 +86,7 @@ you know the resulting model instance is valid.
 
 Fields of a model can be accessed as normal attributes of the `user` object:
 
-```py group="basic-model"
+```python {group="basic-model"}
 assert user.name == 'Jane Doe'  # (1)!
 assert user.id == 123  # (2)!
 assert isinstance(user.id, int)
@@ -100,7 +100,7 @@ assert isinstance(user.id, int)
 
 The model instance can be serialized using the [`model_dump`][pydantic.BaseModel.model_dump] method:
 
-```py group="basic-model"
+```python {group="basic-model"}
 assert user.model_dump() == {'id': 123, 'name': 'Jane Doe'}
 ```
 
@@ -110,7 +110,7 @@ provides numerous arguments to customize the serialization result.
 
 By default, models are mutable and field values can be changed through attribute assignment:
 
-```py group="basic-model"
+```python {group="basic-model"}
 user.id = 321
 assert user.id == 321
 ```
@@ -120,7 +120,7 @@ assert user.id == 321
 
     For example, the following will not behave as expected and would yield a validation error:
 
-    ```py test="skip"
+    ```python {test="skip"}
     from typing import Optional
 
     from pydantic import BaseModel
@@ -816,7 +816,7 @@ except ValidationError as e:
 
     If you need to perform [`isinstance()`](https://docs.python.org/3/library/functions.html#isinstance) checks against parametrized generics, you can do this by subclassing the parametrized generic class:
 
-    ```py test="skip" lint="skip"
+    ```python {test="skip" lint="skip"}
     class MyIntModel(MyGenericModel[int]): ...
 
     isinstance(my_model, MyIntModel)
@@ -856,7 +856,7 @@ except ValidationError as e:
     Then, the validators will be called again on the second pass, during more lax force-revalidation phase, which succeeds.
     To better understand this consequence, see below:
 
-    ```py test="skip"
+    ```python {test="skip"}
     from typing import Any, Generic, Self, TypeVar
 
     from pydantic import BaseModel, model_validator
@@ -1187,7 +1187,7 @@ print(BarModel.model_fields.keys())
 
 You can also add validators by passing a dictionary to the `__validators__` argument.
 
-```py rewrite_assert="false"
+```python {rewrite_assert="false"}
 from pydantic import ValidationError, create_model, field_validator
 
 
@@ -1655,7 +1655,7 @@ a `**data` argument will be added. In addition, the `**data` argument will alway
 
 Pydantic supports structural pattern matching for models, as introduced by [PEP 636](https://peps.python.org/pep-0636/) in Python 3.10.
 
-```py requires="3.10" lint="skip"
+```python {requires="3.10" lint="skip"}
 from pydantic import BaseModel
 
 

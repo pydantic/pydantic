@@ -24,7 +24,7 @@ Pydantic provides two special types for convenience when using `validation_alias
 
 The `AliasPath` is used to specify a path to a field using aliases. For example:
 
-```py lint="skip"
+```python {lint="skip"}
 from pydantic import BaseModel, Field, AliasPath
 
 
@@ -46,7 +46,7 @@ In the `'last_name'` field, we are using the alias `'names'` and the index `1` t
 
 `AliasChoices` is used to specify a choice of aliases. For example:
 
-```py lint="skip"
+```python {lint="skip"}
 from pydantic import BaseModel, Field, AliasChoices
 
 
@@ -68,7 +68,7 @@ print(user)
 
 You can also use `AliasChoices` with `AliasPath`:
 
-```py lint="skip"
+```python {lint="skip"}
 from pydantic import BaseModel, Field, AliasPath, AliasChoices
 
 

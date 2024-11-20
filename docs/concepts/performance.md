@@ -23,7 +23,7 @@ the function is called. Instead, instantiate it once, and reuse it.
 
 === ":x: Bad"
 
-    ```py lint="skip"
+    ```python {lint="skip"}
     from typing import List
 
     from pydantic import TypeAdapter
@@ -36,7 +36,7 @@ the function is called. Instead, instantiate it once, and reuse it.
 
 === ":white_check_mark: Good"
 
-    ```py lint="skip"
+    ```python {lint="skip"}
     from typing import List
 
     from pydantic import TypeAdapter
@@ -100,7 +100,7 @@ model = Model(a=1)
 
 Tagged union (or discriminated union) is a union with a field that indicates which type it is.
 
-```py test="skip"
+```python {test="skip"}
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field
@@ -145,7 +145,7 @@ Instead of using nested models, use `TypedDict` to define the structure of the d
 ??? info "Performance comparison"
     With a simple benchmark, `TypedDict` is about ~2.5x faster than nested models:
 
-    ```py test="skip"
+    ```python {test="skip"}
     from timeit import timeit
 
     from typing_extensions import TypedDict
