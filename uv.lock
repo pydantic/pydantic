@@ -1751,16 +1751,16 @@ wheels = [
 
 [[package]]
 name = "pytest-examples"
-version = "0.0.13"
+version = "0.0.15"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "black" },
     { name = "pytest" },
     { name = "ruff" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/0d/67/9d3486460bde76a5fd3709de38eea6cbeab7f41b1fe2c657f52a71b19575/pytest_examples-0.0.13.tar.gz", hash = "sha256:4d6fd78154953e84444f58f193eb6cc8d853bca7f0ee9f44ea75db043a2c19b5", size = 20445 }
+sdist = { url = "https://files.pythonhosted.org/packages/c3/82/fa4fb866d52934de97b90c84c89896faebfb984436804fc3baa55d48d511/pytest_examples-0.0.15.tar.gz", hash = "sha256:2d6ced2d1f0d59863f81a4d2f193737464b8004a7670907c3bedef6306a5d660", size = 20771 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/17/c4/9b639b46dc0aa246847c5d82171d4167218bcceb2108f566e25afdfd229f/pytest_examples-0.0.13-py3-none-any.whl", hash = "sha256:8c05cc66459199963c7970ff417300ae7e5b7b4c9d5bd859f1e74a35db75555b", size = 17313 },
+    { url = "https://files.pythonhosted.org/packages/ba/81/3f727a7d2f9c1ff36f581453949a4af314629108642d5140298476e90902/pytest_examples-0.0.15-py3-none-any.whl", hash = "sha256:6e4adc522bf2e3f93cae3b37a4add76fcc2c1ada29d8988b2ea15b236233ec0f", size = 17922 },
 ]
 
 [[package]]
