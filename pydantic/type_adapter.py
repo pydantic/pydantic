@@ -76,10 +76,44 @@ class TypeAdapter(Generic[T]):
 
     **Note:** `TypeAdapter` instances are not types, and cannot be used as type annotations for fields.
 
+    Args:
+        type: The type associated with the `TypeAdapter`.
+        config: Configuration for the `TypeAdapter`, should be a dictionary conforming to
+            [`ConfigDict`][pydantic.config.ConfigDict].
+
+            !!! note
+                You cannot provide a configuration when instantiating a `TypeAdapter` if the type you're using
+                has its own config that cannot be overridden (ex: `BaseModel`, `TypedDict`, and `dataclass`). A
+                [`type-adapter-config-unused`](../errors/usage_errors.md#type-adapter-config-unused) error will
+                be raised in this case.
+        _parent_depth: Depth at which to search for the [parent frame][frame-objects]. This frame is used when
+            resolving forward annotations during schema building, by looking for the globals and locals of this
+            frame. Defaults to 2, which will result in the frame where the `TypeAdapter` was instantiated.
+
+            !!! note
+                This parameter is named with an underscore to suggest its private nature and discourage use.
+                It may be deprecated in a minor version, so we only recommend using it if you're comfortable
+                with potential change in behavior/support. It's default value is 2 because internally,
+                the `TypeAdapter` class makes another call to fetch the frame.
+        module: The module that passes to plugin if provided.
+
     Attributes:
         core_schema: The core schema for the type.
-        validator (SchemaValidator): The schema validator for the type.
+        validator: The schema validator for the type.
         serializer: The schema serializer for the type.
+        pydantic_complete: Whether the core schema for the type is successfully built.
+
+    ??? tip "Compatibility with `mypy`"
+        Depending on the type used, `mypy` might raise an error when instantiating a `TypeAdapter`. As a workaround, you can explicitly
+        annotate your variable:
+
+        ```py
+        from typing import Union
+
+        from pydantic import TypeAdapter
+
+        ta: TypeAdapter[Union[str, int]] = TypeAdapter(Union[str, int])  # type: ignore[arg-type]
+        ```
 
     ??? info "Namespace management nuances and implementation details"
 
@@ -92,8 +126,8 @@ class TypeAdapter(Generic[T]):
         So instead we look at the globals in our parent stack frame.
 
         It is expected that the `ns_resolver` passed to this function will have the correct
-        namespace for the type we're adapting. See `TypeAdapter.__init__` and `TypeAdapter.rebuild`
-        for various ways to construct this namespace.
+        namespace for the type we're adapting. See the source code for `TypeAdapter.__init__`
+        and `TypeAdapter.rebuild` for various ways to construct this namespace.
 
         This works for the case where this function is called in a module that
         has the target of forward references in its scope, but
@@ -101,16 +135,14 @@ class TypeAdapter(Generic[T]):
 
         For example, take the following:
 
-        a.py
-        ```python
+        ```python {title="a.py"}
         from typing import Dict, List
 
         IntList = List[int]
         OuterDict = Dict[str, 'IntList']
         ```
 
-        b.py
-        ```python {test="skip"}
+        ```python {test="skip" title="b.py"}
         from a import OuterDict
 
         from pydantic import TypeAdapter
@@ -132,6 +164,11 @@ class TypeAdapter(Generic[T]):
 
         But at the very least this behavior is _subtly_ different from `BaseModel`'s.
     """
+
+    core_schema: CoreSchema
+    validator: SchemaValidator | PluggableSchemaValidator
+    serializer: SchemaSerializer
+    pydantic_complete: bool
 
     @overload
     def __init__(
@@ -164,42 +201,6 @@ class TypeAdapter(Generic[T]):
         _parent_depth: int = 2,
         module: str | None = None,
     ) -> None:
-        """Initializes the TypeAdapter object.
-
-        Args:
-            type: The type associated with the `TypeAdapter`.
-            config: Configuration for the `TypeAdapter`, should be a dictionary conforming to [`ConfigDict`][pydantic.config.ConfigDict].
-            _parent_depth: Depth at which to search for the [parent frame][frame-objects]. This frame is used when resolving forward annotations
-                during schema building, by looking for the globals and locals of this frame. Defaults to 2, which will result in the frame
-                where the `TypeAdapter` was instantiated.
-            module: The module that passes to plugin if provided.
-
-        !!! note
-            You cannot use the `config` argument when instantiating a `TypeAdapter` if the type you're using has its own
-            config that cannot be overridden (ex: `BaseModel`, `TypedDict`, and `dataclass`). A
-            [`type-adapter-config-unused`](../errors/usage_errors.md#type-adapter-config-unused) error will be raised in this case.
-
-        !!! note
-            The `_parent_depth` argument is named with an underscore to suggest its private nature and discourage use.
-            It may be deprecated in a minor version, so we only recommend using it if you're comfortable with potential
-            change in behavior/support. It's default value is 2 because internally, the `TypeAdapter` class makes another
-            call to fetch the frame.
-
-        ??? tip "Compatibility with `mypy`"
-            Depending on the type used, `mypy` might raise an error when instantiating a `TypeAdapter`. As a workaround, you can explicitly
-            annotate your variable:
-
-            ```python
-            from typing import Union
-
-            from pydantic import TypeAdapter
-
-            ta: TypeAdapter[Union[str, int]] = TypeAdapter(Union[str, int])  # type: ignore[arg-type]
-            ```
-
-        Returns:
-            A type adapter configured for the specified `type`.
-        """
         if _type_has_config(type) and config is not None:
             raise PydanticUserError(
                 'Cannot use `config` when the type is a BaseModel, dataclass or TypedDict.'
@@ -212,11 +213,7 @@ class TypeAdapter(Generic[T]):
         self._type = type
         self._config = config
         self._parent_depth = _parent_depth
-
-        self.core_schema: CoreSchema
-        self.validator: SchemaValidator | PluggableSchemaValidator
-        self.serializer: SchemaSerializer
-        self.pydantic_complete: bool = False
+        self.pydantic_complete = False
 
         parent_frame = self._fetch_parent_frame(self._parent_depth)
         if parent_frame is not None:
