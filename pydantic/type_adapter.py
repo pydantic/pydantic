@@ -4,6 +4,7 @@ from __future__ import annotations as _annotations
 
 import sys
 from dataclasses import is_dataclass
+from types import FrameType
 from typing import (
     Any,
     Generic,
@@ -168,9 +169,9 @@ class TypeAdapter(Generic[T]):
         Args:
             type: The type associated with the `TypeAdapter`.
             config: Configuration for the `TypeAdapter`, should be a dictionary conforming to [`ConfigDict`][pydantic.config.ConfigDict].
-            _parent_depth: Depth at which to search the for the parent namespace used for schema building.
-                We also use this as a reference level to find the global namespace (_parent_depth - 1).
-                Defaults to 2 because we expect to reference the frame that called the `TypeAdapter` constructor.
+            _parent_depth: Depth at which to search for the [parent frame][frame-objects]. This frame is used when resolving forward annotations
+                during schema building, by looking for the globals and locals of this frame. Defaults to 2, which will result in the frame
+                where the `TypeAdapter` was instantiated.
             module: The module that passes to plugin if provided.
 
         !!! note
@@ -180,8 +181,9 @@ class TypeAdapter(Generic[T]):
 
         !!! note
             The `_parent_depth` argument is named with an underscore to suggest its private nature and discourage use.
-            It may be deprecated in a minor version, so we only recommend using it if you're
-            comfortable with potential change in behavior / support.
+            It may be deprecated in a minor version, so we only recommend using it if you're comfortable with potential
+            change in behavior/support. It's default value is 2 because internally, the `TypeAdapter` class makes another
+            call to fetch the frame.
 
         ??? tip "Compatibility with `mypy`"
             Depending on the type used, `mypy` might raise an error when instantiating a `TypeAdapter`. As a workaround, you can explicitly
@@ -216,8 +218,15 @@ class TypeAdapter(Generic[T]):
         self.serializer: SchemaSerializer
         self.pydantic_complete: bool = False
 
-        localns = _typing_extra.parent_frame_namespace(parent_depth=self._parent_depth) or {}
-        globalns = sys._getframe(max(self._parent_depth - 1, 1)).f_globals
+        parent_frame = self._fetch_parent_frame(self._parent_depth)
+        if parent_frame is not None:
+            globalns = parent_frame.f_globals
+            # Do not provide a local ns if the type adapter happens to be instantiated at the module level:
+            localns = parent_frame.f_locals if parent_frame.f_locals is not globalns else {}
+        else:
+            globalns = {}
+            localns = {}
+
         self._module_name = module or cast(str, globalns.get('__name__', ''))
         self._init_core_attrs(
             ns_resolver=_namespace_utils.NsResolver(
@@ -226,6 +235,17 @@ class TypeAdapter(Generic[T]):
             ),
             force=False,
         )
+
+    def _fetch_parent_frame(self, depth: int) -> FrameType | None:
+        frame = sys._getframe(depth)
+        if frame.f_globals.get('__name__') == 'typing':
+            # Because `TypeAdapter` is generic, explicitly parametrizing the class results
+            # in a `typing._GenericAlias` instance, which proxies instantiation calls to the
+            # "real" `TypeAdapter` class and thus adding an extra frame to the call. To avoid
+            # pulling anything from the `typing` module, use the correct frame (the one before):
+            return frame.f_back
+
+        return frame
 
     def _init_core_attrs(
         self, ns_resolver: _namespace_utils.NsResolver, force: bool, raise_errors: bool = False
@@ -332,8 +352,12 @@ class TypeAdapter(Generic[T]):
         Args:
             force: Whether to force the rebuilding of the type adapter's schema, defaults to `False`.
             raise_errors: Whether to raise errors, defaults to `True`.
-            _parent_namespace_depth: The depth level of the parent namespace, defaults to 2.
-            _types_namespace: The types namespace, defaults to `None`.
+            _parent_namespace_depth: Depth at which to search for the [parent frame][frame-objects]. This
+                frame is used when resolving forward annotations during schema rebuilding, by looking for
+                the locals of this frame. Defaults to 2, which will result in the frame where the method
+                was called.
+            _types_namespace: An explicit types namespace to use, instead of using the local namespace
+                from the parent frame. Defaults to `None`.
 
         Returns:
             Returns `None` if the schema is already "complete" and rebuilding was not required.
@@ -349,7 +373,7 @@ class TypeAdapter(Generic[T]):
         else:
             rebuild_ns = {}
 
-        # we have to manually fetch globals here because there's no type on the stack for the NsResolver
+        # we have to manually fetch globals here because there's no type on the stack of the NsResolver
         # and so we skip the globalns = get_module_ns_of(typ) call that would normally happen
         globalns = sys._getframe(max(_parent_namespace_depth - 1, 1)).f_globals
         ns_resolver = _namespace_utils.NsResolver(
