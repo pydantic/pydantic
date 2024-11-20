@@ -74,6 +74,7 @@ jobs:
           uv run bash -c "cd pydantic-core && pip install -r tests/requirements.txt && pip uninstall --yes pytest-speed && make build-pgo"
         env:
           CARGO_PROFILE_RELEASE_DEBUG: "line-tables-only"
+          CARGO_PROFILE_RELEASE_STRIP: "false"
 
       - name: Run CodSpeed benchmarks
         uses: CodSpeedHQ/action@v3
