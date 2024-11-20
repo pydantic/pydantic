@@ -3047,7 +3047,7 @@ to help you monitor and understand your
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.8 and above</label><label for="__tabbed_1_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
@@ -3082,7 +3082,7 @@ to help you monitor and understand your
 </ol>
 </div>
 <div class="tabbed-block">
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -3125,7 +3125,7 @@ In the future, <code>jiter</code> is intended to enable support validation error
 in the original JSON input which contained the invalid value.</p>
 <h3 id="partial-json-parsing">Partial JSON Parsing<a class="headerlink" href="#partial-json-parsing" title="Permanent link">&para;</a></h3>
 <p><strong>Starting in v2.7.0</strong>, Pydantic's <a href="https://docs.rs/jiter/latest/jiter/">JSON parser</a> offers support for partial JSON parsing, which is exposed via <a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.from_json"><code>pydantic_core.from_json</code></a>. Here's an example of this feature in action:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic_core</span> <span class="kn">import</span> <span class="n">from_json</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic_core</span> <span class="kn">import</span> <span class="n">from_json</span>
 
 <span class="n">partial_json_data</span> <span class="o">=</span> <span class="s1">&#39;[&quot;aa&quot;, &quot;bb&quot;, &quot;c&#39;</span>  <span class="c1"># (1)!</span>
 
@@ -3145,7 +3145,7 @@ in the original JSON input which contained the invalid value.</p>
 <li>When <code>allow_partial</code> is set to <code>True</code>, part of the input is deserialized successfully.</li>
 </ol>
 <p>This also works for deserializing partial dictionaries. For example:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic_core</span> <span class="kn">import</span> <span class="n">from_json</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic_core</span> <span class="kn">import</span> <span class="n">from_json</span>
 
 <span class="n">partial_dog_json</span> <span class="o">=</span> <span class="s1">&#39;{&quot;breed&quot;: &quot;lab&quot;, &quot;name&quot;: &quot;fluffy&quot;, &quot;friends&quot;: [&quot;buddy&quot;, &quot;spot&quot;, &quot;rufus&quot;], &quot;age&#39;</span>
 <span class="n">dog_dict</span> <span class="o">=</span> <span class="n">from_json</span><span class="p">(</span><span class="n">partial_dog_json</span><span class="p">,</span> <span class="n">allow_partial</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -3161,7 +3161,7 @@ We've written some blog posts about this topic, which you can find <a href="http
 (<a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_validate_json"><code>pydantic.main.BaseModel.model_validate_json</code></a> and
 <a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic.type_adapter.TypeAdapter.validate_json"><code>pydantic.type_adapter.TypeAdapter.validate_json</code></a>) or model configuration. Stay tuned 🚀!</p>
 <p>For now, you can use <a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.from_json"><code>pydantic_core.from_json</code></a> in combination with <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_validate"><code>pydantic.main.BaseModel.model_validate</code></a> to achieve the same result. Here's an example:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic_core</span> <span class="kn">import</span> <span class="n">from_json</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic_core</span> <span class="kn">import</span> <span class="n">from_json</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
 
@@ -3184,7 +3184,7 @@ We've written some blog posts about this topic, which you can find <a href="http
 <p>Check out the following example for a more in-depth look at how to use default values with partial JSON parsing:</p>
 <div class="admonition example">
 <p class="admonition-title">Using default values with partial JSON parsing</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
 
 <span class="kn">import</span> <span class="nn">pydantic_core</span>
 <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>

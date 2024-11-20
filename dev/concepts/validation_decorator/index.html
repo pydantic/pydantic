@@ -3161,7 +3161,7 @@ and validated using the function's annotations before the function is called.</p
 (see <a href="../validators/">Validators</a> for more details), it provides an extremely easy way to apply validation
 to your code with minimal boilerplate.</p>
 <p>Example of usage:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">validate_call</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">validate_call</span>
 
 
 <span class="nd">@validate_call</span>
@@ -3191,7 +3191,7 @@ to your code with minimal boilerplate.</p>
 <h2 id="parameter-types">Parameter types<a class="headerlink" href="#parameter-types" title="Permanent link">&para;</a></h2>
 <p>Parameter types are inferred from type annotations on the function, or as <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Any"><code>Any</code></a> if not annotated. All types listed in <a href="../types/">types</a> can be validated, including Pydantic models and <a href="../types/#custom-types">custom types</a>.
 As with the rest of Pydantic, types are by default coerced by the decorator before they're passed to the actual function:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">validate_call</span>
 
@@ -3231,7 +3231,7 @@ using all possible <a class="autorefs autorefs-external" href="https://docs.pyth
 </ul>
 <details class="example">
 <summary>Example</summary>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">validate_call</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">validate_call</span>
 
 
 <span class="nd">@validate_call</span>
@@ -3334,7 +3334,7 @@ unless <code>default_factory</code> is specified, in which case it should be use
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.8 and above</label><label for="__tabbed_1_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 
 <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
 
@@ -3367,7 +3367,7 @@ unless <code>default_factory</code> is specified, in which case it should be use
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span>
 
@@ -3405,7 +3405,7 @@ unless <code>default_factory</code> is specified, in which case it should be use
 <div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.8 and above</label><label for="__tabbed_2_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">Field</span><span class="p">,</span> <span class="n">validate_call</span>
 
@@ -3419,7 +3419,7 @@ unless <code>default_factory</code> is specified, in which case it should be use
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">Field</span><span class="p">,</span> <span class="n">validate_call</span>
 
@@ -3437,7 +3437,7 @@ unless <code>default_factory</code> is specified, in which case it should be use
 <h2 id="accessing-the-original-function">Accessing the original function<a class="headerlink" href="#accessing-the-original-function" title="Permanent link">&para;</a></h2>
 <p>The original function which was decorated can still be accessed by using the <code>raw_function</code> attribute.
 This is useful if in some scenarios you trust your input arguments and want to call the function in the most efficient way (see <a href="#performance">notes on performance</a> below):</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">validate_call</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">validate_call</span>
 
 
 <span class="nd">@validate_call</span>
@@ -3456,7 +3456,7 @@ This is useful if in some scenarios you trust your input arguments and want to c
 </code></pre></div>
 <h2 id="async-functions">Async functions<a class="headerlink" href="#async-functions" title="Permanent link">&para;</a></h2>
 <p><a class="autorefs autorefs-internal" href="../../api/validate_call/#pydantic.validate_call_decorator.validate_call"><code>validate_call()</code></a> can also be used on async functions:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Connection</span><span class="p">:</span>
+<div class="language-python highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Connection</span><span class="p">:</span>
     <span class="k">async</span> <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sql</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
         <span class="k">return</span> <span class="s1">&#39;testing@example.com&#39;</span>
 
@@ -3510,7 +3510,7 @@ the <a href="#accessing-the-original-function"><code>raw_function</code></a> or 
 need to suppress the error using (usually with a <code># type: ignore</code> comment).</p>
 <h2 id="custom-configuration">Custom configuration<a class="headerlink" href="#custom-configuration" title="Permanent link">&para;</a></h2>
 <p>Similarly to Pydantic models, the <code>config</code> parameter of the decorator can be used to specify a custom configuration:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">validate_call</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">validate_call</span>
 
 
 <span class="k">class</span> <span class="nc">Foobar</span><span class="p">:</span>
@@ -3549,7 +3549,7 @@ need to suppress the error using (usually with a <code># type: ignore</code> com
 <p>In some cases, it may be helpful to separate validation of a function's arguments from the function call itself.
 This might be useful when a particular function is costly/time consuming.</p>
 <p>Here's an example of a workaround you can use for that pattern:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">validate_call</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">validate_call</span>
 
 
 <span class="nd">@validate_call</span>

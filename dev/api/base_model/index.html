@@ -6032,7 +6032,7 @@ is set to <code>'allow'</code>.</p>
 <span class="w">            </span><span class="sd">&quot;&quot;&quot;This signature is included purely to help type-checkers check arguments to class declaration, which</span>
 <span class="sd">            provides a way to conveniently set model_config key/value pairs.</span>
 
-<span class="sd">            ```py</span>
+<span class="sd">            ```python</span>
 <span class="sd">            from pydantic import BaseModel</span>
 
 <span class="sd">            class MyModel(BaseModel, extra=&#39;allow&#39;): ...</span>
@@ -6321,7 +6321,7 @@ is set to <code>'allow'</code>.</p>
 
 <span class="sd">        If you need `include` or `exclude`, use:</span>
 
-<span class="sd">        ```py {test=&quot;skip&quot; lint=&quot;skip&quot;}</span>
+<span class="sd">        ```python {test=&quot;skip&quot; lint=&quot;skip&quot;}</span>
 <span class="sd">        data = self.model_dump(include=include, exclude=exclude, round_trip=True)</span>
 <span class="sd">        data = {**data, **(update or {})}</span>
 <span class="sd">        copied = self.model_validate(data)</span>
@@ -9164,7 +9164,7 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
 <p>This method is now deprecated; use <code>model_copy</code> instead.</p>
 </div>
 <p>If you need <code>include</code> or <code>exclude</code>, use:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="n">include</span><span class="p">,</span> <span class="n">exclude</span><span class="o">=</span><span class="n">exclude</span><span class="p">,</span> <span class="n">round_trip</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="n">include</span><span class="p">,</span> <span class="n">exclude</span><span class="o">=</span><span class="n">exclude</span><span class="p">,</span> <span class="n">round_trip</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="p">(</span><span class="n">update</span> <span class="ow">or</span> <span class="p">{})}</span>
 <span class="n">copied</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
 </code></pre></div>
@@ -9360,7 +9360,7 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
 
 <span class="sd">    If you need `include` or `exclude`, use:</span>
 
-<span class="sd">    ```py {test=&quot;skip&quot; lint=&quot;skip&quot;}</span>
+<span class="sd">    ```python {test=&quot;skip&quot; lint=&quot;skip&quot;}</span>
 <span class="sd">    data = self.model_dump(include=include, exclude=exclude, round_trip=True)</span>
 <span class="sd">    data = {**data, **(update or {})}</span>
 <span class="sd">    copied = self.model_validate(data)</span>

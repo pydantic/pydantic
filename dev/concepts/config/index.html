@@ -2983,7 +2983,7 @@ and as an argument to <a class="autorefs autorefs-internal" href="../../api/type
 <p class="admonition-title">Note</p>
 <p>Before <strong>v2.0</strong>, the <code>Config</code> class was used. This is still supported, but <strong>deprecated</strong>.</p>
 </div>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -3003,7 +3003,7 @@ and as an argument to <a class="autorefs autorefs-internal" href="../../api/type
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
 <p>Also, you can specify config options as model class kwargs:
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">extra</span><span class="o">=</span><span class="s1">&#39;forbid&#39;</span><span class="p">):</span>  <span class="c1"># (1)!</span>
@@ -3024,7 +3024,7 @@ and as an argument to <a class="autorefs autorefs-internal" href="../../api/type
 <li>See the <a href="../models/#extra-fields">Extra Attributes</a> section for more details.</li>
 </ol>
 <p>Similarly, if using the <a class="autorefs autorefs-internal" href="../../api/dataclasses/#pydantic.dataclasses"><code>@dataclass</code></a> decorator from Pydantic:
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
 <span class="kn">from</span> <span class="nn">pydantic.dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
@@ -3052,7 +3052,7 @@ and as an argument to <a class="autorefs autorefs-internal" href="../../api/type
 </code></pre></div></p>
 <h2 id="configuration-with-dataclass-from-the-standard-library-or-typeddict">Configuration with <code>dataclass</code> from the standard library or <code>TypedDict</code><a class="headerlink" href="#configuration-with-dataclass-from-the-standard-library-or-typeddict" title="Permanent link">&para;</a></h2>
 <p>If using the <code>dataclass</code> from the standard library or <code>TypedDict</code>, you should use <code>__pydantic_config__</code> instead.</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
 <span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ConfigDict</span>
@@ -3067,7 +3067,7 @@ and as an argument to <a class="autorefs autorefs-internal" href="../../api/type
     <span class="n">signup_ts</span><span class="p">:</span> <span class="n">datetime</span> <span class="o">=</span> <span class="kc">None</span>
 </code></pre></div>
 <p>Alternatively, the <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.with_config"><code>with_config</code></a> decorator can be used to comply with type checkers.</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">TypedDict</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">TypedDict</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">with_config</span>
 
@@ -3079,7 +3079,7 @@ and as an argument to <a class="autorefs autorefs-internal" href="../../api/type
 <h2 id="change-behaviour-globally">Change behaviour globally<a class="headerlink" href="#change-behaviour-globally" title="Permanent link">&para;</a></h2>
 <p>If you wish to change the behaviour of Pydantic globally, you can create your own custom <code>BaseModel</code>
 with custom <code>model_config</code> since the config is inherited:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
 
 
 <span class="k">class</span> <span class="nc">Parent</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -3095,7 +3095,7 @@ with custom <code>model_config</code> since the config is inherited:</p>
 <span class="c1">#&gt; {&#39;x&#39;: &#39;foo&#39;, &#39;y&#39;: &#39;bar&#39;}</span>
 </code></pre></div>
 <p>If you add a <code>model_config</code> to the <code>Model</code> class, it will <em>merge</em> with the <code>model_config</code> from <code>Parent</code>:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
 
 
 <span class="k">class</span> <span class="nc">Parent</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>

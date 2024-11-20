@@ -4009,7 +4009,7 @@ the types export the following properties:</p>
 <li>Host required</li>
 <li>Max length 2083</li>
 </ul>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">HttpUrl</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">HttpUrl</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 <span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">url</span><span class="p">:</span> <span class="n">HttpUrl</span>
@@ -4044,7 +4044,7 @@ the types export the following properties:</p>
 <p>"International domains" (e.g. a URL where the host or TLD includes non-ascii characters) will be encoded via
 <a href="https://en.wikipedia.org/wiki/Punycode">punycode</a> (see
 <a href="https://www.xudongz.com/blog/2017/idn-phishing/">this article</a> for a good description of why this is important):</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">HttpUrl</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">HttpUrl</span>
 
 <span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">url</span><span class="p">:</span> <span class="n">HttpUrl</span>
@@ -4400,7 +4400,7 @@ underscores are allowed, but you can always do further validation in a validator
 <li>Supports multiple hosts</li>
 </ul>
 <p>If further validation is required, these properties can be used by validators to enforce specific behaviour:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="p">(</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">BaseModel</span><span class="p">,</span>
     <span class="n">HttpUrl</span><span class="p">,</span>
     <span class="n">PostgresDsn</span><span class="p">,</span>
@@ -5065,7 +5065,7 @@ More: https://nats.io</p>
 <div class="language-bash highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>email-validator
 </code></pre></div>
 </details>        <p>Validate email addresses.</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">EmailStr</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">EmailStr</span>
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">email</span><span class="p">:</span> <span class="n">EmailStr</span>
@@ -5124,7 +5124,7 @@ More: https://nats.io</p>
 <a href="https://datatracker.ietf.org/doc/html/rfc5322#section-3.4">RFC 5322</a>.</p>
 <p>The <code>NameEmail</code> has two properties: <code>name</code> and <code>email</code>.
 In case the <code>name</code> is not provided, it's inferred from the email address.</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">NameEmail</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">NameEmail</span>
 
 <span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">email</span><span class="p">:</span> <span class="n">NameEmail</span>
@@ -5187,7 +5187,7 @@ In case the <code>name</code> is not provided, it's inferred from the email addr
 
 
         <p>Validate an IPv4 or IPv6 address.</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
 <span class="kn">from</span> <span class="nn">pydantic.networks</span> <span class="kn">import</span> <span class="n">IPvAnyAddress</span>
 
 <span class="k">class</span> <span class="nc">IpModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>

@@ -4729,7 +4729,7 @@ may encounter when working with pydantic, together with some suggestions on how 
 <p>This error is raised when an object that would be passed as arguments to a function during validation is not
 a <code>tuple</code>, <code>list</code>, or <code>dict</code>. Because <code>NamedTuple</code> uses function calls in its implementation, that is one way to
 produce this error:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">NamedTuple</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">NamedTuple</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -4750,7 +4750,7 @@ produce this error:</p>
 </code></pre></div>
 <h2 id="assertion_error"><code>assertion_error</code><a class="headerlink" href="#assertion_error" title="Permanent link">&para;</a></h2>
 <p>This error is raised when a failing <code>assert</code> statement is encountered during validation:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">field_validator</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">field_validator</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -4771,7 +4771,7 @@ produce this error:</p>
 </code></pre></div>
 <h2 id="bool_parsing"><code>bool_parsing</code><a class="headerlink" href="#bool_parsing" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the input value is a string that is not valid for coercion to a boolean:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -4788,7 +4788,7 @@ produce this error:</p>
 </code></pre></div>
 <h2 id="bool_type"><code>bool_type</code><a class="headerlink" href="#bool_type" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the input value's type is not valid for a <code>bool</code> field:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -4804,7 +4804,7 @@ produce this error:</p>
 <h2 id="bytes_invalid_encoding"><code>bytes_invalid_encoding</code><a class="headerlink" href="#bytes_invalid_encoding" title="Permanent link">&para;</a></h2>
 <p>This error is raised when a <code>bytes</code> value is invalid under the configured encoding.
 In the following example, <code>b'a'</code> is invalid hex (odd number of digits).</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -4821,7 +4821,7 @@ In the following example, <code>b'a'</code> is invalid hex (odd number of digits
 <p>This error is also raised for strict fields when the input value is not an instance of <code>bool</code>.</p>
 <h2 id="bytes_too_long"><code>bytes_too_long</code><a class="headerlink" href="#bytes_too_long" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the length of a <code>bytes</code> value is greater than the field's <code>max_length</code> constraint:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -4836,7 +4836,7 @@ In the following example, <code>b'a'</code> is invalid hex (odd number of digits
 </code></pre></div>
 <h2 id="bytes_too_short"><code>bytes_too_short</code><a class="headerlink" href="#bytes_too_short" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the length of a <code>bytes</code> value is less than the field's <code>min_length</code> constraint:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -4851,7 +4851,7 @@ In the following example, <code>b'a'</code> is invalid hex (odd number of digits
 </code></pre></div>
 <h2 id="bytes_type"><code>bytes_type</code><a class="headerlink" href="#bytes_type" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the input value's type is not valid for a <code>bytes</code> field:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -4870,7 +4870,7 @@ In the following example, <code>b'a'</code> is invalid hex (odd number of digits
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.8 and above</label><label for="__tabbed_1_2">Python 3.10 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ImportString</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -4889,7 +4889,7 @@ In the following example, <code>b'a'</code> is invalid hex (odd number of digits
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
 <span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Callable</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ImportString</span><span class="p">,</span> <span class="n">ValidationError</span>
@@ -4913,7 +4913,7 @@ In the following example, <code>b'a'</code> is invalid hex (odd number of digits
 <h2 id="complex_str_parsing"><code>complex_str_parsing</code><a class="headerlink" href="#complex_str_parsing" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the input value is a string but cannot be parsed as a complex number because
 it does not follow the <a href="https://docs.python.org/3/library/functions.html#complex">rule</a> in Python:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -4930,7 +4930,7 @@ it does not follow the <a href="https://docs.python.org/3/library/functions.html
 </code></pre></div>
 <h2 id="complex_type"><code>complex_type</code><a class="headerlink" href="#complex_type" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the input value cannot be interpreted as a complex number:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -4945,7 +4945,7 @@ it does not follow the <a href="https://docs.python.org/3/library/functions.html
 </code></pre></div>
 <h2 id="dataclass_exact_type"><code>dataclass_exact_type</code><a class="headerlink" href="#dataclass_exact_type" title="Permanent link">&para;</a></h2>
 <p>This error is raised when validating a dataclass with <code>strict=True</code> and the input is not an instance of the dataclass:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">pydantic.dataclasses</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">pydantic.dataclasses</span>
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">TypeAdapter</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
@@ -4969,7 +4969,7 @@ it does not follow the <a href="https://docs.python.org/3/library/functions.html
 </code></pre></div>
 <h2 id="dataclass_type"><code>dataclass_type</code><a class="headerlink" href="#dataclass_type" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the input value is not valid for a <code>dataclass</code> field:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">dataclasses</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">dataclasses</span>
 
 
 <span class="nd">@dataclasses</span><span class="o">.</span><span class="n">dataclass</span>
@@ -4993,7 +4993,7 @@ it does not follow the <a href="https://docs.python.org/3/library/functions.html
 <h2 id="date_from_datetime_inexact"><code>date_from_datetime_inexact</code><a class="headerlink" href="#date_from_datetime_inexact" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the input <code>datetime</code> value provided for a <code>date</code> field has a nonzero time component.
 For a timestamp to parse into a field of type <code>date</code>, the time components must all be zero:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span><span class="p">,</span> <span class="n">datetime</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span><span class="p">,</span> <span class="n">datetime</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -5013,7 +5013,7 @@ For a timestamp to parse into a field of type <code>date</code>, the time compon
 </code></pre></div>
 <h2 id="date_from_datetime_parsing"><code>date_from_datetime_parsing</code><a class="headerlink" href="#date_from_datetime_parsing" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the input value is a string that cannot be parsed for a <code>date</code> field:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -5030,7 +5030,7 @@ For a timestamp to parse into a field of type <code>date</code>, the time compon
 </code></pre></div>
 <h2 id="date_future"><code>date_future</code><a class="headerlink" href="#date_future" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the input value provided for a <code>FutureDate</code> field is not in the future:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">FutureDate</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -5047,7 +5047,7 @@ For a timestamp to parse into a field of type <code>date</code>, the time compon
 </code></pre></div>
 <h2 id="date_parsing"><code>date_parsing</code><a class="headerlink" href="#date_parsing" title="Permanent link">&para;</a></h2>
 <p>This error is raised when validating JSON where the input value is string that cannot be parsed for a <code>date</code> field:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">json</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">json</span>
 <span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
@@ -5065,7 +5065,7 @@ For a timestamp to parse into a field of type <code>date</code>, the time compon
 </code></pre></div>
 <h2 id="date_past"><code>date_past</code><a class="headerlink" href="#date_past" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the value provided for a <code>PastDate</code> field is not in the past:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span><span class="p">,</span> <span class="n">timedelta</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span><span class="p">,</span> <span class="n">timedelta</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PastDate</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -5082,7 +5082,7 @@ For a timestamp to parse into a field of type <code>date</code>, the time compon
 </code></pre></div>
 <h2 id="date_type"><code>date_type</code><a class="headerlink" href="#date_type" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the input value's type is not valid for a <code>date</code> field:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -5104,7 +5104,7 @@ For a timestamp to parse into a field of type <code>date</code>, the time compon
 <p>Support for this error, along with support for parsing datetimes from <code>yyyy-MM-DD</code> dates will be added in <code>v2.6.0</code></p>
 </div>
 <p>This error is raised when the input value is a string that cannot be parsed for a <code>datetime</code> field:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -5122,7 +5122,7 @@ For a timestamp to parse into a field of type <code>date</code>, the time compon
 </code></pre></div>
 <h2 id="datetime_future"><code>datetime_future</code><a class="headerlink" href="#datetime_future" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the value provided for a <code>FutureDatetime</code> field is not in the future:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">FutureDatetime</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -5139,7 +5139,7 @@ For a timestamp to parse into a field of type <code>date</code>, the time compon
 </code></pre></div>
 <h2 id="datetime_object_invalid"><code>datetime_object_invalid</code><a class="headerlink" href="#datetime_object_invalid" title="Permanent link">&para;</a></h2>
 <p>This error is raised when something about the <code>datetime</code> object is not valid:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">tzinfo</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">tzinfo</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">AwareDatetime</span><span class="p">,</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -5163,7 +5163,7 @@ For a timestamp to parse into a field of type <code>date</code>, the time compon
 </code></pre></div>
 <h2 id="datetime_parsing"><code>datetime_parsing</code><a class="headerlink" href="#datetime_parsing" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the value is a string that cannot be parsed for a <code>datetime</code> field:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">json</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">json</span>
 <span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
@@ -5181,7 +5181,7 @@ For a timestamp to parse into a field of type <code>date</code>, the time compon
 </code></pre></div>
 <h2 id="datetime_past"><code>datetime_past</code><a class="headerlink" href="#datetime_past" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the value provided for a <code>PastDatetime</code> field is not in the past:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timedelta</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timedelta</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PastDatetime</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -5198,7 +5198,7 @@ For a timestamp to parse into a field of type <code>date</code>, the time compon
 </code></pre></div>
 <h2 id="datetime_type"><code>datetime_type</code><a class="headerlink" href="#datetime_type" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the input value's type is not valid for a <code>datetime</code> field:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -5216,7 +5216,7 @@ For a timestamp to parse into a field of type <code>date</code>, the time compon
 <p>This error is also raised for strict fields when the input value is not an instance of <code>datetime</code>.</p>
 <h2 id="decimal_max_digits"><code>decimal_max_digits</code><a class="headerlink" href="#decimal_max_digits" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the value provided for a <code>Decimal</code> has too many digits:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">decimal</span> <span class="kn">import</span> <span class="n">Decimal</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">decimal</span> <span class="kn">import</span> <span class="n">Decimal</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -5233,7 +5233,7 @@ For a timestamp to parse into a field of type <code>date</code>, the time compon
 </code></pre></div>
 <h2 id="decimal_max_places"><code>decimal_max_places</code><a class="headerlink" href="#decimal_max_places" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the value provided for a <code>Decimal</code> has too many digits after the decimal point:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">decimal</span> <span class="kn">import</span> <span class="n">Decimal</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">decimal</span> <span class="kn">import</span> <span class="n">Decimal</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -5250,7 +5250,7 @@ For a timestamp to parse into a field of type <code>date</code>, the time compon
 </code></pre></div>
 <h2 id="decimal_parsing"><code>decimal_parsing</code><a class="headerlink" href="#decimal_parsing" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the value provided for a <code>Decimal</code> could not be parsed as a decimal number:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">decimal</span> <span class="kn">import</span> <span class="n">Decimal</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">decimal</span> <span class="kn">import</span> <span class="n">Decimal</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -5267,7 +5267,7 @@ For a timestamp to parse into a field of type <code>date</code>, the time compon
 </code></pre></div>
 <h2 id="decimal_type"><code>decimal_type</code><a class="headerlink" href="#decimal_type" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the value provided for a <code>Decimal</code> is of the wrong type:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">decimal</span> <span class="kn">import</span> <span class="n">Decimal</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">decimal</span> <span class="kn">import</span> <span class="n">Decimal</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -5285,7 +5285,7 @@ For a timestamp to parse into a field of type <code>date</code>, the time compon
 <p>This error is also raised for strict fields when the input value is not an instance of <code>Decimal</code>.</p>
 <h2 id="decimal_whole_digits"><code>decimal_whole_digits</code><a class="headerlink" href="#decimal_whole_digits" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the value provided for a <code>Decimal</code> has more digits before the decimal point than <code>max_digits</code> - <code>decimal_places</code> (as long as both are specified):</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">decimal</span> <span class="kn">import</span> <span class="n">Decimal</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">decimal</span> <span class="kn">import</span> <span class="n">Decimal</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -5303,7 +5303,7 @@ For a timestamp to parse into a field of type <code>date</code>, the time compon
 <p>This error is also raised for strict fields when the input value is not an instance of <code>Decimal</code>.</p>
 <h2 id="dict_type"><code>dict_type</code><a class="headerlink" href="#dict_type" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the input value's type is not <code>dict</code> for a <code>dict</code> field:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -5318,7 +5318,7 @@ For a timestamp to parse into a field of type <code>date</code>, the time compon
 </code></pre></div>
 <h2 id="enum"><code>enum</code><a class="headerlink" href="#enum" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the input value does not exist in an <code>enum</code> field members:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -5339,7 +5339,7 @@ For a timestamp to parse into a field of type <code>date</code>, the time compon
 </code></pre></div>
 <h2 id="extra_forbidden"><code>extra_forbidden</code><a class="headerlink" href="#extra_forbidden" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the input value contains extra fields, but <code>model_config['extra'] == 'forbid'</code>:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -5358,7 +5358,7 @@ For a timestamp to parse into a field of type <code>date</code>, the time compon
 <h2 id="finite_number"><code>finite_number</code><a class="headerlink" href="#finite_number" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the value is infinite, or too large to be represented as a 64-bit floating point number
 during validation:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -5373,7 +5373,7 @@ during validation:</p>
 </code></pre></div>
 <h2 id="float_parsing"><code>float_parsing</code><a class="headerlink" href="#float_parsing" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the value is a string that can't be parsed as a <code>float</code>:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -5388,7 +5388,7 @@ during validation:</p>
 </code></pre></div>
 <h2 id="float_type"><code>float_type</code><a class="headerlink" href="#float_type" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the input value's type is not valid for a <code>float</code> field:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -5403,7 +5403,7 @@ during validation:</p>
 </code></pre></div>
 <h2 id="frozen_field"><code>frozen_field</code><a class="headerlink" href="#frozen_field" title="Permanent link">&para;</a></h2>
 <p>This error is raised when you attempt to assign a value to a field with <code>frozen=True</code>, or to delete such a field:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -5427,7 +5427,7 @@ during validation:</p>
 <h2 id="frozen_instance"><code>frozen_instance</code><a class="headerlink" href="#frozen_instance" title="Permanent link">&para;</a></h2>
 <p>This error is raised when <code>model_config['frozen] == True</code> and you attempt to delete or assign a new value to
 any of the fields:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -5452,7 +5452,7 @@ any of the fields:</p>
 </code></pre></div>
 <h2 id="frozen_set_type"><code>frozen_set_type</code><a class="headerlink" href="#frozen_set_type" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the input value's type is not valid for a <code>frozenset</code> field:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -5467,7 +5467,7 @@ any of the fields:</p>
 </code></pre></div>
 <h2 id="get_attribute_error"><code>get_attribute_error</code><a class="headerlink" href="#get_attribute_error" title="Permanent link">&para;</a></h2>
 <p>This error is raised when <code>model_config['from_attributes'] == True</code> and an error is raised while reading the attributes:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Foobar</span><span class="p">:</span>
@@ -5494,7 +5494,7 @@ any of the fields:</p>
 </code></pre></div>
 <h2 id="greater_than"><code>greater_than</code><a class="headerlink" href="#greater_than" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the value is not greater than the field's <code>gt</code> constraint:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -5509,7 +5509,7 @@ any of the fields:</p>
 </code></pre></div>
 <h2 id="greater_than_equal"><code>greater_than_equal</code><a class="headerlink" href="#greater_than_equal" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the value is not greater than or equal to the field's <code>ge</code> constraint:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -5524,7 +5524,7 @@ any of the fields:</p>
 </code></pre></div>
 <h2 id="int_from_float"><code>int_from_float</code><a class="headerlink" href="#int_from_float" title="Permanent link">&para;</a></h2>
 <p>This error is raised when you provide a <code>float</code> value for an <code>int</code> field:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -5539,7 +5539,7 @@ any of the fields:</p>
 </code></pre></div>
 <h2 id="int_parsing"><code>int_parsing</code><a class="headerlink" href="#int_parsing" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the value can't be parsed as <code>int</code>:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -5555,7 +5555,7 @@ any of the fields:</p>
 <h2 id="int_parsing_size"><code>int_parsing_size</code><a class="headerlink" href="#int_parsing_size" title="Permanent link">&para;</a></h2>
 <p>This error is raised when attempting to parse a python or JSON value from a string outside the maximum range that Python
 <code>str</code> to <code>int</code> parsing permits:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">json</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">json</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -5583,7 +5583,7 @@ any of the fields:</p>
 </code></pre></div>
 <h2 id="int_type"><code>int_type</code><a class="headerlink" href="#int_type" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the input value's type is not valid for an <code>int</code> field:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -5598,7 +5598,7 @@ any of the fields:</p>
 </code></pre></div>
 <h2 id="invalid_key"><code>invalid_key</code><a class="headerlink" href="#invalid_key" title="Permanent link">&para;</a></h2>
 <p>This error is raised when attempting to validate a <code>dict</code> that has a key that is not an instance of <code>str</code>:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -5615,7 +5615,7 @@ any of the fields:</p>
 </code></pre></div>
 <h2 id="is_instance_of"><code>is_instance_of</code><a class="headerlink" href="#is_instance_of" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the input value is not an instance of the expected type:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Nested</span><span class="p">:</span>
@@ -5639,7 +5639,7 @@ any of the fields:</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.8 and above</label><label for="__tabbed_2_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Type</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Type</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -5660,7 +5660,7 @@ any of the fields:</p>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Nested</span><span class="p">:</span>
@@ -5685,7 +5685,7 @@ any of the fields:</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.8 and above</label><label for="__tabbed_3_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Iterable</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Iterable</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -5702,7 +5702,7 @@ any of the fields:</p>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Iterable</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Iterable</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -5725,7 +5725,7 @@ any of the fields:</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">Python 3.8 and above</label><label for="__tabbed_4_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -5747,7 +5747,7 @@ any of the fields:</p>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">def</span> <span class="nf">gen</span><span class="p">():</span>
@@ -5770,7 +5770,7 @@ any of the fields:</p>
 </div>
 <h2 id="json_invalid"><code>json_invalid</code><a class="headerlink" href="#json_invalid" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the input value is not a valid JSON string:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Json</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Json</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -5785,7 +5785,7 @@ any of the fields:</p>
 </code></pre></div>
 <h2 id="json_type"><code>json_type</code><a class="headerlink" href="#json_type" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the input value is of a type that cannot be parsed as JSON:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Json</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Json</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -5800,7 +5800,7 @@ any of the fields:</p>
 </code></pre></div>
 <h2 id="less_than"><code>less_than</code><a class="headerlink" href="#less_than" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the input value is not less than the field's <code>lt</code> constraint:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -5815,7 +5815,7 @@ any of the fields:</p>
 </code></pre></div>
 <h2 id="less_than_equal"><code>less_than_equal</code><a class="headerlink" href="#less_than_equal" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the input value is not less than or equal to the field's <code>le</code> constraint:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -5833,7 +5833,7 @@ any of the fields:</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">Python 3.8 and above</label><label for="__tabbed_5_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -5850,7 +5850,7 @@ any of the fields:</p>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -5868,7 +5868,7 @@ any of the fields:</p>
 </div>
 <h2 id="literal_error"><code>literal_error</code><a class="headerlink" href="#literal_error" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the input value is not one of the expected literal values:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Literal</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Literal</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -5891,7 +5891,7 @@ any of the fields:</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="6:2"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">Python 3.8 and above</label><label for="__tabbed_6_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Mapping</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Mapping</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
@@ -5923,7 +5923,7 @@ any of the fields:</p>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Mapping</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Mapping</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -5957,7 +5957,7 @@ any of the fields:</p>
 </div>
 <h2 id="missing"><code>missing</code><a class="headerlink" href="#missing" title="Permanent link">&para;</a></h2>
 <p>This error is raised when there are required fields missing from the input value:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -5973,7 +5973,7 @@ any of the fields:</p>
 <h2 id="missing_argument"><code>missing_argument</code><a class="headerlink" href="#missing_argument" title="Permanent link">&para;</a></h2>
 <p>This error is raised when a required positional-or-keyword argument is not passed to a function decorated with
 <code>validate_call</code>:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">validate_call</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">validate_call</span>
 
 
 <span class="nd">@validate_call</span>
@@ -5989,7 +5989,7 @@ any of the fields:</p>
 </code></pre></div>
 <h2 id="missing_keyword_only_argument"><code>missing_keyword_only_argument</code><a class="headerlink" href="#missing_keyword_only_argument" title="Permanent link">&para;</a></h2>
 <p>This error is raised when a required keyword-only argument is not passed to a function decorated with <code>validate_call</code>:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">validate_call</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">validate_call</span>
 
 
 <span class="nd">@validate_call</span>
@@ -6006,7 +6006,7 @@ any of the fields:</p>
 <h2 id="missing_positional_only_argument"><code>missing_positional_only_argument</code><a class="headerlink" href="#missing_positional_only_argument" title="Permanent link">&para;</a></h2>
 <p>This error is raised when a required positional-only argument is not passed to a function decorated with
 <code>validate_call</code>:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">validate_call</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">validate_call</span>
 
 
 <span class="nd">@validate_call</span>
@@ -6022,7 +6022,7 @@ any of the fields:</p>
 </code></pre></div>
 <h2 id="model_attributes_type"><code>model_attributes_type</code><a class="headerlink" href="#model_attributes_type" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the input value is not a valid dictionary, model instance, or instance that fields can be extracted from:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -6053,7 +6053,7 @@ any of the fields:</p>
 </code></pre></div>
 <h2 id="model_type"><code>model_type</code><a class="headerlink" href="#model_type" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the input to a model is not an instance of the model or dict:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -6079,7 +6079,7 @@ any of the fields:</p>
 <h2 id="multiple_argument_values"><code>multiple_argument_values</code><a class="headerlink" href="#multiple_argument_values" title="Permanent link">&para;</a></h2>
 <p>This error is raised when you provide multiple values for a single argument while calling a function decorated with
 <code>validate_call</code>:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">validate_call</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">validate_call</span>
 
 
 <span class="nd">@validate_call</span>
@@ -6095,7 +6095,7 @@ any of the fields:</p>
 </code></pre></div>
 <h2 id="multiple_of"><code>multiple_of</code><a class="headerlink" href="#multiple_of" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the input is not a multiple of a field's <code>multiple_of</code> constraint:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -6114,7 +6114,7 @@ For example, we cannot check <code>isinstance</code> or <code>issubclass</code> 
 <div class="tabbed-set tabbed-alternate" data-tabs="7:2"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><div class="tabbed-labels"><label for="__tabbed_7_1">Python 3.8 and above</label><label for="__tabbed_7_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">json</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">json</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Type</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
@@ -6132,7 +6132,7 @@ For example, we cannot check <code>isinstance</code> or <code>issubclass</code> 
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">json</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">json</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -6153,7 +6153,7 @@ For example, we cannot check <code>isinstance</code> or <code>issubclass</code> 
 <h2 id="no_such_attribute"><code>no_such_attribute</code><a class="headerlink" href="#no_such_attribute" title="Permanent link">&para;</a></h2>
 <p>This error is raised when <code>validate_assignment=True</code> in the config, and you attempt to assign a value to an attribute
 that is not an existing field:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">dataclasses</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">dataclasses</span>
 
 
 <span class="nd">@dataclasses</span><span class="o">.</span><span class="n">dataclass</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="n">ConfigDict</span><span class="p">(</span><span class="n">validate_assignment</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
@@ -6170,7 +6170,7 @@ that is not an existing field:</p>
 </code></pre></div>
 <h2 id="none_required"><code>none_required</code><a class="headerlink" href="#none_required" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the input value is not <code>None</code> for a field that requires <code>None</code>:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -6204,7 +6204,7 @@ that is not an existing field:</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="8:2"><input checked="checked" id="__tabbed_8_1" name="__tabbed_8" type="radio" /><input id="__tabbed_8_2" name="__tabbed_8" type="radio" /><div class="tabbed-labels"><label for="__tabbed_8_1">Python 3.8 and above</label><label for="__tabbed_8_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -6223,7 +6223,7 @@ that is not an existing field:</p>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -6246,7 +6246,7 @@ that is not an existing field:</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="9:2"><input checked="checked" id="__tabbed_9_1" name="__tabbed_9" type="radio" /><input id="__tabbed_9_2" name="__tabbed_9" type="radio" /><div class="tabbed-labels"><label for="__tabbed_9_1">Python 3.8 and above</label><label for="__tabbed_9_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Set</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Set</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -6263,7 +6263,7 @@ that is not an existing field:</p>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -6281,7 +6281,7 @@ that is not an existing field:</p>
 </div>
 <h2 id="string_pattern_mismatch"><code>string_pattern_mismatch</code><a class="headerlink" href="#string_pattern_mismatch" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the input value doesn't match the field's <code>pattern</code> constraint:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -6296,7 +6296,7 @@ that is not an existing field:</p>
 </code></pre></div>
 <h2 id="string_sub_type"><code>string_sub_type</code><a class="headerlink" href="#string_sub_type" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the value is an instance of a strict subtype of <code>str</code> when the field is strict:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -6317,7 +6317,7 @@ that is not an existing field:</p>
 </code></pre></div>
 <h2 id="string_too_long"><code>string_too_long</code><a class="headerlink" href="#string_too_long" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the input value is a string whose length is greater than the field's <code>max_length</code> constraint:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -6332,7 +6332,7 @@ that is not an existing field:</p>
 </code></pre></div>
 <h2 id="string_too_short"><code>string_too_short</code><a class="headerlink" href="#string_too_short" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the input value is a string whose length is less than the field's <code>min_length</code> constraint:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -6347,7 +6347,7 @@ that is not an existing field:</p>
 </code></pre></div>
 <h2 id="string_type"><code>string_type</code><a class="headerlink" href="#string_type" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the input value's type is not valid for a <code>str</code> field:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -6363,7 +6363,7 @@ that is not an existing field:</p>
 <p>This error is also raised for strict fields when the input value is not an instance of <code>str</code>.</p>
 <h2 id="string_unicode"><code>string_unicode</code><a class="headerlink" href="#string_unicode" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the value cannot be parsed as a Unicode string:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -6378,7 +6378,7 @@ that is not an existing field:</p>
 </code></pre></div>
 <h2 id="time_delta_parsing"><code>time_delta_parsing</code><a class="headerlink" href="#time_delta_parsing" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the input value is a string that cannot be parsed for a <code>timedelta</code> field:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">timedelta</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">timedelta</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -6395,7 +6395,7 @@ that is not an existing field:</p>
 </code></pre></div>
 <h2 id="time_delta_type"><code>time_delta_type</code><a class="headerlink" href="#time_delta_type" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the input value's type is not valid for a <code>timedelta</code> field:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">timedelta</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">timedelta</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -6413,7 +6413,7 @@ that is not an existing field:</p>
 <p>This error is also raised for strict fields when the input value is not an instance of <code>timedelta</code>.</p>
 <h2 id="time_parsing"><code>time_parsing</code><a class="headerlink" href="#time_parsing" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the input value is a string that cannot be parsed for a <code>time</code> field:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">time</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">time</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -6430,7 +6430,7 @@ that is not an existing field:</p>
 </code></pre></div>
 <h2 id="time_type"><code>time_type</code><a class="headerlink" href="#time_type" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the value type is not valid for a <code>time</code> field:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">time</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">time</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -6449,7 +6449,7 @@ that is not an existing field:</p>
 <h2 id="timezone_aware"><code>timezone_aware</code><a class="headerlink" href="#timezone_aware" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the <code>datetime</code> value provided for a timezone-aware <code>datetime</code> field
 doesn't have timezone information:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">AwareDatetime</span><span class="p">,</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -6467,7 +6467,7 @@ doesn't have timezone information:</p>
 <h2 id="timezone_naive"><code>timezone_naive</code><a class="headerlink" href="#timezone_naive" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the <code>datetime</code> value provided for a timezone-naive <code>datetime</code> field
 has timezone info:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timezone</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timezone</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">NaiveDatetime</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -6487,7 +6487,7 @@ has timezone info:</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="10:2"><input checked="checked" id="__tabbed_10_1" name="__tabbed_10" type="radio" /><input id="__tabbed_10_2" name="__tabbed_10" type="radio" /><div class="tabbed-labels"><label for="__tabbed_10_1">Python 3.8 and above</label><label for="__tabbed_10_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -6504,7 +6504,7 @@ has timezone info:</p>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -6525,7 +6525,7 @@ has timezone info:</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="11:2"><input checked="checked" id="__tabbed_11_1" name="__tabbed_11" type="radio" /><input id="__tabbed_11_2" name="__tabbed_11" type="radio" /><div class="tabbed-labels"><label for="__tabbed_11_1">Python 3.8 and above</label><label for="__tabbed_11_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -6542,7 +6542,7 @@ has timezone info:</p>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -6563,7 +6563,7 @@ has timezone info:</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="12:2"><input checked="checked" id="__tabbed_12_1" name="__tabbed_12" type="radio" /><input id="__tabbed_12_2" name="__tabbed_12" type="radio" /><div class="tabbed-labels"><label for="__tabbed_12_1">Python 3.8 and above</label><label for="__tabbed_12_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -6580,7 +6580,7 @@ has timezone info:</p>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -6600,7 +6600,7 @@ has timezone info:</p>
 <h2 id="unexpected_keyword_argument"><code>unexpected_keyword_argument</code><a class="headerlink" href="#unexpected_keyword_argument" title="Permanent link">&para;</a></h2>
 <p>This error is raised when you provide a value by keyword for a positional-only
 argument while calling a function decorated with <code>validate_call</code>:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">validate_call</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">validate_call</span>
 
 
 <span class="nd">@validate_call</span>
@@ -6615,7 +6615,7 @@ argument while calling a function decorated with <code>validate_call</code>:</p>
     <span class="c1">#&gt; &#39;unexpected_keyword_argument&#39;</span>
 </code></pre></div>
 <p>It is also raised when using pydantic.dataclasses and <code>extra=forbid</code>:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">TypeAdapter</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">TypeAdapter</span><span class="p">,</span> <span class="n">ValidationError</span>
 <span class="kn">from</span> <span class="nn">pydantic.dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
 
 
@@ -6633,7 +6633,7 @@ argument while calling a function decorated with <code>validate_call</code>:</p>
 <h2 id="unexpected_positional_argument"><code>unexpected_positional_argument</code><a class="headerlink" href="#unexpected_positional_argument" title="Permanent link">&para;</a></h2>
 <p>This error is raised when you provide a positional value for a keyword-only
 argument while calling a function decorated with <code>validate_call</code>:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">validate_call</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">validate_call</span>
 
 
 <span class="nd">@validate_call</span>
@@ -6652,7 +6652,7 @@ argument while calling a function decorated with <code>validate_call</code>:</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="13:2"><input checked="checked" id="__tabbed_13_1" name="__tabbed_13" type="radio" /><input id="__tabbed_13_2" name="__tabbed_13" type="radio" /><div class="tabbed-labels"><label for="__tabbed_13_1">Python 3.8 and above</label><label for="__tabbed_13_2">Python 3.10 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Union</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -6677,7 +6677,7 @@ argument while calling a function decorated with <code>validate_call</code>:</p>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Literal</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Literal</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -6708,7 +6708,7 @@ argument while calling a function decorated with <code>validate_call</code>:</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="14:2"><input checked="checked" id="__tabbed_14_1" name="__tabbed_14" type="radio" /><input id="__tabbed_14_2" name="__tabbed_14" type="radio" /><div class="tabbed-labels"><label for="__tabbed_14_1">Python 3.8 and above</label><label for="__tabbed_14_2">Python 3.10 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Union</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -6733,7 +6733,7 @@ argument while calling a function decorated with <code>validate_call</code>:</p>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Literal</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Literal</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -6761,7 +6761,7 @@ argument while calling a function decorated with <code>validate_call</code>:</p>
 </div>
 <h2 id="url_parsing"><code>url_parsing</code><a class="headerlink" href="#url_parsing" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the input value cannot be parsed as a URL:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">AnyUrl</span><span class="p">,</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">AnyUrl</span><span class="p">,</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -6776,7 +6776,7 @@ argument while calling a function decorated with <code>validate_call</code>:</p>
 </code></pre></div>
 <h2 id="url_scheme"><code>url_scheme</code><a class="headerlink" href="#url_scheme" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the URL scheme is not valid for the URL type of the field:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">HttpUrl</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">HttpUrl</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -6791,7 +6791,7 @@ argument while calling a function decorated with <code>validate_call</code>:</p>
 </code></pre></div>
 <h2 id="url_syntax_violation"><code>url_syntax_violation</code><a class="headerlink" href="#url_syntax_violation" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the URL syntax is not valid:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">HttpUrl</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">HttpUrl</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -6806,7 +6806,7 @@ argument while calling a function decorated with <code>validate_call</code>:</p>
 </code></pre></div>
 <h2 id="url_too_long"><code>url_too_long</code><a class="headerlink" href="#url_too_long" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the URL length is greater than 2083:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">HttpUrl</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">HttpUrl</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -6821,7 +6821,7 @@ argument while calling a function decorated with <code>validate_call</code>:</p>
 </code></pre></div>
 <h2 id="url_type"><code>url_type</code><a class="headerlink" href="#url_type" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the input value's type is not valid for a URL field:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">HttpUrl</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">HttpUrl</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -6836,7 +6836,7 @@ argument while calling a function decorated with <code>validate_call</code>:</p>
 </code></pre></div>
 <h2 id="uuid_parsing"><code>uuid_parsing</code><a class="headerlink" href="#uuid_parsing" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the input value's type is not valid for a UUID field:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">uuid</span> <span class="kn">import</span> <span class="n">UUID</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">uuid</span> <span class="kn">import</span> <span class="n">UUID</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -6853,7 +6853,7 @@ argument while calling a function decorated with <code>validate_call</code>:</p>
 </code></pre></div>
 <h2 id="uuid_type"><code>uuid_type</code><a class="headerlink" href="#uuid_type" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the input value's type is not valid instance for a UUID field (str, bytes or UUID):</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">uuid</span> <span class="kn">import</span> <span class="n">UUID</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">uuid</span> <span class="kn">import</span> <span class="n">UUID</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -6870,7 +6870,7 @@ argument while calling a function decorated with <code>validate_call</code>:</p>
 </code></pre></div>
 <h2 id="uuid_version"><code>uuid_version</code><a class="headerlink" href="#uuid_version" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the input value's type is not match UUID version:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">UUID5</span><span class="p">,</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">UUID5</span><span class="p">,</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -6885,7 +6885,7 @@ argument while calling a function decorated with <code>validate_call</code>:</p>
 </code></pre></div>
 <h2 id="value_error"><code>value_error</code><a class="headerlink" href="#value_error" title="Permanent link">&para;</a></h2>
 <p>This error is raised when a <code>ValueError</code> is raised during validation:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">field_validator</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">field_validator</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>

@@ -3329,7 +3329,7 @@ comfortable with potential change in behavior / support.</p>
 <summary>Compatibility with <code>mypy</code></summary>
 <p>Depending on the type used, <code>mypy</code> might raise an error when instantiating a <code>TypeAdapter</code>. As a workaround, you can explicitly
 annotate your variable:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">TypeAdapter</span>
 
@@ -3464,7 +3464,7 @@ annotate your variable:</p>
 <span class="sd">        Depending on the type used, `mypy` might raise an error when instantiating a `TypeAdapter`. As a workaround, you can explicitly</span>
 <span class="sd">        annotate your variable:</span>
 
-<span class="sd">        ```py</span>
+<span class="sd">        ```python</span>
 <span class="sd">        from typing import Union</span>
 
 <span class="sd">        from pydantic import TypeAdapter</span>

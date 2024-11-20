@@ -6570,7 +6570,7 @@ attribute if not provided.</p>
 </div>
 <p>Decorator to include <code>property</code> and <code>cached_property</code> when serializing models or dataclasses.</p>
 <p>This is useful for fields that are computed from other fields, or for fields that are expensive to compute and should be cached.</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">computed_field</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">computed_field</span>
 
 <span class="k">class</span> <span class="nc">Rectangle</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">width</span><span class="p">:</span> <span class="nb">int</span>
@@ -6595,7 +6595,7 @@ See <a href="https://github.com/python/mypy/issues/1362">mypy issue #1362</a>, f
 To avoid this error message, add <code># type: ignore[misc]</code> to the <code>@computed_field</code> line.</p>
 <p><a href="https://github.com/microsoft/pyright">pyright</a> supports <code>@computed_field</code> without error.</p>
 </div>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">random</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">random</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">computed_field</span>
 
@@ -6634,7 +6634,7 @@ To avoid this error message, add <code># type: ignore[misc]</code> to the <code>
 <code>mypy</code> complains about this behavior if allowed, and <code>dataclasses</code> doesn't allow this pattern either.
 See the example below:</p>
 </div>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">computed_field</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">computed_field</span>
 
 <span class="k">class</span> <span class="nc">Parent</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">a</span><span class="p">:</span> <span class="nb">str</span>
@@ -6652,7 +6652,7 @@ See the example below:</p>
     <span class="c1">#&gt; ValueError(&quot;you can&#39;t override a field with a computed field&quot;)</span>
 </code></pre></div>
 <p>Private properties decorated with <code>@computed_field</code> have <code>repr=False</code> by default.</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">cached_property</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">cached_property</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">computed_field</span>
 
@@ -7090,7 +7090,7 @@ objects.</p>
 
 <span class="sd">    This is useful for fields that are computed from other fields, or for fields that are expensive to compute and should be cached.</span>
 
-<span class="sd">    ```py</span>
+<span class="sd">    ```python</span>
 <span class="sd">    from pydantic import BaseModel, computed_field</span>
 
 <span class="sd">    class Rectangle(BaseModel):</span>
@@ -7118,7 +7118,7 @@ objects.</p>
 
 <span class="sd">        [pyright](https://github.com/microsoft/pyright) supports `@computed_field` without error.</span>
 
-<span class="sd">    ```py</span>
+<span class="sd">    ```python</span>
 <span class="sd">    import random</span>
 
 <span class="sd">    from pydantic import BaseModel, computed_field</span>
@@ -7158,7 +7158,7 @@ objects.</p>
 <span class="sd">        `mypy` complains about this behavior if allowed, and `dataclasses` doesn&#39;t allow this pattern either.</span>
 <span class="sd">        See the example below:</span>
 
-<span class="sd">    ```py</span>
+<span class="sd">    ```python</span>
 <span class="sd">    from pydantic import BaseModel, computed_field</span>
 
 <span class="sd">    class Parent(BaseModel):</span>
@@ -7179,7 +7179,7 @@ objects.</p>
 
 <span class="sd">    Private properties decorated with `@computed_field` have `repr=False` by default.</span>
 
-<span class="sd">    ```py</span>
+<span class="sd">    ```python</span>
 <span class="sd">    from functools import cached_property</span>
 
 <span class="sd">    from pydantic import BaseModel, computed_field</span>

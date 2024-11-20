@@ -3932,7 +3932,7 @@ works and how it integrates with Pydantic.</p>
 <p>In all three modes, the output can be customized by excluding specific fields, excluding unset fields, excluding default values, and excluding <code>None</code> values.</p>
 <details class="example">
 <summary>Example - Serialization 3 ways</summary>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
 
@@ -3960,7 +3960,7 @@ works and how it integrates with Pydantic.</p>
 <p>A <a href="https://json-schema.org/">JSON Schema</a> can be generated for any Pydantic schema &mdash; allowing self-documenting APIs and integration with a wide variety of tools which support the JSON Schema format.</p>
 <details class="example">
 <summary>Example - JSON Schema</summary>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
 
@@ -4023,7 +4023,7 @@ many common Python types like <a class="autorefs autorefs-external" href="https:
 implemented in Rust, it's also very performant.</p>
 <details class="example">
 <summary>Example - Strict mode that's actually useful</summary>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -4074,7 +4074,7 @@ implemented in Rust, it's also very performant.</p>
 </ol>
 <details class="example">
 <summary>Example - schema based on a <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.TypedDict"><code>TypedDict</code></a></summary>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 
 <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">NotRequired</span><span class="p">,</span> <span class="n">TypedDict</span>
 
@@ -4122,7 +4122,7 @@ implemented in Rust, it's also very performant.</p>
 <details class="example">
 <summary>Customisation Example - wrap validators</summary>
 <p>"wrap validators" are new in Pydantic V2 and are one of the most powerful ways to customize validation.</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timezone</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timezone</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
 
 <span class="kn">from</span> <span class="nn">pydantic_core.core_schema</span> <span class="kn">import</span> <span class="n">ValidatorFunctionWrapHandler</span>

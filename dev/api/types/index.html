@@ -4712,7 +4712,7 @@ to help you monitor and understand your
     <div class="doc doc-contents ">
 
         <p>An integer that must be greater than zero.</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PositiveInt</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PositiveInt</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">positive_int</span><span class="p">:</span> <span class="n">PositiveInt</span>
@@ -4761,7 +4761,7 @@ to help you monitor and understand your
     <div class="doc doc-contents ">
 
         <p>An integer that must be less than zero.</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">NegativeInt</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">NegativeInt</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">negative_int</span><span class="p">:</span> <span class="n">NegativeInt</span>
@@ -4810,7 +4810,7 @@ to help you monitor and understand your
     <div class="doc doc-contents ">
 
         <p>An integer that must be less than or equal to zero.</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">NonPositiveInt</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">NonPositiveInt</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">non_positive_int</span><span class="p">:</span> <span class="n">NonPositiveInt</span>
@@ -4859,7 +4859,7 @@ to help you monitor and understand your
     <div class="doc doc-contents ">
 
         <p>An integer that must be greater than or equal to zero.</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">NonNegativeInt</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">NonNegativeInt</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">non_negative_int</span><span class="p">:</span> <span class="n">NonNegativeInt</span>
@@ -4908,7 +4908,7 @@ to help you monitor and understand your
     <div class="doc doc-contents ">
 
         <p>An integer that must be validated in strict mode.</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">StrictInt</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">StrictInt</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 <span class="k">class</span> <span class="nc">StrictIntModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">strict_int</span><span class="p">:</span> <span class="n">StrictInt</span>
@@ -4946,7 +4946,7 @@ to help you monitor and understand your
     <div class="doc doc-contents ">
 
         <p>A float that must be greater than zero.</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PositiveFloat</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PositiveFloat</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">positive_float</span><span class="p">:</span> <span class="n">PositiveFloat</span>
@@ -4995,7 +4995,7 @@ to help you monitor and understand your
     <div class="doc doc-contents ">
 
         <p>A float that must be less than zero.</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">NegativeFloat</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">NegativeFloat</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">negative_float</span><span class="p">:</span> <span class="n">NegativeFloat</span>
@@ -5044,7 +5044,7 @@ to help you monitor and understand your
     <div class="doc doc-contents ">
 
         <p>A float that must be less than or equal to zero.</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">NonPositiveFloat</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">NonPositiveFloat</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">non_positive_float</span><span class="p">:</span> <span class="n">NonPositiveFloat</span>
@@ -5093,7 +5093,7 @@ to help you monitor and understand your
     <div class="doc doc-contents ">
 
         <p>A float that must be greater than or equal to zero.</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">NonNegativeFloat</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">NonNegativeFloat</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">non_negative_float</span><span class="p">:</span> <span class="n">NonNegativeFloat</span>
@@ -5142,7 +5142,7 @@ to help you monitor and understand your
     <div class="doc doc-contents ">
 
         <p>A float that must be validated in strict mode.</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">StrictFloat</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">StrictFloat</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 <span class="k">class</span> <span class="nc">StrictFloatModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">strict_float</span><span class="p">:</span> <span class="n">StrictFloat</span>
@@ -5180,7 +5180,7 @@ to help you monitor and understand your
     <div class="doc doc-contents ">
 
         <p>A float that must be finite (not <code>-inf</code>, <code>inf</code>, or <code>nan</code>).</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">FiniteFloat</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">FiniteFloat</span>
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">finite</span><span class="p">:</span> <span class="n">FiniteFloat</span>
@@ -5258,7 +5258,7 @@ to help you monitor and understand your
     <div class="doc doc-contents ">
 
         <p>A <a href="https://docs.python.org/3/library/uuid.html">UUID</a> that must be version 1.</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">uuid</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">uuid</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">UUID1</span><span class="p">,</span> <span class="n">BaseModel</span>
 
@@ -5290,7 +5290,7 @@ to help you monitor and understand your
     <div class="doc doc-contents ">
 
         <p>A <a href="https://docs.python.org/3/library/uuid.html">UUID</a> that must be version 3.</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">uuid</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">uuid</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">UUID3</span><span class="p">,</span> <span class="n">BaseModel</span>
 
@@ -5322,7 +5322,7 @@ to help you monitor and understand your
     <div class="doc doc-contents ">
 
         <p>A <a href="https://docs.python.org/3/library/uuid.html">UUID</a> that must be version 4.</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">uuid</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">uuid</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">UUID4</span><span class="p">,</span> <span class="n">BaseModel</span>
 
@@ -5354,7 +5354,7 @@ to help you monitor and understand your
     <div class="doc doc-contents ">
 
         <p>A <a href="https://docs.python.org/3/library/uuid.html">UUID</a> that must be version 5.</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">uuid</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">uuid</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">UUID5</span><span class="p">,</span> <span class="n">BaseModel</span>
 
@@ -5386,7 +5386,7 @@ to help you monitor and understand your
     <div class="doc doc-contents ">
 
         <p>A path that must point to a file.</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">FilePath</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -5446,7 +5446,7 @@ to help you monitor and understand your
     <div class="doc doc-contents ">
 
         <p>A path that must point to a directory.</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">DirectoryPath</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -5571,7 +5571,7 @@ these methods are considered legacy implementation, and thus, Pydantic v2.10+ no
 <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/base64.html#base64.b64encode"><code>base64.b64encode</code></a> and <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/base64.html#base64.b64decode"><code>base64.b64decode</code></a> functions.</p>
 <p>If you'd still like to use these legacy encoders / decoders, you can achieve this by creating a custom annotated type,
 like follows:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">base64</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">base64</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Literal</span>
 
 <span class="kn">from</span> <span class="nn">pydantic_core</span> <span class="kn">import</span> <span class="n">PydanticCustomError</span>
@@ -5601,7 +5601,7 @@ like follows:</p>
 
 <span class="n">LegacyBase64Bytes</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">bytes</span><span class="p">,</span> <span class="n">EncodedBytes</span><span class="p">(</span><span class="n">encoder</span><span class="o">=</span><span class="n">LegacyBase64Encoder</span><span class="p">)]</span>
 </code></pre></div>
-</details>        <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">Base64Bytes</span><span class="p">,</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+</details>        <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">Base64Bytes</span><span class="p">,</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">base64_bytes</span><span class="p">:</span> <span class="n">Base64Bytes</span>
@@ -5670,7 +5670,7 @@ these methods are considered legacy implementation, and thus, Pydantic v2.10+ no
 <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/base64.html#base64.b64encode"><code>base64.b64encode</code></a> and <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/base64.html#base64.b64decode"><code>base64.b64decode</code></a> functions.</p>
 <p>See the <a class="autorefs autorefs-internal" href="#pydantic.types.Base64Bytes"><code>Base64Bytes</code></a> type for more information on how to
 replicate the old behavior with the legacy encoders / decoders.</p>
-</details>        <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">Base64Str</span><span class="p">,</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+</details>        <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">Base64Str</span><span class="p">,</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">base64_str</span><span class="p">:</span> <span class="n">Base64Str</span>
@@ -5730,7 +5730,7 @@ replicate the old behavior with the legacy encoders / decoders.</p>
 functions.</p>
 <p>As a result, the <code>Base64UrlBytes</code> type can be used to faithfully decode "vanilla" base64 data
 (using <code>'+'</code> and <code>'/'</code>).</p>
-</details>        <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">Base64UrlBytes</span><span class="p">,</span> <span class="n">BaseModel</span>
+</details>        <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">Base64UrlBytes</span><span class="p">,</span> <span class="n">BaseModel</span>
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">base64url_bytes</span><span class="p">:</span> <span class="n">Base64UrlBytes</span>
@@ -5772,7 +5772,7 @@ functions.</p>
   <p>Under the hood, <code>Base64UrlStr</code> use standard library <code>base64.urlsafe_b64encode</code> and <code>base64.urlsafe_b64decode</code>
 functions.</p>
 <p>As a result, the <code>Base64UrlStr</code> type can be used to faithfully decode "vanilla" base64 data (using <code>'+'</code> and <code>'/'</code>).</p>
-</details>        <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">Base64UrlStr</span><span class="p">,</span> <span class="n">BaseModel</span>
+</details>        <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">Base64UrlStr</span><span class="p">,</span> <span class="n">BaseModel</span>
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">base64url_str</span><span class="p">:</span> <span class="n">Base64UrlStr</span>
@@ -5825,7 +5825,7 @@ functions.</p>
 </ul>
 <p>The following example demonstrates how to use <code>JsonValue</code> to validate JSON data,
 and what kind of errors to expect when input data is not json serializable.</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">json</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">json</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">JsonValue</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -6418,7 +6418,7 @@ the resulting field value would be the function <code>cos</code>. If a <code>.</
 are present at the same path, the module will be preferred.</p>
 <p>On model instantiation, pointers will be evaluated and imported. There is
 some nuance to this behavior, demonstrated in the examples below.</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">math</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">math</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ImportString</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -6469,7 +6469,7 @@ some nuance to this behavior, demonstrated in the examples below.</p>
 <span class="k">assert</span> <span class="n">my_cos_default3</span><span class="o">.</span><span class="n">obj</span> <span class="o">==</span> <span class="s1">&#39;math.cos&#39;</span>  <span class="c1"># just string, not evaluated</span>
 </code></pre></div>
 <p>Serializing an <code>ImportString</code> type to json is also possible.</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ImportString</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ImportString</span>
 
 <span class="k">class</span> <span class="nc">ImportThings</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">obj</span><span class="p">:</span> <span class="n">ImportString</span>
@@ -6617,7 +6617,7 @@ some nuance to this behavior, demonstrated in the examples below.</p>
 <span class="sd">    On model instantiation, pointers will be evaluated and imported. There is</span>
 <span class="sd">    some nuance to this behavior, demonstrated in the examples below.</span>
 
-<span class="sd">    ```py</span>
+<span class="sd">    ```python</span>
 <span class="sd">    import math</span>
 
 <span class="sd">    from pydantic import BaseModel, Field, ImportString, ValidationError</span>
@@ -6671,7 +6671,7 @@ some nuance to this behavior, demonstrated in the examples below.</p>
 
 <span class="sd">    Serializing an `ImportString` type to json is also possible.</span>
 
-<span class="sd">    ```py</span>
+<span class="sd">    ```python</span>
 <span class="sd">    from pydantic import BaseModel, ImportString</span>
 
 <span class="sd">    class ImportThings(BaseModel):</span>
@@ -6939,7 +6939,7 @@ some nuance to this behavior, demonstrated in the examples below.</p>
         <p>A special type wrapper which loads JSON before parsing.</p>
 <p>You can use the <code>Json</code> data type to make Pydantic first load a raw JSON string before
 validating the loaded data into the parametrized type:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Json</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -6988,7 +6988,7 @@ validating the loaded data into the parametrized type:</p>
 </code></pre></div>
 <p>When you dump the model using <code>model_dump</code> or <code>model_dump_json</code>, the dumped value will be the result of validation,
 not the original JSON string. However, you can use the argument <code>round_trip=True</code> to get the original JSON string back:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Json</span>
 
@@ -7104,7 +7104,7 @@ not the original JSON string. However, you can use the argument <code>round_trip
 <span class="sd">    You can use the `Json` data type to make Pydantic first load a raw JSON string before</span>
 <span class="sd">    validating the loaded data into the parametrized type:</span>
 
-<span class="sd">    ```py</span>
+<span class="sd">    ```python</span>
 <span class="sd">    from typing import Any, List</span>
 
 <span class="sd">    from pydantic import BaseModel, Json, ValidationError</span>
@@ -7156,7 +7156,7 @@ not the original JSON string. However, you can use the argument <code>round_trip
 <span class="sd">    When you dump the model using `model_dump` or `model_dump_json`, the dumped value will be the result of validation,</span>
 <span class="sd">    not the original JSON string. However, you can use the argument `round_trip=True` to get the original JSON string back:</span>
 
-<span class="sd">    ```py</span>
+<span class="sd">    ```python</span>
 <span class="sd">    from typing import List</span>
 
 <span class="sd">    from pydantic import BaseModel, Json</span>
@@ -7238,7 +7238,7 @@ ways of using <code>Secret</code> to create a new secret type.</p>
 <ol>
 <li>Directly parametrizing <code>Secret</code> with a type:</li>
 </ol>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Secret</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Secret</span>
 
 <span class="n">SecretBool</span> <span class="o">=</span> <span class="n">Secret</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span>
 
@@ -7258,7 +7258,7 @@ ways of using <code>Secret</code> to create a new secret type.</p>
 <ol>
 <li>Subclassing from parametrized <code>Secret</code>:</li>
 </ol>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Secret</span>
 
@@ -7282,7 +7282,7 @@ ways of using <code>Secret</code> to create a new secret type.</p>
 <p>The value returned by the <code>_display</code> method will be used for <code>repr()</code> and <code>str()</code>.</p>
 <p>You can enforce constraints on the underlying type through annotations:
 For example:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">Secret</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -7493,7 +7493,7 @@ For example:</p>
 
 <span class="sd">    1. Directly parametrizing `Secret` with a type:</span>
 
-<span class="sd">    ```py</span>
+<span class="sd">    ```python</span>
 <span class="sd">    from pydantic import BaseModel, Secret</span>
 
 <span class="sd">    SecretBool = Secret[bool]</span>
@@ -7514,7 +7514,7 @@ For example:</p>
 
 <span class="sd">    2. Subclassing from parametrized `Secret`:</span>
 
-<span class="sd">    ```py</span>
+<span class="sd">    ```python</span>
 <span class="sd">    from datetime import date</span>
 
 <span class="sd">    from pydantic import BaseModel, Secret</span>
@@ -7542,7 +7542,7 @@ For example:</p>
 <span class="sd">    You can enforce constraints on the underlying type through annotations:</span>
 <span class="sd">    For example:</span>
 
-<span class="sd">    ```py</span>
+<span class="sd">    ```python</span>
 <span class="sd">    from typing_extensions import Annotated</span>
 
 <span class="sd">    from pydantic import BaseModel, Field, Secret, ValidationError</span>
@@ -7680,7 +7680,7 @@ For example:</p>
         <p>A string used for storing sensitive information that you do not want to be visible in logging or tracebacks.</p>
 <p>When the secret value is nonempty, it is displayed as <code>'**********'</code> instead of the underlying value in
 calls to <code>repr()</code> and <code>str()</code>. If the value <em>is</em> empty, it is displayed as <code>''</code>.</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">SecretStr</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">SecretStr</span>
 
 <span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">username</span><span class="p">:</span> <span class="nb">str</span>
@@ -7699,7 +7699,7 @@ calls to <code>repr()</code> and <code>str()</code>. If the value <em>is</em> em
 will be serialized as <code>**********</code> when serializing to json.</p>
 <p>You can use the <a class="autorefs autorefs-internal" href="../functional_serializers/#pydantic.functional_serializers.field_serializer"><code>field_serializer</code></a> to dump the
 secret as plain-text when serializing to json.</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">SecretBytes</span><span class="p">,</span> <span class="n">SecretStr</span><span class="p">,</span> <span class="n">field_serializer</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">SecretBytes</span><span class="p">,</span> <span class="n">SecretStr</span><span class="p">,</span> <span class="n">field_serializer</span>
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">password</span><span class="p">:</span> <span class="n">SecretStr</span>
@@ -7797,7 +7797,7 @@ secret as plain-text when serializing to json.</p>
 <span class="sd">    When the secret value is nonempty, it is displayed as `&#39;**********&#39;` instead of the underlying value in</span>
 <span class="sd">    calls to `repr()` and `str()`. If the value _is_ empty, it is displayed as `&#39;&#39;`.</span>
 
-<span class="sd">    ```py</span>
+<span class="sd">    ```python</span>
 <span class="sd">    from pydantic import BaseModel, SecretStr</span>
 
 <span class="sd">    class User(BaseModel):</span>
@@ -7820,7 +7820,7 @@ secret as plain-text when serializing to json.</p>
 <span class="sd">    You can use the [`field_serializer`][pydantic.functional_serializers.field_serializer] to dump the</span>
 <span class="sd">    secret as plain-text when serializing to json.</span>
 
-<span class="sd">    ```py</span>
+<span class="sd">    ```python</span>
 <span class="sd">    from pydantic import BaseModel, SecretBytes, SecretStr, field_serializer</span>
 
 <span class="sd">    class Model(BaseModel):</span>
@@ -7899,7 +7899,7 @@ secret as plain-text when serializing to json.</p>
 <p>It displays <code>b'**********'</code> instead of the string value on <code>repr()</code> and <code>str()</code> calls.
 When the secret value is nonempty, it is displayed as <code>b'**********'</code> instead of the underlying value in
 calls to <code>repr()</code> and <code>str()</code>. If the value <em>is</em> empty, it is displayed as <code>b''</code>.</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">SecretBytes</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">SecretBytes</span>
 
 <span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">username</span><span class="p">:</span> <span class="nb">str</span>
@@ -7952,7 +7952,7 @@ calls to <code>repr()</code> and <code>str()</code>. If the value <em>is</em> em
 <span class="sd">    When the secret value is nonempty, it is displayed as `b&#39;**********&#39;` instead of the underlying value in</span>
 <span class="sd">    calls to `repr()` and `str()`. If the value _is_ empty, it is displayed as `b&#39;&#39;`.</span>
 
-<span class="sd">    ```py</span>
+<span class="sd">    ```python</span>
 <span class="sd">    from pydantic import BaseModel, SecretBytes</span>
 
 <span class="sd">    class User(BaseModel):</span>
@@ -8552,7 +8552,7 @@ rather than a power of 10 (so, for example, <code>'1 MB'</code> is treated as <c
 <p class="admonition-title">Info</p>
 <p>Note that <code>1b</code> will be parsed as "1 byte" and not "1 bit".</p>
 </div>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ByteSize</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ByteSize</span>
 
 <span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">size</span><span class="p">:</span> <span class="n">ByteSize</span>
@@ -8746,7 +8746,7 @@ rather than a power of 10 (so, for example, <code>'1 MB'</code> is treated as <c
 <span class="sd">    !!! info</span>
 <span class="sd">        Note that `1b` will be parsed as &quot;1 byte&quot; and not &quot;1 bit&quot;.</span>
 
-<span class="sd">    ```py</span>
+<span class="sd">    ```python</span>
 <span class="sd">    from pydantic import BaseModel, ByteSize</span>
 
 <span class="sd">    class MyModel(BaseModel):</span>
@@ -10809,7 +10809,7 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 
         <p>A bytes type that is encoded and decoded using the specified encoder.</p>
 <p><code>EncodedBytes</code> needs an encoder that implements <code>EncoderProtocol</code> to operate.</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">EncodedBytes</span><span class="p">,</span> <span class="n">EncoderProtocol</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -10960,7 +10960,7 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 
 <span class="sd">    `EncodedBytes` needs an encoder that implements `EncoderProtocol` to operate.</span>
 
-<span class="sd">    ```py</span>
+<span class="sd">    ```python</span>
 <span class="sd">    from typing_extensions import Annotated</span>
 
 <span class="sd">    from pydantic import BaseModel, EncodedBytes, EncoderProtocol, ValidationError</span>
@@ -11282,7 +11282,7 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 
         <p>A str type that is encoded and decoded using the specified encoder.</p>
 <p><code>EncodedStr</code> needs an encoder that implements <code>EncoderProtocol</code> to operate.</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">EncodedStr</span><span class="p">,</span> <span class="n">EncoderProtocol</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -11433,7 +11433,7 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 
 <span class="sd">    `EncodedStr` needs an encoder that implements `EncoderProtocol` to operate.</span>
 
-<span class="sd">    ```py</span>
+<span class="sd">    ```python</span>
 <span class="sd">    from typing_extensions import Annotated</span>
 
 <span class="sd">    from pydantic import BaseModel, EncodedStr, EncoderProtocol, ValidationError</span>
@@ -11918,7 +11918,7 @@ if <code>get_discriminator_value</code> returns <code>'apple'</code>, the input 
 returns <code>'pumpkin'</code>, the input should be validated as a <code>PumpkinPie</code>.</p>
 <p>The primary role of the <code>Tag</code> here is to map the return value from the callable <code>Discriminator</code> function to
 the appropriate member of the <code>Union</code> in question.</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Union</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span><span class="p">,</span> <span class="n">Literal</span>
 
@@ -12079,7 +12079,7 @@ callable <code>Discriminator</code>. Failing to do so will result in a <code>Pyd
 <span class="sd">    The primary role of the `Tag` here is to map the return value from the callable `Discriminator` function to</span>
 <span class="sd">    the appropriate member of the `Union` in question.</span>
 
-<span class="sd">    ```py</span>
+<span class="sd">    ```python</span>
 <span class="sd">    from typing import Any, Union</span>
 
 <span class="sd">    from typing_extensions import Annotated, Literal</span>
@@ -12204,7 +12204,7 @@ Finally, this allows you to use a custom callable as the way to identify which m
 belongs to, while still seeing all the performance benefits of a discriminated union.</p>
 <p>Consider this example, which is much more performant with the use of <code>Discriminator</code> and thus a <code>TaggedUnion</code>
 than it would be as a normal <code>Union</code>.</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Union</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span><span class="p">,</span> <span class="n">Literal</span>
 
@@ -12426,7 +12426,7 @@ than it would be as a normal <code>Union</code>.</p>
 <span class="sd">    Consider this example, which is much more performant with the use of `Discriminator` and thus a `TaggedUnion`</span>
 <span class="sd">    than it would be as a normal `Union`.</span>
 
-<span class="sd">    ```py</span>
+<span class="sd">    ```python</span>
 <span class="sd">    from typing import Any, Union</span>
 
 <span class="sd">    from typing_extensions import Annotated, Literal</span>
@@ -12710,7 +12710,7 @@ validation errors.</p>
 <p>This can be useful when you want to validate a large amount of data and you only need to know if it's valid or not.</p>
 <p>You might want to enable this setting if you want to validate your data faster (basically, if you use this,
 validation will be more performant with the caveat that you get less information).</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
 
 <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
 
@@ -12774,7 +12774,7 @@ validation will be more performant with the caveat that you get less information
 <span class="sd">    You might want to enable this setting if you want to validate your data faster (basically, if you use this,</span>
 <span class="sd">    validation will be more performant with the caveat that you get less information).</span>
 
-<span class="sd">    ```py</span>
+<span class="sd">    ```python</span>
 <span class="sd">    from typing import List</span>
 
 <span class="sd">    from typing_extensions import Annotated</span>
@@ -12853,14 +12853,14 @@ validation will be more performant with the caveat that you get less information
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="pydantic.types.conint--__tabbed_1_1" name="pydantic.types.conint--__tabbed_1" type="radio" /><input id="pydantic.types.conint--__tabbed_1_2" name="pydantic.types.conint--__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="pydantic.types.conint--__tabbed_1_1"><img alt="❌" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/274c.svg" title=":x:" /> Don't do this</label><label for="pydantic.types.conint--__tabbed_1_2"><img alt="✅" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/2705.svg" title=":white_check_mark:" /> Do this</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">conint</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">conint</span>
 
 <span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">bar</span><span class="p">:</span> <span class="n">conint</span><span class="p">(</span><span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">gt</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
 
@@ -12994,7 +12994,7 @@ validation will be more performant with the caveat that you get less information
           </tr>
       </tbody>
     </table>
-        <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">conint</span>
+        <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">conint</span>
 
 <span class="k">class</span> <span class="nc">ConstrainedExample</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">constrained_int</span><span class="p">:</span> <span class="n">conint</span><span class="p">(</span><span class="n">gt</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
@@ -13127,7 +13127,7 @@ validation will be more performant with the caveat that you get less information
 <span class="sd">        The reason is that `conint` returns a type, which doesn&#39;t play well with static analysis tools.</span>
 
 <span class="sd">        === &quot;:x: Don&#39;t do this&quot;</span>
-<span class="sd">            ```py</span>
+<span class="sd">            ```python</span>
 <span class="sd">            from pydantic import BaseModel, conint</span>
 
 <span class="sd">            class Foo(BaseModel):</span>
@@ -13135,7 +13135,7 @@ validation will be more performant with the caveat that you get less information
 <span class="sd">            ```</span>
 
 <span class="sd">        === &quot;:white_check_mark: Do this&quot;</span>
-<span class="sd">            ```py</span>
+<span class="sd">            ```python</span>
 <span class="sd">            from typing_extensions import Annotated</span>
 
 <span class="sd">            from pydantic import BaseModel, Field</span>
@@ -13157,7 +13157,7 @@ validation will be more performant with the caveat that you get less information
 <span class="sd">    Returns:</span>
 <span class="sd">        The wrapped integer type.</span>
 
-<span class="sd">    ```py</span>
+<span class="sd">    ```python</span>
 <span class="sd">    from pydantic import BaseModel, ValidationError, conint</span>
 
 <span class="sd">    class ConstrainedExample(BaseModel):</span>
@@ -13230,14 +13230,14 @@ validation will be more performant with the caveat that you get less information
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="pydantic.types.confloat--__tabbed_1_1" name="pydantic.types.confloat--__tabbed_1" type="radio" /><input id="pydantic.types.confloat--__tabbed_1_2" name="pydantic.types.confloat--__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="pydantic.types.confloat--__tabbed_1_1"><img alt="❌" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/274c.svg" title=":x:" /> Don't do this</label><label for="pydantic.types.confloat--__tabbed_1_2"><img alt="✅" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/2705.svg" title=":white_check_mark:" /> Do this</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">confloat</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">confloat</span>
 
 <span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">bar</span><span class="p">:</span> <span class="n">confloat</span><span class="p">(</span><span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">gt</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
 
@@ -13385,7 +13385,7 @@ validation will be more performant with the caveat that you get less information
           </tr>
       </tbody>
     </table>
-        <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">confloat</span>
+        <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">confloat</span>
 
 <span class="k">class</span> <span class="nc">ConstrainedExample</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">constrained_float</span><span class="p">:</span> <span class="n">confloat</span><span class="p">(</span><span class="n">gt</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
@@ -13521,7 +13521,7 @@ validation will be more performant with the caveat that you get less information
 <span class="sd">        The reason is that `confloat` returns a type, which doesn&#39;t play well with static analysis tools.</span>
 
 <span class="sd">        === &quot;:x: Don&#39;t do this&quot;</span>
-<span class="sd">            ```py</span>
+<span class="sd">            ```python</span>
 <span class="sd">            from pydantic import BaseModel, confloat</span>
 
 <span class="sd">            class Foo(BaseModel):</span>
@@ -13529,7 +13529,7 @@ validation will be more performant with the caveat that you get less information
 <span class="sd">            ```</span>
 
 <span class="sd">        === &quot;:white_check_mark: Do this&quot;</span>
-<span class="sd">            ```py</span>
+<span class="sd">            ```python</span>
 <span class="sd">            from typing_extensions import Annotated</span>
 
 <span class="sd">            from pydantic import BaseModel, Field</span>
@@ -13552,7 +13552,7 @@ validation will be more performant with the caveat that you get less information
 <span class="sd">    Returns:</span>
 <span class="sd">        The wrapped float type.</span>
 
-<span class="sd">    ```py</span>
+<span class="sd">    ```python</span>
 <span class="sd">    from pydantic import BaseModel, ValidationError, confloat</span>
 
 <span class="sd">    class ConstrainedExample(BaseModel):</span>
@@ -13774,14 +13774,14 @@ validation will be more performant with the caveat that you get less information
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="pydantic.types.constr--__tabbed_1_1" name="pydantic.types.constr--__tabbed_1" type="radio" /><input id="pydantic.types.constr--__tabbed_1_2" name="pydantic.types.constr--__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="pydantic.types.constr--__tabbed_1_1"><img alt="❌" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/274c.svg" title=":x:" /> Don't do this</label><label for="pydantic.types.constr--__tabbed_1_2"><img alt="✅" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/2705.svg" title=":white_check_mark:" /> Do this</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">constr</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">constr</span>
 
 <span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">bar</span><span class="p">:</span> <span class="n">constr</span><span class="p">(</span><span class="n">strip_whitespace</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">to_upper</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">pattern</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;^[A-Z]+$&#39;</span><span class="p">)</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">StringConstraints</span>
 
@@ -13798,7 +13798,7 @@ validation will be more performant with the caveat that you get less information
 </div>
 </div>
 <p>A wrapper around <code>str</code> that allows for additional constraints.</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">constr</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">constr</span>
 
 <span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">bar</span><span class="p">:</span> <span class="n">constr</span><span class="p">(</span><span class="n">strip_whitespace</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">to_upper</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -14046,7 +14046,7 @@ validation will be more performant with the caveat that you get less information
 <span class="sd">        The reason is that `constr` returns a type, which doesn&#39;t play well with static analysis tools.</span>
 
 <span class="sd">        === &quot;:x: Don&#39;t do this&quot;</span>
-<span class="sd">            ```py</span>
+<span class="sd">            ```python</span>
 <span class="sd">            from pydantic import BaseModel, constr</span>
 
 <span class="sd">            class Foo(BaseModel):</span>
@@ -14054,7 +14054,7 @@ validation will be more performant with the caveat that you get less information
 <span class="sd">            ```</span>
 
 <span class="sd">        === &quot;:white_check_mark: Do this&quot;</span>
-<span class="sd">            ```py</span>
+<span class="sd">            ```python</span>
 <span class="sd">            from typing_extensions import Annotated</span>
 
 <span class="sd">            from pydantic import BaseModel, StringConstraints</span>
@@ -14070,7 +14070,7 @@ validation will be more performant with the caveat that you get less information
 
 <span class="sd">    A wrapper around `str` that allows for additional constraints.</span>
 
-<span class="sd">    ```py</span>
+<span class="sd">    ```python</span>
 <span class="sd">    from pydantic import BaseModel, constr</span>
 
 <span class="sd">    class Foo(BaseModel):</span>
@@ -14602,14 +14602,14 @@ See <a href="https://github.com/pydantic/pydantic-core/issues/296">this issue</a
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="pydantic.types.condecimal--__tabbed_1_1" name="pydantic.types.condecimal--__tabbed_1" type="radio" /><input id="pydantic.types.condecimal--__tabbed_1_2" name="pydantic.types.condecimal--__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="pydantic.types.condecimal--__tabbed_1_1"><img alt="❌" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/274c.svg" title=":x:" /> Don't do this</label><label for="pydantic.types.condecimal--__tabbed_1_2"><img alt="✅" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/2705.svg" title=":white_check_mark:" /> Do this</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">condecimal</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">condecimal</span>
 
 <span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">bar</span><span class="p">:</span> <span class="n">condecimal</span><span class="p">(</span><span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">allow_inf_nan</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">decimal</span> <span class="kn">import</span> <span class="n">Decimal</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">decimal</span> <span class="kn">import</span> <span class="n">Decimal</span>
 
 <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
 
@@ -14764,7 +14764,7 @@ See <a href="https://github.com/pydantic/pydantic-core/issues/296">this issue</a
           </tr>
       </tbody>
     </table>
-        <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">decimal</span> <span class="kn">import</span> <span class="n">Decimal</span>
+        <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">decimal</span> <span class="kn">import</span> <span class="n">Decimal</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">condecimal</span>
 
@@ -14910,7 +14910,7 @@ See <a href="https://github.com/pydantic/pydantic-core/issues/296">this issue</a
 <span class="sd">        The reason is that `condecimal` returns a type, which doesn&#39;t play well with static analysis tools.</span>
 
 <span class="sd">        === &quot;:x: Don&#39;t do this&quot;</span>
-<span class="sd">            ```py</span>
+<span class="sd">            ```python</span>
 <span class="sd">            from pydantic import BaseModel, condecimal</span>
 
 <span class="sd">            class Foo(BaseModel):</span>
@@ -14918,7 +14918,7 @@ See <a href="https://github.com/pydantic/pydantic-core/issues/296">this issue</a
 <span class="sd">            ```</span>
 
 <span class="sd">        === &quot;:white_check_mark: Do this&quot;</span>
-<span class="sd">            ```py</span>
+<span class="sd">            ```python</span>
 <span class="sd">            from decimal import Decimal</span>
 
 <span class="sd">            from typing_extensions import Annotated</span>
@@ -14942,7 +14942,7 @@ See <a href="https://github.com/pydantic/pydantic-core/issues/296">this issue</a
 <span class="sd">        decimal_places: The number of decimal places. Defaults to `None`.</span>
 <span class="sd">        allow_inf_nan: Whether to allow infinity and NaN. Defaults to `None`.</span>
 
-<span class="sd">    ```py</span>
+<span class="sd">    ```python</span>
 <span class="sd">    from decimal import Decimal</span>
 
 <span class="sd">    from pydantic import BaseModel, ValidationError, condecimal</span>

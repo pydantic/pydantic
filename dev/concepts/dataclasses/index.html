@@ -3106,7 +3106,7 @@ on standard <a class="autorefs autorefs-external" href="https://docs.python.org/
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.8 and above</label><label for="__tabbed_1_2">Python 3.10 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
 
 <span class="kn">from</span> <span class="nn">pydantic.dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
@@ -3127,7 +3127,7 @@ on standard <a class="autorefs autorefs-external" href="https://docs.python.org/
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 
 <span class="kn">from</span> <span class="nn">pydantic.dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
 
@@ -3174,7 +3174,7 @@ you can wrap the dataclass with a <a class="autorefs autorefs-internal" href="..
 <div class="tabbed-set tabbed-alternate" data-tabs="2:3"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><input id="__tabbed_2_3" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.8 and above</label><label for="__tabbed_2_2">Python 3.9 and above</label><label for="__tabbed_2_3">Python 3.10 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">dataclasses</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">dataclasses</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">Field</span><span class="p">,</span> <span class="n">TypeAdapter</span>
@@ -3228,7 +3228,7 @@ you can wrap the dataclass with a <a class="autorefs autorefs-internal" href="..
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">dataclasses</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">dataclasses</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">Field</span><span class="p">,</span> <span class="n">TypeAdapter</span>
@@ -3282,7 +3282,7 @@ you can wrap the dataclass with a <a class="autorefs autorefs-internal" href="..
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">dataclasses</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">dataclasses</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">Field</span><span class="p">,</span> <span class="n">TypeAdapter</span>
 <span class="kn">from</span> <span class="nn">pydantic.dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
@@ -3344,7 +3344,7 @@ of a <code>config</code> parameter.</p>
 <li>Use the <code>config</code> argument of the decorator.</li>
 <li>Define the configuration with the <code>__pydantic_config__</code> attribute.</li>
 </ul>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ConfigDict</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ConfigDict</span>
 <span class="kn">from</span> <span class="nn">pydantic.dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
 
 
@@ -3377,7 +3377,7 @@ See the <a href="../models/#rebuilding-model-schema">rebuilding model schema</a>
 <h3 id="inherit-from-stdlib-dataclasses">Inherit from stdlib dataclasses<a class="headerlink" href="#inherit-from-stdlib-dataclasses" title="Permanent link">&para;</a></h3>
 <p>Stdlib dataclasses (nested or not) can also be inherited and Pydantic will automatically validate
 all the inherited fields.</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">dataclasses</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">dataclasses</span>
 
 <span class="kn">import</span> <span class="nn">pydantic</span>
 
@@ -3418,7 +3418,7 @@ dataclass as a field annotation is functionally equivalent.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.8 and above</label><label for="__tabbed_3_2">Python 3.10 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">dataclasses</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">dataclasses</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
@@ -3461,7 +3461,7 @@ dataclass as a field annotation is functionally equivalent.</p>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">dataclasses</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">dataclasses</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -3509,7 +3509,7 @@ dataclass as a field annotation is functionally equivalent.</p>
 of custom types, you will get an error when trying to refer to the dataclass. To circumvent
 the issue, you can set the <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.arbitrary_types_allowed"><code>arbitrary_types_allowed</code></a>
 configuration value on the dataclass:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">dataclasses</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">dataclasses</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
 <span class="kn">from</span> <span class="nn">pydantic.errors</span> <span class="kn">import</span> <span class="n">PydanticSchemaGenerationError</span>
@@ -3568,7 +3568,7 @@ configuration value on the dataclass:</p>
 <p>Pydantic dataclasses are still considered dataclasses, so using <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/dataclasses.html#dataclasses.is_dataclass"><code>dataclasses.is_dataclass</code></a> will return <code>True</code>. To check
 if a type is specifically a pydantic dataclass you can use the <a class="autorefs autorefs-internal" href="../../api/dataclasses/#pydantic.dataclasses.is_pydantic_dataclass"><code>is_pydantic_dataclass</code></a>
 function.</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">dataclasses</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">dataclasses</span>
 
 <span class="kn">import</span> <span class="nn">pydantic</span>
 
@@ -3592,7 +3592,7 @@ function.</p>
 </code></pre></div>
 <h2 id="validators-and-initialization-hooks">Validators and initialization hooks<a class="headerlink" href="#validators-and-initialization-hooks" title="Permanent link">&para;</a></h2>
 <p>Validators also work with Pydantic dataclasses:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">field_validator</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">field_validator</span>
 <span class="kn">from</span> <span class="nn">pydantic.dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
 
 
@@ -3617,7 +3617,7 @@ function.</p>
 be called between the calls to <em>before</em> and <em>after</em> model validators.</p>
 <details class="example">
 <summary>Example</summary>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic_core</span> <span class="kn">import</span> <span class="n">ArgsKwargs</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic_core</span> <span class="kn">import</span> <span class="n">ArgsKwargs</span>
 <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Self</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">model_validator</span>
