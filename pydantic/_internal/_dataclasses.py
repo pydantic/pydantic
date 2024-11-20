@@ -216,7 +216,7 @@ def is_builtin_dataclass(_cls: type[Any]) -> TypeGuard[type[StandardDataclass]]:
     - `_cls` does not inherit from a processed pydantic dataclass (and thus have a `__pydantic_validator__`)
     - `_cls` does not have any annotations that are not dataclass fields
     e.g.
-    ```py
+    ```python
     import dataclasses
 
     import pydantic.dataclasses

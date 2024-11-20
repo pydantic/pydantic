@@ -1314,7 +1314,7 @@ def computed_field(
 
     This is useful for fields that are computed from other fields, or for fields that are expensive to compute and should be cached.
 
-    ```py
+    ```python
     from pydantic import BaseModel, computed_field
 
     class Rectangle(BaseModel):
@@ -1342,7 +1342,7 @@ def computed_field(
 
         [pyright](https://github.com/microsoft/pyright) supports `@computed_field` without error.
 
-    ```py
+    ```python
     import random
 
     from pydantic import BaseModel, computed_field
@@ -1382,7 +1382,7 @@ def computed_field(
         `mypy` complains about this behavior if allowed, and `dataclasses` doesn't allow this pattern either.
         See the example below:
 
-    ```py
+    ```python
     from pydantic import BaseModel, computed_field
 
     class Parent(BaseModel):
@@ -1403,7 +1403,7 @@ def computed_field(
 
     Private properties decorated with `@computed_field` have `repr=False` by default.
 
-    ```py
+    ```python
     from functools import cached_property
 
     from pydantic import BaseModel, computed_field

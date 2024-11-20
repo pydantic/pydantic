@@ -2572,7 +2572,7 @@ else:
         Add this as an annotation on a field to skip generating a JSON schema for that field.
 
         Example:
-            ```py
+            ```python
             from typing import Union
 
             from pydantic import BaseModel

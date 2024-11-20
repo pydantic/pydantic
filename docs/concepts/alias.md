@@ -107,7 +107,7 @@ want to specify the alias for each field individually.
 
 Here's a basic example using a callable:
 
-```py
+```python
 from pydantic import BaseModel, ConfigDict
 
 
@@ -141,7 +141,7 @@ but you don't want to specify the validation and serialization aliases for each 
 
 For example:
 
-```py
+```python
 from pydantic import AliasGenerator, BaseModel, ConfigDict
 
 
@@ -167,7 +167,7 @@ print(t.model_dump(by_alias=True))
 
 If you specify an `alias` on the [`Field`][pydantic.fields.Field], it will take precedence over the generated alias by default:
 
-```py
+```python
 from pydantic import BaseModel, ConfigDict, Field
 
 
