@@ -3161,7 +3161,7 @@ dependency management process.</p>
 <ol>
 <li>Check the contents of the installed <code>pydantic-core</code> package. Are the compiled library and its type stubs both present?</li>
 </ol>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">importlib.metadata</span> <span class="kn">import</span> <span class="n">files</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">importlib.metadata</span> <span class="kn">import</span> <span class="n">files</span>
 <span class="nb">print</span><span class="p">([</span><span class="n">file</span> <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">files</span><span class="p">(</span><span class="s1">&#39;pydantic-core&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="n">file</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;_pydantic_core&#39;</span><span class="p">)])</span>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">[PackagePath(&#39;pydantic_core/_pydantic_core.pyi&#39;), PackagePath(&#39;pydantic_core/_pydantic_core.cpython-312-x86_64-linux-gnu.so&#39;)]</span>
@@ -3171,7 +3171,7 @@ dependency management process.</p>
 <ol>
 <li>Check that your lambda's Python version is compatible with the compiled library version found above.</li>
 </ol>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">sysconfig</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">sysconfig</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">sysconfig</span><span class="o">.</span><span class="n">get_config_var</span><span class="p">(</span><span class="s2">&quot;EXT_SUFFIX&quot;</span><span class="p">))</span>
 <span class="c1">#&gt; &#39;.cpython-312-x86_64-linux-gnu.so&#39;</span>
 </code></pre></div>

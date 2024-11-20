@@ -3221,13 +3221,14 @@ does not always work for more complex cases.</p>
 <span class="n">OuterDict</span> <span class="o">=</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="s1">&#39;IntList&#39;</span><span class="p">]</span>
 </code></pre></div></p>
 <p>b.py
-```python test="skip"
-from a import OuterDict</p>
-<p>from pydantic import TypeAdapter</p>
-<p>IntList = int  # replaces the symbol the forward reference is looking for
-v = TypeAdapter(OuterDict)
-v({'x': 1})  # should fail but doesn't
-```</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">a</span> <span class="kn">import</span> <span class="n">OuterDict</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">TypeAdapter</span>
+
+<span class="n">IntList</span> <span class="o">=</span> <span class="nb">int</span>  <span class="c1"># replaces the symbol the forward reference is looking for</span>
+<span class="n">v</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">OuterDict</span><span class="p">)</span>
+<span class="n">v</span><span class="p">({</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>  <span class="c1"># should fail but doesn&#39;t</span>
+</code></pre></div></p>
 <p>If <code>OuterDict</code> were a <code>BaseModel</code>, this would work because it would resolve
 the forward reference within the <code>a.py</code> namespace.
 But <code>TypeAdapter(OuterDict)</code> can't determine what module <code>OuterDict</code> came from.</p>

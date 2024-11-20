@@ -4656,7 +4656,7 @@ even if a slash is not specified in the argument to a <code>Url</code> type cons
 <p>If you still want to use the old behavior without the appended slash, take a look at this <a href="https://github.com/pydantic/pydantic/issues/7186#issuecomment-1690235887">solution</a>.</p>
 <h3 id="constrained-types">Constrained types<a class="headerlink" href="#constrained-types" title="Permanent link">&para;</a></h3>
 <p>The <code>Constrained*</code> classes were <em>removed</em>, and you should replace them by <code>Annotated[&lt;type&gt;, Field(...)]</code>, for example:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConstrainedInt</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConstrainedInt</span>
 
 
 <span class="k">class</span> <span class="nc">MyInt</span><span class="p">(</span><span class="n">ConstrainedInt</span><span class="p">):</span>

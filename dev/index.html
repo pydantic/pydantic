@@ -3004,14 +3004,14 @@ to help you monitor and understand your
 <a href="https://anaconda.org/conda-forge/pydantic"><img alt="CondaForge" src="https://img.shields.io/conda/v/conda-forge/pydantic.svg" /></a>
 <a href="https://pepy.tech/project/pydantic"><img alt="downloads" src="https://static.pepy.tech/badge/pydantic/month" /></a><br>
 <a href="https://github.com/pydantic/pydantic/blob/main/LICENSE"><img alt="license" src="https://img.shields.io/github/license/pydantic/pydantic.svg" /></a></p>
-<p>Documentation for development version: <a href="https://github.com/pydantic/pydantic/commit/d20da15dd1f63e9bd3d1a40d2386e0f538679712">d20da15</a>.</p>
+<p>Documentation for development version: <a href="https://github.com/pydantic/pydantic/commit/d41af158416e710fce5b9c1b861e2a0f8a55152f">d41af15</a>.</p>
 <p>Pydantic is the most widely used data validation library for Python.</p>
 <p>Fast and extensible, Pydantic plays nicely with your linters/IDE/brain. Define how data should be in pure, canonical Python 3.8+; validate it with Pydantic.</p>
 <div class="admonition logfire">
 <p class="admonition-title">Monitor Pydantic with Logfire <img alt="🔥" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f525.svg" title=":fire:" /></p>
 <p>Built by the same team as Pydantic, <strong><a href="https://pydantic.dev/logfire">Logfire</a></strong> is an application monitoring tool that is as simple to use and powerful as Pydantic itself.</p>
 <p>Logfire integrates with many popular Python libraries including FastAPI, OpenAI and Pydantic itself, so you can use Logfire to monitor Pydantic validations and understand why some inputs fail validation:</p>
-<div class="language-py highlight"><span class="filename">Monitoring Pydantic with Logfire</span><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<div class="language-python highlight"><span class="filename">Monitoring Pydantic with Logfire</span><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 
 <span class="kn">import</span> <span class="nn">logfire</span>
 
@@ -3059,7 +3059,7 @@ to help you monitor and understand your
 <p><a href="install/">Installing Pydantic</a> is as simple as: <code>pip install pydantic</code></p>
 <h2 id="pydantic-examples">Pydantic examples<a class="headerlink" href="#pydantic-examples" title="Permanent link">&para;</a></h2>
 <p>To see Pydantic at work, let's start with a simple example, creating a custom class that inherits from <code>BaseModel</code>:</p>
-<div class="language-py highlight"><span class="filename">Validation Successful</span><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<div class="language-python highlight"><span class="filename">Validation Successful</span><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PositiveInt</span>
 
@@ -3113,7 +3113,7 @@ to help you monitor and understand your
 <li>We can convert the model to a dictionary with <a class="autorefs autorefs-internal" href="api/base_model/#pydantic.BaseModel.model_dump"><code>model_dump()</code></a>.</li>
 </ol>
 <p>If validation fails, Pydantic will raise an error with a breakdown of what was wrong:</p>
-<div class="language-py highlight"><span class="filename">Validation Error</span><pre><span></span><code><span class="c1"># continuing the above example...</span>
+<div class="language-python highlight"><span class="filename">Validation Error</span><pre><span></span><code><span class="c1"># continuing the above example...</span>
 
 <span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PositiveInt</span><span class="p">,</span> <span class="n">ValidationError</span>

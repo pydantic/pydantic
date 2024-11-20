@@ -3612,7 +3612,7 @@ can be useful:</p>
 <li>The <a href="https://mypy.readthedocs.io/en/latest/">mypy documentation</a></li>
 </ul>
 </div>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
 
 
 <span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -3625,13 +3625,13 @@ can be useful:</p>
 <li><code>name</code>, which is a string and is not required (it has a default value).</li>
 </ul>
 <p>The model can then be instantiated:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="s1">&#39;123&#39;</span><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="s1">&#39;123&#39;</span><span class="p">)</span>
 </code></pre></div>
 <p><code>user</code> is an instance of <code>User</code>. Initialization of the object will perform all parsing and validation.
 If no <a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.ValidationError"><code>ValidationError</code></a> exception is raised,
 you know the resulting model instance is valid.</p>
 <p>Fields of a model can be accessed as normal attributes of the <code>user</code> object:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="k">assert</span> <span class="n">user</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;Jane Doe&#39;</span>  <span class="c1"># (1)!</span>
+<div class="language-python highlight"><pre><span></span><code><span class="k">assert</span> <span class="n">user</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;Jane Doe&#39;</span>  <span class="c1"># (1)!</span>
 <span class="k">assert</span> <span class="n">user</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="mi">123</span>  <span class="c1"># (2)!</span>
 <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
 </code></pre></div>
@@ -3643,20 +3643,20 @@ you know the resulting model instance is valid.</p>
    More details on Pydantic's coercion logic can be found in the <a href="#data-conversion">Data Conversion</a> section.</li>
 </ol>
 <p>The model instance can be serialized using the <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_dump"><code>model_dump</code></a> method:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="k">assert</span> <span class="n">user</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()</span> <span class="o">==</span> <span class="p">{</span><span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="mi">123</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;Jane Doe&#39;</span><span class="p">}</span>
+<div class="language-python highlight"><pre><span></span><code><span class="k">assert</span> <span class="n">user</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()</span> <span class="o">==</span> <span class="p">{</span><span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="mi">123</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;Jane Doe&#39;</span><span class="p">}</span>
 </code></pre></div>
 <p>Calling <a class="autorefs autorefs-external" href="https://docs.python.org/3/reference/expressions.html#dict">dict</a> on the instance will also provide a dictionary, but nested fields will not be
 recursively converted into dictionaries. <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_dump"><code>model_dump</code></a> also
 provides numerous arguments to customize the serialization result.</p>
 <p>By default, models are mutable and field values can be changed through attribute assignment:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="n">user</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="mi">321</span>
+<div class="language-python highlight"><pre><span></span><code><span class="n">user</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="mi">321</span>
 <span class="k">assert</span> <span class="n">user</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="mi">321</span>
 </code></pre></div>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>When defining your models, watch out for naming collisions between your field name and its type annotation.</p>
 <p>For example, the following will not behave as expected and would yield a validation error:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
 
@@ -4705,7 +4705,7 @@ by overriding the <a class="autorefs autorefs-internal" href="../../api/base_mod
 <p>While it may not raise an error, we strongly advise against using parametrized generics in <a href="https://docs.python.org/3/library/functions.html#isinstance"><code>isinstance()</code></a> checks.</p>
 <p>For example, you should not do <code>isinstance(my_model, MyGenericModel[int])</code>. However, it is fine to do <code>isinstance(my_model, MyGenericModel)</code> (note that, for standard generics, it would raise an error to do a subclass check with a parameterized generic class).</p>
 <p>If you need to perform <a href="https://docs.python.org/3/library/functions.html#isinstance"><code>isinstance()</code></a> checks against parametrized generics, you can do this by subclassing the parametrized generic class:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">MyIntModel</span><span class="p">(</span><span class="n">MyGenericModel</span><span class="p">[</span><span class="nb">int</span><span class="p">]):</span> <span class="o">...</span>
+<div class="language-python highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">MyIntModel</span><span class="p">(</span><span class="n">MyGenericModel</span><span class="p">[</span><span class="nb">int</span><span class="p">]):</span> <span class="o">...</span>
 
 <span class="nb">isinstance</span><span class="p">(</span><span class="n">my_model</span><span class="p">,</span> <span class="n">MyIntModel</span><span class="p">)</span>
 </code></pre></div>
@@ -4739,7 +4739,7 @@ we will inspect the data, recognize that the input data is sort of a "loose" sub
 Validators will be called once on the first pass, validating directly against <code>GenericModel[Any]</code>. That validation fails, as <code>GenericModel[int]</code> is not a subclass of <code>GenericModel[Any]</code>. This relates to the warning above about the complications of using parametrized generics in <code>isinstance()</code> and <code>issubclass()</code> checks.
 Then, the validators will be called again on the second pass, during more lax force-revalidation phase, which succeeds.
 To better understand this consequence, see below:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Generic</span><span class="p">,</span> <span class="n">Self</span><span class="p">,</span> <span class="n">TypeVar</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Generic</span><span class="p">,</span> <span class="n">Self</span><span class="p">,</span> <span class="n">TypeVar</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">model_validator</span>
 
@@ -5042,7 +5042,7 @@ This includes extending a base model with extra fields.</p>
 <span class="c1">#&gt; dict_keys([&#39;foo&#39;, &#39;bar&#39;, &#39;apple&#39;, &#39;banana&#39;])</span>
 </code></pre></div>
 <p>You can also add validators by passing a dictionary to the <code>__validators__</code> argument.</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">create_model</span><span class="p">,</span> <span class="n">field_validator</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">create_model</span><span class="p">,</span> <span class="n">field_validator</span>
 
 
 <span class="k">def</span> <span class="nf">alphanum</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
@@ -5549,7 +5549,7 @@ a <code>**data</code> argument will be added. In addition, the <code>**data</cod
 <code>model_config['extra'] == 'allow'</code>.</p>
 <h2 id="structural-pattern-matching">Structural pattern matching<a class="headerlink" href="#structural-pattern-matching" title="Permanent link">&para;</a></h2>
 <p>Pydantic supports structural pattern matching for models, as introduced by <a href="https://peps.python.org/pep-0636/">PEP 636</a> in Python 3.10.</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
 
 
 <span class="k">class</span> <span class="nc">Pet</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>

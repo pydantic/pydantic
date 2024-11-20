@@ -4162,12 +4162,10 @@ to help you monitor and understand your
 </ul>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
 
-
 <span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">extra</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">)</span>  <span class="c1"># (1)!</span>
 
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
-
 
 <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;John Doe&#39;</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>  <span class="c1"># (2)!</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
@@ -4180,12 +4178,10 @@ to help you monitor and understand your
 <p>Instead, with <code>extra='allow'</code>, the <code>age</code> argument is included:</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
 
-
 <span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">extra</span><span class="o">=</span><span class="s1">&#39;allow&#39;</span><span class="p">)</span>
 
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
-
 
 <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;John Doe&#39;</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>  <span class="c1"># (1)!</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
@@ -4197,12 +4193,10 @@ to help you monitor and understand your
 <p>With <code>extra='forbid'</code>, an error is raised:</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
 
-
 <span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">extra</span><span class="o">=</span><span class="s1">&#39;forbid&#39;</span><span class="p">)</span>
 
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
-
 
 <span class="k">try</span><span class="p">:</span>
     <span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;John Doe&#39;</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
@@ -4211,7 +4205,7 @@ to help you monitor and understand your
 <span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">    1 validation error for User</span>
 <span class="sd">    age</span>
-<span class="sd">    Extra inputs are not permitted [type=extra_forbidden, input_value=20, input_type=int]</span>
+<span class="sd">      Extra inputs are not permitted [type=extra_forbidden, input_value=20, input_type=int]</span>
 <span class="sd">    &#39;&#39;&#39;</span>
 </code></pre></div>
     </div>
@@ -4286,13 +4280,11 @@ attribute, as well as the alias. Defaults to <code>False</code>.</p>
 <code>allow_population_by_field_name</code> to <code>populate_by_name</code>.</p>
 </details>        <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">Field</span>
 
-
 <span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">populate_by_name</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">alias</span><span class="o">=</span><span class="s1">&#39;full_name&#39;</span><span class="p">)</span>  <span class="c1"># (1)!</span>
     <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
-
 
 <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">full_name</span><span class="o">=</span><span class="s1">&#39;John Doe&#39;</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>  <span class="c1"># (2)!</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
@@ -4346,23 +4338,22 @@ enum's value occurs during validation, not serialization.</p>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">Field</span>
 
-
 <span class="k">class</span> <span class="nc">SomeEnum</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
     <span class="n">FOO</span> <span class="o">=</span> <span class="s1">&#39;foo&#39;</span>
     <span class="n">BAR</span> <span class="o">=</span> <span class="s1">&#39;bar&#39;</span>
     <span class="n">BAZ</span> <span class="o">=</span> <span class="s1">&#39;baz&#39;</span>
 
-
 <span class="k">class</span> <span class="nc">SomeModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">use_enum_values</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="n">some_enum</span><span class="p">:</span> <span class="n">SomeEnum</span>
-    <span class="n">another_enum</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SomeEnum</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="n">SomeEnum</span><span class="o">.</span><span class="n">FOO</span><span class="p">,</span> <span class="n">validate_default</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-
+    <span class="n">another_enum</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SomeEnum</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="n">SomeEnum</span><span class="o">.</span><span class="n">FOO</span><span class="p">,</span> <span class="n">validate_default</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
 
 <span class="n">model1</span> <span class="o">=</span> <span class="n">SomeModel</span><span class="p">(</span><span class="n">some_enum</span><span class="o">=</span><span class="n">SomeEnum</span><span class="o">.</span><span class="n">BAR</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">model1</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
-<span class="c1"># {&#39;some_enum&#39;: &#39;bar&#39;, &#39;another_enum&#39;: &#39;foo&#39;}</span>
+<span class="c1">#&gt; {&#39;some_enum&#39;: &#39;bar&#39;, &#39;another_enum&#39;: &#39;foo&#39;}</span>
 
 <span class="n">model2</span> <span class="o">=</span> <span class="n">SomeModel</span><span class="p">(</span><span class="n">some_enum</span><span class="o">=</span><span class="n">SomeEnum</span><span class="o">.</span><span class="n">BAR</span><span class="p">,</span> <span class="n">another_enum</span><span class="o">=</span><span class="n">SomeEnum</span><span class="o">.</span><span class="n">BAZ</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">model2</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
@@ -5149,7 +5140,7 @@ Set equal to <code>ser_json_bytes</code> to get back an equal value after serial
 
     <div class="doc doc-contents ">
 
-        <p>whether to validate the return value from call validators. Defaults to <code>False</code>.</p>
+        <p>Whether to validate the return value from call validators. Defaults to <code>False</code>.</p>
     </div>
 
 </div>
@@ -5177,99 +5168,84 @@ Set equal to <code>ser_json_bytes</code> to get back an equal value after serial
 
     <div class="doc doc-contents ">
 
-        <div class="language-text highlight"><pre><span></span><code>A `tuple` of strings and/or patterns that prevent models from having fields with names that conflict with them.
-For strings, we match on a prefix basis. Ex, if &#39;dog&#39; is in the protected namespace, &#39;dog_name&#39; will be protected.
-For patterns, we match on the entire field name. Ex, if `re.compile(r&#39;^dog$&#39;)` is in the protected namespace, &#39;dog&#39; will be protected, but &#39;dog_name&#39; will not be.
-Defaults to `(&#39;model_validate&#39;, &#39;model_dump&#39;)`).
-
-The reason we&#39;ve selected these is to prevent collisions with other validation / dumping formats
-in the future - ex, model_validate_{some_newly_supported_format}.
-
-Before v2.10, Pydantic used `(&#39;model_&#39;,)` as the default value for this setting to
-prevent collisions between model attributes and `BaseModel`&#39;s own methods. This was changed
+        <p>A <code>tuple</code> of strings and/or patterns that prevent models from having fields with names that conflict with them.
+For strings, we match on a prefix basis. Ex, if 'dog' is in the protected namespace, 'dog_name' will be protected.
+For patterns, we match on the entire field name. Ex, if <code>re.compile(r'^dog$')</code> is in the protected namespace, 'dog' will be protected, but 'dog_name' will not be.
+Defaults to <code>('model_validate', 'model_dump',)</code>.</p>
+<p>The reason we've selected these is to prevent collisions with other validation / dumping formats
+in the future - ex, <code>model_validate_{some_newly_supported_format}</code>.</p>
+<p>Before v2.10, Pydantic used <code>('model_',)</code> as the default value for this setting to
+prevent collisions between model attributes and <code>BaseModel</code>'s own methods. This was changed
 in v2.10 given feedback that this restriction was limiting in AI and data science contexts,
-where it is common to have fields with names like `model_id`, `model_input`, `model_output`, etc.
+where it is common to have fields with names like <code>model_id</code>, <code>model_input</code>, <code>model_output</code>, etc.</p>
+<p>For more details, see https://github.com/pydantic/pydantic/issues/10315.</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">warnings</span>
 
-For more details, see https://github.com/pydantic/pydantic/issues/10315.
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
 
-```py
-import warnings
+<span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s1">&#39;error&#39;</span><span class="p">)</span>  <span class="c1"># Raise warnings as errors</span>
 
-from pydantic import BaseModel
+<span class="k">try</span><span class="p">:</span>
 
-warnings.filterwarnings(&#39;error&#39;)  # Raise warnings as errors
+    <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+        <span class="n">model_dump_something</span><span class="p">:</span> <span class="nb">str</span>
 
-try:
+<span class="k">except</span> <span class="ne">UserWarning</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Field &quot;model_dump_something&quot; in Model has conflict with protected namespace &quot;model_dump&quot;.</span>
 
-    class Model(BaseModel):
-        model_dump_something: str
-
-except UserWarning as e:
-    print(e)
-    &#39;&#39;&#39;
-    Field &quot;model_dump_something&quot; in Model has conflict with protected namespace &quot;model_dump&quot;.
-
-    You may be able to resolve this warning by setting `model_config[&#39;protected_namespaces&#39;] = (&#39;model_validate&#39;,)`.
-    &#39;&#39;&#39;
-```
-
-You can customize this behavior using the `protected_namespaces` setting:
-
-```py test=&quot;skip&quot;
-import re
-import warnings
-
-from pydantic import BaseModel, ConfigDict
-
-with warnings.catch_warnings(record=True) as caught_warnings:
-    warnings.simplefilter(&#39;always&#39;)  # Catch all warnings
-
-    class Model(BaseModel):
-        safe_field: str
-        also_protect_field: str
-        protect_this: str
-
-        model_config = ConfigDict(
-            protected_namespaces=(
-                &#39;protect_me_&#39;,
-                &#39;also_protect_&#39;,
-                re.compile(&#39;^protect_this$&#39;),
-            )
-        )
-
-for warning in caught_warnings:
-    print(f&#39;{warning.message}
+<span class="sd">    You may be able to resolve this warning by setting `model_config[&#39;protected_namespaces&#39;] = (&#39;model_validate&#39;,)`.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
 </code></pre></div>
-<p>')
-        '''
-        Field "also_protect_field" in Model has conflict with protected namespace "also_protect_".</p>
-<div class="language-text highlight"><pre><span></span><code>    You may be able to resolve this warning by setting `model_config[&#39;protected_namespaces&#39;] = (&#39;protect_me_&#39;, re.compile(&#39;^protect_this$&#39;))`.
+<p>You can customize this behavior using the <code>protected_namespaces</code> setting:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
 
-    Field &quot;protect_this&quot; in Model has conflict with protected namespace &quot;re.compile(&#39;^protect_this$&#39;)&quot;.
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
 
-    You may be able to resolve this warning by setting `model_config[&#39;protected_namespaces&#39;] = (&#39;protect_me_&#39;, &#39;also_protect_&#39;)`.
-    &#39;&#39;&#39;
-```
+<span class="k">with</span> <span class="n">warnings</span><span class="o">.</span><span class="n">catch_warnings</span><span class="p">(</span><span class="n">record</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">as</span> <span class="n">caught_warnings</span><span class="p">:</span>
+    <span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="s1">&#39;always&#39;</span><span class="p">)</span>  <span class="c1"># Catch all warnings</span>
 
-While Pydantic will only emit a warning when an item is in a protected namespace but does not actually have a collision,
-an error _is_ raised if there is an actual collision with an existing attribute:
+    <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+        <span class="n">safe_field</span><span class="p">:</span> <span class="nb">str</span>
+        <span class="n">also_protect_field</span><span class="p">:</span> <span class="nb">str</span>
+        <span class="n">protect_this</span><span class="p">:</span> <span class="nb">str</span>
 
-```py
-from pydantic import BaseModel, ConfigDict
+        <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span>
+            <span class="n">protected_namespaces</span><span class="o">=</span><span class="p">(</span>
+                <span class="s1">&#39;protect_me_&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;also_protect_&#39;</span><span class="p">,</span>
+                <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s1">&#39;^protect_this$&#39;</span><span class="p">),</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
 
-try:
+<span class="k">for</span> <span class="n">warning</span> <span class="ow">in</span> <span class="n">caught_warnings</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">warning</span><span class="o">.</span><span class="n">message</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Field &quot;also_protect_field&quot; in Model has conflict with protected namespace &quot;also_protect_&quot;.</span>
+<span class="sd">    You may be able to resolve this warning by setting `model_config[&#39;protected_namespaces&#39;] = (&#39;protect_me_&#39;, re.compile(&#39;^protect_this$&#39;))`.</span>
 
-    class Model(BaseModel):
-        model_validate: str
+<span class="sd">    Field &quot;protect_this&quot; in Model has conflict with protected namespace &quot;re.compile(&#39;^protect_this$&#39;)&quot;.</span>
+<span class="sd">    You may be able to resolve this warning by setting `model_config[&#39;protected_namespaces&#39;] = (&#39;protect_me_&#39;, &#39;also_protect_&#39;)`.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+</code></pre></div>
+<p>While Pydantic will only emit a warning when an item is in a protected namespace but does not actually have a collision,
+an error <em>is</em> raised if there is an actual collision with an existing attribute:</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
 
-        model_config = ConfigDict(protected_namespaces=(&#39;model_&#39;,))
+<span class="k">try</span><span class="p">:</span>
 
-except NameError as e:
-    print(e)
-    &#39;&#39;&#39;
-    Field &quot;model_validate&quot; conflicts with member &lt;bound method BaseModel.model_validate of &lt;class &#39;pydantic.main.BaseModel&#39;&gt;&gt; of protected namespace &quot;model_&quot;.
-    &#39;&#39;&#39;
-```
+    <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+        <span class="n">model_validate</span><span class="p">:</span> <span class="nb">str</span>
+
+        <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">protected_namespaces</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;model_&#39;</span><span class="p">,))</span>
+
+<span class="k">except</span> <span class="ne">NameError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Field &quot;model_validate&quot; conflicts with member &lt;bound method BaseModel.model_validate of &lt;class &#39;pydantic.main.BaseModel&#39;&gt;&gt; of protected namespace &quot;model_&quot;.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
 </code></pre></div>
     </div>
 
@@ -5878,7 +5854,18 @@ especially with <code>TypedDict</code>.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/config.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1017</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1006</span>
+<span class="normal">1007</span>
+<span class="normal">1008</span>
+<span class="normal">1009</span>
+<span class="normal">1010</span>
+<span class="normal">1011</span>
+<span class="normal">1012</span>
+<span class="normal">1013</span>
+<span class="normal">1014</span>
+<span class="normal">1015</span>
+<span class="normal">1016</span>
+<span class="normal">1017</span>
 <span class="normal">1018</span>
 <span class="normal">1019</span>
 <span class="normal">1020</span>
@@ -5907,18 +5894,7 @@ especially with <code>TypedDict</code>.</p>
 <span class="normal">1043</span>
 <span class="normal">1044</span>
 <span class="normal">1045</span>
-<span class="normal">1046</span>
-<span class="normal">1047</span>
-<span class="normal">1048</span>
-<span class="normal">1049</span>
-<span class="normal">1050</span>
-<span class="normal">1051</span>
-<span class="normal">1052</span>
-<span class="normal">1053</span>
-<span class="normal">1054</span>
-<span class="normal">1055</span>
-<span class="normal">1056</span>
-<span class="normal">1057</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">with_config</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="n">ConfigDict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_TypeT</span><span class="p">],</span> <span class="n">_TypeT</span><span class="p">]:</span>
+<span class="normal">1046</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">with_config</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="n">ConfigDict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_TypeT</span><span class="p">],</span> <span class="n">_TypeT</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Usage docs: https://docs.pydantic.dev/2.10/concepts/config/#configuration-with-dataclass-from-the-standard-library-or-typeddict</span>
 
 <span class="sd">    A convenience decorator to set a [Pydantic configuration](config.md) on a `TypedDict` or a `dataclass` from the standard library.</span>

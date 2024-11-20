@@ -6321,7 +6321,7 @@ is set to <code>'allow'</code>.</p>
 
 <span class="sd">        If you need `include` or `exclude`, use:</span>
 
-<span class="sd">        ```py</span>
+<span class="sd">        ```py {test=&quot;skip&quot; lint=&quot;skip&quot;}</span>
 <span class="sd">        data = self.model_dump(include=include, exclude=exclude, round_trip=True)</span>
 <span class="sd">        data = {**data, **(update or {})}</span>
 <span class="sd">        copied = self.model_validate(data)</span>
@@ -9360,7 +9360,7 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
 
 <span class="sd">    If you need `include` or `exclude`, use:</span>
 
-<span class="sd">    ```py</span>
+<span class="sd">    ```py {test=&quot;skip&quot; lint=&quot;skip&quot;}</span>
 <span class="sd">    data = self.model_dump(include=include, exclude=exclude, round_trip=True)</span>
 <span class="sd">    data = {**data, **(update or {})}</span>
 <span class="sd">    copied = self.model_validate(data)</span>

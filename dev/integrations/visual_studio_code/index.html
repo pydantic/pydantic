@@ -3277,7 +3277,7 @@ to help you monitor and understand your
 <p>This example above with <code>age='23'</code> is intentionally simple, to show the error and the differences in types.</p>
 <p>But more common cases where these strict errors would be inconvenient would be when using more sophisticated data types, like <code>int</code> values for <code>datetime</code> fields, or <code>dict</code> values for Pydantic sub-models.</p>
 <p>For example, this is valid for Pydantic:</p>
-<div class="language-Python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
 
 
 <span class="k">class</span> <span class="nc">Knight</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -3309,7 +3309,7 @@ to help you monitor and understand your
 </code></pre></div>
 <p>(<a href="https://github.com/microsoft/pyright">pyright</a> is the language server used by Pylance.).</p>
 <p>coming back to the example with <code>age='23'</code>, it would be:</p>
-<div class="language-Python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
 
 
 <span class="k">class</span> <span class="nc">Knight</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -3325,7 +3325,7 @@ to help you monitor and understand your
 <p><strong>Cons</strong>: any other error in that line will also be omitted, including type checks, misspelled arguments, required arguments not provided, etc.</p>
 <h4 id="override-the-type-of-a-variable">Override the type of a variable<a class="headerlink" href="#override-the-type-of-a-variable" title="Permanent link">&para;</a></h4>
 <p>You can also create a variable with the value you want to use and declare its type explicitly with <code>Any</code>.</p>
-<div class="language-Python highlight"><pre><span></span><code><span class="hll"><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
+<div class="language-python highlight"><pre><span></span><code><span class="hll"><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
 </span>
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
 
@@ -3345,7 +3345,7 @@ to help you monitor and understand your
 <h4 id="override-the-type-of-a-value-with-cast">Override the type of a value with <code>cast</code><a class="headerlink" href="#override-the-type-of-a-value-with-cast" title="Permanent link">&para;</a></h4>
 <p>The same idea from the previous example can be put on the same line with the help of <code>cast()</code>.</p>
 <p>This way, the type declaration of the value is overridden inline, without requiring another variable.</p>
-<div class="language-Python highlight"><pre><span></span><code><span class="hll"><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">cast</span>
+<div class="language-python highlight"><pre><span></span><code><span class="hll"><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">cast</span>
 </span>
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
 
@@ -3365,7 +3365,7 @@ to help you monitor and understand your
 <h3 id="config-in-class-arguments">Config in class arguments<a class="headerlink" href="#config-in-class-arguments" title="Permanent link">&para;</a></h3>
 <p>Pydantic has a rich set of <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict">Model Configurations</a> available.</p>
 <p>These configurations can be set in an internal <code>class Config</code> on each model:</p>
-<div class="language-Python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
 
 
 <span class="k">class</span> <span class="nc">Knight</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -3375,7 +3375,7 @@ to help you monitor and understand your
     <span class="n">color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;blue&#39;</span>
 </code></pre></div>
 <p>or passed as keyword arguments when defining the model class:</p>
-<div class="language-Python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
 
 
 <span class="hll"><span class="k">class</span> <span class="nc">Knight</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>

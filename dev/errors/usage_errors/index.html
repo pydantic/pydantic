@@ -3956,7 +3956,7 @@ encounter when working with Pydantic, along with suggestions for addressing the 
 <h2 id="custom-json-schema">Custom JSON Schema<a class="headerlink" href="#custom-json-schema" title="Permanent link">&para;</a></h2>
 <p>The <code>__modify_schema__</code> method is no longer supported in V2. You should use the <code>__get_pydantic_json_schema__</code> method instead.</p>
 <p>The <code>__modify_schema__</code> used to receive a single argument representing the JSON schema. See the example below:</p>
-<div class="language-py highlight"><span class="filename">Old way</span><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PydanticUserError</span>
+<div class="language-python highlight"><span class="filename">Old way</span><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PydanticUserError</span>
 
 <span class="k">try</span><span class="p">:</span>
 
@@ -3974,7 +3974,7 @@ below:</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.8 and above</label><label for="__tabbed_1_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="language-py highlight"><span class="filename">New way</span><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span>
+<div class="language-python highlight"><span class="filename">New way</span><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span>
 
 <span class="kn">from</span> <span class="nn">pydantic_core</span> <span class="kn">import</span> <span class="n">CoreSchema</span>
 
@@ -3999,7 +3999,7 @@ below:</p>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="language-py highlight"><span class="filename">New way</span><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
+<div class="language-python highlight"><span class="filename">New way</span><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
 
 <span class="kn">from</span> <span class="nn">pydantic_core</span> <span class="kn">import</span> <span class="n">CoreSchema</span>
 
@@ -4677,10 +4677,10 @@ by annotating it as a <code>ClassVar</code>:</p>
 <h2 id="circular-reference-schema">Circular reference schema<a class="headerlink" href="#circular-reference-schema" title="Permanent link">&para;</a></h2>
 <p>This error is raised when a circular reference is found that would otherwise result in an infinite recursion.</p>
 <p>For example, this is a valid type alias:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="nb">type</span> <span class="n">A</span> <span class="o">=</span> <span class="nb">list</span><span class="p">[</span><span class="n">A</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span>
+<div class="language-python highlight"><pre><span></span><code><span class="nb">type</span> <span class="n">A</span> <span class="o">=</span> <span class="nb">list</span><span class="p">[</span><span class="n">A</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span>
 </code></pre></div>
 <p>while these are not:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="nb">type</span> <span class="n">A</span> <span class="o">=</span> <span class="n">A</span>
+<div class="language-python highlight"><pre><span></span><code><span class="nb">type</span> <span class="n">A</span> <span class="o">=</span> <span class="n">A</span>
 
 <span class="nb">type</span> <span class="n">B</span> <span class="o">=</span> <span class="n">C</span>
 <span class="nb">type</span> <span class="n">C</span> <span class="o">=</span> <span class="n">B</span>
@@ -4981,7 +4981,7 @@ but it is a dictionary instead of an object like it was in Pydantic V1.</p>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;field-serializer-signature&#39;</span>
 </code></pre></div>
 <p>Valid field serializer signatures are:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">FieldSerializationInfo</span><span class="p">,</span> <span class="n">SerializerFunctionWrapHandler</span><span class="p">,</span> <span class="n">field_serializer</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">FieldSerializationInfo</span><span class="p">,</span> <span class="n">SerializerFunctionWrapHandler</span><span class="p">,</span> <span class="n">field_serializer</span>
 
 <span class="c1"># an instance method with the default mode or `mode=&#39;plain&#39;`</span>
 <span class="nd">@field_serializer</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">)</span>  <span class="c1"># or @field_serializer(&#39;x&#39;, mode=&#39;plain&#39;)</span>
@@ -5033,7 +5033,7 @@ but it is a dictionary instead of an object like it was in Pydantic V1.</p>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;model-serializer-signature&#39;</span>
 </code></pre></div>
 <p>Valid model serializer signatures are:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">SerializerFunctionWrapHandler</span><span class="p">,</span> <span class="n">SerializationInfo</span><span class="p">,</span> <span class="n">model_serializer</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">SerializerFunctionWrapHandler</span><span class="p">,</span> <span class="n">SerializationInfo</span><span class="p">,</span> <span class="n">model_serializer</span>
 
 <span class="c1"># an instance method with the default mode or `mode=&#39;plain&#39;`</span>
 <span class="nd">@model_serializer</span>  <span class="c1"># or model_serializer(mode=&#39;plain&#39;)</span>
@@ -5154,7 +5154,7 @@ if you try to specify a value for the config setting <code>'extra'</code> when c
 <h2 id="unevaluable-type-annotation">Cannot evaluate type annotation<a class="headerlink" href="#unevaluable-type-annotation" title="Permanent link">&para;</a></h2>
 <p>Because type annotations are evaluated <em>after</em> assignments, you might get unexpected results when using a type annotation name
 that clashes with one of your fields. We raise an error in the following case:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
 
@@ -5163,7 +5163,7 @@ that clashes with one of your fields. We raise an error in the following case:</
     <span class="n">date</span><span class="p">:</span> <span class="n">date</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">&#39;A date&#39;</span><span class="p">)</span>
 </code></pre></div>
 <p>As a workaround, you can either use an alias or change your import:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">datetime</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">datetime</span>
 <span class="c1"># Or `from datetime import date as _date`</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
@@ -5176,7 +5176,7 @@ that clashes with one of your fields. We raise an error in the following case:</
 <p>Pydantic does not allow the specification of the <code>extra='allow'</code> setting on a dataclass
 while any of the fields have <code>init=False</code> set.</p>
 <p>Thus, you may not do something like the following:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">Field</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">Field</span>
 <span class="kn">from</span> <span class="nn">pydantic.dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
 
 
@@ -5190,7 +5190,7 @@ This combination is not allowed.
 </code></pre></div>
 <h2 id="clashing-init-and-init-var">Incompatible <code>init</code> and <code>init_var</code> settings on <code>dataclass</code> field<a class="headerlink" href="#clashing-init-and-init-var" title="Permanent link">&para;</a></h2>
 <p>The <code>init=False</code> and <code>init_var=True</code> settings are mutually exclusive. Doing so results in the <code>PydanticUserError</code> shown in the example below.</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">Field</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">Field</span>
 <span class="kn">from</span> <span class="nn">pydantic.dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
 
 
