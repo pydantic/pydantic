@@ -594,9 +594,11 @@ class FieldInfo(_repr.Representation):
         if self.default_factory is None:
             return _utils.smart_deepcopy(self.default)
         elif call_default_factory:
-            if validated_data is None:
-                raise ValueError("'validated_data' must be provided if 'call_default_factory' is True.")
             if _fields.takes_validated_data_argument(self.default_factory):
+                if validated_data is None:
+                    raise ValueError(
+                        "'validated_data' is missing but should be provided. This is a bug, please report this."
+                    )
                 return self.default_factory(validated_data)
             else:
                 fac = cast(Callable[[], Any], self.default_factory)  # Pyright doesn't narrow correctly
