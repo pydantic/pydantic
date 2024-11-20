@@ -78,7 +78,6 @@ def on_page_markdown(markdown: str, page: Page, config: Config, files: Files) ->
     """
     markdown = upgrade_python(markdown)
     markdown = insert_json_output(markdown)
-    markdown = remove_code_fence_attributes(markdown)
     if md := render_index(markdown, page):
         return md
     if md := render_why(markdown, page):
@@ -224,23 +223,6 @@ def insert_json_output(markdown: str) -> str:
         return f'{start}{attrs}{code}{start}\n'
 
     return re.sub(r'(^ *```)([^\n]*?output="json"[^\n]*?\n)(.+?)\1', replace_json, markdown, flags=re.M | re.S)
-
-
-def remove_code_fence_attributes(markdown: str) -> str:
-    """
-    There's no way to add attributes to code fences that works with both pycharm and mkdocs, hence we use
-    `py key="value"` to provide attributes to pytest-examples, then remove those attributes here.
-
-    https://youtrack.jetbrains.com/issue/IDEA-297873 & https://python-markdown.github.io/extensions/fenced_code_blocks/
-    """
-
-    def remove_attrs(match: re.Match[str]) -> str:
-        suffix = re.sub(
-            r' (?:test|lint|upgrade|group|requires|output|rewrite_assert)=".+?"', '', match.group(2), flags=re.M
-        )
-        return f'{match.group(1)}{suffix}'
-
-    return re.sub(r'^( *``` *py)(.*)', remove_attrs, markdown, flags=re.M)
 
 
 def get_orgs_data() -> list[dict[str, str]]:

@@ -1421,7 +1421,7 @@ def computed_field(
 
     m = Model(foo=1)
     print(repr(m))
-    #> M(foo=1)
+    #> Model(foo=1)
     ```
 
     Args:

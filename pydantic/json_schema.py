@@ -2580,12 +2580,10 @@ else:
 
             from pprint import pprint
 
-
             class Model(BaseModel):
                 a: Union[int, None] = None  # (1)!
                 b: Union[int, SkipJsonSchema[None]] = None  # (2)!
                 c: SkipJsonSchema[Union[int, None]] = None  # (3)!
-
 
             pprint(Model.model_json_schema())
             '''

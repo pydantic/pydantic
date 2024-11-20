@@ -71,12 +71,10 @@ class ConfigDict(TypedDict, total=False):
     ```py
     from pydantic import BaseModel, ConfigDict
 
-
     class User(BaseModel):
         model_config = ConfigDict(extra='ignore')  # (1)!
 
         name: str
-
 
     user = User(name='John Doe', age=20)  # (2)!
     print(user)
@@ -91,12 +89,10 @@ class ConfigDict(TypedDict, total=False):
     ```py
     from pydantic import BaseModel, ConfigDict
 
-
     class User(BaseModel):
         model_config = ConfigDict(extra='allow')
 
         name: str
-
 
     user = User(name='John Doe', age=20)  # (1)!
     print(user)
@@ -110,12 +106,10 @@ class ConfigDict(TypedDict, total=False):
     ```py
     from pydantic import BaseModel, ConfigDict, ValidationError
 
-
     class User(BaseModel):
         model_config = ConfigDict(extra='forbid')
 
         name: str
-
 
     try:
         User(name='John Doe', age=20)
@@ -124,7 +118,7 @@ class ConfigDict(TypedDict, total=False):
         '''
         1 validation error for User
         age
-        Extra inputs are not permitted [type=extra_forbidden, input_value=20, input_type=int]
+          Extra inputs are not permitted [type=extra_forbidden, input_value=20, input_type=int]
         '''
     ```
     """
@@ -151,13 +145,11 @@ class ConfigDict(TypedDict, total=False):
     ```py
     from pydantic import BaseModel, ConfigDict, Field
 
-
     class User(BaseModel):
         model_config = ConfigDict(populate_by_name=True)
 
         name: str = Field(alias='full_name')  # (1)!
         age: int
-
 
     user = User(full_name='John Doe', age=20)  # (2)!
     print(user)
@@ -188,23 +180,22 @@ class ConfigDict(TypedDict, total=False):
 
     from pydantic import BaseModel, ConfigDict, Field
 
-
     class SomeEnum(Enum):
         FOO = 'foo'
         BAR = 'bar'
         BAZ = 'baz'
 
-
     class SomeModel(BaseModel):
         model_config = ConfigDict(use_enum_values=True)
 
         some_enum: SomeEnum
-        another_enum: Optional[SomeEnum] = Field(default=SomeEnum.FOO, validate_default=True)
-
+        another_enum: Optional[SomeEnum] = Field(
+            default=SomeEnum.FOO, validate_default=True
+        )
 
     model1 = SomeModel(some_enum=SomeEnum.BAR)
     print(model1.model_dump())
-    # {'some_enum': 'bar', 'another_enum': 'foo'}
+    #> {'some_enum': 'bar', 'another_enum': 'foo'}
 
     model2 = SomeModel(some_enum=SomeEnum.BAR, another_enum=SomeEnum.BAZ)
     print(model2.model_dump())
@@ -607,17 +598,17 @@ class ConfigDict(TypedDict, total=False):
     """Whether to validate default values during validation. Defaults to `False`."""
 
     validate_return: bool
-    """whether to validate the return value from call validators. Defaults to `False`."""
+    """Whether to validate the return value from call validators. Defaults to `False`."""
 
     protected_namespaces: tuple[str | Pattern[str], ...]
     """
     A `tuple` of strings and/or patterns that prevent models from having fields with names that conflict with them.
     For strings, we match on a prefix basis. Ex, if 'dog' is in the protected namespace, 'dog_name' will be protected.
     For patterns, we match on the entire field name. Ex, if `re.compile(r'^dog$')` is in the protected namespace, 'dog' will be protected, but 'dog_name' will not be.
-    Defaults to `('model_validate', 'model_dump')`).
+    Defaults to `('model_validate', 'model_dump',)`.
 
     The reason we've selected these is to prevent collisions with other validation / dumping formats
-    in the future - ex, model_validate_{some_newly_supported_format}.
+    in the future - ex, `model_validate_{some_newly_supported_format}`.
 
     Before v2.10, Pydantic used `('model_',)` as the default value for this setting to
     prevent collisions between model attributes and `BaseModel`'s own methods. This was changed
@@ -649,7 +640,7 @@ class ConfigDict(TypedDict, total=False):
 
     You can customize this behavior using the `protected_namespaces` setting:
 
-    ```py test="skip"
+    ```python {test="skip"}
     import re
     import warnings
 
@@ -672,14 +663,12 @@ class ConfigDict(TypedDict, total=False):
             )
 
     for warning in caught_warnings:
-        print(f'{warning.message}\n')
+        print(f'{warning.message}')
         '''
         Field "also_protect_field" in Model has conflict with protected namespace "also_protect_".
-
         You may be able to resolve this warning by setting `model_config['protected_namespaces'] = ('protect_me_', re.compile('^protect_this$'))`.
 
         Field "protect_this" in Model has conflict with protected namespace "re.compile('^protect_this$')".
-
         You may be able to resolve this warning by setting `model_config['protected_namespaces'] = ('protect_me_', 'also_protect_')`.
         '''
     ```

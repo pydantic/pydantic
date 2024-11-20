@@ -1351,7 +1351,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         If you need `include` or `exclude`, use:
 
-        ```py
+        ```py {test="skip" lint="skip"}
         data = self.model_dump(include=include, exclude=exclude, round_trip=True)
         data = {**data, **(update or {})}
         copied = self.model_validate(data)
