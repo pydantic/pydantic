@@ -142,7 +142,7 @@ In this mode, pydantic attempts to select the best match for the input from the 
         3. If validation succeeded on at least one member in "lax" mode, the leftmost match is returned.
         4. Validation failed on all the members, return all the errors.
 
-```py
+```python
 from typing import Union
 from uuid import UUID
 
@@ -200,7 +200,7 @@ To validate models based on that information you can set the same field - let's 
 in each of the models with a discriminated value, which is one (or many) `Literal` value(s).
 For your `Union`, you can set the discriminator in its value: `Field(discriminator='my_discriminator')`.
 
-```py
+```python
 from typing import Literal, Union
 
 from pydantic import BaseModel, Field, ValidationError
@@ -261,7 +261,7 @@ This is the perfect use case for a callable `Discriminator`.
     If you don't follow this practice, it's likely that you'll, in the best case, get warnings during serialization,
     and in the worst case, get runtime errors during validation.
 
-```py
+```python
 from typing import Any, Literal, Union
 
 from typing_extensions import Annotated
@@ -325,7 +325,7 @@ ThanksgivingDinner(dessert=PumpkinPie(time_to_cook=40, num_ingredients=6, fillin
 
 For example:
 
-```py
+```python
 from typing import Any, Union
 
 from typing_extensions import Annotated
@@ -411,7 +411,7 @@ except ValidationError as e:
 Only one discriminator can be set for a field but sometimes you want to combine multiple discriminators.
 You can do it by creating nested `Annotated` types, e.g.:
 
-```py
+```python
 from typing import Literal, Union
 
 from typing_extensions import Annotated
@@ -497,7 +497,7 @@ the case with a matching discriminator value.
 You can also customize the error type, message, and context for a `Discriminator` by passing
 these specifications as parameters to the `Discriminator` constructor, as seen in the example below.
 
-```py
+```python
 from typing import Union
 
 from typing_extensions import Annotated
@@ -600,7 +600,7 @@ print(m.model_dump())
 You can also simplify error messages by labeling each case with a [`Tag`][pydantic.types.Tag].
 This is especially useful when you have complex types like those in this example:
 
-```py
+```python
 from typing import Dict, List, Union
 
 from typing_extensions import Annotated

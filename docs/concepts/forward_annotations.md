@@ -1,7 +1,7 @@
 Forward annotations (wrapped in quotes) or using the `from __future__ import annotations` [future statement]
 (as introduced in [PEP563](https://www.python.org/dev/peps/pep-0563/)) are supported:
 
-```py
+```python
 from __future__ import annotations
 
 from pydantic import BaseModel
@@ -31,7 +31,7 @@ Models with self-referencing fields are also supported. These annotations will b
 Within the model, you can either add the `from __future__ import annotations` import or wrap the annotation
 in a string:
 
-```py
+```python
 from typing import Optional
 
 from pydantic import BaseModel
@@ -57,7 +57,7 @@ attributes.
 Rather than raising a [`RecursionError`][] while attempting to validate data with cyclic references, Pydantic is able
 to detect the cyclic reference and raise an appropriate [`ValidationError`][pydantic_core.ValidationError]:
 
-```py
+```python
 from typing import Optional
 
 from pydantic import BaseModel, ValidationError
@@ -147,7 +147,7 @@ print(Node.model_validate(node_data))
 Similarly, if Pydantic encounters a recursive reference during _serialization_, rather than waiting
 for the maximum recursion depth to be exceeded, a [`ValueError`][] is raised immediately:
 
-```py
+```python
 from pydantic import TypeAdapter
 
 # Create data with cyclic references representing the graph 1 -> 2 -> 3 -> 1
@@ -166,7 +166,7 @@ except ValueError as exc:
 
 This can also be handled if desired:
 
-```py
+```python
 from dataclasses import field
 from typing import Any, List
 

@@ -15,7 +15,7 @@ Pydantic provides builtin JSON parsing, which helps achieve:
 
 Here's an example of Pydantic's builtin JSON parsing via the [`model_validate_json`][pydantic.main.BaseModel.model_validate_json] method, showcasing the support for `strict` specifications while parsing JSON data that doesn't match the model's type annotations:
 
-```py
+```python
 from datetime import date
 from typing import Tuple
 
@@ -61,7 +61,7 @@ in the original JSON input which contained the invalid value.
 
 **Starting in v2.7.0**, Pydantic's [JSON parser](https://docs.rs/jiter/latest/jiter/) offers support for partial JSON parsing, which is exposed via [`pydantic_core.from_json`][pydantic_core.from_json]. Here's an example of this feature in action:
 
-```py
+```python
 from pydantic_core import from_json
 
 partial_json_data = '["aa", "bb", "c'  # (1)!
@@ -83,7 +83,7 @@ print(result)  # (3)!
 
 This also works for deserializing partial dictionaries. For example:
 
-```py
+```python
 from pydantic_core import from_json
 
 partial_dog_json = '{"breed": "lab", "name": "fluffy", "friends": ["buddy", "spot", "rufus"], "age'
@@ -102,7 +102,7 @@ In future versions of Pydantic, we expect to expand support for this feature thr
 
 For now, you can use [`pydantic_core.from_json`][pydantic_core.from_json] in combination with [`pydantic.main.BaseModel.model_validate`][pydantic.main.BaseModel.model_validate] to achieve the same result. Here's an example:
 
-```py
+```python
 from pydantic_core import from_json
 
 from pydantic import BaseModel
@@ -127,7 +127,7 @@ Check out the following example for a more in-depth look at how to use default v
 
 !!! example "Using default values with partial JSON parsing"
 
-    ```py
+    ```python
     from typing import Any, Optional, Tuple
 
     import pydantic_core

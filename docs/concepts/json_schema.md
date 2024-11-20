@@ -167,7 +167,7 @@ Pydantic V1 (which is now deprecated).
 
 Here's an example of generating JSON schema from a [`TypeAdapter`][pydantic.type_adapter.TypeAdapter]:
 
-```py
+```python
 from typing import List
 
 from pydantic import TypeAdapter
@@ -266,7 +266,7 @@ The [`JsonSchemaMode`][pydantic.json_schema.JsonSchemaMode] is a type alias that
 
 Here's an example of how to specify the `mode` parameter, and how it affects the generated JSON schema:
 
-```py
+```python
 from decimal import Decimal
 
 from pydantic import BaseModel
@@ -403,7 +403,7 @@ If Pydantic finds constraints which are not being enforced, an error will be rai
 constraint to appear in the schema, even though it's not being checked upon parsing, you can use variadic arguments
 to [`Field`][pydantic.fields.Field] with the raw schema attribute name:
 
-```py
+```python
 from pydantic import BaseModel, Field, PositiveInt
 
 try:
@@ -488,7 +488,7 @@ The `field_title_generator` parameter can be used to programmatically generate t
 
 See the following example:
 
-```py
+```python
 import json
 
 from pydantic import BaseModel, Field
@@ -626,7 +626,7 @@ We viewed this change largely as a bug fix, as it resolves unintentional differe
 between `BaseModel` and `TypeAdapter` instances - see [this issue](https://github.com/pydantic/pydantic/issues/9210)
 for more details.
 
-```py
+```python
 import json
 
 from typing_extensions import Annotated, TypeAlias
@@ -748,7 +748,7 @@ In this case the input is the type and the output is a `core_schema`.
 
 Here is an example of a custom type that *overrides* the generated `core_schema`:
 
-```py
+```python
 from dataclasses import dataclass
 from typing import Any, Dict, List, Type
 
@@ -826,7 +826,7 @@ This will be the case for most custom types, so you almost never want to call in
 The process for `Annotated` metadata is much the same except that you can generally call into `handler` to have
 Pydantic handle generating the schema.
 
-```py
+```python
 from dataclasses import dataclass
 from typing import Any, Sequence, Type
 
@@ -894,7 +894,7 @@ So far we have been wrapping the schema, but if you just want to *modify* it or 
 
 To modify the schema, first call the handler, then mutate the result:
 
-```py
+```python
 from typing import Any, Type
 
 from pydantic_core import ValidationError, core_schema
@@ -936,7 +936,7 @@ except ValidationError as e:
 To override the schema completely, do not call the handler and return your own
 `CoreSchema`:
 
-```py
+```python
 from typing import Any, Type
 
 from pydantic_core import ValidationError, core_schema
@@ -991,7 +991,7 @@ However, if you want to take advantage of storing metadata via `Annotated`, but 
 schema, you can use the following approach with a no-op version of `__get_pydantic_core_schema__` implemented on the
 metadata class:
 
-```py
+```python
 from typing import Type
 
 from pydantic_core import CoreSchema
@@ -1121,7 +1121,7 @@ This is similar to the field level `field_title_generator`, but the `ConfigDict`
 
 See the following example:
 
-```py
+```python
 import json
 
 from pydantic import BaseModel, ConfigDict
@@ -1165,7 +1165,7 @@ and accepts the model class as input.
 
 See the following example:
 
-```py
+```python
 import json
 from typing import Type
 
@@ -1307,7 +1307,7 @@ The various methods that can be used to produce JSON schema accept a keyword arg
 By design, this class breaks the JSON schema generation process into smaller methods that can be easily overridden in
 subclasses to modify the "global" approach to generating JSON schema.
 
-```py
+```python
 from pydantic import BaseModel
 from pydantic.json_schema import GenerateJsonSchema
 
@@ -1338,7 +1338,7 @@ print(MyModel.model_json_schema(schema_generator=MyGenerateJsonSchema))
 
 Below is an approach you can use to exclude any fields from the schema that don't have valid json schemas:
 
-```py
+```python
 from typing import Callable
 
 from pydantic_core import PydanticOmit, core_schema
@@ -1388,7 +1388,7 @@ to preserve the order of the fields as they were defined in the model.
 If you would like to customize this behavior, you can override the `sort` method in your custom `GenerateJsonSchema` subclass. The below example
 uses a no-op `sort` method to disable sorting entirely, which is reflected in the preserved order of the model fields and `json_schema_extra` keys:
 
-```py
+```python
 import json
 from typing import Optional
 
