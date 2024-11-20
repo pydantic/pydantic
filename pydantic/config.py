@@ -649,7 +649,7 @@ class ConfigDict(TypedDict, total=False):
 
     You can customize this behavior using the `protected_namespaces` setting:
 
-    ```py test="skip"
+    ```python {test="skip"}
     import re
     import warnings
 

@@ -475,7 +475,7 @@ except ValidationError as e:
 
     Here's an example of the unexpected behavior, and the warning you'll receive:
 
-    ```python test="skip"
+    ```python {test="skip"}
     from pydantic import BaseModel
     from pydantic.functional_validators import model_validator
 

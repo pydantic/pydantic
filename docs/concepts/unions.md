@@ -34,7 +34,7 @@ If validation fails on all members, the validation error includes the errors fro
 
 `union_mode='left_to_right'` must be set as a [`Field`](../concepts/fields.md) parameter on union fields where you want to use it.
 
-```py title="Union with left to right mode"
+```python {title="Union with left to right mode"}
 from typing import Union
 
 from pydantic import BaseModel, Field, ValidationError
@@ -64,7 +64,7 @@ except ValidationError as e:
 
 The order of members is very important in this case, as demonstrated by tweak the above example:
 
-```py title="Union with left to right - unexpected results"
+```python {title="Union with left to right - unexpected results"}
 from typing import Union
 
 from pydantic import BaseModel, Field
@@ -475,7 +475,7 @@ except ValidationError as e:
 
     In the context of the previous example, we have the following:
 
-    ```python lint="skip" test="skip"
+    ```python {lint="skip" test="skip"}
     type_adapter = TypeAdapter(Pet)
 
     pet = type_adapter.validate_python(

@@ -837,7 +837,7 @@ except ValidationError as e:
 
 You may also use `Type` to specify that any class is allowed.
 
-```py upgrade="skip"
+```python {upgrade="skip"}
 from typing import Type
 
 from pydantic import BaseModel, ValidationError

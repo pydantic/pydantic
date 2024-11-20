@@ -6,7 +6,7 @@ Pydantic is instrumental in many web frameworks and libraries, such as FastAPI, 
 [`httpx`](https://www.python-httpx.org/) is a HTTP client for Python 3 with synchronous and asynchronous APIs.
 In the below example, we query the [JSONPlaceholder API](https://jsonplaceholder.typicode.com/) to get a user's data and validate it with a Pydantic model.
 
-```python test="skip"
+```python {test="skip"}
 import httpx
 
 from pydantic import BaseModel, EmailStr
@@ -31,7 +31,7 @@ print(repr(user))
 The [`TypeAdapter`][pydantic.type_adapter.TypeAdapter] tool from Pydantic often comes in quite
 handy when working with HTTP requests. Consider a similar example where we are validating a list of users:
 
-```py test="skip"
+```python {test="skip"}
 from pprint import pprint
 from typing import List
 

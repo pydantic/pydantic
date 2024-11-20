@@ -15,7 +15,7 @@ and IDEs (like [PyCharm](https://www.jetbrains.com/pycharm/) and [VSCode](https:
 
 ???+ example "Example - just type hints"
     _(This example requires Python 3.9+)_
-    ```py requires="3.9"
+    ```python {requires="3.9"}
     from typing import Annotated, Literal
 
     from annotated_types import Gt
@@ -61,7 +61,7 @@ As a result, Pydantic is among the fastest data validation libraries for Python.
     In general, dedicated code should be much faster than a general-purpose validator, but in this example
     Pydantic is >300% faster than dedicated code when parsing JSON and validating URLs.
 
-    ```py title="Performance Example" test="skip"
+    ```python {title="Performance Example" test="skip"}
     import json
     import timeit
     from urllib.parse import urlparse

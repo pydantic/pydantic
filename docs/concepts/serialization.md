@@ -639,7 +639,7 @@ print(u.model_dump_json())  # (1)!
 Pydantic models support efficient pickling and unpickling.
 
 <!-- TODO need to get pickling doctest to work -->
-```py test="skip"
+```python {test="skip"}
 import pickle
 
 from pydantic import BaseModel

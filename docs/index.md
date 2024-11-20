@@ -18,7 +18,7 @@ Fast and extensible, Pydantic plays nicely with your linters/IDE/brain. Define h
 
     Logfire integrates with many popular Python libraries including FastAPI, OpenAI and Pydantic itself, so you can use Logfire to monitor Pydantic validations and understand why some inputs fail validation:
 
-    ```py title="Monitoring Pydantic with Logfire" test="skip"
+    ```python {title="Monitoring Pydantic with Logfire" test="skip"}
     from datetime import datetime
 
     import logfire
@@ -74,7 +74,7 @@ Fast and extensible, Pydantic plays nicely with your linters/IDE/brain. Define h
 
 To see Pydantic at work, let's start with a simple example, creating a custom class that inherits from `BaseModel`:
 
-```py upgrade="skip" title="Validation Successful" requires="3.10"
+```python {upgrade="skip" title="Validation Successful" requires="3.10"}
 from datetime import datetime
 
 from pydantic import BaseModel, PositiveInt
@@ -130,7 +130,7 @@ print(user.model_dump())  # (10)!
 
 If validation fails, Pydantic will raise an error with a breakdown of what was wrong:
 
-```py upgrade="skip" title="Validation Error" test="skip" lint="skip"
+```python {upgrade="skip" title="Validation Error" test="skip" lint="skip"}
 # continuing the above example...
 
 from datetime import datetime
