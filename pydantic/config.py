@@ -71,12 +71,10 @@ class ConfigDict(TypedDict, total=False):
     ```py
     from pydantic import BaseModel, ConfigDict
 
-
     class User(BaseModel):
         model_config = ConfigDict(extra='ignore')  # (1)!
 
         name: str
-
 
     user = User(name='John Doe', age=20)  # (2)!
     print(user)
@@ -91,12 +89,10 @@ class ConfigDict(TypedDict, total=False):
     ```py
     from pydantic import BaseModel, ConfigDict
 
-
     class User(BaseModel):
         model_config = ConfigDict(extra='allow')
 
         name: str
-
 
     user = User(name='John Doe', age=20)  # (1)!
     print(user)
@@ -110,12 +106,10 @@ class ConfigDict(TypedDict, total=False):
     ```py
     from pydantic import BaseModel, ConfigDict, ValidationError
 
-
     class User(BaseModel):
         model_config = ConfigDict(extra='forbid')
 
         name: str
-
 
     try:
         User(name='John Doe', age=20)
@@ -124,7 +118,7 @@ class ConfigDict(TypedDict, total=False):
         '''
         1 validation error for User
         age
-        Extra inputs are not permitted [type=extra_forbidden, input_value=20, input_type=int]
+          Extra inputs are not permitted [type=extra_forbidden, input_value=20, input_type=int]
         '''
     ```
     """
@@ -151,13 +145,11 @@ class ConfigDict(TypedDict, total=False):
     ```py
     from pydantic import BaseModel, ConfigDict, Field
 
-
     class User(BaseModel):
         model_config = ConfigDict(populate_by_name=True)
 
         name: str = Field(alias='full_name')  # (1)!
         age: int
-
 
     user = User(full_name='John Doe', age=20)  # (2)!
     print(user)
@@ -188,23 +180,22 @@ class ConfigDict(TypedDict, total=False):
 
     from pydantic import BaseModel, ConfigDict, Field
 
-
     class SomeEnum(Enum):
         FOO = 'foo'
         BAR = 'bar'
         BAZ = 'baz'
 
-
     class SomeModel(BaseModel):
         model_config = ConfigDict(use_enum_values=True)
 
         some_enum: SomeEnum
-        another_enum: Optional[SomeEnum] = Field(default=SomeEnum.FOO, validate_default=True)
-
+        another_enum: Optional[SomeEnum] = Field(
+            default=SomeEnum.FOO, validate_default=True
+        )
 
     model1 = SomeModel(some_enum=SomeEnum.BAR)
     print(model1.model_dump())
-    # {'some_enum': 'bar', 'another_enum': 'foo'}
+    #> {'some_enum': 'bar', 'another_enum': 'foo'}
 
     model2 = SomeModel(some_enum=SomeEnum.BAR, another_enum=SomeEnum.BAZ)
     print(model2.model_dump())
