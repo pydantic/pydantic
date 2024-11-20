@@ -6,7 +6,7 @@ sources = pydantic tests docs/plugins
 	@uv -V || echo 'Please install uv: https://docs.astral.sh/uv/getting-started/installation/'
 
 .PHONY: .pre-commit  ## Check that pre-commit is installed
-.pre-commit:
+.pre-commit: .uv
 	@uv run pre-commit -V || uv pip install pre-commit
 
 .PHONY: install  ## Install the package, dependencies, and pre-commit for local development
@@ -30,7 +30,7 @@ lint: .uv
 	uv run ruff format --check $(sources)
 
 .PHONY: codespell  ## Use Codespell to do spellchecking
-codespell: .uv .pre-commit
+codespell: .pre-commit
 	pre-commit run codespell --all-files
 
 .PHONY: typecheck  ## Perform type-checking
