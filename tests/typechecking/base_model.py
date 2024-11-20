@@ -28,3 +28,6 @@ class Knight(BaseModel):
 
 
 k = Knight()  # type: ignore[call-arg]  # pyright: ignore[reportCallIssue]
+
+MyModel.model_fields.keys()
+MyModel.model_computed_fields.keys()
