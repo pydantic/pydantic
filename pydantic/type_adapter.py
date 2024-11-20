@@ -187,7 +187,7 @@ class TypeAdapter(Generic[T]):
             Depending on the type used, `mypy` might raise an error when instantiating a `TypeAdapter`. As a workaround, you can explicitly
             annotate your variable:
 
-            ```py
+            ```python
             from typing import Union
 
             from pydantic import TypeAdapter

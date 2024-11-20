@@ -61,7 +61,7 @@ If you know the value is a `dict`, use `dict` instead of `Mapping`.
 
 If you don't need to validate a value, use `Any` to keep the value unchanged.
 
-```py
+```python
 from typing import Any
 
 from pydantic import BaseModel
@@ -78,7 +78,7 @@ model = Model(a=1)
 
 === "Don't do this"
 
-    ```py
+    ```python
     class CompletedStr(str):
         def __init__(self, s: str):
             self.s = s
@@ -87,7 +87,7 @@ model = Model(a=1)
 
 === "Do this"
 
-    ```py
+    ```python
     from pydantic import BaseModel
 
 
@@ -193,7 +193,7 @@ Starting in v2.8+, you can apply the `FailFast` annotation to sequence types to 
 If you use this annotation, you won't get validation errors for the rest of the items in the sequence if one fails, so you're effectively
 trading off visibility for performance.
 
-```py
+```python
 from typing import List
 
 from typing_extensions import Annotated

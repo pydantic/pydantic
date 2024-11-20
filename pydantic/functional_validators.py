@@ -34,7 +34,7 @@ class AfterValidator:
         func: The validator function.
 
     Example:
-        ```py
+        ```python
         from typing_extensions import Annotated
 
         from pydantic import AfterValidator, BaseModel, ValidationError
@@ -96,7 +96,7 @@ class BeforeValidator:
             JSON Schema (in validation mode).
 
     Example:
-        ```py
+        ```python
         from typing_extensions import Annotated
 
         from pydantic import BaseModel, BeforeValidator
@@ -174,7 +174,7 @@ class PlainValidator:
             JSON Schema (in validation mode). If not provided, will default to `Any`.
 
     Example:
-        ```py
+        ```python
         from typing import Union
 
         from typing_extensions import Annotated
@@ -273,7 +273,7 @@ class WrapValidator:
         json_schema_input_type: The input type of the function. This is only used to generate the appropriate
             JSON Schema (in validation mode).
 
-    ```py
+    ```python
     from datetime import datetime
 
     from typing_extensions import Annotated
@@ -437,7 +437,7 @@ def field_validator(
     Decorate methods on the class indicating that they should be used to validate fields.
 
     Example usage:
-    ```py
+    ```python
     from typing import Any
 
     from pydantic import (
@@ -694,7 +694,7 @@ def model_validator(
     Decorate model methods for validation purposes.
 
     Example usage:
-    ```py
+    ```python
     from typing_extensions import Self
 
     from pydantic import BaseModel, ValidationError, model_validator
@@ -756,7 +756,7 @@ else:
         '''Generic type for annotating a type that is an instance of a given class.
 
         Example:
-            ```py
+            ```python
             from pydantic import BaseModel, InstanceOf
 
             class Foo:

@@ -4,7 +4,7 @@
 If you don't want to use Pydantic's [`BaseModel`][pydantic.BaseModel] you can instead get the same data validation
 on standard [dataclasses][dataclasses].
 
-```py
+```python
 from datetime import datetime
 from typing import Optional
 
@@ -52,7 +52,7 @@ you can wrap the dataclass with a [`TypeAdapter`][pydantic.type_adapter.TypeAdap
 
 You can use both the Pydantic's [`Field()`][pydantic.Field] and the stdlib's [`field()`][dataclasses.field] functions:
 
-```py
+```python
 import dataclasses
 from typing import List, Optional
 
@@ -116,7 +116,7 @@ If you want to modify the configuration like you would with a [`BaseModel`][pyda
 * Use the `config` argument of the decorator.
 * Define the configuration with the `__pydantic_config__` attribute.
 
-```py
+```python
 from pydantic import ConfigDict
 from pydantic.dataclasses import dataclass
 
@@ -154,7 +154,7 @@ See the [rebuilding model schema](./models.md#rebuilding-model-schema) section f
 Stdlib dataclasses (nested or not) can also be inherited and Pydantic will automatically validate
 all the inherited fields.
 
-```py
+```python
 import dataclasses
 
 import pydantic
@@ -196,7 +196,7 @@ When a standard library dataclass is used within a Pydantic model, a Pydantic da
 validation will be applied (and the [configuration](#dataclass-config) stays the same). This means that using a stdlib or a Pydantic
 dataclass as a field annotation is functionally equivalent.
 
-```py
+```python
 import dataclasses
 from typing import Optional
 
@@ -246,7 +246,7 @@ of custom types, you will get an error when trying to refer to the dataclass. To
 the issue, you can set the [`arbitrary_types_allowed`][pydantic.ConfigDict.arbitrary_types_allowed]
 configuration value on the dataclass:
 
-```py
+```python
 import dataclasses
 
 from pydantic import BaseModel
@@ -309,7 +309,7 @@ Pydantic dataclasses are still considered dataclasses, so using [`dataclasses.is
 if a type is specifically a pydantic dataclass you can use the [`is_pydantic_dataclass`][pydantic.dataclasses.is_pydantic_dataclass]
 function.
 
-```py
+```python
 import dataclasses
 
 import pydantic
@@ -337,7 +337,7 @@ print(pydantic.dataclasses.is_pydantic_dataclass(PydanticDataclass))
 
 Validators also work with Pydantic dataclasses:
 
-```py
+```python
 from pydantic import field_validator
 from pydantic.dataclasses import dataclass
 
@@ -365,7 +365,7 @@ be called between the calls to *before* and *after* model validators.
 
 ??? example
 
-    ```py
+    ```python
     from pydantic_core import ArgsKwargs
     from typing_extensions import Self
 

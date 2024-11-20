@@ -332,7 +332,7 @@ class _BaseMultiHostUrl:
     def hosts(self) -> list[MultiHostHost]:
         '''The hosts of the `MultiHostUrl` as [`MultiHostHost`][pydantic_core.MultiHostHost] typed dicts.
 
-        ```py
+        ```python
         from pydantic_core import MultiHostUrl
 
         mhu = MultiHostUrl('https://foo.com:123,foo:bar@bar.com/path')
@@ -499,7 +499,7 @@ class HttpUrl(AnyUrl):
     * Host required
     * Max length 2083
 
-    ```py
+    ```python
     from pydantic import BaseModel, HttpUrl, ValidationError
 
     class MyModel(BaseModel):
@@ -536,7 +536,7 @@ class HttpUrl(AnyUrl):
     [punycode](https://en.wikipedia.org/wiki/Punycode) (see
     [this article](https://www.xudongz.com/blog/2017/idn-phishing/) for a good description of why this is important):
 
-    ```py
+    ```python
     from pydantic import BaseModel, HttpUrl
 
     class MyModel(BaseModel):
@@ -638,7 +638,7 @@ class PostgresDsn(_BaseMultiHostUrl):
 
     If further validation is required, these properties can be used by validators to enforce specific behaviour:
 
-    ```py
+    ```python
     from pydantic import (
         BaseModel,
         HttpUrl,
@@ -894,7 +894,7 @@ else:
 
         Validate email addresses.
 
-        ```py
+        ```python
         from pydantic import BaseModel, EmailStr
 
         class Model(BaseModel):
@@ -943,7 +943,7 @@ class NameEmail(_repr.Representation):
     The `NameEmail` has two properties: `name` and `email`.
     In case the `name` is not provided, it's inferred from the email address.
 
-    ```py
+    ```python
     from pydantic import BaseModel, NameEmail
 
     class User(BaseModel):
@@ -1029,7 +1029,7 @@ else:
     class IPvAnyAddress:
         """Validate an IPv4 or IPv6 address.
 
-        ```py
+        ```python
         from pydantic import BaseModel
         from pydantic.networks import IPvAnyAddress
 
