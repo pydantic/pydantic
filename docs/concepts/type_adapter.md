@@ -96,9 +96,10 @@ handle as fields of a [`BaseModel`][pydantic.main.BaseModel].
     just once and reuse it in loops or other performance-critical code.
 
 
-### Rebuilding a `TypeAdapter`'s schema
+## Rebuilding a `TypeAdapter`'s schema
 
 In v2.10+, [`TypeAdapter`][pydantic.type_adapter.TypeAdapter]'s support deferred schema building and manual rebuilds. This is helpful for the case of:
+
 * Types with forward references
 * Types for which core schema builds are expensive
 
