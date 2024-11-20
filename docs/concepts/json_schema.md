@@ -975,52 +975,6 @@ except ValidationError as e:
     """
 ```
 
-As seen above, annotating a field with a `BaseModel` type can be used to modify or override the generated json schema.
-However, if you want to take advantage of storing metadata via `Annotated`, but you don't want to override the generated JSON
-schema, you can use the following approach with a no-op version of `__get_pydantic_core_schema__` implemented on the
-metadata class:
-
-```python
-from typing import Type
-
-from pydantic_core import CoreSchema
-from typing_extensions import Annotated
-
-from pydantic import BaseModel, GetCoreSchemaHandler
-
-
-class Metadata(BaseModel):
-    foo: str = 'metadata!'
-    bar: int = 100
-
-    @classmethod
-    def __get_pydantic_core_schema__(
-        cls, source_type: Type[BaseModel], handler: GetCoreSchemaHandler
-    ) -> CoreSchema:
-        if cls is not source_type:
-            return handler(source_type)
-        return super().__get_pydantic_core_schema__(source_type, handler)
-
-
-class Model(BaseModel):
-    state: Annotated[int, Metadata()]
-
-
-m = Model.model_validate({'state': 2})
-print(repr(m))
-#> Model(state=2)
-print(Model.model_fields)
-"""
-{
-    'state': FieldInfo(
-        annotation=int,
-        required=True,
-        metadata=[Metadata(foo='metadata!', bar=100)],
-    )
-}
-"""
-```
-
 ### Implementing `__get_pydantic_json_schema__` <a name="implementing_get_pydantic_json_schema"></a>
 
 You can also implement `__get_pydantic_json_schema__` to modify or override the generated json schema.
