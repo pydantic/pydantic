@@ -7,11 +7,12 @@ sources = pydantic tests docs/plugins
 
 .PHONY: .pre-commit  ## Check that pre-commit is installed
 .pre-commit:
-	@pre-commit -V || echo 'Please install pre-commit: https://pre-commit.com/'
+	@uv run pre-commit -V || uv pip install pre-commit
 
 .PHONY: install  ## Install the package, dependencies, and pre-commit for local development
-install: .uv .pre-commit
-	uv sync --frozen --group all --all-extras --inexact
+install: .uv
+	uv sync --frozen --group all --all-extras
+	uv pip install pre-commit
 	pre-commit install --install-hooks
 
 .PHONY: rebuild-lockfiles  ## Rebuild lockfiles from scratch, updating all dependencies
@@ -29,7 +30,7 @@ lint: .uv
 	uv run ruff format --check $(sources)
 
 .PHONY: codespell  ## Use Codespell to do spellchecking
-codespell: .pre-commit
+codespell: .uv .pre-commit
 	pre-commit run codespell --all-files
 
 .PHONY: typecheck  ## Perform type-checking
