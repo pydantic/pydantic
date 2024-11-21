@@ -37,3 +37,9 @@ def test_complex_json(value, expected):
         assert math.isnan(c.real)
     else:
         assert c.imag == value.imag
+
+
+def test_complex_inference() -> None:
+    s = SchemaSerializer(core_schema.any_schema())
+    assert s.to_python(1 + 2j) == 1 + 2j
+    assert s.to_json(1 + 2j) == b'"1+2j"'
