@@ -1302,14 +1302,12 @@ def test_validate_call_does_not_override_the_global_ns_with_the_local_ns_where_i
         func_val(a=1)
 
 
-@pytest.mark.xfail(
-    reason='In `GenerateSchema`, only the current class module is taken into account. '
-    'This is similar to `test_uses_the_correct_globals_to_resolve_model_forward_refs`.'
-)
 def test_uses_the_correct_globals_to_resolve_forward_refs_on_serializers(create_module):
+    # Note: unlike `test_uses_the_correct_globals_to_resolve_model_forward_refs`,
+    # we use the globals of the underlying func to resolve the return type.
     @create_module
     def module_1():
-        from pydantic import BaseModel, field_serializer  # or model_serializer
+        from pydantic import BaseModel, field_serializer  # or model_serializer, computed_field
 
         MyStr = str
 
@@ -1317,7 +1315,7 @@ def test_uses_the_correct_globals_to_resolve_forward_refs_on_serializers(create_
             a: int
 
             @field_serializer('a')
-            def ser(self) -> 'MyStr':
+            def ser(self, value) -> 'MyStr':
                 return str(self.a)
 
     class Sub(module_1.Model):
