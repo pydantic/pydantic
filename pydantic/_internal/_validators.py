@@ -6,7 +6,6 @@ Import of this module is deferred since it contains imports of many standard lib
 from __future__ import annotations as _annotations
 
 import math
-import pathlib
 import re
 import typing
 from decimal import Decimal
@@ -309,11 +308,6 @@ def multiple_of_validator(x: Any, multiple_of: Any) -> Any:
         raise TypeError(f"Unable to apply constraint 'multiple_of' to supplied value {x}")
 
 
-# TODO: we have a sort of hacky way of supporting min_length and max_length for path like types as a consequence
-# of prior design that supported out of order metadata injection during core schema generation, which we have since abandoned
-# see: https://github.com/pydantic/pydantic/pull/10846/
-
-
 def min_length_validator(x: Any, min_length: Any) -> Any:
     try:
         if not (len(x) >= min_length):
@@ -322,15 +316,6 @@ def min_length_validator(x: Any, min_length: Any) -> Any:
             )
         return x
     except TypeError:
-        if isinstance(x, pathlib.PurePath):
-            try:
-                if not (len(str(x)) >= min_length):
-                    raise PydanticKnownError(
-                        'too_short', {'field_type': 'Value', 'min_length': min_length, 'actual_length': len(str(x))}
-                    )
-                return x
-            except TypeError:
-                pass
         raise TypeError(f"Unable to apply constraint 'min_length' to supplied value {x}")
 
 
@@ -343,16 +328,6 @@ def max_length_validator(x: Any, max_length: Any) -> Any:
             )
         return x
     except TypeError:
-        if isinstance(x, pathlib.PurePath):
-            try:
-                if len(str(x)) > max_length:
-                    raise PydanticKnownError(
-                        'too_long',
-                        {'field_type': 'Value', 'max_length': max_length, 'actual_length': len(str(x))},
-                    )
-                return x
-            except TypeError:
-                pass
         raise TypeError(f"Unable to apply constraint 'max_length' to supplied value {x}")
 
 
@@ -371,35 +346,38 @@ def _extract_decimal_digits_info(decimal: Decimal) -> tuple[int, int]:
     Though this could be divided into two separate functions, the logic is easier to follow if we couple the computation
     of the number of decimals and digits together.
     """
-    decimal_tuple = decimal.as_tuple()
-    if not isinstance(decimal_tuple.exponent, int):
+    try:
+        decimal_tuple = decimal.as_tuple()
+
+        assert isinstance(decimal_tuple.exponent, int)
+
+        exponent = decimal_tuple.exponent
+        num_digits = len(decimal_tuple.digits)
+
+        if exponent >= 0:
+            # A positive exponent adds that many trailing zeros
+            # Ex: digit_tuple=(1, 2, 3), exponent=2 -> 12300 -> 0 decimal places, 5 digits
+            num_digits += exponent
+            decimal_places = 0
+        else:
+            # If the absolute value of the negative exponent is larger than the
+            # number of digits, then it's the same as the number of digits,
+            # because it'll consume all the digits in digit_tuple and then
+            # add abs(exponent) - len(digit_tuple) leading zeros after the decimal point.
+            # Ex: digit_tuple=(1, 2, 3), exponent=-2 -> 1.23 -> 2 decimal places, 3 digits
+            # Ex: digit_tuple=(1, 2, 3), exponent=-4 -> 0.0123 -> 4 decimal places, 4 digits
+            decimal_places = abs(exponent)
+            num_digits = max(num_digits, decimal_places)
+
+        return decimal_places, num_digits
+    except (AssertionError, AttributeError):
         raise TypeError(f'Unable to extract decimal digits info from supplied value {decimal}')
-    exponent = decimal_tuple.exponent
-    num_digits = len(decimal_tuple.digits)
-
-    if exponent >= 0:
-        # A positive exponent adds that many trailing zeros
-        # Ex: digit_tuple=(1, 2, 3), exponent=2 -> 12300 -> 0 decimal places, 5 digits
-        num_digits += exponent
-        decimal_places = 0
-    else:
-        # If the absolute value of the negative exponent is larger than the
-        # number of digits, then it's the same as the number of digits,
-        # because it'll consume all the digits in digit_tuple and then
-        # add abs(exponent) - len(digit_tuple) leading zeros after the decimal point.
-        # Ex: digit_tuple=(1, 2, 3), exponent=-2 -> 1.23 -> 2 decimal places, 3 digits
-        # Ex: digit_tuple=(1, 2, 3), exponent=-4 -> 0.0123 -> 4 decimal places, 4 digits
-        decimal_places = abs(exponent)
-        num_digits = max(num_digits, decimal_places)
-
-    return decimal_places, num_digits
 
 
 def max_digits_validator(x: Any, max_digits: Any) -> Any:
-    _, num_digits = _extract_decimal_digits_info(x)
-    _, normalized_num_digits = _extract_decimal_digits_info(x.normalize())
-
     try:
+        _, num_digits = _extract_decimal_digits_info(x)
+        _, normalized_num_digits = _extract_decimal_digits_info(x.normalize())
         if (num_digits > max_digits) and (normalized_num_digits > max_digits):
             raise PydanticKnownError(
                 'decimal_max_digits',
@@ -411,10 +389,9 @@ def max_digits_validator(x: Any, max_digits: Any) -> Any:
 
 
 def decimal_places_validator(x: Any, decimal_places: Any) -> Any:
-    decimal_places_, _ = _extract_decimal_digits_info(x)
-    normalized_decimal_places, _ = _extract_decimal_digits_info(x.normalize())
-
     try:
+        decimal_places_, _ = _extract_decimal_digits_info(x)
+        normalized_decimal_places, _ = _extract_decimal_digits_info(x.normalize())
         if (decimal_places_ > decimal_places) and (normalized_decimal_places > decimal_places):
             raise PydanticKnownError(
                 'decimal_max_places',
