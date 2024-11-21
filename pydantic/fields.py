@@ -570,7 +570,9 @@ class FieldInfo(_repr.Representation):
         return self.deprecated if isinstance(self.deprecated, str) else self.deprecated.message
 
     @overload
-    def get_default(self, *, call_default_factory: Literal[True], validated_data: dict[str, Any]) -> Any: ...
+    def get_default(
+        self, *, call_default_factory: Literal[True], validated_data: dict[str, Any] | None = None
+    ) -> Any: ...
 
     @overload
     def get_default(self, *, call_default_factory: Literal[False] = ...) -> Any: ...
@@ -592,9 +594,11 @@ class FieldInfo(_repr.Representation):
         if self.default_factory is None:
             return _utils.smart_deepcopy(self.default)
         elif call_default_factory:
-            if validated_data is None:
-                raise ValueError("'validated_data' must be provided if 'call_default_factory' is True.")
             if _fields.takes_validated_data_argument(self.default_factory):
+                if validated_data is None:
+                    raise ValueError(
+                        "The default factory requires the 'validated_data' argument, which was not provided when calling 'get_default'."
+                    )
                 return self.default_factory(validated_data)
             else:
                 fac = cast(Callable[[], Any], self.default_factory)  # Pyright doesn't narrow correctly
