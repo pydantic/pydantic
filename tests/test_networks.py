@@ -1066,6 +1066,15 @@ def test_url_equality() -> None:
     )
 
 
+def test_equality_independent_of_init() -> None:
+    ta = TypeAdapter(HttpUrl)
+    from_str = ta.validate_python('http://example.com/something')
+    from_url = ta.validate_python(HttpUrl('http://example.com/something'))
+    from_validated = ta.validate_python(from_str)
+
+    assert from_str == from_url == from_validated
+
+
 def test_url_subclasses_any_url() -> None:
     http_url = AnyHttpUrl('https://localhost')
     assert isinstance(http_url, AnyUrl)
