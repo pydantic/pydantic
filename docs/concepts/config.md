@@ -4,7 +4,7 @@ and as an argument to [`TypeAdapter`][pydantic.TypeAdapter].
 !!! note
     Before **v2.0**, the `Config` class was used. This is still supported, but **deprecated**.
 
-```py
+```python
 from pydantic import BaseModel, ConfigDict, ValidationError
 
 
@@ -26,7 +26,7 @@ except ValidationError as e:
 ```
 
 Also, you can specify config options as model class kwargs:
-```py
+```python
 from pydantic import BaseModel, ValidationError
 
 
@@ -48,7 +48,7 @@ except ValidationError as e:
 1. See the [Extra Attributes](models.md#extra-fields) section for more details.
 
 Similarly, if using the [`@dataclass`][pydantic.dataclasses] decorator from Pydantic:
-```py
+```python
 from datetime import datetime
 
 from pydantic import ConfigDict, ValidationError
@@ -80,7 +80,7 @@ except ValidationError as e:
 
 If using the `dataclass` from the standard library or `TypedDict`, you should use `__pydantic_config__` instead.
 
-```py
+```python
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -98,7 +98,7 @@ class User:
 
 Alternatively, the [`with_config`][pydantic.config.with_config] decorator can be used to comply with type checkers.
 
-```py
+```python
 from typing_extensions import TypedDict
 
 from pydantic import ConfigDict, with_config
@@ -114,7 +114,7 @@ class Model(TypedDict):
 If you wish to change the behaviour of Pydantic globally, you can create your own custom `BaseModel`
 with custom `model_config` since the config is inherited:
 
-```py
+```python
 from pydantic import BaseModel, ConfigDict
 
 
@@ -133,7 +133,7 @@ print(m.model_dump())
 
 If you add a `model_config` to the `Model` class, it will _merge_ with the `model_config` from `Parent`:
 
-```py
+```python
 from pydantic import BaseModel, ConfigDict
 
 

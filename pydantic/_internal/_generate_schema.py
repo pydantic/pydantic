@@ -1411,6 +1411,8 @@ class GenerateSchema:
                 )
 
             try:
+                # if a typed dictionary class doesn't have config, we use the parent's config, hence a default of `None`
+                # see https://github.com/pydantic/pydantic/issues/10917
                 config: ConfigDict | None = get_attribute_from_bases(typed_dict_cls, '__pydantic_config__')
             except AttributeError:
                 config = None
@@ -1738,7 +1740,10 @@ class GenerateSchema:
             if origin is not None:
                 dataclass = origin
 
-            config = getattr(dataclass, '__pydantic_config__', ConfigDict())
+            # if (plain) dataclass doesn't have config, we use the parent's config, hence a default of `None`
+            # (Pydantic dataclasses have an empty dict config by default).
+            # see https://github.com/pydantic/pydantic/issues/10917
+            config = getattr(dataclass, '__pydantic_config__', None)
 
             from ..dataclasses import is_pydantic_dataclass
 
@@ -1892,34 +1897,27 @@ class GenerateSchema:
         )
 
     def _unsubstituted_typevar_schema(self, typevar: typing.TypeVar) -> core_schema.CoreSchema:
-        assert isinstance(typevar, typing.TypeVar)
-
-        bound = typevar.__bound__
-        constraints = typevar.__constraints__
-
         try:
-            typevar_has_default = typevar.has_default()  # type: ignore
+            has_default = typevar.has_default()
         except AttributeError:
-            # could still have a default if it's an old version of typing_extensions.TypeVar
-            typevar_has_default = getattr(typevar, '__default__', None) is not None
+            # Happens if using `typing.TypeVar` on Python < 3.13
+            pass
+        else:
+            if has_default:
+                return self.generate_schema(typevar.__default__)
 
-        if (bound is not None) + (len(constraints) != 0) + typevar_has_default > 1:
-            raise NotImplementedError(
-                'Pydantic does not support mixing more than one of TypeVar bounds, constraints and defaults'
-            )
+        if constraints := typevar.__constraints__:
+            return self._union_schema(typing.Union[constraints])
 
-        if typevar_has_default:
-            return self.generate_schema(typevar.__default__)  # type: ignore
-        elif constraints:
-            return self._union_schema(typing.Union[constraints])  # type: ignore
-        elif bound:
+        if bound := typevar.__bound__:
             schema = self.generate_schema(bound)
             schema['serialization'] = core_schema.wrap_serializer_function_ser_schema(
-                lambda x, h: h(x), schema=core_schema.any_schema()
+                lambda x, h: h(x),
+                schema=core_schema.any_schema(),
             )
             return schema
-        else:
-            return core_schema.any_schema()
+
+        return core_schema.any_schema()
 
     def _computed_field_schema(
         self,
@@ -1927,7 +1925,12 @@ class GenerateSchema:
         field_serializers: dict[str, Decorator[FieldSerializerDecoratorInfo]],
     ) -> core_schema.ComputedField:
         try:
-            return_type = _decorators.get_function_return_type(d.func, d.info.return_type, *self._types_namespace)
+            # Do not pass in globals as the function could be defined in a different module.
+            # Instead, let `get_function_return_type` infer the globals to use, but still pass
+            # in locals that may contain a parent/rebuild namespace:
+            return_type = _decorators.get_function_return_type(
+                d.func, d.info.return_type, localns=self._types_namespace.locals
+            )
         except NameError as e:
             raise PydanticUndefinedAnnotation.from_name_error(e) from e
         if return_type is PydanticUndefined:
@@ -2162,8 +2165,11 @@ class GenerateSchema:
             is_field_serializer, info_arg = inspect_field_serializer(serializer.func, serializer.info.mode)
 
             try:
+                # Do not pass in globals as the function could be defined in a different module.
+                # Instead, let `get_function_return_type` infer the globals to use, but still pass
+                # in locals that may contain a parent/rebuild namespace:
                 return_type = _decorators.get_function_return_type(
-                    serializer.func, serializer.info.return_type, *self._types_namespace
+                    serializer.func, serializer.info.return_type, localns=self._types_namespace.locals
                 )
             except NameError as e:
                 raise PydanticUndefinedAnnotation.from_name_error(e) from e
@@ -2202,8 +2208,11 @@ class GenerateSchema:
             info_arg = inspect_model_serializer(serializer.func, serializer.info.mode)
 
             try:
+                # Do not pass in globals as the function could be defined in a different module.
+                # Instead, let `get_function_return_type` infer the globals to use, but still pass
+                # in locals that may contain a parent/rebuild namespace:
                 return_type = _decorators.get_function_return_type(
-                    serializer.func, serializer.info.return_type, *self._types_namespace
+                    serializer.func, serializer.info.return_type, localns=self._types_namespace.locals
                 )
             except NameError as e:
                 raise PydanticUndefinedAnnotation.from_name_error(e) from e

@@ -6,7 +6,9 @@ from pydantic_core import PydanticCustomError, Url
 from typing_extensions import Annotated
 
 from pydantic import (
+    AfterValidator,
     AmqpDsn,
+    AnyHttpUrl,
     AnyUrl,
     BaseModel,
     ClickHouseDsn,
@@ -1062,3 +1064,35 @@ def test_url_equality() -> None:
     assert PostgresDsn('postgres://user:pass@localhost:5432/app') == PostgresDsn(
         'postgres://user:pass@localhost:5432/app'
     )
+
+
+def test_url_subclasses_any_url() -> None:
+    http_url = AnyHttpUrl('https://localhost')
+    assert isinstance(http_url, AnyUrl)
+    assert isinstance(http_url, AnyHttpUrl)
+
+    url = TypeAdapter(AnyUrl).validate_python(http_url)
+    assert url is http_url
+
+
+def test_custom_constraints() -> None:
+    HttpUrl = Annotated[AnyUrl, UrlConstraints(allowed_schemes=['http', 'https'])]
+    ta = TypeAdapter(HttpUrl)
+    assert ta.validate_python('https://example.com')
+
+    with pytest.raises(ValidationError):
+        ta.validate_python('ftp://example.com')
+
+
+def test_after_validator() -> None:
+    def remove_trailing_slash(url: AnyUrl) -> str:
+        """Custom url -> str transformer that removes trailing slash."""
+        return str(url._url).rstrip('/')
+
+    HttpUrl = Annotated[
+        AnyUrl,
+        UrlConstraints(allowed_schemes=['http', 'https']),
+        AfterValidator(lambda url: remove_trailing_slash(url)),
+    ]
+    ta = TypeAdapter(HttpUrl)
+    assert ta.validate_python('https://example.com/') == 'https://example.com'

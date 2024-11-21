@@ -152,6 +152,8 @@ class ModelMetaclass(ABCMeta):
                 None if cls.model_post_init is BaseModel_.model_post_init else 'model_post_init'
             )
 
+            cls.__pydantic_setattr_handlers__ = {}
+
             cls.__pydantic_decorators__ = DecoratorInfos.build(cls)
 
             # Use the getattr below to grab the __parameters__ from the `typing.Generic` parent class
@@ -225,7 +227,6 @@ class ModelMetaclass(ABCMeta):
 
             complete_model_class(
                 cls,
-                cls_name,
                 config_wrapper,
                 raise_errors=False,
                 ns_resolver=ns_resolver,
@@ -610,7 +611,6 @@ def set_model_fields(
 
 def complete_model_class(
     cls: type[BaseModel],
-    cls_name: str,
     config_wrapper: ConfigWrapper,
     *,
     raise_errors: bool = True,
@@ -624,7 +624,6 @@ def complete_model_class(
 
     Args:
         cls: BaseModel or dataclass.
-        cls_name: The model or dataclass name.
         config_wrapper: The config wrapper instance.
         raise_errors: Whether to raise errors.
         ns_resolver: The namespace resolver instance to use during schema building.
@@ -638,7 +637,7 @@ def complete_model_class(
             and `raise_errors=True`.
     """
     if config_wrapper.defer_build:
-        set_model_mocks(cls, cls_name)
+        set_model_mocks(cls)
         return False
 
     typevars_map = get_model_typevars_map(cls)
@@ -659,7 +658,7 @@ def complete_model_class(
     except PydanticUndefinedAnnotation as e:
         if raise_errors:
             raise
-        set_model_mocks(cls, cls_name, f'`{e.name}`')
+        set_model_mocks(cls, f'`{e.name}`')
         return False
 
     core_config = config_wrapper.core_config(title=cls.__name__)
@@ -667,7 +666,7 @@ def complete_model_class(
     try:
         schema = gen_schema.clean_schema(schema)
     except gen_schema.CollectedInvalid:
-        set_model_mocks(cls, cls_name)
+        set_model_mocks(cls)
         return False
 
     # debug(schema)

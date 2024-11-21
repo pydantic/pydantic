@@ -7,7 +7,7 @@ While type hints were primarily introduced for static type checkers (such as [My
 accessible (and sometimes evaluated) at runtime. This means that the following would fail at runtime,
 because `Node` has yet to be defined in the current module:
 
-```python test="skip" lint="skip"
+```python {test="skip" lint="skip"}
 class Node:
     """Binary tree node."""
 
@@ -22,7 +22,7 @@ To circumvent this issue, forward references can be used (by wrapping the annota
 In Python 3.7, [PEP 563] introduced the concept of _postponed evaluation of annotations_, meaning
 with the `from __future__ import annotations` [future statement], type hints are stringified by default:
 
-```python requires="3.12" lint="skip"
+```python {requires="3.12" lint="skip"}
 from __future__ import annotations
 
 from pydantic import BaseModel
@@ -67,7 +67,7 @@ sections below.
 
 The following example will be used as a reference throughout this section:
 
-```python test="skip" lint="skip"
+```python {test="skip" lint="skip"}
 # module1.py:
 type MyType = int
 
@@ -147,7 +147,7 @@ While the namespace fetching logic is trying to be as accurate as possible, we s
 
 1.  Here is an example:
 
-    ```python test="skip" lint="skip"
+    ```python {test="skip" lint="skip"}
     def func():
         A = int
 
@@ -198,7 +198,7 @@ and the `{Bar.__name__: Bar}` namespace are included in the locals during annota
 
 1.  This backwards compatibility logic can introduce some inconsistencies, such as the following:
 
-    ```python lint="skip"
+    ```python {lint="skip"}
     from dataclasses import dataclass
 
     from pydantic import BaseModel
@@ -226,7 +226,7 @@ and the `{Bar.__name__: Bar}` namespace are included in the locals during annota
 When a forward reference fails to evaluate, Pydantic will silently fail and stop the core schema
 generation process. This can be seen by inspecting the `__pydantic_core_schema__` of a model class:
 
-```python lint="skip"
+```python {lint="skip"}
 from pydantic import BaseModel
 
 
@@ -240,7 +240,7 @@ Foo.__pydantic_core_schema__
 
 If you then properly define `MyType`, you can rebuild the model:
 
-```python test="skip" lint="skip"
+```python {test="skip" lint="skip"}
 type MyType = int
 
 Foo.model_rebuild()

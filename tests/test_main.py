@@ -735,8 +735,12 @@ def test_validating_assignment_pass(ValidateAssignmentModel):
     assert p.model_dump() == {'a': 2, 'b': 'hi'}
 
 
-def test_validating_assignment_fail(ValidateAssignmentModel):
+@pytest.mark.parametrize('init_valid', [False, True])
+def test_validating_assignment_fail(ValidateAssignmentModel, init_valid: bool):
     p = ValidateAssignmentModel(a=5, b='hello')
+    if init_valid:
+        p.a = 5
+        p.b = 'hello'
 
     with pytest.raises(ValidationError) as exc_info:
         p.a = 'b'
