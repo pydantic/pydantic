@@ -31,6 +31,7 @@ from typing import (
     Union,
 )
 from uuid import UUID
+from typing_extensions import TypeAliasType
 
 import pytest
 from dirty_equals import HasRepr
@@ -6609,3 +6610,29 @@ def test_warn_on_mixed_compose() -> None:
 
         class Model(BaseModel):
             field: Annotated[int, Field(json_schema_extra={'a': 'dict'}), Field(json_schema_extra=lambda x: x.pop('a'))]  # type: ignore
+
+
+def test_annotated_typealiastype() -> None:
+    TAT_TOO = TypeAliasType(
+        'TAT_TOO',
+        Annotated[
+            str, Field(description='a design made by tattooing', examples=['Wireframe of a pyramid with lines in it'])
+        ],
+    )
+
+    class Model(BaseModel):
+        tat: TAT_TOO
+
+    assert Model.model_json_schema() == {
+        '$defs': {
+            'TAT_TOO': {
+                'type': 'string',
+                'description': 'a design made by tattooing',
+                'examples': ['Wireframe of a pyramid with lines in it'],
+            }
+        },
+        'properties': {'tat': {'$ref': '#/$defs/TAT_TOO'}},
+        'required': ['tat'],
+        'title': 'Model',
+        'type': 'object',
+    }
