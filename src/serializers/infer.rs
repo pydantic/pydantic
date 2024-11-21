@@ -285,8 +285,7 @@ pub(crate) fn infer_to_python_known(
             }
             ObType::Complex => {
                 let v = value.downcast::<PyComplex>()?;
-                let complex_str = type_serializers::complex::complex_to_str(v);
-                complex_str.into_py(py)
+                v.into_py(py)
             }
             ObType::Unknown => {
                 if let Some(fallback) = extra.fallback {
