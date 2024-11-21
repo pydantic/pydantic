@@ -68,13 +68,34 @@ jobs:
         with:
           workspaces: pydantic-core
 
-      - name: install pydantic-core with profiling symbols
+      - name: install pydantic-core dependencies
         run: |
-          uv pip install pip
-          uv run bash -c "cd pydantic-core && pip install -r tests/requirements.txt && pip uninstall --yes pytest-speed && make build-pgo"
+          ln -s ../.venv .venv  # link pydantic-core uv venv to the pydantic one
+          uv sync --inexact --group testing
+          uv pip uninstall pytest-speed
+        working-directory: pydantic-core
+
+      - name: Compile pydantic-core for profiling
+        run: make build-profiling
+        working-directory: pydantic-core
         env:
-          CARGO_PROFILE_RELEASE_DEBUG: "line-tables-only"
-          CARGO_PROFILE_RELEASE_STRIP: "false"
+          CONST_RANDOM_SEED: 0 # Fix the compile time RNG seed
+          RUSTFLAGS: "-Cprofile-generate=${{ github.workspace }}/profdata"
+
+      - name: Gather pgo data
+        run: uv run pytest tests/benchmarks
+        working-directory: pydantic-core
+
+      - name: Prepare merged pgo data
+        run: rustup run stable bash -c '$RUSTUP_HOME/toolchains/$RUSTUP_TOOLCHAIN/lib/rustlib/x86_64-unknown-linux-gnu/bin/llvm-profdata merge -o ${{ github.workspace }}/merged.profdata ${{ github.workspace }}/profdata'
+        working-directory: pydantic-core
+
+      - name: Compile pydantic-core for benchmarking
+        run: make build-profiling
+        working-directory: pydantic-core
+        env:
+          CONST_RANDOM_SEED: 0 # Fix the compile time RNG seed
+          RUSTFLAGS: "-Cprofile-use=${{ github.workspace }}/merged.profdata"
 
       - name: Run CodSpeed benchmarks
         uses: CodSpeedHQ/action@v3

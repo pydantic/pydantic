@@ -46,7 +46,7 @@ requires-python = '>=3.8'
 dependencies = [
     'typing-extensions>=4.12.2',
     'annotated-types>=0.6.0',
-    'pydantic-core==2.27.0',
+    'pydantic-core @ git+https://github.com/pydantic/pydantic-core.git@4477692c0ac616c40b25a7102c942c531f7e6bf8',
 ]
 dynamic = ['version', 'readme']
 
