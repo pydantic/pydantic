@@ -102,6 +102,8 @@ class UrlConstraints:
         schema = handler(source)
 
         # for function-wrap schemas, url constraints is applied to the inner schema
+        # because when we generate schemas for urls, we wrap a core_schema.url_schema() with a function-wrap schema
+        # that helps with validation on initialization, see _BaseUrl and _BaseMultiHostUrl below.
         schema_to_mutate = schema['schema'] if schema['type'] == 'function-wrap' else schema
         if annotated_type := schema_to_mutate['type'] not in ('url', 'multi-host-url'):
             raise PydanticUserError(
