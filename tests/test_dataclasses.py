@@ -3072,3 +3072,17 @@ def test_do_not_leak_config_from_other_types_during_building() -> None:
 
             dc: DC
             other: str
+
+
+def test_config_pushdown_vanilla_dc() -> None:
+    class ArbitraryType:
+        pass
+
+    @dataclasses.dataclass
+    class DC:
+        a: ArbitraryType
+
+    class Model(BaseModel):
+        model_config = ConfigDict(arbitrary_types_allowed=True)
+
+        dc: DC
