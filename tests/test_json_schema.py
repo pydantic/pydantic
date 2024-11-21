@@ -31,14 +31,13 @@ from typing import (
     Union,
 )
 from uuid import UUID
-from typing_extensions import TypeAliasType
 
 import pytest
 from dirty_equals import HasRepr
 from packaging.version import Version
 from pydantic_core import CoreSchema, SchemaValidator, core_schema, to_jsonable_python
 from pydantic_core.core_schema import ValidatorFunctionWrapHandler
-from typing_extensions import Annotated, Literal, Self, TypedDict, deprecated
+from typing_extensions import Annotated, Literal, Self, TypeAliasType, TypedDict, deprecated
 
 import pydantic
 from pydantic import (
