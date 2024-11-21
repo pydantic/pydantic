@@ -599,7 +599,7 @@ class FieldInfo(_repr.Representation):
             if _fields.takes_validated_data_argument(self.default_factory):
                 if validated_data is None:
                     raise ValueError(
-                       "The default factory requires the 'validated_data' argument, which was not provided when calling 'get_default'."
+                        "The default factory requires the 'validated_data' argument, which was not provided when calling 'get_default'."
                     )
                 return self.default_factory(validated_data)
             else:
