@@ -215,7 +215,7 @@ class TypeAdapter(Generic[T]):
         self._parent_depth = _parent_depth
         self.pydantic_complete = False
 
-        parent_frame = self._fetch_parent_frame(self._parent_depth)
+        parent_frame = self._fetch_parent_frame()
         if parent_frame is not None:
             globalns = parent_frame.f_globals
             # Do not provide a local ns if the type adapter happens to be instantiated at the module level:
@@ -233,8 +233,8 @@ class TypeAdapter(Generic[T]):
             force=False,
         )
 
-    def _fetch_parent_frame(self, depth: int) -> FrameType | None:
-        frame = sys._getframe(depth)
+    def _fetch_parent_frame(self) -> FrameType | None:
+        frame = sys._getframe(self._parent_depth)
         if frame.f_globals.get('__name__') == 'typing':
             # Because `TypeAdapter` is generic, explicitly parametrizing the class results
             # in a `typing._GenericAlias` instance, which proxies instantiation calls to the
