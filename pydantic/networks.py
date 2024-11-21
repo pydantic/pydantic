@@ -101,25 +101,14 @@ class UrlConstraints:
     def __get_pydantic_core_schema__(self, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         schema = handler(source)
 
-        if schema['type'] == 'function-wrap':
-            # for function-wrap schemas, url constraints is applied to the inner schema
-            inner = schema['schema']
-
-            if annotated_type := inner['type'] not in ('url', 'multi-host-url'):
-                raise PydanticUserError(
-                    f"'UrlConstraints' cannot annotate '{annotated_type}'.", code='invalid-annotated-type'
-                )
-            for constraint_key, constraint_value in self.defined_constraints.items():
-                inner[constraint_key] = constraint_value
-            schema['schema'] = inner
-        else:
-            if annotated_type := schema['type'] not in ('url', 'multi-host-url'):
-                raise PydanticUserError(
-                    f"'UrlConstraints' cannot annotate '{annotated_type}'.", code='invalid-annotated-type'
-                )
-            for constraint_key, constraint_value in self.defined_constraints.items():
-                schema[constraint_key] = constraint_value
-
+        # for function-wrap schemas, url constraints is applied to the inner schema
+        schema_to_mutate = schema['schema'] if schema['type'] == 'function-wrap' else schema
+        if annotated_type := schema_to_mutate['type'] not in ('url', 'multi-host-url'):
+            raise PydanticUserError(
+                f"'UrlConstraints' cannot annotate '{annotated_type}'.", code='invalid-annotated-type'
+            )
+        for constraint_key, constraint_value in self.defined_constraints.items():
+            schema_to_mutate[constraint_key] = constraint_value
         return schema
 
 
