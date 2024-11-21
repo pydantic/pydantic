@@ -249,7 +249,7 @@ configuration value on the dataclass:
 ```python
 import dataclasses
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from pydantic.errors import PydanticSchemaGenerationError
 
 
@@ -276,6 +276,9 @@ try:
         dc: DC
         other: str
 
+    # invalid as dc is now validated with pydantic, and ArbitraryType is not a known type
+    Model(dc=my_dc, other='other')
+
 except PydanticSchemaGenerationError as e:
     print(e.message)
     """
@@ -285,22 +288,17 @@ except PydanticSchemaGenerationError as e:
     """
 
 
-@dataclasses.dataclass
-class DC2:
-    a: ArbitraryType
-    b: str
-
-    __pydantic_config__ = {'arbitrary_types_allowed': True}
-
-
+# valid as we set arbitrary_types_allowed=True, and that config pushes down to the nested vanilla dataclass
 class Model(BaseModel):
-    dc: DC2
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    dc: DC
     other: str
 
 
-m = Model(dc=DC2(a=ArbitraryType(value=3), b='qwe'), other='other')
+m = Model(dc=my_dc, other='other')
 print(repr(m))
-#> Model(dc=DC2(a=ArbitraryType(value=3), b='qwe'), other='other')
+#> Model(dc=DC(a=ArbitraryType(value=3), b='qwe'), other='other')
 ```
 
 ### Checking if a dataclass is a Pydantic dataclass
