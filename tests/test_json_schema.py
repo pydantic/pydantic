@@ -6621,7 +6621,10 @@ def test_annotated_typealiastype() -> None:
     )
 
     class Model(BaseModel):
-        tat: TAT_TOO
+        tat_one: TAT_TOO
+        tat_two: TAT_TOO = Field(
+            description='a mark, figure, design, or word intentionally fixed or placed on the skin'
+        )
 
     assert Model.model_json_schema() == {
         '$defs': {
@@ -6631,8 +6634,14 @@ def test_annotated_typealiastype() -> None:
                 'examples': ['Wireframe of a pyramid with lines in it'],
             }
         },
-        'properties': {'tat': {'$ref': '#/$defs/TAT_TOO'}},
-        'required': ['tat'],
+        'properties': {
+            'tat_one': {'$ref': '#/$defs/TAT_TOO'},
+            'tat_two': {
+                '$ref': '#/$defs/TAT_TOO',
+                'description': 'a mark, figure, design, or word intentionally fixed or placed on the skin',
+            },
+        },
+        'required': ['tat_one', 'tat_two'],
         'title': 'Model',
         'type': 'object',
     }
