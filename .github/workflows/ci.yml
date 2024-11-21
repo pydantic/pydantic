@@ -10,6 +10,7 @@ on:
 
 env:
   COLUMNS: 150
+  UV_PYTHON: 3.13
 
 jobs:
   coverage:
@@ -30,26 +31,27 @@ jobs:
 
       - run: rustup component add llvm-tools-preview
 
-      - name: set up python
-        uses: actions/setup-python@v5
+      - name: install uv
+        uses: astral-sh/setup-uv@v3
         with:
-          python-version: '3.13'
+          enable-cache: true
 
-      - run: pip install -r tests/requirements.txt
+      - name: install deps
+        run: uv sync --group testing
 
       - run: rustc --version --verbose
 
-      - run: pip install -e .
+      - run: make build-dev
         env:
           RUST_BACKTRACE: 1
           RUSTFLAGS: '-C instrument-coverage'
 
-      - run: pip freeze
+      - run: uv pip freeze
 
-      - run: coverage run -m pytest
+      - run: uv run coverage run -m pytest
 
       - run: ls -lha
-      - run: coverage xml
+      - run: uv run coverage xml
 
       - run: coverage-prepare lcov python/pydantic_core/*.so
 
@@ -85,23 +87,26 @@ jobs:
         with:
           key: test-v3
 
-      - name: set up python
-        uses: actions/setup-python@v5
+      - name: install uv
+        uses: astral-sh/setup-uv@v3
         with:
-          python-version: ${{ matrix.python-version }}
-          allow-prereleases: true
+          enable-cache: true
 
-      - run: pip install -r tests/requirements.txt
+      - name: install deps
+        run: uv sync --group testing
 
-      - run: pip install -e .
+      - run: uv pip install -e .
         env:
           RUST_BACKTRACE: 1
 
-      - run: pip freeze
+      - run: uv pip freeze
 
-      - run: pytest
+      - run: uv run pytest
         env:
           HYPOTHESIS_PROFILE: slow
+
+    env:
+      UV_PYTHON: ${{ matrix.python-version }}
 
   test-os:
     name: test on ${{ matrix.os }}
@@ -121,20 +126,21 @@ jobs:
       - name: cache rust
         uses: Swatinem/rust-cache@v2
 
-      - name: set up python
-        uses: actions/setup-python@v5
+      - name: install uv
+        uses: astral-sh/setup-uv@v3
         with:
-          python-version: '3.13'
+          enable-cache: true
 
-      - run: pip install -r tests/requirements.txt
+      - name: install deps
+        run: uv sync --group testing
 
-      - run: pip install -e .
+      - run: uv pip install -e .
         env:
           RUST_BACKTRACE: 1
 
-      - run: pip freeze
+      - run: uv pip freeze
 
-      - run: pytest
+      - run: uv run pytest
 
       - run: cargo test
 
@@ -145,14 +151,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: set up python
-        uses: actions/setup-python@v5
+      - name: install uv
+        uses: astral-sh/setup-uv@v3
         with:
-          python-version: '3.13'
+          enable-cache: true
+
+      - name: install deps
+        run: uv sync --group testing
 
       - name: resolve MSRV
         id: resolve-msrv
-        run: echo MSRV=`python -c 'import tomllib; print(tomllib.load(open("Cargo.toml", "rb"))["package"]["rust-version"])'` >> $GITHUB_OUTPUT
+        run: echo MSRV=`uv run python -c 'import tomllib; print(tomllib.load(open("Cargo.toml", "rb"))["package"]["rust-version"])'` >> $GITHUB_OUTPUT
 
       - name: install rust MSRV
         uses: dtolnay/rust-toolchain@master
@@ -162,15 +171,13 @@ jobs:
       - name: cache rust
         uses: Swatinem/rust-cache@v2
 
-      - run: pip install -r tests/requirements.txt
-
-      - run: pip install -e .
+      - run: uv pip install -e .
         env:
           RUST_BACKTRACE: 1
 
-      - run: pip freeze
+      - run: uv pip freeze
 
-      - run: pytest
+      - run: uv run pytest
 
       - run: cargo test
 
@@ -188,10 +195,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - name: set up python
-        uses: actions/setup-python@v5
+
+      - name: install uv
+        uses: astral-sh/setup-uv@v3
         with:
-          python-version: ${{ matrix.python-version }}
+          enable-cache: true
 
       - name: install rust stable
         uses: dtolnay/rust-toolchain@stable
@@ -199,11 +207,16 @@ jobs:
       - name: cache rust
         uses: Swatinem/rust-cache@v2
 
-      - run: pip install -r tests/requirements.txt
+      - name: install deps
+        run: uv sync --group testing
+
       - run: make build-dev
 
-      - run: pip freeze
-      - run: pytest
+      - run: uv pip freeze
+      - run: uv run pytest
+
+    env:
+      UV_PYTHON: ${{ matrix.python-version }}
 
   test-pydantic-integration:
     runs-on: ubuntu-latest
@@ -232,19 +245,23 @@ jobs:
 
       - name: install deps
         run: |
-          uv sync --python 3.13 --extra timezone
+          uv sync --extra timezone
           uv pip install maturin pip
-          uv run bash -c 'cd ../pydantic-core && make build-dev'
+          uv run bash -c 'cd ../pydantic-core && maturin develop'
         working-directory: pydantic
 
       - run: uv --version && uv pip list
         working-directory: pydantic
-        # Run pytest with lax xfail because we often add tests to pydantic
-        # which xfail on a pending release of pydantic-core
+
+      # Run pytest with lax xfail because we often add tests to pydantic
+      # which xfail on a pending release of pydantic-core
       - run: uv run pytest --override-ini=xfail_strict=False
         working-directory: pydantic
         env:
           PYDANTIC_PRIVATE_ALLOW_UNHANDLED_SCHEMA_TYPES: 1
+
+    env:
+      UV_PROJECT_ENVIRONMENT: ${{ github.workspace }}/.venv
 
   lint:
     runs-on: ubuntu-latest
@@ -260,32 +277,21 @@ jobs:
       - name: cache rust
         uses: Swatinem/rust-cache@v2
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.13'
-
       # used to lint js code
       - uses: actions/setup-node@v4
         with:
           node-version: '18'
 
-      - uses: actions/cache@v4
-        id: cache-py
-        name: cache python
+      - name: install uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ${{ env.pythonLocation }}
-          key: >
-            py
-            ${{ env.pythonLocation }}
-            ${{ hashFiles('tests/requirements-linting.txt') }}
-            ${{ hashFiles('pyproject.toml') }}
+          enable-cache: true
 
-      - run: pip install -r tests/requirements-linting.txt
-        if: steps.cache-py.outputs.cache-hit != 'true'
-
-      - run: make build-dev
-
-      - run: pip freeze
+      - name: install deps
+        run: |
+          uv sync --group linting
+          make build-dev
+          uv pip freeze
 
       - run: make lint
       - run: make pyright
@@ -319,12 +325,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: set up python
-        id: setup-python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.13'
-
       - name: install rust nightly
         uses: dtolnay/rust-toolchain@nightly
         with:
@@ -342,7 +342,13 @@ jobs:
           version: '3.1.58'
           actions-cache-folder: emsdk-cache
 
-      - run: pip install 'maturin>=1,<2' 'ruff==0.5.0' typing_extensions
+      - name: install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: install deps
+        run: uv sync --group wasm
 
       - name: build wheels
         run: make build-wasm
@@ -363,6 +369,9 @@ jobs:
         with:
           name: wasm_wheels
           path: dist
+
+    env:
+      UV_PYTHON: 3.12
 
   # https://github.com/marketplace/actions/alls-green#why used for branch protection checks
   check:
@@ -533,11 +542,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: set up python
-        uses: actions/setup-python@v5
+      - name: install uv
+        uses: astral-sh/setup-uv@v3
         with:
-          python-version: ${{ matrix.interpreter }}
-          allow-prereleases: true
+          enable-cache: true
 
       - name: install rust stable
         id: rust-toolchain
@@ -572,10 +580,9 @@ jobs:
 
       - name: generate pgo data
         run: |
-          pip install -U pip
-          pip install -r tests/requirements.txt
-          pip install pydantic-core --no-index --no-deps --find-links pgo-wheel --force-reinstall
-          pytest tests/benchmarks
+          uv sync --group testing
+          uv pip install pydantic-core --no-index --no-deps --find-links pgo-wheel --force-reinstall
+          uv run pytest tests/benchmarks
           rustup run ${{ steps.rust-toolchain.outputs.name }} bash -c 'echo LLVM_PROFDATA=$RUSTUP_HOME/toolchains/$RUSTUP_TOOLCHAIN/lib/rustlib/${{ env.RUST_HOST }}/bin/llvm-profdata >> "$GITHUB_ENV"'
 
       - name: merge pgo data
@@ -600,6 +607,9 @@ jobs:
         with:
           name: pypi_files_${{ matrix.os }}_${{ matrix.interpreter }}
           path: dist
+
+    env:
+      UV_PYTHON: ${{ matrix.interpreter }}
 
   inspect-pypi-assets:
     needs: [build, build-sdist, build-pgo]
@@ -667,20 +677,20 @@ jobs:
             if command -v apt-get &> /dev/null; then
               echo "installing python & pip with apt-get..."
               apt-get update
-              apt-get install -y --no-install-recommends python3 python3-pip python3-venv git
+              apt-get install -y --no-install-recommends python3 python3-pip python3-venv git curl
             else
               echo "installing python & pip with apk..."
               apk update
-              apk add python3 py3-pip git
+              apk add python3 py3-pip git curl
             fi
           run: |
             set -x
-            python3 -m venv venv
-            source venv/bin/activate
-            python3 -m pip install -r tests/requirements.txt
-            python3 -m pip install pydantic-core --no-index --no-deps --find-links dist --force-reinstall
-            python3 -m pytest --ignore=tests/test_docstrings.py
-            python3 -c 'import pydantic_core._pydantic_core; print(pydantic_core._pydantic_core.__version__)'
+            curl -LsSf https://astral.sh/uv/install.sh | sh
+            source $HOME/.local/bin/env
+            uv sync --frozen --group testing --no-install-project
+            uv pip install pydantic-core --no-index --no-deps --find-links dist --force-reinstall
+            uv run --no-sync pytest --ignore=tests/test_docstrings.py
+            uv run --no-sync python -c 'import pydantic_core._pydantic_core; print(pydantic_core._pydantic_core.__version__)'
 
   test-builds-os:
     name: test build on ${{ matrix.os }}
@@ -695,10 +705,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: set up python
-        uses: actions/setup-python@v5
+      - name: install uv
+        uses: astral-sh/setup-uv@v3
         with:
-          python-version: '3.13'
+          enable-cache: true
 
       - name: get dist artifacts
         uses: actions/download-artifact@v4
@@ -707,9 +717,9 @@ jobs:
           merge-multiple: true
           path: dist
 
-      - run: pip install -r tests/requirements.txt
-      - run: pip install pydantic-core --no-index --no-deps --find-links dist --force-reinstall
-      - run: pytest --ignore=tests/test_docstrings.py
+      - run: uv sync --group testing
+      - run: uv pip install pydantic-core --no-index --no-deps --find-links dist --force-reinstall
+      - run: uv run pytest --ignore=tests/test_docstrings.py
 
   release:
     needs: [test-builds-arch, test-builds-os, build-sdist, check]

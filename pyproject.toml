@@ -48,6 +48,47 @@ Homepage = 'https://github.com/pydantic/pydantic-core'
 Funding = 'https://github.com/sponsors/samuelcolvin'
 Source = 'https://github.com/pydantic/pydantic-core'
 
+[dependency-groups]
+testing = [
+    'backports.zoneinfo; python_version < "3.9"',
+    'coverage',
+    'dirty-equals',
+    'inline-snapshot',
+    'hypothesis',
+    # pandas doesn't offer prebuilt wheels for all versions and platforms we test in CI e.g. aarch64 musllinux
+    'pandas; python_version >= "3.9" and python_version < "3.13" and implementation_name == "cpython" and platform_machine == "x86_64"',
+    'pytest',
+    # pytest-examples currently depends on aiohttp via black; we don't want to build it on platforms like aarch64 musllinux in CI
+    'pytest-examples; implementation_name == "cpython" and platform_machine == "x86_64"',
+    'pytest-speed',
+    'pytest-mock',
+    'pytest-pretty',
+    'pytest-timeout',
+    'python-dateutil',
+    # numpy doesn't offer prebuilt wheels for all versions and platforms we test in CI e.g. aarch64 musllinux
+    'numpy; python_version >= "3.9" and python_version < "3.13" and implementation_name == "cpython" and platform_machine == "x86_64"',
+    'exceptiongroup; python_version < "3.11"',
+    'tzdata',
+    'typing_extensions',
+]
+linting = [
+    'griffe',
+    'pyright',
+    'ruff',
+    'mypy',
+]
+wasm = [
+    'typing_extensions',
+    'maturin>=1,<2',
+    'ruff',
+]
+
+all = [
+  { include-group = 'testing' },
+  { include-group = 'linting' },
+  { include-group = 'wasm' },
+]
+
 [tool.maturin]
 python-source = "python"
 module-name = "pydantic_core._pydantic_core"
@@ -107,8 +148,13 @@ reviewers = ['sydney-runkle', 'davidhewitt']
 require_change_file = false
 
 [tool.pyright]
-include = ['pydantic_core', 'tests/test_typing.py']
+include = ['python/pydantic_core', 'tests/test_typing.py']
 reportUnnecessaryTypeIgnoreComment = true
 
 [tool.inline-snapshot.shortcuts]
 fix = ["create", "fix"]
+
+[tool.uv]
+# this ensures that `uv run` doesn't actually build the package; a `make`
+# command is needed to build
+package = false
