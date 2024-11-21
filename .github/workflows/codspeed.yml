@@ -100,4 +100,7 @@ jobs:
       - name: Run CodSpeed benchmarks
         uses: CodSpeedHQ/action@v3
         with:
+          # --no-sync ensures that the locally-built core is not overwritten
           run: uv run --no-sync pytest ./tests/benchmarks --codspeed
+        env:
+          UV_FROZEN: false # necessary for --no-sync to be allowed
