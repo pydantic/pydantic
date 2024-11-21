@@ -2,7 +2,10 @@
 This file is used to test pyright's ability to check Pydantic's `BaseModel` related code.
 """
 
+from typing_extensions import assert_type
+
 from pydantic import BaseModel, Field
+from pydantic.fields import ComputedFieldInfo, FieldInfo
 
 
 class MyModel(BaseModel):
