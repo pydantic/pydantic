@@ -119,7 +119,7 @@ class _BaseUrl:
     _url: _CoreUrl
 
     def __init__(self, url: str | _CoreUrl | _BaseUrl) -> None:
-        self._url = _build_type_adapter(self.__class__).validate_python(url)
+        self._url = _build_type_adapter(self.__class__).validate_python(url)._url
 
     @property
     def scheme(self) -> str:
@@ -222,7 +222,7 @@ class _BaseUrl:
         return self.__class__(self._url)
 
     def __eq__(self, other: Any) -> bool:
-        return self.__class__ is other.__class__ and str(self._url) == str(other._url)
+        return self.__class__ is other.__class__ and self._url == other._url
 
     @classmethod
     def build(
@@ -291,7 +291,7 @@ class _BaseMultiHostUrl:
     _url: _CoreMultiHostUrl
 
     def __init__(self, url: str | _CoreMultiHostUrl | _BaseMultiHostUrl) -> None:
-        self._url = _build_type_adapter(self.__class__).validate_python(url)
+        self._url = _build_type_adapter(self.__class__).validate_python(url)._url
 
     @property
     def scheme(self) -> str:
@@ -366,7 +366,7 @@ class _BaseMultiHostUrl:
         return self.__class__(self._url)
 
     def __eq__(self, other: Any) -> bool:
-        return self.__class__ is other.__class__ and str(self._url) == str(other._url)
+        return self.__class__ is other.__class__ and self._url == other._url
 
     @classmethod
     def build(
