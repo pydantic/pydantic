@@ -572,7 +572,9 @@ class FieldInfo(_repr.Representation):
         return self.deprecated if isinstance(self.deprecated, str) else self.deprecated.message
 
     @overload
-    def get_default(self, *, call_default_factory: Literal[True], validated_data: dict[str, Any]) -> Any: ...
+    def get_default(
+        self, *, call_default_factory: Literal[True], validated_data: dict[str, Any] | None = None
+    ) -> Any: ...
 
     @overload
     def get_default(self, *, call_default_factory: Literal[False] = ...) -> Any: ...
