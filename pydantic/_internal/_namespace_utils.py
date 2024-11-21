@@ -30,7 +30,7 @@ class NamespacesTuple(NamedTuple):
 
     This datastructure is defined as a named tuple so that it can easily be unpacked:
 
-    ```python lint="skip" test="skip"
+    ```python {lint="skip" test="skip"}
     def eval_type(typ: type[Any], ns: NamespacesTuple) -> None:
         return eval(typ, *ns)
     ```
@@ -72,7 +72,7 @@ class LazyLocalNamespace(Mapping[str, Any]):
         *namespaces: The namespaces to consider, in ascending order of priority.
 
     Example:
-        ```python lint="skip" test="skip"
+        ```python {lint="skip" test="skip"}
         ns = LazyLocalNamespace({'a': 1, 'b': 2}, {'a': 3})
         ns['a']
         #> 3
@@ -162,7 +162,7 @@ class NsResolver:
             with the lowest priority. For a given class defined in a function, the locals
             of this function are usually used as the parent namespace:
 
-            ```python lint="skip" test="skip"
+            ```python {lint="skip" test="skip"}
             from pydantic import BaseModel
 
             def func() -> None:
@@ -182,7 +182,7 @@ class NsResolver:
             in the same module as the parent namespace.
 
     Example:
-        ```python lint="skip" test="skip"
+        ```python {lint="skip" test="skip"}
         ns_resolver = NsResolver(
             parent_namespace={'fallback': 1},
         )

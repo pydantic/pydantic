@@ -53,7 +53,7 @@ error is a common issue that indicates you have installed `pydantic` incorrectly
 
 1. Check the contents of the installed `pydantic-core` package. Are the compiled library and its type stubs both present?
 
-```py test="skip" lint="skip"
+```python {test="skip" lint="skip"}
 from importlib.metadata import files
 print([file for file in files('pydantic-core') if file.name.startswith('_pydantic_core')])
 """
@@ -65,7 +65,7 @@ You should expect to see two files like those printed above. The compile library
 
 2. Check that your lambda's Python version is compatible with the compiled library version found above.
 
-```py test="skip" lint="skip"
+```python {test="skip" lint="skip"}
 import sysconfig
 print(sysconfig.get_config_var("EXT_SUFFIX"))
 #> '.cpython-312-x86_64-linux-gnu.so'

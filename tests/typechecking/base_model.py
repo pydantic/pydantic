@@ -2,7 +2,10 @@
 This file is used to test pyright's ability to check Pydantic's `BaseModel` related code.
 """
 
+from typing_extensions import assert_type
+
 from pydantic import BaseModel, Field
+from pydantic.fields import ComputedFieldInfo, FieldInfo
 
 
 class MyModel(BaseModel):
@@ -28,3 +31,8 @@ class Knight(BaseModel):
 
 
 k = Knight()  # type: ignore[call-arg]  # pyright: ignore[reportCallIssue]
+
+assert_type(Knight.model_fields, dict[str, FieldInfo])
+assert_type(Knight.model_computed_fields, dict[str, ComputedFieldInfo])
+assert_type(k.model_fields, dict[str, FieldInfo])
+assert_type(k.model_computed_fields, dict[str, ComputedFieldInfo])

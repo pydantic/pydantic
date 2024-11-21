@@ -11,7 +11,7 @@ The custom validator supports string specification of the timezone, and will rai
 
 We use `__get_pydantic_core_schema__` in the validator to customize the schema of the annotated type (in this case, [`datetime`][datetime.datetime]), which allows us to add custom validation logic. Notably, we use a `wrap` validator function so that we can perform operations both before and after the default `pydantic` validation of a [`datetime`][datetime.datetime].
 
-```py
+```python
 import datetime as dt
 from dataclasses import dataclass
 from pprint import pprint
@@ -100,7 +100,7 @@ except ValidationError as ve:
 We can also enforce UTC offset constraints in a similar way.  Assuming we have a `lower_bound` and an `upper_bound`, we can create a custom validator to ensure our `datetime` has a UTC offset that is inclusive within the boundary we define:
 
 
-```py
+```python
 import datetime as dt
 from dataclasses import dataclass
 from pprint import pprint
@@ -177,7 +177,7 @@ In this example, we construct a validator that checks that each user's password 
 
 One way to do this is to place a custom validator on the outer model:
 
-```py
+```python
 from typing import List
 
 from typing_extensions import Self
@@ -228,7 +228,7 @@ Alternatively, a custom validator can be used in the nested model class (`User`)
 !!! warning
     The ability to mutate the context within a validator adds a lot of power to nested validation, but can also lead to confusing or hard-to-debug code. Use this approach at your own risk!
 
-```py
+```python
 from typing import List
 
 from pydantic import BaseModel, ValidationError, ValidationInfo, field_validator

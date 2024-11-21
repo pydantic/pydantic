@@ -9,7 +9,7 @@
 Pydantic provides a way to apply validators via use of `Annotated`.
 You should use this whenever you want to bind validation to a type instead of model or field.
 
-```py
+```python
 from typing import Any, List
 
 from typing_extensions import Annotated
@@ -134,7 +134,7 @@ Order of validation metadata within `Annotated` matters.
 Validation goes from right to left and back.
 That is, it goes from right to left running all "before" validators (or calling into "wrap" validators), then left to right back out calling all "after" validators.
 
-```py
+```python
 from typing import Any, Callable, List, cast
 
 from typing_extensions import Annotated, TypedDict
@@ -269,7 +269,7 @@ This applies both to `@field_validator` validators and `Annotated` validators.
 You can force them to run with `Field(validate_default=True)`. Setting `validate_default` to `True` has the closest behavior to using `always=True` in `validator` in Pydantic v1. However, you are generally better off using a `@model_validator(mode='before')` where the function is called before the inner validator is called.
 
 
-```py
+```python
 from typing_extensions import Annotated
 
 from pydantic import BaseModel, Field, field_validator
@@ -302,7 +302,7 @@ print(Model(x='foo', y='bar'))
 
 If you want to attach a validator to a specific field of a model you can use the `@field_validator` decorator.
 
-```py
+```python
 from pydantic import (
     BaseModel,
     ValidationError,
@@ -397,7 +397,7 @@ However, in most cases where you want to perform validation using multiple field
 
 Validation can also be performed on the entire model's data using `@model_validator`.
 
-```py
+```python
 from typing import Any
 
 from typing_extensions import Self
@@ -475,7 +475,7 @@ except ValidationError as e:
 
     Here's an example of the unexpected behavior, and the warning you'll receive:
 
-    ```python test="skip"
+    ```python {test="skip"}
     from pydantic import BaseModel
     from pydantic.functional_validators import model_validator
 
@@ -559,7 +559,7 @@ Pydantic provides a few special types that can be used to customize validation.
 
 - [`InstanceOf`][pydantic.functional_validators.InstanceOf] is a type that can be used to validate that a value is an instance of a given class.
 
-```py
+```python
 from typing import List
 
 from pydantic import BaseModel, InstanceOf, ValidationError
@@ -595,7 +595,7 @@ except ValidationError as e:
 
 - [`SkipValidation`][pydantic.functional_validators.SkipValidation] is a type that can be used to skip validation on a field.
 
-```py
+```python
 from typing import List
 
 from pydantic import BaseModel, SkipValidation
@@ -783,7 +783,7 @@ The "naive" approach would be to write a separate function, then call it from mu
 Obviously, this entails a lot of repetition and boiler plate code.
 The following approach demonstrates how you can reuse a validator so that redundancy is minimized and the models become again almost declarative.
 
-```py
+```python
 from pydantic import BaseModel, field_validator
 
 

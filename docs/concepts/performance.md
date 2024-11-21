@@ -23,7 +23,7 @@ the function is called. Instead, instantiate it once, and reuse it.
 
 === ":x: Bad"
 
-    ```py lint="skip"
+    ```python {lint="skip"}
     from typing import List
 
     from pydantic import TypeAdapter
@@ -36,7 +36,7 @@ the function is called. Instead, instantiate it once, and reuse it.
 
 === ":white_check_mark: Good"
 
-    ```py lint="skip"
+    ```python {lint="skip"}
     from typing import List
 
     from pydantic import TypeAdapter
@@ -61,7 +61,7 @@ If you know the value is a `dict`, use `dict` instead of `Mapping`.
 
 If you don't need to validate a value, use `Any` to keep the value unchanged.
 
-```py
+```python
 from typing import Any
 
 from pydantic import BaseModel
@@ -78,7 +78,7 @@ model = Model(a=1)
 
 === "Don't do this"
 
-    ```py
+    ```python
     class CompletedStr(str):
         def __init__(self, s: str):
             self.s = s
@@ -87,7 +87,7 @@ model = Model(a=1)
 
 === "Do this"
 
-    ```py
+    ```python
     from pydantic import BaseModel
 
 
@@ -100,7 +100,7 @@ model = Model(a=1)
 
 Tagged union (or discriminated union) is a union with a field that indicates which type it is.
 
-```py test="skip"
+```python {test="skip"}
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field
@@ -145,7 +145,7 @@ Instead of using nested models, use `TypedDict` to define the structure of the d
 ??? info "Performance comparison"
     With a simple benchmark, `TypedDict` is about ~2.5x faster than nested models:
 
-    ```py test="skip"
+    ```python {test="skip"}
     from timeit import timeit
 
     from typing_extensions import TypedDict
@@ -193,7 +193,7 @@ Starting in v2.8+, you can apply the `FailFast` annotation to sequence types to 
 If you use this annotation, you won't get validation errors for the rest of the items in the sequence if one fails, so you're effectively
 trading off visibility for performance.
 
-```py
+```python
 from typing import List
 
 from typing_extensions import Annotated

@@ -33,7 +33,7 @@ This is the primary way of converting a model to a dictionary. Sub-models will b
 
 Example:
 
-```py
+```python
 from typing import Any, List, Optional
 
 from pydantic import BaseModel, Field, Json
@@ -110,7 +110,7 @@ See [arguments][pydantic.main.BaseModel.model_dump_json] for more information.
     Pydantic can serialize many commonly used types to JSON that would otherwise be incompatible with a simple
     `json.dumps(foobar)` (e.g. `datetime`, `date` or `UUID`) .
 
-```py
+```python
 from datetime import datetime
 
 from pydantic import BaseModel
@@ -147,7 +147,7 @@ sub-models will not be converted to dictionaries.
 
 Example:
 
-```py
+```python
 from pydantic import BaseModel
 
 
@@ -187,7 +187,7 @@ Serialization can be customised on a field using the
 [`@field_serializer`][pydantic.functional_serializers.field_serializer] decorator, and on a model using the
 [`@model_serializer`][pydantic.functional_serializers.model_serializer] decorator.
 
-```py
+```python
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict
 
@@ -238,7 +238,7 @@ Both serializers accept optional arguments including:
 
 `PlainSerializer` uses a simple function to modify the output of serialization.
 
-```py
+```python
 from typing_extensions import Annotated
 
 from pydantic import BaseModel
@@ -263,7 +263,7 @@ print(MyModel(x=1234).model_dump(mode='json'))
 `WrapSerializer` receives the raw inputs along with a handler function that applies the standard serialization
 logic, and can modify the resulting value before returning it as the final output of serialization.
 
-```py
+```python
 from typing import Any
 
 from typing_extensions import Annotated
@@ -294,7 +294,7 @@ print(MyModel(x=1234).model_dump(mode='json'))
 
 While the return value of `.model_dump()` can usually be described as `dict[str, Any]`, through the use of
 `@model_serializer` you can actually cause it to return a value that doesn't match this signature:
-```py
+```python
 from pydantic import BaseModel, model_serializer
 
 
@@ -313,7 +313,7 @@ print(Model(x='not a dict').model_dump())
 If you want to do this and still get proper type-checking for this method, you can override `.model_dump()` in an
 `if TYPE_CHECKING:` block:
 
-```py
+```python
 from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import BaseModel, model_serializer
@@ -351,7 +351,7 @@ This trick is actually used in [`RootModel`](models.md#rootmodel-and-custom-root
 
 Subclasses of standard types are automatically dumped like their super-classes:
 
-```py
+```python
 from datetime import date, timedelta
 from typing import Any, Type
 
@@ -397,7 +397,7 @@ the default behavior is to serialize the attribute value as though it was an ins
 even if it is a subclass. More specifically, only the fields from the _annotated_ type will be included in the
 dumped object:
 
-```py
+```python
 from pydantic import BaseModel
 
 
@@ -451,7 +451,7 @@ We discuss these options below in more detail:
 
 If you want duck-typing serialization behavior, this can be done using the `SerializeAsAny` annotation on a type:
 
-```py
+```python
 from pydantic import BaseModel, SerializeAsAny
 
 
@@ -505,7 +505,7 @@ which means that fields present in a subclass but not in the original schema wil
 
 For example:
 
-```py
+```python
 from pydantic import BaseModel
 
 
@@ -543,7 +543,7 @@ but not the base class, are not included in serialization.
 
 This setting even takes effect with nested and recursive patterns as well. For example:
 
-```py
+```python
 from typing import List
 
 from pydantic import BaseModel
@@ -601,7 +601,7 @@ You can override the default setting for `serialize_as_any` by configuring a sub
 
 For example, you could do the following if you want to use duck-typing serialization by default:
 
-```py
+```python
 from typing import Any, Dict
 
 from pydantic import BaseModel, SecretStr
@@ -639,7 +639,7 @@ print(u.model_dump_json())  # (1)!
 Pydantic models support efficient pickling and unpickling.
 
 <!-- TODO need to get pickling doctest to work -->
-```py test="skip"
+```python {test="skip"}
 import pickle
 
 from pydantic import BaseModel
@@ -666,7 +666,7 @@ print(m2)
 The `model_dump` and `model_dump_json` methods support `include` and `exclude` arguments which can either be
 sets or dictionaries. This allows nested selection of which fields to export:
 
-```py
+```python
 from pydantic import BaseModel, SecretStr
 
 
@@ -707,7 +707,7 @@ Special care must be taken when including or excluding fields from a list or tup
 In this scenario, `model_dump` and related methods expect integer keys for element-wise inclusion or exclusion.
 To exclude a field from **every** member of a list or tuple, the dictionary key `'__all__'` can be used, as shown here:
 
-```py
+```python
 import datetime
 from typing import List
 
@@ -813,7 +813,7 @@ we can also pass the `exclude: bool` arguments directly to the `Field` construct
 Setting `exclude` on the field constructor (`Field(exclude=True)`) takes priority over the
 `exclude`/`include` on `model_dump` and `model_dump_json`:
 
-```py
+```python
 from pydantic import BaseModel, Field, SecretStr
 
 
@@ -844,7 +844,7 @@ print(t.model_dump(include={'id': True, 'value': True}))  # (1)!
 That being said, setting `exclude` on the field constructor (`Field(exclude=True)`) does not take priority
 over the `exclude_unset`, `exclude_none`, and `exclude_default` parameters on `model_dump` and `model_dump_json`:
 
-```py
+```python
 from typing import Optional
 
 from pydantic import BaseModel, Field
@@ -915,7 +915,7 @@ Similarly, you can [use a context for validation](../concepts/validators.md#vali
 
 Example:
 
-```py
+```python
 from pydantic import BaseModel
 
 
