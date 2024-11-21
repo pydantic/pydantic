@@ -119,7 +119,7 @@ class _BaseUrl:
     _url: _CoreUrl
 
     def __init__(self, url: str | _CoreUrl | _BaseUrl) -> None:
-        self._url = _build_type_adapter(self.__class__).validate_python(url)
+        self._url = _build_type_adapter(self.__class__).validate_python(url)._url
 
     @property
     def scheme(self) -> str:
@@ -291,7 +291,7 @@ class _BaseMultiHostUrl:
     _url: _CoreMultiHostUrl
 
     def __init__(self, url: str | _CoreMultiHostUrl | _BaseMultiHostUrl) -> None:
-        self._url = _build_type_adapter(self.__class__).validate_python(url)
+        self._url = _build_type_adapter(self.__class__).validate_python(url)._url
 
     @property
     def scheme(self) -> str:
