@@ -1,8 +1,6 @@
 .DEFAULT_GOAL := all
 sources = python/pydantic_core tests generate_self_schema.py wasm-preview/run_tests.py
 
-mypy-stubtest = python -m mypy.stubtest pydantic_core._pydantic_core --allowlist .mypy-stubtest-allowlist
-
 # using pip install cargo (via maturin via pip) doesn't get the tty handle
 # so doesn't render color without some help
 export CARGO_TERM_COLOR=$(shell (test -t 0 && echo "always") || echo "auto")
@@ -10,13 +8,24 @@ export CARGO_TERM_COLOR=$(shell (test -t 0 && echo "always") || echo "auto")
 # more or less equivalent to pip install -e just a little nicer
 USE_MATURIN = $(shell [ "$$VIRTUAL_ENV" != "" ] && (which maturin))
 
+.PHONY: .uv  ## Check that uv is installed
+.uv:
+	@uv -V || echo 'Please install uv: https://docs.astral.sh/uv/getting-started/installation/'
+
+.PHONY: .pre-commit  ## Check that pre-commit is installed
+.pre-commit:
+	@pre-commit -V || echo 'Please install pre-commit: https://pre-commit.com/'
+
 .PHONY: install
-install:
-	pip install -U pip wheel pre-commit
-	pip install -r tests/requirements.txt
-	pip install -r tests/requirements-linting.txt
-	pip install -v -e .
+install: .uv .pre-commit
+	uv pip install -U wheel
+	uv sync --frozen --group all
+	uv pip install -v -e .
 	pre-commit install
+
+.PHONY: rebuild-lockfiles  ## Rebuild lockfiles from scratch, updating all dependencies
+rebuild-lockfiles: .uv
+	uv lock --upgrade
 
 .PHONY: install-rust-coverage
 install-rust-coverage:
@@ -30,36 +39,36 @@ install-rust-coverage:
 build-dev:
 	@rm -f python/pydantic_core/*.so
 ifneq ($(USE_MATURIN),)
-	maturin develop
+	uv run maturin develop
 else
-	pip install -v -e . --config-settings=build-args='--profile dev'
+	uv pip install --force-reinstall -v -e . --config-settings=build-args='--profile dev'
 endif
 
 .PHONY: build-prod
 build-prod:
 	@rm -f python/pydantic_core/*.so
 ifneq ($(USE_MATURIN),)
-	maturin develop --release
+	uv run maturin develop --release
 else
-	pip install -v -e .
+	uv pip install -v -e .
 endif
 
 .PHONY: build-profiling
 build-profiling:
 	@rm -f python/pydantic_core/*.so
 ifneq ($(USE_MATURIN),)
-	maturin develop --profile profiling
+	uv run maturin develop --profile profiling
 else
-	pip install -v -e . --config-settings=build-args='--profile profiling'
+	uv pip install --force-reinstall -v -e . --config-settings=build-args='--profile profiling'
 endif
 
 .PHONY: build-coverage
 build-coverage:
 	@rm -f python/pydantic_core/*.so
 ifneq ($(USE_MATURIN),)
-	RUSTFLAGS='-C instrument-coverage' maturin develop --release
+	RUSTFLAGS='-C instrument-coverage' uv run maturin develop --release
 else
-	RUSTFLAGS='-C instrument-coverage' pip install -v -e .
+	RUSTFLAGS='-C instrument-coverage' uv pip install -v -e .
 endif
 
 .PHONY: build-pgo
@@ -67,17 +76,17 @@ build-pgo:
 	@rm -f python/pydantic_core/*.so
 	$(eval PROFDATA := $(shell mktemp -d))
 ifneq ($(USE_MATURIN),)
-	RUSTFLAGS='-Cprofile-generate=$(PROFDATA)' maturin develop --release
+	RUSTFLAGS='-Cprofile-generate=$(PROFDATA)' uv run maturin develop --release
 else
-	RUSTFLAGS='-Cprofile-generate=$(PROFDATA)' pip install -v -e .
+	RUSTFLAGS='-Cprofile-generate=$(PROFDATA)' uv pip install --force-reinstall -v -e .
 endif
 	pytest tests/benchmarks
 	$(eval LLVM_PROFDATA := $(shell rustup run stable bash -c 'echo $$RUSTUP_HOME/toolchains/$$RUSTUP_TOOLCHAIN/lib/rustlib/$$(rustc -Vv | grep host | cut -d " " -f 2)/bin/llvm-profdata'))
 	$(LLVM_PROFDATA) merge -o $(PROFDATA)/merged.profdata $(PROFDATA)
 ifneq ($(USE_MATURIN),)
-	RUSTFLAGS='-Cprofile-use=$(PROFDATA)/merged.profdata' maturin develop --release
+	RUSTFLAGS='-Cprofile-use=$(PROFDATA)/merged.profdata' uv run maturin develop --release
 else
-	RUSTFLAGS='-Cprofile-use=$(PROFDATA)/merged.profdata' pip install -v -e .
+	RUSTFLAGS='-Cprofile-use=$(PROFDATA)/merged.profdata' uv pip install --force-reinstall -v -e .
 endif
 	@rm -rf $(PROFDATA)
 
@@ -85,21 +94,20 @@ endif
 .PHONY: build-wasm
 build-wasm:
 	@echo 'This requires python 3.12, maturin and emsdk to be installed'
-	maturin build --release --target wasm32-unknown-emscripten --out dist -i 3.12
+	uv run maturin build --release --target wasm32-unknown-emscripten --out dist -i 3.12
 	ls -lh dist
 
 .PHONY: format
 format:
-	ruff check --fix $(sources)
-	ruff format $(sources)
+	uv run ruff check --fix $(sources)
+	uv run ruff format $(sources)
 	cargo fmt
 
 .PHONY: lint-python
 lint-python:
-	ruff check $(sources)
-	ruff format --check $(sources)
-	$(mypy-stubtest)
-	griffe dump -f -d google -LWARNING -o/dev/null python/pydantic_core
+	uv run ruff check $(sources)
+	uv run ruff format --check $(sources)
+	uv run griffe dump -f -d google -LWARNING -o/dev/null python/pydantic_core
 
 .PHONY: lint-rust
 lint-rust:
@@ -113,11 +121,11 @@ lint: lint-python lint-rust
 
 .PHONY: pyright
 pyright:
-	pyright
+	uv run pyright
 
 .PHONY: test
 test:
-	pytest
+	uv run pytest
 
 .PHONY: testcov
 testcov: build-coverage

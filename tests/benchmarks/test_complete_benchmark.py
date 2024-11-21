@@ -53,7 +53,7 @@ def test_complete_valid():
         'field_tuple_var_len_float': tuple(i + 0.5 for i in range(100)),
         'field_tuple_var_len_float_con': tuple(i + 0.5 for i in range(42)),
         'field_tuple_fix_len': ('a', 1, 1.0, True),
-        'field_dict_any': {'a': 'b', 1: True, 1.0: 1.0},
+        'field_dict_any': {'a': 'b', 1: True, 1.0: 1.0},  # noqa: F601
         'field_dict_str_float': {f'{i}': i + 0.5 for i in range(100)},
         'field_literal_1_int': 1,
         'field_literal_1_str': 'foobar',
