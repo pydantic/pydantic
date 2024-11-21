@@ -222,7 +222,7 @@ class _BaseUrl:
         return self.__class__(self._url)
 
     def __eq__(self, other: Any) -> bool:
-        return self.__class__ is other.__class__ and self._url == other._url
+        return self.__class__ is other.__class__ and str(self._url) == str(other._url)
 
     @classmethod
     def build(
@@ -366,7 +366,7 @@ class _BaseMultiHostUrl:
         return self.__class__(self._url)
 
     def __eq__(self, other: Any) -> bool:
-        return self.__class__ is other.__class__ and self._url == other._url
+        return self.__class__ is other.__class__ and str(self._url) == str(other._url)
 
     @classmethod
     def build(
