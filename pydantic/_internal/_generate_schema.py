@@ -1411,7 +1411,7 @@ class GenerateSchema:
                 )
 
             try:
-                # if (plain) dataclass doesn't have config, we use the parent's config, hence a default of `None`
+                # if a typed dictionary class doesn't have config, we use the parent's config, hence a default of `None`
                 # see https://github.com/pydantic/pydantic/issues/10917
                 config: ConfigDict | None = get_attribute_from_bases(typed_dict_cls, '__pydantic_config__')
             except AttributeError:
@@ -1741,6 +1741,7 @@ class GenerateSchema:
                 dataclass = origin
 
             # if (plain) dataclass doesn't have config, we use the parent's config, hence a default of `None`
+            # (Pydantic dataclasses have an empty dict config by default).
             # see https://github.com/pydantic/pydantic/issues/10917
             config = getattr(dataclass, '__pydantic_config__', None)
 
