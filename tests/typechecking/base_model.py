@@ -29,5 +29,7 @@ class Knight(BaseModel):
 
 k = Knight()  # type: ignore[call-arg]  # pyright: ignore[reportCallIssue]
 
-MyModel.model_fields.keys()
-MyModel.model_computed_fields.keys()
+assert_type(Knight.model_fields, dict[str, FieldInfo])
+assert_type(Knight.model_computed_fields, dict[str, ComputedFieldInfo])
+assert_type(k.model_fields, dict[str, FieldInfo])
+assert_type(k.model_computed_fields, dict[str, ComputedFieldInfo])
