@@ -312,11 +312,14 @@ class GenerateJsonSchema:
             CoreSchemaOrFieldType  # type: ignore
         )
         for key in core_schema_types:
+            if key == 'invalid':
+                continue  # TODO remove once 'invalid' schema is removed from pydantic-core
+
             method_name = f"{key.replace('-', '_')}_schema"
             try:
                 mapping[key] = getattr(self, method_name)
             except AttributeError as e:  # pragma: no cover
-                if os.environ['PYDANTIC_PRIVATE_ALLOW_UNHANDLED_SCHEMA_TYPES'] == '1':
+                if os.environ.get('PYDANTIC_PRIVATE_ALLOW_UNHANDLED_SCHEMA_TYPES') == '1':
                     continue
                 raise TypeError(
                     f'No method for generating JsonSchema for core_schema.type={key!r} '
@@ -600,11 +603,6 @@ class GenerateJsonSchema:
             return value
 
     # ### Schema generation methods
-
-    def invalid_schema(self, schema: core_schema.InvalidSchema) -> JsonSchemaValue:
-        """Placeholder - should never be called."""
-
-        raise RuntimeError('Cannot generate schema for invalid_schema. This is a bug! Please report it.')
 
     def any_schema(self, schema: core_schema.AnySchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches any value.

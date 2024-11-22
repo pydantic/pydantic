@@ -1,20 +1,16 @@
 from __future__ import annotations as _annotations
 
-from typing import TYPE_CHECKING, Any, Hashable, Sequence
+from typing import TYPE_CHECKING, Any, Hashable, Sequence, cast
 
 from pydantic_core import CoreSchema, core_schema
 
 from ..errors import PydanticUserError
 from . import _core_utils
-from ._core_utils import (
-    CoreSchemaField,
-    collect_definitions,
-)
+from ._core_metadata import CoreMetadata
+from ._core_utils import CoreSchemaField
 
 if TYPE_CHECKING:
     from ..types import Discriminator
-
-CORE_SCHEMA_METADATA_DISCRIMINATOR_PLACEHOLDER_KEY = 'pydantic.internal.union_discriminator'
 
 
 class MissingDefinitionForUnionRef(Exception):
@@ -28,34 +24,11 @@ class MissingDefinitionForUnionRef(Exception):
 
 
 def set_discriminator_in_metadata(schema: CoreSchema, discriminator: Any) -> None:
-    schema.setdefault('metadata', {})
-    metadata = schema.get('metadata')
-    assert metadata is not None
-    metadata[CORE_SCHEMA_METADATA_DISCRIMINATOR_PLACEHOLDER_KEY] = discriminator
-
-
-def apply_discriminators(schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
-    # We recursively walk through the `schema` passed to `apply_discriminators`, applying discriminators
-    # where necessary at each level. During this recursion, we allow references to be resolved from the definitions
-    # that are originally present on the original, outermost `schema`. Before `apply_discriminators` is called,
-    # `simplify_schema_references` is called on the schema (in the `clean_schema` function),
-    # which often puts the definitions in the outermost schema.
-    global_definitions: dict[str, CoreSchema] = collect_definitions(schema)
-
-    def inner(s: core_schema.CoreSchema, recurse: _core_utils.Recurse) -> core_schema.CoreSchema:
-        nonlocal global_definitions
-
-        s = recurse(s, inner)
-        if s['type'] == 'tagged-union':
-            return s
-
-        metadata = s.get('metadata', {})
-        discriminator = metadata.pop(CORE_SCHEMA_METADATA_DISCRIMINATOR_PLACEHOLDER_KEY, None)
-        if discriminator is not None:
-            s = apply_discriminator(s, discriminator, global_definitions)
-        return s
-
-    return _core_utils.walk_core_schema(schema, inner, copy=False)
+    """Sets the discriminator in the metadata of the schema. Used for deferred discriminator application.
+    These are gathered for schema cleaning in pydantic-core.
+    """
+    metadata = cast(CoreMetadata, schema.setdefault('metadata', {}))
+    metadata['pydantic_internal_union_discriminator'] = discriminator
 
 
 def apply_discriminator(
