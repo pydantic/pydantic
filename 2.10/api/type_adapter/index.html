@@ -3154,94 +3154,6 @@ for types that do not have such methods (such as dataclasses, primitive types, a
 <p><strong>Note:</strong> <code>TypeAdapter</code> instances are not types, and cannot be used as type annotations for fields.</p>
 
 
-<p><span class="doc-section-title">Attributes:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td><code><span title="pydantic.type_adapter.TypeAdapter.core_schema">core_schema</span></code></td>
-            <td>
-                  <code><span title="pydantic_core.CoreSchema">CoreSchema</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>The core schema for the type.</p>
-              </div>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td><code><span title="pydantic.type_adapter.TypeAdapter.validator">validator</span></code></td>
-            <td>
-                  <code><a class="autorefs autorefs-internal" title="pydantic_core.SchemaValidator" href="../pydantic_core/#pydantic_core.SchemaValidator">SchemaValidator</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>The schema validator for the type.</p>
-              </div>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td><code><span title="pydantic.type_adapter.TypeAdapter.serializer">serializer</span></code></td>
-            <td>
-                  <code><a class="autorefs autorefs-internal" title="pydantic_core.SchemaSerializer" href="../pydantic_core/#pydantic_core.SchemaSerializer">SchemaSerializer</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>The schema serializer for the type.</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-        <details class="info">
-<summary>Namespace management nuances and implementation details</summary>
-<p>Here, we collect some notes on namespace management, and subtle differences from <code>BaseModel</code>:</p>
-<p><code>BaseModel</code> uses its own <code>__module__</code> to find out where it was defined
-and then looks for symbols to resolve forward references in those globals.
-On the other hand, <code>TypeAdapter</code> can be initialized with arbitrary objects,
-which may not be types and thus do not have a <code>__module__</code> available.
-So instead we look at the globals in our parent stack frame.</p>
-<p>It is expected that the <code>ns_resolver</code> passed to this function will have the correct
-namespace for the type we're adapting. See <code>TypeAdapter.__init__</code> and <code>TypeAdapter.rebuild</code>
-for various ways to construct this namespace.</p>
-<p>This works for the case where this function is called in a module that
-has the target of forward references in its scope, but
-does not always work for more complex cases.</p>
-<p>For example, take the following:</p>
-<p>a.py
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span>
-
-<span class="n">IntList</span> <span class="o">=</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
-<span class="n">OuterDict</span> <span class="o">=</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="s1">&#39;IntList&#39;</span><span class="p">]</span>
-</code></pre></div></p>
-<p>b.py
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">a</span> <span class="kn">import</span> <span class="n">OuterDict</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">TypeAdapter</span>
-
-<span class="n">IntList</span> <span class="o">=</span> <span class="nb">int</span>  <span class="c1"># replaces the symbol the forward reference is looking for</span>
-<span class="n">v</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">OuterDict</span><span class="p">)</span>
-<span class="n">v</span><span class="p">({</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>  <span class="c1"># should fail but doesn&#39;t</span>
-</code></pre></div></p>
-<p>If <code>OuterDict</code> were a <code>BaseModel</code>, this would work because it would resolve
-the forward reference within the <code>a.py</code> namespace.
-But <code>TypeAdapter(OuterDict)</code> can't determine what module <code>OuterDict</code> came from.</p>
-<p>In other words, the assumption that <em>all</em> forward references exist in the
-module we are being called from is not technically always true.
-Although most of the time it is and it works fine for recursive models and such,
-<code>BaseModel</code>'s behavior isn't perfect either and <em>can</em> break in similar ways,
-so there is no right or wrong between the two.</p>
-<p>But at the very least this behavior is <em>subtly</em> different from <code>BaseModel</code>'s.</p>
-</details>
-
-
-
 <p><span class="doc-section-title">Parameters:</span></p>
     <table>
       <thead>
@@ -3274,7 +3186,15 @@ so there is no right or wrong between the two.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Configuration for the <code>TypeAdapter</code>, should be a dictionary conforming to <a class="autorefs autorefs-internal" href="../config/#pydantic.config.ConfigDict"><code>ConfigDict</code></a>.</p>
+                <p>Configuration for the <code>TypeAdapter</code>, should be a dictionary conforming to
+<a class="autorefs autorefs-internal" href="../config/#pydantic.config.ConfigDict"><code>ConfigDict</code></a>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>You cannot provide a configuration when instantiating a <code>TypeAdapter</code> if the type you're using
+has its own config that cannot be overridden (ex: <code>BaseModel</code>, <code>TypedDict</code>, and <code>dataclass</code>). A
+<a href="../../errors/usage_errors/#type-adapter-config-unused"><code>type-adapter-config-unused</code></a> error will
+be raised in this case.</p>
+</div>
               </div>
             </td>
             <td>
@@ -3288,9 +3208,16 @@ so there is no right or wrong between the two.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Depth at which to search the for the parent namespace used for schema building.
-We also use this as a reference level to find the global namespace (_parent_depth - 1).
-Defaults to 2 because we expect to reference the frame that called the <code>TypeAdapter</code> constructor.</p>
+                <p>Depth at which to search for the <a class="autorefs autorefs-external" href="https://docs.python.org/3/reference/datamodel.html#frame-objects">parent frame</a>. This frame is used when
+resolving forward annotations during schema building, by looking for the globals and locals of this
+frame. Defaults to 2, which will result in the frame where the <code>TypeAdapter</code> was instantiated.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This parameter is named with an underscore to suggest its private nature and discourage use.
+It may be deprecated in a minor version, so we only recommend using it if you're comfortable
+with potential change in behavior/support. It's default value is 2 because internally,
+the <code>TypeAdapter</code> class makes another call to fetch the frame.</p>
+</div>
               </div>
             </td>
             <td>
@@ -3313,94 +3240,117 @@ Defaults to 2 because we expect to reference the frame that called the <code>Typ
           </tr>
       </tbody>
     </table>
-        <div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>You cannot use the <code>config</code> argument when instantiating a <code>TypeAdapter</code> if the type you're using has its own
-config that cannot be overridden (ex: <code>BaseModel</code>, <code>TypedDict</code>, and <code>dataclass</code>). A
-<a href="../../errors/usage_errors/#type-adapter-config-unused"><code>type-adapter-config-unused</code></a> error will be raised in this case.</p>
-</div>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>The <code>_parent_depth</code> argument is named with an underscore to suggest its private nature and discourage use.
-It may be deprecated in a minor version, so we only recommend using it if you're
-comfortable with potential change in behavior / support.</p>
-</div>
-<details class="tip">
-<summary>Compatibility with <code>mypy</code></summary>
-<p>Depending on the type used, <code>mypy</code> might raise an error when instantiating a <code>TypeAdapter</code>. As a workaround, you can explicitly
-annotate your variable:</p>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">TypeAdapter</span>
-
-<span class="n">ta</span><span class="p">:</span> <span class="n">TypeAdapter</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span>  <span class="c1"># type: ignore[arg-type]</span>
-</code></pre></div>
-</details>
 
 
-    <p><span class="doc-section-title">Returns:</span></p>
+<p><span class="doc-section-title">Attributes:</span></p>
     <table>
       <thead>
         <tr>
+          <th>Name</th>
           <th>Type</th>
           <th>Description</th>
         </tr>
       </thead>
       <tbody>
           <tr class="doc-section-item">
+            <td><code><span title="pydantic.type_adapter.TypeAdapter.core_schema">core_schema</span></code></td>
             <td>
-                  <code>None</code>
+                  <code><span title="pydantic_core.CoreSchema">CoreSchema</span></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>A type adapter configured for the specified <code>type</code>.</p>
+                <p>The core schema for the type.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pydantic.type_adapter.TypeAdapter.validator">validator</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="pydantic_core.SchemaValidator" href="../pydantic_core/#pydantic_core.SchemaValidator">SchemaValidator</a> | <span title="pydantic.plugin._schema_validator.PluggableSchemaValidator">PluggableSchemaValidator</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The schema validator for the type.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pydantic.type_adapter.TypeAdapter.serializer">serializer</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="pydantic_core.SchemaSerializer" href="../pydantic_core/#pydantic_core.SchemaSerializer">SchemaSerializer</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The schema serializer for the type.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pydantic.type_adapter.TypeAdapter.pydantic_complete">pydantic_complete</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Whether the core schema for the type is successfully built.</p>
               </div>
             </td>
           </tr>
       </tbody>
     </table>
+        <details class="tip">
+<summary>Compatibility with <code>mypy</code></summary>
+<p>Depending on the type used, <code>mypy</code> might raise an error when instantiating a <code>TypeAdapter</code>. As a workaround, you can explicitly
+annotate your variable:</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">TypeAdapter</span>
+
+<span class="n">ta</span><span class="p">:</span> <span class="n">TypeAdapter</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span>  <span class="c1"># type: ignore[arg-type]</span>
+</code></pre></div>
+</details>
+<details class="info">
+<summary>Namespace management nuances and implementation details</summary>
+<p>Here, we collect some notes on namespace management, and subtle differences from <code>BaseModel</code>:</p>
+<p><code>BaseModel</code> uses its own <code>__module__</code> to find out where it was defined
+and then looks for symbols to resolve forward references in those globals.
+On the other hand, <code>TypeAdapter</code> can be initialized with arbitrary objects,
+which may not be types and thus do not have a <code>__module__</code> available.
+So instead we look at the globals in our parent stack frame.</p>
+<p>It is expected that the <code>ns_resolver</code> passed to this function will have the correct
+namespace for the type we're adapting. See the source code for <code>TypeAdapter.__init__</code>
+and <code>TypeAdapter.rebuild</code> for various ways to construct this namespace.</p>
+<p>This works for the case where this function is called in a module that
+has the target of forward references in its scope, but
+does not always work for more complex cases.</p>
+<p>For example, take the following:</p>
+<div class="language-python highlight"><span class="filename">a.py</span><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span>
+
+<span class="n">IntList</span> <span class="o">=</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+<span class="n">OuterDict</span> <span class="o">=</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="s1">&#39;IntList&#39;</span><span class="p">]</span>
+</code></pre></div>
+<div class="language-python highlight"><span class="filename">b.py</span><pre><span></span><code><span class="kn">from</span> <span class="nn">a</span> <span class="kn">import</span> <span class="n">OuterDict</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">TypeAdapter</span>
+
+<span class="n">IntList</span> <span class="o">=</span> <span class="nb">int</span>  <span class="c1"># replaces the symbol the forward reference is looking for</span>
+<span class="n">v</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">OuterDict</span><span class="p">)</span>
+<span class="n">v</span><span class="p">({</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>  <span class="c1"># should fail but doesn&#39;t</span>
+</code></pre></div>
+<p>If <code>OuterDict</code> were a <code>BaseModel</code>, this would work because it would resolve
+the forward reference within the <code>a.py</code> namespace.
+But <code>TypeAdapter(OuterDict)</code> can't determine what module <code>OuterDict</code> came from.</p>
+<p>In other words, the assumption that <em>all</em> forward references exist in the
+module we are being called from is not technically always true.
+Although most of the time it is and it works fine for recursive models and such,
+<code>BaseModel</code>'s behavior isn't perfect either and <em>can</em> break in similar ways,
+so there is no right or wrong between the two.</p>
+<p>But at the very least this behavior is <em>subtly</em> different from <code>BaseModel</code>'s.</p>
+</details>
 
                   <details class="quote">
                     <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
-                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">158</span>
-<span class="normal">159</span>
-<span class="normal">160</span>
-<span class="normal">161</span>
-<span class="normal">162</span>
-<span class="normal">163</span>
-<span class="normal">164</span>
-<span class="normal">165</span>
-<span class="normal">166</span>
-<span class="normal">167</span>
-<span class="normal">168</span>
-<span class="normal">169</span>
-<span class="normal">170</span>
-<span class="normal">171</span>
-<span class="normal">172</span>
-<span class="normal">173</span>
-<span class="normal">174</span>
-<span class="normal">175</span>
-<span class="normal">176</span>
-<span class="normal">177</span>
-<span class="normal">178</span>
-<span class="normal">179</span>
-<span class="normal">180</span>
-<span class="normal">181</span>
-<span class="normal">182</span>
-<span class="normal">183</span>
-<span class="normal">184</span>
-<span class="normal">185</span>
-<span class="normal">186</span>
-<span class="normal">187</span>
-<span class="normal">188</span>
-<span class="normal">189</span>
-<span class="normal">190</span>
-<span class="normal">191</span>
-<span class="normal">192</span>
-<span class="normal">193</span>
-<span class="normal">194</span>
-<span class="normal">195</span>
-<span class="normal">196</span>
+                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">196</span>
 <span class="normal">197</span>
 <span class="normal">198</span>
 <span class="normal">199</span>
@@ -3432,7 +3382,13 @@ annotate your variable:</p>
 <span class="normal">225</span>
 <span class="normal">226</span>
 <span class="normal">227</span>
-<span class="normal">228</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+<span class="normal">228</span>
+<span class="normal">229</span>
+<span class="normal">230</span>
+<span class="normal">231</span>
+<span class="normal">232</span>
+<span class="normal">233</span>
+<span class="normal">234</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="nb">type</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -3440,41 +3396,6 @@ annotate your variable:</p>
     <span class="n">_parent_depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
     <span class="n">module</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Initializes the TypeAdapter object.</span>
-
-<span class="sd">    Args:</span>
-<span class="sd">        type: The type associated with the `TypeAdapter`.</span>
-<span class="sd">        config: Configuration for the `TypeAdapter`, should be a dictionary conforming to [`ConfigDict`][pydantic.config.ConfigDict].</span>
-<span class="sd">        _parent_depth: Depth at which to search the for the parent namespace used for schema building.</span>
-<span class="sd">            We also use this as a reference level to find the global namespace (_parent_depth - 1).</span>
-<span class="sd">            Defaults to 2 because we expect to reference the frame that called the `TypeAdapter` constructor.</span>
-<span class="sd">        module: The module that passes to plugin if provided.</span>
-
-<span class="sd">    !!! note</span>
-<span class="sd">        You cannot use the `config` argument when instantiating a `TypeAdapter` if the type you&#39;re using has its own</span>
-<span class="sd">        config that cannot be overridden (ex: `BaseModel`, `TypedDict`, and `dataclass`). A</span>
-<span class="sd">        [`type-adapter-config-unused`](../errors/usage_errors.md#type-adapter-config-unused) error will be raised in this case.</span>
-
-<span class="sd">    !!! note</span>
-<span class="sd">        The `_parent_depth` argument is named with an underscore to suggest its private nature and discourage use.</span>
-<span class="sd">        It may be deprecated in a minor version, so we only recommend using it if you&#39;re</span>
-<span class="sd">        comfortable with potential change in behavior / support.</span>
-
-<span class="sd">    ??? tip &quot;Compatibility with `mypy`&quot;</span>
-<span class="sd">        Depending on the type used, `mypy` might raise an error when instantiating a `TypeAdapter`. As a workaround, you can explicitly</span>
-<span class="sd">        annotate your variable:</span>
-
-<span class="sd">        ```python</span>
-<span class="sd">        from typing import Union</span>
-
-<span class="sd">        from pydantic import TypeAdapter</span>
-
-<span class="sd">        ta: TypeAdapter[Union[str, int]] = TypeAdapter(Union[str, int])  # type: ignore[arg-type]</span>
-<span class="sd">        ```</span>
-
-<span class="sd">    Returns:</span>
-<span class="sd">        A type adapter configured for the specified `type`.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">_type_has_config</span><span class="p">(</span><span class="nb">type</span><span class="p">)</span> <span class="ow">and</span> <span class="n">config</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">raise</span> <span class="n">PydanticUserError</span><span class="p">(</span>
             <span class="s1">&#39;Cannot use `config` when the type is a BaseModel, dataclass or TypedDict.&#39;</span>
@@ -3487,14 +3408,17 @@ annotate your variable:</p>
     <span class="bp">self</span><span class="o">.</span><span class="n">_type</span> <span class="o">=</span> <span class="nb">type</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_config</span> <span class="o">=</span> <span class="n">config</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_parent_depth</span> <span class="o">=</span> <span class="n">_parent_depth</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">pydantic_complete</span> <span class="o">=</span> <span class="kc">False</span>
 
-    <span class="bp">self</span><span class="o">.</span><span class="n">core_schema</span><span class="p">:</span> <span class="n">CoreSchema</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">validator</span><span class="p">:</span> <span class="n">SchemaValidator</span> <span class="o">|</span> <span class="n">PluggableSchemaValidator</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">serializer</span><span class="p">:</span> <span class="n">SchemaSerializer</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">pydantic_complete</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">parent_frame</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fetch_parent_frame</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">parent_frame</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">globalns</span> <span class="o">=</span> <span class="n">parent_frame</span><span class="o">.</span><span class="n">f_globals</span>
+        <span class="c1"># Do not provide a local ns if the type adapter happens to be instantiated at the module level:</span>
+        <span class="n">localns</span> <span class="o">=</span> <span class="n">parent_frame</span><span class="o">.</span><span class="n">f_locals</span> <span class="k">if</span> <span class="n">parent_frame</span><span class="o">.</span><span class="n">f_locals</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">globalns</span> <span class="k">else</span> <span class="p">{}</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">globalns</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">localns</span> <span class="o">=</span> <span class="p">{}</span>
 
-    <span class="n">localns</span> <span class="o">=</span> <span class="n">_typing_extra</span><span class="o">.</span><span class="n">parent_frame_namespace</span><span class="p">(</span><span class="n">parent_depth</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_parent_depth</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{}</span>
-    <span class="n">globalns</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">_getframe</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_parent_depth</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">f_globals</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_module_name</span> <span class="o">=</span> <span class="n">module</span> <span class="ow">or</span> <span class="n">cast</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">globalns</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;__name__&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">))</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_init_core_attrs</span><span class="p">(</span>
         <span class="n">ns_resolver</span><span class="o">=</span><span class="n">_namespace_utils</span><span class="o">.</span><span class="n">NsResolver</span><span class="p">(</span>
@@ -3588,7 +3512,10 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>The depth level of the parent namespace, defaults to 2.</p>
+                <p>Depth at which to search for the <a class="autorefs autorefs-external" href="https://docs.python.org/3/reference/datamodel.html#frame-objects">parent frame</a>. This
+frame is used when resolving forward annotations during schema rebuilding, by looking for
+the locals of this frame. Defaults to 2, which will result in the frame where the method
+was called.</p>
               </div>
             </td>
             <td>
@@ -3602,7 +3529,8 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>The types namespace, defaults to <code>None</code>.</p>
+                <p>An explicit types namespace to use, instead of using the local namespace
+from the parent frame. Defaults to <code>None</code>.</p>
               </div>
             </td>
             <td>
@@ -3647,24 +3575,7 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">319</span>
-<span class="normal">320</span>
-<span class="normal">321</span>
-<span class="normal">322</span>
-<span class="normal">323</span>
-<span class="normal">324</span>
-<span class="normal">325</span>
-<span class="normal">326</span>
-<span class="normal">327</span>
-<span class="normal">328</span>
-<span class="normal">329</span>
-<span class="normal">330</span>
-<span class="normal">331</span>
-<span class="normal">332</span>
-<span class="normal">333</span>
-<span class="normal">334</span>
-<span class="normal">335</span>
-<span class="normal">336</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">336</span>
 <span class="normal">337</span>
 <span class="normal">338</span>
 <span class="normal">339</span>
@@ -3687,7 +3598,28 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
 <span class="normal">356</span>
 <span class="normal">357</span>
 <span class="normal">358</span>
-<span class="normal">359</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">rebuild</span><span class="p">(</span>
+<span class="normal">359</span>
+<span class="normal">360</span>
+<span class="normal">361</span>
+<span class="normal">362</span>
+<span class="normal">363</span>
+<span class="normal">364</span>
+<span class="normal">365</span>
+<span class="normal">366</span>
+<span class="normal">367</span>
+<span class="normal">368</span>
+<span class="normal">369</span>
+<span class="normal">370</span>
+<span class="normal">371</span>
+<span class="normal">372</span>
+<span class="normal">373</span>
+<span class="normal">374</span>
+<span class="normal">375</span>
+<span class="normal">376</span>
+<span class="normal">377</span>
+<span class="normal">378</span>
+<span class="normal">379</span>
+<span class="normal">380</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">rebuild</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">force</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -3703,8 +3635,12 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
 <span class="sd">    Args:</span>
 <span class="sd">        force: Whether to force the rebuilding of the type adapter&#39;s schema, defaults to `False`.</span>
 <span class="sd">        raise_errors: Whether to raise errors, defaults to `True`.</span>
-<span class="sd">        _parent_namespace_depth: The depth level of the parent namespace, defaults to 2.</span>
-<span class="sd">        _types_namespace: The types namespace, defaults to `None`.</span>
+<span class="sd">        _parent_namespace_depth: Depth at which to search for the [parent frame][frame-objects]. This</span>
+<span class="sd">            frame is used when resolving forward annotations during schema rebuilding, by looking for</span>
+<span class="sd">            the locals of this frame. Defaults to 2, which will result in the frame where the method</span>
+<span class="sd">            was called.</span>
+<span class="sd">        _types_namespace: An explicit types namespace to use, instead of using the local namespace</span>
+<span class="sd">            from the parent frame. Defaults to `None`.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Returns `None` if the schema is already &quot;complete&quot; and rebuilding was not required.</span>
@@ -3720,7 +3656,7 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">rebuild_ns</span> <span class="o">=</span> <span class="p">{}</span>
 
-    <span class="c1"># we have to manually fetch globals here because there&#39;s no type on the stack for the NsResolver</span>
+    <span class="c1"># we have to manually fetch globals here because there&#39;s no type on the stack of the NsResolver</span>
     <span class="c1"># and so we skip the globalns = get_module_ns_of(typ) call that would normally happen</span>
     <span class="n">globalns</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">_getframe</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">_parent_namespace_depth</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">f_globals</span>
     <span class="n">ns_resolver</span> <span class="o">=</span> <span class="n">_namespace_utils</span><span class="o">.</span><span class="n">NsResolver</span><span class="p">(</span>
@@ -3878,28 +3814,7 @@ argument is not supported.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">361</span>
-<span class="normal">362</span>
-<span class="normal">363</span>
-<span class="normal">364</span>
-<span class="normal">365</span>
-<span class="normal">366</span>
-<span class="normal">367</span>
-<span class="normal">368</span>
-<span class="normal">369</span>
-<span class="normal">370</span>
-<span class="normal">371</span>
-<span class="normal">372</span>
-<span class="normal">373</span>
-<span class="normal">374</span>
-<span class="normal">375</span>
-<span class="normal">376</span>
-<span class="normal">377</span>
-<span class="normal">378</span>
-<span class="normal">379</span>
-<span class="normal">380</span>
-<span class="normal">381</span>
-<span class="normal">382</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">382</span>
 <span class="normal">383</span>
 <span class="normal">384</span>
 <span class="normal">385</span>
@@ -3914,7 +3829,28 @@ argument is not supported.</p>
 <span class="normal">394</span>
 <span class="normal">395</span>
 <span class="normal">396</span>
-<span class="normal">397</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">validate_python</span><span class="p">(</span>
+<span class="normal">397</span>
+<span class="normal">398</span>
+<span class="normal">399</span>
+<span class="normal">400</span>
+<span class="normal">401</span>
+<span class="normal">402</span>
+<span class="normal">403</span>
+<span class="normal">404</span>
+<span class="normal">405</span>
+<span class="normal">406</span>
+<span class="normal">407</span>
+<span class="normal">408</span>
+<span class="normal">409</span>
+<span class="normal">410</span>
+<span class="normal">411</span>
+<span class="normal">412</span>
+<span class="normal">413</span>
+<span class="normal">414</span>
+<span class="normal">415</span>
+<span class="normal">416</span>
+<span class="normal">417</span>
+<span class="normal">418</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">validate_python</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="nb">object</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
     <span class="o">/</span><span class="p">,</span>
@@ -4085,35 +4021,35 @@ argument is not supported.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">399</span>
-<span class="normal">400</span>
-<span class="normal">401</span>
-<span class="normal">402</span>
-<span class="normal">403</span>
-<span class="normal">404</span>
-<span class="normal">405</span>
-<span class="normal">406</span>
-<span class="normal">407</span>
-<span class="normal">408</span>
-<span class="normal">409</span>
-<span class="normal">410</span>
-<span class="normal">411</span>
-<span class="normal">412</span>
-<span class="normal">413</span>
-<span class="normal">414</span>
-<span class="normal">415</span>
-<span class="normal">416</span>
-<span class="normal">417</span>
-<span class="normal">418</span>
-<span class="normal">419</span>
-<span class="normal">420</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">420</span>
 <span class="normal">421</span>
 <span class="normal">422</span>
 <span class="normal">423</span>
 <span class="normal">424</span>
 <span class="normal">425</span>
 <span class="normal">426</span>
-<span class="normal">427</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">validate_json</span><span class="p">(</span>
+<span class="normal">427</span>
+<span class="normal">428</span>
+<span class="normal">429</span>
+<span class="normal">430</span>
+<span class="normal">431</span>
+<span class="normal">432</span>
+<span class="normal">433</span>
+<span class="normal">434</span>
+<span class="normal">435</span>
+<span class="normal">436</span>
+<span class="normal">437</span>
+<span class="normal">438</span>
+<span class="normal">439</span>
+<span class="normal">440</span>
+<span class="normal">441</span>
+<span class="normal">442</span>
+<span class="normal">443</span>
+<span class="normal">444</span>
+<span class="normal">445</span>
+<span class="normal">446</span>
+<span class="normal">447</span>
+<span class="normal">448</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">validate_json</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">data</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="nb">bytearray</span><span class="p">,</span>
     <span class="o">/</span><span class="p">,</span>
@@ -4272,33 +4208,33 @@ argument is not supported.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">429</span>
-<span class="normal">430</span>
-<span class="normal">431</span>
-<span class="normal">432</span>
-<span class="normal">433</span>
-<span class="normal">434</span>
-<span class="normal">435</span>
-<span class="normal">436</span>
-<span class="normal">437</span>
-<span class="normal">438</span>
-<span class="normal">439</span>
-<span class="normal">440</span>
-<span class="normal">441</span>
-<span class="normal">442</span>
-<span class="normal">443</span>
-<span class="normal">444</span>
-<span class="normal">445</span>
-<span class="normal">446</span>
-<span class="normal">447</span>
-<span class="normal">448</span>
-<span class="normal">449</span>
-<span class="normal">450</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">450</span>
 <span class="normal">451</span>
 <span class="normal">452</span>
 <span class="normal">453</span>
 <span class="normal">454</span>
-<span class="normal">455</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">validate_strings</span><span class="p">(</span>
+<span class="normal">455</span>
+<span class="normal">456</span>
+<span class="normal">457</span>
+<span class="normal">458</span>
+<span class="normal">459</span>
+<span class="normal">460</span>
+<span class="normal">461</span>
+<span class="normal">462</span>
+<span class="normal">463</span>
+<span class="normal">464</span>
+<span class="normal">465</span>
+<span class="normal">466</span>
+<span class="normal">467</span>
+<span class="normal">468</span>
+<span class="normal">469</span>
+<span class="normal">470</span>
+<span class="normal">471</span>
+<span class="normal">472</span>
+<span class="normal">473</span>
+<span class="normal">474</span>
+<span class="normal">475</span>
+<span class="normal">476</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">validate_strings</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
     <span class="o">/</span><span class="p">,</span>
@@ -4418,17 +4354,17 @@ argument is not supported.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">457</span>
-<span class="normal">458</span>
-<span class="normal">459</span>
-<span class="normal">460</span>
-<span class="normal">461</span>
-<span class="normal">462</span>
-<span class="normal">463</span>
-<span class="normal">464</span>
-<span class="normal">465</span>
-<span class="normal">466</span>
-<span class="normal">467</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_default_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">strict</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Some</span><span class="p">[</span><span class="n">T</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">478</span>
+<span class="normal">479</span>
+<span class="normal">480</span>
+<span class="normal">481</span>
+<span class="normal">482</span>
+<span class="normal">483</span>
+<span class="normal">484</span>
+<span class="normal">485</span>
+<span class="normal">486</span>
+<span class="normal">487</span>
+<span class="normal">488</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_default_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">strict</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Some</span><span class="p">[</span><span class="n">T</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the default value for the wrapped type.</span>
 
 <span class="sd">    Args:</span>
@@ -4686,28 +4622,7 @@ argument is not supported.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">469</span>
-<span class="normal">470</span>
-<span class="normal">471</span>
-<span class="normal">472</span>
-<span class="normal">473</span>
-<span class="normal">474</span>
-<span class="normal">475</span>
-<span class="normal">476</span>
-<span class="normal">477</span>
-<span class="normal">478</span>
-<span class="normal">479</span>
-<span class="normal">480</span>
-<span class="normal">481</span>
-<span class="normal">482</span>
-<span class="normal">483</span>
-<span class="normal">484</span>
-<span class="normal">485</span>
-<span class="normal">486</span>
-<span class="normal">487</span>
-<span class="normal">488</span>
-<span class="normal">489</span>
-<span class="normal">490</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">490</span>
 <span class="normal">491</span>
 <span class="normal">492</span>
 <span class="normal">493</span>
@@ -4736,7 +4651,28 @@ argument is not supported.</p>
 <span class="normal">516</span>
 <span class="normal">517</span>
 <span class="normal">518</span>
-<span class="normal">519</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">dump_python</span><span class="p">(</span>
+<span class="normal">519</span>
+<span class="normal">520</span>
+<span class="normal">521</span>
+<span class="normal">522</span>
+<span class="normal">523</span>
+<span class="normal">524</span>
+<span class="normal">525</span>
+<span class="normal">526</span>
+<span class="normal">527</span>
+<span class="normal">528</span>
+<span class="normal">529</span>
+<span class="normal">530</span>
+<span class="normal">531</span>
+<span class="normal">532</span>
+<span class="normal">533</span>
+<span class="normal">534</span>
+<span class="normal">535</span>
+<span class="normal">536</span>
+<span class="normal">537</span>
+<span class="normal">538</span>
+<span class="normal">539</span>
+<span class="normal">540</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">dump_python</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">instance</span><span class="p">:</span> <span class="n">T</span><span class="p">,</span>
     <span class="o">/</span><span class="p">,</span>
@@ -5038,28 +4974,7 @@ argument is not supported.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">521</span>
-<span class="normal">522</span>
-<span class="normal">523</span>
-<span class="normal">524</span>
-<span class="normal">525</span>
-<span class="normal">526</span>
-<span class="normal">527</span>
-<span class="normal">528</span>
-<span class="normal">529</span>
-<span class="normal">530</span>
-<span class="normal">531</span>
-<span class="normal">532</span>
-<span class="normal">533</span>
-<span class="normal">534</span>
-<span class="normal">535</span>
-<span class="normal">536</span>
-<span class="normal">537</span>
-<span class="normal">538</span>
-<span class="normal">539</span>
-<span class="normal">540</span>
-<span class="normal">541</span>
-<span class="normal">542</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">542</span>
 <span class="normal">543</span>
 <span class="normal">544</span>
 <span class="normal">545</span>
@@ -5090,7 +5005,28 @@ argument is not supported.</p>
 <span class="normal">570</span>
 <span class="normal">571</span>
 <span class="normal">572</span>
-<span class="normal">573</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">dump_json</span><span class="p">(</span>
+<span class="normal">573</span>
+<span class="normal">574</span>
+<span class="normal">575</span>
+<span class="normal">576</span>
+<span class="normal">577</span>
+<span class="normal">578</span>
+<span class="normal">579</span>
+<span class="normal">580</span>
+<span class="normal">581</span>
+<span class="normal">582</span>
+<span class="normal">583</span>
+<span class="normal">584</span>
+<span class="normal">585</span>
+<span class="normal">586</span>
+<span class="normal">587</span>
+<span class="normal">588</span>
+<span class="normal">589</span>
+<span class="normal">590</span>
+<span class="normal">591</span>
+<span class="normal">592</span>
+<span class="normal">593</span>
+<span class="normal">594</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">dump_json</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">instance</span><span class="p">:</span> <span class="n">T</span><span class="p">,</span>
     <span class="o">/</span><span class="p">,</span>
@@ -5268,30 +5204,30 @@ argument is not supported.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">575</span>
-<span class="normal">576</span>
-<span class="normal">577</span>
-<span class="normal">578</span>
-<span class="normal">579</span>
-<span class="normal">580</span>
-<span class="normal">581</span>
-<span class="normal">582</span>
-<span class="normal">583</span>
-<span class="normal">584</span>
-<span class="normal">585</span>
-<span class="normal">586</span>
-<span class="normal">587</span>
-<span class="normal">588</span>
-<span class="normal">589</span>
-<span class="normal">590</span>
-<span class="normal">591</span>
-<span class="normal">592</span>
-<span class="normal">593</span>
-<span class="normal">594</span>
-<span class="normal">595</span>
-<span class="normal">596</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">596</span>
 <span class="normal">597</span>
-<span class="normal">598</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">json_schema</span><span class="p">(</span>
+<span class="normal">598</span>
+<span class="normal">599</span>
+<span class="normal">600</span>
+<span class="normal">601</span>
+<span class="normal">602</span>
+<span class="normal">603</span>
+<span class="normal">604</span>
+<span class="normal">605</span>
+<span class="normal">606</span>
+<span class="normal">607</span>
+<span class="normal">608</span>
+<span class="normal">609</span>
+<span class="normal">610</span>
+<span class="normal">611</span>
+<span class="normal">612</span>
+<span class="normal">613</span>
+<span class="normal">614</span>
+<span class="normal">615</span>
+<span class="normal">616</span>
+<span class="normal">617</span>
+<span class="normal">618</span>
+<span class="normal">619</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">json_schema</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">by_alias</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
@@ -5494,28 +5430,7 @@ definitions in the output JSON schema.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">600</span>
-<span class="normal">601</span>
-<span class="normal">602</span>
-<span class="normal">603</span>
-<span class="normal">604</span>
-<span class="normal">605</span>
-<span class="normal">606</span>
-<span class="normal">607</span>
-<span class="normal">608</span>
-<span class="normal">609</span>
-<span class="normal">610</span>
-<span class="normal">611</span>
-<span class="normal">612</span>
-<span class="normal">613</span>
-<span class="normal">614</span>
-<span class="normal">615</span>
-<span class="normal">616</span>
-<span class="normal">617</span>
-<span class="normal">618</span>
-<span class="normal">619</span>
-<span class="normal">620</span>
-<span class="normal">621</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">621</span>
 <span class="normal">622</span>
 <span class="normal">623</span>
 <span class="normal">624</span>
@@ -5549,7 +5464,28 @@ definitions in the output JSON schema.</p>
 <span class="normal">652</span>
 <span class="normal">653</span>
 <span class="normal">654</span>
-<span class="normal">655</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="normal">655</span>
+<span class="normal">656</span>
+<span class="normal">657</span>
+<span class="normal">658</span>
+<span class="normal">659</span>
+<span class="normal">660</span>
+<span class="normal">661</span>
+<span class="normal">662</span>
+<span class="normal">663</span>
+<span class="normal">664</span>
+<span class="normal">665</span>
+<span class="normal">666</span>
+<span class="normal">667</span>
+<span class="normal">668</span>
+<span class="normal">669</span>
+<span class="normal">670</span>
+<span class="normal">671</span>
+<span class="normal">672</span>
+<span class="normal">673</span>
+<span class="normal">674</span>
+<span class="normal">675</span>
+<span class="normal">676</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span> <span class="nf">json_schemas</span><span class="p">(</span>
     <span class="n">inputs</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">JsonSchemaKeyT</span><span class="p">,</span> <span class="n">JsonSchemaMode</span><span class="p">,</span> <span class="n">TypeAdapter</span><span class="p">[</span><span class="n">Any</span><span class="p">]]],</span>
     <span class="o">/</span><span class="p">,</span>
@@ -5678,7 +5614,7 @@ definitions in the output JSON schema.</p>
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.10.0", "pydantic-core==2.27.0", "pydantic-extra-types==2.10.0"]
+    window.mkdocs_run_deps = ["pydantic==2.10.1", "pydantic-core==2.27.1", "pydantic-extra-types==2.10.0"]
     </script>
 
               </article>
