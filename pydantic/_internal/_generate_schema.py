@@ -17,7 +17,7 @@ from copy import copy, deepcopy
 from decimal import Decimal
 from enum import Enum
 from fractions import Fraction
-from functools import partial
+from functools import lru_cache, partial
 from inspect import Parameter, _ParameterKind, signature
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from itertools import chain
@@ -885,6 +885,7 @@ class GenerateSchema:
 
         return self.match_type(obj)
 
+    @lru_cache(maxsize=None)
     def match_type(self, obj: Any) -> core_schema.CoreSchema:  # noqa: C901
         """Main mapping of types to schemas.
 
@@ -996,6 +997,7 @@ class GenerateSchema:
             return self._arbitrary_type_schema(obj)
         return self._unknown_type_schema(obj)
 
+    @lru_cache(maxsize=None)
     def _match_generic_type(self, obj: Any, origin: Any) -> CoreSchema:  # noqa: C901
         # Need to handle generic dataclasses before looking for the schema properties because attribute accesses
         # on _GenericAlias delegate to the origin type, so lose the information about the concrete parametrization
