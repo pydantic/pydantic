@@ -1,3 +1,27 @@
+## v2.10.1 (2024-11-21)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.10.1)
+
+### What's Changed
+
+#### Packaging
+
+* Bump `pydantic-core` version to `v2.27.1` by @sydney-runkle in [#10938](https://github.com/pydantic/pydantic/pull/10938)
+
+#### Fixes
+
+* Use the correct frame when instantiating a parametrized `TypeAdapter` by @Viicos in [#10893](https://github.com/pydantic/pydantic/pull/10893)
+* Relax check for validated data in `default_factory` utils by @sydney-runkle in [#10909](https://github.com/pydantic/pydantic/pull/10909)
+* Fix type checking issue with `model_fields` and `model_computed_fields` by @sydney-runkle in [#10911](https://github.com/pydantic/pydantic/pull/10911)
+* Use the parent configuration during schema generation for stdlib `dataclass`es by @sydney-runkle in [#10928](https://github.com/pydantic/pydantic/pull/10928)
+* Use the `globals` of the function when evaluating the return type of serializers and `computed_field`s by @Viicos in [#10929](https://github.com/pydantic/pydantic/pull/10929)
+* Fix URL constraint application by @sydney-runkle in [#10922](https://github.com/pydantic/pydantic/pull/10922)
+* Fix URL equality with different validation methods by @sydney-runkle in [#10934](https://github.com/pydantic/pydantic/pull/10934)
+* Fix JSON schema title when specified as `''` by @sydney-runkle in [#10936](https://github.com/pydantic/pydantic/pull/10936)
+* Fix `python` mode serialization for `complex` inference by @sydney-runkle in [pydantic-core#1549](https://github.com/pydantic/pydantic-core/pull/1549)
+
+### New Contributors
+
 ## v2.10.0 (2024-11-20)
 
 The code released in v2.10.0 is practically identical to that of v2.10.0b2.
