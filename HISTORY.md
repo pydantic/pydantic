@@ -18,6 +18,7 @@
 * Fix URL constraint application by @sydney-runkle in [#10922](https://github.com/pydantic/pydantic/pull/10922)
 * Fix URL equality with different validation methods by @sydney-runkle in [#10934](https://github.com/pydantic/pydantic/pull/10934)
 * Fix JSON schema title when specified as `''` by @sydney-runkle in [#10936](https://github.com/pydantic/pydantic/pull/10936)
+* Fix `python` mode serialization for `complex` inference by @sydney-runkle in [pydantic-core#1549](https://github.com/pydantic/pydantic-core/pull/1549)
 
 ### New Contributors
 
