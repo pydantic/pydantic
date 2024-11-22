@@ -1741,7 +1741,6 @@ class _SecretField(_SecretBase[SecretType]):
                 serialization=core_schema.plain_serializer_function_ser_schema(
                     _serialize_secret_field,
                     info_arg=True,
-                    return_schema=core_schema.str_schema(),
                     when_used='always',
                 ),
             )
