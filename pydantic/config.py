@@ -555,13 +555,47 @@ class ConfigDict(TypedDict, total=False):
     3. Using `'never'` we would have gotten `user=SubUser(hobbies=['scuba diving'], sins=['lying'])`.
     """
 
+    val_date_or_time_unit: Literal['seconds', 'milliseconds', 'infer']
+    """The unit to assume for validating date or time strings. Defaults to `'infer'`.
+    Only applies when the date / time like input is an int / float.
+
+    The "epoch" reference below refers to the Unix epoch, which is 1970-01-01 00:00:00 UTC.
+
+    - `'seconds'` will validate date or time strings as seconds since the epoch.
+    - `'milliseconds'` will validate date or time strings as milliseconds since the epoch.
+    - `'infer'` will infer the unit from the string based on unix time:
+        i.e. seconds (if >= -2e10 and <= 2e10) or milliseconds (if < -2e10or > 2e10) since the epoch.
+    """
+
+    # TODO: does infer even make sense here? I guess in the context of float?
+    ser_date_or_time_unit: Literal['seconds', 'milliseconds', 'infer']
+    """The unit to use for serializing date or time fields. Defaults to `'infer'`.
+    Only applies when the date / time like data is being serialized as a float.
+
+    The "epoch" reference below refers to the Unix epoch, which is 1970-01-01 00:00:00 UTC.
+
+    - `'seconds'` will serialize date or time fields as seconds since the epoch.
+    - `'milliseconds'` will serialize date or time fields as milliseconds since the epoch.
+    - `'infer'` will infer the unit from the field based on unix time:
+        i.e. seconds (if >= -2e10 and <= 2e10) or milliseconds (if < -2e10or > 2e10) since the epoch.
+    """
+
     ser_json_timedelta: Literal['iso8601', 'float']
     """
     The format of JSON serialized timedeltas. Accepts the string values of `'iso8601'` and
     `'float'`. Defaults to `'iso8601'`.
 
-    - `'iso8601'` will serialize timedeltas to ISO 8601 durations.
+    - `'iso8601'` will serialize timedeltas to [ISO 8601 durations](https://en.wikipedia.org/wiki/ISO_8601#Durations).
     - `'float'` will serialize timedeltas to the total number of seconds.
+    """
+
+    ser_json_datetime: Literal['iso8601', 'float']
+    """
+    The format of JSON serialized dates and datetimes. Accepts the string values of `'iso8601'` and
+    `'float'`. Defaults to `'iso8601'`.
+
+    - `'iso8601'` will serialize datetimes to [ISO 8601 strings](https://en.wikipedia.org/wiki/ISO_8601#Dates).
+    - `'float'` will serialize datetimes to the number of seconds since the epoch.
     """
 
     ser_json_bytes: Literal['utf8', 'base64', 'hex']
