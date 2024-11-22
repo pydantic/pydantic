@@ -1495,7 +1495,7 @@ class GenerateJsonSchema:
         from .main import BaseModel
         from .root_model import RootModel
 
-        if config_title := config.get('title'):
+        if (config_title := config.get('title')) is not None:
             json_schema.setdefault('title', config_title)
         elif model_title_generator := config.get('model_title_generator'):
             title = model_title_generator(cls)
