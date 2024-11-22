@@ -20,7 +20,6 @@
 * Fix JSON schema title when specified as `''` by @sydney-runkle in [#10936](https://github.com/pydantic/pydantic/pull/10936)
 * Fix `python` mode serialization for `complex` inference by @sydney-runkle in [pydantic-core#1549](https://github.com/pydantic/pydantic-core/pull/1549)
 
-
 ## v2.10.0 (2024-11-20)
 
 The code released in v2.10.0 is practically identical to that of v2.10.0b2.
