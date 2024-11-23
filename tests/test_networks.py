@@ -1105,3 +1105,14 @@ def test_after_validator() -> None:
     ]
     ta = TypeAdapter(HttpUrl)
     assert ta.validate_python('https://example.com/') == 'https://example.com'
+
+
+def test_any_url_hashable() -> None:
+    example_url_1a = AnyUrl('https://example1.com')
+    example_url_1b = AnyUrl('https://example1.com')
+    example_url_2 = AnyUrl('https://example2.com')
+
+    assert hash(example_url_1a) == hash(example_url_1b)
+    assert example_url_1a is not example_url_1b
+    assert hash(example_url_1a) != hash(example_url_2)
+    assert len({example_url_1a, example_url_1b, example_url_2}) == 2

@@ -221,6 +221,9 @@ class _BaseUrl:
     def __deepcopy__(self, memo: dict) -> Self:
         return self.__class__(self._url)
 
+    def __hash__(self):
+        return self._url.__hash__()
+
     def __eq__(self, other: Any) -> bool:
         return self.__class__ is other.__class__ and self._url == other._url
 
