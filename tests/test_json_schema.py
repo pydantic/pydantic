@@ -2571,6 +2571,24 @@ def test_typeddict_with_extra_ignore():
     }
 
 
+def test_typeddict_exclude_if():
+    class Model(TypedDict):
+        a: Annotated[int, Field(exclude_if=lambda x: x > 1)]
+        b: Annotated[str, Field(exclude_if=lambda x: 'foo' in x)]
+
+    ta = TypeAdapter(Model)
+
+    assert ta.dump_python(Model(a=0, b='bar')) == {'a': 0, 'b': 'bar'}
+    assert ta.dump_python(Model(a=2, b='bar')) == {'b': 'bar'}
+    assert ta.dump_python(Model(a=0, b='foo')) == {'a': 0}
+    assert ta.dump_python(Model(a=2, b='foo')) == {}
+
+    assert ta.dump_json(Model(a=0, b='bar')) == b'{"a":0,"b":"bar"}'
+    assert ta.dump_json(Model(a=2, b='bar')) == b'{"b":"bar"}'
+    assert ta.dump_json(Model(a=0, b='foo')) == b'{"a":0}'
+    assert ta.dump_json(Model(a=2, b='foo')) == b'{}'
+
+
 def test_typeddict_with_extra_forbid():
     @pydantic.dataclasses.dataclass
     class Model:

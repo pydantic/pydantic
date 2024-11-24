@@ -1139,6 +1139,22 @@ def test_exclude_defaults():
     }
 
 
+def test_exclude_if():
+    class Model(BaseModel):
+        a: int = Field(exclude_if=lambda x: x > 1)
+        b: str = Field(exclude_if=lambda x: "foo" in x)
+
+    assert Model(a=0, b='bar').model_dump() == {'a': 0, 'b': 'bar'}
+    assert Model(a=2, b='bar').model_dump() == {'b': 'bar'}
+    assert Model(a=0, b='foo').model_dump() == {'a': 0}
+    assert Model(a=2, b='foo').model_dump() == {}
+
+    assert Model(a=0, b='bar').model_dump_json() == '{"a":0,"b":"bar"}'
+    assert Model(a=2, b='bar').model_dump_json() == '{"b":"bar"}'
+    assert Model(a=0, b='foo').model_dump_json() == '{"a":0}'
+    assert Model(a=2, b='foo').model_dump_json() == '{}'
+
+
 def test_dir_fields():
     class MyModel(BaseModel):
         attribute_a: int

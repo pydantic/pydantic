@@ -2857,6 +2857,25 @@ def test_disallow_init_false_and_init_var_true() -> None:
             bar: str = Field(init=False, init_var=True)
 
 
+def test_exclude() -> None:
+    @pydantic.dataclasses.dataclass
+    class Foo:
+        bar: str = Field(exclude=True)
+        foobaz: int = Field(exclude_if=lambda x: x > 1)
+
+    class Model(BaseModel):
+        foo: Foo
+        other_foo: Foo = Field(default=Foo(bar = 'bar', foobaz = 0), exclude = True)
+
+    assert Model(foo = Foo(bar = 'bar', foobaz=1)).model_dump() == {'foo': {'foobaz': 1}}
+    assert Model(foo = Foo(bar = 'bar', foobaz=2)).model_dump() == {'foo': {}}
+    assert Model(foo = Foo(bar = 'bar', foobaz=2)).model_dump(exclude={'foo'}) == {}
+
+    assert Model(foo = Foo(bar = 'bar', foobaz=1)).model_dump_json() == '{"foo":{"foobaz":1}}'
+    assert Model(foo = Foo(bar = 'bar', foobaz=2)).model_dump_json() == '{"foo":{}}'
+    assert Model(foo = Foo(bar = 'bar', foobaz=2)).model_dump_json(exclude={'foo'}) == '{}'
+
+
 def test_annotations_valid_for_field_inheritance() -> None:
     # testing https://github.com/pydantic/pydantic/issues/8670
 
