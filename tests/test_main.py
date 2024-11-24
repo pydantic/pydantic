@@ -1142,7 +1142,7 @@ def test_exclude_defaults():
 def test_exclude_if():
     class Model(BaseModel):
         a: int = Field(exclude_if=lambda x: x > 1)
-        b: str = Field(exclude_if=lambda x: "foo" in x)
+        b: str = Field(exclude_if=lambda x: 'foo' in x)
 
     assert Model(a=0, b='bar').model_dump() == {'a': 0, 'b': 'bar'}
     assert Model(a=2, b='bar').model_dump() == {'b': 'bar'}
