@@ -33,7 +33,7 @@ from uuid import UUID
 
 import annotated_types
 from annotated_types import BaseMetadata, MaxLen, MinLen
-from pydantic_core import CoreSchema, PydanticCustomError, core_schema
+from pydantic_core import CoreSchema, PydanticCustomError, SchemaSerializer, core_schema
 from typing_extensions import Annotated, Literal, Protocol, TypeAlias, TypeAliasType, deprecated
 
 from ._internal import _core_utils, _fields, _internal_dataclass, _typing_extra, _utils, _validators
@@ -1524,6 +1524,13 @@ class _SecretBase(Generic[SecretType]):
         raise NotImplementedError
 
 
+def _serialize_secret(value: Secret[SecretType], info: core_schema.SerializationInfo) -> str | Secret[SecretType]:
+    if info.mode == 'json':
+        return str(value)
+    else:
+        return value
+
+
 class Secret(_SecretBase[SecretType]):
     """A generic base class used for defining a field with sensitive information that you do not want to be visible in logging or tracebacks.
 
@@ -1660,12 +1667,6 @@ class Secret(_SecretBase[SecretType]):
             validated_inner = handler(value)
             return cls(validated_inner)
 
-        def serialize(value: Secret[SecretType], info: core_schema.SerializationInfo) -> str | Secret[SecretType]:
-            if info.mode == 'json':
-                return str(value)
-            else:
-                return value
-
         return core_schema.json_or_python_schema(
             python_schema=core_schema.no_info_wrap_validator_function(
                 validate_secret_value,
@@ -1673,15 +1674,36 @@ class Secret(_SecretBase[SecretType]):
             ),
             json_schema=core_schema.no_info_after_validator_function(lambda x: cls(x), inner_schema),
             serialization=core_schema.plain_serializer_function_ser_schema(
-                serialize,
+                _serialize_secret,
                 info_arg=True,
                 when_used='always',
             ),
         )
 
+    __pydantic_serializer__ = SchemaSerializer(
+        core_schema.any_schema(
+            serialization=core_schema.plain_serializer_function_ser_schema(
+                _serialize_secret,
+                info_arg=True,
+                when_used='always',
+            )
+        )
+    )
+
 
 def _secret_display(value: SecretType) -> str:  # type: ignore
     return '**********' if value else ''
+
+
+def _serialize_secret_field(
+    value: _SecretField[SecretType], info: core_schema.SerializationInfo
+) -> str | _SecretField[SecretType]:
+    if info.mode == 'json':
+        # we want the output to always be string without the `b'` prefix for bytes,
+        # hence we just use `secret_display`
+        return _secret_display(value.get_secret_value())
+    else:
+        return value
 
 
 class _SecretField(_SecretBase[SecretType]):
@@ -1690,16 +1712,6 @@ class _SecretField(_SecretBase[SecretType]):
 
     @classmethod
     def __get_pydantic_core_schema__(cls, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
-        def serialize(
-            value: _SecretField[SecretType], info: core_schema.SerializationInfo
-        ) -> str | _SecretField[SecretType]:
-            if info.mode == 'json':
-                # we want the output to always be string without the `b'` prefix for bytes,
-                # hence we just use `secret_display`
-                return _secret_display(value.get_secret_value())
-            else:
-                return value
-
         def get_json_schema(_core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
             json_schema = handler(cls._inner_schema)
             _utils.update_not_none(
@@ -1727,10 +1739,9 @@ class _SecretField(_SecretBase[SecretType]):
                 ),
                 json_schema=json_schema,
                 serialization=core_schema.plain_serializer_function_ser_schema(
-                    serialize,
+                    _serialize_secret_field,
                     info_arg=True,
-                    return_schema=core_schema.str_schema(),
-                    when_used='json',
+                    when_used='always',
                 ),
             )
 
@@ -1739,6 +1750,16 @@ class _SecretField(_SecretBase[SecretType]):
             strict_schema=get_secret_schema(strict=True),
             metadata={'pydantic_js_functions': [get_json_schema]},
         )
+
+    __pydantic_serializer__ = SchemaSerializer(
+        core_schema.any_schema(
+            serialization=core_schema.plain_serializer_function_ser_schema(
+                _serialize_secret_field,
+                info_arg=True,
+                when_used='always',
+            )
+        )
+    )
 
 
 class SecretStr(_SecretField[str]):
