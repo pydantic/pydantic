@@ -734,7 +734,7 @@ _T = TypeVar('_T')
 # to understand the magic that happens at runtime with the following overloads:
 @overload  # type hint the return value as `Any` to avoid type checking regressions when using `...`.
 def Field(
-    default: _typing_extra.EllipsisType,
+    default: ellipsis,  # noqa: F821  # TODO: use `_typing_extra.EllipsisType` when we drop Py3.9
     *,
     alias: str | None = _Unset,
     alias_priority: int | None = _Unset,
