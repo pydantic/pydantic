@@ -1,5 +1,5 @@
 import json
-from typing import Union
+from typing import Any, Union
 
 import pytest
 from pydantic_core import PydanticCustomError, Url
@@ -1105,3 +1105,9 @@ def test_after_validator() -> None:
     ]
     ta = TypeAdapter(HttpUrl)
     assert ta.validate_python('https://example.com/') == 'https://example.com'
+
+
+def test_serialize_as_any() -> None:
+    ta = TypeAdapter(Any)
+    assert ta.dump_python(HttpUrl('https://example.com')) == HttpUrl('https://example.com/')
+    assert ta.dump_json('https://example.com') == b'"https://example.com"'

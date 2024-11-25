@@ -7074,3 +7074,37 @@ def test_base64_with_invalid_min_length(base64_type) -> None:
 
     with pytest.raises(ValidationError):
         Model(**{'base64_value': b'123456'})
+
+
+def test_serialize_as_any_secret_types() -> None:
+    ta_secret_str = TypeAdapter(SecretStr)
+    secret_str = ta_secret_str.validate_python('secret')
+
+    ta_any = TypeAdapter(Any)
+
+    assert ta_any.dump_python(secret_str) == secret_str
+    assert ta_any.dump_python(secret_str, mode='json') == '**********'
+    assert ta_any.dump_json(secret_str) == b'"**********"'
+
+    ta_secret_bytes = TypeAdapter(SecretBytes)
+    secret_bytes = ta_secret_bytes.validate_python(b'secret')
+
+    assert ta_any.dump_python(secret_bytes) == secret_bytes
+    assert ta_any.dump_python(secret_bytes, mode='json') == '**********'
+    assert ta_any.dump_json(secret_bytes) == b'"**********"'
+
+    ta_secret_date = TypeAdapter(SecretDate)
+    secret_date = ta_secret_date.validate_python('2024-01-01')
+
+    assert ta_any.dump_python(secret_date) == secret_date
+    assert ta_any.dump_python(secret_date, mode='json') == '****/**/**'
+    assert ta_any.dump_json(secret_date) == b'"****/**/**"'
+
+
+def test_custom_serializer_override_secret_str() -> None:
+    class User(BaseModel):
+        name: str
+        password: Annotated[SecretStr, PlainSerializer(lambda x: f'secret: {str(x)}')]
+
+    u = User(name='sam', password='hi')
+    assert u.model_dump()['password'] == 'secret: **********'
