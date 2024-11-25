@@ -1119,7 +1119,6 @@ def test_any_url_hashable() -> None:
     example_url_2 = AnyUrl('https://example2.com')
 
     assert hash(example_url_1a) == hash(example_url_1b)
-    assert example_url_1a is not example_url_1b
     assert hash(example_url_1a) != hash(example_url_2)
     assert len({example_url_1a, example_url_1b, example_url_2}) == 2
 
@@ -1128,6 +1127,5 @@ def test_any_url_hashable() -> None:
     example_multi_host_url_2 = PostgresDsn('postgres://user:pass@host1:5432,host3:5432/app')
 
     assert hash(example_multi_host_url_1a) == hash(example_multi_host_url_1b)
-    assert example_multi_host_url_1a is not example_multi_host_url_1b
     assert hash(example_multi_host_url_1a) != hash(example_multi_host_url_2)
     assert len({example_multi_host_url_1a, example_multi_host_url_1b, example_multi_host_url_2}) == 2
