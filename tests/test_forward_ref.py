@@ -598,6 +598,13 @@ Forward = int
     assert module.Model.__private_attributes__ == {}
 
 
+def test_private_attr_annotation_not_evaluated() -> None:
+    class Model(BaseModel):
+        _a: 'UnknownAnnotation'
+
+    assert '_a' in Model.__private_attributes__
+
+
 def test_json_encoder_str(create_module):
     module = create_module(
         # language=Python

@@ -1432,9 +1432,7 @@ class GenerateSchema:
                     field_docstrings = None
 
                 try:
-                    annotations = _typing_extra.get_cls_type_hints(
-                        typed_dict_cls, ns_resolver=self._ns_resolver, lenient=False
-                    )
+                    annotations = _typing_extra.get_cls_type_hints(typed_dict_cls, ns_resolver=self._ns_resolver)
                 except NameError as e:
                     raise PydanticUndefinedAnnotation.from_name_error(e) from e
 
@@ -1496,9 +1494,7 @@ class GenerateSchema:
                 namedtuple_cls = origin
 
             try:
-                annotations = _typing_extra.get_cls_type_hints(
-                    namedtuple_cls, ns_resolver=self._ns_resolver, lenient=False
-                )
+                annotations = _typing_extra.get_cls_type_hints(namedtuple_cls, ns_resolver=self._ns_resolver)
             except NameError as e:
                 raise PydanticUndefinedAnnotation.from_name_error(e) from e
             if not annotations:

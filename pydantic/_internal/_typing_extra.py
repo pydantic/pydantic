@@ -9,7 +9,7 @@ import types
 import typing
 import warnings
 from functools import lru_cache, partial
-from typing import Any, Callable, Literal, overload
+from typing import TYPE_CHECKING, Any, Callable
 
 import typing_extensions
 from typing_extensions import TypeIs, deprecated, get_args, get_origin
@@ -23,6 +23,8 @@ else:
     from types import EllipsisType as EllipsisType
     from types import NoneType as NoneType
 
+if TYPE_CHECKING:
+    from pydantic import BaseModel
 
 # See https://typing-extensions.readthedocs.io/en/latest/#runtime-use-of-types:
 
@@ -467,34 +469,21 @@ def _type_convert(arg: Any) -> Any:
     return arg
 
 
-@overload
-def get_cls_type_hints(
-    obj: type[Any],
+def get_model_type_hints(
+    obj: type[BaseModel],
     *,
     ns_resolver: NsResolver | None = None,
-    lenient: Literal[True],
-) -> dict[str, tuple[Any, bool]]: ...
-@overload
-def get_cls_type_hints(
-    obj: type[Any],
-    *,
-    ns_resolver: NsResolver | None = None,
-    lenient: Literal[False] = ...,
-) -> dict[str, Any]: ...
-def get_cls_type_hints(
-    obj: type[Any],
-    *,
-    ns_resolver: NsResolver | None = None,
-    lenient: bool = False,
-) -> dict[str, Any] | dict[str, tuple[Any, bool]]:
-    """Collect annotations from a class, including those from parent classes.
+) -> dict[str, tuple[Any, bool]]:
+    """Collect annotations from a Pydantic model class, including those from parent classes.
 
     Args:
-        obj: The class to inspect.
+        obj: The Pydantic model to inspect.
         ns_resolver: A namespace resolver instance to use. Defaults to an empty instance.
-        lenient: Whether to keep unresolvable annotations as is or re-raise the `NameError` exception.
-            If lenient, an extra boolean flag is set for each annotation value to indicate whether the
-            evaluation succeeded or not. Default: re-raise.
+
+    Returns:
+        A dictionary mapping annotation names to a two-tuple: the first element is the evaluated
+        type or the original annotation if a `NameError` occurred, the second element is a boolean
+        indicating if whether the evaluation succeeded.
     """
     hints: dict[str, Any] | dict[str, tuple[Any, bool]] = {}
     ns_resolver = ns_resolver or NsResolver()
@@ -506,10 +495,43 @@ def get_cls_type_hints(
         with ns_resolver.push(base):
             globalns, localns = ns_resolver.types_namespace
             for name, value in ann.items():
-                if lenient:
-                    hints[name] = try_eval_type(value, globalns, localns)
+                if name.startswith('_'):
+                    # For private attributes, we only need the annotation to detect the `ClassVar` special form.
+                    # For this reason, we still try to evaluate it, but we also catch any possible exception (on
+                    # top of the `NameError`s caught in `try_eval_type`) that could happen so that users are free
+                    # to use any kind of forward annotation for private fields (e.g. circular imports, new typing
+                    # syntax, etc).
+                    try:
+                        hints[name] = try_eval_type(value, globalns, localns)
+                    except Exception:
+                        hints[name] = (value, False)
                 else:
-                    hints[name] = eval_type(value, globalns, localns)
+                    hints[name] = try_eval_type(value, globalns, localns)
+    return hints
+
+
+def get_cls_type_hints(
+    obj: type[Any],
+    *,
+    ns_resolver: NsResolver | None = None,
+) -> dict[str, Any]:
+    """Collect annotations from a class, including those from parent classes.
+
+    Args:
+        obj: The class to inspect.
+        ns_resolver: A namespace resolver instance to use. Defaults to an empty instance.
+    """
+    hints: dict[str, Any] | dict[str, tuple[Any, bool]] = {}
+    ns_resolver = ns_resolver or NsResolver()
+
+    for base in reversed(obj.__mro__):
+        ann: dict[str, Any] | None = base.__dict__.get('__annotations__')
+        if not ann or isinstance(ann, types.GetSetDescriptorType):
+            continue
+        with ns_resolver.push(base):
+            globalns, localns = ns_resolver.types_namespace
+            for name, value in ann.items():
+                hints[name] = eval_type(value, globalns, localns)
     return hints
 
 
