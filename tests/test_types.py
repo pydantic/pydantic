@@ -7099,3 +7099,12 @@ def test_serialize_as_any_secret_types() -> None:
     assert ta_any.dump_python(secret_date) == secret_date
     assert ta_any.dump_python(secret_date, mode='json') == '****/**/**'
     assert ta_any.dump_json(secret_date) == b'"****/**/**"'
+
+
+def test_custom_serializer_override_secret_str() -> None:
+    class User(BaseModel):
+        name: str
+        password: Annotated[SecretStr, PlainSerializer(lambda x: f'secret: {str(x)}')]
+
+    u = User(name='sam', password='hi')
+    assert u.model_dump()['password'] == 'secret: **********'
