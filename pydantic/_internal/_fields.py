@@ -109,7 +109,7 @@ def collect_model_fields(  # noqa: C901
         if model_fields := getattr(base, '__pydantic_fields__', None):
             parent_fields_lookup.update(model_fields)
 
-    type_hints = _typing_extra.get_cls_type_hints(cls, ns_resolver=ns_resolver, lenient=True)
+    type_hints = _typing_extra.get_model_type_hints(cls, ns_resolver=ns_resolver)
 
     # https://docs.python.org/3/howto/annotations.html#accessing-the-annotations-dict-of-an-object-in-python-3-9-and-older
     # annotations is only used for finding fields in parent classes
@@ -216,7 +216,6 @@ def collect_model_fields(  # noqa: C901
                     # Nothing stops us from just creating a new FieldInfo for this type hint, so we do this.
                     field_info = FieldInfo_.from_annotation(ann_type)
                     field_info.evaluated = evaluated
-
         else:
             _warn_on_nested_alias_in_annotation(ann_type, ann_name)
             if isinstance(default, FieldInfo_) and ismethoddescriptor(default.default):
