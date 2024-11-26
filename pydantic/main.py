@@ -871,10 +871,6 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         return m
 
-    def __replace__(self, **changes: Any) -> Self:
-        """Creates a new instance of the model, replacing fields with values from changes. Relevant for v3.13+."""
-        return self.model_copy(update=changes)
-
     if not TYPE_CHECKING:
         # We put `__getattr__` in a non-TYPE_CHECKING block because otherwise, mypy allows arbitrary attribute access
         # The same goes for __setattr__ and __delattr__, see: https://github.com/pydantic/pydantic/issues/8643
@@ -995,6 +991,11 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                     object.__delattr__(self, item)
                 except AttributeError:
                     raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+
+        # Because we make use of `@dataclass_transform()`, `__replace__` is already synthesized by
+        # type checkers, so we define the implementation in this `if not TYPE_CHECKING:` block:
+        def __replace__(self, **changes: Any) -> Self:
+            return self.model_copy(update=changes)
 
     @classmethod
     def _check_frozen(cls, name: str, value: Any) -> None:
