@@ -326,8 +326,10 @@ impl Validator for DataclassArgsValidator {
                                                 Err(err) => return Err(err),
                                             }
                                         } else {
-                                            output_dict
-                                                .set_item(either_str.as_py_string(py, state.cache_str()), value)?;
+                                            output_dict.set_item(
+                                                either_str.as_py_string(py, state.cache_str()),
+                                                value.to_object(py),
+                                            )?;
                                         }
                                     }
                                 }

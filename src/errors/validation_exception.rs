@@ -386,7 +386,7 @@ impl ValidationError {
         let args = (
             borrow.title.bind(py),
             borrow.errors(py, include_url_env(py), true, true)?,
-            borrow.input_type.into_py(py),
+            borrow.input_type.into_pyobject(py)?,
             borrow.hide_input,
         )
             .into_py(slf.py());

@@ -1,5 +1,5 @@
-use std::cell::RefCell;
 use std::fmt;
+use std::sync::Mutex;
 
 use pyo3::exceptions::{PyTypeError, PyValueError};
 use pyo3::intern;
@@ -370,18 +370,27 @@ impl From<bool> for WarningsMode {
     }
 }
 
-#[derive(Clone)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub(crate) struct CollectWarnings {
     mode: WarningsMode,
-    warnings: RefCell<Option<Vec<String>>>,
+    // FIXME: mutex is to satisfy PyO3 0.23, we should be able to refactor this away
+    warnings: Mutex<Vec<String>>,
+}
+
+impl Clone for CollectWarnings {
+    fn clone(&self) -> Self {
+        Self {
+            mode: self.mode,
+            warnings: Mutex::new(self.warnings.lock().expect("lock poisoned").clone()),
+        }
+    }
 }
 
 impl CollectWarnings {
     pub(crate) fn new(mode: WarningsMode) -> Self {
         Self {
             mode,
-            warnings: RefCell::new(None),
+            warnings: Mutex::new(Vec::new()),
         }
     }
 
@@ -447,41 +456,46 @@ impl CollectWarnings {
     }
 
     fn add_warning(&self, message: String) {
-        let mut op_warnings = self.warnings.borrow_mut();
-        if let Some(ref mut warnings) = *op_warnings {
-            warnings.push(message);
-        } else {
-            *op_warnings = Some(vec![message]);
-        }
+        self.warnings.lock().expect("lock poisoned").push(message);
     }
 
     pub fn final_check(&self, py: Python) -> PyResult<()> {
         if self.mode == WarningsMode::None {
             return Ok(());
         }
-        match *self.warnings.borrow() {
-            Some(ref warnings) => {
-                let message = format!("Pydantic serializer warnings:\n  {}", warnings.join("\n  "));
-                if self.mode == WarningsMode::Warn {
-                    let user_warning_type = py.import_bound("builtins")?.getattr("UserWarning")?;
-                    PyErr::warn_bound(py, &user_warning_type, &message, 0)
-                } else {
-                    Err(PydanticSerializationError::new_err(message))
-                }
-            }
-            _ => Ok(()),
+        let warnings = self.warnings.lock().expect("lock poisoned");
+
+        if warnings.is_empty() {
+            return Ok(());
+        }
+
+        let message = format!("Pydantic serializer warnings:\n  {}", warnings.join("\n  "));
+        if self.mode == WarningsMode::Warn {
+            let user_warning_type = py.import_bound("builtins")?.getattr("UserWarning")?;
+            PyErr::warn_bound(py, &user_warning_type, &message, 0)
+        } else {
+            Err(PydanticSerializationError::new_err(message))
         }
     }
 }
 
-#[derive(Default, Clone)]
+#[derive(Default)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct SerRecursionState {
-    guard: RefCell<RecursionState>,
+    // FIXME: mutex is to satisfy PyO3 0.23, we should be able to refactor this away
+    guard: Mutex<RecursionState>,
+}
+
+impl Clone for SerRecursionState {
+    fn clone(&self) -> Self {
+        Self {
+            guard: Mutex::new(self.guard.lock().expect("lock poisoned").clone()),
+        }
+    }
 }
 
 impl ContainsRecursionState for &'_ Extra<'_> {
     fn access_recursion_state<R>(&mut self, f: impl FnOnce(&mut RecursionState) -> R) -> R {
-        f(&mut self.rec_guard.guard.borrow_mut())
+        f(&mut self.rec_guard.guard.lock().expect("lock poisoned"))
     }
 }
