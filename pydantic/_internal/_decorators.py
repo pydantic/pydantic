@@ -203,9 +203,9 @@ class PydanticDescriptorProxy(Generic[ReturnType]):
         if hasattr(self.wrapped, '__set_name__'):
             self.wrapped.__set_name__(instance, name)  # pyright: ignore[reportFunctionMemberAccess]
 
-    def __getattr__(self, __name: str) -> Any:
+    def __getattr__(self, name: str, /) -> Any:
         """Forward checks for __isabstractmethod__ and such."""
-        return getattr(self.wrapped, __name)
+        return getattr(self.wrapped, name)
 
 
 DecoratorInfoType = TypeVar('DecoratorInfoType', bound=DecoratorInfo)
