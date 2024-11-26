@@ -279,9 +279,9 @@ pub(crate) fn create_decimal<'py>(arg: &Bound<'py, PyAny>, input: impl ToErrorVa
 
 fn handle_decimal_new_error(input: impl ToErrorValue, error: PyErr, decimal_exception: Bound<'_, PyAny>) -> ValError {
     let py = decimal_exception.py();
-    if error.matches(py, decimal_exception) {
+    if error.matches(py, decimal_exception).unwrap_or(false) {
         ValError::new(ErrorTypeDefaults::DecimalParsing, input)
-    } else if error.matches(py, PyTypeError::type_object_bound(py)) {
+    } else if error.matches(py, PyTypeError::type_object_bound(py)).unwrap_or(false) {
         ValError::new(ErrorTypeDefaults::DecimalType, input)
     } else {
         ValError::InternalErr(error)

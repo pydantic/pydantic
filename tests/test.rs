@@ -1,3 +1,5 @@
+#![allow(deprecated)] // FIXME: just used during upgrading PyO3 to 0.23
+
 #[cfg(test)]
 mod tests {
     use _pydantic_core::{SchemaSerializer, SchemaValidator, WarningsArg};

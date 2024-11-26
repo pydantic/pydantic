@@ -347,7 +347,8 @@ impl Validator for ArgumentsValidator {
                             },
                             VarKwargsMode::UnpackedTypedDict => {
                                 // Save to the remaining kwargs, we will validate as a single dict:
-                                remaining_kwargs.set_item(either_str.as_py_string(py, state.cache_str()), value)?;
+                                remaining_kwargs
+                                    .set_item(either_str.as_py_string(py, state.cache_str()), value.to_object(py))?;
                             }
                         }
                     }

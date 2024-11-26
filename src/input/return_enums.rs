@@ -278,9 +278,8 @@ pub(crate) fn iterate_mapping_items<'a, 'py>(
         .items()
         .map_err(|e| mapping_err(e, py, input))?
         .iter()
-        .map_err(|e| mapping_err(e, py, input))?
-        .map(move |item| match item {
-            Ok(item) => item.extract().map_err(|_| {
+        .map(move |item| {
+            item.extract().map_err(|_| {
                 ValError::new(
                     ErrorType::MappingType {
                         error: MAPPING_TUPLE_ERROR.into(),
@@ -288,8 +287,7 @@ pub(crate) fn iterate_mapping_items<'a, 'py>(
                     },
                     input,
                 )
-            }),
-            Err(e) => Err(mapping_err(e, py, input)),
+            })
         });
     Ok(iterator)
 }

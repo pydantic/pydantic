@@ -527,7 +527,7 @@ impl TzInfo {
     }
 
     #[allow(unused_variables)]
-    fn dst(&self, dt: &Bound<'_, PyAny>) -> Option<&PyDelta> {
+    fn dst(&self, dt: &Bound<'_, PyAny>) -> Option<Bound<'_, PyDelta>> {
         None
     }
 
