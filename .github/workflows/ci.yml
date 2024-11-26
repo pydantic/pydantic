@@ -556,50 +556,12 @@ jobs:
           # FIXME: Unpin when Python 3.8 support is dropped. (3.9 requires Windows 10)
           toolchain: ${{ (matrix.os == 'windows' && '1.77') || 'stable' }}
 
-      - run: pip install -U 'ruff==0.5.0' typing_extensions
-
-      # generate self-schema now, so we don't have to do so inside docker in maturin build
-      - run: python generate_self_schema.py
-
-      - name: build initial wheel
-        uses: PyO3/maturin-action@v1
+      - name: Build PGO wheel
+        id: pgo-wheel
+        uses: ./.github/actions/build-pgo-wheel
         with:
-          manylinux: auto
-          args: >
-            --release
-            --out pgo-wheel
-            --interpreter ${{ matrix.interpreter }}
+          interpreter: ${{ env.UV_PYTHON }}
           rust-toolchain: ${{ steps.rust-toolchain.outputs.name }}
-          docker-options: -e CI
-        env:
-          RUSTFLAGS: '-Cprofile-generate=${{ github.workspace }}/profdata'
-
-      - name: detect rust host
-        run: echo RUST_HOST=$(rustc -Vv | grep host | cut -d ' ' -f 2) >> "$GITHUB_ENV"
-        shell: bash
-
-      - name: generate pgo data
-        run: |
-          uv sync --group testing
-          uv pip install pydantic-core --no-index --no-deps --find-links pgo-wheel --force-reinstall
-          uv run pytest tests/benchmarks
-          rustup run ${{ steps.rust-toolchain.outputs.name }} bash -c 'echo LLVM_PROFDATA=$RUSTUP_HOME/toolchains/$RUSTUP_TOOLCHAIN/lib/rustlib/${{ env.RUST_HOST }}/bin/llvm-profdata >> "$GITHUB_ENV"'
-
-      - name: merge pgo data
-        run: ${{ env.LLVM_PROFDATA }} merge -o ${{ github.workspace }}/merged.profdata ${{ github.workspace }}/profdata
-
-      - name: build pgo-optimized wheel
-        uses: PyO3/maturin-action@v1
-        with:
-          manylinux: auto
-          args: >
-            --release
-            --out dist
-            --interpreter ${{ matrix.interpreter }}
-          rust-toolchain: ${{steps.rust-toolchain.outputs.name}}
-          docker-options: -e CI
-        env:
-          RUSTFLAGS: '-Cprofile-use=${{ github.workspace }}/merged.profdata'
 
       - run: ${{ matrix.ls || 'ls -lh' }} dist/
 

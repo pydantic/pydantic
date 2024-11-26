@@ -82,6 +82,10 @@ wasm = [
     'maturin>=1,<2',
     'ruff',
 ]
+codspeed = [
+    # codspeed is only run on CI, with latest version of CPython
+    'pytest-codspeed; python_version == "3.13" and implementation_name == "cpython"',
+]
 
 all = [
   { include-group = 'testing' },
