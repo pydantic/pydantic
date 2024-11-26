@@ -5030,7 +5030,8 @@ is set to <code>'allow'</code>.</p>
 <span class="normal">1527</span>
 <span class="normal">1528</span>
 <span class="normal">1529</span>
-<span class="normal">1530</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">BaseModel</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">_model_construction</span><span class="o">.</span><span class="n">ModelMetaclass</span><span class="p">):</span>
+<span class="normal">1530</span>
+<span class="normal">1531</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">BaseModel</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">_model_construction</span><span class="o">.</span><span class="n">ModelMetaclass</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Usage docs: https://docs.pydantic.dev/2.10/concepts/models/</span>
 
 <span class="sd">    A base class for creating Pydantic models.</span>
@@ -5804,10 +5805,6 @@ is set to <code>'allow'</code>.</p>
 
         <span class="k">return</span> <span class="n">m</span>
 
-    <span class="k">def</span> <span class="nf">__replace__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">changes</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates a new instance of the model, replacing fields with values from changes. Relevant for v3.13+.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_copy</span><span class="p">(</span><span class="n">update</span><span class="o">=</span><span class="n">changes</span><span class="p">)</span>
-
     <span class="k">if</span> <span class="ow">not</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
         <span class="c1"># We put `__getattr__` in a non-TYPE_CHECKING block because otherwise, mypy allows arbitrary attribute access</span>
         <span class="c1"># The same goes for __setattr__ and __delattr__, see: https://github.com/pydantic/pydantic/issues/8643</span>
@@ -5918,6 +5915,11 @@ is set to <code>'allow'</code>.</p>
                     <span class="nb">object</span><span class="o">.</span><span class="fm">__delattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
                 <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">!r}</span><span class="s1"> object has no attribute </span><span class="si">{</span><span class="n">item</span><span class="si">!r}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Because we make use of `@dataclass_transform()`, `__replace__` is already synthesized by</span>
+        <span class="c1"># type checkers, so we define the implementation in this `if not TYPE_CHECKING:` block:</span>
+        <span class="k">def</span> <span class="nf">__replace__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">changes</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_copy</span><span class="p">(</span><span class="n">update</span><span class="o">=</span><span class="n">changes</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_check_frozen</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;frozen&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
@@ -9251,8 +9253,7 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/main.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1339</span>
-<span class="normal">1340</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1340</span>
 <span class="normal">1341</span>
 <span class="normal">1342</span>
 <span class="normal">1343</span>
@@ -9326,7 +9327,8 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
 <span class="normal">1411</span>
 <span class="normal">1412</span>
 <span class="normal">1413</span>
-<span class="normal">1414</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@typing_extensions</span><span class="o">.</span><span class="n">deprecated</span><span class="p">(</span>
+<span class="normal">1414</span>
+<span class="normal">1415</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@typing_extensions</span><span class="o">.</span><span class="n">deprecated</span><span class="p">(</span>
     <span class="s1">&#39;The `copy` method is deprecated; use `model_copy` instead. &#39;</span>
     <span class="s1">&#39;See the docstring of `BaseModel.copy` for details about how to handle `include` and `exclude`.&#39;</span><span class="p">,</span>
     <span class="n">category</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -9649,8 +9651,7 @@ Initializing <code>FieldInfo</code> instances directly is not supported.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/main.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1566</span>
-<span class="normal">1567</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1567</span>
 <span class="normal">1568</span>
 <span class="normal">1569</span>
 <span class="normal">1570</span>
@@ -9768,7 +9769,8 @@ Initializing <code>FieldInfo</code> instances directly is not supported.</p>
 <span class="normal">1682</span>
 <span class="normal">1683</span>
 <span class="normal">1684</span>
-<span class="normal">1685</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">create_model</span><span class="p">(</span>  <span class="c1"># noqa: C901</span>
+<span class="normal">1685</span>
+<span class="normal">1686</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">create_model</span><span class="p">(</span>  <span class="c1"># noqa: C901</span>
     <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="o">/</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -9953,7 +9955,7 @@ Initializing <code>FieldInfo</code> instances directly is not supported.</p>
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.10.1", "pydantic-core==2.27.1", "pydantic-extra-types==2.10.0"]
+    window.mkdocs_run_deps = ["pydantic==2.10.2", "pydantic-core==2.27.1", "pydantic-extra-types==2.10.0"]
     </script>
 
               </article>
