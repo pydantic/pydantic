@@ -6,6 +6,7 @@
 
 #### Fixes
 
+* Only evaluate FieldInfo annotations if required during schema building in [#10769](https://github.com/pydantic/pydantic/pull/10769)
 * Do not evaluate annotations for private fields by @Viicos in [#10962](https://github.com/pydantic/pydantic/pull/10962)
 * Support serialization as any for `Secret` types and `Url` types by @sydney-runkle in [#10947](https://github.com/pydantic/pydantic/pull/10947)
 * Fix type hint of `Field.default` to be compatible with Python 3.8 and 3.9 by @Viicos in [#10972](https://github.com/pydantic/pydantic/pull/10972)
