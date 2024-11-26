@@ -4,6 +4,7 @@ use std::fmt;
 use pyo3::exceptions::{PyAttributeError, PyTypeError};
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyMapping, PyString};
+use pyo3::IntoPyObjectExt;
 
 use jiter::{JsonObject, JsonValue};
 
@@ -407,14 +408,18 @@ impl fmt::Display for PathItem {
     }
 }
 
-impl ToPyObject for PathItem {
-    fn to_object(&self, py: Python<'_>) -> PyObject {
+impl<'py> IntoPyObject<'py> for &'_ PathItem {
+    type Target = PyAny;
+    type Output = Bound<'py, PyAny>;
+    type Error = PyErr;
+
+    fn into_pyobject(self, py: Python<'py>) -> Result<Self::Output, Self::Error> {
         match self {
-            Self::S(_, val) => val.to_object(py),
-            Self::Pos(val) => val.to_object(py),
-            Self::Neg(val) => {
+            PathItem::S(_, val) => Ok(val.bind(py).clone().into_any()),
+            PathItem::Pos(val) => val.into_bound_py_any(py),
+            PathItem::Neg(val) => {
                 let neg_value = -(*val as i64);
-                neg_value.to_object(py)
+                neg_value.into_bound_py_any(py)
             }
         }
     }

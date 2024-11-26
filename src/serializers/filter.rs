@@ -132,7 +132,7 @@ impl SchemaFilter<isize> {
 
     pub fn key_filter<'py>(
         &self,
-        key: &Bound<'_, PyAny>,
+        key: &Bound<'py, PyAny>,
         include: Option<&Bound<'py, PyAny>>,
         exclude: Option<&Bound<'py, PyAny>>,
     ) -> PyResult<NextFilters<'py>> {
@@ -152,7 +152,7 @@ trait FilterLogic<T: Eq + Copy> {
     /// 2. or include it, in which case, what values of `include` and `exclude` should be passed to it
     fn filter<'py>(
         &self,
-        py_key: impl ToPyObject + Copy,
+        py_key: impl IntoPyObject<'py> + Copy,
         int_key: T,
         include: Option<&Bound<'py, PyAny>>,
         exclude: Option<&Bound<'py, PyAny>>,
@@ -266,7 +266,7 @@ impl AnyFilter {
 
     pub fn key_filter<'py>(
         &self,
-        key: &Bound<'_, PyAny>,
+        key: &Bound<'py, PyAny>,
         include: Option<&Bound<'py, PyAny>>,
         exclude: Option<&Bound<'py, PyAny>>,
     ) -> PyResult<NextFilters<'py>> {
@@ -289,11 +289,11 @@ impl AnyFilter {
 
 /// if a `__contains__` method exists, call it with the key and `__all__`, and return the result
 /// if it doesn't exist, or calling it fails (e.g. it's not a function), return `None`
-fn check_contains(obj: &Bound<'_, PyAny>, py_key: impl ToPyObject + Copy) -> PyResult<Option<bool>> {
+fn check_contains<'py>(obj: &Bound<'py, PyAny>, py_key: impl IntoPyObject<'py> + Copy) -> PyResult<Option<bool>> {
     let py = obj.py();
     match obj.getattr(intern!(py, "__contains__")) {
         Ok(contains_method) => {
-            if let Ok(result) = contains_method.call1((py_key.to_object(py),)) {
+            if let Ok(result) = contains_method.call1((py_key,)) {
                 Ok(Some(
                     result.is_truthy()? || contains_method.call1((intern!(py, "__all__"),))?.is_truthy()?,
                 ))
@@ -330,7 +330,7 @@ fn is_ellipsis_like(v: &Bound<'_, PyAny>) -> bool {
 /// lookup the dict, for the key and "__all__" key, and merge them following the same rules as pydantic V1
 fn merge_all_value<'py>(
     dict: &Bound<'py, PyDict>,
-    py_key: impl ToPyObject + Copy,
+    py_key: impl IntoPyObject<'py> + Copy,
 ) -> PyResult<Option<Bound<'py, PyAny>>> {
     let op_item_value = dict.get_item(py_key)?;
     let op_all_value = dict.get_item(intern!(dict.py(), "__all__"))?;

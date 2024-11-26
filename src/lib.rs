@@ -1,4 +1,5 @@
 #![cfg_attr(has_coverage_attribute, feature(coverage_attribute))]
+#![allow(deprecated)] // FIXME: just used during upgrading PyO3 to 0.23
 
 extern crate core;
 

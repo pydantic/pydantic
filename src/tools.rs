@@ -11,17 +11,17 @@ use crate::input::Int;
 use jiter::{cached_py_string, pystring_fast_new, StringCacheMode};
 
 pub trait SchemaDict<'py> {
-    fn get_as<T>(&self, key: &Bound<'_, PyString>) -> PyResult<Option<T>>
+    fn get_as<T>(&self, key: &Bound<'py, PyString>) -> PyResult<Option<T>>
     where
         T: FromPyObject<'py>;
 
-    fn get_as_req<T>(&self, key: &Bound<'_, PyString>) -> PyResult<T>
+    fn get_as_req<T>(&self, key: &Bound<'py, PyString>) -> PyResult<T>
     where
         T: FromPyObject<'py>;
 }
 
 impl<'py> SchemaDict<'py> for Bound<'py, PyDict> {
-    fn get_as<T>(&self, key: &Bound<'_, PyString>) -> PyResult<Option<T>>
+    fn get_as<T>(&self, key: &Bound<'py, PyString>) -> PyResult<Option<T>>
     where
         T: FromPyObject<'py>,
     {
@@ -31,7 +31,7 @@ impl<'py> SchemaDict<'py> for Bound<'py, PyDict> {
         }
     }
 
-    fn get_as_req<T>(&self, key: &Bound<'_, PyString>) -> PyResult<T>
+    fn get_as_req<T>(&self, key: &Bound<'py, PyString>) -> PyResult<T>
     where
         T: FromPyObject<'py>,
     {
@@ -43,7 +43,7 @@ impl<'py> SchemaDict<'py> for Bound<'py, PyDict> {
 }
 
 impl<'py> SchemaDict<'py> for Option<&Bound<'py, PyDict>> {
-    fn get_as<T>(&self, key: &Bound<'_, PyString>) -> PyResult<Option<T>>
+    fn get_as<T>(&self, key: &Bound<'py, PyString>) -> PyResult<Option<T>>
     where
         T: FromPyObject<'py>,
     {
@@ -54,7 +54,7 @@ impl<'py> SchemaDict<'py> for Option<&Bound<'py, PyDict>> {
     }
 
     #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn get_as_req<T>(&self, key: &Bound<'_, PyString>) -> PyResult<T>
+    fn get_as_req<T>(&self, key: &Bound<'py, PyString>) -> PyResult<T>
     where
         T: FromPyObject<'py>,
     {
