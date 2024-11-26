@@ -11,7 +11,7 @@
 * Support serialization as any for `Secret` types and `Url` types by @sydney-runkle in [#10947](https://github.com/pydantic/pydantic/pull/10947)
 * Fix type hint of `Field.default` to be compatible with Python 3.8 and 3.9 by @Viicos in [#10972](https://github.com/pydantic/pydantic/pull/10972)
 * Add hashing support for URL types by @sydney-runkle in [#10975](https://github.com/pydantic/pydantic/pull/10975)
-* Hide `BaseModel.__replace__` definition from type checkers in [10979](https://github.com/pydantic/pydantic/pull/10979)
+* Hide `BaseModel.__replace__` definition from type checkers by @Viicos in [10979](https://github.com/pydantic/pydantic/pull/10979)
 
 ## v2.10.1 (2024-11-21)
 
