@@ -1278,6 +1278,10 @@ PropertyT = typing.TypeVar('PropertyT')
 
 
 @typing.overload
+def computed_field(func: PropertyT, /) -> PropertyT: ...
+
+
+@typing.overload
 def computed_field(
     *,
     alias: str | None = None,
@@ -1291,10 +1295,6 @@ def computed_field(
     repr: bool = True,
     return_type: Any = PydanticUndefined,
 ) -> typing.Callable[[PropertyT], PropertyT]: ...
-
-
-@typing.overload
-def computed_field(__func: PropertyT) -> PropertyT: ...
 
 
 def computed_field(

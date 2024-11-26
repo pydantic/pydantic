@@ -557,7 +557,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         params_component = ', '.join(param_names)
         return f'{cls.__name__}[{params_component}]'
 
-    def model_post_init(self, __context: Any) -> None:
+    def model_post_init(self, context: Any, /) -> None:
         """Override this method to perform additional initialization after `__init__` and `model_construct`.
         This is useful if you want to do some validation that requires the entire model to be initialized.
         """
