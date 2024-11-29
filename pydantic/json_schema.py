@@ -2303,13 +2303,13 @@ class GenerateJsonSchema:
             next_json_ref = unvisited_json_refs.pop()
             try:
                 next_defs_ref = self.json_to_defs_refs[next_json_ref]
-                if next_defs_ref in visited_defs_refs:
-                    continue
-                visited_defs_refs.add(next_defs_ref)
-                unvisited_json_refs.update(_get_all_json_refs(self.definitions[next_defs_ref]))
             except KeyError:
                 # We assume this was provided by the user and not by Pydantic, just ignore
-                return None
+                continue
+            if next_defs_ref in visited_defs_refs:
+                continue
+            visited_defs_refs.add(next_defs_ref)
+            unvisited_json_refs.update(_get_all_json_refs(self.definitions[next_defs_ref]))
 
         self.definitions = {k: v for k, v in self.definitions.items() if k in visited_defs_refs}
 
