@@ -2134,9 +2134,8 @@ class GenerateJsonSchema:
                 raise self._core_defs_invalid_for_json_schema[def_ref]
             return self.definitions.get(def_ref, None)
         except KeyError:
-            if json_ref.startswith(('http://', 'https://')):
-                return None
-            raise
+            # We assume this was provided by the user and not by Pydantic, just ignore
+            return None
 
     def encode_default(self, dft: Any) -> Any:
         """Encode a default value to a JSON-serializable value.
@@ -2233,21 +2232,17 @@ class GenerateJsonSchema:
         def _add_json_refs(schema: Any) -> None:
             if isinstance(schema, dict):
                 if '$ref' in schema:
-                    json_ref = JsonRef(schema['$ref'])
                     if not isinstance(json_ref, str):
                         return  # in this case, '$ref' might have been the name of a property
+                    json_ref = JsonRef(schema['$ref'])
                     already_visited = json_ref in json_refs
                     json_refs[json_ref] += 1
                     if already_visited:
                         return  # prevent recursion on a definition that was already visited
-                    try:
-                        defs_ref = self.json_to_defs_refs[json_ref]
-                        if defs_ref in self._core_defs_invalid_for_json_schema:
-                            raise self._core_defs_invalid_for_json_schema[defs_ref]
-                        _add_json_refs(self.definitions[defs_ref])
-                    except KeyError:
-                        if not json_ref.startswith(('http://', 'https://')):
-                            raise
+                    
+                    definition = self.get_schema_from_definitions(json_ref)
+                    if definition is not None:
+                        _add_json_refs(definition)
 
                 for k, v in schema.items():
                     if k == 'examples':
@@ -2313,8 +2308,8 @@ class GenerateJsonSchema:
                 visited_defs_refs.add(next_defs_ref)
                 unvisited_json_refs.update(_get_all_json_refs(self.definitions[next_defs_ref]))
             except KeyError:
-                if not next_json_ref.startswith(('http://', 'https://')):
-                    raise
+                # We assume this was provided by the user and not by Pydantic, just ignore
+                return None
 
         self.definitions = {k: v for k, v in self.definitions.items() if k in visited_defs_refs}
 
