@@ -1139,11 +1139,11 @@ class StaticFoobarModel(BaseModel):
 
 Here `StaticFoobarModel` and `DynamicFoobarModel` are identical.
 
-Fields are defined by one of the following tuple forms:
+Fields are defined by one of the following forms:
 
 * `(<type>, <default value>)`
 * `(<type>, Field(...))`
-* `typing.Annotated[<type>, Field(...)]`
+* `typing.Annotated[<type>, Field(...), ...]`
 
 Using a `Field(...)` call as the second argument in the tuple (the default value)
 allows for more advanced field configuration. Thus, the following are analogous:
@@ -1160,6 +1160,9 @@ DynamicModel = create_model(
 class StaticModel(BaseModel):
     foo: str = Field(description='foo description', alias='FOO')
 ```
+
+The third form, using `typing.Annotated`, accepts multiple `Field(...)` values
+which will be merged.
 
 The special keyword arguments `__config__` and `__base__` can be used to customize the new model.
 This includes extending a base model with extra fields.

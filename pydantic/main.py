@@ -1667,16 +1667,26 @@ def create_model(  # noqa: C901
                 ) from e
 
         elif _typing_extra.is_annotated(f_def):
-            (f_annotation, f_value, *_) = typing_extensions.get_args(
-                f_def
-            )  # first two input are expected from Annotated, refer to https://docs.python.org/3/library/typing.html#typing.Annotated
+            (f_annotation, *metadata) = typing_extensions.get_args(f_def)
             FieldInfo = _import_utils.import_cached_field_info()
 
-            if not isinstance(f_value, FieldInfo):
+            field_infos, extras = [], []
+            for m in metadata:
+                if isinstance(m, FieldInfo):
+                    field_infos.append(m)
+                else:
+                    extras.append(m)
+
+            if not field_infos:
                 raise PydanticUserError(
-                    'Field definitions should be a Annotated[<type>, <FieldInfo>]',
+                    'Field definitions should be a Annotated[<type>, <FieldInfo>, ...]',
                     code='create-model-field-definitions',
                 )
+
+            if extras:
+                warnings.warn(f'extra annotations for "{f_name}" ignored: {extras}', RuntimeWarning)
+
+            f_value = FieldInfo.merge_field_infos(*field_infos)
 
         else:
             f_annotation, f_value = None, f_def

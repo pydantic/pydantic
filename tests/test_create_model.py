@@ -538,10 +538,39 @@ def test_create_model_typing_annotated_field_info(annotation_type, field_info):
     assert foo.description == field_info.description
 
 
+def test_create_model_typing_annotated_field_infos_merged():
+    model = create_model(
+        'FooModel',
+        foo=Annotated[
+            int,
+            Field(title='foo', default=0),
+            Field(description='described', alias='f_o_o'),
+            Field(default=42),
+        ],
+    )
+
+    foo = model.model_fields['foo']
+
+    assert foo is not None
+    assert foo.annotation == int
+    assert foo.alias == 'f_o_o'
+    assert foo.description == 'described'
+
+    m = model()
+    assert m.model_dump(by_alias=True) == {'f_o_o': 42}
+
+
+def test_create_model_typing_annotated_extra_annotations_ignored():
+    with pytest.warns(RuntimeWarning, match=r'extra annotations for "f" ignored: '):
+        model = create_model('FooModel', f=Annotated[int, 'abc', Field(default=0), {'x': 'y'}])
+
+    assert model().f == 0
+
+
 def test_create_model_expect_field_info_as_metadata_typing():
     annotated_foo = Annotated[int, 10]
 
-    with pytest.raises(PydanticUserError, match=r'Field definitions should be a Annotated\[<type>, <FieldInfo>\]'):
+    with pytest.raises(PydanticUserError, match=r'Field definitions should be a Annotated\[<type>, <FieldInfo>\, ...]'):
         create_model('FooModel', foo=annotated_foo)
 
 
