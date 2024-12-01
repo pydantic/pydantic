@@ -572,7 +572,9 @@ class FieldInfo(_repr.Representation):
         return self.deprecated if isinstance(self.deprecated, str) else self.deprecated.message
 
     @overload
-    def get_default(self, *, call_default_factory: Literal[True], validated_data: dict[str, Any]) -> Any: ...
+    def get_default(
+        self, *, call_default_factory: Literal[True], validated_data: dict[str, Any] | None = None
+    ) -> Any: ...
 
     @overload
     def get_default(self, *, call_default_factory: Literal[False] = ...) -> Any: ...
@@ -594,9 +596,11 @@ class FieldInfo(_repr.Representation):
         if self.default_factory is None:
             return _utils.smart_deepcopy(self.default)
         elif call_default_factory:
-            if validated_data is None:
-                raise ValueError("'validated_data' must be provided if 'call_default_factory' is True.")
             if _fields.takes_validated_data_argument(self.default_factory):
+                if validated_data is None:
+                    raise ValueError(
+                        "The default factory requires the 'validated_data' argument, which was not provided when calling 'get_default'."
+                    )
                 return self.default_factory(validated_data)
             else:
                 fac = cast(Callable[[], Any], self.default_factory)  # Pyright doesn't narrow correctly
@@ -730,7 +734,7 @@ _T = TypeVar('_T')
 # to understand the magic that happens at runtime with the following overloads:
 @overload  # type hint the return value as `Any` to avoid type checking regressions when using `...`.
 def Field(
-    default: _typing_extra.EllipsisType,
+    default: ellipsis,  # noqa: F821  # TODO: use `_typing_extra.EllipsisType` when we drop Py3.9
     *,
     alias: str | None = _Unset,
     alias_priority: int | None = _Unset,
@@ -1274,6 +1278,10 @@ PropertyT = typing.TypeVar('PropertyT')
 
 
 @typing.overload
+def computed_field(func: PropertyT, /) -> PropertyT: ...
+
+
+@typing.overload
 def computed_field(
     *,
     alias: str | None = None,
@@ -1287,10 +1295,6 @@ def computed_field(
     repr: bool = True,
     return_type: Any = PydanticUndefined,
 ) -> typing.Callable[[PropertyT], PropertyT]: ...
-
-
-@typing.overload
-def computed_field(__func: PropertyT) -> PropertyT: ...
 
 
 def computed_field(
@@ -1314,7 +1318,7 @@ def computed_field(
 
     This is useful for fields that are computed from other fields, or for fields that are expensive to compute and should be cached.
 
-    ```py
+    ```python
     from pydantic import BaseModel, computed_field
 
     class Rectangle(BaseModel):
@@ -1342,7 +1346,7 @@ def computed_field(
 
         [pyright](https://github.com/microsoft/pyright) supports `@computed_field` without error.
 
-    ```py
+    ```python
     import random
 
     from pydantic import BaseModel, computed_field
@@ -1382,7 +1386,7 @@ def computed_field(
         `mypy` complains about this behavior if allowed, and `dataclasses` doesn't allow this pattern either.
         See the example below:
 
-    ```py
+    ```python
     from pydantic import BaseModel, computed_field
 
     class Parent(BaseModel):
@@ -1403,7 +1407,7 @@ def computed_field(
 
     Private properties decorated with `@computed_field` have `repr=False` by default.
 
-    ```py
+    ```python
     from functools import cached_property
 
     from pydantic import BaseModel, computed_field
@@ -1423,7 +1427,7 @@ def computed_field(
 
     m = Model(foo=1)
     print(repr(m))
-    #> M(foo=1)
+    #> Model(foo=1)
     ```
 
     Args:

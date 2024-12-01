@@ -6618,3 +6618,12 @@ def test_warn_on_mixed_compose() -> None:
 
         class Model(BaseModel):
             field: Annotated[int, Field(json_schema_extra={'a': 'dict'}), Field(json_schema_extra=lambda x: x.pop('a'))]  # type: ignore
+
+
+def test_blank_title_is_respected() -> None:
+    class Model(BaseModel):
+        x: int
+
+        model_config = ConfigDict(title='')
+
+    assert Model.model_json_schema()['title'] == ''

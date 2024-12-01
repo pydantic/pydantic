@@ -6,12 +6,13 @@ sources = pydantic tests docs/plugins
 	@uv -V || echo 'Please install uv: https://docs.astral.sh/uv/getting-started/installation/'
 
 .PHONY: .pre-commit  ## Check that pre-commit is installed
-.pre-commit:
-	@pre-commit -V || echo 'Please install pre-commit: https://pre-commit.com/'
+.pre-commit: .uv
+	@uv run pre-commit -V || uv pip install pre-commit
 
 .PHONY: install  ## Install the package, dependencies, and pre-commit for local development
-install: .uv .pre-commit
+install: .uv
 	uv sync --frozen --group all --all-extras
+	uv pip install pre-commit
 	pre-commit install --install-hooks
 
 .PHONY: rebuild-lockfiles  ## Rebuild lockfiles from scratch, updating all dependencies

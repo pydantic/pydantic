@@ -7,7 +7,7 @@ The [`Field`][pydantic.fields.Field] function is used to customize and add metad
 
 The `default` parameter is used to define a default value for a field.
 
-```py
+```python
 from pydantic import BaseModel, Field
 
 
@@ -25,7 +25,7 @@ print(user)
 
 You can also use `default_factory` (but not both at the same time) to define a callable that will be called to generate a default value.
 
-```py
+```python
 from uuid import uuid4
 
 from pydantic import BaseModel, Field
@@ -37,7 +37,7 @@ class User(BaseModel):
 
 The default factory can also take a single required argument, in which the case the already validated data will be passed as a dictionary.
 
-```py
+```python
 from pydantic import BaseModel, EmailStr, Field
 
 
@@ -59,7 +59,7 @@ The `data` argument will *only* contain the already validated data, based on the
 
 The [`Field`][pydantic.fields.Field] function can also be used together with [`Annotated`][annotated].
 
-```py
+```python
 from uuid import uuid4
 
 from typing_extensions import Annotated
@@ -92,7 +92,7 @@ and `serialization_alias` parameters, which will apply only in their respective 
 
 Here is an example of using the `alias` parameter:
 
-```py
+```python
 from pydantic import BaseModel, Field
 
 
@@ -119,7 +119,7 @@ print(user.model_dump(by_alias=True))  # (2)!
 
 If you want to use an alias _only_ for validation, you can use the `validation_alias` parameter:
 
-```py
+```python
 from pydantic import BaseModel, Field
 
 
@@ -139,7 +139,7 @@ print(user.model_dump(by_alias=True))  # (2)!
 
 If you only want to define an alias for _serialization_, you can use the `serialization_alias` parameter:
 
-```py
+```python
 from pydantic import BaseModel, Field
 
 
@@ -170,7 +170,7 @@ print(user.model_dump(by_alias=True))  # (2)!
     In VSCode, if you use the [Pylance](https://marketplace.visualstudio.com/items?itemName=ms-python.vscode-pylance)
     extension, you won't see a warning when instantiating a model using a field's alias:
 
-    ```py
+    ```python
     from pydantic import BaseModel, Field
 
 
@@ -187,7 +187,7 @@ print(user.model_dump(by_alias=True))  # (2)!
     [Model Config][pydantic.config.ConfigDict.populate_by_name], VSCode will show a warning when instantiating
     a model using the field name (though it will work at runtime) — in this case, `'name'`:
 
-    ```py
+    ```python
     from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -205,7 +205,7 @@ print(user.model_dump(by_alias=True))  # (2)!
     To "trick" VSCode into preferring the field name, you can use the `str` function to wrap the alias value.
     With this approach, though, a warning is shown when instantiating a model using the alias for the field:
 
-    ```py
+    ```python
     from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -231,7 +231,7 @@ print(user.model_dump(by_alias=True))  # (2)!
     in the class initializer, you can instead specify both an `alias` and `serialization_alias`, as the
     `serialization_alias` will override the `alias` during serialization:
 
-    ```py
+    ```python
     from pydantic import BaseModel, Field
 
 
@@ -239,7 +239,7 @@ print(user.model_dump(by_alias=True))  # (2)!
         my_field: int = Field(validation_alias='myValidationAlias')
     ```
     with:
-    ```py
+    ```python
     from pydantic import BaseModel, Field
 
 
@@ -275,7 +275,7 @@ There are some keyword arguments that can be used to constrain numeric values:
 
 Here's an example:
 
-```py
+```python
 from pydantic import BaseModel, Field
 
 
@@ -363,7 +363,7 @@ positive=1 non_negative=0 negative=-1 non_positive=0 even=2 love_for_pydantic=in
     In case you use field constraints with compound types, an error can happen in some cases. To avoid potential issues,
     you can use `Annotated`:
 
-    ```py
+    ```python
     from typing import Optional
 
     from typing_extensions import Annotated
@@ -390,7 +390,7 @@ There are fields that can be used to constrain strings:
 
 Here's an example:
 
-```py
+```python
 from pydantic import BaseModel, Field
 
 
@@ -455,7 +455,7 @@ There are fields that can be used to constrain decimals:
 
 Here's an example:
 
-```py
+```python
 from decimal import Decimal
 
 from pydantic import BaseModel, Field
@@ -480,7 +480,7 @@ There are fields that can be used to constrain dataclasses:
 
 Here's an example:
 
-```py
+```python
 from pydantic import BaseModel, Field
 from pydantic.dataclasses import dataclass
 
@@ -509,7 +509,7 @@ The parameter `validate_default` can be used to control whether the default valu
 
 By default, the default value of the field is not validated.
 
-```py
+```python
 from pydantic import BaseModel, Field, ValidationError
 
 
@@ -533,7 +533,7 @@ except ValidationError as e:
 The parameter `repr` can be used to control whether the field should be included in the string
 representation of the model.
 
-```py
+```python
 from pydantic import BaseModel, Field
 
 
@@ -557,7 +557,7 @@ approach can be useful when the discriminator fields aren't the same for all the
 
 The following example shows how to use `discriminator` with a field name:
 
-```py
+```python
 from typing import Literal, Union
 
 from pydantic import BaseModel, Field
@@ -585,7 +585,7 @@ print(Model.model_validate({'pet': {'pet_type': 'cat', 'age': 12}}))  # (1)!
 
 The following example shows how to use the `discriminator` keyword argument with a `Discriminator` instance:
 
-```py
+```python
 from typing import Literal, Union
 
 from typing_extensions import Annotated
@@ -630,7 +630,7 @@ See the [Discriminated Unions] docs for more details.
 The `strict` parameter on a [`Field`][pydantic.fields.Field] specifies whether the field should be validated in "strict mode".
 In strict mode, Pydantic throws an error during validation instead of coercing data on the field where `strict=True`.
 
-```py
+```python
 from pydantic import BaseModel, Field
 
 
@@ -658,7 +658,7 @@ assigned a new value after the model is created (immutability).
 
 See the [frozen dataclass documentation] for more details.
 
-```py
+```python
 from pydantic import BaseModel, Field, ValidationError
 
 
@@ -689,7 +689,7 @@ model when exporting the model.
 
 See the following example:
 
-```py
+```python
 from pydantic import BaseModel, Field
 
 
@@ -722,7 +722,7 @@ You can set the `deprecated` parameter as one of:
 
 ### `deprecated` as a string
 
-```py
+```python
 from typing_extensions import Annotated
 
 from pydantic import BaseModel, Field
@@ -742,7 +742,7 @@ print(Model.model_json_schema()['properties']['deprecated_field'])
     You can only use the `deprecated` decorator in this way if you have
     `typing_extensions` >= 4.9.0 installed.
 
-```py test="skip"
+```python {test="skip"}
 import importlib.metadata
 
 from packaging.version import Version
@@ -763,7 +763,7 @@ if Version(importlib.metadata.version('typing_extensions')) >= Version('4.9'):
 
 ### `deprecated` as a boolean
 
-```py
+```python
 from typing_extensions import Annotated
 
 from pydantic import BaseModel, Field
@@ -786,7 +786,7 @@ print(Model.model_json_schema()['properties']['deprecated_field'])
     When accessing a deprecated field inside a validator, the deprecation warning will be emitted. You can use
     [`catch_warnings`][warnings.catch_warnings] to explicitly ignore it:
 
-    ```py
+    ```python
     import warnings
 
     from typing_extensions import Self
@@ -833,7 +833,7 @@ The property will also be taken into account in the JSON Schema (in serializatio
 
 Here's an example of the JSON schema (in serialization mode) generated for a model with a computed field:
 
-```py
+```python
 from pydantic import BaseModel, computed_field
 
 
@@ -866,7 +866,7 @@ print(Box.model_json_schema(mode='serialization'))
 
 Here's an example using the `model_dump` method with a computed field:
 
-```py
+```python
 from pydantic import BaseModel, computed_field
 
 
@@ -892,7 +892,7 @@ print(b.model_dump())
 
 As with regular fields, computed fields can be marked as being deprecated:
 
-```py
+```python
 from typing_extensions import deprecated
 
 from pydantic import BaseModel, computed_field

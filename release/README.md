@@ -7,7 +7,7 @@ Prerequisites:
   * Run `gh auth login` to authenticate with GitHub, which is needed for the API calls made in the release process.
 
 To create a new release:
-1. Edit `pydantic/version.py` to set the new version number.
+1. Edit `pydantic/version.py` to set the new version number and run `uv lock -P pydantic`
 2. **(If the new version is a new minor or major release)** run `pre-commit run -a usage_docs` to update the usage links in docstrings.
 3. Run `uv run release/make_history.py` to update `HISTORY.md` and `CITATION.cff`.
 4. **Important:** curate the changes in `HISTORY.md`:

@@ -12,7 +12,7 @@ A [`TypeAdapter`][pydantic.type_adapter.TypeAdapter] instance exposes some of th
 [`BaseModel`][pydantic.main.BaseModel] instance methods for types that do not have such methods
 (such as dataclasses, primitive types, and more):
 
-```py
+```python
 from typing import List
 
 from typing_extensions import TypedDict
@@ -67,7 +67,7 @@ but works with arbitrary Pydantic-compatible types.
 This is especially useful when you want to parse results into a type that is not a direct subclass of
 [`BaseModel`][pydantic.main.BaseModel]. For example:
 
-```py
+```python
 from typing import List
 
 from pydantic import BaseModel, TypeAdapter
@@ -96,9 +96,10 @@ handle as fields of a [`BaseModel`][pydantic.main.BaseModel].
     just once and reuse it in loops or other performance-critical code.
 
 
-### Rebuilding a `TypeAdapter`'s schema
+## Rebuilding a `TypeAdapter`'s schema
 
 In v2.10+, [`TypeAdapter`][pydantic.type_adapter.TypeAdapter]'s support deferred schema building and manual rebuilds. This is helpful for the case of:
+
 * Types with forward references
 * Types for which core schema builds are expensive
 
@@ -112,7 +113,7 @@ Pydantic will defer building the core schema until the first time it is needed (
 In order to manually trigger the building of the core schema, you can call the
 [`rebuild`][pydantic.type_adapter.TypeAdapter.rebuild] method on the [`TypeAdapter`][pydantic.type_adapter.TypeAdapter] instance:
 
-```py
+```python
 from pydantic import ConfigDict, TypeAdapter
 
 ta = TypeAdapter('MyInt', config=ConfigDict(defer_build=True))

@@ -60,7 +60,7 @@ of the resultant model instance will conform to the field types defined on the m
     - The [Type System Guides](https://typing.readthedocs.io/en/latest/guides/index.html)
     - The [mypy documentation](https://mypy.readthedocs.io/en/latest/)
 
-```py group="basic-model"
+```python {group="basic-model"}
 from pydantic import BaseModel
 
 
@@ -76,7 +76,7 @@ In this example, `User` is a model with two fields:
 
 The model can then be instantiated:
 
-```py group="basic-model"
+```python {group="basic-model"}
 user = User(id='123')
 ```
 
@@ -86,7 +86,7 @@ you know the resulting model instance is valid.
 
 Fields of a model can be accessed as normal attributes of the `user` object:
 
-```py group="basic-model"
+```python {group="basic-model"}
 assert user.name == 'Jane Doe'  # (1)!
 assert user.id == 123  # (2)!
 assert isinstance(user.id, int)
@@ -100,7 +100,7 @@ assert isinstance(user.id, int)
 
 The model instance can be serialized using the [`model_dump`][pydantic.BaseModel.model_dump] method:
 
-```py group="basic-model"
+```python {group="basic-model"}
 assert user.model_dump() == {'id': 123, 'name': 'Jane Doe'}
 ```
 
@@ -110,7 +110,7 @@ provides numerous arguments to customize the serialization result.
 
 By default, models are mutable and field values can be changed through attribute assignment:
 
-```py group="basic-model"
+```python {group="basic-model"}
 user.id = 321
 assert user.id == 321
 ```
@@ -120,7 +120,7 @@ assert user.id == 321
 
     For example, the following will not behave as expected and would yield a validation error:
 
-    ```py test="skip"
+    ```python {test="skip"}
     from typing import Optional
 
     from pydantic import BaseModel
@@ -172,7 +172,7 @@ Models possess the following methods and attributes:
 
 More complex hierarchical data structures can be defined using models themselves as types in annotations.
 
-```py
+```python
 from typing import List, Optional
 
 from pydantic import BaseModel
@@ -218,7 +218,7 @@ understand the valid types for each field (more information can be found in the 
 However, it might be the case that annotations refer to symbols not defined when the model class is being created.
 To circumvent this issue, the [`model_rebuild()`][pydantic.main.BaseModel.model_rebuild] method can be used:
 
-```py
+```python
 from pydantic import BaseModel, PydanticUserError
 
 
@@ -277,7 +277,7 @@ To do this, set the [`from_attributes`][pydantic.config.ConfigDict.from_attribut
 
 The example here uses [SQLAlchemy](https://www.sqlalchemy.org/), but the same approach should work for any ORM.
 
-```py
+```python
 from typing import List
 
 from sqlalchemy import ARRAY, String
@@ -328,7 +328,7 @@ deeper-nested attributes as appropriate.
 
 Here is an example demonstrating the principle:
 
-```py
+```python
 from typing import List
 
 from pydantic import BaseModel, ConfigDict
@@ -383,7 +383,7 @@ See [Error Handling](../errors/errors.md) for details on standard and custom err
 
 As a demonstration:
 
-```py
+```python
 from typing import List
 
 from pydantic import BaseModel, ValidationError
@@ -424,7 +424,7 @@ Pydantic provides three methods on models classes for parsing data:
   Learn more about JSON parsing in the [JSON](../concepts/json.md) section of the docs.
 * [`model_validate_strings()`][pydantic.main.BaseModel.model_validate_strings]: this takes a dictionary (can be nested) with string keys and values and validates the data in JSON mode so that said strings can be coerced into the correct types.
 
-```py
+```python
 from datetime import datetime
 from typing import Optional
 
@@ -512,7 +512,7 @@ then pass it to [`model_validate`][pydantic.main.BaseModel.model_validate].
     If you don't set this value, then validation will be skipped on model instances. See the below example:
 
     === ":x: `revalidate_instances='never'`"
-        ```py
+        ```python
         from pydantic import BaseModel
 
 
@@ -529,7 +529,7 @@ then pass it to [`model_validate`][pydantic.main.BaseModel.model_validate].
         ```
 
     === ":white_check_mark: `revalidate_instances='always'`"
-        ```py
+        ```python
         from pydantic import BaseModel, ConfigDict, ValidationError
 
 
@@ -610,7 +610,7 @@ In order to declare a generic model, you should follow the following steps:
 
 Here is an example using a generic Pydantic model to create an easily-reused HTTP response payload wrapper:
 
-```py
+```python
 from typing import Generic, List, Optional, TypeVar
 
 from pydantic import BaseModel, ValidationError
@@ -666,7 +666,7 @@ you would expect if you were to declare a distinct type for each parametrization
 To inherit from a generic model and preserve the fact that it is generic, the subclass must also inherit from
 [`Generic`][typing.Generic]:
 
-```py
+```python
 from typing import Generic, TypeVar
 
 from pydantic import BaseModel
@@ -690,7 +690,7 @@ print(ChildClass[int](X=1))
 You can also create a generic subclass of a model that partially or fully replaces the type variables in the
 superclass:
 
-```py
+```python
 from typing import Generic, TypeVar
 
 from pydantic import BaseModel
@@ -717,7 +717,7 @@ print(ChildClass[str, int](x='1', y='y', z='3'))
 If the name of the concrete subclasses is important, you can also override the default name generation
 by overriding the [`model_parametrized_name()`][pydantic.main.BaseModel.model_parametrized_name] method:
 
-```py
+```python
 from typing import Any, Generic, Tuple, Type, TypeVar
 
 from pydantic import BaseModel
@@ -741,7 +741,7 @@ print(repr(Response[str](data='a')))
 
 You can use parametrized generic models as types in other models:
 
-```py
+```python
 from typing import Generic, TypeVar
 
 from pydantic import BaseModel
@@ -774,7 +774,7 @@ Order(id=1, product=ResponseModel[Product](content=Product(name='Apple', price=0
 
 Using the same type variable in nested models allows you to enforce typing relationships at different points in your model:
 
-```py
+```python
 from typing import Generic, TypeVar
 
 from pydantic import BaseModel, ValidationError
@@ -816,7 +816,7 @@ except ValidationError as e:
 
     If you need to perform [`isinstance()`](https://docs.python.org/3/library/functions.html#isinstance) checks against parametrized generics, you can do this by subclassing the parametrized generic class:
 
-    ```py test="skip" lint="skip"
+    ```python {test="skip" lint="skip"}
     class MyIntModel(MyGenericModel[int]): ...
 
     isinstance(my_model, MyIntModel)
@@ -829,7 +829,7 @@ except ValidationError as e:
 
     This adds some validation overhead, but makes things more intuitive for cases like that shown below.
 
-    ```py
+    ```python
     from typing import Any, Generic, TypeVar
 
     from pydantic import BaseModel
@@ -856,7 +856,7 @@ except ValidationError as e:
     Then, the validators will be called again on the second pass, during more lax force-revalidation phase, which succeeds.
     To better understand this consequence, see below:
 
-    ```py test="skip"
+    ```python {test="skip"}
     from typing import Any, Generic, Self, TypeVar
 
     from pydantic import BaseModel, model_validator
@@ -895,7 +895,7 @@ types like [`list`][] and [`dict`][]:
 * If the type variable has a default type (as specified by [PEP 696](https://peps.python.org/pep-0696/)), it will be used.
 * For unbound or unconstrained type variables, Pydantic will fallback to [`Any`][typing.Any].
 
-```py
+```python
 from typing import Generic
 
 from typing_extensions import TypeVar
@@ -933,7 +933,7 @@ except ValidationError as exc:
 
     In some cases, validation against an unparametrized generic model can lead to data loss. Specifically, if a subtype of the type variable upper bound, constraints, or default is being used and the model isn't explicitly parametrized, the resulting type **will not be** the one being provided:
 
-    ```py
+    ```python
     from typing import Generic, TypeVar
 
     from pydantic import BaseModel
@@ -972,7 +972,7 @@ The behavior of serialization differs when using type variables with [upper boun
 
 If a Pydantic model is used in a type variable upper bound and the type variable is never parametrized, then Pydantic will use the upper bound for validation but treat the value as [`Any`][typing.Any] in terms of serialization:
 
-```py
+```python
 from typing import Generic, TypeVar
 
 from pydantic import BaseModel
@@ -1023,7 +1023,7 @@ assert error.model_dump() == {
 
 Here's another example of the above behavior, enumerating all permutations regarding bound specification and generic type parametrization:
 
-```py
+```python
 from typing import Generic, TypeVar
 
 from pydantic import BaseModel
@@ -1059,7 +1059,7 @@ will be used for both validation and serialization if the type variable is not p
 using [`SerializeAsAny`](./serialization.md#serializeasany-annotation):
 
 
-```py
+```python
 from typing import Generic
 
 from typing_extensions import TypeVar
@@ -1124,7 +1124,7 @@ assert error.model_dump() == {
 There are some occasions where it is desirable to create a model using runtime information to specify the fields.
 For this Pydantic provides the `create_model` function to allow models to be created on the fly:
 
-```py
+```python
 from pydantic import BaseModel, create_model
 
 DynamicFoobarModel = create_model(
@@ -1148,7 +1148,7 @@ Fields are defined by one of the following tuple forms:
 Using a `Field(...)` call as the second argument in the tuple (the default value)
 allows for more advanced field configuration. Thus, the following are analogous:
 
-```py
+```python
 from pydantic import BaseModel, Field, create_model
 
 DynamicModel = create_model(
@@ -1164,7 +1164,7 @@ class StaticModel(BaseModel):
 The special keyword arguments `__config__` and `__base__` can be used to customize the new model.
 This includes extending a base model with extra fields.
 
-```py
+```python
 from pydantic import BaseModel, create_model
 
 
@@ -1187,7 +1187,7 @@ print(BarModel.model_fields.keys())
 
 You can also add validators by passing a dictionary to the `__validators__` argument.
 
-```py rewrite_assert="false"
+```python {rewrite_assert="false"}
 from pydantic import ValidationError, create_model, field_validator
 
 
@@ -1243,7 +1243,7 @@ via the first and only argument.
 
 Here's an example of how this works:
 
-```py
+```python
 from typing import Dict, List
 
 from pydantic import RootModel
@@ -1274,7 +1274,7 @@ print(PetsByName.model_validate({'Otis': 'dog', 'Milo': 'cat'}))
 If you want to access items in the `root` field directly or to iterate over the items, you can implement
 custom `__iter__` and `__getitem__` functions, as shown in the following example.
 
-```py
+```python
 from typing import List
 
 from pydantic import RootModel
@@ -1299,7 +1299,7 @@ print([pet for pet in pets])
 
 You can also create subclasses of the parametrized root model directly:
 
-```py
+```python
 from typing import List
 
 from pydantic import RootModel
@@ -1330,7 +1330,7 @@ values of instance attributes will raise errors. See the [API reference][pydanti
     In Python, immutability is not enforced. Developers have the ability to modify objects
     that are conventionally considered "immutable" if they choose to do so.
 
-```py
+```python
 from pydantic import BaseModel, ConfigDict, ValidationError
 
 
@@ -1370,7 +1370,7 @@ immutability of `foobar` doesn't stop `b` from being changed.
 Pydantic models can be used alongside Python's
 [Abstract Base Classes](https://docs.python.org/3/library/abc.html) (ABCs).
 
-```py
+```python
 import abc
 
 from pydantic import BaseModel
@@ -1393,7 +1393,7 @@ Field order affects models in the following ways:
 * field order is preserved in [validation errors](#error-handling)
 * field order is preserved by [`.model_dump()` and `.model_dump_json()` etc.](serialization.md#model_dump)
 
-```py
+```python
 from pydantic import BaseModel, ValidationError
 
 
@@ -1424,7 +1424,7 @@ print(error_locations)
 To declare a field as required, you may declare it using an annotation, or an annotation in combination with a
 [`Field`][pydantic.Field] function (without specifying any `default` or `default_factory` argument).
 
-```py
+```python
 from pydantic import BaseModel, Field
 
 
@@ -1458,7 +1458,7 @@ Pydantic also supports the use of a [`default_factory`](#fields-with-dynamic-def
 values, but it is not required. In the event that the default value is not hashable, Pydantic will deepcopy the default
 value when creating each instance of the model:
 
-```py
+```python
 from typing import Dict, List
 
 from pydantic import BaseModel
@@ -1485,7 +1485,7 @@ To do this, you may want to use a `default_factory`.
 
 Here is an example:
 
-```py
+```python
 from datetime import datetime, timezone
 from uuid import UUID, uuid4
 
@@ -1514,7 +1514,7 @@ You can find more information in the documentation of the [`Field` function](fie
 Attributes annotated with `typing.ClassVar` are properly treated by Pydantic as class variables, and will not
 become fields on model instances:
 
-```py
+```python
 from typing import ClassVar
 
 from pydantic import BaseModel
@@ -1547,7 +1547,7 @@ calls to `__init__`, `model_validate`, etc.
 
 Here is an example of usage:
 
-```py
+```python
 from datetime import datetime
 from random import randint
 
@@ -1580,7 +1580,7 @@ Pydantic may cast input data to force it to conform to model field types,
 and in some cases this may result in a loss of information.
 For example:
 
-```py
+```python
 from pydantic import BaseModel
 
 
@@ -1603,7 +1603,7 @@ Nevertheless, [strict type checking](strict_mode.md) is also supported.
 
 All Pydantic models will have their signature generated based on their fields:
 
-```py
+```python
 import inspect
 
 from pydantic import BaseModel, Field
@@ -1624,7 +1624,7 @@ An accurate signature is useful for introspection purposes and libraries like `F
 
 The generated signature will also respect custom `__init__` functions:
 
-```py
+```python
 import inspect
 
 from pydantic import BaseModel
@@ -1655,7 +1655,7 @@ a `**data` argument will be added. In addition, the `**data` argument will alway
 
 Pydantic supports structural pattern matching for models, as introduced by [PEP 636](https://peps.python.org/pep-0636/) in Python 3.10.
 
-```py requires="3.10" lint="skip"
+```python {requires="3.10" lint="skip"}
 from pydantic import BaseModel
 
 
@@ -1688,7 +1688,7 @@ coercion.
 In this example, note that the ID of the list changes after the class is constructed because it has been
 copied during validation:
 
-```py
+```python
 from typing import List
 
 from pydantic import BaseModel
@@ -1723,7 +1723,7 @@ print('id(c1.arr) == id(c2.arr):', id(c1.arr) == id(c2.arr))
 
 By default, Pydantic models won't error when you provide data for unrecognized fields, they will just be ignored:
 
-```py
+```python
 from pydantic import BaseModel
 
 
@@ -1738,7 +1738,7 @@ assert m.model_dump() == {'x': 1}
 If you want this to raise an error, you can set the [`extra`][pydantic.ConfigDict.extra] configuration
 value to `'forbid'`:
 
-```py
+```python
 from pydantic import BaseModel, ConfigDict, ValidationError
 
 
@@ -1762,7 +1762,7 @@ except ValidationError as exc:
 To instead preserve any extra data provided, you can set [`extra`][pydantic.ConfigDict.extra] to `'allow'`.
 The extra fields will then be stored in `BaseModel.__pydantic_extra__`:
 
-```py
+```python
 from pydantic import BaseModel, ConfigDict
 
 
@@ -1779,7 +1779,7 @@ assert m.__pydantic_extra__ == {'y': 'a'}
 By default, no validation will be applied to these extra items, but you can set a type for the values by overriding
 the type annotation for `__pydantic_extra__`:
 
-```py
+```python
 from typing import Dict
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError

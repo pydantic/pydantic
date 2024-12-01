@@ -9,7 +9,7 @@ import types
 import typing
 import warnings
 from functools import lru_cache, partial
-from typing import Any, Callable, Literal, overload
+from typing import TYPE_CHECKING, Any, Callable
 
 import typing_extensions
 from typing_extensions import TypeIs, deprecated, get_args, get_origin
@@ -23,6 +23,8 @@ else:
     from types import EllipsisType as EllipsisType
     from types import NoneType as NoneType
 
+if TYPE_CHECKING:
+    from pydantic import BaseModel
 
 # See https://typing-extensions.readthedocs.io/en/latest/#runtime-use-of-types:
 
@@ -51,7 +53,7 @@ def _is_typing_name(obj: object, name: str) -> bool:
 def is_any(tp: Any, /) -> bool:
     """Return whether the provided argument is the `Any` special form.
 
-    ```python test="skip" lint="skip"
+    ```python {test="skip" lint="skip"}
     is_any(Any)
     #> True
     ```
@@ -62,7 +64,7 @@ def is_any(tp: Any, /) -> bool:
 def is_union(tp: Any, /) -> bool:
     """Return whether the provided argument is a `Union` special form.
 
-    ```python test="skip" lint="skip"
+    ```python {test="skip" lint="skip"}
     is_union(Union[int, str])
     #> True
     is_union(int | str)
@@ -75,7 +77,7 @@ def is_union(tp: Any, /) -> bool:
 def is_literal(tp: Any, /) -> bool:
     """Return whether the provided argument is a `Literal` special form.
 
-    ```python test="skip" lint="skip"
+    ```python {test="skip" lint="skip"}
     is_literal(Literal[42])
     #> True
     ```
@@ -97,7 +99,7 @@ def literal_values(tp: Any, /) -> list[Any]:
 def is_annotated(tp: Any, /) -> bool:
     """Return whether the provided argument is a `Annotated` special form.
 
-    ```python test="skip" lint="skip"
+    ```python {test="skip" lint="skip"}
     is_annotated(Annotated[int, ...])
     #> True
     ```
@@ -113,7 +115,7 @@ def annotated_type(tp: Any, /) -> Any | None:
 def is_unpack(tp: Any, /) -> bool:
     """Return whether the provided argument is a `Unpack` special form.
 
-    ```python test="skip" lint="skip"
+    ```python {test="skip" lint="skip"}
     is_unpack(Unpack[Ts])
     #> True
     ```
@@ -129,7 +131,7 @@ def unpack_type(tp: Any, /) -> Any | None:
 def is_self(tp: Any, /) -> bool:
     """Return whether the provided argument is the `Self` special form.
 
-    ```python test="skip" lint="skip"
+    ```python {test="skip" lint="skip"}
     is_self(Self)
     #> True
     ```
@@ -140,7 +142,7 @@ def is_self(tp: Any, /) -> bool:
 def is_new_type(tp: Any, /) -> bool:
     """Return whether the provided argument is a `NewType`.
 
-    ```python test="skip" lint="skip"
+    ```python {test="skip" lint="skip"}
     is_new_type(NewType('MyInt', int))
     #> True
     ```
@@ -155,7 +157,7 @@ def is_new_type(tp: Any, /) -> bool:
 def is_hashable(tp: Any, /) -> bool:
     """Return whether the provided argument is the `Hashable` class.
 
-    ```python test="skip" lint="skip"
+    ```python {test="skip" lint="skip"}
     is_hashable(Hashable)
     #> True
     ```
@@ -168,7 +170,7 @@ def is_hashable(tp: Any, /) -> bool:
 def is_callable(tp: Any, /) -> bool:
     """Return whether the provided argument is a `Callable`, parametrized or not.
 
-    ```python test="skip" lint="skip"
+    ```python {test="skip" lint="skip"}
     is_callable(Callable[[int], str])
     #> True
     is_callable(typing.Callable)
@@ -190,7 +192,7 @@ if sys.version_info >= (3, 10):
 def is_paramspec(tp: Any, /) -> bool:
     """Return whether the provided argument is a `ParamSpec`.
 
-    ```python test="skip" lint="skip"
+    ```python {test="skip" lint="skip"}
     P = ParamSpec('P')
     is_paramspec(P)
     #> True
@@ -207,7 +209,7 @@ if sys.version_info >= (3, 12):
 def is_type_alias_type(tp: Any, /) -> TypeIs[typing_extensions.TypeAliasType]:
     """Return whether the provided argument is an instance of `TypeAliasType`.
 
-    ```python test="skip" lint="skip"
+    ```python {test="skip" lint="skip"}
     type Int = int
     is_type_alias_type(Int)
     #> True
@@ -226,7 +228,7 @@ def is_classvar(tp: Any, /) -> bool:
     which is used to check if an annotation (in the context of a Pydantic model or dataclass)
     should be treated as being a class variable.
 
-    ```python test="skip" lint="skip"
+    ```python {test="skip" lint="skip"}
     is_classvar(ClassVar[int])
     #> True
     is_classvar(ClassVar)
@@ -271,7 +273,7 @@ def is_classvar_annotation(tp: Any, /) -> bool:
 def is_finalvar(tp: Any, /) -> bool:
     """Return whether the provided argument is a `Final` special form, parametrized or not.
 
-    ```python test="skip" lint="skip"
+    ```python {test="skip" lint="skip"}
     is_finalvar(Final[int])
     #> True
     is_finalvar(Final)
@@ -284,7 +286,7 @@ def is_finalvar(tp: Any, /) -> bool:
 def is_required(tp: Any, /) -> bool:
     """Return whether the provided argument is a `Required` special form.
 
-    ```python test="skip" lint="skip"
+    ```python {test="skip" lint="skip"}
     is_required(Required[int])
     #> True
     """
@@ -294,7 +296,7 @@ def is_required(tp: Any, /) -> bool:
 def is_not_required(tp: Any, /) -> bool:
     """Return whether the provided argument is a `NotRequired` special form.
 
-    ```python test="skip" lint="skip"
+    ```python {test="skip" lint="skip"}
     is_required(Required[int])
     #> True
     """
@@ -304,7 +306,7 @@ def is_not_required(tp: Any, /) -> bool:
 def is_no_return(tp: Any, /) -> bool:
     """Return whether the provided argument is the `NoReturn` special form.
 
-    ```python test="skip" lint="skip"
+    ```python {test="skip" lint="skip"}
     is_no_return(NoReturn)
     #> True
     ```
@@ -315,7 +317,7 @@ def is_no_return(tp: Any, /) -> bool:
 def is_never(tp: Any, /) -> bool:
     """Return whether the provided argument is the `Never` special form.
 
-    ```python test="skip" lint="skip"
+    ```python {test="skip" lint="skip"}
     is_never(Never)
     #> True
     ```
@@ -339,7 +341,7 @@ _NONE_TYPES: tuple[Any, ...] = (None, NoneType, typing.Literal[None], typing_ext
 def is_none_type(tp: Any, /) -> bool:
     """Return whether the argument represents the `None` type as part of an annotation.
 
-    ```python test="skip" lint="skip"
+    ```python {test="skip" lint="skip"}
     is_none_type(None)
     #> True
     is_none_type(NoneType)
@@ -467,34 +469,21 @@ def _type_convert(arg: Any) -> Any:
     return arg
 
 
-@overload
-def get_cls_type_hints(
-    obj: type[Any],
+def get_model_type_hints(
+    obj: type[BaseModel],
     *,
     ns_resolver: NsResolver | None = None,
-    lenient: Literal[True],
-) -> dict[str, tuple[Any, bool]]: ...
-@overload
-def get_cls_type_hints(
-    obj: type[Any],
-    *,
-    ns_resolver: NsResolver | None = None,
-    lenient: Literal[False] = ...,
-) -> dict[str, Any]: ...
-def get_cls_type_hints(
-    obj: type[Any],
-    *,
-    ns_resolver: NsResolver | None = None,
-    lenient: bool = False,
-) -> dict[str, Any] | dict[str, tuple[Any, bool]]:
-    """Collect annotations from a class, including those from parent classes.
+) -> dict[str, tuple[Any, bool]]:
+    """Collect annotations from a Pydantic model class, including those from parent classes.
 
     Args:
-        obj: The class to inspect.
+        obj: The Pydantic model to inspect.
         ns_resolver: A namespace resolver instance to use. Defaults to an empty instance.
-        lenient: Whether to keep unresolvable annotations as is or re-raise the `NameError` exception.
-            If lenient, an extra boolean flag is set for each annotation value to indicate whether the
-            evaluation succeeded or not. Default: re-raise.
+
+    Returns:
+        A dictionary mapping annotation names to a two-tuple: the first element is the evaluated
+        type or the original annotation if a `NameError` occurred, the second element is a boolean
+        indicating if whether the evaluation succeeded.
     """
     hints: dict[str, Any] | dict[str, tuple[Any, bool]] = {}
     ns_resolver = ns_resolver or NsResolver()
@@ -506,10 +495,43 @@ def get_cls_type_hints(
         with ns_resolver.push(base):
             globalns, localns = ns_resolver.types_namespace
             for name, value in ann.items():
-                if lenient:
-                    hints[name] = try_eval_type(value, globalns, localns)
+                if name.startswith('_'):
+                    # For private attributes, we only need the annotation to detect the `ClassVar` special form.
+                    # For this reason, we still try to evaluate it, but we also catch any possible exception (on
+                    # top of the `NameError`s caught in `try_eval_type`) that could happen so that users are free
+                    # to use any kind of forward annotation for private fields (e.g. circular imports, new typing
+                    # syntax, etc).
+                    try:
+                        hints[name] = try_eval_type(value, globalns, localns)
+                    except Exception:
+                        hints[name] = (value, False)
                 else:
-                    hints[name] = eval_type(value, globalns, localns)
+                    hints[name] = try_eval_type(value, globalns, localns)
+    return hints
+
+
+def get_cls_type_hints(
+    obj: type[Any],
+    *,
+    ns_resolver: NsResolver | None = None,
+) -> dict[str, Any]:
+    """Collect annotations from a class, including those from parent classes.
+
+    Args:
+        obj: The class to inspect.
+        ns_resolver: A namespace resolver instance to use. Defaults to an empty instance.
+    """
+    hints: dict[str, Any] | dict[str, tuple[Any, bool]] = {}
+    ns_resolver = ns_resolver or NsResolver()
+
+    for base in reversed(obj.__mro__):
+        ann: dict[str, Any] | None = base.__dict__.get('__annotations__')
+        if not ann or isinstance(ann, types.GetSetDescriptorType):
+            continue
+        with ns_resolver.push(base):
+            globalns, localns = ns_resolver.types_namespace
+            for name, value in ann.items():
+                hints[name] = eval_type(value, globalns, localns)
     return hints
 
 

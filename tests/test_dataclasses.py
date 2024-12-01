@@ -21,7 +21,6 @@ from pydantic import (
     BeforeValidator,
     ConfigDict,
     PydanticDeprecatedSince20,
-    PydanticSchemaGenerationError,
     PydanticUndefinedAnnotation,
     PydanticUserError,
     RootModel,
@@ -3054,21 +3053,15 @@ def test_warns_on_double_config() -> None:
             __pydantic_config__ = ConfigDict(title='from __pydantic_config__')
 
 
-def test_do_not_leak_config_from_other_types_during_building() -> None:
-    """Regression test, where dataclasses without any config would use the precedent type's config."""
-
+def test_config_pushdown_vanilla_dc() -> None:
     class ArbitraryType:
         pass
 
     @dataclasses.dataclass
     class DC:
         a: ArbitraryType
-        b: str
 
-    with pytest.raises(PydanticSchemaGenerationError):
+    class Model(BaseModel):
+        model_config = ConfigDict(arbitrary_types_allowed=True)
 
-        class Model(BaseModel):
-            model_config = ConfigDict(arbitrary_types_allowed=True)
-
-            dc: DC
-            other: str
+        dc: DC

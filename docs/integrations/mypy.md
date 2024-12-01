@@ -5,7 +5,7 @@ features that improve its ability to type-check your code.
 
 For example, consider the following script:
 
-```py test="skip" linenums="1"
+```python {test="skip" linenums="1"}
 from datetime import datetime
 from typing import List, Optional
 
@@ -167,7 +167,7 @@ A configuration file with all plugin strictness flags enabled (and some other my
 
 Because Pydantic performs [data conversion](../concepts/models.md#data-conversion) by default, the following is still valid at runtime:
 
-```python test="skip" lint="skip"
+```python {test="skip" lint="skip"}
 class Model(BaseModel):
     a: int
 
@@ -182,7 +182,7 @@ unless `init_typed` is set or [strict mode](../concepts/strict_mode.md) is enabl
 
 By default, Pydantic allows (and ignores) any extra provided argument:
 
-```python test="skip" lint="skip"
+```python {test="skip" lint="skip"}
 class Model(BaseModel):
     a: int = 1
 

@@ -261,7 +261,7 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any] | None) -> Any:
         `typevar_map` keys recursively replaced.
 
     Example:
-        ```py
+        ```python
         from typing import List, Tuple, Union
 
         from pydantic._internal._generics import replace_types

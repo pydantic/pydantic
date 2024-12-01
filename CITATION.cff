@@ -25,6 +25,8 @@ authors:
     given-names: David
   - family-names: Hall
     given-names: Alex
+  - family-names: Plot
+    given-names: Victorien
 repository-code: 'https://github.com/pydantic/pydantic'
 url: 'https://docs.pydantic.dev/latest/'
 abstract: >-
@@ -42,5 +44,5 @@ keywords:
   - hints
   - typing
 license: MIT
-version: v2.9.0
-date-released: 2024-09-05
+version: v2.10.2
+date-released: 2024-11-25

@@ -420,8 +420,8 @@ def test_extra_broken_via_pydantic_extra_interference():
     """
 
     class BrokenExtraBaseModel(BaseModel):
-        def model_post_init(self, __context: Any) -> None:
-            super().model_post_init(__context)
+        def model_post_init(self, context: Any, /) -> None:
+            super().model_post_init(context)
             object.__setattr__(self, '__pydantic_extra__', None)
 
     class Model(BrokenExtraBaseModel):
@@ -735,8 +735,12 @@ def test_validating_assignment_pass(ValidateAssignmentModel):
     assert p.model_dump() == {'a': 2, 'b': 'hi'}
 
 
-def test_validating_assignment_fail(ValidateAssignmentModel):
+@pytest.mark.parametrize('init_valid', [False, True])
+def test_validating_assignment_fail(ValidateAssignmentModel, init_valid: bool):
     p = ValidateAssignmentModel(a=5, b='hello')
+    if init_valid:
+        p.a = 5
+        p.b = 'hello'
 
     with pytest.raises(ValidationError) as exc_info:
         p.a = 'b'
@@ -2054,8 +2058,8 @@ def test_post_init():
         a: int
         b: int
 
-        def model_post_init(self, __context) -> None:
-            super().model_post_init(__context)  # this is included just to show it doesn't error
+        def model_post_init(self, context, /) -> None:
+            super().model_post_init(context)  # this is included just to show it doesn't error
             assert self.model_dump() == {'a': 3, 'b': 4}
             calls.append('inner_model_post_init')
 
@@ -2064,7 +2068,7 @@ def test_post_init():
         d: int
         sub: InnerModel
 
-        def model_post_init(self, __context) -> None:
+        def model_post_init(self, context, /) -> None:
             assert self.model_dump() == {'c': 1, 'd': 2, 'sub': {'a': 3, 'b': 4}}
             calls.append('model_post_init')
 
@@ -2073,9 +2077,9 @@ def test_post_init():
     assert m.model_dump() == {'c': 1, 'd': 2, 'sub': {'a': 3, 'b': 4}}
 
     class SubModel(Model):
-        def model_post_init(self, __context) -> None:
+        def model_post_init(self, context, /) -> None:
             assert self.model_dump() == {'c': 1, 'd': 2, 'sub': {'a': 3, 'b': 4}}
-            super().model_post_init(__context)
+            super().model_post_init(context)
             calls.append('submodel_post_init')
 
     calls.clear()
@@ -2121,7 +2125,7 @@ def test_post_init_not_called_without_override():
         assert calls == []
 
         class WithOverrideModel(BaseModel):
-            def model_post_init(self, __context: Any) -> None:
+            def model_post_init(self, context: Any, /) -> None:
                 calls.append('WithOverrideModel.model_post_init')
 
         WithOverrideModel()
@@ -2140,7 +2144,7 @@ def test_model_post_init_subclass_private_attrs():
     class A(BaseModel):
         a: int = 1
 
-        def model_post_init(self, __context: Any) -> None:
+        def model_post_init(self, context: Any, /) -> None:
             calls.append(f'{self.__class__.__name__}.model_post_init')
 
     class B(A):
@@ -2161,10 +2165,10 @@ def test_model_post_init_supertype_private_attrs():
         _private: int = 12
 
     class SubModel(Model):
-        def model_post_init(self, __context: Any) -> None:
+        def model_post_init(self, context: Any, /) -> None:
             if self._private == 12:
                 self._private = 13
-            super().model_post_init(__context)
+            super().model_post_init(context)
 
     m = SubModel()
 
@@ -2178,7 +2182,7 @@ def test_model_post_init_subclass_setting_private_attrs():
         _priv1: int = PrivateAttr(91)
         _priv2: int = PrivateAttr(92)
 
-        def model_post_init(self, __context) -> None:
+        def model_post_init(self, context, /) -> None:
             self._priv1 = 100
 
     class SubModel(Model):
@@ -2187,10 +2191,10 @@ def test_model_post_init_subclass_setting_private_attrs():
         _priv5: int = PrivateAttr()
         _priv6: int = PrivateAttr()
 
-        def model_post_init(self, __context) -> None:
+        def model_post_init(self, context, /) -> None:
             self._priv3 = 200
             self._priv5 = 300
-            super().model_post_init(__context)
+            super().model_post_init(context)
 
     m = SubModel()
 
@@ -2213,7 +2217,7 @@ def test_model_post_init_correct_mro():
     class B(BaseModel):
         b: int = 1
 
-        def model_post_init(self, __context: Any) -> None:
+        def model_post_init(self, context: Any, /) -> None:
             calls.append(f'{self.__class__.__name__}.model_post_init')
 
     class C(A, B):
@@ -3344,7 +3348,7 @@ def test_model_construct_with_model_post_init_and_model_copy() -> None:
     class Model(BaseModel):
         id: int
 
-        def model_post_init(self, context: Any) -> None:
+        def model_post_init(self, context: Any, /) -> None:
             super().model_post_init(context)
 
     m = Model.model_construct(id=1)

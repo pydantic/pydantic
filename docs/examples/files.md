@@ -21,7 +21,7 @@ Here is an example of a `.json` file:
 
 To validate this data, we can use a `pydantic` model:
 
-```python test="skip"
+```python {test="skip"}
 import pathlib
 
 from pydantic import BaseModel, EmailStr, PositiveInt
@@ -57,7 +57,7 @@ This data is flawed for three reasons:
 When we try to validate this data, `pydantic` raises a [`ValidationError`][pydantic_core.ValidationError] with all of the
 above issues:
 
-```python test="skip"
+```python {test="skip"}
 import pathlib
 
 from pydantic import BaseModel, EmailStr, PositiveInt, ValidationError
@@ -107,7 +107,7 @@ For example, you might have a list of people:
 
 In this case, you can validate the data against a `List[Person]` model:
 
-```python test="skip"
+```python {test="skip"}
 import pathlib
 from typing import List
 
@@ -145,7 +145,7 @@ Consider the following `.jsonl` file:
 
 We can validate this data with a similar approach to the one we used for `.json` files:
 
-```python test="skip"
+```python {test="skip"}
 import pathlib
 
 from pydantic import BaseModel, EmailStr, PositiveInt
@@ -179,7 +179,7 @@ Jane Doe,25,jane@example.com
 
 Here's how we validate that data:
 
-```py test="skip"
+```python {test="skip"}
 import csv
 
 from pydantic import BaseModel, EmailStr, PositiveInt
@@ -213,7 +213,7 @@ email = "john@example.com"
 
 Here's how we validate that data:
 
-```py test="skip"
+```python {test="skip"}
 import tomllib
 
 from pydantic import BaseModel, EmailStr, PositiveInt

@@ -1505,7 +1505,7 @@ class GenerateJsonSchema:
         from .main import BaseModel
         from .root_model import RootModel
 
-        if config_title := config.get('title'):
+        if (config_title := config.get('title')) is not None:
             json_schema.setdefault('title', config_title)
         elif model_title_generator := config.get('model_title_generator'):
             title = model_title_generator(cls)
@@ -2582,7 +2582,7 @@ else:
         Add this as an annotation on a field to skip generating a JSON schema for that field.
 
         Example:
-            ```py
+            ```python
             from typing import Union
 
             from pydantic import BaseModel
@@ -2590,12 +2590,10 @@ else:
 
             from pprint import pprint
 
-
             class Model(BaseModel):
                 a: Union[int, None] = None  # (1)!
                 b: Union[int, SkipJsonSchema[None]] = None  # (2)!
                 c: SkipJsonSchema[Union[int, None]] = None  # (3)!
-
 
             pprint(Model.model_json_schema())
             '''

@@ -10,7 +10,7 @@ to your code with minimal boilerplate.
 
 Example of usage:
 
-```py
+```python
 from pydantic import ValidationError, validate_call
 
 
@@ -44,7 +44,7 @@ except ValidationError as exc:
 Parameter types are inferred from type annotations on the function, or as [`Any`][typing.Any] if not annotated. All types listed in [types](types.md) can be validated, including Pydantic models and [custom types](types.md#custom-types).
 As with the rest of Pydantic, types are by default coerced by the decorator before they're passed to the actual function:
 
-```py
+```python
 from datetime import date
 
 from pydantic import validate_call
@@ -86,7 +86,7 @@ using all possible [parameter configurations][parameter] and all possible combin
 
 ??? example
 
-    ```py
+    ```python
     from pydantic import validate_call
 
 
@@ -194,7 +194,7 @@ The [`Field()` function](fields.md) can also be used with the decorator to provi
 the field and validations. In general it should be used in a type hint with [Annotated](types.md#composing-types-via-annotated),
 unless `default_factory` is specified, in which case it should be used as the default value of the field:
 
-```py
+```python
 from datetime import datetime
 
 from typing_extensions import Annotated
@@ -229,7 +229,7 @@ print(type(when()))
 
 [Aliases](fields.md#field-aliases) can be used with the decorator as normal:
 
-```py
+```python
 from typing_extensions import Annotated
 
 from pydantic import Field, validate_call
@@ -248,7 +248,7 @@ how_many(number=42)
 The original function which was decorated can still be accessed by using the `raw_function` attribute.
 This is useful if in some scenarios you trust your input arguments and want to call the function in the most efficient way (see [notes on performance](#performance) below):
 
-```py
+```python
 from pydantic import validate_call
 
 
@@ -271,7 +271,7 @@ print(b)
 
 [`validate_call()`][pydantic.validate_call] can also be used on async functions:
 
-```py
+```python
 class Connection:
     async def execute(self, sql, *args):
         return 'testing@example.com'
@@ -331,7 +331,7 @@ need to suppress the error using (usually with a `# type: ignore` comment).
 
 Similarly to Pydantic models, the `config` parameter of the decorator can be used to specify a custom configuration:
 
-```py
+```python
 from pydantic import ConfigDict, ValidationError, validate_call
 
 
@@ -375,7 +375,7 @@ This might be useful when a particular function is costly/time consuming.
 
 Here's an example of a workaround you can use for that pattern:
 
-```py
+```python
 from pydantic import validate_call
 
 

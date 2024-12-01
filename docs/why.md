@@ -15,7 +15,7 @@ and IDEs (like [PyCharm](https://www.jetbrains.com/pycharm/) and [VSCode](https:
 
 ???+ example "Example - just type hints"
     _(This example requires Python 3.9+)_
-    ```py requires="3.9"
+    ```python {requires="3.9"}
     from typing import Annotated, Literal
 
     from annotated_types import Gt
@@ -61,7 +61,7 @@ As a result, Pydantic is among the fastest data validation libraries for Python.
     In general, dedicated code should be much faster than a general-purpose validator, but in this example
     Pydantic is >300% faster than dedicated code when parsing JSON and validating URLs.
 
-    ```py title="Performance Example" test="skip"
+    ```python {title="Performance Example" test="skip"}
     import json
     import timeit
     from urllib.parse import urlparse
@@ -137,7 +137,7 @@ In all three modes, the output can be customized by excluding specific fields, e
 
 ??? example "Example - Serialization 3 ways"
 
-    ```py
+    ```python
     from datetime import datetime
 
     from pydantic import BaseModel
@@ -167,7 +167,7 @@ A [JSON Schema](https://json-schema.org/) can be generated for any Pydantic sche
 
 ??? example "Example - JSON Schema"
 
-    ```py
+    ```python
     from datetime import datetime
 
     from pydantic import BaseModel
@@ -236,7 +236,7 @@ implemented in Rust, it's also very performant.
 
 ??? example "Example - Strict mode that's actually useful"
 
-    ```py
+    ```python
     from datetime import datetime
 
     from pydantic import BaseModel, ValidationError
@@ -288,7 +288,7 @@ Pydantic provides four ways to create schemas and perform validation and seriali
 
 ??? example "Example - schema based on a [`TypedDict`][typing.TypedDict]"
 
-    ```py
+    ```python
     from datetime import datetime
 
     from typing_extensions import NotRequired, TypedDict
@@ -338,7 +338,7 @@ Functional validators and serializers, as well as a powerful protocol for custom
 ??? example "Customisation Example - wrap validators"
     "wrap validators" are new in Pydantic V2 and are one of the most powerful ways to customize validation.
 
-    ```py
+    ```python
     from datetime import datetime, timezone
     from typing import Any
 

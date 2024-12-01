@@ -73,7 +73,7 @@ Pydantic takes advantage of this to allow you to create types that are identical
 
 For example, to create a type representing a positive int:
 
-```py
+```python
 # or `from typing import Annotated` for Python 3.9+
 from typing_extensions import Annotated
 
@@ -99,7 +99,7 @@ except ValidationError as exc:
 Note that you can also use constraints from [annotated-types](https://github.com/annotated-types/annotated-types)
 to make this Pydantic-agnostic:
 
-```py
+```python
 from annotated_types import Gt
 from typing_extensions import Annotated
 
@@ -127,7 +127,7 @@ except ValidationError as exc:
 You can add or override validation, serialization, and JSON schemas to an arbitrary type using the markers that
 Pydantic exports:
 
-```py
+```python
 from typing_extensions import Annotated
 
 from pydantic import (
@@ -220,7 +220,7 @@ This means that they will not be able to have a `title` in JSON schemas and thei
 You can use [PEP 695]'s `TypeAliasType` via its [typing-extensions] backport to make named aliases, allowing you to define a new type without creating subclasses.
 This new type can be as simple as a name or have complex validation logic attached to it:
 
-```py
+```python
 from typing import List
 
 from annotated_types import Gt
@@ -287,7 +287,7 @@ print(Model2.model_json_schema())
 
 These named type aliases can also be generic:
 
-```py
+```python
 from typing import Generic, List, TypeVar
 
 from annotated_types import Gt
@@ -323,7 +323,7 @@ except ValidationError as exc:
 
 You can also use `TypeAliasType` to create recursive types:
 
-```py
+```python
 from typing import Any, Dict, List, Union
 
 from pydantic_core import PydanticCustomError
@@ -401,7 +401,7 @@ handler at all.
 The following is an example of a type that uses `__get_pydantic_core_schema__` to customize how it gets validated.
 This is equivalent to implementing `__get_validators__` in Pydantic V1.
 
-```py
+```python
 from typing import Any
 
 from pydantic_core import CoreSchema, core_schema
@@ -431,7 +431,7 @@ Often you'll want to parametrize your custom type by more than just generic type
 
 For example, if you were to implement `pydantic.AfterValidator` (see [Adding validation and serialization](#adding-validation-and-serialization)) yourself, you'd do something similar to the following:
 
-```py
+```python
 from dataclasses import dataclass
 from typing import Any, Callable
 
@@ -470,7 +470,7 @@ assert Model(name='ABC').name == 'abc'  # (2)!
 
 Another use case for the pattern in the previous section is to handle third party types.
 
-```py
+```python
 from typing import Any
 
 from pydantic_core import core_schema
@@ -609,7 +609,7 @@ You can use this approach to e.g. define behavior for Pandas or Numpy types.
 You may notice that the above examples where we create a marker class require a good amount of boilerplate.
 For many simple cases you can greatly minimize this by using `pydantic.GetPydanticSchema`:
 
-```py
+```python
 from pydantic_core import core_schema
 from typing_extensions import Annotated
 
@@ -659,7 +659,7 @@ Note that we do not do something like `handler(get_args(source_type)[0])` becaus
 schema for that generic parameter, not one that is influenced by the current context of `Annotated` metadata and such.
 This is less important for custom types, but crucial for annotated metadata that modifies schema building.
 
-```py
+```python
 from dataclasses import dataclass
 from typing import Any, Generic, TypeVar
 

@@ -1,11 +1,12 @@
 import json
-from typing import Union
+from typing import Any, Union
 
 import pytest
 from pydantic_core import PydanticCustomError, Url
 from typing_extensions import Annotated
 
 from pydantic import (
+    AfterValidator,
     AmqpDsn,
     AnyHttpUrl,
     AnyUrl,
@@ -1065,6 +1066,15 @@ def test_url_equality() -> None:
     )
 
 
+def test_equality_independent_of_init() -> None:
+    ta = TypeAdapter(HttpUrl)
+    from_str = ta.validate_python('http://example.com/something')
+    from_url = ta.validate_python(HttpUrl('http://example.com/something'))
+    from_validated = ta.validate_python(from_str)
+
+    assert from_str == from_url == from_validated
+
+
 def test_url_subclasses_any_url() -> None:
     http_url = AnyHttpUrl('https://localhost')
     assert isinstance(http_url, AnyUrl)
@@ -1072,3 +1082,50 @@ def test_url_subclasses_any_url() -> None:
 
     url = TypeAdapter(AnyUrl).validate_python(http_url)
     assert url is http_url
+
+
+def test_custom_constraints() -> None:
+    HttpUrl = Annotated[AnyUrl, UrlConstraints(allowed_schemes=['http', 'https'])]
+    ta = TypeAdapter(HttpUrl)
+    assert ta.validate_python('https://example.com')
+
+    with pytest.raises(ValidationError):
+        ta.validate_python('ftp://example.com')
+
+
+def test_after_validator() -> None:
+    def remove_trailing_slash(url: AnyUrl) -> str:
+        """Custom url -> str transformer that removes trailing slash."""
+        return str(url._url).rstrip('/')
+
+    HttpUrl = Annotated[
+        AnyUrl,
+        UrlConstraints(allowed_schemes=['http', 'https']),
+        AfterValidator(lambda url: remove_trailing_slash(url)),
+    ]
+    ta = TypeAdapter(HttpUrl)
+    assert ta.validate_python('https://example.com/') == 'https://example.com'
+
+
+def test_serialize_as_any() -> None:
+    ta = TypeAdapter(Any)
+    assert ta.dump_python(HttpUrl('https://example.com')) == HttpUrl('https://example.com/')
+    assert ta.dump_json('https://example.com') == b'"https://example.com"'
+
+
+def test_any_url_hashable() -> None:
+    example_url_1a = AnyUrl('https://example1.com')
+    example_url_1b = AnyUrl('https://example1.com')
+    example_url_2 = AnyUrl('https://example2.com')
+
+    assert hash(example_url_1a) == hash(example_url_1b)
+    assert hash(example_url_1a) != hash(example_url_2)
+    assert len({example_url_1a, example_url_1b, example_url_2}) == 2
+
+    example_multi_host_url_1a = PostgresDsn('postgres://user:pass@host1:5432,host2:5432/app')
+    example_multi_host_url_1b = PostgresDsn('postgres://user:pass@host1:5432,host2:5432/app')
+    example_multi_host_url_2 = PostgresDsn('postgres://user:pass@host1:5432,host3:5432/app')
+
+    assert hash(example_multi_host_url_1a) == hash(example_multi_host_url_1b)
+    assert hash(example_multi_host_url_1a) != hash(example_multi_host_url_2)
+    assert len({example_multi_host_url_1a, example_multi_host_url_1b, example_multi_host_url_2}) == 2
