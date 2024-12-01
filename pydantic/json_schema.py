@@ -676,7 +676,17 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        json_schema = self.str_schema(core_schema.str_schema())
+        max_digits = schema.get('max_digits')
+        decimal_places = schema.get('decimal_places')
+        str_schema = core_schema.str_schema()
+
+        if max_digits is not None and decimal_places is not None:
+            integer_places = max_digits - decimal_places
+            pattern = f'^-?(?:0|[1-9]\\d{{0,{integer_places-1}}})(\\.\\d{{0,{decimal_places}}})?$'
+            str_schema['pattern'] = pattern
+
+        json_schema = self.str_schema(str_schema)
+
         if self.mode == 'validation':
             multiple_of = schema.get('multiple_of')
             le = schema.get('le')

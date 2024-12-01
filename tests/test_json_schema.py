@@ -933,6 +933,15 @@ def test_str_constrained_types(field_type, expected_schema):
     assert model_schema == base_schema
 
 
+def test_decimal_constraints():
+    constraints = {'max_digits': 5, 'decimal_places': 2, 'ge': 0.0, 'le': 10.0}
+    schema = TypeAdapter(Annotated[Decimal, Field(**constraints)]).json_schema()
+
+    assert 'pattern' in schema['anyOf'][1]
+    assert schema['anyOf'][0]['maximum'] == 10.0
+    assert schema['anyOf'][0]['minimum'] == 0.0
+
+
 @pytest.mark.parametrize(
     'field_type,expected_schema',
     [
