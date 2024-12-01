@@ -6618,3 +6618,15 @@ def test_blank_title_is_respected() -> None:
         model_config = ConfigDict(title='')
 
     assert Model.model_json_schema()['title'] == ''
+
+AnnBool = Annotated[
+    bool | Literal["true", "false"],
+    WithJsonSchema({}),
+]
+def test_with_json_schema_doesnt_share_schema() -> None:
+    # See https://github.com/pydantic/pydantic/issues/11013
+    class Model(BaseModel):
+        field1: BoolLikeT = Field(default=False)
+        field2: BoolLikeT | None = Field(default=None)
+
+    assert Model.model_json_schema()["properties"]["field2"]["anyOf"][0] == dict()
