@@ -6620,7 +6620,7 @@ def test_blank_title_is_respected() -> None:
     assert Model.model_json_schema()['title'] == ''
 
 AnnBool = Annotated[
-    bool | Literal["true", "false"],
+    bool,
     WithJsonSchema({}),
 ]
 def test_with_json_schema_doesnt_share_schema() -> None:
