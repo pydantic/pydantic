@@ -23,7 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: astral-sh/setup-uv@v3
+      - uses: astral-sh/setup-uv@v4
         with:
           enable-cache: true
 
@@ -41,7 +41,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - uses: astral-sh/setup-uv@v3
+    - uses: astral-sh/setup-uv@v4
       with:
         enable-cache: true
 
@@ -71,7 +71,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: astral-sh/setup-uv@v3
+      - uses: astral-sh/setup-uv@v4
         with:
           enable-cache: true
 
@@ -122,7 +122,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - uses: astral-sh/setup-uv@v3
+    - uses: astral-sh/setup-uv@v4
       with:
         enable-cache: true
 
@@ -179,7 +179,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: astral-sh/setup-uv@v3
+      - uses: astral-sh/setup-uv@v4
 
       - name: Install dependencies
         run: uv sync --python 3.12
@@ -217,7 +217,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - uses: astral-sh/setup-uv@v3
+    - uses: astral-sh/setup-uv@v4
       with:
         enable-cache: true
 
@@ -249,7 +249,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - uses: astral-sh/setup-uv@v3
+    - uses: astral-sh/setup-uv@v4
       with:
         enable-cache: true
 
@@ -339,7 +339,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - uses: astral-sh/setup-uv@v3
+    - uses: astral-sh/setup-uv@v4
       with:
         enable-cache: true
 
