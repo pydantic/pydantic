@@ -6630,6 +6630,6 @@ def test_with_json_schema_doesnt_share_schema() -> None:
     # See https://github.com/pydantic/pydantic/issues/11013
     class Model(BaseModel):
         field1: AnnBool = Field(default=False)
-        field2: AnnBool | None = Field(default=None)
+        field2: Optional[AnnBool] = Field(default=None)
 
     assert Model.model_json_schema()['properties']['field2']['anyOf'][0] == dict()
