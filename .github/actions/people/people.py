@@ -528,6 +528,7 @@ if __name__ == '__main__':
         'davidhewitt',
         'sydney-runkle',
         'alexmojaki',
+        'Viicos',
     }
     bot_names = {'codecov', 'github-actions', 'pre-commit-ci', 'dependabot'}
     maintainers = []
