@@ -15,7 +15,7 @@ Untrusted data can be passed to a model and, after parsing and validation, Pydan
 of the resultant model instance will conform to the field types defined on the model.
 
 !!! note "Validation — a _deliberate_ misnomer"
-    ### TL;DR
+    <h3>TL;DR</h3>
 
     We use the term "validation" to refer to the process of instantiating a model (or other type) that adheres to specified types and
     constraints. This task, which Pydantic is well known for, is most widely recognized as "validation" in colloquial terms,
@@ -23,12 +23,12 @@ of the resultant model instance will conform to the field types defined on the m
 
     ---
 
-    ### The long version
+    <h3>The long version</h3>
 
     The potential confusion around the term "validation" arises from the fact that, strictly speaking, Pydantic's
     primary focus doesn't align precisely with the dictionary definition of "validation":
 
-    > ### validation
+    > <h3>validation</h3>
     > _noun_
     > the action of checking or proving the validity or accuracy of something.
 
@@ -74,6 +74,9 @@ In this example, `User` is a model with two fields:
 * `id`, which is an integer and is required
 * `name`, which is a string and is not required (it has a default value).
 
+Fields can be customized in a number of ways using the [`Field()`][pydantic.Field] function.
+See the [documentation on fields](./fields.md) for more information.
+
 The model can then be instantiated:
 
 ```python {group="basic-model"}
@@ -96,16 +99,16 @@ assert isinstance(user.id, int)
    The [`model_fields_set`][pydantic.BaseModel.model_fields_set] attribute can be
    inspected to check the field names explicitly set during instantiation.
 2. Note that the string `'123'` was coerced to an integer and its value is `123`.
-   More details on Pydantic's coercion logic can be found in the [Data Conversion](#data-conversion) section.
+   More details on Pydantic's coercion logic can be found in the [data conversion](#data-conversion) section.
 
-The model instance can be serialized using the [`model_dump`][pydantic.BaseModel.model_dump] method:
+The model instance can be serialized using the [`model_dump()`][pydantic.BaseModel.model_dump] method:
 
 ```python {group="basic-model"}
 assert user.model_dump() == {'id': 123, 'name': 'Jane Doe'}
 ```
 
 Calling [dict][] on the instance will also provide a dictionary, but nested fields will not be
-recursively converted into dictionaries. [`model_dump`][pydantic.BaseModel.model_dump] also
+recursively converted into dictionaries. [`model_dump()`][pydantic.BaseModel.model_dump] also
 provides numerous arguments to customize the serialization result.
 
 By default, models are mutable and field values can be changed through attribute assignment:
@@ -167,6 +170,53 @@ Models possess the following methods and attributes:
 !!! tip
     See [Changes to `pydantic.BaseModel`](../migration.md#changes-to-pydanticbasemodel) in the
     [Migration Guide](../migration.md) for details on changes from Pydantic V1.
+
+## Data conversion
+
+Pydantic may cast input data to force it to conform to model field types,
+and in some cases this may result in a loss of information.
+For example:
+
+```python
+from pydantic import BaseModel
+
+
+class Model(BaseModel):
+    a: int
+    b: float
+    c: str
+
+
+print(Model(a=3.000, b='2.72', c=b'binary data').model_dump())
+#> {'a': 3, 'b': 2.72, 'c': 'binary data'}
+```
+
+This is a deliberate decision of Pydantic, and is frequently the most useful approach. See
+[here](https://github.com/pydantic/pydantic/issues/578) for a longer discussion on the subject.
+
+This is also the case for collections. In most cases, you shouldn't make use of abstract container classes
+and just use a concrete type, such as [`list`][]:
+
+```python
+from typing import List
+
+from pydantic import BaseModel
+
+
+class Model(BaseModel):
+    items: List[int]  # (1)!
+
+
+print(Model(items=(1, 2, 3)))
+#> items=[1, 2, 3]
+```
+
+1. In this case, you might be tempted to use the abstract [`Sequence`][collections.abc.Sequence] type
+   to allow both lists and tuples. But Pydantic takes care of converting the tuple input to a list, so
+   in most cases this isn't necessary.
+
+Nevertheless, Pydantic provides a [strict mode](strict_mode.md), where no data conversion is performed.
+Values must be of the same type than the declared field type.
 
 ## Nested models
 
@@ -1389,7 +1439,7 @@ class FooBarModel(BaseModel, abc.ABC):
 
 Field order affects models in the following ways:
 
-* field order is preserved in the model [schema](json_schema.md)
+* field order is preserved in the model [JSON Schema](json_schema.md)
 * field order is preserved in [validation errors](#error-handling)
 * field order is preserved by [`.model_dump()` and `.model_dump_json()` etc.](serialization.md#model_dump)
 
@@ -1419,99 +1469,11 @@ print(error_locations)
 #> [('a',), ('b',), ('c',), ('d',), ('e',)]
 ```
 
-## Required fields
-
-To declare a field as required, you may declare it using an annotation, or an annotation in combination with a
-[`Field`][pydantic.Field] function (without specifying any `default` or `default_factory` argument).
-
-```python
-from pydantic import BaseModel, Field
-
-
-class Model(BaseModel):
-    a: int
-    b: int = Field(alias='B')
-    c: int = Field(..., alias='C')
-```
-
-Here `a`, `b` and `c` are all required. The field `c` uses the [ellipsis][Ellipsis] as a default argument,
-emphasizing on the fact that it is required. However, the usage of the [ellipsis][Ellipsis] is discouraged
-as it doesn't play well with type checkers.
-
-!!! note
-    In Pydantic V1, fields annotated with `Optional` or `Any` would be given an implicit default of `None` even if no
-    default was explicitly specified. This behavior has changed in Pydantic V2, and there are no longer any type
-    annotations that will result in a field having an implicit default value.
-
-    See [the migration guide](../migration.md#required-optional-and-nullable-fields) for more details on changes
-    to required and nullable fields.
-
-## Fields with non-hashable default values
-
-A common source of bugs in python is to use a mutable object as a default value for a function or method argument,
-as the same instance ends up being reused in each call.
-
-The `dataclasses` module actually raises an error in this case, indicating that you should use the `default_factory`
-argument to `dataclasses.field`.
-
-Pydantic also supports the use of a [`default_factory`](#fields-with-dynamic-default-values) for non-hashable default
-values, but it is not required. In the event that the default value is not hashable, Pydantic will deepcopy the default
-value when creating each instance of the model:
-
-```python
-from typing import Dict, List
-
-from pydantic import BaseModel
-
-
-class Model(BaseModel):
-    item_counts: List[Dict[str, int]] = [{}]
-
-
-m1 = Model()
-m1.item_counts[0]['a'] = 1
-print(m1.item_counts)
-#> [{'a': 1}]
-
-m2 = Model()
-print(m2.item_counts)
-#> [{}]
-```
-
-## Fields with dynamic default values
-
-When declaring a field with a default value, you may want it to be dynamic (i.e. different for each model).
-To do this, you may want to use a `default_factory`.
-
-Here is an example:
-
-```python
-from datetime import datetime, timezone
-from uuid import UUID, uuid4
-
-from pydantic import BaseModel, Field
-
-
-def datetime_now() -> datetime:
-    return datetime.now(timezone.utc)
-
-
-class Model(BaseModel):
-    uid: UUID = Field(default_factory=uuid4)
-    updated: datetime = Field(default_factory=datetime_now)
-
-
-m1 = Model()
-m2 = Model()
-assert m1.uid != m2.uid
-```
-
-You can find more information in the documentation of the [`Field` function](fields.md).
-
 ## Automatically excluded attributes
 
-### Class vars
-Attributes annotated with `typing.ClassVar` are properly treated by Pydantic as class variables, and will not
+### Class variables
+
+Attributes annotated with [`ClassVar`][typing.ClassVar] are properly treated by Pydantic as class variables, and will not
 become fields on model instances:
 
 ```python
@@ -1521,14 +1483,15 @@ from pydantic import BaseModel
 
 
 class Model(BaseModel):
-    x: int = 2
-    y: ClassVar[int] = 1
+    x: ClassVar[int] = 1
+
+    y: int = 2
 
 
 m = Model()
 print(m)
-#> x=2
-print(Model.y)
+#> y=2
+print(Model.x)
 #> 1
 ```
 
@@ -1541,15 +1504,12 @@ Attributes whose name has a leading underscore are not treated as fields by Pyda
 model schema. Instead, these are converted into a "private attribute" which is not validated or even set during
 calls to `__init__`, `model_validate`, etc.
 
-!!! note
-    As of Pydantic v2.1.0, you will receive a NameError if trying to use the [`Field` function](fields.md) with a private attribute.
-    Because private attributes are not treated as fields, the Field() function cannot be applied.
-
 Here is an example of usage:
 
 ```python
 from datetime import datetime
 from random import randint
+from typing import Any
 
 from pydantic import BaseModel, PrivateAttr
 
@@ -1558,9 +1518,8 @@ class TimeAwareModel(BaseModel):
     _processed_at: datetime = PrivateAttr(default_factory=datetime.now)
     _secret_value: str
 
-    def __init__(self, **data):
-        super().__init__(**data)
-        # this could also be done with default_factory
+    def model_post_init(self, context: Any) -> None:
+        # this could also be done with `default_factory`:
         self._secret_value = randint(1, 5)
 
 
@@ -1572,32 +1531,7 @@ print(m._secret_value)
 ```
 
 Private attribute names must start with underscore to prevent conflicts with model fields. However, dunder names
-(such as `__attr__`) are not supported.
-
-## Data conversion
-
-Pydantic may cast input data to force it to conform to model field types,
-and in some cases this may result in a loss of information.
-For example:
-
-```python
-from pydantic import BaseModel
-
-
-class Model(BaseModel):
-    a: int
-    b: float
-    c: str
-
-
-print(Model(a=3.000, b='2.72', c=b'binary data').model_dump())
-#> {'a': 3, 'b': 2.72, 'c': 'binary data'}
-```
-
-This is a deliberate decision of Pydantic, and is frequently the most useful approach. See
-[here](https://github.com/pydantic/pydantic/issues/578) for a longer discussion on the subject.
-
-Nevertheless, [strict type checking](strict_mode.md) is also supported.
+(such as `__attr__`) are not supported, and will be completely ignored from the model definition.
 
 ## Model signature
 
@@ -1710,8 +1644,8 @@ arr_orig = [1, 9, 10, 3]
 
 c1 = C1(arr_orig)
 c2 = C2(arr=arr_orig)
-print('id(c1.arr) == id(c2.arr):', id(c1.arr) == id(c2.arr))
-#> id(c1.arr) == id(c2.arr): False
+print(f'{id(c1.arr) == id(c2.arr)=}')
+#> id(c1.arr) == id(c2.arr)=False
 ```
 
 !!! note

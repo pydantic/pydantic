@@ -66,15 +66,12 @@ Besides the above, you can also have a [`FiniteFloat`][pydantic.types.FiniteFloa
 
 You can also define your own custom data types. There are several ways to achieve it.
 
-### Composing types via `Annotated`
+### Using the annotated pattern
 
-[PEP 593] introduced `Annotated` as a way to attach runtime metadata to types without changing how type checkers interpret them.
-Pydantic takes advantage of this to allow you to create types that are identical to the original type as far as type checkers are concerned, but add validation, serialize differently, etc.
-
-For example, to create a type representing a positive int:
+The [annotated pattern](./fields.md#the-annotated-pattern) can be used to make types reusable across your code base.
+For example, to create a type representing a positive integer:
 
 ```python
-# or `from typing import Annotated` for Python 3.9+
 from typing_extensions import Annotated
 
 from pydantic import Field, TypeAdapter, ValidationError
