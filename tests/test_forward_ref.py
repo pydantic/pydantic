@@ -1314,12 +1314,22 @@ def test_uses_the_correct_globals_to_resolve_forward_refs_on_serializers(create_
     # we use the globals of the underlying func to resolve the return type.
     @create_module
     def module_1():
-        from pydantic import BaseModel, field_serializer  # or model_serializer, computed_field
+        from typing_extensions import Annotated
+
+        from pydantic import (
+            BaseModel,
+            PlainSerializer,  # or WrapSerializer
+            field_serializer,  # or model_serializer, computed_field
+        )
 
         MyStr = str
 
+        def ser_func(value) -> 'MyStr':
+            return str(value)
+
         class Model(BaseModel):
             a: int
+            b: Annotated[int, PlainSerializer(ser_func)]
 
             @field_serializer('a')
             def ser(self, value) -> 'MyStr':
