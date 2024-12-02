@@ -44,7 +44,6 @@ url = "2.5.0"
 idna = "1.0.3"
 base64 = "0.22.1"
 num-bigint = "0.4.6"
-python3-dll-a = "0.2.10"
 uuid = "1.11.0"
 jiter = { version = "0.8.0", features = ["python"] }
 hex = "0.4.3"
