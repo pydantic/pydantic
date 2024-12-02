@@ -270,7 +270,7 @@ pub(crate) trait TypeSerializer: Send + Sync + Debug {
 
     fn json_key<'a>(&self, key: &'a Bound<'_, PyAny>, extra: &Extra) -> PyResult<Cow<'a, str>>;
 
-    fn _invalid_as_json_key<'a>(
+    fn invalid_as_json_key<'a>(
         &self,
         key: &'a Bound<'_, PyAny>,
         extra: &Extra,
@@ -332,7 +332,7 @@ impl<'py> PydanticSerializer<'py> {
     }
 }
 
-impl<'py> Serialize for PydanticSerializer<'py> {
+impl Serialize for PydanticSerializer<'_> {
     fn serialize<S: serde::ser::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         self.serializer
             .serde_serialize(self.value, serializer, self.include, self.exclude, self.extra)
@@ -369,6 +369,7 @@ pub(crate) fn to_json_bytes(
     Ok(bytes)
 }
 
+#[allow(clippy::type_complexity)]
 pub(super) fn any_dataclass_iter<'a, 'py>(
     dataclass: &'a Bound<'py, PyAny>,
 ) -> PyResult<(

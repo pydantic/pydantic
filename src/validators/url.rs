@@ -86,9 +86,9 @@ impl Validator for UrlValidator {
         match check_sub_defaults(
             &mut either_url,
             self.host_required,
-            &self.default_host,
+            self.default_host.as_ref(),
             self.default_port,
-            &self.default_path,
+            self.default_path.as_ref(),
         ) {
             Ok(()) => {
                 // Lax rather than strict to preserve V2.4 semantic that str wins over url in union
@@ -251,9 +251,9 @@ impl Validator for MultiHostUrlValidator {
         match check_sub_defaults(
             &mut multi_url,
             self.host_required,
-            &self.default_host,
+            self.default_host.as_ref(),
             self.default_port,
-            &self.default_path,
+            self.default_path.as_ref(),
         ) {
             Ok(()) => {
                 // Lax rather than strict to preserve V2.4 semantic that str wins over url in union
@@ -536,9 +536,9 @@ fn parse_url(url_str: &str, input: impl ToErrorValue, strict: bool) -> ValResult
 fn check_sub_defaults(
     url: &mut impl CopyFromPyUrl,
     host_required: bool,
-    default_host: &Option<String>,
+    default_host: Option<&String>,
     default_port: Option<u16>,
-    default_path: &Option<String>,
+    default_path: Option<&String>,
 ) -> Result<(), ErrorType> {
     let map_parse_err = |e: ParseError| ErrorType::UrlParsing {
         error: e.to_string(),
@@ -546,7 +546,7 @@ fn check_sub_defaults(
     };
 
     if !url.url().has_host() {
-        if let Some(ref default_host) = default_host {
+        if let Some(default_host) = default_host {
             url.url_mut().set_host(Some(default_host)).map_err(map_parse_err)?;
         } else if host_required {
             return Err(ErrorType::UrlParsing {
@@ -562,7 +562,7 @@ fn check_sub_defaults(
                 .map_err(|()| map_parse_err(ParseError::EmptyHost))?;
         }
     }
-    if let Some(ref default_path) = default_path {
+    if let Some(default_path) = default_path {
         let path = url.url().path();
         if path.is_empty() || path == "/" {
             url.url_mut().set_path(default_path);

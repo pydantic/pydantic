@@ -24,7 +24,7 @@ pub enum EitherDate<'a> {
     Py(Bound<'a, PyDate>),
 }
 
-impl<'a> From<Date> for EitherDate<'a> {
+impl From<Date> for EitherDate<'_> {
     fn from(date: Date) -> Self {
         Self::Raw(date)
     }
@@ -45,7 +45,7 @@ pub fn pydate_as_date(py_date: &Bound<'_, PyAny>) -> PyResult<Date> {
     })
 }
 
-impl<'a> EitherDate<'a> {
+impl EitherDate<'_> {
     pub fn as_raw(&self) -> PyResult<Date> {
         match self {
             Self::Raw(date) => Ok(date.clone()),
@@ -68,7 +68,7 @@ pub enum EitherTime<'a> {
     Py(Bound<'a, PyTime>),
 }
 
-impl<'a> From<Time> for EitherTime<'a> {
+impl From<Time> for EitherTime<'_> {
     fn from(time: Time) -> Self {
         Self::Raw(time)
     }
@@ -87,7 +87,7 @@ pub enum EitherTimedelta<'a> {
     PySubclass(Bound<'a, PyDelta>),
 }
 
-impl<'a> From<Duration> for EitherTimedelta<'a> {
+impl From<Duration> for EitherTimedelta<'_> {
     fn from(timedelta: Duration) -> Self {
         Self::Raw(timedelta)
     }
@@ -200,7 +200,7 @@ pub fn pytime_as_time(py_time: &Bound<'_, PyAny>, py_dt: Option<&Bound<'_, PyAny
     })
 }
 
-impl<'a> EitherTime<'a> {
+impl EitherTime<'_> {
     pub fn as_raw(&self) -> PyResult<Time> {
         match self {
             Self::Raw(time) => Ok(time.clone()),
@@ -240,7 +240,7 @@ pub enum EitherDateTime<'a> {
     Py(Bound<'a, PyDateTime>),
 }
 
-impl<'a> From<DateTime> for EitherDateTime<'a> {
+impl From<DateTime> for EitherDateTime<'_> {
     fn from(dt: DateTime) -> Self {
         Self::Raw(dt)
     }

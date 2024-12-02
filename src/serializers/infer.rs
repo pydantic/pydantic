@@ -324,7 +324,7 @@ impl<'py> SerializeInfer<'py> {
     }
 }
 
-impl<'py> Serialize for SerializeInfer<'py> {
+impl Serialize for SerializeInfer<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let ob_type = self.extra.ob_type_lookup.get_type(self.value);
         infer_serialize_known(ob_type, self.value, serializer, self.include, self.exclude, self.extra)

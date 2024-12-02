@@ -582,7 +582,7 @@ struct ValidationErrorSerializer<'py> {
     input_type: &'py InputType,
 }
 
-impl<'py> Serialize for ValidationErrorSerializer<'py> {
+impl Serialize for ValidationErrorSerializer<'_> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -614,7 +614,7 @@ struct PyLineErrorSerializer<'py> {
     input_type: &'py InputType,
 }
 
-impl<'py> Serialize for PyLineErrorSerializer<'py> {
+impl Serialize for PyLineErrorSerializer<'_> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,

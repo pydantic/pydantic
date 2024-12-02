@@ -124,6 +124,7 @@ impl Validator for FunctionBeforeValidator {
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         let validate = |v, s: &mut ValidationState<'_, 'py>| self.validator.validate(py, &v, s);
+        #[allow(clippy::used_underscore_items)]
         self._validate(validate, py, input, state)
     }
     fn validate_assignment<'py>(
@@ -137,6 +138,7 @@ impl Validator for FunctionBeforeValidator {
         let validate = move |v, s: &mut ValidationState<'_, 'py>| {
             self.validator.validate_assignment(py, &v, field_name, field_value, s)
         };
+        #[allow(clippy::used_underscore_items)]
         self._validate(validate, py, obj, state)
     }
 
@@ -190,6 +192,7 @@ impl Validator for FunctionAfterValidator {
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         let validate = |v: &_, s: &mut ValidationState<'_, 'py>| self.validator.validate(py, v, s);
+        #[allow(clippy::used_underscore_items)]
         self._validate(validate, py, input, state)
     }
     fn validate_assignment<'py>(
@@ -203,6 +206,7 @@ impl Validator for FunctionAfterValidator {
         let validate = move |v: &Bound<'py, PyAny>, s: &mut ValidationState<'_, 'py>| {
             self.validator.validate_assignment(py, v, field_name, field_value, s)
         };
+        #[allow(clippy::used_underscore_items)]
         self._validate(validate, py, obj, state)
     }
 
@@ -351,6 +355,7 @@ impl Validator for FunctionWrapValidator {
             ),
         };
         let handler = Bound::new(py, handler)?;
+        #[allow(clippy::used_underscore_items)]
         let result = self._validate(handler.as_any(), py, input, state);
         state.exactness = handler.borrow_mut().validator.exactness;
         result
@@ -376,6 +381,7 @@ impl Validator for FunctionWrapValidator {
             updated_field_name: field_name.to_string(),
             updated_field_value: field_value.to_object(py),
         };
+        #[allow(clippy::used_underscore_items)]
         self._validate(Bound::new(py, handler)?.as_any(), py, obj, state)
     }
 

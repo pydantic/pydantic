@@ -28,7 +28,7 @@ pub enum StringMapping<'py> {
     Mapping(Bound<'py, PyDict>),
 }
 
-impl<'py> ToPyObject for StringMapping<'py> {
+impl ToPyObject for StringMapping<'_> {
     fn to_object(&self, py: Python<'_>) -> PyObject {
         match self {
             Self::String(s) => s.to_object(py),
@@ -83,7 +83,10 @@ impl<'py> Input<'py> for StringMapping<'py> {
         None
     }
 
-    type Arguments<'a> = StringMappingDict<'py> where Self: 'a;
+    type Arguments<'a>
+        = StringMappingDict<'py>
+    where
+        Self: 'a;
 
     fn validate_args(&self) -> ValResult<StringMappingDict<'py>> {
         // do we want to support this?
@@ -150,7 +153,10 @@ impl<'py> Input<'py> for StringMapping<'py> {
         }
     }
 
-    type Dict<'a> = StringMappingDict<'py> where Self: 'a;
+    type Dict<'a>
+        = StringMappingDict<'py>
+    where
+        Self: 'a;
 
     fn strict_dict(&self) -> ValResult<StringMappingDict<'py>> {
         match self {
@@ -159,19 +165,28 @@ impl<'py> Input<'py> for StringMapping<'py> {
         }
     }
 
-    type List<'a> = Never where Self: 'a;
+    type List<'a>
+        = Never
+    where
+        Self: 'a;
 
     fn validate_list(&self, _strict: bool) -> ValMatch<Never> {
         Err(ValError::new(ErrorTypeDefaults::ListType, self))
     }
 
-    type Tuple<'a> = Never where Self: 'a;
+    type Tuple<'a>
+        = Never
+    where
+        Self: 'a;
 
     fn validate_tuple(&self, _strict: bool) -> ValMatch<Never> {
         Err(ValError::new(ErrorTypeDefaults::TupleType, self))
     }
 
-    type Set<'a> = Never where Self: 'a;
+    type Set<'a>
+        = Never
+    where
+        Self: 'a;
 
     fn validate_set(&self, _strict: bool) -> ValMatch<Never> {
         Err(ValError::new(ErrorTypeDefaults::SetType, self))
@@ -259,11 +274,13 @@ impl<'py> Arguments<'py> for StringMappingDict<'py> {
 }
 
 impl<'py> KeywordArgs<'py> for StringMappingDict<'py> {
-    type Key<'a> = StringMapping<'py>
+    type Key<'a>
+        = StringMapping<'py>
     where
         Self: 'a;
 
-    type Item<'a> = StringMapping<'py>
+    type Item<'a>
+        = StringMapping<'py>
     where
         Self: 'a;
 
@@ -283,11 +300,13 @@ impl<'py> KeywordArgs<'py> for StringMappingDict<'py> {
 }
 
 impl<'py> ValidatedDict<'py> for StringMappingDict<'py> {
-    type Key<'a> = StringMapping<'py>
+    type Key<'a>
+        = StringMapping<'py>
     where
         Self: 'a;
 
-    type Item<'a> = StringMapping<'py>
+    type Item<'a>
+        = StringMapping<'py>
     where
         Self: 'a;
     fn get_item<'k>(&self, key: &'k LookupKey) -> ValResult<Option<(&'k LookupPath, Self::Item<'_>)>> {

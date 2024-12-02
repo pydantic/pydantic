@@ -45,7 +45,7 @@ impl TypeSerializer for ComplexSerializer {
     }
 
     fn json_key<'a>(&self, key: &'a Bound<'_, PyAny>, extra: &Extra) -> PyResult<Cow<'a, str>> {
-        self._invalid_as_json_key(key, extra, "complex")
+        self.invalid_as_json_key(key, extra, "complex")
     }
 
     fn serde_serialize<S: serde::ser::Serializer>(

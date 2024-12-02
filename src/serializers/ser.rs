@@ -32,7 +32,7 @@ where
     }
 }
 
-impl<'a, W> PythonSerializer<W, PrettyFormatter<'a>>
+impl<W> PythonSerializer<W, PrettyFormatter<'_>>
 where
     W: io::Write,
 {
@@ -388,7 +388,7 @@ where
     }
 }
 
-impl<'a, W, F> serde::ser::SerializeSeq for Compound<'a, W, F>
+impl<W, F> serde::ser::SerializeSeq for Compound<'_, W, F>
 where
     W: io::Write,
     F: Formatter,
@@ -436,7 +436,7 @@ where
     }
 }
 
-impl<'a, W, F> serde::ser::SerializeTuple for Compound<'a, W, F>
+impl<W, F> serde::ser::SerializeTuple for Compound<'_, W, F>
 where
     W: io::Write,
     F: Formatter,
@@ -458,7 +458,7 @@ where
     }
 }
 
-impl<'a, W, F> serde::ser::SerializeTupleStruct for Compound<'a, W, F>
+impl<W, F> serde::ser::SerializeTupleStruct for Compound<'_, W, F>
 where
     W: io::Write,
     F: Formatter,
@@ -480,7 +480,7 @@ where
     }
 }
 
-impl<'a, W, F> serde::ser::SerializeTupleVariant for Compound<'a, W, F>
+impl<W, F> serde::ser::SerializeTupleVariant for Compound<'_, W, F>
 where
     W: io::Write,
     F: Formatter,
@@ -522,7 +522,7 @@ where
     }
 }
 
-impl<'a, W, F> serde::ser::SerializeMap for Compound<'a, W, F>
+impl<W, F> serde::ser::SerializeMap for Compound<'_, W, F>
 where
     W: io::Write,
     F: Formatter,
@@ -595,7 +595,7 @@ where
     }
 }
 
-impl<'a, W, F> serde::ser::SerializeStruct for Compound<'a, W, F>
+impl<W, F> serde::ser::SerializeStruct for Compound<'_, W, F>
 where
     W: io::Write,
     F: Formatter,
@@ -630,7 +630,7 @@ where
     }
 }
 
-impl<'a, W, F> serde::ser::SerializeStructVariant for Compound<'a, W, F>
+impl<W, F> serde::ser::SerializeStructVariant for Compound<'_, W, F>
 where
     W: io::Write,
     F: Formatter,
@@ -794,7 +794,7 @@ fn invalid_number() -> PythonSerializerError {
     }
 }
 
-impl<'a, W, F> serde::ser::Serializer for MapKeySerializer<'a, W, F>
+impl<W, F> serde::ser::Serializer for MapKeySerializer<'_, W, F>
 where
     W: io::Write,
     F: Formatter,
@@ -1124,7 +1124,7 @@ where
 
 struct NumberStrEmitter<'a, W: 'a + io::Write, F: 'a + Formatter>(&'a mut PythonSerializer<W, F>);
 
-impl<'a, W: io::Write, F: Formatter> serde::ser::Serializer for NumberStrEmitter<'a, W, F> {
+impl<W: io::Write, F: Formatter> serde::ser::Serializer for NumberStrEmitter<'_, W, F> {
     type Ok = ();
     type Error = PythonSerializerError;
 
