@@ -445,7 +445,6 @@ dependencies = [
  "num-bigint",
  "pyo3",
  "pyo3-build-config",
- "python3-dll-a",
  "regex",
  "serde",
  "serde_json",
