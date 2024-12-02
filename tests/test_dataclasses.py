@@ -3065,3 +3065,12 @@ def test_config_pushdown_vanilla_dc() -> None:
         model_config = ConfigDict(arbitrary_types_allowed=True)
 
         dc: DC
+
+
+def test_deferred_dataclass_fields_available() -> None:
+    # This aligns with deferred Pydantic models:
+    @pydantic.dataclasses.dataclass(config={'defer_build': True})
+    class A:
+        a: int
+
+    assert 'a' in A.__pydantic_fields__  # pyright: ignore[reportAttributeAccessIssue]

@@ -125,6 +125,8 @@ def complete_dataclass(
     cls.__init__ = __init__  # type: ignore
     cls.__pydantic_config__ = config_wrapper.config_dict  # type: ignore
 
+    set_dataclass_fields(cls, ns_resolver, config_wrapper=config_wrapper)
+
     if not _force_build and config_wrapper.defer_build:
         set_dataclass_mocks(cls, cls.__name__)
         return False
@@ -134,8 +136,6 @@ def complete_dataclass(
             'Support for `__post_init_post_parse__` has been dropped, the method will not be called', DeprecationWarning
         )
 
-    set_dataclass_fields(cls, ns_resolver, config_wrapper=config_wrapper)
-
     typevars_map = get_standard_typevars_map(cls)
     gen_schema = GenerateSchema(
         config_wrapper,
@@ -143,14 +143,15 @@ def complete_dataclass(
         typevars_map=typevars_map,
     )
 
-    # set __signature__ attr only for model class, but not for its instances
+    # set __signature__ attr only for the class, but not for its instances
     # (because instances can define `__call__`, and `inspect.signature` shouldn't
     # use the `__signature__` attribute and instead generate from `__call__`).
     cls.__signature__ = LazyClassAttribute(
         '__signature__',
         partial(
             generate_pydantic_signature,
-            # It's' important that we reference the original_init here
+            # It's important that we reference the `original_init` here,
+            # as it is the one synthesized by the stdlib `dataclass` module:
             init=original_init,
             fields=cls.__pydantic_fields__,  # type: ignore
             populate_by_name=config_wrapper.populate_by_name,
