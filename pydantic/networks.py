@@ -456,13 +456,13 @@ class AnyUrl(_BaseUrl):
 
     * Any scheme allowed
     * Top-level domain (TLD) not required
-    * Host required
+    * Host not required
 
     Assuming an input URL of `http://samuel:pass@example.com:8000/the/path/?query=here#fragment=is;this=bit`,
     the types export the following properties:
 
     - `scheme`: the URL scheme (`http`), always set.
-    - `host`: the URL host (`example.com`), always set.
+    - `host`: the URL host (`example.com`).
     - `username`: optional username if included (`samuel`).
     - `password`: optional password if included (`pass`).
     - `port`: optional port (`8000`).
@@ -470,13 +470,6 @@ class AnyUrl(_BaseUrl):
     - `query`: optional URL query (for example, `GET` arguments or "search string", such as `query=here`).
     - `fragment`: optional fragment (`fragment=is;this=bit`).
     """
-
-    _constraints = UrlConstraints(host_required=True)
-
-    @property
-    def host(self) -> str:
-        """The required URL host."""
-        return self._url.host  # pyright: ignore[reportReturnType]
 
 
 # Note: all single host urls inherit from `AnyUrl` to preserve compatibility with pre-v2.10 code
@@ -487,17 +480,17 @@ class AnyHttpUrl(AnyUrl):
     """A type that will accept any http or https URL.
 
     * TLD not required
-    * Host required
+    * Host not required
     """
 
-    _constraints = UrlConstraints(host_required=True, allowed_schemes=['http', 'https'])
+    _constraints = UrlConstraints(allowed_schemes=['http', 'https'])
 
 
 class HttpUrl(AnyUrl):
     """A type that will accept any http or https URL.
 
     * TLD not required
-    * Host required
+    * Host not required
     * Max length 2083
 
     ```python
@@ -571,33 +564,28 @@ class HttpUrl(AnyUrl):
         (or at least big) company.
     """
 
-    _constraints = UrlConstraints(max_length=2083, allowed_schemes=['http', 'https'], host_required=True)
+    _constraints = UrlConstraints(max_length=2083, allowed_schemes=['http', 'https'])
 
 
 class AnyWebsocketUrl(AnyUrl):
     """A type that will accept any ws or wss URL.
 
     * TLD not required
-    * Host required
+    * Host not required
     """
 
-    _constraints = UrlConstraints(allowed_schemes=['ws', 'wss'], host_required=True)
+    _constraints = UrlConstraints(allowed_schemes=['ws', 'wss'])
 
 
 class WebsocketUrl(AnyUrl):
     """A type that will accept any ws or wss URL.
 
     * TLD not required
-    * Host required
+    * Host not required
     * Max length 2083
     """
 
-    _constraints = UrlConstraints(max_length=2083, allowed_schemes=['ws', 'wss'], host_required=True)
-
-    @property
-    def host(self) -> str:
-        """The required URL host."""
-        return self._url.host  # type: ignore
+    _constraints = UrlConstraints(max_length=2083, allowed_schemes=['ws', 'wss'])
 
 
 class FileUrl(AnyUrl):
@@ -608,25 +596,15 @@ class FileUrl(AnyUrl):
 
     _constraints = UrlConstraints(allowed_schemes=['file'])
 
-    @property
-    def host(self) -> str | None:  # pyright: ignore[reportIncompatibleMethodOverride]
-        """The host part of the URL, or `None`."""
-        return self._url.host
-
 
 class FtpUrl(AnyUrl):
     """A type that will accept ftp URL.
 
     * TLD not required
-    * Host required
+    * Host not required
     """
 
-    _constraints = UrlConstraints(allowed_schemes=['ftp'], host_required=True)
-
-    @property
-    def host(self) -> str | None:  # pyright: ignore[reportIncompatibleMethodOverride]
-        """The host part of the URL, or `None`."""
-        return self._url.host
+    _constraints = UrlConstraints(allowed_schemes=['ftp'])
 
 
 class PostgresDsn(_BaseMultiHostUrl):
@@ -727,6 +705,11 @@ class CockroachDsn(AnyUrl):
         ],
     )
 
+    @property
+    def host(self) -> str:
+        """The required URL host."""
+        return self._url.host  # pyright: ignore[reportReturnType]
+
 
 class AmqpDsn(AnyUrl):
     """A type that will accept any AMQP DSN.
@@ -737,11 +720,6 @@ class AmqpDsn(AnyUrl):
     """
 
     _constraints = UrlConstraints(allowed_schemes=['amqp', 'amqps'])
-
-    @property
-    def host(self) -> str | None:  # pyright: ignore[reportIncompatibleMethodOverride]
-        """The host part of the URL, or `None`."""
-        return self._url.host
 
 
 class RedisDsn(AnyUrl):
@@ -759,6 +737,11 @@ class RedisDsn(AnyUrl):
         default_path='/0',
         host_required=True,
     )
+
+    @property
+    def host(self) -> str:
+        """The required URL host."""
+        return self._url.host  # pyright: ignore[reportReturnType]
 
 
 class MongoDsn(_BaseMultiHostUrl):
@@ -778,12 +761,10 @@ class KafkaDsn(AnyUrl):
 
     * User info required
     * TLD not required
-    * Host required
+    * Host not required
     """
 
-    _constraints = UrlConstraints(
-        allowed_schemes=['kafka'], default_host='localhost', default_port=9092, host_required=True
-    )
+    _constraints = UrlConstraints(allowed_schemes=['kafka'], default_host='localhost', default_port=9092)
 
 
 class NatsDsn(_BaseMultiHostUrl):
@@ -805,7 +786,7 @@ class MySQLDsn(AnyUrl):
 
     * User info required
     * TLD not required
-    * Host required
+    * Host not required
     """
 
     _constraints = UrlConstraints(
@@ -829,13 +810,12 @@ class MariaDBDsn(AnyUrl):
 
     * User info required
     * TLD not required
-    * Host required
+    * Host not required
     """
 
     _constraints = UrlConstraints(
         allowed_schemes=['mariadb', 'mariadb+mariadbconnector', 'mariadb+pymysql'],
         default_port=3306,
-        host_required=True,
     )
 
 
@@ -844,14 +824,13 @@ class ClickHouseDsn(AnyUrl):
 
     * User info required
     * TLD not required
-    * Host required
+    * Host not required
     """
 
     _constraints = UrlConstraints(
         allowed_schemes=['clickhouse+native', 'clickhouse+asynch'],
         default_host='localhost',
         default_port=9000,
-        host_required=True,
     )
 
 
@@ -867,6 +846,11 @@ class SnowflakeDsn(AnyUrl):
         allowed_schemes=['snowflake'],
         host_required=True,
     )
+
+    @property
+    def host(self) -> str:
+        """The required URL host."""
+        return self._url.host  # pyright: ignore[reportReturnType]
 
 
 def import_email_validator() -> None:

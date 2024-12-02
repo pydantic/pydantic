@@ -1129,3 +1129,9 @@ def test_any_url_hashable() -> None:
     assert hash(example_multi_host_url_1a) == hash(example_multi_host_url_1b)
     assert hash(example_multi_host_url_1a) != hash(example_multi_host_url_2)
     assert len({example_multi_host_url_1a, example_multi_host_url_1b, example_multi_host_url_2}) == 2
+
+
+def test_host_not_required_for_2_9_compatibility() -> None:
+    data_uri = 'file:///path/to/data'
+    url = AnyUrl(data_uri)
+    assert url.host is None
