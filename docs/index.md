@@ -98,7 +98,7 @@ Hundreds of organisations and packages are using *pydantic*, including:
 **Cuenca**
 : are a Mexican neobank that uses *pydantic* for several internal
   tools (including API validation) and for open source projects like
-  [stpmex](https://github.com/cuenca-mx/stpmex-python), which is used to process real-time, 24/7, inter-bank
+  [stpmex](https://pypi.org/project/stpmex/), which is used to process real-time, 24/7, inter-bank
   transfers in Mexico.
 
 [The Molecular Sciences Software Institute](https://molssi.org)
