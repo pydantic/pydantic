@@ -66,9 +66,10 @@ impl<'py, 'data> Input<'py> for JsonValue<'data> {
         }
     }
 
-    type Arguments<'a> = JsonArgs<'a, 'data>
+    type Arguments<'a>
+        = JsonArgs<'a, 'data>
     where
-        Self: 'a,;
+        Self: 'a;
 
     fn validate_args(&self) -> ValResult<JsonArgs<'_, 'data>> {
         match self {
@@ -179,7 +180,10 @@ impl<'py, 'data> Input<'py> for JsonValue<'data> {
         }
     }
 
-    type Dict<'a> = &'a JsonObject<'data> where Self: 'a;
+    type Dict<'a>
+        = &'a JsonObject<'data>
+    where
+        Self: 'a;
 
     fn validate_dict(&self, _strict: bool) -> ValResult<Self::Dict<'_>> {
         match self {
@@ -192,7 +196,10 @@ impl<'py, 'data> Input<'py> for JsonValue<'data> {
         self.validate_dict(false)
     }
 
-    type List<'a> = &'a JsonArray<'data> where Self: 'a;
+    type List<'a>
+        = &'a JsonArray<'data>
+    where
+        Self: 'a;
 
     fn validate_list(&self, _strict: bool) -> ValMatch<&JsonArray<'data>> {
         match self {
@@ -201,7 +208,10 @@ impl<'py, 'data> Input<'py> for JsonValue<'data> {
         }
     }
 
-    type Tuple<'a> = &'a JsonArray<'data> where Self: 'a;
+    type Tuple<'a>
+        = &'a JsonArray<'data>
+    where
+        Self: 'a;
 
     fn validate_tuple(&self, _strict: bool) -> ValMatch<&JsonArray<'data>> {
         // just as in set's case, List has to be allowed
@@ -211,7 +221,10 @@ impl<'py, 'data> Input<'py> for JsonValue<'data> {
         }
     }
 
-    type Set<'a> = &'a JsonArray<'data> where Self: 'a;
+    type Set<'a>
+        = &'a JsonArray<'data>
+    where
+        Self: 'a;
 
     fn validate_set(&self, _strict: bool) -> ValMatch<&JsonArray<'data>> {
         // we allow a list here since otherwise it would be impossible to create a set from JSON
@@ -501,10 +514,16 @@ fn string_to_vec(s: &str) -> JsonArray<'static> {
     JsonArray::new(s.chars().map(|c| JsonValue::Str(c.to_string().into())).collect())
 }
 
-impl<'py, 'data> ValidatedDict<'py> for &'_ JsonObject<'data> {
-    type Key<'a> = &'a str where Self: 'a;
+impl<'data> ValidatedDict<'_> for &'_ JsonObject<'data> {
+    type Key<'a>
+        = &'a str
+    where
+        Self: 'a;
 
-    type Item<'a> = &'a JsonValue<'data> where Self: 'a;
+    type Item<'a>
+        = &'a JsonValue<'data>
+    where
+        Self: 'a;
 
     fn get_item<'k>(&self, key: &'k LookupKey) -> ValResult<Option<(&'k LookupPath, Self::Item<'_>)>> {
         key.json_get(self)
@@ -567,7 +586,7 @@ impl<'a, 'data> JsonArgs<'a, 'data> {
     }
 }
 
-impl<'a, 'data> Arguments<'_> for JsonArgs<'a, 'data> {
+impl<'data> Arguments<'_> for JsonArgs<'_, 'data> {
     type Args = [JsonValue<'data>];
     type Kwargs = JsonObject<'data>;
 
@@ -581,7 +600,10 @@ impl<'a, 'data> Arguments<'_> for JsonArgs<'a, 'data> {
 }
 
 impl<'data> PositionalArgs<'_> for [JsonValue<'data>] {
-    type Item<'a> = &'a JsonValue<'data> where Self: 'a;
+    type Item<'a>
+        = &'a JsonValue<'data>
+    where
+        Self: 'a;
 
     fn len(&self) -> usize {
         <[JsonValue]>::len(self)
@@ -595,8 +617,14 @@ impl<'data> PositionalArgs<'_> for [JsonValue<'data>] {
 }
 
 impl<'data> KeywordArgs<'_> for JsonObject<'data> {
-    type Key<'a> = &'a str where Self: 'a;
-    type Item<'a> = &'a JsonValue<'data> where Self: 'a;
+    type Key<'a>
+        = &'a str
+    where
+        Self: 'a;
+    type Item<'a>
+        = &'a JsonValue<'data>
+    where
+        Self: 'a;
 
     fn len(&self) -> usize {
         LazyIndexMap::len(self)

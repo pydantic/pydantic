@@ -78,7 +78,7 @@ impl TypeSerializer for WithDefaultSerializer {
             Ok(None)
         } else {
             self.default.default_value(
-                py, &None, // Won't be used.
+                py, None, // Won't be used.
             )
         }
     }

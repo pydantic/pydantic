@@ -158,7 +158,7 @@ impl TypeSerializer for UnionSerializer {
             &self.choices,
             self.retry_with_lax_check(),
         ) {
-            Ok(Some(v)) => return infer_serialize(v.bind(value.py()), serializer, None, None, extra),
+            Ok(Some(v)) => infer_serialize(v.bind(value.py()), serializer, None, None, extra),
             Ok(None) => infer_serialize(value, serializer, include, exclude, extra),
             Err(err) => Err(serde::ser::Error::custom(err.to_string())),
         }
@@ -263,7 +263,7 @@ impl TypeSerializer for TaggedUnionSerializer {
             },
             extra,
         ) {
-            Ok(Some(v)) => return infer_serialize(v.bind(value.py()), serializer, None, None, extra),
+            Ok(Some(v)) => infer_serialize(v.bind(value.py()), serializer, None, None, extra),
             Ok(None) => infer_serialize(value, serializer, include, exclude, extra),
             Err(err) => Err(serde::ser::Error::custom(err.to_string())),
         }

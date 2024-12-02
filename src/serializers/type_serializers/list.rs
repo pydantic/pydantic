@@ -82,7 +82,7 @@ impl TypeSerializer for ListSerializer {
     }
 
     fn json_key<'a>(&self, key: &'a Bound<'_, PyAny>, extra: &Extra) -> PyResult<Cow<'a, str>> {
-        self._invalid_as_json_key(key, extra, Self::EXPECTED_TYPE)
+        self.invalid_as_json_key(key, extra, Self::EXPECTED_TYPE)
     }
 
     fn serde_serialize<S: serde::ser::Serializer>(

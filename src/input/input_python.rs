@@ -93,7 +93,10 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
             .map(|dict| dict.to_owned().unbind().into_bound(py))
     }
 
-    type Arguments<'a> = PyArgs<'py> where Self: 'a;
+    type Arguments<'a>
+        = PyArgs<'py>
+    where
+        Self: 'a;
 
     fn validate_args(&self) -> ValResult<PyArgs<'py>> {
         if let Ok(dict) = self.downcast::<PyDict>() {
@@ -350,7 +353,10 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
         Err(ValError::new(error_type, self))
     }
 
-    type Dict<'a> = GenericPyMapping<'a, 'py> where Self: 'a;
+    type Dict<'a>
+        = GenericPyMapping<'a, 'py>
+    where
+        Self: 'a;
 
     fn strict_dict<'a>(&'a self) -> ValResult<GenericPyMapping<'a, 'py>> {
         if let Ok(dict) = self.downcast::<PyDict>() {
@@ -404,7 +410,10 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
         }
     }
 
-    type List<'a> = PySequenceIterable<'a, 'py> where Self: 'a;
+    type List<'a>
+        = PySequenceIterable<'a, 'py>
+    where
+        Self: 'a;
 
     fn validate_list<'a>(&'a self, strict: bool) -> ValMatch<PySequenceIterable<'a, 'py>> {
         if let Ok(list) = self.downcast::<PyList>() {
@@ -418,7 +427,10 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
         Err(ValError::new(ErrorTypeDefaults::ListType, self))
     }
 
-    type Tuple<'a> = PySequenceIterable<'a, 'py> where Self: 'a;
+    type Tuple<'a>
+        = PySequenceIterable<'a, 'py>
+    where
+        Self: 'a;
 
     fn validate_tuple<'a>(&'a self, strict: bool) -> ValMatch<PySequenceIterable<'a, 'py>> {
         if let Ok(tup) = self.downcast::<PyTuple>() {
@@ -432,7 +444,10 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
         Err(ValError::new(ErrorTypeDefaults::TupleType, self))
     }
 
-    type Set<'a> = PySequenceIterable<'a, 'py> where Self: 'a;
+    type Set<'a>
+        = PySequenceIterable<'a, 'py>
+    where
+        Self: 'a;
 
     fn validate_set<'a>(&'a self, strict: bool) -> ValMatch<PySequenceIterable<'a, 'py>> {
         if let Ok(set) = self.downcast::<PySet>() {
@@ -742,7 +757,10 @@ impl<'py> Arguments<'py> for PyArgs<'py> {
 }
 
 impl<'py> PositionalArgs<'py> for PyPosArgs<'py> {
-    type Item<'a> = Borrowed<'a, 'py, PyAny> where Self: 'a;
+    type Item<'a>
+        = Borrowed<'a, 'py, PyAny>
+    where
+        Self: 'a;
 
     fn len(&self) -> usize {
         self.0.len()
@@ -758,11 +776,13 @@ impl<'py> PositionalArgs<'py> for PyPosArgs<'py> {
 }
 
 impl<'py> KeywordArgs<'py> for PyKwargs<'py> {
-    type Key<'a> = Bound<'py, PyAny>
+    type Key<'a>
+        = Bound<'py, PyAny>
     where
         Self: 'a;
 
-    type Item<'a> = Bound<'py, PyAny>
+    type Item<'a>
+        = Bound<'py, PyAny>
     where
         Self: 'a;
 
@@ -790,11 +810,13 @@ pub enum GenericPyMapping<'a, 'py> {
 }
 
 impl<'py> ValidatedDict<'py> for GenericPyMapping<'_, 'py> {
-    type Key<'a> = Bound<'py, PyAny>
+    type Key<'a>
+        = Bound<'py, PyAny>
     where
         Self: 'a;
 
-    type Item<'a> = Bound<'py, PyAny>
+    type Item<'a>
+        = Bound<'py, PyAny>
     where
         Self: 'a;
 
