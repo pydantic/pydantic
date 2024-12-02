@@ -191,7 +191,7 @@ impl PyGcTraverse for ComputedFields {
 
 impl_py_gc_traverse!(ComputedFieldSerializer<'_> { computed_field });
 
-impl<'py> Serialize for ComputedFieldSerializer<'py> {
+impl Serialize for ComputedFieldSerializer<'_> {
     fn serialize<S: serde::ser::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let py = self.model.py();
         let property_name_py = self.computed_field.property_name_py.bind(py);

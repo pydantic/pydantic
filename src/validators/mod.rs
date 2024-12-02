@@ -176,6 +176,7 @@ impl SchemaValidator {
         self_instance: Option<&Bound<'_, PyAny>>,
         allow_partial: PartialMode,
     ) -> PyResult<PyObject> {
+        #[allow(clippy::used_underscore_items)]
         self._validate(
             py,
             input,
@@ -199,6 +200,7 @@ impl SchemaValidator {
         context: Option<&Bound<'_, PyAny>>,
         self_instance: Option<&Bound<'_, PyAny>>,
     ) -> PyResult<bool> {
+        #[allow(clippy::used_underscore_items)]
         match self._validate(
             py,
             input,
@@ -228,6 +230,7 @@ impl SchemaValidator {
         allow_partial: PartialMode,
     ) -> PyResult<PyObject> {
         let r = match json::validate_json_bytes(input) {
+            #[allow(clippy::used_underscore_items)]
             Ok(v_match) => self._validate_json(
                 py,
                 input,
@@ -254,6 +257,7 @@ impl SchemaValidator {
         let t = InputType::String;
         let string_mapping = StringMapping::new_value(input).map_err(|e| self.prepare_validation_err(py, e, t))?;
 
+        #[allow(clippy::used_underscore_items)]
         match self._validate(py, &string_mapping, t, strict, None, context, None, allow_partial) {
             Ok(r) => Ok(r),
             Err(e) => Err(self.prepare_validation_err(py, e, t)),
@@ -383,6 +387,7 @@ impl SchemaValidator {
     ) -> ValResult<PyObject> {
         let json_value = jiter::JsonValue::parse_with_config(json_data, true, allow_partial)
             .map_err(|e| json::map_json_err(input, e, json_data))?;
+        #[allow(clippy::used_underscore_items)]
         self._validate(
             py,
             &json_value,

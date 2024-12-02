@@ -268,7 +268,6 @@ pub trait ValidatedSet<'py> {
 
 /// This type is used for inputs which don't support certain types.
 /// It implements all the associated traits, but never actually gets called.
-
 pub enum Never {}
 
 impl<'py> ValidatedDict<'py> for Never {
@@ -330,7 +329,10 @@ impl Arguments<'_> for Never {
 }
 
 impl<'py> PositionalArgs<'py> for Never {
-    type Item<'a> = Bound<'py, PyAny> where Self: 'a;
+    type Item<'a>
+        = Bound<'py, PyAny>
+    where
+        Self: 'a;
     fn len(&self) -> usize {
         unreachable!()
     }
@@ -343,8 +345,14 @@ impl<'py> PositionalArgs<'py> for Never {
 }
 
 impl<'py> KeywordArgs<'py> for Never {
-    type Key<'a> = Bound<'py, PyAny> where Self: 'a;
-    type Item<'a> = Bound<'py, PyAny> where Self: 'a;
+    type Key<'a>
+        = Bound<'py, PyAny>
+    where
+        Self: 'a;
+    type Item<'a>
+        = Bound<'py, PyAny>
+    where
+        Self: 'a;
     fn len(&self) -> usize {
         unreachable!()
     }

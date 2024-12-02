@@ -47,15 +47,15 @@ impl DefaultType {
         }
     }
 
-    pub fn default_value(&self, py: Python, validated_data: &Option<Bound<PyDict>>) -> PyResult<Option<PyObject>> {
+    pub fn default_value(&self, py: Python, validated_data: Option<&Bound<PyDict>>) -> PyResult<Option<PyObject>> {
         match self {
             Self::Default(ref default) => Ok(Some(default.clone_ref(py))),
             Self::DefaultFactory(ref default_factory, ref takes_data) => {
                 let result = if *takes_data {
-                    if validated_data.is_none() {
-                        default_factory.call1(py, ({},))
+                    if let Some(data) = validated_data {
+                        default_factory.call1(py, (data,))
                     } else {
-                        default_factory.call1(py, (validated_data.as_deref().unwrap(),))
+                        default_factory.call1(py, ({},))
                     }
                 } else {
                     default_factory.call0(py)
@@ -180,7 +180,7 @@ impl Validator for WithDefaultValidator {
         outer_loc: Option<impl Into<LocItem>>,
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Option<PyObject>> {
-        match self.default.default_value(py, &state.extra().data)? {
+        match self.default.default_value(py, state.extra().data.as_ref())? {
             Some(stored_dft) => {
                 let dft: Py<PyAny> = if self.copy_default {
                     let deepcopy_func = COPY_DEEPCOPY.get_or_init(py, || get_deepcopy(py).unwrap());
