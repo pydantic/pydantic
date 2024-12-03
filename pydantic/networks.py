@@ -288,6 +288,15 @@ class _BaseUrl:
             serialization=core_schema.to_string_ser_schema(),
         )
 
+    @classmethod
+    def __get_pydantic_json_schema__(
+        cls, core_schema: core_schema.CoreSchema, handler: _schema_generation_shared.GetJsonSchemaHandler
+    ) -> JsonSchemaValue:
+        # we use the url schema for json schema generation, but we might have to extract it from
+        # the function-wrap schema we use as a tool for validation on initialization
+        inner_schema = core_schema['schema'] if core_schema['type'] == 'function-wrap' else core_schema
+        return handler(inner_schema)
+
     __pydantic_serializer__ = SchemaSerializer(core_schema.any_schema(serialization=core_schema.to_string_ser_schema()))
 
 
@@ -442,6 +451,15 @@ class _BaseMultiHostUrl:
             schema=core_schema.multi_host_url_schema(**cls._constraints.defined_constraints),
             serialization=core_schema.to_string_ser_schema(),
         )
+
+    @classmethod
+    def __get_pydantic_json_schema__(
+        cls, core_schema: core_schema.CoreSchema, handler: _schema_generation_shared.GetJsonSchemaHandler
+    ) -> JsonSchemaValue:
+        # we use the url schema for json schema generation, but we might have to extract it from
+        # the function-wrap schema we use as a tool for validation on initialization
+        inner_schema = core_schema['schema'] if core_schema['type'] == 'function-wrap' else core_schema
+        return handler(inner_schema)
 
     __pydantic_serializer__ = SchemaSerializer(core_schema.any_schema(serialization=core_schema.to_string_ser_schema()))
 

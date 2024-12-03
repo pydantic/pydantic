@@ -1135,3 +1135,12 @@ def test_host_not_required_for_2_9_compatibility() -> None:
     data_uri = 'file:///path/to/data'
     url = AnyUrl(data_uri)
     assert url.host is None
+
+
+def test_json_schema() -> None:
+    ta = TypeAdapter(HttpUrl)
+    val_json_schema = ta.json_schema(mode='validation')
+    assert val_json_schema == {'type': 'string', 'format': 'uri', 'minLength': 1, 'maxLength': 2083}
+
+    ser_json_schema = ta.json_schema(mode='serialization')
+    assert ser_json_schema == {'type': 'string', 'format': 'uri', 'minLength': 1, 'maxLength': 2083}
