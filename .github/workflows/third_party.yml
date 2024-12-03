@@ -38,6 +38,7 @@ jobs:
         echo "PROCEED_WITH_TESTS=${{ github.event.pull_request.labels.*.name }}"
         echo "PROCEED_WITH_TESTS=${{ github.event_name }}"
         echo "PROCEED_WITH_TESTS=${{ contains(github.event.pull_request.labels.*.name, 'third-party-tests') }}"
+        echo $$ {{ env.PROCEED_WITH_TESTS }}
 
   test-fastapi:
     if: ${{ github.env.PROCEED_WITH_TESTS }}
