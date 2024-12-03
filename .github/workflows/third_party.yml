@@ -55,8 +55,9 @@ jobs:
       run: |
         cd fastapi
         uv venv
-        uv pip install -r requirements.txt
-        uv add --editable ../pydantic-latest
+        uv pip install -r requirements-tests.txt
+        uv pip install -e ../pydantic-latest
+        uv pip install anyio==3.7.1
 
     - name: list installed dependencies
       run: cd fastapi; uv pip list
