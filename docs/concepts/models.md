@@ -219,7 +219,7 @@ print(Model(items=(1, 2, 3)))
    in most cases this isn't necessary.
 
 Besides, using these abstract types can also lead to [poor validation performance](./performance.md#sequence-vs-list-or-tuple---mapping-vs-dict), and in general using concrete container types
-will avoid unecessary checks.
+will avoid unnecessary checks.
 
 ## Nested models
 
