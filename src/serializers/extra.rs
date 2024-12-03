@@ -1,10 +1,10 @@
 use std::fmt;
 use std::sync::Mutex;
 
-use pyo3::exceptions::{PyTypeError, PyValueError};
-use pyo3::intern;
+use pyo3::exceptions::{PyTypeError, PyUserWarning, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::{PyBool, PyString};
+use pyo3::{intern, PyTypeInfo};
 
 use serde::ser::Error;
 
@@ -471,7 +471,7 @@ impl CollectWarnings {
 
         let message = format!("Pydantic serializer warnings:\n  {}", warnings.join("\n  "));
         if self.mode == WarningsMode::Warn {
-            let user_warning_type = py.import_bound("builtins")?.getattr("UserWarning")?;
+            let user_warning_type = PyUserWarning::type_object(py);
             PyErr::warn_bound(py, &user_warning_type, &message, 0)
         } else {
             Err(PydanticSerializationError::new_err(message))
