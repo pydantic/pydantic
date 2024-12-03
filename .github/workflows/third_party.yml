@@ -27,6 +27,20 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  test-condition:
+    runs-on: ubuntu-latest
+    steps:
+    - name: check if we should proceed with tests
+      run: echo "PROCEED_WITH_TESTS=${{ env.PROCEED_WITH_TESTS }}"
+      run: echo "PROCEED_WITH_TESTS=${{ github.env.PROCEED_WITH_TESTS }}"
+    
+    - name: Manual check for label
+      run: |
+        echo "PROCEED_WITH_TESTS=${{ github.event.pull_request.labels.*.name }}"
+        echo "PROCEED_WITH_TESTS=${{ github.event_name }}"
+        echo "PROCEED_WITH_TESTS=${{ contains(github.event.pull_request.labels.*.name, 'third-party-tests') }}"
+        echo $$ {{ env.PROCEED_WITH_TESTS }}
+
   test-fastapi:
     if: ${{ github.env.PROCEED_WITH_TESTS == 'true' }}
     name: test fastapi (`main` branch) on python ${{ matrix.python-version }}
