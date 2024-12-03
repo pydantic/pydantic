@@ -495,11 +495,10 @@ def simplify_schema_references(schema: core_schema.CoreSchema) -> core_schema.Co
         # Assume there are no infinite loops, because we already checked for that in `count_refs`
         while 'schema_ref' in s and s['type'] == 'definition-ref':
             ref = s['schema_ref']
-            
             # Check if the reference is only used once, not involved in recursion and does not have
             # any extra keys (like 'serialization')
             if can_be_inlined(s, ref):
-            # Inline the reference by replacing the reference with the actual schema
+                # Inline the reference by replacing the reference with the actual schema
                 new = definitions.pop(ref)
                 ref_counts[ref] -= 1  # because we just replaced it!
                 # put all other keys that were on the def-ref schema into the inlined version
@@ -513,7 +512,7 @@ def simplify_schema_references(schema: core_schema.CoreSchema) -> core_schema.Co
 
     schema = walk_core_schema(schema, inline_refs, copy=False)
 
-    def_values = [v for v in definitions.values() if ref_counts[v['ref']] > 0] # type: ignore
+    def_values = [v for v in definitions.values() if ref_counts[v['ref']] > 0]  # type: ignore
 
     if def_values:
         schema = core_schema.definitions_schema(schema=schema, definitions=def_values)
