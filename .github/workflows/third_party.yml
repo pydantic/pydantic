@@ -62,8 +62,7 @@ jobs:
       run: |
         cd fastapi
         uv venv
-        uv pip sync requirements.txt
-        uv pip uninstall pydantic
+        uv pip install -r requirements.txt
         uv add --editable ../pydantic-latest
 
     - name: list installed dependencies
