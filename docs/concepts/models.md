@@ -1144,7 +1144,7 @@ Field definitions are specified as keyword arguments, and should either be:
 - A two-tuple, the first element being the type and the second element the assigned value
   (either a default or the [`Field()`][pydantic.Field] function).
 
-Here is more advanced example:
+Here is a more advanced example:
 
 ```python
 from typing_extensions import Annotated

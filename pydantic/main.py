@@ -1600,7 +1600,7 @@ def create_model(  # noqa: C901
     __module__: str | None = None,
     __validators__: dict[str, Callable[..., Any]] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
-    # TODO PEP 747:
+    # TODO PEP 747: replace `Any` by the TypeForm:
     **field_definitions: Any | tuple[str, Any],
 ) -> type[ModelT]:
     """Usage docs: https://docs.pydantic.dev/2.10/concepts/models/#dynamic-model-creation
