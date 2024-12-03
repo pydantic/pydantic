@@ -416,23 +416,24 @@ def walk_core_schema(schema: core_schema.CoreSchema, f: Walk, *, copy: bool = Tr
         return f(schema, _dispatch_no_copy)
 
 
-def simplify_schema_references(schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
-    definitions = {}
-    ref_counts = defaultdict(int)
-    involved_in_recursion = set()
-    current_recursion_ref_count = defaultdict(int)
+def simplify_schema_references(schema: core_schema.CoreSchema) -> core_schema.CoreSchema:  # noqa: C901
+    definitions: dict[str, core_schema.CoreSchema] = {}
+    ref_counts: dict[str, int] = defaultdict(int)
+    involved_in_recursion: set[str] = set()
+    current_recursion_ref_count: dict[str, int] = defaultdict(int)
 
     def collect_refs(s: core_schema.CoreSchema, recurse: Recurse) -> core_schema.CoreSchema:
         if 'definitions' in s and s['type'] == 'definitions':
             for definition in s['definitions']:
                 ref = get_ref(definition)
-                if ref and ref not in definitions:
+                assert ref is not None
+                if ref not in definitions:
                     definitions[ref] = definition
                 recurse(definition, collect_refs)
             return recurse(s['schema'], collect_refs)
         else:
             ref = get_ref(s)
-            if ref:
+            if ref is not None:
                 new = recurse(s, collect_refs)
                 new_ref = get_ref(new)
                 if new_ref:
@@ -448,14 +449,18 @@ def simplify_schema_references(schema: core_schema.CoreSchema) -> core_schema.Co
         ref = s['schema_ref']
         ref_counts[ref] += 1
         if ref_counts[ref] >= 2:
+            # If this model is involved in a recursion this should be detected
+            # on its second encounter, we can safely stop the walk here.
             if current_recursion_ref_count[ref] != 0:
                 involved_in_recursion.add(ref)
             return s
         current_recursion_ref_count[ref] += 1
         if 'serialization' in s:
+            # Even though this is a `'definition-ref'` schema, there might
+            # be more references inside the serialization schema:
             recurse(s, count_refs)
         next_s = definitions[ref]
-        visited = set()
+        visited: set[str] = set()
         while 'schema_ref' in next_s and next_s['type'] == 'definition-ref':
             next_ref = next_s['schema_ref']
             if next_ref in visited:
@@ -471,8 +476,7 @@ def simplify_schema_references(schema: core_schema.CoreSchema) -> core_schema.Co
 
     schema = walk_core_schema(schema, count_refs, copy=False)
 
-    if any(c != 0 for c in current_recursion_ref_count.values()):
-        raise RuntimeError('This is a bug! Please report it.')
+    assert all(c == 0 for c in current_recursion_ref_count.values()), 'this is a bug! please report it'
 
     def can_be_inlined(s: core_schema.DefinitionReferenceSchema, ref: str) -> bool:
         if ref_counts[ref] > 1 or ref in involved_in_recursion:
@@ -488,11 +492,18 @@ def simplify_schema_references(schema: core_schema.CoreSchema) -> core_schema.Co
         )
 
     def inline_refs(s: core_schema.CoreSchema, recurse: Recurse) -> core_schema.CoreSchema:
+        # Assume there are no infinite loops, because we already checked for that in `count_refs`
         while 'schema_ref' in s and s['type'] == 'definition-ref':
             ref = s['schema_ref']
+            
+            # Check if the reference is only used once, not involved in recursion and does not have
+            # any extra keys (like 'serialization')
             if can_be_inlined(s, ref):
+            # Inline the reference by replacing the reference with the actual schema
                 new = definitions.pop(ref)
-                ref_counts[ref] -= 1  # Reduce ref count since we are inlining it
+                ref_counts[ref] -= 1  # because we just replaced it!
+                # put all other keys that were on the def-ref schema into the inlined version
+                # in particular this is needed for `serialization`
                 if 'serialization' in s:
                     new['serialization'] = s['serialization']
                 s = new
@@ -502,7 +513,7 @@ def simplify_schema_references(schema: core_schema.CoreSchema) -> core_schema.Co
 
     schema = walk_core_schema(schema, inline_refs, copy=False)
 
-    def_values = [v for v in definitions.values() if ref_counts[get_ref(v)] > 0]
+    def_values = [v for v in definitions.values() if ref_counts[v['ref']] > 0] # type: ignore
 
     if def_values:
         schema = core_schema.definitions_schema(schema=schema, definitions=def_values)
