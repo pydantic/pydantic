@@ -425,10 +425,10 @@ jobs:
     - name: set up python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.10'
+        python-version: '3.11'
 
     - name: install
-      run: pip install -U twine setuptools wheel cibuildwheel==2.21.3
+      run: pip install -U twine setuptools wheel cibuildwheel==2.22.0
 
     - name: build sdist
       if: matrix.os == 'ubuntu' && matrix.python-version == '9'
