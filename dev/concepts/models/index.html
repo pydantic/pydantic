@@ -4988,38 +4988,68 @@ using <a href="../serialization/#serializeasany-annotation"><code>SerializeAsAny
 <p><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.create_model"><code>pydantic.main.create_model</code></a><br></p>
 </details>
 <p>There are some occasions where it is desirable to create a model using runtime information to specify the fields.
-For this Pydantic provides the <code>create_model</code> function to allow models to be created on the fly:</p>
+Pydantic provides the <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.create_model"><code>create_model()</code></a> function to allow models to be created dynamically:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">create_model</span>
 
-<span class="n">DynamicFoobarModel</span> <span class="o">=</span> <span class="n">create_model</span><span class="p">(</span>
-    <span class="s1">&#39;DynamicFoobarModel&#39;</span><span class="p">,</span> <span class="n">foo</span><span class="o">=</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">),</span> <span class="n">bar</span><span class="o">=</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="mi">123</span><span class="p">)</span>
-<span class="p">)</span>
+<span class="n">DynamicFoobarModel</span> <span class="o">=</span> <span class="n">create_model</span><span class="p">(</span><span class="s1">&#39;DynamicFoobarModel&#39;</span><span class="p">,</span> <span class="n">foo</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">bar</span><span class="o">=</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="mi">123</span><span class="p">))</span>
+
+<span class="c1"># Equivalent to:</span>
 
 
 <span class="k">class</span> <span class="nc">StaticFoobarModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">foo</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">bar</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">123</span>
 </code></pre></div>
-<p>Here <code>StaticFoobarModel</code> and <code>DynamicFoobarModel</code> are identical.</p>
-<p>Fields are defined by one of the following tuple forms:</p>
+<p>Fields are defined by one of the following tuple forms:
+Field definitions are specified as keyword arguments, and should either be:</p>
 <ul>
-<li><code>(&lt;type&gt;, &lt;default value&gt;)</code></li>
-<li><code>(&lt;type&gt;, Field(...))</code></li>
-<li><code>typing.Annotated[&lt;type&gt;, Field(...)]</code></li>
+<li>A single element, representing the type annotation of the field.</li>
+<li>A two-tuple, the first element being the type and the second element the assigned value
+  (either a default or the <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.Field"><code>Field()</code></a> function).</li>
 </ul>
-<p>Using a <code>Field(...)</code> call as the second argument in the tuple (the default value)
-allows for more advanced field configuration. Thus, the following are analogous:</p>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">create_model</span>
+<p>Here is a more advanced example:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="9:2"><input checked="checked" id="__tabbed_9_1" name="__tabbed_9" type="radio" /><input id="__tabbed_9_2" name="__tabbed_9" type="radio" /><div class="tabbed-labels"><label for="__tabbed_9_1">Python 3.8 and above</label><label for="__tabbed_9_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">PrivateAttr</span><span class="p">,</span> <span class="n">create_model</span>
 
 <span class="n">DynamicModel</span> <span class="o">=</span> <span class="n">create_model</span><span class="p">(</span>
     <span class="s1">&#39;DynamicModel&#39;</span><span class="p">,</span>
-    <span class="n">foo</span><span class="o">=</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">&#39;foo description&#39;</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="s1">&#39;FOO&#39;</span><span class="p">)),</span>
+    <span class="n">foo</span><span class="o">=</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">alias</span><span class="o">=</span><span class="s1">&#39;FOO&#39;</span><span class="p">)),</span>
+    <span class="n">bar</span><span class="o">=</span><span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">&#39;Bar field&#39;</span><span class="p">)],</span>
+    <span class="n">_private</span><span class="o">=</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">PrivateAttr</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">1</span><span class="p">)),</span>
 <span class="p">)</span>
 
 
 <span class="k">class</span> <span class="nc">StaticModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">foo</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">&#39;foo description&#39;</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="s1">&#39;FOO&#39;</span><span class="p">)</span>
+    <span class="n">foo</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">alias</span><span class="o">=</span><span class="s1">&#39;FOO&#39;</span><span class="p">)</span>
+    <span class="n">bar</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">&#39;Bar field&#39;</span><span class="p">)]</span>
+    <span class="n">_private</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">PrivateAttr</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 </code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">PrivateAttr</span><span class="p">,</span> <span class="n">create_model</span>
+
+<span class="n">DynamicModel</span> <span class="o">=</span> <span class="n">create_model</span><span class="p">(</span>
+    <span class="s1">&#39;DynamicModel&#39;</span><span class="p">,</span>
+    <span class="n">foo</span><span class="o">=</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">alias</span><span class="o">=</span><span class="s1">&#39;FOO&#39;</span><span class="p">)),</span>
+    <span class="n">bar</span><span class="o">=</span><span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">&#39;Bar field&#39;</span><span class="p">)],</span>
+    <span class="n">_private</span><span class="o">=</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">PrivateAttr</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">1</span><span class="p">)),</span>
+<span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">StaticModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">foo</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">alias</span><span class="o">=</span><span class="s1">&#39;FOO&#39;</span><span class="p">)</span>
+    <span class="n">bar</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">&#39;Bar field&#39;</span><span class="p">)]</span>
+    <span class="n">_private</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">PrivateAttr</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>The special keyword arguments <code>__config__</code> and <code>__base__</code> can be used to customize the new model.
 This includes extending a base model with extra fields.</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">create_model</span>
@@ -5095,7 +5125,7 @@ This includes extending a base model with extra fields.</p>
 The root value can be passed to the model <code>__init__</code> or <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_validate"><code>model_validate</code></a>
 via the first and only argument.</p>
 <p>Here's an example of how this works:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="9:2"><input checked="checked" id="__tabbed_9_1" name="__tabbed_9" type="radio" /><input id="__tabbed_9_2" name="__tabbed_9" type="radio" /><div class="tabbed-labels"><label for="__tabbed_9_1">Python 3.8 and above</label><label for="__tabbed_9_2">Python 3.9 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="10:2"><input checked="checked" id="__tabbed_10_1" name="__tabbed_10" type="radio" /><input id="__tabbed_10_2" name="__tabbed_10" type="radio" /><div class="tabbed-labels"><label for="__tabbed_10_1">Python 3.8 and above</label><label for="__tabbed_10_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span>
@@ -5155,7 +5185,7 @@ via the first and only argument.</p>
 </div>
 <p>If you want to access items in the <code>root</code> field directly or to iterate over the items, you can implement
 custom <code>__iter__</code> and <code>__getitem__</code> functions, as shown in the following example.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="10:2"><input checked="checked" id="__tabbed_10_1" name="__tabbed_10" type="radio" /><input id="__tabbed_10_2" name="__tabbed_10" type="radio" /><div class="tabbed-labels"><label for="__tabbed_10_1">Python 3.8 and above</label><label for="__tabbed_10_2">Python 3.9 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="11:2"><input checked="checked" id="__tabbed_11_1" name="__tabbed_11" type="radio" /><input id="__tabbed_11_2" name="__tabbed_11" type="radio" /><div class="tabbed-labels"><label for="__tabbed_11_1">Python 3.8 and above</label><label for="__tabbed_11_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
@@ -5204,7 +5234,7 @@ custom <code>__iter__</code> and <code>__getitem__</code> functions, as shown in
 </div>
 </div>
 <p>You can also create subclasses of the parametrized root model directly:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="11:2"><input checked="checked" id="__tabbed_11_1" name="__tabbed_11" type="radio" /><input id="__tabbed_11_2" name="__tabbed_11" type="radio" /><div class="tabbed-labels"><label for="__tabbed_11_1">Python 3.8 and above</label><label for="__tabbed_11_2">Python 3.9 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="12:2"><input checked="checked" id="__tabbed_12_1" name="__tabbed_12" type="radio" /><input id="__tabbed_12_2" name="__tabbed_12" type="radio" /><div class="tabbed-labels"><label for="__tabbed_12_1">Python 3.8 and above</label><label for="__tabbed_12_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
@@ -5362,7 +5392,7 @@ argument to <code>dataclasses.field</code>.</p>
 <p>Pydantic also supports the use of a <a href="#fields-with-dynamic-default-values"><code>default_factory</code></a> for non-hashable default
 values, but it is not required. In the event that the default value is not hashable, Pydantic will deepcopy the default
 value when creating each instance of the model:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="12:2"><input checked="checked" id="__tabbed_12_1" name="__tabbed_12" type="radio" /><input id="__tabbed_12_2" name="__tabbed_12" type="radio" /><div class="tabbed-labels"><label for="__tabbed_12_1">Python 3.8 and above</label><label for="__tabbed_12_2">Python 3.9 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="13:2"><input checked="checked" id="__tabbed_13_1" name="__tabbed_13" type="radio" /><input id="__tabbed_13_2" name="__tabbed_13" type="radio" /><div class="tabbed-labels"><label for="__tabbed_13_1">Python 3.8 and above</label><label for="__tabbed_13_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span>
@@ -5578,7 +5608,7 @@ it is just syntactic sugar for getting an attribute and either comparing it or d
 coercion.</p>
 <p>In this example, note that the ID of the list changes after the class is constructed because it has been
 copied during validation:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="13:2"><input checked="checked" id="__tabbed_13_1" name="__tabbed_13" type="radio" /><input id="__tabbed_13_2" name="__tabbed_13" type="radio" /><div class="tabbed-labels"><label for="__tabbed_13_1">Python 3.8 and above</label><label for="__tabbed_13_2">Python 3.9 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="14:2"><input checked="checked" id="__tabbed_14_1" name="__tabbed_14" type="radio" /><input id="__tabbed_14_2" name="__tabbed_14" type="radio" /><div class="tabbed-labels"><label for="__tabbed_14_1">Python 3.8 and above</label><label for="__tabbed_14_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
@@ -5687,7 +5717,7 @@ The extra fields will then be stored in <code>BaseModel.__pydantic_extra__</code
 </code></pre></div>
 <p>By default, no validation will be applied to these extra items, but you can set a type for the values by overriding
 the type annotation for <code>__pydantic_extra__</code>:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="14:2"><input checked="checked" id="__tabbed_14_1" name="__tabbed_14" type="radio" /><input id="__tabbed_14_2" name="__tabbed_14" type="radio" /><div class="tabbed-labels"><label for="__tabbed_14_1">Python 3.8 and above</label><label for="__tabbed_14_2">Python 3.9 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="15:2"><input checked="checked" id="__tabbed_15_1" name="__tabbed_15" type="radio" /><input id="__tabbed_15_2" name="__tabbed_15" type="radio" /><div class="tabbed-labels"><label for="__tabbed_15_1">Python 3.8 and above</label><label for="__tabbed_15_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span>
