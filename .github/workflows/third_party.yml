@@ -2,7 +2,7 @@
 # running the tests of various third-party libraries that use pydantic. This helps us spot regressions early,
 # and helps flag when third-party libraries are making incorrect assumptions that might cause them to break when we cut a new release.
 
-name: Third-party tests
+name: third party tests
 
 on:
   schedule:
@@ -31,12 +31,12 @@ jobs:
     outputs:
       proceed: ${{ contains(join(',', github.event.pull_request.labels.*.name), 'third-party-tests') || github.event_name == 'schedule' }}
     steps:
-      - name: Check Condition
+      - name: check condition
         run: echo "proceed=${{ contains(join(',', github.event.pull_request.labels.*.name), 'third-party-tests') || github.event_name == 'schedule' }}" >> $GITHUB_ENV
 
   test-fastapi:
     needs: run_tests
-    name: Test fastapi (`main` branch) on Python ${{ matrix.python-version }}
+    name: test fastapi (`main` branch) on python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -50,28 +50,26 @@ jobs:
         enable-cache: true
         python-version: ${{ matrix.python-version }}
 
-    - name: Checkout fastapi
+    - name: checkout fastapi
       run: git clone https://github.com/tiangolo/fastapi.git --single-branch
 
-    - name: Checkout pydantic
+    - name: checkout pydantic
       uses: actions/checkout@v4
       with:
         path: pydantic-latest
 
-    - name: Install deps
+    - name: install deps
       run: |
         cd fastapi
         uv venv
         uv pip sync requirements.txt
-        uv pip uninstall -y pydantic
+        uv pip uninstall pydantic
         uv add --editable ../pydantic-latest
 
-    - name: List installed dependencies
-      run: |
-        cd fastapi
-        uv pip list
+    - name: list installed dependencies
+      run: cd fastapi; uv pip list
 
-    - name: Run fastapi tests
+    - name: run fastapi tests
       run: cd fastapi; uv run pytest
 
     # TODO: slack notification on failure, if job was scheduled
