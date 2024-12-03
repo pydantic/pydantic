@@ -1788,6 +1788,9 @@ def test_default_factory_validated_data_arg() -> None:
     model = Model()
     assert model.b == 1
 
+    model = Model.model_construct(a=1)
+    assert model.b == 1
+
     class InvalidModel(BaseModel):
         a: int = Field(default_factory=lambda data: data['b'])
         b: int
