@@ -69,6 +69,6 @@ jobs:
       run: cd fastapi; uv pip list
 
     - name: run fastapi tests
-      run: cd fastapi; uv run pytest
+      run: cd fastapi; uv run ./scripts/test.sh -vv
 
     # TODO: slack notification on failure, if job was scheduled
