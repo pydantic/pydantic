@@ -20,7 +20,7 @@ permissions:
 env:
   PIP_DISABLE_PIP_VERSION_CHECK: 1
   FORCE_COLOR: 1
-  PROCEED_WITH_TESTS: ${{ contains(github.event.pull_request.labels.*.name, 'third-party-tests') || github.event_name == 'schedule' }}
+  PROCEED_WITH_TESTS: contains(github.event.pull_request.labels.*.name, 'third-party-tests') || github.event_name == 'schedule'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
