@@ -12,19 +12,19 @@ from pydantic import BaseModel, Field
 
 
 class Model(BaseModel):
-    field: str = Field(frozen=True)
+    name: str = Field(frozen=True)
 ```
 
 !!! note
-    Even though `field` is assigned a value, it is still required and has no default value. If you want
+    Even though `name` is assigned a value, it is still required and has no default value. If you want
     to emphasize on the fact that a value must be provided, you can use the [ellipsis][Ellipsis]:
 
     ```python {lint="skip" test="skip"}
     class Model(BaseModel):
-        field: str = Field(..., frozen=True)
+        name: str = Field(..., frozen=True)
     ```
 
-    However, its usage is discouraged as it doesn't play well with type checkers.
+    However, its usage is discouraged as it doesn't play well with static type checkers.
 
 ## The annotated pattern
 
@@ -38,11 +38,11 @@ from pydantic import BaseModel, Field, WithJsonSchema
 
 
 class Model(BaseModel):
-    field: Annotated[str, Field(strict=True), WithJsonSchema({'extra': 'data'})]
+    name: Annotated[str, Field(strict=True), WithJsonSchema({'extra': 'data'})]
 ```
 
-As far as static type checkers are concerned, `field` is still typed as `str`, but Pydantic leverages
-the available metadata to add validation, constraints, etc.
+As far as static type checkers are concerned, `name` is still typed as `str`, but Pydantic leverages
+the available metadata to add validation logic, type constraints, etc.
 
 Using this pattern has some advantages:
 
@@ -77,7 +77,7 @@ class User(BaseModel):
 
 !!! warning
     [In Pydantic V1](../migration.md#required-optional-and-nullable-fields), a type annotated as [`Any`][typing.Any]
-    or wrapped around [`Optional`][typing.Optional] would be given an implicit default of `None` even if no
+    or wrapped by [`Optional`][typing.Optional] would be given an implicit default of `None` even if no
     default was explicitly specified. This is no longer the case in Pydantic V2.
 
 You can also pass a callable to the `default_factory` argument that will be called to generate a default value:

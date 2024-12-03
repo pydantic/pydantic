@@ -194,6 +194,9 @@ print(Model(a=3.000, b='2.72', c=b'binary data').model_dump())
 This is a deliberate decision of Pydantic, and is frequently the most useful approach. See
 [here](https://github.com/pydantic/pydantic/issues/578) for a longer discussion on the subject.
 
+Nevertheless, Pydantic provides a [strict mode](strict_mode.md), where no data conversion is performed.
+Values must be of the same type than the declared field type.
+
 This is also the case for collections. In most cases, you shouldn't make use of abstract container classes
 and just use a concrete type, such as [`list`][]:
 
@@ -213,10 +216,8 @@ print(Model(items=(1, 2, 3)))
 
 1. In this case, you might be tempted to use the abstract [`Sequence`][collections.abc.Sequence] type
    to allow both lists and tuples. But Pydantic takes care of converting the tuple input to a list, so
-   in most cases this isn't necessary.
-
-Nevertheless, Pydantic provides a [strict mode](strict_mode.md), where no data conversion is performed.
-Values must be of the same type than the declared field type.
+   in most cases this isn't necessary. Beside, using these abstract types can also lead to
+   [poor validation performance](./performance.md#sequence-vs-list-or-tuple---mapping-vs-dict).
 
 ## Nested models
 
