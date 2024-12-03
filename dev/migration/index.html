@@ -4102,7 +4102,7 @@ will be merged, and for any settings defined in both, those from <code>Model2</c
     and improvements.<ul>
 <li>The new <code>@field_validator</code> decorator does not have the <code>each_item</code> keyword argument; validators you want to
     apply to items within a generic container should be added by annotating the type argument. See
-    <a href="../concepts/types/#composing-types-via-annotated">validators in Annotated metadata</a> for details.
+    <a href="../concepts/types/#using-the-annotated-pattern">validators in Annotated metadata</a> for details.
     This looks like <code>List[Annotated[int, Field(ge=0)]]</code></li>
 <li>Even if you keep using the deprecated <code>@validator</code> decorator, you can no longer add the <code>field</code> or
     <code>config</code> arguments to the signature of validator functions. If you need access to these, you'll need
@@ -4695,7 +4695,7 @@ even if a slash is not specified in the argument to a <code>Url</code> type cons
 </div>
 </div>
 </div>
-<p>Read more about it in the <a href="../concepts/types/#composing-types-via-annotated">Composing types via <code>Annotated</code></a>
+<p>Read more about it in the <a href="../concepts/types/#using-the-annotated-pattern">Composing types via <code>Annotated</code></a>
 docs.</p>
 <p>For <code>ConstrainedStr</code> you can use <a class="autorefs autorefs-internal" href="../api/types/#pydantic.types.StringConstraints"><code>StringConstraints</code></a> instead.</p>
 <h4 id="mypy-plugins">Mypy Plugins<a class="headerlink" href="#mypy-plugins" title="Permanent link">&para;</a></h4>

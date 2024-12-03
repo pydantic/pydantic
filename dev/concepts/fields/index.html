@@ -110,7 +110,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#default-values" class="md-skip">
+        <a href="#the-annotated-pattern" class="md-skip">
           Skip to content
         </a>
       
@@ -831,20 +831,35 @@ to help you monitor and understand your
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#default-values" class="md-nav__link">
+  <a href="#the-annotated-pattern" class="md-nav__link">
     <span class="md-ellipsis">
-      Default values
+      The annotated pattern
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#using-annotated" class="md-nav__link">
+  <a href="#default-values" class="md-nav__link">
     <span class="md-ellipsis">
-      Using Annotated
+      Default values
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Default values">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mutable-default-values" class="md-nav__link">
+    <span class="md-ellipsis">
+      Mutable default values
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -854,21 +869,6 @@ to help you monitor and understand your
       Field aliases
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="Field aliases">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#validation-alias" class="md-nav__link">
-    <span class="md-ellipsis">
-      Validation Alias
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -3113,20 +3113,35 @@ to help you monitor and understand your
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#default-values" class="md-nav__link">
+  <a href="#the-annotated-pattern" class="md-nav__link">
     <span class="md-ellipsis">
-      Default values
+      The annotated pattern
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#using-annotated" class="md-nav__link">
+  <a href="#default-values" class="md-nav__link">
     <span class="md-ellipsis">
-      Using Annotated
+      Default values
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Default values">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mutable-default-values" class="md-nav__link">
+    <span class="md-ellipsis">
+      Mutable default values
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -3136,21 +3151,6 @@ to help you monitor and understand your
       Field aliases
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="Field aliases">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#validation-alias" class="md-nav__link">
-    <span class="md-ellipsis">
-      Validation Alias
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -3329,25 +3329,87 @@ to help you monitor and understand your
 <summary>API Documentation</summary>
 <p><a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.Field"><code>pydantic.fields.Field</code></a><br></p>
 </details>
-<p>The <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.Field"><code>Field</code></a> function is used to customize and add metadata to fields of models.</p>
+<p>In this section, we will go through the available mechanisms to customize Pydantic model fields:
+default values, JSON Schema metadata, constraints, etc.</p>
+<p>To do so, the <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.Field"><code>Field()</code></a> function is used a lot, and behaves the same way as
+the standard library <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/dataclasses.html#dataclasses.field"><code>field()</code></a> function for dataclasses:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Even though <code>name</code> is assigned a value, it is still required and has no default value. If you want
+to emphasize on the fact that a value must be provided, you can use the <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/constants.html#Ellipsis">ellipsis</a>:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</code></pre></div>
+<p>However, its usage is discouraged as it doesn't play well with static type checkers.</p>
+</div>
+<h2 id="the-annotated-pattern">The annotated pattern<a class="headerlink" href="#the-annotated-pattern" title="Permanent link">&para;</a></h2>
+<p>To apply constraints or attach <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.Field"><code>Field()</code></a> functions to a model field, Pydantic
+supports the <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Annotated"><code>Annotated</code></a> typing construct to attach metadata to an annotation:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.8 and above</label><label for="__tabbed_1_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">WithJsonSchema</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span> <span class="n">WithJsonSchema</span><span class="p">({</span><span class="s1">&#39;extra&#39;</span><span class="p">:</span> <span class="s1">&#39;data&#39;</span><span class="p">})]</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">WithJsonSchema</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span> <span class="n">WithJsonSchema</span><span class="p">({</span><span class="s1">&#39;extra&#39;</span><span class="p">:</span> <span class="s1">&#39;data&#39;</span><span class="p">})]</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p>As far as static type checkers are concerned, <code>name</code> is still typed as <code>str</code>, but Pydantic leverages
+the available metadata to add validation logic, type constraints, etc.</p>
+<p>Using this pattern has some advantages:</p>
+<ul>
+<li>Using the <code>f: &lt;type&gt; = Field(...)</code> form can be confusing and might trick users into thinking <code>f</code>
+  has a default value, while in reality it is still required.</li>
+<li>You can provide an arbitrary amount of metadata elements for a field. As shown in the example above,
+  the <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.Field"><code>Field()</code></a> function only supports a limited set of constraints/metadata,
+  and you may have to use different Pydantic utilities such as <a class="autorefs autorefs-internal" href="../../api/json_schema/#pydantic.json_schema.WithJsonSchema"><code>WithJsonSchema</code></a>
+  in some cases.</li>
+<li>Types can be made reusable (see the documentation on <a href="../types/#using-the-annotated-pattern">custom types</a>
+  using this pattern).</li>
+</ul>
+<p>However, note that certain arguments to the <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.Field"><code>Field()</code></a> function (namely, <code>default</code>,
+<code>default_factory</code>, and <code>alias</code>) are taken into account by static type checkers to synthesize a correct
+<code>__init__</code> method. The annotated pattern is <em>not</em> understood by them, so you should use the normal
+assignment form instead.</p>
 <h2 id="default-values">Default values<a class="headerlink" href="#default-values" title="Permanent link">&para;</a></h2>
-<p>The <code>default</code> parameter is used to define a default value for a field.</p>
+<p>Default values for fields can be provided using the normal assignment syntax or by providing a value
+to the <code>default</code> argument:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
 
 
 <span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s1">&#39;John Doe&#39;</span><span class="p">)</span>
-
-
-<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">()</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
-<span class="c1">#&gt; name=&#39;John Doe&#39;</span>
+    <span class="c1"># Both fields aren&#39;t required:</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;John Doe&#39;</span>
+    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
 </code></pre></div>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>If you use the <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Optional"><code>Optional</code></a> annotation, it doesn't mean that the field has a default value of <code>None</code>!</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p><a href="../../migration/#required-optional-and-nullable-fields">In Pydantic V1</a>, a type annotated as <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Any"><code>Any</code></a>
+or wrapped by <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Optional"><code>Optional</code></a> would be given an implicit default of <code>None</code> even if no
+default was explicitly specified. This is no longer the case in Pydantic V2.</p>
 </div>
-<p>You can also use <code>default_factory</code> (but not both at the same time) to define a callable that will be called to generate a default value.</p>
+<p>You can also pass a callable to the <code>default_factory</code> argument that will be called to generate a default value:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">uuid</span> <span class="kn">import</span> <span class="n">uuid4</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
@@ -3356,7 +3418,7 @@ to help you monitor and understand your
 <span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="nb">id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span><span class="p">)</span>
 </code></pre></div>
-<p>The default factory can also take a single required argument, in which the case the already validated data will be passed as a dictionary.</p>
+<p>The default factory can also take a single required argument, in which case the already validated data will be passed as a dictionary.</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">EmailStr</span><span class="p">,</span> <span class="n">Field</span>
 
 
@@ -3371,42 +3433,60 @@ to help you monitor and understand your
 </code></pre></div>
 <p>The <code>data</code> argument will <em>only</em> contain the already validated data, based on the <a href="../models/#field-ordering">order of model fields</a>
 (the above example would fail if <code>username</code> were to be defined before <code>email</code>).</p>
-<h2 id="using-annotated">Using <code>Annotated</code><a class="headerlink" href="#using-annotated" title="Permanent link">&para;</a></h2>
-<p>The <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.Field"><code>Field</code></a> function can also be used together with <a href="https://docs.python.org/3/library/typing.html#typing.Annotated"><code>Annotated</code></a>.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.8 and above</label><label for="__tabbed_1_2">Python 3.9 and above</label></div>
+<h3 id="mutable-default-values">Mutable default values<a class="headerlink" href="#mutable-default-values" title="Permanent link">&para;</a></h3>
+<p>A common source of bugs in Python is to use a mutable object as a default value for a function or method argument,
+as the same instance ends up being reused in each call.</p>
+<p>The <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/dataclasses.html#module-dataclasses"><code>dataclasses</code></a> module actually raises an error in this case, indicating that you should use
+a <a href="https://docs.python.org/3/library/dataclasses.html#default-factory-functions">default factory</a> instead.</p>
+<p>While the same thing can be done in Pydantic, it is not required. In the event that the default value is not hashable,
+Pydantic will create a deep copy of the default value when creating each instance of the model:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.8 and above</label><label for="__tabbed_2_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">uuid</span> <span class="kn">import</span> <span class="n">uuid4</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span>
 
-<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
 
 
-<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="nb">id</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span><span class="p">)]</span>
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">item_counts</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[{}]</span>
+
+
+<span class="n">m1</span> <span class="o">=</span> <span class="n">Model</span><span class="p">()</span>
+<span class="n">m1</span><span class="o">.</span><span class="n">item_counts</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;a&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m1</span><span class="o">.</span><span class="n">item_counts</span><span class="p">)</span>
+<span class="c1">#&gt; [{&#39;a&#39;: 1}]</span>
+
+<span class="n">m2</span> <span class="o">=</span> <span class="n">Model</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m2</span><span class="o">.</span><span class="n">item_counts</span><span class="p">)</span>
+<span class="c1">#&gt; [{}]</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">uuid</span> <span class="kn">import</span> <span class="n">uuid4</span>
-
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
 
 
-<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="nb">id</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span><span class="p">)]</span>
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">item_counts</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[{}]</span>
+
+
+<span class="n">m1</span> <span class="o">=</span> <span class="n">Model</span><span class="p">()</span>
+<span class="n">m1</span><span class="o">.</span><span class="n">item_counts</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;a&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m1</span><span class="o">.</span><span class="n">item_counts</span><span class="p">)</span>
+<span class="c1">#&gt; [{&#39;a&#39;: 1}]</span>
+
+<span class="n">m2</span> <span class="o">=</span> <span class="n">Model</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m2</span><span class="o">.</span><span class="n">item_counts</span><span class="p">)</span>
+<span class="c1">#&gt; [{}]</span>
 </code></pre></div>
 </div>
 </div>
 </div>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Defaults can be set outside <a href="https://docs.python.org/3/library/typing.html#typing.Annotated"><code>Annotated</code></a> as the assigned value or with <code>Field.default_factory</code> inside
-<a href="https://docs.python.org/3/library/typing.html#typing.Annotated"><code>Annotated</code></a>. The <code>Field.default</code> argument is not supported inside <a href="https://docs.python.org/3/library/typing.html#typing.Annotated"><code>Annotated</code></a>.</p>
-</div>
 <h2 id="field-aliases">Field aliases<a class="headerlink" href="#field-aliases" title="Permanent link">&para;</a></h2>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Read more about aliases in the <a href="../alias/">dedicated section</a>.</p>
+</div>
 <p>For validation and serialization, you can define an alias for a field.</p>
 <p>There are three ways to define an alias:</p>
 <ul>
@@ -3415,7 +3495,7 @@ to help you monitor and understand your
 <li><code>Field(serialization_alias='foo')</code></li>
 </ul>
 <p>The <code>alias</code> parameter is used for both validation <em>and</em> serialization. If you want to use
-<em>different</em> aliases for validation and serialization respectively, you can use the<code>validation_alias</code>
+<em>different</em> aliases for validation and serialization respectively, you can use the <code>validation_alias</code>
 and <code>serialization_alias</code> parameters, which will apply only in their respective use cases.</p>
 <p>Here is an example of using the <code>alias</code> parameter:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
@@ -3434,8 +3514,7 @@ and <code>serialization_alias</code> parameters, which will apply only in their 
 <ol>
 <li>The alias <code>'username'</code> is used for instance creation and validation.</li>
 <li>
-<p>We are using <code>model_dump</code> to convert the model into a serializable format.</p>
-<p>You can see more details about <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_dump"><code>model_dump</code></a> in the API reference.</p>
+<p>We are using <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_dump"><code>model_dump()</code></a> to convert the model into a serializable format.</p>
 <p>Note that the <code>by_alias</code> keyword argument defaults to <code>False</code>, and must be specified explicitly to dump
 models using the field (serialization) aliases.</p>
 <p>When <code>by_alias=True</code>, the alias <code>'username'</code> is also used during serialization.</p>
@@ -3482,13 +3561,12 @@ models using the field (serialization) aliases.</p>
 <p>In case you use <code>alias</code> together with <code>validation_alias</code> or <code>serialization_alias</code> at the same time,
 the <code>validation_alias</code> will have priority over <code>alias</code> for validation, and <code>serialization_alias</code> will have priority
 over <code>alias</code> for serialization.</p>
-<p>If you use an <code>alias_generator</code> in the <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.alias_generator">Model Config</a>, you can control
-the order of precedence for specified field vs generated aliases via the <code>alias_priority</code> setting. You can read more about alias precedence <a href="../alias/#alias-precedence">here</a>.</p>
+<p>If you provide a value for the <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.alias_generator"><code>alias_generator</code></a> model setting, you can control the order of precedence for field alias and generated aliases via the <code>alias_priority</code> field parameter. You can read more about alias precedence <a href="../alias/#alias-precedence">here</a>.</p>
 </div>
 <details class="tip">
-<summary>VSCode and Pyright users</summary>
-<p>In VSCode, if you use the <a href="https://marketplace.visualstudio.com/items?itemName=ms-python.vscode-pylance">Pylance</a>
-extension, you won't see a warning when instantiating a model using a field's alias:</p>
+<summary>Static type checking/IDE support</summary>
+<p>If you provide a value for the <code>alias</code> field parameter, static type checkers will use this alias instead
+of the actual field name to synthesize the <code>__init__</code> method:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
 
 
@@ -3499,11 +3577,11 @@ extension, you won't see a warning when instantiating a model using a field's al
 <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s1">&#39;johndoe&#39;</span><span class="p">)</span>  <span class="c1"># (1)!</span>
 </code></pre></div>
 <ol>
-<li>VSCode will NOT show a warning here.</li>
+<li>Accepted by type checkers.</li>
 </ol>
-<p>When the <code>'alias'</code> keyword argument is specified, even if you set <code>populate_by_name</code> to <code>True</code> in the
-<a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.populate_by_name">Model Config</a>, VSCode will show a warning when instantiating
-a model using the field name (though it will work at runtime) — in this case, <code>'name'</code>:</p>
+<p>This means that when using the <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.populate_by_name"><code>populate_by_name</code></a> model
+setting (which allows both the field name and alias to be used during model validation), type checkers
+will error when the actual field name is used:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">Field</span>
 
 
@@ -3516,59 +3594,55 @@ a model using the field name (though it will work at runtime) — in this case, 
 <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;johndoe&#39;</span><span class="p">)</span>  <span class="c1"># (1)!</span>
 </code></pre></div>
 <ol>
-<li>VSCode will show a warning here.</li>
+<li><em>Not</em> accepted by type checkers.</li>
 </ol>
-<p>To "trick" VSCode into preferring the field name, you can use the <code>str</code> function to wrap the alias value.
-With this approach, though, a warning is shown when instantiating a model using the alias for the field:</p>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">Field</span>
+<p>If you still want type checkers to use the field name and not the alias, the <a href="#the-annotated-pattern">annotated pattern</a>
+can be used (which is only understood by Pydantic):</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">Field</span>
 
 
 <span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">populate_by_name</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">alias</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="s1">&#39;username&#39;</span><span class="p">))</span>  <span class="c1"># noqa: UP018</span>
+    <span class="n">name</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">alias</span><span class="o">=</span><span class="s1">&#39;username&#39;</span><span class="p">)]</span>
 
 
 <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;johndoe&#39;</span><span class="p">)</span>  <span class="c1"># (1)!</span>
 <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s1">&#39;johndoe&#39;</span><span class="p">)</span>  <span class="c1"># (2)!</span>
 </code></pre></div>
 <ol>
-<li>Now VSCode will NOT show a warning</li>
-<li>VSCode will show a warning here, though</li>
+<li>Accepted by type checkers.</li>
+<li><em>Not</em> accepted by type checkers.</li>
 </ol>
-<p>This is discussed in more detail in <a href="https://github.com/pydantic/pydantic/issues/5893">this issue</a>.</p>
-<h3 id="validation-alias">Validation Alias<a class="headerlink" href="#validation-alias" title="Permanent link">&para;</a></h3>
-<p>Even though Pydantic treats <code>alias</code> and <code>validation_alias</code> the same when creating model instances, VSCode will not
-use the <code>validation_alias</code> in the class initializer signature. If you want VSCode to use the <code>validation_alias</code>
-in the class initializer, you can instead specify both an <code>alias</code> and <code>serialization_alias</code>, as the
-<code>serialization_alias</code> will override the <code>alias</code> during serialization:</p>
-<p><div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+<p><h3>Validation Alias</h3></p>
+<p>Even though Pydantic treats <code>alias</code> and <code>validation_alias</code> the same when creating model instances, type checkers
+only understand the <code>alias</code> field parameter. As a workaround, you can instead specify both an <code>alias</code> and
+serialization_alias<code>(identical to the field name), as the</code>serialization_alias<code>will override the</code>alias` during
+serialization:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
 
 
 <span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">my_field</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">validation_alias</span><span class="o">=</span><span class="s1">&#39;myValidationAlias&#39;</span><span class="p">)</span>
 </code></pre></div>
-with:
+<p>with:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
 
 
 <span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">my_field</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="o">...</span><span class="p">,</span>
         <span class="n">alias</span><span class="o">=</span><span class="s1">&#39;myValidationAlias&#39;</span><span class="p">,</span>
-        <span class="n">serialization_alias</span><span class="o">=</span><span class="s1">&#39;my_serialization_alias&#39;</span><span class="p">,</span>
+        <span class="n">serialization_alias</span><span class="o">=</span><span class="s1">&#39;my_field&#39;</span><span class="p">,</span>
     <span class="p">)</span>
 
 
 <span class="n">m</span> <span class="o">=</span> <span class="n">MyModel</span><span class="p">(</span><span class="n">myValidationAlias</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
-<span class="c1">#&gt; {&#39;my_serialization_alias&#39;: 1}</span>
-</code></pre></div></p>
-<p>All of the above will likely also apply to other tools that respect the
-<a href="https://docs.python.org/3/library/typing.html#typing.dataclass_transform"><code>@typing.dataclass_transform</code></a>
-decorator, such as Pyright.</p>
+<span class="c1">#&gt; {&#39;my_field&#39;: 1}</span>
+</code></pre></div>
 </details>
-<p>For more information on alias usage, see the <a href="../alias/">Alias</a> concepts page.</p>
 <h2 id="numeric-constraints">Numeric Constraints<a class="headerlink" href="#numeric-constraints" title="Permanent link">&para;</a></h2>
 <p>There are some keyword arguments that can be used to constrain numeric values:</p>
 <ul>
@@ -3836,7 +3910,7 @@ representation of the model.</p>
 models in a union. It takes either the name of a field or a <code>Discriminator</code> instance. The <code>Discriminator</code>
 approach can be useful when the discriminator fields aren't the same for all the models in the <code>Union</code>.</p>
 <p>The following example shows how to use <code>discriminator</code> with a field name:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.8 and above</label><label for="__tabbed_2_2">Python 3.10 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.8 and above</label><label for="__tabbed_3_2">Python 3.10 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Union</span>
@@ -3895,7 +3969,7 @@ approach can be useful when the discriminator fields aren't the same for all the
 </div>
 </div>
 <p>The following example shows how to use the <code>discriminator</code> keyword argument with a <code>Discriminator</code> instance:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="3:3"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><input id="__tabbed_3_3" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.8 and above</label><label for="__tabbed_3_2">Python 3.9 and above</label><label for="__tabbed_3_3">Python 3.10 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="4:3"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><input id="__tabbed_4_3" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">Python 3.8 and above</label><label for="__tabbed_4_2">Python 3.9 and above</label><label for="__tabbed_4_3">Python 3.10 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Union</span>
@@ -4093,7 +4167,7 @@ model when exporting the model.</p>
 <li>A boolean, which will be used to mark the field as deprecated with a default <code>'deprecated'</code> deprecation message.</li>
 </ul>
 <h3 id="deprecated-as-a-string"><code>deprecated</code> as a string<a class="headerlink" href="#deprecated-as-a-string" title="Permanent link">&para;</a></h3>
-<div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">Python 3.8 and above</label><label for="__tabbed_4_2">Python 3.9 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">Python 3.8 and above</label><label for="__tabbed_5_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
@@ -4131,7 +4205,7 @@ model when exporting the model.</p>
 <p>You can only use the <code>deprecated</code> decorator in this way if you have
 <code>typing_extensions</code> &gt;= 4.9.0 installed.</p>
 </div>
-<div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">Python 3.8 and above</label><label for="__tabbed_5_2">Python 3.9 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="6:2"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">Python 3.8 and above</label><label for="__tabbed_6_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">importlib.metadata</span>
@@ -4175,7 +4249,7 @@ model when exporting the model.</p>
 </div>
 </div>
 <h3 id="deprecated-as-a-boolean"><code>deprecated</code> as a boolean<a class="headerlink" href="#deprecated-as-a-boolean" title="Permanent link">&para;</a></h3>
-<div class="tabbed-set tabbed-alternate" data-tabs="6:2"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">Python 3.8 and above</label><label for="__tabbed_6_2">Python 3.9 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="7:2"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><div class="tabbed-labels"><label for="__tabbed_7_1">Python 3.8 and above</label><label for="__tabbed_7_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>

@@ -3412,11 +3412,6 @@ with the valid fields set count also tallied.</li>
 </div>
 </div>
 </div>
-<div class="admonition tip">
-<p class="admonition-title">Tip</p>
-<p>The type <code>Optional[x]</code> is a shorthand for <code>Union[x, None]</code>.</p>
-<p>See more details in <a href="../models/#required-fields">Required fields</a>.</p>
-</div>
 <h2 id="discriminated-unions">Discriminated Unions<a class="headerlink" href="#discriminated-unions" title="Permanent link">&para;</a></h2>
 <p><strong>Discriminated unions are sometimes referred to as "Tagged Unions".</strong></p>
 <p>We can use discriminated unions to more efficiently validate <code>Union</code> types, by choosing which member of the union to validate against.</p>
@@ -3893,18 +3888,18 @@ and in the worst case, get runtime errors during validation.</p>
 <p>When <code>None</code> is returned, this <code>union_tag_not_found</code> error is raised.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Using the <a href="../types/#composing-types-via-annotated"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Annotated"><code>typing.Annotated</code></a> fields syntax</a> can be handy to regroup
+<p>Using the <a href="../fields/#the-annotated-pattern">annotated pattern</a> can be handy to regroup
 the <code>Union</code> and <code>discriminator</code> information. See the next example for more details.</p>
 <p>There are a few ways to set a discriminator for a field, all varying slightly in syntax.</p>
-<p>For <code>str</code> discriminators:
-<div class="language-text highlight"><pre><span></span><code>some_field: Union[...] = Field(discriminator=&#39;my_discriminator&#39;
-some_field: Annotated[Union[...], Field(discriminator=&#39;my_discriminator&#39;)]
-</code></pre></div></p>
-<p>For callable <code>Discriminator</code>s:
-<div class="language-text highlight"><pre><span></span><code>some_field: Union[...] = Field(discriminator=Discriminator(...))
-some_field: Annotated[Union[...], Discriminator(...)]
-some_field: Annotated[Union[...], Field(discriminator=Discriminator(...))]
-</code></pre></div></p>
+<p>For <code>str</code> discriminators:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="n">some_field</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;my_discriminator&#39;</span><span class="p">)</span>
+<span class="n">some_field</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="o">...</span><span class="p">],</span> <span class="n">Field</span><span class="p">(</span><span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;my_discriminator&#39;</span><span class="p">)]</span>
+</code></pre></div>
+<p>For callable <code>Discriminator</code>s:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="n">some_field</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">discriminator</span><span class="o">=</span><span class="n">Discriminator</span><span class="p">(</span><span class="o">...</span><span class="p">))</span>
+<span class="n">some_field</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="o">...</span><span class="p">],</span> <span class="n">Discriminator</span><span class="p">(</span><span class="o">...</span><span class="p">)]</span>
+<span class="n">some_field</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="o">...</span><span class="p">],</span> <span class="n">Field</span><span class="p">(</span><span class="n">discriminator</span><span class="o">=</span><span class="n">Discriminator</span><span class="p">(</span><span class="o">...</span><span class="p">))]</span>
+</code></pre></div>
 </div>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>

@@ -937,13 +937,13 @@ to help you monitor and understand your
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#composing-types-via-annotated" class="md-nav__link">
+  <a href="#using-the-annotated-pattern" class="md-nav__link">
     <span class="md-ellipsis">
-      Composing types via Annotated
+      Using the annotated pattern
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Composing types via Annotated">
+    <nav class="md-nav" aria-label="Using the annotated pattern">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -3162,13 +3162,13 @@ to help you monitor and understand your
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#composing-types-via-annotated" class="md-nav__link">
+  <a href="#using-the-annotated-pattern" class="md-nav__link">
     <span class="md-ellipsis">
-      Composing types via Annotated
+      Using the annotated pattern
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Composing types via Annotated">
+    <nav class="md-nav" aria-label="Using the annotated pattern">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -3388,15 +3388,13 @@ so Pydantic implements many commonly used types.</p>
 <p>Besides the above, you can also have a <a class="autorefs autorefs-internal" href="../../api/types/#pydantic.types.FiniteFloat"><code>FiniteFloat</code></a> type that will only accept finite values (i.e. not <code>inf</code>, <code>-inf</code> or <code>nan</code>).</p>
 <h2 id="custom-types">Custom Types<a class="headerlink" href="#custom-types" title="Permanent link">&para;</a></h2>
 <p>You can also define your own custom data types. There are several ways to achieve it.</p>
-<h3 id="composing-types-via-annotated">Composing types via <code>Annotated</code><a class="headerlink" href="#composing-types-via-annotated" title="Permanent link">&para;</a></h3>
-<p><a href="https://peps.python.org/pep-0593/">PEP 593</a> introduced <code>Annotated</code> as a way to attach runtime metadata to types without changing how type checkers interpret them.
-Pydantic takes advantage of this to allow you to create types that are identical to the original type as far as type checkers are concerned, but add validation, serialize differently, etc.</p>
-<p>For example, to create a type representing a positive int:</p>
+<h3 id="using-the-annotated-pattern">Using the annotated pattern<a class="headerlink" href="#using-the-annotated-pattern" title="Permanent link">&para;</a></h3>
+<p>The <a href="../fields/#the-annotated-pattern">annotated pattern</a> can be used to make types reusable across your code base.
+For example, to create a type representing a positive integer:</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.8 and above</label><label for="__tabbed_1_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="language-python highlight"><pre><span></span><code><span class="c1"># or `from typing import Annotated` for Python 3.9+</span>
-<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">Field</span><span class="p">,</span> <span class="n">TypeAdapter</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -3418,8 +3416,7 @@ Pydantic takes advantage of this to allow you to create types that are identical
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="language-python highlight"><pre><span></span><code><span class="c1"># or `from typing import Annotated` for Python 3.9+</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">Field</span><span class="p">,</span> <span class="n">TypeAdapter</span><span class="p">,</span> <span class="n">ValidationError</span>
 
