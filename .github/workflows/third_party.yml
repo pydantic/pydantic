@@ -1,0 +1,79 @@
+# This workflow is a daily cron job, inspired by https://github.com/python/typing_extensions/blob/main/.github/workflows/third_party.yml
+# running the tests of various third-party libraries that use pydantic. This helps us spot regressions early,
+# and helps flag when third-party libraries are making incorrect assumptions that might cause them to break when we cut a new release.
+
+name: Third-party tests
+
+on:
+  schedule:
+    - cron: '0 12 * * *' # Daily at midnight UTC
+  pull_request:
+    branches:
+      - main
+
+  # Can be manually triggered from the Actions tab, if needed
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: 1
+  FORCE_COLOR: 1
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  run_tests:
+    runs-on: ubuntu-latest
+    outputs:
+      proceed: ${{ contains(join(',', github.event.pull_request.labels.*.name), 'third-party-tests') || github.event_name == 'schedule' }}
+    steps:
+      - name: Check Condition
+        run: echo "proceed=${{ contains(join(',', github.event.pull_request.labels.*.name), 'third-party-tests') || github.event_name == 'schedule' }}" >> $GITHUB_ENV
+
+  test-fastapi:
+    needs: run_tests
+    name: Test fastapi (`main` branch) on Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: astral-sh/setup-uv@v4
+      with:
+        enable-cache: true
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      run: uv sync
+
+    - name: Checkout fastapi
+      run: git clone https://github.com/tiangolo/fastapi.git --single-branch
+
+    - name: Checkout pydantic
+      uses: actions/checkout@v4
+      with:
+        path: pydantic-latest
+
+    - name: Install deps
+      run: |
+        cd fastapi
+        uv pip sync requirements.txt
+        pip uninstall -y pydantic
+        uv add --editable ../pydantic-latest
+
+    - name: List installed dependencies
+      run: |
+        cd fastapi
+        uv pip list
+
+    - name: Run fastapi tests
+      run: cd fastapi; uv run ./scripts/test.sh -vv
+
+    # TODO: slack notification on failure, if job was scheduled
