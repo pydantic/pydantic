@@ -1353,6 +1353,15 @@ to help you monitor and understand your
 </li>
         
           <li class="md-nav__item">
+  <a href="#cli-kebab-case-for-arguments" class="md-nav__link">
+    <span class="md-ellipsis">
+      CLI Kebab Case for Arguments
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#change-whether-cli-should-exit-on-error" class="md-nav__link">
     <span class="md-ellipsis">
       Change Whether CLI Should Exit on Error
@@ -3556,6 +3565,15 @@ to help you monitor and understand your
 </li>
         
           <li class="md-nav__item">
+  <a href="#cli-kebab-case-for-arguments" class="md-nav__link">
+    <span class="md-ellipsis">
+      CLI Kebab Case for Arguments
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#change-whether-cli-should-exit-on-error" class="md-nav__link">
     <span class="md-ellipsis">
       Change Whether CLI Should Exit on Error
@@ -4662,19 +4680,14 @@ defined) after instantiation:</p>
 <p>For <code>BaseModel</code> and <code>pydantic.dataclasses.dataclass</code> types, <code>CliApp.run</code> will internally use the following
 <code>BaseSettings</code> configuration defaults:</p>
 <ul>
-<li><code>alias_generator=AliasGenerator(lambda s: s.replace('_', '-'))</code></li>
 <li><code>nested_model_default_partial_update=True</code></li>
 <li><code>case_sensitive=True</code></li>
 <li><code>cli_hide_none_type=True</code></li>
 <li><code>cli_avoid_json=True</code></li>
 <li><code>cli_enforce_required=True</code></li>
 <li><code>cli_implicit_flags=True</code></li>
+<li><code>cli_kebab_case=True</code></li>
 </ul>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>The alias generator for kebab case does not propagate to subcommands or submodels and will have to be manually set
-in these cases.</p>
-</div>
 <h3 id="mutually-exclusive-groups">Mutually Exclusive Groups<a class="headerlink" href="#mutually-exclusive-groups" title="Permanent link">&para;</a></h3>
 <p>CLI mutually exclusive groups can be created by inheriting from the <code>CliMutuallyExclusiveGroup</code> class.</p>
 <div class="admonition note">
@@ -4820,6 +4833,33 @@ does not ignore any args.</p>
 <span class="n">sys</span><span class="o">.</span><span class="n">argv</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;example.py&#39;</span><span class="p">,</span> <span class="s1">&#39;--bad-arg=bad&#39;</span><span class="p">,</span> <span class="s1">&#39;ANOTHER_BAD_ARG&#39;</span><span class="p">,</span> <span class="s1">&#39;--good_arg=hello world&#39;</span><span class="p">]</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">Settings</span><span class="p">()</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
 <span class="c1">#&gt; {&#39;good_arg&#39;: &#39;hello world&#39;}</span>
+</code></pre></div>
+<h4 id="cli-kebab-case-for-arguments">CLI Kebab Case for Arguments<a class="headerlink" href="#cli-kebab-case-for-arguments" title="Permanent link">&para;</a></h4>
+<p>Change whether CLI arguments should use kebab case by enabling <code>cli_kebab_case</code>.</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">Field</span>
+
+<span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="n">BaseSettings</span>
+
+
+<span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">,</span> <span class="n">cli_parse_args</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cli_kebab_case</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="n">my_option</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">&#39;will show as kebab case on CLI&#39;</span><span class="p">)</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">argv</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;example.py&#39;</span><span class="p">,</span> <span class="s1">&#39;--help&#39;</span><span class="p">]</span>
+    <span class="n">Settings</span><span class="p">()</span>
+<span class="k">except</span> <span class="ne">SystemExit</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+    <span class="c1">#&gt; 0</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">usage: example.py [-h] [--my-option str]</span>
+
+<span class="sd">options:</span>
+<span class="sd">  -h, --help       show this help message and exit</span>
+<span class="sd">  --my-option str  will show as kebab case on CLI (required)</span>
+<span class="sd">&quot;&quot;&quot;</span>
 </code></pre></div>
 <h4 id="change-whether-cli-should-exit-on-error">Change Whether CLI Should Exit on Error<a class="headerlink" href="#change-whether-cli-should-exit-on-error" title="Permanent link">&para;</a></h4>
 <p>Change whether the CLI internal parser will exit on error or raise a <code>SettingsError</code> exception by using
