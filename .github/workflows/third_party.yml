@@ -61,6 +61,7 @@ jobs:
     - name: Install deps
       run: |
         cd fastapi
+        uv venv
         uv pip sync requirements.txt
         pip uninstall -y pydantic
         uv add --editable ../pydantic-latest
