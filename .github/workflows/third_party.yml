@@ -31,8 +31,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: check if we should proceed with tests
-      run: echo "PROCEED_WITH_TESTS=${{ env.PROCEED_WITH_TESTS }}"
-      run: echo "PROCEED_WITH_TESTS=${{ github.env.PROCEED_WITH_TESTS }}"
+      run: |
+        echo "PROCEED_WITH_TESTS=${{ env.PROCEED_WITH_TESTS }}"
+        echo "PROCEED_WITH_TESTS=${{ github.env.PROCEED_WITH_TESTS }}"
     
     - name: Manual check for label
       run: |
