@@ -50,9 +50,6 @@ jobs:
         enable-cache: true
         python-version: ${{ matrix.python-version }}
 
-    - name: Install dependencies
-      run: uv sync
-
     - name: Checkout fastapi
       run: git clone https://github.com/tiangolo/fastapi.git --single-branch
 
