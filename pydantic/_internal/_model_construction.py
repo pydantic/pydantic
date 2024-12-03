@@ -257,7 +257,11 @@ class ModelMetaclass(ABCMeta):
             return super().__new__(mcs, cls_name, bases, namespace, **kwargs)
 
     def mro(cls) -> list[type[Any]]:
+        """Paramertrize bases for generic model"""
+        assert_err_msg = 'Unexpected error occurred when generating MRO of generic subclass. Please report this issue on GitHub: https://github.com/pydantic/pydantic/issues.'
+
         original_mro = super().mro()
+        assert all(isinstance(base, type) for base in original_mro), assert_err_msg
 
         if cls.__bases__ == (object,):
             return original_mro
@@ -265,8 +269,6 @@ class ModelMetaclass(ABCMeta):
         generic_metadata: PydanticGenericMetadata | None = cls.__dict__.get('__pydantic_generic_metadata__')
         if not generic_metadata:
             return original_mro
-
-        assert_err_msg = 'Unexpected error occurred when generating MRO of generic subclass. Please report this issue on GitHub: https://github.com/pydantic/pydantic/issues.'
 
         origin: type[BaseModel] | None
         origin, args = (
@@ -279,12 +281,24 @@ class ModelMetaclass(ABCMeta):
         target_params = origin.__pydantic_generic_metadata__['parameters']
         param_dict = dict(zip(target_params, args))
 
+        # An origin model may appear multiple times in the MRO. We only add a
+        # parametrized version for the first occurrence.
+        # For example:
+        # ```
+        # class A(BaseModel, Generic[T]): ...
+        # class B(BaseModel, Generic[T1, T2]): ...
+        #
+        # B[str, T][int] -> Before: (B[str, int], B, A[T2], A, ...)
+        #                   After:  (B[str, int], B, A[int], A, ...)
+        # ```
         indexed_origins = {origin}
 
         new_mro: list[type[Any]] = [cls]
         for base in original_mro[1:]:
-            base_origin: type[BaseModel] | None = getattr(base, '__pydantic_generic_metadata__', {}).get('origin')
-            base_params: tuple[TypeVar, ...] = getattr(base, '__pydantic_generic_metadata__', {}).get('parameters', ())
+            base_generic_metadata = getattr(base, '__pydantic_generic_metadata__', {})
+
+            base_origin: type[BaseModel] | None = base_generic_metadata.get('origin')
+            base_params: tuple[TypeVar, ...] = base_generic_metadata.get('parameters', ())
 
             if base_origin in indexed_origins:
                 continue
@@ -294,19 +308,29 @@ class ModelMetaclass(ABCMeta):
                 new_base = base[new_base_args]  # type: ignore
                 new_mro.append(new_base)
 
-                indexed_origins.add(base_origin or base)
+                indexed_origins.add(base)
 
                 if base_origin is not None:
-                    # dropped previous indexed origins
+                    indexed_origins.add(base_origin)
+
+                    # `base` is a partially parametrized model.
+                    # Since we add a newly parametrized one, we don't have to keep `base` in MRO.
                     continue
             else:
                 indexed_origins.add(base_origin or base)
 
-            # Avoid redundunt case such as
-            # class A(BaseModel, Generic[T]): ...
-            # A[T] is A  # True
             if base is not new_mro[-1]:
+                # Avoid redundunt case such as
+                # class A(BaseModel, Generic[T]): ...
+                # A[T] is A  # True
                 new_mro.append(base)
+
+        if not all(isinstance(base, type) for base in new_mro):
+            non_class_bases = tuple(base for base in new_mro if not isinstance(base, type))
+            raise TypeError(
+                f'Non-class bases found in MRO: {non_class_bases}. Full MRO: {new_mro}.'
+                'This is a bug in Pydantic. Please report it on GitHub: https://github.com/pydantic/pydantic/issues.'
+            )
 
         return new_mro
 
