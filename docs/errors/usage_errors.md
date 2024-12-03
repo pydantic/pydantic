@@ -620,7 +620,7 @@ See the [Migration Guide](../migration.md) for more information.
 
 ## `create_model` field definitions {#create-model-field-definitions}
 
-This error is raised when you provide field definitions input in `create_model` that is not valid.
+This error is raised when you provide invalid field definitions in [`create_model()`][pydantic.create_model].
 
 ```python
 from pydantic import PydanticUserError, create_model
@@ -631,18 +631,8 @@ except PydanticUserError as exc_info:
     assert exc_info.code == 'create-model-field-definitions'
 ```
 
-Or when you use [`typing.Annotated`][] with invalid input
+The fields definition syntax can be found in the [dynamic model creation](../concepts/models.md#dynamic-model-creation) documentation.
 
-```python
-from typing_extensions import Annotated
-
-from pydantic import PydanticUserError, create_model
-
-try:
-    create_model('FooModel', foo=Annotated[str, 'NotFieldInfoValue'])
-except PydanticUserError as exc_info:
-    assert exc_info.code == 'create-model-field-definitions'
-```
 
 ## `create_model` config base {#create-model-config-base}
 

@@ -21,30 +21,58 @@ from pydantic import (
 from pydantic.fields import ModelPrivateAttr
 
 
-def test_create_model():
-    model = create_model('FooModel', foo=(str, ...), bar=(int, 123))
-    assert issubclass(model, BaseModel)
-    assert model.model_config == BaseModel.model_config
-    assert model.__name__ == 'FooModel'
-    assert model.model_fields.keys() == {'foo', 'bar'}
+def test_create_model() -> None:
+    FooModel = create_model(
+        'FooModel',
+        foo=(str, ...),
+        bar=(int, 123),
+        baz=int,
+        qux=Annotated[int, Field(title='QUX')],
+    )
+    assert issubclass(FooModel, BaseModel)
+    assert FooModel.model_config == BaseModel.model_config
+    assert FooModel.__name__ == 'FooModel'
+    assert FooModel.model_fields.keys() == {'foo', 'bar', 'baz', 'qux'}
+    assert FooModel.model_fields['foo'].is_required()
+    assert not FooModel.model_fields['bar'].is_required()
+    assert FooModel.model_fields['baz'].is_required()
 
-    assert not model.__pydantic_decorators__.validators
-    assert not model.__pydantic_decorators__.root_validators
-    assert not model.__pydantic_decorators__.field_validators
-    assert not model.__pydantic_decorators__.field_serializers
+    assert FooModel.model_fields['qux'].title == 'QUX'
 
-    assert model.__module__ == 'tests.test_create_model'
+    assert not FooModel.__pydantic_decorators__.validators
+    assert not FooModel.__pydantic_decorators__.root_validators
+    assert not FooModel.__pydantic_decorators__.field_validators
+    assert not FooModel.__pydantic_decorators__.field_serializers
+
+    assert FooModel.__module__ == 'tests.test_create_model'
+
+
+def test_create_model_invalid_tuple():
+    with pytest.raises(PydanticUserError) as exc_info:
+        create_model('FooModel', foo=(Tuple[int, int], (1, 2), 'more'))
+
+    assert exc_info.value.code == 'create-model-field-definitions'
 
 
 def test_create_model_usage():
-    model = create_model('FooModel', foo=(str, ...), bar=(int, 123))
-    m = model(foo='hello')
+    FooModel = create_model('FooModel', foo=(str, ...), bar=(int, 123))
+    m = FooModel(foo='hello')
     assert m.foo == 'hello'
     assert m.bar == 123
     with pytest.raises(ValidationError):
-        model()
+        FooModel()
     with pytest.raises(ValidationError):
-        model(foo='hello', bar='xxx')
+        FooModel(foo='hello', bar='xxx')
+
+
+def test_create_model_private_attr() -> None:
+    FooModel = create_model('FooModel', _priv1=int, _priv2=(int, PrivateAttr(default=2)))
+    assert set(FooModel.__private_attributes__) == {'_priv1', '_priv2'}
+
+    m = FooModel()
+    m._priv1 = 1
+    assert m._priv1 == 1
+    assert m._priv2 == 2
 
 
 def test_create_model_pickle(create_module):
@@ -110,17 +138,6 @@ def test_create_model_must_not_reset_parent_namespace():
             'input': 'a',
         }
     ]
-
-
-def test_invalid_name():
-    with pytest.warns(RuntimeWarning):
-        model = create_model('FooModel', _foo=(str, ...))
-    assert len(model.model_fields) == 0
-
-
-def test_field_wrong_tuple():
-    with pytest.raises(errors.PydanticUserError):
-        create_model('FooModel', foo=(1, 2, 3))
 
 
 def test_config_and_base():
@@ -229,14 +246,14 @@ def test_inheritance_validators_all():
     assert model(a=2, b=6).model_dump() == {'a': 4, 'b': 12}
 
 
-def test_funky_name():
-    model = create_model('FooModel', **{'this-is-funky': (int, ...)})
-    m = model(**{'this-is-funky': '123'})
-    assert m.model_dump() == {'this-is-funky': 123}
+def test_field_invalid_identifier() -> None:
+    model = create_model('FooModel', **{'invalid-identifier': (int, ...)})
+    m = model(**{'invalid-identifier': '123'})
+    assert m.model_dump() == {'invalid-identifier': 123}
     with pytest.raises(ValidationError) as exc_info:
         model()
     assert exc_info.value.errors(include_url=False) == [
-        {'input': {}, 'loc': ('this-is-funky',), 'msg': 'Field required', 'type': 'missing'}
+        {'input': {}, 'loc': ('invalid-identifier',), 'msg': 'Field required', 'type': 'missing'}
     ]
 
 
@@ -499,61 +516,6 @@ def test_del_model_attr_with_privat_attrs_twice_error():
 
     with pytest.raises(AttributeError, match="'Model' object has no attribute '_private_attr'"):
         del m._private_attr
-
-
-def test_create_model_with_slots():
-    field_definitions = {'__slots__': (Optional[Tuple[str, ...]], None), 'foobar': (Optional[int], None)}
-    with pytest.warns(RuntimeWarning, match='__slots__ should not be passed to create_model'):
-        model = create_model('PartialPet', **field_definitions)
-
-    assert model.model_fields.keys() == {'foobar'}
-
-
-def test_create_model_non_annotated():
-    with pytest.raises(
-        TypeError,
-        match='A non-annotated attribute was detected: `bar = 123`. All model fields require a type annotation',
-    ):
-        create_model('FooModel', foo=(str, ...), bar=123)
-
-
-@pytest.mark.parametrize(
-    'annotation_type,field_info',
-    [
-        (bool, Field(alias='foo_bool_alias', description='foo boolean')),
-        (str, Field(alias='foo_str_alis', description='foo string')),
-    ],
-)
-def test_create_model_typing_annotated_field_info(annotation_type, field_info):
-    annotated_foo = Annotated[annotation_type, field_info]
-    model = create_model('FooModel', foo=annotated_foo, bar=(int, 123))
-
-    assert model.model_fields.keys() == {'foo', 'bar'}
-
-    foo = model.model_fields.get('foo')
-
-    assert foo is not None
-    assert foo.annotation == annotation_type
-    assert foo.alias == field_info.alias
-    assert foo.description == field_info.description
-
-
-def test_create_model_expect_field_info_as_metadata_typing():
-    annotated_foo = Annotated[int, 10]
-
-    with pytest.raises(PydanticUserError, match=r'Field definitions should be a Annotated\[<type>, <FieldInfo>\]'):
-        create_model('FooModel', foo=annotated_foo)
-
-
-def test_create_model_tuple():
-    model = create_model('FooModel', foo=(Tuple[int, int], (1, 2)))
-    assert model().foo == (1, 2)
-    assert model(foo=(3, 4)).foo == (3, 4)
-
-
-def test_create_model_tuple_3():
-    with pytest.raises(PydanticUserError, match=r'^Field definitions should be a `\(<type>, <default>\)`\.\n'):
-        create_model('FooModel', foo=(Tuple[int, int], (1, 2), 'more'))
 
 
 def test_create_model_protected_namespace_default():

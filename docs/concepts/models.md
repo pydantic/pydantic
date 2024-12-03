@@ -1122,14 +1122,14 @@ assert error.model_dump() == {
     [`pydantic.main.create_model`][pydantic.main.create_model]<br>
 
 There are some occasions where it is desirable to create a model using runtime information to specify the fields.
-For this Pydantic provides the `create_model` function to allow models to be created on the fly:
+Pydantic provides the [`create_model()`][pydantic.create_model] function to allow models to be created dynamically:
 
 ```python
 from pydantic import BaseModel, create_model
 
-DynamicFoobarModel = create_model(
-    'DynamicFoobarModel', foo=(str, ...), bar=(int, 123)
-)
+DynamicFoobarModel = create_model('DynamicFoobarModel', foo=str, bar=(int, 123))
+
+# Equivalent to:
 
 
 class StaticFoobarModel(BaseModel):
@@ -1137,28 +1137,32 @@ class StaticFoobarModel(BaseModel):
     bar: int = 123
 ```
 
-Here `StaticFoobarModel` and `DynamicFoobarModel` are identical.
-
 Fields are defined by one of the following tuple forms:
+Field definitions are specified as keyword arguments, and should either be:
 
-* `(<type>, <default value>)`
-* `(<type>, Field(...))`
-* `typing.Annotated[<type>, Field(...)]`
+- A single element, representing the type annotation of the field.
+- A two-tuple, the first element being the type and the second element the assigned value
+  (either a default or the [`Field()`][pydantic.Field] function).
 
-Using a `Field(...)` call as the second argument in the tuple (the default value)
-allows for more advanced field configuration. Thus, the following are analogous:
+Here is more advanced example:
 
 ```python
-from pydantic import BaseModel, Field, create_model
+from typing_extensions import Annotated
+
+from pydantic import BaseModel, Field, PrivateAttr, create_model
 
 DynamicModel = create_model(
     'DynamicModel',
-    foo=(str, Field(description='foo description', alias='FOO')),
+    foo=(str, Field(alias='FOO')),
+    bar=Annotated[str, Field(description='Bar field')],
+    _private=(int, PrivateAttr(default=1)),
 )
 
 
 class StaticModel(BaseModel):
-    foo: str = Field(description='foo description', alias='FOO')
+    foo: str = Field(alias='FOO')
+    bar: Annotated[str, Field(description='Bar field')]
+    _private: int = PrivateAttr(default=1)
 ```
 
 The special keyword arguments `__config__` and `__base__` can be used to customize the new model.
