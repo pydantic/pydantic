@@ -1,3 +1,18 @@
+## v2.10.3 (2024-12-03)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.10.3)
+
+### What's Changed
+
+#### Fixes
+
+* Set fields when `defer_build` is set on Pydantic dataclasses by @Viicos in [#10984](https://github.com/pydantic/pydantic/pull/10984)
+* Do not resolve the JSON Schema reference for `dict` core schema keys by @Viicos in [#10989](https://github.com/pydantic/pydantic/pull/10989)
+* Use the globals of the function when evaluating the return type for `PlainSerializer` and `WrapSerializer` functions by @Viicos in [#11008](https://github.com/pydantic/pydantic/pull/11008)
+* Fix host required enforcement for urls to be compatible with v2.9 behavior by @sydney-runkle in [#11027](https://github.com/pydantic/pydantic/pull/11027)
+* Add a `default_factory_takes_validated_data` property to `FieldInfo` by @Viicos in [#11034](https://github.com/pydantic/pydantic/pull/11034)
+* Fix url json schema in `serialization` mode by @sydney-runkle in [#11035](https://github.com/pydantic/pydantic/pull/11035)
+
 ## v2.10.2 (2024-11-25)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.10.2)
