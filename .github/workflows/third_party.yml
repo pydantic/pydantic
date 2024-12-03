@@ -20,22 +20,15 @@ permissions:
 env:
   PIP_DISABLE_PIP_VERSION_CHECK: 1
   FORCE_COLOR: 1
+  PROCEED_WITH_TESTS: ${{ contains(github.event.pull_request.labels.*.name, 'third-party-tests') || github.event_name == 'schedule' }}
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
 jobs:
-  run_tests:
-    runs-on: ubuntu-latest
-    outputs:
-      proceed: ${{ contains(join(',', github.event.pull_request.labels.*.name), 'third-party-tests') || github.event_name == 'schedule' }}
-    steps:
-      - name: check condition
-        run: echo "proceed=${{ contains(join(',', github.event.pull_request.labels.*.name), 'third-party-tests') || github.event_name == 'schedule' }}" >> $GITHUB_ENV
-
   test-fastapi:
-    needs: run_tests
+    if: ${{ github.env.PROCEED_WITH_TESTS }}
     name: test fastapi (`main` branch) on python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
     strategy:
