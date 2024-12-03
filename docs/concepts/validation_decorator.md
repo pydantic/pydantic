@@ -191,7 +191,7 @@ using all possible [parameter configurations][parameter] and all possible combin
 ## Using the [`Field()`][pydantic.Field] function to describe function parameters
 
 The [`Field()` function](fields.md) can also be used with the decorator to provide extra information about
-the field and validations. In general it should be used in a type hint with [Annotated](types.md#composing-types-via-annotated),
+the field and validations. In general it should be used in a type hint with [Annotated](types.md#using-the-annotated-pattern),
 unless `default_factory` is specified, in which case it should be used as the default value of the field:
 
 ```python

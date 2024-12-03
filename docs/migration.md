@@ -368,7 +368,7 @@ See the [`ConfigDict` API reference][pydantic.config.ConfigDict] for more detail
     and improvements.
     * The new `@field_validator` decorator does not have the `each_item` keyword argument; validators you want to
         apply to items within a generic container should be added by annotating the type argument. See
-        [validators in Annotated metadata](concepts/types.md#composing-types-via-annotated) for details.
+        [validators in Annotated metadata](concepts/types.md#using-the-annotated-pattern) for details.
         This looks like `List[Annotated[int, Field(ge=0)]]`
     * Even if you keep using the deprecated `@validator` decorator, you can no longer add the `field` or
         `config` arguments to the signature of validator functions. If you need access to these, you'll need
@@ -880,7 +880,7 @@ class Model(BaseModel):
     x: MyInt
 ```
 
-Read more about it in the [Composing types via `Annotated`](concepts/types.md#composing-types-via-annotated)
+Read more about it in the [Composing types via `Annotated`](concepts/types.md#using-the-annotated-pattern)
 docs.
 
 For `ConstrainedStr` you can use [`StringConstraints`][pydantic.types.StringConstraints] instead.

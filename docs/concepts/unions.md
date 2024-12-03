@@ -174,11 +174,6 @@ print(user_03_uuid.int)
 #> 275603287559914445491632874575877060712
 ```
 
-!!! tip
-    The type `Optional[x]` is a shorthand for `Union[x, None]`.
-
-    See more details in [Required fields](../concepts/models.md#required-fields).
-
 ## Discriminated Unions
 
 **Discriminated unions are sometimes referred to as "Tagged Unions".**
@@ -382,19 +377,21 @@ except ValidationError as e:
    When `None` is returned, this `union_tag_not_found` error is raised.
 
 !!! note
-    Using the [[`typing.Annotated`][] fields syntax](../concepts/types.md#composing-types-via-annotated) can be handy to regroup
+    Using the [annotated pattern](./fields.md#the-annotated-pattern) can be handy to regroup
     the `Union` and `discriminator` information. See the next example for more details.
 
     There are a few ways to set a discriminator for a field, all varying slightly in syntax.
 
     For `str` discriminators:
-    ```
-    some_field: Union[...] = Field(discriminator='my_discriminator'
+
+    ```python {lint="skip" test="skip"}
+    some_field: Union[...] = Field(discriminator='my_discriminator')
     some_field: Annotated[Union[...], Field(discriminator='my_discriminator')]
     ```
 
     For callable `Discriminator`s:
-    ```
+
+    ```python {lint="skip" test="skip"}
     some_field: Union[...] = Field(discriminator=Discriminator(...))
     some_field: Annotated[Union[...], Discriminator(...)]
     some_field: Annotated[Union[...], Field(discriminator=Discriminator(...))]
