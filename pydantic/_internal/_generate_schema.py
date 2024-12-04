@@ -1057,6 +1057,7 @@ class GenerateSchema:
         return core_schema.typed_dict_field(
             common_field['schema'],
             required=False if not field_info.is_required() else required,
+            exclude_if=field_info.exclude_if,
             serialization_exclude=common_field['serialization_exclude'],
             validation_alias=common_field['validation_alias'],
             serialization_alias=common_field['serialization_alias'],
@@ -1073,6 +1074,7 @@ class GenerateSchema:
         common_field = self._common_field_schema(name, field_info, decorators)
         return core_schema.model_field(
             common_field['schema'],
+            exclude_if=field_info.exclude_if,
             serialization_exclude=common_field['serialization_exclude'],
             validation_alias=common_field['validation_alias'],
             serialization_alias=common_field['serialization_alias'],
@@ -1094,6 +1096,7 @@ class GenerateSchema:
             init=field_info.init,
             init_only=field_info.init_var or None,
             kw_only=None if field_info.kw_only else False,
+            exclude_if=field_info.exclude_if,
             serialization_exclude=common_field['serialization_exclude'],
             validation_alias=common_field['validation_alias'],
             serialization_alias=common_field['serialization_alias'],
