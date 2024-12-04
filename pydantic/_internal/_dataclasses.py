@@ -25,7 +25,6 @@ from ._generate_schema import GenerateSchema
 from ._generics import get_standard_typevars_map
 from ._mock_val_ser import set_dataclass_mocks
 from ._namespace_utils import NsResolver
-from ._schema_generation_shared import CallbackGetCoreSchemaHandler
 from ._signature import generate_pydantic_signature
 from ._utils import LazyClassAttribute
 
@@ -159,19 +158,9 @@ def complete_dataclass(
             is_dataclass=True,
         ),
     )
-    get_core_schema = getattr(cls, '__get_pydantic_core_schema__', None)
+
     try:
-        if get_core_schema:
-            schema = get_core_schema(
-                cls,
-                CallbackGetCoreSchemaHandler(
-                    partial(gen_schema.generate_schema, from_dunder_get_core_schema=False),
-                    gen_schema,
-                    ref_mode='unpack',
-                ),
-            )
-        else:
-            schema = gen_schema.generate_schema(cls, from_dunder_get_core_schema=False)
+        schema = gen_schema.generate_schema(cls)
     except PydanticUndefinedAnnotation as e:
         if raise_errors:
             raise
