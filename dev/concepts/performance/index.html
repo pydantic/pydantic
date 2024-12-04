@@ -1189,9 +1189,9 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
-  <a href="#sequence-vs-list-or-tuple-mapping-vs-dict" class="md-nav__link">
+  <a href="#sequence-vs-list-or-tuple-with-mapping-vs-dict" class="md-nav__link">
     <span class="md-ellipsis">
-      Sequence vs list or tuple - Mapping vs dict
+      Sequence vs list or tuple with Mapping vs dict
     </span>
   </a>
   
@@ -1200,7 +1200,7 @@ to help you monitor and understand your
         <li class="md-nav__item">
   <a href="#dont-do-validation-when-you-dont-have-to-use-any-to-keep-the-value-unchanged" class="md-nav__link">
     <span class="md-ellipsis">
-      Don't do validation when you don't have to - use Any to keep the value unchanged
+      Don't do validation when you don't have to, use Any to keep the value unchanged
     </span>
   </a>
   
@@ -3026,9 +3026,9 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
-  <a href="#sequence-vs-list-or-tuple-mapping-vs-dict" class="md-nav__link">
+  <a href="#sequence-vs-list-or-tuple-with-mapping-vs-dict" class="md-nav__link">
     <span class="md-ellipsis">
-      Sequence vs list or tuple - Mapping vs dict
+      Sequence vs list or tuple with Mapping vs dict
     </span>
   </a>
   
@@ -3037,7 +3037,7 @@ to help you monitor and understand your
         <li class="md-nav__item">
   <a href="#dont-do-validation-when-you-dont-have-to-use-any-to-keep-the-value-unchanged" class="md-nav__link">
     <span class="md-ellipsis">
-      Don't do validation when you don't have to - use Any to keep the value unchanged
+      Don't do validation when you don't have to, use Any to keep the value unchanged
     </span>
   </a>
   
@@ -3149,13 +3149,13 @@ the function is called. Instead, instantiate it once, and reuse it.</p>
 </div>
 </div>
 </div>
-<h2 id="sequence-vs-list-or-tuple-mapping-vs-dict"><code>Sequence</code> vs <code>list</code> or <code>tuple</code> - <code>Mapping</code> vs <code>dict</code><a class="headerlink" href="#sequence-vs-list-or-tuple-mapping-vs-dict" title="Permanent link">&para;</a></h2>
+<h2 id="sequence-vs-list-or-tuple-with-mapping-vs-dict"><code>Sequence</code> vs <code>list</code> or <code>tuple</code> with <code>Mapping</code> vs <code>dict</code><a class="headerlink" href="#sequence-vs-list-or-tuple-with-mapping-vs-dict" title="Permanent link">&para;</a></h2>
 <p>When using <code>Sequence</code>, Pydantic calls <code>isinstance(value, Sequence)</code> to check if the value is a sequence.
 Also, Pydantic will try to validate against different types of sequences, like <code>list</code> and <code>tuple</code>.
 If you know the value is a <code>list</code> or <code>tuple</code>, use <code>list</code> or <code>tuple</code> instead of <code>Sequence</code>.</p>
 <p>The same applies to <code>Mapping</code> and <code>dict</code>.
 If you know the value is a <code>dict</code>, use <code>dict</code> instead of <code>Mapping</code>.</p>
-<h2 id="dont-do-validation-when-you-dont-have-to-use-any-to-keep-the-value-unchanged">Don't do validation when you don't have to - use <code>Any</code> to keep the value unchanged<a class="headerlink" href="#dont-do-validation-when-you-dont-have-to-use-any-to-keep-the-value-unchanged" title="Permanent link">&para;</a></h2>
+<h2 id="dont-do-validation-when-you-dont-have-to-use-any-to-keep-the-value-unchanged">Don't do validation when you don't have to, use <code>Any</code> to keep the value unchanged<a class="headerlink" href="#dont-do-validation-when-you-dont-have-to-use-any-to-keep-the-value-unchanged" title="Permanent link">&para;</a></h2>
 <p>If you don't need to validate a value, use <code>Any</code> to keep the value unchanged.</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
 
