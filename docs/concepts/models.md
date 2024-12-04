@@ -218,7 +218,7 @@ print(Model(items=(1, 2, 3)))
    to allow both lists and tuples. But Pydantic takes care of converting the tuple input to a list, so
    in most cases this isn't necessary.
 
-Besides, using these abstract types can also lead to [poor validation performance](./performance.md#sequence-vs-list-or-tuple---mapping-vs-dict), and in general using concrete container types
+Besides, using these abstract types can also lead to [poor validation performance](./performance.md#sequence-vs-list-or-tuple-with-mapping-vs-dict), and in general using concrete container types
 will avoid unnecessary checks.
 
 ## Nested models
