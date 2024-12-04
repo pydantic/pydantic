@@ -427,6 +427,7 @@ def generic_recursion_self_type(
         else:
             previously_seen_type_refs.add(type_ref)
             yield None
+            previously_seen_type_refs.remove(type_ref)
     finally:
         if token:
             _generic_recursion_cache.reset(token)

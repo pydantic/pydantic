@@ -3081,6 +3081,77 @@ def test_generic_mro_swap():
     assert BSwap[int, str].__mro__[1:] == C[int].__mro__[1:]
 
 
+def test_generic_mro_multi_level():
+    """Pass another generic model as an arg. Test #11024."""
+
+    T = TypeVar('T')
+
+    class GenericBaseModel(BaseModel, Generic[T]): ...
+
+    class EnumerableModel(GenericBaseModel[T]):
+        values: List[T]
+
+    T1 = TypeVar('T1')
+    T2 = TypeVar('T2')
+
+    class CombineModel(BaseModel, Generic[T1, T2]):
+        field_1: T1
+        field_2: T2
+
+    class EnumerableCombineModel(EnumerableModel[CombineModel[T1, T2]]): ...
+
+    m = EnumerableCombineModel[int, int]
+
+    mro = (
+        EnumerableCombineModel[int, int],
+        EnumerableCombineModel,
+        EnumerableModel[CombineModel[int, int]],
+        EnumerableModel,
+        GenericBaseModel[CombineModel[int, int]],
+        GenericBaseModel,
+        BaseModel,
+        Generic,
+        object,
+    )
+    assert m.__mro__ == tuple(HasRepr(repr(m)) for m in mro)
+
+
+@pytest.mark.parametrize('inner_mro_access', [True, False])
+def test_inner_mro_access(inner_mro_access: bool):
+    """https://github.com/pydantic/pydantic/issues/11024#issuecomment-2514590471"""
+
+    T = TypeVar('T')
+    C = TypeVar('C')
+
+    class BaseInner(BaseModel, Generic[T, C]):
+        def __class_getitem__(cls, params):
+            klass = super().__class_getitem__(params)
+            if inner_mro_access:
+                klass.mro()
+            return klass
+
+    class BaseOuter(BaseModel, Generic[T, C]):
+        field1: BaseInner[T, C]
+
+    class Inner(BaseInner[int, C], BaseModel, Generic[C]):
+        pass
+
+    class Outer(BaseOuter[int, C], BaseModel, Generic[C]):
+        field2: Inner[C]
+
+    expected_mro = (
+        Outer[int],
+        Outer,
+        BaseOuter[int, int],
+        BaseOuter,
+        BaseModel,
+        Generic,
+        object,
+    )
+
+    assert Outer[int].__mro__ == tuple(HasRepr(repr(m)) for m in expected_mro)
+
+
 def test_generic_field():
     # https://github.com/pydantic/pydantic/issues/10039
 
