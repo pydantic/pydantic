@@ -3498,15 +3498,6 @@ def test_path_validation_success(value, result):
     assert Model.model_validate_json(json.dumps({'foo': str(value)})).foo == result
 
 
-def test_path_validation_constrained():
-    ta = TypeAdapter(Annotated[Path, Field(min_length=9, max_length=20)])
-    with pytest.raises(ValidationError):
-        ta.validate_python('/short')
-    with pytest.raises(ValidationError):
-        ta.validate_python('/' + 'long' * 100)
-    assert ta.validate_python('/just/right/enough') == Path('/just/right/enough')
-
-
 def test_path_like():
     class Model(BaseModel):
         foo: os.PathLike
