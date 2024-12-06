@@ -125,6 +125,34 @@ JsonRef = NewType('JsonRef', str)
 CoreModeRef = tuple[CoreRef, JsonSchemaMode]
 JsonSchemaKeyT = TypeVar('JsonSchemaKeyT', bound=Hashable)
 
+# ##### Regex for Decimal JSON Schema Generation #####
+_DECIMAL_JSON_VALIDATION_PATTERN = r"""
+    ^
+    -?                            # Minus sign (optional)
+    \d+                           # One or more digits for the integer part (allows leading zeros)
+    (                             # Optional decimal group
+        \.                        # Decimal point
+        \d{{0,{decimal_places}}}  # Up to {decimal_places} decimal digits
+    )?
+    $
+"""
+
+_DECIMAL_JSON_SERIALIZATION_PATTERN = r"""
+    ^
+    -?                            # Minus sign (optional)
+    (?:                           # Non-capturing group for integer part
+        0
+        |                         # Single zero OR Single non-zero digit
+        [1-9]
+        \d{{0,{integer_places}}}  # Up to {integer_places} additional digits
+    )
+    (                             # Optional decimal group
+        \.                        # Decimal point
+        \d{{0,{decimal_places}}}  # Up to {decimal_places} decimal digits
+    )?
+    $
+"""
+
 
 @dataclasses.dataclass(**_internal_dataclass.slots_true)
 class _DefinitionsRemapping:
@@ -678,10 +706,16 @@ class GenerateJsonSchema:
         decimal_places = schema.get('decimal_places')
         str_schema = core_schema.str_schema()
 
-        if max_digits is not None and decimal_places is not None:
-            integer_places = max_digits - decimal_places
-            pattern = f'^-?(?:0|[1-9]\\d{{0,{integer_places-1}}})(\\.\\d{{0,{decimal_places}}})?$'
-            str_schema['pattern'] = pattern
+        if decimal_places is not None:
+            if self.mode == 'serialization' and max_digits is not None:
+                integer_places = max_digits - decimal_places - 1
+                pattern = _DECIMAL_JSON_SERIALIZATION_PATTERN.format(
+                    integer_places=integer_places, decimal_places=decimal_places
+                )
+            else:
+                pattern = _DECIMAL_JSON_VALIDATION_PATTERN.format(decimal_places=decimal_places)
+
+            str_schema['pattern'] = re.compile(pattern, re.VERBOSE).pattern
 
         json_schema = self.str_schema(str_schema)
 

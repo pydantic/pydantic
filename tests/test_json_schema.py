@@ -933,11 +933,41 @@ def test_str_constrained_types(field_type, expected_schema):
 
 def test_decimal_constraints():
     constraints = {'max_digits': 5, 'decimal_places': 2, 'ge': 0.0, 'le': 10.0}
-    schema = TypeAdapter(Annotated[Decimal, Field(**constraints)]).json_schema()
+    ta = TypeAdapter(Annotated[Decimal, Field(**constraints)])
 
-    assert 'pattern' in schema['anyOf'][1]
-    assert schema['anyOf'][0]['maximum'] == 10.0
-    assert schema['anyOf'][0]['minimum'] == 0.0
+    validation_cases = [
+        ('0', Decimal('0')),  # Single zero
+        ('00.12', Decimal('0.12')),  # Leading zeros
+        ('000.12', Decimal('0.12')),  # Multiple leading zeros
+        ('1.23', Decimal('1.23')),  # Regular decimal
+        ('10.00', Decimal('10.00')),  # Maximum value with trailing zeros
+        ('0.12', Decimal('0.12')),  # Decimal less than 1
+    ]
+
+    for input_value, expected in validation_cases:
+        result = ta.validate_json(f'"{input_value}"')
+        assert result == expected
+
+    invalid_cases = [
+        '123.455',  # Exceeds max_digits (5 digits total)
+        '12.345',  # Too many decimal places (3 vs allowed 2)
+        '12.34',  # 11.00 exceeds le=10.0
+        '-1.23',  # Below ge=0.0
+    ]
+
+    for value in invalid_cases:
+        with pytest.raises(ValidationError):
+            ta.validate_json(f'"{value}"')
+
+    serialization_cases = {
+        Decimal('0'): '0',  # Zero case
+        Decimal('00.12'): '0.12',  # Leading zeros removed
+        Decimal('1.20'): '1.20',  # Trailing zeros preserved
+        Decimal('10.00'): '10.00',  # Maximum value
+    }
+
+    for input_value, expected in serialization_cases.items():
+        assert ta.dump_json(input_value).decode().strip('"') == expected
 
 
 @pytest.mark.parametrize(
