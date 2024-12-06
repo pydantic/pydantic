@@ -836,7 +836,7 @@ class PydanticUseDefault(Exception):
         # > Event(name='meeting', time=datetime.datetime(2024, 1, 1, 12, 0))
         ```
 
-    For an additional example, seethe [validating partial json data](../concepts/json.md#partial-json-parsing) section of the Pydantic documentation.
+    For an additional example, see the [validating partial json data](../concepts/json.md#partial-json-parsing) section of the Pydantic documentation.
     """
 
     def __new__(cls) -> Self: ...
