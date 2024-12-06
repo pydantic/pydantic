@@ -1,134 +1,648 @@
-## Annotated Validators
+While Pydantic provides many capabilities to add [validation constraints](./fields.md#field-constraints)
+to fields, you can define custom validators for specific fields or for the whole model.
+
+!!! tip
+    Want to quickly jump to the relevant validator definition?
+
+    - [*after* field validators](#field-after-validator)
+    - [*before* field validators](#field-before-validator)
+    - [*plain* field validators](#field-plain-validator)
+    - [*wrap* field validators](#field-wrap-validator)
+    - [*after* model validators](#model-after-validator)
+    - [*before* model validators](#model-before-validator)
+    - [*wrap* model validators](#model-wrap-validator)
+
+## Field validators
 
 ??? api "API Documentation"
     [`pydantic.functional_validators.WrapValidator`][pydantic.functional_validators.WrapValidator]<br>
     [`pydantic.functional_validators.PlainValidator`][pydantic.functional_validators.PlainValidator]<br>
     [`pydantic.functional_validators.BeforeValidator`][pydantic.functional_validators.BeforeValidator]<br>
     [`pydantic.functional_validators.AfterValidator`][pydantic.functional_validators.AfterValidator]<br>
+    [`pydantic.functional_validators.field_validator`][pydantic.functional_validators.field_validator]<br>
 
-Pydantic provides a way to apply validators via use of `Annotated`.
-You should use this whenever you want to bind validation to a type instead of model or field.
+In its simplest form, a field validator is a callable taking the value to be validated as an argument and
+returning the validated value. The callable can perform checks for specific conditions (see
+[raising validation errors](#raising-validation-errors)) and make changes to the validated value.
 
-```python
-from typing import Any, List
+**Four** different types of validators can be used. They can all be defined using the
+[annotated pattern](./fields.md#the-annotated-pattern) or using the
+[`field_validator()`][pydantic.field_validator] decorator, applied on a [class method][classmethod]:
 
-from typing_extensions import Annotated
+[](){#field-after-validator}
 
-from pydantic import BaseModel, ValidationError
-from pydantic.functional_validators import AfterValidator
+- __*After* validators__: they run after Pydantic's internal validation. They are generally more type safe and thus easier to implement.
 
+    === "Annotated pattern"
 
-def check_squares(v: int) -> int:
-    assert v**0.5 % 1 == 0, f'{v} is not a square number'
-    return v
+        Here is an example of a validator performing a validation check, and returning the value unchanged.
 
+        ```python
+        from typing_extensions import Annotated
 
-def double(v: Any) -> Any:
-    return v * 2
-
-
-MyNumber = Annotated[int, AfterValidator(double), AfterValidator(check_squares)]
-
-
-class DemoModel(BaseModel):
-    number: List[MyNumber]
+        from pydantic import AfterValidator, BaseModel, ValidationError
 
 
-print(DemoModel(number=[2, 8]))
-#> number=[4, 16]
-try:
-    DemoModel(number=[2, 4])
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for DemoModel
-    number.1
-      Assertion failed, 8 is not a square number
-    assert ((8 ** 0.5) % 1) == 0 [type=assertion_error, input_value=4, input_type=int]
-    """
-```
-
-In this example we used some type aliases (`MyNumber = Annotated[...]`).
-While this can help with legibility of the code, it is not required, you can use `Annotated` directly in a model field type hint.
-These type aliases are also not actual types but you can use a similar approach with `TypeAliasType` to create actual types.
-See [Custom Types](../concepts/types.md#custom-types) for a more detailed explanation of custom types.
-
-It is also worth noting that you can nest `Annotated` inside other types.
-In this example we used that to apply validation to the inner items of a list.
-The same approach can be used for dict keys, etc.
-
-### Before, After, Wrap and Plain validators
-
-Pydantic provides multiple types of validator functions:
-
-* `After` validators run after Pydantic's internal parsing. They are generally more type safe and thus easier to implement.
-* `Before` validators run before Pydantic's internal parsing and validation (e.g. coercion of a `str` to an `int`). These are more flexible than `After` validators since they can modify the raw input, but they also have to deal with the raw input, which in theory could be any arbitrary object.
-* `Plain` validators are like a `mode='before'` validator but they terminate validation immediately, no further validators are called and Pydantic does not do any of its internal validation.
-* `Wrap` validators are the most flexible of all. You can run code before or after Pydantic and other validators do their thing or you can terminate validation immediately, both with a successful value or an error.
-
-You can use multiple before, after, or `mode='wrap'` validators, but only one `PlainValidator` since a plain validator
-will not call any inner validators.
-
-Here's an example of a `mode='wrap'` validator:
-
-```python
-import json
-from typing import Any, List
-
-from typing_extensions import Annotated
-
-from pydantic import (
-    BaseModel,
-    ValidationError,
-    ValidationInfo,
-    ValidatorFunctionWrapHandler,
-)
-from pydantic.functional_validators import WrapValidator
+        def is_even(value: int) -> int:
+            if value % 2 == 1:
+                raise ValueError(f'{value} is not an even number')
+            return value  # (1)!
 
 
-def maybe_strip_whitespace(
-    v: Any, handler: ValidatorFunctionWrapHandler, info: ValidationInfo
-) -> int:
-    if info.mode == 'json':
-        assert isinstance(v, str), 'In JSON mode the input must be a string!'
-        # you can call the handler multiple times
+        class Model(BaseModel):
+            number: Annotated[int, AfterValidator(is_even)]
+
+
         try:
-            return handler(v)
-        except ValidationError:
-            return handler(v.strip())
-    assert info.mode == 'python'
-    assert isinstance(v, int), 'In Python mode the input must be an int!'
-    # do no further validation
-    return v
+            Model(number=1)
+        except ValidationError as err:
+            print(err)
+            """
+            1 validation error for Model
+            number
+              Value error, 1 is not an even number [type=value_error, input_value=1, input_type=int]
+            """
+        ```
+
+        1. Note that it is important to return the validated value.
+
+    === "Decorator"
+
+        Here is an example of a validator making changes to the validated value (no exception is raised),
+        this time using the [`field_validator()`][pydantic.field_validator] decorator.
+
+        ```python
+        from pydantic import BaseModel, field_validator
 
 
-MyNumber = Annotated[int, WrapValidator(maybe_strip_whitespace)]
+        class Model(BaseModel):
+            number: int
+
+            @field_validator('number', mode='after')  # (1)!
+            @classmethod
+            def double_number(cls, value: int) -> int:
+                return value * 2
 
 
-class DemoModel(BaseModel):
-    number: List[MyNumber]
+        print(Model(number=2))
+        #> number=4
+        ```
+
+        1. `'after'` is the default mode for the decorator, and can be omitted.
+
+[](){#field-before-validator}
+
+- __*Before* validators__: they run before Pydantic's internal parsing and validation (e.g. coercion of a `str` to an `int`).
+  These are more flexible than *after* validators, but they also have to deal with the raw input, which in theory could be
+  any arbitrary object. Once the validator has been called, the returned value from the callable is validated against
+  the type annotation by Pydantic.
+
+    === "Annotated pattern"
+
+        ```python
+        from typing import Any
+
+        from typing_extensions import Annotated
+
+        from pydantic import BaseModel, BeforeValidator, ValidationError
 
 
-print(DemoModel(number=[2, 8]))
-#> number=[2, 8]
-print(DemoModel.model_validate_json(json.dumps({'number': [' 2 ', '8']})))
-#> number=[2, 8]
-try:
-    DemoModel(number=['2'])
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for DemoModel
-    number.0
-      Assertion failed, In Python mode the input must be an int!
-    assert False
-     +  where False = isinstance('2', int) [type=assertion_error, input_value='2', input_type=str]
-    """
+        def from_hex(value: Any) -> Any:  # (1)!
+            if isinstance(value, str):
+                return int(value, 16)
+            else:
+                return value
+
+
+        class Model(BaseModel):
+            number: Annotated[int, BeforeValidator(from_hex)]
+
+
+        print(Model(number="ea78d"))
+        #> number=960397
+        print(Model(number=123))
+        #> number=123
+
+        try:
+            Model(number=b"invalid bytes type")
+        except ValidationError as err:
+            print(err)  # (2)!
+            """
+            1 validation error for Model
+            number
+              Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value=b'invalid bytes type', input_type=bytes]
+            """
+        ```
+
+        1. Notice the use of [`Any`][typing.Any] as a type hint. *Before* validators take the raw input, which
+           can be anything.
+
+        2. Pydantic still performs validation against the `int` type, no matter if our `from_hex` validator
+           did operations on the original input type.
+
+    === "Decorator"
+
+        ```python
+        from typing import Any, List
+
+        from pydantic import BaseModel, field_validator
+
+
+        class Model(BaseModel):
+            numbers: List[int]
+
+            @field_validator('numbers', mode='before')
+            @classmethod
+            def ensure_list(cls, value: Any) -> Any:
+                if not isinstance(value, list):  # (1)!
+                    return [value]
+                else:
+                    return value
+
+
+        print(Model(numbers=2))
+        #> numbers=[2]
+        ```
+
+        1. Note that you might want to check for other sequence types (such as tuples) that would normally successfully
+           validate against the `list` type. *Before* validators give you more flexibility, but you have to account for
+           every possible case.
+
+[](){#field-plain-validator}
+
+- __*Plain* validators__: they act similarly to *before* validators but they **terminate validation immediately**, no further
+  validators are called and Pydantic does not do any of its internal validation against the field type.
+
+    === "Annotated pattern"
+
+        ```python
+        from typing import Any
+
+        from typing_extensions import Annotated
+
+        from pydantic import BaseModel, PlainValidator
+
+
+        def val_number(value: Any) -> Any:
+            if isinstance(value, int):
+                return value * 2
+            else:
+                return value
+
+
+        class Model(BaseModel):
+            number: Annotated[int, PlainValidator(val_number)]
+
+
+        print(Model(number=4))
+        #> number=8
+        print(Model(number='invalid'))  # (1)!
+        #> number='invalid'
+        ```
+
+        1. Although `'invalid'` shouldn't validate against the `int` type, Pydantic accepts the input.
+
+    === "Decorator"
+
+        ```python
+        from typing import Any
+
+        from pydantic import BaseModel, field_validator
+
+
+        class Model(BaseModel):
+            number: int
+
+            @field_validator('number', mode='plain')
+            @classmethod
+            def val_number(cls, value: Any) -> Any:
+                if isinstance(value, int):
+                    return value * 2
+                else:
+                    return value
+
+
+        print(Model(number=4))
+        #> number=8
+        print(Model(number='invalid'))  # (1)!
+        #> number='invalid'
+        ```
+
+        1. Although `'invalid'` shouldn't validate against the `int` type, Pydantic accepts the input.
+
+[](){#field-wrap-validator}
+
+- __*Wrap* validators__: they are the most flexible of all. You can run code before or after Pydantic and other validators
+  process the input, or you can terminate validation immediately, either by returning the value early or by raising an
+  error.
+
+    === "Annotated pattern"
+
+        ```python {lint="skip"}
+        from typing import Any
+
+        from typing_extensions import Annotated
+
+        from pydantic import BaseModel, Field, ValidationError, ValidatorFunctionWrapHandler, WrapValidator
+
+
+        def truncate(value: Any, handler: ValidatorFunctionWrapHandler) -> str:  # (1)!
+            try:
+                return handler(value)
+            except ValidationError as err:
+                if err.errors()[0]['type'] == 'string_too_long':
+                    return handler(value[:5])
+                else:
+                    raise
+
+
+        class Model(BaseModel):
+            my_string: Annotated[str, Field(max_length=5), WrapValidator(truncate)]
+
+
+        print(Model(my_string='abcde'))
+        #> my_string='abcde'
+        print(Model(my_string='abcdef'))
+        #> my_string='abcde'
+        ```
+
+        1. Unlike the other validator types, *wrap* validators must be defined with a second `handler` argument,
+           even if they don't make use of it.
+
+    === "Decorator"
+
+        ```python {lint="skip"}
+        from typing import Any
+
+        from typing_extensions import Annotated
+
+        from pydantic import BaseModel, Field, ValidationError, ValidatorFunctionWrapHandler, field_validator
+
+
+        class Model(BaseModel):
+            my_string: Annotated[str, Field(max_length=5)]
+
+            @field_validator('my_string', mode='wrap')
+            @classmethod
+            def truncate(cls, value: Any, handler: ValidatorFunctionWrapHandler) -> str:  # (1)!
+                try:
+                    return handler(value)
+                except ValidationError as err:
+                    if err.errors()[0]['type'] == 'string_too_long':
+                        return handler(value[:5])
+                    else:
+                        raise
+
+
+        print(Model(my_string='abcde'))
+        #> my_string='abcde'
+        print(Model(my_string='abcdef'))
+        #> my_string='abcde'
+        ```
+
+        1. Unlike the other validator types, *wrap* validators must be defined with a second `handler` argument,
+           even if they don't make use of it.
+
+!!! note "Validation of default values"
+    As mentioned in the [fields documentation](./fields.md#validate-default-values), default values of fields
+    are *not* validated by default, and thus custom validators will not be applied as well.
+
+### Using the annotated pattern or the decorators
+
+While both approaches can achieve the same thing, each implementation provide different benefits.
+
+#### Using the annotated pattern
+
+One of the key benefits of using the [annotated pattern](./fields.md#the-annotated-pattern) is to make
+validators reusable:
+
+```python
+from typing import List
+
+from typing_extensions import Annotated
+
+from pydantic import AfterValidator, BaseModel
+
+
+def is_even(value: int) -> int:
+    if value % 2 == 1:
+        raise ValueError(f'{value} is not an even number')
+    return value
+
+
+EvenNumber = Annotated[str, AfterValidator(is_even)]
+
+
+class Model1(BaseModel):
+    my_number: EvenNumber
+
+
+class Model2(BaseModel):
+    other_number: Annotated[EvenNumber, AfterValidator(lambda v: v + 2)]
+
+
+class Model3(BaseModel):
+    list_of_even_numbers: List[EvenNumber]  # (1)!
 ```
 
-The same "modes" apply to `@field_validator`, which is discussed in the next section.
+1. As mentioned in the [annotated pattern](./fields.md#the-annotated-pattern) documentation,
+   we can also make use of validators for specific parts of the annotation.
 
-### Ordering of validators within `Annotated`
+It is also easier to understand which validators are applied to a type, by just looking at the field annotation.
+
+#### Using the decorator
+
+One of the key benefits of using the [`field_validator()`][pydantic.field_validator] decorator is to apply
+the function to multiple fields:
+
+```python
+from pydantic import BaseModel, field_validator
+
+
+class Model(BaseModel):
+    f1: str
+    f2: str
+
+    @field_validator('f1', 'f2', mode='before')
+    @classmethod
+    def capitalize(cls, value: str) -> str:
+        return value.capitalize()
+```
+
+Here are a couple additional notes about the decorator usage:
+
+- If you want the validator to apply to all fields (including the ones defined in subclasses), you can pass
+  `'*'` as the field name argument.
+- By default, the decorator will ensure the provided field name(s) are defined on the model. If you want to
+  disable this check during class creation, you can do so by passing `False` to the `check_fields` argument.
+  This is useful when the field validator is defined on a base class, and the field is expected to be set
+  on subclasses.
+
+## Model validators
+
+??? api "API Documentation"
+    [`pydantic.functional_validators.model_validator`][pydantic.functional_validators.model_validator]<br>
+
+Validation can also be performed on the entire model's data using the [`model_validator()`][pydantic.model_validator]
+decorator.
+
+**Three** different types of model validators can be used:
+
+[](){#model-after-validator}
+
+- __*After* validators__: they run after the whole model has been validated. As such, they are defined as
+  *instance* methods and can be seen as post-initialization hooks. However, do note that the instance should
+  be returned.
+
+  ```python
+  from typing_extensions import Self
+
+  from pydantic import BaseModel, model_validator
+
+
+  class UserModel(BaseModel):
+      username: str
+      password: str
+      password_repeat: str
+
+      @model_validator(mode='after')
+      def check_passwords_match(self) -> Self:
+          if self.password != self.password_repeat:
+              raise ValueError('Passwords do not match')
+          return self
+  ```
+
+[](){#model-before-validator}
+
+- __*Before* validators__: they are run before the model is instantiated. These are more flexible than *after* validators,
+  but they also have to deal with the raw input, which in theory could be any arbitrary object.
+
+  ```python
+  from typing import Any
+
+  from pydantic import BaseModel, model_validator
+
+
+  class UserModel(BaseModel):
+      username: str
+
+      @model_validator(mode='before')
+      @classmethod
+      def check_card_number_not_present(cls, data: Any) -> Any:  # (1)!
+          if isinstance(data, dict):  # (2)!
+              if 'card_number' in data:
+                  raise ValueError("'card_number' should not be included")
+          return data
+  ```
+
+  1. Notice the use of [`Any`][typing.Any] as a type hint. *Before* validators take the raw input, which
+     can be anything.
+  2. Most of the time, the input data will be a dictionary (e.g. when calling `UserModel(username='...')`). However,
+     this is not always the case. For instance, if the [`from_attributes`][pydantic.ConfigDict.from_attributes]
+     configuration value is set, you might receive an arbitrary class instance for the `data` argument.
+
+[](){#model-wrap-validator}
+
+- __*Wrap* validators__: they are the most flexible of all. You can run code before or after Pydantic and
+  other validators process the input data, or you can terminate validation immediately, either by returning
+  the data early or by raising an error.
+
+  ```python {lint="skip"}
+  import logging
+  from typing import Any
+
+  from typing_extensions import Self
+
+  from pydantic import BaseModel, ModelWrapValidatorHandler, ValidationError, model_validator
+
+
+  class UserModel(BaseModel):
+      username: str
+
+      @model_validator(mode='wrap')
+      @classmethod
+      def log_failed_validation(cls, data: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
+          try:
+              return handler(data)
+          except ValidationError:
+              logging.error('Model %s failed to validate with data %s', cls, data)
+              raise
+  ```
+
+!!! note "On inheritance"
+    A model validator defined in a base class will be called during the validation of a subclass instance.
+
+    Overriding a model validator in a subclass will override the base class' validator, and thus only the subclass' version of said validator will be called.
+
+## Raising validation errors
+
+To raise a validation error, three types of exceptions can be used:
+
+- [`ValueError`][]: this is the most common exception to be raised inside validators.
+- [`AssertionError`][]: using the [assert][] statement also works, but be aware that these statements
+  are skipped when Python is run with the [-O][] optimization flag.
+- [`PydanticCustomError`][pydantic_core.PydanticCustomError]: a bit more verbose, but provides extra flexibility:
+  ```python
+  from pydantic_core import PydanticCustomError
+
+  from pydantic import BaseModel, ValidationError, field_validator
+
+
+  class Model(BaseModel):
+      x: int
+
+      @field_validator('x', mode='after')
+      @classmethod
+      def validate_x(cls, v: int) -> int:
+          if v % 42 == 0:
+              raise PydanticCustomError(
+                  'the_answer_error',
+                  '{number} is the answer!',
+                  {'number': v},
+              )
+          return v
+
+
+  try:
+      Model(x=42 * 2)
+  except ValidationError as e:
+      print(e)
+      """
+      1 validation error for Model
+      x
+        84 is the answer! [type=the_answer_error, input_value=84, input_type=int]
+      """
+  ```
+
+## Validation info
+
+Both the field and model validators callables (in all modes) can optionally take an extra
+[`ValidationInfo`][pydantic.ValidationInfo] argument, providing useful extra information, such as:
+
+- [already validated data](#validation-data)
+- [user defined context](#validation-context)
+- the current validation mode: either `'python'` or `'json'` (see the [`mode`][pydantic.ValidationInfo.mode] property)
+- the current field name (see the [`field_name`][pydantic.ValidationInfo.field_name] property).
+
+### Validation data
+
+For field validators, the already validated data can be accessed using the [`data`][pydantic.ValidationInfo.data]
+property. Here is an example than can be used as an alternative to the [*after* model validator](#model-after-validator)
+example:
+
+```python
+from pydantic import BaseModel, ValidationInfo, field_validator
+
+
+class UserModel(BaseModel):
+    password: str
+    password_repeat: str
+    username: str
+
+    @field_validator('password_repeat', mode='after')
+    @classmethod
+    def check_passwords_match(cls, value: str, info: ValidationInfo) -> str:
+        if value != info.data['password']:
+            raise ValueError('Passwords do not match')
+        return value
+```
+
+!!! warning
+    As validation is performed in the [order fields are defined](./models.md#field-ordering), you have to
+    make sure you are not accessing a field that hasn't been validated yet. In the code above, for example,
+    the `username` validated value is not available yet, as it is defined *after* `password_repeat`.
+
+The [`data`][pydantic.ValidationInfo.data] property is `None` for [model validators](#model-validators).
+
+### Validation context
+
+You can pass a context object to the [validation methods](./models.md#validating-data), which can be accessed
+inside the validator functions using the [`context`][pydantic.ValidationInfo.context] property:
+
+```python
+from pydantic import BaseModel, ValidationInfo, field_validator
+
+
+class Model(BaseModel):
+    text: str
+
+    @field_validator('text', mode='after')
+    @classmethod
+    def remove_stopwords(cls, v: str, info: ValidationInfo) -> str:
+        if isinstance(info.context, dict):
+            stopwords = info.context.get('stopwords', set())
+            v = ' '.join(w for w in v.split() if w.lower() not in stopwords)
+        return v
+
+
+data = {'text': 'This is an example document'}
+print(Model.model_validate(data))  # no context
+#> text='This is an example document'
+print(Model.model_validate(data, context={'stopwords': ['this', 'is', 'an']}))
+#> text='example document'
+```
+
+Similarly, you can [use a context for serialization](../concepts/serialization.md#serialization-context).
+
+??? note "Providing context when directly instantiating a model"
+    It is currently not possible to provide a context when directly instantiating a model
+    (i.e. when calling `Model(...)`). You can work around this through the use of a
+    [`ContextVar`][contextvars.ContextVar] and a custom `__init__` method:
+
+    ```python
+    from __future__ import annotations
+
+    from contextlib import contextmanager
+    from contextvars import ContextVar
+    from typing import Any, Dict, Generator
+
+    from pydantic import BaseModel, ValidationInfo, field_validator
+
+    _init_context_var = ContextVar('_init_context_var', default=None)
+
+
+    @contextmanager
+    def init_context(value: Dict[str, Any]) -> Generator[None]:
+        token = _init_context_var.set(value)
+        try:
+            yield
+        finally:
+            _init_context_var.reset(token)
+
+
+    class Model(BaseModel):
+        my_number: int
+
+        def __init__(self, /, **data: Any) -> None:
+            self.__pydantic_validator__.validate_python(
+                data,
+                self_instance=self,
+                context=_init_context_var.get(),
+            )
+
+        @field_validator('my_number')
+        @classmethod
+        def multiply_with_context(cls, value: int, info: ValidationInfo) -> int:
+            if isinstance(info.context, dict):
+                multiplier = info.context.get('multiplier', 1)
+                value = value * multiplier
+            return value
+
+
+    print(Model(my_number=2))
+    #> my_number=2
+
+    with init_context({'multiplier': 3}):
+        print(Model(my_number=2))
+        #> my_number=6
+
+    print(Model(my_number=2))
+    #> my_number=2
+    ```
+
+## Ordering of validators within `Annotated`
+
+TODO Needs rework
 
 Order of validation metadata within `Annotated` matters.
 Validation goes from right to left and back.
@@ -262,551 +776,91 @@ print(context['logs'])
 """
 ```
 
-## Validation of default values
-
-Validators won't run when the default value is used.
-This applies both to `@field_validator` validators and `Annotated` validators.
-You can force them to run with `Field(validate_default=True)`. Setting `validate_default` to `True` has the closest behavior to using `always=True` in `validator` in Pydantic v1. However, you are generally better off using a `@model_validator(mode='before')` where the function is called before the inner validator is called.
-
-
-```python
-from typing_extensions import Annotated
-
-from pydantic import BaseModel, Field, field_validator
-
-
-class Model(BaseModel):
-    x: str = 'abc'
-    y: Annotated[str, Field(validate_default=True)] = 'xyz'
-
-    @field_validator('x', 'y')
-    @classmethod
-    def double(cls, v: str) -> str:
-        return v * 2
-
-
-print(Model())
-#> x='abc' y='xyzxyz'
-print(Model(x='foo'))
-#> x='foofoo' y='xyzxyz'
-print(Model(x='abc'))
-#> x='abcabc' y='xyzxyz'
-print(Model(x='foo', y='bar'))
-#> x='foofoo' y='barbar'
-```
-
-## Field validators
-
-??? api "API Documentation"
-    [`pydantic.functional_validators.field_validator`][pydantic.functional_validators.field_validator]<br>
-
-If you want to attach a validator to a specific field of a model you can use the `@field_validator` decorator.
-
-```python
-from pydantic import (
-    BaseModel,
-    ValidationError,
-    ValidationInfo,
-    field_validator,
-)
-
 
-class UserModel(BaseModel):
-    name: str
-    id: int
-
-    @field_validator('name')
-    @classmethod
-    def name_must_contain_space(cls, v: str) -> str:
-        if ' ' not in v:
-            raise ValueError('must contain a space')
-        return v.title()
-
-    # you can select multiple fields, or use '*' to select all fields
-    @field_validator('id', 'name')
-    @classmethod
-    def check_alphanumeric(cls, v: str, info: ValidationInfo) -> str:
-        if isinstance(v, str):
-            # info.field_name is the name of the field being validated
-            is_alphanumeric = v.replace(' ', '').isalnum()
-            assert is_alphanumeric, f'{info.field_name} must be alphanumeric'
-        return v
-
-
-print(UserModel(name='John Doe', id=1))
-#> name='John Doe' id=1
-
-try:
-    UserModel(name='samuel', id=1)
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for UserModel
-    name
-      Value error, must contain a space [type=value_error, input_value='samuel', input_type=str]
-    """
-
-try:
-    UserModel(name='John Doe', id='abc')
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for UserModel
-    id
-      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='abc', input_type=str]
-    """
-
-try:
-    UserModel(name='John Doe!', id=1)
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for UserModel
-    name
-      Assertion failed, name must be alphanumeric
-    assert False [type=assertion_error, input_value='John Doe!', input_type=str]
-    """
-```
-
-A few things to note on validators:
-
-* `@field_validator`s are "class methods", so the first argument value they receive is the `UserModel` class, not an instance of `UserModel`. We recommend you use the `@classmethod` decorator on them below the `@field_validator` decorator to get proper type checking.
-* the second argument is the field value to validate; it can be named as you please
-* the third argument, if present, is an instance of `pydantic.ValidationInfo`
-* validators should either return the parsed value or raise a `ValueError` or `AssertionError` (``assert`` statements may be used).
-* A single validator can be applied to multiple fields by passing it multiple field names.
-* A single validator can also be called on *all* fields by passing the special value `'*'`.
-
-!!! warning
-    If you make use of `assert` statements, keep in mind that running
-    Python with the [`-O` optimization flag](https://docs.python.org/3/using/cmdline.html#cmdoption-o)
-    disables `assert` statements, and **validators will stop working**.
-
-!!! note
-    `FieldValidationInfo` is **deprecated** in 2.4, use `ValidationInfo` instead.
-
-
-If you want to access values from another field inside a `@field_validator`, this may be possible using `ValidationInfo.data`, which is a dict of field name to field value.
-Validation is done in the order fields are defined, so you have to be careful when using `ValidationInfo.data` to not access a field that has not yet been validated/populated — in the code above, for example, you would not be able to access `info.data['id']` from within `name_must_contain_space`.
-However, in most cases where you want to perform validation using multiple field values, it is better to use `@model_validator` which is discussed in the section below.
-
-## Model validators
-
-??? api "API Documentation"
-    [`pydantic.functional_validators.model_validator`][pydantic.functional_validators.model_validator]<br>
-
-Validation can also be performed on the entire model's data using `@model_validator`.
-
-```python
-from typing import Any
-
-from typing_extensions import Self
-
-from pydantic import BaseModel, ValidationError, model_validator
-
-
-class UserModel(BaseModel):
-    username: str
-    password1: str
-    password2: str
-
-    @model_validator(mode='before')
-    @classmethod
-    def check_card_number_omitted(cls, data: Any) -> Any:
-        if isinstance(data, dict):
-            assert (
-                'card_number' not in data
-            ), 'card_number should not be included'
-        return data
-
-    @model_validator(mode='after')
-    def check_passwords_match(self) -> Self:
-        pw1 = self.password1
-        pw2 = self.password2
-        if pw1 is not None and pw2 is not None and pw1 != pw2:
-            raise ValueError('passwords do not match')
-        return self
 
 
-print(UserModel(username='scolvin', password1='zxcvbn', password2='zxcvbn'))
-#> username='scolvin' password1='zxcvbn' password2='zxcvbn'
-try:
-    UserModel(username='scolvin', password1='zxcvbn', password2='zxcvbn2')
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for UserModel
-      Value error, passwords do not match [type=value_error, input_value={'username': 'scolvin', '... 'password2': 'zxcvbn2'}, input_type=dict]
-    """
-
-try:
-    UserModel(
-        username='scolvin',
-        password1='zxcvbn',
-        password2='zxcvbn',
-        card_number='1234',
-    )
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for UserModel
-      Assertion failed, card_number should not be included
-    assert 'card_number' not in {'card_number': '1234', 'password1': 'zxcvbn', 'password2': 'zxcvbn', 'username': 'scolvin'} [type=assertion_error, input_value={'username': 'scolvin', '..., 'card_number': '1234'}, input_type=dict]
-    """
-```
-
-!!! note "On return type checking"
-    Methods decorated with `@model_validator` should return the self instance at the end of the method.
-    For type checking purposes, you can use `Self` from either `typing` or the `typing_extensions` backport as the
-    return type of the decorated method.
-    In the context of the above example, you could also use `def check_passwords_match(self: 'UserModel') -> 'UserModel'` to indicate that the method returns an instance of the model.
-
-!!! warning "On not returning `self`"
-    If you fail to return `self` at the end of a `@model_validator` method (either, returning `None` or returning something other than `self`),
-    you may encounter unexpected behavior.
+## Special types
 
-    Specifically, for nested models, if you return `None` (or equivalently, don't include a `return` statement),
-    despite a potentially successful validation, the nested model will be `None` in the parent model.
+Pydantic provides a few special utilities that can be used to customize validation.
 
-    Returning a value other than `self` causes unexpected behavior at the top level of validation when validating via `__init__`.
-    In order to avoid this, we recommend one of:
-    1. Simply mutate and return `self` at the end of the method.
-    2. If you must return a value other than `self`, use a method like `model_validate` where you can directly fetch the return value.
+- [`InstanceOf`][pydantic.functional_validators.InstanceOf] can be used to validate that a value is an instance of a given class.
+  ```python
+  from typing import List
 
-    Here's an example of the unexpected behavior, and the warning you'll receive:
+  from pydantic import BaseModel, InstanceOf, ValidationError
 
-    ```python {test="skip"}
-    from pydantic import BaseModel
-    from pydantic.functional_validators import model_validator
 
+  class Fruit:
+      def __repr__(self):
+          return self.__class__.__name__
 
-    class Child(BaseModel):
-        name: str
 
-        @model_validator(mode='after')  # type: ignore
-        def validate_model(self) -> 'Child':
-            return Child.model_construct(name='different!')
+  class Banana(Fruit): ...
 
 
-    print(repr(Child(name='foo')))
-    """
-    UserWarning: A custom validator is returning a value other than `self`.
-    Returning anything other than `self` from a top level model validator isn't supported when validating via `__init__`.
-    See the `model_validator` docs (https://docs.pydantic.dev/latest/concepts/validators/#model-validators) for more details.
+  class Apple(Fruit): ...
 
-    Child(name='foo')
-    """
-    ```
 
-!!! note "On Inheritance"
-    A `@model_validator` defined in a base class will be called during the validation of a subclass instance.
+  class Basket(BaseModel):
+      fruits: List[InstanceOf[Fruit]]
 
-    Overriding a `@model_validator` in a subclass will override the base class' `@model_validator`, and thus only the subclass' version of said `@model_validator` will be called.
 
-Model validators can be `mode='before'`, `mode='after'` or `mode='wrap'`.
+  print(Basket(fruits=[Banana(), Apple()]))
+  #> fruits=[Banana, Apple]
+  try:
+      Basket(fruits=[Banana(), 'Apple'])
+  except ValidationError as e:
+      print(e)
+      """
+      1 validation error for Basket
+      fruits.1
+        Input should be an instance of Fruit [type=is_instance_of, input_value='Apple', input_type=str]
+      """
+  ```
 
-Before model validators are passed the raw input which is often a `dict[str, Any]` but could also be an instance of the model itself (e.g. if `UserModel.model_validate(UserModel.construct(...))` is called) or anything else since you can pass arbitrary objects into `model_validate`.
-Because of this `mode='before'` validators are extremely flexible and powerful but can be cumbersome and error prone to implement.
-Before model validators should be class methods.
-The first argument should be `cls` (and we also recommend you use `@classmethod` below `@model_validator` for proper type checking), the second argument will be the input (you should generally type it as `Any` and use `isinstance` to narrow the type) and the third argument (if present) will be a `pydantic.ValidationInfo`.
+- [`SkipValidation`][pydantic.functional_validators.SkipValidation] can be used to skip validation on a field.
+  ```python
+  from typing import List
 
-`mode='after'` validators are instance methods and always receive an instance of the model as the first argument. Be sure to return the instance at the end of your validator.
-You should not use `(cls, ModelType)` as the signature, instead just use `(self)` and let type checkers infer the type of `self` for you.
-Since these are fully type safe they are often easier to implement than `mode='before'` validators.
-If any field fails to validate, `mode='after'` validators for that field will not be called.
+  from pydantic import BaseModel, SkipValidation
 
-## Handling errors in validators
 
-As mentioned in the previous sections you can raise either a `ValueError` or `AssertionError` (including ones generated by `assert ...` statements) within a validator to indicate validation failed.
-You can also raise a `PydanticCustomError` which is a bit more verbose but gives you extra flexibility.
-Any other errors (including `TypeError`) are bubbled up and not wrapped in a `ValidationError`.
+  class Model(BaseModel):
+      names: List[SkipValidation[str]]
 
-```python
-from pydantic_core import PydanticCustomError
 
-from pydantic import BaseModel, ValidationError, field_validator
+  m = Model(names=['foo', 'bar'])
+  print(m)
+  #> names=['foo', 'bar']
 
+  m = Model(names=['foo', 123])  # (1)!
+  print(m)
+  #> names=['foo', 123]
+  ```
 
-class Model(BaseModel):
-    x: int
+    1. Note that the validation of the second item is skipped. If it has the wrong type it will emit a warning during serialization.
 
-    @field_validator('x')
-    @classmethod
-    def validate_x(cls, v: int) -> int:
-        if v % 42 == 0:
-            raise PydanticCustomError(
-                'the_answer_error',
-                '{number} is the answer!',
-                {'number': v},
-            )
-        return v
+- [`PydanticUseDefault`][pydantic_core.PydanticUseDefault] can be used to notify Pydantic that the default value
+  should be used.
+  ```python
+  from typing import Any
 
+  from pydantic_core import PydanticUseDefault
+  from typing_extensions import Annotated
 
-try:
-    Model(x=42 * 2)
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for Model
-    x
-      84 is the answer! [type=the_answer_error, input_value=84, input_type=int]
-    """
-```
+  from pydantic import BaseModel, BeforeValidator
 
-## Special Types
 
-Pydantic provides a few special types that can be used to customize validation.
+  def default_if_none(value: Any) -> Any:
+      if value is None:
+          raise PydanticUseDefault()
+      return value
 
-- [`InstanceOf`][pydantic.functional_validators.InstanceOf] is a type that can be used to validate that a value is an instance of a given class.
 
-```python
-from typing import List
+  class Model(BaseModel):
+      name: Annotated[str, BeforeValidator(default_if_none)] = 'default_name'
 
-from pydantic import BaseModel, InstanceOf, ValidationError
 
-
-class Fruit:
-    def __repr__(self):
-        return self.__class__.__name__
-
-
-class Banana(Fruit): ...
-
-
-class Apple(Fruit): ...
-
-
-class Basket(BaseModel):
-    fruits: List[InstanceOf[Fruit]]
-
-
-print(Basket(fruits=[Banana(), Apple()]))
-#> fruits=[Banana, Apple]
-try:
-    Basket(fruits=[Banana(), 'Apple'])
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for Basket
-    fruits.1
-      Input should be an instance of Fruit [type=is_instance_of, input_value='Apple', input_type=str]
-    """
-```
-
-- [`SkipValidation`][pydantic.functional_validators.SkipValidation] is a type that can be used to skip validation on a field.
-
-```python
-from typing import List
-
-from pydantic import BaseModel, SkipValidation
-
-
-class Model(BaseModel):
-    names: List[SkipValidation[str]]
-
-
-m = Model(names=['foo', 'bar'])
-print(m)
-#> names=['foo', 'bar']
-
-m = Model(names=['foo', 123])  # (1)!
-print(m)
-#> names=['foo', 123]
-```
-
-1. Note that the validation of the second item is skipped. If it has the wrong type it will emit a warning during serialization.
-
-## Field checks
-
-During class creation, validators are checked to confirm that the fields they specify actually exist on the model.
-
-This may be undesirable if, for example, you want to define a validator to validate fields that will only be present
-on subclasses of the model where the validator is defined.
-
-If you want to disable these checks during class creation, you can pass `check_fields=False` as a keyword argument to
-the validator.
-
-## Validation Context
-
-You can pass a context object to the validation methods which can be accessed from the `info`
-argument to decorated validator functions:
-
-```python
-from pydantic import BaseModel, ValidationInfo, field_validator
-
-
-class Model(BaseModel):
-    text: str
-
-    @field_validator('text')
-    @classmethod
-    def remove_stopwords(cls, v: str, info: ValidationInfo):
-        context = info.context
-        if context:
-            stopwords = context.get('stopwords', set())
-            v = ' '.join(w for w in v.split() if w.lower() not in stopwords)
-        return v
-
-
-data = {'text': 'This is an example document'}
-print(Model.model_validate(data))  # no context
-#> text='This is an example document'
-print(Model.model_validate(data, context={'stopwords': ['this', 'is', 'an']}))
-#> text='example document'
-print(Model.model_validate(data, context={'stopwords': ['document']}))
-#> text='This is an example'
-```
-
-This is useful when you need to dynamically update the validation behavior during runtime. For example, if you wanted
-a field to have a dynamically controllable set of allowed values, this could be done by passing the allowed values
-by context, and having a separate mechanism for updating what is allowed:
-
-```python
-from typing import Any, Dict, List
-
-from pydantic import (
-    BaseModel,
-    ValidationError,
-    ValidationInfo,
-    field_validator,
-)
-
-_allowed_choices = ['a', 'b', 'c']
-
-
-def set_allowed_choices(allowed_choices: List[str]) -> None:
-    global _allowed_choices
-    _allowed_choices = allowed_choices
-
-
-def get_context() -> Dict[str, Any]:
-    return {'allowed_choices': _allowed_choices}
-
-
-class Model(BaseModel):
-    choice: str
-
-    @field_validator('choice')
-    @classmethod
-    def validate_choice(cls, v: str, info: ValidationInfo):
-        allowed_choices = info.context.get('allowed_choices')
-        if allowed_choices and v not in allowed_choices:
-            raise ValueError(f'choice must be one of {allowed_choices}')
-        return v
-
-
-print(Model.model_validate({'choice': 'a'}, context=get_context()))
-#> choice='a'
-
-try:
-    print(Model.model_validate({'choice': 'd'}, context=get_context()))
-except ValidationError as exc:
-    print(exc)
-    """
-    1 validation error for Model
-    choice
-      Value error, choice must be one of ['a', 'b', 'c'] [type=value_error, input_value='d', input_type=str]
-    """
-
-set_allowed_choices(['b', 'c'])
-
-try:
-    print(Model.model_validate({'choice': 'a'}, context=get_context()))
-except ValidationError as exc:
-    print(exc)
-    """
-    1 validation error for Model
-    choice
-      Value error, choice must be one of ['b', 'c'] [type=value_error, input_value='a', input_type=str]
-    """
-```
-
-Similarly, you can [use a context for serialization](../concepts/serialization.md#serialization-context).
-
-### Using validation context with `BaseModel` initialization
-Although there is no way to specify a context in the standard `BaseModel` initializer, you can work around this through
-the use of `contextvars.ContextVar` and a custom `__init__` method:
-
-```python
-from contextlib import contextmanager
-from contextvars import ContextVar
-from typing import Any, Dict, Iterator
-
-from pydantic import BaseModel, ValidationInfo, field_validator
-
-_init_context_var = ContextVar('_init_context_var', default=None)
-
-
-@contextmanager
-def init_context(value: Dict[str, Any]) -> Iterator[None]:
-    token = _init_context_var.set(value)
-    try:
-        yield
-    finally:
-        _init_context_var.reset(token)
-
-
-class Model(BaseModel):
-    my_number: int
-
-    def __init__(self, /, **data: Any) -> None:
-        self.__pydantic_validator__.validate_python(
-            data,
-            self_instance=self,
-            context=_init_context_var.get(),
-        )
-
-    @field_validator('my_number')
-    @classmethod
-    def multiply_with_context(cls, value: int, info: ValidationInfo) -> int:
-        if info.context:
-            multiplier = info.context.get('multiplier', 1)
-            value = value * multiplier
-        return value
-
-
-print(Model(my_number=2))
-#> my_number=2
-
-with init_context({'multiplier': 3}):
-    print(Model(my_number=2))
-    #> my_number=6
-
-print(Model(my_number=2))
-#> my_number=2
-```
-
-## Reusing Validators
-
-Occasionally, you will want to use the same validator on multiple fields/models (e.g. to normalize some input data).
-The "naive" approach would be to write a separate function, then call it from multiple decorators.
-Obviously, this entails a lot of repetition and boiler plate code.
-The following approach demonstrates how you can reuse a validator so that redundancy is minimized and the models become again almost declarative.
-
-```python
-from pydantic import BaseModel, field_validator
-
-
-def normalize(name: str) -> str:
-    return ' '.join((word.capitalize()) for word in name.split(' '))
-
-
-class Producer(BaseModel):
-    name: str
-
-    _normalize_name = field_validator('name')(normalize)
-
-
-class Consumer(BaseModel):
-    name: str
-
-    _normalize_name = field_validator('name')(normalize)
-
-
-jane_doe = Producer(name='JaNe DOE')
-print(repr(jane_doe))
-#> Producer(name='Jane Doe')
-john_doe = Consumer(name='joHN dOe')
-print(repr(john_doe))
-#> Consumer(name='John Doe')
-```
+  print(Model(name=None))
+  #> name='default_name'
+  ```
