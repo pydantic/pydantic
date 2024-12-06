@@ -48,7 +48,7 @@ the function is called. Instead, instantiate it once, and reuse it.
         # do something with adapter
     ```
 
-## `Sequence` vs `list` or `tuple` - `Mapping` vs `dict`
+## `Sequence` vs `list` or `tuple` with `Mapping` vs `dict`
 
 When using `Sequence`, Pydantic calls `isinstance(value, Sequence)` to check if the value is a sequence.
 Also, Pydantic will try to validate against different types of sequences, like `list` and `tuple`.
@@ -57,7 +57,7 @@ If you know the value is a `list` or `tuple`, use `list` or `tuple` instead of `
 The same applies to `Mapping` and `dict`.
 If you know the value is a `dict`, use `dict` instead of `Mapping`.
 
-## Don't do validation when you don't have to - use `Any` to keep the value unchanged
+## Don't do validation when you don't have to, use `Any` to keep the value unchanged
 
 If you don't need to validate a value, use `Any` to keep the value unchanged.
 

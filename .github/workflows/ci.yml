@@ -23,12 +23,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: astral-sh/setup-uv@v3
+      - uses: astral-sh/setup-uv@v4
         with:
           enable-cache: true
+          python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
-        run: uv sync --python ${{ matrix.python-version }} --group linting --all-extras
+        run: uv sync --group linting --all-extras
 
       - uses: pre-commit/action@v3.0.1
         with:
@@ -41,15 +42,16 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - uses: astral-sh/setup-uv@v3
+    - uses: astral-sh/setup-uv@v4
       with:
         enable-cache: true
+        python-version: '3.12'
 
     - name: Install dependencies
       # Unlike the docs build, we don't use mkdocs_material-insiders
       # Because the secret for accessing the library is not accessible from forks, but we still want to run
       # this job on public CI runs.
-      run: uv sync --python 3.12 --group docs
+      run: uv sync --group docs
 
     - run: uv run python -c 'import docs.plugins.main'
 
@@ -71,12 +73,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: astral-sh/setup-uv@v3
+      - uses: astral-sh/setup-uv@v4
         with:
           enable-cache: true
+          python-version: '3.12'
 
       - name: install deps
-        run: uv sync --python 3.12 --group testing-extra
+        run: uv sync --group testing-extra
 
       - name: Run tests
         run: uv run pytest --ignore=tests/mypy/ --ignore=tests/test_docs.py --memray
@@ -114,7 +117,6 @@ jobs:
     env:
       OS: ${{ matrix.os }}
       DEPS: yes
-      UV_PYTHON: ${{ matrix.python-version }}
       UV_PYTHON_PREFERENCE: only-managed
 
     runs-on: ${{ matrix.os }}
@@ -122,9 +124,10 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - uses: astral-sh/setup-uv@v3
+    - uses: astral-sh/setup-uv@v4
       with:
         enable-cache: true
+        python-version: ${{ matrix.python-version }}
 
     - name: Install dependencies
       run: uv sync --extra timezone
@@ -179,10 +182,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: astral-sh/setup-uv@v3
+      - uses: astral-sh/setup-uv@v4
+        with:
+          python-version: '3.12'
 
       - name: Install dependencies
-        run: uv sync --python 3.12
+        run: uv sync
 
       - name: Install example plugin
         run: uv pip install ./tests/plugin
@@ -217,12 +222,13 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - uses: astral-sh/setup-uv@v3
+    - uses: astral-sh/setup-uv@v4
       with:
         enable-cache: true
+        python-version: ${{ matrix.python-version }}
 
     - name: Install dependencies
-      run: uv sync --python ${{ matrix.python-version }} --group typechecking --all-extras
+      run: uv sync --group typechecking --all-extras
 
     - name: Install mypy
       if: steps.cache.outputs.cache-hit != 'true'
@@ -252,9 +258,10 @@ jobs:
     - uses: astral-sh/setup-uv@v3
       with:
         enable-cache: true
+        python-version: '3.12'
 
     - name: Install dependencies
-      run: uv sync --python 3.12 --group typechecking
+      run: uv sync --group typechecking
 
     - name: Run typechecking integration tests (Pyright)
       run: make test-typechecking-pyright
@@ -339,12 +346,13 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - uses: astral-sh/setup-uv@v3
+    - uses: astral-sh/setup-uv@v4
       with:
         enable-cache: true
+        python-version: ${{ matrix.python-version }}
 
     - name: Install dependencies
-      run: uv sync --python ${{ matrix.python-version }}
+      run: uv sync
 
     - name: Install typing-extensions
       run: uv pip install 'typing-extensions @ git+https://github.com/python/typing_extensions.git'

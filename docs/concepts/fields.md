@@ -1,29 +1,86 @@
 ??? api "API Documentation"
     [`pydantic.fields.Field`][pydantic.fields.Field]<br>
 
-The [`Field`][pydantic.fields.Field] function is used to customize and add metadata to fields of models.
+In this section, we will go through the available mechanisms to customize Pydantic model fields:
+default values, JSON Schema metadata, constraints, etc.
+
+To do so, the [`Field()`][pydantic.fields.Field] function is used a lot, and behaves the same way as
+the standard library [`field()`][dataclasses.field] function for dataclasses:
+
+```python
+from pydantic import BaseModel, Field
+
+
+class Model(BaseModel):
+    name: str = Field(frozen=True)
+```
+
+!!! note
+    Even though `name` is assigned a value, it is still required and has no default value. If you want
+    to emphasize on the fact that a value must be provided, you can use the [ellipsis][Ellipsis]:
+
+    ```python {lint="skip" test="skip"}
+    class Model(BaseModel):
+        name: str = Field(..., frozen=True)
+    ```
+
+    However, its usage is discouraged as it doesn't play well with static type checkers.
+
+## The annotated pattern
+
+To apply constraints or attach [`Field()`][pydantic.fields.Field] functions to a model field, Pydantic
+supports the [`Annotated`][typing.Annotated] typing construct to attach metadata to an annotation:
+
+```python
+from typing_extensions import Annotated
+
+from pydantic import BaseModel, Field, WithJsonSchema
+
+
+class Model(BaseModel):
+    name: Annotated[str, Field(strict=True), WithJsonSchema({'extra': 'data'})]
+```
+
+As far as static type checkers are concerned, `name` is still typed as `str`, but Pydantic leverages
+the available metadata to add validation logic, type constraints, etc.
+
+Using this pattern has some advantages:
+
+- Using the `f: <type> = Field(...)` form can be confusing and might trick users into thinking `f`
+  has a default value, while in reality it is still required.
+- You can provide an arbitrary amount of metadata elements for a field. As shown in the example above,
+  the [`Field()`][pydantic.fields.Field] function only supports a limited set of constraints/metadata,
+  and you may have to use different Pydantic utilities such as [`WithJsonSchema`][pydantic.WithJsonSchema]
+  in some cases.
+- Types can be made reusable (see the documentation on [custom types](./types.md#using-the-annotated-pattern)
+  using this pattern).
+
+However, note that certain arguments to the [`Field()`][pydantic.fields.Field] function (namely, `default`,
+`default_factory`, and `alias`) are taken into account by static type checkers to synthesize a correct
+`__init__` method. The annotated pattern is *not* understood by them, so you should use the normal
+assignment form instead.
 
 ## Default values
 
-The `default` parameter is used to define a default value for a field.
+Default values for fields can be provided using the normal assignment syntax or by providing a value
+to the `default` argument:
 
 ```python
 from pydantic import BaseModel, Field
 
 
 class User(BaseModel):
-    name: str = Field(default='John Doe')
-
-
-user = User()
-print(user)
-#> name='John Doe'
+    # Both fields aren't required:
+    name: str = 'John Doe'
+    age: int = Field(default=20)
 ```
 
-!!! note
-    If you use the [`Optional`][typing.Optional] annotation, it doesn't mean that the field has a default value of `None`!
+!!! warning
+    [In Pydantic V1](../migration.md#required-optional-and-nullable-fields), a type annotated as [`Any`][typing.Any]
+    or wrapped by [`Optional`][typing.Optional] would be given an implicit default of `None` even if no
+    default was explicitly specified. This is no longer the case in Pydantic V2.
 
-You can also use `default_factory` (but not both at the same time) to define a callable that will be called to generate a default value.
+You can also pass a callable to the `default_factory` argument that will be called to generate a default value:
 
 ```python
 from uuid import uuid4
@@ -35,7 +92,7 @@ class User(BaseModel):
     id: str = Field(default_factory=lambda: uuid4().hex)
 ```
 
-The default factory can also take a single required argument, in which the case the already validated data will be passed as a dictionary.
+The default factory can also take a single required argument, in which case the already validated data will be passed as a dictionary.
 
 ```python
 from pydantic import BaseModel, EmailStr, Field
@@ -54,29 +111,41 @@ print(user.username)
 The `data` argument will *only* contain the already validated data, based on the [order of model fields](./models.md#field-ordering)
 (the above example would fail if `username` were to be defined before `email`).
 
+### Mutable default values
 
-## Using `Annotated`
+A common source of bugs in Python is to use a mutable object as a default value for a function or method argument,
+as the same instance ends up being reused in each call.
 
-The [`Field`][pydantic.fields.Field] function can also be used together with [`Annotated`][annotated].
+The [`dataclasses`][dataclasses] module actually raises an error in this case, indicating that you should use
+a [default factory](https://docs.python.org/3/library/dataclasses.html#default-factory-functions) instead.
+
+While the same thing can be done in Pydantic, it is not required. In the event that the default value is not hashable,
+Pydantic will create a deep copy of the default value when creating each instance of the model:
 
 ```python
-from uuid import uuid4
+from typing import Dict, List
 
-from typing_extensions import Annotated
-
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
-class User(BaseModel):
-    id: Annotated[str, Field(default_factory=lambda: uuid4().hex)]
+class Model(BaseModel):
+    item_counts: List[Dict[str, int]] = [{}]
+
+
+m1 = Model()
+m1.item_counts[0]['a'] = 1
+print(m1.item_counts)
+#> [{'a': 1}]
+
+m2 = Model()
+print(m2.item_counts)
+#> [{}]
 ```
 
-!!! note
-    Defaults can be set outside [`Annotated`][annotated] as the assigned value or with `Field.default_factory` inside
-    [`Annotated`][annotated]. The `Field.default` argument is not supported inside [`Annotated`][annotated].
-
-
 ## Field aliases
+
+!!! tip
+    Read more about aliases in the [dedicated section](./alias.md).
 
 For validation and serialization, you can define an alias for a field.
 
@@ -87,7 +156,7 @@ There are three ways to define an alias:
 * `Field(serialization_alias='foo')`
 
 The `alias` parameter is used for both validation _and_ serialization. If you want to use
-_different_ aliases for validation and serialization respectively, you can use the`validation_alias`
+_different_ aliases for validation and serialization respectively, you can use the `validation_alias`
 and `serialization_alias` parameters, which will apply only in their respective use cases.
 
 Here is an example of using the `alias` parameter:
@@ -108,9 +177,7 @@ print(user.model_dump(by_alias=True))  # (2)!
 ```
 
 1. The alias `'username'` is used for instance creation and validation.
-2. We are using `model_dump` to convert the model into a serializable format.
-
-    You can see more details about [`model_dump`][pydantic.main.BaseModel.model_dump] in the API reference.
+2. We are using [`model_dump()`][pydantic.main.BaseModel.model_dump] to convert the model into a serializable format.
 
     Note that the `by_alias` keyword argument defaults to `False`, and must be specified explicitly to dump
     models using the field (serialization) aliases.
@@ -162,13 +229,11 @@ print(user.model_dump(by_alias=True))  # (2)!
     the `validation_alias` will have priority over `alias` for validation, and `serialization_alias` will have priority
     over `alias` for serialization.
 
-    If you use an `alias_generator` in the [Model Config][pydantic.config.ConfigDict.alias_generator], you can control
-    the order of precedence for specified field vs generated aliases via the `alias_priority` setting. You can read more about alias precedence [here](../concepts/alias.md#alias-precedence).
+    If you provide a value for the [`alias_generator`][pydantic.config.ConfigDict.alias_generator] model setting, you can control the order of precedence for field alias and generated aliases via the `alias_priority` field parameter. You can read more about alias precedence [here](../concepts/alias.md#alias-precedence).
 
-
-??? tip "VSCode and Pyright users"
-    In VSCode, if you use the [Pylance](https://marketplace.visualstudio.com/items?itemName=ms-python.vscode-pylance)
-    extension, you won't see a warning when instantiating a model using a field's alias:
+??? tip "Static type checking/IDE support"
+    If you provide a value for the `alias` field parameter, static type checkers will use this alias instead
+    of the actual field name to synthesize the `__init__` method:
 
     ```python
     from pydantic import BaseModel, Field
@@ -181,11 +246,11 @@ print(user.model_dump(by_alias=True))  # (2)!
     user = User(username='johndoe')  # (1)!
     ```
 
-    1. VSCode will NOT show a warning here.
+    1. Accepted by type checkers.
 
-    When the `'alias'` keyword argument is specified, even if you set `populate_by_name` to `True` in the
-    [Model Config][pydantic.config.ConfigDict.populate_by_name], VSCode will show a warning when instantiating
-    a model using the field name (though it will work at runtime) — in this case, `'name'`:
+    This means that when using the [`populate_by_name`][pydantic.config.ConfigDict.populate_by_name] model
+    setting (which allows both the field name and alias to be used during model validation), type checkers
+    will error when the actual field name is used:
 
     ```python
     from pydantic import BaseModel, ConfigDict, Field
@@ -200,36 +265,36 @@ print(user.model_dump(by_alias=True))  # (2)!
     user = User(name='johndoe')  # (1)!
     ```
 
-    1. VSCode will show a warning here.
+    1. *Not* accepted by type checkers.
 
-    To "trick" VSCode into preferring the field name, you can use the `str` function to wrap the alias value.
-    With this approach, though, a warning is shown when instantiating a model using the alias for the field:
+    If you still want type checkers to use the field name and not the alias, the [annotated pattern](#the-annotated-pattern)
+    can be used (which is only understood by Pydantic):
 
     ```python
+    from typing_extensions import Annotated
+
     from pydantic import BaseModel, ConfigDict, Field
 
 
     class User(BaseModel):
         model_config = ConfigDict(populate_by_name=True)
 
-        name: str = Field(alias=str('username'))  # noqa: UP018
+        name: Annotated[str, Field(alias='username')]
 
 
     user = User(name='johndoe')  # (1)!
     user = User(username='johndoe')  # (2)!
     ```
 
-    1. Now VSCode will NOT show a warning
-    2. VSCode will show a warning here, though
+    1. Accepted by type checkers.
+    2. *Not* accepted by type checkers.
 
-    This is discussed in more detail in [this issue](https://github.com/pydantic/pydantic/issues/5893).
+    <h3>Validation Alias</h3>
 
-    ### Validation Alias
-
-    Even though Pydantic treats `alias` and `validation_alias` the same when creating model instances, VSCode will not
-    use the `validation_alias` in the class initializer signature. If you want VSCode to use the `validation_alias`
-    in the class initializer, you can instead specify both an `alias` and `serialization_alias`, as the
-    `serialization_alias` will override the `alias` during serialization:
+    Even though Pydantic treats `alias` and `validation_alias` the same when creating model instances, type checkers
+    only understand the `alias` field parameter. As a workaround, you can instead specify both an `alias` and
+    serialization_alias` (identical to the field name), as the `serialization_alias` will override the `alias` during
+    serialization:
 
     ```python
     from pydantic import BaseModel, Field
@@ -238,29 +303,24 @@ print(user.model_dump(by_alias=True))  # (2)!
     class MyModel(BaseModel):
         my_field: int = Field(validation_alias='myValidationAlias')
     ```
+
     with:
+
     ```python
     from pydantic import BaseModel, Field
 
 
     class MyModel(BaseModel):
         my_field: int = Field(
-            ...,
             alias='myValidationAlias',
-            serialization_alias='my_serialization_alias',
+            serialization_alias='my_field',
         )
 
 
     m = MyModel(myValidationAlias=1)
     print(m.model_dump(by_alias=True))
-    #> {'my_serialization_alias': 1}
+    #> {'my_field': 1}
     ```
-
-    All of the above will likely also apply to other tools that respect the
-    [`@typing.dataclass_transform`](https://docs.python.org/3/library/typing.html#typing.dataclass_transform)
-    decorator, such as Pyright.
-
-For more information on alias usage, see the [Alias] concepts page.
 
 ## Numeric Constraints
 
@@ -921,4 +981,3 @@ class Box(BaseModel):
 [Serialization]: serialization.md#model-and-field-level-include-and-exclude
 [Customizing JSON Schema]: json_schema.md#field-level-customization
 [annotated]: https://docs.python.org/3/library/typing.html#typing.Annotated
-[Alias]: ../concepts/alias.md

@@ -1782,6 +1782,9 @@ def test_enum_dict():
         enum_dict: Dict[MyEnum, str]
 
     assert MyModel.model_json_schema() == {
+        '$defs': {
+            'MyEnum': {'enum': ['foo', 'bar'], 'title': 'MyEnum', 'type': 'string'},
+        },
         'title': 'MyModel',
         'type': 'object',
         'properties': {
@@ -1789,7 +1792,7 @@ def test_enum_dict():
                 'title': 'Enum Dict',
                 'type': 'object',
                 'additionalProperties': {'type': 'string'},
-                'propertyNames': {'enum': ['foo', 'bar']},
+                'propertyNames': {'$ref': '#/$defs/MyEnum'},
             }
         },
         'required': ['enum_dict'],

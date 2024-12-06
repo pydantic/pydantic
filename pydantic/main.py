@@ -37,7 +37,6 @@ from ._internal import (
     _fields,
     _forward_ref,
     _generics,
-    _import_utils,
     _mock_val_ser,
     _model_construction,
     _namespace_utils,
@@ -1572,7 +1571,7 @@ def create_model(
     __module__: str = __name__,
     __validators__: dict[str, Callable[..., Any]] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
-    **field_definitions: Any,
+    **field_definitions: Any | tuple[str, Any],
 ) -> type[BaseModel]: ...
 
 
@@ -1587,7 +1586,7 @@ def create_model(
     __module__: str = __name__,
     __validators__: dict[str, Callable[..., Any]] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
-    **field_definitions: Any,
+    **field_definitions: Any | tuple[str, Any],
 ) -> type[ModelT]: ...
 
 
@@ -1601,8 +1600,8 @@ def create_model(  # noqa: C901
     __module__: str | None = None,
     __validators__: dict[str, Callable[..., Any]] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
-    __slots__: tuple[str, ...] | None = None,
-    **field_definitions: Any,
+    # TODO PEP 747: replace `Any` by the TypeForm:
+    **field_definitions: Any | tuple[str, Any],
 ) -> type[ModelT]:
     """Usage docs: https://docs.pydantic.dev/2.10/concepts/models/#dynamic-model-creation
 
@@ -1620,7 +1619,6 @@ def create_model(  # noqa: C901
             be added to the model, and the values are the validation methods themselves. You can read more about functional
             validators [here](https://docs.pydantic.dev/2.9/concepts/validators/#field-validators).
         __cls_kwargs__: A dictionary of keyword arguments for class creation, such as `metaclass`.
-        __slots__: Deprecated. Should not be passed to `create_model`.
         **field_definitions: Attributes of the new model. They should be passed in the format:
             `<name>=(<type>, <default value>)`, `<name>=(<type>, <FieldInfo>)`, or `typing.Annotated[<type>, <FieldInfo>]`.
             Any additional metadata in `typing.Annotated[<type>, <FieldInfo>, ...]` will be ignored.
@@ -1633,10 +1631,6 @@ def create_model(  # noqa: C901
     Raises:
         PydanticUserError: If `__base__` and `__config__` are both passed.
     """
-    if __slots__ is not None:
-        # __slots__ will be ignored from here on
-        warnings.warn('__slots__ should not be passed to create_model', RuntimeWarning)
-
     if __base__ is not None:
         if __config__ is not None:
             raise PydanticUserError(
@@ -1650,40 +1644,22 @@ def create_model(  # noqa: C901
 
     __cls_kwargs__ = __cls_kwargs__ or {}
 
-    fields = {}
-    annotations = {}
+    fields: dict[str, Any] = {}
+    annotations: dict[str, Any] = {}
 
     for f_name, f_def in field_definitions.items():
-        if not _fields.is_valid_field_name(f_name):
-            warnings.warn(f'fields may not start with an underscore, ignoring "{f_name}"', RuntimeWarning)
         if isinstance(f_def, tuple):
-            f_def = cast('tuple[str, Any]', f_def)
-            try:
-                f_annotation, f_value = f_def
-            except ValueError as e:
+            if len(f_def) != 2:
                 raise PydanticUserError(
-                    'Field definitions should be a `(<type>, <default>)`.',
-                    code='create-model-field-definitions',
-                ) from e
-
-        elif _typing_extra.is_annotated(f_def):
-            (f_annotation, f_value, *_) = typing_extensions.get_args(
-                f_def
-            )  # first two input are expected from Annotated, refer to https://docs.python.org/3/library/typing.html#typing.Annotated
-            FieldInfo = _import_utils.import_cached_field_info()
-
-            if not isinstance(f_value, FieldInfo):
-                raise PydanticUserError(
-                    'Field definitions should be a Annotated[<type>, <FieldInfo>]',
+                    f'Field definition for {f_name!r} should a single element representing the type or a two-tuple, the first element '
+                    'being the type and the second element the assigned value (either a default or the `Field()` function).',
                     code='create-model-field-definitions',
                 )
 
+            annotations[f_name] = f_def[0]
+            fields[f_name] = f_def[1]
         else:
-            f_annotation, f_value = None, f_def
-
-        if f_annotation:
-            annotations[f_name] = f_annotation
-        fields[f_name] = f_value
+            annotations[f_name] = f_def
 
     if __module__ is None:
         f = sys._getframe(1)
