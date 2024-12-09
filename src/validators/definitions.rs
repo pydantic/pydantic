@@ -92,6 +92,18 @@ impl Validator for DefinitionRefValidator {
         })
     }
 
+    fn default_value<'py>(
+        &self,
+        _py: Python<'py>,
+        _outer_loc: Option<impl Into<crate::errors::LocItem>>,
+        _state: &mut ValidationState<'_, 'py>,
+    ) -> ValResult<Option<PyObject>> {
+        self.definition.read(|validator| {
+            let validator = validator.unwrap();
+            validator.default_value(_py, _outer_loc, _state)
+        })
+    }
+
     fn validate_assignment<'py>(
         &self,
         py: Python<'py>,
