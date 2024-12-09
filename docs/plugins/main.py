@@ -40,29 +40,8 @@ def on_pre_build(config: Config) -> None:
     """
     Before the build starts.
     """
-    import mkdocs_redirects.plugin
-
     add_changelog()
     add_mkdocs_run_deps()
-
-    # work around for very unfortunate bug in mkdocs-redirects:
-    # https://github.com/mkdocs/mkdocs-redirects/issues/65
-    mkdocs_redirects.plugin.HTML_TEMPLATE = """
-<!doctype html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <title>Redirecting...</title>
-    <link rel="canonical" href="{url}">
-    <!-- remove problematic tag here -->
-    <script>var anchor=window.location.hash.substr(1);location.href="{url}"+(anchor?"#"+anchor:"")</script>
-    <meta http-equiv="refresh" content="0; url={url}">
-</head>
-<body>
-Redirecting...
-</body>
-</html>
-"""
 
 
 def on_files(files: Files, config: Config) -> Files:
