@@ -150,3 +150,17 @@ def test_definition_chain():
         ),
     )
     assert v.validate_python('1') == 1
+
+
+def test_forwards_get_default_value():
+    v = SchemaValidator(
+        core_schema.definitions_schema(
+            core_schema.definition_reference_schema('foo'),
+            [core_schema.with_default_schema(core_schema.int_schema(), default=1, ref='foo')],
+        )
+    )
+
+    default = v.get_default_value()
+
+    assert default is not None
+    assert default.value == 1
