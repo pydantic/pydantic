@@ -4,13 +4,25 @@ to fields, you can define custom validators for specific fields or for the whole
 !!! tip
     Want to quickly jump to the relevant validator definition?
 
-    - [*after* field validators](#field-after-validator)
-    - [*before* field validators](#field-before-validator)
-    - [*plain* field validators](#field-plain-validator)
-    - [*wrap* field validators](#field-wrap-validator)
-    - [*after* model validators](#model-after-validator)
-    - [*before* model validators](#model-before-validator)
-    - [*wrap* model validators](#model-wrap-validator)
+    <div class="grid cards" markdown>
+
+    -   Field validators
+
+        ---
+
+        - [*after* field validators](#field-after-validator)
+        - [*before* field validators](#field-before-validator)
+        - [*plain* field validators](#field-plain-validator)
+        - [*wrap* field validators](#field-wrap-validator)
+
+    -   Model validators
+
+        ---
+
+        - [*before* model validators](#model-before-validator)
+        - [*wrap* model validators](#model-wrap-validator)
+
+    </div>
 
 ## Field validators
 
@@ -594,7 +606,7 @@ Similarly, you can [use a context for serialization](../concepts/serialization.m
 
     from contextlib import contextmanager
     from contextvars import ContextVar
-    from typing import Any, Dict, Generator
+    from typing import Any, Generator
 
     from pydantic import BaseModel, ValidationInfo, field_validator
 
@@ -602,7 +614,7 @@ Similarly, you can [use a context for serialization](../concepts/serialization.m
 
 
     @contextmanager
-    def init_context(value: Dict[str, Any]) -> Generator[None]:
+    def init_context(value: dict[str, Any]) -> Generator[None]:
         token = _init_context_var.set(value)
         try:
             yield
@@ -640,144 +652,29 @@ Similarly, you can [use a context for serialization](../concepts/serialization.m
     #> my_number=2
     ```
 
-## Ordering of validators within `Annotated`
+## Ordering of validators
 
-TODO Needs rework
+When using the [annotated pattern](#using-the-annotated-pattern), the order in which validators are applied
+is defined as follows: [*before*](##field-before-validator) and [*wrap*](#field-wrap-validator) validators
+are run from right to left, and [*after*](#field-after-validator) validators are then run from left to right:
 
-Order of validation metadata within `Annotated` matters.
-Validation goes from right to left and back.
-That is, it goes from right to left running all "before" validators (or calling into "wrap" validators), then left to right back out calling all "after" validators.
-
-```python
-from typing import Any, Callable, List, cast
-
-from typing_extensions import Annotated, TypedDict
-
-from pydantic import (
-    AfterValidator,
-    BaseModel,
-    BeforeValidator,
-    PlainValidator,
-    ValidationInfo,
-    ValidatorFunctionWrapHandler,
-    WrapValidator,
-)
-from pydantic.functional_validators import field_validator
+```python {lint="skip" test="skip"}
+from pydantic import AfterValidator, BaseModel, BeforeValidator, WrapValidator
 
 
-class Context(TypedDict):
-    logs: List[str]
-
-
-def make_validator(label: str) -> Callable[[Any, ValidationInfo], Any]:
-    def validator(v: Any, info: ValidationInfo) -> Any:
-        context = cast(Context, info.context)
-        context['logs'].append(label)
-        return v
-
-    return validator
-
-
-def make_wrap_validator(
-    label: str,
-) -> Callable[[Any, ValidatorFunctionWrapHandler, ValidationInfo], Any]:
-    def validator(
-        v: Any, handler: ValidatorFunctionWrapHandler, info: ValidationInfo
-    ) -> Any:
-        context = cast(Context, info.context)
-        context['logs'].append(f'{label}: pre')
-        result = handler(v)
-        context['logs'].append(f'{label}: post')
-        return result
-
-    return validator
-
-
-class A(BaseModel):
-    x: Annotated[
+class Model(BaseModel):
+    name: Annotated[
         str,
-        BeforeValidator(make_validator('before-1')),
-        AfterValidator(make_validator('after-1')),
-        WrapValidator(make_wrap_validator('wrap-1')),
-        BeforeValidator(make_validator('before-2')),
-        AfterValidator(make_validator('after-2')),
-        WrapValidator(make_wrap_validator('wrap-2')),
-        BeforeValidator(make_validator('before-3')),
-        AfterValidator(make_validator('after-3')),
-        WrapValidator(make_wrap_validator('wrap-3')),
-        BeforeValidator(make_validator('before-4')),
-        AfterValidator(make_validator('after-4')),
-        WrapValidator(make_wrap_validator('wrap-4')),
+        AfterValidator(runs_3rd),
+        AfterValidator(runs_4th),
+        BeforeValidator(runs_2nd),
+        WrapValidator(runs_1st),
     ]
-    y: Annotated[
-        str,
-        BeforeValidator(make_validator('before-1')),
-        AfterValidator(make_validator('after-1')),
-        WrapValidator(make_wrap_validator('wrap-1')),
-        BeforeValidator(make_validator('before-2')),
-        AfterValidator(make_validator('after-2')),
-        WrapValidator(make_wrap_validator('wrap-2')),
-        PlainValidator(make_validator('plain')),
-        BeforeValidator(make_validator('before-3')),
-        AfterValidator(make_validator('after-3')),
-        WrapValidator(make_wrap_validator('wrap-3')),
-        BeforeValidator(make_validator('before-4')),
-        AfterValidator(make_validator('after-4')),
-        WrapValidator(make_wrap_validator('wrap-4')),
-    ]
-
-    val_x_before = field_validator('x', mode='before')(
-        make_validator('val_x before')
-    )
-    val_x_after = field_validator('x', mode='after')(
-        make_validator('val_x after')
-    )
-    val_y_wrap = field_validator('y', mode='wrap')(
-        make_wrap_validator('val_y wrap')
-    )
-
-
-context = Context(logs=[])
-
-A.model_validate({'x': 'abc', 'y': 'def'}, context=context)
-print(context['logs'])
-"""
-[
-    'val_x before',
-    'wrap-4: pre',
-    'before-4',
-    'wrap-3: pre',
-    'before-3',
-    'wrap-2: pre',
-    'before-2',
-    'wrap-1: pre',
-    'before-1',
-    'after-1',
-    'wrap-1: post',
-    'after-2',
-    'wrap-2: post',
-    'after-3',
-    'wrap-3: post',
-    'after-4',
-    'wrap-4: post',
-    'val_x after',
-    'val_y wrap: pre',
-    'wrap-4: pre',
-    'before-4',
-    'wrap-3: pre',
-    'before-3',
-    'plain',
-    'after-3',
-    'wrap-3: post',
-    'after-4',
-    'wrap-4: post',
-    'val_y wrap: post',
-]
-"""
 ```
 
-
-
+Internally, validators defined using [the decorator](#using-the-decorator) are converted to their annotated
+form counterpart and added last after the existing metadata for the field. This means that the same ordering
+logic applies.
 
 ## Special types
 
@@ -838,7 +735,8 @@ Pydantic provides a few special utilities that can be used to customize validati
   #> names=['foo', 123]
   ```
 
-    1. Note that the validation of the second item is skipped. If it has the wrong type it will emit a warning during serialization.
+    1. Note that the validation of the second item is skipped. If it has the wrong type it will emit a
+       warning during serialization.
 
 - [`PydanticUseDefault`][pydantic_core.PydanticUseDefault] can be used to notify Pydantic that the default value
   should be used.
