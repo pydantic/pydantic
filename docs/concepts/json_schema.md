@@ -743,7 +743,7 @@ This method receives two positional arguments:
 1. The type annotation that corresponds to this type (so in the case of `TheType[T][int]` it would be `TheType[int]`).
 2. A handler/callback to call the next implementer of `__get_pydantic_core_schema__`.
 
-The handler system works just like [`mode='wrap'` validators](validators.md#annotated-validators).
+The handler system works just like [*wrap* field validators](validators.md#field-wrap-validator).
 In this case the input is the type and the output is a `core_schema`.
 
 Here is an example of a custom type that *overrides* the generated `core_schema`:
