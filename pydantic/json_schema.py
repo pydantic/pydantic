@@ -654,7 +654,12 @@ class GenerateJsonSchema:
         return json_schema
 
     def float_schema(self, schema: core_schema.FloatSchema) -> JsonSchemaValue:
-        """Generates a JSON schema that matches a float value."""
+        """Generates a JSON schema that matches a float value.
+        Args:
+            schema: The core schema.
+        Returns:
+            The generated JSON schema.
+        """
         validations_map = self.ValidationsMapping.numeric
         json_schema: JsonSchemaValue = {'type': 'number'}
 
