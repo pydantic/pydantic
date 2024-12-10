@@ -6531,31 +6531,39 @@ def test_decorator_field_validator_input_type() -> None:
 @pytest.mark.parametrize(
     'validator',
     [
-        PlainValidator(lambda v: v, json_schema_input_type='Sub'),
-        BeforeValidator(lambda v: v, json_schema_input_type='Sub'),
-        WrapValidator(lambda v, h: h(v), json_schema_input_type='Sub'),
+        PlainValidator(lambda v: v, json_schema_input_type='Union[Sub1, Sub2]'),
+        BeforeValidator(lambda v: v, json_schema_input_type='Union[Sub1, Sub2]'),
+        WrapValidator(lambda v, h: h(v), json_schema_input_type='Union[Sub1, Sub2]'),
     ],
 )
 def test_json_schema_input_type_with_refs(validator) -> None:
-    """Test that `'definition-ref` schemas for `json_schema_input_type` are inlined.
+    """Test that `'definition-ref` schemas for `json_schema_input_type` are supported.
 
     See: https://github.com/pydantic/pydantic/issues/10434.
+    See: https://github.com/pydantic/pydantic/issues/11033
     """
 
-    class Sub(BaseModel):
+    class Sub1(BaseModel):
+        pass
+
+    class Sub2(BaseModel):
         pass
 
     class Model(BaseModel):
         sub: Annotated[
-            Sub,
-            PlainSerializer(lambda v: v, return_type=Sub),
+            Union[Sub1, Sub2],
+            PlainSerializer(lambda v: v, return_type=Union[Sub1, Sub2]),
             validator,
         ]
 
     json_schema = Model.model_json_schema()
 
-    assert 'Sub' in json_schema['$defs']
-    assert json_schema['properties']['sub']['$ref'] == '#/$defs/Sub'
+    assert 'Sub1' in json_schema['$defs']
+    assert 'Sub2' in json_schema['$defs']
+    assert json_schema['properties']['sub'] == {
+        'anyOf': [{'$ref': '#/$defs/Sub1'}, {'$ref': '#/$defs/Sub2'}],
+        'title': 'Sub',
+    }
 
 
 @pytest.mark.parametrize(
