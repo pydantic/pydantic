@@ -12,10 +12,25 @@ install-linting:
 install-pydantic:
 	python -m pip install -U wheel pip
 	pip install -r requirements.txt
-	SKIP_CYTHON=1 pip install -e .
+	# Will *not* compile with Cython:
+	pip install -e .
+
+.PHONY: install-pydantic-compiled
+install-pydantic-compiled:
+	python -m pip install -U pip
+	pip install -r requirements.txt
+	# Not editable if compiled:
+	pip install --config-settings="--build-option=--cythonize" .
+
+.PHONY: install-pydantic-compiled-trace
+install-pydantic-compiled-trace:
+	python -m pip install -U pip
+	pip install -r requirements.txt
+	# Not editable if compiled:
+	pip install --config-settings="--build-option=--cythonize" --config-settings="--build-option=--enable-trace" .
 
 .PHONY: install-testing
-install-testing: install-pydantic
+install-testing:
 	pip install -r tests/requirements-testing.txt
 
 .PHONY: install-docs
@@ -25,14 +40,6 @@ install-docs: install-pydantic
 .PHONY: install
 install: install-testing install-linting install-docs
 	@echo 'installed development requirements'
-
-.PHONY: build-trace
-build-trace:
-	python setup.py build_ext --force --inplace --define CYTHON_TRACE
-
-.PHONY: build
-build:
-	python setup.py build_ext --inplace
 
 .PHONY: format
 format:
@@ -45,12 +52,6 @@ lint:
 	flake8 $(sources)
 	$(isort) --check-only --df
 	$(black) --check --diff
-
-.PHONY: check-dist
-check-dist:
-	python setup.py check -ms
-	SKIP_CYTHON=1 python setup.py sdist
-	twine check dist/*
 
 .PHONY: mypy
 mypy:
