@@ -51,9 +51,6 @@ jobs:
       - name: make history
         run: python3 ./changes/make_history.py
 
-      - name: check dist
-        run: make check-dist
-
       - name: install node for pyright
         uses: actions/setup-node@v4
         with:
@@ -81,6 +78,7 @@ jobs:
           docs-build-v2
           ${{ runner.os }}
           ${{ env.pythonLocation }}
+          ${{ hashFiles('pyproject.toml') }}
           ${{ hashFiles('setup.py') }}
           ${{ hashFiles('requirements.txt') }}
           ${{ hashFiles('docs/requirements.txt') }}
@@ -117,18 +115,22 @@ jobs:
           test-memray
           ${{ runner.os }}
           ${{ env.pythonLocation }}
+          ${{ hashFiles('pyproject.toml') }}
           ${{ hashFiles('setup.py') }}
           ${{ hashFiles('requirements.txt') }}
           ${{ hashFiles('tests/requirements-testing.txt') }}
 
     - name: install
       run: |
+        make install-pydantic-compiled-trace
         make install-testing
         pip install pytest-memray==1.4.0
+        # We should ideally switch to src layout to avoid having the `pydantic` folder
+        # in the workdir used, but minimizing changes on V1, so apply a hacky workaround instead:
+        mv pydantic/ _pydantic/
 
-    - name: compile
+    - name: Check compiled installation
       run: |
-        make build-trace
         python -c "import sys, pydantic; print('compiled:', pydantic.compiled); sys.exit(0 if pydantic.compiled else 1)"
 
     - name: test
@@ -136,11 +138,19 @@ jobs:
 
   test-linux-compiled:
     name: test py${{ matrix.python-version }} on linux compiled
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
         python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
+        enable-trace: [true]
+        include:
+          # We cannot use tracing on 3.12/3.13, which makes the coverage useless.
+          # However, we can at least make sure tests run to completion on a cythonized build.
+          - python-version: '3.12'
+            enable-trace: false
+          - python-version: '3.13'
+            enable-trace: false
     env:
       PYTHON: ${{ matrix.python-version }}
       OS: ubuntu
@@ -161,19 +171,32 @@ jobs:
           test-linux-compiled-v2
           ${{ runner.os }}
           ${{ env.pythonLocation }}
+          ${{ hashFiles('pyproject.toml') }}
           ${{ hashFiles('setup.py') }}
           ${{ hashFiles('requirements.txt') }}
           ${{ hashFiles('tests/requirements-testing.txt') }}
 
-    - name: install
-      run: make install-testing
-
-    - name: compile
+    - name: install with tracing
+      if: ${{ matrix.enable-trace }}
       run: |
-        make build-trace
+        make install-pydantic-compiled-trace
+        make install-testing
+        # We should ideally switch to src layout to avoid having the `pydantic` folder
+        # in the workdir used, but minimizing changes on V1, so apply a hacky workaround instead:
+        mv pydantic/ _pydantic/
+
+    - name: install without tracing
+      if: ${{ ! matrix.enable-trace }}
+      run: |
+        make install-pydantic-compiled
+        make install-testing
+        # We should ideally switch to src layout to avoid having the `pydantic` folder
+        # in the workdir used, but minimizing changes on V1, so apply a hacky workaround instead:
+        mv pydantic/ _pydantic/
+
+    - name: Check compiled installation
+      run: |
         python -c "import sys, pydantic; print('compiled:', pydantic.compiled); sys.exit(0 if pydantic.compiled else 1)"
-        ls -alh
-        ls -alh pydantic/
 
     - run: mkdir coverage
 
@@ -184,69 +207,19 @@ jobs:
         CONTEXT: linux-py${{ matrix.python-version }}-compiled
 
     - name: store coverage files
+      if: ${{ matrix.enable-trace }}
       uses: actions/upload-artifact@v4
       with:
         name: coverage-linux-compiled-${{ matrix.python-version }}
         path: coverage
         include-hidden-files: true
 
-# We cannot use tracing on 3.12/3.13 without Cython 3+, which makes the coverage useless.
-# However, we can at least make sure tests run to completion on a cythonized build.
-  test-linux-compiled-notrace:
-    name: test py${{ matrix.python-version }} on linux compiled without tracing
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ['3.12', '3.13']
-    env:
-      PYTHON: ${{ matrix.python-version }}
-      OS: ubuntu
-
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: set up python
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-
-    - uses: actions/cache@v4
-      id: cache
-      with:
-        path: ${{ env.pythonLocation }}
-        key: >
-          test-linux-compiled-v3
-          ${{ runner.os }}
-          ${{ env.pythonLocation }}
-          ${{ hashFiles('setup.py') }}
-          ${{ hashFiles('requirements.txt') }}
-          ${{ hashFiles('tests/requirements-testing.txt') }}
-
-    - name: install
-      run: make install-testing
-
-    - name: compile
-      run: |
-        make build
-        python -c "import sys, pydantic; print('compiled:', pydantic.compiled); sys.exit(0 if pydantic.compiled else 1)"
-        ls -alh
-        ls -alh pydantic/
-
-    - run: mkdir coverage
-
-    - name: test
-      run: make test
-      env:
-        COVERAGE_FILE: coverage/.coverage.linux-py${{ matrix.python-version }}-compiled
-        CONTEXT: linux-py${{ matrix.python-version }}-compiled
-
   test-not-compiled:
-    name: test py${{ matrix.python-version }} on ${{ matrix.os }}
+    name: test py${{ matrix.python-version }} on ${{ matrix.os }} (not compiled)
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-13, macos-latest, windows-latest]
+        os: [ubuntu-22.04, macos-13, macos-latest, windows-latest]
         python-version: ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
         exclude:
           # Python 3.7, 3.8, and 3.9 are not available on macOS 14
@@ -283,12 +256,15 @@ jobs:
           test-not-compiled-v2
           ${{ runner.os }}
           ${{ env.pythonLocation }}
+          ${{ hashFiles('pyproject.toml') }}
           ${{ hashFiles('setup.py') }}
           ${{ hashFiles('requirements.txt') }}
           ${{ hashFiles('tests/requirements-testing.txt') }}
 
     - name: install
-      run: make install-testing
+      run: |
+        make install-pydantic
+        make install-testing
 
     - run: pip freeze
 
@@ -330,7 +306,7 @@ jobs:
     - name: set up python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.10'
+        python-version: '3.11'
 
     - name: install
       run: |
@@ -367,7 +343,7 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.8'
+          python-version: '3.10'
 
       - name: get coverage files
         uses: actions/download-artifact@v4
@@ -428,28 +404,19 @@ jobs:
         python-version: '3.11'
 
     - name: install
-      run: pip install -U twine setuptools wheel cibuildwheel==2.22.0
+      run: pip install -U twine build cibuildwheel==2.22.0
 
-    - name: build sdist
-      if: matrix.os == 'ubuntu' && matrix.python-version == '9'
-      run: python setup.py sdist bdist_wheel
-      env:
-        SKIP_CYTHON: 1
+    - name: build sdist and non cythonized wheel
+      if: matrix.os == 'ubuntu' && matrix.python-version == '10'
+      # Note that we don't provide '-C=--cythonize', so setup.py will not make use of Cython:
+      run: python -m build
 
     - name: build ${{ matrix.platform || matrix.os }} binaries
       run: cibuildwheel --output-dir dist
       env:
-        PIP: 'pip'
+        # Remaining static configuration is defined in the pyproject.toml file (and --cythonize build opt is provided):
         CIBW_BUILD: 'cp3${{ matrix.python-version }}-*'
-        CIBW_SKIP: '*-win32'
         CIBW_PLATFORM: '${{ matrix.platform || matrix.os }}'
-        CIBW_BEFORE_BUILD: 'pip install -U cython'
-        CIBW_TEST_REQUIRES: 'pytest==6.2.5 pytest-mock==3.6.1'
-        CIBW_TEST_COMMAND: 'pytest {project}/tests'
-        CIBW_MANYLINUX_X86_64_IMAGE: 'manylinux2014'
-        CIBW_MANYLINUX_I686_IMAGE: 'manylinux2014'
-        CIBW_ARCHS_MACOS: 'x86_64 arm64'
-        CIBW_TEST_SKIP: '*-macosx_arm64'  # see https://cibuildwheel.readthedocs.io/en/stable/faq/#universal2
 
     # TODO build windows 32bit binaries
 
@@ -461,7 +428,7 @@ jobs:
     - name: Store dist artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: pypi_files
+        name: pypi_files-3.${{ matrix.python-version }}-${{ matrix.platform || matrix.os }}
         path: dist
 
   # https://github.com/marketplace/actions/alls-green#why
@@ -496,8 +463,9 @@ jobs:
       - name: get dist artifacts
         uses: actions/download-artifact@v4
         with:
-          name: pypi_files
           path: dist
+          pattern: pypi_files-*
+          merge-multiple: true
 
       - name: list dist files
         run: |
@@ -568,8 +536,9 @@ jobs:
       - name: get dist artifacts
         uses: actions/download-artifact@v4
         with:
-          name: pypi_files
           path: dist
+          pattern: pypi_files-*
+          merge-multiple: true
 
       - name: check version
         uses: samuelcolvin/check-python-version@v3.2
