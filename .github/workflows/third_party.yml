@@ -1,0 +1,68 @@
+# This workflow is a daily cron job, inspired by https://github.com/python/typing_extensions/blob/main/.github/workflows/third_party.yml
+# running the tests of various third-party libraries that use pydantic. This helps us spot regressions early,
+# and helps flag when third-party libraries are making incorrect assumptions that might cause them to break when we cut a new release.
+
+name: third party tests
+
+on:
+  schedule:
+    - cron: '0 12 * * *' # Daily at midnight UTC
+  pull_request:
+    branches:
+      - main
+
+  # Can be manually triggered from the Actions tab, if needed
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: 1
+  FORCE_COLOR: 1
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  test-fastapi:
+    if: ${{ contains(github.event.pull_request.labels.*.name, 'third-party-tests') || github.event_name == 'schedule' }}
+    name: test fastapi (`main` branch) on python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # FastAPI doesn't yet support Python 3.13
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: astral-sh/setup-uv@v4
+      with:
+        enable-cache: true
+        python-version: ${{ matrix.python-version }}
+
+    - name: checkout fastapi
+      run: git clone https://github.com/tiangolo/fastapi.git --single-branch
+
+    - name: checkout pydantic
+      uses: actions/checkout@v4
+      with:
+        path: pydantic-latest
+
+    - name: install deps
+      run: |
+        cd fastapi
+        uv venv
+        uv pip install -r requirements-tests.txt
+        uv pip install -e ../pydantic-latest
+        uv pip install anyio==3.7.1
+
+    - name: list installed dependencies
+      run: cd fastapi; uv pip list
+
+    - name: run fastapi tests
+      run: cd fastapi; uv run ./scripts/test.sh -vv
+
+    # TODO: slack notification on failure, if job was scheduled
