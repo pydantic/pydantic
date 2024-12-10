@@ -1144,3 +1144,8 @@ def test_json_schema() -> None:
 
     ser_json_schema = ta.json_schema(mode='serialization')
     assert ser_json_schema == {'type': 'string', 'format': 'uri', 'minLength': 1, 'maxLength': 2083}
+
+    def test_any_url_comparison() -> None:
+        first_url = AnyUrl('https://a.com')
+        second_url = AnyUrl('https://b.com')
+        assert second_url > first_url
