@@ -34,6 +34,7 @@ if typing.TYPE_CHECKING:
         AfterValidator,
         BeforeValidator,
         InstanceOf,
+        ModelWrapValidatorHandler,
         PlainValidator,
         SkipValidation,
         WrapValidator,
@@ -74,6 +75,7 @@ __all__ = (
     'WrapValidator',
     'SkipValidation',
     'InstanceOf',
+    'ModelWrapValidatorHandler',
     # JSON Schema
     'WithJsonSchema',
     # deprecated V1 functional validators, these are imported via `__getattr__` below
@@ -240,6 +242,7 @@ _dynamic_imports: 'dict[str, tuple[str, str]]' = {
     'WrapValidator': (__spec__.parent, '.functional_validators'),
     'SkipValidation': (__spec__.parent, '.functional_validators'),
     'InstanceOf': (__spec__.parent, '.functional_validators'),
+    'ModelWrapValidatorHandler': (__spec__.parent, '.functional_validators'),
     # JSON Schema
     'WithJsonSchema': (__spec__.parent, '.json_schema'),
     # functional serializers
