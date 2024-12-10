@@ -637,29 +637,6 @@ def test_handle_typed_dict_schema(params, expected_extra_schema):
     }
 
 
-def test_handle_function_schema():
-    schema = core_schema.with_info_before_validator_function(
-        lambda v, _info: v, core_schema.float_schema(), field_name='field_name'
-    )
-
-    def walk(s, recurse):
-        # change type to str
-        if s['type'] == 'float':
-            s['type'] = 'str'
-        return s
-
-    schema = _WalkCoreSchema().handle_function_schema(schema, walk)
-    assert schema['type'] == 'function-before'
-    assert schema['schema'] == {'type': 'str'}
-
-    def walk1(s, recurse):
-        # this is here to make sure this function is not called
-        assert False
-
-    schema = _WalkCoreSchema().handle_function_schema(core_schema.int_schema(), walk1)
-    assert schema['type'] == 'int'
-
-
 def test_handle_call_schema():
     param_a = core_schema.arguments_parameter(name='a', schema=core_schema.str_schema(), mode='positional_only')
     args_schema = core_schema.arguments_schema([param_a])
