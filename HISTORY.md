@@ -196,7 +196,7 @@ Pre-release, see [the GitHub release](https://github.com/pydantic/pydantic/relea
 
 ## v2.10.0b1 (2024-11-06)
 
-Pre-release, see [the GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.9.0b1) for details.
+Pre-release, see [the GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.10.0b1) for details.
 
 ## v2.9.2 (2024-09-17)
 
