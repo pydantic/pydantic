@@ -10,19 +10,11 @@ from typing_extensions import NamedTuple, TypedDict
 
 from pydantic import BaseModel, Field, PydanticUserError, TypeAdapter, ValidationError, computed_field, validate_call
 
+self_types = [typing_extensions.Self]
+if hasattr(typing, 'Self'):
+    self_types.append(typing.Self)
 
-@pytest.fixture(
-    name='Self',
-    params=[
-        pytest.param(typing, id='typing.Self'),
-        pytest.param(typing_extensions, id='t_e.Self'),
-    ],
-)
-def fixture_self_all(request):
-    try:
-        return request.param.Self
-    except AttributeError:
-        pytest.skip(f'Self is not available from {request.param}')
+pytestmark = pytest.mark.parametrize('Self', self_types)
 
 
 def test_recursive_model(Self):
