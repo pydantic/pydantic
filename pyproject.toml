@@ -50,7 +50,7 @@ pydantic = 'pydantic._hypothesis_plugin'
 [project.urls]
 Homepage = 'https://github.com/pydantic/pydantic'
 Documentation = 'https://docs.pydantic.dev/1.10/'
-Funding = 'https://github.com/sponsors/samuelcolvin'
+Funding = 'https://github.com/sponsors/pydantic'
 Source = 'https://github.com/pydantic/pydantic'
 Changelog = 'https://docs.pydantic.dev/1.10/changelog/'
 

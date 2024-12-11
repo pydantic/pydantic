@@ -147,6 +147,7 @@ jobs:
         include:
           # We cannot use tracing on 3.12/3.13, which makes the coverage useless.
           # However, we can at least make sure tests run to completion on a cythonized build.
+          # TODO: Cython 3.1 might support this.
           - python-version: '3.12'
             enable-trace: false
           - python-version: '3.13'
@@ -348,8 +349,9 @@ jobs:
       - name: get coverage files
         uses: actions/download-artifact@v4
         with:
-          name: coverage-*
           path: coverage
+          pattern: coverage-*
+          merge-multiple: true
 
       - run: pip install coverage
 
