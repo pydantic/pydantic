@@ -1207,7 +1207,9 @@ except PydanticUserError as exc_info:
 
 ## Unsupported type for `validate_call` {#validate-call-type}
 
-`validate_call` has some limitations on the callables it can validate. This error is raised when you try to use it with an unsupported callable. Currently the supported callables are functions (including lambdas) and methods and instances of [`partial`][functools.partial]. In the case of [`partial`][functools.partial], the function being partially applied must be one of the supported callables.
+`validate_call` has some limitations on the callables it can validate. This error is raised when you try to use it with an unsupported callable.
+Currently the supported callables are functions (including lambdas, but not built-ins) and methods and instances of [`partial`][functools.partial].
+In the case of [`partial`][functools.partial], the function being partially applied must be one of the supported callables.
 
 ### `@classmethod`, `@staticmethod`, and `@property`
 
@@ -1260,9 +1262,10 @@ class A2:
     def __new__(cls): ...
 ```
 
-### Custom callable
+### Callable instances
 
-Although you can create custom callable types in Python by implementing a `__call__` method, currently the instances of these types cannot be validated with `validate_call`. This may change in the future, but for now, you should use `validate_call` explicitly on `__call__` instead.
+Although instances can be callable by implementing a `__call__` method, currently the instances of these types cannot be validated with `validate_call`.
+This may change in the future, but for now, you should use `validate_call` explicitly on `__call__` instead.
 
 ```python
 from pydantic import PydanticUserError, validate_call
