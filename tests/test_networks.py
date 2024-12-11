@@ -1147,6 +1147,16 @@ def test_json_schema() -> None:
     assert ser_json_schema == {'type': 'string', 'format': 'uri', 'minLength': 1, 'maxLength': 2083}
 
 
+def test_any_url_comparison() -> None:
+    first_url = AnyUrl('https://a.com')
+    second_url = AnyUrl('https://b.com')
+
+    assert first_url < second_url
+    assert second_url > first_url
+    assert first_url <= second_url
+    assert second_url >= first_url
+
+
 def test_max_length_base_url() -> None:
     class Model(BaseModel):
         url: AnyUrl = Field(max_length=20)
