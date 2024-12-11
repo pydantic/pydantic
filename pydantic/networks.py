@@ -225,7 +225,16 @@ class _BaseUrl:
         return self.__class__ is other.__class__ and self._url == other._url
 
     def __lt__(self, other: Any) -> bool:
-        return self.__class__ is other.__class__ and str(self._url) < str(other._url)
+        return self.__class__ is other.__class__ and self._url < other._url
+
+    def __gt__(self, other: Any) -> bool:
+        return self.__class__ is other.__class__ and self._url > other._url
+
+    def __le__(self, other: Any) -> bool:
+        return self.__class__ is other.__class__ and self._url <= other._url
+
+    def __ge__(self, other: Any) -> bool:
+        return self.__class__ is other.__class__ and self._url >= other._url
 
     def __hash__(self) -> int:
         return hash(self._url)
