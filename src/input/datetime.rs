@@ -56,7 +56,7 @@ impl EitherDate<'_> {
     pub fn try_into_py(self, py: Python<'_>) -> PyResult<PyObject> {
         let date = match self {
             Self::Py(date) => Ok(date),
-            Self::Raw(date) => PyDate::new_bound(py, date.year.into(), date.month, date.day),
+            Self::Raw(date) => PyDate::new(py, date.year.into(), date.month, date.day),
         }?;
         Ok(date.into_py(py))
     }
@@ -165,7 +165,7 @@ pub fn pytimedelta_subclass_as_duration(py_timedelta: &Bound<'_, PyDelta>) -> Py
 
 pub fn duration_as_pytimedelta<'py>(py: Python<'py>, duration: &Duration) -> PyResult<Bound<'py, PyDelta>> {
     let sign = if duration.positive { 1 } else { -1 };
-    PyDelta::new_bound(
+    PyDelta::new(
         py,
         sign * duration.day as i32,
         sign * duration.second as i32,
@@ -211,7 +211,7 @@ impl EitherTime<'_> {
     pub fn try_into_py(self, py: Python<'_>) -> PyResult<PyObject> {
         let time = match self {
             Self::Py(time) => Ok(time),
-            Self::Raw(time) => PyTime::new_bound(
+            Self::Raw(time) => PyTime::new(
                 py,
                 time.hour,
                 time.minute,
@@ -269,7 +269,7 @@ impl<'a> EitherDateTime<'a> {
 
     pub fn try_into_py(self, py: Python<'a>) -> PyResult<PyObject> {
         let dt = match self {
-            Self::Raw(datetime) => PyDateTime::new_bound(
+            Self::Raw(datetime) => PyDateTime::new(
                 py,
                 datetime.date.year.into(),
                 datetime.date.month,
@@ -393,7 +393,7 @@ pub fn float_as_datetime<'py>(input: &(impl Input<'py> + ?Sized), timestamp: f64
 
 pub fn date_as_datetime<'py>(date: &Bound<'py, PyDate>) -> PyResult<EitherDateTime<'py>> {
     let py = date.py();
-    let dt = PyDateTime::new_bound(
+    let dt = PyDateTime::new(
         py,
         date.getattr(intern!(py, "year"))?.extract()?,
         date.getattr(intern!(py, "month"))?.extract()?,
@@ -518,7 +518,7 @@ impl TzInfo {
 
     #[allow(unused_variables)]
     fn utcoffset<'py>(&self, py: Python<'py>, dt: &Bound<'_, PyAny>) -> PyResult<Bound<'py, PyDelta>> {
-        PyDelta::new_bound(py, 0, self.seconds, 0, true)
+        PyDelta::new(py, 0, self.seconds, 0, true)
     }
 
     #[allow(unused_variables)]

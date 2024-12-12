@@ -66,7 +66,7 @@ impl Validator for SetValidator {
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         let collection = input.validate_set(state.strict_or(self.strict))?.unpack(state);
-        let set = PySet::empty_bound(py)?;
+        let set = PySet::empty(py)?;
         collection.iterate(ValidateToSet {
             py,
             input,

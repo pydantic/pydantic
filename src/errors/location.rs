@@ -12,7 +12,7 @@ use crate::lookup_key::{LookupPath, PathItem};
 
 /// Used to store individual items of the error location, e.g. a string for key/field names
 /// or a number for array indices.
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Clone, Eq, PartialEq, IntoPyObjectRef)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub enum LocItem {
     /// string type key, used to identify items from a dict or anything that implements `__getitem__`
@@ -133,9 +133,9 @@ static EMPTY_TUPLE: GILOnceCell<PyObject> = GILOnceCell::new();
 impl ToPyObject for Location {
     fn to_object(&self, py: Python<'_>) -> PyObject {
         match self {
-            Self::List(loc) => PyTuple::new_bound(py, loc.iter().rev()).to_object(py),
+            Self::List(loc) => PyTuple::new(py, loc.iter().rev()).unwrap().to_object(py),
             Self::Empty => EMPTY_TUPLE
-                .get_or_init(py, || PyTuple::empty_bound(py).to_object(py))
+                .get_or_init(py, || PyTuple::empty(py).to_object(py))
                 .clone_ref(py),
         }
     }

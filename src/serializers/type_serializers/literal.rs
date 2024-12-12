@@ -40,7 +40,7 @@ impl BuildSerializer for LiteralSerializer {
         let mut expected_int = AHashSet::new();
         let mut expected_str = AHashSet::new();
         let py = expected.py();
-        let expected_py = PyList::empty_bound(py);
+        let expected_py = PyList::empty(py);
         let mut repr_args: Vec<String> = Vec::new();
         for item in expected {
             repr_args.push(item.repr()?.extract()?);
@@ -89,7 +89,7 @@ impl LiteralSerializer {
                 if let Ok(py_str) = value.downcast::<PyString>() {
                     let s = py_str.to_str()?;
                     if self.expected_str.contains(s) {
-                        return Ok(OutputValue::OkStr(PyString::new_bound(value.py(), s)));
+                        return Ok(OutputValue::OkStr(PyString::new(value.py(), s)));
                     }
                 }
             }

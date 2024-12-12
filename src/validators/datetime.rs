@@ -248,7 +248,7 @@ pub struct NowConstraint {
 static TIME_LOCALTIME: GILOnceCell<PyObject> = GILOnceCell::new();
 
 fn get_localtime(py: Python) -> PyResult<PyObject> {
-    Ok(py.import_bound("time")?.getattr("localtime")?.into_py(py))
+    Ok(py.import("time")?.getattr("localtime")?.into_py(py))
 }
 
 impl NowConstraint {

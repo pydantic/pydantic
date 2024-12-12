@@ -1,3 +1,4 @@
+use std::ffi::CString;
 use std::fmt;
 use std::sync::Mutex;
 
@@ -408,7 +409,7 @@ impl CollectWarnings {
             let type_name = value
                 .get_type()
                 .qualname()
-                .unwrap_or_else(|_| PyString::new_bound(value.py(), "<unknown python object>"));
+                .unwrap_or_else(|_| PyString::new(value.py(), "<unknown python object>"));
 
             let value_str = truncate_safe_repr(value, None);
             Err(PydanticSerializationUnexpectedValue::new_err(Some(format!(
@@ -445,7 +446,7 @@ impl CollectWarnings {
             let type_name = value
                 .get_type()
                 .qualname()
-                .unwrap_or_else(|_| PyString::new_bound(value.py(), "<unknown python object>"));
+                .unwrap_or_else(|_| PyString::new(value.py(), "<unknown python object>"));
 
             let value_str = truncate_safe_repr(value, None);
 
@@ -472,7 +473,7 @@ impl CollectWarnings {
         let message = format!("Pydantic serializer warnings:\n  {}", warnings.join("\n  "));
         if self.mode == WarningsMode::Warn {
             let user_warning_type = PyUserWarning::type_object(py);
-            PyErr::warn_bound(py, &user_warning_type, &message, 0)
+            PyErr::warn(py, &user_warning_type, &CString::new(message)?, 0)
         } else {
             Err(PydanticSerializationError::new_err(message))
         }

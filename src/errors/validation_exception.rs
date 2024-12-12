@@ -3,7 +3,7 @@ use std::fmt::{Display, Write};
 use std::str::from_utf8;
 
 use pyo3::exceptions::{PyKeyError, PyTypeError, PyValueError};
-use pyo3::ffi;
+use pyo3::ffi::{self, c_str};
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::sync::GILOnceCell;
@@ -73,7 +73,7 @@ impl ValidationError {
                                 return cause_problem;
                             }
                         }
-                        PyErr::from_value_bound(err.into_bound(py).into_any())
+                        PyErr::from_value(err.into_bound(py).into_any())
                     }
                     Err(err) => err,
                 }
@@ -145,7 +145,7 @@ impl ValidationError {
                     use pyo3::exceptions::PyUserWarning;
 
                     let wrapped = PyUserWarning::new_err((note,));
-                    wrapped.set_cause(py, Some(PyErr::from_value_bound(err.clone_ref(py).into_bound(py))));
+                    wrapped.set_cause(py, Some(PyErr::from_value(err.clone_ref(py).into_bound(py))));
                     user_py_errs.push(wrapped);
                 }
             }
@@ -167,7 +167,7 @@ impl ValidationError {
             #[cfg(not(Py_3_11))]
             let cause = {
                 use pyo3::exceptions::PyImportError;
-                match py.import_bound("exceptiongroup") {
+                match py.import("exceptiongroup") {
                     Ok(py_mod) => match py_mod.getattr("ExceptionGroup") {
                         Ok(group_cls) => match group_cls.call1((title, user_py_errs)) {
                             Ok(group_instance) => Some(group_instance.into_py(py)),
@@ -202,10 +202,10 @@ fn include_url_env(py: Python) -> bool {
         match std::env::var_os("PYDANTIC_ERRORS_OMIT_URL") {
             Some(val) => {
                 // We don't care whether warning succeeded or not, hence the assignment
-                let _ = PyErr::warn_bound(
+                let _ = PyErr::warn(
                     py,
-                    &py.get_type_bound::<pyo3::exceptions::PyDeprecationWarning>(),
-                    "PYDANTIC_ERRORS_OMIT_URL is deprecated, use PYDANTIC_ERRORS_INCLUDE_URL instead",
+                    &py.get_type::<pyo3::exceptions::PyDeprecationWarning>(),
+                    c_str!("PYDANTIC_ERRORS_OMIT_URL is deprecated, use PYDANTIC_ERRORS_INCLUDE_URL instead"),
                     1,
                 );
                 // If OMIT_URL exists but is empty, we include the URL:
@@ -298,7 +298,7 @@ impl ValidationError {
     ) -> PyResult<Py<PyList>> {
         let url_prefix = get_url_prefix(py, include_url);
         let mut iteration_error = None;
-        let list = PyList::new_bound(
+        let list = PyList::new(
             py,
             // PyList::new takes ExactSizeIterator, so if an error occurs during iteration we
             // fill the list with None before returning the error; the list will then be thrown
@@ -313,7 +313,7 @@ impl ValidationError {
                         py.None()
                     })
             }),
-        );
+        )?;
         if let Some(err) = iteration_error {
             Err(err)
         } else {
@@ -368,7 +368,7 @@ impl ValidationError {
             }
         };
         let s = from_utf8(&bytes).map_err(json_py_err)?;
-        Ok(PyString::new_bound(py, s))
+        Ok(PyString::new(py, s))
     }
 
     fn __repr__(&self, py: Python) -> String {
@@ -489,7 +489,7 @@ impl PyLineError {
         input_type: InputType,
         include_input: bool,
     ) -> PyResult<PyObject> {
-        let dict = PyDict::new_bound(py);
+        let dict = PyDict::new(py);
         dict.set_item("type", self.error_type.type_string())?;
         dict.set_item("loc", self.location.to_object(py))?;
         dict.set_item("msg", self.error_type.render_message(py, input_type)?)?;

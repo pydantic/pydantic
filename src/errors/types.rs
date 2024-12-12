@@ -22,7 +22,7 @@ pub fn list_all_errors(py: Python) -> PyResult<Bound<'_, PyList>> {
     let mut errors: Vec<Bound<'_, PyDict>> = Vec::with_capacity(100);
     for error_type in ErrorType::iter() {
         if !matches!(error_type, ErrorType::CustomError { .. }) {
-            let d = PyDict::new_bound(py);
+            let d = PyDict::new(py);
             d.set_item("type", error_type.to_string())?;
             let message_template_python = error_type.message_template_python();
             d.set_item("message_template_python", message_template_python)?;
@@ -39,7 +39,7 @@ pub fn list_all_errors(py: Python) -> PyResult<Bound<'_, PyList>> {
             errors.push(d);
         }
     }
-    Ok(PyList::new_bound(py, errors))
+    PyList::new(py, errors)
 }
 
 fn field_from_context<'py, T: FromPyObject<'py>>(
@@ -745,7 +745,7 @@ impl ErrorType {
     }
 
     pub fn py_dict(&self, py: Python) -> PyResult<Option<Py<PyDict>>> {
-        let dict = PyDict::new_bound(py);
+        let dict = PyDict::new(py);
         let custom_ctx_used = self.py_dict_update_ctx(py, &dict)?;
 
         if let Self::CustomError { .. } = self {

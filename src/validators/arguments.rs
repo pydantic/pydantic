@@ -142,7 +142,7 @@ impl BuildValidator for ArgumentsValidator {
 
         let py_var_kwargs_mode: Bound<PyString> = schema
             .get_as(intern!(py, "var_kwargs_mode"))?
-            .unwrap_or_else(|| PyString::new_bound(py, "uniform"));
+            .unwrap_or_else(|| PyString::new(py, "uniform"));
 
         let var_kwargs_mode = VarKwargsMode::from_str(py_var_kwargs_mode.to_str()?)?;
         let var_kwargs_validator = match schema.get_item(intern!(py, "var_kwargs_schema"))? {
@@ -193,7 +193,7 @@ impl Validator for ArgumentsValidator {
         let args = input.validate_args()?;
 
         let mut output_args: Vec<PyObject> = Vec::with_capacity(self.positional_params_count);
-        let output_kwargs = PyDict::new_bound(py);
+        let output_kwargs = PyDict::new(py);
         let mut errors: Vec<ValLineError> = Vec::new();
         let mut used_kwargs: AHashSet<&str> = AHashSet::with_capacity(self.parameters.len());
 
@@ -296,7 +296,7 @@ impl Validator for ArgumentsValidator {
             }
         }
 
-        let remaining_kwargs = PyDict::new_bound(py);
+        let remaining_kwargs = PyDict::new(py);
 
         // if there are kwargs check any that haven't been processed yet
         if let Some(kwargs) = args.kwargs() {
@@ -377,7 +377,7 @@ impl Validator for ArgumentsValidator {
         if !errors.is_empty() {
             Err(ValError::LineErrors(errors))
         } else {
-            Ok((PyTuple::new_bound(py, output_args), output_kwargs).to_object(py))
+            Ok((PyTuple::new(py, output_args)?, output_kwargs).to_object(py))
         }
     }
 

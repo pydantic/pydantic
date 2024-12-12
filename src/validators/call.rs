@@ -84,9 +84,9 @@ impl Validator for CallValidator {
         let args = self.arguments_validator.validate(py, input, state)?.into_bound(py);
 
         let return_value = if let Ok((args, kwargs)) = args.extract::<(Bound<PyTuple>, Bound<PyDict>)>() {
-            self.function.call_bound(py, args, Some(&kwargs))?
+            self.function.call(py, args, Some(&kwargs))?
         } else if let Ok(kwargs) = args.downcast::<PyDict>() {
-            self.function.call_bound(py, (), Some(kwargs))?
+            self.function.call(py, (), Some(kwargs))?
         } else {
             let msg = "Arguments validator should return a tuple of (args, kwargs) or a dict of kwargs";
             return Err(PyTypeError::new_err(msg).into());
