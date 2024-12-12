@@ -131,7 +131,7 @@ pub(crate) fn infer_to_python_known(
                 v.into_py(py)
             }
             ObType::Decimal => value.to_string().into_py(py),
-            ObType::StrSubclass => PyString::new_bound(py, value.downcast::<PyString>()?.to_str()?).into(),
+            ObType::StrSubclass => PyString::new(py, value.downcast::<PyString>()?.to_str()?).into(),
             ObType::Bytes => extra
                 .config
                 .bytes_mode
@@ -150,24 +150,24 @@ pub(crate) fn infer_to_python_known(
             }
             ObType::Tuple => {
                 let elements = serialize_seq_filter!(PyTuple);
-                PyList::new_bound(py, elements).into_py(py)
+                PyList::new(py, elements)?.into_py(py)
             }
             ObType::List => {
                 let elements = serialize_seq_filter!(PyList);
-                PyList::new_bound(py, elements).into_py(py)
+                PyList::new(py, elements)?.into_py(py)
             }
             ObType::Set => {
                 let elements = serialize_seq!(PySet);
-                PyList::new_bound(py, elements).into_py(py)
+                PyList::new(py, elements)?.into_py(py)
             }
             ObType::Frozenset => {
                 let elements = serialize_seq!(PyFrozenSet);
-                PyList::new_bound(py, elements).into_py(py)
+                PyList::new(py, elements)?.into_py(py)
             }
             ObType::Dict => {
                 let dict = value.downcast::<PyDict>()?;
                 serialize_pairs_python(py, dict.iter().map(Ok), include, exclude, extra, |k| {
-                    Ok(PyString::new_bound(py, &infer_json_key(&k, extra)?).into_any())
+                    Ok(PyString::new(py, &infer_json_key(&k, extra)?).into_any())
                 })?
             }
             ObType::Datetime => {
@@ -204,7 +204,7 @@ pub(crate) fn infer_to_python_known(
             ObType::PydanticSerializable => serialize_with_serializer()?,
             ObType::Dataclass => {
                 serialize_pairs_python(py, any_dataclass_iter(value)?.0, include, exclude, extra, |k| {
-                    Ok(PyString::new_bound(py, &infer_json_key(&k, extra)?).into_any())
+                    Ok(PyString::new(py, &infer_json_key(&k, extra)?).into_any())
                 })?
             }
             ObType::Enum => {
@@ -228,7 +228,7 @@ pub(crate) fn infer_to_python_known(
                         )?);
                     }
                 }
-                PyList::new_bound(py, items).into_py(py)
+                PyList::new(py, items)?.into_py(py)
             }
             ObType::Complex => {
                 let v = value.downcast::<PyComplex>()?;
@@ -252,19 +252,19 @@ pub(crate) fn infer_to_python_known(
         _ => match ob_type {
             ObType::Tuple => {
                 let elements = serialize_seq_filter!(PyTuple);
-                PyTuple::new_bound(py, elements).into_py(py)
+                PyTuple::new(py, elements)?.into_py(py)
             }
             ObType::List => {
                 let elements = serialize_seq_filter!(PyList);
-                PyList::new_bound(py, elements).into_py(py)
+                PyList::new(py, elements)?.into_py(py)
             }
             ObType::Set => {
                 let elements = serialize_seq!(PySet);
-                PySet::new_bound(py, &elements)?.into_py(py)
+                PySet::new(py, &elements)?.into_py(py)
             }
             ObType::Frozenset => {
                 let elements = serialize_seq!(PyFrozenSet);
-                PyFrozenSet::new_bound(py, &elements)?.into_py(py)
+                PyFrozenSet::new(py, &elements)?.into_py(py)
             }
             ObType::Dict => {
                 let dict = value.downcast::<PyDict>()?;
@@ -708,7 +708,7 @@ fn serialize_pairs_python<'py>(
     extra: &Extra,
     key_transform: impl Fn(Bound<'py, PyAny>) -> PyResult<Bound<'py, PyAny>>,
 ) -> PyResult<PyObject> {
-    let new_dict = PyDict::new_bound(py);
+    let new_dict = PyDict::new(py);
     let filter = AnyFilter::new();
 
     for result in pairs_iter {

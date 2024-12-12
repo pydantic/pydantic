@@ -264,9 +264,9 @@ impl ModelValidator {
 
         if self.root_model {
             let fields_set = if input.to_object(py).is(&self.undefined) {
-                PySet::empty_bound(py)?
+                PySet::empty(py)?
             } else {
-                PySet::new_bound(py, [&String::from(ROOT_FIELD)])?
+                PySet::new(py, [&String::from(ROOT_FIELD)])?
             };
             force_setattr(py, self_instance, intern!(py, DUNDER_FIELDS_SET_KEY), &fields_set)?;
             force_setattr(py, self_instance, intern!(py, ROOT_FIELD), &output)?;
@@ -294,7 +294,7 @@ impl ModelValidator {
             if let Some(kwargs) = input.as_kwargs(py) {
                 return self
                     .class
-                    .call_bound(py, (), Some(&kwargs))
+                    .call(py, (), Some(&kwargs))
                     .map_err(|e| convert_err(py, e, input));
             }
         }
@@ -305,9 +305,9 @@ impl ModelValidator {
 
         if self.root_model {
             let fields_set = if input.to_object(py).is(&self.undefined) {
-                PySet::empty_bound(py)?
+                PySet::empty(py)?
             } else {
-                PySet::new_bound(py, [&String::from(ROOT_FIELD)])?
+                PySet::new(py, [&String::from(ROOT_FIELD)])?
             };
             force_setattr(py, &instance, intern!(py, DUNDER_FIELDS_SET_KEY), &fields_set)?;
             force_setattr(py, &instance, intern!(py, ROOT_FIELD), output)?;
@@ -340,7 +340,7 @@ impl ModelValidator {
 /// https://github.com/PyO3/pyo3/blob/d2caa056e9aacc46374139ef491d112cb8af1a25/src/pyclass_init.rs#L35-L77
 pub(super) fn create_class<'py>(class: &Bound<'py, PyType>) -> PyResult<Bound<'py, PyAny>> {
     let py = class.py();
-    let args = PyTuple::empty_bound(py);
+    let args = PyTuple::empty(py);
     let raw_type = class.as_type_ptr();
     unsafe {
         // Safety: raw_type is known to be a non-null type object pointer

@@ -65,8 +65,8 @@ macro_rules! build_serializer {
                             items.push(item_serializer.to_python(&element, include, exclude, extra)?);
                         }
                         match extra.mode {
-                            SerMode::Json => Ok(PyList::new_bound(py, items).into_py(py)),
-                            _ => Ok(<$py_type>::new_bound(py, &items)?.into_py(py)),
+                            SerMode::Json => Ok(PyList::new(py, items)?.into_py(py)),
+                            _ => Ok(<$py_type>::new(py, &items)?.into_py(py)),
                         }
                     }
                     Err(_) => {

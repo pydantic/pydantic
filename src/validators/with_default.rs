@@ -18,7 +18,7 @@ use crate::PydanticUndefinedType;
 static COPY_DEEPCOPY: GILOnceCell<PyObject> = GILOnceCell::new();
 
 fn get_deepcopy(py: Python) -> PyResult<PyObject> {
-    Ok(py.import_bound("copy")?.getattr("deepcopy")?.into_py(py))
+    Ok(py.import("copy")?.getattr("deepcopy")?.into_py(py))
 }
 
 #[derive(Debug, Clone)]

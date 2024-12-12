@@ -189,7 +189,7 @@ impl FunctionPlainSerializer {
 }
 
 fn on_error(py: Python, err: PyErr, function_name: &str, extra: &Extra) -> PyResult<()> {
-    let exception = err.value_bound(py);
+    let exception = err.value(py);
     if let Ok(ser_err) = exception.extract::<PydanticSerializationUnexpectedValue>() {
         if extra.check.enabled() {
             Err(err)
@@ -638,7 +638,7 @@ impl SerializationInfo {
 
     #[getter]
     fn __dict__<'py>(&'py self, py: Python<'py>) -> PyResult<Bound<'py, PyDict>> {
-        let d = PyDict::new_bound(py);
+        let d = PyDict::new(py);
         if let Some(ref include) = self.include {
             d.set_item("include", include)?;
         }
@@ -689,7 +689,7 @@ impl SerializationInfo {
     #[getter]
     fn get_field_name<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyString>> {
         match self.field_name {
-            Some(ref field_name) => Ok(PyString::new_bound(py, field_name)),
+            Some(ref field_name) => Ok(PyString::new(py, field_name)),
             None => Err(PyAttributeError::new_err("No attribute named 'field_name'")),
         }
     }

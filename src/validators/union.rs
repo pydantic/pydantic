@@ -319,7 +319,7 @@ impl BuildValidator for TaggedUnionValidator {
         let discriminator = Discriminator::new(py, &schema.get_as_req(intern!(py, "discriminator"))?)?;
         let discriminator_repr = discriminator.to_string_py(py)?;
 
-        let choices = PyDict::new_bound(py);
+        let choices = PyDict::new(py);
         let mut tags_repr = String::with_capacity(50);
         let mut descr = String::with_capacity(50);
         let mut first = true;

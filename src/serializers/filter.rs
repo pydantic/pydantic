@@ -40,7 +40,7 @@ fn map_negative_indices<'py>(
 ) -> PyResult<Bound<'py, PyAny>> {
     let py = include_or_exclude.py();
     if let Ok(exclude_dict) = include_or_exclude.downcast::<PyDict>() {
-        let out = PyDict::new_bound(py);
+        let out = PyDict::new(py);
         for (k, v) in exclude_dict.iter() {
             out.set_item(map_negative_index(&k, len)?, v)?;
         }
@@ -50,7 +50,7 @@ fn map_negative_indices<'py>(
         for v in exclude_set.iter() {
             values.push(map_negative_index(&v, len)?);
         }
-        Ok(PySet::new_bound(py, &values)?.into_any())
+        Ok(PySet::new(py, &values)?.into_any())
     } else {
         // return as is and deal with the error later
         Ok(include_or_exclude.clone())
@@ -356,7 +356,7 @@ fn as_dict<'py>(value: &Bound<'py, PyAny>) -> PyResult<Bound<'py, PyDict>> {
         dict.copy()
     } else if let Ok(set) = value.downcast::<PySet>() {
         let py = value.py();
-        let dict = PyDict::new_bound(py);
+        let dict = PyDict::new(py);
         for item in set.iter() {
             dict.set_item(item, py.Ellipsis())?;
         }

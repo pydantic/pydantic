@@ -83,7 +83,7 @@ impl TypeSerializer for DictSerializer {
             Ok(py_dict) => {
                 let value_serializer = self.value_serializer.as_ref();
 
-                let new_dict = PyDict::new_bound(py);
+                let new_dict = PyDict::new(py);
                 for (key, value) in py_dict.iter() {
                     let op_next = self.filter.key_filter(&key, include, exclude)?;
                     if let Some((next_include, next_exclude)) = op_next {

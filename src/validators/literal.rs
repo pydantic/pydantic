@@ -48,9 +48,9 @@ impl<T: Debug> LiteralLookup<T> {
         let mut expected_bool = BoolLiteral::default();
         let mut expected_int = AHashMap::new();
         let mut expected_str: AHashMap<String, usize> = AHashMap::new();
-        let expected_py_dict = PyDict::new_bound(py);
+        let expected_py_dict = PyDict::new(py);
         let mut expected_py_values = Vec::new();
-        let expected_py_primitives = PyDict::new_bound(py);
+        let expected_py_primitives = PyDict::new(py);
         let mut values = Vec::new();
         for (k, v) in expected {
             let id = values.len();

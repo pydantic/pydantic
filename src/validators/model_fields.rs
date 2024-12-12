@@ -149,7 +149,7 @@ impl Validator for ModelFieldsValidator {
             Err(err) => return Err(err),
         };
 
-        let model_dict = PyDict::new_bound(py);
+        let model_dict = PyDict::new(py);
         let mut model_extra_dict_op: Option<Bound<PyDict>> = None;
         let mut errors: Vec<ValLineError> = Vec::with_capacity(self.fields.len());
         let mut fields_set_vec: Vec<Py<PyString>> = Vec::with_capacity(self.fields.len());
@@ -251,7 +251,7 @@ impl Validator for ModelFieldsValidator {
                     self,
                     iterator: impl Iterator<Item = ValResult<(Key, Value)>>,
                 ) -> ValResult<Bound<'py, PyDict>> {
-                    let model_extra_dict = PyDict::new_bound(self.py);
+                    let model_extra_dict = PyDict::new(self.py);
                     for item_result in iterator {
                         let (raw_key, value) = item_result?;
                         let either_str = match raw_key
@@ -331,13 +331,13 @@ impl Validator for ModelFieldsValidator {
         if !errors.is_empty() {
             Err(ValError::LineErrors(errors))
         } else {
-            let fields_set = PySet::new_bound(py, &fields_set_vec)?;
+            let fields_set = PySet::new(py, &fields_set_vec)?;
             state.add_fields_set(fields_set_count);
 
             // if we have extra=allow, but we didn't create a dict because we were validating
             // from attributes, set it now so __pydantic_extra__ is always a dict if extra=allow
             if matches!(self.extra_behavior, ExtraBehavior::Allow) && model_extra_dict_op.is_none() {
-                model_extra_dict_op = Some(PyDict::new_bound(py));
+                model_extra_dict_op = Some(PyDict::new(py));
             };
 
             Ok((model_dict, model_extra_dict_op, fields_set).to_object(py))
@@ -375,7 +375,7 @@ impl Validator for ModelFieldsValidator {
         let data_dict = dict.copy()?;
         if let Err(err) = data_dict.del_item(field_name) {
             // KeyError is fine here as the field might not be in the dict
-            if !err.get_type_bound(py).is(&PyType::new_bound::<PyKeyError>(py)) {
+            if !err.get_type(py).is(&PyType::new::<PyKeyError>(py)) {
                 return Err(err.into());
             }
         }
@@ -420,7 +420,7 @@ impl Validator for ModelFieldsValidator {
 
         let new_extra = match &self.extra_behavior {
             ExtraBehavior::Allow => {
-                let non_extra_data = PyDict::new_bound(py);
+                let non_extra_data = PyDict::new(py);
                 self.fields.iter().try_for_each(|f| -> PyResult<()> {
                     let Some(popped_value) = new_data.get_item(&f.name)? else {
                         // field not present in __dict__ for some reason; let the rest of the
@@ -439,7 +439,7 @@ impl Validator for ModelFieldsValidator {
             _ => py.None(),
         };
 
-        let fields_set = PySet::new_bound(py, &[field_name.to_string()])?;
+        let fields_set = PySet::new(py, &[field_name.to_string()])?;
         Ok((new_data.to_object(py), new_extra, fields_set.to_object(py)).to_object(py))
     }
 

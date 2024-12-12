@@ -63,7 +63,7 @@ impl LookupKey {
                     py_key1: alias_py.clone().into(),
                     path1,
                     key2: alt_alias.to_string(),
-                    py_key2: PyString::new_bound(py, alt_alias).into(),
+                    py_key2: PyString::new(py, alt_alias).into(),
                     path2: LookupPath::from_str(py, alt_alias, None),
                 }),
                 None => Ok(Self::simple(py, &alias, Some(alias_py.clone()))),
@@ -97,7 +97,7 @@ impl LookupKey {
     fn simple(py: Python, key: &str, opt_py_key: Option<Bound<'_, PyString>>) -> Self {
         let py_key = match &opt_py_key {
             Some(py_key) => py_key.clone(),
-            None => PyString::new_bound(py, key),
+            None => PyString::new(py, key),
         };
         Self::Simple {
             key: key.to_string(),
@@ -346,7 +346,7 @@ impl LookupPath {
     fn from_str(py: Python, key: &str, py_key: Option<Bound<'_, PyString>>) -> Self {
         let py_key = match py_key {
             Some(py_key) => py_key,
-            None => PyString::new_bound(py, key),
+            None => PyString::new(py, key),
         };
         Self(vec![PathItem::S(key.to_string(), py_key.into())])
     }
@@ -511,7 +511,7 @@ fn py_get_attrs<'py>(obj: &Bound<'py, PyAny>, attr_name: &Py<PyString>) -> PyRes
     match obj.getattr(attr_name) {
         Ok(attr) => Ok(Some(attr)),
         Err(err) => {
-            if err.get_type_bound(obj.py()).is_subclass_of::<PyAttributeError>()? {
+            if err.get_type(obj.py()).is_subclass_of::<PyAttributeError>()? {
                 Ok(None)
             } else {
                 Err(err)
