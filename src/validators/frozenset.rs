@@ -35,7 +35,7 @@ impl Validator for FrozenSetValidator {
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         let collection = input.validate_frozenset(state.strict_or(self.strict))?.unpack(state);
-        let f_set = PyFrozenSet::empty_bound(py)?;
+        let f_set = PyFrozenSet::empty(py)?;
         collection.iterate(ValidateToFrozenSet {
             py,
             input,

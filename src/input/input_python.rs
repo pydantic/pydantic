@@ -87,10 +87,8 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
         Some(self)
     }
 
-    fn as_kwargs(&self, py: Python<'py>) -> Option<Bound<'py, PyDict>> {
-        self.downcast::<PyDict>()
-            .ok()
-            .map(|dict| dict.to_owned().unbind().into_bound(py))
+    fn as_kwargs(&self, _py: Python<'py>) -> Option<Bound<'py, PyDict>> {
+        self.downcast::<PyDict>().ok().map(Bound::to_owned)
     }
 
     type Arguments<'a>
@@ -620,7 +618,7 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
         if strict {
             return Err(ValError::new(
                 ErrorType::IsInstanceOf {
-                    class: PyComplex::type_object_bound(py)
+                    class: PyComplex::type_object(py)
                         .qualname()
                         .and_then(|name| name.extract())
                         .unwrap_or_else(|_| "complex".to_owned()),

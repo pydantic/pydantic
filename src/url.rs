@@ -34,7 +34,7 @@ impl PyUrl {
 }
 
 fn build_schema_validator(py: Python, schema_type: &str) -> SchemaValidator {
-    let schema = PyDict::new_bound(py);
+    let schema = PyDict::new(py);
     schema.set_item("type", schema_type).unwrap();
     SchemaValidator::py_new(py, &schema, None).unwrap()
 }
@@ -468,7 +468,7 @@ impl fmt::Display for UrlHostParts {
 }
 
 fn host_to_dict<'a>(py: Python<'a>, lib_url: &Url) -> PyResult<Bound<'a, PyDict>> {
-    let dict = PyDict::new_bound(py);
+    let dict = PyDict::new(py);
     dict.set_item(
         "username",
         match lib_url.username() {

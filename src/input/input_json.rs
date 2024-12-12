@@ -56,7 +56,7 @@ impl<'py, 'data> Input<'py> for JsonValue<'data> {
     fn as_kwargs(&self, py: Python<'py>) -> Option<Bound<'py, PyDict>> {
         match self {
             JsonValue::Object(object) => {
-                let dict = PyDict::new_bound(py);
+                let dict = PyDict::new(py);
                 for (k, v) in LazyIndexMap::iter(object) {
                     dict.set_item(k, v.to_object(py)).unwrap();
                 }
@@ -171,7 +171,7 @@ impl<'py, 'data> Input<'py> for JsonValue<'data> {
     fn validate_decimal(&self, _strict: bool, py: Python<'py>) -> ValMatch<Bound<'py, PyAny>> {
         match self {
             JsonValue::Float(f) => {
-                create_decimal(&PyString::new_bound(py, &f.to_string()), self).map(ValidationMatch::strict)
+                create_decimal(&PyString::new(py, &f.to_string()), self).map(ValidationMatch::strict)
             }
             JsonValue::Str(..) | JsonValue::Int(..) | JsonValue::BigInt(..) => {
                 create_decimal(self.to_object(py).bind(py), self).map(ValidationMatch::strict)
@@ -324,7 +324,7 @@ impl<'py, 'data> Input<'py> for JsonValue<'data> {
     fn validate_complex(&self, strict: bool, py: Python<'py>) -> ValResult<ValidationMatch<EitherComplex<'py>>> {
         match self {
             JsonValue::Str(s) => Ok(ValidationMatch::strict(EitherComplex::Py(string_to_complex(
-                &PyString::new_bound(py, s),
+                &PyString::new(py, s),
                 self,
             )?))),
             JsonValue::Float(f) => {

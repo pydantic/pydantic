@@ -90,7 +90,7 @@ impl SchemaError {
                     ValidationError::new(line_errors, "Schema".to_object(py), InputType::Python, false);
                 let schema_error = SchemaError(SchemaErrorEnum::ValidationError(validation_error));
                 match Py::new(py, schema_error) {
-                    Ok(err) => PyErr::from_value_bound(err.into_bound(py).into_any()),
+                    Ok(err) => PyErr::from_value(err.into_bound(py).into_any()),
                     Err(err) => err,
                 }
             }
@@ -124,7 +124,7 @@ impl SchemaError {
 
     fn errors(&self, py: Python) -> PyResult<Py<PyList>> {
         match &self.0 {
-            SchemaErrorEnum::Message(_) => Ok(PyList::empty_bound(py).unbind()),
+            SchemaErrorEnum::Message(_) => Ok(PyList::empty(py).unbind()),
             SchemaErrorEnum::ValidationError(error) => error.errors(py, false, false, true),
         }
     }

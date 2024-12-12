@@ -245,7 +245,7 @@ impl Pattern {
 
         let py = pattern.py();
 
-        let re_module = py.import_bound(intern!(py, "re"))?;
+        let re_module = py.import(intern!(py, "re"))?;
         let re_compile = re_module.getattr(intern!(py, "compile"))?;
         let re_pattern = re_module.getattr(intern!(py, "Pattern"))?;
 

@@ -89,7 +89,7 @@ fn get_pydantic_version(py: Python<'_>) -> Option<&'static str> {
 
     PYDANTIC_VERSION
         .get_or_init(py, || {
-            py.import_bound("pydantic")
+            py.import("pydantic")
                 .and_then(|pydantic| pydantic.getattr("__version__")?.extract())
                 .ok()
         })

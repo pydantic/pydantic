@@ -548,7 +548,7 @@ impl EitherBytes<'_, '_> {
 impl IntoPy<PyObject> for EitherBytes<'_, '_> {
     fn into_py(self, py: Python<'_>) -> PyObject {
         match self {
-            EitherBytes::Cow(bytes) => PyBytes::new_bound(py, &bytes).into_py(py),
+            EitherBytes::Cow(bytes) => PyBytes::new(py, &bytes).into_py(py),
             EitherBytes::Py(py_bytes) => py_bytes.into_py(py),
         }
     }
@@ -755,7 +755,7 @@ pub enum EitherComplex<'a> {
 impl IntoPy<PyObject> for EitherComplex<'_> {
     fn into_py(self, py: Python<'_>) -> PyObject {
         match self {
-            Self::Complex(c) => PyComplex::from_doubles_bound(py, c[0], c[1]).into_py(py),
+            Self::Complex(c) => PyComplex::from_doubles(py, c[0], c[1]).into_py(py),
             Self::Py(c) => c.into_py(py),
         }
     }

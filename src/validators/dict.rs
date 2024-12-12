@@ -107,7 +107,7 @@ where
 {
     type Output = ValResult<PyObject>;
     fn consume_iterator(self, iterator: impl Iterator<Item = ValResult<(Key, Value)>>) -> ValResult<PyObject> {
-        let output = PyDict::new_bound(self.py);
+        let output = PyDict::new(self.py);
         let mut errors: Vec<ValLineError> = Vec::new();
         let allow_partial = self.state.allow_partial;
 

@@ -403,7 +403,7 @@ static DC_FIELD_MARKER: GILOnceCell<PyObject> = GILOnceCell::new();
 /// needed to match the logic from dataclasses.fields `tuple(f for f in fields.values() if f._field_type is _FIELD)`
 fn get_field_marker(py: Python<'_>) -> PyResult<Bound<'_, PyAny>> {
     let field_type_marker_obj = DC_FIELD_MARKER.get_or_try_init(py, || {
-        py.import_bound("dataclasses")?.getattr("_FIELD").map(|f| f.into_py(py))
+        py.import("dataclasses")?.getattr("_FIELD").map(|f| f.into_py(py))
     })?;
     Ok(field_type_marker_obj.bind(py).clone())
 }

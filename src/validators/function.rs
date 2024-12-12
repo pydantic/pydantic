@@ -480,18 +480,18 @@ macro_rules! py_err_string {
 /// as validation errors, `TypeError` is now considered as a runtime error to catch errors in function signatures
 pub fn convert_err(py: Python<'_>, err: PyErr, input: impl ToErrorValue) -> ValError {
     if err.is_instance_of::<PyValueError>(py) {
-        let error_value = err.value_bound(py);
+        let error_value = err.value(py);
         if let Ok(pydantic_value_error) = error_value.extract::<PydanticCustomError>() {
             pydantic_value_error.into_val_error(input)
         } else if let Ok(pydantic_error_type) = error_value.extract::<PydanticKnownError>() {
             pydantic_error_type.into_val_error(input)
-        } else if let Ok(validation_error) = err.value_bound(py).extract::<ValidationError>() {
+        } else if let Ok(validation_error) = err.value(py).extract::<ValidationError>() {
             validation_error.into_val_error()
         } else {
             py_err_string!(py, err, error_value, ValueError, input)
         }
     } else if err.is_instance_of::<PyAssertionError>(py) {
-        py_err_string!(py, err, err.value_bound(py), AssertionError, input)
+        py_err_string!(py, err, err.value(py), AssertionError, input)
     } else if err.is_instance_of::<PydanticOmit>(py) {
         ValError::Omit
     } else if err.is_instance_of::<PydanticUseDefault>(py) {

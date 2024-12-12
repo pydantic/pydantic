@@ -75,7 +75,7 @@ impl BuildSerializer for FormatSerializer {
         } else {
             Ok(Self {
                 format_func: py
-                    .import_bound(intern!(py, "builtins"))?
+                    .import(intern!(py, "builtins"))?
                     .getattr(intern!(py, "format"))?
                     .into_py(py),
                 formatting_string: formatting_string.unbind(),
