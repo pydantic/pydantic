@@ -263,7 +263,7 @@ impl ModelValidator {
         let output = self.validator.validate(py, input, state)?;
 
         if self.root_model {
-            let fields_set = if input.to_object(py).is(&self.undefined) {
+            let fields_set = if input.as_python().is_some_and(|py_input| py_input.is(&self.undefined)) {
                 PySet::empty(py)?
             } else {
                 PySet::new(py, [&String::from(ROOT_FIELD)])?
@@ -304,7 +304,7 @@ impl ModelValidator {
         let instance = create_class(self.class.bind(py))?;
 
         if self.root_model {
-            let fields_set = if input.to_object(py).is(&self.undefined) {
+            let fields_set = if input.as_python().is_some_and(|py_input| py_input.is(&self.undefined)) {
                 PySet::empty(py)?
             } else {
                 PySet::new(py, [&String::from(ROOT_FIELD)])?

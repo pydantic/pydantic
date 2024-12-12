@@ -157,7 +157,7 @@ impl Validator for WithDefaultValidator {
         input: &(impl Input<'py> + ?Sized),
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
-        if input.to_object(py).is(&self.undefined) {
+        if input.as_python().is_some_and(|py_input| py_input.is(&self.undefined)) {
             Ok(self.default_value(py, None::<usize>, state)?.unwrap())
         } else {
             match self.validator.validate(py, input, state) {
