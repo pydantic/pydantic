@@ -11,7 +11,7 @@ import pytest
 
 from pydantic_core import SchemaSerializer, SchemaValidator, ValidationError, validate_core_schema
 
-from .complete_schema import input_data_lax, input_data_strict, input_data_wrong, schema
+from .complete_schema import input_data_lax, input_data_strict, input_data_wrong, schema, wrap_schema_in_root_model
 
 
 def test_complete_valid():
@@ -99,6 +99,12 @@ def test_complete_core_strict(benchmark):
     benchmark(v.validate_python, input_data_strict())
 
 
+@pytest.mark.benchmark(group='complete')
+def test_complete_core_root(benchmark):
+    v = SchemaValidator(validate_core_schema(wrap_schema_in_root_model(schema())))
+    benchmark(v.validate_python, {'root': input_data_lax()})
+
+
 @pytest.mark.benchmark(group='complete-to-python')
 def test_complete_core_serializer_to_python(benchmark):
     core_schema = validate_core_schema(schema())
@@ -157,6 +163,13 @@ def default_json_encoder(obj):
 def test_complete_core_json(benchmark):
     v = SchemaValidator(validate_core_schema(schema()))
     json_data = json.dumps(input_data_lax(), default=default_json_encoder)
+    benchmark(v.validate_json, json_data)
+
+
+@pytest.mark.benchmark(group='complete-json')
+def test_complete_core_root_json(benchmark):
+    v = SchemaValidator(validate_core_schema(wrap_schema_in_root_model(schema())))
+    json_data = json.dumps({'root': input_data_lax()}, default=default_json_encoder)
     benchmark(v.validate_json, json_data)
 
 
