@@ -880,6 +880,31 @@ class Model(BaseModel):
     x: MyInt
 ```
 
+## Implicit type conversion from float to int
+
+When a field is marked as int and you try to pass float it will not be converted to int implicitly, for example
+
+```python
+from pydantic import BaseModel
+
+class Model(BaseModel):
+    x: int
+
+obj = Model(x=10.2)
+```
+Above example will throw an error as float will not be converted to int implicitly, if there will be any loss of data
+
+```python
+from pydantic import BaseModel
+
+class Model(BaseModel):
+    x: int
+
+obj = Model(x=10.0)
+```
+
+In above example float will be converted to int implicitly, as there will be no loss of data
+
 Read more about it in the [Composing types via `Annotated`](concepts/types.md#using-the-annotated-pattern)
 docs.
 
