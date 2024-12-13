@@ -1,8 +1,9 @@
-While Pydantic provides many capabilities to add [validation constraints](./fields.md#field-constraints)
-to fields, you can define custom validators for specific fields or for the whole model.
+In addition to Pydantic's [built-in validation capabilities](./fields.md#field-constraints),
+you can leverage custom validators at the field and model levels to enforce more complex constraints
+and ensure the integrity of your data.
 
 !!! tip
-    Want to quickly jump to the relevant validator definition?
+    Want to quickly jump to the relevant validator section?
 
     <div class="grid cards" markdown>
 
@@ -10,17 +11,18 @@ to fields, you can define custom validators for specific fields or for the whole
 
         ---
 
-        - [*after* field validators](#field-after-validator)
-        - [*before* field validators](#field-before-validator)
-        - [*plain* field validators](#field-plain-validator)
-        - [*wrap* field validators](#field-wrap-validator)
+        - [field *after* validators](#field-after-validator)
+        - [field *before* validators](#field-before-validator)
+        - [field *plain* validators](#field-plain-validator)
+        - [field *wrap* validators](#field-wrap-validator)
 
     -   Model validators
 
         ---
 
-        - [*before* model validators](#model-before-validator)
-        - [*wrap* model validators](#model-wrap-validator)
+        - [model *before* validators](#model-before-validator)
+        - [model *after* validators](#model-after-validator)
+        - [model *wrap* validators](#model-wrap-validator)
 
     </div>
 
@@ -34,8 +36,8 @@ to fields, you can define custom validators for specific fields or for the whole
     [`pydantic.functional_validators.field_validator`][pydantic.functional_validators.field_validator]<br>
 
 In its simplest form, a field validator is a callable taking the value to be validated as an argument and
-returning the validated value. The callable can perform checks for specific conditions (see
-[raising validation errors](#raising-validation-errors)) and make changes to the validated value.
+**returning the validated value**. The callable can perform checks for specific conditions (see
+[raising validation errors](#raising-validation-errors)) and make changes to the validated value (coercion or mutation).
 
 **Four** different types of validators can be used. They can all be defined using the
 [annotated pattern](./fields.md#the-annotated-pattern) or using the
@@ -43,7 +45,7 @@ returning the validated value. The callable can perform checks for specific cond
 
 [](){#field-after-validator}
 
-- __*After* validators__: they run after Pydantic's internal validation. They are generally more type safe and thus easier to implement.
+- __*After* validators__: run after Pydantic's internal validation. They are generally more type safe and thus easier to implement.
 
     === "Annotated pattern"
 
@@ -80,11 +82,11 @@ returning the validated value. The callable can perform checks for specific cond
 
     === "Decorator"
 
-        Here is an example of a validator making changes to the validated value (no exception is raised),
+        Here is an example of a validator performing a validation check, and returning the value unchanged,
         this time using the [`field_validator()`][pydantic.field_validator] decorator.
 
         ```python
-        from pydantic import BaseModel, field_validator
+        from pydantic import BaseModel, ValidationError, field_validator
 
 
         class Model(BaseModel):
@@ -92,64 +94,119 @@ returning the validated value. The callable can perform checks for specific cond
 
             @field_validator('number', mode='after')  # (1)!
             @classmethod
-            def double_number(cls, value: int) -> int:
-                return value * 2
+            def is_even(cls, value: int) -> int:
+                if value % 2 == 1:
+                    raise ValueError(f'{value} is not an even number')
+                return value  # (2)!
 
 
-        print(Model(number=2))
-        #> number=4
+        try:
+            Model(number=1)
+        except ValidationError as err:
+            print(err)
+            """
+            1 validation error for Model
+            number
+              Value error, 1 is not an even number [type=value_error, input_value=1, input_type=int]
+            """
         ```
 
         1. `'after'` is the default mode for the decorator, and can be omitted.
+        2. Note that it is important to return the validated value.
+
+    ??? example "Example mutating the value"
+        Here is an example of a validator making changes to the validated value (no exception is raised).
+
+        === "Annotated pattern"
+
+            ```python
+            from typing_extensions import Annotated
+
+            from pydantic import AfterValidator, BaseModel
+
+
+            def double_number(value: int) -> int:
+                return value * 2
+
+
+            class Model(BaseModel):
+                number: Annotated[int, AfterValidator(double_number)]
+
+
+            print(Model(number=2))
+            #> number=4
+            ```
+
+        === "Decorator"
+
+            ```python
+            from pydantic import BaseModel, field_validator
+
+
+            class Model(BaseModel):
+                number: int
+
+                @field_validator('number', mode='after')  # (1)!
+                @classmethod
+                def double_number(cls, value: int) -> int:
+                    return value * 2
+
+
+            print(Model(number=2))
+            #> number=4
+            ```
+
+            1. `'after'` is the default mode for the decorator, and can be omitted.
 
 [](){#field-before-validator}
 
-- __*Before* validators__: they run before Pydantic's internal parsing and validation (e.g. coercion of a `str` to an `int`).
-  These are more flexible than *after* validators, but they also have to deal with the raw input, which in theory could be
-  any arbitrary object. Once the validator has been called, the returned value from the callable is validated against
-  the type annotation by Pydantic.
+- __*Before* validators__: run before Pydantic's internal parsing and validation (e.g. coercion of a `str` to an `int`).
+  These are more flexible than [*after* validators](#field-after-validator), but they also have to deal with the raw input, which
+  in theory could be any arbitrary object. The value returned from this callable is then validated against the provided type annotation
+  by Pydantic.
 
     === "Annotated pattern"
 
         ```python
-        from typing import Any
+        from typing import Any, List
 
         from typing_extensions import Annotated
 
         from pydantic import BaseModel, BeforeValidator, ValidationError
 
 
-        def from_hex(value: Any) -> Any:  # (1)!
-            if isinstance(value, str):
-                return int(value, 16)
+        def ensure_list(value: Any) -> Any:  # (1)!
+            if not isinstance(value, list):  # (2)!
+                return [value]
             else:
                 return value
 
 
         class Model(BaseModel):
-            number: Annotated[int, BeforeValidator(from_hex)]
+            numbers: Annotated[List[int], BeforeValidator(ensure_list)]
 
 
-        print(Model(number="ea78d"))
-        #> number=960397
-        print(Model(number=123))
-        #> number=123
-
+        print(Model(numbers=2))
+        #> numbers=[2]
         try:
-            Model(number=b"invalid bytes type")
+            Model(numbers='str')
         except ValidationError as err:
-            print(err)  # (2)!
+            print(err)  # (3)!
             """
             1 validation error for Model
-            number
-              Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value=b'invalid bytes type', input_type=bytes]
+            numbers.0
+              Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='str', input_type=str]
             """
         ```
 
-        1. Notice the use of [`Any`][typing.Any] as a type hint. *Before* validators take the raw input, which
+        1. Notice the use of [`Any`][typing.Any] as a type hint for `value`. *Before* validators take the raw input, which
            can be anything.
 
-        2. Pydantic still performs validation against the `int` type, no matter if our `from_hex` validator
+        2. Note that you might want to check for other sequence types (such as tuples) that would normally successfully
+           validate against the `list` type. *Before* validators give you more flexibility, but you have to account for
+           every possible case.
+
+        3. Pydantic still performs validation against the `int` type, no matter if our `ensure_list` validator
            did operations on the original input type.
 
     === "Decorator"
@@ -157,7 +214,7 @@ returning the validated value. The callable can perform checks for specific cond
         ```python
         from typing import Any, List
 
-        from pydantic import BaseModel, field_validator
+        from pydantic import BaseModel, ValidationError, field_validator
 
 
         class Model(BaseModel):
@@ -165,8 +222,8 @@ returning the validated value. The callable can perform checks for specific cond
 
             @field_validator('numbers', mode='before')
             @classmethod
-            def ensure_list(cls, value: Any) -> Any:
-                if not isinstance(value, list):  # (1)!
+            def ensure_list(cls, value: Any) -> Any:  # (1)!
+                if not isinstance(value, list):  # (2)!
                     return [value]
                 else:
                     return value
@@ -174,16 +231,31 @@ returning the validated value. The callable can perform checks for specific cond
 
         print(Model(numbers=2))
         #> numbers=[2]
+        try:
+            Model(numbers='str')
+        except ValidationError as err:
+            print(err)  # (3)!
+            """
+            1 validation error for Model
+            numbers.0
+              Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='str', input_type=str]
+            """
         ```
 
-        1. Note that you might want to check for other sequence types (such as tuples) that would normally successfully
+        1. Notice the use of [`Any`][typing.Any] as a type hint for `value`. *Before* validators take the raw input, which
+           can be anything.
+
+        2. Note that you might want to check for other sequence types (such as tuples) that would normally successfully
            validate against the `list` type. *Before* validators give you more flexibility, but you have to account for
            every possible case.
 
+        3. Pydantic still performs validation against the `int` type, no matter if our `ensure_list` validator
+           did operations on the original input type.
+
 [](){#field-plain-validator}
 
-- __*Plain* validators__: they act similarly to *before* validators but they **terminate validation immediately**, no further
-  validators are called and Pydantic does not do any of its internal validation against the field type.
+- __*Plain* validators__: act similarly to *before* validators but they **terminate validation immediately** after returning,
+  so no further validators are called and Pydantic does not do any of its internal validation against the field type.
 
     === "Annotated pattern"
 
@@ -244,9 +316,15 @@ returning the validated value. The callable can perform checks for specific cond
 
 [](){#field-wrap-validator}
 
-- __*Wrap* validators__: they are the most flexible of all. You can run code before or after Pydantic and other validators
+- __*Wrap* validators__: are the most flexible of all. You can run code before or after Pydantic and other validators
   process the input, or you can terminate validation immediately, either by returning the value early or by raising an
   error.
+
+    Such validators must be defined with a **mandatory** extra `handler` parameter: a callable taking the value to be validated
+    as an argument. Internally, this handler will delegate validation of the value to Pydantic. You are free to wrap the call
+    to the handler in a [`try..except`][handling exceptions] block, or not call it at all.
+
+    [handling exceptions]: https://docs.python.org/3/tutorial/errors.html#handling-exceptions
 
     === "Annotated pattern"
 
@@ -258,7 +336,7 @@ returning the validated value. The callable can perform checks for specific cond
         from pydantic import BaseModel, Field, ValidationError, ValidatorFunctionWrapHandler, WrapValidator
 
 
-        def truncate(value: Any, handler: ValidatorFunctionWrapHandler) -> str:  # (1)!
+        def truncate(value: Any, handler: ValidatorFunctionWrapHandler) -> str:
             try:
                 return handler(value)
             except ValidationError as err:
@@ -278,9 +356,6 @@ returning the validated value. The callable can perform checks for specific cond
         #> my_string='abcde'
         ```
 
-        1. Unlike the other validator types, *wrap* validators must be defined with a second `handler` argument,
-           even if they don't make use of it.
-
     === "Decorator"
 
         ```python {lint="skip"}
@@ -296,7 +371,7 @@ returning the validated value. The callable can perform checks for specific cond
 
             @field_validator('my_string', mode='wrap')
             @classmethod
-            def truncate(cls, value: Any, handler: ValidatorFunctionWrapHandler) -> str:  # (1)!
+            def truncate(cls, value: Any, handler: ValidatorFunctionWrapHandler) -> str:
                 try:
                     return handler(value)
                 except ValidationError as err:
@@ -312,16 +387,13 @@ returning the validated value. The callable can perform checks for specific cond
         #> my_string='abcde'
         ```
 
-        1. Unlike the other validator types, *wrap* validators must be defined with a second `handler` argument,
-           even if they don't make use of it.
-
 !!! note "Validation of default values"
     As mentioned in the [fields documentation](./fields.md#validate-default-values), default values of fields
-    are *not* validated by default, and thus custom validators will not be applied as well.
+    are *not* validated unless configured to do so, and thus custom validators will not be applied as well.
 
-### Using the annotated pattern or the decorators
+### Which validator pattern to use
 
-While both approaches can achieve the same thing, each implementation provide different benefits.
+While both approaches can achieve the same thing, each pattern provides different benefits.
 
 #### Using the annotated pattern
 
@@ -358,11 +430,12 @@ class Model3(BaseModel):
 ```
 
 1. As mentioned in the [annotated pattern](./fields.md#the-annotated-pattern) documentation,
-   we can also make use of validators for specific parts of the annotation.
+   we can also make use of validators for specific parts of the annotation (in this case,
+   validation is applied for list items, but not the whole list).
 
 It is also easier to understand which validators are applied to a type, by just looking at the field annotation.
 
-#### Using the decorator
+#### Using the decorator pattern
 
 One of the key benefits of using the [`field_validator()`][pydantic.field_validator] decorator is to apply
 the function to multiple fields:
@@ -402,10 +475,9 @@ decorator.
 
 [](){#model-after-validator}
 
-- __*After* validators__: they run after the whole model has been validated. As such, they are defined as
-  *instance* methods and can be seen as post-initialization hooks. However, do note that the instance should
-  be returned.
-
+- __*After* validators__: run after the whole model has been validated. As such, they are defined as
+  *instance* methods and can be seen as post-initialization hooks. Important note: the validated instance
+  should be returned.
   ```python
   from typing_extensions import Self
 
@@ -426,9 +498,8 @@ decorator.
 
 [](){#model-before-validator}
 
-- __*Before* validators__: they are run before the model is instantiated. These are more flexible than *after* validators,
+- __*Before* validators__: are run before the model is instantiated. These are more flexible than *after* validators,
   but they also have to deal with the raw input, which in theory could be any arbitrary object.
-
   ```python
   from typing import Any
 
@@ -447,18 +518,17 @@ decorator.
           return data
   ```
 
-  1. Notice the use of [`Any`][typing.Any] as a type hint. *Before* validators take the raw input, which
-     can be anything.
-  2. Most of the time, the input data will be a dictionary (e.g. when calling `UserModel(username='...')`). However,
-     this is not always the case. For instance, if the [`from_attributes`][pydantic.ConfigDict.from_attributes]
-     configuration value is set, you might receive an arbitrary class instance for the `data` argument.
+    1. Notice the use of [`Any`][typing.Any] as a type hint for `data`. *Before* validators take the raw input, which
+       can be anything.
+    2. Most of the time, the input data will be a dictionary (e.g. when calling `UserModel(username='...')`). However,
+       this is not always the case. For instance, if the [`from_attributes`][pydantic.ConfigDict.from_attributes]
+       configuration value is set, you might receive an arbitrary class instance for the `data` argument.
 
 [](){#model-wrap-validator}
 
-- __*Wrap* validators__: they are the most flexible of all. You can run code before or after Pydantic and
+- __*Wrap* validators__: are the most flexible of all. You can run code before or after Pydantic and
   other validators process the input data, or you can terminate validation immediately, either by returning
   the data early or by raising an error.
-
   ```python {lint="skip"}
   import logging
   from typing import Any
@@ -490,7 +560,7 @@ decorator.
 
 To raise a validation error, three types of exceptions can be used:
 
-- [`ValueError`][]: this is the most common exception to be raised inside validators.
+- [`ValueError`][]: this is the most common exception raised inside validators.
 - [`AssertionError`][]: using the [assert][] statement also works, but be aware that these statements
   are skipped when Python is run with the [-O][] optimization flag.
 - [`PydanticCustomError`][pydantic_core.PydanticCustomError]: a bit more verbose, but provides extra flexibility:
@@ -655,7 +725,7 @@ Similarly, you can [use a context for serialization](../concepts/serialization.m
 ## Ordering of validators
 
 When using the [annotated pattern](#using-the-annotated-pattern), the order in which validators are applied
-is defined as follows: [*before*](##field-before-validator) and [*wrap*](#field-wrap-validator) validators
+is defined as follows: [*before*](#field-before-validator) and [*wrap*](#field-wrap-validator) validators
 are run from right to left, and [*after*](#field-after-validator) validators are then run from left to right:
 
 ```python {lint="skip" test="skip"}
@@ -672,7 +742,7 @@ class Model(BaseModel):
     ]
 ```
 
-Internally, validators defined using [the decorator](#using-the-decorator) are converted to their annotated
+Internally, validators defined using [the decorator](#using-the-decorator-pattern) are converted to their annotated
 form counterpart and added last after the existing metadata for the field. This means that the same ordering
 logic applies.
 

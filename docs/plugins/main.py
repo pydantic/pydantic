@@ -189,7 +189,10 @@ def upgrade_python(markdown: str) -> str:
         else:
             return '\n\n'.join(output)
 
-    return re.sub(r'^(``` *py.*?)\n(.+?)^```(\s+(?:^\d+\. .+\n)*)', add_tabs, markdown, flags=re.M | re.S)
+    # Note: we should move away from this regex approach. It does not handle edge cases (indented code blocks inside
+    # other blocks, etc) and can lead to bugs in the rendering of annotations. Edit with care and make sure the rendered
+    # documentation does not break:
+    return re.sub(r'(``` *py.*?)\n(.+?)^```(\s+(?:^\d+\. (?:[^\n][\n]?)+\n?)*)', add_tabs, markdown, flags=re.M | re.S)
 
 
 def _upgrade_code(code: str, min_version: int) -> str:
