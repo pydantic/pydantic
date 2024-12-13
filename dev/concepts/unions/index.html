@@ -3263,7 +3263,8 @@ to help you monitor and understand your
 </code></pre></div>
 <ol>
 <li>As expected the input is validated against the <code>int</code> member and the result is as expected.</li>
-<li>We're in lax mode and the numeric string <code>'123'</code> is valid as input to the first member of the union, <code>int</code>.</li>
+<li>We're in lax mode and the numeric string <code>'123'</code> is valid as input to the first member of the union, <code>int</code>.
+   Since that is tried first, we get the surprising result of <code>id</code> being an <code>int</code> instead of a <code>str</code>.</li>
 </ol>
 </div>
 <div class="tabbed-block">
@@ -3281,12 +3282,12 @@ to help you monitor and understand your
 </code></pre></div>
 <ol>
 <li>As expected the input is validated against the <code>int</code> member and the result is as expected.</li>
-<li>We're in lax mode and the numeric string <code>'123'</code> is valid as input to the first member of the union, <code>int</code>.</li>
+<li>We're in lax mode and the numeric string <code>'123'</code> is valid as input to the first member of the union, <code>int</code>.
+   Since that is tried first, we get the surprising result of <code>id</code> being an <code>int</code> instead of a <code>str</code>.</li>
 </ol>
 </div>
 </div>
 </div>
-<p>Since that is tried first, we get the surprising result of <code>id</code> being an <code>int</code> instead of a <code>str</code>.</p>
 <h3 id="smart-mode">Smart Mode<a class="headerlink" href="#smart-mode" title="Permanent link">&para;</a></h3>
 <p>Because of the potentially surprising results of <code>union_mode='left_to_right'</code>, in Pydantic &gt;=2 the default mode for <code>Union</code> validation is <code>union_mode='smart'</code>.</p>
 <p>In this mode, pydantic attempts to select the best match for the input from the union members. The exact algorithm may change between Pydantic minor releases to allow for improvements in both performance and accuracy.</p>
@@ -3768,7 +3769,8 @@ and in the worst case, get runtime errors during validation.</p>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
 <ol>
-<li>Notice the callable discriminator function returns <code>None</code> if a discriminator value is not found.</li>
+<li>Notice the callable discriminator function returns <code>None</code> if a discriminator value is not found.
+   When <code>None</code> is returned, this <code>union_tag_not_found</code> error is raised.</li>
 </ol>
 </div>
 <div class="tabbed-block">
@@ -3824,7 +3826,8 @@ and in the worst case, get runtime errors during validation.</p>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
 <ol>
-<li>Notice the callable discriminator function returns <code>None</code> if a discriminator value is not found.</li>
+<li>Notice the callable discriminator function returns <code>None</code> if a discriminator value is not found.
+   When <code>None</code> is returned, this <code>union_tag_not_found</code> error is raised.</li>
 </ol>
 </div>
 <div class="tabbed-block">
@@ -3880,12 +3883,12 @@ and in the worst case, get runtime errors during validation.</p>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
 <ol>
-<li>Notice the callable discriminator function returns <code>None</code> if a discriminator value is not found.</li>
+<li>Notice the callable discriminator function returns <code>None</code> if a discriminator value is not found.
+   When <code>None</code> is returned, this <code>union_tag_not_found</code> error is raised.</li>
 </ol>
 </div>
 </div>
 </div>
-<p>When <code>None</code> is returned, this <code>union_tag_not_found</code> error is raised.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Using the <a href="../fields/#the-annotated-pattern">annotated pattern</a> can be handy to regroup
@@ -3910,9 +3913,6 @@ distinguish fields of <code>Union[T]</code> from <code>T</code>.</p>
 <h3 id="nested-discriminated-unions">Nested Discriminated Unions<a class="headerlink" href="#nested-discriminated-unions" title="Permanent link">&para;</a></h3>
 <p>Only one discriminator can be set for a field but sometimes you want to combine multiple discriminators.
 You can do it by creating nested <code>Annotated</code> types, e.g.:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="8:2"><input checked="checked" id="__tabbed_8_1" name="__tabbed_8" type="radio" /><input id="__tabbed_8_2" name="__tabbed_8" type="radio" /><div class="tabbed-labels"><label for="__tabbed_8_1">Python 3.8 and above</label><label for="__tabbed_8_2">Python 3.9 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
@@ -3970,68 +3970,6 @@ You can do it by creating nested <code>Annotated</code> types, e.g.:</p>
 <span class="sd">      Field required [type=missing, input_value={&#39;pet_type&#39;: &#39;cat&#39;, &#39;color&#39;: &#39;black&#39;}, input_type=dict]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
-</div>
-<div class="tabbed-block">
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Union</span>
-
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
-
-
-<span class="k">class</span> <span class="nc">BlackCat</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">pet_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;cat&#39;</span><span class="p">]</span>
-    <span class="n">color</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;black&#39;</span><span class="p">]</span>
-    <span class="n">black_name</span><span class="p">:</span> <span class="nb">str</span>
-
-
-<span class="k">class</span> <span class="nc">WhiteCat</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">pet_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;cat&#39;</span><span class="p">]</span>
-    <span class="n">color</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;white&#39;</span><span class="p">]</span>
-    <span class="n">white_name</span><span class="p">:</span> <span class="nb">str</span>
-
-
-<span class="n">Cat</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">BlackCat</span><span class="p">,</span> <span class="n">WhiteCat</span><span class="p">],</span> <span class="n">Field</span><span class="p">(</span><span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;color&#39;</span><span class="p">)]</span>
-
-
-<span class="k">class</span> <span class="nc">Dog</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">pet_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;dog&#39;</span><span class="p">]</span>
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
-
-
-<span class="n">Pet</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Cat</span><span class="p">,</span> <span class="n">Dog</span><span class="p">],</span> <span class="n">Field</span><span class="p">(</span><span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;pet_type&#39;</span><span class="p">)]</span>
-
-
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">pet</span><span class="p">:</span> <span class="n">Pet</span>
-    <span class="n">n</span><span class="p">:</span> <span class="nb">int</span>
-
-
-<span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">pet</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;pet_type&#39;</span><span class="p">:</span> <span class="s1">&#39;cat&#39;</span><span class="p">,</span> <span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="s1">&#39;black&#39;</span><span class="p">,</span> <span class="s1">&#39;black_name&#39;</span><span class="p">:</span> <span class="s1">&#39;felix&#39;</span><span class="p">},</span> <span class="n">n</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
-<span class="c1">#&gt; pet=BlackCat(pet_type=&#39;cat&#39;, color=&#39;black&#39;, black_name=&#39;felix&#39;) n=1</span>
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">Model</span><span class="p">(</span><span class="n">pet</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;pet_type&#39;</span><span class="p">:</span> <span class="s1">&#39;cat&#39;</span><span class="p">,</span> <span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="s1">&#39;red&#39;</span><span class="p">},</span> <span class="n">n</span><span class="o">=</span><span class="s1">&#39;1&#39;</span><span class="p">)</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    1 validation error for Model</span>
-<span class="sd">    pet.cat</span>
-<span class="sd">      Input tag &#39;red&#39; found using &#39;color&#39; does not match any of the expected tags: &#39;black&#39;, &#39;white&#39; [type=union_tag_invalid, input_value={&#39;pet_type&#39;: &#39;cat&#39;, &#39;color&#39;: &#39;red&#39;}, input_type=dict]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">Model</span><span class="p">(</span><span class="n">pet</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;pet_type&#39;</span><span class="p">:</span> <span class="s1">&#39;cat&#39;</span><span class="p">,</span> <span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="s1">&#39;black&#39;</span><span class="p">},</span> <span class="n">n</span><span class="o">=</span><span class="s1">&#39;1&#39;</span><span class="p">)</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    1 validation error for Model</span>
-<span class="sd">    pet.cat.black.black_name</span>
-<span class="sd">      Field required [type=missing, input_value={&#39;pet_type&#39;: &#39;cat&#39;, &#39;color&#39;: &#39;black&#39;}, input_type=dict]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-</code></pre></div>
-</div>
-</div>
-</div>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>If you want to validate data against a union, and solely a union, you can use pydantic's <a href="../type_adapter/"><code>TypeAdapter</code></a> construct instead of inheriting from the standard <code>BaseModel</code>.</p>
@@ -4054,9 +3992,6 @@ Discriminated unions help to simplify error messages in this case, as validation
 the case with a matching discriminator value.</p>
 <p>You can also customize the error type, message, and context for a <code>Discriminator</code> by passing
 these specifications as parameters to the <code>Discriminator</code> constructor, as seen in the example below.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="9:3"><input checked="checked" id="__tabbed_9_1" name="__tabbed_9" type="radio" /><input id="__tabbed_9_2" name="__tabbed_9" type="radio" /><input id="__tabbed_9_3" name="__tabbed_9" type="radio" /><div class="tabbed-labels"><label for="__tabbed_9_1">Python 3.8 and above</label><label for="__tabbed_9_2">Python 3.9 and above</label><label for="__tabbed_9_3">Python 3.10 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
 
 <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
@@ -4156,214 +4091,9 @@ these specifications as parameters to the <code>Discriminator</code> constructor
 <li><code>custom_error_message</code> is the <code>msg</code> attribute of the <code>ValidationError</code> raised when validation fails.</li>
 <li><code>custom_error_context</code> is the <code>ctx</code> attribute of the <code>ValidationError</code> raised when validation fails.</li>
 </ol>
-</div>
-<div class="tabbed-block">
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
-
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Discriminator</span><span class="p">,</span> <span class="n">Tag</span><span class="p">,</span> <span class="n">ValidationError</span>
-
-
-<span class="c1"># Errors are quite verbose with a normal Union:</span>
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">x</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="s1">&#39;Model&#39;</span><span class="p">]</span>
-
-
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">Model</span><span class="o">.</span><span class="n">model_validate</span><span class="p">({</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}}})</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    4 validation errors for Model</span>
-<span class="sd">    x.str</span>
-<span class="sd">      Input should be a valid string [type=string_type, input_value={&#39;x&#39;: {&#39;x&#39;: 1}}, input_type=dict]</span>
-<span class="sd">    x.Model.x.str</span>
-<span class="sd">      Input should be a valid string [type=string_type, input_value={&#39;x&#39;: 1}, input_type=dict]</span>
-<span class="sd">    x.Model.x.Model.x.str</span>
-<span class="sd">      Input should be a valid string [type=string_type, input_value=1, input_type=int]</span>
-<span class="sd">    x.Model.x.Model.x.Model</span>
-<span class="sd">      Input should be a valid dictionary or instance of Model [type=model_type, input_value=1, input_type=int]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">Model</span><span class="o">.</span><span class="n">model_validate</span><span class="p">({</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">{}}}})</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    4 validation errors for Model</span>
-<span class="sd">    x.str</span>
-<span class="sd">      Input should be a valid string [type=string_type, input_value={&#39;x&#39;: {&#39;x&#39;: {}}}, input_type=dict]</span>
-<span class="sd">    x.Model.x.str</span>
-<span class="sd">      Input should be a valid string [type=string_type, input_value={&#39;x&#39;: {}}, input_type=dict]</span>
-<span class="sd">    x.Model.x.Model.x.str</span>
-<span class="sd">      Input should be a valid string [type=string_type, input_value={}, input_type=dict]</span>
-<span class="sd">    x.Model.x.Model.x.Model.x</span>
-<span class="sd">      Field required [type=missing, input_value={}, input_type=dict]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-
-<span class="c1"># Errors are much simpler with a discriminated union:</span>
-<span class="k">def</span> <span class="nf">model_x_discriminator</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s1">&#39;str&#39;</span>
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="p">(</span><span class="nb">dict</span><span class="p">,</span> <span class="n">BaseModel</span><span class="p">)):</span>
-        <span class="k">return</span> <span class="s1">&#39;model&#39;</span>
-
-
-<span class="k">class</span> <span class="nc">DiscriminatedModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">x</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span>
-        <span class="n">Union</span><span class="p">[</span>
-            <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tag</span><span class="p">(</span><span class="s1">&#39;str&#39;</span><span class="p">)],</span>
-            <span class="n">Annotated</span><span class="p">[</span><span class="s1">&#39;DiscriminatedModel&#39;</span><span class="p">,</span> <span class="n">Tag</span><span class="p">(</span><span class="s1">&#39;model&#39;</span><span class="p">)],</span>
-        <span class="p">],</span>
-        <span class="n">Discriminator</span><span class="p">(</span>
-            <span class="n">model_x_discriminator</span><span class="p">,</span>
-            <span class="n">custom_error_type</span><span class="o">=</span><span class="s1">&#39;invalid_union_member&#39;</span><span class="p">,</span>  <span class="c1"># (1)!</span>
-            <span class="n">custom_error_message</span><span class="o">=</span><span class="s1">&#39;Invalid union member&#39;</span><span class="p">,</span>  <span class="c1"># (2)!</span>
-            <span class="n">custom_error_context</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;discriminator&#39;</span><span class="p">:</span> <span class="s1">&#39;str_or_model&#39;</span><span class="p">},</span>  <span class="c1"># (3)!</span>
-        <span class="p">),</span>
-    <span class="p">]</span>
-
-
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">DiscriminatedModel</span><span class="o">.</span><span class="n">model_validate</span><span class="p">({</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}}})</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    1 validation error for DiscriminatedModel</span>
-<span class="sd">    x.model.x.model.x</span>
-<span class="sd">      Invalid union member [type=invalid_union_member, input_value=1, input_type=int]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">DiscriminatedModel</span><span class="o">.</span><span class="n">model_validate</span><span class="p">({</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">{}}}})</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    1 validation error for DiscriminatedModel</span>
-<span class="sd">    x.model.x.model.x.model.x</span>
-<span class="sd">      Field required [type=missing, input_value={}, input_type=dict]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-<span class="c1"># The data is still handled properly when valid:</span>
-<span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="s1">&#39;a&#39;</span><span class="p">}}}</span>
-<span class="n">m</span> <span class="o">=</span> <span class="n">DiscriminatedModel</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
-<span class="c1">#&gt; {&#39;x&#39;: {&#39;x&#39;: {&#39;x&#39;: &#39;a&#39;}}}</span>
-</code></pre></div>
-<ol>
-<li><code>custom_error_type</code> is the <code>type</code> attribute of the <code>ValidationError</code> raised when validation fails.</li>
-<li><code>custom_error_message</code> is the <code>msg</code> attribute of the <code>ValidationError</code> raised when validation fails.</li>
-<li><code>custom_error_context</code> is the <code>ctx</code> attribute of the <code>ValidationError</code> raised when validation fails.</li>
-</ol>
-</div>
-<div class="tabbed-block">
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
-
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Discriminator</span><span class="p">,</span> <span class="n">Tag</span><span class="p">,</span> <span class="n">ValidationError</span>
-
-
-<span class="c1"># Errors are quite verbose with a normal Union:</span>
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">x</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="s1">&#39;Model&#39;</span><span class="p">]</span>
-
-
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">Model</span><span class="o">.</span><span class="n">model_validate</span><span class="p">({</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}}})</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    4 validation errors for Model</span>
-<span class="sd">    x.str</span>
-<span class="sd">      Input should be a valid string [type=string_type, input_value={&#39;x&#39;: {&#39;x&#39;: 1}}, input_type=dict]</span>
-<span class="sd">    x.Model.x.str</span>
-<span class="sd">      Input should be a valid string [type=string_type, input_value={&#39;x&#39;: 1}, input_type=dict]</span>
-<span class="sd">    x.Model.x.Model.x.str</span>
-<span class="sd">      Input should be a valid string [type=string_type, input_value=1, input_type=int]</span>
-<span class="sd">    x.Model.x.Model.x.Model</span>
-<span class="sd">      Input should be a valid dictionary or instance of Model [type=model_type, input_value=1, input_type=int]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">Model</span><span class="o">.</span><span class="n">model_validate</span><span class="p">({</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">{}}}})</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    4 validation errors for Model</span>
-<span class="sd">    x.str</span>
-<span class="sd">      Input should be a valid string [type=string_type, input_value={&#39;x&#39;: {&#39;x&#39;: {}}}, input_type=dict]</span>
-<span class="sd">    x.Model.x.str</span>
-<span class="sd">      Input should be a valid string [type=string_type, input_value={&#39;x&#39;: {}}, input_type=dict]</span>
-<span class="sd">    x.Model.x.Model.x.str</span>
-<span class="sd">      Input should be a valid string [type=string_type, input_value={}, input_type=dict]</span>
-<span class="sd">    x.Model.x.Model.x.Model.x</span>
-<span class="sd">      Field required [type=missing, input_value={}, input_type=dict]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-
-<span class="c1"># Errors are much simpler with a discriminated union:</span>
-<span class="k">def</span> <span class="nf">model_x_discriminator</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s1">&#39;str&#39;</span>
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="p">(</span><span class="nb">dict</span><span class="p">,</span> <span class="n">BaseModel</span><span class="p">)):</span>
-        <span class="k">return</span> <span class="s1">&#39;model&#39;</span>
-
-
-<span class="k">class</span> <span class="nc">DiscriminatedModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">x</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span>
-        <span class="p">(</span>
-            <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tag</span><span class="p">(</span><span class="s1">&#39;str&#39;</span><span class="p">)]</span> <span class="o">|</span>
-            <span class="n">Annotated</span><span class="p">[</span><span class="s1">&#39;DiscriminatedModel&#39;</span><span class="p">,</span> <span class="n">Tag</span><span class="p">(</span><span class="s1">&#39;model&#39;</span><span class="p">)]</span>
-        <span class="p">),</span>
-        <span class="n">Discriminator</span><span class="p">(</span>
-            <span class="n">model_x_discriminator</span><span class="p">,</span>
-            <span class="n">custom_error_type</span><span class="o">=</span><span class="s1">&#39;invalid_union_member&#39;</span><span class="p">,</span>  <span class="c1"># (1)!</span>
-            <span class="n">custom_error_message</span><span class="o">=</span><span class="s1">&#39;Invalid union member&#39;</span><span class="p">,</span>  <span class="c1"># (2)!</span>
-            <span class="n">custom_error_context</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;discriminator&#39;</span><span class="p">:</span> <span class="s1">&#39;str_or_model&#39;</span><span class="p">},</span>  <span class="c1"># (3)!</span>
-        <span class="p">),</span>
-    <span class="p">]</span>
-
-
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">DiscriminatedModel</span><span class="o">.</span><span class="n">model_validate</span><span class="p">({</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}}})</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    1 validation error for DiscriminatedModel</span>
-<span class="sd">    x.model.x.model.x</span>
-<span class="sd">      Invalid union member [type=invalid_union_member, input_value=1, input_type=int]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">DiscriminatedModel</span><span class="o">.</span><span class="n">model_validate</span><span class="p">({</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">{}}}})</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    1 validation error for DiscriminatedModel</span>
-<span class="sd">    x.model.x.model.x.model.x</span>
-<span class="sd">      Field required [type=missing, input_value={}, input_type=dict]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-<span class="c1"># The data is still handled properly when valid:</span>
-<span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="s1">&#39;a&#39;</span><span class="p">}}}</span>
-<span class="n">m</span> <span class="o">=</span> <span class="n">DiscriminatedModel</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
-<span class="c1">#&gt; {&#39;x&#39;: {&#39;x&#39;: {&#39;x&#39;: &#39;a&#39;}}}</span>
-</code></pre></div>
-<ol>
-<li><code>custom_error_type</code> is the <code>type</code> attribute of the <code>ValidationError</code> raised when validation fails.</li>
-<li><code>custom_error_message</code> is the <code>msg</code> attribute of the <code>ValidationError</code> raised when validation fails.</li>
-<li><code>custom_error_context</code> is the <code>ctx</code> attribute of the <code>ValidationError</code> raised when validation fails.</li>
-</ol>
-</div>
-</div>
-</div>
 <p>You can also simplify error messages by labeling each case with a <a class="autorefs autorefs-internal" href="../../api/types/#pydantic.types.Tag"><code>Tag</code></a>.
 This is especially useful when you have complex types like those in this example:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="10:2"><input checked="checked" id="__tabbed_10_1" name="__tabbed_10" type="radio" /><input id="__tabbed_10_2" name="__tabbed_10" type="radio" /><div class="tabbed-labels"><label for="__tabbed_10_1">Python 3.8 and above</label><label for="__tabbed_10_2">Python 3.9 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="8:2"><input checked="checked" id="__tabbed_8_1" name="__tabbed_8" type="radio" /><input id="__tabbed_8_2" name="__tabbed_8" type="radio" /><div class="tabbed-labels"><label for="__tabbed_8_1">Python 3.8 and above</label><label for="__tabbed_8_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span>

@@ -2176,6 +2176,15 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
+  <a href="#pydantic_core.PydanticUseDefault" class="md-nav__link">
+    <span class="md-ellipsis">
+      PydanticUseDefault
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#pydantic_core.PydanticSerializationError" class="md-nav__link">
     <span class="md-ellipsis">
       PydanticSerializationError
@@ -4107,6 +4116,15 @@ to help you monitor and understand your
   <a href="#pydantic_core.PydanticOmit" class="md-nav__link">
     <span class="md-ellipsis">
       PydanticOmit
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.PydanticUseDefault" class="md-nav__link">
+    <span class="md-ellipsis">
+      PydanticUseDefault
     </span>
   </a>
   
@@ -7387,6 +7405,74 @@ Right now, this is primarily used in the JSON Schema generation process.</p>
 <span class="sd">&#39;&#39;&#39;</span>
 </code></pre></div>
 </details>        <p>For a more in depth example / explanation, see the <a href="../../concepts/json_schema/#customizing-the-json-schema-generation-process">customizing JSON schema</a> docs.</p>
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="pydantic_core.PydanticUseDefault" class="doc doc-heading">
+            <span class="doc doc-object-name doc-class-name">PydanticUseDefault</span>
+
+
+<a href="#pydantic_core.PydanticUseDefault" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#Exception">Exception</a></code></p>
+
+
+        <p>An exception to signal that standard validation either failed or should be skipped, and the default value should be used instead.</p>
+<p>This warning can be raised in custom valiation functions to redirect the flow of validation.</p>
+
+
+<details class="example" open>
+  <summary>Example</summary>
+  <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic_core</span> <span class="kn">import</span> <span class="n">PydanticUseDefault</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">field_validator</span>
+
+
+<span class="k">class</span> <span class="nc">Event</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;meeting&#39;</span>
+    <span class="n">time</span><span class="p">:</span> <span class="n">datetime</span>
+
+    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;plain&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">name_must_be_present</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">v</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">PydanticUseDefault</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">v</span>
+
+
+<span class="n">event1</span> <span class="o">=</span> <span class="n">Event</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;party&#39;</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2024</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">event1</span><span class="p">))</span>
+<span class="c1"># &gt; Event(name=&#39;party&#39;, time=datetime.datetime(2024, 1, 1, 12, 0))</span>
+<span class="n">event2</span> <span class="o">=</span> <span class="n">Event</span><span class="p">(</span><span class="n">time</span><span class="o">=</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2024</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">event2</span><span class="p">))</span>
+<span class="c1"># &gt; Event(name=&#39;meeting&#39;, time=datetime.datetime(2024, 1, 1, 12, 0))</span>
+</code></pre></div>
+</details>        <p>For an additional example, seethe <a href="../../concepts/json/#partial-json-parsing">validating partial json data</a> section of the Pydantic documentation.</p>
 
 
 

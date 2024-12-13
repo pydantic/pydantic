@@ -4515,7 +4515,7 @@ This method receives two positional arguments:</p>
 <li>The type annotation that corresponds to this type (so in the case of <code>TheType[T][int]</code> it would be <code>TheType[int]</code>).</li>
 <li>A handler/callback to call the next implementer of <code>__get_pydantic_core_schema__</code>.</li>
 </ol>
-<p>The handler system works just like <a href="../validators/#annotated-validators"><code>mode='wrap'</code> validators</a>.
+<p>The handler system works just like <a href="../validators/#field-wrap-validator"><em>wrap</em> field validators</a>.
 In this case the input is the type and the output is a <code>core_schema</code>.</p>
 <p>Here is an example of a custom type that <em>overrides</em> the generated <code>core_schema</code>:</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="6:2"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">Python 3.8 and above</label><label for="__tabbed_6_2">Python 3.9 and above</label></div>

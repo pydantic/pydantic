@@ -846,7 +846,16 @@ to help you monitor and understand your
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Default values">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#validate-default-values" class="md-nav__link">
+    <span class="md-ellipsis">
+      Validate default values
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Validate default values">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -903,15 +912,6 @@ to help you monitor and understand your
   <a href="#dataclass-constraints" class="md-nav__link">
     <span class="md-ellipsis">
       Dataclass Constraints
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#validate-default-values" class="md-nav__link">
-    <span class="md-ellipsis">
-      Validate Default Values
     </span>
   </a>
   
@@ -3128,7 +3128,16 @@ to help you monitor and understand your
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Default values">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#validate-default-values" class="md-nav__link">
+    <span class="md-ellipsis">
+      Validate default values
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Validate default values">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -3185,15 +3194,6 @@ to help you monitor and understand your
   <a href="#dataclass-constraints" class="md-nav__link">
     <span class="md-ellipsis">
       Dataclass Constraints
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#validate-default-values" class="md-nav__link">
-    <span class="md-ellipsis">
-      Validate Default Values
     </span>
   </a>
   
@@ -3351,9 +3351,6 @@ to emphasize on the fact that a value must be provided, you can use the <a class
 <h2 id="the-annotated-pattern">The annotated pattern<a class="headerlink" href="#the-annotated-pattern" title="Permanent link">&para;</a></h2>
 <p>To apply constraints or attach <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.Field"><code>Field()</code></a> functions to a model field, Pydantic
 supports the <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Annotated"><code>Annotated</code></a> typing construct to attach metadata to an annotation:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.8 and above</label><label for="__tabbed_1_2">Python 3.9 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">WithJsonSchema</span>
@@ -3362,19 +3359,6 @@ supports the <a class="autorefs autorefs-external" href="https://docs.python.org
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">name</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span> <span class="n">WithJsonSchema</span><span class="p">({</span><span class="s1">&#39;extra&#39;</span><span class="p">:</span> <span class="s1">&#39;data&#39;</span><span class="p">})]</span>
 </code></pre></div>
-</div>
-<div class="tabbed-block">
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">WithJsonSchema</span>
-
-
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">name</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span> <span class="n">WithJsonSchema</span><span class="p">({</span><span class="s1">&#39;extra&#39;</span><span class="p">:</span> <span class="s1">&#39;data&#39;</span><span class="p">})]</span>
-</code></pre></div>
-</div>
-</div>
-</div>
 <p>As far as static type checkers are concerned, <code>name</code> is still typed as <code>str</code>, but Pydantic leverages
 the available metadata to add validation logic, type constraints, etc.</p>
 <p>Using this pattern has some advantages:</p>
@@ -3392,6 +3376,23 @@ the available metadata to add validation logic, type constraints, etc.</p>
 <code>default_factory</code>, and <code>alias</code>) are taken into account by static type checkers to synthesize a correct
 <code>__init__</code> method. The annotated pattern is <em>not</em> understood by them, so you should use the normal
 assignment form instead.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>The annotated pattern can also be used to add metadata to specific parts of the type. For instance,
+<a href="#field-constraints">validation constraints</a> can be added this way:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
+
+<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">int_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">gt</span><span class="o">=</span><span class="mi">0</span><span class="p">)]]</span>
+    <span class="c1"># Valid: [1, 3]</span>
+    <span class="c1"># Invalid: [-1, 2]</span>
+</code></pre></div>
+</div>
 <h2 id="default-values">Default values<a class="headerlink" href="#default-values" title="Permanent link">&para;</a></h2>
 <p>Default values for fields can be provided using the normal assignment syntax or by providing a value
 to the <code>default</code> argument:</p>
@@ -3433,6 +3434,27 @@ default was explicitly specified. This is no longer the case in Pydantic V2.</p>
 </code></pre></div>
 <p>The <code>data</code> argument will <em>only</em> contain the already validated data, based on the <a href="../models/#field-ordering">order of model fields</a>
 (the above example would fail if <code>username</code> were to be defined before <code>email</code>).</p>
+<h2 id="validate-default-values">Validate default values<a class="headerlink" href="#validate-default-values" title="Permanent link">&para;</a></h2>
+<p>By default, Pydantic will <em>not</em> validate default values. The <code>validate_default</code> field parameter
+(or the <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.validate_default"><code>validate_default</code></a> configuration value) can be used
+to enable this behavior:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+
+<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s1">&#39;twelve&#39;</span><span class="p">,</span> <span class="n">validate_default</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">()</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for User</span>
+<span class="sd">    age</span>
+<span class="sd">      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value=&#39;twelve&#39;, input_type=str]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
 <h3 id="mutable-default-values">Mutable default values<a class="headerlink" href="#mutable-default-values" title="Permanent link">&para;</a></h3>
 <p>A common source of bugs in Python is to use a mutable object as a default value for a function or method argument,
 as the same instance ends up being reused in each call.</p>
@@ -3440,7 +3462,7 @@ as the same instance ends up being reused in each call.</p>
 a <a href="https://docs.python.org/3/library/dataclasses.html#default-factory-functions">default factory</a> instead.</p>
 <p>While the same thing can be done in Pydantic, it is not required. In the event that the default value is not hashable,
 Pydantic will create a deep copy of the default value when creating each instance of the model:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.8 and above</label><label for="__tabbed_2_2">Python 3.9 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.8 and above</label><label for="__tabbed_1_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span>
@@ -3643,6 +3665,7 @@ serialization:</p>
 <span class="c1">#&gt; {&#39;my_field&#39;: 1}</span>
 </code></pre></div>
 </details>
+<p><a href="" id="field-constraints"></a></p>
 <h2 id="numeric-constraints">Numeric Constraints<a class="headerlink" href="#numeric-constraints" title="Permanent link">&para;</a></h2>
 <p>There are some keyword arguments that can be used to constrain numeric values:</p>
 <ul>
@@ -3867,26 +3890,6 @@ you can use <code>Annotated</code>:</p>
 <ol>
 <li>The <code>baz</code> field is not included in the <code>model_dump()</code> output, since it is an init-only field.</li>
 </ol>
-<h2 id="validate-default-values">Validate Default Values<a class="headerlink" href="#validate-default-values" title="Permanent link">&para;</a></h2>
-<p>The parameter <code>validate_default</code> can be used to control whether the default value of the field should be validated.</p>
-<p>By default, the default value of the field is not validated.</p>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
-
-
-<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s1">&#39;twelve&#39;</span><span class="p">,</span> <span class="n">validate_default</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-
-
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">()</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    1 validation error for User</span>
-<span class="sd">    age</span>
-<span class="sd">      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value=&#39;twelve&#39;, input_type=str]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-</code></pre></div>
 <h2 id="field-representation">Field Representation<a class="headerlink" href="#field-representation" title="Permanent link">&para;</a></h2>
 <p>The parameter <code>repr</code> can be used to control whether the field should be included in the string
 representation of the model.</p>
@@ -3910,7 +3913,7 @@ representation of the model.</p>
 models in a union. It takes either the name of a field or a <code>Discriminator</code> instance. The <code>Discriminator</code>
 approach can be useful when the discriminator fields aren't the same for all the models in the <code>Union</code>.</p>
 <p>The following example shows how to use <code>discriminator</code> with a field name:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.8 and above</label><label for="__tabbed_3_2">Python 3.10 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.8 and above</label><label for="__tabbed_2_2">Python 3.10 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Union</span>
@@ -3969,7 +3972,7 @@ approach can be useful when the discriminator fields aren't the same for all the
 </div>
 </div>
 <p>The following example shows how to use the <code>discriminator</code> keyword argument with a <code>Discriminator</code> instance:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="4:3"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><input id="__tabbed_4_3" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">Python 3.8 and above</label><label for="__tabbed_4_2">Python 3.9 and above</label><label for="__tabbed_4_3">Python 3.10 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:3"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><input id="__tabbed_3_3" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.8 and above</label><label for="__tabbed_3_2">Python 3.9 and above</label><label for="__tabbed_3_3">Python 3.10 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Union</span>
@@ -4167,7 +4170,7 @@ model when exporting the model.</p>
 <li>A boolean, which will be used to mark the field as deprecated with a default <code>'deprecated'</code> deprecation message.</li>
 </ul>
 <h3 id="deprecated-as-a-string"><code>deprecated</code> as a string<a class="headerlink" href="#deprecated-as-a-string" title="Permanent link">&para;</a></h3>
-<div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">Python 3.8 and above</label><label for="__tabbed_5_2">Python 3.9 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">Python 3.8 and above</label><label for="__tabbed_4_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
@@ -4205,7 +4208,7 @@ model when exporting the model.</p>
 <p>You can only use the <code>deprecated</code> decorator in this way if you have
 <code>typing_extensions</code> &gt;= 4.9.0 installed.</p>
 </div>
-<div class="tabbed-set tabbed-alternate" data-tabs="6:2"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">Python 3.8 and above</label><label for="__tabbed_6_2">Python 3.9 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">Python 3.8 and above</label><label for="__tabbed_5_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">importlib.metadata</span>
@@ -4249,7 +4252,7 @@ model when exporting the model.</p>
 </div>
 </div>
 <h3 id="deprecated-as-a-boolean"><code>deprecated</code> as a boolean<a class="headerlink" href="#deprecated-as-a-boolean" title="Permanent link">&para;</a></h3>
-<div class="tabbed-set tabbed-alternate" data-tabs="7:2"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><div class="tabbed-labels"><label for="__tabbed_7_1">Python 3.8 and above</label><label for="__tabbed_7_2">Python 3.9 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="6:2"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">Python 3.8 and above</label><label for="__tabbed_6_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
