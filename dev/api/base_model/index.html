@@ -9598,11 +9598,12 @@ validators <a href="https://docs.pydantic.dev/2.9/concepts/validators/#field-val
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Attributes of the new model. They should be passed in the format:
-<code>&lt;name&gt;=(&lt;type&gt;, &lt;default value&gt;)</code>, <code>&lt;name&gt;=(&lt;type&gt;, &lt;FieldInfo&gt;)</code>, or <code>typing.Annotated[&lt;type&gt;, &lt;FieldInfo&gt;]</code>.
-Any additional metadata in <code>typing.Annotated[&lt;type&gt;, &lt;FieldInfo&gt;, ...]</code> will be ignored.
-Note, <code>FieldInfo</code> instances should be created via <code>pydantic.Field(...)</code>.
-Initializing <code>FieldInfo</code> instances directly is not supported.</p>
+                <p>Field definitions of the new model. Either:</p>
+<ul>
+<li>a single element, representing the type annotation of the field.</li>
+<li>a two-tuple, the first element being the type and the second element the assigned value
+  (either a default or the <a class="autorefs autorefs-internal" href="../fields/#pydantic.fields.Field"><code>Field()</code></a> function).</li>
+</ul>
               </div>
             </td>
             <td>
@@ -9785,11 +9786,11 @@ Initializing <code>FieldInfo</code> instances directly is not supported.</p>
 <span class="sd">            be added to the model, and the values are the validation methods themselves. You can read more about functional</span>
 <span class="sd">            validators [here](https://docs.pydantic.dev/2.9/concepts/validators/#field-validators).</span>
 <span class="sd">        __cls_kwargs__: A dictionary of keyword arguments for class creation, such as `metaclass`.</span>
-<span class="sd">        **field_definitions: Attributes of the new model. They should be passed in the format:</span>
-<span class="sd">            `&lt;name&gt;=(&lt;type&gt;, &lt;default value&gt;)`, `&lt;name&gt;=(&lt;type&gt;, &lt;FieldInfo&gt;)`, or `typing.Annotated[&lt;type&gt;, &lt;FieldInfo&gt;]`.</span>
-<span class="sd">            Any additional metadata in `typing.Annotated[&lt;type&gt;, &lt;FieldInfo&gt;, ...]` will be ignored.</span>
-<span class="sd">            Note, `FieldInfo` instances should be created via `pydantic.Field(...)`.</span>
-<span class="sd">            Initializing `FieldInfo` instances directly is not supported.</span>
+<span class="sd">        **field_definitions: Field definitions of the new model. Either:</span>
+
+<span class="sd">            - a single element, representing the type annotation of the field.</span>
+<span class="sd">            - a two-tuple, the first element being the type and the second element the assigned value</span>
+<span class="sd">              (either a default or the [`Field()`][pydantic.Field] function).</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        The new [model][pydantic.BaseModel].</span>
