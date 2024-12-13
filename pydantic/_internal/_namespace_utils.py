@@ -6,7 +6,7 @@ from contextlib import contextmanager
 from functools import cached_property
 from typing import Any, Callable, Iterator, Mapping, NamedTuple, TypeVar
 
-from typing_extensions import TypeAlias, TypeAliasType
+from typing_extensions import ParamSpec, TypeAlias, TypeAliasType, TypeVarTuple
 
 GlobalsNamespace: TypeAlias = 'dict[str, Any]'
 """A global namespace.
@@ -23,6 +23,8 @@ the [`f_locals`][frame.f_locals] attribute of a frame object, when dealing with 
 defined inside functions).
 This namespace type is expected as the `locals` argument during annotations evaluation.
 """
+
+_TypeVarLike: TypeAlias = 'TypeVar | ParamSpec | TypeVarTuple'
 
 
 class NamespacesTuple(NamedTuple):
@@ -123,7 +125,11 @@ def ns_for_function(obj: Callable[..., Any], parent_namespace: MappingNamespace 
     # passed as a separate argument. However, internally, `_eval_type` calls
     # `ForwardRef._evaluate` which will merge type params with the localns,
     # essentially mimicking what we do here.
-    type_params: tuple[TypeVar, ...] = ()
+    type_params: tuple[_TypeVarLike, ...]
+    if hasattr(obj, '__type_params__'):
+        type_params = obj.__type_params__
+    else:
+        type_params = ()
     if parent_namespace is not None:
         # We also fetch type params from the parent namespace. If present, it probably
         # means the function was defined in a class. This is to support the following:
