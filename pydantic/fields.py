@@ -936,7 +936,8 @@ def Field(  # noqa: C901
     fail_fast: bool | None = _Unset,
     **extra: Unpack[_EmptyKwargs],
 ) -> Any:
-    """Usage docs: https://docs.pydantic.dev/2.10/concepts/fields
+    """!!! abstract "Usage Documentation"
+        [Fields](../concepts/fields.md)
 
     Create a field for objects that can be configured.
 
@@ -1197,7 +1198,8 @@ def PrivateAttr(
     default_factory: Callable[[], Any] | None = None,
     init: Literal[False] = False,
 ) -> Any:
-    """Usage docs: https://docs.pydantic.dev/2.10/concepts/models/#private-model-attributes
+    """!!! abstract "Usage Documentation"
+        [Private Model Attributes](../concepts/models.md#private-model-attributes)
 
     Indicates that an attribute is intended for private use and not handled during normal validation/serialization.
 
@@ -1322,7 +1324,8 @@ def computed_field(
     repr: bool | None = None,
     return_type: Any = PydanticUndefined,
 ) -> PropertyT | typing.Callable[[PropertyT], PropertyT]:
-    """Usage docs: https://docs.pydantic.dev/2.10/concepts/fields#the-computed_field-decorator
+    """!!! abstract "Usage Documentation"
+        [The `computed_field` decorator](../concepts/fields.md#the-computed_field-decorator)
 
     Decorator to include `property` and `cached_property` when serializing models or dataclasses.
 

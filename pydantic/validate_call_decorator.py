@@ -86,7 +86,8 @@ def validate_call(
     config: ConfigDict | None = None,
     validate_return: bool = False,
 ) -> AnyCallableT | Callable[[AnyCallableT], AnyCallableT]:
-    """Usage docs: https://docs.pydantic.dev/2.10/concepts/validation_decorator/
+    """!!! abstract "Usage Documentation"
+        [Validation Decorator](../concepts/validation_decorator.md)
 
     Returns a decorated wrapper around the function that validates the arguments and, optionally, the return value.
 
