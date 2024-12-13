@@ -1,7 +1,82 @@
 ??? api "API Documentation"
     [`pydantic.fields.Field`][pydantic.fields.Field]<br>
 
-The [`Field`][pydantic.fields.Field] function is used to customize and add metadata to fields of models.
+In this section, we will go through the available mechanisms to customize Pydantic model fields:
+default values, JSON Schema metadata, constraints, etc.
+
+To do so, the [`Field()`][pydantic.fields.Field] function is used a lot, and behaves the same way as
+the standard library [`field()`][dataclasses.field] function for dataclasses:
+
+```python
+from pydantic import BaseModel, Field
+
+
+class Model(BaseModel):
+    name: str = Field(frozen=True)
+```
+
+!!! note
+    Even though `name` is assigned a value, it is still required and has no default value. If you want
+    to emphasize on the fact that a value must be provided, you can use the [ellipsis][Ellipsis]:
+
+    ```python {lint="skip" test="skip"}
+    class Model(BaseModel):
+        name: str = Field(..., frozen=True)
+    ```
+
+    However, its usage is discouraged as it doesn't play well with static type checkers.
+
+## The annotated pattern
+
+To apply constraints or attach [`Field()`][pydantic.fields.Field] functions to a model field, Pydantic
+supports the [`Annotated`][typing.Annotated] typing construct to attach metadata to an annotation:
+
+```python
+from typing_extensions import Annotated
+
+from pydantic import BaseModel, Field, WithJsonSchema
+
+
+class Model(BaseModel):
+    name: Annotated[str, Field(strict=True), WithJsonSchema({'extra': 'data'})]
+```
+
+As far as static type checkers are concerned, `name` is still typed as `str`, but Pydantic leverages
+the available metadata to add validation logic, type constraints, etc.
+
+Using this pattern has some advantages:
+
+- Using the `f: <type> = Field(...)` form can be confusing and might trick users into thinking `f`
+  has a default value, while in reality it is still required.
+- You can provide an arbitrary amount of metadata elements for a field. As shown in the example above,
+  the [`Field()`][pydantic.fields.Field] function only supports a limited set of constraints/metadata,
+  and you may have to use different Pydantic utilities such as [`WithJsonSchema`][pydantic.WithJsonSchema]
+  in some cases.
+- Types can be made reusable (see the documentation on [custom types](./types.md#using-the-annotated-pattern)
+  using this pattern).
+
+However, note that certain arguments to the [`Field()`][pydantic.fields.Field] function (namely, `default`,
+`default_factory`, and `alias`) are taken into account by static type checkers to synthesize a correct
+`__init__` method. The annotated pattern is *not* understood by them, so you should use the normal
+assignment form instead.
+
+!!! tip
+    The annotated pattern can also be used to add metadata to specific parts of the type. For instance,
+    [validation constraints](#field-constraints) can be added this way:
+
+    ```python
+    from typing import List
+
+    from typing_extensions import Annotated
+
+    from pydantic import BaseModel, Field
+
+
+    class Model(BaseModel):
+        int_list: List[Annotated[int, Field(gt=0)]]
+        # Valid: [1, 3]
+        # Invalid: [-1, 2]
+    ```
 
 ## Default values
 
@@ -54,29 +129,66 @@ print(user.username)
 The `data` argument will *only* contain the already validated data, based on the [order of model fields](./models.md#field-ordering)
 (the above example would fail if `username` were to be defined before `email`).
 
+## Validate default values
 
-## Using `Annotated`
-
-The [`Field`][pydantic.fields.Field] function can also be used together with [`Annotated`][annotated].
+By default, Pydantic will *not* validate default values. The `validate_default` field parameter
+(or the [`validate_default`][pydantic.ConfigDict.validate_default] configuration value) can be used
+to enable this behavior:
 
 ```python
-from uuid import uuid4
-
-from typing_extensions import Annotated
-
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 
 
 class User(BaseModel):
-    id: Annotated[str, Field(default_factory=lambda: uuid4().hex)]
+    age: int = Field(default='twelve', validate_default=True)
+
+
+try:
+    user = User()
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for User
+    age
+      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='twelve', input_type=str]
+    """
 ```
 
-!!! note
-    Defaults can be set outside [`Annotated`][annotated] as the assigned value or with `Field.default_factory` inside
-    [`Annotated`][annotated]. The `Field.default` argument is not supported inside [`Annotated`][annotated].
+### Mutable default values
 
+A common source of bugs in Python is to use a mutable object as a default value for a function or method argument,
+as the same instance ends up being reused in each call.
+
+The [`dataclasses`][dataclasses] module actually raises an error in this case, indicating that you should use
+a [default factory](https://docs.python.org/3/library/dataclasses.html#default-factory-functions) instead.
+
+While the same thing can be done in Pydantic, it is not required. In the event that the default value is not hashable,
+Pydantic will create a deep copy of the default value when creating each instance of the model:
+
+```python
+from typing import Dict, List
+
+from pydantic import BaseModel
+
+
+class Model(BaseModel):
+    item_counts: List[Dict[str, int]] = [{}]
+
+
+m1 = Model()
+m1.item_counts[0]['a'] = 1
+print(m1.item_counts)
+#> [{'a': 1}]
+
+m2 = Model()
+print(m2.item_counts)
+#> [{}]
+```
 
 ## Field aliases
+
+!!! tip
+    Read more about aliases in the [dedicated section](./alias.md).
 
 For validation and serialization, you can define an alias for a field.
 
@@ -256,11 +368,7 @@ print(user.model_dump(by_alias=True))  # (2)!
     #> {'my_serialization_alias': 1}
     ```
 
-    All of the above will likely also apply to other tools that respect the
-    [`@typing.dataclass_transform`](https://docs.python.org/3/library/typing.html#typing.dataclass_transform)
-    decorator, such as Pyright.
-
-For more information on alias usage, see the [Alias] concepts page.
+[](){#field-constraints}
 
 ## Numeric Constraints
 
@@ -502,31 +610,6 @@ print(model.model_dump())  # (1)!
 ```
 
 1. The `baz` field is not included in the `model_dump()` output, since it is an init-only field.
-
-## Validate Default Values
-
-The parameter `validate_default` can be used to control whether the default value of the field should be validated.
-
-By default, the default value of the field is not validated.
-
-```python
-from pydantic import BaseModel, Field, ValidationError
-
-
-class User(BaseModel):
-    age: int = Field(default='twelve', validate_default=True)
-
-
-try:
-    user = User()
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for User
-    age
-      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='twelve', input_type=str]
-    """
-```
 
 ## Field Representation
 
