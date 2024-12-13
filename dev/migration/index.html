@@ -905,6 +905,15 @@ to help you monitor and understand your
 </li>
         
           <li class="md-nav__item">
+  <a href="#type-conversion-from-floats-to-integers" class="md-nav__link">
+    <span class="md-ellipsis">
+      Type conversion from floats to integers
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#introduction-of-typeadapter" class="md-nav__link">
     <span class="md-ellipsis">
       Introduction of TypeAdapter
@@ -965,20 +974,14 @@ to help you monitor and understand your
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Constrained types">
-      <ul class="md-nav__list">
+</li>
         
           <li class="md-nav__item">
   <a href="#mypy-plugins" class="md-nav__link">
     <span class="md-ellipsis">
-      Mypy Plugins
+      Mypy plugins
     </span>
   </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
         
@@ -3492,6 +3495,15 @@ to help you monitor and understand your
 </li>
         
           <li class="md-nav__item">
+  <a href="#type-conversion-from-floats-to-integers" class="md-nav__link">
+    <span class="md-ellipsis">
+      Type conversion from floats to integers
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#introduction-of-typeadapter" class="md-nav__link">
     <span class="md-ellipsis">
       Introduction of TypeAdapter
@@ -3552,20 +3564,14 @@ to help you monitor and understand your
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Constrained types">
-      <ul class="md-nav__list">
+</li>
         
           <li class="md-nav__item">
   <a href="#mypy-plugins" class="md-nav__link">
     <span class="md-ellipsis">
-      Mypy Plugins
+      Mypy plugins
     </span>
   </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
         
@@ -4016,9 +4022,6 @@ In Pydantic V2, this behavior has changed to return <code>None</code> when no al
 <li><code>final</code> (use the <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Final">typing.Final</a> type hint instead)</li>
 </ul>
 <p>Field constraints are no longer automatically pushed down to the parameters of generics.  For example, you can no longer validate every element of a list matches a regex by providing <code>my_list: list[str] = Field(pattern=".*")</code>.  Instead, use <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Annotated"><code>typing.Annotated</code></a> to provide an annotation on the <code>str</code> itself: <code>my_list: list[Annotated[str, Field(pattern=".*")]]</code></p>
-<ul>
-<li>[TODO: Need to document any other backwards-incompatible changes to <code>pydantic.Field</code>]</li>
-</ul>
 <h3 id="changes-to-dataclasses">Changes to dataclasses<a class="headerlink" href="#changes-to-dataclasses" title="Permanent link">&para;</a></h3>
 <p>Pydantic <a href="../concepts/dataclasses/">dataclasses</a> continue to be useful for enabling the data validation on standard
 dataclasses without having to subclass <code>BaseModel</code>. Pydantic V2 introduces the following changes to this dataclass behavior:</p>
@@ -4537,6 +4540,29 @@ In particular, it promises linear time searching of strings in exchange for drop
 We believe this is a tradeoff worth making, in particular because Pydantic is used to validate untrusted input where ensuring things don't accidentally run in exponential time depending on the untrusted input is important.
 On the flipside, for anyone not using these features complex regex validation should be orders of magnitude faster because it's done in Rust and in linear time.</p>
 <p>If you still want to use Python's regex library, you can use the <a href="../api/config/#pydantic.config.ConfigDict.regex_engine"><code>regex_engine</code></a> config setting.</p>
+<h3 id="type-conversion-from-floats-to-integers">Type conversion from floats to integers<a class="headerlink" href="#type-conversion-from-floats-to-integers" title="Permanent link">&para;</a></h3>
+<p>In V1, whenever a field was annotated as <code>int</code>, any float value would be accepted, which could lead to a potential data
+loss if the float value contains a non-zero decimal part. In V2, type conversion from floats to integers is only allowed
+if the decimal part is zero:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">x</span><span class="p">:</span> <span class="nb">int</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mf">10.0</span><span class="p">))</span>
+<span class="c1">#&gt; x=10</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mf">10.2</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for Model</span>
+<span class="sd">    x</span>
+<span class="sd">      Input should be a valid integer, got a number with a fractional part [type=int_from_float, input_value=10.2, input_type=float]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
 <h3 id="introduction-of-typeadapter">Introduction of <code>TypeAdapter</code><a class="headerlink" href="#introduction-of-typeadapter" title="Permanent link">&para;</a></h3>
 <p>Pydantic V1 had weak support for validating or serializing non-<code>BaseModel</code> types.</p>
 <p>To work with them, you had to either create a "root" model or use the utility functions in <code>pydantic.tools</code>
@@ -4698,27 +4724,29 @@ even if a slash is not specified in the argument to a <code>Url</code> type cons
 <p>Read more about it in the <a href="../concepts/types/#using-the-annotated-pattern">Composing types via <code>Annotated</code></a>
 docs.</p>
 <p>For <code>ConstrainedStr</code> you can use <a class="autorefs autorefs-internal" href="../api/types/#pydantic.types.StringConstraints"><code>StringConstraints</code></a> instead.</p>
-<h4 id="mypy-plugins">Mypy Plugins<a class="headerlink" href="#mypy-plugins" title="Permanent link">&para;</a></h4>
+<h3 id="mypy-plugins">Mypy plugins<a class="headerlink" href="#mypy-plugins" title="Permanent link">&para;</a></h3>
 <p>Pydantic V2 contains a <a href="https://mypy.readthedocs.io/en/stable/extending_mypy.html#configuring-mypy-to-use-plugins">mypy</a> plugin in
 <code>pydantic.mypy</code>.</p>
 <p>When using <a href="./#continue-using-pydantic-v1-features">V1 features</a> the
 <code>pydantic.v1.mypy</code> plugin might need to also be enabled.</p>
-<p>To configure the <code>mypy</code> plugins:</p>
-<p>=== <code>mypy.ini</code></p>
-<div class="language-text highlight"><pre><span></span><code>```ini
-[mypy]
-plugins = pydantic.mypy, pydantic.v1.mypy # include `.v1.mypy` if required.
-```
+<p>To configure the mypy plugins:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="10:2"><input checked="checked" id="__tabbed_10_1" name="__tabbed_10" type="radio" /><input id="__tabbed_10_2" name="__tabbed_10" type="radio" /><div class="tabbed-labels"><label for="__tabbed_10_1"><code>mypy.ini</code></label><label for="__tabbed_10_2"><code>pyproject.toml</code></label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-ini highlight"><pre><span></span><code><span class="k">[mypy]</span>
+<span class="na">plugins</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">pydantic.mypy, pydantic.v1.mypy</span><span class="w">  </span><span class="c1"># include `.v1.mypy` if required.</span>
 </code></pre></div>
-<p>=== <code>pyproject.toml</code></p>
-<div class="language-text highlight"><pre><span></span><code>```toml
-[tool.mypy]
-plugins = [
-    &quot;pydantic.mypy&quot;,
-    &quot;pydantic.v1.mypy&quot;,
-]
-```
+</div>
+<div class="tabbed-block">
+<div class="language-toml highlight"><pre><span></span><code><span class="k">[tool.mypy]</span>
+<span class="n">plugins</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="s2">&quot;pydantic.mypy&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;pydantic.v1.mypy&quot;</span><span class="p">,</span><span class="w">  </span><span class="c1"># include `.v1.mypy` if required.</span>
+<span class="p">]</span>
 </code></pre></div>
+</div>
+</div>
+</div>
 <h2 id="other-changes">Other changes<a class="headerlink" href="#other-changes" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Dropped support for <a href="https://github.com/JoshData/python-email-validator"><code>email-validator&lt;2.0.0</code></a>. Make sure to update
