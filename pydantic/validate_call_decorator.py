@@ -4,6 +4,7 @@ from __future__ import annotations as _annotations
 
 import inspect
 from functools import partial
+from types import BuiltinFunctionType
 from typing import TYPE_CHECKING, Any, Callable, TypeVar, cast, overload
 
 from ._internal import _generate_schema, _typing_extra, _validate_call
@@ -42,6 +43,8 @@ def _check_function_type(function: object) -> None:
 
         return
 
+    if isinstance(function, BuiltinFunctionType):
+        raise PydanticUserError(f'Input built-in function `{function}` is not supported', code=_INVALID_TYPE_ERROR_CODE)
     if isinstance(function, (classmethod, staticmethod, property)):
         name = type(function).__name__
         raise PydanticUserError(
