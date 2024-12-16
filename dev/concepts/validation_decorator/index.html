@@ -3329,11 +3329,11 @@ keyword parameters of a function:</p>
 </div>
 <h2 id="using-the-field-function-to-describe-function-parameters">Using the <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.Field"><code>Field()</code></a> function to describe function parameters<a class="headerlink" href="#using-the-field-function-to-describe-function-parameters" title="Permanent link">&para;</a></h2>
 <p>The <a href="../fields/"><code>Field()</code> function</a> can also be used with the decorator to provide extra information about
-the field and validations. In general it should be used in a type hint with <a href="../types/#using-the-annotated-pattern">Annotated</a>,
-unless <code>default_factory</code> is specified, in which case it should be used as the default value of the field:</p>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
-
-<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
+the field and validations. If you don't make use of the <code>default</code> or <code>default_factory</code> parameter, it is
+recommended to use the <a href="../fields/#the-annotated-pattern">annotated pattern</a> (so that type checkers
+infer the parameter as being required). Otherwise, the <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.Field"><code>Field()</code></a> function can be used
+as a default value (again, to trick type checkers into thinking a default value is provided for the parameter).</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">validate_call</span>
 
@@ -3355,12 +3355,12 @@ unless <code>default_factory</code> is specified, in which case it should be use
 
 
 <span class="nd">@validate_call</span>
-<span class="k">def</span> <span class="nf">when</span><span class="p">(</span><span class="n">dt</span><span class="p">:</span> <span class="n">datetime</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">)):</span>
-    <span class="k">return</span> <span class="n">dt</span>
+<span class="k">def</span> <span class="nf">return_value</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s1">&#39;default value&#39;</span><span class="p">)):</span>
+    <span class="k">return</span> <span class="n">value</span>
 
 
-<span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">when</span><span class="p">()))</span>
-<span class="c1">#&gt; &lt;class &#39;datetime.datetime&#39;&gt;</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">return_value</span><span class="p">())</span>
+<span class="c1">#&gt; default value</span>
 </code></pre></div>
 <p><a href="../fields/#field-aliases">Aliases</a> can be used with the decorator as normal:</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.8 and above</label><label for="__tabbed_1_2">Python 3.9 and above</label></div>
