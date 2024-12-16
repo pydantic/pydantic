@@ -85,11 +85,27 @@ def is_literal(tp: Any, /) -> bool:
     return _is_typing_name(get_origin(tp), name='Literal')
 
 
-# TODO remove and replace with `get_args` when we drop support for Python 3.8
-# (see https://docs.python.org/3/whatsnew/3.9.html#id4).
 def literal_values(tp: Any, /) -> list[Any]:
-    """Return the values contained in the provided `Literal` special form."""
+    """Return the values contained in the provided `Literal` special form.
+
+    If one of the literal values is a PEP 695 type alias, recursively parse
+    the type alias' `__value__` to unpack literal values as well. This function
+    *doesn't* check that the type alias is referencing a `Literal` special form,
+    so unexpected values could be unpacked.
+    """
+    # TODO When we drop support for Python 3.8, there's no need to check of `is_literal`
+    # here, as Python unpacks nested `Literal` forms in 3.9+.
+    # (see https://docs.python.org/3/whatsnew/3.9.html#id4).
     if not is_literal(tp):
+        # Note: we could also check for generic aliases with a type alias as an origin.
+        # However, it is very unlikely that this happens as type variables can't appear in
+        # `Literal` forms, so the only valid (but unnecessary) use case would be something like:
+        # `type Test[T] = Literal['whatever']` (and then use `Test[SomeType]`).
+        if is_type_alias_type(tp):
+            # Note: accessing `__value__` could raise a `NameError`, but we just let
+            # the exception be raised as there's not much we can do if this happens.
+            return literal_values(tp.__value__)
+
         return [tp]
 
     values = get_args(tp)

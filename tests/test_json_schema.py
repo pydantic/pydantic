@@ -37,7 +37,7 @@ from dirty_equals import HasRepr
 from packaging.version import Version
 from pydantic_core import CoreSchema, SchemaValidator, core_schema, to_jsonable_python
 from pydantic_core.core_schema import ValidatorFunctionWrapHandler
-from typing_extensions import Annotated, Literal, Self, TypedDict, deprecated
+from typing_extensions import Annotated, Literal, Self, TypeAliasType, TypedDict, deprecated
 
 import pydantic
 from pydantic import (
@@ -2375,6 +2375,17 @@ def test_literal_schema():
         'required': ['a', 'b', 'c', 'd', 'e', 'f'],
         'title': 'Model',
         'type': 'object',
+    }
+
+
+def test_literal_schema_type_aliases() -> None:
+    TestType0 = TypeAliasType('TestType0', Literal['a'])
+    TestType1 = TypeAliasType('TestType1', Literal[TestType0, 'b'])
+    TestType2 = TypeAliasType('TestType2', Literal[TestType1, 'c'])
+
+    assert TypeAdapter(TestType2).json_schema() == {
+        'enum': ['a', 'b', 'c'],
+        'type': 'string',
     }
 
 
