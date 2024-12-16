@@ -400,6 +400,9 @@ class _BaseMultiHostUrl:
     def __hash__(self) -> int:
         return hash(self._url)
 
+    def __len__(self) -> int:
+        return len(str(self._url))
+
     @classmethod
     def build(
         cls,
