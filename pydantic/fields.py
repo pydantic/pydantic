@@ -46,86 +46,6 @@ else:
     Deprecated: TypeAlias = deprecated
 
 
-def _unpack_annotated(annotation) -> tuple[Any, list[Any]]:
-    """Unpack the annotation if it is wrapped with the `Annotated` type qualifier.
-
-    This function also unpacks PEP 695 type aliases if necessary (and also generic
-    aliases with a PEP 695 type alias origin). However, it does *not* try to evaluate
-    forward references, so users should make sure the type alias' `__value__` does not
-    contain unresolvable forward references.
-
-    Example:
-        ```python {test="skip" lint="skip"}
-        from typing import Annotated
-
-        type InnerList[T] = Annotated[list[T], 'meta_1']
-        type MyList[T] = Annotated[InnerList[T], 'meta_2']
-        type MyIntList = MyList[int]
-
-        _unpack_annotated(MyList)
-        #> (list[T], ['meta_1', 'meta_2'])
-        _unpack_annotated(MyList[int])
-        #> (list[int], ['meta_1', 'meta_2'])
-        _unpack_annotated(MyIntList)
-        #> (list[int], ['meta_1', 'meta_2'])
-        ```
-
-    Returns:
-        A two-tuple, the first element is the annotated type and the second element
-            is a list containing the annotated metadata. If the annotation wasn't
-            wrapped with `Annotated` in the first place, it is returned as is and the
-            metadata list is empty.
-    """
-    if _typing_extra.is_annotated(annotation):
-        typ, *metadata = typing_extensions.get_args(annotation)
-        # The annotated type might be a PEP 695 type alias, so we need to recursively
-        # unpack it. Note that we could make an optimization here: the following next
-        # call to `_unpack_annotated` could omit the `is_annotated` check, because Python
-        # already flattens `Annotated[Annotated[<type>, ...], ...]` forms. However, we would
-        # need to "re-enable" the check for further recursive calls.
-        typ, sub_meta = _unpack_annotated(typ)
-        metadata = sub_meta + metadata
-        return typ, metadata
-    elif _typing_extra.is_type_alias_type(annotation):
-        try:
-            value = annotation.__value__
-        except NameError:
-            # The type alias value contains an unresolvable reference. Note that even if it
-            # resolves successfully, it might contain string annotations, and because of design
-            # limitations we don't evaluate the type (we don't have access to a `NsResolver` instance).
-            pass
-        else:
-            typ, metadata = _unpack_annotated(value)
-            if metadata:
-                # Having metadata means the type alias' `__value__` was an `Annotated` form
-                # (or, recursively, a type alias to an `Annotated` form). It is important to
-                # check for this as we don't want to unpack "normal" type aliases (e.g. `type MyInt = int`).
-                return typ, metadata
-            return annotation, []
-    elif _typing_extra.is_generic_alias(annotation):
-        # When parametrized, a PEP 695 type alias becomes a generic alias
-        # (e.g. with `type MyList[T] = Annotated[list[T], ...]`, `MyList[int]`
-        # is a generic alias).
-        origin = typing_extensions.get_origin(annotation)
-        if _typing_extra.is_type_alias_type(origin):
-            try:
-                value = origin.__value__
-            except NameError:
-                pass
-            else:
-                # While Python already handles type variable replacement for simple `Annotated` forms,
-                # we need to manually apply the same logic for PEP 695 type aliases:
-                # - With `MyList = Annotated[list[T], ...]`, `MyList[int] == Annotated[list[int], ...]`
-                # - With `type MyList = Annotated[list[T], ...]`, `MyList[int].__value__ == Annotated[list[T], ...]`.
-                value = _generics.replace_types(value, _generics.get_standard_typevars_map(annotation))
-                typ, metadata = _unpack_annotated(value)
-                if metadata:
-                    return typ, metadata
-                return annotation, []
-
-    return annotation, []
-
-
 class _FromFieldInfoInputs(typing_extensions.TypedDict, total=False):
     """This class exists solely to add type checking for the `**kwargs` in `FieldInfo.from_field`."""
 
@@ -404,7 +324,7 @@ class FieldInfo(_repr.Representation):
 
         # 2. Check if the annotation is an `Annotated` form.
         #    In this case, `annotation` will be the annotated type:
-        annotation, metadata = _unpack_annotated(annotation)
+        annotation, metadata = _typing_extra.unpack_annotated(annotation)
 
         # 3. If we have metadata, `annotation` was the annotated type:
         if metadata:
@@ -473,7 +393,7 @@ class FieldInfo(_repr.Representation):
             annotation = typing_extensions.get_args(annotation)[0]
 
         if isinstance(default, FieldInfo):
-            default.annotation, annotation_metadata = _unpack_annotated(annotation)
+            default.annotation, annotation_metadata = _typing_extra.unpack_annotated(annotation)
             default.metadata += annotation_metadata
             default = default.merge_field_infos(
                 *[x for x in annotation_metadata if isinstance(x, FieldInfo)], default, annotation=default.annotation
@@ -491,7 +411,7 @@ class FieldInfo(_repr.Representation):
                 annotation = annotation.type
 
             pydantic_field = FieldInfo._from_dataclass_field(default)
-            pydantic_field.annotation, annotation_metadata = _unpack_annotated(annotation)
+            pydantic_field.annotation, annotation_metadata = _typing_extra.unpack_annotated(annotation)
             pydantic_field.metadata += annotation_metadata
             pydantic_field = pydantic_field.merge_field_infos(
                 *[x for x in annotation_metadata if isinstance(x, FieldInfo)],
@@ -504,7 +424,7 @@ class FieldInfo(_repr.Representation):
             pydantic_field.kw_only = getattr(default, 'kw_only', None)
             return pydantic_field
 
-        annotation, metadata = _unpack_annotated(annotation)
+        annotation, metadata = _typing_extra.unpack_annotated(annotation)
 
         if metadata:
             field_infos = [a for a in metadata if isinstance(a, FieldInfo)]
