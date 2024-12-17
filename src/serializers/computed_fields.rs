@@ -135,10 +135,10 @@ impl ComputedField {
             .unwrap_or_else(|| property_name.clone());
         Ok(Self {
             property_name: property_name.extract()?,
-            property_name_py: property_name.into_py(py),
+            property_name_py: property_name.into(),
             serializer,
             alias: alias_py.extract()?,
-            alias_py: alias_py.into_py(py),
+            alias_py: alias_py.into(),
         })
     }
 

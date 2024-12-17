@@ -378,7 +378,7 @@ impl Validator for DataclassArgsValidator {
             // which doesn't make much sense in this context but we need to put something there
             // so that function validators that sit between DataclassValidator and DataclassArgsValidator
             // always get called the same shape of data.
-            Ok(PyTuple::new(py, vec![dict.to_object(py), py.None()])?.into_py(py))
+            Ok(PyTuple::new(py, vec![dict.to_object(py), py.None()])?.into())
         };
 
         if let Some(field) = self.fields.iter().find(|f| f.name == field_name) {
@@ -476,7 +476,7 @@ impl BuildValidator for DataclassValidator {
         let validator = build_validator(&sub_schema, config, definitions)?;
 
         let post_init = if schema.get_as::<bool>(intern!(py, "post_init"))?.unwrap_or(false) {
-            Some(intern!(py, "__post_init__").into_py(py))
+            Some(intern!(py, "__post_init__").clone().unbind())
         } else {
             None
         };
@@ -626,7 +626,7 @@ impl DataclassValidator {
 
         self.set_dict_call(py, self_instance, val_output, input)?;
 
-        Ok(self_instance.into_py(py))
+        Ok(self_instance.clone().unbind())
     }
 
     fn dataclass_to_dict<'py>(&self, dc: &Bound<'py, PyAny>) -> PyResult<Bound<'py, PyDict>> {

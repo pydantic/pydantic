@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
-use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyString};
+use pyo3::{prelude::*, IntoPyObjectExt};
 
 use crate::definitions::DefinitionsBuilder;
 
@@ -43,10 +43,10 @@ impl TypeSerializer for StrSerializer {
     ) -> PyResult<PyObject> {
         let py = value.py();
         match extra.ob_type_lookup.is_type(value, ObType::Str) {
-            IsType::Exact => Ok(value.into_py(py)),
+            IsType::Exact => Ok(value.clone().unbind()),
             IsType::Subclass => match extra.mode {
-                SerMode::Json => Ok(value.downcast::<PyString>()?.to_str()?.into_py(py)),
-                _ => Ok(value.into_py(py)),
+                SerMode::Json => value.downcast::<PyString>()?.to_str()?.into_py_any(py),
+                _ => Ok(value.clone().unbind()),
             },
             IsType::False => {
                 extra.warnings.on_fallback_py(self.get_name(), value, extra)?;

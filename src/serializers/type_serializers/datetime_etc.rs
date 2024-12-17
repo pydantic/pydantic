@@ -2,6 +2,7 @@ use std::borrow::Cow;
 
 use pyo3::prelude::*;
 use pyo3::types::{PyDate, PyDateTime, PyDict, PyTime};
+use pyo3::IntoPyObjectExt;
 
 use crate::definitions::DefinitionsBuilder;
 use crate::input::{pydate_as_date, pydatetime_as_datetime, pytime_as_time};
@@ -68,9 +69,9 @@ macro_rules! build_serializer {
                     Ok(py_value) => match extra.mode {
                         SerMode::Json => {
                             let s = $convert_func(py_value)?;
-                            Ok(s.into_py(py))
+                            s.into_py_any(py)
                         }
-                        _ => Ok(value.into_py(py)),
+                        _ => Ok(value.clone().unbind()),
                     },
                     Err(_) => {
                         extra.warnings.on_fallback_py(self.get_name(), value, extra)?;

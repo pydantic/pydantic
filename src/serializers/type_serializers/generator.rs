@@ -5,6 +5,7 @@ use pyo3::gc::PyVisit;
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyIterator};
+use pyo3::IntoPyObjectExt;
 use pyo3::PyTraverseError;
 
 use serde::ser::SerializeSeq;
@@ -78,7 +79,7 @@ impl TypeSerializer for GeneratorSerializer {
                                 )?);
                             }
                         }
-                        Ok(items.into_py(py))
+                        items.into_py_any(py)
                     }
                     _ => {
                         let iter = SerializationIterator::new(
@@ -89,7 +90,7 @@ impl TypeSerializer for GeneratorSerializer {
                             exclude,
                             extra,
                         );
-                        Ok(iter.into_py(py))
+                        iter.into_py_any(py)
                     }
                 }
             }

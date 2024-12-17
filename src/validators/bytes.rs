@@ -1,6 +1,7 @@
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
+use pyo3::IntoPyObjectExt;
 
 use crate::build_tools::is_strict;
 use crate::errors::{ErrorType, ValError, ValResult};
@@ -51,7 +52,7 @@ impl Validator for BytesValidator {
     ) -> ValResult<PyObject> {
         input
             .validate_bytes(state.strict_or(self.strict), self.bytes_mode)
-            .map(|m| m.unpack(state).into_py(py))
+            .and_then(|m| Ok(m.unpack(state).into_py_any(py)?))
     }
 
     fn get_name(&self) -> &str {
@@ -103,7 +104,7 @@ impl Validator for BytesConstrainedValidator {
                 ));
             }
         }
-        Ok(either_bytes.into_py(py))
+        Ok(either_bytes.into_py_any(py)?)
     }
 
     fn get_name(&self) -> &str {

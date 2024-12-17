@@ -82,8 +82,8 @@ impl TypeSerializer for TupleSerializer {
                 })??;
 
                 match extra.mode {
-                    SerMode::Json => Ok(PyList::new(py, items)?.into_py(py)),
-                    _ => Ok(PyTuple::new(py, items)?.into_py(py)),
+                    SerMode::Json => Ok(PyList::new(py, items)?.into()),
+                    _ => Ok(PyTuple::new(py, items)?.into()),
                 }
             }
             Err(_) => {

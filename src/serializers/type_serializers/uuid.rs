@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
 use pyo3::types::PyDict;
-use pyo3::{intern, prelude::*};
+use pyo3::{intern, prelude::*, IntoPyObjectExt};
 use uuid::Uuid;
 
 use crate::definitions::DefinitionsBuilder;
@@ -46,8 +46,8 @@ impl TypeSerializer for UuidSerializer {
         let py = value.py();
         match extra.ob_type_lookup.is_type(value, ObType::Uuid) {
             IsType::Exact | IsType::Subclass => match extra.mode {
-                SerMode::Json => Ok(uuid_to_string(value)?.into_py(py)),
-                _ => Ok(value.into_py(py)),
+                SerMode::Json => uuid_to_string(value)?.into_py_any(py),
+                _ => Ok(value.clone().unbind()),
             },
             IsType::False => {
                 extra.warnings.on_fallback_py(self.get_name(), value, extra)?;

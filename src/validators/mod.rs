@@ -5,10 +5,10 @@ use jiter::{PartialMode, StringCacheMode};
 
 use pyo3::exceptions::PyTypeError;
 use pyo3::ffi::c_str;
-use pyo3::prelude::*;
 use pyo3::sync::GILOnceCell;
 use pyo3::types::{PyAny, PyDict, PyString, PyTuple, PyType};
 use pyo3::{intern, PyTraverseError, PyVisit};
+use pyo3::{prelude::*, IntoPyObjectExt};
 
 use crate::build_tools::{py_schema_err, py_schema_error_type, SchemaError};
 use crate::definitions::{Definitions, DefinitionsBuilder};
@@ -127,7 +127,7 @@ impl SchemaValidator {
 
         let validator = build_validator(schema, config, &mut definitions_builder)?;
         let definitions = definitions_builder.finish()?;
-        let py_schema = schema.into_py(py);
+        let py_schema = schema.clone().unbind();
         let py_config = match config {
             Some(c) if !c.is_empty() => Some(c.clone().into()),
             _ => None,
@@ -137,8 +137,8 @@ impl SchemaValidator {
             None => None,
         };
         let title = match config_title {
-            Some(t) => t.into_py(py),
-            None => validator.get_name().into_py(py),
+            Some(t) => t.unbind(),
+            None => validator.get_name().into_py_any(py)?,
         };
         let hide_input_in_errors: bool = config.get_as(intern!(py, "hide_input_in_errors"))?.unwrap_or(false);
         let validation_error_cause: bool = config.get_as(intern!(py, "validation_error_cause"))?.unwrap_or(false);
@@ -315,8 +315,8 @@ impl SchemaValidator {
         let r = self.validator.default_value(py, None::<i64>, &mut state);
         match r {
             Ok(maybe_default) => match maybe_default {
-                Some(v) => Ok(PySome::new(v).into_py(py)),
-                None => Ok(py.None().into_py(py)),
+                Some(v) => PySome::new(v).into_py_any(py),
+                None => Ok(py.None()),
             },
             Err(e) => Err(self.prepare_validation_err(py, e, InputType::Python)),
         }
@@ -462,7 +462,7 @@ impl<'py> SelfValidator<'py> {
             definitions,
             py_schema: py.None(),
             py_config: None,
-            title: "Self Schema".into_py(py),
+            title: "Self Schema".into_py_any(py)?,
             hide_input_in_errors: false,
             validation_error_cause: false,
             cache_str: true.into(),

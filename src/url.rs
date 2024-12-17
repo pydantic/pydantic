@@ -8,7 +8,7 @@ use pyo3::exceptions::PyValueError;
 use pyo3::pyclass::CompareOp;
 use pyo3::sync::GILOnceCell;
 use pyo3::types::{PyDict, PyType};
-use pyo3::{intern, prelude::*};
+use pyo3::{intern, prelude::*, IntoPyObjectExt};
 use url::Url;
 
 use crate::tools::SchemaDict;
@@ -98,13 +98,13 @@ impl PyUrl {
         self.lib_url.query()
     }
 
-    pub fn query_params(&self, py: Python) -> PyObject {
+    pub fn query_params<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
         // `query_pairs` is a pure iterator, so can't implement `ExactSizeIterator`, hence we need the temporary `Vec`
         self.lib_url
             .query_pairs()
-            .map(|(key, value)| (key, value).into_py(py))
-            .collect::<Vec<PyObject>>()
-            .into_py(py)
+            .map(|(key, value)| (key, value).into_pyobject(py))
+            .collect::<PyResult<Vec<_>>>()?
+            .into_pyobject(py)
     }
 
     #[getter]
@@ -147,8 +147,8 @@ impl PyUrl {
     }
 
     #[pyo3(signature = (_memo, /))]
-    pub fn __deepcopy__(&self, py: Python, _memo: Bound<'_, PyAny>) -> Py<PyAny> {
-        self.clone().into_py(py)
+    pub fn __deepcopy__(&self, py: Python, _memo: Bound<'_, PyAny>) -> PyResult<Py<PyAny>> {
+        self.clone().into_py_any(py)
     }
 
     fn __getnewargs__(&self) -> (&str,) {
@@ -259,7 +259,7 @@ impl PyMultiHostUrl {
         self.ref_url.query()
     }
 
-    pub fn query_params(&self, py: Python) -> PyObject {
+    pub fn query_params<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
         self.ref_url.query_params(py)
     }
 
@@ -350,8 +350,8 @@ impl PyMultiHostUrl {
         true // an empty string is not a valid URL
     }
 
-    pub fn __deepcopy__(&self, py: Python, _memo: &Bound<'_, PyDict>) -> Py<PyAny> {
-        self.clone().into_py(py)
+    pub fn __deepcopy__(&self, py: Python, _memo: &Bound<'_, PyDict>) -> PyResult<Py<PyAny>> {
+        self.clone().into_py_any(py)
     }
 
     fn __getnewargs__(&self) -> (String,) {

@@ -89,7 +89,7 @@ impl BuildSerializer for DataclassSerializer {
         let fields = schema
             .get_as_req::<Bound<'_, PyList>>(intern!(py, "fields"))?
             .iter()
-            .map(|s| Ok(s.downcast::<PyString>()?.into_py(py)))
+            .map(|s| Ok(s.downcast_into::<PyString>()?.unbind()))
             .collect::<PyResult<Vec<_>>>()?;
 
         Ok(Self {
@@ -155,7 +155,7 @@ impl TypeSerializer for DataclassSerializer {
                 )?;
 
                 fields_serializer.add_computed_fields_python(model, &output_dict, include, exclude, extra)?;
-                Ok(output_dict.into_py(py))
+                Ok(output_dict.into())
             } else {
                 let inner_value = self.get_inner_value(value)?;
                 self.serializer.to_python(&inner_value, include, exclude, &dc_extra)

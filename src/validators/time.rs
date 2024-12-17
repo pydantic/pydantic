@@ -2,6 +2,7 @@ use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyString};
 
+use pyo3::IntoPyObjectExt;
 use speedate::Time;
 
 use crate::build_tools::is_strict;
@@ -77,7 +78,7 @@ impl Validator for TimeValidator {
                 tz_constraint.tz_check(raw_time.tz_offset, input)?;
             }
         }
-        Ok(time.try_into_py(py)?)
+        Ok(time.into_py_any(py)?)
     }
 
     fn get_name(&self) -> &str {

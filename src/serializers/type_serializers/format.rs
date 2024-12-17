@@ -77,7 +77,7 @@ impl BuildSerializer for FormatSerializer {
                 format_func: py
                     .import(intern!(py, "builtins"))?
                     .getattr(intern!(py, "format"))?
-                    .into_py(py),
+                    .unbind(),
                 formatting_string: formatting_string.unbind(),
                 when_used: WhenUsed::new(schema, WhenUsed::JsonUnlessNone)?,
             }
@@ -117,7 +117,7 @@ impl TypeSerializer for FormatSerializer {
         if self.when_used.should_use(value, extra) {
             self.call(value).map_err(PydanticSerializationError::new_err)
         } else {
-            Ok(value.into_py(value.py()))
+            Ok(value.clone().unbind())
         }
     }
 
@@ -191,9 +191,9 @@ impl TypeSerializer for ToStringSerializer {
         extra: &Extra,
     ) -> PyResult<PyObject> {
         if self.when_used.should_use(value, extra) {
-            value.str().map(|s| s.into_py(value.py()))
+            value.str().map(Into::into)
         } else {
-            Ok(value.into_py(value.py()))
+            Ok(value.clone().unbind())
         }
     }
 

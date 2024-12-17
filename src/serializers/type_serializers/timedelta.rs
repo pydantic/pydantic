@@ -42,7 +42,7 @@ impl TypeSerializer for TimeDeltaSerializer {
     ) -> PyResult<PyObject> {
         match extra.mode {
             SerMode::Json => match EitherTimedelta::try_from(value) {
-                Ok(either_timedelta) => self.timedelta_mode.either_delta_to_json(value.py(), &either_timedelta),
+                Ok(either_timedelta) => self.timedelta_mode.either_delta_to_json(value.py(), either_timedelta),
                 Err(_) => {
                     extra.warnings.on_fallback_py(self.get_name(), value, extra)?;
                     infer_to_python(value, include, exclude, extra)
@@ -54,7 +54,7 @@ impl TypeSerializer for TimeDeltaSerializer {
 
     fn json_key<'a>(&self, key: &'a Bound<'_, PyAny>, extra: &Extra) -> PyResult<Cow<'a, str>> {
         match EitherTimedelta::try_from(key) {
-            Ok(either_timedelta) => self.timedelta_mode.json_key(key.py(), &either_timedelta),
+            Ok(either_timedelta) => self.timedelta_mode.json_key(key.py(), either_timedelta),
             Err(_) => {
                 extra.warnings.on_fallback_py(self.get_name(), key, extra)?;
                 infer_json_key(key, extra)
@@ -73,7 +73,7 @@ impl TypeSerializer for TimeDeltaSerializer {
         match EitherTimedelta::try_from(value) {
             Ok(either_timedelta) => self
                 .timedelta_mode
-                .timedelta_serialize(value.py(), &either_timedelta, serializer),
+                .timedelta_serialize(value.py(), either_timedelta, serializer),
             Err(_) => {
                 extra.warnings.on_fallback_ser::<S>(self.get_name(), value, extra)?;
                 infer_serialize(value, serializer, include, exclude, extra)

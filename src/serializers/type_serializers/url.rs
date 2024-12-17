@@ -2,6 +2,7 @@ use std::borrow::Cow;
 
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
+use pyo3::IntoPyObjectExt;
 
 use crate::definitions::DefinitionsBuilder;
 
@@ -42,8 +43,8 @@ macro_rules! build_serializer {
                 let py = value.py();
                 match value.extract::<$extract>() {
                     Ok(py_url) => match extra.mode {
-                        SerMode::Json => Ok(py_url.__str__().into_py(py)),
-                        _ => Ok(value.into_py(py)),
+                        SerMode::Json => py_url.__str__().into_py_any(py),
+                        _ => Ok(value.clone().unbind()),
                     },
                     Err(_) => {
                         extra.warnings.on_fallback_py(self.get_name(), value, extra)?;

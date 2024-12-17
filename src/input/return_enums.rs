@@ -1,5 +1,6 @@
 use std::borrow::Cow;
 use std::cmp::Ordering;
+use std::convert::Infallible;
 use std::ops::Rem;
 use std::str::FromStr;
 
@@ -14,6 +15,7 @@ use pyo3::prelude::*;
 use pyo3::types::PyFunction;
 use pyo3::types::{PyBytes, PyComplex, PyFloat, PyFrozenSet, PyIterator, PyMapping, PySet, PyString};
 
+use pyo3::IntoPyObjectExt;
 use serde::{ser::Error, Serialize, Serializer};
 
 use crate::errors::{
@@ -506,6 +508,7 @@ pub fn py_string_str<'a>(py_str: &'a Bound<'_, PyString>) -> ValResult<&'a str> 
 }
 
 #[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(IntoPyObject)]
 pub enum EitherBytes<'a, 'py> {
     Cow(Cow<'a, [u8]>),
     Py(Bound<'py, PyBytes>),
@@ -545,25 +548,17 @@ impl EitherBytes<'_, '_> {
     }
 }
 
-impl IntoPy<PyObject> for EitherBytes<'_, '_> {
-    fn into_py(self, py: Python<'_>) -> PyObject {
-        match self {
-            EitherBytes::Cow(bytes) => PyBytes::new(py, &bytes).into_py(py),
-            EitherBytes::Py(py_bytes) => py_bytes.into_py(py),
-        }
-    }
-}
-
 #[cfg_attr(debug_assertions, derive(Debug))]
-pub enum EitherInt<'a> {
+#[derive(IntoPyObject)]
+pub enum EitherInt<'py> {
     I64(i64),
     U64(u64),
     BigInt(BigInt),
-    Py(Bound<'a, PyAny>),
+    Py(Bound<'py, PyAny>),
 }
 
-impl<'a> EitherInt<'a> {
-    pub fn upcast(py_any: &Bound<'a, PyAny>) -> ValResult<Self> {
+impl<'py> EitherInt<'py> {
+    pub fn upcast(py_any: &Bound<'py, PyAny>) -> ValResult<Self> {
         // Safety: we know that py_any is a python int
         if let Some(int_64) = extract_i64(py_any) {
             Ok(Self::I64(int_64))
@@ -573,18 +568,21 @@ impl<'a> EitherInt<'a> {
         }
     }
 
-    pub fn into_i64(self, py: Python<'a>) -> ValResult<i64> {
+    pub fn into_i64(self, py: Python<'py>) -> ValResult<i64> {
         match self {
             EitherInt::I64(i) => Ok(i),
             EitherInt::U64(u) => match i64::try_from(u) {
                 Ok(u) => Ok(u),
-                Err(_) => Err(ValError::new(ErrorTypeDefaults::IntParsingSize, u.into_py(py).bind(py))),
+                Err(_) => Err(ValError::new(
+                    ErrorTypeDefaults::IntParsingSize,
+                    u.into_bound_py_any(py)?,
+                )),
             },
             EitherInt::BigInt(u) => match i64::try_from(u) {
                 Ok(u) => Ok(u),
                 Err(e) => Err(ValError::new(
                     ErrorTypeDefaults::IntParsingSize,
-                    e.into_original().into_py(py).bind(py),
+                    e.into_original().into_bound_py_any(py)?,
                 )),
             },
             EitherInt::Py(i) => i
@@ -633,22 +631,11 @@ impl<'a> EitherInt<'a> {
     }
 }
 
-impl IntoPy<PyObject> for EitherInt<'_> {
-    fn into_py(self, py: Python<'_>) -> PyObject {
-        match self {
-            Self::I64(int) => int.into_py(py),
-            Self::U64(int) => int.into_py(py),
-            Self::BigInt(int) => int.into_py(py),
-            Self::Py(int) => int.into_py(py),
-        }
-    }
-}
-
 #[cfg_attr(debug_assertions, derive(Debug))]
-#[derive(Clone)]
-pub enum EitherFloat<'a> {
+#[derive(Clone, IntoPyObject)]
+pub enum EitherFloat<'py> {
     F64(f64),
-    Py(Bound<'a, PyFloat>),
+    Py(Bound<'py, PyFloat>),
 }
 
 impl EitherFloat<'_> {
@@ -660,30 +647,12 @@ impl EitherFloat<'_> {
     }
 }
 
-impl IntoPy<PyObject> for EitherFloat<'_> {
-    fn into_py(self, py: Python<'_>) -> PyObject {
-        match self {
-            Self::F64(float) => float.into_py(py),
-            Self::Py(float) => float.into_py(py),
-        }
-    }
-}
-
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, IntoPyObject)]
 #[serde(untagged)]
 pub enum Int {
     I64(i64),
     #[serde(serialize_with = "serialize_bigint_as_number")]
     Big(BigInt),
-}
-
-impl IntoPy<PyObject> for Int {
-    fn into_py(self, py: Python<'_>) -> PyObject {
-        match self {
-            Self::I64(i) => i.into_py(py),
-            Self::Big(big_i) => big_i.into_py(py),
-        }
-    }
 }
 
 // The default serialization for BigInt is some internal representation which roundtrips efficiently
@@ -747,28 +716,20 @@ impl ToPyObject for Int {
 }
 
 #[derive(Clone)]
-pub enum EitherComplex<'a> {
+pub enum EitherComplex<'py> {
     Complex([f64; 2]),
-    Py(Bound<'a, PyComplex>),
+    Py(Bound<'py, PyComplex>),
 }
 
-impl IntoPy<PyObject> for EitherComplex<'_> {
-    fn into_py(self, py: Python<'_>) -> PyObject {
-        match self {
-            Self::Complex(c) => PyComplex::from_doubles(py, c[0], c[1]).into_py(py),
-            Self::Py(c) => c.into_py(py),
-        }
-    }
-}
+impl<'py> IntoPyObject<'py> for EitherComplex<'py> {
+    type Target = PyComplex;
+    type Output = Bound<'py, PyComplex>;
+    type Error = Infallible;
 
-impl EitherComplex<'_> {
-    pub fn as_f64(&self, py: Python<'_>) -> [f64; 2] {
+    fn into_pyobject(self, py: Python<'py>) -> Result<Bound<'py, PyComplex>, Infallible> {
         match self {
-            EitherComplex::Complex(f) => *f,
-            EitherComplex::Py(f) => [
-                f.getattr(intern!(py, "real")).unwrap().extract().unwrap(),
-                f.getattr(intern!(py, "imag")).unwrap().extract().unwrap(),
-            ],
+            EitherComplex::Complex(c) => Ok(PyComplex::from_doubles(py, c[0], c[1])),
+            EitherComplex::Py(c) => Ok(c),
         }
     }
 }

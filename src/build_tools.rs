@@ -6,7 +6,7 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyString};
 use pyo3::{intern, FromPyObject, PyErrArguments};
 
-use crate::errors::ValError;
+use crate::errors::{PyLineError, ValError};
 use crate::input::InputType;
 use crate::tools::SchemaDict;
 use crate::ValidationError;
@@ -85,7 +85,14 @@ impl SchemaError {
     pub fn from_val_error(py: Python, error: ValError) -> PyErr {
         match error {
             ValError::LineErrors(raw_errors) => {
-                let line_errors = raw_errors.into_iter().map(|e| e.into_py(py)).collect();
+                let line_errors = match raw_errors
+                    .into_iter()
+                    .map(|e| PyLineError::from_val_line_error(py, e))
+                    .collect::<PyResult<_>>()
+                {
+                    Ok(errors) => errors,
+                    Err(err) => return err,
+                };
                 let validation_error =
                     ValidationError::new(line_errors, "Schema".to_object(py), InputType::Python, false);
                 let schema_error = SchemaError(SchemaErrorEnum::ValidationError(validation_error));

@@ -7,6 +7,7 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList};
 
 use ahash::AHashSet;
+use pyo3::IntoPyObjectExt;
 use url::{ParseError, SyntaxViolation, Url};
 
 use crate::build_tools::{is_strict, py_schema_err};
@@ -93,7 +94,7 @@ impl Validator for UrlValidator {
             Ok(()) => {
                 // Lax rather than strict to preserve V2.4 semantic that str wins over url in union
                 state.floor_exactness(Exactness::Lax);
-                Ok(either_url.into_py(py))
+                Ok(either_url.into_py_any(py)?)
             }
             Err(error_type) => Err(ValError::new(error_type, input)),
         }
@@ -155,11 +156,15 @@ enum EitherUrl<'py> {
     Rust(Url),
 }
 
-impl EitherUrl<'_> {
-    fn into_py(self, py: Python) -> PyObject {
+impl<'py> IntoPyObject<'py> for EitherUrl<'py> {
+    type Target = PyUrl;
+    type Output = Bound<'py, PyUrl>;
+    type Error = PyErr;
+
+    fn into_pyobject(self, py: Python<'py>) -> PyResult<Self::Output> {
         match self {
-            EitherUrl::Py(py_url) => py_url.into_py(py),
-            EitherUrl::Rust(rust_url) => PyUrl::new(rust_url).into_py(py),
+            EitherUrl::Py(py_url) => Ok(py_url),
+            EitherUrl::Rust(rust_url) => Bound::new(py, PyUrl::new(rust_url)),
         }
     }
 }
@@ -258,7 +263,7 @@ impl Validator for MultiHostUrlValidator {
             Ok(()) => {
                 // Lax rather than strict to preserve V2.4 semantic that str wins over url in union
                 state.floor_exactness(Exactness::Lax);
-                Ok(multi_url.into_py(py))
+                Ok(multi_url.into_py_any(py)?)
             }
             Err(error_type) => Err(ValError::new(error_type, input)),
         }
@@ -324,11 +329,15 @@ enum EitherMultiHostUrl<'py> {
     Rust(PyMultiHostUrl),
 }
 
-impl EitherMultiHostUrl<'_> {
-    fn into_py(self, py: Python) -> PyObject {
+impl<'py> IntoPyObject<'py> for EitherMultiHostUrl<'py> {
+    type Target = PyMultiHostUrl;
+    type Output = Bound<'py, PyMultiHostUrl>;
+    type Error = PyErr;
+
+    fn into_pyobject(self, py: Python<'py>) -> PyResult<Self::Output> {
         match self {
-            EitherMultiHostUrl::Py(py_multi_url) => py_multi_url.into_py(py),
-            EitherMultiHostUrl::Rust(rust_multi_url) => rust_multi_url.into_py(py),
+            EitherMultiHostUrl::Py(py_multi_url) => Ok(py_multi_url),
+            EitherMultiHostUrl::Rust(rust_multi_url) => Bound::new(py, rust_multi_url),
         }
     }
 }

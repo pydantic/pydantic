@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
-use pyo3::prelude::*;
 use pyo3::types::{PyComplex, PyDict};
+use pyo3::{prelude::*, IntoPyObjectExt};
 
 use crate::definitions::DefinitionsBuilder;
 
@@ -33,10 +33,10 @@ impl TypeSerializer for ComplexSerializer {
     ) -> PyResult<PyObject> {
         let py = value.py();
         match value.downcast::<PyComplex>() {
-            Ok(py_complex) => Ok(match extra.mode {
-                SerMode::Json => complex_to_str(py_complex).into_py(py),
-                _ => value.into_py(py),
-            }),
+            Ok(py_complex) => match extra.mode {
+                SerMode::Json => complex_to_str(py_complex).into_py_any(py),
+                _ => Ok(value.clone().unbind()),
+            },
             Err(_) => {
                 extra.warnings.on_fallback_py(self.get_name(), value, extra)?;
                 infer_to_python(value, include, exclude, extra)
