@@ -74,7 +74,7 @@ impl Validator for TimeDeltaValidator {
         let timedelta = input
             .validate_timedelta(state.strict_or(self.strict), self.microseconds_precision)?
             .unpack(state);
-        let py_timedelta = timedelta.try_into_py(py)?;
+        let py_timedelta = timedelta.clone().into_pyobject(py)?;
         if let Some(constraints) = &self.constraints {
             let raw_timedelta = timedelta.to_duration()?;
 

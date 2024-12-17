@@ -1,5 +1,5 @@
-use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyFrozenSet};
+use pyo3::{prelude::*, IntoPyObjectExt};
 
 use crate::errors::ValResult;
 use crate::input::{validate_iter_to_set, BorrowInput, ConsumeIterator, Input, ValidatedSet};
@@ -46,7 +46,7 @@ impl Validator for FrozenSetValidator {
             fail_fast: self.fail_fast,
         })??;
         min_length_check!(input, "Frozenset", self.min_length, f_set);
-        Ok(f_set.into_py(py))
+        Ok(f_set.into_py_any(py)?)
     }
 
     fn get_name(&self) -> &str {

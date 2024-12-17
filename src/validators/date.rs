@@ -1,6 +1,7 @@
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDate, PyDict, PyString};
+use pyo3::IntoPyObjectExt;
 use speedate::{Date, Time};
 use strum::EnumMessage;
 
@@ -97,7 +98,7 @@ impl Validator for DateValidator {
                 }
             }
         }
-        Ok(date.try_into_py(py)?)
+        Ok(date.into_py_any(py)?)
     }
 
     fn get_name(&self) -> &str {

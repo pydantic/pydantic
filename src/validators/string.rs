@@ -1,6 +1,7 @@
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyString};
+use pyo3::IntoPyObjectExt;
 use regex::Regex;
 
 use crate::build_tools::{is_strict, py_schema_error_type, schema_or_config, schema_or_config_same};
@@ -49,7 +50,12 @@ impl Validator for StrValidator {
     ) -> ValResult<PyObject> {
         input
             .validate_str(state.strict_or(self.strict), self.coerce_numbers_to_str)
-            .map(|val_match| val_match.unpack(state).as_py_string(py, state.cache_str()).into_py(py))
+            .and_then(|val_match| {
+                Ok(val_match
+                    .unpack(state)
+                    .as_py_string(py, state.cache_str())
+                    .into_py_any(py)?)
+            })
     }
 
     fn get_name(&self) -> &str {
@@ -138,7 +144,7 @@ impl Validator for StrConstrainedValidator {
             // we haven't modified the string, return the original as it might be a PyString
             either_str.as_py_string(py, state.cache_str())
         };
-        Ok(py_string.into_py(py))
+        Ok(py_string.into_py_any(py)?)
     }
 
     fn get_name(&self) -> &str {

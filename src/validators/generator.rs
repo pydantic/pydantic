@@ -2,7 +2,7 @@ use std::fmt;
 use std::sync::Arc;
 
 use pyo3::types::PyDict;
-use pyo3::{prelude::*, PyTraverseError, PyVisit};
+use pyo3::{prelude::*, IntoPyObjectExt, PyTraverseError, PyVisit};
 
 use crate::errors::{ErrorType, LocItem, ValError, ValResult};
 use crate::input::{BorrowInput, GenericIterator, Input};
@@ -72,7 +72,6 @@ impl Validator for GeneratorValidator {
         let iterator = input.validate_iter()?.into_static();
         let validator = self.item_validator.as_ref().map(|v| {
             InternalValidator::new(
-                py,
                 "ValidatorIterator",
                 v.clone(),
                 state,
@@ -89,7 +88,7 @@ impl Validator for GeneratorValidator {
             hide_input_in_errors: self.hide_input_in_errors,
             validation_error_cause: self.validation_error_cause,
         };
-        Ok(v_iterator.into_py(py))
+        Ok(v_iterator.into_py_any(py)?)
     }
 
     fn get_name(&self) -> &str {
@@ -240,7 +239,6 @@ impl fmt::Debug for InternalValidator {
 
 impl InternalValidator {
     pub fn new(
-        py: Python,
         name: &str,
         validator: Arc<CombinedValidator>,
         state: &ValidationState,
@@ -254,8 +252,8 @@ impl InternalValidator {
             data: extra.data.as_ref().map(|d| d.clone().into()),
             strict: extra.strict,
             from_attributes: extra.from_attributes,
-            context: extra.context.map(|d| d.into_py(py)),
-            self_instance: extra.self_instance.map(|d| d.into_py(py)),
+            context: extra.context.map(|d| d.clone().unbind()),
+            self_instance: extra.self_instance.map(|d| d.clone().unbind()),
             recursion_guard: state.recursion_guard.clone(),
             exactness: state.exactness,
             validation_mode: extra.input_type,

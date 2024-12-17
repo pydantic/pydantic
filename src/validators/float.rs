@@ -3,6 +3,7 @@ use std::cmp::Ordering;
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
+use pyo3::IntoPyObjectExt;
 
 use crate::build_tools::{is_strict, schema_or_config_same};
 use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValResult};
@@ -74,7 +75,7 @@ impl Validator for FloatValidator {
         if !self.allow_inf_nan && !either_float.as_f64().is_finite() {
             return Err(ValError::new(ErrorTypeDefaults::FiniteNumber, input));
         }
-        Ok(either_float.into_py(py))
+        Ok(either_float.into_py_any(py)?)
     }
 
     fn get_name(&self) -> &str {
@@ -164,7 +165,7 @@ impl Validator for ConstrainedFloatValidator {
                 ));
             }
         }
-        Ok(either_float.into_py(py))
+        Ok(either_float.into_py_any(py)?)
     }
 
     fn get_name(&self) -> &str {

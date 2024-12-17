@@ -4,6 +4,7 @@ use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList};
 
+use pyo3::IntoPyObjectExt;
 use serde::ser::SerializeSeq;
 
 use crate::definitions::DefinitionsBuilder;
@@ -72,7 +73,7 @@ impl TypeSerializer for ListSerializer {
                         )?);
                     }
                 }
-                Ok(items.into_py(py))
+                items.into_py_any(py)
             }
             Err(_) => {
                 extra.warnings.on_fallback_py(self.get_name(), value, extra)?;
