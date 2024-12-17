@@ -168,7 +168,17 @@ def unpack_annotated(annotation: Any, /) -> tuple[Any, list[Any]]:
         typ, sub_meta = unpack_annotated(typ)
         metadata = sub_meta + metadata
         return typ, metadata
-    elif is_type_alias_type(annotation):
+
+    if sys.version_info[:2] == (3, 10):
+        # Parametrized PEP 695 type aliases are instances of `types.GenericAlias` in typing_extensions>=4.13.0.
+        # On Python 3.10, with `Alias[int]` being a such an instance of `GenericAlias`,
+        # `isinstance(Alias[int], TypeAliasType)` returns `True`.
+        # See https://github.com/python/cpython/issues/89828.
+        ann_is_type_alias = type(annotation) is not types.GenericAlias and is_type_alias_type(annotation)
+    else:
+        ann_is_type_alias = is_type_alias_type(annotation)
+
+    if ann_is_type_alias:
         try:
             value = annotation.__value__
         except NameError:
