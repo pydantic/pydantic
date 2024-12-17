@@ -1115,6 +1115,15 @@ to help you monitor and understand your
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#json-schema-and-field-validators" class="md-nav__link">
+    <span class="md-ellipsis">
+      JSON Schema and field validators
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -3154,6 +3163,15 @@ to help you monitor and understand your
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#json-schema-and-field-validators" class="md-nav__link">
+    <span class="md-ellipsis">
+      JSON Schema and field validators
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -4001,6 +4019,59 @@ logic applies.</p>
 </code></pre></div></p>
 </li>
 </ul>
+<h2 id="json-schema-and-field-validators">JSON Schema and field validators<a class="headerlink" href="#json-schema-and-field-validators" title="Permanent link">&para;</a></h2>
+<p>When using <a href="#field-before-validator"><em>before</em></a>, <a href="#field-plain-validator"><em>plain</em></a> or <a href="#field-wrap-validator"><em>wrap</em></a>
+field validators, the accepted input type may be different from the field annotation.</p>
+<p>Consider the following example:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">field_validator</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">value</span><span class="p">:</span> <span class="nb">str</span>
+
+    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;value&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;before&#39;</span><span class="p">)</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">cast_ints</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">value</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="s1">&#39;a&#39;</span><span class="p">))</span>
+<span class="c1">#&gt; value=&#39;a&#39;</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+<span class="c1">#&gt; value=&#39;1&#39;</span>
+</code></pre></div>
+<p>While the type hint for <code>value</code> is <code>str</code>, the <code>cast_ints</code> validator also allows integers. To specify the correct
+input type, the <code>json_schema_input_type</code> argument can be provided:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">field_validator</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">value</span><span class="p">:</span> <span class="nb">str</span>
+
+    <span class="nd">@field_validator</span><span class="p">(</span>
+        <span class="s1">&#39;value&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;before&#39;</span><span class="p">,</span> <span class="n">json_schema_input_type</span><span class="o">=</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span>
+    <span class="p">)</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">cast_ints</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">value</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="o">.</span><span class="n">model_json_schema</span><span class="p">()[</span><span class="s1">&#39;properties&#39;</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">])</span>
+<span class="c1">#&gt; {&#39;anyOf&#39;: [{&#39;type&#39;: &#39;integer&#39;}, {&#39;type&#39;: &#39;string&#39;}], &#39;title&#39;: &#39;Value&#39;}</span>
+</code></pre></div>
+<p>As a convenience, Pydantic will use the field type if the argument is not provided (unless you are using
+a <a href="#field-plain-validator"><em>plain</em></a> validator, in which case <code>json_schema_input_type</code> defaults to
+<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Any"><code>Any</code></a> as the field type is completely discarded).</p>
 
 
 
