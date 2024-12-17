@@ -3,9 +3,9 @@ use std::borrow::Cow;
 use std::fmt;
 
 use pyo3::exceptions::{PyKeyError, PyTypeError};
-use pyo3::prelude::*;
 use pyo3::sync::GILOnceCell;
 use pyo3::types::{PyDict, PyList};
+use pyo3::{prelude::*, IntoPyObjectExt};
 
 use ahash::AHashMap;
 use num_bigint::BigInt;
@@ -766,7 +766,7 @@ impl ErrorType {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, IntoPyObject, IntoPyObjectRef)]
 pub enum Number {
     Int(i64),
     BigInt(BigInt),
@@ -826,11 +826,6 @@ impl fmt::Display for Number {
 }
 impl ToPyObject for Number {
     fn to_object(&self, py: Python<'_>) -> PyObject {
-        match self {
-            Self::Int(i) => i.into_py(py),
-            Self::BigInt(i) => i.clone().into_py(py),
-            Self::Float(f) => f.into_py(py),
-            Self::String(s) => s.into_py(py),
-        }
+        self.into_py_any(py).unwrap()
     }
 }

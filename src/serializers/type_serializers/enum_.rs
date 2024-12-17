@@ -67,7 +67,7 @@ impl TypeSerializer for EnumSerializer {
                 }
             } else {
                 // if we're not in JSON mode, we assume the value is safe to return directly
-                Ok(value.into_py(py))
+                Ok(value.clone().unbind())
             }
         } else {
             extra.warnings.on_fallback_py(self.get_name(), value, extra)?;

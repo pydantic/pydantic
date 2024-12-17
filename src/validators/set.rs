@@ -1,5 +1,5 @@
-use pyo3::prelude::*;
 use pyo3::types::{PyDict, PySet};
+use pyo3::{prelude::*, IntoPyObjectExt};
 
 use crate::errors::ValResult;
 use crate::input::{validate_iter_to_set, BorrowInput, ConsumeIterator, Input, ValidatedSet};
@@ -77,7 +77,7 @@ impl Validator for SetValidator {
             fail_fast: self.fail_fast,
         })??;
         min_length_check!(input, "Set", self.min_length, set);
-        Ok(set.into_py(py))
+        Ok(set.into_py_any(py)?)
     }
 
     fn get_name(&self) -> &str {

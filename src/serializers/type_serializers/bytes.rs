@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
-use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyDict};
+use pyo3::{prelude::*, IntoPyObjectExt};
 
 use crate::definitions::DefinitionsBuilder;
 use crate::serializers::config::{BytesMode, FromConfig};
@@ -44,9 +44,9 @@ impl TypeSerializer for BytesSerializer {
             Ok(py_bytes) => match extra.mode {
                 SerMode::Json => self
                     .bytes_mode
-                    .bytes_to_string(py, py_bytes.as_bytes())
-                    .map(|s| s.into_py(py)),
-                _ => Ok(value.into_py(py)),
+                    .bytes_to_string(py, py_bytes.as_bytes())?
+                    .into_py_any(py),
+                _ => Ok(value.clone().unbind()),
             },
             Err(_) => {
                 extra.warnings.on_fallback_py(self.get_name(), value, extra)?;

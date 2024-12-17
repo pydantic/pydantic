@@ -127,7 +127,7 @@ impl BuildSerializer for FunctionPlainSerializer {
 
         let name = format!("plain_function[{function_name}]");
         Ok(Self {
-            func: function.into_py(py),
+            func: function.unbind(),
             function_name,
             name,
             return_serializer,
@@ -153,7 +153,7 @@ impl FunctionPlainSerializer {
             let v = if self.is_field_serializer {
                 if let Some(model) = extra.model {
                     if self.info_arg {
-                        let info = SerializationInfo::new(py, include, exclude, extra, self.is_field_serializer)?;
+                        let info = SerializationInfo::new(include, exclude, extra, self.is_field_serializer)?;
                         self.func.call1(py, (model, value, info))?
                     } else {
                         self.func.call1(py, (model, value))?
@@ -162,14 +162,14 @@ impl FunctionPlainSerializer {
                     return Err(PyRuntimeError::new_err("Function plain serializer expected to be run inside the context of a model field but no model was found"));
                 }
             } else if self.info_arg {
-                let info = SerializationInfo::new(py, include, exclude, extra, self.is_field_serializer)?;
+                let info = SerializationInfo::new(include, exclude, extra, self.is_field_serializer)?;
                 self.func.call1(py, (value, info))?
             } else {
                 self.func.call1(py, (value,))?
             };
             Ok((true, v))
         } else {
-            Ok((false, value.into_py(py)))
+            Ok((false, value.clone().unbind()))
         }
     }
 
@@ -371,7 +371,7 @@ impl BuildSerializer for FunctionWrapSerializer {
         let name = format!("wrap_function[{function_name}, {}]", serializer.get_name());
         Ok(Self {
             serializer: Arc::new(serializer),
-            func: function.into_py(py),
+            func: function.into(),
             function_name,
             name,
             return_serializer: Arc::new(return_serializer),
@@ -393,11 +393,11 @@ impl FunctionWrapSerializer {
     ) -> PyResult<(bool, PyObject)> {
         let py = value.py();
         if self.when_used.should_use(value, extra) {
-            let serialize = SerializationCallable::new(py, &self.serializer, include, exclude, extra);
+            let serialize = SerializationCallable::new(&self.serializer, include, exclude, extra);
             let v = if self.is_field_serializer {
                 if let Some(model) = extra.model {
                     if self.info_arg {
-                        let info = SerializationInfo::new(py, include, exclude, extra, self.is_field_serializer)?;
+                        let info = SerializationInfo::new(include, exclude, extra, self.is_field_serializer)?;
                         self.func.call1(py, (model, value, serialize, info))?
                     } else {
                         self.func.call1(py, (model, value, serialize))?
@@ -406,14 +406,14 @@ impl FunctionWrapSerializer {
                     return Err(PyRuntimeError::new_err("Function wrap serializer expected to be run inside the context of a model field but no model was found"));
                 }
             } else if self.info_arg {
-                let info = SerializationInfo::new(py, include, exclude, extra, self.is_field_serializer)?;
+                let info = SerializationInfo::new(include, exclude, extra, self.is_field_serializer)?;
                 self.func.call1(py, (value, serialize, info))?
             } else {
                 self.func.call1(py, (value, serialize))?
             };
             Ok((true, v))
         } else {
-            Ok((false, value.into_py(py)))
+            Ok((false, value.clone().unbind()))
         }
     }
 
@@ -446,7 +446,6 @@ pub(crate) struct SerializationCallable {
 
 impl SerializationCallable {
     pub fn new(
-        py: Python,
         serializer: &Arc<CombinedSerializer>,
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
@@ -456,8 +455,8 @@ impl SerializationCallable {
             serializer: serializer.clone(),
             extra_owned: ExtraOwned::new(extra),
             filter: AnyFilter::new(),
-            include: include.map(|v| v.into_py(py)),
-            exclude: exclude.map(|v| v.into_py(py)),
+            include: include.map(|v| v.clone().unbind()),
+            exclude: exclude.map(|v| v.clone().unbind()),
         }
     }
 
@@ -563,7 +562,6 @@ struct SerializationInfo {
 
 impl SerializationInfo {
     fn new(
-        py: Python,
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
         extra: &Extra,
@@ -572,9 +570,9 @@ impl SerializationInfo {
         if is_field_serializer {
             match extra.field_name {
                 Some(field_name) => Ok(Self {
-                    include: include.map(|i| i.into_py(py)),
-                    exclude: exclude.map(|e| e.into_py(py)),
-                    context: extra.context.map(|c| c.into_py(py)),
+                    include: include.map(|i| i.clone().unbind()),
+                    exclude: exclude.map(|e| e.clone().unbind()),
+                    context: extra.context.map(|c| c.clone().unbind()),
                     _mode: extra.mode.clone(),
                     by_alias: extra.by_alias,
                     exclude_unset: extra.exclude_unset,
@@ -590,9 +588,9 @@ impl SerializationInfo {
             }
         } else {
             Ok(Self {
-                include: include.map(|i| i.into_py(py)),
-                exclude: exclude.map(|e| e.into_py(py)),
-                context: extra.context.map(|c| c.into_py(py)),
+                include: include.map(|i| i.clone().unbind()),
+                exclude: exclude.map(|e| e.clone().unbind()),
+                context: extra.context.map(|c| c.clone().unbind()),
                 _mode: extra.mode.clone(),
                 by_alias: extra.by_alias,
                 exclude_unset: extra.exclude_unset,

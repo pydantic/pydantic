@@ -346,7 +346,6 @@ impl Validator for FunctionWrapValidator {
     ) -> ValResult<PyObject> {
         let handler = ValidatorCallable {
             validator: InternalValidator::new(
-                py,
                 "ValidatorCallable",
                 self.validator.clone(),
                 state,
@@ -371,7 +370,6 @@ impl Validator for FunctionWrapValidator {
     ) -> ValResult<PyObject> {
         let handler = AssignmentValidatorCallable {
             validator: InternalValidator::new(
-                py,
                 "AssignmentValidatorCallable",
                 self.validator.clone(),
                 state,
@@ -464,7 +462,7 @@ macro_rules! py_err_string {
             Ok(py_string) => match py_string.to_str() {
                 Ok(_) => ValError::new(
                     ErrorType::$type_member {
-                        error: Some($py_err.into_py($py)),
+                        error: pyo3::IntoPyObjectExt::into_py_any($py_err, $py).ok(),
                         context: None,
                     },
                     $input,

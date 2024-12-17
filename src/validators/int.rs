@@ -2,6 +2,7 @@ use num_bigint::BigInt;
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
+use pyo3::IntoPyObjectExt;
 
 use crate::build_tools::is_strict;
 use crate::errors::{ErrorType, ValError, ValResult};
@@ -51,7 +52,7 @@ impl Validator for IntValidator {
     ) -> ValResult<PyObject> {
         input
             .validate_int(state.strict_or(self.strict))
-            .map(|val_match| val_match.unpack(state).into_py(py))
+            .and_then(|val_match| Ok(val_match.unpack(state).into_py_any(py)?))
     }
 
     fn get_name(&self) -> &str {
@@ -136,7 +137,7 @@ impl Validator for ConstrainedIntValidator {
                 ));
             }
         }
-        Ok(either_int.into_py(py))
+        Ok(either_int.into_py_any(py)?)
     }
 
     fn get_name(&self) -> &str {

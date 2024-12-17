@@ -46,7 +46,7 @@ impl Validator for ComplexValidator {
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         let res = input.validate_complex(self.strict, py)?.unpack(state);
-        Ok(res.into_py(py))
+        Ok(res.into_pyobject(py)?.into())
     }
 
     fn get_name(&self) -> &str {

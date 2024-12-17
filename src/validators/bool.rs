@@ -1,5 +1,5 @@
-use pyo3::prelude::*;
 use pyo3::types::PyDict;
+use pyo3::{prelude::*, IntoPyObjectExt};
 
 use crate::build_tools::is_strict;
 use crate::errors::ValResult;
@@ -40,7 +40,7 @@ impl Validator for BoolValidator {
         // and back again, might be worth profiling?
         input
             .validate_bool(state.strict_or(self.strict))
-            .map(|val_match| val_match.unpack(state).into_py(py))
+            .and_then(|val_match| Ok(val_match.unpack(state).into_py_any(py)?))
     }
 
     fn get_name(&self) -> &str {

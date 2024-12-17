@@ -306,7 +306,7 @@ impl Validator for TupleValidator {
         }
 
         if errors.is_empty() {
-            Ok(PyTuple::new(py, output)?.into_py(py))
+            Ok(PyTuple::new(py, output)?.into())
         } else {
             Err(ValError::LineErrors(errors))
         }

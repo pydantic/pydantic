@@ -1,8 +1,8 @@
 use std::ptr::null_mut;
 
 use pyo3::exceptions::PyTypeError;
-use pyo3::ffi;
 use pyo3::types::{PyDict, PySet, PyString, PyTuple, PyType};
+use pyo3::{ffi, IntoPyObjectExt};
 use pyo3::{intern, prelude::*};
 
 use super::function::convert_err;
@@ -205,7 +205,7 @@ impl Validator for ModelValidator {
                 let output = self.validator.validate(py, field_value, state)?;
 
                 force_setattr(py, model, intern!(py, ROOT_FIELD), output)?;
-                Ok(model.into_py(py))
+                Ok(model.into_py_any(py)?)
             };
         }
         let old_dict = model.getattr(intern!(py, DUNDER_DICT))?.downcast_into::<PyDict>()?;
@@ -240,7 +240,7 @@ impl Validator for ModelValidator {
             intern!(py, DUNDER_MODEL_EXTRA_KEY),
             validated_extra.to_object(py),
         )?;
-        Ok(model.into_py(py))
+        Ok(model.into_py_any(py)?)
     }
 
     fn get_name(&self) -> &str {

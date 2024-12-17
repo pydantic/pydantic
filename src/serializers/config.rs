@@ -2,9 +2,9 @@ use std::borrow::Cow;
 use std::str::{from_utf8, FromStr, Utf8Error};
 
 use base64::Engine;
-use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDelta, PyDict, PyString};
+use pyo3::{intern, IntoPyObjectExt};
 
 use serde::ser::Error;
 
@@ -112,30 +112,30 @@ impl TimedeltaMode {
         py_timedelta.call_method0(intern!(py_timedelta.py(), "total_seconds"))
     }
 
-    pub fn either_delta_to_json(self, py: Python, either_delta: &EitherTimedelta) -> PyResult<PyObject> {
+    pub fn either_delta_to_json(self, py: Python, either_delta: EitherTimedelta) -> PyResult<PyObject> {
         match self {
             Self::Iso8601 => {
                 let d = either_delta.to_duration()?;
-                Ok(d.to_string().into_py(py))
+                d.to_string().into_py_any(py)
             }
             Self::Float => {
                 // convert to int via a py timedelta not duration since we know this this case the input would have
                 // been a py timedelta
-                let py_timedelta = either_delta.try_into_py(py)?;
+                let py_timedelta = either_delta.into_pyobject(py)?;
                 let seconds = Self::total_seconds(&py_timedelta)?;
-                Ok(seconds.into_py(py))
+                Ok(seconds.unbind())
             }
         }
     }
 
-    pub fn json_key<'py>(self, py: Python, either_delta: &EitherTimedelta) -> PyResult<Cow<'py, str>> {
+    pub fn json_key<'py>(self, py: Python, either_delta: EitherTimedelta) -> PyResult<Cow<'py, str>> {
         match self {
             Self::Iso8601 => {
                 let d = either_delta.to_duration()?;
                 Ok(d.to_string().into())
             }
             Self::Float => {
-                let py_timedelta = either_delta.try_into_py(py)?;
+                let py_timedelta = either_delta.into_pyobject(py)?;
                 let seconds: f64 = Self::total_seconds(&py_timedelta)?.extract()?;
                 Ok(seconds.to_string().into())
             }
@@ -145,7 +145,7 @@ impl TimedeltaMode {
     pub fn timedelta_serialize<S: serde::ser::Serializer>(
         self,
         py: Python,
-        either_delta: &EitherTimedelta,
+        either_delta: EitherTimedelta,
         serializer: S,
     ) -> Result<S::Ok, S::Error> {
         match self {
@@ -154,7 +154,7 @@ impl TimedeltaMode {
                 serializer.serialize_str(&d.to_string())
             }
             Self::Float => {
-                let py_timedelta = either_delta.try_into_py(py).map_err(py_err_se_err)?;
+                let py_timedelta = either_delta.into_pyobject(py).map_err(py_err_se_err)?;
                 let seconds = Self::total_seconds(&py_timedelta).map_err(py_err_se_err)?;
                 let seconds: f64 = seconds.extract().map_err(py_err_se_err)?;
                 serializer.serialize_f64(seconds)

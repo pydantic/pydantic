@@ -1,8 +1,8 @@
 use std::borrow::Cow;
 
-use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyFrozenSet, PyList, PySet};
+use pyo3::{intern, IntoPyObjectExt};
 
 use serde::ser::SerializeSeq;
 
@@ -65,8 +65,8 @@ macro_rules! build_serializer {
                             items.push(item_serializer.to_python(&element, include, exclude, extra)?);
                         }
                         match extra.mode {
-                            SerMode::Json => Ok(PyList::new(py, items)?.into_py(py)),
-                            _ => Ok(<$py_type>::new(py, &items)?.into_py(py)),
+                            SerMode::Json => Ok(PyList::new(py, items)?.into()),
+                            _ => <$py_type>::new(py, &items)?.into_py_any(py),
                         }
                     }
                     Err(_) => {

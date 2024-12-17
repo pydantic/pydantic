@@ -383,7 +383,7 @@ impl TypeSerializer for GeneralFieldsSerializer {
             }
         }
         self.add_computed_fields_python(model, &output_dict, include, exclude, extra)?;
-        Ok(output_dict.into_py(py))
+        Ok(output_dict.into())
     }
 
     fn json_key<'a>(&self, key: &'a Bound<'_, PyAny>, extra: &Extra) -> PyResult<Cow<'a, str>> {
