@@ -709,6 +709,11 @@ print(json.dumps(Model.model_json_schema(), indent=2))
 """
 ```
 
+!!! note
+    You might be tempted to use the [`WithJsonSchema`][pydantic.json_schema.WithJsonSchema] annotation
+    to fine-tune the JSON Schema of fields having [validators](./validators.md) attached. Instead, it
+    is recommended to use [the `json_schema_input_type` argument](./validators.md#json-schema-and-field-validators).
+
 ### `SkipJsonSchema` annotation
 
 ??? api "API Documentation"
