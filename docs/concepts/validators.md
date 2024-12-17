@@ -832,3 +832,65 @@ Pydantic provides a few special utilities that can be used to customize validati
   print(Model(name=None))
   #> name='default_name'
   ```
+
+## JSON Schema and field validators
+
+When using [*before*](#field-before-validator), [*plain*](#field-plain-validator) or [*wrap*](#field-wrap-validator)
+field validators, the accepted input type may be different from the field annotation.
+
+Consider the following example:
+
+```python
+from typing import Any
+
+from pydantic import BaseModel, field_validator
+
+
+class Model(BaseModel):
+    value: str
+
+    @field_validator('value', mode='before')
+    @classmethod
+    def cast_ints(cls, value: Any) -> Any:
+        if isinstance(value, int):
+            return str(value)
+        else:
+            return value
+
+
+print(Model(value='a'))
+#> value='a'
+print(Model(value=1))
+#> value='1'
+```
+
+While the type hint for `value` is `str`, the `cast_ints` validator also allows integers. To specify the correct
+input type, the `json_schema_input_type` argument can be provided:
+
+```python
+from typing import Any, Union
+
+from pydantic import BaseModel, field_validator
+
+
+class Model(BaseModel):
+    value: str
+
+    @field_validator(
+        'value', mode='before', json_schema_input_type=Union[int, str]
+    )
+    @classmethod
+    def cast_ints(cls, value: Any) -> Any:
+        if isinstance(value, int):
+            return str(value)
+        else:
+            return value
+
+
+print(Model.model_json_schema()['properties']['value'])
+#> {'anyOf': [{'type': 'integer'}, {'type': 'string'}], 'title': 'Value'}
+```
+
+As a convenience, Pydantic will use the field type if the argument is not provided (unless you are using
+a [*plain*](#field-plain-validator) validator, in which case `json_schema_input_type` defaults to
+[`Any`][typing.Any] as the field type is completely discarded).
