@@ -27,7 +27,7 @@ _inspect_validator = _decorators.inspect_validator
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
 class AfterValidator:
     """!!! abstract "Usage Documentation"
-        [field **after** validators](../concepts/validators.md#field-after-validator)
+        [field *after* validators](../concepts/validators.md#field-after-validator)
 
     A metadata class that indicates that a validation should be applied **after** the inner validation logic.
 
@@ -88,7 +88,7 @@ class AfterValidator:
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
 class BeforeValidator:
     """!!! abstract "Usage Documentation"
-        [field **before** validator](../concepts/validators.md#field-before-validator)
+        [field *before* validators](../concepts/validators.md#field-before-validator)
 
     A metadata class that indicates that a validation should be applied **before** the inner validation logic.
 
@@ -162,7 +162,7 @@ class BeforeValidator:
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
 class PlainValidator:
     """!!! abstract "Usage Documentation"
-        [field **plain** validator](../concepts/validators.md#field-plain-validator)
+        [field *plain* validators](../concepts/validators.md#field-plain-validator)
 
     A metadata class that indicates that a validation should be applied **instead** of the inner validation logic.
 
@@ -268,7 +268,7 @@ class PlainValidator:
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
 class WrapValidator:
     """!!! abstract "Usage Documentation"
-        [field **wrap** validator](../concepts/validators.md#field-wrap-validator)
+        [field *wrap* validators](../concepts/validators.md#field-wrap-validator)
 
     A metadata class that indicates that a validation should be applied **around** the inner validation logic.
 

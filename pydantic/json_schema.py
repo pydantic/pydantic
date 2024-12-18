@@ -1,5 +1,5 @@
 """!!! abstract "Usage Documentation"
-    [Json Schema](../concepts/json_schema.md)
+    [JSON Schema](../concepts/json_schema.md)
 
 The `json_schema` module contains classes and functions to allow the way [JSON Schema](https://json-schema.org/)
 is generated to be customized.
