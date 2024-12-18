@@ -5830,7 +5830,7 @@ as the performance difference is minimal if repeated strings are rare.</p>
 
         <div class="admonition abstract">
 <p class="admonition-title">Usage Documentation</p>
-<p><a href="../../concepts/config/#configuration-with-dataclass-from-the-standard-library-or-typeddict">Configuration with <code>dataclass</code> from the standard library or <code>TypedDict</code></a></p>
+<p><a href="../../concepts/config/#configuration-with-dataclass-from-the-standard-library-or-typeddict">Configuration with a <code>dataclass</code> or <code>TypedDict</code></a></p>
 </div>
 <p>A convenience decorator to set a <a href="./">Pydantic configuration</a> on a <code>TypedDict</code> or a <code>dataclass</code> from the standard library.</p>
 <p>Although the configuration can be set using the <code>__pydantic_config__</code> attribute, it does not play well with type checkers,
@@ -5894,8 +5894,10 @@ especially with <code>TypedDict</code>.</p>
 <span class="normal">1043</span>
 <span class="normal">1044</span>
 <span class="normal">1045</span>
-<span class="normal">1046</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">with_config</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="n">ConfigDict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_TypeT</span><span class="p">],</span> <span class="n">_TypeT</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Usage docs: https://docs.pydantic.dev/2.10/concepts/config/#configuration-with-dataclass-from-the-standard-library-or-typeddict</span>
+<span class="normal">1046</span>
+<span class="normal">1047</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">with_config</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="n">ConfigDict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_TypeT</span><span class="p">],</span> <span class="n">_TypeT</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;!!! abstract &quot;Usage Documentation&quot;</span>
+<span class="sd">        [Configuration with a `dataclass` or `TypedDict`](../concepts/config.md#configuration-with-dataclass-from-the-standard-library-or-typeddict)</span>
 
 <span class="sd">    A convenience decorator to set a [Pydantic configuration](config.md) on a `TypedDict` or a `dataclass` from the standard library.</span>
 

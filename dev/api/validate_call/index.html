@@ -3152,14 +3152,16 @@ to help you monitor and understand your
 <span class="normal">112</span>
 <span class="normal">113</span>
 <span class="normal">114</span>
-<span class="normal">115</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">validate_call</span><span class="p">(</span>
+<span class="normal">115</span>
+<span class="normal">116</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">validate_call</span><span class="p">(</span>
     <span class="n">func</span><span class="p">:</span> <span class="n">AnyCallableT</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">/</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">config</span><span class="p">:</span> <span class="n">ConfigDict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">validate_return</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AnyCallableT</span> <span class="o">|</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">AnyCallableT</span><span class="p">],</span> <span class="n">AnyCallableT</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Usage docs: https://docs.pydantic.dev/2.10/concepts/validation_decorator/</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;!!! abstract &quot;Usage Documentation&quot;</span>
+<span class="sd">        [Validation Decorator](../concepts/validation_decorator.md)</span>
 
 <span class="sd">    Returns a decorated wrapper around the function that validates the arguments and, optionally, the return value.</span>
 
