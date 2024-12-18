@@ -761,6 +761,10 @@ class PydanticModelTransformer:
                 )
                 node.type = AnyType(TypeOfAny.from_error)
 
+        if node.is_final and has_default:
+            # TODO this path should be removed (see https://github.com/pydantic/pydantic/issues/11119)
+            return PydanticModelClassVar(lhs.name)
+
         alias, has_dynamic_alias = self.get_alias_info(stmt)
         if has_dynamic_alias and not model_config.populate_by_name and self.plugin_config.warn_required_dynamic_aliases:
             error_required_dynamic_aliases(self._api, stmt)

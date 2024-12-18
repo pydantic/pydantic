@@ -246,6 +246,9 @@ def get_model_typevars_map(cls: type[BaseModel]) -> dict[TypeVar, Any] | None:
     generic_metadata = cls.__pydantic_generic_metadata__
     origin = generic_metadata['origin']
     args = generic_metadata['args']
+    if not args:
+        # No need to go into `iter_contained_typevars`:
+        return {}
     return dict(zip(iter_contained_typevars(origin), args))
 
 
