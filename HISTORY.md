@@ -18,9 +18,6 @@
 
 ### New Contributors
 
-* @FyZzyss made their first contribution in [#10789](https://github.com/pydantic/pydantic/pull/10789)
-* @tamird made their first contribution in [#10948](https://github.com/pydantic/pydantic/pull/10948)
-* @felixxm made their first contribution in [#11077](https://github.com/pydantic/pydantic/pull/11077)
 * @alexprabhat99 made their first contribution in [#11082](https://github.com/pydantic/pydantic/pull/11082)
 * @Kharianne made their first contribution in [#11111](https://github.com/pydantic/pydantic/pull/11111)
 
