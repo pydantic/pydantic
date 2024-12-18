@@ -26,7 +26,8 @@ _inspect_validator = _decorators.inspect_validator
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
 class AfterValidator:
-    """Usage docs: https://docs.pydantic.dev/2.10/concepts/validators/#field-validators
+    """!!! abstract "Usage Documentation"
+        [field *after* validators](../concepts/validators.md#field-after-validator)
 
     A metadata class that indicates that a validation should be applied **after** the inner validation logic.
 
@@ -86,7 +87,8 @@ class AfterValidator:
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
 class BeforeValidator:
-    """Usage docs: https://docs.pydantic.dev/2.10/concepts/validators/#field-validators
+    """!!! abstract "Usage Documentation"
+        [field *before* validators](../concepts/validators.md#field-before-validator)
 
     A metadata class that indicates that a validation should be applied **before** the inner validation logic.
 
@@ -153,7 +155,8 @@ class BeforeValidator:
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
 class PlainValidator:
-    """Usage docs: https://docs.pydantic.dev/2.10/concepts/validators/#field-validators
+    """!!! abstract "Usage Documentation"
+        [field *plain* validators](../concepts/validators.md#field-plain-validator)
 
     A metadata class that indicates that a validation should be applied **instead** of the inner validation logic.
 
@@ -251,7 +254,8 @@ class PlainValidator:
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
 class WrapValidator:
-    """Usage docs: https://docs.pydantic.dev/2.10/concepts/validators/#field-validators
+    """!!! abstract "Usage Documentation"
+        [field *wrap* validators](../concepts/validators.md#field-wrap-validator)
 
     A metadata class that indicates that a validation should be applied **around** the inner validation logic.
 
@@ -411,7 +415,8 @@ def field_validator(
     check_fields: bool | None = None,
     json_schema_input_type: Any = PydanticUndefined,
 ) -> Callable[[Any], Any]:
-    """Usage docs: https://docs.pydantic.dev/2.10/concepts/validators/#field-validators
+    """!!! abstract "Usage Documentation"
+        [field validators](../concepts/validators.md#field-validators)
 
     Decorate methods on the class indicating that they should be used to validate fields.
 
@@ -668,7 +673,8 @@ def model_validator(
     *,
     mode: Literal['wrap', 'before', 'after'],
 ) -> Any:
-    """Usage docs: https://docs.pydantic.dev/2.10/concepts/validators/#model-validators
+    """!!! abstract "Usage Documentation"
+        [Model Validators](../concepts/validators.md#model-validators)
 
     Decorate model methods for validation purposes.
 

@@ -33,7 +33,8 @@ RootModelRootType = typing.TypeVar('RootModelRootType')
 
 
 class RootModel(BaseModel, typing.Generic[RootModelRootType], metaclass=_RootModelMetaclass):
-    """Usage docs: https://docs.pydantic.dev/2.10/concepts/models/#rootmodel-and-custom-root-types
+    """!!! abstract "Usage Documentation"
+        [`RootModel` and Custom Root Types](../concepts/models.md#rootmodel-and-custom-root-types)
 
     A Pydantic `BaseModel` for the root object of the model.
 
