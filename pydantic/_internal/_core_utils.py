@@ -280,11 +280,37 @@ class _WalkCoreSchema:
             schema['values_schema'] = self.walk(values_schema, f)
         return schema
 
-    def handle_function_schema(self, schema: AnyFunctionSchema, f: Walk) -> core_schema.CoreSchema:
-        if not is_function_with_inner_schema(schema):
-            return schema
+    def handle_function_after_schema(
+        self, schema: core_schema.AfterValidatorFunctionSchema, f: Walk
+    ) -> core_schema.CoreSchema:
         schema['schema'] = self.walk(schema['schema'], f)
         return schema
+
+    def handle_function_before_schema(
+        self, schema: core_schema.BeforeValidatorFunctionSchema, f: Walk
+    ) -> core_schema.CoreSchema:
+        schema['schema'] = self.walk(schema['schema'], f)
+        if 'json_schema_input_schema' in schema:
+            schema['json_schema_input_schema'] = self.walk(schema['json_schema_input_schema'], f)
+        return schema
+
+    # TODO duplicate schema types for serializers and validators, needs to be deduplicated:
+    def handle_function_plain_schema(
+        self, schema: core_schema.PlainValidatorFunctionSchema | core_schema.PlainSerializerFunctionSerSchema, f: Walk
+    ) -> core_schema.CoreSchema:
+        if 'json_schema_input_schema' in schema:
+            schema['json_schema_input_schema'] = self.walk(schema['json_schema_input_schema'], f)
+        return schema  # pyright: ignore[reportReturnType]
+
+    # TODO duplicate schema types for serializers and validators, needs to be deduplicated:
+    def handle_function_wrap_schema(
+        self, schema: core_schema.WrapValidatorFunctionSchema | core_schema.WrapSerializerFunctionSerSchema, f: Walk
+    ) -> core_schema.CoreSchema:
+        if 'schema' in schema:
+            schema['schema'] = self.walk(schema['schema'], f)
+        if 'json_schema_input_schema' in schema:
+            schema['json_schema_input_schema'] = self.walk(schema['json_schema_input_schema'], f)
+        return schema  # pyright: ignore[reportReturnType]
 
     def handle_union_schema(self, schema: core_schema.UnionSchema, f: Walk) -> core_schema.CoreSchema:
         new_choices: list[CoreSchema | tuple[CoreSchema, str]] = []
