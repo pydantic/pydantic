@@ -1,3 +1,29 @@
+## v2.10.4 (2024-12-18)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.10.4)
+
+### What's Changed
+
+#### Packaging
+
+* Bump `pydantic-core` to v2.27.2 by @davidhewitt in [#11138](https://github.com/pydantic/pydantic/pull/11138)
+
+#### Fixes
+
+* Fix for comparison of `AnyUrl` objects by @alexprabhat99 in [#11082](https://github.com/pydantic/pydantic/pull/11082)
+* Properly fetch PEP 695 type params for functions, do not fetch annotations from signature by @Viicos in [#11093](https://github.com/pydantic/pydantic/pull/11093)
+* Include JSON Schema input core schema in function schemas by @Viicos in [#11085](https://github.com/pydantic/pydantic/pull/11085)
+* Add `len` to `_BaseUrl` to avoid TypeError by @Kharianne in [#11111](https://github.com/pydantic/pydantic/pull/11111)
+* Make sure the type reference is removed from the seen references by @Viicos in [#11143](https://github.com/pydantic/pydantic/pull/11143)
+
+### New Contributors
+
+* @FyZzyss made their first contribution in [#10789](https://github.com/pydantic/pydantic/pull/10789)
+* @tamird made their first contribution in [#10948](https://github.com/pydantic/pydantic/pull/10948)
+* @felixxm made their first contribution in [#11077](https://github.com/pydantic/pydantic/pull/11077)
+* @alexprabhat99 made their first contribution in [#11082](https://github.com/pydantic/pydantic/pull/11082)
+* @Kharianne made their first contribution in [#11111](https://github.com/pydantic/pydantic/pull/11111)
+
 ## v2.10.3 (2024-12-03)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.10.3)
