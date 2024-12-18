@@ -48,7 +48,7 @@ pub fn pydate_as_date(py_date: &Bound<'_, PyAny>) -> PyResult<Date> {
 }
 
 impl<'py> EitherDate<'py> {
-    pub fn try_into_py(&self, py: Python<'py>, input: &(impl Input<'py> + ?Sized)) -> ValResult<PyObject> {
+    pub fn try_into_py(self, py: Python<'py>, input: &(impl Input<'py> + ?Sized)) -> ValResult<PyObject> {
         match self {
             Self::Raw(date) => {
                 if date.year == 0 {
@@ -63,7 +63,7 @@ impl<'py> EitherDate<'py> {
                 let py_date = PyDate::new(py, date.year.into(), date.month, date.day)?;
                 Ok(py_date.into())
             }
-            Self::Py(py_date) => Ok(py_date.clone().into()),
+            Self::Py(py_date) => Ok(py_date.into()),
         }
     }
 
@@ -285,7 +285,7 @@ pub fn pydatetime_as_datetime(py_dt: &Bound<'_, PyAny>) -> PyResult<DateTime> {
 }
 
 impl<'py> EitherDateTime<'py> {
-    pub fn try_into_py(&self, py: Python<'py>, input: &(impl Input<'py> + ?Sized)) -> ValResult<PyObject> {
+    pub fn try_into_py(self, py: Python<'py>, input: &(impl Input<'py> + ?Sized)) -> ValResult<PyObject> {
         match self {
             Self::Raw(dt) => {
                 if dt.date.year == 0 {
@@ -310,7 +310,7 @@ impl<'py> EitherDateTime<'py> {
                 )?;
                 Ok(py_dt.into())
             }
-            Self::Py(py_dt) => Ok(py_dt.clone().into()),
+            Self::Py(py_dt) => Ok(py_dt.into()),
         }
     }
 
