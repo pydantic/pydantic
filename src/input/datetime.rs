@@ -47,20 +47,26 @@ pub fn pydate_as_date(py_date: &Bound<'_, PyAny>) -> PyResult<Date> {
     })
 }
 
-impl<'py> IntoPyObject<'py> for EitherDate<'py> {
-    type Target = PyDate;
-    type Output = Bound<'py, PyDate>;
-    type Error = PyErr;
-
-    fn into_pyobject(self, py: Python<'py>) -> PyResult<Self::Output> {
+impl<'py> EitherDate<'py> {
+    pub fn try_into_py(&self, py: Python<'py>, input: &(impl Input<'py> + ?Sized)) -> ValResult<PyObject> {
         match self {
-            Self::Raw(date) => PyDate::new(py, date.year.into(), date.month, date.day),
-            Self::Py(date) => Ok(date),
+            Self::Raw(date) => {
+                if date.year == 0 {
+                    return Err(ValError::new(
+                        ErrorType::DateParsing {
+                            error: Cow::Borrowed("year 0 is out of range"),
+                            context: None,
+                        },
+                        input,
+                    ));
+                };
+                let py_date = PyDate::new(py, date.year.into(), date.month, date.day)?;
+                Ok(py_date.into())
+            }
+            Self::Py(py_date) => Ok(py_date.clone().into()),
         }
     }
-}
 
-impl EitherDate<'_> {
     pub fn as_raw(&self) -> PyResult<Date> {
         match self {
             Self::Raw(date) => Ok(date.clone()),
@@ -278,30 +284,36 @@ pub fn pydatetime_as_datetime(py_dt: &Bound<'_, PyAny>) -> PyResult<DateTime> {
     })
 }
 
-impl<'py> IntoPyObject<'py> for EitherDateTime<'py> {
-    type Target = PyDateTime;
-    type Output = Bound<'py, PyDateTime>;
-    type Error = PyErr;
-
-    fn into_pyobject(self, py: Python<'py>) -> PyResult<Self::Output> {
+impl<'py> EitherDateTime<'py> {
+    pub fn try_into_py(&self, py: Python<'py>, input: &(impl Input<'py> + ?Sized)) -> ValResult<PyObject> {
         match self {
-            Self::Raw(dt) => PyDateTime::new(
-                py,
-                dt.date.year.into(),
-                dt.date.month,
-                dt.date.day,
-                dt.time.hour,
-                dt.time.minute,
-                dt.time.second,
-                dt.time.microsecond,
-                time_as_tzinfo(py, &dt.time)?.as_ref(),
-            ),
-            Self::Py(dt) => Ok(dt),
+            Self::Raw(dt) => {
+                if dt.date.year == 0 {
+                    return Err(ValError::new(
+                        ErrorType::DatetimeParsing {
+                            error: Cow::Borrowed("year 0 is out of range"),
+                            context: None,
+                        },
+                        input,
+                    ));
+                };
+                let py_dt = PyDateTime::new(
+                    py,
+                    dt.date.year.into(),
+                    dt.date.month,
+                    dt.date.day,
+                    dt.time.hour,
+                    dt.time.minute,
+                    dt.time.second,
+                    dt.time.microsecond,
+                    time_as_tzinfo(py, &dt.time)?.as_ref(),
+                )?;
+                Ok(py_dt.into())
+            }
+            Self::Py(py_dt) => Ok(py_dt.clone().into()),
         }
     }
-}
 
-impl EitherDateTime<'_> {
     pub fn as_raw(&self) -> PyResult<DateTime> {
         match self {
             Self::Raw(dt) => Ok(dt.clone()),
