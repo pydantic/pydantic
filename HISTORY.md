@@ -196,6 +196,8 @@ Pre-release, see [the GitHub release](https://github.com/pydantic/pydantic/relea
 
 Pre-release, see [the GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.9.0b1) for details.
 
+<!-- package description limit -->
+
 ## v2.9.2 (2024-09-17)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.9.2)
@@ -1544,8 +1546,6 @@ See the full changelog [here](https://github.com/pydantic/pydantic/releases/tag/
 First pre-release of Pydantic V2!
 
 See [this post](https://docs.pydantic.dev/blog/pydantic-v2-alpha/) for more details.
-
-<!-- package description limit -->
 
 ## v1.10.19 (2024-11-06)
 
