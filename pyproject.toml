@@ -176,9 +176,6 @@ markers = [
 [tool.uv]
 default-groups = ['dev']
 
-[tool.uv.sources]
-pydantic-core = { git = "https://github.com/pydantic/pydantic-core", branch = "js-input-type-in-cs" }
-
 # configuring https://github.com/pydantic/hooky
 [tool.hooky]
 reviewers = ['sydney-runkle']
