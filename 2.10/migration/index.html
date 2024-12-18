@@ -3822,9 +3822,6 @@ to help ease migration, but calling them will emit <code>DeprecationWarning</cod
 If you'd still like to use said arguments, you can use <a href="https://github.com/pydantic/pydantic/issues/8825#issuecomment-1946206415">this workaround</a>.</li>
 <li>JSON serialization of non-string key values is generally done with <code>str(key)</code>, leading to some changes in behavior such as the following:</li>
 </ul>
-<div class="tabbed-set tabbed-alternate" data-tabs="2:3"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><input id="__tabbed_2_3" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.8 and above</label><label for="__tabbed_2_2">Python 3.9 and above</label><label for="__tabbed_2_3">Python 3.10 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Optional</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span> <span class="k">as</span> <span class="n">V2BaseModel</span>
@@ -3850,66 +3847,11 @@ If you'd still like to use said arguments, you can use <a href="https://github.c
 <span class="nb">print</span><span class="p">(</span><span class="n">v2_model</span><span class="o">.</span><span class="n">model_dump_json</span><span class="p">())</span>
 <span class="c1">#&gt; {&quot;a&quot;:{&quot;None&quot;:123}}</span>
 </code></pre></div>
-</div>
-<div class="tabbed-block">
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span> <span class="k">as</span> <span class="n">V2BaseModel</span>
-<span class="kn">from</span> <span class="nn">pydantic.v1</span> <span class="kn">import</span> <span class="n">BaseModel</span> <span class="k">as</span> <span class="n">V1BaseModel</span>
-
-
-<span class="k">class</span> <span class="nc">V1Model</span><span class="p">(</span><span class="n">V1BaseModel</span><span class="p">):</span>
-    <span class="n">a</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">int</span><span class="p">]</span>
-
-
-<span class="k">class</span> <span class="nc">V2Model</span><span class="p">(</span><span class="n">V2BaseModel</span><span class="p">):</span>
-    <span class="n">a</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">int</span><span class="p">]</span>
-
-
-<span class="n">v1_model</span> <span class="o">=</span> <span class="n">V1Model</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="p">{</span><span class="kc">None</span><span class="p">:</span> <span class="mi">123</span><span class="p">})</span>
-<span class="n">v2_model</span> <span class="o">=</span> <span class="n">V2Model</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="p">{</span><span class="kc">None</span><span class="p">:</span> <span class="mi">123</span><span class="p">})</span>
-
-<span class="c1"># V1</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">v1_model</span><span class="o">.</span><span class="n">json</span><span class="p">())</span>
-<span class="c1">#&gt; {&quot;a&quot;: {&quot;null&quot;: 123}}</span>
-
-<span class="c1"># V2</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">v2_model</span><span class="o">.</span><span class="n">model_dump_json</span><span class="p">())</span>
-<span class="c1">#&gt; {&quot;a&quot;:{&quot;None&quot;:123}}</span>
-</code></pre></div>
-</div>
-<div class="tabbed-block">
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span> <span class="k">as</span> <span class="n">V2BaseModel</span>
-<span class="kn">from</span> <span class="nn">pydantic.v1</span> <span class="kn">import</span> <span class="n">BaseModel</span> <span class="k">as</span> <span class="n">V1BaseModel</span>
-
-
-<span class="k">class</span> <span class="nc">V1Model</span><span class="p">(</span><span class="n">V1BaseModel</span><span class="p">):</span>
-    <span class="n">a</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>
-
-
-<span class="k">class</span> <span class="nc">V2Model</span><span class="p">(</span><span class="n">V2BaseModel</span><span class="p">):</span>
-    <span class="n">a</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>
-
-
-<span class="n">v1_model</span> <span class="o">=</span> <span class="n">V1Model</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="p">{</span><span class="kc">None</span><span class="p">:</span> <span class="mi">123</span><span class="p">})</span>
-<span class="n">v2_model</span> <span class="o">=</span> <span class="n">V2Model</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="p">{</span><span class="kc">None</span><span class="p">:</span> <span class="mi">123</span><span class="p">})</span>
-
-<span class="c1"># V1</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">v1_model</span><span class="o">.</span><span class="n">json</span><span class="p">())</span>
-<span class="c1">#&gt; {&quot;a&quot;: {&quot;null&quot;: 123}}</span>
-
-<span class="c1"># V2</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">v2_model</span><span class="o">.</span><span class="n">model_dump_json</span><span class="p">())</span>
-<span class="c1">#&gt; {&quot;a&quot;:{&quot;None&quot;:123}}</span>
-</code></pre></div>
-</div>
-</div>
-</div>
 <ul>
 <li><code>model_dump_json()</code> results are compacted in order to save space, and don't always exactly match that of <code>json.dumps()</code> output.
 That being said, you can easily modify the separators used in <code>json.dumps()</code> results in order to align the two outputs:</li>
 </ul>
-<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.8 and above</label><label for="__tabbed_3_2">Python 3.9 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.8 and above</label><label for="__tabbed_2_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">json</span>
@@ -4234,7 +4176,7 @@ if coercing strings to ints).</p>
 type will match the type annotations.</p>
 <p>Going back to the <code>Mapping</code> example, we promise the output will be a valid <code>Mapping</code>, and in practice it will be a
 plain <code>dict</code>:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">Python 3.8 and above</label><label for="__tabbed_4_2">Python 3.9 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.8 and above</label><label for="__tabbed_3_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Mapping</span>
@@ -4271,7 +4213,7 @@ plain <code>dict</code>:</p>
 </div>
 </div>
 <p>If you want the output type to be a specific type, consider annotating it as such or implementing a custom validator:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">Python 3.8 and above</label><label for="__tabbed_5_2">Python 3.9 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">Python 3.8 and above</label><label for="__tabbed_4_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">TypeVar</span>
@@ -4393,7 +4335,7 @@ and for dataclasses:</p>
 <p>While union types will still attempt validation of each choice from left to right, they now preserve the type of the
 input whenever possible, even if the correct type is not the first choice for which the input would pass validation.
 As a demonstration, consider the following example:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="6:2"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">Python 3.8 and above</label><label for="__tabbed_6_2">Python 3.10 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">Python 3.8 and above</label><label for="__tabbed_5_2">Python 3.10 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
@@ -4480,7 +4422,7 @@ It does not mean that the field has a default value of <code>None</code>. <em>(T
 <p>Any default value if provided makes a field not required.</p>
 </div>
 <p>Here is a code example demonstrating the above:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="7:2"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><div class="tabbed-labels"><label for="__tabbed_7_1">Python 3.8 and above</label><label for="__tabbed_7_2">Python 3.10 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="6:2"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">Python 3.8 and above</label><label for="__tabbed_6_2">Python 3.10 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
@@ -4546,7 +4488,7 @@ with methods for validating, serializing, and producing JSON schemas for arbitra
 This serves as a complete replacement for <code>parse_obj_as</code> and <code>schema_of</code> (which are now deprecated),
 and also covers some of the use cases of "root" models. (<a href="../concepts/models/#rootmodel-and-custom-root-types"><code>RootModel</code></a>,
 <a href="#changes-to-pydanticbasemodel">discussed above</a>, covers the others.)</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="8:2"><input checked="checked" id="__tabbed_8_1" name="__tabbed_8" type="radio" /><input id="__tabbed_8_2" name="__tabbed_8" type="radio" /><div class="tabbed-labels"><label for="__tabbed_8_1">Python 3.8 and above</label><label for="__tabbed_8_2">Python 3.9 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="7:2"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><div class="tabbed-labels"><label for="__tabbed_7_1">Python 3.8 and above</label><label for="__tabbed_7_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
@@ -4667,7 +4609,7 @@ even if a slash is not specified in the argument to a <code>Url</code> type cons
     <span class="n">x</span><span class="p">:</span> <span class="n">MyInt</span>
 </code></pre></div>
 <p>...becomes:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="9:2"><input checked="checked" id="__tabbed_9_1" name="__tabbed_9" type="radio" /><input id="__tabbed_9_2" name="__tabbed_9" type="radio" /><div class="tabbed-labels"><label for="__tabbed_9_1">Python 3.8 and above</label><label for="__tabbed_9_2">Python 3.9 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="8:2"><input checked="checked" id="__tabbed_8_1" name="__tabbed_8" type="radio" /><input id="__tabbed_8_2" name="__tabbed_8" type="radio" /><div class="tabbed-labels"><label for="__tabbed_8_1">Python 3.8 and above</label><label for="__tabbed_8_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
@@ -5133,7 +5075,7 @@ plugins = [
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.10.3", "pydantic-core==2.27.1", "pydantic-extra-types==2.10.0"]
+    window.mkdocs_run_deps = ["pydantic==2.10.4", "pydantic-core==2.27.2", "pydantic-extra-types==2.10.0"]
     </script>
 
               </article>

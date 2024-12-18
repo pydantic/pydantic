@@ -3125,7 +3125,8 @@ For example, you might have a list of people:</p>
 <span class="c1">#&gt; [Person(name=&#39;John Doe&#39;, age=30, email=&#39;john@example.com&#39;), Person(name=&#39;Jane Doe&#39;, age=25, email=&#39;jane@example.com&#39;)]</span>
 </code></pre></div>
 <ol>
-<li>We use <a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic.type_adapter.TypeAdapter"><code>TypeAdapter</code></a> to validate a list of <code>Person</code> objects.</li>
+<li>We use <a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic.type_adapter.TypeAdapter"><code>TypeAdapter</code></a> to validate a list of <code>Person</code> objects.
+<a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic.type_adapter.TypeAdapter"><code>TypeAdapter</code></a> is a Pydantic construct used to validate data against a single type.</li>
 </ol>
 </div>
 <div class="tabbed-block">
@@ -3148,12 +3149,12 @@ For example, you might have a list of people:</p>
 <span class="c1">#&gt; [Person(name=&#39;John Doe&#39;, age=30, email=&#39;john@example.com&#39;), Person(name=&#39;Jane Doe&#39;, age=25, email=&#39;jane@example.com&#39;)]</span>
 </code></pre></div>
 <ol>
-<li>We use <a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic.type_adapter.TypeAdapter"><code>TypeAdapter</code></a> to validate a list of <code>Person</code> objects.</li>
+<li>We use <a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic.type_adapter.TypeAdapter"><code>TypeAdapter</code></a> to validate a list of <code>Person</code> objects.
+<a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic.type_adapter.TypeAdapter"><code>TypeAdapter</code></a> is a Pydantic construct used to validate data against a single type.</li>
 </ol>
 </div>
 </div>
 </div>
-<p><a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic.type_adapter.TypeAdapter"><code>TypeAdapter</code></a> is a Pydantic construct used to validate data against a single type.</p>
 <h2 id="json-lines-files">JSON lines files<a class="headerlink" href="#json-lines-files" title="Permanent link">&para;</a></h2>
 <p>Similar to validating a list of objects from a <code>.json</code> file, you can validate a list of objects from a <code>.jsonl</code> file.
 <code>.jsonl</code> files are a sequence of JSON objects separated by newlines.</p>
@@ -3293,7 +3294,7 @@ Jane Doe,25,jane@example.com
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.10.3", "pydantic-core==2.27.1", "pydantic-extra-types==2.10.0"]
+    window.mkdocs_run_deps = ["pydantic==2.10.4", "pydantic-core==2.27.2", "pydantic-extra-types==2.10.0"]
     </script>
 
               </article>
