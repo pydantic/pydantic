@@ -1190,7 +1190,6 @@ class StaticFoobarModel(BaseModel):
     bar: int = 123
 ```
 
-Fields are defined by one of the following tuple forms:
 Field definitions are specified as keyword arguments, and should either be:
 
 - A single element, representing the type annotation of the field.
