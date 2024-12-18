@@ -22,7 +22,7 @@ from inspect import Parameter, _ParameterKind, signature
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from itertools import chain
 from operator import attrgetter
-from types import BuiltinFunctionType, BuiltinMethodType, FunctionType, LambdaType, MethodType
+from types import FunctionType, LambdaType, MethodType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -63,7 +63,7 @@ from ..functional_validators import AfterValidator, BeforeValidator, FieldValida
 from ..json_schema import JsonSchemaValue
 from ..version import version_short
 from ..warnings import PydanticDeprecatedSince20
-from . import _core_utils, _decorators, _discriminated_union, _known_annotated_metadata, _typing_extra
+from . import _core_utils, _decorators, _discriminated_union, _known_annotated_metadata, _repr, _typing_extra
 from ._config import ConfigWrapper, ConfigWrapperStack
 from ._core_metadata import update_core_metadata
 from ._core_utils import (
@@ -155,8 +155,6 @@ ValidateCallSupportedTypes = Union[
     LambdaType,
     FunctionType,
     MethodType,
-    BuiltinFunctionType,
-    BuiltinMethodType,
     partial,
 ]
 
@@ -1647,7 +1645,12 @@ class GenerateSchema:
         else:
             if _typing_extra.is_self(type_param):
                 type_param = self._resolve_self_type(type_param)
-
+            if _typing_extra.is_generic_alias(type_param):
+                raise PydanticUserError(
+                    'Subscripting `type[]` with an already parametrized type is not supported. '
+                    f'Instead of using type[{type_param!r}], use type[{_repr.display_as_type(get_origin(type_param))}].',
+                    code=None,
+                )
             if not inspect.isclass(type_param):
                 raise TypeError(f'Expected a class, got {type_param!r}')
             return core_schema.is_subclass_schema(type_param)
@@ -1816,6 +1819,8 @@ class GenerateSchema:
         TODO support functional validators once we support them in Config
         """
         sig = signature(function)
+        globalns, localns = self._types_namespace
+        type_hints = _typing_extra.get_function_type_hints(function, globalns=globalns, localns=localns)
 
         mode_lookup: dict[_ParameterKind, Literal['positional_only', 'positional_or_keyword', 'keyword_only']] = {
             Parameter.POSITIONAL_ONLY: 'positional_only',
@@ -1832,13 +1837,7 @@ class GenerateSchema:
             if p.annotation is sig.empty:
                 annotation = typing.cast(Any, Any)
             else:
-                # Note: This was originally get by `_typing_extra.get_function_type_hints`,
-                #       but we switch to simply `p.annotation` to support bultins (e.g. `sorted`).
-                #       May need to revisit if anything breaks.
-                annotation = (
-                    _typing_extra._make_forward_ref(p.annotation) if isinstance(p.annotation, str) else p.annotation
-                )
-                annotation = self._resolve_forward_ref(annotation)
+                annotation = type_hints[name]
 
             parameter_mode = mode_lookup.get(p.kind)
             if parameter_mode is not None:

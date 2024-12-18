@@ -26,7 +26,7 @@ _inspect_validator = _decorators.inspect_validator
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
 class AfterValidator:
-    """Usage docs: https://docs.pydantic.dev/2.10/concepts/validators/#annotated-validators
+    """Usage docs: https://docs.pydantic.dev/2.10/concepts/validators/#field-validators
 
     A metadata class that indicates that a validation should be applied **after** the inner validation logic.
 
@@ -86,7 +86,7 @@ class AfterValidator:
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
 class BeforeValidator:
-    """Usage docs: https://docs.pydantic.dev/2.10/concepts/validators/#annotated-validators
+    """Usage docs: https://docs.pydantic.dev/2.10/concepts/validators/#field-validators
 
     A metadata class that indicates that a validation should be applied **before** the inner validation logic.
 
@@ -153,7 +153,7 @@ class BeforeValidator:
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
 class PlainValidator:
-    """Usage docs: https://docs.pydantic.dev/2.10/concepts/validators/#annotated-validators
+    """Usage docs: https://docs.pydantic.dev/2.10/concepts/validators/#field-validators
 
     A metadata class that indicates that a validation should be applied **instead** of the inner validation logic.
 
@@ -251,7 +251,7 @@ class PlainValidator:
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
 class WrapValidator:
-    """Usage docs: https://docs.pydantic.dev/2.10/concepts/validators/#annotated-validators
+    """Usage docs: https://docs.pydantic.dev/2.10/concepts/validators/#field-validators
 
     A metadata class that indicates that a validation should be applied **around** the inner validation logic.
 

@@ -35,6 +35,7 @@ from pydantic import (
     PrivateAttr,
     PydanticDeprecatedSince20,
     PydanticSchemaGenerationError,
+    PydanticUserError,
     RootModel,
     TypeAdapter,
     ValidationError,
@@ -1468,6 +1469,17 @@ def test_type_on_annotated():
             'ctx': {'class': 'int'},
         }
     ]
+
+
+def test_type_on_generic_alias() -> None:
+    error_msg = 'Instead of using type[typing.List[int]], use type[list].'
+
+    with pytest.raises(PydanticUserError) as exc_info:
+
+        class Model(BaseModel):
+            a: Type[List[int]]
+
+    assert error_msg in exc_info.value.message
 
 
 def test_type_assign():

@@ -325,11 +325,18 @@ class ModelMetaclass(ABCMeta):
         return _ModelNamespaceDict()
 
     def __instancecheck__(self, instance: Any) -> bool:
+        """Avoid calling ABC _abc_instancecheck unless we're pretty sure.
+
+        See #3829 and python/cpython#92810
+        """
+        return hasattr(instance, '__pydantic_decorators__') and super().__instancecheck__(instance)
+
+    def __subclasscheck__(self, subclass: type[Any]) -> bool:
         """Avoid calling ABC _abc_subclasscheck unless we're pretty sure.
 
         See #3829 and python/cpython#92810
         """
-        return hasattr(instance, '__pydantic_validator__') and super().__instancecheck__(instance)
+        return hasattr(subclass, '__pydantic_decorators__') and super().__subclasscheck__(subclass)
 
     @staticmethod
     def _collect_bases_data(bases: tuple[type[Any], ...]) -> tuple[set[str], set[str], dict[str, ModelPrivateAttr]]:

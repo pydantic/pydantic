@@ -60,6 +60,24 @@ However, note that certain arguments to the [`Field()`][pydantic.fields.Field] f
 `__init__` method. The annotated pattern is *not* understood by them, so you should use the normal
 assignment form instead.
 
+!!! tip
+    The annotated pattern can also be used to add metadata to specific parts of the type. For instance,
+    [validation constraints](#field-constraints) can be added this way:
+
+    ```python
+    from typing import List
+
+    from typing_extensions import Annotated
+
+    from pydantic import BaseModel, Field
+
+
+    class Model(BaseModel):
+        int_list: List[Annotated[int, Field(gt=0)]]
+        # Valid: [1, 3]
+        # Invalid: [-1, 2]
+    ```
+
 ## Default values
 
 Default values for fields can be provided using the normal assignment syntax or by providing a value
@@ -110,6 +128,31 @@ print(user.username)
 
 The `data` argument will *only* contain the already validated data, based on the [order of model fields](./models.md#field-ordering)
 (the above example would fail if `username` were to be defined before `email`).
+
+## Validate default values
+
+By default, Pydantic will *not* validate default values. The `validate_default` field parameter
+(or the [`validate_default`][pydantic.ConfigDict.validate_default] configuration value) can be used
+to enable this behavior:
+
+```python
+from pydantic import BaseModel, Field, ValidationError
+
+
+class User(BaseModel):
+    age: int = Field(default='twelve', validate_default=True)
+
+
+try:
+    user = User()
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for User
+    age
+      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='twelve', input_type=str]
+    """
+```
 
 ### Mutable default values
 
@@ -321,6 +364,8 @@ print(user.model_dump(by_alias=True))  # (2)!
     print(m.model_dump(by_alias=True))
     #> {'my_field': 1}
     ```
+
+[](){#field-constraints}
 
 ## Numeric Constraints
 
@@ -562,31 +607,6 @@ print(model.model_dump())  # (1)!
 ```
 
 1. The `baz` field is not included in the `model_dump()` output, since it is an init-only field.
-
-## Validate Default Values
-
-The parameter `validate_default` can be used to control whether the default value of the field should be validated.
-
-By default, the default value of the field is not validated.
-
-```python
-from pydantic import BaseModel, Field, ValidationError
-
-
-class User(BaseModel):
-    age: int = Field(default='twelve', validate_default=True)
-
-
-try:
-    user = User()
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for User
-    age
-      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='twelve', input_type=str]
-    """
-```
 
 ## Field Representation
 
