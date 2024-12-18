@@ -64,6 +64,12 @@ from ..conftest import Err, PyAndJson
         ),
         pytest.param('-', Err('Input should be a valid date or datetime, input is too short'), id='minus'),
         pytest.param('+', Err('Input should be a valid date or datetime, input is too short'), id='pus'),
+        pytest.param('0001-01-01', date(1, 1, 1), id='min-date'),
+        pytest.param(
+            '0000-12-31',
+            Err('Input should be a valid date in the format YYYY-MM-DD, year 0 is out of range [type=date_parsing,'),
+            id='year-0',
+        ),
     ],
 )
 def test_date(input_value, expected):
