@@ -53,6 +53,14 @@ from ..conftest import Err, PyAndJson
                 'Input should be a valid datetime or date, day value is outside expected range [type=datetime_from_date_parsing,'
             ),
         ),
+        (
+            '0001-01-01T00:00:00.000000Z',
+            datetime(1, 1, 1, tzinfo=timezone.utc),
+        ),
+        (
+            '0000-12-31T23:59:59.999999Z',
+            Err('Input should be a valid datetime, year 0 is out of range [type=datetime_parsing,'),
+        ),
     ],
 )
 def test_datetime(input_value, expected):
