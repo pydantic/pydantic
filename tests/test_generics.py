@@ -3099,3 +3099,41 @@ def test_revalidation_with_basic_inference() -> None:
     holder2 = Holder(inner=Inner(inner=1))
     # implies that validation succeeds for both
     assert holder1 == holder2
+
+
+def test_generic_mro_multi_level():
+    """Pass another generic model as an arg.
+
+    See https://github.com/pydantic/pydantic/issues/11024.
+    """
+
+    T = TypeVar('T')
+
+    class GenericBaseModel(BaseModel, Generic[T]): ...
+
+    class EnumerableModel(GenericBaseModel[T]):
+        values: List[T]
+
+    T1 = TypeVar('T1')
+    T2 = TypeVar('T2')
+
+    class CombineModel(BaseModel, Generic[T1, T2]):
+        field_1: T1
+        field_2: T2
+
+    class EnumerableCombineModel(EnumerableModel[CombineModel[T1, T2]]): ...
+
+    m = EnumerableCombineModel[int, int]
+
+    mro = (
+        EnumerableCombineModel[int, int],
+        EnumerableCombineModel,
+        EnumerableModel[CombineModel[int, int]],
+        EnumerableModel,
+        GenericBaseModel[CombineModel[int, int]],
+        GenericBaseModel,
+        BaseModel,
+        Generic,
+        object,
+    )
+    assert m.__mro__ == tuple(HasRepr(repr(m)) for m in mro)
