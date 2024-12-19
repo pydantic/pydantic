@@ -747,8 +747,9 @@ def test_pre_called_once():
     ],
 )
 def test_make_generic_validator(fields, result):
-    exec(f"""def testing_function({', '.join(fields)}): return {' + "," + '.join(fields)}""")
-    func = locals()['testing_function']
+    custom_locals = {}
+    exec(f"""def testing_function({', '.join(fields)}): return {' + "," + '.join(fields)}""", globals(), custom_locals)
+    func = custom_locals['testing_function']
     validator = make_generic_validator(func)
     assert validator.__qualname__ == 'testing_function'
     assert validator.__name__ == 'testing_function'

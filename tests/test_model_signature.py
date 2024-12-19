@@ -4,6 +4,12 @@ from typing import Any, Iterable, Optional, Union
 from typing_extensions import Annotated
 
 from pydantic import BaseModel, Extra, Field, create_model
+from pydantic.version import compiled
+
+# Cython 3.x uses stringified annotations by default. When a signature is generated
+# for Pydantic models, we use the `BaseModel.__init__` signature which has a type
+# of `Any` for the data. This annotation is reused and will be stringified only when compiled:
+Any_ann = "'Any'" if compiled else 'Any'
 
 
 def _equals(a: Union[str, Iterable[str]], b: Union[str, Iterable[str]]) -> bool:
@@ -73,7 +79,7 @@ def test_invalid_identifiers_signature():
     )
     assert _equals(str(signature(model)), '(*, valid_identifier: int = 123, yeah: int = 0) -> None')
     model = create_model('Model', **{'123 invalid identifier!': 123, '!': Field(0, alias='yeah')})
-    assert _equals(str(signature(model)), '(*, yeah: int = 0, **extra_data: Any) -> None')
+    assert _equals(str(signature(model)), f'(*, yeah: int = 0, **extra_data: {Any_ann}) -> None')
 
 
 def test_use_field_name():
@@ -103,7 +109,7 @@ def test_extra_allow_no_conflict():
         class Config:
             extra = Extra.allow
 
-    assert _equals(str(signature(Model)), '(*, spam: str, **extra_data: Any) -> None')
+    assert _equals(str(signature(Model)), f'(*, spam: str, **extra_data: {Any_ann}) -> None')
 
 
 def test_extra_allow_conflict():
@@ -113,7 +119,7 @@ def test_extra_allow_conflict():
         class Config:
             extra = Extra.allow
 
-    assert _equals(str(signature(Model)), '(*, extra_data: str, **extra_data_: Any) -> None')
+    assert _equals(str(signature(Model)), f'(*, extra_data: str, **extra_data_: {Any_ann}) -> None')
 
 
 def test_extra_allow_conflict_twice():
@@ -124,7 +130,7 @@ def test_extra_allow_conflict_twice():
         class Config:
             extra = Extra.allow
 
-    assert _equals(str(signature(Model)), '(*, extra_data: str, extra_data_: str, **extra_data__: Any) -> None')
+    assert _equals(str(signature(Model)), f'(*, extra_data: str, extra_data_: str, **extra_data__: {Any_ann}) -> None')
 
 
 def test_extra_allow_conflict_custom_signature():

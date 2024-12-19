@@ -1,0 +1,84 @@
+[build-system]
+requires = ['setuptools>=68.0.0', 'Cython>=3.0.0']
+build-backend = 'setuptools.build_meta'
+
+[project]
+name = 'pydantic'
+description = 'Data validation and settings management using python type hints'
+authors = [
+    {name = 'Samuel Colvin', email = 's@muelcolvin.com'}
+]
+license = {text = 'MIT'}
+classifiers=[
+    'Development Status :: 5 - Production/Stable',
+    'Programming Language :: Python',
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3 :: Only',
+    'Programming Language :: Python :: 3.7',
+    'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11',
+    'Programming Language :: Python :: 3.12',
+    'Programming Language :: Python :: 3.13',
+    'Intended Audience :: Developers',
+    'Intended Audience :: Information Technology',
+    'Intended Audience :: System Administrators',
+    'License :: OSI Approved :: MIT License',
+    'Operating System :: Unix',
+    'Operating System :: POSIX :: Linux',
+    'Environment :: Console',
+    'Environment :: MacOS X',
+    'Framework :: Hypothesis',
+    'Framework :: Pydantic',
+    'Topic :: Software Development :: Libraries :: Python Modules',
+    'Topic :: Internet',
+]
+requires-python = '>=3.7'
+dependencies = [
+    'typing-extensions>=4.2.0',
+]
+dynamic = ['readme', 'version']
+
+[project.optional-dependencies]
+email = ['email-validator>=1.0.3']
+dotenv = ['python-dotenv>=0.10.4']
+
+[project.entry-points.hypothesis]
+pydantic = 'pydantic._hypothesis_plugin'
+
+[project.urls]
+Homepage = 'https://github.com/pydantic/pydantic'
+Documentation = 'https://docs.pydantic.dev/1.10/'
+Funding = 'https://github.com/sponsors/pydantic'
+Source = 'https://github.com/pydantic/pydantic'
+Changelog = 'https://docs.pydantic.dev/1.10/changelog/'
+
+
+[tool.setuptools]
+packages = ['pydantic', 'pydantic.v1']
+
+[tool.setuptools.package-data]
+pydantic = ['py.typed']
+
+[tool.setuptools.exclude-package-data]
+pydantic = ['*.c']
+
+[tool.setuptools.dynamic]
+version = {attr = 'pydantic.version.VERSION'}
+
+[tool.cibuildwheel]
+build-frontend = 'build'
+skip = '*-win32'
+test-requires = 'pytest==6.2.5 pytest-mock==3.6.1'
+test-command = 'pytest {project}/tests'
+# see https://cibuildwheel.readthedocs.io/en/stable/faq/#universal2:
+test-skip = '*-macosx_arm64'
+manylinux-x86_64-image = 'manylinux2014'
+manylinux-i686-image = 'manylinux2014'
+
+[tool.cibuildwheel.config-settings]
+--build-option = '--cythonize'
+
+[tool.cibuildwheel.macos]
+archs = ['x86_64', 'arm64']
