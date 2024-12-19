@@ -61,6 +61,9 @@ packages = ['pydantic', 'pydantic.v1']
 [tool.setuptools.package-data]
 pydantic = ['py.typed']
 
+[tool.setuptools.exclude-package-data]
+pydantic = ['*.c']
+
 [tool.setuptools.dynamic]
 version = {attr = 'pydantic.version.VERSION'}
 
