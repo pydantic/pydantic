@@ -38,7 +38,7 @@ requires-python = '>=3.7'
 dependencies = [
     'typing-extensions>=4.2.0',
 ]
-dynamic = ['version']
+dynamic = ['readme', 'version']
 
 [project.optional-dependencies]
 email = ['email-validator>=1.0.3']

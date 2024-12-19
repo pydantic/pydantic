@@ -57,4 +57,6 @@ if '--cythonize' in sys.argv:
 
 setup(
     ext_modules=ext_modules,
+    long_description=long_description,
+    long_description_content_type='text/markdown',
 )
