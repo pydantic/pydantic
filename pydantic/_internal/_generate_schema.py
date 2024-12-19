@@ -609,7 +609,7 @@ class GenerateSchema:
         if schema is None:
             schema = self._generate_schema_inner(obj)
 
-        metadata_js_function = _extract_get_pydantic_json_schema(obj, schema)
+        metadata_js_function = _extract_get_pydantic_json_schema(obj)
         if metadata_js_function is not None:
             metadata_schema = resolve_original_schema(schema, self.defs.definitions)
             if metadata_schema:
@@ -2035,7 +2035,7 @@ class GenerateSchema:
                 schema = self._generate_schema_inner(obj)
             else:
                 schema = from_property
-            metadata_js_function = _extract_get_pydantic_json_schema(obj, schema)
+            metadata_js_function = _extract_get_pydantic_json_schema(obj)
             if metadata_js_function is not None:
                 metadata_schema = resolve_original_schema(schema, self.defs.definitions)
                 if metadata_schema is not None:
@@ -2130,7 +2130,7 @@ class GenerateSchema:
             schema = self._apply_single_annotation(schema, annotation)
             schema = self._apply_single_annotation_json_schema(schema, annotation)
 
-            metadata_js_function = _extract_get_pydantic_json_schema(annotation, schema)
+            metadata_js_function = _extract_get_pydantic_json_schema(annotation)
             if metadata_js_function is not None:
                 pydantic_js_annotation_functions.append(metadata_js_function)
             return schema
@@ -2375,7 +2375,7 @@ def wrap_default(field_info: FieldInfo, schema: core_schema.CoreSchema) -> core_
         return schema
 
 
-def _extract_get_pydantic_json_schema(tp: Any, schema: CoreSchema) -> GetJsonSchemaFunction | None:
+def _extract_get_pydantic_json_schema(tp: Any) -> GetJsonSchemaFunction | None:
     """Extract `__get_pydantic_json_schema__` from a type, handling the deprecated `__modify_schema__`."""
     js_modify_function = getattr(tp, '__get_pydantic_json_schema__', None)
 
@@ -2398,7 +2398,9 @@ def _extract_get_pydantic_json_schema(tp: Any, schema: CoreSchema) -> GetJsonSch
 
     # handle GenericAlias' but ignore Annotated which "lies" about its origin (in this case it would be `int`)
     if hasattr(tp, '__origin__') and not _typing_extra.is_annotated(tp):
-        return _extract_get_pydantic_json_schema(tp.__origin__, schema)
+        # Generic aliases proxy attribute access to the origin, *except* dunder attributes,
+        # such as `__get_pydantic_json_schema__`, hence the explicit check.
+        return _extract_get_pydantic_json_schema(tp.__origin__)
 
     if js_modify_function is None:
         return None
