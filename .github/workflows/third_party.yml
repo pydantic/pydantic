@@ -2,14 +2,13 @@
 # running the tests of various third-party libraries that use pydantic. This helps us spot regressions early,
 # and helps flag when third-party libraries are making incorrect assumptions that might cause them to break when we cut a new release.
 
-name: third party tests
+name: Third party tests
 
 on:
   schedule:
     - cron: '0 12 * * *' # Daily at midnight UTC
   pull_request:
-    branches:
-      - main
+    types: [labeled]
 
   # Can be manually triggered from the Actions tab, if needed
   workflow_dispatch:
@@ -17,18 +16,20 @@ on:
 permissions:
   contents: read
 
-env:
-  PIP_DISABLE_PIP_VERSION_CHECK: 1
-  FORCE_COLOR: 1
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
 jobs:
   test-fastapi:
-    if: ${{ contains(github.event.pull_request.labels.*.name, 'third-party-tests') || github.event_name == 'schedule' }}
-    name: test fastapi (`main` branch) on python ${{ matrix.python-version }}
+    if: >-
+      # if 'schedule' was the trigger, don't run it on contributors' forks
+      ${{
+        (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
+        (github.event_name == 'pull_request' && github.event.label == 'third-party-tests')
+      }}
+
+    name: Test FastAPI (`main` branch) on Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -43,26 +44,25 @@ jobs:
         enable-cache: true
         python-version: ${{ matrix.python-version }}
 
-    - name: checkout fastapi
-      run: git clone https://github.com/tiangolo/fastapi.git --single-branch
+    - name: Checkout FastAPI
+      run: git clone https://github.com/tiangolo/fastapi.git --depth=1
 
-    - name: checkout pydantic
+    - name: checkout Pydantic
       uses: actions/checkout@v4
       with:
         path: pydantic-latest
 
-    - name: install deps
+    - name: Install FastAPI dependencies
       run: |
         cd fastapi
-        uv venv
+        uv venv --python ${{ matrix.python-version }}
         uv pip install -r requirements-tests.txt
         uv pip install -e ../pydantic-latest
-        uv pip install anyio==3.7.1
 
-    - name: list installed dependencies
+    - name: List installed dependencies
       run: cd fastapi; uv pip list
 
-    - name: run fastapi tests
+    - name: Run FastAPI tests
       run: cd fastapi; uv run ./scripts/test.sh -vv
 
     # TODO: slack notification on failure, if job was scheduled
