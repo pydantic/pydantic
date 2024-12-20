@@ -233,6 +233,52 @@ except ValidationError as e:
       Field required [type=missing, input_value={'pet_type': 'dog'}, input_type=dict]
     """
 ```
+### Discriminated Unions Inside Lists
+
+If you need a list of discriminated union items, apply the discriminator to the union item type, **not** to the entire list.
+
+!!! warning
+    **Incorrect:**
+    ```python
+    AnimalType = Annotated[
+        list[Union[Dog, Cat]],
+        Field(discriminator='pet_type'),
+    ]
+    ```
+    This will raise `TypeError: 'list' is not a valid discriminated union variant; should be a BaseModel or dataclass`.
+
+**Correct:**
+
+```python
+from typing import Literal, Union, Annotated
+from pydantic import BaseModel, Field
+
+class Dog(BaseModel):
+    pet_type: Literal["dog"] = "dog"
+    name: str
+
+
+class Cat(BaseModel):
+    pet_type: Literal["cat"] = "cat"
+    name: str
+
+
+class Pets(BaseModel):
+    animals: list[
+        Annotated[
+            Union[Dog, Cat],
+            Field(discriminator="pet_type"),
+        ]
+    ]
+
+
+pets = Pets(animals=[
+    {'pet_type': 'dog', 'name': 'Buddy'},
+    {'pet_type': 'cat', 'name': 'Misty'}
+])
+```
+
+By applying the discriminator to the union type itself (rather than the `list`), each item in the `list` is validated against the correct member of the union based on the discriminator value.
 
 ### Discriminated Unions with callable `Discriminator`
 
