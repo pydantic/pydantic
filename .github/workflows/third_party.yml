@@ -45,6 +45,7 @@ jobs:
 
     - uses: astral-sh/setup-uv@v4
       with:
+        enable-cache: true
         python-version: ${{ matrix.python-version }}
 
     - name: Checkout FastAPI
@@ -60,12 +61,12 @@ jobs:
         cd fastapi
         uv venv --python ${{ matrix.python-version }}
         uv pip install -r requirements-tests.txt
-        uv pip install -e ../pydantic-latest
+        uv pip install ../pydantic-latest
 
     - name: List installed dependencies
       run: cd fastapi; uv pip list
 
     - name: Run FastAPI tests
-      run: cd fastapi; uv run ./scripts/test.sh -vv
+      run: cd fastapi; PYTHONPATH=./docs_src uv run --no-project pytest tests
 
     # TODO: slack notification on failure, if job was scheduled
