@@ -255,18 +255,17 @@ Pydantic has a badge that you can use to show that your project uses Pydantic. Y
 <a href="https://pydantic.dev"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/main/docs/badge/v2.json" alt="Pydantic Version 2" style="max-width:100%;"></a>
 ```
 
-## Adding your library as part of Pydantic tests
+## Adding your library as part of Pydantic's third party test suite
 
 To be able to identify regressions early during development, Pydantic runs tests on various third-party projects
-using Pydantic. Are you maintaining an open source project and are you heavily relying on Pydantic? If you match
-some of the following criteria:
+using Pydantic. We consider adding support for testing new open source projects (that rely heavily on Pydantic) if your said project matches some of the following criteria:
 
 - The project is actively maintained.
-- Making use of Pydantic internals (e.g. relying on the [`BaseModel`][pydantic.BaseModel] metaclass, typing utilities).
+- The project makes use of Pydantic internals (e.g. relying on the [`BaseModel`][pydantic.BaseModel] metaclass, typing utilities).
 - The project is popular enough (although small projects can still be included depending on how Pydantic is being used).
-- The project CI is simple enough to be ported into Pydantic's workflow.
+- The project CI is simple enough to be ported into Pydantic's testing workflow.
 
-The project can be tested as part of Pydantic's development process. You can [open feature request][open feature request]
+If your project meets some of these criteria, you can [open feature request][open feature request]
 to discuss the inclusion of your project.
 
 [open feature request]: https://github.com/pydantic/pydantic/issues/new?assignees=&labels=feature+request&projects=&template=feature_request.yml
