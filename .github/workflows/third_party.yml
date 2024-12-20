@@ -8,7 +8,7 @@ on:
   schedule:
     - cron: '0 12 * * *' # Daily at midnight UTC
   pull_request:
-    types: [labeled]
+    branches: [main]
 
   # Can be manually triggered from the Actions tab, if needed
   workflow_dispatch:
@@ -30,7 +30,7 @@ jobs:
       # if 'schedule' was the trigger, don't run it on contributors' forks
       ${{
         (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
-        (github.event_name == 'pull_request' && github.event.label == 'third-party-tests')
+        (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
       }}
 
     name: Test FastAPI (`main` branch) on Python ${{ matrix.python-version }}
