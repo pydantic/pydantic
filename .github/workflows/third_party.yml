@@ -1,7 +1,7 @@
-# This workflow is a daily cron job, inspired by https://github.com/python/typing_extensions/blob/main/.github/workflows/third_party.yml
-# running the tests of various third-party libraries that use pydantic. This helps us spot regressions early,
-# and helps flag when third-party libraries are making incorrect assumptions that might cause them to break when we cut a new release.
-
+# This workflow is a daily cron job, inspired by:
+# https://github.com/python/typing_extensions/blob/main/.github/workflows/third_party.yml.
+# Running the tests of various third-party libraries that use Pydantic. This helps us spot regressions early, and helps
+# flag when third-party libraries are making incorrect assumptions that might cause them to break when we cut a new release.
 name: Third party tests
 
 on:
@@ -110,3 +110,31 @@ jobs:
 
     - name: Run SQLModel tests
       run: uv run --no-project pytest tests
+
+  create-issue-on-failure:
+    name: Create an issue if tests failed
+    runs-on: ubuntu-latest
+    needs:
+      - test-fastapi
+      - test-sqlmodel
+    if: >-
+      ${{
+        github.repository == 'pydantic/pydantic' &&
+        github.event_name == 'schedule' &&
+        (
+          needs.test-fastapi.result == 'failure' ||
+          needs.test-sqlmodel.result == 'failure'
+        )
+      }}
+    permissions:
+      issues: write
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.create({
+              owner: 'pydantic',
+              repo: 'pydantic',
+              title: `Third-party tests failed on ${new Date().toDateString()}`,
+              body: 'Run listed here: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}',
+            })
