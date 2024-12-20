@@ -228,6 +228,7 @@ Here's a quick guide on how to do that. This tutorial is done in VSCode, but you
 Pydantic has a badge that you can use to show that your project uses Pydantic. You can use this badge in your `README.md`:
 
 ### With Markdown
+
 ```md
 [![Pydantic v1](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/main/docs/badge/v1.json)](https://pydantic.dev)
 
@@ -253,3 +254,19 @@ Pydantic has a badge that you can use to show that your project uses Pydantic. Y
 
 <a href="https://pydantic.dev"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/main/docs/badge/v2.json" alt="Pydantic Version 2" style="max-width:100%;"></a>
 ```
+
+## Adding your library as part of Pydantic tests
+
+To be able to identify regressions early during development, Pydantic runs tests on various third-party projects
+using Pydantic. Are you maintaining an open source project and are you heavily relying on Pydantic? If you match
+some of the following criteria:
+
+- The project is actively maintained.
+- Making use of Pydantic internals (e.g. relying on the [`BaseModel`][pydantic.BaseModel] metaclass, typing utilities).
+- The project is popular enough (although small projects can still be included depending on how Pydantic is being used).
+- The project CI is simple enough to be ported into Pydantic's workflow.
+
+The project can be tested as part of Pydantic's development process. You can [open feature request][open feature request]
+to discuss the inclusion of your project.
+
+[open feature request]: https://github.com/pydantic/pydantic/issues/new?assignees=&labels=feature+request&projects=&template=feature_request.yml

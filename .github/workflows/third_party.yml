@@ -33,7 +33,7 @@ jobs:
         (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
       }}
 
-    name: Test FastAPI (`main` branch) on Python ${{ matrix.python-version }}
+    name: Test FastAPI (main branch) on Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -76,7 +76,7 @@ jobs:
         (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
       }}
 
-    name: Test SQLModel (`main` branch) on Python ${{ matrix.python-version }}
+    name: Test SQLModel (main branch) on Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
