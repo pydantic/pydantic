@@ -897,6 +897,15 @@ to help you monitor and understand your
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#adding-your-library-as-part-of-pydantics-third-party-test-suite" class="md-nav__link">
+    <span class="md-ellipsis">
+      Adding your library as part of Pydantic's third party test suite
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -3274,6 +3283,15 @@ to help you monitor and understand your
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#adding-your-library-as-part-of-pydantics-third-party-test-suite" class="md-nav__link">
+    <span class="md-ellipsis">
+      Adding your library as part of Pydantic's third party test suite
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -3483,6 +3501,17 @@ Here's a quick guide on how to do that. This tutorial is done in VSCode, but you
 
 <span class="p">&lt;</span><span class="nt">a</span> <span class="na">href</span><span class="o">=</span><span class="s">&quot;https://pydantic.dev&quot;</span><span class="p">&gt;&lt;</span><span class="nt">img</span> <span class="na">src</span><span class="o">=</span><span class="s">&quot;https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/main/docs/badge/v2.json&quot;</span> <span class="na">alt</span><span class="o">=</span><span class="s">&quot;Pydantic Version 2&quot;</span> <span class="na">style</span><span class="o">=</span><span class="s">&quot;max-width:100%;&quot;</span><span class="p">&gt;&lt;/</span><span class="nt">a</span><span class="p">&gt;</span>
 </code></pre></div>
+<h2 id="adding-your-library-as-part-of-pydantics-third-party-test-suite">Adding your library as part of Pydantic's third party test suite<a class="headerlink" href="#adding-your-library-as-part-of-pydantics-third-party-test-suite" title="Permanent link">&para;</a></h2>
+<p>To be able to identify regressions early during development, Pydantic runs tests on various third-party projects
+using Pydantic. We consider adding support for testing new open source projects (that rely heavily on Pydantic) if your said project matches some of the following criteria:</p>
+<ul>
+<li>The project is actively maintained.</li>
+<li>The project makes use of Pydantic internals (e.g. relying on the <a class="autorefs autorefs-internal" href="../api/base_model/#pydantic.BaseModel"><code>BaseModel</code></a> metaclass, typing utilities).</li>
+<li>The project is popular enough (although small projects can still be included depending on how Pydantic is being used).</li>
+<li>The project CI is simple enough to be ported into Pydantic's testing workflow.</li>
+</ul>
+<p>If your project meets some of these criteria, you can <a href="https://github.com/pydantic/pydantic/issues/new?assignees=&amp;labels=feature+request&amp;projects=&amp;template=feature_request.yml">open feature request</a>
+to discuss the inclusion of your project.</p>
 
 
 
