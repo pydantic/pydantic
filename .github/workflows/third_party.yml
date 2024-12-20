@@ -95,9 +95,6 @@ jobs:
       with:
         enable-cache: true
         python-version: ${{ matrix.python-version }}
-        cache-dependency-glob: |
-          requirements**.txt
-          pyproject.toml
 
     - name: Install SQLModel dependencies
       run: |
