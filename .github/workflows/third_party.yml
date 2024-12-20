@@ -41,20 +41,18 @@ jobs:
         # FastAPI doesn't yet support Python 3.13
         python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout FastAPI
+      run: git clone https://github.com/fastapi/fastapi.git --depth=1
+
+    - name: Checkout Pydantic
+      uses: actions/checkout@v4
+      with:
+        path: pydantic-latest
 
     - uses: astral-sh/setup-uv@v4
       with:
         enable-cache: true
         python-version: ${{ matrix.python-version }}
-
-    - name: Checkout FastAPI
-      run: git clone https://github.com/tiangolo/fastapi.git --depth=1
-
-    - name: checkout Pydantic
-      uses: actions/checkout@v4
-      with:
-        path: pydantic-latest
 
     - name: Install FastAPI dependencies
       run: |
@@ -69,4 +67,47 @@ jobs:
     - name: Run FastAPI tests
       run: cd fastapi; PYTHONPATH=./docs_src uv run --no-project pytest tests
 
-    # TODO: slack notification on failure, if job was scheduled
+  test-sqlmodel:
+    if: >-
+      # if 'schedule' was the trigger, don't run it on contributors' forks
+      ${{
+        (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
+        (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
+      }}
+
+    name: Test SQLModel (`main` branch) on Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # SQLModel doesn't yet support Python 3.13
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+    steps:
+    - name: Checkout SQLModel
+      run: git clone https://github.com/fastapi/sqlmodel.git --depth=1
+
+    - name: Checkout Pydantic
+      uses: actions/checkout@v4
+      with:
+        path: pydantic-latest
+
+    - uses: astral-sh/setup-uv@v4
+      with:
+        enable-cache: true
+        python-version: ${{ matrix.python-version }}
+        cache-dependency-glob: |
+          requirements**.txt
+          pyproject.toml
+
+    - name: Install SQLModel dependencies
+      run: |
+        cd sqlmodel
+        uv venv --python ${{ matrix.python-version }}
+        uv pip install -r requirements-tests.txt
+        uv pip install ../pydantic-latest
+
+    - name: List installed dependencies
+      run: cd sqlmodel; uv pip list
+
+    - name: Run SQLModel tests
+      run: cd sqlmodel; uv run --no-project pytest tests
