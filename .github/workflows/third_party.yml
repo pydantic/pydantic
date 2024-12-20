@@ -45,7 +45,6 @@ jobs:
 
     - uses: astral-sh/setup-uv@v4
       with:
-        enable-cache: true
         python-version: ${{ matrix.python-version }}
 
     - name: Checkout FastAPI
