@@ -9,8 +9,7 @@ on:
     - cron: '0 12 * * *' # Daily at midnight UTC
   pull_request:
     branches: [main]
-
-  # Can be manually triggered from the Actions tab, if needed
+  # Can be manually triggered from the Actions tab, if needed:
   workflow_dispatch:
 
 permissions:
@@ -26,14 +25,13 @@ concurrency:
 
 jobs:
   test-fastapi:
-    if: >-
-      # if 'schedule' was the trigger, don't run it on contributors' forks
-      ${{
-        (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
-        (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
-      }}
-
     name: Test FastAPI (main branch) on Python ${{ matrix.python-version }}
+    # If 'schedule' was the trigger, don't run it on contributors' forks
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
+
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -69,14 +67,13 @@ jobs:
       run: PYTHONPATH=./docs_src uv run --no-project pytest tests
 
   test-sqlmodel:
-    if: >-
-      # if 'schedule' was the trigger, don't run it on contributors' forks
-      ${{
-        (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
-        (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
-      }}
-
     name: Test SQLModel (main branch) on Python ${{ matrix.python-version }}
+    # If 'schedule' was the trigger, don't run it on contributors' forks
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
+
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -117,15 +114,13 @@ jobs:
     needs:
       - test-fastapi
       - test-sqlmodel
-    if: >-
-      ${{
-        github.repository == 'pydantic/pydantic' &&
-        github.event_name == 'schedule' &&
-        (
-          needs.test-fastapi.result == 'failure' ||
-          needs.test-sqlmodel.result == 'failure'
-        )
-      }}
+    if: |
+      github.repository == 'pydantic/pydantic' &&
+      github.event_name == 'schedule' &&
+      (
+        needs.test-fastapi.result == 'failure' ||
+        needs.test-sqlmodel.result == 'failure'
+      )
     permissions:
       issues: write
     steps:
