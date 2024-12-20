@@ -42,7 +42,9 @@ jobs:
         python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
     steps:
     - name: Checkout FastAPI
-      run: git clone https://github.com/fastapi/fastapi.git --depth=1
+      uses: actions/checkout@v4
+      with:
+        repository: fastapi/fastapi
 
     - name: Checkout Pydantic
       uses: actions/checkout@v4
@@ -56,16 +58,15 @@ jobs:
 
     - name: Install FastAPI dependencies
       run: |
-        cd fastapi
         uv venv --python ${{ matrix.python-version }}
         uv pip install -r requirements-tests.txt
-        uv pip install ../pydantic-latest
+        uv pip install ./pydantic-latest
 
     - name: List installed dependencies
-      run: cd fastapi; uv pip list
+      run: uv pip list
 
     - name: Run FastAPI tests
-      run: cd fastapi; PYTHONPATH=./docs_src uv run --no-project pytest tests
+      run: PYTHONPATH=./docs_src uv run --no-project pytest tests
 
   test-sqlmodel:
     if: >-
@@ -84,7 +85,9 @@ jobs:
         python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
     steps:
     - name: Checkout SQLModel
-      run: git clone https://github.com/fastapi/sqlmodel.git --depth=1
+      uses: actions/checkout@v4
+      with:
+        repository: fastapi/sqlmodel
 
     - name: Checkout Pydantic
       uses: actions/checkout@v4
@@ -98,13 +101,12 @@ jobs:
 
     - name: Install SQLModel dependencies
       run: |
-        cd sqlmodel
         uv venv --python ${{ matrix.python-version }}
         uv pip install -r requirements-tests.txt
-        uv pip install ../pydantic-latest
+        uv pip install ./pydantic-latest
 
     - name: List installed dependencies
-      run: cd sqlmodel; uv pip list
+      run: uv pip list
 
     - name: Run SQLModel tests
-      run: cd sqlmodel; uv run --no-project pytest tests
+      run: uv run --no-project pytest tests
