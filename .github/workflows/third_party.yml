@@ -16,6 +16,10 @@ on:
 permissions:
   contents: read
 
+env:
+  # https://github.com/pytest-dev/pytest/issues/7443#issuecomment-656642591:
+  FORCE_COLOR: 1
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
