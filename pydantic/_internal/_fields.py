@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Any, Callable, Pattern
 from pydantic_core import PydanticUndefined
 from typing_extensions import TypeIs
 
+from pydantic import PydanticDeprecatedSince211
 from pydantic.errors import PydanticUserError
 
 from . import _typing_extra
@@ -158,7 +159,18 @@ def collect_model_fields(  # noqa: C901
         if _typing_extra.is_classvar_annotation(ann_type):
             class_vars.add(ann_name)
             continue
-        if _is_finalvar_with_default_val(ann_type, getattr(cls, ann_name, PydanticUndefined)):
+
+        assigned_value = getattr(cls, ann_name, PydanticUndefined)
+
+        if _is_finalvar_with_default_val(ann_type, assigned_value):
+            warnings.warn(
+                f'Annotation {ann_name!r} is marked as final and has a default value. Pydantic treats {ann_name!r} as a '
+                f'class variable, but it will be considered as an normal field in V3. If you still want {ann_name!r} to be '
+                'considered as a class variable, annotate it as: `ClassVar[<type>] = <default>.`',
+                category=PydanticDeprecatedSince211,
+                # Incorrect when `create_model` is used, but the chance that final with a default is used is low in that case:
+                stacklevel=4,
+            )
             class_vars.add(ann_name)
             continue
         if not is_valid_field_name(ann_name):
@@ -195,11 +207,7 @@ def collect_model_fields(  # noqa: C901
                     UserWarning,
                 )
 
-        try:
-            default = getattr(cls, ann_name, PydanticUndefined)
-            if default is PydanticUndefined:
-                raise AttributeError
-        except AttributeError:
+        if assigned_value is PydanticUndefined:
             if ann_name in annotations:
                 field_info = FieldInfo_.from_annotation(ann_type)
                 field_info.evaluated = evaluated
@@ -218,14 +226,15 @@ def collect_model_fields(  # noqa: C901
                     field_info.evaluated = evaluated
         else:
             _warn_on_nested_alias_in_annotation(ann_type, ann_name)
-            if isinstance(default, FieldInfo_) and ismethoddescriptor(default.default):
-                # the `getattr` call above triggers a call to `__get__` for descriptors, so we do
-                # the same if the `= field(default=...)` form is used. Note that we only do this
-                # for method descriptors for now, we might want to extend this to any descriptor
-                # in the future (by simply checking for `hasattr(default.default, '__get__')`).
-                default.default = default.default.__get__(None, cls)
+            if isinstance(assigned_value, FieldInfo_) and ismethoddescriptor(assigned_value.default):
+                # `assigned_value` was fetched using `getattr`, which triggers a call to `__get__`
+                # for descriptors, so we do the same if the `= field(default=...)` form is used.
+                # Note that we only do this for method descriptors for now, we might want to
+                # extend this to any descriptor in the future (by simply checking for
+                # `hasattr(assigned_value.default, '__get__')`).
+                assigned_value.default = assigned_value.default.__get__(None, cls)
 
-            field_info = FieldInfo_.from_annotated_attribute(ann_type, default)
+            field_info = FieldInfo_.from_annotated_attribute(ann_type, assigned_value)
             field_info.evaluated = evaluated
             # attributes which are fields are removed from the class namespace:
             # 1. To match the behaviour of annotation-only fields
@@ -266,14 +275,15 @@ def _warn_on_nested_alias_in_annotation(ann_type: type[Any], ann_name: str) -> N
                         return
 
 
-def _is_finalvar_with_default_val(type_: type[Any], val: Any) -> bool:
+def _is_finalvar_with_default_val(ann_type: type[Any], assigned_value: Any) -> bool:
+    if assigned_value is PydanticUndefined:
+        return False
+
     FieldInfo = import_cached_field_info()
 
-    if not _typing_extra.is_finalvar(type_):
+    if isinstance(assigned_value, FieldInfo) and assigned_value.is_required():
         return False
-    elif val is PydanticUndefined:
-        return False
-    elif isinstance(val, FieldInfo) and (val.default is PydanticUndefined and val.default_factory is None):
+    elif not _typing_extra.is_finalvar(ann_type):
         return False
     else:
         return True
