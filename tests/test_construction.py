@@ -143,7 +143,6 @@ def test_simple_copy(copy_method):
     assert m.a == m2.a == 24
     assert m.b == m2.b == 10
     assert m == m2
-    assert m.model_fields == m2.model_fields
 
 
 @pytest.fixture(scope='session', name='ModelTwo')
@@ -169,7 +168,6 @@ def test_deep_copy(ModelTwo, copy_method):
     assert m.c == m2.c == 'foobar'
     assert m.d is not m2.d
     assert m == m2
-    assert m.model_fields == m2.model_fields
     assert m._foo_ == m2._foo_
     assert m._foo_ is not m2._foo_
 
@@ -329,7 +327,6 @@ def test_simple_pickle():
     assert m is not m2
     assert tuple(m) == (('a', 24.0), ('b', 10))
     assert tuple(m2) == (('a', 24.0), ('b', 10))
-    assert m.model_fields == m2.model_fields
 
 
 def test_recursive_pickle(create_module):
@@ -355,7 +352,6 @@ def test_recursive_pickle(create_module):
 
     assert m.d.a == 123.45
     assert m2.d.a == 123.45
-    assert m.model_fields == m2.model_fields
     assert m._foo_ == m2._foo_
 
 

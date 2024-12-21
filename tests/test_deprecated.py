@@ -18,6 +18,7 @@ from pydantic import (
     PydanticDeprecatedSince20,
     PydanticUserError,
     ValidationError,
+    computed_field,
     conlist,
     root_validator,
 )
@@ -29,6 +30,7 @@ from pydantic.deprecated.tools import parse_obj_as, schema_json_of, schema_of
 from pydantic.functional_serializers import model_serializer
 from pydantic.json_schema import JsonSchemaValue
 from pydantic.type_adapter import TypeAdapter
+from pydantic.warnings import PydanticDeprecatedSince210
 
 
 def deprecated_from_orm(model_type: Type[BaseModel], obj: Any) -> Any:
@@ -316,9 +318,20 @@ def test_fields():
         x: int
         y: int = 2
 
+        @computed_field
+        @property
+        def area(self) -> int:
+            return self.x * self.y
+
     m = Model(x=1)
     assert len(Model.model_fields) == 2
-    assert len(m.model_fields) == 2
+
+    with pytest.warns(PydanticDeprecatedSince210):
+        assert len(m.model_fields) == 2
+
+    with pytest.warns(PydanticDeprecatedSince210):
+        assert len(m.model_computed_fields) == 1
+
     match = '^The `__fields__` attribute is deprecated, use `model_fields` instead.'
     with pytest.warns(PydanticDeprecatedSince20, match=match):
         assert len(Model.__fields__) == 2
