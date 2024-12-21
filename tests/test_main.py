@@ -111,8 +111,8 @@ def test_ultra_simple_repr(UltraSimpleModel):
     m = UltraSimpleModel(a=10.2)
     assert str(m) == 'a=10.2 b=10'
     assert repr(m) == 'UltraSimpleModel(a=10.2, b=10)'
-    assert repr(m.model_fields['a']) == 'FieldInfo(annotation=float, required=True)'
-    assert repr(m.model_fields['b']) == 'FieldInfo(annotation=int, required=False, default=10)'
+    assert repr(UltraSimpleModel.model_fields['a']) == 'FieldInfo(annotation=float, required=True)'
+    assert repr(UltraSimpleModel.model_fields['b']) == 'FieldInfo(annotation=int, required=False, default=10)'
     assert dict(m) == {'a': 10.2, 'b': 10}
     assert m.model_dump() == {'a': 10.2, 'b': 10}
     assert m.model_dump_json() == '{"a":10.2,"b":10}'
@@ -142,7 +142,7 @@ def test_default_factory_field():
 
     m = Model()
     assert str(m) == 'a=1'
-    assert repr(m.model_fields['a']) == 'FieldInfo(annotation=int, required=False, default_factory=myfunc)'
+    assert repr(Model.model_fields['a']) == 'FieldInfo(annotation=int, required=False, default_factory=myfunc)'
     assert dict(m) == {'a': 1}
     assert m.model_dump_json() == '{"a":1}'
 
@@ -1864,9 +1864,9 @@ def test_repr_field():
 
     m = Model(a=1, b=2.5, c=True)
     assert repr(m) == 'Model(a=1, b=2.5)'
-    assert repr(m.model_fields['a']) == 'FieldInfo(annotation=int, required=True)'
-    assert repr(m.model_fields['b']) == 'FieldInfo(annotation=float, required=True)'
-    assert repr(m.model_fields['c']) == 'FieldInfo(annotation=bool, required=True, repr=False)'
+    assert repr(Model.model_fields['a']) == 'FieldInfo(annotation=int, required=True)'
+    assert repr(Model.model_fields['b']) == 'FieldInfo(annotation=float, required=True)'
+    assert repr(Model.model_fields['c']) == 'FieldInfo(annotation=bool, required=True, repr=False)'
 
 
 def test_inherited_model_field_copy():

@@ -39,8 +39,8 @@ from ._typing_extra import (
 from ._utils import LazyClassAttribute, SafeGetItemProxy
 
 if typing.TYPE_CHECKING:
-    from ..fields import ComputedFieldInfo, FieldInfo, ModelPrivateAttr
     from ..fields import Field as PydanticModelField
+    from ..fields import FieldInfo, ModelPrivateAttr
     from ..fields import PrivateAttr as PydanticModelPrivateAttr
     from ..main import BaseModel
 else:
@@ -361,25 +361,7 @@ class ModelMetaclass(ABCMeta):
             PydanticDeprecatedSince20,
             stacklevel=2,
         )
-        return self.model_fields
-
-    @property
-    def model_fields(self) -> dict[str, FieldInfo]:
-        """Get metadata about the fields defined on the model.
-
-        Returns:
-            A mapping of field names to [`FieldInfo`][pydantic.fields.FieldInfo] objects.
-        """
         return getattr(self, '__pydantic_fields__', {})
-
-    @property
-    def model_computed_fields(self) -> dict[str, ComputedFieldInfo]:
-        """Get metadata about the computed fields defined on the model.
-
-        Returns:
-            A mapping of computed field names to [`ComputedFieldInfo`][pydantic.fields.ComputedFieldInfo] objects.
-        """
-        return getattr(self, '__pydantic_computed_fields__', {})
 
     def __dir__(self) -> list[str]:
         attributes = list(super().__dir__())
