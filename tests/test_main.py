@@ -52,6 +52,7 @@ from pydantic._internal._generate_schema import GenerateSchema
 from pydantic._internal._mock_val_ser import MockCoreSchema
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.v1 import BaseModel as BaseModelV1
+from pydantic.warnings import PydanticDeprecatedSince211
 
 
 def test_success():
@@ -2011,8 +2012,10 @@ def test_frozen_field_decl_without_default_val(ann, value):
     ids=['no-arg', 'with-arg'],
 )
 def test_final_field_decl_with_default_val(ann):
-    class Model(BaseModel):
-        a: ann = 10
+    with pytest.warns(PydanticDeprecatedSince211):
+
+        class Model(BaseModel):
+            a: ann = 10
 
     assert 'a' in Model.__class_vars__
     assert 'a' not in Model.model_fields
