@@ -125,7 +125,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           persist-credentials: false
-          repository: airflow/airflow
+          repository: apache/airflow
 
       - name: "Cleanup docker"
         run: ./scripts/ci/cleanup_docker.sh
@@ -134,7 +134,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ github.sha }}
-          repository: airflow/airflow
+          repository: apache/airflow
           fetch-depth: 2
           persist-credentials: false
       - name: "Install Breeze"
@@ -182,7 +182,7 @@ jobs:
     - name: Checkout Airflow
       uses: actions/checkout@v4
       with:
-        repository: airflow/airflow
+        repository: apache/airflow
         # Need to fetch all history for selective checks tests
         fetch-depth: 0
         persist-credentials: false
