@@ -175,7 +175,7 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
 
     Args:
         annotation: The annotation.
-        schema: The schema.
+        schema: The schema. May mutate the schema so caller is responsible for making a shallow copy if necessary.
 
     Returns:
         An updated schema with annotation if it is an annotation we know about, `None` otherwise.
@@ -187,7 +187,6 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
 
     from ._validators import NUMERIC_VALIDATOR_LOOKUP, forbid_inf_nan_check
 
-    schema = schema.copy()
     schema_update, other_metadata = collect_known_metadata([annotation])
     schema_type = schema['type']
 
@@ -210,7 +209,8 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
         # this is a bit challenging because we sometimes want to apply constraints to the inner schema,
         # whereas other times we want to wrap the existing schema with a new one that enforces a new constraint.
         if schema_type in {'function-before', 'function-wrap', 'function-after'} and constraint == 'strict':
-            schema['schema'] = apply_known_metadata(annotation, schema['schema'])  # type: ignore  # schema is function schema
+            # schema is function schema
+            schema['schema'] = apply_known_metadata(annotation, schema['schema'].copy())  # type: ignore
             return schema
 
         # if we're allowed to apply constraint directly to the schema, like le to int, do that
