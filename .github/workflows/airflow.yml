@@ -159,6 +159,7 @@ jobs:
     # If 'schedule' was the trigger, don't run it on contributors' forks
     if: |
       github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'push' ||
       (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
       (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
 
