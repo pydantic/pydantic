@@ -113,6 +113,51 @@ jobs:
     - name: Run SQLModel tests
       run: uv run --no-project pytest tests
 
+  test-openapi-python-client:
+    name: Test openapi-python-client (main branch) on Python ${{ matrix.python-version }}
+    # If 'schedule' was the trigger, don't run it on contributors' forks
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
+
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
+    steps:
+    - name: Checkout openapi-python-client
+      uses: actions/checkout@v4
+      with:
+        repository: Viicos/openapi-python-client
+        ref: 'model-rebuild'
+
+    - name: Checkout Pydantic
+      uses: actions/checkout@v4
+      with:
+        path: pydantic-latest
+
+    - name: Set up PDM
+      uses: pdm-project/setup-pdm@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install openapi-python-client dependencies
+      run: |
+        pdm install --quiet
+        pdm run python -m ensurepip
+        pdm run python -m pip uninstall --yes pydantic
+        pdm run python -m pip install ./pydantic-latest
+
+    - name: List installed dependencies
+      run: pdm list
+
+    - name: Run openapi-python-client tests
+      run: pdm test
+      env:
+        TASKIPY: true
+
   create-issue-on-failure:
     name: Create an issue if tests failed
     runs-on: ubuntu-latest
