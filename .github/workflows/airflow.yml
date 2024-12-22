@@ -218,7 +218,7 @@ jobs:
     if: |
       github.repository == 'pydantic/pydantic' &&
       github.event_name == 'schedule' &&
-      needs.test-airflow.result == 'failure
+      needs.test-airflow.result == 'failure'
     permissions:
       issues: write
     steps:
