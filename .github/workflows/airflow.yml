@@ -12,7 +12,7 @@ on:
   # Can be manually triggered from the Actions tab, if needed:
   workflow_dispatch:
   push:
-    branches: [third-party-airflow]
+    branches: [ci/third-party-airflow]
 
 permissions:
   contents: read
