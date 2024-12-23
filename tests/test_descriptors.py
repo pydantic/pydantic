@@ -3,11 +3,10 @@ from typing import Any
 from pydantic_core import PydanticUndefined
 
 from pydantic import BaseModel, Field, ModelFieldDescriptor
-from pydantic.fields import FieldInfo
 
 
 class FieldDescriptor(ModelFieldDescriptor):
-    def __init__(self, /, default: Any = PydanticUndefined, field: FieldInfo | None = None):
+    def __init__(self, /, default: Any = PydanticUndefined, field=None):
         super().__init__(default=default, field=field)
         self.__values = {}
 
