@@ -188,8 +188,8 @@ jobs:
       use-uv: ${{ needs.build-info.outputs.force-pip == 'true' && 'false' || 'true' }}
       upgrade-to-newer-dependencies: ${{ needs.build-info.outputs.upgrade-to-newer-dependencies }}
       constraints-branch: ${{ needs.build-info.outputs.default-constraints-branch }}
-      docker-cache: ${{ needs.build-info.outputs.docker-cache }}
-      disable-airflow-repo-cache: ${{ needs.build-info.outputs.disable-airflow-repo-cache }}
+      docker-cache: false
+      disable-airflow-repo-cache: true
 
   wait-for-ci-images:
     timeout-minutes: 120
