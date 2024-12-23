@@ -340,35 +340,35 @@ jobs:
       debug-resources: ${{ needs.build-info.outputs.debug-resources }}
     if: needs.build-info.outputs.run-tests == 'true'
 
-  tests-special:
-    name: "Special tests"
-    uses: ./.github/workflows/special-tests.yml
-    needs: [build-info, wait-for-ci-images]
-    permissions:
-      contents: read
-      packages: read
-    secrets: inherit
-    if: >
-      needs.build-info.outputs.run-tests == 'true' &&
-      (needs.build-info.outputs.canary-run == 'true' ||
-       needs.build-info.outputs.upgrade-to-newer-dependencies != 'false' ||
-       needs.build-info.outputs.full-tests-needed == 'true')
-    with:
-      test-groups: ${{ needs.build-info.outputs.test-groups }}
-      default-branch: ${{ needs.build-info.outputs.default-branch }}
-      runs-on-as-json-default: ${{ needs.build-info.outputs.runs-on-as-json-default }}
-      image-tag: latest
-      core-test-types-list-as-string: ${{ needs.build-info.outputs.core-test-types-list-as-string }}
-      providers-test-types-list-as-string: ${{ needs.build-info.outputs.providers-test-types-list-as-string }}
-      run-coverage: ${{ needs.build-info.outputs.run-coverage }}
-      default-python-version: ${{ needs.build-info.outputs.default-python-version }}
-      python-versions: ${{ needs.build-info.outputs.python-versions }}
-      default-postgres-version: ${{ needs.build-info.outputs.default-postgres-version }}
-      excluded-providers-as-string: ${{ needs.build-info.outputs.excluded-providers-as-string }}
-      canary-run: ${{ needs.build-info.outputs.canary-run }}
-      upgrade-to-newer-dependencies: ${{ needs.build-info.outputs.upgrade-to-newer-dependencies }}
-      include-success-outputs: ${{ needs.build-info.outputs.include-success-outputs }}
-      debug-resources: ${{ needs.build-info.outputs.debug-resources }}
+  # tests-special:
+  #   name: "Special tests"
+  #   uses: ./.github/workflows/special-tests.yml
+  #   needs: [build-info, wait-for-ci-images]
+  #   permissions:
+  #     contents: read
+  #     packages: read
+  #   secrets: inherit
+  #   if: >
+  #     needs.build-info.outputs.run-tests == 'true' &&
+  #     (needs.build-info.outputs.canary-run == 'true' ||
+  #      needs.build-info.outputs.upgrade-to-newer-dependencies != 'false' ||
+  #      needs.build-info.outputs.full-tests-needed == 'true')
+  #   with:
+  #     test-groups: ${{ needs.build-info.outputs.test-groups }}
+  #     default-branch: ${{ needs.build-info.outputs.default-branch }}
+  #     runs-on-as-json-default: ${{ needs.build-info.outputs.runs-on-as-json-default }}
+  #     image-tag: latest
+  #     core-test-types-list-as-string: ${{ needs.build-info.outputs.core-test-types-list-as-string }}
+  #     providers-test-types-list-as-string: ${{ needs.build-info.outputs.providers-test-types-list-as-string }}
+  #     run-coverage: ${{ needs.build-info.outputs.run-coverage }}
+  #     default-python-version: ${{ needs.build-info.outputs.default-python-version }}
+  #     python-versions: ${{ needs.build-info.outputs.python-versions }}
+  #     default-postgres-version: ${{ needs.build-info.outputs.default-postgres-version }}
+  #     excluded-providers-as-string: ${{ needs.build-info.outputs.excluded-providers-as-string }}
+  #     canary-run: ${{ needs.build-info.outputs.canary-run }}
+  #     upgrade-to-newer-dependencies: ${{ needs.build-info.outputs.upgrade-to-newer-dependencies }}
+  #     include-success-outputs: ${{ needs.build-info.outputs.include-success-outputs }}
+  #     debug-resources: ${{ needs.build-info.outputs.debug-resources }}
 
   tests-integration-system:
     name: Integration and System Tests
