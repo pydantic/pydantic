@@ -138,7 +138,7 @@ ${{ inputs.do-build == 'true' && inputs.image-tag || '' }}"
         shell: bash
         run: docker run -v "${GITHUB_WORKSPACE}:/workspace" -u 0:0 bash -c "rm -rf /workspace/*"
         if: inputs.do-build == 'true'
-      - name: "Checkout target branch"
+      - name: "Checkout airflow code"
         uses: actions/checkout@v4
         with:
           persist-credentials: false

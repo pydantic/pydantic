@@ -373,7 +373,7 @@ jobs:
   tests-integration-system:
     name: Integration and System Tests
     needs: [build-info, wait-for-ci-images]
-    uses: ./.github/workflows/integration-system-tests.yml
+    uses: ./.github/workflows/airflow-integration-system-tests.yml
     permissions:
       contents: read
       packages: read
