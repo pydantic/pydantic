@@ -366,6 +366,8 @@ _dynamic_imports: 'dict[str, tuple[str, str]]' = {
     'JsonValue': (__spec__.parent, '.types'),
     'OnErrorOmit': (__spec__.parent, '.types'),
     'FailFast': (__spec__.parent, '.types'),
+    # descriptors
+    'ModelFieldDescriptor': (__spec__.parent, '.descriptors'),
     # type_adapter
     'TypeAdapter': (__spec__.parent, '.type_adapter'),
     # warnings
