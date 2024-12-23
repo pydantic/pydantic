@@ -1,5 +1,5 @@
-"""
-Usage docs: https://docs.pydantic.dev/2.5/concepts/json_schema/
+"""!!! abstract "Usage Documentation"
+    [JSON Schema](../concepts/json_schema.md)
 
 The `json_schema` module contains classes and functions to allow the way [JSON Schema](https://json-schema.org/)
 is generated to be customized.
@@ -211,7 +211,8 @@ class _DefinitionsRemapping:
 
 
 class GenerateJsonSchema:
-    """Usage docs: https://docs.pydantic.dev/2.10/concepts/json_schema/#customizing-the-json-schema-generation-process
+    """!!! abstract "Usage Documentation"
+        [Customizing the JSON Schema Generation Process](../concepts/json_schema.md#customizing-the-json-schema-generation-process)
 
     A class for generating JSON schemas.
 
@@ -1053,9 +1054,7 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        if self._mode == 'validation' and (
-            input_schema := schema.get('metadata', {}).get('pydantic_js_input_core_schema')
-        ):
+        if self._mode == 'validation' and (input_schema := schema.get('json_schema_input_schema')):
             return self.generate_inner(input_schema)
 
         return self.generate_inner(schema['schema'])
@@ -1080,9 +1079,7 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        if self._mode == 'validation' and (
-            input_schema := schema.get('metadata', {}).get('pydantic_js_input_core_schema')
-        ):
+        if self._mode == 'validation' and (input_schema := schema.get('json_schema_input_schema')):
             return self.generate_inner(input_schema)
 
         return self.handle_invalid_for_json_schema(
@@ -1098,9 +1095,7 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        if self._mode == 'validation' and (
-            input_schema := schema.get('metadata', {}).get('pydantic_js_input_core_schema')
-        ):
+        if self._mode == 'validation' and (input_schema := schema.get('json_schema_input_schema')):
             return self.generate_inner(input_schema)
 
         return self.generate_inner(schema['schema'])
@@ -2445,7 +2440,8 @@ def _make_json_hashable(value: JsonValue) -> _HashableJsonValue:
 
 @dataclasses.dataclass(**_internal_dataclass.slots_true)
 class WithJsonSchema:
-    """Usage docs: https://docs.pydantic.dev/2.10/concepts/json_schema/#withjsonschema-annotation
+    """!!! abstract "Usage Documentation"
+        [`WithJsonSchema` Annotation](../concepts/json_schema.md#withjsonschema-annotation)
 
     Add this as an annotation on a field to override the (base) JSON schema that would be generated for that field.
     This provides a way to set a JSON schema for types that would otherwise raise errors when producing a JSON schema,
@@ -2582,7 +2578,8 @@ else:
 
     @dataclasses.dataclass(**_internal_dataclass.slots_true)
     class SkipJsonSchema:
-        """Usage docs: https://docs.pydantic.dev/2.10/concepts/json_schema/#skipjsonschema-annotation
+        """!!! abstract "Usage Documentation"
+            [`SkipJsonSchema` Annotation](../concepts/json_schema.md#skipjsonschema-annotation)
 
         Add this as an annotation on a field to skip generating a JSON schema for that field.
 

@@ -96,7 +96,8 @@ _SIMPLE_SETATTR_HANDLERS: Mapping[str, Callable[[BaseModel, str, Any], None]] = 
 
 
 class BaseModel(metaclass=_model_construction.ModelMetaclass):
-    """Usage docs: https://docs.pydantic.dev/2.10/concepts/models/
+    """!!! abstract "Usage Documentation"
+        [Models](../concepts/models.md)
 
     A base class for creating Pydantic models.
 
@@ -384,7 +385,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         return m
 
     def model_copy(self, *, update: Mapping[str, Any] | None = None, deep: bool = False) -> Self:
-        """Usage docs: https://docs.pydantic.dev/2.10/concepts/serialization/#model_copy
+        """!!! abstract "Usage Documentation"
+            [`model_copy`](../concepts/serialization.md#model_copy)
 
         Returns a copy of the model.
 
@@ -426,7 +428,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         warnings: bool | Literal['none', 'warn', 'error'] = True,
         serialize_as_any: bool = False,
     ) -> dict[str, Any]:
-        """Usage docs: https://docs.pydantic.dev/2.10/concepts/serialization/#modelmodel_dump
+        """!!! abstract "Usage Documentation"
+            [`model_dump`](../concepts/serialization.md#modelmodel_dump)
 
         Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.
 
@@ -479,7 +482,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         warnings: bool | Literal['none', 'warn', 'error'] = True,
         serialize_as_any: bool = False,
     ) -> str:
-        """Usage docs: https://docs.pydantic.dev/2.10/concepts/serialization/#modelmodel_dump_json
+        """!!! abstract "Usage Documentation"
+            [`model_dump_json`](../concepts/serialization.md#modelmodel_dump_json)
 
         Generates a JSON representation of the model using Pydantic's `to_json` method.
 
@@ -661,7 +665,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         strict: bool | None = None,
         context: Any | None = None,
     ) -> Self:
-        """Usage docs: https://docs.pydantic.dev/2.10/concepts/json/#json-parsing
+        """!!! abstract "Usage Documentation"
+            [JSON Parsing](../concepts/json.md#json-parsing)
 
         Validate the given JSON data against the Pydantic model.
 
@@ -1630,7 +1635,8 @@ def create_model(  # noqa: C901
     # TODO PEP 747: replace `Any` by the TypeForm:
     **field_definitions: Any | tuple[str, Any],
 ) -> type[ModelT]:
-    """Usage docs: https://docs.pydantic.dev/2.10/concepts/models/#dynamic-model-creation
+    """!!! abstract "Usage Documentation"
+        [Dynamic Model Creation](../concepts/models.md#dynamic-model-creation)
 
     Dynamically creates and returns a new Pydantic model, in other words, `create_model` dynamically creates a
     subclass of [`BaseModel`][pydantic.BaseModel].

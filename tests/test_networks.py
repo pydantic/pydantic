@@ -13,6 +13,7 @@ from pydantic import (
     BaseModel,
     ClickHouseDsn,
     CockroachDsn,
+    Field,
     FileUrl,
     FtpUrl,
     HttpUrl,
@@ -1154,3 +1155,28 @@ def test_any_url_comparison() -> None:
     assert second_url > first_url
     assert first_url <= second_url
     assert second_url >= first_url
+
+
+def test_max_length_base_url() -> None:
+    class Model(BaseModel):
+        url: AnyUrl = Field(max_length=20)
+
+    # _BaseUrl/AnyUrl adds trailing slash: https://github.com/pydantic/pydantic/issues/7186
+    # once solved the second expected line can be removed
+    expected = 'https://example.com'
+    expected = f'{expected}/'
+    assert len(Model(url='https://example.com').url) == len(expected)
+
+    with pytest.raises(ValidationError, match=r'Value should have at most 20 items after validation'):
+        Model(url='https://example.com/longer')
+
+
+def test_max_length_base_multi_host() -> None:
+    class Model(BaseModel):
+        postgres: PostgresDsn = Field(max_length=45)
+
+    expected = 'postgres://user:pass@localhost:5432/foobar'
+    assert len(Model(postgres=expected).postgres) == len(expected)
+
+    with pytest.raises(ValidationError, match=r'Value should have at most 45 items after validation'):
+        Model(postgres='postgres://user:pass@localhost:5432/foobarbazfoo')

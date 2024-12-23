@@ -160,22 +160,6 @@ jobs:
         path: coverage
         include-hidden-files: true
 
-  test-fastapi:
-    # If some tests start failing due to out-of-date schemas/validation errors/etc.,
-    # update the `tests/test_fastapi.sh` script to exclude tests that have known-acceptable failures.
-    name: Test FastAPI
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: set up python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      - name: Run tests
-        run: make test-fastapi
-
   test-plugin:
     name: Test Pydantic plugin
     runs-on: ubuntu-latest
@@ -373,7 +357,6 @@ jobs:
       - test
       - test-memray
       - test-mypy
-      - test-fastapi
       - test-plugin
 
     runs-on: ubuntu-latest
