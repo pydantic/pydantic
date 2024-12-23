@@ -9,7 +9,7 @@ from pydantic_core import PydanticUndefined
 class ModelFieldDescriptor(ABC):
     """A base class from which to derive any descriptor you want to use for a model field"""
 
-    def __init__(self, /, default: Any = PydanticUndefined, field: Any | None = None):
+    def __init__(self, /, default: Any = PydanticUndefined, field=None):
         from ._internal._import_utils import import_cached_field_info
 
         FieldInfo_ = import_cached_field_info()
