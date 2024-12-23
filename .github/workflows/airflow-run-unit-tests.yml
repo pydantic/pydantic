@@ -159,10 +159,11 @@ jobs:
       - name: "Cleanup repo"
         shell: bash
         run: docker run -v "${GITHUB_WORKSPACE}:/workspace" -u 0:0 bash -c "rm -rf /workspace/*"
-      - name: "Checkout ${{ github.ref }} ( ${{ github.sha }} )"
+      - name: "Checkout airflow repository"
         uses: actions/checkout@v4
         with:
           persist-credentials: false
+          repository: apache/airflow
       - name: "Cleanup docker"
         run: ./scripts/ci/cleanup_docker.sh
       - name: "Prepare breeze & CI image: ${{matrix.python-version}}:${{ inputs.image-tag }}"
