@@ -254,7 +254,6 @@ jobs:
       run-migration-tests: "true"
       run-coverage: ${{ needs.build-info.outputs.run-coverage }}
       debug-resources: ${{ needs.build-info.outputs.debug-resources }}
-    if: needs.build-info.outputs.run-tests == 'true'
 
   tests-mysql:
     name: "MySQL tests"
@@ -281,7 +280,6 @@ jobs:
       run-coverage: ${{ needs.build-info.outputs.run-coverage }}
       run-migration-tests: "true"
       debug-resources: ${{ needs.build-info.outputs.debug-resources }}
-    if: needs.build-info.outputs.run-tests == 'true'
 
   tests-sqlite:
     name: "Sqlite tests"
@@ -310,7 +308,6 @@ jobs:
       run-coverage: ${{ needs.build-info.outputs.run-coverage }}
       run-migration-tests: "true"
       debug-resources: ${{ needs.build-info.outputs.debug-resources }}
-    if: needs.build-info.outputs.run-tests == 'true'
 
   tests-non-db:
     name: "Non-DB tests"
@@ -338,7 +335,6 @@ jobs:
       include-success-outputs: ${{ needs.build-info.outputs.include-success-outputs }}
       run-coverage: ${{ needs.build-info.outputs.run-coverage }}
       debug-resources: ${{ needs.build-info.outputs.debug-resources }}
-    if: needs.build-info.outputs.run-tests == 'true'
 
   # tests-special:
   #   name: "Special tests"
@@ -348,9 +344,7 @@ jobs:
   #     contents: read
   #     packages: read
   #   secrets: inherit
-  #   if: >
-  #     needs.build-info.outputs.run-tests == 'true' &&
-  #     (needs.build-info.outputs.canary-run == 'true' ||
+  #   if: > (needs.build-info.outputs.canary-run == 'true' ||
   #      needs.build-info.outputs.upgrade-to-newer-dependencies != 'false' ||
   #      needs.build-info.outputs.full-tests-needed == 'true')
   #   with:
@@ -390,7 +384,6 @@ jobs:
       skip-providers-tests: ${{ needs.build-info.outputs.skip-providers-tests }}
       run-coverage: ${{ needs.build-info.outputs.run-coverage }}
       debug-resources: ${{ needs.build-info.outputs.debug-resources }}
-    if: needs.build-info.outputs.run-tests == 'true'
 
   tests-with-lowest-direct-resolution:
     name: "Lowest direct dependency providers tests"
@@ -400,8 +393,6 @@ jobs:
       contents: read
       packages: read
     secrets: inherit
-    if: >
-      needs.build-info.outputs.run-tests == 'true'
     with:
       runs-on-as-json-default: ${{ needs.build-info.outputs.runs-on-as-json-default }}
       test-name: "LowestDeps-Postgres"
