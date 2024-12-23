@@ -181,7 +181,7 @@ jobs:
       runs-on-as-json-public: ${{ needs.build-info.outputs.runs-on-as-json-public }}
       runs-on-as-json-self-hosted: ${{ needs.build-info.outputs.runs-on-as-json-self-hosted }}
       do-build: true
-      image-tag: ${{ needs.build-info.outputs.image-tag }}
+      image-tag: latest
       platform: "linux/amd64"
       python-versions: ${{ needs.build-info.outputs.python-versions }}
       branch: ${{ needs.build-info.outputs.default-branch }}
@@ -221,7 +221,7 @@ jobs:
       - name: Login to ghcr.io
         run: echo "${{ env.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
         if: needs.build-info.outputs.in-workflow-build == 'false'
-      - name: Wait for CI images ${{ env.PYTHON_VERSIONS }}:${{ needs.build-info.outputs.image-tag }}
+      - name: Wait for CI images ${{ env.PYTHON_VERSIONS }}:latest
         id: wait-for-images
         run: breeze ci-image pull --run-in-parallel --wait-for-image --tag-as-latest
         env:
