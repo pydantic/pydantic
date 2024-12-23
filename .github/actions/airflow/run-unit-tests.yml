@@ -1,0 +1,186 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+---
+name: Unit tests
+on:  # yamllint disable-line rule:truthy
+  workflow_call:
+    inputs:
+      runs-on-as-json-default:
+        description: "The array of labels (in json form) determining default runner used for the build."
+        required: true
+        type: string
+      test-groups:
+        description: "The json representing list of test test groups to run"
+        required: true
+        type: string
+      backend:
+        description: "The backend to run the tests on"
+        required: true
+        type: string
+      test-scope:
+        description: "The scope of the test to run: ('DB', 'Non-DB', 'All', 'ARM collection')"
+        required: true
+        type: string
+      test-name:
+        description: "The name of the test to run"
+        required: true
+        type: string
+      test-name-separator:
+        description: "The separator to use after the test name"
+        required: false
+        default: ":"
+        type: string
+      image-tag:
+        description: "Tag to set for the image"
+        required: true
+        type: string
+      python-versions:
+        description: "The list of python versions (stringified JSON array) to run the tests on."
+        required: true
+        type: string
+      backend-versions:
+        description: "The list of backend versions (stringified JSON array) to run the tests on."
+        required: true
+        type: string
+      excluded-providers-as-string:
+        description: "Excluded providers (per Python version) as json string"
+        required: true
+        type: string
+      excludes:
+        description: "Excluded combos (stringified JSON array of python-version/backend-version dicts)"
+        required: true
+        type: string
+      core-test-types-list-as-string:
+        description: "The list of core test types to run separated by spaces"
+        required: true
+        type: string
+      providers-test-types-list-as-string:
+        description: "The list of providers test types to run separated by spaces"
+        required: true
+        type: string
+      run-migration-tests:
+        description: "Whether to run migration tests or not (true/false)"
+        required: false
+        default: "false"
+        type: string
+      run-coverage:
+        description: "Whether to run coverage or not (true/false)"
+        required: true
+        type: string
+      debug-resources:
+        description: "Whether to debug resources or not (true/false)"
+        required: true
+        type: string
+      include-success-outputs:
+        description: "Whether to include success outputs or not (true/false)"
+        required: false
+        default: "false"
+        type: string
+      downgrade-sqlalchemy:
+        description: "Whether to downgrade SQLAlchemy or not (true/false)"
+        required: false
+        default: "false"
+        type: string
+      upgrade-boto:
+        description: "Whether to upgrade boto or not (true/false)"
+        required: false
+        default: "false"
+        type: string
+      downgrade-pendulum:
+        description: "Whether to downgrade pendulum or not (true/false)"
+        required: false
+        default: "false"
+        type: string
+      force-lowest-dependencies:
+        description: "Whether to force lowest dependencies for the tests or not (true/false)"
+        required: false
+        default: "false"
+        type: string
+      monitor-delay-time-in-seconds:
+        description: "How much time to wait between printing parallel monitor summary"
+        required: false
+        default: 20
+        type: number
+jobs:
+  tests:
+    timeout-minutes: 120
+    name: "\
+      ${{ inputs.test-scope }}-${{ matrix.test-group }}:\
+      ${{ inputs.test-name }}${{ inputs.test-name-separator }}${{ matrix.backend-version }}:\
+      ${{matrix.python-version}}"
+    runs-on: ${{ fromJSON(inputs.runs-on-as-json-default) }}
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: "${{fromJSON(inputs.python-versions)}}"
+        backend-version: "${{fromJSON(inputs.backend-versions)}}"
+        exclude: "${{fromJSON(inputs.excludes)}}"
+        test-group: "${{fromJSON(inputs.test-groups)}}"
+    env:
+      BACKEND: "${{ inputs.backend }}"
+      BACKEND_VERSION: "${{ matrix.backend-version }}"
+      DB_RESET: "true"
+      DEBUG_RESOURCES: "${{ inputs.debug-resources }}"
+      DOWNGRADE_SQLALCHEMY: "${{ inputs.downgrade-sqlalchemy }}"
+      DOWNGRADE_PENDULUM: "${{ inputs.downgrade-pendulum }}"
+      ENABLE_COVERAGE: "${{ inputs.run-coverage }}"
+      EXCLUDED_PROVIDERS: "${{ inputs.excluded-providers-as-string }}"
+      FORCE_LOWEST_DEPENDENCIES: "${{ inputs.force-lowest-dependencies }}"
+      GITHUB_REPOSITORY: ${{ github.repository }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_USERNAME: ${{ github.actor }}
+      IMAGE_TAG: "${{ inputs.image-tag }}"
+      INCLUDE_SUCCESS_OUTPUTS: ${{ inputs.include-success-outputs }}
+      # yamllint disable rule:line-length
+      JOB_ID: "${{ matrix.test-group }}-${{ inputs.test-scope }}-${{ inputs.test-name }}-${{inputs.backend}}-${{ matrix.backend-version }}-${{ matrix.python-version }}"
+      MOUNT_SOURCES: "skip"
+      # yamllint disable rule:line-length
+      PARALLEL_TEST_TYPES: ${{ matrix.test-group == 'core' && inputs.core-test-types-list-as-string || inputs.providers-test-types-list-as-string }}
+      PYTHON_MAJOR_MINOR_VERSION: "${{ matrix.python-version }}"
+      UPGRADE_BOTO: "${{ inputs.upgrade-boto }}"
+      AIRFLOW_MONITOR_DELAY_TIME_IN_SECONDS: "${{inputs.monitor-delay-time-in-seconds}}"
+      VERBOSE: "true"
+    steps:
+      - name: "Cleanup repo"
+        shell: bash
+        run: docker run -v "${GITHUB_WORKSPACE}:/workspace" -u 0:0 bash -c "rm -rf /workspace/*"
+      - name: "Checkout ${{ github.ref }} ( ${{ github.sha }} )"
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: "Cleanup docker"
+        run: ./scripts/ci/cleanup_docker.sh
+      - name: "Prepare breeze & CI image: ${{matrix.python-version}}:${{ inputs.image-tag }}"
+        uses: ./.github/actions/prepare_breeze_and_image
+      - name: >
+          Migration Tests: ${{ matrix.python-version }}:${{ env.PARALLEL_TEST_TYPES }}
+        uses: ./.github/actions/migration_tests
+        if: inputs.run-migration-tests == 'true' && matrix.test-group == 'core'
+      - name: >
+          ${{ matrix.test-group}}:${{ inputs.test-scope }} Tests ${{ inputs.test-name }} ${{ matrix.backend-version }}
+          Py${{ matrix.python-version }}:${{ env.PARALLEL_TEST_TYPES }}
+        run: ./scripts/ci/testing/run_unit_tests.sh "${{ matrix.test-group }}" "${{ inputs.test-scope }}"
+      - name: "Post Tests success"
+        uses: ./.github/actions/post_tests_success
+        with:
+          codecov-token: ${{ secrets.CODECOV_TOKEN }}
+          python-version: ${{ matrix.python-version }}
+        if: success()
+      - name: "Post Tests failure"
+        uses: ./.github/actions/post_tests_failure
+        if: failure() || cancelled()

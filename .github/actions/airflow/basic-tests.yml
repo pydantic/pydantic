@@ -1,0 +1,82 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+---
+name: Basic tests
+on:  # yamllint disable-line rule:truthy
+  workflow_call:
+    inputs:
+      runs-on-as-json-public:
+        description: "The array of labels (in json form) determining public runners."
+        required: true
+        type: string
+      run-ui-tests:
+        description: "Whether to run UI tests (true/false)"
+        required: true
+        type: string
+      run-www-tests:
+        description: "Whether to run WWW tests (true/false)"
+        required: true
+        type: string
+      needs-api-codegen:
+        description: "Whether to run API codegen (true/false)"
+        required: true
+        type: string
+      basic-checks-only:
+        description: "Whether to run only basic checks (true/false)"
+        required: true
+        type: string
+      skip-pre-commits:
+        description: "Whether to skip pre-commits (true/false)"
+        required: true
+        type: string
+      default-python-version:
+        description: "Which version of python should be used by default"
+        required: true
+        type: string
+      canary-run:
+        description: "Whether to run canary tests (true/false)"
+        required: true
+        type: string
+      latest-versions-only:
+        description: "Whether to run only latest version checks (true/false)"
+        required: true
+        type: string
+jobs:
+  run-breeze-tests:
+    timeout-minutes: 10
+    name: Breeze unit tests
+    runs-on: ${{ fromJSON(inputs.runs-on-as-json-public) }}
+    steps:
+      - name: "Cleanup repo"
+        shell: bash
+        run: docker run -v "${GITHUB_WORKSPA  CE}:/workspace" -u 0:0 bash -c "rm -rf /workspace/*"
+      - uses: actions/checkout@v4
+        with:
+          # Need to fetch all history for selective checks tests
+          fetch-depth: 0
+          persist-credentials: false
+      - name: "Cleanup docker"
+        run: ./scripts/ci/cleanup_docker.sh
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "${{ inputs.default-python-version }}"
+          cache: 'pip'
+          cache-dependency-path: ./dev/breeze/pyproject.toml
+      - run: pip install --editable ./dev/breeze/
+      - run: python -m pytest -n auto --color=yes
+        working-directory: ./dev/breeze/
