@@ -432,7 +432,6 @@ jobs:
       - tests-mysql
       - tests-sqlite
       - tests-non-db
-      - tests-special
       - tests-integration-system
       - tests-with-lowest-direct-resolution
     if: |
@@ -444,7 +443,6 @@ jobs:
         needs.tests-mysql.result == 'failure' ||
         needs.tests-sqlite.result == 'failure' ||
         needs.tests-non-db.result == 'failure' ||
-        needs.tests-special.result == 'failure' ||
         needs.tests-integration-system.result == 'failure' ||
         needs.tests-with-lowest-direct-resolution.result == 'failure'
       )
