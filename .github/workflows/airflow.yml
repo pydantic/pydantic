@@ -145,7 +145,7 @@ jobs:
       ${{ needs.build-info.outputs.in-workflow-build == 'true' && 'Build' || 'Skip building' }}
       CI images in-workflow
     needs: [build-info]
-    uses: ./.github/workflows/breeze/ci-image-build.yml
+    uses: ./.github/workflows/airflow-ci-image-build.yml
     permissions:
       contents: read
       # This write is only given here for `push` events from "apache/airflow" repo. It is not given for PRs
