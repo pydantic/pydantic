@@ -48,6 +48,7 @@ from ._migration import getattr_migration
 from .aliases import AliasChoices, AliasPath
 from .annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
 from .config import ConfigDict
+from .descriptors import ModelFieldDescriptor
 from .errors import PydanticUndefinedAnnotation, PydanticUserError
 from .json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema, JsonSchemaMode, JsonSchemaValue, model_json_schema
 from .plugin._schema_validator import PluggableSchemaValidator
@@ -197,6 +198,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     __pydantic_private__: dict[str, Any] | None = _model_construction.NoInitField(init=False)
     """Values of private attributes set on the model instance."""
 
+    __pydantic_descriptor_fields__: set[str] = _model_construction.NoInitField(init=False)
+    """The names of fields implemented by descriptors."""
+
     if not TYPE_CHECKING:
         # Prevent `BaseModel` from being instantiated directly
         # (defined in an `if not TYPE_CHECKING` block for clarity and to avoid type checking errors):
@@ -215,7 +219,13 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             code='base-model-instantiated',
         )
 
-    __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+    __slots__ = (
+        '__dict__',
+        '__pydantic_fields_set__',
+        '__pydantic_extra__',
+        '__pydantic_private__',
+        '__pydantic_descriptor_fields__',
+    )
 
     def __init__(self, /, **data: Any) -> None:
         """Create a new model by parsing and validating input data from keyword arguments.
@@ -945,7 +955,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             # to generalize this to all data/non-data descriptors at some point. For non-data descriptors
             # (such as `cached_property`), it isn't obvious though. `cached_property` caches the value
             # to the instance's `__dict__`, but other non-data descriptors might do things differently.
-            if isinstance(attr, property):
+            if isinstance(attr, (property, ModelFieldDescriptor)):
                 return lambda model, _name, val: attr.__set__(model, val)
             elif isinstance(attr, cached_property):
                 return _SIMPLE_SETATTR_HANDLERS['cached_property']
@@ -1043,6 +1053,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                     self_type == other_type
                     and getattr(self, '__pydantic_private__', None) == getattr(other, '__pydantic_private__', None)
                     and self.__pydantic_extra__ == other.__pydantic_extra__
+                    and self.__pydantic_descriptor_fields__ == other.__pydantic_descriptor_fields__
                 ):
                     return False
 
@@ -1050,15 +1061,26 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 # We'll perform a fast check first, and fallback only when needed
                 # See GH-7444 and GH-7825 for rationale and a performance benchmark
 
+                if self.__pydantic_descriptor_fields__:
+                    self_dict = {**self.__dict__, **{k: getattr(self, k) for k in self.__pydantic_descriptor_fields__}}
+                    other_dict = {
+                        **other.__dict__,
+                        **{k: getattr(other, k) for k in self.__pydantic_descriptor_fields__},
+                    }
+                else:
+                    self_dict = self.__dict__
+                    other_dict = other.__dict__
+
                 # First, do the fast (and sometimes faulty) __dict__ comparison
-                if self.__dict__ == other.__dict__:
+                if self_dict == other.__dict__:
                     # If the check above passes, then pydantic fields are equal, we can return early
-                    return True
+                    if not self.__pydantic_descriptor_fields__:
+                        return True
 
                 # We don't want to trigger unnecessary costly filtering of __dict__ on all unequal objects, so we return
                 # early if there are no keys to ignore (we would just return False later on anyway)
                 model_fields = type(self).__pydantic_fields__.keys()
-                if self.__dict__.keys() <= model_fields and other.__dict__.keys() <= model_fields:
+                if self_dict.keys() <= model_fields and other_dict.keys() <= model_fields:
                     return False
 
                 # If we reach here, there are non-pydantic-fields keys, mapped to unequal values, that we need to ignore
@@ -1070,15 +1092,15 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 # So we can use operator.itemgetter() instead of operator.attrgetter()
                 getter = operator.itemgetter(*model_fields) if model_fields else lambda _: _utils._SENTINEL
                 try:
-                    return getter(self.__dict__) == getter(other.__dict__)
+                    return getter(self_dict) == getter(other_dict)
                 except KeyError:
                     # In rare cases (such as when using the deprecated BaseModel.copy() method),
                     # the __dict__ may not contain all model fields, which is how we can get here.
                     # getter(self.__dict__) is much faster than any 'safe' method that accounts
                     # for missing keys, and wrapping it in a `try` doesn't slow things down much
                     # in the common case.
-                    self_fields_proxy = _utils.SafeGetItemProxy(self.__dict__)
-                    other_fields_proxy = _utils.SafeGetItemProxy(other.__dict__)
+                    self_fields_proxy = _utils.SafeGetItemProxy(self_dict)
+                    other_fields_proxy = _utils.SafeGetItemProxy(other_dict)
                     return getter(self_fields_proxy) == getter(other_fields_proxy)
 
             # other instance is not a BaseModel
@@ -1118,6 +1140,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         extra = self.__pydantic_extra__
         if extra:
             yield from extra.items()
+        if self.__pydantic_descriptor_fields__:
+            yield from ((k, getattr(self, k)) for k in self.__pydantic_descriptor_fields__)
 
     def __repr__(self) -> str:
         return f'{self.__repr_name__()}({self.__repr_str__(", ")})'
@@ -1142,6 +1166,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         if pydantic_extra is not None:
             yield from ((k, v) for k, v in pydantic_extra.items())
         yield from ((k, getattr(self, k)) for k, v in self.__pydantic_computed_fields__.items() if v.repr)
+
+        if self.__pydantic_descriptor_fields__:
+            yield from ((k, getattr(self, k)) for k in self.__pydantic_descriptor_fields__ if self.model_fields[k].repr)
 
     # take logic from `_repr.Representation` without the side effects of inheritance, see #5740
     __repr_name__ = _repr.Representation.__repr_name__
