@@ -168,17 +168,7 @@ def unpack_annotated(annotation: Any, /) -> tuple[Any, list[Any]]:
         typ, sub_meta = unpack_annotated(typ)
         metadata = sub_meta + metadata
         return typ, metadata
-
-    if sys.version_info[:2] == (3, 10):
-        # Parametrized PEP 695 type aliases are instances of `types.GenericAlias` in typing_extensions>=4.13.0.
-        # On Python 3.10, with `Alias[int]` being a such an instance of `GenericAlias`,
-        # `isinstance(Alias[int], TypeAliasType)` returns `True`.
-        # See https://github.com/python/cpython/issues/89828.
-        ann_is_type_alias = type(annotation) is not types.GenericAlias and is_type_alias_type(annotation)
-    else:
-        ann_is_type_alias = is_type_alias_type(annotation)
-
-    if ann_is_type_alias:
+    elif is_type_alias_type(annotation):
         try:
             value = annotation.__value__
         except NameError:
@@ -314,6 +304,8 @@ _TYPE_ALIAS_TYPES: tuple[type[typing_extensions.TypeAliasType], ...] = (typing_e
 if sys.version_info >= (3, 12):
     _TYPE_ALIAS_TYPES = (*_TYPE_ALIAS_TYPES, typing.TypeAliasType)
 
+_IS_PY310 = sys.version_info[:2] == (3, 10)
+
 
 def is_type_alias_type(tp: Any, /) -> TypeIs[typing_extensions.TypeAliasType]:
     """Return whether the provided argument is an instance of `TypeAliasType`.
@@ -327,7 +319,14 @@ def is_type_alias_type(tp: Any, /) -> TypeIs[typing_extensions.TypeAliasType]:
     #> True
     ```
     """
-    return isinstance(tp, _TYPE_ALIAS_TYPES)
+    if _IS_PY310:
+        # Parametrized PEP 695 type aliases are instances of `types.GenericAlias` in typing_extensions>=4.13.0.
+        # On Python 3.10, with `Alias[int]` being such an instance of `GenericAlias`,
+        # `isinstance(Alias[int], TypeAliasType)` returns `True`.
+        # See https://github.com/python/cpython/issues/89828.
+        return type(tp) is not types.GenericAlias and isinstance(tp, _TYPE_ALIAS_TYPES)
+    else:
+        return isinstance(tp, _TYPE_ALIAS_TYPES)
 
 
 def is_classvar(tp: Any, /) -> bool:

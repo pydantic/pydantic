@@ -444,7 +444,8 @@ def test_nested_annotated_with_type_aliases() -> None:
 
 @pytest.mark.xfail(
     reason="When trying to recursively unpack the annotated form, we don't resolve "
-    'forward annotations in PEP 695 type aliases (due to current limitations).'
+    'forward annotations in PEP 695 type aliases (due to current limitations) '
+    '(see https://github.com/pydantic/pydantic/issues/11122).',
 )
 def test_nested_annotated_with_type_aliases_and_forward_ref() -> None:
     SomeAlias = TypeAliasType('SomeAlias', "Annotated[int, Field(description='number')]")

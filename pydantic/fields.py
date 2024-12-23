@@ -315,11 +315,11 @@ class FieldInfo(_repr.Representation):
         final = _typing_extra.is_finalvar(annotation)
         if final:
             if _typing_extra.is_generic_alias(annotation):
-                # The annotation is a parametrized `Final`, e.g. `Final[int]`.
-                # In this case, `annotation` will be `int`:
+                # 1.1. The annotation is a parametrized `Final`, e.g. `Final[int]`.
+                #      In this case, `annotation` will be `int`:
                 annotation = typing_extensions.get_args(annotation)[0]
             else:
-                # The annotation is a bare `Final`. Use `Any` as a type annotation:
+                # 1.2. The annotation is a bare `Final`. Use `Any` as a type annotation:
                 return FieldInfo(annotation=Any, frozen=True)  # pyright: ignore[reportArgumentType] (PEP 747)
 
         # 2. Check if the annotation is an `Annotated` form.
@@ -354,6 +354,7 @@ class FieldInfo(_repr.Representation):
                 new_field_info.metadata = field_metadata
                 return new_field_info
 
+        # 4. We don't have metadata:
         return FieldInfo(annotation=annotation, frozen=final or None)  # pyright: ignore[reportArgumentType] (PEP 747)
 
     @staticmethod
