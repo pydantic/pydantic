@@ -142,13 +142,7 @@ ${{ inputs.do-build == 'true' && inputs.image-tag || '' }}"
         uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - name: "Checkout target commit"
-        uses: ./.github/actions/checkout_target_commit
-        if: inputs.do-build == 'true'
-        with:
-          target-commit-sha: ${{ inputs.target-commit-sha }}
-          pull-request-target: ${{ inputs.pull-request-target }}
-          is-committer-build: ${{ inputs.is-committer-build }}
+          repository: apache/airflow
       - name: "Cleanup docker"
         run: ./scripts/ci/cleanup_docker.sh
         if: inputs.do-build == 'true'

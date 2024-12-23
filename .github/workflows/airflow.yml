@@ -157,7 +157,7 @@ jobs:
     with:
       runs-on-as-json-public: ${{ needs.build-info.outputs.runs-on-as-json-public }}
       runs-on-as-json-self-hosted: ${{ needs.build-info.outputs.runs-on-as-json-self-hosted }}
-      do-build: ${{ needs.build-info.outputs.in-workflow-build }}
+      do-build: true
       image-tag: ${{ needs.build-info.outputs.image-tag }}
       platform: "linux/amd64"
       python-versions: ${{ needs.build-info.outputs.python-versions }}
