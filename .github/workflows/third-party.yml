@@ -127,8 +127,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # SQLModel doesn't yet support Python 3.13
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        python-version: [ "3.8", "3.9", "3.10", "3.11", "3.12", "3.13" ]
+        mongodb-version: [4.4, 5.0, 6.0, 7.0, 8.0 ]
+        pydantic-version: [ "1.10.18", "2.9.2" ]
     steps:
     - name: Checkout beanie
       uses: actions/checkout@v4
@@ -145,6 +146,12 @@ jobs:
         enable-cache: true
         python-version: ${{ matrix.python-version }}
 
+    - name: Start MongoDB
+      uses: supercharge/mongodb-github-action@1.11.0
+      with:
+        mongodb-version: ${{ matrix.mongodb-version }}
+        mongodb-replica-set: test-rs
+
     - name: Install beanie dependencies
       run: |
         uv venv --python ${{ matrix.python-version }}
@@ -155,6 +162,8 @@ jobs:
       run: uv pip list
 
     - name: Run beanie tests
+      env:
+        PYTHON_JIT: 1
       run: uv run pytest -v
 
   create-issue-on-failure:
