@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Any, Callable, Pattern
 from pydantic_core import PydanticUndefined
 from typing_extensions import TypeIs
 
+from pydantic.descriptors import ModelFieldDescriptor
 from pydantic.errors import PydanticUserError
 
 from . import _typing_extra
@@ -78,7 +79,7 @@ def collect_model_fields(  # noqa: C901
     ns_resolver: NsResolver | None,
     *,
     typevars_map: dict[Any, Any] | None = None,
-) -> tuple[dict[str, FieldInfo], set[str]]:
+) -> tuple[dict[str, FieldInfo], set[str], set[str]]:
     """Collect the fields of a nascent pydantic model.
 
     Also collect the names of any ClassVars present in the type hints.
@@ -115,6 +116,7 @@ def collect_model_fields(  # noqa: C901
     # annotations is only used for finding fields in parent classes
     annotations = cls.__dict__.get('__annotations__', {})
     fields: dict[str, FieldInfo] = {}
+    descriptor_fields: set[str] = set()
 
     class_vars: set[str] = set()
     for ann_name, (ann_type, evaluated) in type_hints.items():
@@ -197,6 +199,10 @@ def collect_model_fields(  # noqa: C901
 
         try:
             default = getattr(cls, ann_name, PydanticUndefined)
+            if isinstance(default, ModelFieldDescriptor):
+                descriptor_fields.add(ann_name)
+                default = default.field
+
             if default is PydanticUndefined:
                 raise AttributeError
         except AttributeError:
@@ -230,10 +236,12 @@ def collect_model_fields(  # noqa: C901
             # attributes which are fields are removed from the class namespace:
             # 1. To match the behaviour of annotation-only fields
             # 2. To avoid false positives in the NameError check above
-            try:
-                delattr(cls, ann_name)
-            except AttributeError:
-                pass  # indicates the attribute was on a parent class
+
+            if ann_name not in descriptor_fields:
+                try:
+                    delattr(cls, ann_name)
+                except AttributeError:
+                    pass  # indicates the attribute was on a parent class
 
         # Use cls.__dict__['__pydantic_decorators__'] instead of cls.__pydantic_decorators__
         # to make sure the decorators have already been built for this exact class
@@ -247,7 +255,7 @@ def collect_model_fields(  # noqa: C901
             field.apply_typevars_map(typevars_map)
 
     _update_fields_from_docstrings(cls, fields, config_wrapper)
-    return fields, class_vars
+    return fields, class_vars, descriptor_fields
 
 
 def _warn_on_nested_alias_in_annotation(ann_type: type[Any], ann_name: str) -> None:

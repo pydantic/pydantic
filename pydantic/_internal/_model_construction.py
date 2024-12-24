@@ -248,7 +248,12 @@ class ModelMetaclass(ABCMeta):
             return cls
         else:
             # These are instance variables, but have been assigned to `NoInitField` to trick the type checker.
-            for instance_slot in '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__':
+            for instance_slot in (
+                '__pydantic_fields_set__',
+                '__pydantic_extra__',
+                '__pydantic_private__',
+                '__pydantic_descriptor_fields__',
+            ):
                 namespace.pop(
                     instance_slot,
                     None,  # In case the metaclass is used with a class other than `BaseModel`.
@@ -598,10 +603,13 @@ def set_model_fields(
         ns_resolver: Namespace resolver to use when getting model annotations.
     """
     typevars_map = get_model_typevars_map(cls)
-    fields, class_vars = collect_model_fields(cls, bases, config_wrapper, ns_resolver, typevars_map=typevars_map)
+    fields, class_vars, descriptor_fields = collect_model_fields(
+        cls, bases, config_wrapper, ns_resolver, typevars_map=typevars_map
+    )
 
     cls.__pydantic_fields__ = fields
     cls.__class_vars__.update(class_vars)
+    cls.__pydantic_descriptor_fields__ = descriptor_fields
 
     for k in class_vars:
         # Class vars should not be private attributes
@@ -614,6 +622,9 @@ def set_model_fields(
         value = cls.__private_attributes__.pop(k, None)
         if value is not None and value.default is not PydanticUndefined:
             setattr(cls, k, value.default)
+
+    for name in descriptor_fields:
+        object.__getattribute__(cls, name).__set_name__(cls, name)
 
 
 def complete_model_class(
