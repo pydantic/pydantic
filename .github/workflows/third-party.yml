@@ -164,7 +164,19 @@ jobs:
     - name: Run beanie tests
       env:
         PYTHON_JIT: 1
-      run: uv run pytest -v
+      # Run tests except for known issues on https://github.com/BeanieODM/beanie/issues/1084
+      run: |
+        uv run pytest -v \
+        --deselect tests/odm/test_encoder.py::test_should_encode_pydantic_v2_url_correctly \
+        --deselect tests/odm/test_encoder.py::test_should_be_able_to_save_retrieve_doc_with_url \
+        --deselect tests/odm/test_fields.py::test_revision_id_not_in_schema \
+        --deselect tests/odm/test_json_schema_generation.py::test_schema_export_of_model_with_decimal_field \
+        --deselect tests/odm/test_json_schema_generation.py::test_schema_export_of_model_with_pydanticobjectid \
+        --deselect tests/odm/test_json_schema_generation.py::test_schema_export_of_model_with_link \
+        --deselect tests/odm/test_json_schema_generation.py \
+        --deselect tests/odm/test_json_schema_generation.py::test_schema_export_of_model_with_list_link \
+        --deselect tests/odm/test_json_schema_generation.py::test_schema_export_of_model_with_backlink \
+        --deselect tests/odm/test_json_schema_generation.py::test_schema_export_of_model_with_list_backlink \
 
   create-issue-on-failure:
     name: Create an issue if tests failed
