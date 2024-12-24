@@ -1058,7 +1058,6 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                     self_type == other_type
                     and getattr(self, '__pydantic_private__', None) == getattr(other, '__pydantic_private__', None)
                     and self.__pydantic_extra__ == other.__pydantic_extra__
-                    and self.__pydantic_descriptor_fields__ == other.__pydantic_descriptor_fields__
                 ):
                     return False
 
@@ -1077,7 +1076,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                     other_dict = other.__dict__
 
                 # First, do the fast (and sometimes faulty) __dict__ comparison
-                if self_dict == other.__dict__:
+                if self_dict == other_dict:
                     # If the check above passes, then pydantic fields are equal, we can return early
                     if not self.__pydantic_descriptor_fields__:
                         return True
