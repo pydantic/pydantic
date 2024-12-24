@@ -314,28 +314,14 @@ def test_recursive_generic_type_alias_annotated_defs() -> None:
     }
 
 
-@pytest.mark.xfail(reason='description is currently dropped')
-def test_field() -> None:
-    SomeAlias = TypeAliasType('SomeAlias', Annotated[int, Field(description='number')])
-
-    ta = TypeAdapter(Annotated[SomeAlias, Field(title='abc')])
-
-    # insert_assert(ta.json_schema())
-    assert ta.json_schema() == {
-        '$defs': {'SomeAlias': {'type': 'integer', 'description': 'number'}},
-        '$ref': '#/$defs/SomeAlias',
-        'title': 'abc',
-    }
-
-
 def test_nested_generic_type_alias_type() -> None:
     class MyModel(BaseModel):
         field_1: MyList[bool]
         field_2: MyList[str]
 
-    model = MyModel(field_1=[True], field_2=['abc'])
+    MyModel(field_1=[True], field_2=['abc'])
 
-    assert model.model_json_schema() == {
+    assert MyModel.model_json_schema() == {
         '$defs': {
             'MyList_bool_': {'items': {'type': 'boolean'}, 'type': 'array'},
             'MyList_str_': {'items': {'type': 'string'}, 'type': 'array'},
@@ -443,3 +429,45 @@ def test_circular_type_aliases() -> None:
 
     assert exc_info.value.code == 'circular-reference-schema'
     assert exc_info.value.message.startswith('tests.test_type_alias_type.C')
+
+
+## Tests related to (recursive) unpacking of annotated types, when PEP 695 type aliases are involved:
+
+
+def test_nested_annotated_with_type_aliases() -> None:
+    SomeAlias = TypeAliasType('SomeAlias', Annotated[int, Field(description='number')])
+
+    ta = TypeAdapter(Annotated[SomeAlias, Field(title='abc')])
+
+    assert ta.json_schema() == {'description': 'number', 'title': 'abc', 'type': 'integer'}
+
+
+@pytest.mark.xfail(
+    reason="When trying to recursively unpack the annotated form, we don't resolve "
+    'forward annotations in PEP 695 type aliases (due to current limitations) '
+    '(see https://github.com/pydantic/pydantic/issues/11122).',
+)
+def test_nested_annotated_with_type_aliases_and_forward_ref() -> None:
+    SomeAlias = TypeAliasType('SomeAlias', "Annotated[int, Field(description='number')]")
+
+    ta = TypeAdapter(Annotated[SomeAlias, Field(title='abc')])
+
+    assert ta.json_schema() == {'description': 'number', 'title': 'abc', 'type': 'integer'}
+
+
+def test_nested_annotated_model_field() -> None:
+    T = TypeVar('T')
+
+    InnerList = TypeAliasType('InnerList', Annotated[List[T], Field(alias='alias')], type_params=(T,))
+    MyList = TypeAliasType('MyList', Annotated[InnerList[T], Field(deprecated=True)], type_params=(T,))
+    MyIntList = TypeAliasType('MyIntList', MyList[int])
+
+    class Model(BaseModel):
+        f1: Annotated[MyIntList, Field(json_schema_extra={'extra': 'test'})]
+
+    f1_info = Model.model_fields['f1']
+
+    assert f1_info.annotation == List[int]
+    assert f1_info.alias == 'alias'
+    assert f1_info.deprecated
+    assert f1_info.json_schema_extra == {'extra': 'test'}
