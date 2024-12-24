@@ -127,7 +127,6 @@ jobs:
       matrix:
         python-version: [ "3.8", "3.9", "3.10", "3.11", "3.12", "3.13" ]
         mongodb-version: [4.4, 5.0, 6.0, 7.0, 8.0 ]
-        pydantic-version: [ "1.10.18", "2.9.2" ]
     steps:
     - name: Checkout beanie
       uses: actions/checkout@v4
