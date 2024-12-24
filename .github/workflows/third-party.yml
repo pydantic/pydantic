@@ -11,6 +11,7 @@ on:
     branches: [main]
   # Can be manually triggered from the Actions tab, if needed:
   workflow_dispatch:
+  push:
 
 permissions:
   contents: read
@@ -113,18 +114,63 @@ jobs:
     - name: Run SQLModel tests
       run: uv run --no-project pytest tests
 
+  test-beanie:
+    name: Test Beanie (main branch) on Python ${{ matrix.python-version }}
+    # If 'schedule' was the trigger, don't run it on contributors' forks
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'push' && github.repository != 'pydantic/pydantic') ||
+      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
+
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # SQLModel doesn't yet support Python 3.13
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+    steps:
+    - name: Checkout beanie
+      uses: actions/checkout@v4
+      with:
+        repository: BeanieODM/beanie
+
+    - name: Checkout Pydantic
+      uses: actions/checkout@v4
+      with:
+        path: pydantic-latest
+
+    - uses: astral-sh/setup-uv@v4
+      with:
+        enable-cache: true
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install beanie dependencies
+      run: |
+        uv venv --python ${{ matrix.python-version }}
+        uv pip install .[test,ci]
+        uv pip install ./pydantic-latest
+
+    - name: List installed dependencies
+      run: uv pip list
+
+    - name: Run beanie tests
+      run: uv run pytest -v
+
   create-issue-on-failure:
     name: Create an issue if tests failed
     runs-on: ubuntu-latest
     needs:
       - test-fastapi
       - test-sqlmodel
+      - test-beanie
     if: |
       github.repository == 'pydantic/pydantic' &&
       github.event_name == 'schedule' &&
       (
         needs.test-fastapi.result == 'failure' ||
-        needs.test-sqlmodel.result == 'failure'
+        needs.test-sqlmodel.result == 'failure' ||
+        needs.test-beanie.result == 'failure'
       )
     permissions:
       issues: write
