@@ -113,18 +113,82 @@ jobs:
     - name: Run SQLModel tests
       run: uv run --no-project pytest tests
 
+  test-beanie:
+    name: Test Beanie (main branch) on Python ${{ matrix.python-version }}
+    # If 'schedule' was the trigger, don't run it on contributors' forks
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
+
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [ "3.8", "3.9", "3.10", "3.11", "3.12", "3.13" ]
+        mongodb-version: [4.4, 5.0, 6.0, 7.0, 8.0 ]
+    steps:
+    - name: Checkout beanie
+      uses: actions/checkout@v4
+      with:
+        repository: BeanieODM/beanie
+
+    - name: Checkout Pydantic
+      uses: actions/checkout@v4
+      with:
+        path: pydantic-latest
+
+    - uses: astral-sh/setup-uv@v4
+      with:
+        enable-cache: true
+        python-version: ${{ matrix.python-version }}
+
+    - name: Start MongoDB
+      uses: supercharge/mongodb-github-action@1.11.0
+      with:
+        mongodb-version: ${{ matrix.mongodb-version }}
+        mongodb-replica-set: test-rs
+
+    - name: Install beanie dependencies
+      run: |
+        uv venv --python ${{ matrix.python-version }}
+        uv pip install .[test,ci]
+        uv pip install ./pydantic-latest
+
+    - name: List installed dependencies
+      run: uv pip list
+
+    - name: Run beanie tests
+      env:
+        PYTHON_JIT: 1
+      # Run tests except for known issues on https://github.com/BeanieODM/beanie/issues/1084
+      run: |
+        uv run pytest -v \
+        --deselect tests/odm/test_encoder.py::test_should_encode_pydantic_v2_url_correctly \
+        --deselect tests/odm/test_encoder.py::test_should_be_able_to_save_retrieve_doc_with_url \
+        --deselect tests/odm/test_fields.py::test_revision_id_not_in_schema \
+        --deselect tests/odm/test_json_schema_generation.py::test_schema_export_of_model_with_decimal_field \
+        --deselect tests/odm/test_json_schema_generation.py::test_schema_export_of_model_with_pydanticobjectid \
+        --deselect tests/odm/test_json_schema_generation.py::test_schema_export_of_model_with_link \
+        --deselect tests/odm/test_json_schema_generation.py \
+        --deselect tests/odm/test_json_schema_generation.py::test_schema_export_of_model_with_list_link \
+        --deselect tests/odm/test_json_schema_generation.py::test_schema_export_of_model_with_backlink \
+        --deselect tests/odm/test_json_schema_generation.py::test_schema_export_of_model_with_list_backlink \
+
   create-issue-on-failure:
     name: Create an issue if tests failed
     runs-on: ubuntu-latest
     needs:
       - test-fastapi
       - test-sqlmodel
+      - test-beanie
     if: |
       github.repository == 'pydantic/pydantic' &&
       github.event_name == 'schedule' &&
       (
         needs.test-fastapi.result == 'failure' ||
-        needs.test-sqlmodel.result == 'failure'
+        needs.test-sqlmodel.result == 'failure' ||
+        needs.test-beanie.result == 'failure'
       )
     permissions:
       issues: write
