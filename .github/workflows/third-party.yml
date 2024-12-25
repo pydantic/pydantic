@@ -126,9 +126,8 @@ jobs:
       fail-fast: false
       matrix:
         python-version: [ "3.8", "3.9", "3.10", "3.11", "3.12", "3.13" ]
-        mongodb-version: [4.4, 5.0, 6.0, 7.0, 8.0 ]
     steps:
-    - name: Checkout beanie
+    - name: Checkout Beanie
       uses: actions/checkout@v4
       with:
         repository: BeanieODM/beanie
@@ -138,32 +137,29 @@ jobs:
       with:
         path: pydantic-latest
 
-    - uses: astral-sh/setup-uv@v4
+    - uses: actions/setup-python@v5
       with:
-        enable-cache: true
         python-version: ${{ matrix.python-version }}
 
     - name: Start MongoDB
       uses: supercharge/mongodb-github-action@1.11.0
       with:
-        mongodb-version: ${{ matrix.mongodb-version }}
+        mongodb-version: "8.0"
         mongodb-replica-set: test-rs
 
-    - name: Install beanie dependencies
+    - name: Install Beanie dependencies
       run: |
-        uv venv --python ${{ matrix.python-version }}
-        uv pip install .[test,ci]
-        uv pip install ./pydantic-latest
+        pip install .[test,ci]
+        pip uninstall --yes pydantic
+        pip install ./pydantic-latest
 
     - name: List installed dependencies
-      run: uv pip list
+      run: pip list
 
-    - name: Run beanie tests
-      env:
-        PYTHON_JIT: 1
+    - name: Run Beanie tests
       # Run tests except for known issues on https://github.com/BeanieODM/beanie/issues/1084
       run: |
-        uv run pytest -v \
+        pytest -v \
         --deselect tests/odm/test_encoder.py::test_should_encode_pydantic_v2_url_correctly \
         --deselect tests/odm/test_encoder.py::test_should_be_able_to_save_retrieve_doc_with_url \
         --deselect tests/odm/test_fields.py::test_revision_id_not_in_schema \
