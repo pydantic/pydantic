@@ -187,8 +187,7 @@ jobs:
     - name: Checkout openapi-python-client
       uses: actions/checkout@v4
       with:
-        repository: Viicos/openapi-python-client
-        ref: 'model-rebuild'
+        repository: openapi-generators/openapi-python-client
 
     - name: Checkout Pydantic
       uses: actions/checkout@v4
@@ -222,13 +221,15 @@ jobs:
       - test-fastapi
       - test-sqlmodel
       - test-beanie
+      - test-openapi-python-client
     if: |
       github.repository == 'pydantic/pydantic' &&
       github.event_name == 'schedule' &&
       (
         needs.test-fastapi.result == 'failure' ||
         needs.test-sqlmodel.result == 'failure' ||
-        needs.test-beanie.result == 'failure'
+        needs.test-beanie.result == 'failure' ||
+        needs.test-openapi-python-client.result == 'failure'
       )
     permissions:
       issues: write
