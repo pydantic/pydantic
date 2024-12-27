@@ -130,8 +130,7 @@ jobs:
     - name: Checkout openapi-python-client
       uses: actions/checkout@v4
       with:
-        repository: Viicos/openapi-python-client
-        ref: 'model-rebuild'
+        repository: openapi-generators/openapi-python-client
 
     - name: Checkout Pydantic
       uses: actions/checkout@v4
