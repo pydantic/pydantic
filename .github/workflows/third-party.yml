@@ -164,12 +164,14 @@ jobs:
     needs:
       - test-fastapi
       - test-sqlmodel
+      - test-openapi-python-client
     if: |
       github.repository == 'pydantic/pydantic' &&
       github.event_name == 'schedule' &&
       (
         needs.test-fastapi.result == 'failure' ||
-        needs.test-sqlmodel.result == 'failure'
+        needs.test-sqlmodel.result == 'failure' ||
+        needs.test-openapi-python-client.result == 'failure'
       )
     permissions:
       issues: write
