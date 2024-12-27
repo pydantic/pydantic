@@ -165,8 +165,8 @@ def collect_model_fields(  # noqa: C901
         if _is_finalvar_with_default_val(ann_type, assigned_value):
             warnings.warn(
                 f'Annotation {ann_name!r} is marked as final and has a default value. Pydantic treats {ann_name!r} as a '
-                f'class variable, but it will be considered as an normal field in V3. If you still want {ann_name!r} to be '
-                'considered as a class variable, annotate it as: `ClassVar[<type>] = <default>.`',
+                'class variable, but it will be considered as a normal field in V3 to be aligned with dataclasses. If you '
+                f'still want {ann_name!r} to be considered as a class variable, annotate it as: `ClassVar[<type>] = <default>.`',
                 category=PydanticDeprecatedSince211,
                 # Incorrect when `create_model` is used, but the chance that final with a default is used is low in that case:
                 stacklevel=4,
