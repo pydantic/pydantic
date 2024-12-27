@@ -3986,9 +3986,7 @@ type-annotated fields without causing a type error.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/fields.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 900</span>
-<span class="normal"> 901</span>
-<span class="normal"> 902</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 902</span>
 <span class="normal"> 903</span>
 <span class="normal"> 904</span>
 <span class="normal"> 905</span>
@@ -4191,7 +4189,9 @@ type-annotated fields without causing a type error.</p>
 <span class="normal">1102</span>
 <span class="normal">1103</span>
 <span class="normal">1104</span>
-<span class="normal">1105</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">Field</span><span class="p">(</span>  <span class="c1"># noqa: C901</span>
+<span class="normal">1105</span>
+<span class="normal">1106</span>
+<span class="normal">1107</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">Field</span><span class="p">(</span>  <span class="c1"># noqa: C901</span>
     <span class="n">default</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">PydanticUndefined</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">default_factory</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">_Unset</span><span class="p">,</span>
@@ -4696,8 +4696,7 @@ or a boolean. If <code>True</code>, a default deprecation message will be emitte
 
                   <details class="quote">
                     <summary>Source code in <code>pydantic/fields.py</code></summary>
-                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">202</span>
-<span class="normal">203</span>
+                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">203</span>
 <span class="normal">204</span>
 <span class="normal">205</span>
 <span class="normal">206</span>
@@ -4744,7 +4743,8 @@ or a boolean. If <code>True</code>, a default deprecation message will be emitte
 <span class="normal">247</span>
 <span class="normal">248</span>
 <span class="normal">249</span>
-<span class="normal">250</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Unpack</span><span class="p">[</span><span class="n">_FieldInfoInputs</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">250</span>
+<span class="normal">251</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Unpack</span><span class="p">[</span><span class="n">_FieldInfoInputs</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;This class should generally not be initialized directly; instead, use the `pydantic.fields.Field` function</span>
 <span class="sd">    or one of the constructor classmethods.</span>
 
@@ -4752,7 +4752,7 @@ or a boolean. If <code>True</code>, a default deprecation message will be emitte
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_set</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">_Unset</span><span class="p">}</span>
     <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">_DefaultValues</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="n">_Unset</span> <span class="k">else</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>  <span class="c1"># type: ignore</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">annotation</span><span class="p">,</span> <span class="n">annotation_metadata</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extract_metadata</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;annotation&#39;</span><span class="p">))</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">annotation</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;annotation&#39;</span><span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">evaluated</span> <span class="o">=</span> <span class="kc">False</span>
 
     <span class="n">default</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;default&#39;</span><span class="p">,</span> <span class="n">PydanticUndefined</span><span class="p">)</span>
@@ -4792,7 +4792,7 @@ or a boolean. If <code>True</code>, a default deprecation message will be emitte
     <span class="bp">self</span><span class="o">.</span><span class="n">init_var</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;init_var&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">kw_only</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;kw_only&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 
-    <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_collect_metadata</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">+</span> <span class="n">annotation_metadata</span>  <span class="c1"># type: ignore</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_collect_metadata</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
 </code></pre></div></td></tr></table></div>
                   </details>
 
@@ -4929,8 +4929,7 @@ or a boolean. If <code>True</code>, a default deprecation message will be emitte
 </details>
             <details class="quote">
               <summary>Source code in <code>pydantic/fields.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">252</span>
-<span class="normal">253</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">253</span>
 <span class="normal">254</span>
 <span class="normal">255</span>
 <span class="normal">256</span>
@@ -4955,7 +4954,8 @@ or a boolean. If <code>True</code>, a default deprecation message will be emitte
 <span class="normal">275</span>
 <span class="normal">276</span>
 <span class="normal">277</span>
-<span class="normal">278</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="normal">278</span>
+<span class="normal">279</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span> <span class="nf">from_field</span><span class="p">(</span><span class="n">default</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">PydanticUndefined</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Unpack</span><span class="p">[</span><span class="n">_FromFieldInfoInputs</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">FieldInfo</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a new `FieldInfo` object with the `Field` function.</span>
 
@@ -5083,8 +5083,7 @@ one of the (not first) arguments in <code>Annotated</code> is an instance of <co
 
             <details class="quote">
               <summary>Source code in <code>pydantic/fields.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">280</span>
-<span class="normal">281</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">281</span>
 <span class="normal">282</span>
 <span class="normal">283</span>
 <span class="normal">284</span>
@@ -5143,7 +5142,25 @@ one of the (not first) arguments in <code>Annotated</code> is an instance of <co
 <span class="normal">337</span>
 <span class="normal">338</span>
 <span class="normal">339</span>
-<span class="normal">340</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="normal">340</span>
+<span class="normal">341</span>
+<span class="normal">342</span>
+<span class="normal">343</span>
+<span class="normal">344</span>
+<span class="normal">345</span>
+<span class="normal">346</span>
+<span class="normal">347</span>
+<span class="normal">348</span>
+<span class="normal">349</span>
+<span class="normal">350</span>
+<span class="normal">351</span>
+<span class="normal">352</span>
+<span class="normal">353</span>
+<span class="normal">354</span>
+<span class="normal">355</span>
+<span class="normal">356</span>
+<span class="normal">357</span>
+<span class="normal">358</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span> <span class="nf">from_annotation</span><span class="p">(</span><span class="n">annotation</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">FieldInfo</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Creates a `FieldInfo` instance from a bare annotation.</span>
 
@@ -5176,34 +5193,51 @@ one of the (not first) arguments in <code>Annotated</code> is an instance of <co
 <span class="sd">    Returns:</span>
 <span class="sd">        An instance of the field metadata.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">final</span> <span class="o">=</span> <span class="kc">False</span>
-    <span class="k">if</span> <span class="n">_typing_extra</span><span class="o">.</span><span class="n">is_finalvar</span><span class="p">(</span><span class="n">annotation</span><span class="p">):</span>
-        <span class="n">final</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="k">if</span> <span class="n">annotation</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">typing_extensions</span><span class="o">.</span><span class="n">Final</span><span class="p">:</span>
+    <span class="c1"># 1. Check if the annotation is the `Final` type qualifier:</span>
+    <span class="n">final</span> <span class="o">=</span> <span class="n">_typing_extra</span><span class="o">.</span><span class="n">is_finalvar</span><span class="p">(</span><span class="n">annotation</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">final</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">_typing_extra</span><span class="o">.</span><span class="n">is_generic_alias</span><span class="p">(</span><span class="n">annotation</span><span class="p">):</span>
+            <span class="c1"># 1.1. The annotation is a parametrized `Final`, e.g. `Final[int]`.</span>
+            <span class="c1">#      In this case, `annotation` will be `int`:</span>
             <span class="n">annotation</span> <span class="o">=</span> <span class="n">typing_extensions</span><span class="o">.</span><span class="n">get_args</span><span class="p">(</span><span class="n">annotation</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># 1.2. The annotation is a bare `Final`. Use `Any` as a type annotation:</span>
+            <span class="k">return</span> <span class="n">FieldInfo</span><span class="p">(</span><span class="n">annotation</span><span class="o">=</span><span class="n">Any</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># pyright: ignore[reportArgumentType] (PEP 747)</span>
 
-    <span class="k">if</span> <span class="n">_typing_extra</span><span class="o">.</span><span class="n">is_annotated</span><span class="p">(</span><span class="n">annotation</span><span class="p">):</span>
-        <span class="n">first_arg</span><span class="p">,</span> <span class="o">*</span><span class="n">extra_args</span> <span class="o">=</span> <span class="n">typing_extensions</span><span class="o">.</span><span class="n">get_args</span><span class="p">(</span><span class="n">annotation</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">_typing_extra</span><span class="o">.</span><span class="n">is_finalvar</span><span class="p">(</span><span class="n">first_arg</span><span class="p">):</span>
-            <span class="n">final</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="n">field_info_annotations</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">extra_args</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">FieldInfo</span><span class="p">)]</span>
-        <span class="n">field_info</span> <span class="o">=</span> <span class="n">FieldInfo</span><span class="o">.</span><span class="n">merge_field_infos</span><span class="p">(</span><span class="o">*</span><span class="n">field_info_annotations</span><span class="p">,</span> <span class="n">annotation</span><span class="o">=</span><span class="n">first_arg</span><span class="p">)</span>
+    <span class="c1"># 2. Check if the annotation is an `Annotated` form.</span>
+    <span class="c1">#    In this case, `annotation` will be the annotated type:</span>
+    <span class="n">annotation</span><span class="p">,</span> <span class="n">metadata</span> <span class="o">=</span> <span class="n">_typing_extra</span><span class="o">.</span><span class="n">unpack_annotated</span><span class="p">(</span><span class="n">annotation</span><span class="p">)</span>
+
+    <span class="c1"># 3. If we have metadata, `annotation` was the annotated type:</span>
+    <span class="k">if</span> <span class="n">metadata</span><span class="p">:</span>
+        <span class="c1"># 3.1. Check if the annotated type is the `Final` type qualifier.</span>
+        <span class="c1">#      (i.e. `Annotated[Final[...], ...]`). Note that we only do</span>
+        <span class="c1">#      so if `final` isn&#39;t `True` already, because we don&#39;t want to</span>
+        <span class="c1">#      support the invalid `Final[Annotated[Final, ...]]` form.</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">final</span><span class="p">:</span>
+            <span class="n">final</span> <span class="o">=</span> <span class="n">_typing_extra</span><span class="o">.</span><span class="n">is_finalvar</span><span class="p">(</span><span class="n">annotation</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">final</span> <span class="ow">and</span> <span class="n">_typing_extra</span><span class="o">.</span><span class="n">is_generic_alias</span><span class="p">(</span><span class="n">annotation</span><span class="p">):</span>
+                <span class="n">annotation</span> <span class="o">=</span> <span class="n">typing_extensions</span><span class="o">.</span><span class="n">get_args</span><span class="p">(</span><span class="n">annotation</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">field_info_annotations</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">metadata</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">FieldInfo</span><span class="p">)]</span>
+        <span class="n">field_info</span> <span class="o">=</span> <span class="n">FieldInfo</span><span class="o">.</span><span class="n">merge_field_infos</span><span class="p">(</span><span class="o">*</span><span class="n">field_info_annotations</span><span class="p">,</span> <span class="n">annotation</span><span class="o">=</span><span class="n">annotation</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">field_info</span><span class="p">:</span>
             <span class="n">new_field_info</span> <span class="o">=</span> <span class="n">copy</span><span class="p">(</span><span class="n">field_info</span><span class="p">)</span>
-            <span class="n">new_field_info</span><span class="o">.</span><span class="n">annotation</span> <span class="o">=</span> <span class="n">first_arg</span>
+            <span class="n">new_field_info</span><span class="o">.</span><span class="n">annotation</span> <span class="o">=</span> <span class="n">annotation</span>
             <span class="n">new_field_info</span><span class="o">.</span><span class="n">frozen</span> <span class="o">=</span> <span class="n">final</span> <span class="ow">or</span> <span class="n">field_info</span><span class="o">.</span><span class="n">frozen</span>
-            <span class="n">metadata</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">extra_args</span><span class="p">:</span>
+            <span class="n">field_metadata</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">metadata</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">_typing_extra</span><span class="o">.</span><span class="n">is_deprecated_instance</span><span class="p">(</span><span class="n">a</span><span class="p">):</span>
                     <span class="n">new_field_info</span><span class="o">.</span><span class="n">deprecated</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">message</span>
                 <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">FieldInfo</span><span class="p">):</span>
-                    <span class="n">metadata</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+                    <span class="n">field_metadata</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">metadata</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">metadata</span><span class="p">)</span>
-            <span class="n">new_field_info</span><span class="o">.</span><span class="n">metadata</span> <span class="o">=</span> <span class="n">metadata</span>
+                    <span class="n">field_metadata</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">metadata</span><span class="p">)</span>
+            <span class="n">new_field_info</span><span class="o">.</span><span class="n">metadata</span> <span class="o">=</span> <span class="n">field_metadata</span>
             <span class="k">return</span> <span class="n">new_field_info</span>
 
-    <span class="k">return</span> <span class="n">FieldInfo</span><span class="p">(</span><span class="n">annotation</span><span class="o">=</span><span class="n">annotation</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="n">final</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">)</span>  <span class="c1"># pyright: ignore[reportArgumentType]</span>
+    <span class="c1"># 4. We don&#39;t have metadata:</span>
+    <span class="k">return</span> <span class="n">FieldInfo</span><span class="p">(</span><span class="n">annotation</span><span class="o">=</span><span class="n">annotation</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="n">final</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">)</span>  <span class="c1"># pyright: ignore[reportArgumentType] (PEP 747)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -5315,25 +5349,7 @@ one of the (not first) arguments in <code>Annotated</code> is an instance of <co
 
             <details class="quote">
               <summary>Source code in <code>pydantic/fields.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">342</span>
-<span class="normal">343</span>
-<span class="normal">344</span>
-<span class="normal">345</span>
-<span class="normal">346</span>
-<span class="normal">347</span>
-<span class="normal">348</span>
-<span class="normal">349</span>
-<span class="normal">350</span>
-<span class="normal">351</span>
-<span class="normal">352</span>
-<span class="normal">353</span>
-<span class="normal">354</span>
-<span class="normal">355</span>
-<span class="normal">356</span>
-<span class="normal">357</span>
-<span class="normal">358</span>
-<span class="normal">359</span>
-<span class="normal">360</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">360</span>
 <span class="normal">361</span>
 <span class="normal">362</span>
 <span class="normal">363</span>
@@ -5398,7 +5414,26 @@ one of the (not first) arguments in <code>Annotated</code> is an instance of <co
 <span class="normal">422</span>
 <span class="normal">423</span>
 <span class="normal">424</span>
-<span class="normal">425</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="normal">425</span>
+<span class="normal">426</span>
+<span class="normal">427</span>
+<span class="normal">428</span>
+<span class="normal">429</span>
+<span class="normal">430</span>
+<span class="normal">431</span>
+<span class="normal">432</span>
+<span class="normal">433</span>
+<span class="normal">434</span>
+<span class="normal">435</span>
+<span class="normal">436</span>
+<span class="normal">437</span>
+<span class="normal">438</span>
+<span class="normal">439</span>
+<span class="normal">440</span>
+<span class="normal">441</span>
+<span class="normal">442</span>
+<span class="normal">443</span>
+<span class="normal">444</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span> <span class="nf">from_annotated_attribute</span><span class="p">(</span><span class="n">annotation</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">default</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FieldInfo</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Create `FieldInfo` from an annotation with a default value.</span>
 
@@ -5426,16 +5461,16 @@ one of the (not first) arguments in <code>Annotated</code> is an instance of <co
     <span class="k">if</span> <span class="n">annotation</span> <span class="ow">is</span> <span class="n">default</span><span class="p">:</span>
         <span class="k">raise</span> <span class="n">PydanticUserError</span><span class="p">(</span>
             <span class="s1">&#39;Error when building FieldInfo from annotated attribute. &#39;</span>
-            <span class="s2">&quot;Make sure you don&#39;t have any field name clashing with a type annotation &quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Make sure you don&#39;t have any field name clashing with a type annotation.&quot;</span><span class="p">,</span>
             <span class="n">code</span><span class="o">=</span><span class="s1">&#39;unevaluable-type-annotation&#39;</span><span class="p">,</span>
         <span class="p">)</span>
 
     <span class="n">final</span> <span class="o">=</span> <span class="n">_typing_extra</span><span class="o">.</span><span class="n">is_finalvar</span><span class="p">(</span><span class="n">annotation</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">final</span> <span class="ow">and</span> <span class="n">annotation</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">typing_extensions</span><span class="o">.</span><span class="n">Final</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">final</span> <span class="ow">and</span> <span class="n">_typing_extra</span><span class="o">.</span><span class="n">is_generic_alias</span><span class="p">(</span><span class="n">annotation</span><span class="p">):</span>
         <span class="n">annotation</span> <span class="o">=</span> <span class="n">typing_extensions</span><span class="o">.</span><span class="n">get_args</span><span class="p">(</span><span class="n">annotation</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">default</span><span class="p">,</span> <span class="n">FieldInfo</span><span class="p">):</span>
-        <span class="n">default</span><span class="o">.</span><span class="n">annotation</span><span class="p">,</span> <span class="n">annotation_metadata</span> <span class="o">=</span> <span class="n">FieldInfo</span><span class="o">.</span><span class="n">_extract_metadata</span><span class="p">(</span><span class="n">annotation</span><span class="p">)</span>  <span class="c1"># pyright: ignore[reportArgumentType]</span>
+        <span class="n">default</span><span class="o">.</span><span class="n">annotation</span><span class="p">,</span> <span class="n">annotation_metadata</span> <span class="o">=</span> <span class="n">_typing_extra</span><span class="o">.</span><span class="n">unpack_annotated</span><span class="p">(</span><span class="n">annotation</span><span class="p">)</span>
         <span class="n">default</span><span class="o">.</span><span class="n">metadata</span> <span class="o">+=</span> <span class="n">annotation_metadata</span>
         <span class="n">default</span> <span class="o">=</span> <span class="n">default</span><span class="o">.</span><span class="n">merge_field_infos</span><span class="p">(</span>
             <span class="o">*</span><span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">annotation_metadata</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">FieldInfo</span><span class="p">)],</span> <span class="n">default</span><span class="p">,</span> <span class="n">annotation</span><span class="o">=</span><span class="n">default</span><span class="o">.</span><span class="n">annotation</span>
@@ -5453,7 +5488,7 @@ one of the (not first) arguments in <code>Annotated</code> is an instance of <co
             <span class="n">annotation</span> <span class="o">=</span> <span class="n">annotation</span><span class="o">.</span><span class="n">type</span>
 
         <span class="n">pydantic_field</span> <span class="o">=</span> <span class="n">FieldInfo</span><span class="o">.</span><span class="n">_from_dataclass_field</span><span class="p">(</span><span class="n">default</span><span class="p">)</span>
-        <span class="n">pydantic_field</span><span class="o">.</span><span class="n">annotation</span><span class="p">,</span> <span class="n">annotation_metadata</span> <span class="o">=</span> <span class="n">FieldInfo</span><span class="o">.</span><span class="n">_extract_metadata</span><span class="p">(</span><span class="n">annotation</span><span class="p">)</span>  <span class="c1"># pyright: ignore[reportArgumentType]</span>
+        <span class="n">pydantic_field</span><span class="o">.</span><span class="n">annotation</span><span class="p">,</span> <span class="n">annotation_metadata</span> <span class="o">=</span> <span class="n">_typing_extra</span><span class="o">.</span><span class="n">unpack_annotated</span><span class="p">(</span><span class="n">annotation</span><span class="p">)</span>
         <span class="n">pydantic_field</span><span class="o">.</span><span class="n">metadata</span> <span class="o">+=</span> <span class="n">annotation_metadata</span>
         <span class="n">pydantic_field</span> <span class="o">=</span> <span class="n">pydantic_field</span><span class="o">.</span><span class="n">merge_field_infos</span><span class="p">(</span>
             <span class="o">*</span><span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">annotation_metadata</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">FieldInfo</span><span class="p">)],</span>
@@ -5466,19 +5501,20 @@ one of the (not first) arguments in <code>Annotated</code> is an instance of <co
         <span class="n">pydantic_field</span><span class="o">.</span><span class="n">kw_only</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">default</span><span class="p">,</span> <span class="s1">&#39;kw_only&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">pydantic_field</span>
 
-    <span class="k">if</span> <span class="n">_typing_extra</span><span class="o">.</span><span class="n">is_annotated</span><span class="p">(</span><span class="n">annotation</span><span class="p">):</span>
-        <span class="n">first_arg</span><span class="p">,</span> <span class="o">*</span><span class="n">extra_args</span> <span class="o">=</span> <span class="n">typing_extensions</span><span class="o">.</span><span class="n">get_args</span><span class="p">(</span><span class="n">annotation</span><span class="p">)</span>
-        <span class="n">field_infos</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">extra_args</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">FieldInfo</span><span class="p">)]</span>
-        <span class="n">field_info</span> <span class="o">=</span> <span class="n">FieldInfo</span><span class="o">.</span><span class="n">merge_field_infos</span><span class="p">(</span><span class="o">*</span><span class="n">field_infos</span><span class="p">,</span> <span class="n">annotation</span><span class="o">=</span><span class="n">first_arg</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">default</span><span class="p">)</span>
-        <span class="n">metadata</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">extra_args</span><span class="p">:</span>
+    <span class="n">annotation</span><span class="p">,</span> <span class="n">metadata</span> <span class="o">=</span> <span class="n">_typing_extra</span><span class="o">.</span><span class="n">unpack_annotated</span><span class="p">(</span><span class="n">annotation</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">metadata</span><span class="p">:</span>
+        <span class="n">field_infos</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">metadata</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">FieldInfo</span><span class="p">)]</span>
+        <span class="n">field_info</span> <span class="o">=</span> <span class="n">FieldInfo</span><span class="o">.</span><span class="n">merge_field_infos</span><span class="p">(</span><span class="o">*</span><span class="n">field_infos</span><span class="p">,</span> <span class="n">annotation</span><span class="o">=</span><span class="n">annotation</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">default</span><span class="p">)</span>
+        <span class="n">field_metadata</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">metadata</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">_typing_extra</span><span class="o">.</span><span class="n">is_deprecated_instance</span><span class="p">(</span><span class="n">a</span><span class="p">):</span>
                 <span class="n">field_info</span><span class="o">.</span><span class="n">deprecated</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">message</span>
             <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">FieldInfo</span><span class="p">):</span>
-                <span class="n">metadata</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+                <span class="n">field_metadata</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">metadata</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">metadata</span><span class="p">)</span>
-        <span class="n">field_info</span><span class="o">.</span><span class="n">metadata</span> <span class="o">=</span> <span class="n">metadata</span>
+                <span class="n">field_metadata</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">metadata</span><span class="p">)</span>
+        <span class="n">field_info</span><span class="o">.</span><span class="n">metadata</span> <span class="o">=</span> <span class="n">field_metadata</span>
         <span class="k">return</span> <span class="n">field_info</span>
 
     <span class="k">return</span> <span class="n">FieldInfo</span><span class="p">(</span><span class="n">annotation</span><span class="o">=</span><span class="n">annotation</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">default</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="n">final</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">)</span>  <span class="c1"># pyright: ignore[reportArgumentType]</span>
@@ -5540,26 +5576,7 @@ one of the (not first) arguments in <code>Annotated</code> is an instance of <co
 
             <details class="quote">
               <summary>Source code in <code>pydantic/fields.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">427</span>
-<span class="normal">428</span>
-<span class="normal">429</span>
-<span class="normal">430</span>
-<span class="normal">431</span>
-<span class="normal">432</span>
-<span class="normal">433</span>
-<span class="normal">434</span>
-<span class="normal">435</span>
-<span class="normal">436</span>
-<span class="normal">437</span>
-<span class="normal">438</span>
-<span class="normal">439</span>
-<span class="normal">440</span>
-<span class="normal">441</span>
-<span class="normal">442</span>
-<span class="normal">443</span>
-<span class="normal">444</span>
-<span class="normal">445</span>
-<span class="normal">446</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">446</span>
 <span class="normal">447</span>
 <span class="normal">448</span>
 <span class="normal">449</span>
@@ -5604,7 +5621,26 @@ one of the (not first) arguments in <code>Annotated</code> is an instance of <co
 <span class="normal">488</span>
 <span class="normal">489</span>
 <span class="normal">490</span>
-<span class="normal">491</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="normal">491</span>
+<span class="normal">492</span>
+<span class="normal">493</span>
+<span class="normal">494</span>
+<span class="normal">495</span>
+<span class="normal">496</span>
+<span class="normal">497</span>
+<span class="normal">498</span>
+<span class="normal">499</span>
+<span class="normal">500</span>
+<span class="normal">501</span>
+<span class="normal">502</span>
+<span class="normal">503</span>
+<span class="normal">504</span>
+<span class="normal">505</span>
+<span class="normal">506</span>
+<span class="normal">507</span>
+<span class="normal">508</span>
+<span class="normal">509</span>
+<span class="normal">510</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span> <span class="nf">merge_field_infos</span><span class="p">(</span><span class="o">*</span><span class="n">field_infos</span><span class="p">:</span> <span class="n">FieldInfo</span><span class="p">,</span> <span class="o">**</span><span class="n">overrides</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FieldInfo</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Merge `FieldInfo` instances keeping only explicitly set attributes.</span>
 
@@ -5827,9 +5863,7 @@ be called (namely, when instantiating a model via <code>model_construct</code>).
 
             <details class="quote">
               <summary>Source code in <code>pydantic/fields.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">591</span>
-<span class="normal">592</span>
-<span class="normal">593</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">593</span>
 <span class="normal">594</span>
 <span class="normal">595</span>
 <span class="normal">596</span>
@@ -5855,7 +5889,9 @@ be called (namely, when instantiating a model via <code>model_construct</code>).
 <span class="normal">616</span>
 <span class="normal">617</span>
 <span class="normal">618</span>
-<span class="normal">619</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_default</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">call_default_factory</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">validated_data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="normal">619</span>
+<span class="normal">620</span>
+<span class="normal">621</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_default</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">call_default_factory</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">validated_data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the default value.</span>
 
 <span class="sd">    We expose an option for whether to call the default_factory (if present), as calling it may</span>
@@ -5935,13 +5971,13 @@ be called (namely, when instantiating a model via <code>model_construct</code>).
 
             <details class="quote">
               <summary>Source code in <code>pydantic/fields.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">621</span>
-<span class="normal">622</span>
-<span class="normal">623</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">623</span>
 <span class="normal">624</span>
 <span class="normal">625</span>
 <span class="normal">626</span>
-<span class="normal">627</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">is_required</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="normal">627</span>
+<span class="normal">628</span>
+<span class="normal">629</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">is_required</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if the field is required (i.e., does not have a default value or factory).</span>
 
 <span class="sd">    Returns:</span>
@@ -6004,9 +6040,7 @@ type had unrecognized annotations, or was annotated with a call to <code>pydanti
 
             <details class="quote">
               <summary>Source code in <code>pydantic/fields.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">629</span>
-<span class="normal">630</span>
-<span class="normal">631</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">631</span>
 <span class="normal">632</span>
 <span class="normal">633</span>
 <span class="normal">634</span>
@@ -6021,7 +6055,9 @@ type had unrecognized annotations, or was annotated with a call to <code>pydanti
 <span class="normal">643</span>
 <span class="normal">644</span>
 <span class="normal">645</span>
-<span class="normal">646</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">rebuild_annotation</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="normal">646</span>
+<span class="normal">647</span>
+<span class="normal">648</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">rebuild_annotation</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Attempts to rebuild the original annotation for use in function signatures.</span>
 
 <span class="sd">    If metadata is present, it adds it to the original annotation using</span>
@@ -6136,9 +6172,7 @@ type had unrecognized annotations, or was annotated with a call to <code>pydanti
 </details>
             <details class="quote">
               <summary>Source code in <code>pydantic/fields.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">648</span>
-<span class="normal">649</span>
-<span class="normal">650</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">650</span>
 <span class="normal">651</span>
 <span class="normal">652</span>
 <span class="normal">653</span>
@@ -6158,7 +6192,9 @@ type had unrecognized annotations, or was annotated with a call to <code>pydanti
 <span class="normal">667</span>
 <span class="normal">668</span>
 <span class="normal">669</span>
-<span class="normal">670</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">apply_typevars_map</span><span class="p">(</span>
+<span class="normal">670</span>
+<span class="normal">671</span>
+<span class="normal">672</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">apply_typevars_map</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">typevars_map</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">globalns</span><span class="p">:</span> <span class="n">GlobalsNamespace</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -6334,9 +6370,7 @@ If both <code>default</code> and <code>default_factory</code> are set, an error 
 
             <details class="quote">
               <summary>Source code in <code>pydantic/fields.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1195</span>
-<span class="normal">1196</span>
-<span class="normal">1197</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1197</span>
 <span class="normal">1198</span>
 <span class="normal">1199</span>
 <span class="normal">1200</span>
@@ -6368,7 +6402,9 @@ If both <code>default</code> and <code>default_factory</code> are set, an error 
 <span class="normal">1226</span>
 <span class="normal">1227</span>
 <span class="normal">1228</span>
-<span class="normal">1229</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">PrivateAttr</span><span class="p">(</span>
+<span class="normal">1229</span>
+<span class="normal">1230</span>
+<span class="normal">1231</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">PrivateAttr</span><span class="p">(</span>
     <span class="n">default</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">PydanticUndefined</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">default_factory</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -6479,14 +6515,14 @@ attribute if not provided.</p>
 
                   <details class="quote">
                     <summary>Source code in <code>pydantic/fields.py</code></summary>
-                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1127</span>
-<span class="normal">1128</span>
-<span class="normal">1129</span>
+                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1129</span>
 <span class="normal">1130</span>
 <span class="normal">1131</span>
 <span class="normal">1132</span>
 <span class="normal">1133</span>
-<span class="normal">1134</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+<span class="normal">1134</span>
+<span class="normal">1135</span>
+<span class="normal">1136</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> <span class="n">default</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">PydanticUndefined</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">default_factory</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span><span class="p">[[],</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="k">if</span> <span class="n">default</span> <span class="ow">is</span> <span class="bp">Ellipsis</span><span class="p">:</span>
@@ -6549,9 +6585,7 @@ attribute if not provided.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/fields.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1157</span>
-<span class="normal">1158</span>
-<span class="normal">1159</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1159</span>
 <span class="normal">1160</span>
 <span class="normal">1161</span>
 <span class="normal">1162</span>
@@ -6559,7 +6593,9 @@ attribute if not provided.</p>
 <span class="normal">1164</span>
 <span class="normal">1165</span>
 <span class="normal">1166</span>
-<span class="normal">1167</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_default</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="normal">1167</span>
+<span class="normal">1168</span>
+<span class="normal">1169</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_default</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Retrieve the default value of the object.</span>
 
 <span class="sd">    If `self.default_factory` is `None`, the method will return a deep copy of the `self.default` object.</span>
@@ -6932,9 +6968,7 @@ objects.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/fields.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1312</span>
-<span class="normal">1313</span>
-<span class="normal">1314</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1314</span>
 <span class="normal">1315</span>
 <span class="normal">1316</span>
 <span class="normal">1317</span>
@@ -7127,7 +7161,9 @@ objects.</p>
 <span class="normal">1504</span>
 <span class="normal">1505</span>
 <span class="normal">1506</span>
-<span class="normal">1507</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">computed_field</span><span class="p">(</span>
+<span class="normal">1507</span>
+<span class="normal">1508</span>
+<span class="normal">1509</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">computed_field</span><span class="p">(</span>
     <span class="n">func</span><span class="p">:</span> <span class="n">PropertyT</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">/</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
