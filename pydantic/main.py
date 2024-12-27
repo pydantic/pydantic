@@ -240,7 +240,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     # The following line sets a flag that we use to determine when `__init__` gets overridden by the user
     __init__.__pydantic_base_init__ = True  # pyright: ignore[reportFunctionMemberAccess]
 
-    @_utils.deprecatedinstanceproperty
+    @_utils.deprecated_instance_property
     @classmethod
     def model_fields(cls) -> dict[str, FieldInfo]:
         """A mapping of field names to their respective [`FieldInfo`][pydantic.fields.FieldInfo] instances.
@@ -251,7 +251,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         """
         return getattr(cls, '__pydantic_fields__', {})
 
-    @_utils.deprecatedinstanceproperty
+    @_utils.deprecated_instance_property
     @classmethod
     def model_computed_fields(cls) -> dict[str, ComputedFieldInfo]:
         """A mapping of computed field names to their respective [`ComputedFieldInfo`][pydantic.fields.ComputedFieldInfo] instances.
