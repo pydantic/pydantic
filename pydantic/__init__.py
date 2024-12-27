@@ -21,6 +21,7 @@ if typing.TYPE_CHECKING:
     from .aliases import AliasChoices, AliasGenerator, AliasPath
     from .annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
     from .config import ConfigDict, with_config
+    from .descriptors import ModelFieldDescriptor
     from .errors import *
     from .fields import Field, PrivateAttr, computed_field
     from .functional_serializers import (
@@ -228,6 +229,7 @@ __all__ = (
     'FieldSerializationInfo',
     'SerializerFunctionWrapHandler',
     'OnErrorOmit',
+    'ModelFieldDescriptor',
 )
 
 # A mapping of {<member name>: (package, <module name>)} defining dynamic imports
@@ -364,6 +366,8 @@ _dynamic_imports: 'dict[str, tuple[str, str]]' = {
     'JsonValue': (__spec__.parent, '.types'),
     'OnErrorOmit': (__spec__.parent, '.types'),
     'FailFast': (__spec__.parent, '.types'),
+    # descriptors
+    'ModelFieldDescriptor': (__spec__.parent, '.descriptors'),
     # type_adapter
     'TypeAdapter': (__spec__.parent, '.type_adapter'),
     # warnings
