@@ -38,6 +38,7 @@ from pydantic import (
     Field,
     GetCoreSchemaHandler,
     PrivateAttr,
+    PydanticDeprecatedSince211,
     PydanticUndefinedAnnotation,
     PydanticUserError,
     SecretStr,
@@ -2010,9 +2011,11 @@ def test_frozen_field_decl_without_default_val(ann, value):
     [Final, Final[int]],
     ids=['no-arg', 'with-arg'],
 )
-def test_final_field_decl_with_default_val(ann):
-    class Model(BaseModel):
-        a: ann = 10
+def test_deprecated_final_field_decl_with_default_val(ann):
+    with pytest.warns(PydanticDeprecatedSince211):
+
+        class Model(BaseModel):
+            a: ann = 10
 
     assert 'a' in Model.__class_vars__
     assert 'a' not in Model.model_fields
