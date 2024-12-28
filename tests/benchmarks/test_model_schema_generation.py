@@ -293,9 +293,27 @@ def test_stdlib_type_schema_generation(benchmark, field_type):
 
 @pytest.mark.parametrize('field_type', PydanticTypes)
 @pytest.mark.benchmark(group='pydantic_custom_types_schema_generation')
-@pytest.mark.skip('Clutters codspeed CI, but should be enabled on branches where we modify schema building.')
+# @pytest.mark.skip('Clutters codspeed CI, but should be enabled on branches where we modify schema building.')
 def test_pydantic_custom_types_schema_generation(benchmark, field_type):
     class PydanticTypeModel(DeferredModel):
         field: field_type
 
     benchmark(rebuild_model, PydanticTypeModel)
+
+
+from pydantic.types import Strict
+
+
+def tmp():
+    class Model(BaseModel):
+        a: Annotated[int, Field(gt=1), Strict()] = Field(alias='test')
+        b: Annotated[str, Field(gt=1), Field(alias='test2'), Strict(), Field(pattern='test')]
+        c: str
+        d: Annotated[int, Field(default=1)]
+
+
+
+@pytest.mark.benchmark
+def test_temp(benchmark):
+
+    benchmark(tmp)
