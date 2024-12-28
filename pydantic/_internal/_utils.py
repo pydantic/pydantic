@@ -20,7 +20,7 @@ from typing import Any, Callable, Generic, Mapping, TypeVar, overload
 
 from typing_extensions import TypeAlias, TypeGuard, deprecated
 
-from pydantic.warnings import PydanticDeprecatedSince210
+from pydantic import PydanticDeprecatedSince211
 
 from . import _repr, _typing_extra
 from ._import_utils import import_cached_base_model
@@ -422,6 +422,6 @@ class deprecated_instance_property(Generic[_ModelT, _RT]):
             warnings.warn(
                 'Accessing this attribute on the instance is deprecated, and will be removed in Pydantic V3. '
                 'Instead, you should access this attribute from the model class.',
-                category=PydanticDeprecatedSince210,
+                category=PydanticDeprecatedSince211,
             )
         return self.fget.__get__(instance, objtype)()
