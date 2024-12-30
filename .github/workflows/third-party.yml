@@ -214,6 +214,50 @@ jobs:
       env:
         TASKIPY: true
 
+  test-pandera:
+    name: Test pandera (main branch) on Python ${{ matrix.python-version }}
+    # If 'schedule' was the trigger, don't run it on contributors' forks
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
+
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.8', '3.9', '3.10', '3.11']
+    steps:
+    - name: Checkout pandera
+      uses: actions/checkout@v4
+      with:
+        repository: unionai-oss/pandera
+
+    - name: Checkout Pydantic
+      uses: actions/checkout@v4
+      with:
+        path: pydantic-latest
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install pandera dependencies
+      run: |
+        pip install uv
+        uv pip install --system -r requirements.in
+        uv pip uninstall --system pydantic pydantic-core
+        uv pip install --system ./pydantic-latest
+
+    - name: List installed dependencies
+      run: uv pip list
+
+    - name: Run pandera tests
+      # Pandera's CI uses nox sessions which encapsulate the logic to install a specific Pydantic version.
+      # Instead, manually run pytest (we run core and FastAPI tests):
+      run: pytest tests/core tests/fastapi
+
   create-issue-on-failure:
     name: Create an issue if tests failed
     runs-on: ubuntu-latest
@@ -222,6 +266,7 @@ jobs:
       - test-sqlmodel
       - test-beanie
       - test-openapi-python-client
+      - test-pandera
     if: |
       github.repository == 'pydantic/pydantic' &&
       github.event_name == 'schedule' &&
@@ -229,7 +274,8 @@ jobs:
         needs.test-fastapi.result == 'failure' ||
         needs.test-sqlmodel.result == 'failure' ||
         needs.test-beanie.result == 'failure' ||
-        needs.test-openapi-python-client.result == 'failure'
+        needs.test-openapi-python-client.result == 'failure' ||
+        needs.test-pandera.result == 'failure'
       )
     permissions:
       issues: write
