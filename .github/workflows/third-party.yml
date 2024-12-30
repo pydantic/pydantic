@@ -276,7 +276,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11']
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
 
     steps:
       - name: Checkout odmantic
@@ -310,11 +310,7 @@ jobs:
           pip install -e ./pydantic-latest
 
       - name: Run all tests
-        run: |
-          ls
-          cd odmantic
-          ls
-          pytest odmantic/tests
+        run: pytest tests
         env:
           TEST_MONGO_URI: ${{ steps.mongo-service.outputs.connection-string }}
           TEST_MONGO_MODE: standalone
