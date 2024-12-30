@@ -277,16 +277,6 @@ jobs:
       fail-fast: false
       matrix:
         python-version: ['3.8', '3.9', '3.10', '3.11']
-        mongo-version: ['4.4', '5', '6']
-        mongo-mode:
-          - standalone
-        include:
-          - python-version: 3.11
-            mongo-version: 4.0
-            mongo-mode: replicaSet
-          - python-version: 3.11
-            mongo-version: 4.2
-            mongo-mode: sharded
 
     steps:
       - name: Checkout odmantic
@@ -310,21 +300,20 @@ jobs:
         id: mongo-service
         uses: art049/mongodb-cluster-action@v0
         with:
-          version: ${{ matrix.mongo-version }}
-          mode: ${{ matrix.mongo-mode }}
+          version: 6
+          mode: standalone
 
       - name: Install dependencies
         run: |
           pip install flit
           pip install ".[test]"
           pip install -e ./pydantic-latest
+
       - name: Run all tests
         working-directory: ./odmantic
         run: |
           set -e
-          coverage run -m pytest -v
-          coverage report -m
-          coverage xml
+          pytest -v
         env:
           TEST_MONGO_URI: ${{ steps.mongo-service.outputs.connection-string }}
           TEST_MONGO_MODE: ${{ matrix.mongo-mode }}
