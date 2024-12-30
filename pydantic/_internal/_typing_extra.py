@@ -9,7 +9,7 @@ import types
 import typing
 import warnings
 from functools import lru_cache, partial
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any, Callable, cast
 
 import typing_extensions
 from typing_extensions import TypeIs, deprecated, get_args, get_origin
@@ -524,35 +524,62 @@ typing_base: Any = typing._Final  # pyright: ignore[reportAttributeAccessIssue]
 
 
 def parent_frame_namespace(*, parent_depth: int = 2, force: bool = False) -> dict[str, Any] | None:
-    """We allow use of items in parent namespace to get around the issue with `get_type_hints` only looking in the
-    global module namespace. See https://github.com/pydantic/pydantic/issues/2678#issuecomment-1008139014 -> Scope
-    and suggestion at the end of the next comment by @gvanrossum.
+    """Fetch the local namespace of the parent frame where this function is called.
 
-    WARNING 1: it matters exactly where this is called. By default, this function will build a namespace from the
-    parent of where it is called.
+    Using this function is mostly useful to resolve forward annotations pointing to members defined in a local namespace,
+    such as assignments inside a function. Using the standard library tools, it is currently not possible to resolve
+    such annotations:
 
-    WARNING 2: this only looks in the parent namespace, not other parents since (AFAIK) there's no way to collect a
-    dict of exactly what's in scope. Using `f_back` would work sometimes but would be very wrong and confusing in many
-    other cases. See https://discuss.python.org/t/is-there-a-way-to-access-parent-nested-namespaces/20659.
+    ```python {lint="skip" test="skip"}
+    from typing import get_type_hints
 
-    There are some cases where we want to force fetching the parent namespace, ex: during a `model_rebuild` call.
-    In this case, we want both the namespace of the class' module, if applicable, and the parent namespace of the
-    module where the rebuild is called.
+    def func() -> None:
+        Alias = int
 
-    In other cases, like during initial schema build, if a class is defined at the top module level, we don't need to
-    fetch that module's namespace, because the class' __module__ attribute can be used to access the parent namespace.
-    This is done in `_namespace_utils.get_module_ns_of`. Thus, there's no need to cache the parent frame namespace in this case.
+        class C:
+            a: 'Alias'
+
+        # Raises a `NameError: 'Alias' is not defined`
+        get_type_hints(C)
+    ```
+
+    Pydantic uses this function when a Pydantic model is being defined to fetch the parent frame locals. However,
+    this only allows us to fetch the parent frame namespace and not other parents (e.g. a model defined in a function,
+    itself defined in another function). Inspecting the next outer frames (using `f_back`) is not reliable enough
+    (see https://discuss.python.org/t/20659).
+
+    Because this function is mostly used to better resolve forward annotations, nothing is returned if the parent frame's
+    code object is defined at the module level. In this case, the locals of the frame will be the same as the module
+    globals where the class is defined (see `_namespace_utils.get_module_ns_of`). However, if you still want to fetch
+    the module globals (e.g. when rebuilding a model, where the frame where the rebuild call is performed might contain
+    members that you want to use for forward annotations evaluation), you can use the `force` parameter.
+
+    Args:
+        parent_depth: The depth at which to get the frame. Defaults to 2, meaning the parent frame where this function
+            is called will be used.
+        force: Whether to always return the frame locals, even if the frame's code object is defined at the module level.
+
+    Returns:
+        The locals of the namespace, or `None` if it was skipped as per the described logic.
     """
     frame = sys._getframe(parent_depth)
 
-    # note, we don't copy frame.f_locals here (or during the last return call), because we don't expect the namespace to be modified down the line
-    # if this becomes a problem, we could implement some sort of frozen mapping structure to enforce this
+    if frame.f_code.co_name.startswith('<generic parameters of'):
+        # As `parent_frame_namespace` is mostly called in `ModelMetaclass.__new__`,
+        # the parent frame can be the annotation scope if the PEP 695 generic syntax is used.
+        # (see https://docs.python.org/3/reference/executionmodel.html#annotation-scopes,
+        # https://docs.python.org/3/reference/compound_stmts.html#generic-classes).
+        # In this case, we need to skip this frame as it is irrelevant.
+        frame = cast(types.FrameType, frame.f_back)  # guaranteed to not be `None`
+
+    # note, we don't copy frame.f_locals here (or during the last return call), because we don't expect the namespace to be
+    # modified down the line if this becomes a problem, we could implement some sort of frozen mapping structure to enforce this.
     if force:
         return frame.f_locals
 
-    # if either of the following conditions are true, the class is defined at the top module level
-    # to better understand why we need both of these checks, see
-    # https://github.com/pydantic/pydantic/pull/10113#discussion_r1714981531
+    # if either of the following conditions are true, the class is defined at the top module level.
+    # To better understand why we need both of these checks, see
+    # https://github.com/pydantic/pydantic/pull/10113#discussion_r1714981531.
     if frame.f_back is None or frame.f_code.co_name == '<module>':
         return None
 
