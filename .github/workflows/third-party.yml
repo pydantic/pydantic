@@ -282,7 +282,8 @@ jobs:
       - name: Checkout odmantic
         uses: actions/checkout@v4
         with:
-          repository: art049/odmantic
+          repository: sydney-runkle/odmantic
+          ref: fix-model-fields-access
 
       - name: Checkout Pydantic
         uses: actions/checkout@v4
