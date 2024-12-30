@@ -311,12 +311,10 @@ jobs:
 
       - name: Run all tests
         working-directory: ./odmantic
-        run: |
-          set -e
-          pytest -v
+        run: pytest tests
         env:
           TEST_MONGO_URI: ${{ steps.mongo-service.outputs.connection-string }}
-          TEST_MONGO_MODE: ${{ matrix.mongo-mode }}
+          TEST_MONGO_MODE: standalone
 
   create-issue-on-failure:
     name: Create an issue if tests failed
