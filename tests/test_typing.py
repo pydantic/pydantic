@@ -88,7 +88,7 @@ def test_is_literal_with_typing_literal():
 
 
 @pytest.mark.parametrize(
-    ['ann_type', 'extepcted'],
+    ['ann_type', 'expected'],
     (
         (None, False),
         (ForwardRef('Other[int]'), False),
@@ -103,8 +103,8 @@ def test_is_literal_with_typing_literal():
         (Annotated[ClassVar[int], ...], True),
     ),
 )
-def test_is_classvar_annotation(ann_type, extepcted):
-    assert is_classvar_annotation(ann_type) is extepcted
+def test_is_classvar_annotation(ann_type, expected):
+    assert is_classvar_annotation(ann_type) is expected
 
 
 def test_parent_frame_namespace(mocker):
