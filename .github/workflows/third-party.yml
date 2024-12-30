@@ -264,6 +264,69 @@ jobs:
       # Instead, manually run pytest (we run core and FastAPI tests):
       run: pytest tests/core tests/fastapi
 
+  test-odmantic:
+    name: Test odmantic (main branch) on Python ${{ matrix.python-version }}
+    # If 'schedule' was the trigger, don't run it on contributors' forks
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
+
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.8', '3.9', '3.10', '3.11']
+        mongo-version: ['4.4', '5', '6']
+        mongo-mode:
+          - standalone
+        include:
+          - python-version: 3.11
+            mongo-version: 4.0
+            mongo-mode: replicaSet
+          - python-version: 3.11
+            mongo-version: 4.2
+            mongo-mode: sharded
+
+    steps:
+      - name: Checkout odmantic
+        uses: actions/checkout@v4
+        with:
+          repository: art049/odmantic
+
+      - name: Checkout Pydantic
+        uses: actions/checkout@v4
+        with:
+          path: pydantic-latest
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: "pyproject.toml"
+
+      - name: Mongo Service
+        id: mongo-service
+        uses: art049/mongodb-cluster-action@v0
+        with:
+          version: ${{ matrix.mongo-version }}
+          mode: ${{ matrix.mongo-mode }}
+
+      - name: Install dependencies
+        run: |
+          pip install flit
+          pip install ".[test]"
+      - name: Run all tests
+        run: |
+          set -e
+          coverage run -m pytest -v
+          coverage report -m
+          coverage xml
+        env:
+          TEST_MONGO_URI: ${{ steps.mongo-service.outputs.connection-string }}
+          TEST_MONGO_MODE: ${{ matrix.mongo-mode }}
+
   create-issue-on-failure:
     name: Create an issue if tests failed
     runs-on: ubuntu-latest
@@ -273,6 +336,7 @@ jobs:
       - test-beanie
       - test-openapi-python-client
       - test-pandera
+      - test-odmantic
     if: |
       github.repository == 'pydantic/pydantic' &&
       github.event_name == 'schedule' &&
@@ -281,7 +345,8 @@ jobs:
         needs.test-sqlmodel.result == 'failure' ||
         needs.test-beanie.result == 'failure' ||
         needs.test-openapi-python-client.result == 'failure' ||
-        needs.test-pandera.result == 'failure'
+        needs.test-pandera.result == 'failure' ||
+        needs.test-odmantic.result == 'failure'
       )
     permissions:
       issues: write
