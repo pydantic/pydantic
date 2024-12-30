@@ -310,8 +310,9 @@ jobs:
           pip install -e ./pydantic-latest
 
       - name: Run all tests
-        working-directory: ./odmantic
-        run: pytest tests
+        run: |
+          ls
+          pytest odmantic/tests
         env:
           TEST_MONGO_URI: ${{ steps.mongo-service.outputs.connection-string }}
           TEST_MONGO_MODE: standalone
