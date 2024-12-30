@@ -107,20 +107,6 @@ def test_is_classvar_annotation(ann_type, expected):
     assert is_classvar_annotation(ann_type) is expected
 
 
-def test_parent_frame_namespace(mocker):
-    assert parent_frame_namespace() is not None
-
-    from dataclasses import dataclass
-
-    @dataclass
-    class MockedFrame:
-        f_back = None
-        f_locals = {}
-
-    mocker.patch('sys._getframe', return_value=MockedFrame())
-    assert parent_frame_namespace() is None
-
-
 def test_get_function_type_hints_none_type():
     def f(x: int, y: None) -> int:
         return x
@@ -160,13 +146,19 @@ def test_func_ns_excludes_default_globals() -> None:
         assert default_global_var not in func_ns
 
 
-module_foo = 'global_foo'
-module_ns = parent_frame_namespace(parent_depth=1)
+def test_parent_frame_namespace(create_module) -> None:
+    """Parent frame namespace should be `None` because we skip fetching data from the top module level."""
 
+    @create_module
+    def mod1() -> None:
+        from pydantic._internal._typing_extra import parent_frame_namespace
 
-def test_module_ns_is_none() -> None:
-    """Module namespace should be none because we skip fetching data from the top module level."""
-    assert module_ns is None
+        module_foo = 'global_foo'  # noqa: F841
+        module_ns = parent_frame_namespace(parent_depth=1)  # noqa: F841
+        module_ns_force = parent_frame_namespace(parent_depth=1, force=True)  # noqa: F841
+
+    assert mod1.module_ns is None
+    assert mod1.module_ns_force is not None
 
 
 def test_exotic_localns() -> None:

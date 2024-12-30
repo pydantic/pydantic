@@ -125,11 +125,7 @@ def ns_for_function(obj: Callable[..., Any], parent_namespace: MappingNamespace 
     # passed as a separate argument. However, internally, `_eval_type` calls
     # `ForwardRef._evaluate` which will merge type params with the localns,
     # essentially mimicking what we do here.
-    type_params: tuple[_TypeVarLike, ...]
-    if hasattr(obj, '__type_params__'):
-        type_params = obj.__type_params__
-    else:
-        type_params = ()
+    type_params: tuple[_TypeVarLike, ...] = getattr(obj, '__type_params__', ())
     if parent_namespace is not None:
         # We also fetch type params from the parent namespace. If present, it probably
         # means the function was defined in a class. This is to support the following:
@@ -262,11 +258,24 @@ class NsResolver:
             first_type = self._types_stack[0]
             locals_list.append({first_type.__name__: first_type})
 
+        # Adding `__type_params__` *before* `vars(typ)`, as the latter takes priority
+        # (see https://github.com/python/cpython/pull/120272).
+        # TODO `typ.__type_params__` when we drop support for Python 3.11:
+        type_params: tuple[_TypeVarLike, ...] = getattr(typ, '__type_params__', ())
+        if type_params:
+            # Adding `__type_params__` is mostly useful for generic classes defined using
+            # PEP 695 syntax *and* using forward annotations (see the example in
+            # https://github.com/python/cpython/issues/114053). For TypeAliasType instances,
+            # it is way less common, but still required if using a string annotation in the alias
+            # value, e.g. `type A[T] = 'T'` (which is not necessary in most cases).
+            locals_list.append({t.__name__: t for t in type_params})
+
+        # TypeAliasType instances don't have a `__dict__` attribute, so the check
+        # is necessary:
         if hasattr(typ, '__dict__'):
-            # TypeAliasType is the exception.
             locals_list.append(vars(typ))
 
-        # The len check above presents this from being added twice:
+        # The `len(self._types_stack) > 1` check above prevents this from being added twice:
         locals_list.append({typ.__name__: typ})
 
         return NamespacesTuple(globalns, LazyLocalNamespace(*locals_list))
