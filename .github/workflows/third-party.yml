@@ -320,6 +320,8 @@ jobs:
           pip install -e ./pydantic-latest
       - name: Run all tests
         run: |
+          pwd
+          ls
           set -e
           coverage run -m pytest -v
           coverage report -m
