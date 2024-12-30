@@ -317,6 +317,110 @@ jobs:
           TEST_MONGO_URI: ${{ steps.mongo-service.outputs.connection-string }}
           TEST_MONGO_MODE: standalone
 
+  test-polar:
+    name: Test Polar (main branch) on Python ${{ matrix.python-version }}
+    # If 'schedule' was the trigger, don't run it on contributors' forks
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
+
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
+    services:
+      postgres:
+        image: postgres:15.1-bullseye
+        env:
+          POSTGRES_USER: polar
+          POSTGRES_PASSWORD: polar
+          POSTGRES_DB: polar_test
+          POSTGRES_PORT: 5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      minio:
+        image: bitnami/minio:2024.5.28
+        ports:
+          - 9000:9000
+          - 9001:9001
+        env:
+          MINIO_ROOT_USER: polar
+          MINIO_ROOT_PASSWORD: polarpolar
+        options: >-
+          --health-cmd "curl -I http://127.0.0.1:9000/minio/health/live"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - name: Checkout polar
+      uses: actions/checkout@v4
+      with:
+        repository: polarsource/polar
+
+    - name: 💿 MinIO Setup
+      working-directory: ./server/.minio
+      env:
+        MINIO_HOST: 127.0.0.1
+        MINIO_ROOT_USER: polar
+        MINIO_ROOT_PASSWORD: polarpolar
+        ACCESS_KEY: polar-development
+        SECRET_ACCESS_KEY: polar123456789
+        BUCKET_NAME: polar-s3
+        BUCKET_TESTING_NAME: testing-polar-s3
+        POLICY_FILE: policy.json
+      run:  bash github.sh
+
+    - name: Checkout Pydantic
+      uses: actions/checkout@v4
+      with:
+        path: pydantic-latest
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v5
+      with:
+        enable-cache: true
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: 🔧 uv install
+      working-directory: ./server
+      run: |
+        uv sync --dev
+        uv pip uninstall pydantic
+        uv pip install -e ./../pydantic-latest
+        uv run task generate_dev_jwks
+
+    - name: ⚗️ alembic migrate
+      working-directory: ./server
+      env:
+        POLAR_ENV: testing
+      run: uv run task db_migrate
+
+    - name: ⚗️ alembic check
+      working-directory: ./server
+      env:
+        POLAR_ENV: testing
+      run: uv run alembic check
+
+    - name: List installed dependencies
+      run: uv pip list
+
+    - name: 🐍 Run polar tests (pytest)
+      working-directory: ./server
+      run: uv run pytest -n auto --no-cov
+
   create-issue-on-failure:
     name: Create an issue if tests failed
     runs-on: ubuntu-latest
@@ -327,6 +431,7 @@ jobs:
       - test-openapi-python-client
       - test-pandera
       - test-odmantic
+      - test-polar
     if: |
       github.repository == 'pydantic/pydantic' &&
       github.event_name == 'schedule' &&
@@ -336,7 +441,8 @@ jobs:
         needs.test-beanie.result == 'failure' ||
         needs.test-openapi-python-client.result == 'failure' ||
         needs.test-pandera.result == 'failure' ||
-        needs.test-odmantic.result == 'failure'
+        needs.test-odmantic.result == 'failure' ||
+        needs.test-polar.result == 'failure'
       )
     permissions:
       issues: write
