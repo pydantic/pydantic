@@ -317,6 +317,7 @@ jobs:
         run: |
           pip install flit
           pip install ".[test]"
+          pip install -e ./pydantic-latest
       - name: Run all tests
         run: |
           set -e
