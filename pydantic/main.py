@@ -786,7 +786,6 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             )  # use dict as ordered set
 
             with _generics.generic_recursion_self_type(origin, args) as maybe_self_type:
-                # Check cached first otherwise `mro` may return `PydanticRecursiveRef`
                 cached = _generics.get_cached_generic_type_late(cls, typevar_values, origin, args)
                 if cached is not None:
                     return cached
