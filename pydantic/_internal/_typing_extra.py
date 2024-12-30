@@ -569,7 +569,8 @@ def parent_frame_namespace(*, parent_depth: int = 2, force: bool = False) -> dic
         # the parent frame can be the annotation scope if the PEP 695 generic syntax is used.
         # (see https://docs.python.org/3/reference/executionmodel.html#annotation-scopes,
         # https://docs.python.org/3/reference/compound_stmts.html#generic-classes).
-        # In this case, we need to skip this frame as it is irrelevant.
+        # In this case, the code name is set to `<generic parameters of MyClass>`,
+        # and we need to skip this frame as it is irrelevant.
         frame = cast(types.FrameType, frame.f_back)  # guaranteed to not be `None`
 
     # note, we don't copy frame.f_locals here (or during the last return call), because we don't expect the namespace to be
@@ -577,7 +578,7 @@ def parent_frame_namespace(*, parent_depth: int = 2, force: bool = False) -> dic
     if force:
         return frame.f_locals
 
-    # if either of the following conditions are true, the class is defined at the top module level.
+    # If either of the following conditions are true, the class is defined at the top module level.
     # To better understand why we need both of these checks, see
     # https://github.com/pydantic/pydantic/pull/10113#discussion_r1714981531.
     if frame.f_back is None or frame.f_code.co_name == '<module>':
