@@ -161,7 +161,7 @@ class _ApplyInferredDiscriminator:
         # in the output TaggedUnionSchema that will replace the union from the input schema
         self._tagged_union_choices: dict[Hashable, core_schema.CoreSchema] = {}
 
-        # `_used` is changed to True after applying the discriminator to prevent accidental re-use
+        # `_used` is changed to True after applying the discriminator to prevent accidental reuse
         self._used = False
 
     def apply(self, schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
@@ -286,10 +286,13 @@ class _ApplyInferredDiscriminator:
             'definition-ref',
         } and not _core_utils.is_function_with_inner_schema(choice):
             # We should eventually handle 'definition-ref' as well
-            raise TypeError(
-                f'{choice["type"]!r} is not a valid discriminated union variant;'
-                ' should be a `BaseModel` or `dataclass`'
-            )
+            err_str = f'The core schema type {choice["type"]!r} is not a valid discriminated union variant.'
+            if choice['type'] == 'list':
+                err_str += (
+                    ' If you are making use of a list of union types, make sure the discriminator is applied to the '
+                    'union type and not the list (e.g. `list[Annotated[<T> | <U>, Field(discriminator=...)]]`).'
+                )
+            raise TypeError(err_str)
         else:
             if choice['type'] == 'tagged-union' and self._is_discriminator_shared(choice):
                 # In this case, this inner tagged-union is compatible with the outer tagged-union,
@@ -323,13 +326,10 @@ class _ApplyInferredDiscriminator:
         """
         if choice['type'] == 'definitions':
             return self._infer_discriminator_values_for_choice(choice['schema'], source_name=source_name)
-        elif choice['type'] == 'function-plain':
-            raise TypeError(
-                f'{choice["type"]!r} is not a valid discriminated union variant;'
-                ' should be a `BaseModel` or `dataclass`'
-            )
+
         elif _core_utils.is_function_with_inner_schema(choice):
             return self._infer_discriminator_values_for_choice(choice['schema'], source_name=source_name)
+
         elif choice['type'] == 'lax-or-strict':
             return sorted(
                 set(
@@ -380,10 +380,13 @@ class _ApplyInferredDiscriminator:
                 raise MissingDefinitionForUnionRef(schema_ref)
             return self._infer_discriminator_values_for_choice(self.definitions[schema_ref], source_name=source_name)
         else:
-            raise TypeError(
-                f'{choice["type"]!r} is not a valid discriminated union variant;'
-                ' should be a `BaseModel` or `dataclass`'
-            )
+            err_str = f'The core schema type {choice["type"]!r} is not a valid discriminated union variant.'
+            if choice['type'] == 'list':
+                err_str += (
+                    ' If you are making use of a list of union types, make sure the discriminator is applied to the '
+                    'union type and not the list (e.g. `list[Annotated[<T> | <U>, Field(discriminator=...)]]`).'
+                )
+            raise TypeError(err_str)
 
     def _infer_discriminator_values_for_typed_dict_choice(
         self, choice: core_schema.TypedDictSchema, source_name: str | None = None

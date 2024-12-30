@@ -6,7 +6,7 @@ from contextlib import contextmanager
 from functools import cached_property
 from typing import Any, Callable, Iterator, Mapping, NamedTuple, TypeVar
 
-from typing_extensions import TypeAlias, TypeAliasType
+from typing_extensions import ParamSpec, TypeAlias, TypeAliasType, TypeVarTuple
 
 GlobalsNamespace: TypeAlias = 'dict[str, Any]'
 """A global namespace.
@@ -24,13 +24,15 @@ defined inside functions).
 This namespace type is expected as the `locals` argument during annotations evaluation.
 """
 
+_TypeVarLike: TypeAlias = 'TypeVar | ParamSpec | TypeVarTuple'
+
 
 class NamespacesTuple(NamedTuple):
     """A tuple of globals and locals to be used during annotations evaluation.
 
     This datastructure is defined as a named tuple so that it can easily be unpacked:
 
-    ```python lint="skip" test="skip"
+    ```python {lint="skip" test="skip"}
     def eval_type(typ: type[Any], ns: NamespacesTuple) -> None:
         return eval(typ, *ns)
     ```
@@ -72,7 +74,7 @@ class LazyLocalNamespace(Mapping[str, Any]):
         *namespaces: The namespaces to consider, in ascending order of priority.
 
     Example:
-        ```python lint="skip" test="skip"
+        ```python {lint="skip" test="skip"}
         ns = LazyLocalNamespace({'a': 1, 'b': 2}, {'a': 3})
         ns['a']
         #> 3
@@ -123,7 +125,11 @@ def ns_for_function(obj: Callable[..., Any], parent_namespace: MappingNamespace 
     # passed as a separate argument. However, internally, `_eval_type` calls
     # `ForwardRef._evaluate` which will merge type params with the localns,
     # essentially mimicking what we do here.
-    type_params: tuple[TypeVar, ...] = ()
+    type_params: tuple[_TypeVarLike, ...]
+    if hasattr(obj, '__type_params__'):
+        type_params = obj.__type_params__
+    else:
+        type_params = ()
     if parent_namespace is not None:
         # We also fetch type params from the parent namespace. If present, it probably
         # means the function was defined in a class. This is to support the following:
@@ -162,7 +168,7 @@ class NsResolver:
             with the lowest priority. For a given class defined in a function, the locals
             of this function are usually used as the parent namespace:
 
-            ```python lint="skip" test="skip"
+            ```python {lint="skip" test="skip"}
             from pydantic import BaseModel
 
             def func() -> None:
@@ -182,7 +188,7 @@ class NsResolver:
             in the same module as the parent namespace.
 
     Example:
-        ```python lint="skip" test="skip"
+        ```python {lint="skip" test="skip"}
         ns_resolver = NsResolver(
             parent_namespace={'fallback': 1},
         )
@@ -231,7 +237,16 @@ class NsResolver:
     def types_namespace(self) -> NamespacesTuple:
         """The current global and local namespaces to be used for annotations evaluation."""
         if not self._types_stack:
-            # TODO do we want to merge `self._parent_ns` here?
+            # TODO: should we merge the parent namespace here?
+            # This is relevant for TypeAdapter, where there are no types on the stack, and we might
+            # need access to the parent_ns. Right now, we sidestep this in `type_adapter.py` by passing
+            # locals to both parent_ns and the base_ns_tuple, but this is a bit hacky.
+            # we might consider something like:
+            # if self._parent_ns is not None:
+            #     # Hacky workarounds, see class docstring:
+            #     # An optional parent namespace that will be added to the locals with the lowest priority
+            #     locals_list: list[MappingNamespace] = [self._parent_ns, self._base_ns_tuple.locals]
+            #     return NamespacesTuple(self._base_ns_tuple.globals, LazyLocalNamespace(*locals_list))
             return self._base_ns_tuple
 
         typ = self._types_stack[-1]
@@ -240,6 +255,7 @@ class NsResolver:
 
         locals_list: list[MappingNamespace] = []
         # Hacky workarounds, see class docstring:
+        # An optional parent namespace that will be added to the locals with the lowest priority
         if self._parent_ns is not None:
             locals_list.append(self._parent_ns)
         if len(self._types_stack) > 1:

@@ -2,20 +2,16 @@ from __future__ import annotations
 
 import os
 from collections import defaultdict
-from typing import (
-    Any,
-    Callable,
-    Hashable,
-    TypeVar,
-    Union,
-)
+from typing import Any, Callable, Hashable, TypeVar, Union
 
 from pydantic_core import CoreSchema, core_schema
 from pydantic_core import validate_core_schema as _validate_core_schema
-from typing_extensions import TypeAliasType, TypeGuard, get_args, get_origin
+from typing_extensions import TypeGuard, get_args, get_origin
 
+from ..errors import PydanticUserError
 from . import _repr
-from ._typing_extra import is_generic_alias
+from ._core_metadata import CoreMetadata
+from ._typing_extra import is_generic_alias, is_type_alias_type
 
 AnyFunctionSchema = Union[
     core_schema.AfterValidatorFunctionSchema,
@@ -85,7 +81,7 @@ def get_type_ref(type_: type[Any], args_override: tuple[type[Any], ...] | None =
         args = generic_metadata['args'] or args
 
     module_name = getattr(origin, '__module__', '<No __module__>')
-    if isinstance(origin, TypeAliasType):
+    if is_type_alias_type(origin):
         type_ref = f'{module_name}.{origin.__name__}:{id(origin)}'
     else:
         try:
@@ -284,11 +280,37 @@ class _WalkCoreSchema:
             schema['values_schema'] = self.walk(values_schema, f)
         return schema
 
-    def handle_function_schema(self, schema: AnyFunctionSchema, f: Walk) -> core_schema.CoreSchema:
-        if not is_function_with_inner_schema(schema):
-            return schema
+    def handle_function_after_schema(
+        self, schema: core_schema.AfterValidatorFunctionSchema, f: Walk
+    ) -> core_schema.CoreSchema:
         schema['schema'] = self.walk(schema['schema'], f)
         return schema
+
+    def handle_function_before_schema(
+        self, schema: core_schema.BeforeValidatorFunctionSchema, f: Walk
+    ) -> core_schema.CoreSchema:
+        schema['schema'] = self.walk(schema['schema'], f)
+        if 'json_schema_input_schema' in schema:
+            schema['json_schema_input_schema'] = self.walk(schema['json_schema_input_schema'], f)
+        return schema
+
+    # TODO duplicate schema types for serializers and validators, needs to be deduplicated:
+    def handle_function_plain_schema(
+        self, schema: core_schema.PlainValidatorFunctionSchema | core_schema.PlainSerializerFunctionSerSchema, f: Walk
+    ) -> core_schema.CoreSchema:
+        if 'json_schema_input_schema' in schema:
+            schema['json_schema_input_schema'] = self.walk(schema['json_schema_input_schema'], f)
+        return schema  # pyright: ignore[reportReturnType]
+
+    # TODO duplicate schema types for serializers and validators, needs to be deduplicated:
+    def handle_function_wrap_schema(
+        self, schema: core_schema.WrapValidatorFunctionSchema | core_schema.WrapSerializerFunctionSerSchema, f: Walk
+    ) -> core_schema.CoreSchema:
+        if 'schema' in schema:
+            schema['schema'] = self.walk(schema['schema'], f)
+        if 'json_schema_input_schema' in schema:
+            schema['json_schema_input_schema'] = self.walk(schema['json_schema_input_schema'], f)
+        return schema  # pyright: ignore[reportReturnType]
 
     def handle_union_schema(self, schema: core_schema.UnionSchema, f: Walk) -> core_schema.CoreSchema:
         new_choices: list[CoreSchema | tuple[CoreSchema, str]] = []
@@ -463,7 +485,20 @@ def simplify_schema_references(schema: core_schema.CoreSchema) -> core_schema.Co
             # Even though this is a `'definition-ref'` schema, there might
             # be more references inside the serialization schema:
             recurse(s, count_refs)
-        recurse(definitions[ref], count_refs)
+
+        next_s = definitions[ref]
+        visited: set[str] = set()
+        while next_s['type'] == 'definition-ref':
+            if next_s['schema_ref'] in visited:
+                raise PydanticUserError(
+                    f'{ref} contains a circular reference to itself.', code='circular-reference-schema'
+                )
+
+            visited.add(next_s['schema_ref'])
+            ref_counts[next_s['schema_ref']] += 1
+            next_s = definitions[next_s['schema_ref']]
+
+        recurse(next_s, count_refs)
         current_recursion_ref_count[ref] -= 1
         return s
 
@@ -480,19 +515,21 @@ def simplify_schema_references(schema: core_schema.CoreSchema) -> core_schema.Co
             return False
         if 'metadata' in s:
             metadata = s['metadata']
-            for k in (
-                'pydantic_js_functions',
-                'pydantic_js_annotation_functions',
+            for k in [
+                *CoreMetadata.__annotations__.keys(),
                 'pydantic.internal.union_discriminator',
-            ):
+                'pydantic.internal.tagged_union_tag',
+            ]:
                 if k in metadata:
                     # we need to keep this as a ref
                     return False
         return True
 
     def inline_refs(s: core_schema.CoreSchema, recurse: Recurse) -> core_schema.CoreSchema:
-        if s['type'] == 'definition-ref':
+        # Assume there are no infinite loops, because we already checked for that in `count_refs`
+        while s['type'] == 'definition-ref':
             ref = s['schema_ref']
+
             # Check if the reference is only used once, not involved in recursion and does not have
             # any extra keys (like 'serialization')
             if can_be_inlined(s, ref):
@@ -503,12 +540,10 @@ def simplify_schema_references(schema: core_schema.CoreSchema) -> core_schema.Co
                 # in particular this is needed for `serialization`
                 if 'serialization' in s:
                     new['serialization'] = s['serialization']
-                s = recurse(new, inline_refs)
-                return s
+                s = new
             else:
-                return recurse(s, inline_refs)
-        else:
-            return recurse(s, inline_refs)
+                break
+        return recurse(s, inline_refs)
 
     schema = walk_core_schema(schema, inline_refs, copy=False)
 

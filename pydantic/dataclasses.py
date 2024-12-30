@@ -109,7 +109,8 @@ def dataclass(
     kw_only: bool = False,
     slots: bool = False,
 ) -> Callable[[type[_T]], type[PydanticDataclass]] | type[PydanticDataclass]:
-    """Usage docs: https://docs.pydantic.dev/2.10/concepts/dataclasses/
+    """!!! abstract "Usage Documentation"
+        [`dataclasses`](../concepts/dataclasses.md)
 
     A decorator used to create a Pydantic-enhanced dataclass, similar to the standard Python `dataclass`,
     but with added validation.
@@ -204,7 +205,7 @@ def dataclass(
 
         # we warn on conflicting config specifications, but only if the class doesn't have a dataclass base
         # because a dataclass base might provide a __pydantic_config__ attribute that we don't want to warn about
-        has_dataclass_base = any(_typing_extra.is_dataclass(base) for base in cls.__bases__)
+        has_dataclass_base = any(dataclasses.is_dataclass(base) for base in cls.__bases__)
         if not has_dataclass_base and config is not None and hasattr(cls, '__pydantic_config__'):
             warn(
                 f'`config` is set via both the `dataclass` decorator and `__pydantic_config__` for dataclass {cls.__name__}. '

@@ -9,10 +9,11 @@ from pydantic_core import ValidationError
 from typing_extensions import Annotated, TypeAlias, TypedDict
 
 from pydantic import BaseModel, Field, TypeAdapter, ValidationInfo, create_model, field_validator
+from pydantic._internal import _mock_val_ser
 from pydantic._internal._typing_extra import annotated_type
 from pydantic.config import ConfigDict
 from pydantic.dataclasses import dataclass as pydantic_dataclass
-from pydantic.errors import PydanticUserError
+from pydantic.errors import PydanticUndefinedAnnotation, PydanticUserError
 from pydantic.type_adapter import _type_has_config
 
 ItemType = TypeVar('ItemType')
@@ -531,15 +532,17 @@ def test_core_schema_respects_defer_build(model: Any, config: ConfigDict, method
 
     if config.get('defer_build'):
         assert generate_schema_calls.count == 0, 'Should be built deferred'
-        assert type_adapter._core_schema is None, 'Should be initialized deferred'
-        assert type_adapter._validator is None, 'Should be initialized deferred'
-        assert type_adapter._serializer is None, 'Should be initialized deferred'
+        assert isinstance(type_adapter.core_schema, _mock_val_ser.MockCoreSchema), 'Should be initialized deferred'
+        assert isinstance(type_adapter.validator, _mock_val_ser.MockValSer), 'Should be initialized deferred'
+        assert isinstance(type_adapter.serializer, _mock_val_ser.MockValSer), 'Should be initialized deferred'
     else:
         built_inside_type_adapter = 'Dict' in str(model) or 'Annotated' in str(model)
         assert generate_schema_calls.count == (1 if built_inside_type_adapter else 0), f'Should be built ({model})'
-        assert type_adapter._core_schema is not None, 'Should be initialized before usage'
-        assert type_adapter._validator is not None, 'Should be initialized before usage'
-        assert type_adapter._serializer is not None, 'Should be initialized before usage'
+        assert not isinstance(
+            type_adapter.core_schema, _mock_val_ser.MockCoreSchema
+        ), 'Should be initialized before usage'
+        assert not isinstance(type_adapter.validator, _mock_val_ser.MockValSer), 'Should be initialized before usage'
+        assert not isinstance(type_adapter.validator, _mock_val_ser.MockValSer), 'Should be initialized before usage'
 
     if method == 'schema':
         json_schema = type_adapter.json_schema()  # Use it
@@ -556,6 +559,52 @@ def test_core_schema_respects_defer_build(model: Any, config: ConfigDict, method
         assert json.loads(raw.decode())['x'] == 1  # Sanity check
         assert generate_schema_calls.count < 2, 'Should not build duplicates'
 
-    assert type_adapter._core_schema is not None, 'Should be initialized after the usage'
-    assert type_adapter._validator is not None, 'Should be initialized after the usage'
-    assert type_adapter._serializer is not None, 'Should be initialized after the usage'
+    assert not isinstance(
+        type_adapter.core_schema, _mock_val_ser.MockCoreSchema
+    ), 'Should be initialized after the usage'
+    assert not isinstance(type_adapter.validator, _mock_val_ser.MockValSer), 'Should be initialized after the usage'
+    assert not isinstance(type_adapter.validator, _mock_val_ser.MockValSer), 'Should be initialized after the usage'
+
+
+def test_defer_build_raise_errors() -> None:
+    ta = TypeAdapter('MyInt', config=ConfigDict(defer_build=True))  # pyright: ignore[reportUndefinedVariable]
+    assert isinstance(ta.core_schema, _mock_val_ser.MockCoreSchema)
+
+    with pytest.raises(PydanticUndefinedAnnotation):
+        # `True` is the `raise_errors` default for the `rebuild` method, but we include here for clarity
+        ta.rebuild(raise_errors=True)
+
+    ta.rebuild(raise_errors=False)
+    assert isinstance(ta.core_schema, _mock_val_ser.MockCoreSchema)
+
+    MyInt = int  # noqa: F841
+
+    ta.rebuild(raise_errors=True)
+    assert not isinstance(ta.core_schema, _mock_val_ser.MockCoreSchema)
+
+
+@dataclass
+class SimpleDataclass:
+    x: int
+
+
+@pytest.mark.parametrize('type_,repr_', [(int, 'int'), (List[int], 'List[int]'), (SimpleDataclass, 'SimpleDataclass')])
+def test_ta_repr(type_: Any, repr_: str) -> None:
+    ta = TypeAdapter(type_)
+    assert repr(ta) == f'TypeAdapter({repr_})'
+
+
+def test_correct_frame_used_parametrized(create_module) -> None:
+    """https://github.com/pydantic/pydantic/issues/10892"""
+
+    @create_module
+    def module_1() -> None:
+        from pydantic import TypeAdapter
+
+        Any = int  # noqa: F841
+
+        # 'Any' should resolve to `int`, not `typing.Any`:
+        ta = TypeAdapter[int]('Any')  # noqa: F841
+
+    with pytest.raises(ValidationError):
+        module_1.ta.validate_python('a')

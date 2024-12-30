@@ -13,9 +13,8 @@ from functools import lru_cache, partial
 from types import FunctionType
 from typing import Any, Callable, Generic, Literal, NoReturn, cast
 
-import typing_extensions
 from pydantic_core import PydanticUndefined, SchemaSerializer
-from typing_extensions import dataclass_transform, deprecated
+from typing_extensions import TypeAliasType, dataclass_transform, deprecated, get_args
 
 from ..errors import PydanticUndefinedAnnotation, PydanticUserError
 from ..plugin._schema_validator import create_schema_validator
@@ -34,10 +33,10 @@ from ._typing_extra import (
     _make_forward_ref,
     eval_type_backport,
     is_annotated,
-    is_classvar,
+    is_classvar_annotation,
     parent_frame_namespace,
 )
-from ._utils import ClassAttribute, SafeGetItemProxy
+from ._utils import LazyClassAttribute, SafeGetItemProxy
 
 if typing.TYPE_CHECKING:
     from ..fields import ComputedFieldInfo, FieldInfo, ModelPrivateAttr
@@ -132,8 +131,6 @@ class ModelMetaclass(ABCMeta):
 
             namespace['__class_vars__'] = class_vars
             namespace['__private_attributes__'] = {**base_private_attributes, **private_attributes}
-            if __pydantic_generic_metadata__:
-                namespace['__pydantic_generic_metadata__'] = __pydantic_generic_metadata__
 
             cls = cast('type[BaseModel]', super().__new__(mcs, cls_name, bases, namespace, **kwargs))
             BaseModel_ = import_cached_base_model()
@@ -152,6 +149,8 @@ class ModelMetaclass(ABCMeta):
             cls.__pydantic_post_init__ = (
                 None if cls.model_post_init is BaseModel_.model_post_init else 'model_post_init'
             )
+
+            cls.__pydantic_setattr_handlers__ = {}
 
             cls.__pydantic_decorators__ = DecoratorInfos.build(cls)
 
@@ -226,7 +225,6 @@ class ModelMetaclass(ABCMeta):
 
             complete_model_class(
                 cls,
-                cls_name,
                 config_wrapper,
                 raise_errors=False,
                 ns_resolver=ns_resolver,
@@ -256,62 +254,6 @@ class ModelMetaclass(ABCMeta):
             namespace.get('__annotations__', {}).clear()
             return super().__new__(mcs, cls_name, bases, namespace, **kwargs)
 
-    def mro(cls) -> list[type[Any]]:
-        original_mro = super().mro()
-
-        if cls.__bases__ == (object,):
-            return original_mro
-
-        generic_metadata: PydanticGenericMetadata | None = cls.__dict__.get('__pydantic_generic_metadata__')
-        if not generic_metadata:
-            return original_mro
-
-        assert_err_msg = 'Unexpected error occurred when generating MRO of generic subclass. Please report this issue on GitHub: https://github.com/pydantic/pydantic/issues.'
-
-        origin: type[BaseModel] | None
-        origin, args = (
-            generic_metadata['origin'],
-            generic_metadata['args'],
-        )
-        if not origin:
-            return original_mro
-
-        target_params = origin.__pydantic_generic_metadata__['parameters']
-        param_dict = dict(zip(target_params, args))
-
-        indexed_origins = {origin}
-
-        new_mro: list[type[Any]] = [cls]
-        for base in original_mro[1:]:
-            base_origin: type[BaseModel] | None = getattr(base, '__pydantic_generic_metadata__', {}).get('origin')
-            base_params: tuple[type[Any], ...] = getattr(base, '__pydantic_generic_metadata__', {}).get(
-                'parameters', ()
-            )
-
-            if base_origin in indexed_origins:
-                continue
-            elif base not in indexed_origins and base_params:
-                assert set(base_params) <= param_dict.keys(), assert_err_msg
-                new_base_args = tuple(param_dict[param] for param in base_params)
-                new_base = base[new_base_args]  # type: ignore
-                new_mro.append(new_base)
-
-                indexed_origins.add(base_origin or base)
-
-                if base_origin is not None:
-                    # dropped previous indexed origins
-                    continue
-            else:
-                indexed_origins.add(base_origin or base)
-
-            # Avoid redundunt case such as
-            # class A(BaseModel, Generic[T]): ...
-            # A[T] is A  # True
-            if base is not new_mro[-1]:
-                new_mro.append(base)
-
-        return new_mro
-
     if not typing.TYPE_CHECKING:  # pragma: no branch
         # We put `__getattr__` in a non-TYPE_CHECKING block because otherwise, mypy allows arbitrary attribute access
 
@@ -327,11 +269,18 @@ class ModelMetaclass(ABCMeta):
         return _ModelNamespaceDict()
 
     def __instancecheck__(self, instance: Any) -> bool:
+        """Avoid calling ABC _abc_instancecheck unless we're pretty sure.
+
+        See #3829 and python/cpython#92810
+        """
+        return hasattr(instance, '__pydantic_decorators__') and super().__instancecheck__(instance)
+
+    def __subclasscheck__(self, subclass: type[Any]) -> bool:
         """Avoid calling ABC _abc_subclasscheck unless we're pretty sure.
 
         See #3829 and python/cpython#92810
         """
-        return hasattr(instance, '__pydantic_validator__') and super().__instancecheck__(instance)
+        return hasattr(subclass, '__pydantic_decorators__') and super().__subclasscheck__(subclass)
 
     @staticmethod
     def _collect_bases_data(bases: tuple[type[Any], ...]) -> tuple[set[str], set[str], dict[str, ModelPrivateAttr]]:
@@ -489,7 +438,7 @@ def inspect_namespace(  # noqa C901
         elif var_name.startswith('__'):
             continue
         elif is_valid_privateattr_name(var_name):
-            if var_name not in raw_annotations or not is_classvar(raw_annotations[var_name]):
+            if var_name not in raw_annotations or not is_classvar_annotation(raw_annotations[var_name]):
                 private_attributes[var_name] = cast(ModelPrivateAttr, PrivateAttr(default=value))
                 del namespace[var_name]
         elif var_name in base_class_vars:
@@ -518,9 +467,9 @@ def inspect_namespace(  # noqa C901
             is_valid_privateattr_name(ann_name)
             and ann_name not in private_attributes
             and ann_name not in ignored_names
-            # This condition is a false negative when `ann_type` is stringified,
-            # but it is handled in `set_model_fields`:
-            and not is_classvar(ann_type)
+            # This condition can be a false negative when `ann_type` is stringified,
+            # but it is handled in most cases in `set_model_fields`:
+            and not is_classvar_annotation(ann_type)
             and ann_type not in all_ignored_types
             and getattr(ann_type, '__module__', None) != 'functools'
         ):
@@ -539,7 +488,7 @@ def inspect_namespace(  # noqa C901
                         pass
 
             if is_annotated(ann_type):
-                _, *metadata = typing_extensions.get_args(ann_type)
+                _, *metadata = get_args(ann_type)
                 private_attr = next((v for v in metadata if isinstance(v, ModelPrivateAttr)), None)
                 if private_attr is not None:
                     private_attributes[ann_name] = private_attr
@@ -613,7 +562,6 @@ def set_model_fields(
 
 def complete_model_class(
     cls: type[BaseModel],
-    cls_name: str,
     config_wrapper: ConfigWrapper,
     *,
     raise_errors: bool = True,
@@ -627,7 +575,6 @@ def complete_model_class(
 
     Args:
         cls: BaseModel or dataclass.
-        cls_name: The model or dataclass name.
         config_wrapper: The config wrapper instance.
         raise_errors: Whether to raise errors.
         ns_resolver: The namespace resolver instance to use during schema building.
@@ -641,7 +588,7 @@ def complete_model_class(
             and `raise_errors=True`.
     """
     if config_wrapper.defer_build:
-        set_model_mocks(cls, cls_name)
+        set_model_mocks(cls)
         return False
 
     typevars_map = get_model_typevars_map(cls)
@@ -662,7 +609,7 @@ def complete_model_class(
     except PydanticUndefinedAnnotation as e:
         if raise_errors:
             raise
-        set_model_mocks(cls, cls_name, f'`{e.name}`')
+        set_model_mocks(cls, f'`{e.name}`')
         return False
 
     core_config = config_wrapper.core_config(title=cls.__name__)
@@ -670,7 +617,7 @@ def complete_model_class(
     try:
         schema = gen_schema.clean_schema(schema)
     except gen_schema.CollectedInvalid:
-        set_model_mocks(cls, cls_name)
+        set_model_mocks(cls)
         return False
 
     # debug(schema)
@@ -689,9 +636,17 @@ def complete_model_class(
     cls.__pydantic_complete__ = True
 
     # set __signature__ attr only for model class, but not for its instances
-    cls.__signature__ = ClassAttribute(
+    # (because instances can define `__call__`, and `inspect.signature` shouldn't
+    # use the `__signature__` attribute and instead generate from `__call__`).
+    cls.__signature__ = LazyClassAttribute(
         '__signature__',
-        generate_pydantic_signature(init=cls.__init__, fields=cls.__pydantic_fields__, config_wrapper=config_wrapper),
+        partial(
+            generate_pydantic_signature,
+            init=cls.__init__,
+            fields=cls.__pydantic_fields__,
+            populate_by_name=config_wrapper.populate_by_name,
+            extra=config_wrapper.extra,
+        ),
     )
     return True
 
@@ -834,11 +789,10 @@ def default_ignored_types() -> tuple[type[Any], ...]:
         staticmethod,
         PydanticDescriptorProxy,
         ComputedFieldInfo,
+        TypeAliasType,  # from `typing_extensions`
     ]
 
     if sys.version_info >= (3, 12):
-        from typing import TypeAliasType
-
-        ignored_types.append(TypeAliasType)
+        ignored_types.append(typing.TypeAliasType)
 
     return tuple(ignored_types)

@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections import defaultdict
 from copy import copy
 from functools import lru_cache, partial
-from typing import TYPE_CHECKING, Any, Callable, Iterable
+from typing import TYPE_CHECKING, Any, Iterable
 
 from pydantic_core import CoreSchema, PydanticCustomError, ValidationError, to_jsonable_python
 from pydantic_core import core_schema as cs
@@ -12,7 +12,7 @@ from ._fields import PydanticMetadata
 from ._import_utils import import_cached_field_info
 
 if TYPE_CHECKING:
-    from ..annotated_handlers import GetJsonSchemaHandler
+    pass
 
 STRICT = {'strict'}
 FAIL_FAST = {'fail_fast'}
@@ -96,22 +96,6 @@ for constraints, schemas in constraint_schema_pairings:
         CONSTRAINTS_TO_ALLOWED_SCHEMAS[c].update(schemas)
 
 
-def add_js_update_schema(s: cs.CoreSchema, f: Callable[[], dict[str, Any]]) -> None:
-    def update_js_schema(s: cs.CoreSchema, handler: GetJsonSchemaHandler) -> dict[str, Any]:
-        js_schema = handler(s)
-        js_schema.update(f())
-        return js_schema
-
-    if 'metadata' in s:
-        metadata = s['metadata']
-        if 'pydantic_js_functions' in s:
-            metadata['pydantic_js_functions'].append(update_js_schema)
-        else:
-            metadata['pydantic_js_functions'] = [update_js_schema]
-    else:
-        s['metadata'] = {'pydantic_js_functions': [update_js_schema]}
-
-
 def as_jsonable_value(v: Any) -> Any:
     if type(v) not in (int, str, float, bytes, bool, type(None)):
         return to_jsonable_python(v)
@@ -128,7 +112,7 @@ def expand_grouped_metadata(annotations: Iterable[Any]) -> Iterable[Any]:
         An iterable of expanded annotations.
 
     Example:
-        ```py
+        ```python
         from annotated_types import Ge, Len
 
         from pydantic._internal._known_annotated_metadata import expand_grouped_metadata
@@ -281,7 +265,15 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
             schema = cs.no_info_after_validator_function(
                 partial(NUMERIC_VALIDATOR_LOOKUP[constraint], **{constraint: value}), schema
             )
-            add_js_update_schema(schema, lambda: {js_constraint_key: as_jsonable_value(value)})  # noqa: B023
+            metadata = schema.get('metadata', {})
+            if (existing_json_schema_updates := metadata.get('pydantic_js_updates')) is not None:
+                metadata['pydantic_js_updates'] = {
+                    **existing_json_schema_updates,
+                    **{js_constraint_key: as_jsonable_value(value)},
+                }
+            else:
+                metadata['pydantic_js_updates'] = {js_constraint_key: as_jsonable_value(value)}
+            schema['metadata'] = metadata
         elif constraint == 'allow_inf_nan' and value is False:
             schema = cs.no_info_after_validator_function(
                 forbid_inf_nan_check,
@@ -346,7 +338,7 @@ def collect_known_metadata(annotations: Iterable[Any]) -> tuple[dict[str, Any], 
         A tuple contains a dict of known metadata and a list of unknown annotations.
 
     Example:
-        ```py
+        ```python
         from annotated_types import Gt, Len
 
         from pydantic._internal._known_annotated_metadata import collect_known_metadata

@@ -11,9 +11,11 @@ import typing
 import weakref
 from collections import OrderedDict, defaultdict, deque
 from copy import deepcopy
+from functools import cached_property
+from inspect import Parameter
 from itertools import zip_longest
 from types import BuiltinFunctionType, CodeType, FunctionType, GeneratorType, LambdaType, ModuleType
-from typing import Any, Mapping, TypeVar
+from typing import Any, Callable, Mapping, TypeVar
 
 from typing_extensions import TypeAlias, TypeGuard
 
@@ -60,6 +62,25 @@ BUILTIN_COLLECTIONS: set[type[Any]] = {
     defaultdict,
     deque,
 }
+
+
+def can_be_positional(param: Parameter) -> bool:
+    """Return whether the parameter accepts a positional argument.
+
+    ```python {test="skip" lint="skip"}
+    def func(a, /, b, *, c):
+        pass
+
+    params = inspect.signature(func).parameters
+    can_be_positional(params['a'])
+    #> True
+    can_be_positional(params['b'])
+    #> True
+    can_be_positional(params['c'])
+    #> False
+    ```
+    """
+    return param.kind in (Parameter.POSITIONAL_ONLY, Parameter.POSITIONAL_OR_KEYWORD)
 
 
 def sequence_like(v: Any) -> bool:
@@ -278,18 +299,23 @@ class ValueItems(_repr.Representation):
 
 if typing.TYPE_CHECKING:
 
-    def ClassAttribute(name: str, value: T) -> T: ...
+    def LazyClassAttribute(name: str, get_value: Callable[[], T]) -> T: ...
 
 else:
 
-    class ClassAttribute:
-        """Hide class attribute from its instances."""
+    class LazyClassAttribute:
+        """A descriptor exposing an attribute only accessible on a class (hidden from instances).
 
-        __slots__ = 'name', 'value'
+        The attribute is lazily computed and cached during the first access.
+        """
 
-        def __init__(self, name: str, value: Any) -> None:
+        def __init__(self, name: str, get_value: Callable[[], Any]) -> None:
             self.name = name
-            self.value = value
+            self.get_value = get_value
+
+        @cached_property
+        def value(self) -> Any:
+            return self.get_value()
 
         def __get__(self, instance: Any, owner: type[Any]) -> None:
             if instance is None:

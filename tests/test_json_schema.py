@@ -37,7 +37,7 @@ from dirty_equals import HasRepr
 from packaging.version import Version
 from pydantic_core import CoreSchema, SchemaValidator, core_schema, to_jsonable_python
 from pydantic_core.core_schema import ValidatorFunctionWrapHandler
-from typing_extensions import Annotated, Literal, Self, TypedDict, deprecated
+from typing_extensions import Annotated, Literal, Self, TypeAliasType, TypedDict, deprecated
 
 import pydantic
 from pydantic import (
@@ -62,7 +62,6 @@ from pydantic import (
     field_serializer,
     field_validator,
 )
-from pydantic._internal._core_metadata import CoreMetadataHandler, build_metadata_dict
 from pydantic.color import Color
 from pydantic.config import ConfigDict
 from pydantic.dataclasses import dataclass
@@ -77,7 +76,15 @@ from pydantic.json_schema import (
     model_json_schema,
     models_json_schema,
 )
-from pydantic.networks import AnyUrl, EmailStr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, MultiHostUrl, NameEmail
+from pydantic.networks import (
+    AnyUrl,
+    EmailStr,
+    IPvAnyAddress,
+    IPvAnyInterface,
+    IPvAnyNetwork,
+    NameEmail,
+    _CoreMultiHostUrl,
+)
 from pydantic.type_adapter import TypeAdapter
 from pydantic.types import (
     UUID1,
@@ -109,7 +116,6 @@ from pydantic.types import (
     conint,
     constr,
 )
-from pydantic.warnings import PydanticDeprecatedSince210
 
 try:
     import email_validator
@@ -935,7 +941,7 @@ def test_str_constrained_types(field_type, expected_schema):
             Annotated[AnyUrl, Field(max_length=2**16)],
             {'title': 'A', 'type': 'string', 'format': 'uri', 'minLength': 1, 'maxLength': 2**16},
         ),
-        (MultiHostUrl, {'title': 'A', 'type': 'string', 'format': 'multi-host-uri', 'minLength': 1}),
+        (_CoreMultiHostUrl, {'title': 'A', 'type': 'string', 'format': 'multi-host-uri', 'minLength': 1}),
     ],
 )
 def test_special_str_types(field_type, expected_schema):
@@ -1737,6 +1743,9 @@ def test_enum_dict():
         enum_dict: Dict[MyEnum, str]
 
     assert MyModel.model_json_schema() == {
+        '$defs': {
+            'MyEnum': {'enum': ['foo', 'bar'], 'title': 'MyEnum', 'type': 'string'},
+        },
         'title': 'MyModel',
         'type': 'object',
         'properties': {
@@ -1744,7 +1753,7 @@ def test_enum_dict():
                 'title': 'Enum Dict',
                 'type': 'object',
                 'additionalProperties': {'type': 'string'},
-                'propertyNames': {'enum': ['foo', 'bar']},
+                'propertyNames': {'$ref': '#/$defs/MyEnum'},
             }
         },
         'required': ['enum_dict'],
@@ -1822,15 +1831,11 @@ def test_model_default():
 @pytest.mark.parametrize(
     'ser_json_timedelta,properties',
     [
-        ('seconds_float', {'duration': {'default': 300.0, 'title': 'Duration', 'type': 'number'}}),
-        ('milliseconds_float', {'duration': {'default': 300000.0, 'title': 'Duration', 'type': 'number'}}),
+        ('float', {'duration': {'default': 300.0, 'title': 'Duration', 'type': 'number'}}),
         ('iso8601', {'duration': {'default': 'PT5M', 'format': 'duration', 'title': 'Duration', 'type': 'string'}}),
     ],
 )
-def test_model_default_timedelta(
-    ser_json_timedelta: Literal['iso8601', 'seconds_float', 'milliseconds_float'],
-    properties: typing.Dict[str, Any],
-):
+def test_model_default_timedelta(ser_json_timedelta: Literal['float', 'iso8601'], properties: typing.Dict[str, Any]):
     class Model(BaseModel):
         model_config = ConfigDict(ser_json_timedelta=ser_json_timedelta)
 
@@ -1842,22 +1847,6 @@ def test_model_default_timedelta(
         'title': 'Model',
         'type': 'object',
     }
-
-
-def test_model_default_timedelta_deprecated_float():
-    with pytest.warns(PydanticDeprecatedSince210):
-
-        class Model(BaseModel):
-            model_config = ConfigDict(ser_json_timedelta='float')
-
-            duration: timedelta = timedelta(minutes=5)
-
-        # insert_assert(Model.model_json_schema(mode='serialization'))
-        assert Model.model_json_schema(mode='serialization') == {
-            'properties': {'duration': {'default': 300.0, 'title': 'Duration', 'type': 'number'}},
-            'title': 'Model',
-            'type': 'object',
-        }
 
 
 @pytest.mark.parametrize(
@@ -1884,14 +1873,12 @@ def test_model_default_bytes(ser_json_bytes: Literal['base64', 'utf8'], properti
 @pytest.mark.parametrize(
     'ser_json_timedelta,properties',
     [
-        ('seconds_float', {'duration': {'default': 300.0, 'title': 'Duration', 'type': 'number'}}),
-        ('milliseconds_float', {'duration': {'default': 300000.0, 'title': 'Duration', 'type': 'number'}}),
+        ('float', {'duration': {'default': 300.0, 'title': 'Duration', 'type': 'number'}}),
         ('iso8601', {'duration': {'default': 'PT5M', 'format': 'duration', 'title': 'Duration', 'type': 'string'}}),
     ],
 )
 def test_dataclass_default_timedelta(
-    ser_json_timedelta: Literal['iso8601', 'milliseconds_float', 'seconds_float'],
-    properties: typing.Dict[str, Any],
+    ser_json_timedelta: Literal['float', 'iso8601'], properties: typing.Dict[str, Any]
 ):
     @dataclass(config=ConfigDict(ser_json_timedelta=ser_json_timedelta))
     class Dataclass:
@@ -1903,20 +1890,6 @@ def test_dataclass_default_timedelta(
         'title': 'Dataclass',
         'type': 'object',
     }
-
-
-def test_dataclass_default_timedelta_float():
-    with pytest.warns(PydanticDeprecatedSince210):
-
-        @dataclass(config=ConfigDict(ser_json_timedelta='float'))
-        class Dataclass:
-            duration: timedelta = timedelta(minutes=5)
-
-        assert TypeAdapter(Dataclass).json_schema(mode='serialization') == {
-            'properties': {'duration': {'default': 300.0, 'title': 'Duration', 'type': 'number'}},
-            'title': 'Dataclass',
-            'type': 'object',
-        }
 
 
 @pytest.mark.parametrize(
@@ -1942,49 +1915,24 @@ def test_dataclass_default_bytes(ser_json_bytes: Literal['base64', 'utf8'], prop
 @pytest.mark.parametrize(
     'ser_json_timedelta,properties',
     [
-        ('seconds_float', {'duration': {'default': 300.0, 'title': 'Duration', 'type': 'number'}}),
-        ('milliseconds_float', {'duration': {'default': 300000.0, 'title': 'Duration', 'type': 'number'}}),
+        ('float', {'duration': {'default': 300.0, 'title': 'Duration', 'type': 'number'}}),
         ('iso8601', {'duration': {'default': 'PT5M', 'format': 'duration', 'title': 'Duration', 'type': 'string'}}),
     ],
 )
 def test_typeddict_default_timedelta(
-    ser_json_timedelta: Literal['iso8601', 'milliseconds_float', 'seconds_float'],
-    properties: typing.Dict[str, Any],
+    ser_json_timedelta: Literal['float', 'iso8601'], properties: typing.Dict[str, Any]
 ):
     class MyTypedDict(TypedDict):
         __pydantic_config__ = ConfigDict(ser_json_timedelta=ser_json_timedelta)
 
         duration: Annotated[timedelta, Field(timedelta(minutes=5))]
 
-    if ser_json_timedelta == 'float':
-        with pytest.warns(PydanticDeprecatedSince210):
-            # insert_assert(TypeAdapter(MyTypedDict).json_schema(mode='serialization'))
-            assert TypeAdapter(MyTypedDict).json_schema(mode='serialization') == {
-                'properties': properties,
-                'title': 'MyTypedDict',
-                'type': 'object',
-            }
-    else:
-        assert TypeAdapter(MyTypedDict).json_schema(mode='serialization') == {
-            'properties': properties,
-            'title': 'MyTypedDict',
-            'type': 'object',
-        }
-
-
-def test_typeddict_default_timedelta_float():
-    class MyTypedDict(TypedDict):
-        __pydantic_config__ = ConfigDict(ser_json_timedelta='float')
-
-        duration: Annotated[timedelta, Field(timedelta(minutes=5))]
-
-    with pytest.warns(PydanticDeprecatedSince210):
-        # insert_assert(TypeAdapter(MyTypedDict).json_schema(mode='serialization'))
-        assert TypeAdapter(MyTypedDict).json_schema(mode='serialization') == {
-            'properties': {'duration': {'default': 300.0, 'title': 'Duration', 'type': 'number'}},
-            'title': 'MyTypedDict',
-            'type': 'object',
-        }
+    # insert_assert(TypeAdapter(MyTypedDict).json_schema(mode='serialization'))
+    assert TypeAdapter(MyTypedDict).json_schema(mode='serialization') == {
+        'properties': properties,
+        'title': 'MyTypedDict',
+        'type': 'object',
+    }
 
 
 @pytest.mark.parametrize(
@@ -2430,6 +2378,17 @@ def test_literal_schema():
     }
 
 
+def test_literal_schema_type_aliases() -> None:
+    TestType0 = TypeAliasType('TestType0', Literal['a'])
+    TestType1 = TypeAliasType('TestType1', Literal[TestType0, 'b'])
+    TestType2 = TypeAliasType('TestType2', Literal[TestType1, 'c'])
+
+    assert TypeAdapter(TestType2).json_schema() == {
+        'enum': ['a', 'b', 'c'],
+        'type': 'string',
+    }
+
+
 def test_literal_enum():
     class MyEnum(str, Enum):
         FOO = 'foo'
@@ -2613,23 +2572,6 @@ def test_typeddict_with_extra_allow():
     }
 
 
-def test_typeddict_with_extra_behavior_allow():
-    class Model:
-        @classmethod
-        def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-            return core_schema.typed_dict_schema(
-                {'a': core_schema.typed_dict_field(core_schema.str_schema())},
-                extra_behavior='allow',
-            )
-
-    assert TypeAdapter(Model).json_schema() == {
-        'type': 'object',
-        'properties': {'a': {'title': 'A', 'type': 'string'}},
-        'required': ['a'],
-        'additionalProperties': True,
-    }
-
-
 def test_typeddict_with_extra_ignore():
     class Model(TypedDict):
         __pydantic_config__ = ConfigDict(extra='ignore')  # type: ignore
@@ -2637,22 +2579,6 @@ def test_typeddict_with_extra_ignore():
 
     assert TypeAdapter(Model).json_schema() == {
         'title': 'Model',
-        'type': 'object',
-        'properties': {'a': {'title': 'A', 'type': 'string'}},
-        'required': ['a'],
-    }
-
-
-def test_typeddict_with_extra_behavior_ignore():
-    class Model:
-        @classmethod
-        def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-            return core_schema.typed_dict_schema(
-                {'a': core_schema.typed_dict_field(core_schema.str_schema())},
-                extra_behavior='ignore',
-            )
-
-    assert TypeAdapter(Model).json_schema() == {
         'type': 'object',
         'properties': {'a': {'title': 'A', 'type': 'string'}},
         'required': ['a'],
@@ -2667,23 +2593,6 @@ def test_typeddict_with_extra_forbid():
 
     assert TypeAdapter(Model).json_schema() == {
         'title': 'Model',
-        'type': 'object',
-        'properties': {'a': {'title': 'A', 'type': 'string'}},
-        'required': ['a'],
-        'additionalProperties': False,
-    }
-
-
-def test_typeddict_with_extra_behavior_forbid():
-    class Model:
-        @classmethod
-        def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-            return core_schema.typed_dict_schema(
-                {'a': core_schema.typed_dict_field(core_schema.str_schema())},
-                extra_behavior='forbid',
-            )
-
-    assert TypeAdapter(Model).json_schema() == {
         'type': 'object',
         'properties': {'a': {'title': 'A', 'type': 'string'}},
         'required': ['a'],
@@ -3372,7 +3281,7 @@ def test_schema_for_generic_field():
         ) -> core_schema.PlainValidatorFunctionSchema:
             source_args = getattr(source, '__args__', [Any])
             param = source_args[0]
-            metadata = build_metadata_dict(js_functions=[lambda _c, h: h(handler.generate_schema(param))])
+            metadata = {'pydantic_js_functions': [lambda _c, h: h(handler.generate_schema(param))]}
             return core_schema.with_info_plain_validator_function(
                 GenModel,
                 metadata=metadata,
@@ -3542,7 +3451,7 @@ def test_advanced_generic_schema():  # noqa: C901
         ) -> core_schema.CoreSchema:
             if hasattr(source, '__args__'):
                 # the js_function ignores the schema we were given and gets a new Tuple CoreSchema
-                metadata = build_metadata_dict(js_functions=[lambda _c, h: h(handler(Tuple[source.__args__]))])
+                metadata = {'pydantic_js_functions': [lambda _c, h: h(handler(Tuple[source.__args__]))]}
                 return core_schema.with_info_plain_validator_function(
                     GenTwoParams,
                     metadata=metadata,
@@ -5245,18 +5154,6 @@ def test_root_model():
     }
 
 
-def test_core_metadata_core_schema_metadata():
-    with pytest.raises(TypeError, match=re.escape("CoreSchema metadata should be a dict; got 'test'.")):
-        CoreMetadataHandler({'metadata': 'test'})
-
-    core_metadata_handler = CoreMetadataHandler({})
-    core_metadata_handler._schema = {}
-    assert core_metadata_handler.metadata == {}
-    core_metadata_handler._schema = {'metadata': 'test'}
-    with pytest.raises(TypeError, match=re.escape("CoreSchema metadata should be a dict; got 'test'.")):
-        core_metadata_handler.metadata
-
-
 def test_type_adapter_json_schemas_title_description():
     class Model(BaseModel):
         a: str
@@ -5684,7 +5581,6 @@ def test_custom_type_gets_unpacked_ref() -> None:
             self, schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
         ) -> JsonSchemaValue:
             json_schema = handler(schema)
-            assert '$ref' in json_schema
             json_schema['title'] = 'Set from annotation'
             return json_schema
 
@@ -5696,7 +5592,6 @@ def test_custom_type_gets_unpacked_ref() -> None:
             cls, schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
         ) -> JsonSchemaValue:
             json_schema = handler(schema)
-            assert json_schema['type'] == 'object' and '$ref' not in json_schema
             return json_schema
 
     ta = TypeAdapter(Annotated[Model, Annotation()])
@@ -6528,17 +6423,6 @@ def test_merge_json_schema_extra_from_field_infos() -> None:
     }
 
 
-def test_remove_key_from_like_parent_annotation() -> None:
-    class Model(BaseModel):
-        a: Annotated[
-            int,
-            Field(json_schema_extra={'key_to_remove': 'value'}),
-            Field(json_schema_extra=lambda _: None),
-        ]
-
-    assert Model.model_json_schema()['properties']['a'] == {'title': 'A', 'type': 'integer'}
-
-
 def test_ta_and_bm_same_json_schema() -> None:
     MyStr = Annotated[str, Field(json_schema_extra={'key1': 'value1'}), Field(json_schema_extra={'key2': 'value2'})]
 
@@ -6658,31 +6542,39 @@ def test_decorator_field_validator_input_type() -> None:
 @pytest.mark.parametrize(
     'validator',
     [
-        PlainValidator(lambda v: v, json_schema_input_type='Sub'),
-        BeforeValidator(lambda v: v, json_schema_input_type='Sub'),
-        WrapValidator(lambda v, h: h(v), json_schema_input_type='Sub'),
+        PlainValidator(lambda v: v, json_schema_input_type='Union[Sub1, Sub2]'),
+        BeforeValidator(lambda v: v, json_schema_input_type='Union[Sub1, Sub2]'),
+        WrapValidator(lambda v, h: h(v), json_schema_input_type='Union[Sub1, Sub2]'),
     ],
 )
 def test_json_schema_input_type_with_refs(validator) -> None:
-    """Test that `'definition-ref` schemas for `json_schema_input_type` are inlined.
+    """Test that `'definition-ref` schemas for `json_schema_input_type` are supported.
 
     See: https://github.com/pydantic/pydantic/issues/10434.
+    See: https://github.com/pydantic/pydantic/issues/11033
     """
 
-    class Sub(BaseModel):
+    class Sub1(BaseModel):
+        pass
+
+    class Sub2(BaseModel):
         pass
 
     class Model(BaseModel):
         sub: Annotated[
-            Sub,
-            PlainSerializer(lambda v: v, return_type=Sub),
+            Union[Sub1, Sub2],
+            PlainSerializer(lambda v: v, return_type=Union[Sub1, Sub2]),
             validator,
         ]
 
     json_schema = Model.model_json_schema()
 
-    assert 'Sub' in json_schema['$defs']
-    assert json_schema['properties']['sub']['$ref'] == '#/$defs/Sub'
+    assert 'Sub1' in json_schema['$defs']
+    assert 'Sub2' in json_schema['$defs']
+    assert json_schema['properties']['sub'] == {
+        'anyOf': [{'$ref': '#/$defs/Sub1'}, {'$ref': '#/$defs/Sub2'}],
+        'title': 'Sub',
+    }
 
 
 @pytest.mark.parametrize(
@@ -6730,3 +6622,21 @@ def test_arbitrary_ref_in_json_schema() -> None:
     }
 
     # raises KeyError: '#/components/schemas/Pet'
+
+
+def test_warn_on_mixed_compose() -> None:
+    with pytest.warns(
+        PydanticJsonSchemaWarning, match='Composing `dict` and `callable` type `json_schema_extra` is not supported.'
+    ):
+
+        class Model(BaseModel):
+            field: Annotated[int, Field(json_schema_extra={'a': 'dict'}), Field(json_schema_extra=lambda x: x.pop('a'))]  # type: ignore
+
+
+def test_blank_title_is_respected() -> None:
+    class Model(BaseModel):
+        x: int
+
+        model_config = ConfigDict(title='')
+
+    assert Model.model_json_schema()['title'] == ''

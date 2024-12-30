@@ -14,7 +14,7 @@ import dataclasses
 import os
 import typing
 from functools import partial
-from typing import Any, Callable, Iterable, Tuple, TypeVar
+from typing import Any, Callable, Iterable, Tuple, TypeVar, cast
 
 import typing_extensions
 from pydantic_core import (
@@ -164,13 +164,13 @@ class DequeValidator:
     metadata: dict[str, Any]
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-        if self.item_source_type is Any:
+        if _typing_extra.is_any(self.item_source_type):
             items_schema = None
         else:
             items_schema = handler.generate_schema(self.item_source_type)
 
         # if we have a MaxLen annotation might as well set that as the default maxlen on the deque
-        # this lets us re-use existing metadata annotations to let users set the maxlen on a dequeue
+        # this lets us reuse existing metadata annotations to let users set the maxlen on a dequeue
         # that e.g. comes from JSON
         coerce_instance_wrap = partial(
             core_schema.no_info_wrap_validator_function,
@@ -300,7 +300,8 @@ def get_defaultdict_default_default_factory(values_source_type: Any) -> Callable
     else:
         field_info = None
     if field_info and field_info.default_factory:
-        default_default_factory = field_info.default_factory
+        # Assume the default factory does not take any argument:
+        default_default_factory = cast(Callable[[], Any], field_info.default_factory)
     else:
         default_default_factory = infer_default()
     return default_default_factory
@@ -319,11 +320,11 @@ class MappingValidator:
         return handler(v)
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-        if self.keys_source_type is Any:
+        if _typing_extra.is_any(self.keys_source_type):
             keys_schema = None
         else:
             keys_schema = handler.generate_schema(self.keys_source_type)
-        if self.values_source_type is Any:
+        if _typing_extra.is_any(self.values_source_type):
             values_schema = None
         else:
             values_schema = handler.generate_schema(self.values_source_type)

@@ -4,9 +4,10 @@ from __future__ import annotations as _annotations
 
 import inspect
 from functools import partial
+from types import BuiltinFunctionType
 from typing import TYPE_CHECKING, Any, Callable, TypeVar, cast, overload
 
-from ._internal import _typing_extra, _validate_call
+from ._internal import _generate_schema, _typing_extra, _validate_call
 from .errors import PydanticUserError
 
 __all__ = ('validate_call',)
@@ -22,9 +23,9 @@ _INVALID_TYPE_ERROR_CODE = 'validate-call-type'
 
 def _check_function_type(function: object) -> None:
     """Check if the input function is a supported type for `validate_call`."""
-    if isinstance(function, _validate_call.VALIDATE_CALL_SUPPORTED_TYPES):
+    if isinstance(function, _generate_schema.VALIDATE_CALL_SUPPORTED_TYPES):
         try:
-            inspect.signature(cast(_validate_call.ValidateCallSupportedTypes, function))
+            inspect.signature(cast(_generate_schema.ValidateCallSupportedTypes, function))
         except ValueError:
             raise PydanticUserError(
                 f"Input function `{function}` doesn't have a valid signature", code=_INVALID_TYPE_ERROR_CODE
@@ -42,6 +43,8 @@ def _check_function_type(function: object) -> None:
 
         return
 
+    if isinstance(function, BuiltinFunctionType):
+        raise PydanticUserError(f'Input built-in function `{function}` is not supported', code=_INVALID_TYPE_ERROR_CODE)
     if isinstance(function, (classmethod, staticmethod, property)):
         name = type(function).__name__
         raise PydanticUserError(
@@ -83,7 +86,8 @@ def validate_call(
     config: ConfigDict | None = None,
     validate_return: bool = False,
 ) -> AnyCallableT | Callable[[AnyCallableT], AnyCallableT]:
-    """Usage docs: https://docs.pydantic.dev/2.10/concepts/validation_decorator/
+    """!!! abstract "Usage Documentation"
+        [Validation Decorator](../concepts/validation_decorator.md)
 
     Returns a decorated wrapper around the function that validates the arguments and, optionally, the return value.
 
@@ -102,7 +106,7 @@ def validate_call(
     def validate(function: AnyCallableT) -> AnyCallableT:
         _check_function_type(function)
         validate_call_wrapper = _validate_call.ValidateCallWrapper(
-            cast(_validate_call.ValidateCallSupportedTypes, function), config, validate_return, parent_namespace
+            cast(_generate_schema.ValidateCallSupportedTypes, function), config, validate_return, parent_namespace
         )
         return _validate_call.update_wrapper_attributes(function, validate_call_wrapper.__call__)  # type: ignore
 
