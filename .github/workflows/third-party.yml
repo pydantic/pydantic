@@ -319,9 +319,8 @@ jobs:
           pip install ".[test]"
           pip install -e ./pydantic-latest
       - name: Run all tests
+        working_directory: ./odmantic
         run: |
-          pwd
-          ls
           set -e
           coverage run -m pytest -v
           coverage report -m
