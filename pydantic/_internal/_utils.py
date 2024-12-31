@@ -423,5 +423,6 @@ class deprecated_instance_property(Generic[_ModelT, _RT]):
                 'Accessing this attribute on the instance is deprecated, and will be removed in Pydantic V3. '
                 'Instead, you should access this attribute from the model class.',
                 category=PydanticDeprecatedSince211,
+                stacklevel=2,
             )
         return self.fget.__get__(instance, objtype)()
