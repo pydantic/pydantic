@@ -265,7 +265,7 @@ jobs:
       run: pytest tests/core tests/fastapi
 
   test-odmantic:
-    name: Test odmantic (main branch) on Python ${{ matrix.python-version }}
+    name: Test ODMantic (main branch) on Python ${{ matrix.python-version }}
     # If 'schedule' was the trigger, don't run it on contributors' forks
     if: |
       github.event_name == 'workflow_dispatch' ||
@@ -279,7 +279,7 @@ jobs:
         python-version: ['3.8', '3.9', '3.10', '3.11']
 
     steps:
-      - name: Checkout odmantic
+      - name: Checkout ODMantic
         uses: actions/checkout@v4
         with:
           repository: sydney-runkle/odmantic
@@ -294,23 +294,24 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          cache: pip
-          cache-dependency-path: "pyproject.toml"
 
-      - name: Mongo Service
+      - name: Mongo service
         id: mongo-service
         uses: art049/mongodb-cluster-action@v0
         with:
           version: 6
           mode: standalone
 
-      - name: Install dependencies
+      - name: Install ODMantic dependencies
         run: |
-          pip install flit
           pip install ".[test]"
+          pip uninstall --yes pydantic
           pip install -e ./pydantic-latest
 
-      - name: Run all tests
+      - name: List installed dependencies
+        run: pip list
+
+      - name: Run ODMantic tests
         run: pytest tests
         env:
           TEST_MONGO_URI: ${{ steps.mongo-service.outputs.connection-string }}
