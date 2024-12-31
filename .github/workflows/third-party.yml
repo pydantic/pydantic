@@ -402,6 +402,10 @@ jobs:
         uv pip install -e ./../pydantic-latest
         uv run task generate_dev_jwks
 
+    - name: List installed dependencies
+      working-directory: ./server
+      run: uv pip list
+
     - name: ⚗️ alembic migrate
       working-directory: ./server
       env:
@@ -413,9 +417,6 @@ jobs:
       env:
         POLAR_ENV: testing
       run: uv run alembic check
-
-    - name: List installed dependencies
-      run: uv pip list
 
     - name: 🐍 Run polar tests (pytest)
       working-directory: ./server
