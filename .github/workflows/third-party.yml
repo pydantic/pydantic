@@ -60,7 +60,7 @@ jobs:
       with:
         path: pydantic-latest
 
-    - uses: astral-sh/setup-uv@v4
+    - uses: astral-sh/setup-uv@v5
       with:
         enable-cache: true
         python-version: ${{ matrix.python-version }}
@@ -102,7 +102,7 @@ jobs:
       with:
         path: pydantic-latest
 
-    - uses: astral-sh/setup-uv@v4
+    - uses: astral-sh/setup-uv@v5
       with:
         enable-cache: true
         python-version: ${{ matrix.python-version }}
