@@ -70,6 +70,9 @@ class ConfigWrapper:
     strict: bool
     # whether instances of models and dataclasses (including subclass instances) should re-validate, default 'never'
     revalidate_instances: Literal['always', 'never', 'subclass-instances']
+    val_date_or_time_unit: Literal['seconds', 'milliseconds', 'infer']
+    ser_date_or_time_unit: Literal['seconds', 'milliseconds', 'infer']
+    ser_json_datetime: Literal['iso8601', 'float']
     ser_json_timedelta: Literal['iso8601', 'float']
     ser_json_bytes: Literal['utf8', 'base64', 'hex']
     val_json_bytes: Literal['utf8', 'base64', 'hex']
@@ -183,7 +186,10 @@ class ConfigWrapper:
             'str_to_lower': config.get('str_to_lower'),
             'str_to_upper': config.get('str_to_upper'),
             'strict': config.get('strict'),
+            'val_date_or_time_unit': config.get('val_date_or_time_unit'),
+            'ser_date_or_time_unit': config.get('ser_date_or_time_unit'),
             'ser_json_timedelta': config.get('ser_json_timedelta'),
+            'ser_json_datetime': config.get('ser_json_datetime'),
             'ser_json_bytes': config.get('ser_json_bytes'),
             'val_json_bytes': config.get('val_json_bytes'),
             'ser_json_inf_nan': config.get('ser_json_inf_nan'),
@@ -257,6 +263,9 @@ config_defaults = ConfigDict(
     json_schema_extra=None,
     strict=False,
     revalidate_instances='never',
+    val_date_or_time_unit='infer',
+    ser_date_or_time_unit='infer',
+    ser_json_datetime='iso8601',
     ser_json_timedelta='iso8601',
     ser_json_bytes='utf8',
     val_json_bytes='utf8',
