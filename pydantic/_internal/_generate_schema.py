@@ -481,7 +481,7 @@ class GenerateSchema:
         )
 
     def _path_schema(self, tp: Any, path_type: Any) -> CoreSchema:
-        if tp is os.PathLike and (path_type not in {str, bytes} or not _typing_extra.is_any(path_type)):
+        if tp is os.PathLike and (path_type not in {str, bytes} and not _typing_extra.is_any(path_type)):
             raise PydanticUserError(
                 '`os.PathLike` can only be used with `str`, `bytes` or `Any`', code='schema-for-unknown-type'
             )
