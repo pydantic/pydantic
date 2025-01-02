@@ -23,7 +23,9 @@ jobs:
           python-version: '3.12'
 
       - name: Install dependencies
-        run: uv sync --group linting --all-extras
+        run: |
+          uv sync --group linting --all-extras
+          uv pip install pip
 
       - uses: pre-commit/action@v3.0.1
         with:
