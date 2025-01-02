@@ -60,9 +60,8 @@ jobs:
       with:
         path: pydantic-latest
 
-    - uses: astral-sh/setup-uv@v4
+    - uses: astral-sh/setup-uv@v5
       with:
-        enable-cache: true
         python-version: ${{ matrix.python-version }}
 
     - name: Install FastAPI dependencies
@@ -102,9 +101,8 @@ jobs:
       with:
         path: pydantic-latest
 
-    - uses: astral-sh/setup-uv@v4
+    - uses: astral-sh/setup-uv@v5
       with:
-        enable-cache: true
         python-version: ${{ matrix.python-version }}
 
     - name: Install SQLModel dependencies
@@ -386,8 +384,6 @@ jobs:
 
     - name: Install uv
       uses: astral-sh/setup-uv@v5
-      with:
-        enable-cache: true
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5

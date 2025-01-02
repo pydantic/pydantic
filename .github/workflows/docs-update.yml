@@ -18,9 +18,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: astral-sh/setup-uv@v4
+      - uses: astral-sh/setup-uv@v5
         with:
-          enable-cache: true
           python-version: '3.12'
 
       - name: Install dependencies
@@ -37,9 +36,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: astral-sh/setup-uv@v4
+      - uses: astral-sh/setup-uv@v5
         with:
-          enable-cache: true
           python-version: '3.12'
 
       - name: Install dependencies
@@ -64,9 +62,8 @@ jobs:
       - name: Checkout current branch
         uses: actions/checkout@v4
 
-      - uses: astral-sh/setup-uv@v4
+      - uses: astral-sh/setup-uv@v5
         with:
-          enable-cache: true
           python-version: '3.12'
 
       - run: uv sync --group docs
