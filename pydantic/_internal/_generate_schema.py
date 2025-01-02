@@ -744,7 +744,22 @@ class GenerateSchema:
         return obj
 
     def _generate_schema_from_get_schema_method(self, obj: Any, source: Any) -> core_schema.CoreSchema | None:
-        if (get_schema := getattr(obj, '__get_pydantic_core_schema__', None)) is not None:
+        BaseModel_ = import_cached_base_model()
+
+        get_schema = getattr(obj, '__get_pydantic_core_schema__', None)
+        is_base_model_get_schema = (
+            getattr(get_schema, '__func__', None) is BaseModel_.__get_pydantic_core_schema__.__func__  # pyright: ignore[reportFunctionMemberAccess]
+        )
+
+        if (
+            get_schema is not None
+            # BaseModel.__get_pydantic_core_schema__ is defined for backwards compatibility,
+            # to allow existing code to call `super().__get_pydantic_core_schema__` in Pydantic
+            # model that overrides `__get_pydantic_core_schema__`. However, it raises a deprecation
+            # warning stating that the method will be removed, and during the core schema gen we actually
+            # don't call the method:
+            and not is_base_model_get_schema
+        ):
             if obj is source:
                 ref_mode = 'unpack'
             else:

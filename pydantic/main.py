@@ -31,6 +31,7 @@ import typing_extensions
 from pydantic_core import PydanticUndefined
 from typing_extensions import Self, TypeAlias, Unpack
 
+from . import PydanticDeprecatedSince20, PydanticDeprecatedSince211
 from ._internal import (
     _config,
     _decorators,
@@ -46,12 +47,11 @@ from ._internal import (
 )
 from ._migration import getattr_migration
 from .aliases import AliasChoices, AliasPath
-from .annotated_handlers import GetJsonSchemaHandler
+from .annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
 from .config import ConfigDict
 from .errors import PydanticUndefinedAnnotation, PydanticUserError
 from .json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema, JsonSchemaMode, JsonSchemaValue, model_json_schema
 from .plugin._schema_validator import PluggableSchemaValidator
-from .warnings import PydanticDeprecatedSince20
 
 if TYPE_CHECKING:
     from inspect import Signature
@@ -684,6 +684,24 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         # `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks
         __tracebackhide__ = True
         return cls.__pydantic_validator__.validate_strings(obj, strict=strict, context=context)
+
+    @classmethod
+    def __get_pydantic_core_schema__(cls, source: type[BaseModel], handler: GetCoreSchemaHandler, /) -> CoreSchema:
+        warnings.warn(
+            'The `__get_pydantic_core_schema__` method of the `BaseModel` class is deprecated. If you are calling '
+            '`super().__get_pydantic_core_schema__` when overriding the method on a Pydantic model, consider using '
+            '`handler(source)` instead. However, note that overriding this method on models can lead to unexpected '
+            'side effects.',
+            PydanticDeprecatedSince211,
+            stacklevel=2,
+        )
+        # Logic copied over from `GenerateSchema._model_schema`:
+        schema = cls.__dict__.get('__pydantic_core_schema__')
+        if schema is not None and not isinstance(schema, _mock_val_ser.MockCoreSchema):
+            if not cls.__pydantic_generic_metadata__['origin']:
+                return cls.__pydantic_core_schema__
+
+        return handler(source)
 
     @classmethod
     def __get_pydantic_json_schema__(
