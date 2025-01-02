@@ -1,7 +1,7 @@
 version = 1
 requires-python = ">=3.8"
 resolution-markers = [
-    "(python_full_version < '3.9' and platform_system == 'Windows') or (python_full_version < '3.12' and platform_system != 'Windows' and sys_platform != 'win32') or (python_full_version < '3.9' and sys_platform == 'win32')",
+    "python_full_version < '3.9' or (python_full_version < '3.12' and platform_system != 'Windows' and sys_platform != 'win32')",
     "python_full_version >= '3.9' and python_full_version < '3.12' and platform_system == 'Windows' and sys_platform != 'win32'",
     "python_full_version >= '3.12' and sys_platform != 'win32'",
     "python_full_version >= '3.9' and python_full_version < '3.12' and sys_platform == 'win32'",
@@ -46,8 +46,8 @@ name = "astunparse"
 version = "1.6.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "six", marker = "(python_full_version < '3.9' and platform_system == 'Windows') or (python_full_version < '3.12' and platform_system != 'Windows' and sys_platform != 'win32') or (python_full_version < '3.9' and sys_platform == 'win32')" },
-    { name = "wheel", marker = "(python_full_version < '3.9' and platform_system == 'Windows') or (python_full_version < '3.12' and platform_system != 'Windows' and sys_platform != 'win32') or (python_full_version < '3.9' and sys_platform == 'win32')" },
+    { name = "six", marker = "python_full_version < '3.9' or (python_full_version < '3.12' and platform_system != 'Windows' and sys_platform != 'win32')" },
+    { name = "wheel", marker = "python_full_version < '3.9' or (python_full_version < '3.12' and platform_system != 'Windows' and sys_platform != 'win32')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/f3/af/4182184d3c338792894f34a62672919db7ca008c89abee9b564dd34d8029/astunparse-1.6.3.tar.gz", hash = "sha256:5ad93a8456f0d084c3456d059fd9a92cce667963232cbf763eac3bc5b7940872", size = 18290 }
 wheels = [
@@ -1324,7 +1324,7 @@ wheels = [
 
 [[package]]
 name = "pydantic"
-version = "2.10.4"
+version = "2.10.3"
 source = { editable = "." }
 dependencies = [
     { name = "annotated-types" },
