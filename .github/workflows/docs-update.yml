@@ -23,7 +23,10 @@ jobs:
           python-version: '3.12'
 
       - name: Install dependencies
-        run: uv sync --group linting --all-extras
+        # Installing pip is required for the pre-commit action:
+        run: |
+          uv sync --group linting --all-extras
+          uv pip install pip
 
       - uses: pre-commit/action@v3.0.1
         with:
