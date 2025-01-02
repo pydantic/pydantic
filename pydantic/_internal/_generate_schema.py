@@ -2477,16 +2477,28 @@ class _Definitions:
         - TypedDict
         - TypeAliasType
         """
-        ref = get_type_ref(tp)
-        # return the reference if we're either (1) in a cycle or (2) it was already defined
-        if ref in self.seen or ref in self.definitions:
-            yield (ref, core_schema.definition_reference_schema(ref))
+        BaseModel_ = import_cached_base_model()
+        if (
+            lenient_issubclass(tp, BaseModel_)
+            or _typing_extra.is_generic_alias(tp)
+            or dataclasses.is_dataclass(tp)
+            or is_typeddict(tp)
+            or _typing_extra.is_namedtuple(tp)
+            or _typing_extra.is_type_alias_type(tp)
+            or (inspect.isclass(tp) and issubclass(tp, Enum))
+        ):
+            ref = get_type_ref(tp)  # pyright: ignore[reportArgumentType]
+            # return the reference if we're either (1) in a cycle or (2) it was already defined
+            if ref in self.seen or ref in self.definitions:
+                yield (ref, core_schema.definition_reference_schema(ref))
+            else:
+                self.seen.add(ref)
+                try:
+                    yield (ref, None)
+                finally:
+                    self.seen.discard(ref)
         else:
-            self.seen.add(ref)
-            try:
-                yield (ref, None)
-            finally:
-                self.seen.discard(ref)
+            yield ('', None)
 
 
 def resolve_original_schema(schema: CoreSchema, definitions: dict[str, CoreSchema]) -> CoreSchema | None:
