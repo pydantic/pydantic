@@ -581,3 +581,30 @@ def test_defer_build_raise_errors() -> None:
 
     ta.rebuild(raise_errors=True)
     assert not isinstance(ta.core_schema, _mock_val_ser.MockCoreSchema)
+
+
+@dataclass
+class SimpleDataclass:
+    x: int
+
+
+@pytest.mark.parametrize('type_,repr_', [(int, 'int'), (List[int], 'List[int]'), (SimpleDataclass, 'SimpleDataclass')])
+def test_ta_repr(type_: Any, repr_: str) -> None:
+    ta = TypeAdapter(type_)
+    assert repr(ta) == f'TypeAdapter({repr_})'
+
+
+def test_correct_frame_used_parametrized(create_module) -> None:
+    """https://github.com/pydantic/pydantic/issues/10892"""
+
+    @create_module
+    def module_1() -> None:
+        from pydantic import TypeAdapter
+
+        Any = int  # noqa: F841
+
+        # 'Any' should resolve to `int`, not `typing.Any`:
+        ta = TypeAdapter[int]('Any')  # noqa: F841
+
+    with pytest.raises(ValidationError):
+        module_1.ta.validate_python('a')

@@ -6,7 +6,7 @@ from typing import Any, Optional, Tuple
 
 import pytest
 
-from pydantic import BaseModel, PydanticUserError, ValidationError
+from pydantic import BaseModel, PydanticUserError, TypeAdapter, ValidationError
 
 
 def test_postponed_annotations(create_module):
@@ -596,6 +596,13 @@ Forward = int
 
     assert module.Model.__class_vars__ == {'a', '_b', '_c', '_d', '_e', '_f'}
     assert module.Model.__private_attributes__ == {}
+
+
+def test_private_attr_annotation_not_evaluated() -> None:
+    class Model(BaseModel):
+        _a: 'UnknownAnnotation'
+
+    assert '_a' in Model.__private_attributes__
 
 
 def test_json_encoder_str(create_module):
@@ -1302,22 +1309,30 @@ def test_validate_call_does_not_override_the_global_ns_with_the_local_ns_where_i
         func_val(a=1)
 
 
-@pytest.mark.xfail(
-    reason='In `GenerateSchema`, only the current class module is taken into account. '
-    'This is similar to `test_uses_the_correct_globals_to_resolve_model_forward_refs`.'
-)
 def test_uses_the_correct_globals_to_resolve_forward_refs_on_serializers(create_module):
+    # Note: unlike `test_uses_the_correct_globals_to_resolve_model_forward_refs`,
+    # we use the globals of the underlying func to resolve the return type.
     @create_module
     def module_1():
-        from pydantic import BaseModel, field_serializer  # or model_serializer
+        from typing_extensions import Annotated
+
+        from pydantic import (
+            BaseModel,
+            PlainSerializer,  # or WrapSerializer
+            field_serializer,  # or model_serializer, computed_field
+        )
 
         MyStr = str
 
+        def ser_func(value) -> 'MyStr':
+            return str(value)
+
         class Model(BaseModel):
             a: int
+            b: Annotated[int, PlainSerializer(ser_func)]
 
             @field_serializer('a')
-            def ser(self) -> 'MyStr':
+            def ser(self, value) -> 'MyStr':
                 return str(self.a)
 
     class Sub(module_1.Model):
@@ -1350,3 +1365,78 @@ def test_do_not_use_parent_ns_when_outside_the_function(create_module):
         ReturnedModel = inner()  # noqa: F841
 
     assert module_1.ReturnedModel.__pydantic_complete__ is False
+
+
+# Tests related to forward annotations evaluation coupled with PEP 695 generic syntax:
+
+
+@pytest.mark.skipif(sys.version_info < (3, 12), reason='Test related to PEP 695 syntax.')
+def test_pep695_generics_syntax_base_model(create_module) -> None:
+    mod_1 = create_module(
+        """
+from pydantic import BaseModel
+
+class Model[T](BaseModel):
+    t: 'T'
+        """
+    )
+
+    assert mod_1.Model[int].model_fields['t'].annotation is int
+
+
+@pytest.mark.skipif(sys.version_info < (3, 12), reason='Test related to PEP 695 syntax.')
+def test_pep695_generics_syntax_arbitry_class(create_module) -> None:
+    mod_1 = create_module(
+        """
+from typing import TypedDict
+
+class TD[T](TypedDict):
+    t: 'T'
+        """
+    )
+
+    with pytest.raises(ValidationError):
+        TypeAdapter(mod_1.TD[str]).validate_python({'t': 1})
+
+
+@pytest.mark.skipif(sys.version_info < (3, 12), reason='Test related to PEP 695 syntax.')
+def test_pep695_generics_class_locals_take_priority(create_module) -> None:
+    # As per https://github.com/python/cpython/pull/120272
+    mod_1 = create_module(
+        """
+from pydantic import BaseModel
+
+class Model[T](BaseModel):
+    type T = int
+    t: 'T'
+        """
+    )
+
+    # 'T' should resolve to the `TypeAliasType` instance, not the type variable:
+    assert mod_1.Model[int].model_fields['t'].annotation.__value__ is int
+
+
+@pytest.mark.skipif(sys.version_info < (3, 12), reason='Test related to PEP 695 syntax.')
+def test_annotation_scope_skipped(create_module) -> None:
+    # Documentation:
+    # https://docs.python.org/3/reference/executionmodel.html#annotation-scopes
+    # https://docs.python.org/3/reference/compound_stmts.html#generic-classes
+    # Under the hood, `parent_frame_namespace` skips the annotation scope so that
+    # we still properly fetch the namespace of `func` containing `Alias`.
+    mod_1 = create_module(
+        """
+from pydantic import BaseModel
+
+def func() -> None:
+    Alias = int
+
+    class Model[T](BaseModel):
+        a: 'Alias'
+
+    return Model
+
+Model = func()
+        """
+    )
+
+    assert mod_1.Model.model_fields['a'].annotation is int

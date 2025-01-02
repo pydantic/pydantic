@@ -63,13 +63,14 @@ class PlainSerializer:
             The Pydantic core schema.
         """
         schema = handler(source_type)
-        globalns, localns = handler._get_types_namespace()
         try:
+            # Do not pass in globals as the function could be defined in a different module.
+            # Instead, let `get_function_return_type` infer the globals to use, but still pass
+            # in locals that may contain a parent/rebuild namespace:
             return_type = _decorators.get_function_return_type(
                 self.func,
                 self.return_type,
-                globalns=globalns,
-                localns=localns,
+                localns=handler._get_types_namespace().locals,
             )
         except NameError as e:
             raise PydanticUndefinedAnnotation.from_name_error(e) from e
@@ -166,11 +167,13 @@ class WrapSerializer:
         schema = handler(source_type)
         globalns, localns = handler._get_types_namespace()
         try:
+            # Do not pass in globals as the function could be defined in a different module.
+            # Instead, let `get_function_return_type` infer the globals to use, but still pass
+            # in locals that may contain a parent/rebuild namespace:
             return_type = _decorators.get_function_return_type(
                 self.func,
                 self.return_type,
-                globalns=globalns,
-                localns=localns,
+                localns=handler._get_types_namespace().locals,
             )
         except NameError as e:
             raise PydanticUndefinedAnnotation.from_name_error(e) from e

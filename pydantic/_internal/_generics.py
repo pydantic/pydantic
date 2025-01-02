@@ -246,6 +246,9 @@ def get_model_typevars_map(cls: type[BaseModel]) -> dict[TypeVar, Any] | None:
     generic_metadata = cls.__pydantic_generic_metadata__
     origin = generic_metadata['origin']
     args = generic_metadata['args']
+    if not args:
+        # No need to go into `iter_contained_typevars`:
+        return {}
     return dict(zip(iter_contained_typevars(origin), args))
 
 
@@ -261,7 +264,7 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any] | None) -> Any:
         `typevar_map` keys recursively replaced.
 
     Example:
-        ```py
+        ```python
         from typing import List, Tuple, Union
 
         from pydantic._internal._generics import replace_types
@@ -426,7 +429,8 @@ def generic_recursion_self_type(
             yield self_type
         else:
             previously_seen_type_refs.add(type_ref)
-            yield None
+            yield
+            previously_seen_type_refs.remove(type_ref)
     finally:
         if token:
             _generic_recursion_cache.reset(token)

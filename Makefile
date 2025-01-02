@@ -6,12 +6,13 @@ sources = pydantic tests docs/plugins
 	@uv -V || echo 'Please install uv: https://docs.astral.sh/uv/getting-started/installation/'
 
 .PHONY: .pre-commit  ## Check that pre-commit is installed
-.pre-commit:
-	@pre-commit -V || echo 'Please install pre-commit: https://pre-commit.com/'
+.pre-commit: .uv
+	@uv run pre-commit -V || uv pip install pre-commit
 
 .PHONY: install  ## Install the package, dependencies, and pre-commit for local development
-install: .uv .pre-commit
+install: .uv
 	uv sync --frozen --group all --all-extras
+	uv pip install pre-commit
 	pre-commit install --install-hooks
 
 .PHONY: rebuild-lockfiles  ## Rebuild lockfiles from scratch, updating all dependencies
@@ -78,11 +79,6 @@ testcov: test
 test-examples: .uv
 	@echo "running examples"
 	@find docs/examples -type f -name '*.py' | xargs -I'{}' sh -c 'uv run python {} >/dev/null 2>&1 || (echo "{} failed")'
-
-.PHONY: test-fastapi  ## Run the FastAPI tests with this version of pydantic
-test-fastapi:
-	git clone https://github.com/tiangolo/fastapi.git --single-branch
-	./tests/test_fastapi.sh
 
 .PHONY: test-pydantic-settings  ## Run the pydantic-settings tests with this version of pydantic
 test-pydantic-settings: .uv

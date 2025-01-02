@@ -50,7 +50,7 @@ In the case of a Pydantic model, a core schema will be constructed and set as th
 To illustrate what a core schema looks like, we will take the example of the
 [`bool`][pydantic_core.core_schema.bool_schema] core schema:
 
-```python lint="skip" test="skip"
+```python {lint="skip" test="skip"}
 class BoolSchema(TypedDict, total=False):
     type: Required[Literal['bool']]
     strict: bool
@@ -85,7 +85,7 @@ If we were to define a custom serialization function for `foo` (1), the `seriali
 
 1.  For example using the [`field_serializer`][pydantic.functional_serializers.field_serializer] decorator:
 
-    ```python test="skip" lint="skip"
+    ```python {test="skip" lint="skip"}
     class Model(BaseModel):
         foo: bool = Field(strict=True)
 
@@ -94,7 +94,7 @@ If we were to define a custom serialization function for `foo` (1), the `seriali
             ...
     ```
 
-```python lint="skip" test="skip"
+```python {lint="skip" test="skip"}
 {
     'type': 'function-plain',
     'function': <function Model.serialize_foo at 0x111>,

@@ -34,7 +34,7 @@ If validation fails on all members, the validation error includes the errors fro
 
 `union_mode='left_to_right'` must be set as a [`Field`](../concepts/fields.md) parameter on union fields where you want to use it.
 
-```py title="Union with left to right mode"
+```python {title="Union with left to right mode"}
 from typing import Union
 
 from pydantic import BaseModel, Field, ValidationError
@@ -64,7 +64,7 @@ except ValidationError as e:
 
 The order of members is very important in this case, as demonstrated by tweak the above example:
 
-```py title="Union with left to right - unexpected results"
+```python {title="Union with left to right - unexpected results"}
 from typing import Union
 
 from pydantic import BaseModel, Field
@@ -142,7 +142,7 @@ In this mode, pydantic attempts to select the best match for the input from the 
         3. If validation succeeded on at least one member in "lax" mode, the leftmost match is returned.
         4. Validation failed on all the members, return all the errors.
 
-```py
+```python
 from typing import Union
 from uuid import UUID
 
@@ -174,11 +174,6 @@ print(user_03_uuid.int)
 #> 275603287559914445491632874575877060712
 ```
 
-!!! tip
-    The type `Optional[x]` is a shorthand for `Union[x, None]`.
-
-    See more details in [Required fields](../concepts/models.md#required-fields).
-
 ## Discriminated Unions
 
 **Discriminated unions are sometimes referred to as "Tagged Unions".**
@@ -200,7 +195,7 @@ To validate models based on that information you can set the same field - let's 
 in each of the models with a discriminated value, which is one (or many) `Literal` value(s).
 For your `Union`, you can set the discriminator in its value: `Field(discriminator='my_discriminator')`.
 
-```py
+```python
 from typing import Literal, Union
 
 from pydantic import BaseModel, Field, ValidationError
@@ -261,7 +256,7 @@ This is the perfect use case for a callable `Discriminator`.
     If you don't follow this practice, it's likely that you'll, in the best case, get warnings during serialization,
     and in the worst case, get runtime errors during validation.
 
-```py
+```python
 from typing import Any, Literal, Union
 
 from typing_extensions import Annotated
@@ -325,7 +320,7 @@ ThanksgivingDinner(dessert=PumpkinPie(time_to_cook=40, num_ingredients=6, fillin
 
 For example:
 
-```py
+```python
 from typing import Any, Union
 
 from typing_extensions import Annotated
@@ -382,19 +377,21 @@ except ValidationError as e:
    When `None` is returned, this `union_tag_not_found` error is raised.
 
 !!! note
-    Using the [[`typing.Annotated`][] fields syntax](../concepts/types.md#composing-types-via-annotated) can be handy to regroup
+    Using the [annotated pattern](./fields.md#the-annotated-pattern) can be handy to regroup
     the `Union` and `discriminator` information. See the next example for more details.
 
     There are a few ways to set a discriminator for a field, all varying slightly in syntax.
 
     For `str` discriminators:
-    ```
-    some_field: Union[...] = Field(discriminator='my_discriminator'
+
+    ```python {lint="skip" test="skip"}
+    some_field: Union[...] = Field(discriminator='my_discriminator')
     some_field: Annotated[Union[...], Field(discriminator='my_discriminator')]
     ```
 
     For callable `Discriminator`s:
-    ```
+
+    ```python {lint="skip" test="skip"}
     some_field: Union[...] = Field(discriminator=Discriminator(...))
     some_field: Annotated[Union[...], Discriminator(...)]
     some_field: Annotated[Union[...], Field(discriminator=Discriminator(...))]
@@ -411,7 +408,7 @@ except ValidationError as e:
 Only one discriminator can be set for a field but sometimes you want to combine multiple discriminators.
 You can do it by creating nested `Annotated` types, e.g.:
 
-```py
+```python
 from typing import Literal, Union
 
 from typing_extensions import Annotated
@@ -475,7 +472,7 @@ except ValidationError as e:
 
     In the context of the previous example, we have the following:
 
-    ```python lint="skip" test="skip"
+    ```python {lint="skip" test="skip"}
     type_adapter = TypeAdapter(Pet)
 
     pet = type_adapter.validate_python(
@@ -497,7 +494,7 @@ the case with a matching discriminator value.
 You can also customize the error type, message, and context for a `Discriminator` by passing
 these specifications as parameters to the `Discriminator` constructor, as seen in the example below.
 
-```py
+```python
 from typing import Union
 
 from typing_extensions import Annotated
@@ -600,7 +597,7 @@ print(m.model_dump())
 You can also simplify error messages by labeling each case with a [`Tag`][pydantic.types.Tag].
 This is especially useful when you have complex types like those in this example:
 
-```py
+```python
 from typing import Dict, List, Union
 
 from typing_extensions import Annotated

@@ -1806,9 +1806,20 @@ def test_enum_with_no_cases() -> None:
     'kwargs,type_,a',
     [
         ({'pattern': '^foo$'}, int, 1),
-        ({'gt': 0}, conlist(int, min_length=4), [1, 2, 3, 4, 5]),
-        ({'gt': 0}, conset(int, min_length=4), {1, 2, 3, 4, 5}),
-        ({'gt': 0}, confrozenset(int, min_length=4), frozenset({1, 2, 3, 4, 5})),
+        *[
+            ({constraint_name: 0}, List[int], [1, 2, 3, 4, 5])
+            for constraint_name in ['gt', 'lt', 'ge', 'le', 'multiple_of']
+        ]
+        + [
+            ({constraint_name: 0}, Set[int], {1, 2, 3, 4, 5})
+            for constraint_name in ['gt', 'lt', 'ge', 'le', 'multiple_of']
+        ]
+        + [
+            ({constraint_name: 0}, FrozenSet[int], frozenset({1, 2, 3, 4, 5}))
+            for constraint_name in ['gt', 'lt', 'ge', 'le', 'multiple_of']
+        ]
+        + [({constraint_name: 0}, Decimal, Decimal('1.0')) for constraint_name in ['max_length', 'min_length']]
+        + [({constraint_name: 0}, float, 1.0) for constraint_name in ['max_digits', 'decimal_places']],
     ],
 )
 def test_invalid_schema_constraints(kwargs, type_, a):
@@ -1822,12 +1833,15 @@ def test_invalid_schema_constraints(kwargs, type_, a):
         Foo(a=a)
 
 
-def test_invalid_decimal_constraint():
-    class Foo(BaseModel):
-        a: Decimal = Field('foo', title='A title', description='A description', max_length=5)
+def test_fraction_validation():
+    class Model(BaseModel):
+        a: Fraction
 
-    with pytest.raises(TypeError, match="Unable to apply constraint 'max_length' to supplied value 1.0"):
-        Foo(a=1.0)
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a='wrong_format')
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'fraction_parsing', 'loc': ('a',), 'msg': 'Input is not a valid fraction', 'input': 'wrong_format'}
+    ]
 
 
 @pytest.mark.skipif(not email_validator, reason='email_validator not installed')
@@ -7051,3 +7065,37 @@ def test_base64_with_invalid_min_length(base64_type) -> None:
 
     with pytest.raises(ValidationError):
         Model(**{'base64_value': b'123456'})
+
+
+def test_serialize_as_any_secret_types() -> None:
+    ta_secret_str = TypeAdapter(SecretStr)
+    secret_str = ta_secret_str.validate_python('secret')
+
+    ta_any = TypeAdapter(Any)
+
+    assert ta_any.dump_python(secret_str) == secret_str
+    assert ta_any.dump_python(secret_str, mode='json') == '**********'
+    assert ta_any.dump_json(secret_str) == b'"**********"'
+
+    ta_secret_bytes = TypeAdapter(SecretBytes)
+    secret_bytes = ta_secret_bytes.validate_python(b'secret')
+
+    assert ta_any.dump_python(secret_bytes) == secret_bytes
+    assert ta_any.dump_python(secret_bytes, mode='json') == '**********'
+    assert ta_any.dump_json(secret_bytes) == b'"**********"'
+
+    ta_secret_date = TypeAdapter(SecretDate)
+    secret_date = ta_secret_date.validate_python('2024-01-01')
+
+    assert ta_any.dump_python(secret_date) == secret_date
+    assert ta_any.dump_python(secret_date, mode='json') == '****/**/**'
+    assert ta_any.dump_json(secret_date) == b'"****/**/**"'
+
+
+def test_custom_serializer_override_secret_str() -> None:
+    class User(BaseModel):
+        name: str
+        password: Annotated[SecretStr, PlainSerializer(lambda x: f'secret: {str(x)}')]
+
+    u = User(name='sam', password='hi')
+    assert u.model_dump()['password'] == 'secret: **********'

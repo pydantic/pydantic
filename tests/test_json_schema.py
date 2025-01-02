@@ -37,7 +37,7 @@ from dirty_equals import HasRepr
 from packaging.version import Version
 from pydantic_core import CoreSchema, SchemaValidator, core_schema, to_jsonable_python
 from pydantic_core.core_schema import ValidatorFunctionWrapHandler
-from typing_extensions import Annotated, Literal, Self, TypedDict, deprecated
+from typing_extensions import Annotated, Literal, Self, TypeAliasType, TypedDict, deprecated
 
 import pydantic
 from pydantic import (
@@ -1743,6 +1743,9 @@ def test_enum_dict():
         enum_dict: Dict[MyEnum, str]
 
     assert MyModel.model_json_schema() == {
+        '$defs': {
+            'MyEnum': {'enum': ['foo', 'bar'], 'title': 'MyEnum', 'type': 'string'},
+        },
         'title': 'MyModel',
         'type': 'object',
         'properties': {
@@ -1750,7 +1753,7 @@ def test_enum_dict():
                 'title': 'Enum Dict',
                 'type': 'object',
                 'additionalProperties': {'type': 'string'},
-                'propertyNames': {'enum': ['foo', 'bar']},
+                'propertyNames': {'$ref': '#/$defs/MyEnum'},
             }
         },
         'required': ['enum_dict'],
@@ -2372,6 +2375,17 @@ def test_literal_schema():
         'required': ['a', 'b', 'c', 'd', 'e', 'f'],
         'title': 'Model',
         'type': 'object',
+    }
+
+
+def test_literal_schema_type_aliases() -> None:
+    TestType0 = TypeAliasType('TestType0', Literal['a'])
+    TestType1 = TypeAliasType('TestType1', Literal[TestType0, 'b'])
+    TestType2 = TypeAliasType('TestType2', Literal[TestType1, 'c'])
+
+    assert TypeAdapter(TestType2).json_schema() == {
+        'enum': ['a', 'b', 'c'],
+        'type': 'string',
     }
 
 
@@ -6528,31 +6542,39 @@ def test_decorator_field_validator_input_type() -> None:
 @pytest.mark.parametrize(
     'validator',
     [
-        PlainValidator(lambda v: v, json_schema_input_type='Sub'),
-        BeforeValidator(lambda v: v, json_schema_input_type='Sub'),
-        WrapValidator(lambda v, h: h(v), json_schema_input_type='Sub'),
+        PlainValidator(lambda v: v, json_schema_input_type='Union[Sub1, Sub2]'),
+        BeforeValidator(lambda v: v, json_schema_input_type='Union[Sub1, Sub2]'),
+        WrapValidator(lambda v, h: h(v), json_schema_input_type='Union[Sub1, Sub2]'),
     ],
 )
 def test_json_schema_input_type_with_refs(validator) -> None:
-    """Test that `'definition-ref` schemas for `json_schema_input_type` are inlined.
+    """Test that `'definition-ref` schemas for `json_schema_input_type` are supported.
 
     See: https://github.com/pydantic/pydantic/issues/10434.
+    See: https://github.com/pydantic/pydantic/issues/11033
     """
 
-    class Sub(BaseModel):
+    class Sub1(BaseModel):
+        pass
+
+    class Sub2(BaseModel):
         pass
 
     class Model(BaseModel):
         sub: Annotated[
-            Sub,
-            PlainSerializer(lambda v: v, return_type=Sub),
+            Union[Sub1, Sub2],
+            PlainSerializer(lambda v: v, return_type=Union[Sub1, Sub2]),
             validator,
         ]
 
     json_schema = Model.model_json_schema()
 
-    assert 'Sub' in json_schema['$defs']
-    assert json_schema['properties']['sub']['$ref'] == '#/$defs/Sub'
+    assert 'Sub1' in json_schema['$defs']
+    assert 'Sub2' in json_schema['$defs']
+    assert json_schema['properties']['sub'] == {
+        'anyOf': [{'$ref': '#/$defs/Sub1'}, {'$ref': '#/$defs/Sub2'}],
+        'title': 'Sub',
+    }
 
 
 @pytest.mark.parametrize(
@@ -6609,3 +6631,27 @@ def test_warn_on_mixed_compose() -> None:
 
         class Model(BaseModel):
             field: Annotated[int, Field(json_schema_extra={'a': 'dict'}), Field(json_schema_extra=lambda x: x.pop('a'))]  # type: ignore
+
+
+def test_blank_title_is_respected() -> None:
+    class Model(BaseModel):
+        x: int
+
+        model_config = ConfigDict(title='')
+
+    assert Model.model_json_schema()['title'] == ''
+
+
+AnnBool = Annotated[
+    bool,
+    WithJsonSchema({}),
+]
+
+
+def test_with_json_schema_doesnt_share_schema() -> None:
+    # See https://github.com/pydantic/pydantic/issues/11013
+    class Model(BaseModel):
+        field1: AnnBool = Field(default=False)
+        field2: Optional[AnnBool] = Field(default=None)
+
+    assert Model.model_json_schema()['properties']['field2']['anyOf'][0] == dict()

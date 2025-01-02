@@ -34,7 +34,7 @@ The first item in the `loc` list will be the field where the error occurred, and
 
 As a demonstration:
 
-```py
+```python
 from typing import List
 
 from pydantic import BaseModel, ValidationError, conint
@@ -135,7 +135,7 @@ In your custom data types or validators you should use `ValueError` or `Assertio
 
 See [validators](../concepts/validators.md) for more details on use of the `@validator` decorator.
 
-```py
+```python
 from pydantic import BaseModel, ValidationError, field_validator
 
 
@@ -176,7 +176,7 @@ except ValidationError as e:
 
 You can also use [`PydanticCustomError`][pydantic_core.PydanticCustomError], to fully control the error structure:
 
-```py
+```python
 from pydantic_core import PydanticCustomError
 
 from pydantic import BaseModel, ValidationError, field_validator
@@ -220,7 +220,7 @@ We've provided documentation for default error codes in the following sections:
 
 You can customize error messages by creating a custom error handler.
 
-```py
+```python
 from typing import Dict, List
 
 from pydantic_core import ErrorDetails
@@ -285,7 +285,7 @@ dictionary of translations.
 
 Another example is customizing the way that the `'loc'` value of an error is represented.
 
-```py
+```python
 from typing import Any, Dict, List, Tuple, Union
 
 from pydantic import BaseModel, ValidationError

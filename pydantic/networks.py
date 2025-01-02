@@ -10,14 +10,14 @@ from importlib.metadata import version
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from typing import TYPE_CHECKING, Any, ClassVar
 
-from pydantic_core import MultiHostHost, PydanticCustomError, core_schema
+from pydantic_core import MultiHostHost, PydanticCustomError, SchemaSerializer, core_schema
 from pydantic_core import MultiHostUrl as _CoreMultiHostUrl
 from pydantic_core import Url as _CoreUrl
 from typing_extensions import Annotated, Self, TypeAlias
 
 from pydantic.errors import PydanticUserError
 
-from ._internal import _fields, _repr, _schema_generation_shared
+from ._internal import _repr, _schema_generation_shared
 from ._migration import getattr_migration
 from .annotated_handlers import GetCoreSchemaHandler
 from .json_schema import JsonSchemaValue
@@ -62,7 +62,7 @@ __all__ = [
 
 
 @_dataclasses.dataclass
-class UrlConstraints(_fields.PydanticMetadata):
+class UrlConstraints:
     """Url constraints.
 
     Attributes:
@@ -96,7 +96,22 @@ class UrlConstraints(_fields.PydanticMetadata):
     @property
     def defined_constraints(self) -> dict[str, Any]:
         """Fetch a key / value mapping of constraints to values that are not None. Used for core schema updates."""
-        return {field.name: getattr(self, field.name) for field in fields(self)}
+        return {field.name: value for field in fields(self) if (value := getattr(self, field.name)) is not None}
+
+    def __get_pydantic_core_schema__(self, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+        schema = handler(source)
+
+        # for function-wrap schemas, url constraints is applied to the inner schema
+        # because when we generate schemas for urls, we wrap a core_schema.url_schema() with a function-wrap schema
+        # that helps with validation on initialization, see _BaseUrl and _BaseMultiHostUrl below.
+        schema_to_mutate = schema['schema'] if schema['type'] == 'function-wrap' else schema
+        if annotated_type := schema_to_mutate['type'] not in ('url', 'multi-host-url'):
+            raise PydanticUserError(
+                f"'UrlConstraints' cannot annotate '{annotated_type}'.", code='invalid-annotated-type'
+            )
+        for constraint_key, constraint_value in self.defined_constraints.items():
+            schema_to_mutate[constraint_key] = constraint_value
+        return schema
 
 
 class _BaseUrl:
@@ -104,7 +119,7 @@ class _BaseUrl:
     _url: _CoreUrl
 
     def __init__(self, url: str | _CoreUrl | _BaseUrl) -> None:
-        self._url = _build_type_adapter(self.__class__).validate_python(url)
+        self._url = _build_type_adapter(self.__class__).validate_python(url)._url
 
     @property
     def scheme(self) -> str:
@@ -209,6 +224,24 @@ class _BaseUrl:
     def __eq__(self, other: Any) -> bool:
         return self.__class__ is other.__class__ and self._url == other._url
 
+    def __lt__(self, other: Any) -> bool:
+        return self.__class__ is other.__class__ and self._url < other._url
+
+    def __gt__(self, other: Any) -> bool:
+        return self.__class__ is other.__class__ and self._url > other._url
+
+    def __le__(self, other: Any) -> bool:
+        return self.__class__ is other.__class__ and self._url <= other._url
+
+    def __ge__(self, other: Any) -> bool:
+        return self.__class__ is other.__class__ and self._url >= other._url
+
+    def __hash__(self) -> int:
+        return hash(self._url)
+
+    def __len__(self) -> int:
+        return len(str(self._url))
+
     @classmethod
     def build(
         cls,
@@ -254,33 +287,32 @@ class _BaseUrl:
     def __get_pydantic_core_schema__(
         cls, source: type[_BaseUrl], handler: GetCoreSchemaHandler
     ) -> core_schema.CoreSchema:
-        if issubclass(cls, source):
+        def wrap_val(v, h):
+            if isinstance(v, source):
+                return v
+            if isinstance(v, _BaseUrl):
+                v = str(v)
+            core_url = h(v)
+            instance = source.__new__(source)
+            instance._url = core_url
+            return instance
 
-            def wrap_val(value, handler):
-                if isinstance(value, source):
-                    return value
-                if isinstance(value, _BaseUrl):
-                    value = str(value)
-                core_url = handler(value)
-                instance = source.__new__(source)
-                instance._url = core_url
-                return instance
+        return core_schema.no_info_wrap_validator_function(
+            wrap_val,
+            schema=core_schema.url_schema(**cls._constraints.defined_constraints),
+            serialization=core_schema.to_string_ser_schema(),
+        )
 
-            return core_schema.no_info_wrap_validator_function(
-                wrap_val,
-                schema=core_schema.url_schema(**cls._constraints.defined_constraints),
-                serialization=core_schema.to_string_ser_schema(),
-            )
-        else:
-            schema = handler(source)
-            # TODO: this logic is used in types.py as well in the _check_annotated_type function, should we move that to somewhere more central?
-            if annotated_type := schema['type'] not in ('url', 'multi-host-url'):
-                raise PydanticUserError(
-                    f"'{cls.__name__}' cannot annotate '{annotated_type}'.", code='invalid-annotated-type'
-                )
-            for constraint_key, constraint_value in cls._constraints.defined_constraints.items():
-                schema[constraint_key] = constraint_value
-            return schema
+    @classmethod
+    def __get_pydantic_json_schema__(
+        cls, core_schema: core_schema.CoreSchema, handler: _schema_generation_shared.GetJsonSchemaHandler
+    ) -> JsonSchemaValue:
+        # we use the url schema for json schema generation, but we might have to extract it from
+        # the function-wrap schema we use as a tool for validation on initialization
+        inner_schema = core_schema['schema'] if core_schema['type'] == 'function-wrap' else core_schema
+        return handler(inner_schema)
+
+    __pydantic_serializer__ = SchemaSerializer(core_schema.any_schema(serialization=core_schema.to_string_ser_schema()))
 
 
 class _BaseMultiHostUrl:
@@ -288,7 +320,7 @@ class _BaseMultiHostUrl:
     _url: _CoreMultiHostUrl
 
     def __init__(self, url: str | _CoreMultiHostUrl | _BaseMultiHostUrl) -> None:
-        self._url = _build_type_adapter(self.__class__).validate_python(url)
+        self._url = _build_type_adapter(self.__class__).validate_python(url)._url
 
     @property
     def scheme(self) -> str:
@@ -332,7 +364,7 @@ class _BaseMultiHostUrl:
     def hosts(self) -> list[MultiHostHost]:
         '''The hosts of the `MultiHostUrl` as [`MultiHostHost`][pydantic_core.MultiHostHost] typed dicts.
 
-        ```py
+        ```python
         from pydantic_core import MultiHostUrl
 
         mhu = MultiHostUrl('https://foo.com:123,foo:bar@bar.com/path')
@@ -364,6 +396,12 @@ class _BaseMultiHostUrl:
 
     def __eq__(self, other: Any) -> bool:
         return self.__class__ is other.__class__ and self._url == other._url
+
+    def __hash__(self) -> int:
+        return hash(self._url)
+
+    def __len__(self) -> int:
+        return len(str(self._url))
 
     @classmethod
     def build(
@@ -416,33 +454,32 @@ class _BaseMultiHostUrl:
     def __get_pydantic_core_schema__(
         cls, source: type[_BaseMultiHostUrl], handler: GetCoreSchemaHandler
     ) -> core_schema.CoreSchema:
-        if issubclass(cls, source):
+        def wrap_val(v, h):
+            if isinstance(v, source):
+                return v
+            if isinstance(v, _BaseMultiHostUrl):
+                v = str(v)
+            core_url = h(v)
+            instance = source.__new__(source)
+            instance._url = core_url
+            return instance
 
-            def wrap_val(value, handler):
-                if isinstance(value, source):
-                    return value
-                if isinstance(value, _BaseMultiHostUrl):
-                    value = str(value)
-                core_url = handler(value)
-                instance = source.__new__(source)
-                instance._url = core_url
-                return instance
+        return core_schema.no_info_wrap_validator_function(
+            wrap_val,
+            schema=core_schema.multi_host_url_schema(**cls._constraints.defined_constraints),
+            serialization=core_schema.to_string_ser_schema(),
+        )
 
-            return core_schema.no_info_wrap_validator_function(
-                wrap_val,
-                schema=core_schema.multi_host_url_schema(**cls._constraints.defined_constraints),
-                serialization=core_schema.to_string_ser_schema(),
-            )
-        else:
-            schema = handler(source)
-            # TODO: this logic is used in types.py as well in the _check_annotated_type function, should we move that to somewhere more central?
-            if annotated_type := schema['type'] not in ('url', 'multi-host-url'):
-                raise PydanticUserError(
-                    f"'{cls.__name__}' cannot annotate '{annotated_type}'.", code='invalid-annotated-type'
-                )
-            for constraint_key, constraint_value in cls._constraints.defined_constraints.items():
-                schema[constraint_key] = constraint_value
-            return schema
+    @classmethod
+    def __get_pydantic_json_schema__(
+        cls, core_schema: core_schema.CoreSchema, handler: _schema_generation_shared.GetJsonSchemaHandler
+    ) -> JsonSchemaValue:
+        # we use the url schema for json schema generation, but we might have to extract it from
+        # the function-wrap schema we use as a tool for validation on initialization
+        inner_schema = core_schema['schema'] if core_schema['type'] == 'function-wrap' else core_schema
+        return handler(inner_schema)
+
+    __pydantic_serializer__ = SchemaSerializer(core_schema.any_schema(serialization=core_schema.to_string_ser_schema()))
 
 
 @lru_cache
@@ -455,13 +492,13 @@ class AnyUrl(_BaseUrl):
 
     * Any scheme allowed
     * Top-level domain (TLD) not required
-    * Host required
+    * Host not required
 
     Assuming an input URL of `http://samuel:pass@example.com:8000/the/path/?query=here#fragment=is;this=bit`,
     the types export the following properties:
 
     - `scheme`: the URL scheme (`http`), always set.
-    - `host`: the URL host (`example.com`), always set.
+    - `host`: the URL host (`example.com`).
     - `username`: optional username if included (`samuel`).
     - `password`: optional password if included (`pass`).
     - `port`: optional port (`8000`).
@@ -470,37 +507,29 @@ class AnyUrl(_BaseUrl):
     - `fragment`: optional fragment (`fragment=is;this=bit`).
     """
 
-    _constraints = UrlConstraints(host_required=True)
 
-    @property
-    def host(self) -> str:
-        """The required URL host."""
-        return self._url.host  # type: ignore
+# Note: all single host urls inherit from `AnyUrl` to preserve compatibility with pre-v2.10 code
+# Where urls were annotated variants of `AnyUrl`, which was an alias to `pydantic_core.Url`
 
 
-class AnyHttpUrl(_BaseUrl):
+class AnyHttpUrl(AnyUrl):
     """A type that will accept any http or https URL.
 
     * TLD not required
-    * Host required
+    * Host not required
     """
 
-    _constraints = UrlConstraints(host_required=True, allowed_schemes=['http', 'https'])
-
-    @property
-    def host(self) -> str:
-        """The required URL host."""
-        return self._url.host  # type: ignore
+    _constraints = UrlConstraints(allowed_schemes=['http', 'https'])
 
 
-class HttpUrl(_BaseUrl):
+class HttpUrl(AnyUrl):
     """A type that will accept any http or https URL.
 
     * TLD not required
-    * Host required
+    * Host not required
     * Max length 2083
 
-    ```py
+    ```python
     from pydantic import BaseModel, HttpUrl, ValidationError
 
     class MyModel(BaseModel):
@@ -537,7 +566,7 @@ class HttpUrl(_BaseUrl):
     [punycode](https://en.wikipedia.org/wiki/Punycode) (see
     [this article](https://www.xudongz.com/blog/2017/idn-phishing/) for a good description of why this is important):
 
-    ```py
+    ```python
     from pydantic import BaseModel, HttpUrl
 
     class MyModel(BaseModel):
@@ -571,46 +600,31 @@ class HttpUrl(_BaseUrl):
         (or at least big) company.
     """
 
-    _constraints = UrlConstraints(max_length=2083, allowed_schemes=['http', 'https'], host_required=True)
-
-    @property
-    def host(self) -> str:
-        """The required URL host."""
-        return self._url.host  # type: ignore
+    _constraints = UrlConstraints(max_length=2083, allowed_schemes=['http', 'https'])
 
 
-class AnyWebsocketUrl(_BaseUrl):
+class AnyWebsocketUrl(AnyUrl):
     """A type that will accept any ws or wss URL.
 
     * TLD not required
-    * Host required
+    * Host not required
     """
 
-    _constraints = UrlConstraints(allowed_schemes=['ws', 'wss'], host_required=True)
-
-    @property
-    def host(self) -> str:
-        """The required URL host."""
-        return self._url.host  # type: ignore
+    _constraints = UrlConstraints(allowed_schemes=['ws', 'wss'])
 
 
-class WebsocketUrl(_BaseUrl):
+class WebsocketUrl(AnyUrl):
     """A type that will accept any ws or wss URL.
 
     * TLD not required
-    * Host required
+    * Host not required
     * Max length 2083
     """
 
-    _constraints = UrlConstraints(max_length=2083, allowed_schemes=['ws', 'wss'], host_required=True)
-
-    @property
-    def host(self) -> str:
-        """The required URL host."""
-        return self._url.host  # type: ignore
+    _constraints = UrlConstraints(max_length=2083, allowed_schemes=['ws', 'wss'])
 
 
-class FileUrl(_BaseUrl):
+class FileUrl(AnyUrl):
     """A type that will accept any file URL.
 
     * Host not required
@@ -619,14 +633,14 @@ class FileUrl(_BaseUrl):
     _constraints = UrlConstraints(allowed_schemes=['file'])
 
 
-class FtpUrl(_BaseUrl):
+class FtpUrl(AnyUrl):
     """A type that will accept ftp URL.
 
     * TLD not required
-    * Host required
+    * Host not required
     """
 
-    _constraints = UrlConstraints(allowed_schemes=['ftp'], host_required=True)
+    _constraints = UrlConstraints(allowed_schemes=['ftp'])
 
 
 class PostgresDsn(_BaseMultiHostUrl):
@@ -639,7 +653,7 @@ class PostgresDsn(_BaseMultiHostUrl):
 
     If further validation is required, these properties can be used by validators to enforce specific behaviour:
 
-    ```py
+    ```python
     from pydantic import (
         BaseModel,
         HttpUrl,
@@ -707,10 +721,10 @@ class PostgresDsn(_BaseMultiHostUrl):
     @property
     def host(self) -> str:
         """The required URL host."""
-        return self._url.host  # type: ignore
+        return self._url.host  # pyright: ignore[reportAttributeAccessIssue]
 
 
-class CockroachDsn(_BaseUrl):
+class CockroachDsn(AnyUrl):
     """A type that will accept any Cockroach DSN.
 
     * User info required
@@ -730,10 +744,10 @@ class CockroachDsn(_BaseUrl):
     @property
     def host(self) -> str:
         """The required URL host."""
-        return self._url.host  # type: ignore
+        return self._url.host  # pyright: ignore[reportReturnType]
 
 
-class AmqpDsn(_BaseUrl):
+class AmqpDsn(AnyUrl):
     """A type that will accept any AMQP DSN.
 
     * User info required
@@ -744,7 +758,7 @@ class AmqpDsn(_BaseUrl):
     _constraints = UrlConstraints(allowed_schemes=['amqp', 'amqps'])
 
 
-class RedisDsn(_BaseUrl):
+class RedisDsn(AnyUrl):
     """A type that will accept any Redis DSN.
 
     * User info required
@@ -763,7 +777,7 @@ class RedisDsn(_BaseUrl):
     @property
     def host(self) -> str:
         """The required URL host."""
-        return self._url.host  # type: ignore
+        return self._url.host  # pyright: ignore[reportReturnType]
 
 
 class MongoDsn(_BaseMultiHostUrl):
@@ -778,17 +792,15 @@ class MongoDsn(_BaseMultiHostUrl):
     _constraints = UrlConstraints(allowed_schemes=['mongodb', 'mongodb+srv'], default_port=27017)
 
 
-class KafkaDsn(_BaseUrl):
+class KafkaDsn(AnyUrl):
     """A type that will accept any Kafka DSN.
 
     * User info required
     * TLD not required
-    * Host required
+    * Host not required
     """
 
-    _constraints = UrlConstraints(
-        allowed_schemes=['kafka'], default_host='localhost', default_port=9092, host_required=True
-    )
+    _constraints = UrlConstraints(allowed_schemes=['kafka'], default_host='localhost', default_port=9092)
 
 
 class NatsDsn(_BaseMultiHostUrl):
@@ -805,12 +817,12 @@ class NatsDsn(_BaseMultiHostUrl):
     )
 
 
-class MySQLDsn(_BaseUrl):
+class MySQLDsn(AnyUrl):
     """A type that will accept any MySQL DSN.
 
     * User info required
     * TLD not required
-    * Host required
+    * Host not required
     """
 
     _constraints = UrlConstraints(
@@ -828,54 +840,37 @@ class MySQLDsn(_BaseUrl):
         host_required=True,
     )
 
-    @property
-    def host(self) -> str:
-        """The required URL host."""
-        return self._url.host  # type: ignore
 
-
-class MariaDBDsn(_BaseUrl):
+class MariaDBDsn(AnyUrl):
     """A type that will accept any MariaDB DSN.
 
     * User info required
     * TLD not required
-    * Host required
+    * Host not required
     """
 
     _constraints = UrlConstraints(
         allowed_schemes=['mariadb', 'mariadb+mariadbconnector', 'mariadb+pymysql'],
         default_port=3306,
-        host_required=True,
     )
 
-    @property
-    def host(self) -> str:
-        """The required URL host."""
-        return self._url.host  # type: ignore
 
-
-class ClickHouseDsn(_BaseUrl):
+class ClickHouseDsn(AnyUrl):
     """A type that will accept any ClickHouse DSN.
 
     * User info required
     * TLD not required
-    * Host required
+    * Host not required
     """
 
     _constraints = UrlConstraints(
         allowed_schemes=['clickhouse+native', 'clickhouse+asynch'],
         default_host='localhost',
         default_port=9000,
-        host_required=True,
     )
 
-    @property
-    def host(self) -> str:
-        """The required URL host."""
-        return self._url.host  # type: ignore
 
-
-class SnowflakeDsn(_BaseUrl):
+class SnowflakeDsn(AnyUrl):
     """A type that will accept any Snowflake DSN.
 
     * User info required
@@ -891,7 +886,7 @@ class SnowflakeDsn(_BaseUrl):
     @property
     def host(self) -> str:
         """The required URL host."""
-        return self._url.host  # type: ignore
+        return self._url.host  # pyright: ignore[reportReturnType]
 
 
 def import_email_validator() -> None:
@@ -920,7 +915,7 @@ else:
 
         Validate email addresses.
 
-        ```py
+        ```python
         from pydantic import BaseModel, EmailStr
 
         class Model(BaseModel):
@@ -969,7 +964,7 @@ class NameEmail(_repr.Representation):
     The `NameEmail` has two properties: `name` and `email`.
     In case the `name` is not provided, it's inferred from the email address.
 
-    ```py
+    ```python
     from pydantic import BaseModel, NameEmail
 
     class User(BaseModel):
@@ -1055,7 +1050,7 @@ else:
     class IPvAnyAddress:
         """Validate an IPv4 or IPv6 address.
 
-        ```py
+        ```python
         from pydantic import BaseModel
         from pydantic.networks import IPvAnyAddress
 

@@ -22,7 +22,7 @@ from inspect import Parameter, _ParameterKind, signature
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from itertools import chain
 from operator import attrgetter
-from types import BuiltinFunctionType, BuiltinMethodType, FunctionType, LambdaType, MethodType
+from types import FunctionType, LambdaType, MethodType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -63,7 +63,7 @@ from ..functional_validators import AfterValidator, BeforeValidator, FieldValida
 from ..json_schema import JsonSchemaValue
 from ..version import version_short
 from ..warnings import PydanticDeprecatedSince20
-from . import _core_utils, _decorators, _discriminated_union, _known_annotated_metadata, _typing_extra
+from . import _core_utils, _decorators, _discriminated_union, _known_annotated_metadata, _repr, _typing_extra
 from ._config import ConfigWrapper, ConfigWrapperStack
 from ._core_metadata import update_core_metadata
 from ._core_utils import (
@@ -155,8 +155,6 @@ ValidateCallSupportedTypes = Union[
     LambdaType,
     FunctionType,
     MethodType,
-    BuiltinFunctionType,
-    BuiltinMethodType,
     partial,
 ]
 
@@ -659,7 +657,7 @@ class GenerateSchema:
         if schema is None:
             schema = self._generate_schema_inner(obj)
 
-        metadata_js_function = _extract_get_pydantic_json_schema(obj, schema)
+        metadata_js_function = _extract_get_pydantic_json_schema(obj)
         if metadata_js_function is not None:
             metadata_schema = resolve_original_schema(schema, self.defs.definitions)
             if metadata_schema:
@@ -1463,6 +1461,8 @@ class GenerateSchema:
                 )
 
             try:
+                # if a typed dictionary class doesn't have config, we use the parent's config, hence a default of `None`
+                # see https://github.com/pydantic/pydantic/issues/10917
                 config: ConfigDict | None = get_attribute_from_bases(typed_dict_cls, '__pydantic_config__')
             except AttributeError:
                 config = None
@@ -1482,9 +1482,7 @@ class GenerateSchema:
                     field_docstrings = None
 
                 try:
-                    annotations = _typing_extra.get_cls_type_hints(
-                        typed_dict_cls, ns_resolver=self._ns_resolver, lenient=False
-                    )
+                    annotations = _typing_extra.get_cls_type_hints(typed_dict_cls, ns_resolver=self._ns_resolver)
                 except NameError as e:
                     raise PydanticUndefinedAnnotation.from_name_error(e) from e
 
@@ -1546,9 +1544,7 @@ class GenerateSchema:
                 namedtuple_cls = origin
 
             try:
-                annotations = _typing_extra.get_cls_type_hints(
-                    namedtuple_cls, ns_resolver=self._ns_resolver, lenient=False
-                )
+                annotations = _typing_extra.get_cls_type_hints(namedtuple_cls, ns_resolver=self._ns_resolver)
             except NameError as e:
                 raise PydanticUndefinedAnnotation.from_name_error(e) from e
             if not annotations:
@@ -1701,7 +1697,12 @@ class GenerateSchema:
         else:
             if _typing_extra.is_self(type_param):
                 type_param = self._resolve_self_type(type_param)
-
+            if _typing_extra.is_generic_alias(type_param):
+                raise PydanticUserError(
+                    'Subscripting `type[]` with an already parametrized type is not supported. '
+                    f'Instead of using type[{type_param!r}], use type[{_repr.display_as_type(get_origin(type_param))}].',
+                    code=None,
+                )
             if not inspect.isclass(type_param):
                 raise TypeError(f'Expected a class, got {type_param!r}')
             return core_schema.is_subclass_schema(type_param)
@@ -1790,7 +1791,10 @@ class GenerateSchema:
             if origin is not None:
                 dataclass = origin
 
-            config = getattr(dataclass, '__pydantic_config__', ConfigDict())
+            # if (plain) dataclass doesn't have config, we use the parent's config, hence a default of `None`
+            # (Pydantic dataclasses have an empty dict config by default).
+            # see https://github.com/pydantic/pydantic/issues/10917
+            config = getattr(dataclass, '__pydantic_config__', None)
 
             from ..dataclasses import is_pydantic_dataclass
 
@@ -1867,6 +1871,8 @@ class GenerateSchema:
         TODO support functional validators once we support them in Config
         """
         sig = signature(function)
+        globalns, localns = self._types_namespace
+        type_hints = _typing_extra.get_function_type_hints(function, globalns=globalns, localns=localns)
 
         mode_lookup: dict[_ParameterKind, Literal['positional_only', 'positional_or_keyword', 'keyword_only']] = {
             Parameter.POSITIONAL_ONLY: 'positional_only',
@@ -1883,13 +1889,7 @@ class GenerateSchema:
             if p.annotation is sig.empty:
                 annotation = typing.cast(Any, Any)
             else:
-                # Note: This was originally get by `_typing_extra.get_function_type_hints`,
-                #       but we switch to simply `p.annotation` to support bultins (e.g. `sorted`).
-                #       May need to revisit if anything breaks.
-                annotation = (
-                    _typing_extra._make_forward_ref(p.annotation) if isinstance(p.annotation, str) else p.annotation
-                )
-                annotation = self._resolve_forward_ref(annotation)
+                annotation = type_hints[name]
 
             parameter_mode = mode_lookup.get(p.kind)
             if parameter_mode is not None:
@@ -1944,34 +1944,27 @@ class GenerateSchema:
         )
 
     def _unsubstituted_typevar_schema(self, typevar: typing.TypeVar) -> core_schema.CoreSchema:
-        assert isinstance(typevar, typing.TypeVar)
-
-        bound = typevar.__bound__
-        constraints = typevar.__constraints__
-
         try:
-            typevar_has_default = typevar.has_default()  # type: ignore
+            has_default = typevar.has_default()
         except AttributeError:
-            # could still have a default if it's an old version of typing_extensions.TypeVar
-            typevar_has_default = getattr(typevar, '__default__', None) is not None
+            # Happens if using `typing.TypeVar` on Python < 3.13
+            pass
+        else:
+            if has_default:
+                return self.generate_schema(typevar.__default__)
 
-        if (bound is not None) + (len(constraints) != 0) + typevar_has_default > 1:
-            raise NotImplementedError(
-                'Pydantic does not support mixing more than one of TypeVar bounds, constraints and defaults'
-            )
+        if constraints := typevar.__constraints__:
+            return self._union_schema(typing.Union[constraints])
 
-        if typevar_has_default:
-            return self.generate_schema(typevar.__default__)  # type: ignore
-        elif constraints:
-            return self._union_schema(typing.Union[constraints])  # type: ignore
-        elif bound:
+        if bound := typevar.__bound__:
             schema = self.generate_schema(bound)
             schema['serialization'] = core_schema.wrap_serializer_function_ser_schema(
-                lambda x, h: h(x), schema=core_schema.any_schema()
+                lambda x, h: h(x),
+                schema=core_schema.any_schema(),
             )
             return schema
-        else:
-            return core_schema.any_schema()
+
+        return core_schema.any_schema()
 
     def _computed_field_schema(
         self,
@@ -1979,7 +1972,12 @@ class GenerateSchema:
         field_serializers: dict[str, Decorator[FieldSerializerDecoratorInfo]],
     ) -> core_schema.ComputedField:
         try:
-            return_type = _decorators.get_function_return_type(d.func, d.info.return_type, *self._types_namespace)
+            # Do not pass in globals as the function could be defined in a different module.
+            # Instead, let `get_function_return_type` infer the globals to use, but still pass
+            # in locals that may contain a parent/rebuild namespace:
+            return_type = _decorators.get_function_return_type(
+                d.func, d.info.return_type, localns=self._types_namespace.locals
+            )
         except NameError as e:
             raise PydanticUndefinedAnnotation.from_name_error(e) from e
         if return_type is PydanticUndefined:
@@ -2021,12 +2019,25 @@ class GenerateSchema:
     def _annotated_schema(self, annotated_type: Any) -> core_schema.CoreSchema:
         """Generate schema for an Annotated type, e.g. `Annotated[int, Field(...)]` or `Annotated[int, Gt(0)]`."""
         FieldInfo = import_cached_field_info()
+        # Ideally, we should delegate all this to `_typing_extra.unpack_annotated`, e.g.:
+        # `typ, annotations = _typing_extra.unpack_annotated(annotated_type); schema = self.apply_annotations(...)`
+        # if it was able to use a `NsResolver`. But because `unpack_annotated` is also used
+        # when constructing `FieldInfo` instances (where we don't have access to a `NsResolver`),
+        # the implementation of the function does *not* resolve forward annotations. This could
+        # be solved by calling `unpack_annotated` directly inside `collect_model_fields`.
+        # For now, we at least resolve the annotated type if it is a forward ref, but note that
+        # unexpected results will happen if you have something like `Annotated[Alias, ...]` and
+        # `Alias` is a PEP 695 type alias containing forward references.
+        typ, *annotations = get_args(annotated_type)
+        if isinstance(typ, str):
+            typ = _typing_extra._make_forward_ref(typ)
+        if isinstance(typ, ForwardRef):
+            typ = self._resolve_forward_ref(typ)
 
-        source_type, *annotations = self._get_args_resolving_forward_refs(
-            annotated_type,
-            required=True,
-        )
-        schema = self._apply_annotations(source_type, annotations)
+        typ, sub_annotations = _typing_extra.unpack_annotated(typ)
+        annotations = sub_annotations + annotations
+
+        schema = self._apply_annotations(typ, annotations)
         # put the default validator last so that TypeAdapter.get_default_value() works
         # even if there are function validators involved
         for annotation in annotations:
@@ -2086,7 +2097,7 @@ class GenerateSchema:
                 schema = self._generate_schema_inner(obj)
             else:
                 schema = from_property
-            metadata_js_function = _extract_get_pydantic_json_schema(obj, schema)
+            metadata_js_function = _extract_get_pydantic_json_schema(obj)
             if metadata_js_function is not None:
                 metadata_schema = resolve_original_schema(schema, self.defs.definitions)
                 if metadata_schema is not None:
@@ -2144,7 +2155,7 @@ class GenerateSchema:
                     return self.defs.definitions[new_ref]
                 schema['ref'] = new_ref  # type: ignore
 
-        maybe_updated_schema = _known_annotated_metadata.apply_known_metadata(metadata, schema.copy())
+        maybe_updated_schema = _known_annotated_metadata.apply_known_metadata(metadata, schema)
 
         if maybe_updated_schema is not None:
             return maybe_updated_schema
@@ -2172,16 +2183,17 @@ class GenerateSchema:
         annotation: Any,
         pydantic_js_annotation_functions: list[GetJsonSchemaFunction],
     ) -> CallbackGetCoreSchemaHandler:
-        metadata_get_schema: GetCoreSchemaFunction = getattr(annotation, '__get_pydantic_core_schema__', None) or (
-            lambda source, handler: handler(source)
-        )
+        annotation_get_schema: GetCoreSchemaFunction | None = getattr(annotation, '__get_pydantic_core_schema__', None)
 
         def new_handler(source: Any) -> core_schema.CoreSchema:
-            schema = metadata_get_schema(source, get_inner_schema)
-            schema = self._apply_single_annotation(schema, annotation)
-            schema = self._apply_single_annotation_json_schema(schema, annotation)
+            if annotation_get_schema is not None:
+                schema = annotation_get_schema(source, get_inner_schema)
+            else:
+                schema = get_inner_schema(source)
+                schema = self._apply_single_annotation(schema, annotation)
+                schema = self._apply_single_annotation_json_schema(schema, annotation)
 
-            metadata_js_function = _extract_get_pydantic_json_schema(annotation, schema)
+            metadata_js_function = _extract_get_pydantic_json_schema(annotation)
             if metadata_js_function is not None:
                 pydantic_js_annotation_functions.append(metadata_js_function)
             return schema
@@ -2211,8 +2223,11 @@ class GenerateSchema:
             is_field_serializer, info_arg = inspect_field_serializer(serializer.func, serializer.info.mode)
 
             try:
+                # Do not pass in globals as the function could be defined in a different module.
+                # Instead, let `get_function_return_type` infer the globals to use, but still pass
+                # in locals that may contain a parent/rebuild namespace:
                 return_type = _decorators.get_function_return_type(
-                    serializer.func, serializer.info.return_type, *self._types_namespace
+                    serializer.func, serializer.info.return_type, localns=self._types_namespace.locals
                 )
             except NameError as e:
                 raise PydanticUndefinedAnnotation.from_name_error(e) from e
@@ -2251,8 +2266,11 @@ class GenerateSchema:
             info_arg = inspect_model_serializer(serializer.func, serializer.info.mode)
 
             try:
+                # Do not pass in globals as the function could be defined in a different module.
+                # Instead, let `get_function_return_type` infer the globals to use, but still pass
+                # in locals that may contain a parent/rebuild namespace:
                 return_type = _decorators.get_function_return_type(
-                    serializer.func, serializer.info.return_type, *self._types_namespace
+                    serializer.func, serializer.info.return_type, localns=self._types_namespace.locals
                 )
             except NameError as e:
                 raise PydanticUndefinedAnnotation.from_name_error(e) from e
@@ -2420,7 +2438,7 @@ def wrap_default(field_info: FieldInfo, schema: core_schema.CoreSchema) -> core_
         return schema
 
 
-def _extract_get_pydantic_json_schema(tp: Any, schema: CoreSchema) -> GetJsonSchemaFunction | None:
+def _extract_get_pydantic_json_schema(tp: Any) -> GetJsonSchemaFunction | None:
     """Extract `__get_pydantic_json_schema__` from a type, handling the deprecated `__modify_schema__`."""
     js_modify_function = getattr(tp, '__get_pydantic_json_schema__', None)
 
@@ -2443,7 +2461,9 @@ def _extract_get_pydantic_json_schema(tp: Any, schema: CoreSchema) -> GetJsonSch
 
     # handle GenericAlias' but ignore Annotated which "lies" about its origin (in this case it would be `int`)
     if hasattr(tp, '__origin__') and not _typing_extra.is_annotated(tp):
-        return _extract_get_pydantic_json_schema(tp.__origin__, schema)
+        # Generic aliases proxy attribute access to the origin, *except* dunder attributes,
+        # such as `__get_pydantic_json_schema__`, hence the explicit check.
+        return _extract_get_pydantic_json_schema(tp.__origin__)
 
     if js_modify_function is None:
         return None

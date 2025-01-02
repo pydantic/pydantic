@@ -1,5 +1,5 @@
-"""
-Usage docs: https://docs.pydantic.dev/2.5/concepts/json_schema/
+"""!!! abstract "Usage Documentation"
+    [JSON Schema](../concepts/json_schema.md)
 
 The `json_schema` module contains classes and functions to allow the way [JSON Schema](https://json-schema.org/)
 is generated to be customized.
@@ -211,7 +211,8 @@ class _DefinitionsRemapping:
 
 
 class GenerateJsonSchema:
-    """Usage docs: https://docs.pydantic.dev/2.10/concepts/json_schema/#customizing-the-json-schema-generation-process
+    """!!! abstract "Usage Documentation"
+        [Customizing the JSON Schema Generation Process](../concepts/json_schema.md#customizing-the-json-schema-generation-process)
 
     A class for generating JSON schemas.
 
@@ -1009,24 +1010,36 @@ class GenerateJsonSchema:
         """
         json_schema: JsonSchemaValue = {'type': 'object'}
 
-        keys_schema = self.resolve_ref_schema(
-            self.generate_inner(schema['keys_schema']).copy() if 'keys_schema' in schema else {}
-        )
-        keys_pattern = keys_schema.pop('pattern', None)
+        keys_schema = self.generate_inner(schema['keys_schema']).copy() if 'keys_schema' in schema else {}
+        if '$ref' not in keys_schema:
+            keys_pattern = keys_schema.pop('pattern', None)
+            # Don't give a title to patternProperties/propertyNames:
+            keys_schema.pop('title', None)
+        else:
+            # Here, we assume that if the keys schema is a definition reference,
+            # it can't be a simple string core schema (and thus no pattern can exist).
+            # However, this is only in practice (in theory, a definition reference core
+            # schema could be generated for a simple string schema).
+            # Note that we avoid calling `self.resolve_ref_schema`, as it might not exist yet.
+            keys_pattern = None
 
         values_schema = self.generate_inner(schema['values_schema']).copy() if 'values_schema' in schema else {}
-        # don't give a title to additionalProperties, patternProperties and propertyNames
+        # don't give a title to additionalProperties:
         values_schema.pop('title', None)
-        keys_schema.pop('title', None)
+
         if values_schema or keys_pattern is not None:  # don't add additionalProperties if it's empty
             if keys_pattern is None:
                 json_schema['additionalProperties'] = values_schema
             else:
                 json_schema['patternProperties'] = {keys_pattern: values_schema}
 
-        # The len check indicates that constraints are probably present:
-        if keys_schema.get('type') == 'string' and len(keys_schema) > 1:
-            keys_schema.pop('type')
+        if (
+            # The len check indicates that constraints are probably present:
+            (keys_schema.get('type') == 'string' and len(keys_schema) > 1)
+            # If this is a definition reference schema, it most likely has constraints:
+            or '$ref' in keys_schema
+        ):
+            keys_schema.pop('type', None)
             json_schema['propertyNames'] = keys_schema
 
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.object)
@@ -1041,9 +1054,7 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        if self._mode == 'validation' and (
-            input_schema := schema.get('metadata', {}).get('pydantic_js_input_core_schema')
-        ):
+        if self._mode == 'validation' and (input_schema := schema.get('json_schema_input_schema')):
             return self.generate_inner(input_schema)
 
         return self.generate_inner(schema['schema'])
@@ -1068,9 +1079,7 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        if self._mode == 'validation' and (
-            input_schema := schema.get('metadata', {}).get('pydantic_js_input_core_schema')
-        ):
+        if self._mode == 'validation' and (input_schema := schema.get('json_schema_input_schema')):
             return self.generate_inner(input_schema)
 
         return self.handle_invalid_for_json_schema(
@@ -1086,9 +1095,7 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        if self._mode == 'validation' and (
-            input_schema := schema.get('metadata', {}).get('pydantic_js_input_core_schema')
-        ):
+        if self._mode == 'validation' and (input_schema := schema.get('json_schema_input_schema')):
             return self.generate_inner(input_schema)
 
         return self.generate_inner(schema['schema'])
@@ -1495,7 +1502,7 @@ class GenerateJsonSchema:
         from .main import BaseModel
         from .root_model import RootModel
 
-        if config_title := config.get('title'):
+        if (config_title := config.get('title')) is not None:
             json_schema.setdefault('title', config_title)
         elif model_title_generator := config.get('model_title_generator'):
             title = model_title_generator(cls)
@@ -1559,6 +1566,9 @@ class GenerateJsonSchema:
 
         Returns:
             The resolved schema.
+
+        Raises:
+            RuntimeError: If the schema reference can't be found in definitions.
         """
         if '$ref' not in json_schema:
             return json_schema
@@ -2430,7 +2440,8 @@ def _make_json_hashable(value: JsonValue) -> _HashableJsonValue:
 
 @dataclasses.dataclass(**_internal_dataclass.slots_true)
 class WithJsonSchema:
-    """Usage docs: https://docs.pydantic.dev/2.10/concepts/json_schema/#withjsonschema-annotation
+    """!!! abstract "Usage Documentation"
+        [`WithJsonSchema` Annotation](../concepts/json_schema.md#withjsonschema-annotation)
 
     Add this as an annotation on a field to override the (base) JSON schema that would be generated for that field.
     This provides a way to set a JSON schema for types that would otherwise raise errors when producing a JSON schema,
@@ -2456,7 +2467,7 @@ class WithJsonSchema:
             # This exception is handled in pydantic.json_schema.GenerateJsonSchema._named_required_fields_schema
             raise PydanticOmit
         else:
-            return self.json_schema
+            return self.json_schema.copy()
 
     def __hash__(self) -> int:
         return hash(type(self.mode))
@@ -2567,12 +2578,13 @@ else:
 
     @dataclasses.dataclass(**_internal_dataclass.slots_true)
     class SkipJsonSchema:
-        """Usage docs: https://docs.pydantic.dev/2.10/concepts/json_schema/#skipjsonschema-annotation
+        """!!! abstract "Usage Documentation"
+            [`SkipJsonSchema` Annotation](../concepts/json_schema.md#skipjsonschema-annotation)
 
         Add this as an annotation on a field to skip generating a JSON schema for that field.
 
         Example:
-            ```py
+            ```python
             from typing import Union
 
             from pydantic import BaseModel
@@ -2580,12 +2592,10 @@ else:
 
             from pprint import pprint
 
-
             class Model(BaseModel):
                 a: Union[int, None] = None  # (1)!
                 b: Union[int, SkipJsonSchema[None]] = None  # (2)!
                 c: SkipJsonSchema[Union[int, None]] = None  # (3)!
-
 
             pprint(Model.model_json_schema())
             '''

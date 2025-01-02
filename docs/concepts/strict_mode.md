@@ -14,7 +14,7 @@ and will instead error if the data is not of the correct type.
 
 Here is a brief example showing the difference between validation behavior in strict and the default/"lax" mode:
 
-```py
+```python
 from pydantic import BaseModel, ValidationError
 
 
@@ -54,7 +54,7 @@ will result in raising a `ValidationError`.
 Note that we are looser when validating data from JSON in strict mode. For example, when validating a `UUID` field,
 instances of `str` will be accepted when validating from JSON, but not from python:
 
-```py
+```python
 import json
 from uuid import UUID
 
@@ -325,7 +325,7 @@ such as [`StrictInt`](../api/types.md#pydantic.types.StrictInt).
 If you want to enable strict mode for all fields on a complex input type, you can use
 [`ConfigDict(strict=True)`](../api/config.md#pydantic.config.ConfigDict) in the `model_config`:
 
-```py
+```python
 from pydantic import BaseModel, ConfigDict, ValidationError
 
 
@@ -354,7 +354,7 @@ except ValidationError as exc:
     When using `strict=True` through a model's `model_config`, you can still override the strictness
     of individual fields by setting `strict=False` on individual fields:
 
-    ```py
+    ```python
     from pydantic import BaseModel, ConfigDict, Field
 
 

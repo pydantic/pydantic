@@ -18,12 +18,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: astral-sh/setup-uv@v3
+      - uses: astral-sh/setup-uv@v5
         with:
-          enable-cache: true
+          python-version: '3.12'
 
       - name: Install dependencies
-        run: uv sync --python 3.12 --group linting --all-extras
+        run: uv sync --group linting --all-extras
 
       - uses: pre-commit/action@v3.0.1
         with:
@@ -36,12 +36,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: astral-sh/setup-uv@v3
+      - uses: astral-sh/setup-uv@v5
         with:
-          enable-cache: true
+          python-version: '3.12'
 
       - name: Install dependencies
-        run: uv sync --python 3.12 --group testing-extra --all-extras
+        run: uv sync --group testing-extra --all-extras
 
       - run: 'uv run python -c "import pydantic.version; print(pydantic.version.version_info())"'
 
@@ -62,11 +62,11 @@ jobs:
       - name: Checkout current branch
         uses: actions/checkout@v4
 
-      - uses: astral-sh/setup-uv@v3
+      - uses: astral-sh/setup-uv@v5
         with:
-          enable-cache: true
+          python-version: '3.12'
 
-      - run: uv sync --python 3.12 --group docs
+      - run: uv sync --group docs
 
       - run: uv pip install --default-index https://pydantic:${PPPR_TOKEN}@pppr.pydantic.dev/simple/ mkdocs-material
         env:

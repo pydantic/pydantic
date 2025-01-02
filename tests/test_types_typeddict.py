@@ -916,3 +916,16 @@ def test_typeddict_with_config_decorator():
     ta = TypeAdapter(Model)
 
     assert ta.validate_python({'x': 'ABC'}) == {'x': 'abc'}
+
+
+def test_config_pushdown_typed_dict() -> None:
+    class ArbitraryType:
+        pass
+
+    class TD(TypedDict):
+        a: ArbitraryType
+
+    class Model(BaseModel):
+        model_config = ConfigDict(arbitrary_types_allowed=True)
+
+        td: TD

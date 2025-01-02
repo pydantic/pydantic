@@ -4,8 +4,6 @@ from typing import TYPE_CHECKING, Any, TypedDict, cast
 from warnings import warn
 
 if TYPE_CHECKING:
-    from pydantic_core import CoreSchema
-
     from ..config import JsonDict, JsonSchemaExtraCallable
     from ._schema_generation_shared import (
         GetJsonSchemaFunction,
@@ -20,7 +18,6 @@ class CoreMetadata(TypedDict, total=False):
         pydantic_js_annotation_functions: List of JSON schema functions that don't resolve refs during application.
         pydantic_js_prefer_positional_arguments: Whether JSON schema generator will
             prefer positional over keyword arguments for an 'arguments' schema.
-        pydantic_js_input_core_schema: Schema associated with the input value for the associated
             custom validation function. Only applies to before, plain, and wrap validators.
         pydantic_js_udpates: key / value pair updates to apply to the JSON schema for a type.
         pydantic_js_extra: WIP, either key/value pair updates to apply to the JSON schema, or a custom callable.
@@ -37,7 +34,6 @@ class CoreMetadata(TypedDict, total=False):
     pydantic_js_functions: list[GetJsonSchemaFunction]
     pydantic_js_annotation_functions: list[GetJsonSchemaFunction]
     pydantic_js_prefer_positional_arguments: bool
-    pydantic_js_input_core_schema: CoreSchema
     pydantic_js_updates: JsonDict
     pydantic_js_extra: JsonDict | JsonSchemaExtraCallable
 

@@ -64,6 +64,14 @@ def test_func_type() -> None:
         validate_call([])
 
 
+def validate_bare_none() -> None:
+    @validate_call
+    def func(f: None):
+        return f
+
+    assert func(f=None) is None
+
+
 def test_validate_class() -> None:
     class A:
         @validate_call
@@ -113,17 +121,9 @@ def test_validate_custom_callable() -> None:
 
 
 def test_invalid_signature() -> None:
-    # In some versions, these functions may not have a valid signature
-    for func in (max, min, breakpoint, sorted, compile, print, [].append, {}.popitem, int().bit_length):
-        try:
-            inspect.signature(func)
-            assert validate_call(func).__name__ == func.__name__
-            assert validate_call(func).__qualname__ == func.__qualname__
-            assert validate_call(partial(func)).__name__ == f'partial({func.__name__})'
-            assert validate_call(partial(func)).__qualname__ == f'partial({func.__qualname__})'
-        except ValueError:
-            with pytest.raises(PydanticUserError, match=(f"Input function `{func}` doesn't have a valid signature")):
-                validate_call(func)
+    # Builtins functions not supported:
+    with pytest.raises(PydanticUserError, match=(f'Input built-in function `{breakpoint}` is not supported')):
+        validate_call(breakpoint)
 
     class A:
         def f(): ...
@@ -1129,11 +1129,11 @@ from typing import Iterable
 from pydantic import validate_call
 
 @validate_call
-def find_max_no_validate_return[T](args: Iterable[T]) -> T:
+def find_max_no_validate_return[T](args: 'Iterable[T]') -> T:
     return sorted(args, reverse=True)[0]
 
 @validate_call(validate_return=True)
-def find_max_validate_return[T](args: Iterable[T]) -> T:
+def find_max_validate_return[T](args: 'Iterable[T]') -> T:
     return sorted(args, reverse=True)[0]
         """
     )
