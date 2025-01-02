@@ -20,7 +20,6 @@ jobs:
 
       - uses: astral-sh/setup-uv@v5
         with:
-          enable-cache: true
           python-version: '3.12'
 
       - name: Install dependencies
@@ -39,7 +38,6 @@ jobs:
 
       - uses: astral-sh/setup-uv@v5
         with:
-          enable-cache: true
           python-version: '3.12'
 
       - name: Install dependencies
@@ -66,7 +64,6 @@ jobs:
 
       - uses: astral-sh/setup-uv@v5
         with:
-          enable-cache: true
           python-version: '3.12'
 
       - run: uv sync --group docs
