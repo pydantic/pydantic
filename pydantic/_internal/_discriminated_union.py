@@ -1,6 +1,6 @@
 from __future__ import annotations as _annotations
 
-from typing import TYPE_CHECKING, Any, Hashable, Sequence
+from typing import TYPE_CHECKING, Any, Hashable, Sequence, cast
 
 from pydantic_core import CoreSchema, core_schema
 
@@ -13,8 +13,7 @@ from ._core_utils import (
 
 if TYPE_CHECKING:
     from ..types import Discriminator
-
-CORE_SCHEMA_METADATA_DISCRIMINATOR_PLACEHOLDER_KEY = 'pydantic.internal.union_discriminator'
+    from ._core_metadata import CoreMetadata
 
 
 class MissingDefinitionForUnionRef(Exception):
@@ -28,10 +27,8 @@ class MissingDefinitionForUnionRef(Exception):
 
 
 def set_discriminator_in_metadata(schema: CoreSchema, discriminator: Any) -> None:
-    schema.setdefault('metadata', {})
-    metadata = schema.get('metadata')
-    assert metadata is not None
-    metadata[CORE_SCHEMA_METADATA_DISCRIMINATOR_PLACEHOLDER_KEY] = discriminator
+    metadata = cast('CoreMetadata', schema.setdefault('metadata', {}))
+    metadata['pydantic_internal_union_discriminator'] = discriminator
 
 
 def apply_discriminators(schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
@@ -49,9 +46,11 @@ def apply_discriminators(schema: core_schema.CoreSchema) -> core_schema.CoreSche
         if s['type'] == 'tagged-union':
             return s
 
-        metadata = s.get('metadata', {})
-        discriminator = metadata.pop(CORE_SCHEMA_METADATA_DISCRIMINATOR_PLACEHOLDER_KEY, None)
-        if discriminator is not None:
+        metadata = cast('CoreMetadata | None', s.get('metadata'))
+        if (
+            metadata is not None
+            and (discriminator := metadata.pop('pydantic_internal_union_discriminator', None)) is not None
+        ):
             s = apply_discriminator(s, discriminator, global_definitions)
         return s
 
