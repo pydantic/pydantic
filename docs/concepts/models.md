@@ -221,6 +221,55 @@ print(Model(items=(1, 2, 3)))
 Besides, using these abstract types can also lead to [poor validation performance](./performance.md#sequence-vs-list-or-tuple-with-mapping-vs-dict), and in general using concrete container types
 will avoid unnecessary checks.
 
+<!-- old anchor added for backwards compatibility -->
+[](){#extra-fields}
+
+## Extra data
+
+By default, Pydantic models **won't error when you provide extra data**, and these values will simply be ignored:
+
+```python
+from pydantic import BaseModel
+
+
+class Model(BaseModel):
+    x: int
+
+
+m = Model(x=1, y='a')
+assert m.model_dump() == {'x': 1}
+```
+
+The [`extra`][pydantic.ConfigDict.extra] configuration value can be used to control this behavior:
+
+```python
+from pydantic import BaseModel, ConfigDict
+
+
+class Model(BaseModel):
+    x: int
+
+    model_config = ConfigDict(extra='allow')
+
+
+m = Model(x=1, y='a')  # (1)!
+assert m.__pydantic_extra__ == {'y': 'a'}
+```
+
+1. If [`extra`][pydantic.ConfigDict.extra] was set to `'forbid'`, this would fail.
+
+The configuration can take three values:
+
+- `'ignore'`: Providing extra data is ignored (the default).
+- `'forbid'`: Providing extra data is not permitted.
+- `'allow'`: Providing extra data is allowed and stored in the `__pydantic_extra__` dictionary attribute.
+  The `__pydantic_extra__` can explicitly be annotated to provide validation for extra fields.
+
+For more details, refer to the [`extra`][pydantic.ConfigDict.extra] API documentation.
+
+The same behavior applies to typed dictionaries and dataclasses (see how to
+[add configuration to these types](./config.md#configuration-with-dataclass-from-the-standard-library-or-typeddict)).
+
 ## Nested models
 
 More complex hierarchical data structures can be defined using models themselves as types in annotations.
@@ -639,7 +688,7 @@ Here are some additional notes on the behavior of [`model_construct()`][pydantic
   creating the model with validation.
 * No `__init__` method from the model or any of its parent classes will be called, even when a custom `__init__` method is defined.
 
-!!! note "On [extra fields](#extra-fields) behavior with [`model_construct()`][pydantic.main.BaseModel.model_construct]"
+!!! note "On [extra data](#extra-data) behavior with [`model_construct()`][pydantic.main.BaseModel.model_construct]"
     * For models with [`extra`][pydantic.ConfigDict.extra] set to `'allow'`, data not corresponding to fields will be correctly stored in
     the `__pydantic_extra__` dictionary and saved to the model's `__dict__` attribute.
     * For models with [`extra`][pydantic.ConfigDict.extra] set to `'ignore'`, data not corresponding to fields will be ignored — that is,
@@ -1692,100 +1741,3 @@ print(f'{id(c1.arr) == id(c2.arr)=}')
     There are some situations where Pydantic does not copy attributes, such as when passing models &mdash; we use the
     model as is. You can override this behaviour by setting
     [`model_config['revalidate_instances'] = 'always'`](../api/config.md#pydantic.config.ConfigDict).
-
-## Extra fields
-
-By default, Pydantic models won't error when you provide data for unrecognized fields, they will just be ignored:
-
-```python
-from pydantic import BaseModel
-
-
-class Model(BaseModel):
-    x: int
-
-
-m = Model(x=1, y='a')
-assert m.model_dump() == {'x': 1}
-```
-
-If you want this to raise an error, you can set the [`extra`][pydantic.ConfigDict.extra] configuration
-value to `'forbid'`:
-
-```python
-from pydantic import BaseModel, ConfigDict, ValidationError
-
-
-class Model(BaseModel):
-    x: int
-
-    model_config = ConfigDict(extra='forbid')
-
-
-try:
-    Model(x=1, y='a')
-except ValidationError as exc:
-    print(exc)
-    """
-    1 validation error for Model
-    y
-      Extra inputs are not permitted [type=extra_forbidden, input_value='a', input_type=str]
-    """
-```
-
-To instead preserve any extra data provided, you can set [`extra`][pydantic.ConfigDict.extra] to `'allow'`.
-The extra fields will then be stored in `BaseModel.__pydantic_extra__`:
-
-```python
-from pydantic import BaseModel, ConfigDict
-
-
-class Model(BaseModel):
-    x: int
-
-    model_config = ConfigDict(extra='allow')
-
-
-m = Model(x=1, y='a')
-assert m.__pydantic_extra__ == {'y': 'a'}
-```
-
-By default, no validation will be applied to these extra items, but you can set a type for the values by overriding
-the type annotation for `__pydantic_extra__`:
-
-```python
-from typing import Dict
-
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
-
-
-class Model(BaseModel):
-    __pydantic_extra__: Dict[str, int] = Field(init=False)  # (1)!
-
-    x: int
-
-    model_config = ConfigDict(extra='allow')
-
-
-try:
-    Model(x=1, y='a')
-except ValidationError as exc:
-    print(exc)
-    """
-    1 validation error for Model
-    y
-      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='a', input_type=str]
-    """
-
-m = Model(x=1, y='2')
-assert m.x == 1
-assert m.y == 2
-assert m.model_dump() == {'x': 1, 'y': 2}
-assert m.__pydantic_extra__ == {'y': 2}
-```
-
-1. The `= Field(init=False)` does not have any effect at runtime, but prevents the `__pydantic_extra__` field from
-   being included as a parameter to the model's `__init__` method by type checkers.
-
-The same configurations apply to `TypedDict` and `dataclass`' except the config is controlled by setting the
-`__pydantic_config__` attribute of the class to a valid `ConfigDict`.
