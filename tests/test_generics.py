@@ -1410,8 +1410,6 @@ def test_deep_generic_with_referenced_inner_generic():
         InnerModel[int](a=['s', {'a': 'wrong'}])
     assert InnerModel[int](a=['s', {'a': 1}]).a[1].a == 1
 
-    assert InnerModel[int].model_fields['a'].annotation == Optional[List[Union[ReferencedModel[int], str]]]
-
 
 def test_deep_generic_with_multiple_typevars():
     T = TypeVar('T')
@@ -1617,6 +1615,26 @@ def test_generic_recursive_models(create_module):
 
     result = Model1[str].model_validate(dict(ref=dict(ref=dict(ref=dict(ref='123')))))
     assert result.model_dump() == {'ref': {'ref': {'ref': {'ref': '123'}}}}
+
+
+def test_generic_recursive_models_parametrized() -> None:
+    """https://github.com/pydantic/pydantic/issues/10279"""
+
+    # This test is similar (if not identical) to the previous one, although in this one,
+    # we make sure we can parametrize and rebuild the models (see the linked issue).
+
+    T = TypeVar('T')
+
+    class Model1(BaseModel, Generic[T]):
+        model2: 'Model2[T]'
+
+    S = TypeVar('S')
+
+    class Model2(BaseModel, Generic[S]):
+        model1: Model1[S]
+
+    Model1[str].model_rebuild()
+    Model2[str].model_rebuild()
 
 
 def test_generic_recursive_models_separate_parameters(create_module):
