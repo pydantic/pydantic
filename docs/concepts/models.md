@@ -648,62 +648,96 @@ Here are some additional notes on the behavior of [`model_construct()`][pydantic
 
 ## Generic models
 
-Pydantic supports the creation of generic models to make it easier to reuse a common model structure.
-
-In order to declare a generic model, you should follow the following steps:
-
-1. Declare one or more [type variables][typing.TypeVar] to use to parameterize your model.
-2. Declare a pydantic model that inherits from [`BaseModel`][pydantic.BaseModel] and [`typing.Generic`][] (in this specific order),
-  and add the list of type variables you declared previously as parameters to the [`Generic`][typing.Generic] parent.
-3. Use the type variables as annotations where you will want to replace them with other types.
-
-!!! warning "PEP 695 support"
-    Pydantic does not support the new syntax for generic classes (introduced by [PEP 695](https://peps.python.org/pep-0695/)),
-    available since Python 3.12. Progress can be tracked in [this issue](https://github.com/pydantic/pydantic/issues/9782).
+Pydantic supports the creation of generic models to make it easier to reuse a common model structure. Both the new
+[type parameter syntax][type-params] (introduced by [PEP 695](https://peps.python.org/pep-0695/) in Python 3.12)
+and the old syntax are supported (refer to
+[the Python documentation](https://docs.python.org/3/library/typing.html#building-generic-types-and-type-aliases)
+for more details).
 
 Here is an example using a generic Pydantic model to create an easily-reused HTTP response payload wrapper:
 
-```python
-from typing import Generic, List, Optional, TypeVar
+=== "Python 3.8 and above"
 
-from pydantic import BaseModel, ValidationError
+    ```python {upgrade="skip"}
+    from typing import Generic, TypeVar
 
-DataT = TypeVar('DataT')  # (1)!
+    from pydantic import BaseModel, ValidationError
 
-
-class DataModel(BaseModel):
-    numbers: List[int]
-    people: List[str]
+    DataT = TypeVar('DataT')  # (1)!
 
 
-class Response(BaseModel, Generic[DataT]):  # (2)!
-    data: Optional[DataT] = None  # (3)!
+    class DataModel(BaseModel):
+        number: int
 
 
-print(Response[int](data=1))
-#> data=1
-print(Response[str](data='value'))
-#> data='value'
-print(Response[str](data='value').model_dump())
-#> {'data': 'value'}
+    class Response(BaseModel, Generic[DataT]):  # (2)!
+        data: DataT  # (3)!
 
-data = DataModel(numbers=[1, 2, 3], people=[])
-print(Response[DataModel](data=data).model_dump())
-#> {'data': {'numbers': [1, 2, 3], 'people': []}}
-try:
-    Response[int](data='value')
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for Response[int]
-    data
-      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='value', input_type=str]
-    """
-```
 
-1. Refers to step 1 described above.
-2. Refers to step 2 described above.
-3. Refers to step 3 described above.
+    print(Response[int](data=1))
+    #> data=1
+    print(Response[str](data='value'))
+    #> data='value'
+    print(Response[str](data='value').model_dump())
+    #> {'data': 'value'}
+
+    data = DataModel(number=1)
+    print(Response[DataModel](data=data).model_dump())
+    #> {'data': {'number': 1}}
+    try:
+        Response[int](data='value')
+    except ValidationError as e:
+        print(e)
+        """
+        1 validation error for Response[int]
+        data
+          Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='value', input_type=str]
+        """
+    ```
+
+    1. Declare one or more [type variables][typing.TypeVar] to use to parameterize your model.
+    2. Declare a Pydantic model that inherits from [`BaseModel`][pydantic.BaseModel] and [`typing.Generic`][]
+       (in this specific order), and add the list of type variables you declared previously as parameters to the
+       [`Generic`][typing.Generic] parent.
+    3. Use the type variables as annotations where you will want to replace them with other types.
+
+=== "Python 3.12 and above (new syntax)"
+
+    ```python {requires="3.12" upgrade="skip"}
+    from pydantic import BaseModel, ValidationError
+
+
+    class DataModel(BaseModel):
+        number: int
+
+
+    class Response[DataT](BaseModel):  # (1)!
+        data: DataT  # (2)!
+
+
+    print(Response[int](data=1))
+    #> data=1
+    print(Response[str](data='value'))
+    #> data='value'
+    print(Response[str](data='value').model_dump())
+    #> {'data': 'value'}
+
+    data = DataModel(number=1)
+    print(Response[DataModel](data=data).model_dump())
+    #> {'data': {'number': 1}}
+    try:
+        Response[int](data='value')
+    except ValidationError as e:
+        print(e)
+        """
+        1 validation error for Response[int]
+        data
+          Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='value', input_type=str]
+        """
+    ```
+
+    1. Declare a Pydantic model and add the list of type variables as type parameters.
+    2. Use the type variables as annotations where you will want to replace them with other types.
 
 Any [configuration](./config.md), [validation](./validators.md) or [serialization](./serialization.md) logic
 set on the generic model will also be applied to the parametrized classes, in the same way as when inheriting from
@@ -875,7 +909,7 @@ except ValidationError as e:
     isinstance(my_model, MyIntModel)
     ```
 
-!!! note "Implementation Details"
+??? note "Implementation Details"
     When using nested generic models, Pydantic sometimes performs revalidation in an attempt to produce the most intuitive validation result.
     Specifically, if you have a field of type `GenericModel[SomeType]` and you validate data like `GenericModel[SomeCompatibleType]` against this field,
     we will inspect the data, recognize that the input data is sort of a "loose" subclass of `GenericModel`, and revalidate the contained `SomeCompatibleType` data.

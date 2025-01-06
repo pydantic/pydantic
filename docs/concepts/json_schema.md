@@ -1009,7 +1009,7 @@ class Model(BaseModel):
 m = Model.model_validate({'state': 2})
 print(repr(m))
 #> Model(state=2)
-print(m.model_fields)
+print(Model.model_fields)
 """
 {
     'state': FieldInfo(
