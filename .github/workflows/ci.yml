@@ -32,9 +32,7 @@ jobs:
       - run: rustup component add llvm-tools-preview
 
       - name: install uv
-        uses: astral-sh/setup-uv@v4
-        with:
-          enable-cache: true
+        uses: astral-sh/setup-uv@v5
 
       - name: install deps
         run: uv sync --group testing
@@ -88,9 +86,9 @@ jobs:
           key: test-v3
 
       - name: install uv
-        uses: astral-sh/setup-uv@v4
+        uses: astral-sh/setup-uv@v5
         with:
-          enable-cache: true
+          python-version: ${{ matrix.python-version }}
 
       - name: install deps
         run: uv sync --group testing
@@ -104,9 +102,6 @@ jobs:
       - run: uv run pytest
         env:
           HYPOTHESIS_PROFILE: slow
-
-    env:
-      UV_PYTHON: ${{ matrix.python-version }}
 
   test-os:
     name: test on ${{ matrix.os }}
@@ -127,9 +122,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: install uv
-        uses: astral-sh/setup-uv@v4
-        with:
-          enable-cache: true
+        uses: astral-sh/setup-uv@v5
 
       - name: install deps
         run: uv sync --group testing
@@ -152,9 +145,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: install uv
-        uses: astral-sh/setup-uv@v4
-        with:
-          enable-cache: true
+        uses: astral-sh/setup-uv@v5
 
       - name: install deps
         run: uv sync --group testing
@@ -197,9 +188,9 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: install uv
-        uses: astral-sh/setup-uv@v4
+        uses: astral-sh/setup-uv@v5
         with:
-          enable-cache: true
+          python-version: ${{ matrix.python-version }}
 
       - name: install rust stable
         uses: dtolnay/rust-toolchain@stable
@@ -214,9 +205,6 @@ jobs:
 
       - run: uv pip freeze
       - run: uv run pytest
-
-    env:
-      UV_PYTHON: ${{ matrix.python-version }}
 
   test-pydantic-integration:
     runs-on: ubuntu-latest
@@ -239,9 +227,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: install uv
-        uses: astral-sh/setup-uv@v4
-        with:
-          enable-cache: true
+        uses: astral-sh/setup-uv@v5
 
       - name: install deps
         run: |
@@ -283,9 +269,7 @@ jobs:
           node-version: '18'
 
       - name: install uv
-        uses: astral-sh/setup-uv@v4
-        with:
-          enable-cache: true
+        uses: astral-sh/setup-uv@v5
 
       - name: install deps
         run: |
@@ -343,9 +327,7 @@ jobs:
           actions-cache-folder: emsdk-cache
 
       - name: install uv
-        uses: astral-sh/setup-uv@v4
-        with:
-          enable-cache: true
+        uses: astral-sh/setup-uv@v5
 
       - name: install deps
         run: uv sync --group wasm
@@ -369,9 +351,6 @@ jobs:
         with:
           name: wasm_wheels
           path: dist
-
-    env:
-      UV_PYTHON: 3.12
 
   # https://github.com/marketplace/actions/alls-green#why used for branch protection checks
   check:
@@ -543,9 +522,9 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: install uv
-        uses: astral-sh/setup-uv@v4
+        uses: astral-sh/setup-uv@v5
         with:
-          enable-cache: true
+          python-version: ${{ matrix.interpreter }}
 
       - name: install rust stable
         id: rust-toolchain
@@ -560,7 +539,7 @@ jobs:
         id: pgo-wheel
         uses: ./.github/actions/build-pgo-wheel
         with:
-          interpreter: ${{ env.UV_PYTHON }}
+          interpreter: ${{ matrix.interpreter }}
           rust-toolchain: ${{ steps.rust-toolchain.outputs.name }}
 
       - run: ${{ matrix.ls || 'ls -lh' }} dist/
@@ -569,9 +548,6 @@ jobs:
         with:
           name: pypi_files_${{ matrix.os }}_${{ matrix.interpreter }}
           path: dist
-
-    env:
-      UV_PYTHON: ${{ matrix.interpreter }}
 
   inspect-pypi-assets:
     needs: [build, build-sdist, build-pgo]
@@ -668,9 +644,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: install uv
-        uses: astral-sh/setup-uv@v4
-        with:
-          enable-cache: true
+        uses: astral-sh/setup-uv@v5
 
       - name: get dist artifacts
         uses: actions/download-artifact@v4
