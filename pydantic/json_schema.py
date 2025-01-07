@@ -1570,14 +1570,13 @@ class GenerateJsonSchema:
         Raises:
             RuntimeError: If the schema reference can't be found in definitions.
         """
-        if '$ref' not in json_schema:
-            return json_schema
-
-        ref = json_schema['$ref']
-        schema_to_update = self.get_schema_from_definitions(JsonRef(ref))
-        if schema_to_update is None:
-            raise RuntimeError(f'Cannot update undefined schema for $ref={ref}')
-        return self.resolve_ref_schema(schema_to_update)
+        while '$ref' in json_schema:
+            ref = json_schema['$ref']
+            schema_to_update = self.get_schema_from_definitions(JsonRef(ref))
+            if schema_to_update is None:
+                raise RuntimeError(f'Cannot update undefined schema for $ref={ref}')
+            json_schema = schema_to_update
+        return json_schema
 
     def model_fields_schema(self, schema: core_schema.ModelFieldsSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a schema that defines a model's fields.
