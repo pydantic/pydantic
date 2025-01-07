@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#v11019-2024-11-06" class="md-skip">
+        <a href="#v11020-2025-01-07" class="md-skip">
           Skip to content
         </a>
       
@@ -881,6 +881,15 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
       Table of contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#v11020-2025-01-07" class="md-nav__link">
+    <span class="md-ellipsis">
+      v1.10.20 (2025-01-07)
+    </span>
+  </a>
+  
+</li>
       
         <li class="md-nav__item">
   <a href="#v11019-2024-11-06" class="md-nav__link">
@@ -1968,6 +1977,15 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v11020-2025-01-07" class="md-nav__link">
+    <span class="md-ellipsis">
+      v1.10.20 (2025-01-07)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v11019-2024-11-06" class="md-nav__link">
     <span class="md-ellipsis">
       v1.10.19 (2024-11-06)
@@ -3041,6 +3059,20 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 
   <h1>Changelog</h1>
 
+<h2 id="v11020-2025-01-07">v1.10.20 (2025-01-07)<a class="headerlink" href="#v11020-2025-01-07" title="Permanent link">&para;</a></h2>
+<p>This release provides proper support for Python 3.13, with (Cythonized) wheels published for this version.
+As a consequence, Cython was updated from <code>0.29.x</code> to <code>3.0.x</code>.</p>
+<ul>
+<li>General maintenance of CI and build ecosystem by <a href="https://github.com/Viicos">@Viicos</a> in https://github.com/pydantic/pydantic/pull/10847<ul>
+<li>Update Cython to <code>3.0.x</code>.</li>
+<li>Properly address Python 3.13 deprecation warnings.</li>
+<li>Migrate packaging to <code>pyproject.toml</code>, make use of PEP 517 build options.</li>
+<li>Use <a href="https://pypi.org/project/build/"><code>build</code></a> instead of direct <code>setup.py</code> invocations.</li>
+<li>Update various Github Actions versions.</li>
+</ul>
+</li>
+<li>Replace outdated stpmex link in documentation by <a href="https://github.com/jaredenorris">@jaredenorris</a> in https://github.com/pydantic/pydantic/pull/10997</li>
+</ul>
 <h2 id="v11019-2024-11-06">v1.10.19 (2024-11-06)<a class="headerlink" href="#v11019-2024-11-06" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Add warning when v2 model is nested in v1 model by <a href="https://github.com/sydney-runkle">@sydney-runkle</a> in https://github.com/pydantic/pydantic/pull/10432</li>

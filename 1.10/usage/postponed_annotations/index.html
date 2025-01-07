@@ -966,12 +966,12 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.7 and above</label><label for="__tabbed_1_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span>
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
 
 
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">a</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
     <span class="n">b</span><span class="p">:</span> <span class="n">Any</span>
 
@@ -981,12 +981,12 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
 
 
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">a</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
     <span class="n">b</span><span class="p">:</span> <span class="n">Any</span>
 
@@ -1008,13 +1008,13 @@ When this happens, you'll need to call <code>update_forward_refs</code> after th
 <div class="tabbed-set tabbed-alternate" data-tabs="2:1"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.7 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">ForwardRef</span>
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">ForwardRef</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
 
 <span class="n">Foo</span> <span class="o">=</span> <span class="n">ForwardRef</span><span class="p">(</span><span class="s1">&#39;Foo&#39;</span><span class="p">)</span>
 
 
-<span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">a</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">123</span>
     <span class="n">b</span><span class="p">:</span> <span class="n">Foo</span> <span class="o">=</span> <span class="kc">None</span>
 
@@ -1040,13 +1040,13 @@ This means <em>pydantic</em> may not play well with types not defined in the glo
 <div class="tabbed-set tabbed-alternate" data-tabs="3:1"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.7 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">HttpUrl</span>  <span class="c1"># HttpUrl is defined in the module&#39;s global scope</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">HttpUrl</span>  <span class="c1"># HttpUrl is defined in the module&#39;s global scope</span>
 
 
-<span class="k">def</span> <span class="nf">this_works</span><span class="p">():</span>
-    <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">this_works</span><span class="p">():</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
         <span class="n">a</span><span class="p">:</span> <span class="n">HttpUrl</span>
 
     <span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="s1">&#39;https://example.com&#39;</span><span class="p">))</span>
@@ -1063,15 +1063,15 @@ This means <em>pydantic</em> may not play well with types not defined in the glo
 <div class="tabbed-set tabbed-alternate" data-tabs="4:1"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">Python 3.7 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
-<span class="kn">from</span> <span class="nn">pydantic.errors</span> <span class="kn">import</span> <span class="n">ConfigError</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic.errors</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConfigError</span>
 
 
-<span class="k">def</span> <span class="nf">this_is_broken</span><span class="p">():</span>
-    <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">HttpUrl</span>  <span class="c1"># HttpUrl is defined in function local scope</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">this_is_broken</span><span class="p">():</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">HttpUrl</span>  <span class="c1"># HttpUrl is defined in function local scope</span>
 
-    <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
         <span class="n">a</span><span class="p">:</span> <span class="n">HttpUrl</span>
 
     <span class="k">try</span><span class="p">:</span>
@@ -1102,10 +1102,10 @@ resolved after model creation.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="5:1"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">Python 3.7 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
 
 
-<span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">a</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">123</span>
     <span class="c1">#: The sibling of `Foo` is referenced by string</span>
     <span class="n">sibling</span><span class="p">:</span> <span class="s1">&#39;Foo&#39;</span> <span class="o">=</span> <span class="kc">None</span>
@@ -1126,11 +1126,11 @@ and <em>pydantic</em> versions).</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="6:1"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">Python 3.7 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
 
 
-<span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">a</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">123</span>
     <span class="c1">#: The sibling of `Foo` is referenced directly by type</span>
     <span class="n">sibling</span><span class="p">:</span> <span class="n">Foo</span> <span class="o">=</span> <span class="kc">None</span>

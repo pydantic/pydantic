@@ -994,19 +994,19 @@ of given args for the constrained function types.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.7 and above</label><label for="__tabbed_1_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">typing</span>
-<span class="kn">from</span> <span class="nn">hypothesis</span> <span class="kn">import</span> <span class="n">given</span><span class="p">,</span> <span class="n">strategies</span> <span class="k">as</span> <span class="n">st</span>
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">EmailStr</span><span class="p">,</span> <span class="n">PaymentCardNumber</span><span class="p">,</span> <span class="n">PositiveFloat</span>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">typing</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">hypothesis</span><span class="w"> </span><span class="kn">import</span> <span class="n">given</span><span class="p">,</span> <span class="n">strategies</span> <span class="k">as</span> <span class="n">st</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">EmailStr</span><span class="p">,</span> <span class="n">PaymentCardNumber</span><span class="p">,</span> <span class="n">PositiveFloat</span>
 
 
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">card</span><span class="p">:</span> <span class="n">PaymentCardNumber</span>
     <span class="n">price</span><span class="p">:</span> <span class="n">PositiveFloat</span>
     <span class="n">users</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">List</span><span class="p">[</span><span class="n">EmailStr</span><span class="p">]</span>
 
 
 <span class="nd">@given</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">builds</span><span class="p">(</span><span class="n">Model</span><span class="p">))</span>
-<span class="k">def</span> <span class="nf">test_property</span><span class="p">(</span><span class="n">instance</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_property</span><span class="p">(</span><span class="n">instance</span><span class="p">):</span>
     <span class="c1"># Hypothesis calls this test function many times with varied Models,</span>
     <span class="c1"># so you can write a test that should pass given *any* instance.</span>
     <span class="k">assert</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="n">instance</span><span class="o">.</span><span class="n">price</span>
@@ -1014,25 +1014,25 @@ of given args for the constrained function types.</p>
 
 
 <span class="nd">@given</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">builds</span><span class="p">(</span><span class="n">Model</span><span class="p">,</span> <span class="n">price</span><span class="o">=</span><span class="n">st</span><span class="o">.</span><span class="n">floats</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">200</span><span class="p">)))</span>
-<span class="k">def</span> <span class="nf">test_with_discount</span><span class="p">(</span><span class="n">instance</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_with_discount</span><span class="p">(</span><span class="n">instance</span><span class="p">):</span>
     <span class="c1"># This test shows how you can override specific fields,</span>
     <span class="c1"># and let Hypothesis fill in any you don&#39;t care about.</span>
     <span class="k">assert</span> <span class="mi">100</span> <span class="o">&lt;=</span> <span class="n">instance</span><span class="o">.</span><span class="n">price</span> <span class="o">&lt;=</span> <span class="mi">200</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">hypothesis</span> <span class="kn">import</span> <span class="n">given</span><span class="p">,</span> <span class="n">strategies</span> <span class="k">as</span> <span class="n">st</span>
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">EmailStr</span><span class="p">,</span> <span class="n">PaymentCardNumber</span><span class="p">,</span> <span class="n">PositiveFloat</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hypothesis</span><span class="w"> </span><span class="kn">import</span> <span class="n">given</span><span class="p">,</span> <span class="n">strategies</span> <span class="k">as</span> <span class="n">st</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">EmailStr</span><span class="p">,</span> <span class="n">PaymentCardNumber</span><span class="p">,</span> <span class="n">PositiveFloat</span>
 
 
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">card</span><span class="p">:</span> <span class="n">PaymentCardNumber</span>
     <span class="n">price</span><span class="p">:</span> <span class="n">PositiveFloat</span>
     <span class="n">users</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">EmailStr</span><span class="p">]</span>
 
 
 <span class="nd">@given</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">builds</span><span class="p">(</span><span class="n">Model</span><span class="p">))</span>
-<span class="k">def</span> <span class="nf">test_property</span><span class="p">(</span><span class="n">instance</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_property</span><span class="p">(</span><span class="n">instance</span><span class="p">):</span>
     <span class="c1"># Hypothesis calls this test function many times with varied Models,</span>
     <span class="c1"># so you can write a test that should pass given *any* instance.</span>
     <span class="k">assert</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="n">instance</span><span class="o">.</span><span class="n">price</span>
@@ -1040,7 +1040,7 @@ of given args for the constrained function types.</p>
 
 
 <span class="nd">@given</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">builds</span><span class="p">(</span><span class="n">Model</span><span class="p">,</span> <span class="n">price</span><span class="o">=</span><span class="n">st</span><span class="o">.</span><span class="n">floats</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">200</span><span class="p">)))</span>
-<span class="k">def</span> <span class="nf">test_with_discount</span><span class="p">(</span><span class="n">instance</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_with_discount</span><span class="p">(</span><span class="n">instance</span><span class="p">):</span>
     <span class="c1"># This test shows how you can override specific fields,</span>
     <span class="c1"># and let Hypothesis fill in any you don&#39;t care about.</span>
     <span class="k">assert</span> <span class="mi">100</span> <span class="o">&lt;=</span> <span class="n">instance</span><span class="o">.</span><span class="n">price</span> <span class="o">&lt;=</span> <span class="mi">200</span>

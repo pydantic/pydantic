@@ -1718,9 +1718,9 @@ It can therefore validate a single <code>string</code> or <code>datetime</code> 
 my misgivings about marking a field as <code>Optional[int]</code> but requiring a value to be provided but allowing it to be
 <code>None</code> - I didn't like using the word "optional" in relation to a field which was not optional.</p>
 <p>In pydantic V2, pydantic will move to match dataclasses, thus:</p>
-<div class="highlight"><span class="filename">Required vs. Nullable</span><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+<div class="highlight"><span class="filename">Required vs. Nullable</span><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
 
-<span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">f1</span><span class="p">:</span> <span class="nb">str</span>  <span class="c1"># required, cannot be None</span>
     <span class="n">f2</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>  <span class="c1"># required, can be None - same as Optional[str] / Union[str, None]</span>
     <span class="n">f3</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># not required, can be None</span>
@@ -1740,14 +1740,14 @@ find a way to do this until now.</p>
   not call the inner validator or catch errors from the inner validator and return a default value, or change the error</li>
 </ul>
 <p>An example how a wrap validator might look:</p>
-<div class="highlight"><span class="filename">Wrap mode validator function</span><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">validator</span>
+<div class="highlight"><span class="filename">Wrap mode validator function</span><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">validator</span>
 
-<span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MyModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">timestamp</span><span class="p">:</span> <span class="n">datetime</span>
 
     <span class="nd">@validator</span><span class="p">(</span><span class="s1">&#39;timestamp&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;wrap&#39;</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">validate_timestamp</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">handler</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">validate_timestamp</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">handler</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">v</span> <span class="o">==</span> <span class="s1">&#39;now&#39;</span><span class="p">:</span>
             <span class="c1"># we don&#39;t want to bother with further validation, </span>
             <span class="c1"># just return the new value</span>
@@ -1763,10 +1763,10 @@ find a way to do this until now.</p>
 <h3 id="more-powerful-aliases">More powerful alias(es) <img alt="👍" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f44d.svg" title=":thumbsup:" /><a class="headerlink" href="#more-powerful-aliases" title="Permanent link">&para;</a></h3>
 <p>pydantic-core can support alias "paths" as well as simple string aliases to flatten data as it's validated.</p>
 <p>Best demonstrated with an example:</p>
-<div class="highlight"><span class="filename">Alias paths</span><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+<div class="highlight"><span class="filename">Alias paths</span><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
 
 
-<span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">bar</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">aliases</span><span class="o">=</span><span class="p">[[</span><span class="s1">&#39;baz&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;qux&#39;</span><span class="p">]])</span>
 
 
@@ -1812,19 +1812,19 @@ to allow for customising field keys.</p>
 which will allow you to pass information not available when creating a model to validators.
 See <a href="https://github.com/pydantic/pydantic/issues/1549">pydantic#1549</a> for motivation.</p>
 <p>Here's an example of <code>context</code> might be used:</p>
-<div class="highlight"><span class="filename">Context during Validation</span><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">EmailStr</span><span class="p">,</span> <span class="n">validator</span>
+<div class="highlight"><span class="filename">Context during Validation</span><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">EmailStr</span><span class="p">,</span> <span class="n">validator</span>
 
-<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">email</span><span class="p">:</span> <span class="n">EmailStr</span>
     <span class="n">home_country</span><span class="p">:</span> <span class="nb">str</span>
 
     <span class="nd">@validator</span><span class="p">(</span><span class="s1">&#39;home_country&#39;</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">check_home_country</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_home_country</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">v</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">context</span><span class="p">[</span><span class="s1">&#39;countries&#39;</span><span class="p">]:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;invalid country choice&#39;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">v</span>
 
-<span class="k">async</span> <span class="k">def</span> <span class="nf">add_user</span><span class="p">(</span><span class="n">post_data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">):</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">add_user</span><span class="p">(</span><span class="n">post_data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">):</span>
     <span class="n">countries</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="k">await</span> <span class="n">db_connection</span><span class="o">.</span><span class="n">fetch_all</span><span class="p">(</span><span class="s1">&#39;select code from country&#39;</span><span class="p">))</span>
     <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">model_validate_json</span><span class="p">(</span><span class="n">post_data</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;countries&#39;</span><span class="p">:</span> <span class="n">countries</span><span class="p">})</span>
     <span class="o">...</span>
@@ -1852,16 +1852,16 @@ I've decided to go with the simplest and clearest approach, at the expense of a 
 <p>All methods on models will start with <code>model_</code>, fields' names will not be allowed to start with <code>"model"</code>
 (aliases can be used if required).</p>
 <p>This will mean <code>BaseModel</code> will have roughly the following signature.</p>
-<div class="annotate highlight"><span class="filename">New BaseModel methods</span><pre><span></span><code><span class="k">class</span> <span class="nc">BaseModel</span><span class="p">:</span>
+<div class="annotate highlight"><span class="filename">New BaseModel methods</span><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">BaseModel</span><span class="p">:</span>
     <span class="n">model_fields</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">FieldInfo</span><span class="p">]</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;previously `__fields__`, although the format will change a lot&quot;&quot;&quot;</span>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">model_validate</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>  <span class="c1"># (1)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">model_validate</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>  <span class="c1"># (1)</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        previously `parse_obj()`, validate data</span>
 <span class="sd">        &quot;&quot;&quot;</span>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">model_validate_json</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">model_validate_json</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span>
         <span class="n">data</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="nb">bytearray</span><span class="p">,</span>
         <span class="o">*</span><span class="p">,</span>
@@ -1872,12 +1872,12 @@ I've decided to go with the simplest and clearest approach, at the expense of a 
 <span class="sd">        validate data from JSON</span>
 <span class="sd">        &quot;&quot;&quot;</span>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">model_is_instance</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span> <span class="c1"># (2)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">model_is_instance</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span> <span class="c1"># (2)</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        new, check if data is value for the model</span>
 <span class="sd">        &quot;&quot;&quot;</span>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">model_is_instance_json</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">model_is_instance_json</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span>
         <span class="n">data</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="nb">bytearray</span><span class="p">,</span>
         <span class="o">*</span><span class="p">,</span>
@@ -1886,7 +1886,7 @@ I've decided to go with the simplest and clearest approach, at the expense of a 
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Same as `model_is_instance`, but from JSON</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="nf">model_dump</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">model_dump</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">include</span><span class="p">:</span> <span class="o">...</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">exclude</span><span class="p">:</span> <span class="o">...</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -1901,23 +1901,23 @@ I've decided to go with the simplest and clearest approach, at the expense of a 
 <span class="sd">        previously `dict()`, as before</span>
 <span class="sd">        with new `mode` argument</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="nf">model_dump_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">model_dump_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        previously `json()`, arguments as above</span>
 <span class="sd">        effectively equivalent to `json.dump(self.model_dump(..., mode=&#39;json&#39;))`,</span>
 <span class="sd">        but more performant</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="nf">model_json_schema</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">model_json_schema</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        previously `schema()`, arguments roughly as before</span>
 <span class="sd">        JSON schema as a dict</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="nf">model_update_forward_refs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">model_update_forward_refs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        previously `update_forward_refs()`, update forward references</span>
 <span class="sd">        &quot;&quot;&quot;</span>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">model_construct</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">model_construct</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">_fields_set</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="o">**</span><span class="n">values</span><span class="p">:</span> <span class="n">Any</span>
@@ -1927,14 +1927,14 @@ I've decided to go with the simplest and clearest approach, at the expense of a 
 <span class="sd">        construct a model with no validation</span>
 <span class="sd">        &quot;&quot;&quot;</span>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">model_customize_schema</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">schema</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">model_customize_schema</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">schema</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        new, way to customize validation,</span>
 <span class="sd">        e.g. if you wanted to alter how the model validates certain types,</span>
 <span class="sd">        or add validation for a specific type without custom types or</span>
 <span class="sd">        decorated validators</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-    <span class="k">class</span> <span class="nc">ModelConfig</span><span class="p">:</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">ModelConfig</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        previously `Config`, configuration class for models</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -2030,10 +2030,10 @@ In addition:</p>
 validation then throws away the result while avoiding the (admittedly small) overhead of creating and raising
 an error or returning the validation result.</p>
 <p>To be clear, this isn't a real <code>isinstance</code> call, rather it is equivalent to</p>
-<div class="highlight"><span class="filename">is_instance</span><pre><span></span><code><span class="k">class</span> <span class="nc">BaseModel</span><span class="p">:</span>
+<div class="highlight"><span class="filename">is_instance</span><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">BaseModel</span><span class="p">:</span>
     <span class="o">...</span>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">model_is_instance</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">model_is_instance</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="bp">cls</span><span class="p">(</span><span class="o">**</span><span class="n">data</span><span class="p">)</span>
         <span class="k">except</span> <span class="n">ValidationError</span><span class="p">:</span>
@@ -2058,10 +2058,10 @@ way of defining custom field types no longer makes sense.</p>
 pydantic-core compliant schema for validating data to this field type (the <code>function</code>
 item can be a string, if so a function of that name will be taken from the class, see <code>'validate'</code> below).</p>
 <p>Here's an example of how a custom field type could be defined:</p>
-<div class="highlight"><span class="filename">New custom field types</span><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ValidationSchema</span>
+<div class="highlight"><span class="filename">New custom field types</span><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">ValidationSchema</span>
 
-<span class="k">class</span> <span class="nc">Foobar</span><span class="p">:</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Foobar</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span>
 
     <span class="n">__pydantic_validation_schema__</span><span class="p">:</span> <span class="n">ValidationSchema</span> <span class="o">=</span> <span class="p">{</span>
@@ -2072,7 +2072,7 @@ item can be a string, if so a function of that name will be taken from the class
     <span class="p">}</span>
 
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">validate</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="k">if</span> <span class="s1">&#39;foobar&#39;</span> <span class="ow">in</span> <span class="n">value</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">Foobar</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
@@ -2198,20 +2198,20 @@ We will endeavour to read and respond to everyone.</p>
 <span class="c1"># any type we can perform validation for</span>
 <span class="n">AnyOutputType</span> <span class="o">=</span> <span class="o">...</span>
 
-<span class="k">class</span> <span class="nc">PydanticValidator</span><span class="p">:</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output_type</span><span class="p">:</span> <span class="n">AnyOutputType</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">Config</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">PydanticValidator</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output_type</span><span class="p">:</span> <span class="n">AnyOutputType</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">Config</span><span class="p">):</span>
         <span class="o">...</span>
-    <span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_data</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ValidData</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_data</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ValidData</span><span class="p">:</span>
         <span class="o">...</span>
-    <span class="k">def</span> <span class="nf">validate_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_data</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="nb">bytearray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ValidData</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">validate_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_data</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="nb">bytearray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ValidData</span><span class="p">:</span>
         <span class="o">...</span>
-    <span class="k">def</span> <span class="nf">is_instance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_data</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_instance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_data</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="o">...</span>
-    <span class="k">def</span> <span class="nf">is_instance_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_data</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="nb">bytearray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_instance_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_data</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="nb">bytearray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="o">...</span>
-    <span class="k">def</span> <span class="nf">json_schema</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">json_schema</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
         <span class="o">...</span>
-    <span class="k">def</span> <span class="nf">dump</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">dump</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">data</span><span class="p">:</span> <span class="n">ValidData</span><span class="p">,</span>
         <span class="n">include</span><span class="p">:</span> <span class="o">...</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -2224,7 +2224,7 @@ We will endeavour to read and respond to everyone.</p>
         <span class="n">converter</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
         <span class="o">...</span>
-    <span class="k">def</span> <span class="nf">dump_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">dump_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="o">...</span>
 </code></pre></div>
 <p>This could be used directly, but more commonly will be used by the following:</p>

@@ -1099,23 +1099,23 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 <div class="tabbed-set tabbed-alternate" data-tabs="1:1"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.7 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span>
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">Enum</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
 
 
-<span class="k">class</span> <span class="nc">FooBar</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">FooBar</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">count</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">size</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span>
 
 
-<span class="k">class</span> <span class="nc">Gender</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Gender</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
     <span class="n">male</span> <span class="o">=</span> <span class="s1">&#39;male&#39;</span>
     <span class="n">female</span> <span class="o">=</span> <span class="s1">&#39;female&#39;</span>
     <span class="n">other</span> <span class="o">=</span> <span class="s1">&#39;other&#39;</span>
     <span class="n">not_given</span> <span class="o">=</span> <span class="s1">&#39;not_given&#39;</span>
 
 
-<span class="k">class</span> <span class="nc">MainModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MainModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This is the description of the main model</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -1130,7 +1130,7 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
         <span class="n">lt</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
     <span class="p">)</span>
 
-    <span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
         <span class="n">title</span> <span class="o">=</span> <span class="s1">&#39;Main&#39;</span>
 
 
@@ -1223,19 +1223,19 @@ but work with arbitrary pydantic-compatible types.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.7 and above</label><label for="__tabbed_2_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Union</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Union</span>
 
-<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing_extensions</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">schema_json_of</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">schema_json_of</span>
 
 
-<span class="k">class</span> <span class="nc">Cat</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Cat</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">pet_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;cat&#39;</span><span class="p">]</span>
     <span class="n">cat_name</span><span class="p">:</span> <span class="nb">str</span>
 
 
-<span class="k">class</span> <span class="nc">Dog</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Dog</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">pet_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;dog&#39;</span><span class="p">]</span>
     <span class="n">dog_name</span><span class="p">:</span> <span class="nb">str</span>
 
@@ -1310,19 +1310,19 @@ but work with arbitrary pydantic-compatible types.</p>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Union</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Union</span>
 
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">schema_json_of</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">schema_json_of</span>
 
 
-<span class="k">class</span> <span class="nc">Cat</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Cat</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">pet_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;cat&#39;</span><span class="p">]</span>
     <span class="n">cat_name</span><span class="p">:</span> <span class="nb">str</span>
 
 
-<span class="k">class</span> <span class="nc">Dog</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Dog</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">pet_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;dog&#39;</span><span class="p">]</span>
     <span class="n">dog_name</span><span class="p">:</span> <span class="nb">str</span>
 
@@ -1475,12 +1475,12 @@ to <code>Field()</code> with the raw schema attribute name:</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="3:1"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.7 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">PositiveInt</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">PositiveInt</span>
 
 <span class="k">try</span><span class="p">:</span>
     <span class="c1"># this won&#39;t work since PositiveInt takes precedence over the</span>
     <span class="c1"># constraints defined in Field meaning they&#39;re ignored</span>
-    <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
         <span class="n">foo</span><span class="p">:</span> <span class="n">PositiveInt</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">lt</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
@@ -1494,7 +1494,7 @@ to <code>Field()</code> with the raw schema attribute name:</p>
 
 <span class="c1"># but you can set the schema attribute directly:</span>
 <span class="c1"># (Note: here exclusiveMaximum will not be enforce)</span>
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">foo</span><span class="p">:</span> <span class="n">PositiveInt</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">exclusiveMaximum</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 
 
@@ -1519,7 +1519,7 @@ to <code>Field()</code> with the raw schema attribute name:</p>
 <span class="c1"># if you find yourself needing this, an alternative is to declare</span>
 <span class="c1"># the constraints in Field (or you could use conint())</span>
 <span class="c1"># here both constraints will be enforced:</span>
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="c1"># Here both constraints will be applied and the schema</span>
     <span class="c1"># will be generated correctly</span>
     <span class="n">foo</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">gt</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">lt</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
@@ -1551,25 +1551,25 @@ to <code>Field()</code> with the raw schema attribute name:</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">Python 3.7 and above</label><label for="__tabbed_4_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">uuid</span> <span class="kn">import</span> <span class="n">uuid4</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">uuid</span><span class="w"> </span><span class="kn">import</span> <span class="n">uuid4</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
-<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing_extensions</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
 
 
-<span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="nb">id</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span><span class="p">)]</span>
     <span class="n">name</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">256</span><span class="p">)]</span> <span class="o">=</span> <span class="s1">&#39;Bar&#39;</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">uuid</span> <span class="kn">import</span> <span class="n">uuid4</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">uuid</span><span class="w"> </span><span class="kn">import</span> <span class="n">uuid4</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
 
 
-<span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="nb">id</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span><span class="p">)]</span>
     <span class="n">name</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">256</span><span class="p">)]</span> <span class="o">=</span> <span class="s1">&#39;Bar&#39;</span>
 </code></pre></div>
@@ -1590,26 +1590,26 @@ included.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="5:3"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><input id="__tabbed_5_3" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">Python 3.7 and above</label><label for="__tabbed_5_2">Python 3.9 and above</label><label for="__tabbed_5_3">Python 3.10 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Generator</span><span class="p">,</span> <span class="n">Optional</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Generator</span><span class="p">,</span> <span class="n">Optional</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
-<span class="kn">from</span> <span class="nn">pydantic.fields</span> <span class="kn">import</span> <span class="n">ModelField</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic.fields</span><span class="w"> </span><span class="kn">import</span> <span class="n">ModelField</span>
 
 
-<span class="k">class</span> <span class="nc">RestrictedAlphabetStr</span><span class="p">(</span><span class="nb">str</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">RestrictedAlphabetStr</span><span class="p">(</span><span class="nb">str</span><span class="p">):</span>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">__get_validators__</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="n">Callable</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__get_validators__</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="n">Callable</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
         <span class="k">yield</span> <span class="bp">cls</span><span class="o">.</span><span class="n">validate</span>
 
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">field</span><span class="p">:</span> <span class="n">ModelField</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">validate</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">field</span><span class="p">:</span> <span class="n">ModelField</span><span class="p">):</span>
         <span class="n">alphabet</span> <span class="o">=</span> <span class="n">field</span><span class="o">.</span><span class="n">field_info</span><span class="o">.</span><span class="n">extra</span><span class="p">[</span><span class="s1">&#39;alphabet&#39;</span><span class="p">]</span>
         <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">c</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">alphabet</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">value</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">value</span><span class="si">!r}</span><span class="s1"> is not restricted to </span><span class="si">{</span><span class="n">alphabet</span><span class="si">!r}</span><span class="s1">&#39;</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
 
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">__modify_schema__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__modify_schema__</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span> <span class="n">field_schema</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">field</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ModelField</span><span class="p">]</span>
     <span class="p">):</span>
         <span class="k">if</span> <span class="n">field</span><span class="p">:</span>
@@ -1617,7 +1617,7 @@ included.</p>
             <span class="n">field_schema</span><span class="p">[</span><span class="s1">&#39;examples&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="o">*</span> <span class="mi">3</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">alphabet</span><span class="p">]</span>
 
 
-<span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MyModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">value</span><span class="p">:</span> <span class="n">RestrictedAlphabetStr</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">alphabet</span><span class="o">=</span><span class="s1">&#39;ABC&#39;</span><span class="p">)</span>
 
 
@@ -1625,27 +1625,27 @@ included.</p>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Optional</span>
-<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Generator</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Optional</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Generator</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
-<span class="kn">from</span> <span class="nn">pydantic.fields</span> <span class="kn">import</span> <span class="n">ModelField</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic.fields</span><span class="w"> </span><span class="kn">import</span> <span class="n">ModelField</span>
 
 
-<span class="k">class</span> <span class="nc">RestrictedAlphabetStr</span><span class="p">(</span><span class="nb">str</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">RestrictedAlphabetStr</span><span class="p">(</span><span class="nb">str</span><span class="p">):</span>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">__get_validators__</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="n">Callable</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__get_validators__</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="n">Callable</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
         <span class="k">yield</span> <span class="bp">cls</span><span class="o">.</span><span class="n">validate</span>
 
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">field</span><span class="p">:</span> <span class="n">ModelField</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">validate</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">field</span><span class="p">:</span> <span class="n">ModelField</span><span class="p">):</span>
         <span class="n">alphabet</span> <span class="o">=</span> <span class="n">field</span><span class="o">.</span><span class="n">field_info</span><span class="o">.</span><span class="n">extra</span><span class="p">[</span><span class="s1">&#39;alphabet&#39;</span><span class="p">]</span>
         <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">c</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">alphabet</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">value</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">value</span><span class="si">!r}</span><span class="s1"> is not restricted to </span><span class="si">{</span><span class="n">alphabet</span><span class="si">!r}</span><span class="s1">&#39;</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
 
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">__modify_schema__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__modify_schema__</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span> <span class="n">field_schema</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">field</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ModelField</span><span class="p">]</span>
     <span class="p">):</span>
         <span class="k">if</span> <span class="n">field</span><span class="p">:</span>
@@ -1653,7 +1653,7 @@ included.</p>
             <span class="n">field_schema</span><span class="p">[</span><span class="s1">&#39;examples&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="o">*</span> <span class="mi">3</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">alphabet</span><span class="p">]</span>
 
 
-<span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MyModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">value</span><span class="p">:</span> <span class="n">RestrictedAlphabetStr</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">alphabet</span><span class="o">=</span><span class="s1">&#39;ABC&#39;</span><span class="p">)</span>
 
 
@@ -1661,27 +1661,27 @@ included.</p>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
-<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Generator</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Generator</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
-<span class="kn">from</span> <span class="nn">pydantic.fields</span> <span class="kn">import</span> <span class="n">ModelField</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic.fields</span><span class="w"> </span><span class="kn">import</span> <span class="n">ModelField</span>
 
 
-<span class="k">class</span> <span class="nc">RestrictedAlphabetStr</span><span class="p">(</span><span class="nb">str</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">RestrictedAlphabetStr</span><span class="p">(</span><span class="nb">str</span><span class="p">):</span>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">__get_validators__</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="n">Callable</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__get_validators__</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="n">Callable</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
         <span class="k">yield</span> <span class="bp">cls</span><span class="o">.</span><span class="n">validate</span>
 
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">field</span><span class="p">:</span> <span class="n">ModelField</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">validate</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">field</span><span class="p">:</span> <span class="n">ModelField</span><span class="p">):</span>
         <span class="n">alphabet</span> <span class="o">=</span> <span class="n">field</span><span class="o">.</span><span class="n">field_info</span><span class="o">.</span><span class="n">extra</span><span class="p">[</span><span class="s1">&#39;alphabet&#39;</span><span class="p">]</span>
         <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">c</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">alphabet</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">value</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">value</span><span class="si">!r}</span><span class="s1"> is not restricted to </span><span class="si">{</span><span class="n">alphabet</span><span class="si">!r}</span><span class="s1">&#39;</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
 
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">__modify_schema__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__modify_schema__</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span> <span class="n">field_schema</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">field</span><span class="p">:</span> <span class="n">ModelField</span> <span class="o">|</span> <span class="kc">None</span>
     <span class="p">):</span>
         <span class="k">if</span> <span class="n">field</span><span class="p">:</span>
@@ -1689,7 +1689,7 @@ included.</p>
             <span class="n">field_schema</span><span class="p">[</span><span class="s1">&#39;examples&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="o">*</span> <span class="mi">3</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">alphabet</span><span class="p">]</span>
 
 
-<span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MyModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">value</span><span class="p">:</span> <span class="n">RestrictedAlphabetStr</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">alphabet</span><span class="o">=</span><span class="s1">&#39;ABC&#39;</span><span class="p">)</span>
 
 
@@ -2803,20 +2803,20 @@ sub-models in its <code>definitions</code>:</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="6:1"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">Python 3.7 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">json</span>
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
-<span class="kn">from</span> <span class="nn">pydantic.schema</span> <span class="kn">import</span> <span class="n">schema</span>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic.schema</span><span class="w"> </span><span class="kn">import</span> <span class="n">schema</span>
 
 
-<span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">a</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>
 
 
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">b</span><span class="p">:</span> <span class="n">Foo</span>
 
 
-<span class="k">class</span> <span class="nc">Bar</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Bar</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">c</span><span class="p">:</span> <span class="nb">int</span>
 
 
@@ -2876,16 +2876,16 @@ sub-models in its <code>definitions</code>:</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="7:1"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><div class="tabbed-labels"><label for="__tabbed_7_1">Python 3.7 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">json</span>
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
-<span class="kn">from</span> <span class="nn">pydantic.schema</span> <span class="kn">import</span> <span class="n">schema</span>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic.schema</span><span class="w"> </span><span class="kn">import</span> <span class="n">schema</span>
 
 
-<span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">a</span><span class="p">:</span> <span class="nb">int</span>
 
 
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">a</span><span class="p">:</span> <span class="n">Foo</span>
 
 
@@ -2934,14 +2934,14 @@ sub-models in its <code>definitions</code>:</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="8:1"><input checked="checked" id="__tabbed_8_1" name="__tabbed_8" type="radio" /><div class="tabbed-labels"><label for="__tabbed_8_1">Python 3.7 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
 
 
-<span class="k">class</span> <span class="nc">Person</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Person</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
 
-    <span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
         <span class="n">schema_extra</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s1">&#39;examples&#39;</span><span class="p">:</span> <span class="p">[</span>
                 <span class="p">{</span>
@@ -2993,17 +2993,17 @@ The callable is expected to mutate the schema dictionary <em>in-place</em>; the 
 <div class="tabbed-set tabbed-alternate" data-tabs="9:2"><input checked="checked" id="__tabbed_9_1" name="__tabbed_9" type="radio" /><input id="__tabbed_9_2" name="__tabbed_9" type="radio" /><div class="tabbed-labels"><label for="__tabbed_9_1">Python 3.7 and above</label><label for="__tabbed_9_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Type</span>
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Type</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
 
 
-<span class="k">class</span> <span class="nc">Person</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Person</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
 
-    <span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
         <span class="nd">@staticmethod</span>
-        <span class="k">def</span> <span class="nf">schema_extra</span><span class="p">(</span><span class="n">schema</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">model</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="s1">&#39;Person&#39;</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">schema_extra</span><span class="p">(</span><span class="n">schema</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">model</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="s1">&#39;Person&#39;</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">prop</span> <span class="ow">in</span> <span class="n">schema</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;properties&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
                 <span class="n">prop</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;title&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 
@@ -3012,17 +3012,17 @@ The callable is expected to mutate the schema dictionary <em>in-place</em>; the 
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
 
 
-<span class="k">class</span> <span class="nc">Person</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Person</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
 
-    <span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
         <span class="nd">@staticmethod</span>
-        <span class="k">def</span> <span class="nf">schema_extra</span><span class="p">(</span><span class="n">schema</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">model</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="s1">&#39;Person&#39;</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">schema_extra</span><span class="p">(</span><span class="n">schema</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">model</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="s1">&#39;Person&#39;</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">prop</span> <span class="ow">in</span> <span class="n">schema</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;properties&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
                 <span class="n">prop</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;title&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 

@@ -1069,29 +1069,29 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 <div class="tabbed-set tabbed-alternate" data-tabs="1:1"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.7 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">validator</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">validator</span>
 
 
-<span class="k">class</span> <span class="nc">UserModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">UserModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">username</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">password1</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">password2</span><span class="p">:</span> <span class="nb">str</span>
 
     <span class="nd">@validator</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">name_must_contain_space</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">name_must_contain_space</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
         <span class="k">if</span> <span class="s1">&#39; &#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">v</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;must contain a space&#39;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">v</span><span class="o">.</span><span class="n">title</span><span class="p">()</span>
 
     <span class="nd">@validator</span><span class="p">(</span><span class="s1">&#39;password2&#39;</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">passwords_match</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">passwords_match</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="k">if</span> <span class="s1">&#39;password1&#39;</span> <span class="ow">in</span> <span class="n">values</span> <span class="ow">and</span> <span class="n">v</span> <span class="o">!=</span> <span class="n">values</span><span class="p">[</span><span class="s1">&#39;password1&#39;</span><span class="p">]:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;passwords do not match&#39;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">v</span>
 
     <span class="nd">@validator</span><span class="p">(</span><span class="s1">&#39;username&#39;</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">username_alphanumeric</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">username_alphanumeric</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
         <span class="k">assert</span> <span class="n">v</span><span class="o">.</span><span class="n">isalnum</span><span class="p">(),</span> <span class="s1">&#39;must be alphanumeric&#39;</span>
         <span class="k">return</span> <span class="n">v</span>
 
@@ -1167,34 +1167,34 @@ disables <code>assert</code> statements, and <strong>validators will stop workin
 <div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.7 and above</label><label for="__tabbed_2_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">validator</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">validator</span>
 
 
-<span class="k">class</span> <span class="nc">DemoModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">DemoModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">square_numbers</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">cube_numbers</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
 
     <span class="c1"># &#39;*&#39; is the same as &#39;cube_numbers&#39;, &#39;square_numbers&#39; here:</span>
     <span class="nd">@validator</span><span class="p">(</span><span class="s1">&#39;*&#39;</span><span class="p">,</span> <span class="n">pre</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">split_str</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">split_str</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">v</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;|&#39;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">v</span>
 
     <span class="nd">@validator</span><span class="p">(</span><span class="s1">&#39;cube_numbers&#39;</span><span class="p">,</span> <span class="s1">&#39;square_numbers&#39;</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">check_sum</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_sum</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">sum</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">42</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;sum of numbers greater than 42&#39;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">v</span>
 
     <span class="nd">@validator</span><span class="p">(</span><span class="s1">&#39;square_numbers&#39;</span><span class="p">,</span> <span class="n">each_item</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">check_squares</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_squares</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
         <span class="k">assert</span> <span class="n">v</span> <span class="o">**</span> <span class="mf">0.5</span> <span class="o">%</span> <span class="mi">1</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s1"> is not a square number&#39;</span>
         <span class="k">return</span> <span class="n">v</span>
 
     <span class="nd">@validator</span><span class="p">(</span><span class="s1">&#39;cube_numbers&#39;</span><span class="p">,</span> <span class="n">each_item</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">check_cubes</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_cubes</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
         <span class="c1"># 64 ** (1 / 3) == 3.9999999999999996 (!)</span>
         <span class="c1"># this is not a good way of checking cubes</span>
         <span class="k">assert</span> <span class="n">v</span> <span class="o">**</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">3</span><span class="p">)</span> <span class="o">%</span> <span class="mi">1</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s1"> is not a cubed number&#39;</span>
@@ -1229,33 +1229,33 @@ disables <code>assert</code> statements, and <strong>validators will stop workin
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">validator</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">validator</span>
 
 
-<span class="k">class</span> <span class="nc">DemoModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">DemoModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">square_numbers</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">cube_numbers</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
 
     <span class="c1"># &#39;*&#39; is the same as &#39;cube_numbers&#39;, &#39;square_numbers&#39; here:</span>
     <span class="nd">@validator</span><span class="p">(</span><span class="s1">&#39;*&#39;</span><span class="p">,</span> <span class="n">pre</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">split_str</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">split_str</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">v</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;|&#39;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">v</span>
 
     <span class="nd">@validator</span><span class="p">(</span><span class="s1">&#39;cube_numbers&#39;</span><span class="p">,</span> <span class="s1">&#39;square_numbers&#39;</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">check_sum</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_sum</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">sum</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">42</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;sum of numbers greater than 42&#39;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">v</span>
 
     <span class="nd">@validator</span><span class="p">(</span><span class="s1">&#39;square_numbers&#39;</span><span class="p">,</span> <span class="n">each_item</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">check_squares</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_squares</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
         <span class="k">assert</span> <span class="n">v</span> <span class="o">**</span> <span class="mf">0.5</span> <span class="o">%</span> <span class="mi">1</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s1"> is not a square number&#39;</span>
         <span class="k">return</span> <span class="n">v</span>
 
     <span class="nd">@validator</span><span class="p">(</span><span class="s1">&#39;cube_numbers&#39;</span><span class="p">,</span> <span class="n">each_item</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">check_cubes</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_cubes</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
         <span class="c1"># 64 ** (1 / 3) == 3.9999999999999996 (!)</span>
         <span class="c1"># this is not a good way of checking cubes</span>
         <span class="k">assert</span> <span class="n">v</span> <span class="o">**</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">3</span><span class="p">)</span> <span class="o">%</span> <span class="mi">1</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s1"> is not a cubed number&#39;</span>
@@ -1306,17 +1306,17 @@ cause the validator not to run; instead, the list must be iterated over programm
 <div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.7 and above</label><label for="__tabbed_3_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">validator</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">validator</span>
 
 
-<span class="k">class</span> <span class="nc">ParentModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ParentModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">names</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
 
 
-<span class="k">class</span> <span class="nc">ChildModel</span><span class="p">(</span><span class="n">ParentModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ChildModel</span><span class="p">(</span><span class="n">ParentModel</span><span class="p">):</span>
     <span class="nd">@validator</span><span class="p">(</span><span class="s1">&#39;names&#39;</span><span class="p">,</span> <span class="n">each_item</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">check_names_not_empty</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_names_not_empty</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
         <span class="k">assert</span> <span class="n">v</span> <span class="o">!=</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;Empty strings are not allowed.&#39;</span>
         <span class="k">return</span> <span class="n">v</span>
 
@@ -1331,9 +1331,9 @@ cause the validator not to run; instead, the list must be iterated over programm
     <span class="c1">#&gt; No ValidationError caught.</span>
 
 
-<span class="k">class</span> <span class="nc">ChildModel2</span><span class="p">(</span><span class="n">ParentModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ChildModel2</span><span class="p">(</span><span class="n">ParentModel</span><span class="p">):</span>
     <span class="nd">@validator</span><span class="p">(</span><span class="s1">&#39;names&#39;</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">check_names_not_empty</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_names_not_empty</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">v</span><span class="p">:</span>
             <span class="k">assert</span> <span class="n">name</span> <span class="o">!=</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;Empty strings are not allowed.&#39;</span>
         <span class="k">return</span> <span class="n">v</span>
@@ -1351,16 +1351,16 @@ cause the validator not to run; instead, the list must be iterated over programm
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">validator</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">validator</span>
 
 
-<span class="k">class</span> <span class="nc">ParentModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ParentModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">names</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
 
 
-<span class="k">class</span> <span class="nc">ChildModel</span><span class="p">(</span><span class="n">ParentModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ChildModel</span><span class="p">(</span><span class="n">ParentModel</span><span class="p">):</span>
     <span class="nd">@validator</span><span class="p">(</span><span class="s1">&#39;names&#39;</span><span class="p">,</span> <span class="n">each_item</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">check_names_not_empty</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_names_not_empty</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
         <span class="k">assert</span> <span class="n">v</span> <span class="o">!=</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;Empty strings are not allowed.&#39;</span>
         <span class="k">return</span> <span class="n">v</span>
 
@@ -1375,9 +1375,9 @@ cause the validator not to run; instead, the list must be iterated over programm
     <span class="c1">#&gt; No ValidationError caught.</span>
 
 
-<span class="k">class</span> <span class="nc">ChildModel2</span><span class="p">(</span><span class="n">ParentModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ChildModel2</span><span class="p">(</span><span class="n">ParentModel</span><span class="p">):</span>
     <span class="nd">@validator</span><span class="p">(</span><span class="s1">&#39;names&#39;</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">check_names_not_empty</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_names_not_empty</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">v</span><span class="p">:</span>
             <span class="k">assert</span> <span class="n">name</span> <span class="o">!=</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;Empty strings are not allowed.&#39;</span>
         <span class="k">return</span> <span class="n">v</span>
@@ -1404,21 +1404,21 @@ to set a dynamic default value.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="4:1"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">Python 3.7 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">validator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">validator</span>
 
 
-<span class="k">class</span> <span class="nc">DemoModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">DemoModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">ts</span><span class="p">:</span> <span class="n">datetime</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="nd">@validator</span><span class="p">(</span><span class="s1">&#39;ts&#39;</span><span class="p">,</span> <span class="n">pre</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">always</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">set_ts_now</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_ts_now</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">v</span> <span class="ow">or</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
 
 
 <span class="nb">print</span><span class="p">(</span><span class="n">DemoModel</span><span class="p">())</span>
-<span class="c1">#&gt; ts=datetime.datetime(2024, 11, 6, 16, 45, 51, 7291)</span>
+<span class="c1">#&gt; ts=datetime.datetime(2025, 1, 7, 19, 41, 4, 970736)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">DemoModel</span><span class="p">(</span><span class="n">ts</span><span class="o">=</span><span class="s1">&#39;2017-11-08T14:00&#39;</span><span class="p">))</span>
 <span class="c1">#&gt; ts=datetime.datetime(2017, 11, 8, 14, 0)</span>
 </code></pre></div>
@@ -1437,21 +1437,21 @@ boiler plate code. To circumvent this, the <code>allow_reuse</code> parameter ha
 <div class="tabbed-set tabbed-alternate" data-tabs="5:1"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">Python 3.7 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">validator</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">validator</span>
 
 
-<span class="k">def</span> <span class="nf">normalize</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">normalize</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
     <span class="k">return</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">((</span><span class="n">word</span><span class="o">.</span><span class="n">capitalize</span><span class="p">())</span> <span class="k">for</span> <span class="n">word</span> <span class="ow">in</span> <span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">))</span>
 
 
-<span class="k">class</span> <span class="nc">Producer</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Producer</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
 
     <span class="c1"># validators</span>
     <span class="n">_normalize_name</span> <span class="o">=</span> <span class="n">validator</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="n">allow_reuse</span><span class="o">=</span><span class="kc">True</span><span class="p">)(</span><span class="n">normalize</span><span class="p">)</span>
 
 
-<span class="k">class</span> <span class="nc">Consumer</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Consumer</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
 
     <span class="c1"># validators</span>
@@ -1480,21 +1480,21 @@ over again.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="6:1"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">Python 3.7 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">root_validator</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">root_validator</span>
 
 
-<span class="k">class</span> <span class="nc">UserModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">UserModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">username</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">password1</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">password2</span><span class="p">:</span> <span class="nb">str</span>
 
     <span class="nd">@root_validator</span><span class="p">(</span><span class="n">pre</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">check_card_number_omitted</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">values</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_card_number_omitted</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">values</span><span class="p">):</span>
         <span class="k">assert</span> <span class="s1">&#39;card_number&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">values</span><span class="p">,</span> <span class="s1">&#39;card_number should not be included&#39;</span>
         <span class="k">return</span> <span class="n">values</span>
 
     <span class="nd">@root_validator</span>
-    <span class="k">def</span> <span class="nf">check_passwords_match</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">values</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_passwords_match</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">values</span><span class="p">):</span>
         <span class="n">pw1</span><span class="p">,</span> <span class="n">pw2</span> <span class="o">=</span> <span class="n">values</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;password1&#39;</span><span class="p">),</span> <span class="n">values</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;password2&#39;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">pw1</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">pw2</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">pw1</span> <span class="o">!=</span> <span class="n">pw2</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;passwords do not match&#39;</span><span class="p">)</span>
@@ -1549,23 +1549,23 @@ In this case you should set <code>check_fields=False</code> on the validator.</p
 <div class="tabbed-set tabbed-alternate" data-tabs="7:1"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><div class="tabbed-labels"><label for="__tabbed_7_1">Python 3.7 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">validator</span>
-<span class="kn">from</span> <span class="nn">pydantic.dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">validator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic.dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
 
 
 <span class="nd">@dataclass</span>
-<span class="k">class</span> <span class="nc">DemoDataclass</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">DemoDataclass</span><span class="p">:</span>
     <span class="n">ts</span><span class="p">:</span> <span class="n">datetime</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="nd">@validator</span><span class="p">(</span><span class="s1">&#39;ts&#39;</span><span class="p">,</span> <span class="n">pre</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">always</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">set_ts_now</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_ts_now</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">v</span> <span class="ow">or</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
 
 
 <span class="nb">print</span><span class="p">(</span><span class="n">DemoDataclass</span><span class="p">())</span>
-<span class="c1">#&gt; DemoDataclass(ts=datetime.datetime(2024, 11, 6, 16, 45, 51, 15417))</span>
+<span class="c1">#&gt; DemoDataclass(ts=datetime.datetime(2025, 1, 7, 19, 41, 4, 978524))</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">DemoDataclass</span><span class="p">(</span><span class="n">ts</span><span class="o">=</span><span class="s1">&#39;2017-11-08T14:00&#39;</span><span class="p">))</span>
 <span class="c1">#&gt; DemoDataclass(ts=datetime.datetime(2017, 11, 8, 14, 0))</span>
 </code></pre></div>

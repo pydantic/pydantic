@@ -1283,16 +1283,16 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 <p>This example above with <code>age='23'</code> is intentionally simple, to show the error and the differences in types.</p>
 <p>But more common cases where these strict errors would be inconvenient would be when using more sophisticated data types, like <code>int</code> values for <code>datetime</code> fields, or <code>dict</code> values for <em>pydantic</em> sub-models.</p>
 <p>For example, this is valid for <em>pydantic</em>:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
 
 
-<span class="k">class</span> <span class="nc">Knight</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Knight</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">title</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;blue&#39;</span>
 
 
-<span class="k">class</span> <span class="nc">Quest</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Quest</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">title</span><span class="p">:</span> <span class="nb">str</span>
 <span class="hll">    <span class="n">knight</span><span class="p">:</span> <span class="n">Knight</span>
 </span>
@@ -1316,10 +1316,10 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 </code></pre></div>
 <p>(<a href="https://github.com/microsoft/pyright">pyright</a> is the language server used by Pylance.).</p>
 <p>coming back to the example with <code>age='23'</code>, it would be:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
 
 
-<span class="k">class</span> <span class="nc">Knight</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Knight</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">title</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;blue&#39;</span>
@@ -1332,11 +1332,11 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 <p><strong>Cons</strong>: any other error in that line will also be omitted, including type checks, misspelled arguments, required arguments not provided, etc.</p>
 <h4 id="override-the-type-of-a-variable">Override the type of a variable<a class="headerlink" href="#override-the-type-of-a-variable" title="Permanent link">&para;</a></h4>
 <p>You can also create a variable with the value you want to use and declare it's type explicitly with <code>Any</code>.</p>
-<div class="highlight"><pre><span></span><code><span class="hll"><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
-</span><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+<div class="highlight"><pre><span></span><code><span class="hll"><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
+</span><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
 
 
-<span class="k">class</span> <span class="nc">Knight</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Knight</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">title</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;blue&#39;</span>
@@ -1351,11 +1351,11 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 <h4 id="override-the-type-of-a-value-with-cast">Override the type of a value with <code>cast</code><a class="headerlink" href="#override-the-type-of-a-value-with-cast" title="Permanent link">&para;</a></h4>
 <p>The same idea from the previous example can be put on the same line with the help of <code>cast()</code>.</p>
 <p>This way, the type declaration of the value is overridden inline, without requiring another variable.</p>
-<div class="highlight"><pre><span></span><code><span class="hll"><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">cast</span>
-</span><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+<div class="highlight"><pre><span></span><code><span class="hll"><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">cast</span>
+</span><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
 
 
-<span class="k">class</span> <span class="nc">Knight</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Knight</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">title</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;blue&#39;</span>
@@ -1370,22 +1370,22 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 <h3 id="config-in-class-arguments">Config in class arguments<a class="headerlink" href="#config-in-class-arguments" title="Permanent link">&para;</a></h3>
 <p><em>pydantic</em> has a rich set of <a href="../usage/model_config/">Model Configurations</a> available.</p>
 <p>These configurations can be set in an internal <code>class Config</code> on each model:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
 
 
-<span class="k">class</span> <span class="nc">Knight</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Knight</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">title</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;blue&#39;</span>
 
-<span class="hll">    <span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+<span class="hll">    <span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
 </span><span class="hll">        <span class="n">frozen</span> <span class="o">=</span> <span class="kc">True</span>
 </span></code></pre></div>
 <p>or passed as keyword arguments when defining the model class:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
 
 
-<span class="hll"><span class="k">class</span> <span class="nc">Knight</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="hll"><span class="k">class</span><span class="w"> </span><span class="nc">Knight</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 </span>    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;blue&#39;</span>
@@ -1410,10 +1410,10 @@ reasons behind this, and why we can't avoid the problem.</p>
 </ul>
 <h2 id="adding-a-default-with-field">Adding a default with <code>Field</code><a class="headerlink" href="#adding-a-default-with-field" title="Permanent link">&para;</a></h2>
 <p>Pylance/pyright requires <code>default</code> to be a keyword argument to <code>Field</code> in order to infer that the field is optional.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
 
 
-<span class="k">class</span> <span class="nc">Knight</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Knight</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s1">&#39;Sir Lancelot&#39;</span><span class="p">)</span>  <span class="c1"># this is okay</span>
     <span class="n">age</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="mi">23</span><span class="p">)</span>  <span class="c1"># this works fine at runtime but will case an error for pyright</span>
 

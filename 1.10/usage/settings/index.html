@@ -1157,9 +1157,9 @@ will still be used if the matching environment variable is not set.)</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.7 and above</label><label for="__tabbed_1_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Set</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Set</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">BaseModel</span><span class="p">,</span>
     <span class="n">BaseSettings</span><span class="p">,</span>
     <span class="n">PyObject</span><span class="p">,</span>
@@ -1170,12 +1170,12 @@ will still be used if the matching environment variable is not set.)</p>
 <span class="p">)</span>
 
 
-<span class="k">class</span> <span class="nc">SubModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SubModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">foo</span> <span class="o">=</span> <span class="s1">&#39;bar&#39;</span>
     <span class="n">apple</span> <span class="o">=</span> <span class="mi">1</span>
 
 
-<span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
     <span class="n">auth_key</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">api_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="s1">&#39;my_api_key&#39;</span><span class="p">)</span>
 
@@ -1193,7 +1193,7 @@ will still be used if the matching environment variable is not set.)</p>
     <span class="c1"># export my_prefix_more_settings=&#39;{&quot;foo&quot;: &quot;x&quot;, &quot;apple&quot;: 1}&#39;</span>
     <span class="n">more_settings</span><span class="p">:</span> <span class="n">SubModel</span> <span class="o">=</span> <span class="n">SubModel</span><span class="p">()</span>
 
-    <span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
         <span class="n">env_prefix</span> <span class="o">=</span> <span class="s1">&#39;my_prefix_&#39;</span>  <span class="c1"># defaults to no prefix, i.e. &quot;&quot;</span>
         <span class="n">fields</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s1">&#39;auth_key&#39;</span><span class="p">:</span> <span class="p">{</span>
@@ -1223,7 +1223,7 @@ will still be used if the matching environment variable is not set.)</p>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="p">(</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">BaseModel</span><span class="p">,</span>
     <span class="n">BaseSettings</span><span class="p">,</span>
     <span class="n">PyObject</span><span class="p">,</span>
@@ -1234,12 +1234,12 @@ will still be used if the matching environment variable is not set.)</p>
 <span class="p">)</span>
 
 
-<span class="k">class</span> <span class="nc">SubModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SubModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">foo</span> <span class="o">=</span> <span class="s1">&#39;bar&#39;</span>
     <span class="n">apple</span> <span class="o">=</span> <span class="mi">1</span>
 
 
-<span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
     <span class="n">auth_key</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">api_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="s1">&#39;my_api_key&#39;</span><span class="p">)</span>
 
@@ -1257,7 +1257,7 @@ will still be used if the matching environment variable is not set.)</p>
     <span class="c1"># export my_prefix_more_settings=&#39;{&quot;foo&quot;: &quot;x&quot;, &quot;apple&quot;: 1}&#39;</span>
     <span class="n">more_settings</span><span class="p">:</span> <span class="n">SubModel</span> <span class="o">=</span> <span class="n">SubModel</span><span class="p">()</span>
 
-    <span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
         <span class="n">env_prefix</span> <span class="o">=</span> <span class="s1">&#39;my_prefix_&#39;</span>  <span class="c1"># defaults to no prefix, i.e. &quot;&quot;</span>
         <span class="n">fields</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s1">&#39;auth_key&#39;</span><span class="p">:</span> <span class="p">{</span>
@@ -1329,13 +1329,13 @@ suppress it.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="2:1"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.7 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseSettings</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseSettings</span>
 
 
-<span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
     <span class="n">redis_host</span> <span class="o">=</span> <span class="s1">&#39;localhost&#39;</span>
 
-    <span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
         <span class="n">case_sensitive</span> <span class="o">=</span> <span class="kc">True</span>
 </code></pre></div>
 </div>
@@ -1378,25 +1378,25 @@ If you have multiple variables with the same structure they will be merged.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="3:1"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.7 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">BaseSettings</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">BaseSettings</span>
 
 
-<span class="k">class</span> <span class="nc">DeepSubModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">DeepSubModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">v4</span><span class="p">:</span> <span class="nb">str</span>
 
 
-<span class="k">class</span> <span class="nc">SubModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SubModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">v1</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">v2</span><span class="p">:</span> <span class="nb">bytes</span>
     <span class="n">v3</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">deep</span><span class="p">:</span> <span class="n">DeepSubModel</span>
 
 
-<span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
     <span class="n">v0</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">sub_model</span><span class="p">:</span> <span class="n">SubModel</span>
 
-    <span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
         <span class="n">env_nested_delimiter</span> <span class="o">=</span> <span class="s1">&#39;__&#39;</span>
 
 
@@ -1428,18 +1428,18 @@ the <code>parse_env_var</code> classmethod in the Config object.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">Python 3.7 and above</label><label for="__tabbed_4_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseSettings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseSettings</span>
 
 
-<span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
     <span class="n">numbers</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
 
-    <span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
         <span class="nd">@classmethod</span>
-        <span class="k">def</span> <span class="nf">parse_env_var</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">field_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">raw_val</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">parse_env_var</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">field_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">raw_val</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">field_name</span> <span class="o">==</span> <span class="s1">&#39;numbers&#39;</span><span class="p">:</span>
                 <span class="k">return</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">raw_val</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)]</span>
             <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">json_loads</span><span class="p">(</span><span class="n">raw_val</span><span class="p">)</span>
@@ -1451,18 +1451,18 @@ the <code>parse_env_var</code> classmethod in the Config object.</p>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseSettings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseSettings</span>
 
 
-<span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
     <span class="n">numbers</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
 
-    <span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
         <span class="nd">@classmethod</span>
-        <span class="k">def</span> <span class="nf">parse_env_var</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">field_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">raw_val</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">parse_env_var</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">field_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">raw_val</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">field_name</span> <span class="o">==</span> <span class="s1">&#39;numbers&#39;</span><span class="p">:</span>
                 <span class="k">return</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">raw_val</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)]</span>
             <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">json_loads</span><span class="p">(</span><span class="n">raw_val</span><span class="p">)</span>
@@ -1495,10 +1495,10 @@ and looks something like:</p>
 <p>Once you have your <code>.env</code> file filled with variables, <em>pydantic</em> supports loading it in two ways:</p>
 <p><strong>1.</strong> setting <code>env_file</code> (and <code>env_file_encoding</code> if you don't want the default encoding of your OS) on <code>Config</code>
 in a <code>BaseSettings</code> class:</p>
-<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
     <span class="o">...</span>
 
-    <span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
         <span class="n">env_file</span> <span class="o">=</span> <span class="s1">&#39;.env&#39;</span>
         <span class="n">env_file_encoding</span> <span class="o">=</span> <span class="s1">&#39;utf-8&#39;</span>
 </code></pre></div>
@@ -1521,12 +1521,12 @@ the value (if any) set on the <code>Config</code> class. If the above snippets w
 while <code>.env</code> would be ignored.</p>
 <p>If you need to load multiple dotenv files, you can pass the file paths as a <code>list</code> or <code>tuple</code>.</p>
 <p>Later files in the list/tuple will take priority over earlier files.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseSettings</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseSettings</span>
 
-<span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
     <span class="o">...</span>
 
-    <span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
         <span class="c1"># `.env.prod` takes priority over `.env`</span>
         <span class="n">env_file</span> <span class="o">=</span> <span class="s1">&#39;.env&#39;</span><span class="p">,</span> <span class="s1">&#39;.env.prod&#39;</span>
 </code></pre></div>
@@ -1544,11 +1544,11 @@ is used as the key. A secret file will look like the following:</p>
 </code></pre></div></p>
 <p>Once you have your secret files, <em>pydantic</em> supports loading it in two ways:</p>
 <p><strong>1.</strong> setting <code>secrets_dir</code> on <code>Config</code> in a <code>BaseSettings</code> class to the directory where your secret files are stored:</p>
-<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
     <span class="o">...</span>
     <span class="n">database_password</span><span class="p">:</span> <span class="nb">str</span>
 
-    <span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
         <span class="n">secrets_dir</span> <span class="o">=</span> <span class="s1">&#39;/var/run&#39;</span>
 </code></pre></div>
 <p><strong>2.</strong> instantiating a <code>BaseSettings</code> derived class with the <code>_secrets_dir</code> keyword argument:</p>
@@ -1567,10 +1567,10 @@ To use these secrets in a <em>pydantic</em> application the process is simple. M
 and using secrets in Docker see the official
 <a href="https://docs.docker.com/engine/reference/commandline/secret/">Docker documentation</a>.</p>
 <p>First, define your Settings
-<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
     <span class="n">my_secret_data</span><span class="p">:</span> <span class="nb">str</span>
 
-    <span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
         <span class="n">secrets_dir</span> <span class="o">=</span> <span class="s1">&#39;/run/secrets&#39;</span>
 </code></pre></div></p>
 <div class="admonition note">
@@ -1605,17 +1605,17 @@ callables are called to build the inputs to the fields of the settings class.</p
 <div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">Python 3.7 and above</label><label for="__tabbed_5_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span>
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">PostgresDsn</span>
-<span class="kn">from</span> <span class="nn">pydantic.env_settings</span> <span class="kn">import</span> <span class="n">SettingsSourceCallable</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tuple</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">PostgresDsn</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic.env_settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">SettingsSourceCallable</span>
 
 
-<span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
     <span class="n">database_dsn</span><span class="p">:</span> <span class="n">PostgresDsn</span>
 
-    <span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
         <span class="nd">@classmethod</span>
-        <span class="k">def</span> <span class="nf">customise_sources</span><span class="p">(</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">customise_sources</span><span class="p">(</span>
             <span class="bp">cls</span><span class="p">,</span>
             <span class="n">init_settings</span><span class="p">:</span> <span class="n">SettingsSourceCallable</span><span class="p">,</span>
             <span class="n">env_settings</span><span class="p">:</span> <span class="n">SettingsSourceCallable</span><span class="p">,</span>
@@ -1629,16 +1629,16 @@ callables are called to build the inputs to the fields of the settings class.</p
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">PostgresDsn</span>
-<span class="kn">from</span> <span class="nn">pydantic.env_settings</span> <span class="kn">import</span> <span class="n">SettingsSourceCallable</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">PostgresDsn</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic.env_settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">SettingsSourceCallable</span>
 
 
-<span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
     <span class="n">database_dsn</span><span class="p">:</span> <span class="n">PostgresDsn</span>
 
-    <span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
         <span class="nd">@classmethod</span>
-        <span class="k">def</span> <span class="nf">customise_sources</span><span class="p">(</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">customise_sources</span><span class="p">(</span>
             <span class="bp">cls</span><span class="p">,</span>
             <span class="n">init_settings</span><span class="p">:</span> <span class="n">SettingsSourceCallable</span><span class="p">,</span>
             <span class="n">env_settings</span><span class="p">:</span> <span class="n">SettingsSourceCallable</span><span class="p">,</span>
@@ -1661,14 +1661,14 @@ need to add your own custom sources, <code>customise_sources</code> makes this v
 <div class="tabbed-set tabbed-alternate" data-tabs="6:2"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">Python 3.7 and above</label><label for="__tabbed_6_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">json</span>
-<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseSettings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseSettings</span>
 
 
-<span class="k">def</span> <span class="nf">json_config_settings_source</span><span class="p">(</span><span class="n">settings</span><span class="p">:</span> <span class="n">BaseSettings</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">json_config_settings_source</span><span class="p">(</span><span class="n">settings</span><span class="p">:</span> <span class="n">BaseSettings</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    A simple settings source that loads variables from a JSON file</span>
 <span class="sd">    at the project&#39;s root.</span>
@@ -1680,14 +1680,14 @@ need to add your own custom sources, <code>customise_sources</code> makes this v
     <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;config.json&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">read_text</span><span class="p">(</span><span class="n">encoding</span><span class="p">))</span>
 
 
-<span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
     <span class="n">foobar</span><span class="p">:</span> <span class="nb">str</span>
 
-    <span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
         <span class="n">env_file_encoding</span> <span class="o">=</span> <span class="s1">&#39;utf-8&#39;</span>
 
         <span class="nd">@classmethod</span>
-        <span class="k">def</span> <span class="nf">customise_sources</span><span class="p">(</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">customise_sources</span><span class="p">(</span>
             <span class="bp">cls</span><span class="p">,</span>
             <span class="n">init_settings</span><span class="p">,</span>
             <span class="n">env_settings</span><span class="p">,</span>
@@ -1706,14 +1706,14 @@ need to add your own custom sources, <code>customise_sources</code> makes this v
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">json</span>
-<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseSettings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseSettings</span>
 
 
-<span class="k">def</span> <span class="nf">json_config_settings_source</span><span class="p">(</span><span class="n">settings</span><span class="p">:</span> <span class="n">BaseSettings</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">json_config_settings_source</span><span class="p">(</span><span class="n">settings</span><span class="p">:</span> <span class="n">BaseSettings</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    A simple settings source that loads variables from a JSON file</span>
 <span class="sd">    at the project&#39;s root.</span>
@@ -1725,14 +1725,14 @@ need to add your own custom sources, <code>customise_sources</code> makes this v
     <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;config.json&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">read_text</span><span class="p">(</span><span class="n">encoding</span><span class="p">))</span>
 
 
-<span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
     <span class="n">foobar</span><span class="p">:</span> <span class="nb">str</span>
 
-    <span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
         <span class="n">env_file_encoding</span> <span class="o">=</span> <span class="s1">&#39;utf-8&#39;</span>
 
         <span class="nd">@classmethod</span>
-        <span class="k">def</span> <span class="nf">customise_sources</span><span class="p">(</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">customise_sources</span><span class="p">(</span>
             <span class="bp">cls</span><span class="p">,</span>
             <span class="n">init_settings</span><span class="p">,</span>
             <span class="n">env_settings</span><span class="p">,</span>
@@ -1758,18 +1758,18 @@ need to add your own custom sources, <code>customise_sources</code> makes this v
 <div class="tabbed-set tabbed-alternate" data-tabs="7:2"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><div class="tabbed-labels"><label for="__tabbed_7_1">Python 3.7 and above</label><label for="__tabbed_7_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tuple</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseSettings</span>
-<span class="kn">from</span> <span class="nn">pydantic.env_settings</span> <span class="kn">import</span> <span class="n">SettingsSourceCallable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseSettings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic.env_settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">SettingsSourceCallable</span>
 
 
-<span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
     <span class="n">my_api_key</span><span class="p">:</span> <span class="nb">str</span>
 
-    <span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
         <span class="nd">@classmethod</span>
-        <span class="k">def</span> <span class="nf">customise_sources</span><span class="p">(</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">customise_sources</span><span class="p">(</span>
             <span class="bp">cls</span><span class="p">,</span>
             <span class="n">init_settings</span><span class="p">:</span> <span class="n">SettingsSourceCallable</span><span class="p">,</span>
             <span class="n">env_settings</span><span class="p">:</span> <span class="n">SettingsSourceCallable</span><span class="p">,</span>
@@ -1784,16 +1784,16 @@ need to add your own custom sources, <code>customise_sources</code> makes this v
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseSettings</span>
-<span class="kn">from</span> <span class="nn">pydantic.env_settings</span> <span class="kn">import</span> <span class="n">SettingsSourceCallable</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseSettings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic.env_settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">SettingsSourceCallable</span>
 
 
-<span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
     <span class="n">my_api_key</span><span class="p">:</span> <span class="nb">str</span>
 
-    <span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
         <span class="nd">@classmethod</span>
-        <span class="k">def</span> <span class="nf">customise_sources</span><span class="p">(</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">customise_sources</span><span class="p">(</span>
             <span class="bp">cls</span><span class="p">,</span>
             <span class="n">init_settings</span><span class="p">:</span> <span class="n">SettingsSourceCallable</span><span class="p">,</span>
             <span class="n">env_settings</span><span class="p">:</span> <span class="n">SettingsSourceCallable</span><span class="p">,</span>
