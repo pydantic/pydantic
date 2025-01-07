@@ -10,7 +10,13 @@ from importlib.metadata import version
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from typing import TYPE_CHECKING, Any, ClassVar
 
-from pydantic_core import MultiHostHost, PydanticCustomError, SchemaSerializer, core_schema
+from pydantic_core import (
+    MultiHostHost,
+    PydanticCustomError,
+    PydanticSerializationUnexpectedValue,
+    SchemaSerializer,
+    core_schema,
+)
 from pydantic_core import MultiHostUrl as _CoreMultiHostUrl
 from pydantic_core import Url as _CoreUrl
 from typing_extensions import Annotated, Self, TypeAlias
@@ -284,6 +290,14 @@ class _BaseUrl:
         )
 
     @classmethod
+    def serialize_url(cls, url: Any) -> str:
+        if not isinstance(url, cls):
+            raise PydanticSerializationUnexpectedValue(
+                f"Expected `{cls}` but got `{type(url)}` with value `'{url}'` - serialized value may not be as expected."
+            )
+        return str(url)
+
+    @classmethod
     def __get_pydantic_core_schema__(
         cls, source: type[_BaseUrl], handler: GetCoreSchemaHandler
     ) -> core_schema.CoreSchema:
@@ -300,7 +314,7 @@ class _BaseUrl:
         return core_schema.no_info_wrap_validator_function(
             wrap_val,
             schema=core_schema.url_schema(**cls._constraints.defined_constraints),
-            serialization=core_schema.to_string_ser_schema(),
+            serialization=core_schema.plain_serializer_function_ser_schema(cls.serialize_url),
         )
 
     @classmethod
@@ -451,6 +465,14 @@ class _BaseMultiHostUrl:
         )
 
     @classmethod
+    def serialize_url(cls, url: Any) -> str:
+        if not isinstance(url, cls):
+            raise PydanticSerializationUnexpectedValue(
+                f"Expected `{cls}` but got `{type(url)}` with value `'{url}'` - serialized value may not be as expected."
+            )
+        return str(url)
+
+    @classmethod
     def __get_pydantic_core_schema__(
         cls, source: type[_BaseMultiHostUrl], handler: GetCoreSchemaHandler
     ) -> core_schema.CoreSchema:
@@ -467,7 +489,7 @@ class _BaseMultiHostUrl:
         return core_schema.no_info_wrap_validator_function(
             wrap_val,
             schema=core_schema.multi_host_url_schema(**cls._constraints.defined_constraints),
-            serialization=core_schema.to_string_ser_schema(),
+            serialization=core_schema.plain_serializer_function_ser_schema(cls.serialize_url),
         )
 
     @classmethod
