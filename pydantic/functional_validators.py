@@ -137,6 +137,7 @@ class BeforeValidator:
                 func,
                 schema=schema,
                 field_name=handler.field_name,
+                model_type=handler.model_type,
                 json_schema_input_schema=input_schema,
             )
         else:

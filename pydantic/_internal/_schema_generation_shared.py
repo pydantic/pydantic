@@ -100,6 +100,10 @@ class CallbackGetCoreSchemaHandler(GetCoreSchemaHandler):
     def field_name(self) -> str | None:
         return self._generate_schema.field_name_stack.get()
 
+    @property
+    def model_type(self) -> type | None:
+        return self._generate_schema.model_type_stack.get()
+
     def resolve_ref_schema(self, maybe_ref_schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
         """Resolves reference in the core schema.
 

@@ -117,6 +117,11 @@ class GetCoreSchemaHandler:
         """Get the name of the closest field to this validator."""
         raise NotImplementedError
 
+    @property
+    def model_type(self) -> type | None:
+        """Get the type of the closest model to this validator."""
+        raise NotImplementedError
+
     def _get_types_namespace(self) -> NamespacesTuple:
         """Internal method used during type resolution for serializer annotations."""
         raise NotImplementedError
