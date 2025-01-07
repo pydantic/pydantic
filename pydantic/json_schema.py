@@ -317,7 +317,7 @@ class GenerateJsonSchema:
             try:
                 mapping[key] = getattr(self, method_name)
             except AttributeError as e:  # pragma: no cover
-                if os.environ['PYDANTIC_PRIVATE_ALLOW_UNHANDLED_SCHEMA_TYPES'] == '1':
+                if os.getenv('PYDANTIC_PRIVATE_ALLOW_UNHANDLED_SCHEMA_TYPES'):
                     continue
                 raise TypeError(
                     f'No method for generating JsonSchema for core_schema.type={key!r} '
