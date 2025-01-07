@@ -5269,7 +5269,7 @@ GenerateJsonSchema.ValidationsMapping) to change these mappings.</p>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">mapping</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method_name</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">AttributeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
-            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;PYDANTIC_PRIVATE_ALLOW_UNHANDLED_SCHEMA_TYPES&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;1&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;PYDANTIC_PRIVATE_ALLOW_UNHANDLED_SCHEMA_TYPES&#39;</span><span class="p">):</span>
                 <span class="k">continue</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s1">&#39;No method for generating JsonSchema for core_schema.type=</span><span class="si">{</span><span class="n">key</span><span class="si">!r}</span><span class="s1"> &#39;</span>
