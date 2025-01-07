@@ -5018,7 +5018,11 @@ is set to <code>'allow'</code>.</p>
 <span class="normal">1546</span>
 <span class="normal">1547</span>
 <span class="normal">1548</span>
-<span class="normal">1549</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">BaseModel</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">_model_construction</span><span class="o">.</span><span class="n">ModelMetaclass</span><span class="p">):</span>
+<span class="normal">1549</span>
+<span class="normal">1550</span>
+<span class="normal">1551</span>
+<span class="normal">1552</span>
+<span class="normal">1553</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">BaseModel</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">_model_construction</span><span class="o">.</span><span class="n">ModelMetaclass</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;!!! abstract &quot;Usage Documentation&quot;</span>
 <span class="sd">        [Models](../concepts/models.md)</span>
 
@@ -5741,8 +5745,12 @@ is set to <code>'allow'</code>.</p>
 
                 <span class="n">submodel</span> <span class="o">=</span> <span class="n">_generics</span><span class="o">.</span><span class="n">create_generic_submodel</span><span class="p">(</span><span class="n">model_name</span><span class="p">,</span> <span class="n">origin</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
 
-                <span class="c1"># Update cache</span>
-                <span class="n">_generics</span><span class="o">.</span><span class="n">set_cached_generic_type</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">typevar_values</span><span class="p">,</span> <span class="n">submodel</span><span class="p">,</span> <span class="n">origin</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
+                <span class="c1"># Cache the generated model *only* if not in the process of parametrizing</span>
+                <span class="c1"># another model. In some valid scenarios, we miss the opportunity to cache</span>
+                <span class="c1"># it but in some cases this results in `PydanticRecursiveRef` instances left</span>
+                <span class="c1"># on `FieldInfo` annotations:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">_generics</span><span class="o">.</span><span class="n">recursively_defined_type_refs</span><span class="p">())</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">_generics</span><span class="o">.</span><span class="n">set_cached_generic_type</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">typevar_values</span><span class="p">,</span> <span class="n">submodel</span><span class="p">,</span> <span class="n">origin</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">submodel</span>
 
@@ -9349,11 +9357,7 @@ validators <a href="https://docs.pydantic.dev/2.9/concepts/validators/#field-val
 
             <details class="quote">
               <summary>Source code in <code>pydantic/main.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1585</span>
-<span class="normal">1586</span>
-<span class="normal">1587</span>
-<span class="normal">1588</span>
-<span class="normal">1589</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1589</span>
 <span class="normal">1590</span>
 <span class="normal">1591</span>
 <span class="normal">1592</span>
@@ -9446,7 +9450,11 @@ validators <a href="https://docs.pydantic.dev/2.9/concepts/validators/#field-val
 <span class="normal">1679</span>
 <span class="normal">1680</span>
 <span class="normal">1681</span>
-<span class="normal">1682</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">create_model</span><span class="p">(</span>  <span class="c1"># noqa: C901</span>
+<span class="normal">1682</span>
+<span class="normal">1683</span>
+<span class="normal">1684</span>
+<span class="normal">1685</span>
+<span class="normal">1686</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">create_model</span><span class="p">(</span>  <span class="c1"># noqa: C901</span>
     <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="o">/</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
