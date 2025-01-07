@@ -35,6 +35,7 @@ from pydantic import (
     PrivateAttr,
     PydanticDeprecatedSince20,
     PydanticSchemaGenerationError,
+    PydanticUserError,
     RootModel,
     TypeAdapter,
     ValidationError,
@@ -59,7 +60,7 @@ def test_str_bytes():
 
     m = Model(v='s')
     assert m.v == 's'
-    assert repr(m.model_fields['v']) == 'FieldInfo(annotation=Union[str, bytes], required=True)'
+    assert repr(Model.model_fields['v']) == 'FieldInfo(annotation=Union[str, bytes], required=True)'
 
     m = Model(v=b'b')
     assert m.v == b'b'
@@ -1468,6 +1469,17 @@ def test_type_on_annotated():
             'ctx': {'class': 'int'},
         }
     ]
+
+
+def test_type_on_generic_alias() -> None:
+    error_msg = 'Instead of using type[typing.List[int]], use type[list].'
+
+    with pytest.raises(PydanticUserError) as exc_info:
+
+        class Model(BaseModel):
+            a: Type[List[int]]
+
+    assert error_msg in exc_info.value.message
 
 
 def test_type_assign():

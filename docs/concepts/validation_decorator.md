@@ -191,12 +191,12 @@ using all possible [parameter configurations][parameter] and all possible combin
 ## Using the [`Field()`][pydantic.Field] function to describe function parameters
 
 The [`Field()` function](fields.md) can also be used with the decorator to provide extra information about
-the field and validations. In general it should be used in a type hint with [Annotated](types.md#composing-types-via-annotated),
-unless `default_factory` is specified, in which case it should be used as the default value of the field:
+the field and validations. If you don't make use of the `default` or `default_factory` parameter, it is
+recommended to use the [annotated pattern](./fields.md#the-annotated-pattern) (so that type checkers
+infer the parameter as being required). Otherwise, the [`Field()`][pydantic.Field] function can be used
+as a default value (again, to trick type checkers into thinking a default value is provided for the parameter).
 
 ```python
-from datetime import datetime
-
 from typing_extensions import Annotated
 
 from pydantic import Field, ValidationError, validate_call
@@ -219,12 +219,12 @@ except ValidationError as e:
 
 
 @validate_call
-def when(dt: datetime = Field(default_factory=datetime.now)):
-    return dt
+def return_value(value: str = Field(default='default value')):
+    return value
 
 
-print(type(when()))
-#> <class 'datetime.datetime'>
+print(return_value())
+#> default value
 ```
 
 [Aliases](fields.md#field-aliases) can be used with the decorator as normal:

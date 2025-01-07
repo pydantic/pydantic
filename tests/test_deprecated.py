@@ -16,8 +16,10 @@ from pydantic import (
     GetCoreSchemaHandler,
     GetJsonSchemaHandler,
     PydanticDeprecatedSince20,
+    PydanticDeprecatedSince211,
     PydanticUserError,
     ValidationError,
+    computed_field,
     conlist,
     root_validator,
 )
@@ -316,9 +318,20 @@ def test_fields():
         x: int
         y: int = 2
 
+        @computed_field
+        @property
+        def area(self) -> int:
+            return self.x * self.y
+
     m = Model(x=1)
     assert len(Model.model_fields) == 2
-    assert len(m.model_fields) == 2
+
+    with pytest.warns(PydanticDeprecatedSince211):
+        assert len(m.model_fields) == 2
+
+    with pytest.warns(PydanticDeprecatedSince211):
+        assert len(m.model_computed_fields) == 1
+
     match = '^The `__fields__` attribute is deprecated, use `model_fields` instead.'
     with pytest.warns(PydanticDeprecatedSince20, match=match):
         assert len(Model.__fields__) == 2

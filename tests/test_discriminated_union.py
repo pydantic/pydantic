@@ -16,6 +16,7 @@ from pydantic import (
     Discriminator,
     Field,
     PlainSerializer,
+    PlainValidator,
     TypeAdapter,
     ValidationError,
     field_validator,
@@ -29,10 +30,8 @@ from pydantic.json_schema import GenerateJsonSchema
 from pydantic.types import Tag
 
 
-def test_discriminated_union_type():
-    with pytest.raises(
-        TypeError, match="'str' is not a valid discriminated union variant; should be a `BaseModel` or `dataclass`"
-    ):
+def test_discriminated_union_type_invalid_single_variant():
+    with pytest.raises(TypeError, match="The core schema type 'str' is not a valid discriminated union variant."):
 
         class Model(BaseModel):
             x: str = Field(discriminator='qwe')
@@ -72,15 +71,6 @@ def test_discriminated_union_single_variant():
         x: Union[InnerModel] = Field(discriminator='qwe')
 
     assert Model(x={'qwe': 'qwe'}).x.qwe == 'qwe'
-
-
-def test_discriminated_union_invalid_type():
-    with pytest.raises(
-        TypeError, match="'str' is not a valid discriminated union variant; should be a `BaseModel` or `dataclass`"
-    ):
-
-        class Model(BaseModel):
-            x: Union[str, int] = Field(discriminator='qwe')
 
 
 def test_discriminated_union_defined_discriminator():
@@ -863,12 +853,25 @@ def test_invalid_discriminated_union_type() -> None:
     class Dog(BaseModel):
         pet_type: Literal['dog'] = Field(alias='typeOfPet')
 
-    with pytest.raises(
-        TypeError, match="'str' is not a valid discriminated union variant; should be a `BaseModel` or `dataclass`"
-    ):
+    with pytest.raises(TypeError, match="The core schema type 'str' is not a valid discriminated union variant."):
 
         class Model(BaseModel):
             pet: Union[Cat, Dog, str] = Field(discriminator='pet_type')
+
+
+def test_invalid_list_discriminated_union_type():
+    with pytest.raises(
+        TypeError,
+        match=re.escape(
+            "The core schema type 'list' is not a valid discriminated union variant. "
+            'If you are making use of a list of union types, make sure the discriminator is applied to the '
+            'union type and not the list (e.g. `list[Annotated[<T> | <U>, Field(discriminator=...)]]`).'
+        ),
+    ):
+
+        class Model(BaseModel):
+            # Note: `int`/`str` is invalid but we just want to test the `list` error message:
+            pets: List[Union[int, str]] = Field(discriminator='pet_type')
 
 
 def test_invalid_alias() -> None:
@@ -941,14 +944,11 @@ def test_wrap_function_schema() -> None:
 def test_plain_function_schema_is_invalid() -> None:
     with pytest.raises(
         TypeError,
-        match="'function-plain' is not a valid discriminated union variant; " 'should be a `BaseModel` or `dataclass`',
+        match="The core schema type 'function-plain' is not a valid discriminated union variant.",
     ):
-        apply_discriminator(
-            core_schema.union_schema(
-                [core_schema.with_info_plain_validator_function(lambda x, y: None), core_schema.int_schema()]
-            ),
-            'kind',
-        )
+
+        class Model(BaseModel):
+            a: Union[Annotated[int, PlainValidator(lambda v: v)], str] = Field(discriminator='kind')
 
 
 def test_invalid_str_choice_discriminator_values() -> None:
@@ -965,9 +965,7 @@ def test_invalid_str_choice_discriminator_values() -> None:
         ]
     )
 
-    with pytest.raises(
-        TypeError, match="'str' is not a valid discriminated union variant; should be a `BaseModel` or `dataclass`"
-    ):
+    with pytest.raises(TypeError, match="The core schema type 'str' is not a valid discriminated union variant."):
         apply_discriminator(schema, 'kind')
 
 

@@ -620,7 +620,7 @@ See the [Migration Guide](../migration.md) for more information.
 
 ## `create_model` field definitions {#create-model-field-definitions}
 
-This error is raised when you provide field definitions input in `create_model` that is not valid.
+This error is raised when you provide invalid field definitions in [`create_model()`][pydantic.create_model].
 
 ```python
 from pydantic import PydanticUserError, create_model
@@ -631,18 +631,8 @@ except PydanticUserError as exc_info:
     assert exc_info.code == 'create-model-field-definitions'
 ```
 
-Or when you use [`typing.Annotated`][] with invalid input
+The fields definition syntax can be found in the [dynamic model creation](../concepts/models.md#dynamic-model-creation) documentation.
 
-```python
-from typing_extensions import Annotated
-
-from pydantic import PydanticUserError, create_model
-
-try:
-    create_model('FooModel', foo=Annotated[str, 'NotFieldInfoValue'])
-except PydanticUserError as exc_info:
-    assert exc_info.code == 'create-model-field-definitions'
-```
 
 ## `create_model` config base {#create-model-config-base}
 
@@ -1207,7 +1197,9 @@ except PydanticUserError as exc_info:
 
 ## Unsupported type for `validate_call` {#validate-call-type}
 
-`validate_call` has some limitations on the callables it can validate. This error is raised when you try to use it with an unsupported callable. Currently the supported callables are functions (including lambdas) and methods and instances of [`partial`][functools.partial]. In the case of [`partial`][functools.partial], the function being partially applied must be one of the supported callables.
+`validate_call` has some limitations on the callables it can validate. This error is raised when you try to use it with an unsupported callable.
+Currently the supported callables are functions (including lambdas, but not built-ins) and methods and instances of [`partial`][functools.partial].
+In the case of [`partial`][functools.partial], the function being partially applied must be one of the supported callables.
 
 ### `@classmethod`, `@staticmethod`, and `@property`
 
@@ -1260,9 +1252,10 @@ class A2:
     def __new__(cls): ...
 ```
 
-### Custom callable
+### Callable instances
 
-Although you can create custom callable types in Python by implementing a `__call__` method, currently the instances of these types cannot be validated with `validate_call`. This may change in the future, but for now, you should use `validate_call` explicitly on `__call__` instead.
+Although instances can be callable by implementing a `__call__` method, currently the instances of these types cannot be validated with `validate_call`.
+This may change in the future, but for now, you should use `validate_call` explicitly on `__call__` instead.
 
 ```python
 from pydantic import PydanticUserError, validate_call
