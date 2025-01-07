@@ -3021,7 +3021,7 @@ and as an argument to <a class="autorefs autorefs-internal" href="../../api/type
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div></p>
 <ol>
-<li>See the <a href="../models/#extra-fields">Extra Attributes</a> section for more details.</li>
+<li>See the <a href="../models/#extra-data">Extra data</a> section for more details.</li>
 </ol>
 <p>Similarly, if using the <a class="autorefs autorefs-internal" href="../../api/dataclasses/#pydantic.dataclasses"><code>@dataclass</code></a> decorator from Pydantic:
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
@@ -3103,7 +3103,7 @@ with custom <code>model_config</code> since the config is inherited:</p>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">Parent</span><span class="p">):</span>
-    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">str_to_lower</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># (1)!</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">str_to_lower</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="n">x</span><span class="p">:</span> <span class="nb">str</span>
 
