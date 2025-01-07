@@ -13,6 +13,7 @@ from pydantic import (
     BaseModel,
     ClickHouseDsn,
     CockroachDsn,
+    Field,
     FileUrl,
     FtpUrl,
     HttpUrl,
@@ -1129,3 +1130,53 @@ def test_any_url_hashable() -> None:
     assert hash(example_multi_host_url_1a) == hash(example_multi_host_url_1b)
     assert hash(example_multi_host_url_1a) != hash(example_multi_host_url_2)
     assert len({example_multi_host_url_1a, example_multi_host_url_1b, example_multi_host_url_2}) == 2
+
+
+def test_host_not_required_for_2_9_compatibility() -> None:
+    data_uri = 'file:///path/to/data'
+    url = AnyUrl(data_uri)
+    assert url.host is None
+
+
+def test_json_schema() -> None:
+    ta = TypeAdapter(HttpUrl)
+    val_json_schema = ta.json_schema(mode='validation')
+    assert val_json_schema == {'type': 'string', 'format': 'uri', 'minLength': 1, 'maxLength': 2083}
+
+    ser_json_schema = ta.json_schema(mode='serialization')
+    assert ser_json_schema == {'type': 'string', 'format': 'uri', 'minLength': 1, 'maxLength': 2083}
+
+
+def test_any_url_comparison() -> None:
+    first_url = AnyUrl('https://a.com')
+    second_url = AnyUrl('https://b.com')
+
+    assert first_url < second_url
+    assert second_url > first_url
+    assert first_url <= second_url
+    assert second_url >= first_url
+
+
+def test_max_length_base_url() -> None:
+    class Model(BaseModel):
+        url: AnyUrl = Field(max_length=20)
+
+    # _BaseUrl/AnyUrl adds trailing slash: https://github.com/pydantic/pydantic/issues/7186
+    # once solved the second expected line can be removed
+    expected = 'https://example.com'
+    expected = f'{expected}/'
+    assert len(Model(url='https://example.com').url) == len(expected)
+
+    with pytest.raises(ValidationError, match=r'Value should have at most 20 items after validation'):
+        Model(url='https://example.com/longer')
+
+
+def test_max_length_base_multi_host() -> None:
+    class Model(BaseModel):
+        postgres: PostgresDsn = Field(max_length=45)
+
+    expected = 'postgres://user:pass@localhost:5432/foobar'
+    assert len(Model(postgres=expected).postgres) == len(expected)
+
+    with pytest.raises(ValidationError, match=r'Value should have at most 45 items after validation'):
+        Model(postgres='postgres://user:pass@localhost:5432/foobarbazfoo')

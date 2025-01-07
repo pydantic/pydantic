@@ -37,7 +37,6 @@ from ._internal import (
     _fields,
     _forward_ref,
     _generics,
-    _import_utils,
     _mock_val_ser,
     _model_construction,
     _namespace_utils,
@@ -96,7 +95,8 @@ _SIMPLE_SETATTR_HANDLERS: Mapping[str, Callable[[BaseModel, str, Any], None]] = 
 
 
 class BaseModel(metaclass=_model_construction.ModelMetaclass):
-    """Usage docs: https://docs.pydantic.dev/2.10/concepts/models/
+    """!!! abstract "Usage Documentation"
+        [Models](../concepts/models.md)
 
     A base class for creating Pydantic models.
 
@@ -240,39 +240,27 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     # The following line sets a flag that we use to determine when `__init__` gets overridden by the user
     __init__.__pydantic_base_init__ = True  # pyright: ignore[reportFunctionMemberAccess]
 
-    if TYPE_CHECKING:
-        model_fields: ClassVar[dict[str, FieldInfo]]
-        model_computed_fields: ClassVar[dict[str, ComputedFieldInfo]]
-    else:
-        # TODO: V3 - remove `model_fields` and `model_computed_fields` properties from the `BaseModel` class - they should only
-        # be accessible on the model class, not on instances. We have these purely for backwards compatibility with Pydantic <v2.10.
-        # This is similar to the fact that we have __fields__ defined here (on `BaseModel`) and on `ModelMetaClass`.
-        # Another problem here is that there's no great way to have class properties :(
-        @property
-        def model_fields(self) -> dict[str, FieldInfo]:
-            """Get metadata about the fields defined on the model.
+    @_utils.deprecated_instance_property
+    @classmethod
+    def model_fields(cls) -> dict[str, FieldInfo]:
+        """A mapping of field names to their respective [`FieldInfo`][pydantic.fields.FieldInfo] instances.
 
-            Deprecation warning: you should be getting this information from the model class, not from an instance.
-            In V3, this property will be removed from the `BaseModel` class.
+        !!! warning
+            Accessing this attribute from a model instance is deprecated, and will not work in Pydantic V3.
+            Instead, you should access this attribute from the model class.
+        """
+        return getattr(cls, '__pydantic_fields__', {})
 
-            Returns:
-                A mapping of field names to [`FieldInfo`][pydantic.fields.FieldInfo] objects.
-            """
-            # Must be set for `GenerateSchema.model_schema` to work for a plain `BaseModel` annotation, hence the default here.
-            return getattr(self, '__pydantic_fields__', {})
+    @_utils.deprecated_instance_property
+    @classmethod
+    def model_computed_fields(cls) -> dict[str, ComputedFieldInfo]:
+        """A mapping of computed field names to their respective [`ComputedFieldInfo`][pydantic.fields.ComputedFieldInfo] instances.
 
-        @property
-        def model_computed_fields(self) -> dict[str, ComputedFieldInfo]:
-            """Get metadata about the computed fields defined on the model.
-
-            Deprecation warning: you should be getting this information from the model class, not from an instance.
-            In V3, this property will be removed from the `BaseModel` class.
-
-            Returns:
-                A mapping of computed field names to [`ComputedFieldInfo`][pydantic.fields.ComputedFieldInfo] objects.
-            """
-            # Must be set for `GenerateSchema.model_schema` to work for a plain `BaseModel` annotation, hence the default here.
-            return getattr(self, '__pydantic_computed_fields__', {})
+        !!! warning
+            Accessing this attribute from a model instance is deprecated, and will not work in Pydantic V3.
+            Instead, you should access this attribute from the model class.
+        """
+        return getattr(cls, '__pydantic_computed_fields__', {})
 
     @property
     def model_extra(self) -> dict[str, Any] | None:
@@ -375,7 +363,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         return m
 
     def model_copy(self, *, update: Mapping[str, Any] | None = None, deep: bool = False) -> Self:
-        """Usage docs: https://docs.pydantic.dev/2.10/concepts/serialization/#model_copy
+        """!!! abstract "Usage Documentation"
+            [`model_copy`](../concepts/serialization.md#model_copy)
 
         Returns a copy of the model.
 
@@ -417,7 +406,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         warnings: bool | Literal['none', 'warn', 'error'] = True,
         serialize_as_any: bool = False,
     ) -> dict[str, Any]:
-        """Usage docs: https://docs.pydantic.dev/2.10/concepts/serialization/#modelmodel_dump
+        """!!! abstract "Usage Documentation"
+            [`model_dump`](../concepts/serialization.md#modelmodel_dump)
 
         Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.
 
@@ -470,7 +460,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         warnings: bool | Literal['none', 'warn', 'error'] = True,
         serialize_as_any: bool = False,
     ) -> str:
-        """Usage docs: https://docs.pydantic.dev/2.10/concepts/serialization/#modelmodel_dump_json
+        """!!! abstract "Usage Documentation"
+            [`model_dump_json`](../concepts/serialization.md#modelmodel_dump_json)
 
         Generates a JSON representation of the model using Pydantic's `to_json` method.
 
@@ -652,7 +643,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         strict: bool | None = None,
         context: Any | None = None,
     ) -> Self:
-        """Usage docs: https://docs.pydantic.dev/2.10/concepts/json/#json-parsing
+        """!!! abstract "Usage Documentation"
+            [JSON Parsing](../concepts/json.md#json-parsing)
 
         Validate the given JSON data against the Pydantic model.
 
@@ -802,7 +794,6 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             )  # use dict as ordered set
 
             with _generics.generic_recursion_self_type(origin, args) as maybe_self_type:
-                # Check cached first otherwise `mro` may return `PydanticRecursiveRef`
                 cached = _generics.get_cached_generic_type_late(cls, typevar_values, origin, args)
                 if cached is not None:
                     return cached
@@ -826,8 +817,12 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
                 submodel = _generics.create_generic_submodel(model_name, origin, args, params)
 
-                # Update cache
-                _generics.set_cached_generic_type(cls, typevar_values, submodel, origin, args)
+                # Cache the generated model *only* if not in the process of parametrizing
+                # another model. In some valid scenarios, we miss the opportunity to cache
+                # it but in some cases this results in `PydanticRecursiveRef` instances left
+                # on `FieldInfo` annotations:
+                if len(_generics.recursively_defined_type_refs()) == 1:
+                    _generics.set_cached_generic_type(cls, typevar_values, submodel, origin, args)
 
         return submodel
 
@@ -1165,7 +1160,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             category=PydanticDeprecatedSince20,
             stacklevel=2,
         )
-        return self.model_fields
+        return getattr(type(self), '__pydantic_fields__', {})
 
     @property
     @typing_extensions.deprecated(
@@ -1572,7 +1567,7 @@ def create_model(
     __module__: str = __name__,
     __validators__: dict[str, Callable[..., Any]] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
-    **field_definitions: Any,
+    **field_definitions: Any | tuple[str, Any],
 ) -> type[BaseModel]: ...
 
 
@@ -1587,7 +1582,7 @@ def create_model(
     __module__: str = __name__,
     __validators__: dict[str, Callable[..., Any]] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
-    **field_definitions: Any,
+    **field_definitions: Any | tuple[str, Any],
 ) -> type[ModelT]: ...
 
 
@@ -1601,10 +1596,11 @@ def create_model(  # noqa: C901
     __module__: str | None = None,
     __validators__: dict[str, Callable[..., Any]] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
-    __slots__: tuple[str, ...] | None = None,
-    **field_definitions: Any,
+    # TODO PEP 747: replace `Any` by the TypeForm:
+    **field_definitions: Any | tuple[str, Any],
 ) -> type[ModelT]:
-    """Usage docs: https://docs.pydantic.dev/2.10/concepts/models/#dynamic-model-creation
+    """!!! abstract "Usage Documentation"
+        [Dynamic Model Creation](../concepts/models.md#dynamic-model-creation)
 
     Dynamically creates and returns a new Pydantic model, in other words, `create_model` dynamically creates a
     subclass of [`BaseModel`][pydantic.BaseModel].
@@ -1620,12 +1616,11 @@ def create_model(  # noqa: C901
             be added to the model, and the values are the validation methods themselves. You can read more about functional
             validators [here](https://docs.pydantic.dev/2.9/concepts/validators/#field-validators).
         __cls_kwargs__: A dictionary of keyword arguments for class creation, such as `metaclass`.
-        __slots__: Deprecated. Should not be passed to `create_model`.
-        **field_definitions: Attributes of the new model. They should be passed in the format:
-            `<name>=(<type>, <default value>)`, `<name>=(<type>, <FieldInfo>)`, or `typing.Annotated[<type>, <FieldInfo>]`.
-            Any additional metadata in `typing.Annotated[<type>, <FieldInfo>, ...]` will be ignored.
-            Note, `FieldInfo` instances should be created via `pydantic.Field(...)`.
-            Initializing `FieldInfo` instances directly is not supported.
+        **field_definitions: Field definitions of the new model. Either:
+
+            - a single element, representing the type annotation of the field.
+            - a two-tuple, the first element being the type and the second element the assigned value
+              (either a default or the [`Field()`][pydantic.Field] function).
 
     Returns:
         The new [model][pydantic.BaseModel].
@@ -1633,10 +1628,6 @@ def create_model(  # noqa: C901
     Raises:
         PydanticUserError: If `__base__` and `__config__` are both passed.
     """
-    if __slots__ is not None:
-        # __slots__ will be ignored from here on
-        warnings.warn('__slots__ should not be passed to create_model', RuntimeWarning)
-
     if __base__ is not None:
         if __config__ is not None:
             raise PydanticUserError(
@@ -1650,40 +1641,22 @@ def create_model(  # noqa: C901
 
     __cls_kwargs__ = __cls_kwargs__ or {}
 
-    fields = {}
-    annotations = {}
+    fields: dict[str, Any] = {}
+    annotations: dict[str, Any] = {}
 
     for f_name, f_def in field_definitions.items():
-        if not _fields.is_valid_field_name(f_name):
-            warnings.warn(f'fields may not start with an underscore, ignoring "{f_name}"', RuntimeWarning)
         if isinstance(f_def, tuple):
-            f_def = cast('tuple[str, Any]', f_def)
-            try:
-                f_annotation, f_value = f_def
-            except ValueError as e:
+            if len(f_def) != 2:
                 raise PydanticUserError(
-                    'Field definitions should be a `(<type>, <default>)`.',
-                    code='create-model-field-definitions',
-                ) from e
-
-        elif _typing_extra.is_annotated(f_def):
-            (f_annotation, f_value, *_) = typing_extensions.get_args(
-                f_def
-            )  # first two input are expected from Annotated, refer to https://docs.python.org/3/library/typing.html#typing.Annotated
-            FieldInfo = _import_utils.import_cached_field_info()
-
-            if not isinstance(f_value, FieldInfo):
-                raise PydanticUserError(
-                    'Field definitions should be a Annotated[<type>, <FieldInfo>]',
+                    f'Field definition for {f_name!r} should a single element representing the type or a two-tuple, the first element '
+                    'being the type and the second element the assigned value (either a default or the `Field()` function).',
                     code='create-model-field-definitions',
                 )
 
+            annotations[f_name] = f_def[0]
+            fields[f_name] = f_def[1]
         else:
-            f_annotation, f_value = None, f_def
-
-        if f_annotation:
-            annotations[f_name] = f_annotation
-        fields[f_name] = f_value
+            annotations[f_name] = f_def
 
     if __module__ is None:
         f = sys._getframe(1)

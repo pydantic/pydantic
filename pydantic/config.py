@@ -59,69 +59,101 @@ class ConfigDict(TypedDict, total=False):
     """The maximum length for str types. Defaults to `None`."""
 
     extra: ExtraValues | None
-    """
-    Whether to ignore, allow, or forbid extra attributes during model initialization. Defaults to `'ignore'`.
+    '''
+    Whether to ignore, allow, or forbid extra data during model initialization. Defaults to `'ignore'`.
 
-    You can configure how pydantic handles the attributes that are not defined in the model:
+    Three configuration values are available:
 
-    * `allow` - Allow any extra attributes.
-    * `forbid` - Forbid any extra attributes.
-    * `ignore` - Ignore any extra attributes.
+    - `'ignore'`: Providing extra data is ignored (the default):
+      ```python
+      from pydantic import BaseModel, ConfigDict
 
-    ```python
-    from pydantic import BaseModel, ConfigDict
+      class User(BaseModel):
+          model_config = ConfigDict(extra='ignore')  # (1)!
 
-    class User(BaseModel):
-        model_config = ConfigDict(extra='ignore')  # (1)!
+          name: str
 
-        name: str
+      user = User(name='John Doe', age=20)  # (2)!
+      print(user)
+      #> name='John Doe'
+      ```
 
-    user = User(name='John Doe', age=20)  # (2)!
-    print(user)
-    #> name='John Doe'
-    ```
+        1. This is the default behaviour.
+        2. The `age` argument is ignored.
 
-    1. This is the default behaviour.
-    2. The `age` argument is ignored.
+    - `'forbid'`: Providing extra data is not permitted, and a [`ValidationError`][pydantic_core.ValidationError]
+      will be raised if this is the case:
+      ```python
+      from pydantic import BaseModel, ConfigDict, ValidationError
 
-    Instead, with `extra='allow'`, the `age` argument is included:
 
-    ```python
-    from pydantic import BaseModel, ConfigDict
+      class Model(BaseModel):
+          x: int
 
-    class User(BaseModel):
-        model_config = ConfigDict(extra='allow')
+          model_config = ConfigDict(extra='forbid')
 
-        name: str
 
-    user = User(name='John Doe', age=20)  # (1)!
-    print(user)
-    #> name='John Doe' age=20
-    ```
+      try:
+          Model(x=1, y='a')
+      except ValidationError as exc:
+          print(exc)
+          """
+          1 validation error for Model
+          y
+            Extra inputs are not permitted [type=extra_forbidden, input_value='a', input_type=str]
+          """
+      ```
 
-    1. The `age` argument is included.
+    - `'allow'`: Providing extra data is allowed and stored in the `__pydantic_extra__` dictionary attribute:
+      ```python
+      from pydantic import BaseModel, ConfigDict
 
-    With `extra='forbid'`, an error is raised:
 
-    ```python
-    from pydantic import BaseModel, ConfigDict, ValidationError
+      class Model(BaseModel):
+          x: int
 
-    class User(BaseModel):
-        model_config = ConfigDict(extra='forbid')
+          model_config = ConfigDict(extra='allow')
 
-        name: str
 
-    try:
-        User(name='John Doe', age=20)
-    except ValidationError as e:
-        print(e)
-        '''
-        1 validation error for User
-        age
-          Extra inputs are not permitted [type=extra_forbidden, input_value=20, input_type=int]
-        '''
-    ```
-    """
+      m = Model(x=1, y='a')
+      assert m.__pydantic_extra__ == {'y': 'a'}
+      ```
+      By default, no validation will be applied to these extra items, but you can set a type for the values by overriding
+      the type annotation for `__pydantic_extra__`:
+      ```python
+      from typing import Dict
+
+      from pydantic import BaseModel, ConfigDict, Field, ValidationError
+
+
+      class Model(BaseModel):
+          __pydantic_extra__: Dict[str, int] = Field(init=False)  # (1)!
+
+          x: int
+
+          model_config = ConfigDict(extra='allow')
+
+
+      try:
+          Model(x=1, y='a')
+      except ValidationError as exc:
+          print(exc)
+          """
+          1 validation error for Model
+          y
+            Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='a', input_type=str]
+          """
+
+      m = Model(x=1, y='2')
+      assert m.x == 1
+      assert m.y == 2
+      assert m.model_dump() == {'x': 1, 'y': 2}
+      assert m.__pydantic_extra__ == {'y': 2}
+      ```
+
+        1. The `= Field(init=False)` does not have any effect at runtime, but prevents the `__pydantic_extra__` field from
+           being included as a parameter to the model's `__init__` method by type checkers.
+    '''
 
     frozen: bool
     """
@@ -1004,7 +1036,8 @@ _TypeT = TypeVar('_TypeT', bound=type)
 
 
 def with_config(config: ConfigDict) -> Callable[[_TypeT], _TypeT]:
-    """Usage docs: https://docs.pydantic.dev/2.10/concepts/config/#configuration-with-dataclass-from-the-standard-library-or-typeddict
+    """!!! abstract "Usage Documentation"
+        [Configuration with a `dataclass` or `TypedDict`](../concepts/config.md#configuration-with-dataclass-from-the-standard-library-or-typeddict)
 
     A convenience decorator to set a [Pydantic configuration](config.md) on a `TypedDict` or a `dataclass` from the standard library.
 

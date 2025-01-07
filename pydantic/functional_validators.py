@@ -26,7 +26,8 @@ _inspect_validator = _decorators.inspect_validator
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
 class AfterValidator:
-    """Usage docs: https://docs.pydantic.dev/2.10/concepts/validators/#annotated-validators
+    """!!! abstract "Usage Documentation"
+        [field *after* validators](../concepts/validators.md#field-after-validator)
 
     A metadata class that indicates that a validation should be applied **after** the inner validation logic.
 
@@ -86,7 +87,8 @@ class AfterValidator:
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
 class BeforeValidator:
-    """Usage docs: https://docs.pydantic.dev/2.10/concepts/validators/#annotated-validators
+    """!!! abstract "Usage Documentation"
+        [field *before* validators](../concepts/validators.md#field-before-validator)
 
     A metadata class that indicates that a validation should be applied **before** the inner validation logic.
 
@@ -127,14 +129,6 @@ class BeforeValidator:
             if self.json_schema_input_type is PydanticUndefined
             else handler.generate_schema(self.json_schema_input_type)
         )
-        # Try to resolve the original schema if required, because schema cleaning
-        # won't inline references in metadata:
-        if input_schema is not None:
-            try:
-                input_schema = handler.resolve_ref_schema(input_schema)
-            except LookupError:
-                pass
-        metadata = {'pydantic_js_input_core_schema': input_schema} if input_schema is not None else {}
 
         info_arg = _inspect_validator(self.func, 'before')
         if info_arg:
@@ -143,11 +137,13 @@ class BeforeValidator:
                 func,
                 schema=schema,
                 field_name=handler.field_name,
-                metadata=metadata,
+                json_schema_input_schema=input_schema,
             )
         else:
             func = cast(core_schema.NoInfoValidatorFunction, self.func)
-            return core_schema.no_info_before_validator_function(func, schema=schema, metadata=metadata)
+            return core_schema.no_info_before_validator_function(
+                func, schema=schema, json_schema_input_schema=input_schema
+            )
 
     @classmethod
     def _from_decorator(cls, decorator: _decorators.Decorator[_decorators.FieldValidatorDecoratorInfo]) -> Self:
@@ -159,7 +155,8 @@ class BeforeValidator:
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
 class PlainValidator:
-    """Usage docs: https://docs.pydantic.dev/2.10/concepts/validators/#annotated-validators
+    """!!! abstract "Usage Documentation"
+        [field *plain* validators](../concepts/validators.md#field-plain-validator)
 
     A metadata class that indicates that a validation should be applied **instead** of the inner validation logic.
 
@@ -229,13 +226,6 @@ class PlainValidator:
             serialization = None
 
         input_schema = handler.generate_schema(self.json_schema_input_type)
-        # Try to resolve the original schema if required, because schema cleaning
-        # won't inline references in metadata:
-        try:
-            input_schema = handler.resolve_ref_schema(input_schema)
-        except LookupError:
-            pass
-        metadata = {'pydantic_js_input_core_schema': input_schema} if input_schema is not None else {}
 
         info_arg = _inspect_validator(self.func, 'plain')
         if info_arg:
@@ -244,14 +234,14 @@ class PlainValidator:
                 func,
                 field_name=handler.field_name,
                 serialization=serialization,  # pyright: ignore[reportArgumentType]
-                metadata=metadata,
+                json_schema_input_schema=input_schema,
             )
         else:
             func = cast(core_schema.NoInfoValidatorFunction, self.func)
             return core_schema.no_info_plain_validator_function(
                 func,
                 serialization=serialization,  # pyright: ignore[reportArgumentType]
-                metadata=metadata,
+                json_schema_input_schema=input_schema,
             )
 
     @classmethod
@@ -264,7 +254,8 @@ class PlainValidator:
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
 class WrapValidator:
-    """Usage docs: https://docs.pydantic.dev/2.10/concepts/validators/#annotated-validators
+    """!!! abstract "Usage Documentation"
+        [field *wrap* validators](../concepts/validators.md#field-wrap-validator)
 
     A metadata class that indicates that a validation should be applied **around** the inner validation logic.
 
@@ -312,14 +303,6 @@ class WrapValidator:
             if self.json_schema_input_type is PydanticUndefined
             else handler.generate_schema(self.json_schema_input_type)
         )
-        # Try to resolve the original schema if required, because schema cleaning
-        # won't inline references in metadata:
-        if input_schema is not None:
-            try:
-                input_schema = handler.resolve_ref_schema(input_schema)
-            except LookupError:
-                pass
-        metadata = {'pydantic_js_input_core_schema': input_schema} if input_schema is not None else {}
 
         info_arg = _inspect_validator(self.func, 'wrap')
         if info_arg:
@@ -328,14 +311,14 @@ class WrapValidator:
                 func,
                 schema=schema,
                 field_name=handler.field_name,
-                metadata=metadata,
+                json_schema_input_schema=input_schema,
             )
         else:
             func = cast(core_schema.NoInfoWrapValidatorFunction, self.func)
             return core_schema.no_info_wrap_validator_function(
                 func,
                 schema=schema,
-                metadata=metadata,
+                json_schema_input_schema=input_schema,
             )
 
     @classmethod
@@ -432,7 +415,8 @@ def field_validator(
     check_fields: bool | None = None,
     json_schema_input_type: Any = PydanticUndefined,
 ) -> Callable[[Any], Any]:
-    """Usage docs: https://docs.pydantic.dev/2.10/concepts/validators/#field-validators
+    """!!! abstract "Usage Documentation"
+        [field validators](../concepts/validators.md#field-validators)
 
     Decorate methods on the class indicating that they should be used to validate fields.
 
@@ -689,7 +673,8 @@ def model_validator(
     *,
     mode: Literal['wrap', 'before', 'after'],
 ) -> Any:
-    """Usage docs: https://docs.pydantic.dev/2.10/concepts/validators/#model-validators
+    """!!! abstract "Usage Documentation"
+        [Model Validators](../concepts/validators.md#model-validators)
 
     Decorate model methods for validation purposes.
 

@@ -67,7 +67,8 @@ def _type_has_config(type_: Any) -> bool:
 
 @final
 class TypeAdapter(Generic[T]):
-    """Usage docs: https://docs.pydantic.dev/2.10/concepts/type_adapter/
+    """!!! abstract "Usage Documentation"
+        [`TypeAdapter`](../concepts/type_adapter.md)
 
     Type adapters provide a flexible way to perform validation and serialization based on a Python type.
 
@@ -426,7 +427,8 @@ class TypeAdapter(Generic[T]):
         context: dict[str, Any] | None = None,
         experimental_allow_partial: bool | Literal['off', 'on', 'trailing-strings'] = False,
     ) -> T:
-        """Usage docs: https://docs.pydantic.dev/2.10/concepts/json/#json-parsing
+        """!!! abstract "Usage Documentation"
+            [JSON Parsing](../concepts/json.md#json-parsing)
 
         Validate a JSON string or bytes against the model.
 
@@ -556,7 +558,8 @@ class TypeAdapter(Generic[T]):
         serialize_as_any: bool = False,
         context: dict[str, Any] | None = None,
     ) -> bytes:
-        """Usage docs: https://docs.pydantic.dev/2.10/concepts/json/#json-serialization
+        """!!! abstract "Usage Documentation"
+            [JSON Serialization](../concepts/json.md#json-serialization)
 
         Serialize an instance of the adapted type to JSON.
 

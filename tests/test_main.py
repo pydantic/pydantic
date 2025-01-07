@@ -38,6 +38,7 @@ from pydantic import (
     Field,
     GetCoreSchemaHandler,
     PrivateAttr,
+    PydanticDeprecatedSince211,
     PydanticUndefinedAnnotation,
     PydanticUserError,
     SecretStr,
@@ -110,8 +111,8 @@ def test_ultra_simple_repr(UltraSimpleModel):
     m = UltraSimpleModel(a=10.2)
     assert str(m) == 'a=10.2 b=10'
     assert repr(m) == 'UltraSimpleModel(a=10.2, b=10)'
-    assert repr(m.model_fields['a']) == 'FieldInfo(annotation=float, required=True)'
-    assert repr(m.model_fields['b']) == 'FieldInfo(annotation=int, required=False, default=10)'
+    assert repr(UltraSimpleModel.model_fields['a']) == 'FieldInfo(annotation=float, required=True)'
+    assert repr(UltraSimpleModel.model_fields['b']) == 'FieldInfo(annotation=int, required=False, default=10)'
     assert dict(m) == {'a': 10.2, 'b': 10}
     assert m.model_dump() == {'a': 10.2, 'b': 10}
     assert m.model_dump_json() == '{"a":10.2,"b":10}'
@@ -141,7 +142,7 @@ def test_default_factory_field():
 
     m = Model()
     assert str(m) == 'a=1'
-    assert repr(m.model_fields['a']) == 'FieldInfo(annotation=int, required=False, default_factory=myfunc)'
+    assert repr(Model.model_fields['a']) == 'FieldInfo(annotation=int, required=False, default_factory=myfunc)'
     assert dict(m) == {'a': 1}
     assert m.model_dump_json() == '{"a":1}'
 
@@ -1788,6 +1789,9 @@ def test_default_factory_validated_data_arg() -> None:
     model = Model()
     assert model.b == 1
 
+    model = Model.model_construct(a=1)
+    assert model.b == 1
+
     class InvalidModel(BaseModel):
         a: int = Field(default_factory=lambda data: data['b'])
         b: int
@@ -1860,9 +1864,9 @@ def test_repr_field():
 
     m = Model(a=1, b=2.5, c=True)
     assert repr(m) == 'Model(a=1, b=2.5)'
-    assert repr(m.model_fields['a']) == 'FieldInfo(annotation=int, required=True)'
-    assert repr(m.model_fields['b']) == 'FieldInfo(annotation=float, required=True)'
-    assert repr(m.model_fields['c']) == 'FieldInfo(annotation=bool, required=True, repr=False)'
+    assert repr(Model.model_fields['a']) == 'FieldInfo(annotation=int, required=True)'
+    assert repr(Model.model_fields['b']) == 'FieldInfo(annotation=float, required=True)'
+    assert repr(Model.model_fields['c']) == 'FieldInfo(annotation=bool, required=True, repr=False)'
 
 
 def test_inherited_model_field_copy():
@@ -2007,9 +2011,11 @@ def test_frozen_field_decl_without_default_val(ann, value):
     [Final, Final[int]],
     ids=['no-arg', 'with-arg'],
 )
-def test_final_field_decl_with_default_val(ann):
-    class Model(BaseModel):
-        a: ann = 10
+def test_deprecated_final_field_decl_with_default_val(ann):
+    with pytest.warns(PydanticDeprecatedSince211):
+
+        class Model(BaseModel):
+            a: ann = 10
 
     assert 'a' in Model.__class_vars__
     assert 'a' not in Model.model_fields
@@ -2226,6 +2232,76 @@ def test_model_post_init_correct_mro():
     C()
 
     assert calls == ['C.model_post_init']
+
+
+def test_del_model_attr():
+    class Model(BaseModel):
+        some_field: str
+
+    m = Model(some_field='value')
+    assert hasattr(m, 'some_field')
+
+    del m.some_field
+
+    assert not hasattr(m, 'some_field')
+
+
+@pytest.mark.skipif(
+    platform.python_implementation() == 'PyPy',
+    reason='In this single case `del` behaves weird on pypy',
+)
+def test_del_model_attr_error():
+    class Model(BaseModel):
+        some_field: str
+
+    m = Model(some_field='value')
+    assert not hasattr(m, 'other_field')
+
+    with pytest.raises(AttributeError, match='other_field'):
+        del m.other_field
+
+
+def test_del_model_attr_with_private_attrs():
+    class Model(BaseModel):
+        _private_attr: int = PrivateAttr(default=1)
+        some_field: str
+
+    m = Model(some_field='value')
+    assert hasattr(m, 'some_field')
+
+    del m.some_field
+
+    assert not hasattr(m, 'some_field')
+
+
+@pytest.mark.skipif(
+    platform.python_implementation() == 'PyPy',
+    reason='In this single case `del` behaves weird on pypy',
+)
+def test_del_model_attr_with_private_attrs_error():
+    class Model(BaseModel):
+        _private_attr: int = PrivateAttr(default=1)
+        some_field: str
+
+    m = Model(some_field='value')
+    assert not hasattr(m, 'other_field')
+
+    with pytest.raises(AttributeError, match="'Model' object has no attribute 'other_field'"):
+        del m.other_field
+
+
+def test_del_model_attr_with_private_attrs_twice_error():
+    class Model(BaseModel):
+        _private_attr: int = 1
+        some_field: str
+
+    m = Model(some_field='value')
+    assert hasattr(m, '_private_attr')
+
+    del m._private_attr
+
+    with pytest.raises(AttributeError, match="'Model' object has no attribute '_private_attr'"):
+        del m._private_attr
 
 
 def test_deeper_recursive_model():

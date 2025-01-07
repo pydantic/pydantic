@@ -22,7 +22,7 @@ from inspect import Parameter, _ParameterKind, signature
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from itertools import chain
 from operator import attrgetter
-from types import BuiltinFunctionType, BuiltinMethodType, FunctionType, LambdaType, MethodType
+from types import FunctionType, LambdaType, MethodType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -63,9 +63,9 @@ from ..functional_validators import AfterValidator, BeforeValidator, FieldValida
 from ..json_schema import JsonSchemaValue
 from ..version import version_short
 from ..warnings import PydanticDeprecatedSince20
-from . import _core_utils, _decorators, _discriminated_union, _known_annotated_metadata, _typing_extra
+from . import _decorators, _discriminated_union, _known_annotated_metadata, _repr, _typing_extra
 from ._config import ConfigWrapper, ConfigWrapperStack
-from ._core_metadata import update_core_metadata
+from ._core_metadata import CoreMetadata, update_core_metadata
 from ._core_utils import (
     collect_invalid_schemas,
     define_expected_missing_refs,
@@ -155,8 +155,6 @@ ValidateCallSupportedTypes = Union[
     LambdaType,
     FunctionType,
     MethodType,
-    BuiltinFunctionType,
-    BuiltinMethodType,
     partial,
 ]
 
@@ -482,6 +480,53 @@ class GenerateSchema:
             },
         )
 
+    def _path_schema(self, tp: Any, path_type: Any) -> CoreSchema:
+        if tp is os.PathLike and (path_type not in {str, bytes} and not _typing_extra.is_any(path_type)):
+            raise PydanticUserError(
+                '`os.PathLike` can only be used with `str`, `bytes` or `Any`', code='schema-for-unknown-type'
+            )
+
+        path_constructor = pathlib.PurePath if tp is os.PathLike else tp
+        constrained_schema = core_schema.bytes_schema() if (path_type is bytes) else core_schema.str_schema()
+
+        def path_validator(input_value: str | bytes) -> os.PathLike[Any]:  # type: ignore
+            try:
+                if path_type is bytes:
+                    if isinstance(input_value, bytes):
+                        try:
+                            input_value = input_value.decode()
+                        except UnicodeDecodeError as e:
+                            raise PydanticCustomError('bytes_type', 'Input must be valid bytes') from e
+                    else:
+                        raise PydanticCustomError('bytes_type', 'Input must be bytes')
+                elif not isinstance(input_value, str):
+                    raise PydanticCustomError('path_type', 'Input is not a valid path')
+
+                return path_constructor(input_value)  # type: ignore
+            except TypeError as e:
+                raise PydanticCustomError('path_type', 'Input is not a valid path') from e
+
+        instance_schema = core_schema.json_or_python_schema(
+            json_schema=core_schema.no_info_after_validator_function(path_validator, constrained_schema),
+            python_schema=core_schema.is_instance_schema(tp),
+        )
+
+        schema = core_schema.lax_or_strict_schema(
+            lax_schema=core_schema.union_schema(
+                [
+                    instance_schema,
+                    core_schema.no_info_after_validator_function(path_validator, constrained_schema),
+                ],
+                custom_error_type='path_type',
+                custom_error_message=f'Input is not a valid path for {tp}',
+                strict=True,
+            ),
+            strict_schema=instance_schema,
+            serialization=core_schema.to_string_ser_schema(),
+            metadata={'pydantic_js_functions': [lambda source, handler: {**handler(source), 'format': 'path'}]},
+        )
+        return schema
+
     def _fraction_schema(self) -> CoreSchema:
         """Support for [`fractions.Fraction`][fractions.Fraction]."""
         from ._validators import fraction_validator
@@ -611,7 +656,7 @@ class GenerateSchema:
         if schema is None:
             schema = self._generate_schema_inner(obj)
 
-        metadata_js_function = _extract_get_pydantic_json_schema(obj, schema)
+        metadata_js_function = _extract_get_pydantic_json_schema(obj)
         if metadata_js_function is not None:
             metadata_schema = resolve_original_schema(schema, self.defs.definitions)
             if metadata_schema:
@@ -946,6 +991,8 @@ class GenerateSchema:
             return self._sequence_schema(Any)
         elif obj in DICT_TYPES:
             return self._dict_schema(Any, Any)
+        elif obj in PATH_TYPES:
+            return self._path_schema(obj, Any)
         elif _typing_extra.is_type_alias_type(obj):
             return self._type_alias_type_schema(obj)
         elif obj is type:
@@ -1024,6 +1071,8 @@ class GenerateSchema:
             return self._frozenset_schema(self._get_first_arg_or_any(obj))
         elif origin in DICT_TYPES:
             return self._dict_schema(*self._get_first_two_args_or_any(obj))
+        elif origin in PATH_TYPES:
+            return self._path_schema(origin, self._get_first_arg_or_any(obj))
         elif is_typeddict(origin):
             return self._typed_dict_schema(obj, origin)
         elif origin in (typing.Type, type):
@@ -1331,7 +1380,7 @@ class GenerateSchema:
         else:
             choices_with_tags: list[CoreSchema | tuple[CoreSchema, str]] = []
             for choice in choices:
-                tag = choice.get('metadata', {}).get(_core_utils.TAGGED_UNION_TAG_KEY)
+                tag = cast(CoreMetadata, choice.get('metadata', {})).get('pydantic_internal_union_tag_key')
                 if tag is not None:
                     choices_with_tags.append((choice, tag))
                 else:
@@ -1647,7 +1696,12 @@ class GenerateSchema:
         else:
             if _typing_extra.is_self(type_param):
                 type_param = self._resolve_self_type(type_param)
-
+            if _typing_extra.is_generic_alias(type_param):
+                raise PydanticUserError(
+                    'Subscripting `type[]` with an already parametrized type is not supported. '
+                    f'Instead of using type[{type_param!r}], use type[{_repr.display_as_type(get_origin(type_param))}].',
+                    code=None,
+                )
             if not inspect.isclass(type_param):
                 raise TypeError(f'Expected a class, got {type_param!r}')
             return core_schema.is_subclass_schema(type_param)
@@ -1816,6 +1870,8 @@ class GenerateSchema:
         TODO support functional validators once we support them in Config
         """
         sig = signature(function)
+        globalns, localns = self._types_namespace
+        type_hints = _typing_extra.get_function_type_hints(function, globalns=globalns, localns=localns)
 
         mode_lookup: dict[_ParameterKind, Literal['positional_only', 'positional_or_keyword', 'keyword_only']] = {
             Parameter.POSITIONAL_ONLY: 'positional_only',
@@ -1832,13 +1888,7 @@ class GenerateSchema:
             if p.annotation is sig.empty:
                 annotation = typing.cast(Any, Any)
             else:
-                # Note: This was originally get by `_typing_extra.get_function_type_hints`,
-                #       but we switch to simply `p.annotation` to support bultins (e.g. `sorted`).
-                #       May need to revisit if anything breaks.
-                annotation = (
-                    _typing_extra._make_forward_ref(p.annotation) if isinstance(p.annotation, str) else p.annotation
-                )
-                annotation = self._resolve_forward_ref(annotation)
+                annotation = type_hints[name]
 
             parameter_mode = mode_lookup.get(p.kind)
             if parameter_mode is not None:
@@ -1968,12 +2018,25 @@ class GenerateSchema:
     def _annotated_schema(self, annotated_type: Any) -> core_schema.CoreSchema:
         """Generate schema for an Annotated type, e.g. `Annotated[int, Field(...)]` or `Annotated[int, Gt(0)]`."""
         FieldInfo = import_cached_field_info()
+        # Ideally, we should delegate all this to `_typing_extra.unpack_annotated`, e.g.:
+        # `typ, annotations = _typing_extra.unpack_annotated(annotated_type); schema = self.apply_annotations(...)`
+        # if it was able to use a `NsResolver`. But because `unpack_annotated` is also used
+        # when constructing `FieldInfo` instances (where we don't have access to a `NsResolver`),
+        # the implementation of the function does *not* resolve forward annotations. This could
+        # be solved by calling `unpack_annotated` directly inside `collect_model_fields`.
+        # For now, we at least resolve the annotated type if it is a forward ref, but note that
+        # unexpected results will happen if you have something like `Annotated[Alias, ...]` and
+        # `Alias` is a PEP 695 type alias containing forward references.
+        typ, *annotations = get_args(annotated_type)
+        if isinstance(typ, str):
+            typ = _typing_extra._make_forward_ref(typ)
+        if isinstance(typ, ForwardRef):
+            typ = self._resolve_forward_ref(typ)
 
-        source_type, *annotations = self._get_args_resolving_forward_refs(
-            annotated_type,
-            required=True,
-        )
-        schema = self._apply_annotations(source_type, annotations)
+        typ, sub_annotations = _typing_extra.unpack_annotated(typ)
+        annotations = sub_annotations + annotations
+
+        schema = self._apply_annotations(typ, annotations)
         # put the default validator last so that TypeAdapter.get_default_value() works
         # even if there are function validators involved
         for annotation in annotations:
@@ -1987,7 +2050,6 @@ class GenerateSchema:
         from ._std_types_schema import (
             deque_schema_prepare_pydantic_annotations,
             mapping_like_prepare_pydantic_annotations,
-            path_schema_prepare_pydantic_annotations,
         )
 
         # Check for hashability
@@ -2002,9 +2064,7 @@ class GenerateSchema:
         # not always called from match_type, but sometimes from _apply_annotations
         obj_origin = get_origin(obj) or obj
 
-        if obj_origin in PATH_TYPES:
-            return path_schema_prepare_pydantic_annotations(obj, annotations)
-        elif obj_origin in DEQUE_TYPES:
+        if obj_origin in DEQUE_TYPES:
             return deque_schema_prepare_pydantic_annotations(obj, annotations)
         elif obj_origin in MAPPING_TYPES:
             return mapping_like_prepare_pydantic_annotations(obj, annotations)
@@ -2036,7 +2096,7 @@ class GenerateSchema:
                 schema = self._generate_schema_inner(obj)
             else:
                 schema = from_property
-            metadata_js_function = _extract_get_pydantic_json_schema(obj, schema)
+            metadata_js_function = _extract_get_pydantic_json_schema(obj)
             if metadata_js_function is not None:
                 metadata_schema = resolve_original_schema(schema, self.defs.definitions)
                 if metadata_schema is not None:
@@ -2094,7 +2154,7 @@ class GenerateSchema:
                     return self.defs.definitions[new_ref]
                 schema['ref'] = new_ref  # type: ignore
 
-        maybe_updated_schema = _known_annotated_metadata.apply_known_metadata(metadata, schema.copy())
+        maybe_updated_schema = _known_annotated_metadata.apply_known_metadata(metadata, schema)
 
         if maybe_updated_schema is not None:
             return maybe_updated_schema
@@ -2122,16 +2182,17 @@ class GenerateSchema:
         annotation: Any,
         pydantic_js_annotation_functions: list[GetJsonSchemaFunction],
     ) -> CallbackGetCoreSchemaHandler:
-        metadata_get_schema: GetCoreSchemaFunction = getattr(annotation, '__get_pydantic_core_schema__', None) or (
-            lambda source, handler: handler(source)
-        )
+        annotation_get_schema: GetCoreSchemaFunction | None = getattr(annotation, '__get_pydantic_core_schema__', None)
 
         def new_handler(source: Any) -> core_schema.CoreSchema:
-            schema = metadata_get_schema(source, get_inner_schema)
-            schema = self._apply_single_annotation(schema, annotation)
-            schema = self._apply_single_annotation_json_schema(schema, annotation)
+            if annotation_get_schema is not None:
+                schema = annotation_get_schema(source, get_inner_schema)
+            else:
+                schema = get_inner_schema(source)
+                schema = self._apply_single_annotation(schema, annotation)
+                schema = self._apply_single_annotation_json_schema(schema, annotation)
 
-            metadata_js_function = _extract_get_pydantic_json_schema(annotation, schema)
+            metadata_js_function = _extract_get_pydantic_json_schema(annotation)
             if metadata_js_function is not None:
                 pydantic_js_annotation_functions.append(metadata_js_function)
             return schema
@@ -2376,7 +2437,7 @@ def wrap_default(field_info: FieldInfo, schema: core_schema.CoreSchema) -> core_
         return schema
 
 
-def _extract_get_pydantic_json_schema(tp: Any, schema: CoreSchema) -> GetJsonSchemaFunction | None:
+def _extract_get_pydantic_json_schema(tp: Any) -> GetJsonSchemaFunction | None:
     """Extract `__get_pydantic_json_schema__` from a type, handling the deprecated `__modify_schema__`."""
     js_modify_function = getattr(tp, '__get_pydantic_json_schema__', None)
 
@@ -2399,7 +2460,9 @@ def _extract_get_pydantic_json_schema(tp: Any, schema: CoreSchema) -> GetJsonSch
 
     # handle GenericAlias' but ignore Annotated which "lies" about its origin (in this case it would be `int`)
     if hasattr(tp, '__origin__') and not _typing_extra.is_annotated(tp):
-        return _extract_get_pydantic_json_schema(tp.__origin__, schema)
+        # Generic aliases proxy attribute access to the origin, *except* dunder attributes,
+        # such as `__get_pydantic_json_schema__`, hence the explicit check.
+        return _extract_get_pydantic_json_schema(tp.__origin__)
 
     if js_modify_function is None:
         return None

@@ -1,3 +1,44 @@
+## v2.10.4 (2024-12-18)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.10.4)
+
+### What's Changed
+
+#### Packaging
+
+* Bump `pydantic-core` to v2.27.2 by @davidhewitt in [#11138](https://github.com/pydantic/pydantic/pull/11138)
+
+#### Fixes
+
+* Fix for comparison of `AnyUrl` objects by @alexprabhat99 in [#11082](https://github.com/pydantic/pydantic/pull/11082)
+* Properly fetch PEP 695 type params for functions, do not fetch annotations from signature by @Viicos in [#11093](https://github.com/pydantic/pydantic/pull/11093)
+* Include JSON Schema input core schema in function schemas by @Viicos in [#11085](https://github.com/pydantic/pydantic/pull/11085)
+* Add `len` to `_BaseUrl` to avoid TypeError by @Kharianne in [#11111](https://github.com/pydantic/pydantic/pull/11111)
+* Make sure the type reference is removed from the seen references by @Viicos in [#11143](https://github.com/pydantic/pydantic/pull/11143)
+
+### New Contributors
+
+* @FyZzyss made their first contribution in [#10789](https://github.com/pydantic/pydantic/pull/10789)
+* @tamird made their first contribution in [#10948](https://github.com/pydantic/pydantic/pull/10948)
+* @felixxm made their first contribution in [#11077](https://github.com/pydantic/pydantic/pull/11077)
+* @alexprabhat99 made their first contribution in [#11082](https://github.com/pydantic/pydantic/pull/11082)
+* @Kharianne made their first contribution in [#11111](https://github.com/pydantic/pydantic/pull/11111)
+
+## v2.10.3 (2024-12-03)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.10.3)
+
+### What's Changed
+
+#### Fixes
+
+* Set fields when `defer_build` is set on Pydantic dataclasses by @Viicos in [#10984](https://github.com/pydantic/pydantic/pull/10984)
+* Do not resolve the JSON Schema reference for `dict` core schema keys by @Viicos in [#10989](https://github.com/pydantic/pydantic/pull/10989)
+* Use the globals of the function when evaluating the return type for `PlainSerializer` and `WrapSerializer` functions by @Viicos in [#11008](https://github.com/pydantic/pydantic/pull/11008)
+* Fix host required enforcement for urls to be compatible with v2.9 behavior by @sydney-runkle in [#11027](https://github.com/pydantic/pydantic/pull/11027)
+* Add a `default_factory_takes_validated_data` property to `FieldInfo` by @Viicos in [#11034](https://github.com/pydantic/pydantic/pull/11034)
+* Fix url json schema in `serialization` mode by @sydney-runkle in [#11035](https://github.com/pydantic/pydantic/pull/11035)
+
 ## v2.10.2 (2024-11-25)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.10.2)
@@ -181,7 +222,9 @@ Pre-release, see [the GitHub release](https://github.com/pydantic/pydantic/relea
 
 ## v2.10.0b1 (2024-11-06)
 
-Pre-release, see [the GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.9.0b1) for details.
+Pre-release, see [the GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.10.0b1) for details.
+
+<!-- package description limit -->
 
 ## v2.9.2 (2024-09-17)
 
@@ -1531,8 +1574,6 @@ See the full changelog [here](https://github.com/pydantic/pydantic/releases/tag/
 First pre-release of Pydantic V2!
 
 See [this post](https://docs.pydantic.dev/blog/pydantic-v2-alpha/) for more details.
-
-<!-- package description limit -->
 
 ## v1.10.19 (2024-11-06)
 
