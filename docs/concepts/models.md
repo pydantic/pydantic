@@ -253,6 +253,7 @@ class Model(BaseModel):
 
 
 m = Model(x=1, y='a')  # (1)!
+assert m.model_dump() == {'x': 1, 'y': 'a'}
 assert m.__pydantic_extra__ == {'y': 'a'}
 ```
 
@@ -267,8 +268,7 @@ The configuration can take three values:
 
 For more details, refer to the [`extra`][pydantic.ConfigDict.extra] API documentation.
 
-The same behavior applies to typed dictionaries and dataclasses (see how to
-[add configuration to these types](./config.md#configuration-with-dataclass-from-the-standard-library-or-typeddict)).
+Pydantic dataclasses also support extra data (see the [dataclass configuration](./dataclasses.md#dataclass-config) section).
 
 ## Nested models
 
