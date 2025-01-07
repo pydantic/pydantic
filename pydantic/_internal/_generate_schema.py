@@ -824,10 +824,6 @@ class GenerateSchema:
         if ref:
             return self.defs.create_definition_reference_schema(schema)
 
-        # TODO
-        # if schema['type'] == 'definition-ref':
-        #     return core_schema.definition_reference_schema(schema_ref=schema['schema_ref'])
-
         return schema
 
     def _resolve_forward_ref(self, obj: Any) -> Any:
