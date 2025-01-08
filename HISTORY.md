@@ -5,13 +5,7 @@
 ### What's Changed
 
 * Remove custom MRO implementation of Pydantic models by @Viicos in [#11184](https://github.com/pydantic/pydantic/pull/11184)
-  This was originally introduced to better validate generic subclasses, but ended up introducing subtle regressions.
-  As another related change was introduced later, this MRO override approach is no longer necessary, and as such
-  can safely be removed.
 * Fix URL serialization for unions by @sydney-runkle in [#11233](https://github.com/pydantic/pydantic/pull/11233)
-  Specifically, we've made the serialization for URL types more strict. If a non-URL type is passed into the serializer, we
-  raise an unexpected value warning instead of just blindly attempting to stringify the input. This results in more intuitive
-  behavior for serializing unions with URL types.
 
 ## v2.10.4 (2024-12-18)
 
