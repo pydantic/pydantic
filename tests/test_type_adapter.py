@@ -9,17 +9,16 @@ from pydantic_core import ValidationError
 from typing_extensions import Annotated, TypeAlias, TypedDict
 
 from pydantic import BaseModel, Field, TypeAdapter, ValidationInfo, create_model, field_validator
+from pydantic._internal import _mock_val_ser
 from pydantic._internal._typing_extra import annotated_type
 from pydantic.config import ConfigDict
 from pydantic.dataclasses import dataclass as pydantic_dataclass
-from pydantic.errors import PydanticUserError
+from pydantic.errors import PydanticUndefinedAnnotation, PydanticUserError
 from pydantic.type_adapter import _type_has_config
 
 ItemType = TypeVar('ItemType')
 
 NestedList = List[List[ItemType]]
-
-DEFER_ENABLE_MODE = ('model', 'type_adapter')
 
 
 class PydanticModel(BaseModel):
@@ -73,7 +72,7 @@ OuterDict = Dict[str, 'IntList']
 @pytest.mark.parametrize('defer_build', [False, True])
 @pytest.mark.parametrize('method', ['validate', 'serialize', 'json_schema', 'json_schemas'])
 def test_global_namespace_variables(defer_build: bool, method: str, generate_schema_calls):
-    config = ConfigDict(defer_build=True, experimental_defer_build_mode=DEFER_ENABLE_MODE) if defer_build else None
+    config = ConfigDict(defer_build=True) if defer_build else None
     ta = TypeAdapter(OuterDict, config=config)
 
     assert generate_schema_calls.count == (0 if defer_build else 1), 'Should be built deferred'
@@ -94,9 +93,7 @@ def test_global_namespace_variables(defer_build: bool, method: str, generate_sch
 @pytest.mark.parametrize('method', ['validate', 'serialize', 'json_schema', 'json_schemas'])
 def test_model_global_namespace_variables(defer_build: bool, method: str, generate_schema_calls):
     class MyModel(BaseModel):
-        model_config = (
-            ConfigDict(defer_build=True, experimental_defer_build_mode=DEFER_ENABLE_MODE) if defer_build else None
-        )
+        model_config = ConfigDict(defer_build=defer_build)
         x: OuterDict
 
     ta = TypeAdapter(MyModel)
@@ -121,7 +118,7 @@ def test_local_namespace_variables(defer_build: bool, method: str, generate_sche
     IntList = List[int]  # noqa: F841
     OuterDict = Dict[str, 'IntList']
 
-    config = ConfigDict(defer_build=True, experimental_defer_build_mode=DEFER_ENABLE_MODE) if defer_build else None
+    config = ConfigDict(defer_build=True) if defer_build else None
     ta = TypeAdapter(OuterDict, config=config)
 
     assert generate_schema_calls.count == (0 if defer_build else 1), 'Should be built deferred'
@@ -144,9 +141,7 @@ def test_model_local_namespace_variables(defer_build: bool, method: str, generat
     IntList = List[int]  # noqa: F841
 
     class MyModel(BaseModel):
-        model_config = (
-            ConfigDict(defer_build=True, experimental_defer_build_mode=DEFER_ENABLE_MODE) if defer_build else None
-        )
+        model_config = ConfigDict(defer_build=defer_build)
         x: Dict[str, 'IntList']
 
     ta = TypeAdapter(MyModel)
@@ -169,7 +164,7 @@ def test_model_local_namespace_variables(defer_build: bool, method: str, generat
 @pytest.mark.parametrize('method', ['validate', 'serialize', 'json_schema', 'json_schemas'])
 @pytest.mark.skipif(sys.version_info < (3, 9), reason="ForwardRef doesn't accept module as a parameter in Python < 3.9")
 def test_top_level_fwd_ref(defer_build: bool, method: str, generate_schema_calls):
-    config = ConfigDict(defer_build=True, experimental_defer_build_mode=DEFER_ENABLE_MODE) if defer_build else None
+    config = ConfigDict(defer_build=True) if defer_build else None
 
     FwdRef = ForwardRef('OuterDict', module=__name__)
     ta = TypeAdapter(FwdRef, config=config)
@@ -397,7 +392,7 @@ def test_validate_python_from_attributes() -> None:
 def test_validate_strings(
     field_type, input_value, expected, raises_match, strict, defer_build: bool, generate_schema_calls
 ):
-    config = ConfigDict(defer_build=True, experimental_defer_build_mode=DEFER_ENABLE_MODE) if defer_build else None
+    config = ConfigDict(defer_build=True) if defer_build else None
     ta = TypeAdapter(field_type, config=config)
 
     assert generate_schema_calls.count == (0 if defer_build else 1), 'Should be built deferred'
@@ -518,10 +513,8 @@ def defer_build_test_models(config: ConfigDict) -> List[Any]:
 
 
 CONFIGS = [
-    ConfigDict(defer_build=False, experimental_defer_build_mode=('model',)),
-    ConfigDict(defer_build=False, experimental_defer_build_mode=DEFER_ENABLE_MODE),
-    ConfigDict(defer_build=True, experimental_defer_build_mode=('model',)),
-    ConfigDict(defer_build=True, experimental_defer_build_mode=DEFER_ENABLE_MODE),
+    ConfigDict(defer_build=False),
+    ConfigDict(defer_build=True),
 ]
 MODELS_CONFIGS: List[Tuple[Any, ConfigDict]] = [
     (model, config) for config in CONFIGS for model in defer_build_test_models(config)
@@ -537,17 +530,19 @@ def test_core_schema_respects_defer_build(model: Any, config: ConfigDict, method
 
     type_adapter = TypeAdapter(model) if _type_has_config(model) else TypeAdapter(model, config=config)
 
-    if config['defer_build'] and 'type_adapter' in config['experimental_defer_build_mode']:
+    if config.get('defer_build'):
         assert generate_schema_calls.count == 0, 'Should be built deferred'
-        assert type_adapter._core_schema is None, 'Should be initialized deferred'
-        assert type_adapter._validator is None, 'Should be initialized deferred'
-        assert type_adapter._serializer is None, 'Should be initialized deferred'
+        assert isinstance(type_adapter.core_schema, _mock_val_ser.MockCoreSchema), 'Should be initialized deferred'
+        assert isinstance(type_adapter.validator, _mock_val_ser.MockValSer), 'Should be initialized deferred'
+        assert isinstance(type_adapter.serializer, _mock_val_ser.MockValSer), 'Should be initialized deferred'
     else:
         built_inside_type_adapter = 'Dict' in str(model) or 'Annotated' in str(model)
         assert generate_schema_calls.count == (1 if built_inside_type_adapter else 0), f'Should be built ({model})'
-        assert type_adapter._core_schema is not None, 'Should be initialized before usage'
-        assert type_adapter._validator is not None, 'Should be initialized before usage'
-        assert type_adapter._serializer is not None, 'Should be initialized before usage'
+        assert not isinstance(
+            type_adapter.core_schema, _mock_val_ser.MockCoreSchema
+        ), 'Should be initialized before usage'
+        assert not isinstance(type_adapter.validator, _mock_val_ser.MockValSer), 'Should be initialized before usage'
+        assert not isinstance(type_adapter.validator, _mock_val_ser.MockValSer), 'Should be initialized before usage'
 
     if method == 'schema':
         json_schema = type_adapter.json_schema()  # Use it
@@ -564,6 +559,52 @@ def test_core_schema_respects_defer_build(model: Any, config: ConfigDict, method
         assert json.loads(raw.decode())['x'] == 1  # Sanity check
         assert generate_schema_calls.count < 2, 'Should not build duplicates'
 
-    assert type_adapter._core_schema is not None, 'Should be initialized after the usage'
-    assert type_adapter._validator is not None, 'Should be initialized after the usage'
-    assert type_adapter._serializer is not None, 'Should be initialized after the usage'
+    assert not isinstance(
+        type_adapter.core_schema, _mock_val_ser.MockCoreSchema
+    ), 'Should be initialized after the usage'
+    assert not isinstance(type_adapter.validator, _mock_val_ser.MockValSer), 'Should be initialized after the usage'
+    assert not isinstance(type_adapter.validator, _mock_val_ser.MockValSer), 'Should be initialized after the usage'
+
+
+def test_defer_build_raise_errors() -> None:
+    ta = TypeAdapter('MyInt', config=ConfigDict(defer_build=True))  # pyright: ignore[reportUndefinedVariable]
+    assert isinstance(ta.core_schema, _mock_val_ser.MockCoreSchema)
+
+    with pytest.raises(PydanticUndefinedAnnotation):
+        # `True` is the `raise_errors` default for the `rebuild` method, but we include here for clarity
+        ta.rebuild(raise_errors=True)
+
+    ta.rebuild(raise_errors=False)
+    assert isinstance(ta.core_schema, _mock_val_ser.MockCoreSchema)
+
+    MyInt = int  # noqa: F841
+
+    ta.rebuild(raise_errors=True)
+    assert not isinstance(ta.core_schema, _mock_val_ser.MockCoreSchema)
+
+
+@dataclass
+class SimpleDataclass:
+    x: int
+
+
+@pytest.mark.parametrize('type_,repr_', [(int, 'int'), (List[int], 'List[int]'), (SimpleDataclass, 'SimpleDataclass')])
+def test_ta_repr(type_: Any, repr_: str) -> None:
+    ta = TypeAdapter(type_)
+    assert repr(ta) == f'TypeAdapter({repr_})'
+
+
+def test_correct_frame_used_parametrized(create_module) -> None:
+    """https://github.com/pydantic/pydantic/issues/10892"""
+
+    @create_module
+    def module_1() -> None:
+        from pydantic import TypeAdapter
+
+        Any = int  # noqa: F841
+
+        # 'Any' should resolve to `int`, not `typing.Any`:
+        ta = TypeAdapter[int]('Any')  # noqa: F841
+
+    with pytest.raises(ValidationError):
+        module_1.ta.validate_python('a')

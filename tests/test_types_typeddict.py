@@ -9,14 +9,13 @@ from typing import Any, Dict, Generic, List, Optional, TypeVar
 import pytest
 import typing_extensions
 from annotated_types import Lt
-from pydantic_core import CoreSchema, core_schema
+from pydantic_core import core_schema
 from typing_extensions import Annotated, TypedDict
 
 from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
-    GenerateSchema,
     GetCoreSchemaHandler,
     PositiveInt,
     PydanticUserError,
@@ -881,20 +880,6 @@ def test_model_config_inherited() -> None:
     assert ta.validate_python({'x': 'ABC'}) == {'x': 'abc'}
 
 
-def test_schema_generator() -> None:
-    class LaxStrGenerator(GenerateSchema):
-        def str_schema(self) -> CoreSchema:
-            return core_schema.no_info_plain_validator_function(str)
-
-    class Model(TypedDict):
-        x: str
-        __pydantic_config__ = ConfigDict(schema_generator=LaxStrGenerator)  # type: ignore
-
-    ta = TypeAdapter(Model)
-
-    assert ta.validate_python(dict(x=1))['x'] == '1'
-
-
 def test_grandparent_config():
     class MyTypedDict(TypedDict):
         __pydantic_config__ = ConfigDict(str_to_lower=True)
@@ -931,3 +916,16 @@ def test_typeddict_with_config_decorator():
     ta = TypeAdapter(Model)
 
     assert ta.validate_python({'x': 'ABC'}) == {'x': 'abc'}
+
+
+def test_config_pushdown_typed_dict() -> None:
+    class ArbitraryType:
+        pass
+
+    class TD(TypedDict):
+        a: ArbitraryType
+
+    class Model(BaseModel):
+        model_config = ConfigDict(arbitrary_types_allowed=True)
+
+        td: TD

@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Tuple
 from uuid import UUID
 
+import pytest
 from annotated_types import Gt
 from typing_extensions import Annotated
 
@@ -14,7 +15,13 @@ from pydantic import AnyUrl, BaseModel, EmailStr, TypeAdapter
 from pydantic.functional_validators import AfterValidator
 from pydantic.types import StringConstraints
 
+try:
+    import email_validator
+except ImportError:
+    email_validator = None
 
+
+@pytest.mark.skipif(not email_validator, reason='email_validator not installed')
 def test_fastapi_startup_perf(benchmark: Callable[[Callable[[], Any]], None]):
     def run() -> None:
         class User(BaseModel):
@@ -91,7 +98,7 @@ def test_fastapi_startup_perf(benchmark: Callable[[Callable[[], Any]], None]):
 
 
 if __name__ == '__main__':
-    # run with `pdm run tests/benchmarks/test_fastapi_startup_simple.py`
+    # run with `uv run tests/benchmarks/test_fastapi_startup_simple.py`
     import cProfile
     import sys
     import time

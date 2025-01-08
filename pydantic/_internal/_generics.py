@@ -7,14 +7,14 @@ from collections import ChainMap
 from contextlib import contextmanager
 from contextvars import ContextVar
 from types import prepare_class
-from typing import TYPE_CHECKING, Any, Iterator, List, Mapping, MutableMapping, Tuple, TypeVar
+from typing import TYPE_CHECKING, Any, Iterator, Mapping, MutableMapping, Tuple, TypeVar
 from weakref import WeakValueDictionary
 
 import typing_extensions
 
+from . import _typing_extra
 from ._core_utils import get_type_ref
 from ._forward_ref import PydanticRecursiveRef
-from ._typing_extra import TypeVarType, typing_base
 from ._utils import all_identical, is_model_class
 
 if sys.version_info >= (3, 10):
@@ -109,7 +109,7 @@ _GENERIC_TYPES_CACHE = GenericTypesCache()
 class PydanticGenericMetadata(typing_extensions.TypedDict):
     origin: type[BaseModel] | None  # analogous to typing._GenericAlias.__origin__
     args: tuple[Any, ...]  # analogous to typing._GenericAlias.__args__
-    parameters: tuple[type[Any], ...]  # analogous to typing.Generic.__parameters__
+    parameters: tuple[TypeVar, ...]  # analogous to typing.Generic.__parameters__
 
 
 def create_generic_submodel(
@@ -184,7 +184,7 @@ def _get_caller_frame_info(depth: int = 2) -> tuple[str | None, bool]:
 DictValues: type[Any] = {}.values().__class__
 
 
-def iter_contained_typevars(v: Any) -> Iterator[TypeVarType]:
+def iter_contained_typevars(v: Any) -> Iterator[TypeVar]:
     """Recursively iterate through all subtypes and type args of `v` and yield any typevars that are found.
 
     This is inspired as an alternative to directly accessing the `__parameters__` attribute of a GenericAlias,
@@ -217,7 +217,7 @@ def get_origin(v: Any) -> Any:
     return typing_extensions.get_origin(v)
 
 
-def get_standard_typevars_map(cls: type[Any]) -> dict[TypeVarType, Any] | None:
+def get_standard_typevars_map(cls: Any) -> dict[TypeVar, Any] | None:
     """Package a generic type's typevars and parametrization (if present) into a dictionary compatible with the
     `replace_types` function. Specifically, this works with standard typing generics and typing._GenericAlias.
     """
@@ -230,11 +230,11 @@ def get_standard_typevars_map(cls: type[Any]) -> dict[TypeVarType, Any] | None:
     # In this case, we know that cls is a _GenericAlias, and origin is the generic type
     # So it is safe to access cls.__args__ and origin.__parameters__
     args: tuple[Any, ...] = cls.__args__  # type: ignore
-    parameters: tuple[TypeVarType, ...] = origin.__parameters__
+    parameters: tuple[TypeVar, ...] = origin.__parameters__
     return dict(zip(parameters, args))
 
 
-def get_model_typevars_map(cls: type[BaseModel]) -> dict[TypeVarType, Any] | None:
+def get_model_typevars_map(cls: type[BaseModel]) -> dict[TypeVar, Any] | None:
     """Package a generic BaseModel's typevars and concrete parametrization (if present) into a dictionary compatible
     with the `replace_types` function.
 
@@ -246,6 +246,9 @@ def get_model_typevars_map(cls: type[BaseModel]) -> dict[TypeVarType, Any] | Non
     generic_metadata = cls.__pydantic_generic_metadata__
     origin = generic_metadata['origin']
     args = generic_metadata['args']
+    if not args:
+        # No need to go into `iter_contained_typevars`:
+        return {}
     return dict(zip(iter_contained_typevars(origin), args))
 
 
@@ -261,7 +264,7 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any] | None) -> Any:
         `typevar_map` keys recursively replaced.
 
     Example:
-        ```py
+        ```python
         from typing import List, Tuple, Union
 
         from pydantic._internal._generics import replace_types
@@ -274,27 +277,29 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any] | None) -> Any:
         return type_
 
     type_args = get_args(type_)
-    origin_type = get_origin(type_)
 
-    if origin_type is typing_extensions.Annotated:
+    if _typing_extra.is_annotated(type_):
         annotated_type, *annotations = type_args
         annotated = replace_types(annotated_type, type_map)
         for annotation in annotations:
             annotated = typing_extensions.Annotated[annotated, annotation]
         return annotated
 
-    # Having type args is a good indicator that this is a typing module
-    # class instantiation or a generic alias of some sort.
+    origin_type = get_origin(type_)
+
+    # Having type args is a good indicator that this is a typing special form
+    # instance or a generic alias of some sort.
     if type_args:
         resolved_type_args = tuple(replace_types(arg, type_map) for arg in type_args)
         if all_identical(type_args, resolved_type_args):
             # If all arguments are the same, there is no need to modify the
             # type or create a new object at all
             return type_
+
         if (
             origin_type is not None
-            and isinstance(type_, typing_base)
-            and not isinstance(origin_type, typing_base)
+            and isinstance(type_, _typing_extra.typing_base)
+            and not isinstance(origin_type, _typing_extra.typing_base)
             and getattr(type_, '_name', None) is not None
         ):
             # In python < 3.9 generic aliases don't exist so any of these like `list`,
@@ -302,6 +307,18 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any] | None) -> Any:
             # See: https://www.python.org/dev/peps/pep-0585
             origin_type = getattr(typing, type_._name)
         assert origin_type is not None
+
+        if _typing_extra.origin_is_union(origin_type):
+            if any(_typing_extra.is_any(arg) for arg in resolved_type_args):
+                # `Any | T` ~ `Any`:
+                resolved_type_args = (Any,)
+            # `Never | T` ~ `T`:
+            resolved_type_args = tuple(
+                arg
+                for arg in resolved_type_args
+                if not (_typing_extra.is_no_return(arg) or _typing_extra.is_never(arg))
+            )
+
         # PEP-604 syntax (Ex.: list | str) is represented with a types.UnionType object that does not have __getitem__.
         # We also cannot use isinstance() since we have to compare types.
         if sys.version_info >= (3, 10) and origin_type is types.UnionType:
@@ -323,7 +340,7 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any] | None) -> Any:
 
     # Handle special case for typehints that can have lists as arguments.
     # `typing.Callable[[int, str], int]` is an example for this.
-    if isinstance(type_, (List, list)):
+    if isinstance(type_, list):
         resolved_list = [replace_types(element, type_map) for element in type_]
         if all_identical(type_, resolved_list):
             return type_
@@ -340,13 +357,12 @@ def has_instance_in_type(type_: Any, isinstance_target: Any) -> bool:
     """
     if isinstance(type_, isinstance_target):
         return True
+    if _typing_extra.is_annotated(type_):
+        return has_instance_in_type(type_.__origin__, isinstance_target)
+    if _typing_extra.is_literal(type_):
+        return False
 
     type_args = get_args(type_)
-    origin_type = get_origin(type_)
-
-    if origin_type is typing_extensions.Annotated:
-        annotated_type, *annotations = type_args
-        return has_instance_in_type(annotated_type, isinstance_target)
 
     # Having type args is a good indicator that this is a typing module
     # class instantiation or a generic alias of some sort.
@@ -356,7 +372,11 @@ def has_instance_in_type(type_: Any, isinstance_target: Any) -> bool:
 
     # Handle special case for typehints that can have lists as arguments.
     # `typing.Callable[[int, str], int]` is an example for this.
-    if isinstance(type_, (List, list)) and not isinstance(type_, typing_extensions.ParamSpec):
+    if (
+        isinstance(type_, list)
+        # On Python < 3.10, typing_extensions implements `ParamSpec` as a subclass of `list`:
+        and not isinstance(type_, typing_extensions.ParamSpec)
+    ):
         for element in type_:
             if has_instance_in_type(element, isinstance_target):
                 return True
@@ -409,7 +429,8 @@ def generic_recursion_self_type(
             yield self_type
         else:
             previously_seen_type_refs.add(type_ref)
-            yield None
+            yield
+            previously_seen_type_refs.remove(type_ref)
     finally:
         if token:
             _generic_recursion_cache.reset(token)
@@ -488,7 +509,7 @@ def _union_orderings_key(typevar_values: Any) -> Any:
         for value in typevar_values:
             args_data.append(_union_orderings_key(value))
         return tuple(args_data)
-    elif typing_extensions.get_origin(typevar_values) is typing.Union:
+    elif _typing_extra.is_union(typevar_values):
         return get_args(typevar_values)
     else:
         return ()

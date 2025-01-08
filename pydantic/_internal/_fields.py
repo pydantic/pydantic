@@ -3,22 +3,25 @@
 from __future__ import annotations as _annotations
 
 import dataclasses
-import sys
 import warnings
 from copy import copy
 from functools import lru_cache
-from typing import TYPE_CHECKING, Any
+from inspect import Parameter, ismethoddescriptor, signature
+from typing import TYPE_CHECKING, Any, Callable, Pattern
 
 from pydantic_core import PydanticUndefined
+from typing_extensions import TypeIs
 
+from pydantic import PydanticDeprecatedSince211
 from pydantic.errors import PydanticUserError
 
 from . import _typing_extra
 from ._config import ConfigWrapper
 from ._docs_extraction import extract_docstrings_from_cls
 from ._import_utils import import_cached_base_model, import_cached_field_info
+from ._namespace_utils import NsResolver
 from ._repr import Representation
-from ._typing_extra import get_cls_type_hints_lenient, is_classvar, is_finalvar
+from ._utils import can_be_positional
 
 if TYPE_CHECKING:
     from annotated_types import BaseMetadata
@@ -73,7 +76,7 @@ def collect_model_fields(  # noqa: C901
     cls: type[BaseModel],
     bases: tuple[type[Any], ...],
     config_wrapper: ConfigWrapper,
-    types_namespace: dict[str, Any] | None,
+    ns_resolver: NsResolver | None,
     *,
     typevars_map: dict[Any, Any] | None = None,
 ) -> tuple[dict[str, FieldInfo], set[str]]:
@@ -87,7 +90,7 @@ def collect_model_fields(  # noqa: C901
         cls: BaseModel or dataclass.
         bases: Parents of the class, generally `cls.__bases__`.
         config_wrapper: The config wrapper instance.
-        types_namespace: Optional extra namespace to look for types in.
+        ns_resolver: Namespace resolver to use when getting model annotations.
         typevars_map: A dictionary mapping type variables to their concrete types.
 
     Returns:
@@ -102,7 +105,12 @@ def collect_model_fields(  # noqa: C901
     BaseModel = import_cached_base_model()
     FieldInfo_ = import_cached_field_info()
 
-    type_hints = get_cls_type_hints_lenient(cls, types_namespace)
+    parent_fields_lookup: dict[str, FieldInfo] = {}
+    for base in reversed(bases):
+        if model_fields := getattr(base, '__pydantic_fields__', None):
+            parent_fields_lookup.update(model_fields)
+
+    type_hints = _typing_extra.get_model_type_hints(cls, ns_resolver=ns_resolver)
 
     # https://docs.python.org/3/howto/annotations.html#accessing-the-annotations-dict-of-an-object-in-python-3-9-and-older
     # annotations is only used for finding fields in parent classes
@@ -110,35 +118,59 @@ def collect_model_fields(  # noqa: C901
     fields: dict[str, FieldInfo] = {}
 
     class_vars: set[str] = set()
-    for ann_name, ann_type in type_hints.items():
+    for ann_name, (ann_type, evaluated) in type_hints.items():
         if ann_name == 'model_config':
             # We never want to treat `model_config` as a field
             # Note: we may need to change this logic if/when we introduce a `BareModel` class with no
             # protected namespaces (where `model_config` might be allowed as a field name)
             continue
+
         for protected_namespace in config_wrapper.protected_namespaces:
-            if ann_name.startswith(protected_namespace):
+            ns_violation: bool = False
+            if isinstance(protected_namespace, Pattern):
+                ns_violation = protected_namespace.match(ann_name) is not None
+            elif isinstance(protected_namespace, str):
+                ns_violation = ann_name.startswith(protected_namespace)
+
+            if ns_violation:
                 for b in bases:
                     if hasattr(b, ann_name):
-                        if not (issubclass(b, BaseModel) and ann_name in b.model_fields):
+                        if not (issubclass(b, BaseModel) and ann_name in getattr(b, '__pydantic_fields__', {})):
                             raise NameError(
                                 f'Field "{ann_name}" conflicts with member {getattr(b, ann_name)}'
                                 f' of protected namespace "{protected_namespace}".'
                             )
                 else:
-                    valid_namespaces = tuple(
-                        x for x in config_wrapper.protected_namespaces if not ann_name.startswith(x)
-                    )
+                    valid_namespaces = ()
+                    for pn in config_wrapper.protected_namespaces:
+                        if isinstance(pn, Pattern):
+                            if not pn.match(ann_name):
+                                valid_namespaces += (f're.compile({pn.pattern})',)
+                        else:
+                            if not ann_name.startswith(pn):
+                                valid_namespaces += (pn,)
+
                     warnings.warn(
                         f'Field "{ann_name}" in {cls.__name__} has conflict with protected namespace "{protected_namespace}".'
                         '\n\nYou may be able to resolve this warning by setting'
                         f" `model_config['protected_namespaces'] = {valid_namespaces}`.",
                         UserWarning,
                     )
-        if is_classvar(ann_type):
+        if _typing_extra.is_classvar_annotation(ann_type):
             class_vars.add(ann_name)
             continue
-        if _is_finalvar_with_default_val(ann_type, getattr(cls, ann_name, PydanticUndefined)):
+
+        assigned_value = getattr(cls, ann_name, PydanticUndefined)
+
+        if _is_finalvar_with_default_val(ann_type, assigned_value):
+            warnings.warn(
+                f'Annotation {ann_name!r} is marked as final and has a default value. Pydantic treats {ann_name!r} as a '
+                'class variable, but it will be considered as a normal field in V3 to be aligned with dataclasses. If you '
+                f'still want {ann_name!r} to be considered as a class variable, annotate it as: `ClassVar[<type>] = <default>.`',
+                category=PydanticDeprecatedSince211,
+                # Incorrect when `create_model` is used, but the chance that final with a default is used is low in that case:
+                stacklevel=4,
+            )
             class_vars.add(ann_name)
             continue
         if not is_valid_field_name(ann_name):
@@ -175,31 +207,35 @@ def collect_model_fields(  # noqa: C901
                     UserWarning,
                 )
 
-        try:
-            default = getattr(cls, ann_name, PydanticUndefined)
-            if default is PydanticUndefined:
-                raise AttributeError
-        except AttributeError:
+        if assigned_value is PydanticUndefined:
             if ann_name in annotations:
                 field_info = FieldInfo_.from_annotation(ann_type)
+                field_info.evaluated = evaluated
             else:
                 # if field has no default value and is not in __annotations__ this means that it is
                 # defined in a base class and we can take it from there
-                model_fields_lookup: dict[str, FieldInfo] = {}
-                for x in cls.__bases__[::-1]:
-                    model_fields_lookup.update(getattr(x, 'model_fields', {}))
-                if ann_name in model_fields_lookup:
+                if ann_name in parent_fields_lookup:
                     # The field was present on one of the (possibly multiple) base classes
                     # copy the field to make sure typevar substitutions don't cause issues with the base classes
-                    field_info = copy(model_fields_lookup[ann_name])
+                    field_info = copy(parent_fields_lookup[ann_name])
                 else:
                     # The field was not found on any base classes; this seems to be caused by fields not getting
                     # generated thanks to models not being fully defined while initializing recursive models.
                     # Nothing stops us from just creating a new FieldInfo for this type hint, so we do this.
                     field_info = FieldInfo_.from_annotation(ann_type)
+                    field_info.evaluated = evaluated
         else:
             _warn_on_nested_alias_in_annotation(ann_type, ann_name)
-            field_info = FieldInfo_.from_annotated_attribute(ann_type, default)
+            if isinstance(assigned_value, FieldInfo_) and ismethoddescriptor(assigned_value.default):
+                # `assigned_value` was fetched using `getattr`, which triggers a call to `__get__`
+                # for descriptors, so we do the same if the `= field(default=...)` form is used.
+                # Note that we only do this for method descriptors for now, we might want to
+                # extend this to any descriptor in the future (by simply checking for
+                # `hasattr(assigned_value.default, '__get__')`).
+                assigned_value.default = assigned_value.default.__get__(None, cls)
+
+            field_info = FieldInfo_.from_annotated_attribute(ann_type, assigned_value)
+            field_info.evaluated = evaluated
             # attributes which are fields are removed from the class namespace:
             # 1. To match the behaviour of annotation-only fields
             # 2. To avoid false positives in the NameError check above
@@ -217,10 +253,9 @@ def collect_model_fields(  # noqa: C901
 
     if typevars_map:
         for field in fields.values():
-            field.apply_typevars_map(typevars_map, types_namespace)
+            field.apply_typevars_map(typevars_map)
 
     _update_fields_from_docstrings(cls, fields, config_wrapper)
-
     return fields, class_vars
 
 
@@ -240,14 +275,15 @@ def _warn_on_nested_alias_in_annotation(ann_type: type[Any], ann_name: str) -> N
                         return
 
 
-def _is_finalvar_with_default_val(type_: type[Any], val: Any) -> bool:
+def _is_finalvar_with_default_val(ann_type: type[Any], assigned_value: Any) -> bool:
+    if assigned_value is PydanticUndefined:
+        return False
+
     FieldInfo = import_cached_field_info()
 
-    if not is_finalvar(type_):
+    if isinstance(assigned_value, FieldInfo) and assigned_value.is_required():
         return False
-    elif val is PydanticUndefined:
-        return False
-    elif isinstance(val, FieldInfo) and (val.default is PydanticUndefined and val.default_factory is None):
+    elif not _typing_extra.is_finalvar(ann_type):
         return False
     else:
         return True
@@ -255,8 +291,8 @@ def _is_finalvar_with_default_val(type_: type[Any], val: Any) -> bool:
 
 def collect_dataclass_fields(
     cls: type[StandardDataclass],
-    types_namespace: dict[str, Any] | None,
     *,
+    ns_resolver: NsResolver | None = None,
     typevars_map: dict[Any, Any] | None = None,
     config_wrapper: ConfigWrapper | None = None,
 ) -> dict[str, FieldInfo]:
@@ -264,7 +300,8 @@ def collect_dataclass_fields(
 
     Args:
         cls: dataclass.
-        types_namespace: Optional extra namespace to look for types in.
+        ns_resolver: Namespace resolver to use when getting dataclass annotations.
+            Defaults to an empty instance.
         typevars_map: A dictionary mapping type variables to their concrete types.
         config_wrapper: The config wrapper instance.
 
@@ -274,50 +311,66 @@ def collect_dataclass_fields(
     FieldInfo_ = import_cached_field_info()
 
     fields: dict[str, FieldInfo] = {}
-    dataclass_fields: dict[str, dataclasses.Field] = cls.__dataclass_fields__
-    cls_localns = dict(vars(cls))  # this matches get_cls_type_hints_lenient, but all tests pass with `= None` instead
+    ns_resolver = ns_resolver or NsResolver()
+    dataclass_fields = cls.__dataclass_fields__
 
-    source_module = sys.modules.get(cls.__module__)
-    if source_module is not None:
-        types_namespace = {**source_module.__dict__, **(types_namespace or {})}
-
-    for ann_name, dataclass_field in dataclass_fields.items():
-        ann_type = _typing_extra.eval_type_lenient(dataclass_field.type, types_namespace, cls_localns)
-        if is_classvar(ann_type):
+    # The logic here is similar to `_typing_extra.get_cls_type_hints`,
+    # although we do it manually as stdlib dataclasses already have annotations
+    # collected in each class:
+    for base in reversed(cls.__mro__):
+        if not dataclasses.is_dataclass(base):
             continue
 
-        if (
-            not dataclass_field.init
-            and dataclass_field.default == dataclasses.MISSING
-            and dataclass_field.default_factory == dataclasses.MISSING
-        ):
-            # TODO: We should probably do something with this so that validate_assignment behaves properly
-            #   Issue: https://github.com/pydantic/pydantic/issues/5470
-            continue
+        with ns_resolver.push(base):
+            for ann_name, dataclass_field in dataclass_fields.items():
+                if ann_name not in base.__dict__.get('__annotations__', {}):
+                    # `__dataclass_fields__`contains every field, even the ones from base classes.
+                    # Only collect the ones defined on `base`.
+                    continue
 
-        if isinstance(dataclass_field.default, FieldInfo_):
-            if dataclass_field.default.init_var:
-                if dataclass_field.default.init is False:
-                    raise PydanticUserError(
-                        f'Dataclass field {ann_name} has init=False and init_var=True, but these are mutually exclusive.',
-                        code='clashing-init-and-init-var',
-                    )
+                globalns, localns = ns_resolver.types_namespace
+                ann_type, _ = _typing_extra.try_eval_type(dataclass_field.type, globalns, localns)
 
-                # TODO: same note as above re validate_assignment
-                continue
-            field_info = FieldInfo_.from_annotated_attribute(ann_type, dataclass_field.default)
-        else:
-            field_info = FieldInfo_.from_annotated_attribute(ann_type, dataclass_field)
+                if _typing_extra.is_classvar_annotation(ann_type):
+                    continue
 
-        fields[ann_name] = field_info
+                if (
+                    not dataclass_field.init
+                    and dataclass_field.default is dataclasses.MISSING
+                    and dataclass_field.default_factory is dataclasses.MISSING
+                ):
+                    # TODO: We should probably do something with this so that validate_assignment behaves properly
+                    #   Issue: https://github.com/pydantic/pydantic/issues/5470
+                    continue
 
-        if field_info.default is not PydanticUndefined and isinstance(getattr(cls, ann_name, field_info), FieldInfo_):
-            # We need this to fix the default when the "default" from __dataclass_fields__ is a pydantic.FieldInfo
-            setattr(cls, ann_name, field_info.default)
+                if isinstance(dataclass_field.default, FieldInfo_):
+                    if dataclass_field.default.init_var:
+                        if dataclass_field.default.init is False:
+                            raise PydanticUserError(
+                                f'Dataclass field {ann_name} has init=False and init_var=True, but these are mutually exclusive.',
+                                code='clashing-init-and-init-var',
+                            )
+
+                        # TODO: same note as above re validate_assignment
+                        continue
+                    field_info = FieldInfo_.from_annotated_attribute(ann_type, dataclass_field.default)
+                else:
+                    field_info = FieldInfo_.from_annotated_attribute(ann_type, dataclass_field)
+
+                fields[ann_name] = field_info
+
+                if field_info.default is not PydanticUndefined and isinstance(
+                    getattr(cls, ann_name, field_info), FieldInfo_
+                ):
+                    # We need this to fix the default when the "default" from __dataclass_fields__ is a pydantic.FieldInfo
+                    setattr(cls, ann_name, field_info.default)
 
     if typevars_map:
         for field in fields.values():
-            field.apply_typevars_map(typevars_map, types_namespace)
+            # We don't pass any ns, as `field.annotation`
+            # was already evaluated. TODO: is this method relevant?
+            # Can't we juste use `_generics.replace_types`?
+            field.apply_typevars_map(typevars_map)
 
     if config_wrapper is not None:
         _update_fields_from_docstrings(cls, fields, config_wrapper)
@@ -331,3 +384,19 @@ def is_valid_field_name(name: str) -> bool:
 
 def is_valid_privateattr_name(name: str) -> bool:
     return name.startswith('_') and not name.startswith('__')
+
+
+def takes_validated_data_argument(
+    default_factory: Callable[[], Any] | Callable[[dict[str, Any]], Any],
+) -> TypeIs[Callable[[dict[str, Any]], Any]]:
+    """Whether the provided default factory callable has a validated data parameter."""
+    try:
+        sig = signature(default_factory)
+    except (ValueError, TypeError):
+        # `inspect.signature` might not be able to infer a signature, e.g. with C objects.
+        # In this case, we assume no data argument is present:
+        return False
+
+    parameters = list(sig.parameters.values())
+
+    return len(parameters) == 1 and can_be_positional(parameters[0]) and parameters[0].default is Parameter.empty

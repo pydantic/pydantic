@@ -1,4 +1,5 @@
-"""Usage docs: https://docs.pydantic.dev/2.9/concepts/plugins#build-a-plugin
+"""!!! abstract "Usage Documentation"
+    [Build a Plugin](../concepts/plugins.md#build-a-plugin)
 
 Plugin interface for Pydantic plugins, and related types.
 """

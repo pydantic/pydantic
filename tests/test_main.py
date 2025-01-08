@@ -1,6 +1,7 @@
 import json
 import platform
 import re
+import sys
 import warnings
 from collections import defaultdict
 from copy import deepcopy
@@ -35,9 +36,9 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
-    GenerateSchema,
     GetCoreSchemaHandler,
     PrivateAttr,
+    PydanticDeprecatedSince211,
     PydanticUndefinedAnnotation,
     PydanticUserError,
     SecretStr,
@@ -48,8 +49,10 @@ from pydantic import (
     constr,
     field_validator,
 )
+from pydantic._internal._generate_schema import GenerateSchema
 from pydantic._internal._mock_val_ser import MockCoreSchema
 from pydantic.dataclasses import dataclass as pydantic_dataclass
+from pydantic.v1 import BaseModel as BaseModelV1
 
 
 def test_success():
@@ -108,12 +111,26 @@ def test_ultra_simple_repr(UltraSimpleModel):
     m = UltraSimpleModel(a=10.2)
     assert str(m) == 'a=10.2 b=10'
     assert repr(m) == 'UltraSimpleModel(a=10.2, b=10)'
-    assert repr(m.model_fields['a']) == 'FieldInfo(annotation=float, required=True)'
-    assert repr(m.model_fields['b']) == 'FieldInfo(annotation=int, required=False, default=10)'
+    assert repr(UltraSimpleModel.model_fields['a']) == 'FieldInfo(annotation=float, required=True)'
+    assert repr(UltraSimpleModel.model_fields['b']) == 'FieldInfo(annotation=int, required=False, default=10)'
     assert dict(m) == {'a': 10.2, 'b': 10}
     assert m.model_dump() == {'a': 10.2, 'b': 10}
     assert m.model_dump_json() == '{"a":10.2,"b":10}'
     assert str(m) == 'a=10.2 b=10'
+
+
+def test_recursive_repr() -> None:
+    class A(BaseModel):
+        a: object = None
+
+    class B(BaseModel):
+        a: Optional[A] = None
+
+    a = A()
+    a.a = a
+    b = B(a=a)
+
+    assert re.match(r"B\(a=A\(a='<Recursion on A with id=\d+>'\)\)", repr(b)) is not None
 
 
 def test_default_factory_field():
@@ -125,7 +142,7 @@ def test_default_factory_field():
 
     m = Model()
     assert str(m) == 'a=1'
-    assert repr(m.model_fields['a']) == 'FieldInfo(annotation=int, required=False, default_factory=myfunc)'
+    assert repr(Model.model_fields['a']) == 'FieldInfo(annotation=int, required=False, default_factory=myfunc)'
     assert dict(m) == {'a': 1}
     assert m.model_dump_json() == '{"a":1}'
 
@@ -404,8 +421,8 @@ def test_extra_broken_via_pydantic_extra_interference():
     """
 
     class BrokenExtraBaseModel(BaseModel):
-        def model_post_init(self, __context: Any) -> None:
-            super().model_post_init(__context)
+        def model_post_init(self, context: Any, /) -> None:
+            super().model_post_init(context)
             object.__setattr__(self, '__pydantic_extra__', None)
 
     class Model(BrokenExtraBaseModel):
@@ -719,8 +736,12 @@ def test_validating_assignment_pass(ValidateAssignmentModel):
     assert p.model_dump() == {'a': 2, 'b': 'hi'}
 
 
-def test_validating_assignment_fail(ValidateAssignmentModel):
+@pytest.mark.parametrize('init_valid', [False, True])
+def test_validating_assignment_fail(ValidateAssignmentModel, init_valid: bool):
     p = ValidateAssignmentModel(a=5, b='hello')
+    if init_valid:
+        p.a = 5
+        p.b = 'hello'
 
     with pytest.raises(ValidationError) as exc_info:
         p.a = 'b'
@@ -997,13 +1018,6 @@ def test_bare_type_type_validation_fails(bare_type):
             'input': arbitrary_type,
         }
     ]
-
-
-def test_annotation_field_name_shadows_attribute():
-    with pytest.raises(NameError):
-        # When defining a model that has an attribute with the name of a built-in attribute, an exception is raised
-        class BadModel(BaseModel):
-            model_json_schema: str  # This conflicts with the BaseModel's model_json_schema() class method
 
 
 def test_value_field_name_shadows_attribute():
@@ -1502,7 +1516,7 @@ def test_model_export_exclusion_inheritance():
     class Parent(BaseModel):
         model_config = ConfigDict(fields={'a': {'exclude': ...}, 's': {'exclude': {'s1'}}})
         a: int
-        b: int = Field(..., exclude=...)
+        b: int = Field(exclude=...)
         c: int
         d: int
         s: Sub = Sub()
@@ -1767,8 +1781,41 @@ def test_default_factory_parse():
     assert repr(parsed) == 'Outer(inner_1=Inner(val=0), inner_2=Inner(val=0))'
 
 
+def test_default_factory_validated_data_arg() -> None:
+    class Model(BaseModel):
+        a: int = 1
+        b: int = Field(default_factory=lambda data: data['a'])
+
+    model = Model()
+    assert model.b == 1
+
+    model = Model.model_construct(a=1)
+    assert model.b == 1
+
+    class InvalidModel(BaseModel):
+        a: int = Field(default_factory=lambda data: data['b'])
+        b: int
+
+    with pytest.raises(KeyError):
+        InvalidModel(b=2)
+
+
+def test_default_factory_validated_data_arg_not_required() -> None:
+    def fac(data: Optional[Dict[str, Any]] = None):
+        if data is not None:
+            return data['a']
+        return 3
+
+    class Model(BaseModel):
+        a: int = 1
+        b: int = Field(default_factory=fac)
+
+    model = Model()
+    assert model.b == 3
+
+
 def test_reuse_same_field():
-    required_field = Field(...)
+    required_field = Field()
 
     class Model1(BaseModel):
         required: str = required_field
@@ -1817,9 +1864,9 @@ def test_repr_field():
 
     m = Model(a=1, b=2.5, c=True)
     assert repr(m) == 'Model(a=1, b=2.5)'
-    assert repr(m.model_fields['a']) == 'FieldInfo(annotation=int, required=True)'
-    assert repr(m.model_fields['b']) == 'FieldInfo(annotation=float, required=True)'
-    assert repr(m.model_fields['c']) == 'FieldInfo(annotation=bool, required=True, repr=False)'
+    assert repr(Model.model_fields['a']) == 'FieldInfo(annotation=int, required=True)'
+    assert repr(Model.model_fields['b']) == 'FieldInfo(annotation=float, required=True)'
+    assert repr(Model.model_fields['c']) == 'FieldInfo(annotation=bool, required=True, repr=False)'
 
 
 def test_inherited_model_field_copy():
@@ -1943,7 +1990,7 @@ def test_new_union_origin():
 )
 @pytest.mark.parametrize(
     'value',
-    [None, Field(...)],
+    [None, Field()],
     ids=['none', 'field'],
 )
 def test_frozen_field_decl_without_default_val(ann, value):
@@ -1964,9 +2011,11 @@ def test_frozen_field_decl_without_default_val(ann, value):
     [Final, Final[int]],
     ids=['no-arg', 'with-arg'],
 )
-def test_final_field_decl_with_default_val(ann):
-    class Model(BaseModel):
-        a: ann = 10
+def test_deprecated_final_field_decl_with_default_val(ann):
+    with pytest.warns(PydanticDeprecatedSince211):
+
+        class Model(BaseModel):
+            a: ann = 10
 
     assert 'a' in Model.__class_vars__
     assert 'a' not in Model.model_fields
@@ -2015,8 +2064,8 @@ def test_post_init():
         a: int
         b: int
 
-        def model_post_init(self, __context) -> None:
-            super().model_post_init(__context)  # this is included just to show it doesn't error
+        def model_post_init(self, context, /) -> None:
+            super().model_post_init(context)  # this is included just to show it doesn't error
             assert self.model_dump() == {'a': 3, 'b': 4}
             calls.append('inner_model_post_init')
 
@@ -2025,7 +2074,7 @@ def test_post_init():
         d: int
         sub: InnerModel
 
-        def model_post_init(self, __context) -> None:
+        def model_post_init(self, context, /) -> None:
             assert self.model_dump() == {'c': 1, 'd': 2, 'sub': {'a': 3, 'b': 4}}
             calls.append('model_post_init')
 
@@ -2034,9 +2083,9 @@ def test_post_init():
     assert m.model_dump() == {'c': 1, 'd': 2, 'sub': {'a': 3, 'b': 4}}
 
     class SubModel(Model):
-        def model_post_init(self, __context) -> None:
+        def model_post_init(self, context, /) -> None:
             assert self.model_dump() == {'c': 1, 'd': 2, 'sub': {'a': 3, 'b': 4}}
-            super().model_post_init(__context)
+            super().model_post_init(context)
             calls.append('submodel_post_init')
 
     calls.clear()
@@ -2082,7 +2131,7 @@ def test_post_init_not_called_without_override():
         assert calls == []
 
         class WithOverrideModel(BaseModel):
-            def model_post_init(self, __context: Any) -> None:
+            def model_post_init(self, context: Any, /) -> None:
                 calls.append('WithOverrideModel.model_post_init')
 
         WithOverrideModel()
@@ -2101,7 +2150,7 @@ def test_model_post_init_subclass_private_attrs():
     class A(BaseModel):
         a: int = 1
 
-        def model_post_init(self, __context: Any) -> None:
+        def model_post_init(self, context: Any, /) -> None:
             calls.append(f'{self.__class__.__name__}.model_post_init')
 
     class B(A):
@@ -2122,10 +2171,10 @@ def test_model_post_init_supertype_private_attrs():
         _private: int = 12
 
     class SubModel(Model):
-        def model_post_init(self, __context: Any) -> None:
+        def model_post_init(self, context: Any, /) -> None:
             if self._private == 12:
                 self._private = 13
-            super().model_post_init(__context)
+            super().model_post_init(context)
 
     m = SubModel()
 
@@ -2139,7 +2188,7 @@ def test_model_post_init_subclass_setting_private_attrs():
         _priv1: int = PrivateAttr(91)
         _priv2: int = PrivateAttr(92)
 
-        def model_post_init(self, __context) -> None:
+        def model_post_init(self, context, /) -> None:
             self._priv1 = 100
 
     class SubModel(Model):
@@ -2148,10 +2197,10 @@ def test_model_post_init_subclass_setting_private_attrs():
         _priv5: int = PrivateAttr()
         _priv6: int = PrivateAttr()
 
-        def model_post_init(self, __context) -> None:
+        def model_post_init(self, context, /) -> None:
             self._priv3 = 200
             self._priv5 = 300
-            super().model_post_init(__context)
+            super().model_post_init(context)
 
     m = SubModel()
 
@@ -2174,7 +2223,7 @@ def test_model_post_init_correct_mro():
     class B(BaseModel):
         b: int = 1
 
-        def model_post_init(self, __context: Any) -> None:
+        def model_post_init(self, context: Any, /) -> None:
             calls.append(f'{self.__class__.__name__}.model_post_init')
 
     class C(A, B):
@@ -2183,6 +2232,76 @@ def test_model_post_init_correct_mro():
     C()
 
     assert calls == ['C.model_post_init']
+
+
+def test_del_model_attr():
+    class Model(BaseModel):
+        some_field: str
+
+    m = Model(some_field='value')
+    assert hasattr(m, 'some_field')
+
+    del m.some_field
+
+    assert not hasattr(m, 'some_field')
+
+
+@pytest.mark.skipif(
+    platform.python_implementation() == 'PyPy',
+    reason='In this single case `del` behaves weird on pypy',
+)
+def test_del_model_attr_error():
+    class Model(BaseModel):
+        some_field: str
+
+    m = Model(some_field='value')
+    assert not hasattr(m, 'other_field')
+
+    with pytest.raises(AttributeError, match='other_field'):
+        del m.other_field
+
+
+def test_del_model_attr_with_private_attrs():
+    class Model(BaseModel):
+        _private_attr: int = PrivateAttr(default=1)
+        some_field: str
+
+    m = Model(some_field='value')
+    assert hasattr(m, 'some_field')
+
+    del m.some_field
+
+    assert not hasattr(m, 'some_field')
+
+
+@pytest.mark.skipif(
+    platform.python_implementation() == 'PyPy',
+    reason='In this single case `del` behaves weird on pypy',
+)
+def test_del_model_attr_with_private_attrs_error():
+    class Model(BaseModel):
+        _private_attr: int = PrivateAttr(default=1)
+        some_field: str
+
+    m = Model(some_field='value')
+    assert not hasattr(m, 'other_field')
+
+    with pytest.raises(AttributeError, match="'Model' object has no attribute 'other_field'"):
+        del m.other_field
+
+
+def test_del_model_attr_with_private_attrs_twice_error():
+    class Model(BaseModel):
+        _private_attr: int = 1
+        some_field: str
+
+    m = Model(some_field='value')
+    assert hasattr(m, '_private_attr')
+
+    del m._private_attr
+
+    with pytest.raises(AttributeError, match="'Model' object has no attribute '_private_attr'"):
+        del m._private_attr
 
 
 def test_deeper_recursive_model():
@@ -2587,20 +2706,11 @@ def test_recursion_loop_error():
 
 def test_protected_namespace_default():
     with pytest.warns(
-        UserWarning, match='Field "model_prefixed_field" in Model has conflict with protected namespace "model_"'
+        UserWarning, match='Field "model_dump_something" in Model has conflict with protected namespace "model_dump"'
     ):
 
         class Model(BaseModel):
-            model_prefixed_field: str
-
-
-def test_protected_namespace_real_conflict():
-    with pytest.raises(
-        NameError, match=r'Field "model_validate" conflicts with member .* of protected namespace "model_"\.'
-    ):
-
-        class Model(BaseModel):
-            model_validate: str
+            model_dump_something: str
 
 
 def test_custom_protected_namespace():
@@ -2624,6 +2734,15 @@ def test_multiple_protected_namespace():
             also_protect_field: str
 
             model_config = ConfigDict(protected_namespaces=('protect_me_', 'also_protect_'))
+
+
+def test_protected_namespace_pattern() -> None:
+    with pytest.warns(UserWarning, match=r'Field "perfect_match" in Model has conflict with protected namespace .*'):
+
+        class Model(BaseModel):
+            perfect_match: str
+
+            model_config = ConfigDict(protected_namespaces=(re.compile(r'^perfect_match$'),))
 
 
 def test_model_get_core_schema() -> None:
@@ -3131,62 +3250,7 @@ def test_cannot_use_leading_underscore_field_names():
             ___: int = Field(default=1)
 
 
-def test_schema_generator_customize_type() -> None:
-    class LaxStrGenerator(GenerateSchema):
-        def str_schema(self) -> CoreSchema:
-            return core_schema.no_info_plain_validator_function(str)
-
-    class Model(BaseModel):
-        x: str
-        model_config = ConfigDict(schema_generator=LaxStrGenerator)
-
-    assert Model(x=1).x == '1'
-
-
-def test_schema_generator_customize_type_constraints() -> None:
-    class LaxStrGenerator(GenerateSchema):
-        def str_schema(self) -> CoreSchema:
-            return core_schema.no_info_plain_validator_function(str)
-
-    class Model(BaseModel):
-        x: Annotated[str, Field(pattern='^\\d+$')]
-        y: Annotated[float, Field(gt=0)]
-        z: Annotated[List[int], Field(min_length=1)]
-        model_config = ConfigDict(schema_generator=LaxStrGenerator)
-
-    # insert_assert(Model(x='123', y=1, z=[-1]).model_dump())
-    assert Model(x='123', y=1, z=[-1]).model_dump() == {'x': '123', 'y': 1.0, 'z': [-1]}
-
-    with pytest.raises(ValidationError) as exc_info:
-        Model(x='abc', y=-1, z=[])
-
-    # insert_assert(exc_info.value.errors(include_url=False))
-    assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'string_pattern_mismatch',
-            'loc': ('x',),
-            'msg': "String should match pattern '^\\d+$'",
-            'input': 'abc',
-            'ctx': {'pattern': '^\\d+$'},
-        },
-        {
-            'type': 'greater_than',
-            'loc': ('y',),
-            'msg': 'Input should be greater than 0',
-            'input': -1,
-            'ctx': {'gt': 0.0},
-        },
-        {
-            'type': 'too_short',
-            'loc': ('z',),
-            'msg': 'List should have at least 1 item after validation, not 0',
-            'input': [],
-            'ctx': {'field_type': 'List', 'min_length': 1, 'actual_length': 0},
-        },
-    ]
-
-
-def test_schema_generator_customize_type_constraints_order() -> None:
+def test_customize_type_constraints_order() -> None:
     class Model(BaseModel):
         # whitespace will be stripped first, then max length will be checked, should pass on ' 1 '
         x: Annotated[str, AfterValidator(lambda x: x.strip()), StringConstraints(max_length=1)]
@@ -3360,7 +3424,7 @@ def test_model_construct_with_model_post_init_and_model_copy() -> None:
     class Model(BaseModel):
         id: int
 
-        def model_post_init(self, context: Any) -> None:
+        def model_post_init(self, context: Any, /) -> None:
             super().model_post_init(context)
 
     m = Model.model_construct(id=1)
@@ -3368,3 +3432,34 @@ def test_model_construct_with_model_post_init_and_model_copy() -> None:
 
     assert m == copy
     assert id(m) != id(copy)
+
+
+def test_subclassing_gen_schema_warns() -> None:
+    with pytest.warns(UserWarning, match='Subclassing `GenerateSchema` is not supported.'):
+
+        class MyGenSchema(GenerateSchema): ...
+
+
+def test_nested_v1_model_warns() -> None:
+    with pytest.warns(
+        UserWarning,
+        match=r'Mixing V1 models and V2 models \(or constructs, like `TypeAdapter`\) is not supported. Please upgrade `V1Model` to V2.',
+    ):
+
+        class V1Model(BaseModelV1):
+            a: int
+
+        class V2Model(BaseModel):
+            inner: V1Model
+
+
+@pytest.mark.skipif(sys.version_info < (3, 13), reason='requires python 3.13')
+def test_replace() -> None:
+    from copy import replace
+
+    class Model(BaseModel):
+        x: int
+        y: int
+
+    m = Model(x=1, y=2)
+    assert replace(m, x=3) == Model(x=3, y=2)

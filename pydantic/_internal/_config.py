@@ -2,6 +2,7 @@ from __future__ import annotations as _annotations
 
 import warnings
 from contextlib import contextmanager
+from re import Pattern
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -18,7 +19,7 @@ from typing_extensions import (
 from ..aliases import AliasGenerator
 from ..config import ConfigDict, ExtraValues, JsonDict, JsonEncoder, JsonSchemaExtraCallable
 from ..errors import PydanticUserError
-from ..warnings import PydanticDeprecatedSince20
+from ..warnings import PydanticDeprecatedSince20, PydanticDeprecatedSince210
 
 if not TYPE_CHECKING:
     # See PyCharm issues https://youtrack.jetbrains.com/issue/PY-21915
@@ -76,10 +77,9 @@ class ConfigWrapper:
     # whether to validate default values during validation, default False
     validate_default: bool
     validate_return: bool
-    protected_namespaces: tuple[str, ...]
+    protected_namespaces: tuple[str | Pattern[str], ...]
     hide_input_in_errors: bool
     defer_build: bool
-    experimental_defer_build_mode: tuple[Literal['model', 'type_adapter'], ...]
     plugin_settings: dict[str, object] | None
     schema_generator: type[GenerateSchema] | None
     json_schema_serialization_defaults_required: bool
@@ -123,7 +123,7 @@ class ConfigWrapper:
         config_dict_from_namespace = namespace.get('model_config')
 
         raw_annotations = namespace.get('__annotations__', {})
-        if raw_annotations.get('model_config') and not config_dict_from_namespace:
+        if raw_annotations.get('model_config') and config_dict_from_namespace is None:
             raise PydanticUserError(
                 '`model_config` cannot be used as a model field name. Use `model_config` for model configuration.',
                 code='model-config-invalid-field-name',
@@ -154,23 +154,28 @@ class ConfigWrapper:
                 except KeyError:
                     raise AttributeError(f'Config has no attribute {name!r}') from None
 
-    def core_config(self, obj: Any) -> core_schema.CoreConfig:
-        """Create a pydantic-core config, `obj` is just used to populate `title` if not set in config.
-
-        Pass `obj=None` if you do not want to attempt to infer the `title`.
+    def core_config(self, title: str | None) -> core_schema.CoreConfig:
+        """Create a pydantic-core config.
 
         We don't use getattr here since we don't want to populate with defaults.
 
         Args:
-            obj: An object used to populate `title` if not set in config.
+            title: The title to use if not set in config.
 
         Returns:
             A `CoreConfig` object created from config.
         """
         config = self.config_dict
 
+        if config.get('schema_generator') is not None:
+            warnings.warn(
+                'The `schema_generator` setting has been deprecated since v2.10. This setting no longer has any effect.',
+                PydanticDeprecatedSince210,
+                stacklevel=2,
+            )
+
         core_config_values = {
-            'title': config.get('title') or (obj and obj.__name__),
+            'title': config.get('title') or title or None,
             'extra_fields_behavior': config.get('extra'),
             'allow_inf_nan': config.get('allow_inf_nan'),
             'populate_by_name': config.get('populate_by_name'),
@@ -258,13 +263,12 @@ config_defaults = ConfigDict(
     ser_json_inf_nan='null',
     validate_default=False,
     validate_return=False,
-    protected_namespaces=('model_',),
+    protected_namespaces=('model_validate', 'model_dump'),
     hide_input_in_errors=False,
     json_encoders=None,
     defer_build=False,
-    experimental_defer_build_mode=('model',),
-    plugin_settings=None,
     schema_generator=None,
+    plugin_settings=None,
     json_schema_serialization_defaults_required=False,
     json_schema_mode_override=None,
     coerce_numbers_to_str=False,

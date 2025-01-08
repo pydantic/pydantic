@@ -1542,8 +1542,6 @@ def test_root_validator_returns_none_exception():
 
 
 def test_model_validator_returns_ignore():
-    # This is weird, and I don't understand entirely why it's happening, but it kind of makes sense
-
     class Model(BaseModel):
         a: int = 1
 
@@ -1551,7 +1549,8 @@ def test_model_validator_returns_ignore():
         def model_validator_return_none(self) -> None:
             return None
 
-    m = Model(a=2)
+    with pytest.warns(UserWarning, match='A custom validator is returning a value other than `self`'):
+        m = Model(a=2)
     assert m.model_dump() == {'a': 2}
 
 
@@ -1817,7 +1816,7 @@ def test_overridden_root_validators():
 
 def test_validating_assignment_pre_root_validator_fail():
     class Model(BaseModel):
-        current_value: float = Field(..., alias='current')
+        current_value: float = Field(alias='current')
         max_value: float
 
         model_config = ConfigDict(validate_assignment=True)
@@ -1845,7 +1844,7 @@ def test_validating_assignment_pre_root_validator_fail():
 
 def test_validating_assignment_model_validator_before_fail():
     class Model(BaseModel):
-        current_value: float = Field(..., alias='current')
+        current_value: float = Field(alias='current')
         max_value: float
 
         model_config = ConfigDict(validate_assignment=True)
@@ -2870,6 +2869,45 @@ def test_plain_validator_plain_serializer() -> None:
     assert isinstance(data['bar'], ser_type)
 
 
+def test_plain_validator_plain_serializer_single_ser_call() -> None:
+    """https://github.com/pydantic/pydantic/issues/10385"""
+
+    ser_count = 0
+
+    def ser(v):
+        nonlocal ser_count
+        ser_count += 1
+        return v
+
+    class Model(BaseModel):
+        foo: Annotated[bool, PlainSerializer(ser), PlainValidator(lambda v: v)]
+
+    model = Model(foo=True)
+    data = model.model_dump()
+
+    assert data == {'foo': True}
+    assert ser_count == 1
+
+
+@pytest.mark.xfail(reason='https://github.com/pydantic/pydantic/issues/10428')
+def test_plain_validator_with_filter_dict_schema() -> None:
+    class MyDict:
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source, handler):
+            return core_schema.dict_schema(
+                keys_schema=handler.generate_schema(str),
+                values_schema=handler.generate_schema(int),
+                serialization=core_schema.filter_dict_schema(
+                    include={'a'},
+                ),
+            )
+
+    class Model(BaseModel):
+        f: Annotated[MyDict, PlainValidator(lambda v: v)]
+
+    assert Model(f={'a': 1, 'b': 1}).model_dump() == {'f': {'a': 1}}
+
+
 def test_plain_validator_with_unsupported_type() -> None:
     class UnsupportedClass:
         pass
@@ -2898,3 +2936,30 @@ def test_validator_with_default_values() -> None:
 
     with pytest.raises(ValidationError):
         Model(x=-1)
+
+
+def test_field_validator_input_type_invalid_mode() -> None:
+    with pytest.raises(
+        PydanticUserError, match=re.escape("`json_schema_input_type` can't be used when mode is set to 'after'")
+    ):
+
+        class Model(BaseModel):
+            a: int
+
+            @field_validator('a', mode='after', json_schema_input_type=Union[int, str])  # pyright: ignore
+            @classmethod
+            def validate_a(cls, value: Any) -> Any: ...
+
+
+def test_non_self_return_val_warns() -> None:
+    class Child(BaseModel):
+        name: str
+
+        @model_validator(mode='after')  # type: ignore
+        def validate_model(self) -> 'Child':
+            return Child.model_construct(name='different')
+
+    with pytest.warns(UserWarning, match='A custom validator is returning a value other than `self`'):
+        c = Child(name='name')
+        # confirmation of behavior: non-self return value is ignored
+        assert c.name == 'name'

@@ -1,11 +1,12 @@
 import datetime as dt
 import sys
 from dataclasses import dataclass
+from decimal import Decimal
 from typing import Any, Callable, Generic, Iterator, List, Optional, Set, TypeVar
 
 import pytest
 import pytz
-from annotated_types import BaseMetadata, GroupedMetadata, Gt, Lt, Predicate
+from annotated_types import BaseMetadata, GroupedMetadata, Gt, Lt, Not, Predicate
 from pydantic_core import CoreSchema, PydanticUndefined, core_schema
 from typing_extensions import Annotated
 
@@ -385,6 +386,12 @@ def test_validate_float_inf_nan_python() -> None:
     ]
 
 
+def test_predicate_success_python() -> None:
+    ta = TypeAdapter(Annotated[int, Predicate(lambda x: x > 0)])
+
+    assert ta.validate_python(1) == 1
+
+
 def test_predicate_error_python() -> None:
     ta = TypeAdapter(Annotated[int, Predicate(lambda x: x > 0)])
 
@@ -398,6 +405,23 @@ def test_predicate_error_python() -> None:
             'loc': (),
             'msg': 'Predicate test_predicate_error_python.<locals>.<lambda> failed',
             'input': -1,
+        }
+    ]
+
+
+def test_not_operation_error_python() -> None:
+    ta = TypeAdapter(Annotated[int, Not(lambda x: x > 5)])
+
+    with pytest.raises(ValidationError) as exc_info:
+        ta.validate_python(6)
+
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'not_operation_failed',
+            'loc': (),
+            'msg': 'Not of test_not_operation_error_python.<locals>.<lambda> failed',
+            'input': 6,
         }
     ]
 
@@ -621,3 +645,20 @@ def test_compatible_metadata_raises_correct_validation_error() -> None:
     ta = TypeAdapter(Annotated[str, BeforeValidator(lambda x: x), Field(pattern='abc')])
     with pytest.raises(ValidationError, match="String should match pattern 'abc'"):
         ta.validate_python('def')
+
+
+def test_decimal_constraints_after_annotation() -> None:
+    DecimalAnnotation = Annotated[Decimal, BeforeValidator(lambda v: v), Field(max_digits=10, decimal_places=4)]
+
+    ta = TypeAdapter(DecimalAnnotation)
+    assert ta.validate_python(Decimal('123.4567')) == Decimal('123.4567')
+
+    with pytest.raises(ValidationError) as e:
+        ta.validate_python(Decimal('123.45678'))
+
+    assert e.value.errors()[0]['type'] == 'decimal_max_places'
+
+    with pytest.raises(ValidationError) as e:
+        ta.validate_python(Decimal('12345678.901'))
+
+    assert e.value.errors()[0]['type'] == 'decimal_max_digits'

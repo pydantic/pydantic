@@ -23,7 +23,7 @@ github_graphql_url = 'https://api.github.com/graphql'
 
 discussions_query = """
 query Q($after: String) {
-  repository(name: "pydantic", owner: "samuelcolvin") {
+  repository(name: "pydantic", owner: "pydantic") {
     discussions(first: 100, after: $after) {
       edges {
         cursor
@@ -528,6 +528,7 @@ if __name__ == '__main__':
         'davidhewitt',
         'sydney-runkle',
         'alexmojaki',
+        'Viicos',
     }
     bot_names = {'codecov', 'github-actions', 'pre-commit-ci', 'dependabot'}
     maintainers = []

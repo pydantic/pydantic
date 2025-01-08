@@ -11,28 +11,24 @@ from __future__ import annotations as _annotations
 import collections
 import collections.abc
 import dataclasses
-import os
 import typing
 from functools import partial
-from typing import Any, Callable, Iterable, Tuple, TypeVar
+from typing import Any, Callable, Iterable, Tuple, TypeVar, cast
 
 import typing_extensions
 from pydantic_core import (
     CoreSchema,
-    PydanticCustomError,
     core_schema,
 )
 from typing_extensions import get_args, get_origin
 
 from pydantic._internal._serializers import serialize_sequence_via_list
 from pydantic.errors import PydanticSchemaGenerationError
-from pydantic.types import Strict
 
-from ..json_schema import JsonSchemaValue
 from . import _known_annotated_metadata, _typing_extra
 from ._import_utils import import_cached_field_info
 from ._internal_dataclass import slots_true
-from ._schema_generation_shared import GetCoreSchemaHandler, GetJsonSchemaHandler
+from ._schema_generation_shared import GetCoreSchemaHandler
 
 FieldInfo = import_cached_field_info()
 
@@ -40,110 +36,6 @@ if typing.TYPE_CHECKING:
     from ._generate_schema import GenerateSchema
 
     StdSchemaFunction = Callable[[GenerateSchema, type[Any]], core_schema.CoreSchema]
-
-
-@dataclasses.dataclass(**slots_true)
-class InnerSchemaValidator:
-    """Use a fixed CoreSchema, avoiding interference from outward annotations."""
-
-    core_schema: CoreSchema
-    js_schema: JsonSchemaValue | None = None
-    js_core_schema: CoreSchema | None = None
-    js_schema_update: JsonSchemaValue | None = None
-
-    def __get_pydantic_json_schema__(self, _schema: CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
-        if self.js_schema is not None:
-            return self.js_schema
-        js_schema = handler(self.js_core_schema or self.core_schema)
-        if self.js_schema_update is not None:
-            js_schema.update(self.js_schema_update)
-        return js_schema
-
-    def __get_pydantic_core_schema__(self, _source_type: Any, _handler: GetCoreSchemaHandler) -> CoreSchema:
-        return self.core_schema
-
-
-def path_schema_prepare_pydantic_annotations(
-    source_type: Any, annotations: Iterable[Any]
-) -> tuple[Any, list[Any]] | None:
-    import pathlib
-
-    orig_source_type: Any = get_origin(source_type) or source_type
-    if (
-        (source_type_args := get_args(source_type))
-        and orig_source_type is os.PathLike
-        and source_type_args[0] not in {str, bytes, Any}
-    ):
-        return None
-
-    if orig_source_type not in {
-        os.PathLike,
-        pathlib.Path,
-        pathlib.PurePath,
-        pathlib.PosixPath,
-        pathlib.PurePosixPath,
-        pathlib.PureWindowsPath,
-    }:
-        return None
-
-    metadata, remaining_annotations = _known_annotated_metadata.collect_known_metadata(annotations)
-    _known_annotated_metadata.check_metadata(metadata, _known_annotated_metadata.STR_CONSTRAINTS, orig_source_type)
-
-    is_first_arg_byte = source_type_args and source_type_args[0] is bytes
-    construct_path = pathlib.PurePath if orig_source_type is os.PathLike else orig_source_type
-    constrained_schema = (
-        core_schema.bytes_schema(**metadata) if is_first_arg_byte else core_schema.str_schema(**metadata)
-    )
-
-    def path_validator(input_value: str | bytes) -> os.PathLike[Any]:  # type: ignore
-        try:
-            if is_first_arg_byte:
-                if isinstance(input_value, bytes):
-                    try:
-                        input_value = input_value.decode()
-                    except UnicodeDecodeError as e:
-                        raise PydanticCustomError('bytes_type', 'Input must be valid bytes') from e
-                else:
-                    raise PydanticCustomError('bytes_type', 'Input must be bytes')
-            elif not isinstance(input_value, str):
-                raise PydanticCustomError('path_type', 'Input is not a valid path')
-
-            return construct_path(input_value)
-        except TypeError as e:
-            raise PydanticCustomError('path_type', 'Input is not a valid path') from e
-
-    instance_schema = core_schema.json_or_python_schema(
-        json_schema=core_schema.no_info_after_validator_function(path_validator, constrained_schema),
-        python_schema=core_schema.is_instance_schema(orig_source_type),
-    )
-
-    strict: bool | None = None
-    for annotation in annotations:
-        if isinstance(annotation, Strict):
-            strict = annotation.strict
-
-    schema = core_schema.lax_or_strict_schema(
-        lax_schema=core_schema.union_schema(
-            [
-                instance_schema,
-                core_schema.no_info_after_validator_function(path_validator, constrained_schema),
-            ],
-            custom_error_type='path_type',
-            custom_error_message=f'Input is not a valid path for {orig_source_type}',
-            strict=True,
-        ),
-        strict_schema=instance_schema,
-        serialization=core_schema.to_string_ser_schema(),
-        strict=strict,
-    )
-
-    return (
-        orig_source_type,
-        [
-            InnerSchemaValidator(schema, js_core_schema=constrained_schema, js_schema_update={'format': 'path'}),
-            *remaining_annotations,
-        ],
-    )
 
 
 def deque_validator(
@@ -164,13 +56,13 @@ class DequeValidator:
     metadata: dict[str, Any]
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-        if self.item_source_type is Any:
+        if _typing_extra.is_any(self.item_source_type):
             items_schema = None
         else:
             items_schema = handler.generate_schema(self.item_source_type)
 
         # if we have a MaxLen annotation might as well set that as the default maxlen on the deque
-        # this lets us re-use existing metadata annotations to let users set the maxlen on a dequeue
+        # this lets us reuse existing metadata annotations to let users set the maxlen on a dequeue
         # that e.g. comes from JSON
         coerce_instance_wrap = partial(
             core_schema.no_info_wrap_validator_function,
@@ -300,7 +192,8 @@ def get_defaultdict_default_default_factory(values_source_type: Any) -> Callable
     else:
         field_info = None
     if field_info and field_info.default_factory:
-        default_default_factory = field_info.default_factory
+        # Assume the default factory does not take any argument:
+        default_default_factory = cast(Callable[[], Any], field_info.default_factory)
     else:
         default_default_factory = infer_default()
     return default_default_factory
@@ -319,11 +212,11 @@ class MappingValidator:
         return handler(v)
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-        if self.keys_source_type is Any:
+        if _typing_extra.is_any(self.keys_source_type):
             keys_schema = None
         else:
             keys_schema = handler.generate_schema(self.keys_source_type)
-        if self.values_source_type is Any:
+        if _typing_extra.is_any(self.values_source_type):
             values_schema = None
         else:
             values_schema = handler.generate_schema(self.values_source_type)

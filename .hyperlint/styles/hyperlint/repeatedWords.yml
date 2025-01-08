@@ -1,0 +1,6 @@
+extends: repetition
+message: "'%s' is repeated, did you mean to repeat this word?"
+level: error
+alpha: true
+tokens:
+  - '[^\s]+'

@@ -14,6 +14,7 @@ from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta, timezone
 from decimal import Decimal
 from enum import Enum, IntEnum
+from fractions import Fraction
 from numbers import Number
 from pathlib import Path
 from typing import (
@@ -62,6 +63,7 @@ from pydantic import (
     Base64UrlBytes,
     Base64UrlStr,
     BaseModel,
+    BeforeValidator,
     ByteSize,
     ConfigDict,
     DirectoryPath,
@@ -100,6 +102,7 @@ from pydantic import (
     SecretStr,
     SerializeAsAny,
     SkipValidation,
+    SocketPath,
     Strict,
     StrictBool,
     StrictBytes,
@@ -389,7 +392,7 @@ def test_constrained_list_item_type_fails():
 
 def test_conlist():
     class Model(BaseModel):
-        foo: List[int] = Field(..., min_length=2, max_length=4)
+        foo: List[int] = Field(min_length=2, max_length=4)
         bar: conlist(str, min_length=1, max_length=4) = None
 
     assert Model(foo=[1, 2], bar=['spoon']).model_dump() == {'foo': [1, 2], 'bar': ['spoon']}
@@ -604,7 +607,7 @@ def test_constrained_set_item_type_fails():
 
 def test_conset():
     class Model(BaseModel):
-        foo: Set[int] = Field(..., min_length=2, max_length=4)
+        foo: Set[int] = Field(min_length=2, max_length=4)
         bar: conset(str, min_length=1, max_length=4) = None
 
     assert Model(foo=[1, 2], bar=['spoon']).model_dump() == {'foo': {1, 2}, 'bar': {'spoon'}}
@@ -653,7 +656,7 @@ def test_conset_not_required():
 
 def test_confrozenset():
     class Model(BaseModel):
-        foo: FrozenSet[int] = Field(..., min_length=2, max_length=4)
+        foo: FrozenSet[int] = Field(min_length=2, max_length=4)
         bar: confrozenset(str, min_length=1, max_length=4) = None
 
     m = Model(foo=[1, 2], bar=['spoon'])
@@ -1803,9 +1806,20 @@ def test_enum_with_no_cases() -> None:
     'kwargs,type_,a',
     [
         ({'pattern': '^foo$'}, int, 1),
-        ({'gt': 0}, conlist(int, min_length=4), [1, 2, 3, 4, 5]),
-        ({'gt': 0}, conset(int, min_length=4), {1, 2, 3, 4, 5}),
-        ({'gt': 0}, confrozenset(int, min_length=4), frozenset({1, 2, 3, 4, 5})),
+        *[
+            ({constraint_name: 0}, List[int], [1, 2, 3, 4, 5])
+            for constraint_name in ['gt', 'lt', 'ge', 'le', 'multiple_of']
+        ]
+        + [
+            ({constraint_name: 0}, Set[int], {1, 2, 3, 4, 5})
+            for constraint_name in ['gt', 'lt', 'ge', 'le', 'multiple_of']
+        ]
+        + [
+            ({constraint_name: 0}, FrozenSet[int], frozenset({1, 2, 3, 4, 5}))
+            for constraint_name in ['gt', 'lt', 'ge', 'le', 'multiple_of']
+        ]
+        + [({constraint_name: 0}, Decimal, Decimal('1.0')) for constraint_name in ['max_length', 'min_length']]
+        + [({constraint_name: 0}, float, 1.0) for constraint_name in ['max_digits', 'decimal_places']],
     ],
 )
 def test_invalid_schema_constraints(kwargs, type_, a):
@@ -1819,12 +1833,15 @@ def test_invalid_schema_constraints(kwargs, type_, a):
         Foo(a=a)
 
 
-def test_invalid_decimal_constraint():
-    class Foo(BaseModel):
-        a: Decimal = Field('foo', title='A title', description='A description', max_length=5)
+def test_fraction_validation():
+    class Model(BaseModel):
+        a: Fraction
 
-    with pytest.raises(TypeError, match="Unable to apply constraint 'max_length' to supplied value 1.0"):
-        Foo(a=1.0)
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a='wrong_format')
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'fraction_parsing', 'loc': ('a',), 'msg': 'Input is not a valid fraction', 'input': 'wrong_format'}
+    ]
 
 
 @pytest.mark.skipif(not email_validator, reason='email_validator not installed')
@@ -2806,7 +2823,7 @@ def test_strict_bytes():
 
 def test_strict_bytes_max_length():
     class Model(BaseModel):
-        u: StrictBytes = Field(..., max_length=5)
+        u: StrictBytes = Field(max_length=5)
 
     assert Model(u=b'foo').u == b'foo'
 
@@ -2839,7 +2856,7 @@ def test_strict_str():
 
 def test_strict_str_max_length():
     class Model(BaseModel):
-        u: StrictStr = Field(..., max_length=5)
+        u: StrictStr = Field(max_length=5)
 
     assert Model(u='foo').u == 'foo'
 
@@ -3082,11 +3099,11 @@ def test_uuid_strict() -> None:
         model_config = ConfigDict(strict=True)
 
     class StrictByField(BaseModel):
-        a: UUID1 = Field(..., strict=True)
-        b: UUID3 = Field(..., strict=True)
-        c: UUID4 = Field(..., strict=True)
-        d: UUID5 = Field(..., strict=True)
-        e: uuid.UUID = Field(..., strict=True)
+        a: UUID1 = Field(strict=True)
+        b: UUID3 = Field(strict=True)
+        c: UUID4 = Field(strict=True)
+        d: UUID5 = Field(strict=True)
+        e: uuid.UUID = Field(strict=True)
 
     a = uuid.UUID('7fb48116-ca6b-11ed-a439-3274d3adddac')  # uuid1
     b = uuid.UUID('6fa459ea-ee8a-3ca4-894e-db77e160355e')  # uuid3
@@ -3481,15 +3498,6 @@ def test_path_validation_success(value, result):
     assert Model.model_validate_json(json.dumps({'foo': str(value)})).foo == result
 
 
-def test_path_validation_constrained():
-    ta = TypeAdapter(Annotated[Path, Field(min_length=9, max_length=20)])
-    with pytest.raises(ValidationError):
-        ta.validate_python('/short')
-    with pytest.raises(ValidationError):
-        ta.validate_python('/' + 'long' * 100)
-    assert ta.validate_python('/just/right/enough') == Path('/just/right/enough')
-
-
 def test_path_like():
     class Model(BaseModel):
         foo: os.PathLike
@@ -3694,6 +3702,43 @@ def test_new_path_validation_path_already_exists(value):
             'loc': ('foo',),
             'msg': 'Path already exists',
             'input': value,
+        }
+    ]
+
+
+@pytest.mark.skipif(
+    not sys.platform.startswith('linux'),
+    reason='Test only works for linux systems. Windows excluded (unsupported). Mac excluded due to CI issues.',
+)
+def test_socket_exists(tmp_path):
+    import socket
+
+    # Working around path length limits by reducing character count where possible.
+    target = tmp_path / 's'
+    with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as sock:
+        sock.bind(str(target))
+
+        class Model(BaseModel):
+            path: SocketPath
+
+        assert Model(path=target).path == target
+
+
+def test_socket_not_exists(tmp_path):
+    target = tmp_path / 's'
+
+    class Model(BaseModel):
+        path: SocketPath
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(path=target)
+
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'path_not_socket',
+            'loc': ('path',),
+            'msg': 'Path does not point to a socket',
+            'input': target,
         }
     ]
 
@@ -4217,7 +4262,7 @@ def test_compiled_pattern_in_field(use_field):
     if use_field:
 
         class Foobar(BaseModel):
-            str_regex: str = Field(..., pattern=field_pattern)
+            str_regex: str = Field(pattern=field_pattern)
     else:
 
         class Foobar(BaseModel):
@@ -5306,20 +5351,20 @@ def test_none_literal():
         'title': 'Model',
         'type': 'object',
         'properties': {
-            'my_none': {'const': None, 'enum': [None], 'title': 'My None', 'type': 'null'},
+            'my_none': {'const': None, 'title': 'My None', 'type': 'null'},
             'my_none_list': {
-                'items': {'const': None, 'enum': [None], 'type': 'null'},
+                'items': {'const': None, 'type': 'null'},
                 'title': 'My None List',
                 'type': 'array',
             },
             'my_none_dict': {
-                'additionalProperties': {'const': None, 'enum': [None], 'type': 'null'},
+                'additionalProperties': {'const': None, 'type': 'null'},
                 'title': 'My None Dict',
                 'type': 'object',
             },
             'my_json_none': {
                 'contentMediaType': 'application/json',
-                'contentSchema': {'const': None, 'enum': [None], 'type': 'null'},
+                'contentSchema': {'const': None, 'type': 'null'},
                 'title': 'My Json None',
                 'type': 'string',
             },
@@ -5561,23 +5606,19 @@ def test_custom_generic_containers():
 @pytest.mark.parametrize(
     ('field_type', 'input_data', 'expected_value', 'serialized_data'),
     [
-        pytest.param(Base64Bytes, b'Zm9vIGJhcg==\n', b'foo bar', b'Zm9vIGJhcg==\n', id='Base64Bytes-reversible'),
-        pytest.param(Base64Str, 'Zm9vIGJhcg==\n', 'foo bar', 'Zm9vIGJhcg==\n', id='Base64Str-reversible'),
-        pytest.param(Base64Bytes, b'Zm9vIGJhcg==', b'foo bar', b'Zm9vIGJhcg==\n', id='Base64Bytes-bytes-input'),
-        pytest.param(Base64Bytes, 'Zm9vIGJhcg==', b'foo bar', b'Zm9vIGJhcg==\n', id='Base64Bytes-str-input'),
+        pytest.param(Base64Bytes, b'Zm9vIGJhcg==', b'foo bar', b'Zm9vIGJhcg==', id='Base64Bytes-bytes-input'),
+        pytest.param(Base64Bytes, 'Zm9vIGJhcg==', b'foo bar', b'Zm9vIGJhcg==', id='Base64Bytes-str-input'),
         pytest.param(
-            Base64Bytes, bytearray(b'Zm9vIGJhcg=='), b'foo bar', b'Zm9vIGJhcg==\n', id='Base64Bytes-bytearray-input'
+            Base64Bytes, bytearray(b'Zm9vIGJhcg=='), b'foo bar', b'Zm9vIGJhcg==', id='Base64Bytes-bytearray-input'
         ),
-        pytest.param(Base64Str, b'Zm9vIGJhcg==', 'foo bar', 'Zm9vIGJhcg==\n', id='Base64Str-bytes-input'),
-        pytest.param(Base64Str, 'Zm9vIGJhcg==', 'foo bar', 'Zm9vIGJhcg==\n', id='Base64Str-str-input'),
-        pytest.param(
-            Base64Str, bytearray(b'Zm9vIGJhcg=='), 'foo bar', 'Zm9vIGJhcg==\n', id='Base64Str-bytearray-input'
-        ),
+        pytest.param(Base64Str, b'Zm9vIGJhcg==', 'foo bar', 'Zm9vIGJhcg==', id='Base64Str-bytes-input'),
+        pytest.param(Base64Str, 'Zm9vIGJhcg==', 'foo bar', 'Zm9vIGJhcg==', id='Base64Str-str-input'),
+        pytest.param(Base64Str, bytearray(b'Zm9vIGJhcg=='), 'foo bar', 'Zm9vIGJhcg==', id='Base64Str-bytearray-input'),
         pytest.param(
             Base64Bytes,
             b'BCq+6+1/Paun/Q==',
             b'\x04*\xbe\xeb\xed\x7f=\xab\xa7\xfd',
-            b'BCq+6+1/Paun/Q==\n',
+            b'BCq+6+1/Paun/Q==',
             id='Base64Bytes-bytes-alphabet-vanilla',
         ),
     ],
@@ -6326,6 +6367,7 @@ def test_constraints_arbitrary_type() -> None:
         min_length: Annotated[CustomType, annotated_types.MinLen(1)]
         max_length: Annotated[CustomType, annotated_types.MaxLen(1)]
         predicate: Annotated[CustomType, annotated_types.Predicate(lambda x: x > 0)]
+        not_multiple_of_3: Annotated[CustomType, annotated_types.Not(lambda x: x % 3 == 0)]
 
         model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -6338,6 +6380,7 @@ def test_constraints_arbitrary_type() -> None:
         max_length=CustomType([1]),
         multiple_of=CustomType(4),
         predicate=CustomType(1),
+        not_multiple_of_3=CustomType(4),
     )
 
     with pytest.raises(ValidationError) as exc_info:
@@ -6350,6 +6393,7 @@ def test_constraints_arbitrary_type() -> None:
             max_length=CustomType([1, 2, 3]),
             multiple_of=CustomType(3),
             predicate=CustomType(-1),
+            not_multiple_of_3=CustomType(6),
         )
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
@@ -6407,6 +6451,12 @@ def test_constraints_arbitrary_type() -> None:
             'loc': ('predicate',),
             'msg': 'Predicate test_constraints_arbitrary_type.<locals>.Model.<lambda> failed',
             'input': CustomType(-1),
+        },
+        {
+            'type': 'not_operation_failed',
+            'loc': ('not_multiple_of_3',),
+            'msg': 'Not of test_constraints_arbitrary_type.<locals>.Model.<lambda> failed',
+            'input': CustomType(6),
         },
     ]
 
@@ -6900,6 +6950,7 @@ def test_python_re_respects_flags() -> None:
     assert Model(a='abc').a == 'abc'
 
 
+@pytest.mark.skipif(not email_validator, reason='email_validator not installed')
 def test_constraints_on_str_like() -> None:
     """See https://github.com/pydantic/pydantic/issues/8577 for motivation."""
 
@@ -6924,9 +6975,9 @@ def test_constraints_on_str_like() -> None:
         pytest.param(True, FailFast(), id='fail-fast-default'),
         pytest.param(True, FailFast(True), id='fail-fast-true'),
         pytest.param(False, FailFast(False), id='fail-fast-false'),
-        pytest.param(False, Field(...), id='field-default'),
-        pytest.param(True, Field(..., fail_fast=True), id='field-true'),
-        pytest.param(False, Field(..., fail_fast=False), id='field-false'),
+        pytest.param(False, Field(), id='field-default'),
+        pytest.param(True, Field(fail_fast=True), id='field-true'),
+        pytest.param(False, Field(fail_fast=False), id='field-false'),
     ],
 )
 def test_fail_fast(tp, fail_fast, decl) -> None:
@@ -6984,5 +7035,118 @@ def test_ser_ip_with_union() -> None:
 def test_ser_ip_with_unexpected_value() -> None:
     ta = TypeAdapter(ipaddress.IPv4Address)
 
-    with pytest.raises(UserWarning, match='serialized value may not be as expected.'):
+    with pytest.warns(UserWarning, match='serialized value may not be as expected.'):
         assert ta.dump_python(123)
+
+
+def test_ser_ip_python_and_json() -> None:
+    ta = TypeAdapter(ipaddress.IPv4Address)
+
+    ip = ta.validate_python('127.0.0.1')
+    assert ta.dump_python(ip) == ip
+    assert ta.dump_python(ip, mode='json') == '127.0.0.1'
+    assert ta.dump_json(ip) == b'"127.0.0.1"'
+
+
+@pytest.mark.parametrize('input_data', ['1/3', 1.333, Fraction(1, 3), Decimal('1.333')])
+def test_fraction_validation_lax(input_data) -> None:
+    ta = TypeAdapter(Fraction)
+    fraction = ta.validate_python(input_data)
+    assert isinstance(fraction, Fraction)
+
+
+def test_fraction_validation_strict() -> None:
+    ta = TypeAdapter(Fraction, config=ConfigDict(strict=True))
+
+    assert ta.validate_python(Fraction(1 / 3)) == Fraction(1 / 3)
+
+    # only fractions accepted in strict mode
+    for lax_fraction in ['1/3', 1.333, Decimal('1.333')]:
+        with pytest.raises(ValidationError):
+            ta.validate_python(lax_fraction)
+
+
+def test_fraction_serialization() -> None:
+    ta = TypeAdapter(Fraction)
+    assert ta.dump_python(Fraction(1, 3)) == '1/3'
+    assert ta.dump_json(Fraction(1, 3)) == b'"1/3"'
+
+
+def test_fraction_json_schema() -> None:
+    ta = TypeAdapter(Fraction)
+    assert ta.json_schema() == {'type': 'string', 'format': 'fraction'}
+
+
+def test_annotated_metadata_any_order() -> None:
+    def validator(v):
+        if isinstance(v, (int, float)):
+            return timedelta(days=v)
+        return v
+
+    class BeforeValidatorAfterLe(BaseModel):
+        v: Annotated[timedelta, annotated_types.Le(timedelta(days=365)), BeforeValidator(validator)]
+
+    class BeforeValidatorBeforeLe(BaseModel):
+        v: Annotated[timedelta, BeforeValidator(validator), annotated_types.Le(timedelta(days=365))]
+
+    try:
+        BeforeValidatorAfterLe(v=366)
+    except ValueError as ex:
+        assert '365 days' in str(ex)
+
+    # in this case, the Le constraint comes after the BeforeValidator, so we use functional validators
+    # from pydantic._internal._validators.py (in this case, less_than_or_equal_validator)
+    # which doesn't have access to fancy pydantic-core formatting for timedelta, so we get
+    # the raw timedelta repr in the error `datetime.timedelta(days=365`` vs the above `365 days`
+    try:
+        BeforeValidatorBeforeLe(v=366)
+    except ValueError as ex:
+        assert 'datetime.timedelta(days=365)' in str(ex)
+
+
+@pytest.mark.parametrize('base64_type', [Base64Bytes, Base64Str, Base64UrlBytes, Base64UrlStr])
+def test_base64_with_invalid_min_length(base64_type) -> None:
+    """Check that an error is raised when the length of the base64 type's value is less or more than the min_length and max_length."""
+
+    class Model(BaseModel):
+        base64_value: base64_type = Field(min_length=3, max_length=5)  # type: ignore
+
+    with pytest.raises(ValidationError):
+        Model(**{'base64_value': b''})
+
+    with pytest.raises(ValidationError):
+        Model(**{'base64_value': b'123456'})
+
+
+def test_serialize_as_any_secret_types() -> None:
+    ta_secret_str = TypeAdapter(SecretStr)
+    secret_str = ta_secret_str.validate_python('secret')
+
+    ta_any = TypeAdapter(Any)
+
+    assert ta_any.dump_python(secret_str) == secret_str
+    assert ta_any.dump_python(secret_str, mode='json') == '**********'
+    assert ta_any.dump_json(secret_str) == b'"**********"'
+
+    ta_secret_bytes = TypeAdapter(SecretBytes)
+    secret_bytes = ta_secret_bytes.validate_python(b'secret')
+
+    assert ta_any.dump_python(secret_bytes) == secret_bytes
+    assert ta_any.dump_python(secret_bytes, mode='json') == '**********'
+    assert ta_any.dump_json(secret_bytes) == b'"**********"'
+
+    ta_secret_date = TypeAdapter(SecretDate)
+    secret_date = ta_secret_date.validate_python('2024-01-01')
+
+    assert ta_any.dump_python(secret_date) == secret_date
+    assert ta_any.dump_python(secret_date, mode='json') == '****/**/**'
+    assert ta_any.dump_json(secret_date) == b'"****/**/**"'
+
+
+def test_custom_serializer_override_secret_str() -> None:
+    class User(BaseModel):
+        name: str
+        password: Annotated[SecretStr, PlainSerializer(lambda x: f'secret: {str(x)}')]
+
+    u = User(name='sam', password='hi')
+    assert u.model_dump()['password'] == 'secret: **********'

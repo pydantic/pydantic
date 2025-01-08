@@ -4,15 +4,15 @@ from collections import namedtuple
 from typing import Callable, ClassVar, ForwardRef, NamedTuple
 
 import pytest
-from typing_extensions import Literal, get_origin
+from typing_extensions import Annotated, Literal, get_origin
 
 from pydantic import BaseModel, Field  # noqa: F401
 from pydantic._internal._typing_extra import (
     NoneType,
-    eval_type_lenient,
+    eval_type,
     get_function_type_hints,
-    is_classvar,
-    is_literal_type,
+    is_classvar_annotation,
+    is_literal,
     is_namedtuple,
     is_none_type,
     origin_is_union,
@@ -64,7 +64,7 @@ def test_is_none_type():
     'union',
     [
         typing.Union[int, str],
-        eval_type_lenient('int | str'),
+        eval_type('int | str'),
         *([int | str] if sys.version_info >= (3, 10) else []),
     ],
 )
@@ -76,19 +76,19 @@ def test_is_union(union):
 def test_is_literal_with_typing_extension_literal():
     from typing_extensions import Literal
 
-    assert is_literal_type(Literal) is False
-    assert is_literal_type(Literal['foo']) is True
+    assert is_literal(Literal) is False
+    assert is_literal(Literal['foo']) is True
 
 
 def test_is_literal_with_typing_literal():
     from typing import Literal
 
-    assert is_literal_type(Literal) is False
-    assert is_literal_type(Literal['foo']) is True
+    assert is_literal(Literal) is False
+    assert is_literal(Literal['foo']) is True
 
 
 @pytest.mark.parametrize(
-    'ann_type,extepcted',
+    ['ann_type', 'expected'],
     (
         (None, False),
         (ForwardRef('Other[int]'), False),
@@ -96,24 +96,15 @@ def test_is_literal_with_typing_literal():
         (ForwardRef('ClassVar[int]'), True),
         (ForwardRef('t.ClassVar[int]'), True),
         (ForwardRef('typing.ClassVar[int]'), True),
+        (ForwardRef('Annotated[ClassVar[int], ...]'), True),
+        (ForwardRef('Annotated[t.ClassVar[int], ...]'), True),
+        (ForwardRef('t.Annotated[t.ClassVar[int], ...]'), True),
         (ClassVar[int], True),
+        (Annotated[ClassVar[int], ...], True),
     ),
 )
-def test_is_classvar(ann_type, extepcted):
-    assert is_classvar(ann_type) is extepcted
-
-
-def test_parent_frame_namespace(mocker):
-    assert parent_frame_namespace() is not None
-
-    from dataclasses import dataclass
-
-    @dataclass
-    class MockedFrame:
-        f_back = None
-
-    mocker.patch('sys._getframe', return_value=MockedFrame())
-    assert parent_frame_namespace() is None
+def test_is_classvar_annotation(ann_type, expected):
+    assert is_classvar_annotation(ann_type) is expected
 
 
 def test_get_function_type_hints_none_type():
@@ -155,13 +146,19 @@ def test_func_ns_excludes_default_globals() -> None:
         assert default_global_var not in func_ns
 
 
-module_foo = 'global_foo'
-module_ns = parent_frame_namespace(parent_depth=1)
+def test_parent_frame_namespace(create_module) -> None:
+    """Parent frame namespace should be `None` because we skip fetching data from the top module level."""
 
+    @create_module
+    def mod1() -> None:
+        from pydantic._internal._typing_extra import parent_frame_namespace
 
-def test_module_ns_is_none() -> None:
-    """Module namespace should be none because we skip fetching data from the top module level."""
-    assert module_ns is None
+        module_foo = 'global_foo'  # noqa: F841
+        module_ns = parent_frame_namespace(parent_depth=1)  # noqa: F841
+        module_ns_force = parent_frame_namespace(parent_depth=1, force=True)  # noqa: F841
+
+    assert mod1.module_ns is None
+    assert mod1.module_ns_force is not None
 
 
 def test_exotic_localns() -> None:

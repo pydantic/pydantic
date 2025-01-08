@@ -3,6 +3,7 @@ import json
 import os
 import pickle
 import sys
+import time
 from copy import copy, deepcopy
 from typing import Callable, Dict, Generic, List, NewType, Tuple, TypeVar, Union
 
@@ -14,10 +15,10 @@ from typing_extensions import Annotated, Literal
 from pydantic import BaseModel
 from pydantic._internal import _repr
 from pydantic._internal._core_utils import _WalkCoreSchema, pretty_print_core_schema
-from pydantic._internal._typing_extra import all_literal_values, get_origin, is_new_type
+from pydantic._internal._typing_extra import get_origin, is_new_type, literal_values
 from pydantic._internal._utils import (
     BUILTIN_COLLECTIONS,
-    ClassAttribute,
+    LazyClassAttribute,
     ValueItems,
     all_identical,
     deep_update,
@@ -76,6 +77,7 @@ class LoggedVar(Generic[T]):
         (Tuple[str, ...], 'Tuple[str, ...]'),
         (Union[int, List[str], Tuple[str, int]], 'Union[int, List[str], Tuple[str, int]]'),
         (foobar, 'foobar'),
+        (time.time_ns, 'time_ns'),
         (LoggedVar, 'LoggedVar'),
         (LoggedVar(), 'LoggedVar'),
     ],
@@ -366,7 +368,7 @@ def test_undefined_copy():
 
 def test_class_attribute():
     class Foo:
-        attr = ClassAttribute('attr', 'foo')
+        attr = LazyClassAttribute('attr', lambda: 'foo')
 
     assert Foo.attr == 'foo'
 
@@ -378,21 +380,21 @@ def test_class_attribute():
     assert f.attr == 'not foo'
 
 
-def test_all_literal_values():
+def test_literal_values():
     L1 = Literal['1']
-    assert all_literal_values(L1) == ['1']
+    assert literal_values(L1) == ['1']
 
     L2 = Literal['2']
     L12 = Literal[L1, L2]
-    assert all_literal_values(L12) == IsList('1', '2', check_order=False)
+    assert literal_values(L12) == IsList('1', '2', check_order=False)
 
     L312 = Literal['3', Literal[L1, L2]]
-    assert all_literal_values(L312) == IsList('3', '1', '2', check_order=False)
+    assert literal_values(L312) == IsList('3', '1', '2', check_order=False)
 
 
 @pytest.mark.parametrize(
     'obj',
-    (1, 1.0, '1', b'1', int, None, test_all_literal_values, len, test_all_literal_values.__code__, lambda: ..., ...),
+    (1, 1.0, '1', b'1', int, None, test_literal_values, len, test_literal_values.__code__, lambda: ..., ...),
 )
 def test_smart_deepcopy_immutable_non_sequence(obj, mocker):
     # make sure deepcopy is not used
@@ -633,29 +635,6 @@ def test_handle_typed_dict_schema(params, expected_extra_schema):
         'type': 'typed-dict',
         'fields': {'foo': {'type': 'model-field', 'schema': {'type': 'int'}}},
     }
-
-
-def test_handle_function_schema():
-    schema = core_schema.with_info_before_validator_function(
-        lambda v, _info: v, core_schema.float_schema(), field_name='field_name'
-    )
-
-    def walk(s, recurse):
-        # change type to str
-        if s['type'] == 'float':
-            s['type'] = 'str'
-        return s
-
-    schema = _WalkCoreSchema().handle_function_schema(schema, walk)
-    assert schema['type'] == 'function-before'
-    assert schema['schema'] == {'type': 'str'}
-
-    def walk1(s, recurse):
-        # this is here to make sure this function is not called
-        assert False
-
-    schema = _WalkCoreSchema().handle_function_schema(core_schema.int_schema(), walk1)
-    assert schema['type'] == 'int'
 
 
 def test_handle_call_schema():

@@ -1,12 +1,20 @@
 Installation is as simple as:
 
-```bash
-pip install pydantic
-```
+=== "pip"
+
+    ```bash
+    pip install pydantic
+    ```
+
+=== "uv"
+
+    ```bash
+    uv add pydantic
+    ```
 
 Pydantic has a few dependencies:
 
-* [`pydantic-core`](https://pypi.org/project/pydantic-core/): Core validation logic for _pydantic_ written in rust.
+* [`pydantic-core`](https://pypi.org/project/pydantic-core/): Core validation logic for Pydantic written in Rust.
 * [`typing-extensions`](https://pypi.org/project/typing-extensions/): Backport of the standard library [typing][] module.
 * [`annotated-types`](https://pypi.org/project/annotated-types/): Reusable constraint types to use with [`typing.Annotated`][].
 
@@ -23,22 +31,49 @@ conda install pydantic -c conda-forge
 
 Pydantic has the following optional dependencies:
 
-* If you require email validation, you can add [email-validator](https://github.com/JoshData/python-email-validator).
+* `email`: Email validation provided by the [email-validator](https://pypi.org/project/email-validator/) package.
+* `timezone`: Fallback IANA time zone database provided by the [tzdata](https://pypi.org/project/tzdata/) package.
 
 To install optional dependencies along with Pydantic:
 
-```bash
-pip install pydantic[email]
-```
 
-Of course, you can also install requirements manually with `pip install email-validator`.
+=== "pip"
+
+    ```bash
+    # with the `email` extra:
+    pip install 'pydantic[email]'
+    # or with `email` and `timezone` extras:
+    pip install 'pydantic[email,timezone]'
+    ```
+
+=== "uv"
+
+    ```bash
+    # with the `email` extra:
+    uv add 'pydantic[email]'
+    # or with `email` and `timezone` extras:
+    uv add 'pydantic[email,timezone]'
+    ```
+
+Of course, you can also install requirements manually with `pip install email-validator tzdata`.
 
 ## Install from repository
 
 And if you prefer to install Pydantic directly from the repository:
 
-```bash
-pip install git+https://github.com/pydantic/pydantic@main#egg=pydantic
-# or with extras
-pip install git+https://github.com/pydantic/pydantic@main#egg=pydantic[email]
-```
+
+=== "pip"
+
+    ```bash
+    pip install 'git+https://github.com/pydantic/pydantic@main'
+    # or with `email` and `timezone` extras:
+    pip install 'git+https://github.com/pydantic/pydantic@main#egg=pydantic[email,timezone]'
+    ```
+
+=== "uv"
+
+    ```bash
+    uv add 'git+https://github.com/pydantic/pydantic@main'
+    # or with `email` and `timezone` extras:
+    uv add 'git+https://github.com/pydantic/pydantic@main#egg=pydantic[email,timezone]'
+    ```

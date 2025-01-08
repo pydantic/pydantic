@@ -36,6 +36,7 @@ from pydantic_core import CoreSchema, core_schema
 from typing_extensions import (
     Annotated,
     Literal,
+    Never,
     NotRequired,
     ParamSpec,
     TypedDict,
@@ -358,7 +359,7 @@ def test_cache_keys_are_hashable(clean_cache):
     assert len(_GENERIC_TYPES_CACHE) == cache_size + 15
 
     class Model(BaseModel):
-        x: MyGenericModel[Callable[[C], Iterable[str]]] = Field(...)
+        x: MyGenericModel[Callable[[C], Iterable[str]]]
 
     models.append(Model)
     assert len(_GENERIC_TYPES_CACHE) == cache_size + 15
@@ -685,10 +686,7 @@ def test_nested():
     OuterT_SameType[int](i={'a': 8})
     OuterT_SameType[int](i=inner_int)
     OuterT_SameType[str](i=inner_str)
-    # TODO: The next line is failing, but passes in v1.
-    #   Should re-parse-from-dict if the pydantic_generic_origin is the same
-    # OuterT_SameType[str](i=inner_int_any)
-    OuterT_SameType[int](i=inner_int_any.model_dump())
+    OuterT_SameType[int](i=inner_int_any)
 
     with pytest.raises(ValidationError) as exc_info:
         OuterT_SameType[int](i=inner_str.model_dump())
@@ -706,11 +704,10 @@ def test_nested():
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
-            'type': 'model_type',
-            'loc': ('i',),
-            'msg': 'Input should be a valid dictionary or instance of InnerT[int]',
-            'input': InnerT[str](a='ate'),
-            'ctx': {'class_name': 'InnerT[int]'},
+            'type': 'int_parsing',
+            'loc': ('i', 'a'),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'ate',
         }
     ]
 
@@ -724,13 +721,7 @@ def test_nested():
         OuterT_SameType[int](i=inner_dict_any)
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'model_type',
-            'loc': ('i',),
-            'msg': 'Input should be a valid dictionary or instance of InnerT[int]',
-            'input': InnerT[Any](a={}),
-            'ctx': {'class_name': 'InnerT[int]'},
-        }
+        {'type': 'int_type', 'loc': ('i', 'a'), 'msg': 'Input should be a valid integer', 'input': {}}
     ]
 
 
@@ -1419,8 +1410,6 @@ def test_deep_generic_with_referenced_inner_generic():
         InnerModel[int](a=['s', {'a': 'wrong'}])
     assert InnerModel[int](a=['s', {'a': 1}]).a[1].a == 1
 
-    assert InnerModel[int].model_fields['a'].annotation == Optional[List[Union[ReferencedModel[int], str]]]
-
 
 def test_deep_generic_with_multiple_typevars():
     T = TypeVar('T')
@@ -1626,6 +1615,26 @@ def test_generic_recursive_models(create_module):
 
     result = Model1[str].model_validate(dict(ref=dict(ref=dict(ref=dict(ref='123')))))
     assert result.model_dump() == {'ref': {'ref': {'ref': {'ref': '123'}}}}
+
+
+def test_generic_recursive_models_parametrized() -> None:
+    """https://github.com/pydantic/pydantic/issues/10279"""
+
+    # This test is similar (if not identical) to the previous one, although in this one,
+    # we make sure we can parametrize and rebuild the models (see the linked issue).
+
+    T = TypeVar('T')
+
+    class Model1(BaseModel, Generic[T]):
+        model2: 'Model2[T]'
+
+    S = TypeVar('S')
+
+    class Model2(BaseModel, Generic[S]):
+        model1: Model1[S]
+
+    Model1[str].model_rebuild()
+    Model2[str].model_rebuild()
 
 
 def test_generic_recursive_models_separate_parameters(create_module):
@@ -2170,7 +2179,6 @@ def test_parse_generic_json():
     }
 
 
-@pytest.mark.skipif(sys.version_info > (3, 12), reason="memray doesn't yet support Python 3.13")
 def memray_limit_memory(limit):
     if '--memray' in sys.argv:
         return pytest.mark.limit_memory(limit)
@@ -2320,7 +2328,7 @@ def test_construct_generic_model_with_validation():
     class Page(BaseModel, Generic[T]):
         page: int = Field(ge=42)
         items: Sequence[T]
-        unenforced: PositiveInt = Field(..., lt=10)
+        unenforced: PositiveInt = Field(lt=10)
 
     with pytest.raises(ValidationError) as exc_info:
         Page[int](page=41, items=[], unenforced=11)
@@ -2416,7 +2424,7 @@ def test_generic_enum_bound():
 
     # insert_assert(Model[MyEnum].model_json_schema())
     assert Model[MyEnum].model_json_schema() == {
-        '$defs': {'MyEnum': {'const': 1, 'enum': [1], 'title': 'MyEnum', 'type': 'integer'}},
+        '$defs': {'MyEnum': {'enum': [1], 'title': 'MyEnum', 'type': 'integer'}},
         'properties': {'x': {'$ref': '#/$defs/MyEnum'}},
         'required': ['x'],
         'title': 'Model[test_generic_enum_bound.<locals>.MyEnum]',
@@ -2468,7 +2476,7 @@ def test_generic_intenum_bound():
 
     # insert_assert(Model[MyEnum].model_json_schema())
     assert Model[MyEnum].model_json_schema() == {
-        '$defs': {'MyEnum': {'const': 1, 'enum': [1], 'title': 'MyEnum', 'type': 'integer'}},
+        '$defs': {'MyEnum': {'enum': [1], 'title': 'MyEnum', 'type': 'integer'}},
         'properties': {'x': {'$ref': '#/$defs/MyEnum'}},
         'required': ['x'],
         'title': 'Model[test_generic_intenum_bound.<locals>.MyEnum]',
@@ -2842,14 +2850,93 @@ def test_serialize_unsubstituted_typevars_variants(
     }
 
 
-def test_mix_default_and_constraints() -> None:
-    T = TypingExtensionsTypeVar('T', str, int, default=str)
+def test_serialize_typevars_default_and_bound_with_user_model() -> None:
+    class MyErrorDetails(BaseModel):
+        bar: str
 
-    msg = 'Pydantic does not support mixing more than one of TypeVar bounds, constraints and defaults'
-    with pytest.raises(NotImplementedError, match=msg):
+    class ExtendedMyErrorDetails(MyErrorDetails):
+        foo: str
 
-        class _(BaseModel, Generic[T]):
-            x: T
+    class MoreExtendedMyErrorDetails(ExtendedMyErrorDetails):
+        suu: str
+
+    T = TypingExtensionsTypeVar('T', bound=MyErrorDetails, default=ExtendedMyErrorDetails)
+
+    class Error(BaseModel, Generic[T]):
+        message: str
+        details: T
+
+    # bound small parent model
+    sample_error = Error[MyErrorDetails](
+        message='We just had an error',
+        details=MyErrorDetails(foo='var', bar='baz', suu='suu'),
+    )
+
+    assert sample_error.details.model_dump() == {
+        'bar': 'baz',
+    }
+    assert sample_error.model_dump() == {
+        'message': 'We just had an error',
+        'details': {
+            'bar': 'baz',
+        },
+    }
+
+    # default middle child model
+    sample_error = Error(
+        message='We just had an error',
+        details=MoreExtendedMyErrorDetails(foo='var', bar='baz', suu='suu'),
+    )
+
+    assert sample_error.details.model_dump() == {
+        'foo': 'var',
+        'bar': 'baz',
+        'suu': 'suu',
+    }
+    assert sample_error.model_dump() == {
+        'message': 'We just had an error',
+        'details': {'foo': 'var', 'bar': 'baz'},
+    }
+
+    # bound big child model
+    sample_error = Error[MoreExtendedMyErrorDetails](
+        message='We just had an error',
+        details=MoreExtendedMyErrorDetails(foo='var', bar='baz', suu='suu'),
+    )
+
+    assert sample_error.details.model_dump() == {
+        'foo': 'var',
+        'bar': 'baz',
+        'suu': 'suu',
+    }
+    assert sample_error.model_dump() == {
+        'message': 'We just had an error',
+        'details': {
+            'foo': 'var',
+            'bar': 'baz',
+            'suu': 'suu',
+        },
+    }
+
+
+def test_typevars_default_model_validation_error() -> None:
+    class MyErrorDetails(BaseModel):
+        bar: str
+
+    class ExtendedMyErrorDetails(MyErrorDetails):
+        foo: str
+
+    T = TypingExtensionsTypeVar('T', bound=MyErrorDetails, default=ExtendedMyErrorDetails)
+
+    class Error(BaseModel, Generic[T]):
+        message: str
+        details: T
+
+    with pytest.raises(ValidationError):
+        Error(
+            message='We just had an error',
+            details=MyErrorDetails(foo='var', bar='baz'),
+        )
 
 
 def test_generic_with_not_required_in_typed_dict() -> None:
@@ -2875,3 +2962,104 @@ def test_generic_with_allow_extra():
     # This used to raise an error related to accessing the __annotations__ attribute of the Generic class
     class AllowExtraGeneric(BaseModel, Generic[T], extra='allow'):
         data: T
+
+
+def test_generic_field():
+    """Test for https://github.com/pydantic/pydantic/issues/10039.
+
+    This was originally fixed by defining a custom MRO for Pydantic models,
+    but the fix from https://github.com/pydantic/pydantic/pull/10666 seemed
+    better. Test is still kept for historical purposes.
+    """
+
+    T = TypeVar('T')
+
+    class A(BaseModel, Generic[T]): ...
+
+    class B(A[T]): ...
+
+    class C(B[bool]): ...
+
+    class Model(BaseModel):
+        input_bool: A[bool]
+
+    Model(input_bool=C())
+
+
+def test_generic_any_or_never() -> None:
+    T = TypeVar('T')
+
+    class GenericModel(BaseModel, Generic[T]):
+        f: Union[T, int]
+
+    any_json_schema = GenericModel[Any].model_json_schema()
+    assert any_json_schema['properties']['f'] == {'title': 'F'}  # any type
+
+    never_json_schema = GenericModel[Never].model_json_schema()
+    assert never_json_schema['properties']['f'] == {'type': 'integer', 'title': 'F'}
+
+
+def test_revalidation_against_any() -> None:
+    T = TypeVar('T')
+
+    class ResponseModel(BaseModel, Generic[T]):
+        content: T
+
+    class Product(BaseModel):
+        name: str
+        price: float
+
+    class Order(BaseModel):
+        id: int
+        product: ResponseModel[Any]
+
+    product = Product(name='Apple', price=0.5)
+    response1: ResponseModel[Any] = ResponseModel[Any](content=product)
+    response2: ResponseModel[Any] = ResponseModel(content=product)
+    response3: ResponseModel[Any] = ResponseModel[Product](content=product)
+
+    for response in response1, response2, response3:
+        order = Order(id=1, product=response)
+        assert isinstance(order.product.content, Product)
+
+
+def test_revalidation_without_explicit_parametrization() -> None:
+    """Note, this is seen in the test above as well, but is added here for thoroughness."""
+
+    T1 = TypeVar('T1', bound=BaseModel)
+
+    class InnerModel(BaseModel, Generic[T1]):
+        model: T1
+
+    T2 = TypeVar('T2', bound=InnerModel)
+
+    class OuterModel(BaseModel, Generic[T2]):
+        inner: T2
+
+    class MyModel(BaseModel):
+        foo: int
+
+    # Construct two instances, with and without generic annotation in the constructor:
+    inner1 = InnerModel[MyModel](model=MyModel(foo=42))
+    inner2 = InnerModel(model=MyModel(foo=42))
+    assert inner1 == inner2
+
+    outer1 = OuterModel[InnerModel[MyModel]](inner=inner1)
+    outer2 = OuterModel[InnerModel[MyModel]](inner=inner2)
+    # implies that validation succeeds for both
+    assert outer1 == outer2
+
+
+def test_revalidation_with_basic_inference() -> None:
+    T = TypeVar('T')
+
+    class Inner(BaseModel, Generic[T]):
+        inner: T
+
+    class Holder(BaseModel, Generic[T]):
+        inner: Inner[T]
+
+    holder1 = Holder[int](inner=Inner[int](inner=1))
+    holder2 = Holder(inner=Inner(inner=1))
+    # implies that validation succeeds for both
+    assert holder1 == holder2

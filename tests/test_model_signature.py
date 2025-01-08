@@ -23,13 +23,14 @@ def _equals(a: Union[str, Iterable[str]], b: Union[str, Iterable[str]]) -> bool:
 
 def test_model_signature():
     class Model(BaseModel):
-        a: float = Field(..., title='A')
+        a: float = Field(title='A')
         b: int = Field(10)
+        c: int = Field(default_factory=lambda: 1)
 
     sig = signature(Model)
     assert sig != signature(BaseModel)
-    assert _equals(map(str, sig.parameters.values()), ('a: float', 'b: int = 10'))
-    assert _equals(str(sig), '(*, a: float, b: int = 10) -> None')
+    assert _equals(map(str, sig.parameters.values()), ('a: float', 'b: int = 10', 'c: int = <factory>'))
+    assert _equals(str(sig), '(*, a: float, b: int = 10, c: int = <factory>) -> None')
 
 
 def test_generic_model_signature():
@@ -48,7 +49,7 @@ def test_custom_init_signature():
     class MyModel(BaseModel):
         id: int
         name: str = 'John Doe'
-        f__: str = Field(..., alias='foo')
+        f__: str = Field(alias='foo')
 
         model_config = ConfigDict(extra='allow')
 
@@ -92,7 +93,7 @@ def test_invalid_identifiers_signature():
 
 def test_use_field_name():
     class Foo(BaseModel):
-        foo: str = Field(..., alias='this is invalid')
+        foo: str = Field(alias='this is invalid')
 
         model_config = ConfigDict(populate_by_name=True)
 
@@ -101,7 +102,7 @@ def test_use_field_name():
 
 def test_does_not_use_reserved_word():
     class Foo(BaseModel):
-        from_: str = Field(..., alias='from')
+        from_: str = Field(alias='from')
 
         model_config = ConfigDict(populate_by_name=True)
 

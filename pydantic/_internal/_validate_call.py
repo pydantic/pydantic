@@ -1,5 +1,6 @@
 from __future__ import annotations as _annotations
 
+import functools
 import inspect
 from functools import partial
 from typing import Any, Awaitable, Callable
@@ -8,60 +9,74 @@ import pydantic_core
 
 from ..config import ConfigDict
 from ..plugin._schema_validator import create_schema_validator
-from . import _generate_schema, _typing_extra
 from ._config import ConfigWrapper
+from ._generate_schema import GenerateSchema, ValidateCallSupportedTypes
+from ._namespace_utils import MappingNamespace, NsResolver, ns_for_function
+
+
+def extract_function_name(func: ValidateCallSupportedTypes) -> str:
+    """Extract the name of a `ValidateCallSupportedTypes` object."""
+    return f'partial({func.func.__name__})' if isinstance(func, functools.partial) else func.__name__
+
+
+def extract_function_qualname(func: ValidateCallSupportedTypes) -> str:
+    """Extract the qualname of a `ValidateCallSupportedTypes` object."""
+    return f'partial({func.func.__qualname__})' if isinstance(func, functools.partial) else func.__qualname__
+
+
+def update_wrapper_attributes(wrapped: ValidateCallSupportedTypes, wrapper: Callable[..., Any]):
+    """Update the `wrapper` function with the attributes of the `wrapped` function. Return the updated function."""
+    if inspect.iscoroutinefunction(wrapped):
+
+        @functools.wraps(wrapped)
+        async def wrapper_function(*args, **kwargs):  # type: ignore
+            return await wrapper(*args, **kwargs)
+    else:
+
+        @functools.wraps(wrapped)
+        def wrapper_function(*args, **kwargs):
+            return wrapper(*args, **kwargs)
+
+    # We need to manually update this because `partial` object has no `__name__` and `__qualname__`.
+    wrapper_function.__name__ = extract_function_name(wrapped)
+    wrapper_function.__qualname__ = extract_function_qualname(wrapped)
+    wrapper_function.raw_function = wrapped  # type: ignore
+
+    return wrapper_function
 
 
 class ValidateCallWrapper:
     """This is a wrapper around a function that validates the arguments passed to it, and optionally the return value."""
 
-    __slots__ = (
-        '__pydantic_validator__',
-        '__name__',
-        '__qualname__',
-        '__annotations__',
-        '__dict__',  # required for __module__
-    )
+    __slots__ = ('__pydantic_validator__', '__return_pydantic_validator__')
 
     def __init__(
         self,
-        function: Callable[..., Any],
+        function: ValidateCallSupportedTypes,
         config: ConfigDict | None,
         validate_return: bool,
-        namespace: dict[str, Any] | None,
-    ):
+        parent_namespace: MappingNamespace | None,
+    ) -> None:
         if isinstance(function, partial):
-            func = function.func
-            schema_type = func
-            self.__name__ = f'partial({func.__name__})'
-            self.__qualname__ = f'partial({func.__qualname__})'
-            self.__module__ = func.__module__
+            schema_type = function.func
+            module = function.func.__module__
         else:
             schema_type = function
-            self.__name__ = function.__name__
-            self.__qualname__ = function.__qualname__
-            self.__module__ = function.__module__
+            module = function.__module__
+        qualname = extract_function_qualname(function)
 
-        global_ns = _typing_extra.add_module_globals(function, None)
-        # TODO: this is a bit of a hack, we should probably have a better way to handle this
-        # specifically, we shouldn't be pumping the namespace full of type_params
-        # when we take namespace and type_params arguments in eval_type_backport
-        type_params = getattr(schema_type, '__type_params__', ())
-        namespace = {
-            **{param.__name__: param for param in type_params},
-            **(global_ns or {}),
-            **(namespace or {}),
-        }
+        ns_resolver = NsResolver(namespaces_tuple=ns_for_function(schema_type, parent_namespace=parent_namespace))
+
         config_wrapper = ConfigWrapper(config)
-        gen_schema = _generate_schema.GenerateSchema(config_wrapper, namespace)
+        gen_schema = GenerateSchema(config_wrapper, ns_resolver)
         schema = gen_schema.clean_schema(gen_schema.generate_schema(function))
-        core_config = config_wrapper.core_config(self)
+        core_config = config_wrapper.core_config(title=qualname)
 
         self.__pydantic_validator__ = create_schema_validator(
             schema,
             schema_type,
-            self.__module__,
-            self.__qualname__,
+            module,
+            qualname,
             'validate_call',
             core_config,
             config_wrapper.plugin_settings,
@@ -70,13 +85,13 @@ class ValidateCallWrapper:
         if validate_return:
             signature = inspect.signature(function)
             return_type = signature.return_annotation if signature.return_annotation is not signature.empty else Any
-            gen_schema = _generate_schema.GenerateSchema(config_wrapper, namespace)
+            gen_schema = GenerateSchema(config_wrapper, ns_resolver)
             schema = gen_schema.clean_schema(gen_schema.generate_schema(return_type))
             validator = create_schema_validator(
                 schema,
                 schema_type,
-                self.__module__,
-                self.__qualname__,
+                module,
+                qualname,
                 'validate_call',
                 core_config,
                 config_wrapper.plugin_settings,
@@ -96,4 +111,5 @@ class ValidateCallWrapper:
         res = self.__pydantic_validator__.validate_python(pydantic_core.ArgsKwargs(args, kwargs))
         if self.__return_pydantic_validator__:
             return self.__return_pydantic_validator__(res)
-        return res
+        else:
+            return res

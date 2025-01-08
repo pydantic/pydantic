@@ -2,20 +2,16 @@ from __future__ import annotations
 
 import os
 from collections import defaultdict
-from typing import (
-    Any,
-    Callable,
-    Hashable,
-    TypeVar,
-    Union,
-)
+from typing import Any, Callable, Hashable, TypeVar, Union
 
 from pydantic_core import CoreSchema, core_schema
 from pydantic_core import validate_core_schema as _validate_core_schema
-from typing_extensions import TypeAliasType, TypeGuard, get_args, get_origin
+from typing_extensions import TypeGuard, get_args, get_origin
 
+from ..errors import PydanticUserError
 from . import _repr
-from ._typing_extra import is_generic_alias
+from ._core_metadata import CoreMetadata
+from ._typing_extra import is_generic_alias, is_type_alias_type
 
 AnyFunctionSchema = Union[
     core_schema.AfterValidatorFunctionSchema,
@@ -39,15 +35,6 @@ CoreSchemaOrField = Union[core_schema.CoreSchema, CoreSchemaField]
 _CORE_SCHEMA_FIELD_TYPES = {'typed-dict-field', 'dataclass-field', 'model-field', 'computed-field'}
 _FUNCTION_WITH_INNER_SCHEMA_TYPES = {'function-before', 'function-after', 'function-wrap'}
 _LIST_LIKE_SCHEMA_WITH_ITEMS_TYPES = {'list', 'set', 'frozenset'}
-
-TAGGED_UNION_TAG_KEY = 'pydantic.internal.tagged_union_tag'
-"""
-Used in a `Tag` schema to specify the tag used for a discriminated union.
-"""
-HAS_INVALID_SCHEMAS_METADATA_KEY = 'pydantic.internal.invalid'
-"""Used to mark a schema that is invalid because it refers to a definition that was not yet defined when the
-schema was first encountered.
-"""
 
 
 def is_core_schema(
@@ -89,7 +76,7 @@ def get_type_ref(type_: type[Any], args_override: tuple[type[Any], ...] | None =
         args = generic_metadata['args'] or args
 
     module_name = getattr(origin, '__module__', '<No __module__>')
-    if isinstance(origin, TypeAliasType):
+    if is_type_alias_type(origin):
         type_ref = f'{module_name}.{origin.__name__}:{id(origin)}'
     else:
         try:
@@ -128,7 +115,7 @@ def collect_definitions(schema: core_schema.CoreSchema) -> dict[str, core_schema
             defs[ref] = s
         return recurse(s, _record_valid_refs)
 
-    walk_core_schema(schema, _record_valid_refs)
+    walk_core_schema(schema, _record_valid_refs, copy=False)
 
     return defs
 
@@ -146,10 +133,7 @@ def define_expected_missing_refs(
     expected_missing_refs = allowed_missing_refs.difference(refs)
     if expected_missing_refs:
         definitions: list[core_schema.CoreSchema] = [
-            # TODO: Replace this with a (new) CoreSchema that, if present at any level, makes validation fail
-            #   Issue: https://github.com/pydantic/pydantic-core/issues/619
-            core_schema.none_schema(ref=ref, metadata={HAS_INVALID_SCHEMAS_METADATA_KEY: True})
-            for ref in expected_missing_refs
+            core_schema.invalid_schema(ref=ref) for ref in expected_missing_refs
         ]
         return core_schema.definitions_schema(schema, definitions)
     return None
@@ -160,14 +144,14 @@ def collect_invalid_schemas(schema: core_schema.CoreSchema) -> bool:
 
     def _is_schema_valid(s: core_schema.CoreSchema, recurse: Recurse) -> core_schema.CoreSchema:
         nonlocal invalid
-        if 'metadata' in s:
-            metadata = s['metadata']
-            if HAS_INVALID_SCHEMAS_METADATA_KEY in metadata:
-                invalid = metadata[HAS_INVALID_SCHEMAS_METADATA_KEY]
-                return s
+
+        if s['type'] == 'invalid':
+            invalid = True
+            return s
+
         return recurse(s, _is_schema_valid)
 
-    walk_core_schema(schema, _is_schema_valid)
+    walk_core_schema(schema, _is_schema_valid, copy=False)
     return invalid
 
 
@@ -180,10 +164,16 @@ Walk = Callable[[core_schema.CoreSchema, Recurse], core_schema.CoreSchema]
 # TODO: Should we move _WalkCoreSchema into pydantic_core proper?
 #   Issue: https://github.com/pydantic/pydantic-core/issues/615
 
+CoreSchemaT = TypeVar('CoreSchemaT')
+
 
 class _WalkCoreSchema:
-    def __init__(self):
+    def __init__(self, *, copy: bool = True):
         self._schema_type_to_method = self._build_schema_type_to_method()
+        self._copy = copy
+
+    def _copy_schema(self, schema: CoreSchemaT) -> CoreSchemaT:
+        return schema.copy() if self._copy else schema  # pyright: ignore[reportAttributeAccessIssue]
 
     def _build_schema_type_to_method(self) -> dict[core_schema.CoreSchemaType, Recurse]:
         mapping: dict[core_schema.CoreSchemaType, Recurse] = {}
@@ -197,7 +187,7 @@ class _WalkCoreSchema:
         return f(schema, self._walk)
 
     def _walk(self, schema: core_schema.CoreSchema, f: Walk) -> core_schema.CoreSchema:
-        schema = self._schema_type_to_method[schema['type']](schema.copy(), f)
+        schema = self._schema_type_to_method[schema['type']](self._copy_schema(schema), f)
         ser_schema: core_schema.SerSchema | None = schema.get('serialization')  # type: ignore
         if ser_schema:
             schema['serialization'] = self._handle_ser_schemas(ser_schema, f)
@@ -213,7 +203,7 @@ class _WalkCoreSchema:
         schema: core_schema.CoreSchema | None = ser_schema.get('schema', None)
         return_schema: core_schema.CoreSchema | None = ser_schema.get('return_schema', None)
         if schema is not None or return_schema is not None:
-            ser_schema = ser_schema.copy()
+            ser_schema = self._copy_schema(ser_schema)
             if schema is not None:
                 ser_schema['schema'] = self.walk(schema, f)  # type: ignore
             if return_schema is not None:
@@ -243,7 +233,7 @@ class _WalkCoreSchema:
             # This means we'd be returning a "trivial" definitions schema that just wrapped the inner schema
             return new_inner_schema
 
-        new_schema = schema.copy()
+        new_schema = self._copy_schema(schema)
         new_schema['schema'] = new_inner_schema
         new_schema['definitions'] = new_definitions
         return new_schema
@@ -285,11 +275,37 @@ class _WalkCoreSchema:
             schema['values_schema'] = self.walk(values_schema, f)
         return schema
 
-    def handle_function_schema(self, schema: AnyFunctionSchema, f: Walk) -> core_schema.CoreSchema:
-        if not is_function_with_inner_schema(schema):
-            return schema
+    def handle_function_after_schema(
+        self, schema: core_schema.AfterValidatorFunctionSchema, f: Walk
+    ) -> core_schema.CoreSchema:
         schema['schema'] = self.walk(schema['schema'], f)
         return schema
+
+    def handle_function_before_schema(
+        self, schema: core_schema.BeforeValidatorFunctionSchema, f: Walk
+    ) -> core_schema.CoreSchema:
+        schema['schema'] = self.walk(schema['schema'], f)
+        if 'json_schema_input_schema' in schema:
+            schema['json_schema_input_schema'] = self.walk(schema['json_schema_input_schema'], f)
+        return schema
+
+    # TODO duplicate schema types for serializers and validators, needs to be deduplicated:
+    def handle_function_plain_schema(
+        self, schema: core_schema.PlainValidatorFunctionSchema | core_schema.PlainSerializerFunctionSerSchema, f: Walk
+    ) -> core_schema.CoreSchema:
+        if 'json_schema_input_schema' in schema:
+            schema['json_schema_input_schema'] = self.walk(schema['json_schema_input_schema'], f)
+        return schema  # pyright: ignore[reportReturnType]
+
+    # TODO duplicate schema types for serializers and validators, needs to be deduplicated:
+    def handle_function_wrap_schema(
+        self, schema: core_schema.WrapValidatorFunctionSchema | core_schema.WrapSerializerFunctionSerSchema, f: Walk
+    ) -> core_schema.CoreSchema:
+        if 'schema' in schema:
+            schema['schema'] = self.walk(schema['schema'], f)
+        if 'json_schema_input_schema' in schema:
+            schema['json_schema_input_schema'] = self.walk(schema['json_schema_input_schema'], f)
+        return schema  # pyright: ignore[reportReturnType]
 
     def handle_union_schema(self, schema: core_schema.UnionSchema, f: Walk) -> core_schema.CoreSchema:
         new_choices: list[CoreSchema | tuple[CoreSchema, str]] = []
@@ -329,13 +345,13 @@ class _WalkCoreSchema:
         replaced_fields: dict[str, core_schema.ModelField] = {}
         replaced_computed_fields: list[core_schema.ComputedField] = []
         for computed_field in schema.get('computed_fields', ()):
-            replaced_field = computed_field.copy()
+            replaced_field = self._copy_schema(computed_field)
             replaced_field['return_schema'] = self.walk(computed_field['return_schema'], f)
             replaced_computed_fields.append(replaced_field)
         if replaced_computed_fields:
             schema['computed_fields'] = replaced_computed_fields
         for k, v in schema['fields'].items():
-            replaced_field = v.copy()
+            replaced_field = self._copy_schema(v)
             replaced_field['schema'] = self.walk(v['schema'], f)
             replaced_fields[k] = replaced_field
         schema['fields'] = replaced_fields
@@ -347,14 +363,14 @@ class _WalkCoreSchema:
             schema['extras_schema'] = self.walk(extras_schema, f)
         replaced_computed_fields: list[core_schema.ComputedField] = []
         for computed_field in schema.get('computed_fields', ()):
-            replaced_field = computed_field.copy()
+            replaced_field = self._copy_schema(computed_field)
             replaced_field['return_schema'] = self.walk(computed_field['return_schema'], f)
             replaced_computed_fields.append(replaced_field)
         if replaced_computed_fields:
             schema['computed_fields'] = replaced_computed_fields
         replaced_fields: dict[str, core_schema.TypedDictField] = {}
         for k, v in schema['fields'].items():
-            replaced_field = v.copy()
+            replaced_field = self._copy_schema(v)
             replaced_field['schema'] = self.walk(v['schema'], f)
             replaced_fields[k] = replaced_field
         schema['fields'] = replaced_fields
@@ -364,13 +380,13 @@ class _WalkCoreSchema:
         replaced_fields: list[core_schema.DataclassField] = []
         replaced_computed_fields: list[core_schema.ComputedField] = []
         for computed_field in schema.get('computed_fields', ()):
-            replaced_field = computed_field.copy()
+            replaced_field = self._copy_schema(computed_field)
             replaced_field['return_schema'] = self.walk(computed_field['return_schema'], f)
             replaced_computed_fields.append(replaced_field)
         if replaced_computed_fields:
             schema['computed_fields'] = replaced_computed_fields
         for field in schema['fields']:
-            replaced_field = field.copy()
+            replaced_field = self._copy_schema(field)
             replaced_field['schema'] = self.walk(field['schema'], f)
             replaced_fields.append(replaced_field)
         schema['fields'] = replaced_fields
@@ -379,7 +395,7 @@ class _WalkCoreSchema:
     def handle_arguments_schema(self, schema: core_schema.ArgumentsSchema, f: Walk) -> core_schema.CoreSchema:
         replaced_arguments_schema: list[core_schema.ArgumentsParameter] = []
         for param in schema['arguments_schema']:
-            replaced_param = param.copy()
+            replaced_param = self._copy_schema(param)
             replaced_param['schema'] = self.walk(param['schema'], f)
             replaced_arguments_schema.append(replaced_param)
         schema['arguments_schema'] = replaced_arguments_schema
@@ -397,9 +413,10 @@ class _WalkCoreSchema:
 
 
 _dispatch = _WalkCoreSchema().walk
+_dispatch_no_copy = _WalkCoreSchema(copy=False).walk
 
 
-def walk_core_schema(schema: core_schema.CoreSchema, f: Walk) -> core_schema.CoreSchema:
+def walk_core_schema(schema: core_schema.CoreSchema, f: Walk, *, copy: bool = True) -> core_schema.CoreSchema:
     """Recursively traverse a CoreSchema.
 
     Args:
@@ -409,11 +426,12 @@ def walk_core_schema(schema: core_schema.CoreSchema, f: Walk) -> core_schema.Cor
              (not the same one you passed into this function, one level down).
           2. The "next" `f` to call. This lets you for example use `f=functools.partial(some_method, some_context)`
              to pass data down the recursive calls without using globals or other mutable state.
+        copy: Whether schema should be recursively copied.
 
     Returns:
         core_schema.CoreSchema: A processed CoreSchema.
     """
-    return f(schema.copy(), _dispatch)
+    return f(schema.copy() if copy else schema, _dispatch if copy else _dispatch_no_copy)
 
 
 def simplify_schema_references(schema: core_schema.CoreSchema) -> core_schema.CoreSchema:  # noqa: C901
@@ -458,11 +476,28 @@ def simplify_schema_references(schema: core_schema.CoreSchema) -> core_schema.Co
             return s
 
         current_recursion_ref_count[ref] += 1
-        recurse(definitions[ref], count_refs)
+        if 'serialization' in s:
+            # Even though this is a `'definition-ref'` schema, there might
+            # be more references inside the serialization schema:
+            recurse(s, count_refs)
+
+        next_s = definitions[ref]
+        visited: set[str] = set()
+        while next_s['type'] == 'definition-ref':
+            if next_s['schema_ref'] in visited:
+                raise PydanticUserError(
+                    f'{ref} contains a circular reference to itself.', code='circular-reference-schema'
+                )
+
+            visited.add(next_s['schema_ref'])
+            ref_counts[next_s['schema_ref']] += 1
+            next_s = definitions[next_s['schema_ref']]
+
+        recurse(next_s, count_refs)
         current_recursion_ref_count[ref] -= 1
         return s
 
-    schema = walk_core_schema(schema, count_refs)
+    schema = walk_core_schema(schema, count_refs, copy=False)
 
     assert all(c == 0 for c in current_recursion_ref_count.values()), 'this is a bug! please report it'
 
@@ -475,19 +510,21 @@ def simplify_schema_references(schema: core_schema.CoreSchema) -> core_schema.Co
             return False
         if 'metadata' in s:
             metadata = s['metadata']
-            for k in (
-                'pydantic_js_functions',
-                'pydantic_js_annotation_functions',
+            for k in [
+                *CoreMetadata.__annotations__.keys(),
                 'pydantic.internal.union_discriminator',
-            ):
+                'pydantic.internal.tagged_union_tag',
+            ]:
                 if k in metadata:
                     # we need to keep this as a ref
                     return False
         return True
 
     def inline_refs(s: core_schema.CoreSchema, recurse: Recurse) -> core_schema.CoreSchema:
-        if s['type'] == 'definition-ref':
+        # Assume there are no infinite loops, because we already checked for that in `count_refs`
+        while s['type'] == 'definition-ref':
             ref = s['schema_ref']
+
             # Check if the reference is only used once, not involved in recursion and does not have
             # any extra keys (like 'serialization')
             if can_be_inlined(s, ref):
@@ -498,14 +535,12 @@ def simplify_schema_references(schema: core_schema.CoreSchema) -> core_schema.Co
                 # in particular this is needed for `serialization`
                 if 'serialization' in s:
                     new['serialization'] = s['serialization']
-                s = recurse(new, inline_refs)
-                return s
+                s = new
             else:
-                return recurse(s, inline_refs)
-        else:
-            return recurse(s, inline_refs)
+                break
+        return recurse(s, inline_refs)
 
-    schema = walk_core_schema(schema, inline_refs)
+    schema = walk_core_schema(schema, inline_refs, copy=False)
 
     def_values = [v for v in definitions.values() if ref_counts[v['ref']] > 0]  # type: ignore
 

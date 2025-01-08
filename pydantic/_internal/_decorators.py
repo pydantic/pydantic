@@ -15,7 +15,9 @@ from typing_extensions import Literal, TypeAlias, is_typeddict
 from ..errors import PydanticUserError
 from ._core_utils import get_type_ref
 from ._internal_dataclass import slots_true
+from ._namespace_utils import GlobalsNamespace, MappingNamespace
 from ._typing_extra import get_function_type_hints
+from ._utils import can_be_positional
 
 if TYPE_CHECKING:
     from ..fields import ComputedFieldInfo
@@ -56,6 +58,9 @@ class FieldValidatorDecoratorInfo:
         fields: A tuple of field names the validator should be called on.
         mode: The proposed validator mode.
         check_fields: Whether to check that the fields actually exist on the model.
+        json_schema_input_type: The input type of the function. This is only used to generate
+            the appropriate JSON Schema (in validation mode) and can only specified
+            when `mode` is either `'before'`, `'plain'` or `'wrap'`.
     """
 
     decorator_repr: ClassVar[str] = '@field_validator'
@@ -63,6 +68,7 @@ class FieldValidatorDecoratorInfo:
     fields: tuple[str, ...]
     mode: FieldValidatorModes
     check_fields: bool | None
+    json_schema_input_type: Any
 
 
 @dataclass(**slots_true)
@@ -197,9 +203,9 @@ class PydanticDescriptorProxy(Generic[ReturnType]):
         if hasattr(self.wrapped, '__set_name__'):
             self.wrapped.__set_name__(instance, name)  # pyright: ignore[reportFunctionMemberAccess]
 
-    def __getattr__(self, __name: str) -> Any:
+    def __getattr__(self, name: str, /) -> Any:
         """Forward checks for __isabstractmethod__ and such."""
-        return getattr(self.wrapped, __name)
+        return getattr(self.wrapped, name)
 
 
 DecoratorInfoType = TypeVar('DecoratorInfoType', bound=DecoratorInfo)
@@ -544,9 +550,7 @@ def inspect_validator(validator: Callable[..., Any], mode: FieldValidatorModes) 
     )
 
 
-def inspect_field_serializer(
-    serializer: Callable[..., Any], mode: Literal['plain', 'wrap'], computed_field: bool = False
-) -> tuple[bool, bool]:
+def inspect_field_serializer(serializer: Callable[..., Any], mode: Literal['plain', 'wrap']) -> tuple[bool, bool]:
     """Look at a field serializer function and determine if it is a field serializer,
     and whether it takes an info argument.
 
@@ -555,8 +559,6 @@ def inspect_field_serializer(
     Args:
         serializer: The serializer function to inspect.
         mode: The serializer mode, either 'plain' or 'wrap'.
-        computed_field: When serializer is applied on computed_field. It doesn't require
-            info signature.
 
     Returns:
         Tuple of (is_field_serializer, info_arg).
@@ -583,13 +585,8 @@ def inspect_field_serializer(
             f'Unrecognized field_serializer function signature for {serializer} with `mode={mode}`:{sig}',
             code='field-serializer-signature',
         )
-    if info_arg and computed_field:
-        raise PydanticUserError(
-            'field_serializer on computed_field does not use info signature', code='field-serializer-signature'
-        )
 
-    else:
-        return is_field_serializer, info_arg
+    return is_field_serializer, info_arg
 
 
 def inspect_annotated_serializer(serializer: Callable[..., Any], mode: Literal['plain', 'wrap']) -> bool:
@@ -757,7 +754,10 @@ def unwrap_wrapped_function(
 
 
 def get_function_return_type(
-    func: Any, explicit_return_type: Any, types_namespace: dict[str, Any] | None = None
+    func: Any,
+    explicit_return_type: Any,
+    globalns: GlobalsNamespace | None = None,
+    localns: MappingNamespace | None = None,
 ) -> Any:
     """Get the function return type.
 
@@ -767,7 +767,8 @@ def get_function_return_type(
     Args:
         func: The function to get its return type.
         explicit_return_type: The explicit return type.
-        types_namespace: The types namespace, defaults to `None`.
+        globalns: The globals namespace to use during type annotation evaluation.
+        localns: The locals namespace to use during type annotation evaluation.
 
     Returns:
         The function return type.
@@ -775,7 +776,10 @@ def get_function_return_type(
     if explicit_return_type is PydanticUndefined:
         # try to get it from the type annotation
         hints = get_function_type_hints(
-            unwrap_wrapped_function(func), include_keys={'return'}, types_namespace=types_namespace
+            unwrap_wrapped_function(func),
+            include_keys={'return'},
+            globalns=globalns,
+            localns=localns,
         )
         return hints.get('return', PydanticUndefined)
     else:
@@ -800,12 +804,8 @@ def count_positional_required_params(sig: Signature) -> int:
         # First argument is the value being validated/serialized, and can have a default value
         # (e.g. `float`, which has signature `(x=0, /)`). We assume other parameters (the info arg
         # for instance) should be required, and thus without any default value.
-        and (param.default is Parameter.empty or param == parameters[0])
+        and (param.default is Parameter.empty or param is parameters[0])
     )
-
-
-def can_be_positional(param: Parameter) -> bool:
-    return param.kind in (Parameter.POSITIONAL_ONLY, Parameter.POSITIONAL_OR_KEYWORD)
 
 
 def ensure_property(f: Any) -> Any:

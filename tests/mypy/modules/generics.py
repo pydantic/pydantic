@@ -1,5 +1,7 @@
 from typing import Any, Dict, Generic, Optional, TypeVar
 
+from typing_extensions import assert_type
+
 from pydantic import BaseModel
 
 Tbody = TypeVar('Tbody')
@@ -35,7 +37,7 @@ example = {'url': 'foo.com', 'body': {'raw': '..<html>..', 'doctype': 'html'}}
 resp = HtmlResponse.model_validate(example)
 resp.custom_method()
 
-doctype = resp.body.doctype
+assert_type(resp.body, HtmlBody)
 
 
 T = TypeVar('T', int, str)
@@ -50,4 +52,4 @@ class DomainType(HistoryField[int]):
 
 
 thing = DomainType(value=None)
-var: Optional[int] = thing.value
+assert_type(thing.value, Optional[int])

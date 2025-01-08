@@ -6,8 +6,11 @@ from .version import version_short
 
 __all__ = (
     'PydanticDeprecatedSince20',
-    'PydanticDeprecationWarning',
     'PydanticDeprecatedSince26',
+    'PydanticDeprecatedSince29',
+    'PydanticDeprecatedSince210',
+    'PydanticDeprecatedSince211',
+    'PydanticDeprecationWarning',
     'PydanticExperimentalWarning',
 )
 
@@ -65,6 +68,20 @@ class PydanticDeprecatedSince29(PydanticDeprecationWarning):
 
     def __init__(self, message: str, *args: object) -> None:
         super().__init__(message, *args, since=(2, 9), expected_removal=(3, 0))
+
+
+class PydanticDeprecatedSince210(PydanticDeprecationWarning):
+    """A specific `PydanticDeprecationWarning` subclass defining functionality deprecated since Pydantic 2.10."""
+
+    def __init__(self, message: str, *args: object) -> None:
+        super().__init__(message, *args, since=(2, 10), expected_removal=(3, 0))
+
+
+class PydanticDeprecatedSince211(PydanticDeprecationWarning):
+    """A specific `PydanticDeprecationWarning` subclass defining functionality deprecated since Pydantic 2.11."""
+
+    def __init__(self, message: str, *args: object) -> None:
+        super().__init__(message, *args, since=(2, 11), expected_removal=(3, 0))
 
 
 class GenericBeforeBaseModelWarning(Warning):

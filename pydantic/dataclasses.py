@@ -10,7 +10,7 @@ from warnings import warn
 
 from typing_extensions import Literal, TypeGuard, dataclass_transform
 
-from ._internal import _config, _decorators, _typing_extra
+from ._internal import _config, _decorators, _namespace_utils, _typing_extra
 from ._internal import _dataclasses as _pydantic_dataclasses
 from ._migration import getattr_migration
 from .config import ConfigDict
@@ -19,6 +19,7 @@ from .fields import Field, FieldInfo, PrivateAttr
 
 if TYPE_CHECKING:
     from ._internal._dataclasses import PydanticDataclass
+    from ._internal._namespace_utils import MappingNamespace
 
 __all__ = 'dataclass', 'rebuild_dataclass'
 
@@ -108,7 +109,8 @@ def dataclass(
     kw_only: bool = False,
     slots: bool = False,
 ) -> Callable[[type[_T]], type[PydanticDataclass]] | type[PydanticDataclass]:
-    """Usage docs: https://docs.pydantic.dev/2.9/concepts/dataclasses/
+    """!!! abstract "Usage Documentation"
+        [`dataclasses`](../concepts/dataclasses.md)
 
     A decorator used to create a Pydantic-enhanced dataclass, similar to the standard Python `dataclass`,
     but with added validation.
@@ -201,6 +203,17 @@ def dataclass(
 
         original_cls = cls
 
+        # we warn on conflicting config specifications, but only if the class doesn't have a dataclass base
+        # because a dataclass base might provide a __pydantic_config__ attribute that we don't want to warn about
+        has_dataclass_base = any(dataclasses.is_dataclass(base) for base in cls.__bases__)
+        if not has_dataclass_base and config is not None and hasattr(cls, '__pydantic_config__'):
+            warn(
+                f'`config` is set via both the `dataclass` decorator and `__pydantic_config__` for dataclass {cls.__name__}. '
+                f'The `config` specification from `dataclass` decorator will take priority.',
+                category=UserWarning,
+                stacklevel=2,
+            )
+
         # if config is not explicitly provided, try to read it from the type
         config_dict = config if config is not None else getattr(cls, '__pydantic_config__', None)
         config_wrapper = _config.ConfigWrapper(config_dict)
@@ -257,10 +270,11 @@ def dataclass(
         cls.__doc__ = original_doc
         cls.__module__ = original_cls.__module__
         cls.__qualname__ = original_cls.__qualname__
-        pydantic_complete = _pydantic_dataclasses.complete_dataclass(
-            cls, config_wrapper, raise_errors=False, types_namespace=None
-        )
-        cls.__pydantic_complete__ = pydantic_complete  # type: ignore
+        cls.__pydantic_complete__ = False  # `complete_dataclass` will set it to `True` if successful.
+        # TODO `parent_namespace` is currently None, but we could do the same thing as Pydantic models:
+        # fetch the parent ns using `parent_frame_namespace` (if the dataclass was defined in a function),
+        # and possibly cache it (see the `__pydantic_parent_namespace__` logic for models).
+        _pydantic_dataclasses.complete_dataclass(cls, config_wrapper, raise_errors=False)
         return cls
 
     return create_dataclass if _cls is None else create_dataclass(_cls)
@@ -288,7 +302,7 @@ def rebuild_dataclass(
     force: bool = False,
     raise_errors: bool = True,
     _parent_namespace_depth: int = 2,
-    _types_namespace: dict[str, Any] | None = None,
+    _types_namespace: MappingNamespace | None = None,
 ) -> bool | None:
     """Try to rebuild the pydantic-core schema for the dataclass.
 
@@ -310,25 +324,32 @@ def rebuild_dataclass(
     """
     if not force and cls.__pydantic_complete__:
         return None
-    else:
-        if _types_namespace is not None:
-            types_namespace: dict[str, Any] | None = _types_namespace.copy()
-        else:
-            if _parent_namespace_depth > 0:
-                frame_parent_ns = _typing_extra.parent_frame_namespace(parent_depth=_parent_namespace_depth) or {}
-                # Note: we may need to add something similar to cls.__pydantic_parent_namespace__ from BaseModel
-                #   here when implementing handling of recursive generics. See BaseModel.model_rebuild for reference.
-                types_namespace = frame_parent_ns
-            else:
-                types_namespace = {}
 
-            types_namespace = _typing_extra.get_cls_types_namespace(cls, types_namespace)
-        return _pydantic_dataclasses.complete_dataclass(
-            cls,
-            _config.ConfigWrapper(cls.__pydantic_config__, check=False),
-            raise_errors=raise_errors,
-            types_namespace=types_namespace,
-        )
+    if '__pydantic_core_schema__' in cls.__dict__:
+        delattr(cls, '__pydantic_core_schema__')  # delete cached value to ensure full rebuild happens
+
+    if _types_namespace is not None:
+        rebuild_ns = _types_namespace
+    elif _parent_namespace_depth > 0:
+        rebuild_ns = _typing_extra.parent_frame_namespace(parent_depth=_parent_namespace_depth, force=True) or {}
+    else:
+        rebuild_ns = {}
+
+    ns_resolver = _namespace_utils.NsResolver(
+        parent_namespace=rebuild_ns,
+    )
+
+    return _pydantic_dataclasses.complete_dataclass(
+        cls,
+        _config.ConfigWrapper(cls.__pydantic_config__, check=False),
+        raise_errors=raise_errors,
+        ns_resolver=ns_resolver,
+        # We could provide a different config instead (with `'defer_build'` set to `True`)
+        # of this explicit `_force_build` argument, but because config can come from the
+        # decorator parameter or the `__pydantic_config__` attribute, `complete_dataclass`
+        # will overwrite `__pydantic_config__` with the provided config above:
+        _force_build=True,
+    )
 
 
 def is_pydantic_dataclass(class_: type[Any], /) -> TypeGuard[type[PydanticDataclass]]:

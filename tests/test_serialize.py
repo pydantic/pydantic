@@ -17,7 +17,6 @@ from pydantic import (
     BaseModel,
     Field,
     FieldSerializationInfo,
-    PydanticUserError,
     SerializationInfo,
     SerializerFunctionWrapHandler,
     TypeAdapter,
@@ -893,6 +892,21 @@ def test_clear_return_schema():
     assert return_serializer == 'return_serializer: Any'
 
 
+def test_serializer_return_type_model() -> None:
+    """https://github.com/pydantic/pydantic/issues/10443"""
+
+    class Sub(BaseModel):
+        pass
+
+    class Model(BaseModel):
+        sub: Annotated[
+            Sub,
+            PlainSerializer(lambda v: v, return_type=Sub),
+        ]
+
+    assert Model(sub=Sub()).model_dump() == {'sub': {}}
+
+
 def test_type_adapter_dump_json():
     class Model(TypedDict):
         x: int
@@ -1071,24 +1085,6 @@ def test_annotated_computed_field_custom_serializer():
         'title': 'Model',
         'type': 'object',
     }
-
-
-def test_computed_field_custom_serializer_bad_signature():
-    error_msg = 'field_serializer on computed_field does not use info signature'
-
-    with pytest.raises(PydanticUserError, match=error_msg):
-
-        class Model(BaseModel):
-            x: int
-
-            @computed_field
-            @property
-            def two_x(self) -> int:
-                return self.x * 2
-
-            @field_serializer('two_x')
-            def ser_two_x_bad_signature(self, v, _info):
-                return f'The double of x is {v}'
 
 
 @pytest.mark.skipif(

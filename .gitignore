@@ -52,4 +52,3 @@ pydantic/*.so
 .auto-format
 /sandbox/
 /worktrees/
-.pdm-python
