@@ -5,6 +5,7 @@ Import of this module is deferred since it contains imports of many standard lib
 
 from __future__ import annotations as _annotations
 
+import collections.abc
 import math
 import re
 import typing
@@ -400,6 +401,14 @@ def decimal_places_validator(x: Any, decimal_places: Any) -> Any:
         return x
     except TypeError:
         raise TypeError(f"Unable to apply constraint 'decimal_places' to supplied value {x}")
+
+
+def deque_validator(input_value: Any, handler: core_schema.ValidatorFunctionWrapHandler) -> collections.deque[Any]:
+    if isinstance(input_value, collections.deque):
+        maxlen = input_value.maxlen
+        return collections.deque(handler(input_value), maxlen=maxlen)
+    else:
+        return collections.deque(handler(input_value))
 
 
 NUMERIC_VALIDATOR_LOOKUP: dict[str, Callable] = {
