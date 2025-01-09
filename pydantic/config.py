@@ -1006,10 +1006,12 @@ class ConfigDict(TypedDict, total=False):
     ```
     This requires the source code of the class to be available at runtime.
 
-    !!! warning "Usage with `TypedDict`"
-        Due to current limitations, attribute docstrings detection may not work as expected when using `TypedDict`
-        (in particular when multiple `TypedDict` classes have the same name in the same source file). The behavior
-        can be different depending on the Python version used.
+    !!! warning "Usage with `TypedDict` and stdlib dataclasses"
+        Due to current limitations, attribute docstrings detection may not work as expected when using
+        [`TypedDict`][typing.TypedDict] and stdlib dataclasses, in particular when:
+
+        - inheritance is being used.
+        - multiple classes have the same name in the same source file.
     '''
 
     cache_strings: bool | Literal['all', 'keys', 'none']

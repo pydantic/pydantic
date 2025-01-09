@@ -1,9 +1,11 @@
 import textwrap
+from dataclasses import dataclass
 from typing import Generic, TypeVar
 
+import pytest
 from typing_extensions import Annotated, TypedDict
 
-from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, create_model
+from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, create_model, with_config
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 
 T = TypeVar('T')
@@ -257,6 +259,50 @@ def test_dataclass_docs_extraction():
     # Even though the `FieldInfo` instances had the correct description set,
     # a bug in the core schema generation logic omitted them:
     assert TypeAdapter(MyModel).json_schema()['properties']['a']['description'] == 'A docs'
+
+
+def test_stdlib_docs_extraction():
+    @dataclass
+    @with_config({'use_attribute_docstrings': True})
+    class MyModel:
+        a: int
+        """A docs"""
+
+    ta = TypeAdapter(MyModel)
+
+    assert ta.json_schema() == {
+        'properties': {'a': {'title': 'A', 'type': 'integer', 'description': 'A docs'}},
+        'required': ['a'],
+        'title': 'MyModel',
+        'type': 'object',
+    }
+
+
+@pytest.mark.xfail(reason='Current implementation does not take inheritance into account.')
+def test_stdlib_docs_extraction_inheritance():
+    @dataclass
+    @with_config({'use_attribute_docstrings': True})
+    class Base:
+        a: int
+        """A docs"""
+
+    @dataclass
+    @with_config({'use_attribute_docstrings': True})
+    class MyStdlibDataclass(Base):
+        b: int
+        """B docs"""
+
+    ta = TypeAdapter(MyStdlibDataclass)
+
+    assert ta.json_schema() == {
+        'properties': {
+            'a': {'title': 'A', 'type': 'integer', 'description': 'A docs'},
+            'b': {'title': 'B', 'type': 'integer', 'description': 'B docs'},
+        },
+        'required': ['a', 'b'],
+        'title': 'MyStdlibDataclass',
+        'type': 'object',
+    }
 
 
 def test_typeddict():
