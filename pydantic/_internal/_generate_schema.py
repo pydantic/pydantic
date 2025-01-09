@@ -539,11 +539,11 @@ class GenerateSchema:
             python_schema=core_schema.is_instance_schema(collections.deque, cls_repr='Deque'),
         )
 
+        lax_schema = core_schema.no_info_wrap_validator_function(deque_validator, list_schema)
+
         return core_schema.lax_or_strict_schema(
-            lax_schema=core_schema.no_info_wrap_validator_function(deque_validator, list_schema),
-            strict_schema=core_schema.chain_schema(
-                [check_instance, core_schema.no_info_wrap_validator_function(deque_validator, list_schema)]
-            ),
+            lax_schema=lax_schema,
+            strict_schema=core_schema.chain_schema([check_instance, lax_schema]),
             serialization=core_schema.wrap_serializer_function_ser_schema(
                 serialize_sequence_via_list, schema=item_type_schema, info_arg=True
             ),

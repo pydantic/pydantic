@@ -5,10 +5,10 @@ Import of this module is deferred since it contains imports of many standard lib
 
 from __future__ import annotations as _annotations
 
-import collections.abc
 import math
 import re
 import typing
+from collections import deque
 from decimal import Decimal
 from fractions import Fraction
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
@@ -403,12 +403,8 @@ def decimal_places_validator(x: Any, decimal_places: Any) -> Any:
         raise TypeError(f"Unable to apply constraint 'decimal_places' to supplied value {x}")
 
 
-def deque_validator(input_value: Any, handler: core_schema.ValidatorFunctionWrapHandler) -> collections.deque[Any]:
-    if isinstance(input_value, collections.deque):
-        maxlen = input_value.maxlen
-        return collections.deque(handler(input_value), maxlen=maxlen)
-    else:
-        return collections.deque(handler(input_value))
+def deque_validator(input_value: Any, handler: core_schema.ValidatorFunctionWrapHandler) -> deque[Any]:
+    return deque(handler(input_value), maxlen=getattr(input_value, 'maxlen', None))
 
 
 NUMERIC_VALIDATOR_LOOKUP: dict[str, Callable] = {
