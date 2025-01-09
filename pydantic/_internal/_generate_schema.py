@@ -524,6 +524,31 @@ class GenerateSchema:
         )
         return schema
 
+    def _deque_schema(self, items_type: Any) -> CoreSchema:
+        from ._serializers import serialize_sequence_via_list
+        from ._validators import deque_validator
+
+        item_type_schema = self.generate_schema(items_type)
+
+        # we have to use a lax list schema here, because we need to validate the deque's
+        # items via a list schema, but it's ok if the deque itself is not a list
+        list_schema = core_schema.list_schema(item_type_schema, strict=False)
+
+        check_instance = core_schema.json_or_python_schema(
+            json_schema=core_schema.list_schema(),
+            python_schema=core_schema.is_instance_schema(collections.deque, cls_repr='Deque'),
+        )
+
+        lax_schema = core_schema.no_info_wrap_validator_function(deque_validator, list_schema)
+
+        return core_schema.lax_or_strict_schema(
+            lax_schema=lax_schema,
+            strict_schema=core_schema.chain_schema([check_instance, lax_schema]),
+            serialization=core_schema.wrap_serializer_function_ser_schema(
+                serialize_sequence_via_list, schema=item_type_schema, info_arg=True
+            ),
+        )
+
     def _fraction_schema(self) -> CoreSchema:
         """Support for [`fractions.Fraction`][fractions.Fraction]."""
         from ._validators import fraction_validator
@@ -967,6 +992,8 @@ class GenerateSchema:
             return self._dict_schema(Any, Any)
         elif obj in PATH_TYPES:
             return self._path_schema(obj, Any)
+        elif obj in DEQUE_TYPES:
+            return self._deque_schema(Any)
         elif _typing_extra.is_type_alias_type(obj):
             return self._type_alias_type_schema(obj)
         elif obj is type:
@@ -1047,6 +1074,8 @@ class GenerateSchema:
             return self._dict_schema(*self._get_first_two_args_or_any(obj))
         elif origin in PATH_TYPES:
             return self._path_schema(origin, self._get_first_arg_or_any(obj))
+        elif origin in DEQUE_TYPES:
+            return self._deque_schema(self._get_first_arg_or_any(obj))
         elif is_typeddict(origin):
             return self._typed_dict_schema(obj, origin)
         elif origin in (typing.Type, type):
@@ -2019,10 +2048,7 @@ class GenerateSchema:
     def _get_prepare_pydantic_annotations_for_known_type(
         self, obj: Any, annotations: tuple[Any, ...]
     ) -> tuple[Any, list[Any]] | None:
-        from ._std_types_schema import (
-            deque_schema_prepare_pydantic_annotations,
-            mapping_like_prepare_pydantic_annotations,
-        )
+        from ._std_types_schema import mapping_like_prepare_pydantic_annotations
 
         # Check for hashability
         try:
@@ -2036,9 +2062,7 @@ class GenerateSchema:
         # not always called from match_type, but sometimes from _apply_annotations
         obj_origin = get_origin(obj) or obj
 
-        if obj_origin in DEQUE_TYPES:
-            return deque_schema_prepare_pydantic_annotations(obj, annotations)
-        elif obj_origin in MAPPING_TYPES:
+        if obj_origin in MAPPING_TYPES:
             return mapping_like_prepare_pydantic_annotations(obj, annotations)
         else:
             return None

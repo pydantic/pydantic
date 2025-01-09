@@ -3,8 +3,8 @@
 Import of this module is deferred since it contains imports of many standard library modules.
 """
 
-# TODO: eventually, we'd like to move all of the types handled here to have pydantic-core validators
-# so that we can avoid this annotation injection and just use the standard pydantic-core schema generation
+# TODO: working on removing these types as the annotation injection pattern we use here is inconsistent
+# with the rest of the library and is not well supported by the pydantic-core schema generation
 
 from __future__ import annotations as _annotations
 
@@ -22,7 +22,6 @@ from pydantic_core import (
 )
 from typing_extensions import get_args, get_origin
 
-from pydantic._internal._serializers import serialize_sequence_via_list
 from pydantic.errors import PydanticSchemaGenerationError
 
 from . import _known_annotated_metadata, _typing_extra
@@ -31,86 +30,6 @@ from ._internal_dataclass import slots_true
 from ._schema_generation_shared import GetCoreSchemaHandler
 
 FieldInfo = import_cached_field_info()
-
-if typing.TYPE_CHECKING:
-    from ._generate_schema import GenerateSchema
-
-    StdSchemaFunction = Callable[[GenerateSchema, type[Any]], core_schema.CoreSchema]
-
-
-def deque_validator(
-    input_value: Any, handler: core_schema.ValidatorFunctionWrapHandler, maxlen: None | int
-) -> collections.deque[Any]:
-    if isinstance(input_value, collections.deque):
-        maxlens = [v for v in (input_value.maxlen, maxlen) if v is not None]
-        if maxlens:
-            maxlen = min(maxlens)
-        return collections.deque(handler(input_value), maxlen=maxlen)
-    else:
-        return collections.deque(handler(input_value), maxlen=maxlen)
-
-
-@dataclasses.dataclass(**slots_true)
-class DequeValidator:
-    item_source_type: type[Any]
-    metadata: dict[str, Any]
-
-    def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-        if _typing_extra.is_any(self.item_source_type):
-            items_schema = None
-        else:
-            items_schema = handler.generate_schema(self.item_source_type)
-
-        # if we have a MaxLen annotation might as well set that as the default maxlen on the deque
-        # this lets us reuse existing metadata annotations to let users set the maxlen on a dequeue
-        # that e.g. comes from JSON
-        coerce_instance_wrap = partial(
-            core_schema.no_info_wrap_validator_function,
-            partial(deque_validator, maxlen=self.metadata.get('max_length', None)),
-        )
-
-        # we have to use a lax list schema here, because we need to validate the deque's
-        # items via a list schema, but it's ok if the deque itself is not a list
-        metadata_with_strict_override = {**self.metadata, 'strict': False}
-        constrained_schema = core_schema.list_schema(items_schema, **metadata_with_strict_override)
-
-        check_instance = core_schema.json_or_python_schema(
-            json_schema=core_schema.list_schema(),
-            python_schema=core_schema.is_instance_schema(collections.deque),
-        )
-
-        serialization = core_schema.wrap_serializer_function_ser_schema(
-            serialize_sequence_via_list, schema=items_schema or core_schema.any_schema(), info_arg=True
-        )
-
-        strict = core_schema.chain_schema([check_instance, coerce_instance_wrap(constrained_schema)])
-
-        if self.metadata.get('strict', False):
-            schema = strict
-        else:
-            lax = coerce_instance_wrap(constrained_schema)
-            schema = core_schema.lax_or_strict_schema(lax_schema=lax, strict_schema=strict)
-        schema['serialization'] = serialization
-
-        return schema
-
-
-def deque_schema_prepare_pydantic_annotations(
-    source_type: Any, annotations: Iterable[Any]
-) -> tuple[Any, list[Any]] | None:
-    args = get_args(source_type)
-
-    if not args:
-        args = typing.cast(Tuple[Any], (Any,))
-    elif len(args) != 1:
-        raise ValueError('Expected deque to have exactly 1 generic parameter')
-
-    item_source_type = args[0]
-
-    metadata, remaining_annotations = _known_annotated_metadata.collect_known_metadata(annotations)
-    _known_annotated_metadata.check_metadata(metadata, _known_annotated_metadata.SEQUENCE_CONSTRAINTS, source_type)
-
-    return (source_type, [DequeValidator(item_source_type, metadata), *remaining_annotations])
 
 
 MAPPING_ORIGIN_MAP: dict[Any, Any] = {

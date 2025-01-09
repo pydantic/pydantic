@@ -5190,36 +5190,12 @@ def test_deque_typed_maxlen():
     assert DequeModel3(field=deque(maxlen=8)).field.maxlen == 8
 
 
-def test_deque_set_maxlen():
+def test_deque_enforces_maxlen():
     class DequeModel1(BaseModel):
-        field: Annotated[Deque[int], Field(max_length=10)]
+        field: Annotated[Deque[int], Field(max_length=3)]
 
-    assert DequeModel1(field=deque()).field.maxlen == 10
-    assert DequeModel1(field=deque(maxlen=8)).field.maxlen == 8
-    assert DequeModel1(field=deque(maxlen=15)).field.maxlen == 10
-
-    class DequeModel2(BaseModel):
-        field: Annotated[Deque[int], Field(max_length=10)] = deque()
-
-    assert DequeModel2().field.maxlen is None
-    assert DequeModel2(field=deque()).field.maxlen == 10
-    assert DequeModel2(field=deque(maxlen=8)).field.maxlen == 8
-    assert DequeModel2(field=deque(maxlen=15)).field.maxlen == 10
-
-    class DequeModel3(DequeModel2):
-        model_config = ConfigDict(validate_default=True)
-
-    assert DequeModel3().field.maxlen == 10
-
-    class DequeModel4(BaseModel):
-        field: Annotated[Deque[int], Field(max_length=10)] = deque(maxlen=5)
-
-    assert DequeModel4().field.maxlen == 5
-
-    class DequeModel5(DequeModel4):
-        model_config = ConfigDict(validate_default=True)
-
-    assert DequeModel4().field.maxlen == 5
+    with pytest.raises(ValidationError):
+        DequeModel1(field=deque([1, 2, 3, 4]))
 
 
 @pytest.mark.parametrize('value_type', (None, type(None), None.__class__))

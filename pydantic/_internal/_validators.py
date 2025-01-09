@@ -8,6 +8,7 @@ from __future__ import annotations as _annotations
 import math
 import re
 import typing
+from collections import deque
 from decimal import Decimal
 from fractions import Fraction
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
@@ -400,6 +401,10 @@ def decimal_places_validator(x: Any, decimal_places: Any) -> Any:
         return x
     except TypeError:
         raise TypeError(f"Unable to apply constraint 'decimal_places' to supplied value {x}")
+
+
+def deque_validator(input_value: Any, handler: core_schema.ValidatorFunctionWrapHandler) -> deque[Any]:
+    return deque(handler(input_value), maxlen=getattr(input_value, 'maxlen', None))
 
 
 NUMERIC_VALIDATOR_LOOKUP: dict[str, Callable] = {
