@@ -362,6 +362,6 @@ def is_pydantic_dataclass(class_: type[Any], /) -> TypeGuard[type[PydanticDatacl
         `True` if the class is a pydantic dataclass, `False` otherwise.
     """
     try:
-        return '__pydantic_validator__' in class_.__dict__ and dataclasses.is_dataclass(class_)
+        return '__pydantic_fields__' in class_.__dict__ and dataclasses.is_dataclass(class_)
     except AttributeError:
         return False

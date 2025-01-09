@@ -253,6 +253,11 @@ def test_dataclass_docs_extraction():
     assert MyModel.__pydantic_fields__['g'].description == 'G docs'
     assert MyModel.__pydantic_fields__['i'].description == 'Real description'
 
+    # https://github.com/pydantic/pydantic/issues/11243:
+    # Even though the `FieldInfo` instances had the correct description set,
+    # a bug in the core schema generation logic omitted them:
+    assert TypeAdapter(MyModel).json_schema()['properties']['a']['description'] == 'A docs'
+
 
 def test_typeddict():
     class MyModel(TypedDict):
