@@ -36,11 +36,6 @@ _CORE_SCHEMA_FIELD_TYPES = {'typed-dict-field', 'dataclass-field', 'model-field'
 _FUNCTION_WITH_INNER_SCHEMA_TYPES = {'function-before', 'function-after', 'function-wrap'}
 _LIST_LIKE_SCHEMA_WITH_ITEMS_TYPES = {'list', 'set', 'frozenset'}
 
-TAGGED_UNION_TAG_KEY = 'pydantic.internal.tagged_union_tag'
-"""
-Used in a `Tag` schema to specify the tag used for a discriminated union.
-"""
-
 
 def is_core_schema(
     schema: CoreSchemaOrField,
@@ -184,7 +179,7 @@ class _WalkCoreSchema:
         mapping: dict[core_schema.CoreSchemaType, Recurse] = {}
         key: core_schema.CoreSchemaType
         for key in get_args(core_schema.CoreSchemaType):
-            method_name = f"handle_{key.replace('-', '_')}_schema"
+            method_name = f'handle_{key.replace("-", "_")}_schema'
             mapping[key] = getattr(self, method_name, self._handle_other_schemas)
         return mapping
 

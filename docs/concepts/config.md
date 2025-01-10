@@ -45,7 +45,7 @@ except ValidationError as e:
     """
 ```
 
-1. See the [Extra Attributes](models.md#extra-fields) section for more details.
+1. See the [Extra data](models.md#extra-data) section for more details.
 
 Similarly, if using the [`@dataclass`][pydantic.dataclasses] decorator from Pydantic:
 ```python
@@ -142,7 +142,7 @@ class Parent(BaseModel):
 
 
 class Model(Parent):
-    model_config = ConfigDict(str_to_lower=True)  # (1)!
+    model_config = ConfigDict(str_to_lower=True)
 
     x: str
 

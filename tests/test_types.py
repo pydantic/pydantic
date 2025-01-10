@@ -3498,15 +3498,6 @@ def test_path_validation_success(value, result):
     assert Model.model_validate_json(json.dumps({'foo': str(value)})).foo == result
 
 
-def test_path_validation_constrained():
-    ta = TypeAdapter(Annotated[Path, Field(min_length=9, max_length=20)])
-    with pytest.raises(ValidationError):
-        ta.validate_python('/short')
-    with pytest.raises(ValidationError):
-        ta.validate_python('/' + 'long' * 100)
-    assert ta.validate_python('/just/right/enough') == Path('/just/right/enough')
-
-
 def test_path_like():
     class Model(BaseModel):
         foo: os.PathLike
@@ -5199,36 +5190,12 @@ def test_deque_typed_maxlen():
     assert DequeModel3(field=deque(maxlen=8)).field.maxlen == 8
 
 
-def test_deque_set_maxlen():
+def test_deque_enforces_maxlen():
     class DequeModel1(BaseModel):
-        field: Annotated[Deque[int], Field(max_length=10)]
+        field: Annotated[Deque[int], Field(max_length=3)]
 
-    assert DequeModel1(field=deque()).field.maxlen == 10
-    assert DequeModel1(field=deque(maxlen=8)).field.maxlen == 8
-    assert DequeModel1(field=deque(maxlen=15)).field.maxlen == 10
-
-    class DequeModel2(BaseModel):
-        field: Annotated[Deque[int], Field(max_length=10)] = deque()
-
-    assert DequeModel2().field.maxlen is None
-    assert DequeModel2(field=deque()).field.maxlen == 10
-    assert DequeModel2(field=deque(maxlen=8)).field.maxlen == 8
-    assert DequeModel2(field=deque(maxlen=15)).field.maxlen == 10
-
-    class DequeModel3(DequeModel2):
-        model_config = ConfigDict(validate_default=True)
-
-    assert DequeModel3().field.maxlen == 10
-
-    class DequeModel4(BaseModel):
-        field: Annotated[Deque[int], Field(max_length=10)] = deque(maxlen=5)
-
-    assert DequeModel4().field.maxlen == 5
-
-    class DequeModel5(DequeModel4):
-        model_config = ConfigDict(validate_default=True)
-
-    assert DequeModel4().field.maxlen == 5
+    with pytest.raises(ValidationError):
+        DequeModel1(field=deque([1, 2, 3, 4]))
 
 
 @pytest.mark.parametrize('value_type', (None, type(None), None.__class__))
@@ -5555,7 +5522,7 @@ def test_custom_generic_containers():
         {
             'input': 'a',
             'loc': ('field', 0),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'type': 'int_parsing',
         }
     ]
@@ -6248,14 +6215,14 @@ def test_instanceof_invalid_core_schema():
             'ctx': {'class': 'test_instanceof_invalid_core_schema.<locals>.MyClass'},
             'input': 1,
             'loc': ('a',),
-            'msg': 'Input should be an instance of ' 'test_instanceof_invalid_core_schema.<locals>.MyClass',
+            'msg': 'Input should be an instance of test_instanceof_invalid_core_schema.<locals>.MyClass',
             'type': 'is_instance_of',
         },
         {
             'ctx': {'class': 'test_instanceof_invalid_core_schema.<locals>.MyClass'},
             'input': 1,
             'loc': ('b',),
-            'msg': 'Input should be an instance of ' 'test_instanceof_invalid_core_schema.<locals>.MyClass',
+            'msg': 'Input should be an instance of test_instanceof_invalid_core_schema.<locals>.MyClass',
             'type': 'is_instance_of',
         },
     ]
@@ -6637,7 +6604,7 @@ def test_union_tags_in_errors():
         {
             'input': 'a',
             'loc': ('function-after[<lambda>(), list[int]]', 0),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'type': 'int_parsing',
         },
         {
@@ -6660,7 +6627,7 @@ def test_union_tags_in_errors():
         {
             'input': 'a',
             'loc': ('DoubledList', 0),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'type': 'int_parsing',
         },
         {
@@ -6975,7 +6942,7 @@ def test_mutable_mapping() -> None:
     """
     import collections.abc
 
-    adapter = TypeAdapter(collections.abc.MutableMapping, config=ConfigDict(arbitrary_types_allowed=True, strict=True))
+    adapter = TypeAdapter(collections.abc.MutableMapping, config=ConfigDict(strict=True))
 
     assert isinstance(adapter.validate_python(collections.UserDict()), collections.abc.MutableMapping)
 

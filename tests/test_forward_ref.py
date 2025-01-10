@@ -164,7 +164,7 @@ def test_self_forward_ref_collection(create_module):
     assert repr(module.Foo.model_fields['b']) == 'FieldInfo(annotation=Foo, required=False, default=None)'
     if sys.version_info < (3, 10):
         return
-    assert repr(module.Foo.model_fields['c']) == ('FieldInfo(annotation=List[Foo], required=False, ' 'default=[])')
+    assert repr(module.Foo.model_fields['c']) == ('FieldInfo(annotation=List[Foo], required=False, default=[])')
     assert repr(module.Foo.model_fields['d']) == ('FieldInfo(annotation=Dict[str, Foo], required=False, default={})')
 
 
@@ -735,9 +735,15 @@ def test_recursive_models_union(create_module):
     # This test should pass because PydanticRecursiveRef.__or__ is implemented,
     # not because `eval_type_backport` magically makes `|` work,
     # since it's installed for tests but otherwise optional.
+    # When generic models are involved in recursive models, parametrizing a model
+    # can result in a `PydanticRecursiveRef` instance. This isn't ideal, as in the
+    # example below, this results in the `FieldInfo.annotation` attribute being changed,
+    # e.g. for `bar` to something like `PydanticRecursiveRef(...) | None`.
+    # We currently have a workaround (avoid caching parametrized models where this bad
+    # annotation mutation can happen).
     sys.modules['eval_type_backport'] = None  # type: ignore
     try:
-        module = create_module(
+        create_module(
             # language=Python
             """
 from __future__ import annotations
@@ -758,13 +764,9 @@ class Bar(BaseModel, Generic[T]):
     finally:
         del sys.modules['eval_type_backport']
 
-    assert module.Foo.model_fields['bar'].annotation == typing.Optional[module.Bar[str]]
-    assert module.Foo.model_fields['bar2'].annotation == typing.Union[int, module.Bar[float]]
-    assert module.Bar.model_fields['foo'].annotation == module.Foo
-
 
 def test_recursive_models_union_backport(create_module):
-    module = create_module(
+    create_module(
         # language=Python
         """
 from __future__ import annotations
@@ -785,10 +787,6 @@ class Bar(BaseModel, Generic[T]):
     foo: Foo
 """
     )
-
-    assert module.Foo.model_fields['bar'].annotation == typing.Optional[module.Bar[str]]
-    assert module.Foo.model_fields['bar2'].annotation == typing.Union[int, str, module.Bar[float]]
-    assert module.Bar.model_fields['foo'].annotation == module.Foo
 
 
 def test_force_rebuild():

@@ -604,7 +604,7 @@ if __name__ == '__main__':
         if args.output_path.suffix:
             filepath = args.output_path
         else:
-            filepath = args.output_path / f"eq-benchmark_python-{PYTHON_VERSION.replace('.', '-')}.png"
+            filepath = args.output_path / f'eq-benchmark_python-{PYTHON_VERSION.replace(".", "-")}.png'
         fig.savefig(
             filepath,
             dpi=200,

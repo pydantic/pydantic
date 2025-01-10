@@ -313,11 +313,11 @@ class GenerateJsonSchema:
             CoreSchemaOrFieldType  # type: ignore
         )
         for key in core_schema_types:
-            method_name = f"{key.replace('-', '_')}_schema"
+            method_name = f'{key.replace("-", "_")}_schema'
             try:
                 mapping[key] = getattr(self, method_name)
             except AttributeError as e:  # pragma: no cover
-                if os.environ['PYDANTIC_PRIVATE_ALLOW_UNHANDLED_SCHEMA_TYPES'] == '1':
+                if os.getenv('PYDANTIC_PRIVATE_ALLOW_UNHANDLED_SCHEMA_TYPES'):
                     continue
                 raise TypeError(
                     f'No method for generating JsonSchema for core_schema.type={key!r} '
@@ -1570,14 +1570,13 @@ class GenerateJsonSchema:
         Raises:
             RuntimeError: If the schema reference can't be found in definitions.
         """
-        if '$ref' not in json_schema:
-            return json_schema
-
-        ref = json_schema['$ref']
-        schema_to_update = self.get_schema_from_definitions(JsonRef(ref))
-        if schema_to_update is None:
-            raise RuntimeError(f'Cannot update undefined schema for $ref={ref}')
-        return self.resolve_ref_schema(schema_to_update)
+        while '$ref' in json_schema:
+            ref = json_schema['$ref']
+            schema_to_update = self.get_schema_from_definitions(JsonRef(ref))
+            if schema_to_update is None:
+                raise RuntimeError(f'Cannot update undefined schema for $ref={ref}')
+            json_schema = schema_to_update
+        return json_schema
 
     def model_fields_schema(self, schema: core_schema.ModelFieldsSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a schema that defines a model's fields.
@@ -2467,7 +2466,7 @@ class WithJsonSchema:
             # This exception is handled in pydantic.json_schema.GenerateJsonSchema._named_required_fields_schema
             raise PydanticOmit
         else:
-            return self.json_schema
+            return self.json_schema.copy()
 
     def __hash__(self) -> int:
         return hash(type(self.mode))

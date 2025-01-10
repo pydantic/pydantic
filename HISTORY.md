@@ -1,3 +1,12 @@
+## v2.10.5 (2025-01-08)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.10.5)
+
+### What's Changed
+
+* Remove custom MRO implementation of Pydantic models by @Viicos in [#11184](https://github.com/pydantic/pydantic/pull/11184)
+* Fix URL serialization for unions by @sydney-runkle in [#11233](https://github.com/pydantic/pydantic/pull/11233)
+
 ## v2.10.4 (2024-12-18)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.10.4)

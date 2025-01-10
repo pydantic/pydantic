@@ -36,12 +36,15 @@ from annotated_types import BaseMetadata, MaxLen, MinLen
 from pydantic_core import CoreSchema, PydanticCustomError, SchemaSerializer, core_schema
 from typing_extensions import Annotated, Literal, Protocol, TypeAlias, TypeAliasType, deprecated
 
-from ._internal import _core_utils, _fields, _internal_dataclass, _typing_extra, _utils, _validators
+from ._internal import _fields, _internal_dataclass, _typing_extra, _utils, _validators
 from ._migration import getattr_migration
 from .annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
 from .errors import PydanticUserError
 from .json_schema import JsonSchemaValue
 from .warnings import PydanticDeprecatedSince20
+
+if TYPE_CHECKING:
+    from ._internal._core_metadata import CoreMetadata
 
 __all__ = (
     'Strict',
@@ -2937,9 +2940,8 @@ class Tag:
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
         schema = handler(source_type)
-        metadata = schema.setdefault('metadata', {})
-        assert isinstance(metadata, dict)
-        metadata[_core_utils.TAGGED_UNION_TAG_KEY] = self.tag
+        metadata = cast('CoreMetadata', schema.setdefault('metadata', {}))
+        metadata['pydantic_internal_union_tag_key'] = self.tag
         return schema
 
 
@@ -3059,11 +3061,9 @@ class Discriminator:
             tag = None
             if isinstance(choice, tuple):
                 choice, tag = choice
-            metadata = choice.get('metadata')
+            metadata = cast('CoreMetadata | None', choice.get('metadata'))
             if metadata is not None:
-                metadata_tag = metadata.get(_core_utils.TAGGED_UNION_TAG_KEY)
-                if metadata_tag is not None:
-                    tag = metadata_tag
+                tag = metadata.get('pydantic_internal_union_tag_key') or tag
             if tag is None:
                 raise PydanticUserError(
                     f'`Tag` not provided for choice {choice} used with `Discriminator`',

@@ -23,14 +23,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: astral-sh/setup-uv@v4
+      - uses: astral-sh/setup-uv@v5
         with:
-          enable-cache: true
           python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
-        run: uv sync --group linting --all-extras
-
+        # Installing pip is required for the pre-commit action:
+        run: |
+          uv sync --group linting --all-extras
+          uv pip install pip
       - uses: pre-commit/action@v3.0.1
         with:
           extra_args: --all-files --verbose
@@ -42,9 +43,8 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - uses: astral-sh/setup-uv@v4
+    - uses: astral-sh/setup-uv@v5
       with:
-        enable-cache: true
         python-version: '3.12'
 
     - name: Install dependencies
@@ -73,9 +73,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: astral-sh/setup-uv@v4
+      - uses: astral-sh/setup-uv@v5
         with:
-          enable-cache: true
           python-version: '3.12'
 
       - name: install deps
@@ -124,9 +123,8 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - uses: astral-sh/setup-uv@v4
+    - uses: astral-sh/setup-uv@v5
       with:
-        enable-cache: true
         python-version: ${{ matrix.python-version }}
 
     - name: Install dependencies
@@ -166,7 +164,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: astral-sh/setup-uv@v4
+      - uses: astral-sh/setup-uv@v5
         with:
           python-version: '3.12'
 
@@ -206,9 +204,8 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - uses: astral-sh/setup-uv@v4
+    - uses: astral-sh/setup-uv@v5
       with:
-        enable-cache: true
         python-version: ${{ matrix.python-version }}
 
     - name: Install dependencies
@@ -239,9 +236,8 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - uses: astral-sh/setup-uv@v3
+    - uses: astral-sh/setup-uv@v5
       with:
-        enable-cache: true
         python-version: '3.12'
 
     - name: Install dependencies
@@ -330,9 +326,8 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - uses: astral-sh/setup-uv@v4
+    - uses: astral-sh/setup-uv@v5
       with:
-        enable-cache: true
         python-version: ${{ matrix.python-version }}
 
     - name: Install dependencies

@@ -57,7 +57,7 @@ def test_discriminated_single_variant(union):
             'ctx': {'discriminator': "'qwe'", 'expected_tags': "'qwe'", 'tag': 'asd'},
             'input': {'qwe': 'asd', 'y': 'a'},
             'loc': ('x',),
-            'msg': "Input tag 'asd' found using 'qwe' does not match any of the expected " "tags: 'qwe'",
+            'msg': "Input tag 'asd' found using 'qwe' does not match any of the expected tags: 'qwe'",
             'type': 'union_tag_invalid',
         }
     ]
@@ -186,7 +186,7 @@ def test_discriminated_union_validation(color_discriminator_kind, pet_discrimina
         {
             'input': 'x',
             'loc': ('number',),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'type': 'int_parsing',
         },
     ]
@@ -276,7 +276,7 @@ def test_discriminated_annotated_union():
         {
             'input': 'x',
             'loc': ('number',),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'type': 'int_parsing',
         },
     ]
@@ -288,7 +288,7 @@ def test_discriminated_annotated_union():
             'ctx': {'discriminator': "'pet_type'", 'expected_tags': "'cat', 'dog'", 'tag': 'fish'},
             'input': {'pet_type': 'fish'},
             'loc': ('pet',),
-            'msg': "Input tag 'fish' found using 'pet_type' does not match any of the " "expected tags: 'cat', 'dog'",
+            'msg': "Input tag 'fish' found using 'pet_type' does not match any of the expected tags: 'cat', 'dog'",
             'type': 'union_tag_invalid',
         }
     ]
@@ -308,7 +308,7 @@ def test_discriminated_annotated_union():
             'ctx': {'discriminator': "'color'", 'expected_tags': "'black', 'white'", 'tag': 'red'},
             'input': {'color': 'red', 'pet_type': 'cat'},
             'loc': ('pet', 'cat'),
-            'msg': "Input tag 'red' found using 'color' does not match any of the " "expected tags: 'black', 'white'",
+            'msg': "Input tag 'red' found using 'color' does not match any of the expected tags: 'black', 'white'",
             'type': 'union_tag_invalid',
         }
     ]
@@ -381,7 +381,7 @@ def test_discriminated_union_int():
             'ctx': {'discriminator': "'m'", 'expected_tags': '1, 2', 'tag': '3'},
             'input': {'m': 3},
             'loc': ('sub',),
-            'msg': "Input tag '3' found using 'm' does not match any of the expected " 'tags: 1, 2',
+            'msg': "Input tag '3' found using 'm' does not match any of the expected tags: 1, 2",
             'type': 'union_tag_invalid',
         }
     ]
@@ -580,7 +580,7 @@ def test_optional_union():
             'ctx': {'discriminator': "'pet_type'", 'expected_tags': "'cat', 'dog'", 'tag': 'lizard'},
             'input': {'pet_type': 'lizard'},
             'loc': ('pet',),
-            'msg': "Input tag 'lizard' found using 'pet_type' does not match any of the " "expected tags: 'cat', 'dog'",
+            'msg': "Input tag 'lizard' found using 'pet_type' does not match any of the expected tags: 'cat', 'dog'",
             'type': 'union_tag_invalid',
         }
     ]
@@ -622,7 +622,7 @@ def test_optional_union_with_defaults():
             'ctx': {'discriminator': "'pet_type'", 'expected_tags': "'cat', 'dog'", 'tag': 'lizard'},
             'input': {'pet_type': 'lizard'},
             'loc': ('pet',),
-            'msg': "Input tag 'lizard' found using 'pet_type' does not match any of the " "expected tags: 'cat', 'dog'",
+            'msg': "Input tag 'lizard' found using 'pet_type' does not match any of the expected tags: 'cat', 'dog'",
             'type': 'union_tag_invalid',
         }
     ]
@@ -796,7 +796,7 @@ def test_none_schema() -> None:
             'ctx': {'discriminator': "'kind'", 'expected_tags': "'cat', 'dog'", 'tag': 'lizard'},
             'input': {'kind': 'lizard'},
             'loc': (),
-            'msg': "Input tag 'lizard' found using 'kind' does not match any of the " "expected tags: 'cat', 'dog'",
+            'msg': "Input tag 'lizard' found using 'kind' does not match any of the expected tags: 'cat', 'dog'",
             'type': 'union_tag_invalid',
         }
     ]
@@ -827,7 +827,7 @@ def test_nested_unwrapping() -> None:
             'ctx': {'discriminator': "'kind'", 'expected_tags': "'cat', 'dog'", 'tag': 'lizard'},
             'input': {'kind': 'lizard'},
             'loc': (),
-            'msg': "Input tag 'lizard' found using 'kind' does not match any of the " "expected tags: 'cat', 'dog'",
+            'msg': "Input tag 'lizard' found using 'kind' does not match any of the expected tags: 'cat', 'dog'",
             'type': 'union_tag_invalid',
         }
     ]

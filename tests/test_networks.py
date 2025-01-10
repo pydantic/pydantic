@@ -2,7 +2,7 @@ import json
 from typing import Any, Union
 
 import pytest
-from pydantic_core import PydanticCustomError, Url
+from pydantic_core import PydanticCustomError, PydanticSerializationError, Url
 from typing_extensions import Annotated
 
 from pydantic import (
@@ -761,8 +761,7 @@ def test_mongodb_dsns():
             'mongodb+srv://user:pass@localhost/app',
             marks=pytest.mark.xfail(
                 reason=(
-                    'This case is not supported. '
-                    'Check https://github.com/pydantic/pydantic/pull/7116 for more details.'
+                    'This case is not supported. Check https://github.com/pydantic/pydantic/pull/7116 for more details.'
                 )
             ),
         ),
@@ -1180,3 +1179,12 @@ def test_max_length_base_multi_host() -> None:
 
     with pytest.raises(ValidationError, match=r'Value should have at most 45 items after validation'):
         Model(postgres='postgres://user:pass@localhost:5432/foobarbazfoo')
+
+
+def test_unexpected_ser() -> None:
+    ta = TypeAdapter(HttpUrl)
+    with pytest.raises(
+        PydanticSerializationError,
+        match="Expected `<class 'pydantic.networks.HttpUrl'>` but got `<class 'str'>` with value `'http://example.com'`",
+    ):
+        ta.dump_python('http://example.com', warnings='error')
