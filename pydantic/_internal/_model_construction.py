@@ -9,7 +9,7 @@ import typing
 import warnings
 import weakref
 from abc import ABCMeta
-from functools import lru_cache, partial
+from functools import lru_cache, partial, wraps
 from types import FunctionType
 from typing import Any, Callable, Generic, Literal, NoReturn, cast
 
@@ -118,6 +118,7 @@ class ModelMetaclass(ABCMeta):
                 if original_model_post_init is not None:
                     # if there are private_attributes and a model_post_init function, we handle both
 
+                    @wraps(original_model_post_init)
                     def wrapped_model_post_init(self: BaseModel, context: Any, /) -> None:
                         """We need to both initialize private attributes and call the user-defined model_post_init
                         method.
@@ -125,7 +126,6 @@ class ModelMetaclass(ABCMeta):
                         init_private_attributes(self, context)
                         original_model_post_init(self, context)
 
-                    wrapped_model_post_init.__doc__ = original_model_post_init.__doc__
                     namespace['model_post_init'] = wrapped_model_post_init
                 else:
                     namespace['model_post_init'] = init_private_attributes
