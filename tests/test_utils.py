@@ -117,7 +117,6 @@ def test_lenient_issubclass():
     assert lenient_issubclass(A, str) is True
 
 
-@pytest.mark.skipif(sys.version_info < (3, 9), reason='generic aliases are not available in python < 3.9')
 def test_lenient_issubclass_with_generic_aliases():
     from collections.abc import Mapping
 

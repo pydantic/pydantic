@@ -62,10 +62,7 @@ else:
 
 # weak dictionaries allow the dynamically created parametrized versions of generic models to get collected
 # once they are no longer referenced by the caller.
-if sys.version_info >= (3, 9):  # Typing for weak dictionaries available at 3.9
-    GenericTypesCache = WeakValueDictionary[GenericTypesCacheKey, 'type[BaseModel]']
-else:
-    GenericTypesCache = WeakValueDictionary
+GenericTypesCache = WeakValueDictionary[GenericTypesCacheKey, 'type[BaseModel]']
 
 if TYPE_CHECKING:
 

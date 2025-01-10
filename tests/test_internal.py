@@ -2,6 +2,7 @@
 Tests for internal things that are complex enough to warrant their own unit tests.
 """
 
+import sys
 from dataclasses import dataclass
 from decimal import Decimal
 
@@ -193,12 +194,20 @@ def test_representation_integrations():
 
     obj = Obj()
 
-    assert str(devtools.debug.format(obj)).split('\n')[1:] == [
-        '    obj: Obj(',
-        '        int_attr=42,',
-        "        str_attr='Marvin',",
-        '    ) (Obj)',
-    ]
+    if sys.version_info < (3, 11):
+        assert str(devtools.debug.format(obj)).split('\n')[1:] == [
+            '    Obj(',
+            '        int_attr=42,',
+            "        str_attr='Marvin',",
+            '    ) (Obj)',
+        ]
+    else:
+        assert str(devtools.debug.format(obj)).split('\n')[1:] == [
+            '    obj: Obj(',
+            '        int_attr=42,',
+            "        str_attr='Marvin',",
+            '    ) (Obj)',
+        ]
     assert list(obj.__rich_repr__()) == [('int_attr', 42), ('str_attr', 'Marvin')]
 
 

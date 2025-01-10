@@ -91,8 +91,7 @@ def test_generic_name():
     class Result(BaseModel, Generic[data_type]):
         data: data_type
 
-    if sys.version_info >= (3, 9):
-        assert Result[list[int]].__name__ == 'Result[list[int]]'
+    assert Result[list[int]].__name__ == 'Result[list[int]]'
     assert Result[List[int]].__name__ == 'Result[List[int]]'
     assert Result[int].__name__ == 'Result[int]'
 
@@ -1139,11 +1138,10 @@ def test_replace_types():
     assert replace_types(Model[T], {T: T}) == Model[T]
     assert replace_types(Json[T], {T: int}) == Json[int]
 
-    if sys.version_info >= (3, 9):
-        # Check generic aliases (subscripted builtin types) to make sure they
-        # resolve correctly (don't get translated to typing versions for
-        # example)
-        assert replace_types(list[Union[str, list, T]], {T: int}) == list[Union[str, list, int]]
+    # Check generic aliases (subscripted builtin types) to make sure they
+    # resolve correctly (don't get translated to typing versions for
+    # example)
+    assert replace_types(list[Union[str, list, T]], {T: int}) == list[Union[str, list, int]]
 
     if sys.version_info >= (3, 10):
         # Check that types.UnionType gets handled properly
@@ -1486,9 +1484,7 @@ def test_generic_with_referenced_generic_type_bound():
     T = TypeVar('T', bound=int)
 
     class ModelWithType(BaseModel, Generic[T]):
-        # Type resolves to type origin of "type" which is non-subscriptible for
-        # python < 3.9 so we want to make sure it works for other versions
-        some_type: Type[T]
+        some_type: type[T]
 
     class ReferenceModel(BaseModel, Generic[T]):
         abstract_base_with_type: ModelWithType[T]
@@ -1502,7 +1498,7 @@ def test_generic_with_referenced_generic_union_type_bound():
     T = TypeVar('T', bound=Union[str, int])
 
     class ModelWithType(BaseModel, Generic[T]):
-        some_type: Type[T]
+        some_type: type[T]
 
     class MyInt(int): ...
 
@@ -1516,9 +1512,7 @@ def test_generic_with_referenced_generic_type_constraints():
     T = TypeVar('T', int, str)
 
     class ModelWithType(BaseModel, Generic[T]):
-        # Type resolves to type origin of "type" which is non-subscriptible for
-        # python < 3.9 so we want to make sure it works for other versions
-        some_type: Type[T]
+        some_type: type[T]
 
     class ReferenceModel(BaseModel, Generic[T]):
         abstract_base_with_type: ModelWithType[T]

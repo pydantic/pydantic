@@ -1745,8 +1745,6 @@ def test_enum_from_json(enum_base, strict):
     with pytest.raises(ValidationError) as exc_info:
         Model.model_validate_json('{"my_enum":2}', strict=strict)
 
-    MyEnum.__name__ if sys.version_info[:2] <= (3, 8) else MyEnum.__qualname__
-
     if strict:
         assert exc_info.value.errors(include_url=False) == [
             {
@@ -3514,7 +3512,6 @@ def test_path_like():
     }
 
 
-@pytest.mark.skipif(sys.version_info < (3, 9), reason='requires python 3.9 or higher to parametrize os.PathLike')
 def test_path_like_extra_subtype():
     class Model(BaseModel):
         str_type: os.PathLike[str]

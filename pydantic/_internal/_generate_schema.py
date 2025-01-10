@@ -909,12 +909,11 @@ class GenerateSchema:
     def _get_args_resolving_forward_refs(self, obj: Any, required: bool = False) -> tuple[Any, ...] | None:
         args = get_args(obj)
         if args:
-            if sys.version_info >= (3, 9):
-                from types import GenericAlias
+            from types import GenericAlias
 
-                if isinstance(obj, GenericAlias):
-                    # PEP 585 generic aliases don't convert args to ForwardRefs, unlike `typing.List/Dict` etc.
-                    args = (_typing_extra._make_forward_ref(a) if isinstance(a, str) else a for a in args)
+            if isinstance(obj, GenericAlias):
+                # PEP 585 generic aliases don't convert args to ForwardRefs, unlike `typing.List/Dict` etc.
+                args = (_typing_extra._make_forward_ref(a) if isinstance(a, str) else a for a in args)
             args = tuple(self._resolve_forward_ref(a) if isinstance(a, ForwardRef) else a for a in args)
         elif required:  # pragma: no cover
             raise TypeError(f'Expected {obj} to have generic parameters but it had none')

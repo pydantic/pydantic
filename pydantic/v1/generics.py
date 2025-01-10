@@ -42,12 +42,8 @@ Parametrization = Mapping[TypeVarType, Type[Any]]
 
 # weak dictionaries allow the dynamically created parametrized versions of generic models to get collected
 # once they are no longer referenced by the caller.
-if sys.version_info >= (3, 9):  # Typing for weak dictionaries available at 3.9
-    GenericTypesCache = WeakValueDictionary[CacheKey, Type[BaseModel]]
-    AssignedParameters = WeakKeyDictionary[Type[BaseModel], Parametrization]
-else:
-    GenericTypesCache = WeakValueDictionary
-    AssignedParameters = WeakKeyDictionary
+GenericTypesCache = WeakValueDictionary[CacheKey, Type[BaseModel]]
+AssignedParameters = WeakKeyDictionary[Type[BaseModel], Parametrization]
 
 # _generic_types_cache is a Mapping from __class_getitem__ arguments to the parametrized version of generic models.
 # This ensures multiple calls of e.g. A[B] return always the same class.

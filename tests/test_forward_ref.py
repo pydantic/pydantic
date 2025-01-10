@@ -639,12 +639,6 @@ class Model(BaseModel):
     assert m.model_dump_json() == '{"foo_user":{"x":"user1"},"user":"User(user2)"}'
 
 
-skip_pep585 = pytest.mark.skipif(
-    sys.version_info < (3, 9), reason='PEP585 generics only supported for python 3.9 and above'
-)
-
-
-@skip_pep585
 def test_pep585_self_referencing_generics(create_module):
     module = create_module(
         # language=Python
@@ -668,7 +662,6 @@ class SelfReferencing(BaseModel):
     assert obj.names == [SelfReferencing(names=[])]
 
 
-@skip_pep585
 def test_pep585_recursive_generics(create_module):
     @create_module
     def module():

@@ -1088,7 +1088,7 @@ def test_annotated_computed_field_custom_serializer():
 
 
 @pytest.mark.skipif(
-    sys.version_info < (3, 9) or sys.version_info >= (3, 13),
+    sys.version_info >= (3, 13),
     reason='@computed_field @classmethod @property only works in 3.9-3.12',
 )
 def test_forward_ref_for_classmethod_computed_fields():

@@ -1,5 +1,4 @@
 import json
-import sys
 from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Any, Dict, ForwardRef, Generic, List, NamedTuple, Optional, Tuple, TypeVar, Union
@@ -162,7 +161,6 @@ def test_model_local_namespace_variables(defer_build: bool, method: str, generat
 
 @pytest.mark.parametrize('defer_build', [False, True])
 @pytest.mark.parametrize('method', ['validate', 'serialize', 'json_schema', 'json_schemas'])
-@pytest.mark.skipif(sys.version_info < (3, 9), reason="ForwardRef doesn't accept module as a parameter in Python < 3.9")
 def test_top_level_fwd_ref(defer_build: bool, method: str, generate_schema_calls):
     config = ConfigDict(defer_build=True) if defer_build else None
 

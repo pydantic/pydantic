@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import datetime
-import sys
 import warnings
 from decimal import Decimal
 from typing import Any, Callable, Dict, FrozenSet, List, Set, Tuple, Union
@@ -12,9 +11,6 @@ import pytest
 import pytz
 from annotated_types import Interval
 from typing_extensions import Annotated
-
-if sys.version_info >= (3, 9):
-    pass
 
 from pydantic import PydanticExperimentalWarning, TypeAdapter, ValidationError
 

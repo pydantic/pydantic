@@ -4,8 +4,9 @@ import sys
 from contextlib import nullcontext as does_not_raise
 from decimal import Decimal
 from inspect import signature
-from typing import Any, ContextManager, Dict, Iterable, NamedTuple, Optional, Type, Union
+from typing import Annotated, Any, ContextManager, Dict, Iterable, NamedTuple, Optional, Type, Union
 
+import pytest
 from dirty_equals import HasRepr, IsPartialDict
 from pydantic_core import SchemaError, SchemaSerializer, SchemaValidator
 
@@ -35,13 +36,6 @@ from pydantic.type_adapter import TypeAdapter
 from pydantic.warnings import PydanticDeprecatedSince210, PydanticDeprecationWarning
 
 from .conftest import CallCounter
-
-if sys.version_info < (3, 9):
-    from typing_extensions import Annotated
-else:
-    from typing import Annotated
-
-import pytest
 
 
 @pytest.fixture(scope='session', name='BaseConfigModelWithStrictConfig')

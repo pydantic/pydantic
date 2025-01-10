@@ -2410,7 +2410,6 @@ def test_literal_enum():
     }
 
 
-@pytest.mark.skipif(sys.version_info[:2] == (3, 8), reason="ListEnum doesn't work in 3.8")
 def test_literal_types() -> None:
     """Test that we properly add `type` to json schema enums when there is a single type."""
 

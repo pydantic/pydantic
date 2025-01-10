@@ -472,7 +472,6 @@ def get_defaultdict_default_default_factory(values_source_type: Any) -> Callable
 
     # Assume Annotated[..., Field(...)]
     if _typing_extra.is_annotated(values_source_type):
-        # Important that we use typing_extensions.get_args here in order to support 3.8
         field_info = next((v for v in typing_extensions.get_args(values_source_type) if isinstance(v, FieldInfo)), None)
     else:
         field_info = None

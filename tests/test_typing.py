@@ -114,26 +114,6 @@ def test_get_function_type_hints_none_type():
     assert get_function_type_hints(f) == {'return': int, 'x': int, 'y': NoneType}
 
 
-@pytest.mark.skipif(sys.version_info[:2] > (3, 9), reason='testing using a feature not supported by older Python')
-def test_eval_type_backport_not_installed():
-    sys.modules['eval_type_backport'] = None
-    try:
-        with pytest.raises(TypeError) as exc_info:
-
-            class _Model(BaseModel):
-                foo: 'int | str'
-
-        assert str(exc_info.value) == (
-            "Unable to evaluate type annotation 'int | str'. If you are making use "
-            'of the new typing syntax (unions using `|` since Python 3.10 or builtins subscripting '
-            'since Python 3.9), you should either replace the use of new syntax with the existing '
-            '`typing` constructs or install the `eval_type_backport` package.'
-        )
-
-    finally:
-        del sys.modules['eval_type_backport']
-
-
 def test_func_ns_excludes_default_globals() -> None:
     foo = 'foo'
 

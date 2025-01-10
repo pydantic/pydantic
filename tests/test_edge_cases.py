@@ -1626,11 +1626,6 @@ class DisplayGen(Generic[T1, T2]):
         (dict, 'dict'),
         pytest.param(
             DisplayGen[bool, str],
-            'DisplayGen[bool, str]',
-            marks=pytest.mark.skipif(sys.version_info[:2] <= (3, 9), reason='difference in __name__ between versions'),
-        ),
-        pytest.param(
-            DisplayGen[bool, str],
             'tests.test_edge_cases.DisplayGen[bool, str]',
             marks=pytest.mark.skipif(sys.version_info[:2] > (3, 9), reason='difference in __name__ between versions'),
         ),
