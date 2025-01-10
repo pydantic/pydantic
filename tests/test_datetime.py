@@ -1,9 +1,9 @@
 import re
 from datetime import date, datetime, time, timedelta, timezone
+from typing import Annotated
 
 import pytest
 from dirty_equals import HasRepr
-from typing_extensions import Annotated
 
 from pydantic import (
     AwareDatetime,

@@ -182,8 +182,7 @@ You can use a custom serializer to override this behavior if desired. For exampl
 
 ```python
 from decimal import Decimal
-
-from typing_extensions import Annotated
+from typing import Annotated
 
 from pydantic import BaseModel, PlainSerializer
 

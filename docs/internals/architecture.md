@@ -147,10 +147,9 @@ To understand this wrapper pattern, we will take the example of metadata classes
 where the `__get_pydantic_core_schema__` method can be used:
 
 ```python
-from typing import Any
+from typing import Annotated, Any
 
 from pydantic_core import CoreSchema
-from typing_extensions import Annotated
 
 from pydantic import GetCoreSchemaHandler, TypeAdapter
 

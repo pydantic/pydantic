@@ -7,11 +7,11 @@ import re
 import sys
 from enum import Enum
 from functools import partial, partialmethod
-from typing import Any, Callable, ClassVar, Dict, List, Optional, Pattern, Union
+from typing import Annotated, Any, Callable, ClassVar, Dict, List, Optional, Pattern, Union
 
 import pytest
 from pydantic_core import PydanticSerializationError, core_schema, to_jsonable_python
-from typing_extensions import Annotated, TypedDict
+from typing_extensions import TypedDict
 
 from pydantic import (
     BaseModel,

@@ -1,8 +1,7 @@
 import re
-from typing import Generic, Tuple, TypeVar
+from typing import Annotated, Generic, Tuple, TypeVar
 
 import pytest
-from typing_extensions import Annotated
 
 from pydantic import (
     BaseModel,

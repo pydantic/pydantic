@@ -2,13 +2,12 @@ import datetime as dt
 import sys
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import Any, Callable, Generic, Iterator, List, Optional, Set, TypeVar
+from typing import Annotated, Any, Callable, Generic, Iterator, List, Optional, Set, TypeVar
 
 import pytest
 import pytz
 from annotated_types import BaseMetadata, GroupedMetadata, Gt, Lt, Not, Predicate
 from pydantic_core import CoreSchema, PydanticUndefined, core_schema
-from typing_extensions import Annotated
 
 from pydantic import (
     BaseModel,

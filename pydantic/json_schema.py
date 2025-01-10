@@ -22,12 +22,14 @@ from copy import deepcopy
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
+    Annotated,
     Any,
     Callable,
     Counter,
     Dict,
     Hashable,
     Iterable,
+    Literal,
     NewType,
     Pattern,
     Sequence,
@@ -41,7 +43,7 @@ from typing import (
 import pydantic_core
 from pydantic_core import CoreSchema, PydanticOmit, core_schema, to_jsonable_python
 from pydantic_core.core_schema import ComputedField
-from typing_extensions import Annotated, Literal, TypeAlias, assert_never, deprecated, final
+from typing_extensions import TypeAlias, assert_never, deprecated, final
 
 from pydantic.warnings import PydanticDeprecatedSince26, PydanticDeprecatedSince29
 
@@ -2584,12 +2586,11 @@ else:
 
         Example:
             ```python
+            from pprint import pprint
             from typing import Union
 
             from pydantic import BaseModel
             from pydantic.json_schema import SkipJsonSchema
-
-            from pprint import pprint
 
             class Model(BaseModel):
                 a: Union[int, None] = None  # (1)!

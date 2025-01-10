@@ -3,12 +3,12 @@ import sys
 from dataclasses import dataclass
 from enum import Enum, IntEnum
 from types import SimpleNamespace
-from typing import Any, Callable, Generic, List, Optional, Sequence, TypeVar, Union
+from typing import Annotated, Any, Callable, Generic, List, Literal, Optional, Sequence, TypeVar, Union
 
 import pytest
 from dirty_equals import HasRepr, IsStr
 from pydantic_core import SchemaValidator, core_schema
-from typing_extensions import Annotated, Literal, TypedDict
+from typing_extensions import TypedDict
 
 from pydantic import (
     BaseModel,

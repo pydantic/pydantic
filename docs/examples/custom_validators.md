@@ -15,11 +15,10 @@ We use `__get_pydantic_core_schema__` in the validator to customize the schema o
 import datetime as dt
 from dataclasses import dataclass
 from pprint import pprint
-from typing import Any, Callable, Optional
+from typing import Annotated, Any, Callable, Optional
 
 import pytz
 from pydantic_core import CoreSchema, core_schema
-from typing_extensions import Annotated
 
 from pydantic import (
     GetCoreSchemaHandler,
@@ -104,11 +103,10 @@ We can also enforce UTC offset constraints in a similar way.  Assuming we have a
 import datetime as dt
 from dataclasses import dataclass
 from pprint import pprint
-from typing import Any, Callable
+from typing import Annotated, Any, Callable
 
 import pytz
 from pydantic_core import CoreSchema, core_schema
-from typing_extensions import Annotated
 
 from pydantic import GetCoreSchemaHandler, TypeAdapter, ValidationError
 

@@ -6,10 +6,10 @@ Plugin interface for Pydantic plugins, and related types.
 
 from __future__ import annotations
 
-from typing import Any, Callable, NamedTuple
+from typing import Any, Callable, Literal, NamedTuple
 
 from pydantic_core import CoreConfig, CoreSchema, ValidationError
-from typing_extensions import Literal, Protocol, TypeAlias
+from typing_extensions import Protocol, TypeAlias
 
 __all__ = (
     'PydanticPluginProtocol',

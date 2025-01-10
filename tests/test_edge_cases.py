@@ -7,6 +7,7 @@ from collections.abc import Hashable
 from decimal import Decimal
 from enum import Enum, auto
 from typing import (
+    Annotated,
     Any,
     Callable,
     Dict,
@@ -14,6 +15,7 @@ from typing import (
     FrozenSet,
     Generic,
     List,
+    Literal,
     Optional,
     Sequence,
     Set,
@@ -26,7 +28,7 @@ from typing import (
 import pytest
 from dirty_equals import HasRepr, IsStr
 from pydantic_core import ErrorDetails, InitErrorDetails, PydanticSerializationError, PydanticUndefined, core_schema
-from typing_extensions import Annotated, Literal, TypeAliasType, TypedDict, get_args
+from typing_extensions import TypeAliasType, TypedDict, get_args
 
 from pydantic import (
     BaseModel,

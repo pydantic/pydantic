@@ -7,13 +7,26 @@ from enum import Enum
 from functools import partial, partialmethod
 from itertools import product
 from os.path import normcase
-from typing import Any, Callable, Deque, Dict, FrozenSet, List, NamedTuple, Optional, Tuple, Union
+from typing import (
+    Annotated,
+    Any,
+    Callable,
+    Deque,
+    Dict,
+    FrozenSet,
+    List,
+    Literal,
+    NamedTuple,
+    Optional,
+    Tuple,
+    Union,
+)
 from unittest.mock import MagicMock
 
 import pytest
 from dirty_equals import HasRepr, IsInstance
 from pydantic_core import core_schema
-from typing_extensions import Annotated, Literal, TypedDict
+from typing_extensions import TypedDict
 
 from pydantic import (
     BaseModel,

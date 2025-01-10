@@ -356,9 +356,7 @@ assert Model(pet={'pet_type': 'kitten'}).pet.pet_type == 'cat'
 This error is raised when a `Union` that uses a callable `Discriminator` doesn't have `Tag` annotations for all cases.
 
 ```python
-from typing import Union
-
-from typing_extensions import Annotated
+from typing import Annotated, Union
 
 from pydantic import BaseModel, Discriminator, PydanticUserError, Tag
 
@@ -1002,7 +1000,7 @@ except PydanticUserError as exc_info:
 This error is raised when an annotation cannot annotate a type.
 
 ```python
-from typing_extensions import Annotated
+from typing import Annotated
 
 from pydantic import BaseModel, FutureDate, PydanticUserError
 

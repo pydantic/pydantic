@@ -1,8 +1,8 @@
-from typing import Dict, List, Tuple
+from typing import Annotated, Dict, List, Tuple
 
 import pytest
 from annotated_types import Ge
-from typing_extensions import Annotated, TypedDict
+from typing_extensions import TypedDict
 
 from pydantic import TypeAdapter, ValidationError
 

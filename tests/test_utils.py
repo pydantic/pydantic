@@ -5,12 +5,11 @@ import pickle
 import sys
 import time
 from copy import copy, deepcopy
-from typing import Callable, Dict, Generic, List, NewType, Tuple, TypeVar, Union
+from typing import Annotated, Callable, Dict, Generic, List, Literal, NewType, Tuple, TypeVar, Union
 
 import pytest
 from dirty_equals import IsList
 from pydantic_core import PydanticCustomError, PydanticUndefined, core_schema
-from typing_extensions import Annotated, Literal
 
 from pydantic import BaseModel
 from pydantic._internal import _repr

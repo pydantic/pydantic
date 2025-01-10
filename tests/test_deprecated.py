@@ -3,11 +3,10 @@ import re
 from datetime import date, timedelta
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Any, Dict, Iterable, List, Type
+from typing import Any, Dict, Iterable, List, Literal, Type
 
 import pytest
 from pydantic_core import CoreSchema, core_schema
-from typing_extensions import Literal
 
 from pydantic import (
     BaseModel,

@@ -239,7 +239,7 @@ Both serializers accept optional arguments including:
 `PlainSerializer` uses a simple function to modify the output of serialization.
 
 ```python
-from typing_extensions import Annotated
+from typing import Annotated
 
 from pydantic import BaseModel
 from pydantic.functional_serializers import PlainSerializer
@@ -264,9 +264,7 @@ print(MyModel(x=1234).model_dump(mode='json'))
 logic, and can modify the resulting value before returning it as the final output of serialization.
 
 ```python
-from typing import Any
-
-from typing_extensions import Annotated
+from typing import Annotated, Any
 
 from pydantic import BaseModel, SerializerFunctionWrapHandler
 from pydantic.functional_serializers import WrapSerializer

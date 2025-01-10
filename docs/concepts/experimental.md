@@ -47,8 +47,7 @@ These APIs are meant for situations where the code savings are significant and t
 from __future__ import annotations
 
 from datetime import datetime
-
-from typing_extensions import Annotated
+from typing import Annotated
 
 from pydantic import BaseModel
 from pydantic.experimental.pipeline import validate_as
@@ -92,7 +91,7 @@ class User(BaseModel):
 The `validate_as` method is a more type-safe way to define `BeforeValidator`, `AfterValidator` and `WrapValidator`:
 
 ```python
-from typing_extensions import Annotated
+from typing import Annotated
 
 from pydantic.experimental.pipeline import transform, validate_as
 
@@ -198,10 +197,9 @@ It can take the following values (and is `False`, by default):
 `experiment_allow_partial` in action:
 
 ```python
-from typing import List
+from typing import Annotated, List, NotRequired, TypedDict
 
 from annotated_types import MinLen
-from typing_extensions import Annotated, NotRequired, TypedDict
 
 from pydantic import TypeAdapter
 
@@ -292,10 +290,9 @@ The point is that if you only see part of some valid input data, validation erro
 To avoid these errors breaking partial validation, Pydantic will ignore ALL errors in the last element of the input data.
 
 ```python {title="Errors in last element ignored"}
-from typing import List
+from typing import Annotated, List
 
 from annotated_types import MinLen
-from typing_extensions import Annotated
 
 from pydantic import BaseModel, TypeAdapter
 
@@ -337,10 +334,9 @@ E.g. in the [above](#2-ignore-errors-in-last) example partial validation works a
 But partial validation won't work at all in the follow example because `BaseModel` doesn't support partial validation so it doesn't forward the `allow_partial` instruction down to the list validator in `b`:
 
 ```python
-from typing import List
+from typing import Annotated, List
 
 from annotated_types import MinLen
-from typing_extensions import Annotated
 
 from pydantic import BaseModel, TypeAdapter, ValidationError
 
@@ -373,8 +369,9 @@ The way [jiter](https://github.com/pydantic/jiter) (the JSON parser used by Pyda
 This means that some invalid JSON will be accepted by Pydantic when using `experimental_allow_partial`, e.g.:
 
 ```python
+from typing import Annotated, TypedDict
+
 from annotated_types import MinLen
-from typing_extensions import Annotated, TypedDict
 
 from pydantic import TypeAdapter
 
@@ -409,10 +406,9 @@ As described [above](#2-ignore-errors-in-last), many errors can result from trun
 This means clearly invalid data will pass validation if the error is in the last field of the input:
 
 ```python
-from typing import List
+from typing import Annotated, List
 
 from annotated_types import Ge
-from typing_extensions import Annotated
 
 from pydantic import TypeAdapter
 

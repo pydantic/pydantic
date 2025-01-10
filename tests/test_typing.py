@@ -1,10 +1,10 @@
 import sys
 import typing
 from collections import namedtuple
-from typing import Callable, ClassVar, ForwardRef, NamedTuple
+from typing import Annotated, Callable, ClassVar, ForwardRef, Literal, NamedTuple
 
 import pytest
-from typing_extensions import Annotated, Literal, get_origin
+from typing_extensions import get_origin
 
 from pydantic import BaseModel, Field  # noqa: F401
 from pydantic._internal._typing_extra import (

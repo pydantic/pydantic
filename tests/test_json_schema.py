@@ -11,6 +11,7 @@ from enum import Enum, IntEnum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
 from typing import (
+    Annotated,
     Any,
     Callable,
     Deque,
@@ -19,6 +20,7 @@ from typing import (
     Generic,
     Iterable,
     List,
+    Literal,
     NamedTuple,
     NewType,
     Optional,
@@ -27,6 +29,7 @@ from typing import (
     Set,
     Tuple,
     Type,
+    TypedDict,
     TypeVar,
     Union,
 )
@@ -37,7 +40,7 @@ from dirty_equals import HasRepr
 from packaging.version import Version
 from pydantic_core import CoreSchema, SchemaValidator, core_schema, to_jsonable_python
 from pydantic_core.core_schema import ValidatorFunctionWrapHandler
-from typing_extensions import Annotated, Literal, Self, TypeAliasType, TypedDict, deprecated
+from typing_extensions import Self, TypeAliasType, TypedDict, deprecated
 
 import pydantic
 from pydantic import (

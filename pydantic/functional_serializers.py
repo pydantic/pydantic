@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import dataclasses
 from functools import partial, partialmethod
-from typing import TYPE_CHECKING, Any, Callable, TypeVar, overload
+from typing import TYPE_CHECKING, Annotated, Any, Callable, Literal, TypeVar, overload
 
 from pydantic_core import PydanticUndefined, core_schema
 from pydantic_core.core_schema import SerializationInfo, SerializerFunctionWrapHandler, WhenUsed
-from typing_extensions import Annotated, Literal, TypeAlias
+from typing_extensions import TypeAlias
 
 from . import PydanticUndefinedAnnotation
 from ._internal import _decorators, _internal_dataclass
@@ -23,9 +23,7 @@ class PlainSerializer:
     Consider an input of `list`, which will be serialized into a space-delimited string.
 
     ```python
-    from typing import List
-
-    from typing_extensions import Annotated
+    from typing import Annotated, List
 
     from pydantic import BaseModel, PlainSerializer
 
@@ -93,9 +91,7 @@ class WrapSerializer:
 
     ```python
     from datetime import datetime, timezone
-    from typing import Any, Dict
-
-    from typing_extensions import Annotated
+    from typing import Annotated, Any, Dict
 
     from pydantic import BaseModel, WrapSerializer
 

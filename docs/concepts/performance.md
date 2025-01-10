@@ -194,9 +194,7 @@ If you use this annotation, you won't get validation errors for the rest of the 
 trading off visibility for performance.
 
 ```python
-from typing import List
-
-from typing_extensions import Annotated
+from typing import Annotated, List
 
 from pydantic import FailFast, TypeAdapter, ValidationError
 

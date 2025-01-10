@@ -52,7 +52,7 @@ In its simplest form, a field validator is a callable taking the value to be val
         Here is an example of a validator performing a validation check, and returning the value unchanged.
 
         ```python
-        from typing_extensions import Annotated
+        from typing import Annotated
 
         from pydantic import AfterValidator, BaseModel, ValidationError
 
@@ -120,7 +120,7 @@ In its simplest form, a field validator is a callable taking the value to be val
         === "Annotated pattern"
 
             ```python
-            from typing_extensions import Annotated
+            from typing import Annotated
 
             from pydantic import AfterValidator, BaseModel
 
@@ -168,9 +168,7 @@ In its simplest form, a field validator is a callable taking the value to be val
     === "Annotated pattern"
 
         ```python
-        from typing import Any, List
-
-        from typing_extensions import Annotated
+        from typing import Annotated, Any, List
 
         from pydantic import BaseModel, BeforeValidator, ValidationError
 
@@ -260,9 +258,7 @@ In its simplest form, a field validator is a callable taking the value to be val
     === "Annotated pattern"
 
         ```python
-        from typing import Any
-
-        from typing_extensions import Annotated
+        from typing import Annotated, Any
 
         from pydantic import BaseModel, PlainValidator
 
@@ -331,7 +327,7 @@ In its simplest form, a field validator is a callable taking the value to be val
         ```python {lint="skip"}
         from typing import Any
 
-        from typing_extensions import Annotated
+        from typing import Annotated
 
         from pydantic import BaseModel, Field, ValidationError, ValidatorFunctionWrapHandler, WrapValidator
 
@@ -361,7 +357,7 @@ In its simplest form, a field validator is a callable taking the value to be val
         ```python {lint="skip"}
         from typing import Any
 
-        from typing_extensions import Annotated
+        from typing import Annotated
 
         from pydantic import BaseModel, Field, ValidationError, ValidatorFunctionWrapHandler, field_validator
 
@@ -401,9 +397,7 @@ One of the key benefits of using the [annotated pattern](./fields.md#the-annotat
 validators reusable:
 
 ```python
-from typing import List
-
-from typing_extensions import Annotated
+from typing import Annotated, List
 
 from pydantic import AfterValidator, BaseModel
 
@@ -811,10 +805,9 @@ Pydantic provides a few special utilities that can be used to customize validati
 - [`PydanticUseDefault`][pydantic_core.PydanticUseDefault] can be used to notify Pydantic that the default value
   should be used.
   ```python
-  from typing import Any
+  from typing import Annotated, Any
 
   from pydantic_core import PydanticUseDefault
-  from typing_extensions import Annotated
 
   from pydantic import BaseModel, BeforeValidator
 

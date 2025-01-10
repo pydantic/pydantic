@@ -490,7 +490,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from pydantic import BaseModel
-from typing_extensions import Literal
+from typing import Literal
 
 @dataclass
 class Base:
@@ -516,9 +516,7 @@ def test_nested_forward_ref():
 def test_discriminated_union_forward_ref(create_module):
     @create_module
     def module():
-        from typing import Union
-
-        from typing_extensions import Literal
+        from typing import Literal, Union
 
         from pydantic import BaseModel, Field
 
@@ -576,8 +574,7 @@ def test_class_var_as_string(create_module):
         # language=Python
         """
 from __future__ import annotations
-from typing import ClassVar, ClassVar as CV
-from typing_extensions import Annotated
+from typing import Annotated, ClassVar, ClassVar as CV
 from pydantic import BaseModel
 
 class Model(BaseModel):
@@ -854,8 +851,9 @@ def test_nested_more_annotation(create_module):
 def test_nested_annotation_priority(create_module):
     @create_module
     def module():
+        from typing import Annotated
+
         from annotated_types import Gt
-        from typing_extensions import Annotated
 
         from pydantic import BaseModel
 
@@ -1305,7 +1303,7 @@ def test_uses_the_correct_globals_to_resolve_forward_refs_on_serializers(create_
     # we use the globals of the underlying func to resolve the return type.
     @create_module
     def module_1():
-        from typing_extensions import Annotated
+        from typing import Annotated
 
         from pydantic import (
             BaseModel,

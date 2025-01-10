@@ -1,4 +1,5 @@
 from typing import (
+    Annotated,
     Any,
     Dict,
     Generic,
@@ -12,7 +13,7 @@ from typing import (
 )
 
 import pytest
-from typing_extensions import Annotated, Self
+from typing_extensions import Self
 
 from pydantic import (
     AfterValidator,

@@ -10,6 +10,7 @@ from datetime import date, datetime
 from enum import Enum
 from functools import partial
 from typing import (
+    Annotated,
     Any,
     Callable,
     ClassVar,
@@ -17,6 +18,7 @@ from typing import (
     Final,
     Generic,
     List,
+    Literal,
     Mapping,
     Optional,
     Set,
@@ -29,7 +31,6 @@ from uuid import UUID, uuid4
 
 import pytest
 from pydantic_core import CoreSchema, core_schema
-from typing_extensions import Annotated, Literal
 
 from pydantic import (
     AfterValidator,

@@ -18,6 +18,7 @@ from fractions import Fraction
 from numbers import Number
 from pathlib import Path
 from typing import (
+    Annotated,
     Any,
     Callable,
     Counter,
@@ -27,6 +28,7 @@ from typing import (
     FrozenSet,
     Iterable,
     List,
+    Literal,
     NewType,
     Optional,
     Pattern,
@@ -48,7 +50,7 @@ from pydantic_core import (
     SchemaError,
     core_schema,
 )
-from typing_extensions import Annotated, Literal, NotRequired, TypedDict, get_args
+from typing_extensions import NotRequired, TypedDict, get_args
 
 from pydantic import (
     UUID1,

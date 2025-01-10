@@ -4,13 +4,13 @@ Tests for TypedDict
 
 import sys
 import typing
-from typing import Any, Dict, Generic, List, Optional, TypeVar
+from typing import Annotated, Any, Dict, Generic, List, Optional, TypeVar
 
 import pytest
 import typing_extensions
 from annotated_types import Lt
 from pydantic_core import core_schema
-from typing_extensions import Annotated, TypedDict
+from typing_extensions import TypedDict
 
 from pydantic import (
     BaseModel,
@@ -497,12 +497,6 @@ def test_typeddict_annotated(TypedDict, input_value, expected):
 
 
 def test_recursive_typeddict():
-    from typing import Optional
-
-    from typing_extensions import TypedDict
-
-    from pydantic import BaseModel
-
     class RecursiveTypedDict(TypedDict):
         foo: Optional['RecursiveTypedDict']
 
@@ -528,7 +522,7 @@ T = TypeVar('T')
 def test_generic_typeddict_in_concrete_model():
     T = TypeVar('T')
 
-    class GenericTypedDict(typing_extensions.TypedDict, Generic[T]):
+    class GenericTypedDict(TypedDict, Generic[T]):
         x: T
 
     class Model(BaseModel):
@@ -550,7 +544,7 @@ def test_generic_typeddict_in_concrete_model():
 def test_generic_typeddict_in_generic_model():
     T = TypeVar('T')
 
-    class GenericTypedDict(typing_extensions.TypedDict, Generic[T]):
+    class GenericTypedDict(TypedDict, Generic[T]):
         x: T
 
     class Model(BaseModel, Generic[T]):

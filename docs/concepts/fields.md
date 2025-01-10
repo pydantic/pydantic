@@ -32,7 +32,7 @@ To apply constraints or attach [`Field()`][pydantic.fields.Field] functions to a
 supports the [`Annotated`][typing.Annotated] typing construct to attach metadata to an annotation:
 
 ```python
-from typing_extensions import Annotated
+from typing import Annotated
 
 from pydantic import BaseModel, Field, WithJsonSchema
 
@@ -65,9 +65,7 @@ assignment form instead.
     [validation constraints](#field-constraints) can be added this way:
 
     ```python
-    from typing import List
-
-    from typing_extensions import Annotated
+    from typing import Annotated, List
 
     from pydantic import BaseModel, Field
 
@@ -314,7 +312,7 @@ print(user.model_dump(by_alias=True))  # (2)!
     can be used (which is only understood by Pydantic):
 
     ```python
-    from typing_extensions import Annotated
+    from typing import Annotated
 
     from pydantic import BaseModel, ConfigDict, Field
 
@@ -469,9 +467,7 @@ positive=1 non_negative=0 negative=-1 non_positive=0 even=2 love_for_pydantic=in
     you can use `Annotated`:
 
     ```python
-    from typing import Optional
-
-    from typing_extensions import Annotated
+    from typing import Annotated, Optional
 
     from pydantic import BaseModel, Field
 
@@ -666,9 +662,7 @@ print(Model.model_validate({'pet': {'pet_type': 'cat', 'age': 12}}))  # (1)!
 The following example shows how to use the `discriminator` keyword argument with a `Discriminator` instance:
 
 ```python
-from typing import Literal, Union
-
-from typing_extensions import Annotated
+from typing import Annotated, Literal, Union
 
 from pydantic import BaseModel, Discriminator, Field, Tag
 
@@ -803,7 +797,7 @@ You can set the `deprecated` parameter as one of:
 ### `deprecated` as a string
 
 ```python
-from typing_extensions import Annotated
+from typing import Annotated
 
 from pydantic import BaseModel, Field
 
@@ -824,9 +818,9 @@ print(Model.model_json_schema()['properties']['deprecated_field'])
 
 ```python {test="skip"}
 import importlib.metadata
+from typing import Annotated, deprecated
 
 from packaging.version import Version
-from typing_extensions import Annotated, deprecated
 
 from pydantic import BaseModel, Field
 
@@ -844,7 +838,7 @@ if Version(importlib.metadata.version('typing_extensions')) >= Version('4.9'):
 ### `deprecated` as a boolean
 
 ```python
-from typing_extensions import Annotated
+from typing import Annotated
 
 from pydantic import BaseModel, Field
 

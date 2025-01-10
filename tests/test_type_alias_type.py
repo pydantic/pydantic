@@ -1,10 +1,10 @@
 import datetime
 from dataclasses import dataclass
-from typing import Dict, Generic, List, Sequence, Tuple, TypeVar, Union
+from typing import Annotated, Dict, Generic, List, Literal, Sequence, Tuple, TypeVar, Union
 
 import pytest
 from annotated_types import MaxLen
-from typing_extensions import Annotated, Literal, TypeAliasType
+from typing_extensions import TypeAliasType
 
 from pydantic import BaseModel, Field, PydanticUserError, TypeAdapter, ValidationError
 

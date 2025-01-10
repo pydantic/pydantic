@@ -1,11 +1,10 @@
 import asyncio
 import inspect
 from pathlib import Path
-from typing import List
+from typing import Annotated, List
 
 import pytest
 from dirty_equals import IsInstance
-from typing_extensions import Annotated
 
 from pydantic import BaseModel, Field, PydanticDeprecatedSince20, ValidationError
 from pydantic.deprecated.decorator import ValidatedFunction

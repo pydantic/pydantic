@@ -5,12 +5,11 @@ from __future__ import annotations
 import datetime
 import warnings
 from decimal import Decimal
-from typing import Any, Callable, Dict, FrozenSet, List, Set, Tuple, Union
+from typing import Annotated, Any, Callable, Dict, FrozenSet, List, Set, Tuple, Union
 
 import pytest
 import pytz
 from annotated_types import Interval
-from typing_extensions import Annotated
 
 from pydantic import PydanticExperimentalWarning, TypeAdapter, ValidationError
 

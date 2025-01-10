@@ -5,10 +5,10 @@ from __future__ import annotations as _annotations
 import dataclasses
 import sys
 import types
-from typing import TYPE_CHECKING, Any, Callable, Generic, NoReturn, TypeVar, overload
+from typing import TYPE_CHECKING, Any, Callable, Generic, Literal, NoReturn, TypeVar, overload
 from warnings import warn
 
-from typing_extensions import Literal, TypeGuard, dataclass_transform
+from typing_extensions import TypeGuard, dataclass_transform
 
 from ._internal import _config, _decorators, _namespace_utils, _typing_extra
 from ._internal import _dataclasses as _pydantic_dataclasses

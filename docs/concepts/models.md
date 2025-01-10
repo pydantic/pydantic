@@ -380,11 +380,10 @@ To do this, set the [`from_attributes`][pydantic.config.ConfigDict.from_attribut
 The example here uses [SQLAlchemy](https://www.sqlalchemy.org/), but the same approach should work for any ORM.
 
 ```python
-from typing import List
+from typing import Annotated, List
 
 from sqlalchemy import ARRAY, String
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-from typing_extensions import Annotated
 
 from pydantic import BaseModel, ConfigDict, StringConstraints
 
@@ -1282,7 +1281,7 @@ Field definitions are specified as keyword arguments, and should either be:
 Here is a more advanced example:
 
 ```python
-from typing_extensions import Annotated
+from typing import Annotated
 
 from pydantic import BaseModel, Field, PrivateAttr, create_model
 

@@ -8,12 +8,11 @@ from decimal import Decimal
 from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
-from typing import Any, Generator, List, Optional, Pattern, Union
+from typing import Annotated, Any, Generator, List, Optional, Pattern, Union
 from uuid import UUID
 
 import pytest
 from pydantic_core import CoreSchema, SchemaSerializer, core_schema
-from typing_extensions import Annotated
 
 from pydantic import (
     AfterValidator,

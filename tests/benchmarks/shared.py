@@ -20,6 +20,7 @@ from typing import (
     FrozenSet,
     Iterable,
     List,
+    Literal,
     NamedTuple,
     Optional,
     Sequence,
@@ -30,7 +31,7 @@ from typing import (
 )
 from uuid import UUID, uuid4, uuid5
 
-from typing_extensions import Literal, TypedDict
+from typing_extensions import TypedDict
 
 from pydantic import (
     UUID1,

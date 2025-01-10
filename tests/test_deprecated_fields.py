@@ -1,8 +1,9 @@
 import importlib.metadata
+from typing import Annotated
 
 import pytest
 from packaging.version import Version
-from typing_extensions import Annotated, Self, deprecated
+from typing_extensions import Self, deprecated
 
 from pydantic import BaseModel, Field, computed_field, field_validator, model_validator
 

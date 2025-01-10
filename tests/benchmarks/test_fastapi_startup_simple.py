@@ -4,12 +4,11 @@ from __future__ import annotations
 
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Tuple
+from typing import Annotated, Any, Callable, Dict, List, Tuple
 from uuid import UUID
 
 import pytest
 from annotated_types import Gt
-from typing_extensions import Annotated
 
 from pydantic import AnyUrl, BaseModel, EmailStr, TypeAdapter
 from pydantic.functional_validators import AfterValidator

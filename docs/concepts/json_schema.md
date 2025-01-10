@@ -45,9 +45,7 @@ Here's an example of generating JSON schema from a `BaseModel`:
 ```python {output="json"}
 import json
 from enum import Enum
-from typing import Union
-
-from typing_extensions import Annotated
+from typing import Annotated, Union
 
 from pydantic import BaseModel, Field
 from pydantic.config import ConfigDict
@@ -447,9 +445,8 @@ You can specify JSON schema modifications via the [`Field`][pydantic.fields.Fiel
 
 ```python {output="json"}
 import json
+from typing import Annotated
 from uuid import uuid4
-
-from typing_extensions import Annotated
 
 from pydantic import BaseModel, Field
 
@@ -628,8 +625,7 @@ for more details.
 
 ```python
 import json
-
-from typing_extensions import Annotated, TypeAlias
+from typing import Annotated, TypeAlias
 
 from pydantic import Field, TypeAdapter
 
@@ -671,8 +667,7 @@ for the field (in the following example, the `'type'` also needs to be provided)
 
 ```python {output="json"}
 import json
-
-from typing_extensions import Annotated
+from typing import Annotated
 
 from pydantic import BaseModel, WithJsonSchema
 
@@ -817,10 +812,9 @@ Pydantic handle generating the schema.
 
 ```python
 from dataclasses import dataclass
-from typing import Any, Sequence, Type
+from typing import Annotated, Any, Sequence, Type
 
 from pydantic_core import core_schema
-from typing_extensions import Annotated
 
 from pydantic import BaseModel, GetCoreSchemaHandler, ValidationError
 
@@ -884,10 +878,9 @@ So far we have been wrapping the schema, but if you just want to *modify* it or 
 To modify the schema, first call the handler, then mutate the result:
 
 ```python
-from typing import Any, Type
+from typing import Annotated, Any, Type
 
 from pydantic_core import ValidationError, core_schema
-from typing_extensions import Annotated
 
 from pydantic import BaseModel, GetCoreSchemaHandler
 
@@ -926,10 +919,9 @@ To override the schema completely, do not call the handler and return your own
 `CoreSchema`:
 
 ```python
-from typing import Any, Type
+from typing import Annotated, Any, Type
 
 from pydantic_core import ValidationError, core_schema
-from typing_extensions import Annotated
 
 from pydantic import BaseModel, GetCoreSchemaHandler
 
@@ -981,10 +973,9 @@ schema, you can use the following approach with a no-op version of `__get_pydant
 metadata class:
 
 ```python
-from typing import Type
+from typing import Annotated, Type
 
 from pydantic_core import CoreSchema
-from typing_extensions import Annotated
 
 from pydantic import BaseModel, GetCoreSchemaHandler
 

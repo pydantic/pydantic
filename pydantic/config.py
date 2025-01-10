@@ -3,9 +3,9 @@
 from __future__ import annotations as _annotations
 
 from re import Pattern
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Type, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Literal, Type, TypeVar, Union
 
-from typing_extensions import Literal, TypeAlias, TypedDict
+from typing_extensions import TypeAlias, TypedDict
 
 from ._migration import getattr_migration
 from .aliases import AliasGenerator

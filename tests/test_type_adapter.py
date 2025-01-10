@@ -1,11 +1,11 @@
 import json
 from dataclasses import dataclass
 from datetime import date, datetime
-from typing import Any, Dict, ForwardRef, Generic, List, NamedTuple, Optional, Tuple, TypeVar, Union
+from typing import Annotated, Any, Dict, ForwardRef, Generic, List, NamedTuple, Optional, Tuple, TypeVar, Union
 
 import pytest
 from pydantic_core import ValidationError
-from typing_extensions import Annotated, TypeAlias, TypedDict
+from typing_extensions import TypeAlias, TypedDict
 
 from pydantic import BaseModel, Field, TypeAdapter, ValidationInfo, create_model, field_validator
 from pydantic._internal import _mock_val_ser

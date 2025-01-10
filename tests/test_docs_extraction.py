@@ -1,7 +1,7 @@
 import textwrap
-from typing import Generic, TypeVar
+from typing import Annotated, Generic, TypeVar
 
-from typing_extensions import Annotated, TypedDict
+from typing_extensions import TypedDict
 
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, create_model
 from pydantic.dataclasses import dataclass as pydantic_dataclass

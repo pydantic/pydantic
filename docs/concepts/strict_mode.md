@@ -262,7 +262,7 @@ Note that `Field(strict=True)` (or with any other keyword arguments) can be used
 when working with `TypedDict`:
 
 ```python
-from typing_extensions import Annotated, TypedDict
+from typing import Annotated, TypedDict
 
 from pydantic import Field, TypeAdapter, ValidationError
 
@@ -292,7 +292,7 @@ metadata with [`typing.Annotated`][] class; this annotation indicates that the a
 strict mode:
 
 ```python
-from typing_extensions import Annotated
+from typing import Annotated
 
 from pydantic import BaseModel, Strict, ValidationError
 

@@ -33,6 +33,7 @@ from typing import (
     Generator,
     Iterable,
     Iterator,
+    Literal,
     Mapping,
     Type,
     TypeVar,
@@ -54,7 +55,7 @@ from pydantic_core import (
     core_schema,
     to_jsonable_python,
 )
-from typing_extensions import Literal, TypeAliasType, TypedDict, get_args, get_origin, is_typeddict
+from typing_extensions import TypeAliasType, TypedDict, get_args, get_origin, is_typeddict
 
 from ..aliases import AliasChoices, AliasGenerator, AliasPath
 from ..annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler

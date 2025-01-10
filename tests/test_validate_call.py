@@ -4,11 +4,11 @@ import re
 import sys
 from datetime import datetime, timezone
 from functools import partial
-from typing import Any, List, Literal, Tuple, Union
+from typing import Annotated, Any, List, Literal, Tuple, Union
 
 import pytest
 from pydantic_core import ArgsKwargs
-from typing_extensions import Annotated, Required, TypedDict, Unpack
+from typing_extensions import Required, TypedDict, Unpack
 
 from pydantic import (
     AfterValidator,

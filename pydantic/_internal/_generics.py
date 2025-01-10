@@ -279,7 +279,7 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any] | None) -> Any:
         annotated_type, *annotations = type_args
         annotated = replace_types(annotated_type, type_map)
         for annotation in annotations:
-            annotated = typing_extensions.Annotated[annotated, annotation]
+            annotated = typing.Annotated[annotated, annotation]
         return annotated
 
     origin_type = get_origin(type_)

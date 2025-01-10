@@ -9,11 +9,10 @@ import json
 from datetime import date, datetime, time
 from decimal import Decimal
 from pathlib import Path
-from typing import List, Union
+from typing import Annotated, List, Literal, Union
 from uuid import UUID
 
 import pytest
-from typing_extensions import Annotated, Literal
 
 
 @pytest.fixture(scope='module')

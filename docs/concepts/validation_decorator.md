@@ -197,7 +197,7 @@ infer the parameter as being required). Otherwise, the [`Field()`][pydantic.Fiel
 as a default value (again, to trick type checkers into thinking a default value is provided for the parameter).
 
 ```python
-from typing_extensions import Annotated
+from typing import Annotated
 
 from pydantic import Field, ValidationError, validate_call
 
@@ -230,7 +230,7 @@ print(return_value())
 [Aliases](fields.md#field-aliases) can be used with the decorator as normal:
 
 ```python
-from typing_extensions import Annotated
+from typing import Annotated
 
 from pydantic import Field, validate_call
 

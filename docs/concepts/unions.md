@@ -257,9 +257,7 @@ This is the perfect use case for a callable `Discriminator`.
     and in the worst case, get runtime errors during validation.
 
 ```python
-from typing import Any, Literal, Union
-
-from typing_extensions import Annotated
+from typing import Annotated, Any, Literal, Union
 
 from pydantic import BaseModel, Discriminator, Tag
 
@@ -321,9 +319,7 @@ ThanksgivingDinner(dessert=PumpkinPie(time_to_cook=40, num_ingredients=6, fillin
 For example:
 
 ```python
-from typing import Any, Union
-
-from typing_extensions import Annotated
+from typing import Annotated, Any, Union
 
 from pydantic import BaseModel, Discriminator, Tag, ValidationError
 
@@ -409,9 +405,7 @@ Only one discriminator can be set for a field but sometimes you want to combine 
 You can do it by creating nested `Annotated` types, e.g.:
 
 ```python
-from typing import Literal, Union
-
-from typing_extensions import Annotated
+from typing import Annotated, Literal, Union
 
 from pydantic import BaseModel, Field, ValidationError
 
@@ -495,9 +489,7 @@ You can also customize the error type, message, and context for a `Discriminator
 these specifications as parameters to the `Discriminator` constructor, as seen in the example below.
 
 ```python
-from typing import Union
-
-from typing_extensions import Annotated
+from typing import Annotated, Union
 
 from pydantic import BaseModel, Discriminator, Tag, ValidationError
 
@@ -598,9 +590,7 @@ You can also simplify error messages by labeling each case with a [`Tag`][pydant
 This is especially useful when you have complex types like those in this example:
 
 ```python
-from typing import Dict, List, Union
-
-from typing_extensions import Annotated
+from typing import Annotated, Dict, List, Union
 
 from pydantic import AfterValidator, Tag, TypeAdapter, ValidationError
 

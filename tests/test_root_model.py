@@ -1,11 +1,10 @@
 import pickle
 from datetime import date, datetime
-from typing import Any, Dict, Generic, List, Optional, Union
+from typing import Annotated, Any, Dict, Generic, List, Literal, Optional, TypeVar, Union
 
 import pytest
 from pydantic_core import CoreSchema
 from pydantic_core.core_schema import SerializerFunctionWrapHandler
-from typing_extensions import Annotated, Literal, TypeVar
 
 from pydantic import (
     Base64Str,

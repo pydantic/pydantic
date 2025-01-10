@@ -72,7 +72,7 @@ The [annotated pattern](./fields.md#the-annotated-pattern) can be used to make t
 For example, to create a type representing a positive integer:
 
 ```python
-from typing_extensions import Annotated
+from typing import Annotated
 
 from pydantic import Field, TypeAdapter, ValidationError
 
@@ -97,8 +97,9 @@ Note that you can also use constraints from [annotated-types](https://github.com
 to make this Pydantic-agnostic:
 
 ```python
+from typing import Annotated
+
 from annotated_types import Gt
-from typing_extensions import Annotated
 
 from pydantic import TypeAdapter, ValidationError
 
@@ -125,7 +126,7 @@ You can add or override validation, serialization, and JSON schemas to an arbitr
 Pydantic exports:
 
 ```python
-from typing_extensions import Annotated
+from typing import Annotated
 
 from pydantic import (
     AfterValidator,
@@ -160,10 +161,9 @@ assert ta.json_schema(mode='serialization') == {'type': 'string'}
 You can use type variables within `Annotated` to make reusable modifications to types:
 
 ```python
-from typing import Any, List, Sequence, TypeVar
+from typing import Annotated, Any, List, Sequence, TypeVar
 
 from annotated_types import Gt, Len
-from typing_extensions import Annotated
 
 from pydantic import ValidationError
 from pydantic.type_adapter import TypeAdapter
@@ -218,10 +218,9 @@ You can use [PEP 695]'s `TypeAliasType` via its [typing-extensions] backport to 
 This new type can be as simple as a name or have complex validation logic attached to it:
 
 ```python
-from typing import List
+from typing import Annotated, List, TypeAliasType
 
 from annotated_types import Gt
-from typing_extensions import Annotated, TypeAliasType
 
 from pydantic import BaseModel
 
@@ -285,10 +284,9 @@ print(Model2.model_json_schema())
 These named type aliases can also be generic:
 
 ```python
-from typing import Generic, List, TypeVar
+from typing import Annotated, Generic, List, TypeAliasType, TypeVar
 
 from annotated_types import Gt
-from typing_extensions import Annotated, TypeAliasType
 
 from pydantic import BaseModel, ValidationError
 
@@ -321,10 +319,9 @@ except ValidationError as exc:
 You can also use `TypeAliasType` to create recursive types:
 
 ```python
-from typing import Any, Dict, List, Union
+from typing import Annotated, Any, Dict, List, TypeAliasType, Union
 
 from pydantic_core import PydanticCustomError
-from typing_extensions import Annotated, TypeAliasType
 
 from pydantic import (
     TypeAdapter,
@@ -430,10 +427,9 @@ For example, if you were to implement `pydantic.AfterValidator` (see [Adding val
 
 ```python
 from dataclasses import dataclass
-from typing import Any, Callable
+from typing import Annotated, Any, Callable
 
 from pydantic_core import CoreSchema, core_schema
-from typing_extensions import Annotated
 
 from pydantic import BaseModel, GetCoreSchemaHandler
 
@@ -468,10 +464,9 @@ assert Model(name='ABC').name == 'abc'  # (2)!
 Another use case for the pattern in the previous section is to handle third party types.
 
 ```python
-from typing import Any
+from typing import Annotated, Any
 
 from pydantic_core import core_schema
-from typing_extensions import Annotated
 
 from pydantic import (
     BaseModel,
@@ -607,8 +602,9 @@ You may notice that the above examples where we create a marker class require a 
 For many simple cases you can greatly minimize this by using `pydantic.GetPydanticSchema`:
 
 ```python
+from typing import Annotated
+
 from pydantic_core import core_schema
-from typing_extensions import Annotated
 
 from pydantic import BaseModel, GetPydanticSchema
 
@@ -926,7 +922,7 @@ print(m.my_field)
 You can also access `field_name` from the markers used with `Annotated`, like [`AfterValidator`][pydantic.functional_validators.AfterValidator].
 
 ```python
-from typing_extensions import Annotated
+from typing import Annotated
 
 from pydantic import AfterValidator, BaseModel, ValidationInfo
 

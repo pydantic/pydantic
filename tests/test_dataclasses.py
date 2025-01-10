@@ -8,12 +8,25 @@ from collections.abc import Hashable
 from dataclasses import InitVar
 from datetime import date, datetime
 from pathlib import Path
-from typing import Any, Callable, ClassVar, Dict, FrozenSet, Generic, List, Optional, Set, TypeVar, Union
+from typing import (
+    Annotated,
+    Any,
+    Callable,
+    ClassVar,
+    Dict,
+    FrozenSet,
+    Generic,
+    List,
+    Literal,
+    Optional,
+    Set,
+    TypeVar,
+    Union,
+)
 
 import pytest
 from dirty_equals import HasRepr
 from pydantic_core import ArgsKwargs, SchemaValidator
-from typing_extensions import Annotated, Literal
 
 import pydantic
 from pydantic import (

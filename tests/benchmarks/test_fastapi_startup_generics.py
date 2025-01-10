@@ -3,9 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Generic, List, TypeVar
-
-from typing_extensions import Annotated
+from typing import Annotated, Any, Generic, List, TypeVar
 
 from pydantic import BaseModel, TypeAdapter, create_model
 from pydantic.fields import FieldInfo

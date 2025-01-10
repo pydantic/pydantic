@@ -536,9 +536,7 @@ print(type(v))
 If you want the output type to be a specific type, consider annotating it as such or implementing a custom validator:
 
 ```python
-from typing import Any, Mapping, TypeVar
-
-from typing_extensions import Annotated
+from typing import Annotated, Any, Mapping, TypeVar
 
 from pydantic import (
     TypeAdapter,
@@ -893,7 +891,7 @@ class Model(BaseModel):
 ...becomes:
 
 ```python
-from typing_extensions import Annotated
+from typing import Annotated
 
 from pydantic import BaseModel, Field
 
