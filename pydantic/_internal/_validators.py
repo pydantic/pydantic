@@ -514,14 +514,12 @@ MAPPING_ORIGIN_MAP: dict[Any, Any] = {
     collections.defaultdict: collections.defaultdict,
     collections.OrderedDict: collections.OrderedDict,
     TypingExtensionsOrderedDict: collections.OrderedDict,
-    dict: dict,
-    typing.Dict: dict,
     collections.Counter: collections.Counter,
     typing.Counter: collections.Counter,
     # this doesn't handle subclasses of these
     typing.Mapping: dict,
     typing.MutableMapping: dict,
     # parametrized typing.{Mutable}Mapping creates one of these
-    collections.abc.MutableMapping: dict,
     collections.abc.Mapping: dict,
+    collections.abc.MutableMapping: dict,
 }
