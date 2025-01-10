@@ -145,9 +145,8 @@ MAPPING_TYPES = [
     typing_extensions.OrderedDict,
     typing.DefaultDict,
     collections.defaultdict,
-    collections.Counter,
-    typing.Counter,
 ]
+COUNTER_TYPES = [collections.Counter, typing.Counter]
 DEQUE_TYPES: list[type] = [collections.deque, typing.Deque]
 
 # Note: This does not play very well with type checkers. For example,
@@ -535,7 +534,7 @@ class GenerateSchema:
         list_schema = core_schema.list_schema(item_type_schema, strict=False)
 
         check_instance = core_schema.json_or_python_schema(
-            json_schema=core_schema.list_schema(),
+            json_schema=list_schema,
             python_schema=core_schema.is_instance_schema(collections.deque, cls_repr='Deque'),
         )
 
@@ -548,6 +547,38 @@ class GenerateSchema:
                 serialize_sequence_via_list, schema=item_type_schema, info_arg=True
             ),
         )
+
+    def _mapping_schema(self, tp: Any, keys_type: Any, values_type: Any) -> CoreSchema:
+        from ._validators import MAPPING_ORIGIN_MAP, defaultdict_validator, get_defaultdict_default_default_factory
+
+        keys_schema = self.generate_schema(keys_type)
+        values_schema = self.generate_schema(values_type)
+
+        dict_schema = core_schema.dict_schema(keys_schema, values_schema)
+        check_instance = core_schema.json_or_python_schema(
+            json_schema=dict_schema,
+            python_schema=core_schema.is_instance_schema(tp),
+        )
+
+        if tp is collections.defaultdict:
+            default_default_factory = get_defaultdict_default_default_factory(values_type)
+            coerce_instance_wrap = partial(
+                core_schema.no_info_wrap_validator_function,
+                partial(defaultdict_validator, default_default_factory=default_default_factory),
+            )
+        else:
+            coerce_instance_wrap = partial(core_schema.no_info_after_validator_function, MAPPING_ORIGIN_MAP[tp])
+
+        lax_schema = coerce_instance_wrap(dict_schema)
+        schema = core_schema.lax_or_strict_schema(
+            lax_schema=lax_schema,
+            strict_schema=core_schema.union_schema([check_instance, lax_schema]),
+            serialization=core_schema.wrap_serializer_function_ser_schema(
+                lambda v, h: h(v), schema=dict_schema, info_arg=False
+            ),
+        )
+
+        return schema
 
     def _fraction_schema(self) -> CoreSchema:
         """Support for [`fractions.Fraction`][fractions.Fraction]."""
@@ -994,6 +1025,10 @@ class GenerateSchema:
             return self._path_schema(obj, Any)
         elif obj in DEQUE_TYPES:
             return self._deque_schema(Any)
+        elif obj in MAPPING_TYPES:
+            return self._mapping_schema(obj, Any, Any)
+        elif obj in COUNTER_TYPES:
+            return self._mapping_schema(obj, Any, int)
         elif _typing_extra.is_type_alias_type(obj):
             return self._type_alias_type_schema(obj)
         elif obj is type:
@@ -1035,11 +1070,6 @@ class GenerateSchema:
         if origin is not None:
             return self._match_generic_type(obj, origin)
 
-        res = self._get_prepare_pydantic_annotations_for_known_type(obj, ())
-        if res is not None:
-            source_type, annotations = res
-            return self._apply_annotations(source_type, annotations)
-
         if self._arbitrary_types:
             return self._arbitrary_type_schema(obj)
         return self._unknown_type_schema(obj)
@@ -1076,6 +1106,10 @@ class GenerateSchema:
             return self._path_schema(origin, self._get_first_arg_or_any(obj))
         elif origin in DEQUE_TYPES:
             return self._deque_schema(self._get_first_arg_or_any(obj))
+        elif origin in MAPPING_TYPES:
+            return self._mapping_schema(origin, *self._get_first_two_args_or_any(obj))
+        elif origin in COUNTER_TYPES:
+            return self._mapping_schema(origin, self._get_first_arg_or_any(obj), int)
         elif is_typeddict(origin):
             return self._typed_dict_schema(obj, origin)
         elif origin in (typing.Type, type):
@@ -1086,11 +1120,6 @@ class GenerateSchema:
             return self._iterable_schema(obj)
         elif origin in (re.Pattern, typing.Pattern):
             return self._pattern_schema(obj)
-
-        res = self._get_prepare_pydantic_annotations_for_known_type(obj, ())
-        if res is not None:
-            source_type, annotations = res
-            return self._apply_annotations(source_type, annotations)
 
         if self._arbitrary_types:
             return self._arbitrary_type_schema(origin)
@@ -2045,28 +2074,6 @@ class GenerateSchema:
                 schema = wrap_default(annotation, schema)
         return schema
 
-    def _get_prepare_pydantic_annotations_for_known_type(
-        self, obj: Any, annotations: tuple[Any, ...]
-    ) -> tuple[Any, list[Any]] | None:
-        from ._std_types_schema import mapping_like_prepare_pydantic_annotations
-
-        # Check for hashability
-        try:
-            hash(obj)
-        except TypeError:
-            # obj is definitely not a known type if this fails
-            return None
-
-        # TODO: I'd rather we didn't handle the generic nature in the annotations prep, but the same way we do other
-        # generic types like list[str] via _match_generic_type, but I'm not sure if we can do that because this is
-        # not always called from match_type, but sometimes from _apply_annotations
-        obj_origin = get_origin(obj) or obj
-
-        if obj_origin in MAPPING_TYPES:
-            return mapping_like_prepare_pydantic_annotations(obj, annotations)
-        else:
-            return None
-
     def _apply_annotations(
         self,
         source_type: Any,
@@ -2080,9 +2087,6 @@ class GenerateSchema:
         (in other words, `GenerateSchema._annotated_schema` just unpacks `Annotated`, this process it).
         """
         annotations = list(_known_annotated_metadata.expand_grouped_metadata(annotations))
-        res = self._get_prepare_pydantic_annotations_for_known_type(source_type, tuple(annotations))
-        if res is not None:
-            source_type, annotations = res
 
         pydantic_js_annotation_functions: list[GetJsonSchemaFunction] = []
 

@@ -6942,7 +6942,7 @@ def test_mutable_mapping() -> None:
     """
     import collections.abc
 
-    adapter = TypeAdapter(collections.abc.MutableMapping, config=ConfigDict(arbitrary_types_allowed=True, strict=True))
+    adapter = TypeAdapter(collections.abc.MutableMapping, config=ConfigDict(strict=True))
 
     assert isinstance(adapter.validate_python(collections.UserDict()), collections.abc.MutableMapping)
 
