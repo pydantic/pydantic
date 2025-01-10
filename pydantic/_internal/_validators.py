@@ -413,10 +413,6 @@ def deque_validator(input_value: Any, handler: core_schema.ValidatorFunctionWrap
     return collections.deque(handler(input_value), maxlen=getattr(input_value, 'maxlen', None))
 
 
-# def defaultdict_validator(input_value: Any, handler: core_schema.ValidatorFunctionWrapHandler) -> collections.defaultdict[Any]:
-#     ...
-
-
 def defaultdict_validator(
     input_value: Any, handler: core_schema.ValidatorFunctionWrapHandler, default_default_factory: Callable[[], Any]
 ) -> collections.defaultdict[Any, Any]:
