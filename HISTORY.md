@@ -1,3 +1,7 @@
+## v1.10.21 (2025-01-10)
+
+* Fix compatibility with ForwardRef._evaluate and Python < 3.12.4 by @griels in https://github.com/pydantic/pydantic/pull/11232
+
 ## v1.10.20 (2025-01-07)
 
 This release provides proper support for Python 3.13, with (Cythonized) wheels published for this version.
