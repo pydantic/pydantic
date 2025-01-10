@@ -27,7 +27,6 @@ classifiers = [
     'Programming Language :: Python :: Implementation :: PyPy',
     'Programming Language :: Python :: 3',
     'Programming Language :: Python :: 3 :: Only',
-    'Programming Language :: Python :: 3.8',
     'Programming Language :: Python :: 3.9',
     'Programming Language :: Python :: 3.10',
     'Programming Language :: Python :: 3.11',
@@ -42,7 +41,7 @@ classifiers = [
     'Topic :: Software Development :: Libraries :: Python Modules',
     'Topic :: Internet',
 ]
-requires-python = '>=3.8'
+requires-python = '>=3.9'
 dependencies = [
     'typing-extensions>=4.12.2',
     'annotated-types>=0.6.0',
@@ -92,7 +91,8 @@ docs = [
     'pyupgrade',
     'mike',
     'pydantic-settings',
-    'pydantic-extra-types @ git+https://github.com/pydantic/pydantic-extra-types.git@main',
+    # remove once docs issue is fixed in pydantic-extra-types
+    'pydantic-extra-types==2.10',
     'requests',
 ]
 linting = [

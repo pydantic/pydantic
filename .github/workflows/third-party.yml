@@ -42,10 +42,9 @@ jobs:
       fail-fast: false
       matrix:
         # FastAPI doesn't yet support Python 3.13
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        python-version: ['3.9', '3.10', '3.11', '3.12']
         # Only test on 3.12 if the PR wasn't labeled as 'third-party-tests':
         exclude:
-          - python-version: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'third-party-tests') && '3.8' }}
           - python-version: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'third-party-tests') && '3.9' }}
           - python-version: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'third-party-tests') && '3.10' }}
           - python-version: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'third-party-tests') && '3.11' }}
@@ -89,7 +88,7 @@ jobs:
       fail-fast: false
       matrix:
         # SQLModel doesn't yet support Python 3.13
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        python-version: ['3.9', '3.10', '3.11', '3.12']
     steps:
     - name: Checkout SQLModel
       uses: actions/checkout@v4
@@ -129,7 +128,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [ "3.8", "3.9", "3.10", "3.11", "3.12", "3.13" ]
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13" ]
     steps:
     - name: Checkout Beanie
       uses: actions/checkout@v4
@@ -218,7 +217,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11']
+        python-version: ['3.9', '3.10', '3.11']
     steps:
     - name: Checkout pandera
       uses: actions/checkout@v4
@@ -262,7 +261,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11']
+        python-version: ['3.9', '3.10', '3.11']
 
     steps:
       - name: Checkout ODMantic
@@ -315,7 +314,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
     services:
       postgres:
         image: postgres:15.1-bullseye
