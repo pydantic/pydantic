@@ -261,7 +261,9 @@ Note that `Field(strict=True)` (or with any other keyword arguments) can be used
 when working with `TypedDict`:
 
 ```python
-from typing import Annotated, TypedDict
+from typing import Annotated
+
+from typing_extensions import TypedDict
 
 from pydantic import Field, TypeAdapter, ValidationError
 

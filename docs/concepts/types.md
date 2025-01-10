@@ -218,9 +218,10 @@ You can use [PEP 695]'s `TypeAliasType` via its [typing-extensions] backport to 
 This new type can be as simple as a name or have complex validation logic attached to it:
 
 ```python
-from typing import Annotated, TypeAliasType
+from typing import Annotated
 
 from annotated_types import Gt
+from typing_extensions import TypeAliasType
 
 from pydantic import BaseModel
 
@@ -284,9 +285,10 @@ print(Model2.model_json_schema())
 These named type aliases can also be generic:
 
 ```python
-from typing import Annotated, Generic, TypeAliasType, TypeVar
+from typing import Annotated, Generic, TypeVar
 
 from annotated_types import Gt
+from typing_extensions import TypeAliasType
 
 from pydantic import BaseModel, ValidationError
 
@@ -319,9 +321,10 @@ except ValidationError as exc:
 You can also use `TypeAliasType` to create recursive types:
 
 ```python
-from typing import Annotated, Any, TypeAliasType, Union
+from typing import Annotated, Any, Union
 
 from pydantic_core import PydanticCustomError
+from typing_extensions import TypeAliasType
 
 from pydantic import (
     TypeAdapter,

@@ -197,9 +197,10 @@ It can take the following values (and is `False`, by default):
 `experiment_allow_partial` in action:
 
 ```python
-from typing import Annotated, NotRequired, TypedDict
+from typing import Annotated
 
 from annotated_types import MinLen
+from typing_extensions import NotRequired, TypedDict
 
 from pydantic import TypeAdapter
 
@@ -369,9 +370,10 @@ The way [jiter](https://github.com/pydantic/jiter) (the JSON parser used by Pyda
 This means that some invalid JSON will be accepted by Pydantic when using `experimental_allow_partial`, e.g.:
 
 ```python
-from typing import Annotated, TypedDict
+from typing import Annotated
 
 from annotated_types import MinLen
+from typing_extensions import TypedDict
 
 from pydantic import TypeAdapter
 
