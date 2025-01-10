@@ -541,7 +541,7 @@ def test_generic_typeddict_in_concrete_model():
         {
             'input': 'a',
             'loc': ('y', 'x'),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'type': 'int_parsing',
         }
     ]
@@ -563,7 +563,7 @@ def test_generic_typeddict_in_generic_model():
         {
             'input': 'a',
             'loc': ('y', 'x'),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'type': 'int_parsing',
         }
     ]
@@ -597,13 +597,13 @@ def test_recursive_generic_typeddict_in_module(create_module):
         {
             'input': 'a',
             'loc': ('rec', 'foo', 'ls', 0),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'type': 'int_parsing',
         },
         {
             'input': 'a',
             'loc': ('rec', 'ls', 0),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'type': 'int_parsing',
         },
     ]
@@ -633,13 +633,13 @@ def test_recursive_generic_typeddict_in_function_1():
         {
             'input': 'a',
             'loc': ('rec', 'foo', 'ls', 0),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'type': 'int_parsing',
         },
         {
             'input': 'a',
             'loc': ('rec', 'ls', 0),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'type': 'int_parsing',
         },
     ]
@@ -666,13 +666,13 @@ def test_recursive_generic_typeddict_in_function_2():
         {
             'input': 'a',
             'loc': ('rec', 'foo', 'ls', 0),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'type': 'int_parsing',
         },
         {
             'input': 'a',
             'loc': ('rec', 'ls', 0),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'type': 'int_parsing',
         },
     ]
@@ -700,13 +700,13 @@ def test_recursive_generic_typeddict_in_function_3():
         {
             'input': 'a',
             'loc': ('rec', 'foo', 'ls', 0),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'type': 'int_parsing',
         },
         {
             'input': 'a',
             'loc': ('rec', 'ls', 0),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'type': 'int_parsing',
         },
     ]

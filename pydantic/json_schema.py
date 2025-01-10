@@ -313,7 +313,7 @@ class GenerateJsonSchema:
             CoreSchemaOrFieldType  # type: ignore
         )
         for key in core_schema_types:
-            method_name = f"{key.replace('-', '_')}_schema"
+            method_name = f'{key.replace("-", "_")}_schema'
             try:
                 mapping[key] = getattr(self, method_name)
             except AttributeError as e:  # pragma: no cover

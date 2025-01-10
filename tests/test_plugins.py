@@ -88,7 +88,7 @@ def test_on_validate_json_on_error() -> None:
                 {
                     'input': 'potato',
                     'loc': ('a',),
-                    'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+                    'msg': 'Input should be a valid integer, unable to parse string as an integer',
                     'type': 'int_parsing',
                 },
             ]
@@ -169,7 +169,7 @@ def test_on_validate_python_on_error() -> None:
                 {
                     'input': 'potato',
                     'loc': ('a',),
-                    'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+                    'msg': 'Input should be a valid integer, unable to parse string as an integer',
                     'type': 'int_parsing',
                 },
             ]

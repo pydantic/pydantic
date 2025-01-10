@@ -230,7 +230,7 @@ def test_kwargs():
         {
             'input': 'x',
             'loc': ('b',),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'type': 'int_parsing',
         }
     ]
@@ -609,7 +609,7 @@ def test_json_schema():
     with pytest.raises(
         PydanticInvalidForJsonSchema,
         match=(
-            'Unable to generate JSON schema for arguments validator ' 'with positional-only and keyword-only arguments'
+            'Unable to generate JSON schema for arguments validator with positional-only and keyword-only arguments'
         ),
     ):
         TypeAdapter(foo).json_schema()

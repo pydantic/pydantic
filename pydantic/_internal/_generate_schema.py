@@ -247,7 +247,7 @@ def apply_each_item_validators(
         schema['values_schema'] = apply_validators(inner_schema, each_item_validators, field_name)
     else:
         raise TypeError(
-            f"`@validator(..., each_item=True)` cannot be applied to fields with a schema of {schema['type']}"
+            f'`@validator(..., each_item=True)` cannot be applied to fields with a schema of {schema["type"]}'
         )
     return schema
 
@@ -1942,8 +1942,8 @@ class GenerateSchema:
                     if overlapping_params:
                         raise PydanticUserError(
                             f'Typed dictionary {unpack_type.__name__!r} overlaps with parameter'
-                            f"{'s' if len(overlapping_params) >= 2 else ''} "
-                            f"{', '.join(repr(p) for p in sorted(overlapping_params))}",
+                            f'{"s" if len(overlapping_params) >= 2 else ""} '
+                            f'{", ".join(repr(p) for p in sorted(overlapping_params))}',
                             code='overlapping-unpack-typed-dict',
                         )
 

@@ -5522,7 +5522,7 @@ def test_custom_generic_containers():
         {
             'input': 'a',
             'loc': ('field', 0),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'type': 'int_parsing',
         }
     ]
@@ -6215,14 +6215,14 @@ def test_instanceof_invalid_core_schema():
             'ctx': {'class': 'test_instanceof_invalid_core_schema.<locals>.MyClass'},
             'input': 1,
             'loc': ('a',),
-            'msg': 'Input should be an instance of ' 'test_instanceof_invalid_core_schema.<locals>.MyClass',
+            'msg': 'Input should be an instance of test_instanceof_invalid_core_schema.<locals>.MyClass',
             'type': 'is_instance_of',
         },
         {
             'ctx': {'class': 'test_instanceof_invalid_core_schema.<locals>.MyClass'},
             'input': 1,
             'loc': ('b',),
-            'msg': 'Input should be an instance of ' 'test_instanceof_invalid_core_schema.<locals>.MyClass',
+            'msg': 'Input should be an instance of test_instanceof_invalid_core_schema.<locals>.MyClass',
             'type': 'is_instance_of',
         },
     ]
@@ -6604,7 +6604,7 @@ def test_union_tags_in_errors():
         {
             'input': 'a',
             'loc': ('function-after[<lambda>(), list[int]]', 0),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'type': 'int_parsing',
         },
         {
@@ -6627,7 +6627,7 @@ def test_union_tags_in_errors():
         {
             'input': 'a',
             'loc': ('DoubledList', 0),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'type': 'int_parsing',
         },
         {

@@ -534,9 +534,9 @@ def test_config_wrapper_match():
     ]
     config_wrapper_annotations.sort()
 
-    assert (
-        config_dict_annotations == config_wrapper_annotations
-    ), 'ConfigDict and ConfigWrapper must have the same annotations (except ConfigWrapper.config_dict)'
+    assert config_dict_annotations == config_wrapper_annotations, (
+        'ConfigDict and ConfigWrapper must have the same annotations (except ConfigWrapper.config_dict)'
+    )
 
 
 @pytest.mark.skipif(sys.version_info < (3, 11), reason='requires backport pre 3.11, fully tested in pydantic core')

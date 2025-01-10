@@ -174,7 +174,7 @@ def test_alias_override_behavior():
         {
             'input': 'a',
             'loc': ('x2',),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'type': 'int_parsing',
         }
     ]

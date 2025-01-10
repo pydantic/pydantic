@@ -179,7 +179,7 @@ class _WalkCoreSchema:
         mapping: dict[core_schema.CoreSchemaType, Recurse] = {}
         key: core_schema.CoreSchemaType
         for key in get_args(core_schema.CoreSchemaType):
-            method_name = f"handle_{key.replace('-', '_')}_schema"
+            method_name = f'handle_{key.replace("-", "_")}_schema'
             mapping[key] = getattr(self, method_name, self._handle_other_schemas)
         return mapping
 

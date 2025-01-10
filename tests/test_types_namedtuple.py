@@ -190,7 +190,7 @@ def test_recursive_namedtuple():
         {
             'input': 'a',
             'loc': ('y', 'y', 'x'),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'type': 'int_parsing',
         }
     ]
@@ -213,7 +213,7 @@ def test_recursive_generic_namedtuple():
         {
             'input': 'a',
             'loc': ('y', 'y', 'x'),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'type': 'int_parsing',
         }
     ]

@@ -82,9 +82,7 @@ def test_ultra_simple_missing(UltraSimpleModel):
         {'loc': ('a',), 'msg': 'Field required', 'type': 'missing', 'input': {}}
     ]
     assert str(exc_info.value) == (
-        '1 validation error for UltraSimpleModel\n'
-        'a\n'
-        '  Field required [type=missing, input_value={}, input_type=dict]'
+        '1 validation error for UltraSimpleModel\na\n  Field required [type=missing, input_value={}, input_type=dict]'
     )
 
 
@@ -3045,7 +3043,7 @@ def test_extra_validator_field() -> None:
         {
             'input': 'a',
             'loc': ('a',),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'type': 'int_parsing',
         }
     ]

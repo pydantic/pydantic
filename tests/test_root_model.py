@@ -90,7 +90,7 @@ def test_root_model_validation_error():
         {
             'input': 'forty two',
             'loc': (),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'type': 'int_parsing',
         },
     ]
