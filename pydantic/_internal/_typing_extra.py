@@ -562,6 +562,9 @@ def is_zoneinfo_type(tp: Any, /) -> TypeIs[type[ZoneInfo]]:
 _t_union = typing.Union
 _te_union = typing_extensions.Union
 
+_t_union = typing.Union
+_te_union = typing_extensions.Union
+
 if sys.version_info < (3, 10):
 
     def origin_is_union(tp: Any, /) -> bool:
