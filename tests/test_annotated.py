@@ -545,9 +545,9 @@ def test_tzinfo_validator_example_pattern() -> None:
                     f'Invalid tz_constraint: {self.tz_constraint}', code='unevaluable-type-annotation'
                 )
             result = handler(value)  # (2)!
-            assert self.tz_constraint == str(
-                result.tzinfo
-            ), f'Invalid tzinfo: {str(result.tzinfo)}, expected: {self.tz_constraint}'
+            assert self.tz_constraint == str(result.tzinfo), (
+                f'Invalid tzinfo: {str(result.tzinfo)}, expected: {self.tz_constraint}'
+            )
 
             return result
 

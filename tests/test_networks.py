@@ -761,8 +761,7 @@ def test_mongodb_dsns():
             'mongodb+srv://user:pass@localhost/app',
             marks=pytest.mark.xfail(
                 reason=(
-                    'This case is not supported. '
-                    'Check https://github.com/pydantic/pydantic/pull/7116 for more details.'
+                    'This case is not supported. Check https://github.com/pydantic/pydantic/pull/7116 for more details.'
                 )
             ),
         ),

@@ -1399,9 +1399,9 @@ def test_post_init_after_validation():
         set: Set[int]
 
         def __post_init__(self):
-            assert isinstance(
-                self.set, set
-            ), f"self.set should be a set but it's {self.set!r} of type {type(self.set).__name__}"
+            assert isinstance(self.set, set), (
+                f"self.set should be a set but it's {self.set!r} of type {type(self.set).__name__}"
+            )
 
     class Model(pydantic.BaseModel):
         set_wrapper: SetWrapper
@@ -1600,8 +1600,7 @@ def test_cross_module_cyclic_reference_dataclass(create_module):
     with pytest.raises(
         PydanticUserError,
         match=re.escape(
-            '`D1` is not fully defined; you should define `D2`, then call'
-            ' `pydantic.dataclasses.rebuild_dataclass(D1)`.'
+            '`D1` is not fully defined; you should define `D2`, then call `pydantic.dataclasses.rebuild_dataclass(D1)`.'
         ),
     ):
         D1()
@@ -2143,7 +2142,7 @@ def test_unparametrized_generic_dataclass(dataclass_decorator):
                 {
                     'input': 'a',
                     'loc': ('x',),
-                    'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+                    'msg': 'Input should be a valid integer, unable to parse string as an integer',
                     'type': 'int_parsing',
                 }
             ],

@@ -1526,7 +1526,7 @@ def test_optional_subfields():
         {
             'input': 'foobar',
             'loc': ('a',),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'type': 'int_parsing',
         }
     ]
@@ -1558,7 +1558,7 @@ def test_validated_optional_subfields():
         {
             'input': 'foobar',
             'loc': ('a',),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'type': 'int_parsing',
         }
     ]
@@ -1906,7 +1906,7 @@ def test_required_optional():
         {
             'input': 'some text',
             'loc': ('nullable1',),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'type': 'int_parsing',
         },
         {'input': {'nullable1': 'some text'}, 'loc': ('nullable2',), 'msg': 'Field required', 'type': 'missing'},
@@ -2113,7 +2113,7 @@ def test_custom_generic_arbitrary_allowed():
             'ctx': {'class': 'test_custom_generic_arbitrary_allowed.<locals>.MyGen'},
             'input': 'invalid',
             'loc': ('gen',),
-            'msg': 'Input should be an instance of ' 'test_custom_generic_arbitrary_allowed.<locals>.MyGen',
+            'msg': 'Input should be an instance of test_custom_generic_arbitrary_allowed.<locals>.MyGen',
             'type': 'is_instance_of',
         }
     ]

@@ -44,7 +44,7 @@ def test_parse_obj_fails():
         {
             'input': 'a',
             'loc': (),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'type': 'int_parsing',
         }
     ]
