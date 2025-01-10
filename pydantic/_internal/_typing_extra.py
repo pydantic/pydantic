@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Any, Callable, cast
 
 import typing_extensions
 from typing_extensions import ParamSpec, TypeAliasType, TypeIs, deprecated, get_args, get_origin
+from zoneinfo import ZoneInfo
 
 from ._namespace_utils import GlobalsNamespace, MappingNamespace, NsResolver, get_module_ns_of
 
@@ -553,18 +554,9 @@ def is_namedtuple(tp: Any, /) -> bool:
     return lenient_issubclass(tp, tuple) and hasattr(tp, '_fields')
 
 
-if sys.version_info < (3, 9):
-
-    def is_zoneinfo_type(tp: Any, /) -> bool:
-        """Return whether the provided argument is the `zoneinfo.ZoneInfo` type."""
-        return False
-
-else:
-    from zoneinfo import ZoneInfo
-
-    def is_zoneinfo_type(tp: Any, /) -> TypeIs[type[ZoneInfo]]:
-        """Return whether the provided argument is the `zoneinfo.ZoneInfo` type."""
-        return tp is ZoneInfo
+def is_zoneinfo_type(tp: Any, /) -> TypeIs[type[ZoneInfo]]:
+    """Return whether the provided argument is the `zoneinfo.ZoneInfo` type."""
+    return tp is ZoneInfo
 
 
 _t_union = typing.Union

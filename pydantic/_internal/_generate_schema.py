@@ -1672,11 +1672,6 @@ class GenerateSchema:
 
     def _zoneinfo_schema(self) -> core_schema.CoreSchema:
         """Generate schema for a zone_info.ZoneInfo object"""
-        # we're def >=py3.9 if ZoneInfo was included in input
-        if sys.version_info < (3, 9):
-            assert False, 'Unreachable'
-
-        # import in this path is safe
         from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
         def validate_str_is_valid_iana_tz(value: Any, /) -> ZoneInfo:
