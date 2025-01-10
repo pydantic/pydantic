@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
     steps:
       - uses: actions/checkout@v4
 
@@ -89,7 +89,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-13, macos-latest, windows-latest]
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
         include:
           # no pydantic-core binaries for pypy on windows, so tests take absolute ages
           # macos tests with pypy take ages (>10mins) since pypy is very slow
@@ -99,7 +99,7 @@ jobs:
           - os: ubuntu-latest
             python-version: 'pypy3.10'
         exclude:
-          # Python 3.8 and 3.9 are not available on macOS 14
+          # Python 3.9 is not available on macOS 14
           - os: macos-13
             python-version: '3.10'
           - os: macos-13
@@ -108,8 +108,6 @@ jobs:
             python-version: '3.12'
           - os: macos-latest
             python-version: '3.13'
-          - os: macos-latest
-            python-version: '3.8'
           - os: macos-latest
             python-version: '3.9'
 
@@ -188,8 +186,6 @@ jobs:
         mypy-version: ['1.10.1', '1.11.2']
         python-version: ['3.12']
         include:
-          - mypy-version: '1.12.0'
-            python-version: '3.8'
           - mypy-version: '1.12.0'
             python-version: '3.9'
           - mypy-version: '1.12.0'
@@ -322,7 +318,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
     steps:
     - uses: actions/checkout@v4
 

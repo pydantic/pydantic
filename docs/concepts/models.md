@@ -705,7 +705,7 @@ for more details).
 
 Here is an example using a generic Pydantic model to create an easily-reused HTTP response payload wrapper:
 
-=== "Python 3.8 and above"
+=== "Python 3.9 and above"
 
     ```python {upgrade="skip"}
     from typing import Generic, TypeVar
