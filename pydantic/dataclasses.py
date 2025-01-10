@@ -178,10 +178,6 @@ def dataclass(
                     field_args['repr'] = field_value.repr
 
                 setattr(cls, field_name, dataclasses.field(**field_args))
-                # In Python 3.8, dataclasses checks cls.__dict__['__annotations__'] for annotations,
-                # so we must make sure it's initialized before we add to it.
-                if cls.__dict__.get('__annotations__') is None:
-                    cls.__annotations__ = {}
                 cls.__annotations__[field_name] = annotations[field_name]
 
     def create_dataclass(cls: type[Any]) -> type[PydanticDataclass]:
