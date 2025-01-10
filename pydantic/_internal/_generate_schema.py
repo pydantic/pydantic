@@ -556,7 +556,7 @@ class GenerateSchema:
 
         coerce_instance_type = MAPPING_ORIGIN_MAP[tp]
 
-        if tp is dict:
+        if coerce_instance_type is dict:
             schema = core_schema.dict_schema(keys_schema, values_schema)
         else:
             dict_schema = core_schema.dict_schema(keys_schema, values_schema)
