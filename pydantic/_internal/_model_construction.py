@@ -125,6 +125,7 @@ class ModelMetaclass(ABCMeta):
                         init_private_attributes(self, context)
                         original_model_post_init(self, context)
 
+                    wrapped_model_post_init.__doc__ = original_model_post_init.__doc__
                     namespace['model_post_init'] = wrapped_model_post_init
                 else:
                     namespace['model_post_init'] = init_private_attributes
