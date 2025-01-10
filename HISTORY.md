@@ -1342,7 +1342,7 @@ Pre-release, see [the GitHub release](https://github.com/pydantic/pydantic/relea
 * Fix issue where generic models couldn't be parametrized with BaseModel by @dmontagu in [#6933](https://github.com/pydantic/pydantic/pull/6933)
 * Remove xfail for discriminated union with alias by @dmontagu in [#6938](https://github.com/pydantic/pydantic/pull/6938)
 * add field_serializer to computed_field by @andresliszt in [#6965](https://github.com/pydantic/pydantic/pull/6965)
-* Use union_schema with Type[Union[...]] by @JeanArhancet in [#6952](https://github.com/pydantic/pydantic/pull/6952)
+* Use union_schema with type[Union[...]] by @JeanArhancet in [#6952](https://github.com/pydantic/pydantic/pull/6952)
 * Fix inherited typeddict attributes / config by @adriangb in [#6981](https://github.com/pydantic/pydantic/pull/6981)
 * fix dataclass annotated before validator called twice by @davidhewitt in [#6998](https://github.com/pydantic/pydantic/pull/6998)
 * Update test-fastapi deselected tests by @hramezani in [#7014](https://github.com/pydantic/pydantic/pull/7014)
@@ -1755,7 +1755,7 @@ See [this post](https://docs.pydantic.dev/blog/pydantic-v2-alpha/) for more deta
 * Fix JSON schema for `set` and `frozenset` when they include default values, [#4155](https://github.com/pydantic/pydantic/pull/4155) by @aminalaee
 * Teach the mypy plugin that methods decorated by `@validator` are classmethods, [#4102](https://github.com/pydantic/pydantic/pull/4102) by @DMRobertson
 * Improve mypy plugin's ability to detect required fields, [#4086](https://github.com/pydantic/pydantic/pull/4086) by @richardxia
-* Support fields of type `Type[]` in schema, [#4051](https://github.com/pydantic/pydantic/pull/4051) by @aminalaee
+* Support fields of type `type[]` in schema, [#4051](https://github.com/pydantic/pydantic/pull/4051) by @aminalaee
 * Add `default` value in JSON Schema when `const=True`, [#4031](https://github.com/pydantic/pydantic/pull/4031) by @aminalaee
 * Adds reserved word check to signature generation logic, [#4011](https://github.com/pydantic/pydantic/pull/4011) by @strue36
 * Fix Json strategy failure for the complex nested field, [#4005](https://github.com/pydantic/pydantic/pull/4005) by @sergiosim
@@ -2055,7 +2055,7 @@ for their kind support.
 * Add support for `NamedTuple` and `TypedDict` types.
   Those two types are now handled and validated when used inside `BaseModel` or _pydantic_ `dataclass`.
   Two utils are also added `create_model_from_namedtuple` and `create_model_from_typeddict`, [#2216](https://github.com/pydantic/pydantic/pull/2216) by @PrettyWood
-* Do not ignore annotated fields when type is `Union[Type[...], ...]`, [#2213](https://github.com/pydantic/pydantic/pull/2213) by @PrettyWood
+* Do not ignore annotated fields when type is `Union[type[...], ...]`, [#2213](https://github.com/pydantic/pydantic/pull/2213) by @PrettyWood
 * Raise a user-friendly `TypeError` when a `root_validator` does not return a `dict` (e.g. `None`), [#2209](https://github.com/pydantic/pydantic/pull/2209) by @masalim2
 * Add a `FrozenSet[str]` type annotation to the `allowed_schemes` argument on the `strict_url` field type, [#2198](https://github.com/pydantic/pydantic/pull/2198) by @Midnighter
 * add `allow_mutation` constraint to `Field`, [#2195](https://github.com/pydantic/pydantic/pull/2195) by @sblack-usu
@@ -2215,7 +2215,7 @@ Thank you to pydantic's sponsors: @matin, @tiangolo, @chdsbd, @jorgecarleitao, a
 * Allow custom encoding for `dotenv` files, [#1615](https://github.com/pydantic/pydantic/pull/1615) by @PrettyWood
 * Ensure `SchemaExtraCallable` is always defined to get type hints on BaseConfig, [#1614](https://github.com/pydantic/pydantic/pull/1614) by @PrettyWood
 * Update datetime parser to support negative timestamps, [#1600](https://github.com/pydantic/pydantic/pull/1600) by @mlbiche
-* Update mypy, remove `AnyType` alias for `Type[Any]`, [#1598](https://github.com/pydantic/pydantic/pull/1598) by @samuelcolvin
+* Update mypy, remove `AnyType` alias for `type[Any]`, [#1598](https://github.com/pydantic/pydantic/pull/1598) by @samuelcolvin
 * Adjust handling of root validators so that errors are aggregated from _all_ failing root validators, instead of reporting on only the first root validator to fail, [#1586](https://github.com/pydantic/pydantic/pull/1586) by @beezee
 * Make `__modify_schema__` on Enums apply to the enum schema rather than fields that use the enum, [#1581](https://github.com/pydantic/pydantic/pull/1581) by @therefromhere
 * Fix behavior of `__all__` key when used in conjunction with index keys in advanced include/exclude of fields that are sequences, [#1579](https://github.com/pydantic/pydantic/pull/1579) by @xspirus
@@ -2435,7 +2435,7 @@ Thank you to pydantic's sponsors: @matin, @tiangolo, @chdsbd, @jorgecarleitao, a
   `StrictFloat` and `StrictInt` classes, [#799](https://github.com/pydantic/pydantic/pull/799) by @DerRidda
 * Improve handling of `None` and `Optional`, replace `whole` with `each_item` (inverse meaning, default `False`)
   on validators, [#803](https://github.com/pydantic/pydantic/pull/803) by @samuelcolvin
-* add support for `Type[T]` type hints, [#807](https://github.com/pydantic/pydantic/pull/807) by @timonbimon
+* add support for `type[T]` type hints, [#807](https://github.com/pydantic/pydantic/pull/807) by @timonbimon
 * Performance improvements from removing `change_exceptions`, change how pydantic error are constructed, [#819](https://github.com/pydantic/pydantic/pull/819) by @samuelcolvin
 * Fix the error message arising when a `BaseModel`-type model field causes a `ValidationError` during parsing, [#820](https://github.com/pydantic/pydantic/pull/820) by @dmontagu
 * allow `getter_dict` on `Config`, modify `GetterDict` to be more like a `Mapping` object and thus easier to work with, [#821](https://github.com/pydantic/pydantic/pull/821) by @samuelcolvin

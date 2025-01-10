@@ -168,7 +168,7 @@ In its simplest form, a field validator is a callable taking the value to be val
     === "Annotated pattern"
 
         ```python
-        from typing import Annotated, Any, List
+        from typing import Annotated, Any
 
         from pydantic import BaseModel, BeforeValidator, ValidationError
 
@@ -181,7 +181,7 @@ In its simplest form, a field validator is a callable taking the value to be val
 
 
         class Model(BaseModel):
-            numbers: Annotated[List[int], BeforeValidator(ensure_list)]
+            numbers: Annotated[list[int], BeforeValidator(ensure_list)]
 
 
         print(Model(numbers=2))
@@ -210,13 +210,13 @@ In its simplest form, a field validator is a callable taking the value to be val
     === "Decorator"
 
         ```python
-        from typing import Any, List
+        from typing import Any
 
         from pydantic import BaseModel, ValidationError, field_validator
 
 
         class Model(BaseModel):
-            numbers: List[int]
+            numbers: list[int]
 
             @field_validator('numbers', mode='before')
             @classmethod
@@ -397,7 +397,7 @@ One of the key benefits of using the [annotated pattern](./fields.md#the-annotat
 validators reusable:
 
 ```python
-from typing import Annotated, List
+from typing import Annotated
 
 from pydantic import AfterValidator, BaseModel
 
@@ -420,7 +420,7 @@ class Model2(BaseModel):
 
 
 class Model3(BaseModel):
-    list_of_even_numbers: List[EvenNumber]  # (1)!
+    list_of_even_numbers: list[EvenNumber]  # (1)!
 ```
 
 1. As mentioned in the [annotated pattern](./fields.md#the-annotated-pattern) documentation,
@@ -746,8 +746,6 @@ Pydantic provides a few special utilities that can be used to customize validati
 
 - [`InstanceOf`][pydantic.functional_validators.InstanceOf] can be used to validate that a value is an instance of a given class.
   ```python
-  from typing import List
-
   from pydantic import BaseModel, InstanceOf, ValidationError
 
 
@@ -763,7 +761,7 @@ Pydantic provides a few special utilities that can be used to customize validati
 
 
   class Basket(BaseModel):
-      fruits: List[InstanceOf[Fruit]]
+      fruits: list[InstanceOf[Fruit]]
 
 
   print(Basket(fruits=[Banana(), Apple()]))
@@ -781,13 +779,11 @@ Pydantic provides a few special utilities that can be used to customize validati
 
 - [`SkipValidation`][pydantic.functional_validators.SkipValidation] can be used to skip validation on a field.
   ```python
-  from typing import List
-
   from pydantic import BaseModel, SkipValidation
 
 
   class Model(BaseModel):
-      names: List[SkipValidation[str]]
+      names: list[SkipValidation[str]]
 
 
   m = Model(names=['foo', 'bar'])

@@ -590,12 +590,12 @@ You can also simplify error messages by labeling each case with a [`Tag`][pydant
 This is especially useful when you have complex types like those in this example:
 
 ```python
-from typing import Annotated, Dict, List, Union
+from typing import Annotated, Union
 
 from pydantic import AfterValidator, Tag, TypeAdapter, ValidationError
 
-DoubledList = Annotated[List[int], AfterValidator(lambda x: x * 2)]
-StringsMap = Dict[str, str]
+DoubledList = Annotated[list[int], AfterValidator(lambda x: x * 2)]
+StringsMap = dict[str, str]
 
 
 # Not using any `Tag`s for each union case, the errors are not so nice to look at

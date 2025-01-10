@@ -271,19 +271,15 @@ except ValidationError as e:
 Allows [`list`][], [`tuple`][], [`set`][], [`frozenset`][], [`deque`][collections.deque], or generators and casts to a [`list`][].
 When a generic parameter is provided, the appropriate validation is applied to all items of the list.
 
-### [`typing.List`][]
-
-Handled the same as `list` above.
-
 ```python
-from typing import List, Optional
+from typing import Optional
 
 from pydantic import BaseModel
 
 
 class Model(BaseModel):
     simple_list: Optional[list] = None
-    list_of_ints: Optional[List[int]] = None
+    list_of_ints: Optional[list[int]] = None
 
 
 print(Model(simple_list=['1', '2', '3']).simple_list)
@@ -569,41 +565,14 @@ except ValidationError as e:
 
 ### [`dict`][]
 
-`dict(v)` is used to attempt to convert a dictionary. see [`typing.Dict`][] below for sub-type constraints.
+`dict(v)` is used to attempt to convert a dictionary.
 
 ```python
 from pydantic import BaseModel, ValidationError
 
 
 class Model(BaseModel):
-    x: dict
-
-
-m = Model(x={'foo': 1})
-print(m.model_dump())
-#> {'x': {'foo': 1}}
-
-try:
-    Model(x='test')
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for Model
-    x
-      Input should be a valid dictionary [type=dict_type, input_value='test', input_type=str]
-    """
-```
-
-### [`typing.Dict`][]
-
-```python
-from typing import Dict
-
-from pydantic import BaseModel, ValidationError
-
-
-class Model(BaseModel):
-    x: Dict[str, int]
+    x: dict[str, int]
 
 
 m = Model(x={'foo': 1})
@@ -788,20 +757,14 @@ In case you want to constrain the UUID version, you can check the following type
 Pydantic has extensive support for union validation, both [`typing.Union`][] and Python 3.10's pipe syntax (`A | B`) are supported.
 Read more in the [`Unions`](../concepts/unions.md) section of the concepts docs.
 
-## [`Type`][typing.Type] and [`TypeVar`][typing.TypeVar]
+## [`type`][] and [`TypeVar`][typing.TypeVar]
 
 ### [`type`][]
 
 Pydantic supports the use of `type[T]` to specify that a field may only accept classes (not instances)
 that are subclasses of `T`.
 
-### [`typing.Type`][]
-
-Handled the same as `type` above.
-
 ```python
-from typing import Type
-
 from pydantic import BaseModel, ValidationError
 
 
@@ -818,7 +781,7 @@ class Other:
 
 
 class SimpleModel(BaseModel):
-    just_subclasses: Type[Foo]
+    just_subclasses: type[Foo]
 
 
 SimpleModel(just_subclasses=Foo)
@@ -834,11 +797,9 @@ except ValidationError as e:
     """
 ```
 
-You may also use `Type` to specify that any class is allowed.
+You may also use `type` to specify that any class is allowed.
 
 ```python {upgrade="skip"}
-from typing import Type
-
 from pydantic import BaseModel, ValidationError
 
 
@@ -847,7 +808,7 @@ class Foo:
 
 
 class LenientSimpleModel(BaseModel):
-    any_class_goes: Type
+    any_class_goes: type
 
 
 LenientSimpleModel(any_class_goes=int)
@@ -990,19 +951,19 @@ One benefit of this field type is that it can be used to check for equality with
 without needing to declare custom validators:
 
 ```python
-from typing import ClassVar, List, Literal, Union
+from typing import ClassVar, Literal, Union
 
 from pydantic import BaseModel, ValidationError
 
 
 class Cake(BaseModel):
     kind: Literal['cake']
-    required_utensils: ClassVar[List[str]] = ['fork', 'knife']
+    required_utensils: ClassVar[list[str]] = ['fork', 'knife']
 
 
 class IceCream(BaseModel):
     kind: Literal['icecream']
-    required_utensils: ClassVar[List[str]] = ['spoon']
+    required_utensils: ClassVar[list[str]] = ['spoon']
 
 
 class Meal(BaseModel):

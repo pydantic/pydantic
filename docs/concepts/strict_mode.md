@@ -143,13 +143,12 @@ This also works with the `TypeAdapter.validate_json` and `BaseModel.model_valida
 
 ```python
 import json
-from typing import List
 from uuid import UUID
 
 from pydantic import BaseModel, TypeAdapter, ValidationError
 
 try:
-    TypeAdapter(List[int]).validate_json('["1", 2, "3"]', strict=True)
+    TypeAdapter(list[int]).validate_json('["1", 2, "3"]', strict=True)
 except ValidationError as exc:
     print(exc)
     """

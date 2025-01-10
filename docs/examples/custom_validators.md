@@ -176,8 +176,6 @@ In this example, we construct a validator that checks that each user's password 
 One way to do this is to place a custom validator on the outer model:
 
 ```python
-from typing import List
-
 from typing_extensions import Self
 
 from pydantic import BaseModel, ValidationError, model_validator
@@ -189,8 +187,8 @@ class User(BaseModel):
 
 
 class Organization(BaseModel):
-    forbidden_passwords: List[str]
-    users: List[User]
+    forbidden_passwords: list[str]
+    users: list[User]
 
     @model_validator(mode='after')
     def validate_user_passwords(self) -> Self:
@@ -227,8 +225,6 @@ Alternatively, a custom validator can be used in the nested model class (`User`)
     The ability to mutate the context within a validator adds a lot of power to nested validation, but can also lead to confusing or hard-to-debug code. Use this approach at your own risk!
 
 ```python
-from typing import List
-
 from pydantic import BaseModel, ValidationError, ValidationInfo, field_validator
 
 
@@ -251,12 +247,12 @@ class User(BaseModel):
 
 
 class Organization(BaseModel):
-    forbidden_passwords: List[str]
-    users: List[User]
+    forbidden_passwords: list[str]
+    users: list[User]
 
     @field_validator('forbidden_passwords', mode='after')
     @classmethod
-    def add_context(cls, v: List[str], info: ValidationInfo) -> List[str]:
+    def add_context(cls, v: list[str], info: ValidationInfo) -> list[str]:
         if info.context is not None:
             info.context.update({'forbidden_passwords': v})
         return v

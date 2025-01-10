@@ -166,11 +166,9 @@ Pydantic V1 (which is now deprecated).
 Here's an example of generating JSON schema from a [`TypeAdapter`][pydantic.type_adapter.TypeAdapter]:
 
 ```python
-from typing import List
-
 from pydantic import TypeAdapter
 
-adapter = TypeAdapter(List[int])
+adapter = TypeAdapter(list[int])
 print(adapter.json_schema())
 #> {'items': {'type': 'integer'}, 'type': 'array'}
 ```
@@ -734,7 +732,7 @@ Here is an example of a custom type that *overrides* the generated `core_schema`
 
 ```python
 from dataclasses import dataclass
-from typing import Any, Dict, List, Type
+from typing import Any
 
 from pydantic_core import core_schema
 
@@ -743,15 +741,15 @@ from pydantic import BaseModel, GetCoreSchemaHandler
 
 @dataclass
 class CompressedString:
-    dictionary: Dict[int, str]
-    text: List[int]
+    dictionary: dict[int, str]
+    text: list[int]
 
     def build(self) -> str:
         return ' '.join([self.dictionary[key] for key in self.text])
 
     @classmethod
     def __get_pydantic_core_schema__(
-        cls, source: Type[Any], handler: GetCoreSchemaHandler
+        cls, source: type[Any], handler: GetCoreSchemaHandler
     ) -> core_schema.CoreSchema:
         assert source is CompressedString
         return core_schema.no_info_after_validator_function(
@@ -766,8 +764,8 @@ class CompressedString:
 
     @staticmethod
     def _validate(value: str) -> 'CompressedString':
-        inverse_dictionary: Dict[str, int] = {}
-        text: List[int] = []
+        inverse_dictionary: dict[str, int] = {}
+        text: list[int] = []
         for word in value.split(' '):
             if word not in inverse_dictionary:
                 inverse_dictionary[word] = len(inverse_dictionary)
@@ -812,7 +810,7 @@ Pydantic handle generating the schema.
 
 ```python
 from dataclasses import dataclass
-from typing import Annotated, Any, Sequence, Type
+from typing import Annotated, Any, Sequence
 
 from pydantic_core import core_schema
 
@@ -824,7 +822,7 @@ class RestrictCharacters:
     alphabet: Sequence[str]
 
     def __get_pydantic_core_schema__(
-        self, source: Type[Any], handler: GetCoreSchemaHandler
+        self, source: type[Any], handler: GetCoreSchemaHandler
     ) -> core_schema.CoreSchema:
         if not self.alphabet:
             raise ValueError('Alphabet may not be empty')
@@ -878,7 +876,7 @@ So far we have been wrapping the schema, but if you just want to *modify* it or 
 To modify the schema, first call the handler, then mutate the result:
 
 ```python
-from typing import Annotated, Any, Type
+from typing import Annotated, Any
 
 from pydantic_core import ValidationError, core_schema
 
@@ -888,7 +886,7 @@ from pydantic import BaseModel, GetCoreSchemaHandler
 class SmallString:
     def __get_pydantic_core_schema__(
         self,
-        source: Type[Any],
+        source: type[Any],
         handler: GetCoreSchemaHandler,
     ) -> core_schema.CoreSchema:
         schema = handler(source)
@@ -919,7 +917,7 @@ To override the schema completely, do not call the handler and return your own
 `CoreSchema`:
 
 ```python
-from typing import Annotated, Any, Type
+from typing import Annotated, Any
 
 from pydantic_core import ValidationError, core_schema
 
@@ -928,7 +926,7 @@ from pydantic import BaseModel, GetCoreSchemaHandler
 
 class AllowAnySubclass:
     def __get_pydantic_core_schema__(
-        self, source: Type[Any], handler: GetCoreSchemaHandler
+        self, source: type[Any], handler: GetCoreSchemaHandler
     ) -> core_schema.CoreSchema:
         # we can't call handler since it will fail for arbitrary types
         def validate(value: Any) -> Any:
@@ -973,7 +971,7 @@ schema, you can use the following approach with a no-op version of `__get_pydant
 metadata class:
 
 ```python
-from typing import Annotated, Type
+from typing import Annotated
 
 from pydantic_core import CoreSchema
 
@@ -986,7 +984,7 @@ class Metadata(BaseModel):
 
     @classmethod
     def __get_pydantic_core_schema__(
-        cls, source_type: Type[BaseModel], handler: GetCoreSchemaHandler
+        cls, source_type: type[BaseModel], handler: GetCoreSchemaHandler
     ) -> CoreSchema:
         if cls is not source_type:
             return handler(source_type)
@@ -1147,12 +1145,11 @@ See the following example:
 
 ```python
 import json
-from typing import Type
 
 from pydantic import BaseModel, ConfigDict
 
 
-def make_title(model: Type) -> str:
+def make_title(model: type) -> str:
     return f'Title-{model.__name__}'
 
 

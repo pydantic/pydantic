@@ -65,13 +65,13 @@ assignment form instead.
     [validation constraints](#field-constraints) can be added this way:
 
     ```python
-    from typing import Annotated, List
+    from typing import Annotated
 
     from pydantic import BaseModel, Field
 
 
     class Model(BaseModel):
-        int_list: List[Annotated[int, Field(gt=0)]]
+        int_list: list[Annotated[int, Field(gt=0)]]
         # Valid: [1, 3]
         # Invalid: [-1, 2]
     ```
@@ -164,13 +164,11 @@ While the same thing can be done in Pydantic, it is not required. In the event t
 Pydantic will create a deep copy of the default value when creating each instance of the model:
 
 ```python
-from typing import Dict, List
-
 from pydantic import BaseModel
 
 
 class Model(BaseModel):
-    item_counts: List[Dict[str, int]] = [{}]
+    item_counts: list[dict[str, int]] = [{}]
 
 
 m1 = Model()

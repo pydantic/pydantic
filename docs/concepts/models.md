@@ -201,13 +201,11 @@ This is also the case for collections. In most cases, you shouldn't make use of 
 and just use a concrete type, such as [`list`][]:
 
 ```python
-from typing import List
-
 from pydantic import BaseModel
 
 
 class Model(BaseModel):
-    items: List[int]  # (1)!
+    items: list[int]  # (1)!
 
 
 print(Model(items=(1, 2, 3)))
@@ -275,7 +273,7 @@ Pydantic dataclasses also support extra data (see the [dataclass configuration](
 More complex hierarchical data structures can be defined using models themselves as types in annotations.
 
 ```python
-from typing import List, Optional
+from typing import Optional
 
 from pydantic import BaseModel
 
@@ -292,7 +290,7 @@ class Bar(BaseModel):
 
 class Spam(BaseModel):
     foo: Foo
-    bars: List[Bar]
+    bars: list[Bar]
 
 
 m = Spam(foo={'count': 4}, bars=[{'apple': 'x1'}, {'apple': 'x2'}])
@@ -380,7 +378,7 @@ To do this, set the [`from_attributes`][pydantic.config.ConfigDict.from_attribut
 The example here uses [SQLAlchemy](https://www.sqlalchemy.org/), but the same approach should work for any ORM.
 
 ```python
-from typing import Annotated, List
+from typing import Annotated
 
 from sqlalchemy import ARRAY, String
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
@@ -399,7 +397,7 @@ class CompanyOrm(Base):
     public_key: Mapped[str] = mapped_column(
         String(20), index=True, nullable=False, unique=True
     )
-    domains: Mapped[List[str]] = mapped_column(ARRAY(String(255)))
+    domains: Mapped[list[str]] = mapped_column(ARRAY(String(255)))
 
 
 class CompanyModel(BaseModel):
@@ -407,7 +405,7 @@ class CompanyModel(BaseModel):
 
     id: int
     public_key: Annotated[str, StringConstraints(max_length=20)]
-    domains: List[Annotated[str, StringConstraints(max_length=255)]]
+    domains: list[Annotated[str, StringConstraints(max_length=255)]]
 
 
 co_orm = CompanyOrm(
@@ -430,8 +428,6 @@ deeper-nested attributes as appropriate.
 Here is an example demonstrating the principle:
 
 ```python
-from typing import List
-
 from pydantic import BaseModel, ConfigDict
 
 
@@ -442,7 +438,7 @@ class PetCls:
 
 
 class PersonCls:
-    def __init__(self, *, name: str, age: float = None, pets: List[PetCls]):
+    def __init__(self, *, name: str, age: float = None, pets: list[PetCls]):
         self.name = name
         self.age = age
         self.pets = pets
@@ -460,7 +456,7 @@ class Person(BaseModel):
 
     name: str
     age: float = None
-    pets: List[Pet]
+    pets: list[Pet]
 
 
 bones = PetCls(name='Bones', species='dog')
@@ -485,13 +481,11 @@ See [Error Handling](../errors/errors.md) for details on standard and custom err
 As a demonstration:
 
 ```python
-from typing import List
-
 from pydantic import BaseModel, ValidationError
 
 
 class Model(BaseModel):
-    list_of_ints: List[int]
+    list_of_ints: list[int]
     a_float: float
 
 
@@ -853,7 +847,7 @@ If the name of the concrete subclasses is important, you can also override the d
 by overriding the [`model_parametrized_name()`][pydantic.main.BaseModel.model_parametrized_name] method:
 
 ```python
-from typing import Any, Generic, Tuple, Type, TypeVar
+from typing import Any, Generic, Tuple, TypeVar
 
 from pydantic import BaseModel
 
@@ -864,7 +858,7 @@ class Response(BaseModel, Generic[DataT]):
     data: DataT
 
     @classmethod
-    def model_parametrized_name(cls, params: Tuple[Type[Any], ...]) -> str:
+    def model_parametrized_name(cls, params: Tuple[type[Any], ...]) -> str:
         return f'{params[0].__name__.title()}Response'
 
 
@@ -1382,12 +1376,10 @@ via the first and only argument.
 Here's an example of how this works:
 
 ```python
-from typing import Dict, List
-
 from pydantic import RootModel
 
-Pets = RootModel[List[str]]
-PetsByName = RootModel[Dict[str, str]]
+Pets = RootModel[list[str]]
+PetsByName = RootModel[dict[str, str]]
 
 
 print(Pets(['dog', 'cat']))
@@ -1398,7 +1390,7 @@ print(Pets.model_validate(['dog', 'cat']))
 #> root=['dog', 'cat']
 print(Pets.model_json_schema())
 """
-{'items': {'type': 'string'}, 'title': 'RootModel[List[str]]', 'type': 'array'}
+{'items': {'type': 'string'}, 'title': 'RootModel[list[str]]', 'type': 'array'}
 """
 
 print(PetsByName({'Otis': 'dog', 'Milo': 'cat'}))
@@ -1413,13 +1405,11 @@ If you want to access items in the `root` field directly or to iterate over the 
 custom `__iter__` and `__getitem__` functions, as shown in the following example.
 
 ```python
-from typing import List
-
 from pydantic import RootModel
 
 
 class Pets(RootModel):
-    root: List[str]
+    root: list[str]
 
     def __iter__(self):
         return iter(self.root)
@@ -1438,12 +1428,10 @@ print([pet for pet in pets])
 You can also create subclasses of the parametrized root model directly:
 
 ```python
-from typing import List
-
 from pydantic import RootModel
 
 
-class Pets(RootModel[List[str]]):
+class Pets(RootModel[list[str]]):
     def describe(self) -> str:
         return f'Pets: {", ".join(self.root)}'
 
@@ -1711,8 +1699,6 @@ In this example, note that the ID of the list changes after the class is constru
 copied during validation:
 
 ```python
-from typing import List
-
 from pydantic import BaseModel
 
 
@@ -1724,7 +1710,7 @@ class C1:
 
 
 class C2(BaseModel):
-    arr: List[int]
+    arr: list[int]
 
 
 arr_orig = [1, 9, 10, 3]

@@ -161,7 +161,7 @@ assert ta.json_schema(mode='serialization') == {'type': 'string'}
 You can use type variables within `Annotated` to make reusable modifications to types:
 
 ```python
-from typing import Annotated, Any, List, Sequence, TypeVar
+from typing import Annotated, Any, Sequence, TypeVar
 
 from annotated_types import Gt, Len
 
@@ -174,7 +174,7 @@ SequenceType = TypeVar('SequenceType', bound=Sequence[Any])
 ShortSequence = Annotated[SequenceType, Len(max_length=10)]
 
 
-ta = TypeAdapter(ShortSequence[List[int]])
+ta = TypeAdapter(ShortSequence[list[int]])
 
 v = ta.validate_python([1, 2, 3, 4, 5])
 assert v == [1, 2, 3, 4, 5]
@@ -191,7 +191,7 @@ except ValidationError as exc:
 
 T = TypeVar('T')  # or a bound=SupportGt
 
-PositiveList = List[Annotated[T, Gt(0)]]
+PositiveList = list[Annotated[T, Gt(0)]]
 
 ta = TypeAdapter(PositiveList[float])
 
@@ -218,13 +218,13 @@ You can use [PEP 695]'s `TypeAliasType` via its [typing-extensions] backport to 
 This new type can be as simple as a name or have complex validation logic attached to it:
 
 ```python
-from typing import Annotated, List, TypeAliasType
+from typing import Annotated, TypeAliasType
 
 from annotated_types import Gt
 
 from pydantic import BaseModel
 
-ImplicitAliasPositiveIntList = List[Annotated[int, Gt(0)]]
+ImplicitAliasPositiveIntList = list[Annotated[int, Gt(0)]]
 
 
 class Model1(BaseModel):
@@ -253,7 +253,7 @@ print(Model1.model_json_schema())
 }
 """
 
-PositiveIntList = TypeAliasType('PositiveIntList', List[Annotated[int, Gt(0)]])
+PositiveIntList = TypeAliasType('PositiveIntList', list[Annotated[int, Gt(0)]])
 
 
 class Model2(BaseModel):
@@ -284,7 +284,7 @@ print(Model2.model_json_schema())
 These named type aliases can also be generic:
 
 ```python
-from typing import Annotated, Generic, List, TypeAliasType, TypeVar
+from typing import Annotated, Generic, TypeAliasType, TypeVar
 
 from annotated_types import Gt
 
@@ -293,7 +293,7 @@ from pydantic import BaseModel, ValidationError
 T = TypeVar('T')  # or a `bound=SupportGt`
 
 PositiveList = TypeAliasType(
-    'PositiveList', List[Annotated[T, Gt(0)]], type_params=(T,)
+    'PositiveList', list[Annotated[T, Gt(0)]], type_params=(T,)
 )
 
 
@@ -319,7 +319,7 @@ except ValidationError as exc:
 You can also use `TypeAliasType` to create recursive types:
 
 ```python
-from typing import Annotated, Any, Dict, List, TypeAliasType, Union
+from typing import Annotated, Any, TypeAliasType, Union
 
 from pydantic_core import PydanticCustomError
 
@@ -350,7 +350,7 @@ def json_custom_error_validator(
 Json = TypeAliasType(
     'Json',
     Annotated[
-        Union[Dict[str, 'Json'], List['Json'], str, int, float, bool, None],
+        Union[dict[str, 'Json'], list['Json'], str, int, float, bool, None],
         WrapValidator(json_custom_error_validator),
     ],
 )

@@ -197,7 +197,7 @@ It can take the following values (and is `False`, by default):
 `experiment_allow_partial` in action:
 
 ```python
-from typing import Annotated, List, NotRequired, TypedDict
+from typing import Annotated, NotRequired, TypedDict
 
 from annotated_types import MinLen
 
@@ -210,7 +210,7 @@ class Foobar(TypedDict):  # (1)!
     c: NotRequired[Annotated[str, MinLen(5)]]
 
 
-ta = TypeAdapter(List[Foobar])
+ta = TypeAdapter(list[Foobar])
 
 v = ta.validate_json('[{"a": 1, "b"', experimental_allow_partial=True)  # (2)!
 print(v)
@@ -290,7 +290,7 @@ The point is that if you only see part of some valid input data, validation erro
 To avoid these errors breaking partial validation, Pydantic will ignore ALL errors in the last element of the input data.
 
 ```python {title="Errors in last element ignored"}
-from typing import Annotated, List
+from typing import Annotated
 
 from annotated_types import MinLen
 
@@ -302,7 +302,7 @@ class MyModel(BaseModel):
     b: Annotated[str, MinLen(5)]
 
 
-ta = TypeAdapter(List[MyModel])
+ta = TypeAdapter(list[MyModel])
 v = ta.validate_json(
     '[{"a": 1, "b": "12345"}, {"a": 1,',
     experimental_allow_partial=True,
@@ -334,7 +334,7 @@ E.g. in the [above](#2-ignore-errors-in-last) example partial validation works a
 But partial validation won't work at all in the follow example because `BaseModel` doesn't support partial validation so it doesn't forward the `allow_partial` instruction down to the list validator in `b`:
 
 ```python
-from typing import Annotated, List
+from typing import Annotated
 
 from annotated_types import MinLen
 
@@ -343,7 +343,7 @@ from pydantic import BaseModel, TypeAdapter, ValidationError
 
 class MyModel(BaseModel):
     a: int = 1
-    b: List[Annotated[str, MinLen(5)]] = []  # (1)!
+    b: list[Annotated[str, MinLen(5)]] = []  # (1)!
 
 
 ta = TypeAdapter(MyModel)
@@ -406,18 +406,18 @@ As described [above](#2-ignore-errors-in-last), many errors can result from trun
 This means clearly invalid data will pass validation if the error is in the last field of the input:
 
 ```python
-from typing import Annotated, List
+from typing import Annotated
 
 from annotated_types import Ge
 
 from pydantic import TypeAdapter
 
-ta = TypeAdapter(List[Annotated[int, Ge(10)]])
+ta = TypeAdapter(list[Annotated[int, Ge(10)]])
 v = ta.validate_python([20, 30, 4], experimental_allow_partial=True)  # (1)!
 print(v)
 #> [20, 30]
 
-ta = TypeAdapter(List[int])
+ta = TypeAdapter(list[int])
 
 v = ta.validate_python([1, 2, 'wrong'], experimental_allow_partial=True)  # (2)!
 print(v)
