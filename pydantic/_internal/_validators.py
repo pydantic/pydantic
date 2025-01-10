@@ -12,9 +12,10 @@ import typing
 from decimal import Decimal
 from fractions import Fraction
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
-from typing import Any, Callable, TypeVar, Union, cast, get_args, get_origin
+from typing import Any, Callable, TypeVar, Union, cast, get_origin
 from typing import OrderedDict as TypingExtensionsOrderedDict
 
+import typing_extensions
 from pydantic_core import PydanticCustomError, core_schema
 from pydantic_core._pydantic_core import PydanticKnownError
 
@@ -475,7 +476,8 @@ def get_defaultdict_default_default_factory(values_source_type: Any) -> Callable
 
     # Assume Annotated[..., Field(...)]
     if _typing_extra.is_annotated(values_source_type):
-        field_info = next((v for v in get_args(values_source_type) if isinstance(v, FieldInfo)), None)
+        # Important that we use typing_extensions.get_args here in order to support 3.8
+        field_info = next((v for v in typing_extensions.get_args(values_source_type) if isinstance(v, FieldInfo)), None)
     else:
         field_info = None
     if field_info and field_info.default_factory:
