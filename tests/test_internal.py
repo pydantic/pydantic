@@ -194,7 +194,7 @@ def test_representation_integrations():
     obj = Obj()
 
     assert str(devtools.debug.format(obj)).split('\n')[1:] == [
-        '    Obj(',
+        '    obj: Obj(',
         '        int_attr=42,',
         "        str_attr='Marvin',",
         '    ) (Obj)',
