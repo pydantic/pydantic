@@ -837,6 +837,15 @@ class GenerateSchema:
             # don't call the method:
             and not is_base_model_get_schema
         ):
+            # Some referenceable types might have a `__get_pydantic_core_schema__` method
+            # defined on it by users (e.g. on a dataclass). This generally doesn't play well
+            # as these types are already recognized by the `GenerateSchema` class and isn't ideal
+            # as we might end up calling `get_schema_or_ref` (expensive) on types that are actually
+            # not referenceable:
+            with self.defs.get_schema_or_ref(obj) as (_, maybe_schema):
+                if maybe_schema is not None:
+                    return maybe_schema
+
             if obj is source:
                 ref_mode = 'unpack'
             else:
