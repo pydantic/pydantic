@@ -8,11 +8,11 @@ import sys
 import types
 import typing
 import warnings
-from functools import lru_cache, partial
+from functools import partial
 from typing import TYPE_CHECKING, Any, Callable, cast
 
-import typing_extensions
-from typing_extensions import TypeIs, deprecated, get_args, get_origin
+import typing_extensions as t_e
+from typing_extensions import ParamSpec, TypeAliasType, TypeIs, deprecated, get_args, get_origin
 
 from ._namespace_utils import GlobalsNamespace, MappingNamespace, NsResolver, get_module_ns_of
 
@@ -26,28 +26,10 @@ else:
 if TYPE_CHECKING:
     from pydantic import BaseModel
 
-# See https://typing-extensions.readthedocs.io/en/latest/#runtime-use-of-types:
-
-
-@lru_cache(maxsize=None)
-def _get_typing_objects_by_name_of(name: str) -> tuple[Any, ...]:
-    """Get the member named `name` from both `typing` and `typing-extensions` (if it exists)."""
-    result = tuple(getattr(module, name) for module in (typing, typing_extensions) if hasattr(module, name))
-    if not result:
-        raise ValueError(f'Neither `typing` nor `typing_extensions` has an object called {name!r}')
-    return result
-
-
-# As suggested by the `typing-extensions` documentation, we could apply caching to this method,
-# but it doesn't seem to improve performance. This also requires `obj` to be hashable, which
-# might not be always the case:
-def _is_typing_name(obj: object, name: str) -> bool:
-    """Return whether `obj` is the member of the typing modules (includes the `typing-extensions` one) named `name`."""
-    # Using `any()` is slower:
-    for thing in _get_typing_objects_by_name_of(name):
-        if obj is thing:
-            return True
-    return False
+# As per https://typing-extensions.readthedocs.io/en/latest/#runtime-use-of-types,
+# always check for both `typing` and `typing_extensions` variants of a typing construct.
+# (this is implemented differently than the suggested approach in the `typing_extensions`
+# docs for performance).
 
 
 def is_any(tp: Any, /) -> bool:
@@ -58,7 +40,7 @@ def is_any(tp: Any, /) -> bool:
     #> True
     ```
     """
-    return _is_typing_name(tp, name='Any')
+    return tp is typing.Any or tp is t_e.Any
 
 
 def is_union(tp: Any, /) -> bool:
@@ -71,7 +53,8 @@ def is_union(tp: Any, /) -> bool:
     #> False
     ```
     """
-    return _is_typing_name(get_origin(tp), name='Union')
+    origin = get_origin(tp)
+    return origin is typing.Union or origin is t_e.Union
 
 
 def is_literal(tp: Any, /) -> bool:
@@ -82,7 +65,8 @@ def is_literal(tp: Any, /) -> bool:
     #> True
     ```
     """
-    return _is_typing_name(get_origin(tp), name='Literal')
+    origin = get_origin(tp)
+    return origin is typing.Literal or origin is t_e.Literal
 
 
 def literal_values(tp: Any, /) -> list[Any]:
@@ -100,7 +84,7 @@ def literal_values(tp: Any, /) -> list[Any]:
         # Note: we could also check for generic aliases with a type alias as an origin.
         # However, it is very unlikely that this happens as type variables can't appear in
         # `Literal` forms, so the only valid (but unnecessary) use case would be something like:
-        # `type Test[T] = Literal['whatever']` (and then use `Test[SomeType]`).
+        # `type test[T] = Literal['whatever']` (and then use `Test[SomeType]`).
         if is_type_alias_type(tp):
             # Note: accessing `__value__` could raise a `NameError`, but we just let
             # the exception be raised as there's not much we can do if this happens.
@@ -112,6 +96,7 @@ def literal_values(tp: Any, /) -> list[Any]:
     return [x for value in values for x in literal_values(value)]
 
 
+# Drop Python 3.8: `origin is typing.Annotated or origin is t_e.Annotated`
 def is_annotated(tp: Any, /) -> bool:
     """Return whether the provided argument is a `Annotated` special form.
 
@@ -120,7 +105,8 @@ def is_annotated(tp: Any, /) -> bool:
     #> True
     ```
     """
-    return _is_typing_name(get_origin(tp), name='Annotated')
+    origin = get_origin(tp)
+    return origin is t_e.Annotated or (hasattr(typing, 'Annotated') and origin is typing.Annotated)
 
 
 def annotated_type(tp: Any, /) -> Any | None:
@@ -159,7 +145,7 @@ def unpack_annotated(annotation: Any, /) -> tuple[Any, list[Any]]:
             metadata list is empty.
     """
     if is_annotated(annotation):
-        typ, *metadata = typing_extensions.get_args(annotation)
+        typ, *metadata = get_args(annotation)
         # The annotated type might be a PEP 695 type alias, so we need to recursively
         # unpack it. Note that we could make an optimization here: the following next
         # call to `_unpack_annotated` could omit the `is_annotated` check, because Python
@@ -188,7 +174,7 @@ def unpack_annotated(annotation: Any, /) -> tuple[Any, list[Any]]:
         # When parametrized, a PEP 695 type alias becomes a generic alias
         # (e.g. with `type MyList[T] = Annotated[list[T], ...]`, `MyList[int]`
         # is a generic alias).
-        origin = typing_extensions.get_origin(annotation)
+        origin = get_origin(annotation)
         if is_type_alias_type(origin):
             try:
                 value = origin.__value__
@@ -211,6 +197,7 @@ def unpack_annotated(annotation: Any, /) -> tuple[Any, list[Any]]:
     return annotation, []
 
 
+# Drop Python 3.10: `origin is typing.Unpack or origin is t_e.Unpack`
 def is_unpack(tp: Any, /) -> bool:
     """Return whether the provided argument is a `Unpack` special form.
 
@@ -219,7 +206,8 @@ def is_unpack(tp: Any, /) -> bool:
     #> True
     ```
     """
-    return _is_typing_name(get_origin(tp), name='Unpack')
+    origin = get_origin(tp)
+    return origin is t_e.Unpack or (hasattr(typing, 'Unpack') and origin is typing.Unpack)
 
 
 def unpack_type(tp: Any, /) -> Any | None:
@@ -227,6 +215,7 @@ def unpack_type(tp: Any, /) -> Any | None:
     return get_args(tp)[0] if is_unpack(tp) else None
 
 
+# Drop Python 3.10: `tp is typing.Self or tp is t_e.Self`
 def is_self(tp: Any, /) -> bool:
     """Return whether the provided argument is the `Self` special form.
 
@@ -235,7 +224,7 @@ def is_self(tp: Any, /) -> bool:
     #> True
     ```
     """
-    return _is_typing_name(tp, name='Self')
+    return tp is t_e.Self or (hasattr(typing, 'Self') and tp is typing.Self)
 
 
 def is_new_type(tp: Any, /) -> bool:
@@ -250,7 +239,7 @@ def is_new_type(tp: Any, /) -> bool:
         # On Python < 3.10, `typing.NewType` is a function
         return hasattr(tp, '__supertype__')
     else:
-        return _is_typing_name(type(tp), name='NewType')
+        return type(tp) is typing.NewType or type(tp) is t_e.NewType
 
 
 def is_hashable(tp: Any, /) -> bool:
@@ -283,7 +272,7 @@ def is_callable(tp: Any, /) -> bool:
     return tp is collections.abc.Callable or get_origin(tp) is collections.abc.Callable
 
 
-_PARAMSPEC_TYPES: tuple[type[typing_extensions.ParamSpec], ...] = (typing_extensions.ParamSpec,)
+_PARAMSPEC_TYPES: tuple[type[ParamSpec], ...] = (t_e.ParamSpec,)
 if sys.version_info >= (3, 10):
     _PARAMSPEC_TYPES = (*_PARAMSPEC_TYPES, typing.ParamSpec)  # pyright: ignore[reportAssignmentType]
 
@@ -300,14 +289,14 @@ def is_paramspec(tp: Any, /) -> bool:
     return isinstance(tp, _PARAMSPEC_TYPES)
 
 
-_TYPE_ALIAS_TYPES: tuple[type[typing_extensions.TypeAliasType], ...] = (typing_extensions.TypeAliasType,)
+_TYPE_ALIAS_TYPES: tuple[type[TypeAliasType], ...] = (t_e.TypeAliasType,)
 if sys.version_info >= (3, 12):
     _TYPE_ALIAS_TYPES = (*_TYPE_ALIAS_TYPES, typing.TypeAliasType)
 
 _IS_PY310 = sys.version_info[:2] == (3, 10)
 
 
-def is_type_alias_type(tp: Any, /) -> TypeIs[typing_extensions.TypeAliasType]:
+def is_type_alias_type(tp: Any, /) -> TypeIs[TypeAliasType]:
     """Return whether the provided argument is an instance of `TypeAliasType`.
 
     ```python {test="skip" lint="skip"}
@@ -343,7 +332,10 @@ def is_classvar(tp: Any, /) -> bool:
     #> True
     """
     # ClassVar is not necessarily parametrized:
-    return _is_typing_name(tp, name='ClassVar') or _is_typing_name(get_origin(tp), name='ClassVar')
+    if tp is typing.ClassVar or tp is t_e.ClassVar:
+        return True
+    origin = get_origin(tp)
+    return origin is typing.ClassVar or origin is t_e.ClassVar
 
 
 _classvar_re = re.compile(r'((\w+\.)?Annotated\[)?(\w+\.)?ClassVar\[')
@@ -388,9 +380,13 @@ def is_finalvar(tp: Any, /) -> bool:
     #> True
     """
     # Final is not necessarily parametrized:
-    return _is_typing_name(tp, name='Final') or _is_typing_name(get_origin(tp), name='Final')
+    if tp is typing.Final or tp is t_e.Final:
+        return True
+    origin = get_origin(tp)
+    return origin is typing.Final or origin is t_e.Final
 
 
+# Drop Python 3.10: `origin is typing.Required or origin is t_e.Required`
 def is_required(tp: Any, /) -> bool:
     """Return whether the provided argument is a `Required` special form.
 
@@ -398,9 +394,11 @@ def is_required(tp: Any, /) -> bool:
     is_required(Required[int])
     #> True
     """
-    return _is_typing_name(get_origin(tp), name='Required')
+    origin = get_origin(tp)
+    return origin is t_e.Required or (hasattr(typing, 'Required') and origin is typing.Required)
 
 
+# Drop Python 3.10: `origin is typing.NotRequired or origin is t_e.NotRequired`
 def is_not_required(tp: Any, /) -> bool:
     """Return whether the provided argument is a `NotRequired` special form.
 
@@ -408,7 +406,8 @@ def is_not_required(tp: Any, /) -> bool:
     is_required(Required[int])
     #> True
     """
-    return _is_typing_name(get_origin(tp), name='NotRequired')
+    origin = get_origin(tp)
+    return origin is t_e.NotRequired or (hasattr(typing, 'NotRequired') and origin is typing.NotRequired)
 
 
 def is_no_return(tp: Any, /) -> bool:
@@ -419,9 +418,10 @@ def is_no_return(tp: Any, /) -> bool:
     #> True
     ```
     """
-    return _is_typing_name(tp, name='NoReturn')
+    return tp is typing.NoReturn or tp is t_e.NoReturn
 
 
+# Drop Python 3.10: `tp is typing.Never or tp is t_e.Never`
 def is_never(tp: Any, /) -> bool:
     """Return whether the provided argument is the `Never` special form.
 
@@ -430,10 +430,10 @@ def is_never(tp: Any, /) -> bool:
     #> True
     ```
     """
-    return _is_typing_name(tp, name='Never')
+    return tp is t_e.Never or (hasattr(typing, 'Never') and tp is typing.Never)
 
 
-_DEPRECATED_TYPES: tuple[type[typing_extensions.deprecated], ...] = (typing_extensions.deprecated,)
+_DEPRECATED_TYPES: tuple[type[deprecated], ...] = (t_e.deprecated,)
 if hasattr(warnings, 'deprecated'):
     _DEPRECATED_TYPES = (*_DEPRECATED_TYPES, warnings.deprecated)  # pyright: ignore[reportAttributeAccessIssue]
 
@@ -443,7 +443,7 @@ def is_deprecated_instance(obj: Any, /) -> TypeIs[deprecated]:
     return isinstance(obj, _DEPRECATED_TYPES)
 
 
-_NONE_TYPES: tuple[Any, ...] = (None, NoneType, typing.Literal[None], typing_extensions.Literal[None])
+_NONE_TYPES: tuple[Any, ...] = (None, NoneType, typing.Literal[None], t_e.Literal[None])
 
 
 def is_none_type(tp: Any, /) -> bool:
@@ -491,7 +491,7 @@ if sys.version_info < (3, 10):
 
     def origin_is_union(tp: Any, /) -> bool:
         """Return whether the provided argument is the `Union` special form."""
-        return _is_typing_name(tp, name='Union')
+        return tp is typing.Union or tp is t_e.Union
 
     def is_generic_alias(type_: type[Any]) -> bool:
         return isinstance(type_, typing._GenericAlias)  # pyright: ignore[reportAttributeAccessIssue]
@@ -500,7 +500,7 @@ else:
 
     def origin_is_union(tp: Any, /) -> bool:
         """Return whether the provided argument is the `Union` special form or the `UnionType`."""
-        return _is_typing_name(tp, name='Union') or tp is types.UnionType
+        return tp is typing.Union or tp is t_e.Union or tp is types.UnionType
 
     def is_generic_alias(tp: Any, /) -> bool:
         return isinstance(tp, (types.GenericAlias, typing._GenericAlias))  # pyright: ignore[reportAttributeAccessIssue]
