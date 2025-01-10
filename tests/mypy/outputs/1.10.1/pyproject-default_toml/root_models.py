@@ -44,9 +44,9 @@ class Model(BaseModel, Generic[V]):
 Model[str](m1=1, m2='dog', m3=[])
 # MYPY: error: Argument "m1" to "Model" has incompatible type "int"; expected "Maybe[int]"  [arg-type]
 # MYPY: error: Argument "m2" to "Model" has incompatible type "str"; expected "Maybe[str]"  [arg-type]
-# MYPY: error: Argument "m3" to "Model" has incompatible type "List[Never]"; expected "Maybe[Any]"  [arg-type]
+# MYPY: error: Argument "m3" to "Model" has incompatible type "list[Never]"; expected "Maybe[Any]"  [arg-type]
 Model[str](m1=Maybe(None), m2=Maybe('dog'), m3=Maybe([]))
 Model(m1=None, m2={}, m3=[])
 # MYPY: error: Argument "m1" to "Model" has incompatible type "None"; expected "Maybe[int]"  [arg-type]
-# MYPY: error: Argument "m2" to "Model" has incompatible type "Dict[Never, Never]"; expected "Maybe[Never]"  [arg-type]
-# MYPY: error: Argument "m3" to "Model" has incompatible type "List[Never]"; expected "Maybe[Any]"  [arg-type]
+# MYPY: error: Argument "m2" to "Model" has incompatible type "dict[Never, Never]"; expected "Maybe[Never]"  [arg-type]
+# MYPY: error: Argument "m3" to "Model" has incompatible type "list[Never]"; expected "Maybe[Any]"  [arg-type]
