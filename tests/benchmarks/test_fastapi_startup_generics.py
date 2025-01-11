@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Annotated, Any, Generic, List, TypeVar
+from typing import Annotated, Any, Generic, TypeVar
 
 from pydantic import BaseModel, TypeAdapter, create_model
 from pydantic.fields import FieldInfo
@@ -24,7 +24,7 @@ def create_data_models() -> list[Any]:
             type_ = TYPES[j % len(TYPES)]
             type_default = TYPES_DEFAULTS[type_]
             if j % 4 == 0:
-                type_ = List[type_]
+                type_ = list[type_]
                 type_default = []
 
             default = ... if j % 2 == 0 else type_default
@@ -38,7 +38,7 @@ def create_data_models() -> list[Any]:
         for j in range(i):
             type_ = models[j % len(models)] if j % 2 == 0 else TYPES[j % len(TYPES)]
             if j % 4 == 0:
-                type_ = List[type_]
+                type_ = list[type_]
             fields[f'f{j}'] = (type_, ...)
         models_with_nested.append(create_model(f'M2{i}', **fields))
 

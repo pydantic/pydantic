@@ -1,5 +1,5 @@
 import re
-from typing import Annotated, Generic, Tuple, TypeVar
+from typing import Annotated, Generic, TypeVar
 
 import pytest
 
@@ -46,7 +46,7 @@ def test_create_model() -> None:
 
 def test_create_model_invalid_tuple():
     with pytest.raises(PydanticUserError) as exc_info:
-        create_model('FooModel', foo=(Tuple[int, int], (1, 2), 'more'))
+        create_model('FooModel', foo=(tuple[int, int], (1, 2), 'more'))
 
     assert exc_info.value.code == 'create-model-field-definitions'
 

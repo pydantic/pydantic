@@ -4,7 +4,7 @@ import re
 import sys
 from datetime import datetime, timezone
 from functools import partial
-from typing import Annotated, Any, List, Literal, Tuple, Union
+from typing import Annotated, Any, Literal, Union
 
 import pytest
 from pydantic_core import ArgsKwargs
@@ -485,7 +485,7 @@ def test_async():
 
 def test_string_annotation():
     @validate_call
-    def foo(a: 'List[int]', b: 'float'):
+    def foo(a: 'list[int]', b: 'float'):
         return f'a={a!r} b={b!r}'
 
     assert foo([1, 2, 3], 22) == 'a=[1, 2, 3] b=22.0'
@@ -506,7 +506,7 @@ def test_string_annotation():
 
 
 def test_local_annotation():
-    ListInt = List[int]
+    ListInt = list[int]
 
     @validate_call
     def foo(a: ListInt):
@@ -693,7 +693,7 @@ def test_config_arbitrary_types_allowed():
 
 def test_config_strict():
     @validate_call(config=dict(strict=True))
-    def foo(a: int, b: List[str]):
+    def foo(a: int, b: list[str]):
         return f'{a}, {b[0]}'
 
     assert foo(1, ['bar', 'foobar']) == '1, bar'
@@ -921,7 +921,7 @@ def test_model_as_arg() -> None:
         y: int
 
     @validate_call(validate_return=True)
-    def f1(m1: Model1, m2: Model2) -> Tuple[Model1, Model2]:
+    def f1(m1: Model1, m2: Model2) -> tuple[Model1, Model2]:
         return (m1, m2.model_dump())  # type: ignore
 
     res = f1({'x': '1'}, {'y': '2'})  # type: ignore

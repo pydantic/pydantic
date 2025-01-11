@@ -8,7 +8,7 @@ from decimal import Decimal
 from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
-from typing import Annotated, Any, Generator, List, Optional, Pattern, Union
+from typing import Annotated, Any, Generator, Optional, Pattern, Union
 from uuid import UUID
 
 import pytest
@@ -492,10 +492,10 @@ def test_json_encoders_types() -> None:
 
     class A(BaseModel):
         a: MyEnum
-        b: List[int]
+        b: list[int]
         c: Decimal
         model_config = ConfigDict(
-            json_encoders={Enum: lambda val: val.name, List[int]: lambda val: 'list!', Decimal: lambda val: 'decimal!'}
+            json_encoders={Enum: lambda val: val.name, list[int]: lambda val: 'list!', Decimal: lambda val: 'decimal!'}
         )
 
     m = A(a=MyEnum.A, b=[1, 2, 3], c=Decimal('0'))

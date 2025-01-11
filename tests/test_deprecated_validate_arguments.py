@@ -1,7 +1,7 @@
 import asyncio
 import inspect
 from pathlib import Path
-from typing import Annotated, List
+from typing import Annotated
 
 import pytest
 from dirty_equals import IsInstance
@@ -238,7 +238,7 @@ def test_async():
 
 def test_string_annotation():
     @validate_arguments
-    def foo(a: 'List[int]', b: 'Path'):
+    def foo(a: 'list[int]', b: 'Path'):
         return f'a={a!r} b={b!r}'
 
     assert foo([1, 2, 3], '/')

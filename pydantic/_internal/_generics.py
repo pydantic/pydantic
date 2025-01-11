@@ -7,7 +7,7 @@ from collections import ChainMap
 from contextlib import contextmanager
 from contextvars import ContextVar
 from types import prepare_class
-from typing import TYPE_CHECKING, Any, Iterator, Mapping, MutableMapping, Tuple, TypeVar
+from typing import TYPE_CHECKING, Any, Iterator, Mapping, MutableMapping, TypeVar
 from weakref import WeakValueDictionary
 
 import typing_extensions
@@ -23,7 +23,7 @@ if sys.version_info >= (3, 10):
 if TYPE_CHECKING:
     from ..main import BaseModel
 
-GenericTypesCacheKey = Tuple[Any, Any, Tuple[Any, ...]]
+GenericTypesCacheKey = tuple[Any, Any, tuple[Any, ...]]
 
 # Note: We want to remove LimitedDict, but to do this, we'd need to improve the handling of generics caching.
 #   Right now, to handle recursive generics, we some types must remain cached for brief periods without references.
@@ -262,12 +262,12 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any] | None) -> Any:
 
     Example:
         ```python
-        from typing import List, Tuple, Union
+        from typing import List, Union
 
         from pydantic._internal._generics import replace_types
 
-        replace_types(Tuple[str, Union[List[str], float]], {str: int})
-        #> Tuple[int, Union[List[int], float]]
+        replace_types(tuple[str, Union[List[str], float]], {str: int})
+        #> tuple[int, Union[List[int], float]]
         ```
     """
     if not type_map:

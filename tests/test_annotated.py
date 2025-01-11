@@ -2,7 +2,7 @@ import datetime as dt
 import sys
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import Annotated, Any, Callable, Generic, Iterator, List, Optional, Set, TypeVar
+from typing import Annotated, Any, Callable, Generic, Iterator, Optional, Set, TypeVar
 
 import pytest
 import pytz
@@ -167,7 +167,7 @@ def test_annotated_alias() -> None:
     StrAlias = Annotated[str, Field(max_length=3)]
     IntAlias = Annotated[int, Field(default_factory=lambda: 2)]
 
-    Nested = Annotated[List[StrAlias], Field(description='foo')]
+    Nested = Annotated[list[StrAlias], Field(description='foo')]
 
     class MyModel(BaseModel):
         a: StrAlias = 'abc'
@@ -182,13 +182,13 @@ def test_annotated_alias() -> None:
         'b': 'FieldInfo(annotation=str, required=True, metadata=[MaxLen(max_length=3)])',
         'c': 'FieldInfo(annotation=int, required=False, default_factory=<lambda>)',
         'd': 'FieldInfo(annotation=int, required=False, default_factory=<lambda>)',
-        'e': "FieldInfo(annotation=List[Annotated[str, FieldInfo(annotation=NoneType, required=True, metadata=[MaxLen(max_length=3)])]], required=True, description='foo')",
+        'e': "FieldInfo(annotation=list[Annotated[str, FieldInfo(annotation=NoneType, required=True, metadata=[MaxLen(max_length=3)])]], required=True, description='foo')",
     }
     assert MyModel(b='def', e=['xyz']).model_dump() == dict(a='abc', b='def', c=2, d=2, e=['xyz'])
 
 
 def test_modify_get_schema_annotated() -> None:
-    calls: List[str] = []
+    calls: list[str] = []
 
     class CustomType:
         @classmethod
@@ -634,7 +634,7 @@ def test_utcoffset_validator_example_pattern() -> None:
 
 
 def test_incompatible_metadata_error() -> None:
-    ta = TypeAdapter(Annotated[List[int], Field(pattern='abc')])
+    ta = TypeAdapter(Annotated[list[int], Field(pattern='abc')])
     with pytest.raises(TypeError, match="Unable to apply constraint 'pattern'"):
         ta.validate_python([1, 2, 3])
 

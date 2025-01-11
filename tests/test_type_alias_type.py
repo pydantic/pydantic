@@ -1,6 +1,6 @@
 import datetime
 from dataclasses import dataclass
-from typing import Annotated, Dict, Generic, List, Literal, Sequence, Tuple, TypeVar, Union
+from typing import Annotated, Generic, Literal, Sequence, TypeVar, Union
 
 import pytest
 from annotated_types import MaxLen
@@ -10,11 +10,11 @@ from pydantic import BaseModel, Field, PydanticUserError, TypeAdapter, Validatio
 
 T = TypeVar('T')
 
-JsonType = TypeAliasType('JsonType', Union[List['JsonType'], Dict[str, 'JsonType'], str, int, float, bool, None])
+JsonType = TypeAliasType('JsonType', Union[list['JsonType'], dict[str, 'JsonType'], str, int, float, bool, None])
 RecursiveGenericAlias = TypeAliasType(
-    'RecursiveGenericAlias', List[Union['RecursiveGenericAlias[T]', T]], type_params=(T,)
+    'RecursiveGenericAlias', list[Union['RecursiveGenericAlias[T]', T]], type_params=(T,)
 )
-MyList = TypeAliasType('MyList', List[T], type_params=(T,))
+MyList = TypeAliasType('MyList', list[T], type_params=(T,))
 # try mixing with implicit type aliases
 ShortMyList = Annotated[MyList[T], MaxLen(1)]
 ShortRecursiveGenericAlias = Annotated[RecursiveGenericAlias[T], MaxLen(1)]
@@ -167,7 +167,7 @@ def test_type_alias_annotated() -> None:
 
 def test_type_alias_annotated_defs() -> None:
     # force use of refs by referencing the schema in multiple places
-    t = TypeAdapter(Tuple[ShortMyList[int], ShortMyList[int]])
+    t = TypeAdapter(tuple[ShortMyList[int], ShortMyList[int]])
 
     assert t.validate_python((['1'], ['2'])) == ([1], [2])
 
@@ -275,7 +275,7 @@ def test_recursive_generic_type_alias_annotated() -> None:
 
 def test_recursive_generic_type_alias_annotated_defs() -> None:
     # force use of refs by referencing the schema in multiple places
-    t = TypeAdapter(Tuple[ShortRecursiveGenericAlias[int], ShortRecursiveGenericAlias[int]])
+    t = TypeAdapter(tuple[ShortRecursiveGenericAlias[int], ShortRecursiveGenericAlias[int]])
 
     assert t.validate_python(([[]], [[]])) == ([[]], [[]])
 
@@ -356,7 +356,7 @@ def test_redefined_type_alias():
 def test_type_alias_to_type_with_ref():
     class Div(BaseModel):
         type: Literal['Div'] = 'Div'
-        components: List['AnyComponent']
+        components: list['AnyComponent']
 
     AnyComponent = TypeAliasType('AnyComponent', Div)
 
@@ -396,11 +396,11 @@ def test_intermediate_type_aliases() -> None:
 
 def test_intermediate_type_aliases_json_type() -> None:
     JSON = TypeAliasType('JSON', Union[str, int, bool, 'JSONSeq', 'JSONObj', None])
-    JSONObj = TypeAliasType('JSONObj', Dict[str, JSON])
-    JSONSeq = TypeAliasType('JSONSeq', List[JSON])
+    JSONObj = TypeAliasType('JSONObj', dict[str, JSON])
+    JSONSeq = TypeAliasType('JSONSeq', list[JSON])
     MyJSONAlias1 = TypeAliasType('MyJSONAlias1', JSON)
     MyJSONAlias2 = TypeAliasType('MyJSONAlias2', MyJSONAlias1)
-    JSONs = TypeAliasType('JSONs', List[MyJSONAlias2])
+    JSONs = TypeAliasType('JSONs', list[MyJSONAlias2])
 
     adapter = TypeAdapter(JSONs)
 
@@ -458,7 +458,7 @@ def test_nested_annotated_with_type_aliases_and_forward_ref() -> None:
 def test_nested_annotated_model_field() -> None:
     T = TypeVar('T')
 
-    InnerList = TypeAliasType('InnerList', Annotated[List[T], Field(alias='alias')], type_params=(T,))
+    InnerList = TypeAliasType('InnerList', Annotated[list[T], Field(alias='alias')], type_params=(T,))
     MyList = TypeAliasType('MyList', Annotated[InnerList[T], Field(deprecated=True)], type_params=(T,))
     MyIntList = TypeAliasType('MyIntList', MyList[int])
 
@@ -467,7 +467,7 @@ def test_nested_annotated_model_field() -> None:
 
     f1_info = Model.model_fields['f1']
 
-    assert f1_info.annotation == List[int]
+    assert f1_info.annotation == list[int]
     assert f1_info.alias == 'alias'
     assert f1_info.deprecated
     assert f1_info.json_schema_extra == {'extra': 'test'}

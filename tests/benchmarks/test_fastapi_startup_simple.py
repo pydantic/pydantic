@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from pathlib import Path
-from typing import Annotated, Any, Callable, Dict, List, Tuple
+from typing import Annotated, Any, Callable
 from uuid import UUID
 
 import pytest
@@ -74,7 +74,7 @@ def test_fastapi_startup_perf(benchmark: Callable[[Callable[[], Any]], None]):
             name: str
             description: str | None = None
 
-        ReviewGroup = List[Dict[Tuple[User, Product], Comment]]
+        ReviewGroup = list[dict[tuple[User, Product], Comment]]
 
         data_models = [
             User,

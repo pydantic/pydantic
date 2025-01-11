@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List
 
 import pytest
 from pydantic_core import CoreSchema
@@ -111,7 +111,7 @@ def test_model_validate_root():
 
 def test_parse_root_list():
     class MyModel(BaseModel):
-        root: List[str]
+        root: list[str]
 
         @model_validator(mode='before')
         @classmethod
@@ -141,7 +141,7 @@ def test_parse_nested_root_list():
         id: str
 
     class NestedModel(BaseModel):
-        root: List[NestedData]
+        root: list[NestedData]
 
         @model_validator(mode='before')
         @classmethod
@@ -174,7 +174,7 @@ def test_parse_nested_root_tuple():
         id: str
 
     class NestedModel(BaseModel):
-        root: Tuple[int, NestedData]
+        root: tuple[int, NestedData]
 
         @model_validator(mode='before')
         @classmethod
@@ -194,7 +194,7 @@ def test_parse_nested_root_tuple():
             return json_schema['properties']['root']
 
     class MyModel(BaseModel):
-        nested: List[NestedModel]
+        nested: list[NestedModel]
 
     data = [0, {'id': 'foo'}]
     m = MyModel.model_validate({'nested': [data]})
@@ -207,7 +207,7 @@ def test_parse_nested_root_tuple():
 
 def test_parse_nested_custom_root():
     class NestedModel(BaseModel):
-        root: List[str]
+        root: list[str]
 
         @model_validator(mode='before')
         @classmethod

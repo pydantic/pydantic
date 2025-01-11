@@ -3,7 +3,7 @@
 from __future__ import annotations as _annotations
 
 from re import Pattern
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Literal, Type, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, Literal, TypeVar, Union
 
 from typing_extensions import TypeAlias, TypedDict
 
@@ -18,14 +18,14 @@ if TYPE_CHECKING:
 __all__ = ('ConfigDict', 'with_config')
 
 
-JsonValue: TypeAlias = Union[int, float, str, bool, None, List['JsonValue'], 'JsonDict']
-JsonDict: TypeAlias = Dict[str, JsonValue]
+JsonValue: TypeAlias = Union[int, float, str, bool, None, list['JsonValue'], 'JsonDict']
+JsonDict: TypeAlias = dict[str, JsonValue]
 
 JsonEncoder = Callable[[Any], Any]
 
 JsonSchemaExtraCallable: TypeAlias = Union[
     Callable[[JsonDict], None],
-    Callable[[JsonDict, Type[Any]], None],
+    Callable[[JsonDict, type[Any]], None],
 ]
 
 ExtraValues = Literal['allow', 'ignore', 'forbid']
@@ -121,13 +121,11 @@ class ConfigDict(TypedDict, total=False):
       By default, no validation will be applied to these extra items, but you can set a type for the values by overriding
       the type annotation for `__pydantic_extra__`:
       ```python
-      from typing import Dict
-
       from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 
       class Model(BaseModel):
-          __pydantic_extra__: Dict[str, int] = Field(init=False)  # (1)!
+          __pydantic_extra__: dict[str, int] = Field(init=False)  # (1)!
 
           x: int
 
@@ -473,15 +471,13 @@ class ConfigDict(TypedDict, total=False):
     By default, model and dataclass instances are not revalidated during validation.
 
     ```python
-    from typing import List
-
     from pydantic import BaseModel
 
     class User(BaseModel, revalidate_instances='never'):  # (1)!
-        hobbies: List[str]
+        hobbies: list[str]
 
     class SubUser(User):
-        sins: List[str]
+        sins: list[str]
 
     class Transaction(BaseModel):
         user: User
@@ -510,15 +506,13 @@ class ConfigDict(TypedDict, total=False):
     in the model's config.
 
     ```python
-    from typing import List
-
     from pydantic import BaseModel, ValidationError
 
     class User(BaseModel, revalidate_instances='always'):  # (1)!
-        hobbies: List[str]
+        hobbies: list[str]
 
     class SubUser(User):
-        sins: List[str]
+        sins: list[str]
 
     class Transaction(BaseModel):
         user: User
@@ -553,15 +547,13 @@ class ConfigDict(TypedDict, total=False):
     of subclasses of the model.
 
     ```python
-    from typing import List
-
     from pydantic import BaseModel
 
     class User(BaseModel, revalidate_instances='subclass-instances'):  # (1)!
-        hobbies: List[str]
+        hobbies: list[str]
 
     class SubUser(User):
-        sins: List[str]
+        sins: list[str]
 
     class Transaction(BaseModel):
         user: User

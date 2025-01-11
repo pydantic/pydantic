@@ -14,10 +14,8 @@ from typing import (
     Any,
     Callable,
     ClassVar,
-    Dict,
     Final,
     Generic,
-    List,
     Literal,
     Mapping,
     Optional,
@@ -617,7 +615,7 @@ def test_frozen_with_unhashable_fields_are_not_hashable():
     class TestModel(BaseModel):
         model_config = ConfigDict(frozen=True)
         a: int = 10
-        y: List[int] = [1, 2, 3]
+        y: list[int] = [1, 2, 3]
 
     m = TestModel()
     with pytest.raises(TypeError) as exc_info:
@@ -702,7 +700,7 @@ def test_hash_method_is_inherited_for_frozen_models():
             return hash(id(self))
 
     class MySubClass(MyBaseModel):
-        x: Dict[str, int]
+        x: dict[str, int]
 
         @lru_cache(maxsize=None)
         def cached_method(self):
@@ -899,7 +897,7 @@ def test_set_tuple_values():
 
 def test_default_copy():
     class User(BaseModel):
-        friends: List[int] = Field(default_factory=lambda: [])
+        friends: list[int] = Field(default_factory=lambda: [])
 
     u1 = User()
     u2 = User()
@@ -954,7 +952,7 @@ def test_arbitrary_types_not_allowed():
 @pytest.fixture(scope='session', name='TypeTypeModel')
 def type_type_model_fixture():
     class TypeTypeModel(BaseModel):
-        t: Type[ArbitraryType]
+        t: type[ArbitraryType]
 
     return TypeTypeModel
 
@@ -1293,7 +1291,7 @@ def test_model_export_nested_list(exclude, expected, raises_match):
 
     class Bar(BaseModel):
         c: int
-        foos: List[Foo]
+        foos: list[Foo]
 
     m = Bar(c=3, foos=[Foo(a=1, b=2), Foo(a=3, b=4)])
 
@@ -1325,7 +1323,7 @@ def test_model_export_nested_list(exclude, expected, raises_match):
 def test_model_export_dict_exclusion(excludes, expected):
     class Foo(BaseModel):
         a: int = 1
-        bars: List[Dict[str, int]]
+        bars: list[dict[str, int]]
 
     m = Foo(a=1, bars=[{'w': 0, 'x': 1}, {'y': 2}, {'w': -1, 'z': 3}])
 
@@ -1340,7 +1338,7 @@ def test_field_exclude():
         id: int
         username: str
         password: SecretStr = Field(exclude=True)
-        hobbies: List[str]
+        hobbies: list[str]
 
     my_user = User(id=42, username='JohnDoe', password='hashedpassword', hobbies=['scuba diving'])
 
@@ -1352,7 +1350,7 @@ def test_field_exclude():
 
 def test_revalidate_instances_never():
     class User(BaseModel):
-        hobbies: List[str]
+        hobbies: list[str]
 
     my_user = User(hobbies=['scuba diving'])
 
@@ -1365,7 +1363,7 @@ def test_revalidate_instances_never():
     assert t.user.hobbies is my_user.hobbies
 
     class SubUser(User):
-        sins: List[str]
+        sins: list[str]
 
     my_sub_user = SubUser(hobbies=['scuba diving'], sins=['lying'])
 
@@ -1377,7 +1375,7 @@ def test_revalidate_instances_never():
 
 def test_revalidate_instances_sub_instances():
     class User(BaseModel, revalidate_instances='subclass-instances'):
-        hobbies: List[str]
+        hobbies: list[str]
 
     my_user = User(hobbies=['scuba diving'])
 
@@ -1390,7 +1388,7 @@ def test_revalidate_instances_sub_instances():
     assert t.user.hobbies is my_user.hobbies
 
     class SubUser(User):
-        sins: List[str]
+        sins: list[str]
 
     my_sub_user = SubUser(hobbies=['scuba diving'], sins=['lying'])
 
@@ -1403,7 +1401,7 @@ def test_revalidate_instances_sub_instances():
 
 def test_revalidate_instances_always():
     class User(BaseModel, revalidate_instances='always'):
-        hobbies: List[str]
+        hobbies: list[str]
 
     my_user = User(hobbies=['scuba diving'])
 
@@ -1416,7 +1414,7 @@ def test_revalidate_instances_always():
     assert t.user.hobbies is not my_user.hobbies
 
     class SubUser(User):
-        sins: List[str]
+        sins: list[str]
 
     my_sub_user = SubUser(hobbies=['scuba diving'], sins=['lying'])
 
@@ -1433,7 +1431,7 @@ def test_revalidate_instances_always_list_of_model_instance():
         name: str
 
     class B(BaseModel):
-        list_a: List[A]
+        list_a: list[A]
 
     a = A(name='a')
     b = B(list_a=[a])
@@ -1486,7 +1484,7 @@ def test_model_export_exclusion_with_fields_and_config(kinds, exclude, expected)
         ParentConfig.fields = {'b': {'exclude': ...}, 'd': {'exclude': {'a'}}}
 
     class Sub(BaseModel):
-        a: List[int] = Field([3, 4, 5], exclude={1} if 'sub_fields' in kinds else None)
+        a: list[int] = Field([3, 4, 5], exclude={1} if 'sub_fields' in kinds else None)
         b: int = Field(4, exclude=... if 'sub_fields' in kinds else None)
         c: str = 'foobar'
 
@@ -1754,7 +1752,7 @@ def test_default_factory_validate_children():
         x: int
 
     class Parent(BaseModel):
-        children: List[Child] = Field(default_factory=list)
+        children: list[Child] = Field(default_factory=list)
 
     Parent(children=[{'x': 1}, {'x': 2}])
     with pytest.raises(ValidationError) as exc_info:
@@ -1800,7 +1798,7 @@ def test_default_factory_validated_data_arg() -> None:
 
 
 def test_default_factory_validated_data_arg_not_required() -> None:
-    def fac(data: Optional[Dict[str, Any]] = None):
+    def fac(data: Optional[dict[str, Any]] = None):
         if data is not None:
             return data['a']
         return 3
@@ -1913,7 +1911,7 @@ def test_mapping_subclass_as_input():
 
 def test_typing_coercion_dict():
     class Model(BaseModel):
-        x: Dict[str, int]
+        x: dict[str, int]
 
     m = Model(x={'one': 1, 'two': 2})
     assert repr(m) == "Model(x={'one': 1, 'two': 2})"
@@ -1923,7 +1921,7 @@ KT = TypeVar('KT')
 VT = TypeVar('VT')
 
 
-class MyDict(Dict[KT, VT]):
+class MyDict(dict[KT, VT]):
     def __repr__(self):
         return f'MyDict({super().__repr__()})'
 
@@ -2557,7 +2555,7 @@ def test_model_validate_list_strict() -> None:
     # for sequence like types. See: https://github.com/pydantic/pydantic/issues/8930
 
     class LaxModel(BaseModel):
-        x: List[str]
+        x: list[str]
         model_config = ConfigDict(strict=False)
 
     assert LaxModel.model_validate_json(json.dumps({'x': ('a', 'b', 'c')}), strict=None) == LaxModel(x=('a', 'b', 'c'))
@@ -2602,7 +2600,7 @@ def test_model_validate_json_strict() -> None:
 
 
 def test_validate_python_context() -> None:
-    contexts: List[Any] = [None, None, {'foo': 'bar'}]
+    contexts: list[Any] = [None, None, {'foo': 'bar'}]
 
     class Model(BaseModel):
         x: int
@@ -2619,7 +2617,7 @@ def test_validate_python_context() -> None:
 
 
 def test_validate_json_context() -> None:
-    contexts: List[Any] = [None, None, {'foo': 'bar'}]
+    contexts: list[Any] = [None, None, {'foo': 'bar'}]
 
     class Model(BaseModel):
         x: int
@@ -2691,7 +2689,7 @@ def test_equality_delegation():
 
 def test_recursion_loop_error():
     class Model(BaseModel):
-        x: List['Model']
+        x: list['Model']
 
     data = {'x': []}
     data['x'].append(data)
@@ -2771,7 +2769,7 @@ def test_nested_types_ignored():
             pass
 
         # You can still store such types on the class by annotating as a ClassVar
-        MyType: ClassVar[Type[Any]] = NonNestedType
+        MyType: ClassVar[type[Any]] = NonNestedType
 
         # For documentation: you _can_ give multiple names to a nested type and it won't error:
         # It might be better if it did, but this seems to be rare enough that I'm not concerned
@@ -2890,7 +2888,7 @@ def test_model_validate_strings(field_type, input_value, expected, raises_match,
 @pytest.mark.parametrize('strict', [True, False])
 def test_model_validate_strings_dict(strict):
     class Model(BaseModel):
-        x: Dict[int, date]
+        x: dict[int, date]
 
     assert Model.model_validate_strings({'x': {'1': '2017-01-01', '2': '2017-01-02'}}, strict=strict).x == {
         1: date(2017, 1, 1),
@@ -3016,7 +3014,7 @@ def test_extra_validator_scalar() -> None:
         model_config = ConfigDict(extra='allow')
 
     class Child(Model):
-        __pydantic_extra__: Dict[str, int]
+        __pydantic_extra__: dict[str, int]
 
     m = Child(a='1')
     assert m.__pydantic_extra__ == {'a': 1}
@@ -3033,7 +3031,7 @@ def test_extra_validator_scalar() -> None:
 def test_extra_validator_field() -> None:
     class Model(BaseModel, extra='allow'):
         # use Field(init=False) to ensure this is not treated as a field by dataclass_transform
-        __pydantic_extra__: Dict[str, int] = Field(init=False)
+        __pydantic_extra__: dict[str, int] = Field(init=False)
 
     m = Model(a='1')
     assert m.__pydantic_extra__ == {'a': 1}

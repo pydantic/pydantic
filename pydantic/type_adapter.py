@@ -137,10 +137,8 @@ class TypeAdapter(Generic[T]):
         For example, take the following:
 
         ```python {title="a.py"}
-        from typing import Dict, List
-
-        IntList = List[int]
-        OuterDict = Dict[str, 'IntList']
+        IntList = list[int]
+        OuterDict = dict[str, 'IntList']
         ```
 
         ```python {test="skip" title="b.py"}

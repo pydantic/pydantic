@@ -23,12 +23,12 @@ class PlainSerializer:
     Consider an input of `list`, which will be serialized into a space-delimited string.
 
     ```python
-    from typing import Annotated, List
+    from typing import Annotated
 
     from pydantic import BaseModel, PlainSerializer
 
     CustomStr = Annotated[
-        List, PlainSerializer(lambda x: ' '.join(x), return_type=str)
+        list, PlainSerializer(lambda x: ' '.join(x), return_type=str)
     ]
 
     class StudentModel(BaseModel):
@@ -91,7 +91,7 @@ class WrapSerializer:
 
     ```python
     from datetime import datetime, timezone
-    from typing import Annotated, Any, Dict
+    from typing import Annotated, Any
 
     from pydantic import BaseModel, WrapSerializer
 
@@ -99,7 +99,7 @@ class WrapSerializer:
         start: datetime
         end: datetime
 
-    def convert_to_utc(value: Any, handler, info) -> Dict[str, datetime]:
+    def convert_to_utc(value: Any, handler, info) -> dict[str, datetime]:
         # Note that `handler` can actually help serialize the `value` for
         # further custom serialization in case it's a subclass.
         partial_result = handler(value, info)

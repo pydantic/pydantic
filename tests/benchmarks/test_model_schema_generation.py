@@ -1,12 +1,9 @@
 from typing import (
     Annotated,
     Any,
-    Dict,
     Generic,
-    List,
     Literal,
     Optional,
-    Type,
     TypeVar,
     Union,
     get_origin,
@@ -62,8 +59,8 @@ def test_simple_model_schema_lots_of_fields_generation(benchmark) -> None:
 def test_nested_model_schema_generation(benchmark) -> None:
     class NestedModel(BaseModel):
         field1: str
-        field2: List[int]
-        field3: Dict[str, float]
+        field2: list[int]
+        field3: dict[str, float]
 
     class OuterModel(DeferredModel):
         nested: NestedModel
@@ -76,8 +73,8 @@ def test_nested_model_schema_generation(benchmark) -> None:
 def test_complex_model_schema_generation(benchmark) -> None:
     class ComplexModel(DeferredModel):
         field1: Union[str, int, float]
-        field2: List[Dict[str, Union[int, float]]]
-        field3: Optional[List[Union[str, int]]]
+        field2: list[dict[str, Union[int, float]]]
+        field3: Optional[list[Union[str, int]]]
 
     benchmark(rebuild_model, ComplexModel)
 
@@ -86,7 +83,7 @@ def test_complex_model_schema_generation(benchmark) -> None:
 def test_recursive_model_schema_generation(benchmark) -> None:
     class RecursiveModel(DeferredModel):
         name: str
-        children: Optional[List['RecursiveModel']] = None
+        children: Optional[list['RecursiveModel']] = None
 
     benchmark(rebuild_model, RecursiveModel)
 
@@ -125,7 +122,7 @@ def test_lots_of_models_with_lots_of_fields(benchmark):
 
     class RecursiveModel(BaseModel):
         name: str
-        children: Optional[List['RecursiveModel']] = None
+        children: Optional[list['RecursiveModel']] = None
 
     class Address(BaseModel):
         street: Annotated[str, Field(max_length=100)]
@@ -139,13 +136,13 @@ def test_lots_of_models_with_lots_of_fields(benchmark):
 
     class Company(BaseModel):
         name: Annotated[str, Field(min_length=1)]
-        employees: Annotated[List[Person], Field(min_length=1)]
+        employees: Annotated[list[Person], Field(min_length=1)]
 
     class Product(BaseModel):
         id: Annotated[int, Field(ge=1)]
         name: Annotated[str, Field(min_length=1)]
         price: Annotated[float, Field(ge=0)]
-        metadata: Dict[str, str]
+        metadata: dict[str, str]
 
     # Repeat the pattern for other models up to Model_99
     models: list[type[BaseModel]] = []
@@ -156,11 +153,11 @@ def test_lots_of_models_with_lots_of_fields(benchmark):
         field_types = [
             Annotated[int, Field(ge=0, le=1000)],
             Annotated[str, Field(max_length=50)],
-            Annotated[List[int], Field(min_length=1, max_length=10)],
+            Annotated[list[int], Field(min_length=1, max_length=10)],
             int,
             str,
-            List[int],
-            Dict[str, Union[str, int]],
+            list[int],
+            dict[str, Union[str, int]],
             GenericModel[int],
             RecursiveModel,
             Address,
@@ -170,8 +167,8 @@ def test_lots_of_models_with_lots_of_fields(benchmark):
             Union[
                 int,
                 str,
-                List[str],
-                Dict[str, int],
+                list[str],
+                dict[str, int],
                 GenericModel[str],
                 RecursiveModel,
                 Address,
@@ -191,7 +188,7 @@ def test_lots_of_models_with_lots_of_fields(benchmark):
         model_name = f'Model_{i}'
         models.append(create_model(model_name, __config__={'defer_build': True}, **model_fields))
 
-    def rebuild_models(models: List[Type[BaseModel]]) -> None:
+    def rebuild_models(models: list[type[BaseModel]]) -> None:
         for model in models:
             rebuild_model(model)
 

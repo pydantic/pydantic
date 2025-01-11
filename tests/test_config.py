@@ -4,7 +4,7 @@ import sys
 from contextlib import nullcontext as does_not_raise
 from decimal import Decimal
 from inspect import signature
-from typing import Annotated, Any, ContextManager, Dict, Iterable, NamedTuple, Optional, Type, Union
+from typing import Annotated, Any, ContextManager, Iterable, NamedTuple, Optional, Union
 
 import pytest
 from dirty_equals import HasRepr, IsPartialDict
@@ -199,7 +199,7 @@ class TestsBaseConfig:
         assert m.model_dump() == {'_foo': 'field'}
 
     def test_base_config_parse_model_with_strict_config_disabled(
-        self, BaseConfigModelWithStrictConfig: Type[BaseModel]
+        self, BaseConfigModelWithStrictConfig: type[BaseModel]
     ) -> None:
         class Model(BaseConfigModelWithStrictConfig):
             model_config = ConfigDict(strict=False)
@@ -575,8 +575,6 @@ def test_config_defaults_match():
 
 
 def test_config_is_not_inherited_in_model_fields():
-    from typing import List
-
     from pydantic import BaseModel, ConfigDict
 
     class Inner(BaseModel):
@@ -586,7 +584,7 @@ def test_config_is_not_inherited_in_model_fields():
         # this cause the inner model incorrectly dumpped:
         model_config = ConfigDict(str_to_lower=True)
 
-        x: List[str]  # should be converted to lower
+        x: list[str]  # should be converted to lower
         inner: Inner  # should not have fields converted to lower
 
     m = Outer.model_validate(dict(x=['Abc'], inner=dict(a='Def')))
@@ -797,7 +795,7 @@ def test_config_model_type_adapter_defer_build(defer_build: bool, generate_schem
 def test_config_plain_type_adapter_defer_build(defer_build: bool, generate_schema_calls: CallCounter):
     config = ConfigDict(defer_build=defer_build)
 
-    ta = TypeAdapter(Dict[str, int], config=config)
+    ta = TypeAdapter(dict[str, int], config=config)
 
     assert generate_schema_calls.count == (0 if defer_build else 1)
     generate_schema_calls.reset()

@@ -5,7 +5,7 @@ import pickle
 import sys
 import time
 from copy import copy, deepcopy
-from typing import Annotated, Callable, Dict, Generic, List, Literal, NewType, Tuple, TypeVar, Union
+from typing import Annotated, Callable, Generic, List, Literal, NewType, TypeVar, Union
 
 import pytest
 from dirty_equals import IsList
@@ -71,10 +71,10 @@ class LoggedVar(Generic[T]):
         (list, 'list'),
         (List, 'List'),
         ([1, 2, 3], 'list'),
-        (List[Dict[str, int]], 'List[Dict[str, int]]'),
-        (Tuple[str, int, float], 'Tuple[str, int, float]'),
-        (Tuple[str, ...], 'Tuple[str, ...]'),
-        (Union[int, List[str], Tuple[str, int]], 'Union[int, List[str], Tuple[str, int]]'),
+        (list[dict[str, int]], 'list[dict[str, int]]'),
+        (tuple[str, int, float], 'tuple[str, int, float]'),
+        (tuple[str, ...], 'tuple[str, ...]'),
+        (Union[int, list[str], tuple[str, int]], 'Union[int, list[str], tuple[str, int]]'),
         (foobar, 'foobar'),
         (time.time_ns, 'time_ns'),
         (LoggedVar, 'LoggedVar'),
@@ -96,12 +96,12 @@ def test_display_as_type(value, expected):
         (lambda: list, 'list'),
         (lambda: List, 'List'),
         (lambda: list[int], 'list[int]'),
-        (lambda: List[int], 'List[int]'),
+        (lambda: list[int], 'list[int]'),
         (lambda: list[dict[str, int]], 'list[dict[str, int]]'),
         (lambda: list[Union[str, int]], 'list[Union[str, int]]'),
         (lambda: list[str | int], 'list[Union[str, int]]'),
         (lambda: LoggedVar[int], 'LoggedVar[int]'),
-        (lambda: LoggedVar[Dict[int, str]], 'LoggedVar[Dict[int, str]]'),
+        (lambda: LoggedVar[dict[int, str]], 'LoggedVar[dict[int, str]]'),
     ],
 )
 def test_display_as_type_310(value_gen, expected):
@@ -264,7 +264,7 @@ def test_is_new_type():
 def test_pretty():
     class MyTestModel(BaseModel):
         a: int = 1
-        b: List[int] = [1, 2, 3]
+        b: list[int] = [1, 2, 3]
 
     m = MyTestModel()
     assert m.__repr_name__() == 'MyTestModel'
@@ -310,7 +310,7 @@ def test_pretty_color():
 def test_devtools_output():
     class MyTestModel(BaseModel):
         a: int = 1
-        b: List[int] = [1, 2, 3]
+        b: list[int] = [1, 2, 3]
 
     assert devtools.pformat(MyTestModel()) == 'MyTestModel(\n    a=1,\n    b=[1, 2, 3],\n)'
 
@@ -436,8 +436,8 @@ T = TypeVar('T')
     [
         (Annotated[int, 10] if Annotated else None, Annotated),
         (Callable[[], T][int], collections.abc.Callable),
-        (Dict[str, int], dict),
-        (List[str], list),
+        (dict[str, int], dict),
+        (list[str], list),
         (Union[int, str], Union),
         (int, None),
     ],

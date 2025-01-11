@@ -3,7 +3,7 @@ import sys
 from dataclasses import dataclass
 from enum import Enum, IntEnum
 from types import SimpleNamespace
-from typing import Annotated, Any, Callable, Generic, List, Literal, Optional, Sequence, TypeVar, Union
+from typing import Annotated, Any, Callable, Generic, Literal, Optional, Sequence, TypeVar, Union
 
 import pytest
 from dirty_equals import HasRepr, IsStr
@@ -870,7 +870,7 @@ def test_invalid_list_discriminated_union_type():
 
         class Model(BaseModel):
             # Note: `int`/`str` is invalid but we just want to test the `list` error message:
-            pets: List[Union[int, str]] = Field(discriminator='pet_type')
+            pets: list[Union[int, str]] = Field(discriminator='pet_type')
 
 
 def test_invalid_alias() -> None:
@@ -1816,7 +1816,7 @@ def test_presence_of_discriminator_when_generating_type_adaptor_json_schema_defi
 
     class CreateObjectDto(BaseModel):
         id: int
-        items: List[
+        items: list[
             Annotated[
                 Union[
                     CreateItem1,
@@ -1884,7 +1884,7 @@ def test_nested_discriminator() -> None:
 
     class MyModel(BaseModel):
         type: Literal['mixed']
-        sub_models: List['SubModel']
+        sub_models: list['SubModel']
         steps: Union[Step_A, Step_B] = Field(
             default=None,
             discriminator='type',
@@ -2104,12 +2104,12 @@ def test_discriminated_union_with_unsubstituted_type_var() -> None:
 
     class Dog(BaseModel, Generic[T]):
         type_: Literal['dog']
-        friends: List['GenericPet']
+        friends: list['GenericPet']
         id: T
 
     class Cat(BaseModel, Generic[T]):
         type_: Literal['cat']
-        friends: List['GenericPet']
+        friends: list['GenericPet']
         id: T
 
     GenericPet = Annotated[Union[Dog[T], Cat[T]], Field(discriminator='type_')]

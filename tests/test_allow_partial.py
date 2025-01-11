@@ -1,4 +1,4 @@
-from typing import Annotated, Dict, List, Tuple
+from typing import Annotated
 
 import pytest
 from annotated_types import Ge
@@ -29,7 +29,7 @@ def test_typed_dict(mode, value, expected):
     class Foobar(TypedDict, total=False):
         a: int
         b: str
-        c: Tuple[int, str]
+        c: tuple[int, str]
 
     ta = TypeAdapter(Foobar)
     if mode == 'python':
@@ -59,7 +59,7 @@ def test_typed_dict(mode, value, expected):
     ],
 )
 def test_list(mode, value, expected):
-    ta = TypeAdapter(List[Annotated[int, Ge(10)]])
+    ta = TypeAdapter(list[Annotated[int, Ge(10)]])
     if mode == 'python':
         if isinstance(expected, Err):
             with pytest.raises(ValidationError, match=expected.message):
@@ -75,7 +75,7 @@ def test_list(mode, value, expected):
 
 
 def test_dict():
-    ta = TypeAdapter(Dict[str, Annotated[int, Ge(10)]])
+    ta = TypeAdapter(dict[str, Annotated[int, Ge(10)]])
     eap = dict(experimental_allow_partial=True)
 
     assert ta.validate_python({'a': 10, 'b': 20, 'c': 30}, **eap) == {'a': 10, 'b': 20, 'c': 30}

@@ -1,5 +1,5 @@
 from dataclasses import asdict, is_dataclass
-from typing import Any, List
+from typing import Any
 
 import pytest
 from dirty_equals import HasRepr
@@ -24,17 +24,17 @@ def test_simple():
 def test_validate_before():
     @dataclass
     class MyDataclass:
-        a: List[int]
+        a: list[int]
 
         @field_validator('a', mode='before')
         @classmethod
-        def check_a1(cls, v: List[Any]) -> List[Any]:
+        def check_a1(cls, v: list[Any]) -> list[Any]:
             v.append('123')
             return v
 
         @field_validator('a')
         @classmethod
-        def check_a2(cls, v: List[int]) -> List[int]:
+        def check_a2(cls, v: list[int]) -> list[int]:
             v.append(456)
             return v
 

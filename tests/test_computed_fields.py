@@ -2,7 +2,7 @@ import random
 import sys
 from abc import ABC, abstractmethod
 from functools import cached_property, lru_cache, singledispatchmethod
-from typing import Any, Callable, ClassVar, Generic, List, Tuple, TypeVar
+from typing import Any, Callable, ClassVar, Generic, TypeVar
 
 import pytest
 from pydantic_core import ValidationError, core_schema
@@ -290,11 +290,11 @@ def test_include_exclude():
         y: int
 
         @computed_field
-        def x_list(self) -> List[int]:
+        def x_list(self) -> list[int]:
             return [self.x, self.x + 1]
 
         @computed_field
-        def y_list(self) -> List[int]:
+        def y_list(self) -> list[int]:
             return [self.y, self.y + 1, self.y + 2]
 
     m = Model(x=1, y=2)
@@ -330,7 +330,7 @@ def test_expected_type():
         y: int
 
         @computed_field
-        def x_list(self) -> List[int]:
+        def x_list(self) -> list[int]:
             return [self.x, self.x + 1]
 
         @computed_field
@@ -349,7 +349,7 @@ def test_expected_type_wrong():
         x: int
 
         @computed_field
-        def x_list(self) -> List[int]:
+        def x_list(self) -> list[int]:
             return 'not a list'
 
     m = Model(x=1)
@@ -533,7 +533,7 @@ def test_abstractmethod():
         (BaseModel,),
     ],
 )
-def test_abstractmethod_missing(bases: Tuple[Any, ...]):
+def test_abstractmethod_missing(bases: tuple[Any, ...]):
     class AbstractSquare(*bases):
         side: float
 

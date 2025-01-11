@@ -13,10 +13,8 @@ from typing import (
     Any,
     Callable,
     ClassVar,
-    Dict,
     FrozenSet,
     Generic,
-    List,
     Literal,
     Optional,
     Set,
@@ -544,7 +542,7 @@ def test_default_factory_field(field_constructor: Callable):
     @pydantic.dataclasses.dataclass
     class User:
         id: int
-        other: Dict[str, str] = field_constructor(default_factory=lambda: {'John': 'Joey'})
+        other: dict[str, str] = field_constructor(default_factory=lambda: {'John': 'Joey'})
 
     user = User(id=123)
 
@@ -578,7 +576,7 @@ def test_schema():
     class User:
         id: int
         name: str = 'John Doe'
-        aliases: Dict[str, str] = dataclasses.field(default_factory=lambda: {'John': 'Joey'})
+        aliases: dict[str, str] = dataclasses.field(default_factory=lambda: {'John': 'Joey'})
         signup_ts: datetime = None
         age: Optional[int] = dataclasses.field(
             default=None, metadata=dict(title='The age of the user', description='do not lie!')
@@ -1820,7 +1818,7 @@ def test_extra_forbid_list_no_error():
 
     @pydantic.dataclasses.dataclass
     class Foo:
-        a: List[Bar]
+        a: list[Bar]
 
     assert isinstance(Foo(a=[Bar()]).a[0], Bar)
 
@@ -2003,7 +2001,7 @@ def test_validator_info_field_name_data_before():
     ],
     ids=['pydantic', 'stdlib'],
 )
-def test_inheritance_replace(decorator1: Callable[[Any], Any], expected_parent: List[str], expected_child: List[str]):
+def test_inheritance_replace(decorator1: Callable[[Any], Any], expected_parent: list[str], expected_child: list[str]):
     """We promise that if you add a validator
     with the same _function_ name as an existing validator
     it replaces the existing validator and is run instead of it.
@@ -2011,23 +2009,23 @@ def test_inheritance_replace(decorator1: Callable[[Any], Any], expected_parent: 
 
     @decorator1
     class Parent:
-        a: List[str]
+        a: list[str]
 
         @field_validator('a')
         @classmethod
-        def parent_val_before(cls, v: List[str]):
+        def parent_val_before(cls, v: list[str]):
             v.append('parent before')
             return v
 
         @field_validator('a')
         @classmethod
-        def val(cls, v: List[str]):
+        def val(cls, v: list[str]):
             v.append('parent')
             return v
 
         @field_validator('a')
         @classmethod
-        def parent_val_after(cls, v: List[str]):
+        def parent_val_after(cls, v: list[str]):
             v.append('parent after')
             return v
 
@@ -2035,19 +2033,19 @@ def test_inheritance_replace(decorator1: Callable[[Any], Any], expected_parent: 
     class Child(Parent):
         @field_validator('a')
         @classmethod
-        def child_val_before(cls, v: List[str]):
+        def child_val_before(cls, v: list[str]):
             v.append('child before')
             return v
 
         @field_validator('a')
         @classmethod
-        def val(cls, v: List[str]):
+        def val(cls, v: list[str]):
             v.append('child')
             return v
 
         @field_validator('a')
         @classmethod
-        def child_val_after(cls, v: List[str]):
+        def child_val_after(cls, v: list[str]):
             v.append('child after')
             return v
 
@@ -2233,7 +2231,6 @@ def test_recursive_dataclasses_gh_4509(create_module) -> None:
     @create_module
     def module():
         import dataclasses
-        from typing import List
 
         import pydantic
 
@@ -2243,7 +2240,7 @@ def test_recursive_dataclasses_gh_4509(create_module) -> None:
 
         @dataclasses.dataclass
         class Cook:
-            recipes: List[Recipe]
+            recipes: list[Recipe]
 
         @pydantic.dataclasses.dataclass
         class Foo(Cook):

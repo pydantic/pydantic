@@ -298,14 +298,14 @@ When generic parameters are provided, the appropriate validation is applied to t
 Handled the same as `tuple` above.
 
 ```python
-from typing import Optional, Tuple
+from typing import Optional
 
 from pydantic import BaseModel
 
 
 class Model(BaseModel):
     simple_tuple: Optional[tuple] = None
-    tuple_of_different_types: Optional[Tuple[int, float, bool]] = None
+    tuple_of_different_types: Optional[tuple[int, float, bool]] = None
 
 
 print(Model(simple_tuple=[1, 2, 3, 4]).simple_tuple)

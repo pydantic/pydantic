@@ -623,7 +623,9 @@ for more details.
 
 ```python
 import json
-from typing import Annotated, TypeAlias
+from typing import Annotated
+
+from typing_extensions import TypeAlias
 
 from pydantic import Field, TypeAdapter
 

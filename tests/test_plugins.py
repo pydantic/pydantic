@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import contextlib
 from functools import partial
-from typing import Any, Generator, List
+from typing import Any, Generator
 
 from pydantic_core import ValidationError
 
@@ -334,14 +334,14 @@ def test_plugin_path_type_adapter() -> None:
 
     class Plugin:
         def new_schema_validator(self, schema, schema_type, schema_type_path, schema_kind, config, plugin_settings):
-            assert str(schema_type) == 'typing.List[str]'
-            assert schema_type_path == SchemaTypePath('tests.test_plugins', 'typing.List[str]')
+            assert str(schema_type) == 'list[str]'
+            assert schema_type_path == SchemaTypePath('tests.test_plugins', 'list[str]')
             assert schema_kind == 'TypeAdapter'
             return CustomOnValidatePython(), None, None
 
     plugin = Plugin()
     with install_plugin(plugin):
-        adapter = TypeAdapter(List[str])
+        adapter = TypeAdapter(list[str])
         adapter.validate_python(['a', 'b'])
 
 
@@ -351,14 +351,14 @@ def test_plugin_path_type_adapter_with_module() -> None:
 
     class Plugin:
         def new_schema_validator(self, schema, schema_type, schema_type_path, schema_kind, config, plugin_settings):
-            assert str(schema_type) == 'typing.List[str]'
-            assert schema_type_path == SchemaTypePath('provided_module_by_type_adapter', 'typing.List[str]')
+            assert str(schema_type) == 'list[str]'
+            assert schema_type_path == SchemaTypePath('provided_module_by_type_adapter', 'list[str]')
             assert schema_kind == 'TypeAdapter'
             return CustomOnValidatePython(), None, None
 
     plugin = Plugin()
     with install_plugin(plugin):
-        TypeAdapter(List[str], module='provided_module_by_type_adapter')
+        TypeAdapter(list[str], module='provided_module_by_type_adapter')
 
 
 def test_plugin_path_type_adapter_without_name_in_globals() -> None:
@@ -367,18 +367,16 @@ def test_plugin_path_type_adapter_without_name_in_globals() -> None:
 
     class Plugin:
         def new_schema_validator(self, schema, schema_type, schema_type_path, schema_kind, config, plugin_settings):
-            assert str(schema_type) == 'typing.List[str]'
-            assert schema_type_path == SchemaTypePath('', 'typing.List[str]')
+            assert str(schema_type) == 'list[str]'
+            assert schema_type_path == SchemaTypePath('', 'list[str]')
             assert schema_kind == 'TypeAdapter'
             return CustomOnValidatePython(), None, None
 
     plugin = Plugin()
     with install_plugin(plugin):
         code = """
-from typing import List
-
 import pydantic
-pydantic.TypeAdapter(List[str])
+pydantic.TypeAdapter(list[str])
 """
         exec(code, {'bar': 'baz'})
 

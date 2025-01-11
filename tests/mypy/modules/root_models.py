@@ -1,19 +1,19 @@
-from typing import Generic, List, TypeVar
+from typing import Generic, TypeVar
 
 from pydantic import BaseModel, RootModel
 
 
-class Pets1(RootModel[List[str]]):
+class Pets1(RootModel[list[str]]):
     pass
 
 
 pets_construct = Pets1.model_construct(['dog'])
 
-Pets2 = RootModel[List[str]]
+Pets2 = RootModel[list[str]]
 
 
 class Pets3(RootModel):
-    root: List[str]
+    root: list[str]
 
 
 pets1 = Pets1(['dog', 'cat'])
@@ -21,8 +21,8 @@ pets2 = Pets2(['dog', 'cat'])
 pets3 = Pets3(['dog', 'cat'])
 
 
-class Pets4(RootModel[List[str]]):
-    pets: List[str]
+class Pets4(RootModel[list[str]]):
+    pets: list[str]
 
 
 T = TypeVar('T')

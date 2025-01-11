@@ -1909,13 +1909,11 @@ except ValidationError as exc:
 This error is raised when the input value's type is not valid for a `tuple` field:
 
 ```python
-from typing import Tuple
-
 from pydantic import BaseModel, ValidationError
 
 
 class Model(BaseModel):
-    x: Tuple[int]
+    x: tuple[int]
 
 
 try:

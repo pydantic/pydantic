@@ -5,7 +5,7 @@ from __future__ import annotations
 import datetime
 import warnings
 from decimal import Decimal
-from typing import Annotated, Any, Callable, Dict, FrozenSet, List, Set, Tuple, Union
+from typing import Annotated, Any, Callable, FrozenSet, Set, Union
 
 import pytest
 import pytz
@@ -115,12 +115,12 @@ def test_interval_constraints(type_: Any, pipeline: Any, valid_cases: list[Any],
             ['a', 'abcdef'],
         ),
         (
-            List[int],
-            validate_as(List[int]).len(min_len=1, max_len=3),
+            list[int],
+            validate_as(list[int]).len(min_len=1, max_len=3),
             [[1], [1, 2], [1, 2, 3]],
             [[], [1, 2, 3, 4]],
         ),
-        (Tuple[int, ...], validate_as(Tuple[int, ...]).len(min_len=1, max_len=2), [(1,), (1, 2)], [(), (1, 2, 3)]),
+        (tuple[int, ...], validate_as(tuple[int, ...]).len(min_len=1, max_len=2), [(1,), (1, 2)], [(), (1, 2, 3)]),
         (
             Set[int],
             validate_as(Set[int]).len(min_len=2, max_len=4),
@@ -134,8 +134,8 @@ def test_interval_constraints(type_: Any, pipeline: Any, valid_cases: list[Any],
             [frozenset({1}), frozenset({1, 2, 3, 4})],
         ),
         (
-            Dict[str, int],
-            validate_as(Dict[str, int]).len(min_len=1, max_len=2),
+            dict[str, int],
+            validate_as(dict[str, int]).len(min_len=1, max_len=2),
             [{'a': 1}, {'a': 1, 'b': 2}],
             [{}, {'a': 1, 'b': 2, 'c': 3}],
         ),
@@ -290,7 +290,7 @@ def test_predicates() -> None:
             {'anyOf': [{'type': 'integer', 'exclusiveMinimum': 0}, {'type': 'integer', 'exclusiveMaximum': 100}]},
         ),
         (
-            Annotated[List[int], validate_as(...).len(0, 100)],
+            Annotated[list[int], validate_as(...).len(0, 100)],
             {'type': 'array', 'items': {'type': 'integer'}, 'maxItems': 100},
             {'type': 'array', 'items': {'type': 'integer'}, 'maxItems': 100},
         ),

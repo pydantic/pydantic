@@ -847,7 +847,7 @@ If the name of the concrete subclasses is important, you can also override the d
 by overriding the [`model_parametrized_name()`][pydantic.main.BaseModel.model_parametrized_name] method:
 
 ```python
-from typing import Any, Generic, Tuple, TypeVar
+from typing import Any, Generic, TypeVar
 
 from pydantic import BaseModel
 
@@ -858,7 +858,7 @@ class Response(BaseModel, Generic[DataT]):
     data: DataT
 
     @classmethod
-    def model_parametrized_name(cls, params: Tuple[type[Any], ...]) -> str:
+    def model_parametrized_name(cls, params: tuple[type[Any], ...]) -> str:
         return f'{params[0].__name__.title()}Response'
 
 

@@ -19,7 +19,6 @@ from typing import (
     Literal,
     Mapping,
     Set,
-    Tuple,
     TypeVar,
     Union,
     cast,
@@ -71,7 +70,7 @@ else:
 __all__ = 'BaseModel', 'create_model'
 
 # Keep these type aliases available at runtime:
-TupleGenerator: TypeAlias = Generator[Tuple[str, Any], None, None]
+TupleGenerator: TypeAlias = Generator[tuple[str, Any], None, None]
 # NOTE: In reality, `bool` should be replaced by `Literal[True]` but mypy fails to correctly apply bidirectional
 # type inference (e.g. when using `{'a': {'b': True}}`):
 # NOTE: Keep this type alias in sync with the stub definition in `pydantic-core`:

@@ -33,7 +33,6 @@ from typing import (
     NewType,
     Pattern,
     Sequence,
-    Tuple,
     TypeVar,
     Union,
     cast,
@@ -127,7 +126,7 @@ DefsRef = NewType('DefsRef', str)
 #       * By default, these look like "#/$defs/MyModel", as in {"$ref": "#/$defs/MyModel"}
 JsonRef = NewType('JsonRef', str)
 
-CoreModeRef = Tuple[CoreRef, JsonSchemaMode]
+CoreModeRef = tuple[CoreRef, JsonSchemaMode]
 JsonSchemaKeyT = TypeVar('JsonSchemaKeyT', bound=Hashable)
 
 
@@ -925,8 +924,8 @@ class GenerateJsonSchema:
         return self.tuple_schema(schema)
 
     def tuple_schema(self, schema: core_schema.TupleSchema) -> JsonSchemaValue:
-        """Generates a JSON schema that matches a tuple schema e.g. `Tuple[int,
-        str, bool]` or `Tuple[int, ...]`.
+        """Generates a JSON schema that matches a tuple schema e.g. `tuple[int,
+        str, bool]` or `tuple[int, ...]`.
 
         Args:
             schema: The core schema.
@@ -2422,7 +2421,7 @@ def models_json_schema(
 
 
 _HashableJsonValue: TypeAlias = Union[
-    int, float, str, bool, None, Tuple['_HashableJsonValue', ...], Tuple[Tuple[str, '_HashableJsonValue'], ...]
+    int, float, str, bool, None, tuple['_HashableJsonValue', ...], tuple[tuple[str, '_HashableJsonValue'], ...]
 ]
 
 

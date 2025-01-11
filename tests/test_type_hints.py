@@ -8,7 +8,6 @@ import sys
 from functools import lru_cache
 from typing import (
     Any,
-    Dict,
     Generic,
     Optional,
     Set,
@@ -158,7 +157,7 @@ def test_generics():
         data: data_type
 
     inspect_type_hints(Result, None, DEPRECATED_MODEL_MEMBERS)
-    inspect_type_hints(Result[Dict[str, Any]], None, DEPRECATED_MODEL_MEMBERS)
+    inspect_type_hints(Result[dict[str, Any]], None, DEPRECATED_MODEL_MEMBERS)
 
 
 def test_dataclasses():

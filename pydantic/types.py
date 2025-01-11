@@ -16,12 +16,10 @@ from typing import (
     Any,
     Callable,
     ClassVar,
-    Dict,
     FrozenSet,
     Generic,
     Hashable,
     Iterator,
-    List,
     Literal,
     Pattern,
     Set,
@@ -878,7 +876,7 @@ def conlist(
     max_length: int | None = None,
     unique_items: bool | None = None,
 ) -> type[list[AnyItemType]]:
-    """A wrapper around typing.List that adds validation.
+    """A wrapper around [`list`][] that adds validation.
 
     Args:
         item_type: The type of the items in the list.
@@ -900,7 +898,7 @@ def conlist(
             ),
             code='removed-kwargs',
         )
-    return Annotated[List[item_type], annotated_types.Len(min_length or 0, max_length)]  # pyright: ignore[reportReturnType]
+    return Annotated[list[item_type], annotated_types.Len(min_length or 0, max_length)]  # pyright: ignore[reportReturnType]
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~ IMPORT STRING TYPE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1405,7 +1403,7 @@ else:
         validating the loaded data into the parametrized type:
 
         ```python
-        from typing import Any, List
+        from typing import Any
 
         from pydantic import BaseModel, Json, ValidationError
 
@@ -1413,7 +1411,7 @@ else:
             json_obj: Json[Any]
 
         class ConstrainedJsonModel(BaseModel):
-            json_obj: Json[List[int]]
+            json_obj: Json[list[int]]
 
         print(AnyJsonModel(json_obj='{"b": 1}'))
         #> json_obj={'b': 1}
@@ -1457,12 +1455,10 @@ else:
         not the original JSON string. However, you can use the argument `round_trip=True` to get the original JSON string back:
 
         ```python
-        from typing import List
-
         from pydantic import BaseModel, Json
 
         class ConstrainedJsonModel(BaseModel):
-            json_obj: Json[List[int]]
+            json_obj: Json[list[int]]
 
         print(ConstrainedJsonModel(json_obj='[1, 2, 3]').model_dump_json())
         #> {"json_obj":[1,2,3]}
@@ -3123,8 +3119,8 @@ class _AllowAnyJson:
 if TYPE_CHECKING:
     # This seems to only be necessary for mypy
     JsonValue: TypeAlias = Union[
-        List['JsonValue'],
-        Dict[str, 'JsonValue'],
+        list['JsonValue'],
+        dict[str, 'JsonValue'],
         str,
         bool,
         int,
@@ -3135,8 +3131,8 @@ if TYPE_CHECKING:
 
     It may be one of:
 
-    * `List['JsonValue']`
-    * `Dict[str, 'JsonValue']`
+    * `list['JsonValue']`
+    * `dict[str, 'JsonValue']`
     * `str`
     * `bool`
     * `int`
@@ -3179,8 +3175,8 @@ else:
         'JsonValue',
         Annotated[
             Union[
-                Annotated[List['JsonValue'], Tag('list')],
-                Annotated[Dict[str, 'JsonValue'], Tag('dict')],
+                Annotated[list['JsonValue'], Tag('list')],
+                Annotated[dict[str, 'JsonValue'], Tag('dict')],
                 Annotated[str, Tag('str')],
                 Annotated[bool, Tag('bool')],
                 Annotated[int, Tag('int')],
@@ -3225,12 +3221,12 @@ class FailFast(_fields.PydanticMetadata, BaseMetadata):
     validation will be more performant with the caveat that you get less information).
 
     ```python
-    from typing import Annotated, List
+    from typing import Annotated
 
     from pydantic import BaseModel, FailFast, ValidationError
 
     class Model(BaseModel):
-        x: Annotated[List[int], FailFast()]
+        x: Annotated[list[int], FailFast()]
 
     # This will raise a single error for the first invalid value and stop validation
     try:

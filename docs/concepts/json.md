@@ -17,7 +17,6 @@ Here's an example of Pydantic's builtin JSON parsing via the [`model_validate_js
 
 ```python
 from datetime import date
-from typing import Tuple
 
 from pydantic import BaseModel, ConfigDict, ValidationError
 
@@ -26,7 +25,7 @@ class Event(BaseModel):
     model_config = ConfigDict(strict=True)
 
     when: date
-    where: Tuple[int, int]
+    where: tuple[int, int]
 
 
 json_data = '{"when": "1987-01-28", "where": [51, -1]}'
@@ -161,7 +160,7 @@ Check out the following example for a more in-depth look at how to use default v
     class MyModel(BaseModel):
         foo: Optional[str] = None
         bar: Annotated[
-            Optional[Tuple[str, int]], WrapValidator(default_on_error)
+            Optional[tuple[str, int]], WrapValidator(default_on_error)
         ] = None
         nested: Annotated[
             Optional[NestedModel], WrapValidator(default_on_error)

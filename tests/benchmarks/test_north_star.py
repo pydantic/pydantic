@@ -9,7 +9,7 @@ import json
 from datetime import date, datetime, time
 from decimal import Decimal
 from pathlib import Path
-from typing import Annotated, List, Literal, Union
+from typing import Annotated, Literal, Union
 from uuid import UUID
 
 import pytest
@@ -57,9 +57,9 @@ def pydantic_type_adapter():
         entry_created_date: date
         entry_created_time: time
         entry_updated_at: datetime
-        websites: List[Website] = Field(default_factory=list)
+        websites: list[Website] = Field(default_factory=list)
 
-    return TypeAdapter(List[Person])
+    return TypeAdapter(list[Person])
 
 
 _NORTH_STAR_DATA_PATH = Path(__file__).parent / 'north_star_data.json'

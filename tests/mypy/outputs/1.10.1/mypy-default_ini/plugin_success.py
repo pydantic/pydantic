@@ -1,5 +1,5 @@
 from dataclasses import InitVar
-from typing import Any, ClassVar, Generic, List, Optional, TypeVar, Union
+from typing import Any, ClassVar, Generic, Optional, TypeVar, Union
 
 from typing_extensions import Self
 
@@ -227,7 +227,7 @@ def _default_factory_str() -> str:
     return 'x'
 
 
-def _default_factory_list() -> List[int]:
+def _default_factory_list() -> list[int]:
     return [1, 2, 3]
 
 
@@ -241,7 +241,7 @@ class FieldDefaultTestingModel(BaseModel):
     d: int = Field(1)
 
     # Default factory
-    g: List[int] = Field(default_factory=_default_factory_list)
+    g: list[int] = Field(default_factory=_default_factory_list)
     h: str = Field(default_factory=_default_factory_str)
     i: str = Field(default_factory=lambda: 'test')
 
