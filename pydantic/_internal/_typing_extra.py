@@ -571,17 +571,15 @@ if sys.version_info < (3, 10):
         """Return whether the provided argument is the `Union` special form."""
         return tp is _t_union or tp is _te_union
 
-    def is_generic_alias(type_: type[Any]) -> bool:
-        return isinstance(type_, typing._GenericAlias)  # pyright: ignore[reportAttributeAccessIssue]
-
 else:
 
     def origin_is_union(tp: Any, /) -> bool:
         """Return whether the provided argument is the `Union` special form or the `UnionType`."""
         return tp is _t_union or tp is _te_union or tp is types.UnionType
 
-    def is_generic_alias(tp: Any, /) -> bool:
-        return isinstance(tp, (types.GenericAlias, typing._GenericAlias))  # pyright: ignore[reportAttributeAccessIssue]
+
+def is_generic_alias(tp: Any, /) -> bool:
+    return isinstance(tp, (types.GenericAlias, typing._GenericAlias))  # pyright: ignore[reportAttributeAccessIssue]
 
 
 # TODO: Ideally, we should avoid relying on the private `typing` constructs:
