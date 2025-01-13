@@ -376,11 +376,9 @@ def collect_dataclass_fields(
         _update_fields_from_docstrings(
             cls,
             fields,
-            # This is an attribute that is only set when building a Pydantic dataclass,
-            # and we need to rely on the `inspect` module to get the source code otherwise.
-            # Note that it would be great to have an explicit `__is_pydantic_dataclass__`
-            # attribute instead.
-            use_inspect=not hasattr(cls, '__pydantic_complete__'),
+            # We can't rely on the (more reliable) frame inspection method
+            # for stdlib dataclasses:
+            use_inspect=not hasattr(cls, '__is_pydantic_dataclass__'),
         )
 
     return fields
