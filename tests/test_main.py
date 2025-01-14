@@ -2092,6 +2092,16 @@ def test_post_init():
     assert m.model_dump() == {'c': 1, 'd': 2, 'sub': {'a': 3, 'b': 4}}
 
 
+def test_post_init_function_attrs_preserved() -> None:
+    class Model(BaseModel):
+        _a: int  # Necessary to have model_post_init wrapped
+
+        def model_post_init(self, context, /) -> None:
+            """Custom docstring"""
+
+    assert Model.model_post_init.__doc__ == 'Custom docstring'
+
+
 @pytest.mark.parametrize('include_private_attribute', [True, False])
 def test_post_init_call_signatures(include_private_attribute):
     calls = []
