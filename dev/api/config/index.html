@@ -5786,10 +5786,13 @@ should be used for field descriptions. Defaults to <code>False</code>.</p>
 </code></pre></div>
 This requires the source code of the class to be available at runtime.</p>
 <div class="admonition warning">
-<p class="admonition-title">Usage with <code>TypedDict</code></p>
-<p>Due to current limitations, attribute docstrings detection may not work as expected when using <code>TypedDict</code>
-(in particular when multiple <code>TypedDict</code> classes have the same name in the same source file). The behavior
-can be different depending on the Python version used.</p>
+<p class="admonition-title">Usage with <code>TypedDict</code> and stdlib dataclasses</p>
+<p>Due to current limitations, attribute docstrings detection may not work as expected when using
+<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.TypedDict"><code>TypedDict</code></a> and stdlib dataclasses, in particular when:</p>
+<ul>
+<li>inheritance is being used.</li>
+<li>multiple classes have the same name in the same source file.</li>
+</ul>
 </div>
     </div>
 
@@ -5894,9 +5897,7 @@ especially with <code>TypedDict</code>.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/config.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1038</span>
-<span class="normal">1039</span>
-<span class="normal">1040</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1040</span>
 <span class="normal">1041</span>
 <span class="normal">1042</span>
 <span class="normal">1043</span>
@@ -5935,7 +5936,9 @@ especially with <code>TypedDict</code>.</p>
 <span class="normal">1076</span>
 <span class="normal">1077</span>
 <span class="normal">1078</span>
-<span class="normal">1079</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">with_config</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="n">ConfigDict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_TypeT</span><span class="p">],</span> <span class="n">_TypeT</span><span class="p">]:</span>
+<span class="normal">1079</span>
+<span class="normal">1080</span>
+<span class="normal">1081</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">with_config</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="n">ConfigDict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_TypeT</span><span class="p">],</span> <span class="n">_TypeT</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;!!! abstract &quot;Usage Documentation&quot;</span>
 <span class="sd">        [Configuration with a `dataclass` or `TypedDict`](../concepts/config.md#configuration-with-dataclass-from-the-standard-library-or-typeddict)</span>
 
