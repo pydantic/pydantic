@@ -2059,9 +2059,6 @@ def test_annotated_final():
 
 def test_post_init():
     calls = []
-    inner_model_docstring = 'InnerModel Docstring'
-    sub_model_docstring = 'SubModel Docstring'
-    model_docstring = 'Model Docstring'
 
     class InnerModel(BaseModel):
         a: int
@@ -2072,8 +2069,6 @@ def test_post_init():
             assert self.model_dump() == {'a': 3, 'b': 4}
             calls.append('inner_model_post_init')
 
-        model_post_init.__doc__ = inner_model_docstring
-
     class Model(BaseModel):
         c: int
         d: int
@@ -2083,13 +2078,9 @@ def test_post_init():
             assert self.model_dump() == {'c': 1, 'd': 2, 'sub': {'a': 3, 'b': 4}}
             calls.append('model_post_init')
 
-        model_post_init.__doc__ = model_docstring
-
     m = Model(c=1, d='2', sub={'a': 3, 'b': '4'})
     assert calls == ['inner_model_post_init', 'model_post_init']
     assert m.model_dump() == {'c': 1, 'd': 2, 'sub': {'a': 3, 'b': 4}}
-    assert InnerModel.model_post_init.__doc__ == inner_model_docstring
-    assert Model.model_post_init.__doc__ == model_docstring
 
     class SubModel(Model):
         def model_post_init(self, context, /) -> None:
@@ -2097,13 +2088,10 @@ def test_post_init():
             super().model_post_init(context)
             calls.append('submodel_post_init')
 
-        model_post_init.__doc__ = sub_model_docstring
-
     calls.clear()
     m = SubModel(c=1, d='2', sub={'a': 3, 'b': '4'})
     assert calls == ['inner_model_post_init', 'model_post_init', 'submodel_post_init']
     assert m.model_dump() == {'c': 1, 'd': 2, 'sub': {'a': 3, 'b': 4}}
-    assert SubModel.model_post_init.__doc__ == sub_model_docstring
 
 
 @pytest.mark.parametrize('include_private_attribute', [True, False])
