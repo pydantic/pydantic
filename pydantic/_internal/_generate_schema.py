@@ -1725,6 +1725,10 @@ class GenerateSchema:
                     code=None,
                 )
             if not inspect.isclass(type_param):
+                # when using type[None], this doesn't type convert to type[NoneType], and None isn't a class
+                # so we handle it manually here
+                if _typing_extra.is_none_type(type_param):
+                    return core_schema.is_subclass_schema(_typing_extra.NoneType)
                 raise TypeError(f'Expected a class, got {type_param!r}')
             return core_schema.is_subclass_schema(type_param)
 

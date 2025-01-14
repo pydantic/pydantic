@@ -127,7 +127,7 @@ Check out the following example for a more in-depth look at how to use default v
 !!! example "Using default values with partial JSON parsing"
 
     ```python
-    from typing import Annotated, Any, Optional, Tuple
+    from typing import Annotated, Any, Optional
 
     import pydantic_core
 
