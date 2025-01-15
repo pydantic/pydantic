@@ -460,10 +460,8 @@ Valid config keys have changed in V2:
 
 
 def test_invalid_extra():
-    extra_error = re.escape(
-        "Input should be 'allow', 'forbid' or 'ignore'"
-        " [type=literal_error, input_value='invalid-value', input_type=str]"
-    )
+    ConfigDict(extra='invalid-value')
+    extra_error = re.escape('Invalid extra_behavior: `invalid-value`')
     config_dict = {'extra': 'invalid-value'}
 
     with pytest.raises(SchemaError, match=extra_error):
