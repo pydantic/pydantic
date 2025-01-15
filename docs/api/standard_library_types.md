@@ -5,6 +5,10 @@ description: Support for common types from the Python standard library.
 Pydantic supports many common types from the Python standard library. If you need stricter processing see
 [Strict Types](../concepts/types.md#strict-types), including if you need to constrain the values allowed (e.g. to require a positive `int`).
 
+!!! note
+    Pydantic still supports older (3.8-) typing constructs like `typing.List` and `typing.Dict`, but
+    it's best practice to use the newer types like `list` and `dict`.
+
 ## Booleans
 
 A standard `bool` field will raise a `ValidationError` if the value is not one of the following:
@@ -757,9 +761,7 @@ In case you want to constrain the UUID version, you can check the following type
 Pydantic has extensive support for union validation, both [`typing.Union`][] and Python 3.10's pipe syntax (`A | B`) are supported.
 Read more in the [`Unions`](../concepts/unions.md) section of the concepts docs.
 
-## [`type`][] and [`TypeVar`][typing.TypeVar]
-
-### [`type`][]
+## [`type`][]
 
 Pydantic supports the use of `type[T]` to specify that a field may only accept classes (not instances)
 that are subclasses of `T`.
@@ -824,7 +826,7 @@ except ValidationError as e:
     """
 ```
 
-### [`typing.TypeVar`][]
+## [`typing.TypeVar`][]
 
 [`TypeVar`][typing.TypeVar] is supported either unconstrained, constrained or with a bound.
 

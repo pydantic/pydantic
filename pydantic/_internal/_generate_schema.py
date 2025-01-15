@@ -1639,8 +1639,8 @@ class GenerateSchema:
         if typevars_map and params:
             params = tuple(replace_types(param, typevars_map) for param in params)
 
-        # NOTE: subtle difference: `tuple[()]` gives `params=()`, whereas `typing.tuple[()]` gives `params=((),)`
-        # This is only true for <3.11, on Python 3.11+ `typing.tuple[()]` gives `params=()`
+        # NOTE: subtle difference: `tuple[()]` gives `params=()`, whereas `typing.Tuple[()]` gives `params=((),)`
+        # This is only true for <3.11, on Python 3.11+ `typing.Tuple[()]` gives `params=()`
         if not params:
             if tuple_type in TUPLE_TYPES:
                 return core_schema.tuple_schema([core_schema.any_schema()], variadic_item_index=0)
