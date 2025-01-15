@@ -32,6 +32,7 @@ def main():
 
     # use ( to avoid matching beta versions
     if f'## v{new_version} (' in history_content:
+        print(f'WARNING: v{new_version} already in history, stopping')
         sys.exit(1)
 
     date_today_str = f'{date.today():%Y-%m-%d}'
@@ -43,21 +44,27 @@ def main():
         f'{notes}\n\n'
     )
     if args.preview:
+        print(new_chunk)
         return
     history = new_chunk + history_content
 
     history_path.write_text(history)
+    print(f'\nSUCCESS: added "{title}" section to {history_path.relative_to(root_dir)}')
 
     citation_path = root_dir / 'CITATION.cff'
     citation_text = citation_path.read_text()
 
-    # a or b in version indicates a pre-release version
-    if 'a' not in new_version and 'b' not in new_version:
+    if not (alpha_version := 'a' in new_version) and not (beta_version := 'b' in new_version):
         citation_text = re.sub(r'(?<=\nversion: ).*', f'v{new_version}', citation_text)
         citation_text = re.sub(r'(?<=date-released: ).*', date_today_str, citation_text)
         citation_path.write_text(citation_text)
+        print(
+            f'SUCCESS: updated version=v{new_version} and date-released={date_today_str} in {citation_path.relative_to(root_dir)}'
+        )
     else:
-        pass
+        print(
+            f'WARNING: not updating CITATION.cff because version is {"alpha" if alpha_version else "beta"} version {new_version}'
+        )
 
 
 def get_notes(new_version: str) -> str:
