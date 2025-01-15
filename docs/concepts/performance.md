@@ -24,24 +24,20 @@ the function is called. Instead, instantiate it once, and reuse it.
 === ":x: Bad"
 
     ```python {lint="skip"}
-    from typing import List
-
     from pydantic import TypeAdapter
 
 
     def my_func():
-        adapter = TypeAdapter(List[int])
+        adapter = TypeAdapter(list[int])
         # do something with adapter
     ```
 
 === ":white_check_mark: Good"
 
     ```python {lint="skip"}
-    from typing import List
-
     from pydantic import TypeAdapter
 
-    adapter = TypeAdapter(List[int])
+    adapter = TypeAdapter(list[int])
 
     def my_func():
         ...
@@ -194,13 +190,11 @@ If you use this annotation, you won't get validation errors for the rest of the 
 trading off visibility for performance.
 
 ```python
-from typing import List
-
-from typing_extensions import Annotated
+from typing import Annotated
 
 from pydantic import FailFast, TypeAdapter, ValidationError
 
-ta = TypeAdapter(Annotated[List[bool], FailFast()])
+ta = TypeAdapter(Annotated[list[bool], FailFast()])
 try:
     ta.validate_python([True, 'invalid', False, 'also invalid'])
 except ValidationError as exc:

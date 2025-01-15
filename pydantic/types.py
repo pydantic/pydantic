@@ -5,36 +5,31 @@ from __future__ import annotations as _annotations
 import base64
 import dataclasses as _dataclasses
 import re
+from collections.abc import Hashable, Iterator
 from datetime import date, datetime
 from decimal import Decimal
 from enum import Enum
 from pathlib import Path
+from re import Pattern
 from types import ModuleType
 from typing import (
     TYPE_CHECKING,
+    Annotated,
     Any,
     Callable,
     ClassVar,
-    Dict,
-    FrozenSet,
     Generic,
-    Hashable,
-    Iterator,
-    List,
-    Pattern,
-    Set,
+    Literal,
     TypeVar,
     Union,
     cast,
-    get_args,
-    get_origin,
 )
 from uuid import UUID
 
 import annotated_types
 from annotated_types import BaseMetadata, MaxLen, MinLen
 from pydantic_core import CoreSchema, PydanticCustomError, SchemaSerializer, core_schema
-from typing_extensions import Annotated, Literal, Protocol, TypeAlias, TypeAliasType, deprecated
+from typing_extensions import Protocol, TypeAlias, TypeAliasType, deprecated, get_args, get_origin
 
 from ._internal import _fields, _internal_dataclass, _typing_extra, _utils, _validators
 from ._migration import getattr_migration
@@ -127,7 +122,7 @@ class Strict(_fields.PydanticMetadata, BaseMetadata):
 
     Example:
         ```python
-        from typing_extensions import Annotated
+        from typing import Annotated
 
         from pydantic.types import Strict
 
@@ -178,7 +173,7 @@ def conint(
 
         === ":white_check_mark: Do this"
             ```python
-            from typing_extensions import Annotated
+            from typing import Annotated
 
             from pydantic import BaseModel, Field
 
@@ -395,7 +390,7 @@ class AllowInfNan(_fields.PydanticMetadata):
 
     Example:
         ```python
-        from typing_extensions import Annotated
+        from typing import Annotated
 
         from pydantic.types import AllowInfNan
 
@@ -438,7 +433,7 @@ def confloat(
 
         === ":white_check_mark: Do this"
             ```python
-            from typing_extensions import Annotated
+            from typing import Annotated
 
             from pydantic import BaseModel, Field
 
@@ -709,7 +704,7 @@ class StringConstraints(annotated_types.GroupedMetadata):
 
     Example:
         ```python
-        from typing_extensions import Annotated
+        from typing import Annotated
 
         from pydantic.types import StringConstraints
 
@@ -776,7 +771,7 @@ def constr(
 
         === ":white_check_mark: Do this"
             ```python
-            from typing_extensions import Annotated
+            from typing import Annotated
 
             from pydantic import BaseModel, StringConstraints
 
@@ -849,7 +844,7 @@ def conset(
     Returns:
         The wrapped set type.
     """
-    return Annotated[Set[item_type], annotated_types.Len(min_length or 0, max_length)]  # pyright: ignore[reportReturnType]
+    return Annotated[set[item_type], annotated_types.Len(min_length or 0, max_length)]  # pyright: ignore[reportReturnType]
 
 
 def confrozenset(
@@ -865,7 +860,7 @@ def confrozenset(
     Returns:
         The wrapped frozenset type.
     """
-    return Annotated[FrozenSet[item_type], annotated_types.Len(min_length or 0, max_length)]  # pyright: ignore[reportReturnType]
+    return Annotated[frozenset[item_type], annotated_types.Len(min_length or 0, max_length)]  # pyright: ignore[reportReturnType]
 
 
 AnyItemType = TypeVar('AnyItemType')
@@ -878,7 +873,7 @@ def conlist(
     max_length: int | None = None,
     unique_items: bool | None = None,
 ) -> type[list[AnyItemType]]:
-    """A wrapper around typing.List that adds validation.
+    """A wrapper around [`list`][] that adds validation.
 
     Args:
         item_type: The type of the items in the list.
@@ -900,7 +895,7 @@ def conlist(
             ),
             code='removed-kwargs',
         )
-    return Annotated[List[item_type], annotated_types.Len(min_length or 0, max_length)]  # pyright: ignore[reportReturnType]
+    return Annotated[list[item_type], annotated_types.Len(min_length or 0, max_length)]  # pyright: ignore[reportReturnType]
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~ IMPORT STRING TYPE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1071,8 +1066,7 @@ def condecimal(
         === ":white_check_mark: Do this"
             ```python
             from decimal import Decimal
-
-            from typing_extensions import Annotated
+            from typing import Annotated
 
             from pydantic import BaseModel, Field
 
@@ -1147,9 +1141,8 @@ class UuidVersion:
 
     Example:
         ```python
+        from typing import Annotated
         from uuid import UUID
-
-        from typing_extensions import Annotated
 
         from pydantic.types import UuidVersion
 
@@ -1407,7 +1400,7 @@ else:
         validating the loaded data into the parametrized type:
 
         ```python
-        from typing import Any, List
+        from typing import Any
 
         from pydantic import BaseModel, Json, ValidationError
 
@@ -1415,7 +1408,7 @@ else:
             json_obj: Json[Any]
 
         class ConstrainedJsonModel(BaseModel):
-            json_obj: Json[List[int]]
+            json_obj: Json[list[int]]
 
         print(AnyJsonModel(json_obj='{"b": 1}'))
         #> json_obj={'b': 1}
@@ -1459,12 +1452,10 @@ else:
         not the original JSON string. However, you can use the argument `round_trip=True` to get the original JSON string back:
 
         ```python
-        from typing import List
-
         from pydantic import BaseModel, Json
 
         class ConstrainedJsonModel(BaseModel):
-            json_obj: Json[List[int]]
+            json_obj: Json[list[int]]
 
         print(ConstrainedJsonModel(json_obj='[1, 2, 3]').model_dump_json())
         #> {"json_obj":[1,2,3]}
@@ -1595,7 +1586,7 @@ class Secret(_SecretBase[SecretType]):
     For example:
 
     ```python
-    from typing_extensions import Annotated
+    from typing import Annotated
 
     from pydantic import BaseModel, Field, Secret, ValidationError
 
@@ -2444,7 +2435,7 @@ class EncodedBytes:
     `EncodedBytes` needs an encoder that implements `EncoderProtocol` to operate.
 
     ```python
-    from typing_extensions import Annotated
+    from typing import Annotated
 
     from pydantic import BaseModel, EncodedBytes, EncoderProtocol, ValidationError
 
@@ -2543,7 +2534,7 @@ class EncodedStr:
     `EncodedStr` needs an encoder that implements `EncoderProtocol` to operate.
 
     ```python
-    from typing_extensions import Annotated
+    from typing import Annotated
 
     from pydantic import BaseModel, EncodedStr, EncoderProtocol, ValidationError
 
@@ -2655,10 +2646,9 @@ Warning:
 
     ```python
     import base64
-    from typing import Literal
+    from typing import Annotated, Literal
 
     from pydantic_core import PydanticCustomError
-    from typing_extensions import Annotated
 
     from pydantic import EncodedBytes, EncoderProtocol
 
@@ -2821,9 +2811,7 @@ class GetPydanticSchema:
 
     For example, to have a field treated by type checkers as `int`, but by pydantic as `Any`, you can do:
     ```python
-    from typing import Any
-
-    from typing_extensions import Annotated
+    from typing import Annotated, Any
 
     from pydantic import BaseModel, GetPydanticSchema
 
@@ -2873,9 +2861,7 @@ class Tag:
     the appropriate member of the `Union` in question.
 
     ```python
-    from typing import Any, Union
-
-    from typing_extensions import Annotated, Literal
+    from typing import Annotated, Any, Literal, Union
 
     from pydantic import BaseModel, Discriminator, Tag
 
@@ -2962,9 +2948,7 @@ class Discriminator:
     than it would be as a normal `Union`.
 
     ```python
-    from typing import Any, Union
-
-    from typing_extensions import Annotated, Literal
+    from typing import Annotated, Any, Literal, Union
 
     from pydantic import BaseModel, Discriminator, Tag
 
@@ -3132,8 +3116,8 @@ class _AllowAnyJson:
 if TYPE_CHECKING:
     # This seems to only be necessary for mypy
     JsonValue: TypeAlias = Union[
-        List['JsonValue'],
-        Dict[str, 'JsonValue'],
+        list['JsonValue'],
+        dict[str, 'JsonValue'],
         str,
         bool,
         int,
@@ -3144,8 +3128,8 @@ if TYPE_CHECKING:
 
     It may be one of:
 
-    * `List['JsonValue']`
-    * `Dict[str, 'JsonValue']`
+    * `list['JsonValue']`
+    * `dict[str, 'JsonValue']`
     * `str`
     * `bool`
     * `int`
@@ -3188,8 +3172,8 @@ else:
         'JsonValue',
         Annotated[
             Union[
-                Annotated[List['JsonValue'], Tag('list')],
-                Annotated[Dict[str, 'JsonValue'], Tag('dict')],
+                Annotated[list['JsonValue'], Tag('list')],
+                Annotated[dict[str, 'JsonValue'], Tag('dict')],
                 Annotated[str, Tag('str')],
                 Annotated[bool, Tag('bool')],
                 Annotated[int, Tag('int')],
@@ -3234,14 +3218,12 @@ class FailFast(_fields.PydanticMetadata, BaseMetadata):
     validation will be more performant with the caveat that you get less information).
 
     ```python
-    from typing import List
-
-    from typing_extensions import Annotated
+    from typing import Annotated
 
     from pydantic import BaseModel, FailFast, ValidationError
 
     class Model(BaseModel):
-        x: Annotated[List[int], FailFast()]
+        x: Annotated[list[int], FailFast()]
 
     # This will raise a single error for the first invalid value and stop validation
     try:

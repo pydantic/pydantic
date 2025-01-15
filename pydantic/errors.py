@@ -3,8 +3,9 @@
 from __future__ import annotations as _annotations
 
 import re
+from typing import Literal
 
-from typing_extensions import Literal, Self
+from typing_extensions import Self
 
 from ._migration import getattr_migration
 from .version import version_short

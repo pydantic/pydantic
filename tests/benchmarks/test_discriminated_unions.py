@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from typing import Literal, Union
+from typing import Annotated, Literal, Union
 
 import pytest
-from typing_extensions import Annotated
 
 from pydantic import BaseModel, Field, TypeAdapter
 

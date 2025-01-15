@@ -13,7 +13,7 @@ from decimal import Decimal
 from fractions import Fraction
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from typing import Any, Callable, TypeVar, Union, cast, get_origin
-from typing import OrderedDict as TypingExtensionsOrderedDict
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import typing_extensions
 from pydantic_core import PydanticCustomError, core_schema
@@ -428,14 +428,11 @@ def get_defaultdict_default_default_factory(values_source_type: Any) -> Callable
 
     def infer_default() -> Callable[[], Any]:
         allowed_default_types: dict[Any, Any] = {
-            typing.Tuple: tuple,
             tuple: tuple,
             collections.abc.Sequence: tuple,
             collections.abc.MutableSequence: list,
-            typing.List: list,
             list: list,
             typing.Sequence: list,
-            typing.Set: set,
             set: set,
             typing.MutableSet: set,
             collections.abc.MutableSet: set,
@@ -472,7 +469,6 @@ def get_defaultdict_default_default_factory(values_source_type: Any) -> Callable
 
     # Assume Annotated[..., Field(...)]
     if _typing_extra.is_annotated(values_source_type):
-        # Important that we use typing_extensions.get_args here in order to support 3.8
         field_info = next((v for v in typing_extensions.get_args(values_source_type) if isinstance(v, FieldInfo)), None)
     else:
         field_info = None
@@ -482,6 +478,15 @@ def get_defaultdict_default_default_factory(values_source_type: Any) -> Callable
     else:
         default_default_factory = infer_default()
     return default_default_factory
+
+
+def validate_str_is_valid_iana_tz(value: Any, /) -> ZoneInfo:
+    if isinstance(value, ZoneInfo):
+        return value
+    try:
+        return ZoneInfo(value)
+    except (ZoneInfoNotFoundError, ValueError, TypeError):
+        raise PydanticCustomError('zoneinfo_str', 'invalid timezone: {value}', {'value': value})
 
 
 NUMERIC_VALIDATOR_LOOKUP: dict[str, Callable] = {
@@ -508,12 +513,13 @@ IP_VALIDATOR_LOOKUP: dict[type[IpType], Callable] = {
 }
 
 MAPPING_ORIGIN_MAP: dict[Any, Any] = {
-    typing.DefaultDict: collections.defaultdict,
+    typing.DefaultDict: collections.defaultdict,  # noqa: UP006
     collections.defaultdict: collections.defaultdict,
+    typing.OrderedDict: collections.OrderedDict,  # noqa: UP006
     collections.OrderedDict: collections.OrderedDict,
-    TypingExtensionsOrderedDict: collections.OrderedDict,
-    collections.Counter: collections.Counter,
+    typing_extensions.OrderedDict: collections.OrderedDict,
     typing.Counter: collections.Counter,
+    collections.Counter: collections.Counter,
     # this doesn't handle subclasses of these
     typing.Mapping: dict,
     typing.MutableMapping: dict,

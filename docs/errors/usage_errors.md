@@ -99,7 +99,7 @@ and the second a callable `handler` that receives a `CoreSchema` as parameter, a
 below:
 
 ```python {title="New way"}
-from typing import Any, Dict
+from typing import Any
 
 from pydantic_core import CoreSchema
 
@@ -110,7 +110,7 @@ class Model(BaseModel):
     @classmethod
     def __get_pydantic_json_schema__(
         cls, core_schema: CoreSchema, handler: GetJsonSchemaHandler
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         json_schema = super().__get_pydantic_json_schema__(core_schema, handler)
         json_schema = handler.resolve_ref_schema(json_schema)
         json_schema.update(examples=['example'])
@@ -356,9 +356,7 @@ assert Model(pet={'pet_type': 'kitten'}).pet.pet_type == 'cat'
 This error is raised when a `Union` that uses a callable `Discriminator` doesn't have `Tag` annotations for all cases.
 
 ```python
-from typing import Union
-
-from typing_extensions import Annotated
+from typing import Annotated, Union
 
 from pydantic import BaseModel, Discriminator, PydanticUserError, Tag
 
@@ -1002,7 +1000,7 @@ except PydanticUserError as exc_info:
 This error is raised when an annotation cannot annotate a type.
 
 ```python
-from typing_extensions import Annotated
+from typing import Annotated
 
 from pydantic import BaseModel, FutureDate, PydanticUserError
 

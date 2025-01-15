@@ -1,5 +1,5 @@
 import pickle
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 import pytest
 from pydantic_core import PydanticUndefined, ValidationError
@@ -214,7 +214,7 @@ def test_copy_advanced_exclude():
 
     class SubModel(BaseModel):
         c: str
-        d: List[SubSubModel]
+        d: list[SubSubModel]
 
     class Model(BaseModel):
         e: str
@@ -237,7 +237,7 @@ def test_copy_advanced_include():
 
     class SubModel(BaseModel):
         c: str
-        d: List[SubSubModel]
+        d: list[SubSubModel]
 
     class Model(BaseModel):
         e: str
@@ -260,7 +260,7 @@ def test_copy_advanced_include_exclude():
 
     class SubModel(BaseModel):
         c: str
-        d: List[SubSubModel]
+        d: list[SubSubModel]
 
     class Model(BaseModel):
         e: str
@@ -467,7 +467,7 @@ def test_shallow_copy_modify(copy_method):
 
 def test_construct_default_factory():
     class Model(BaseModel):
-        foo: List[int] = Field(default_factory=list)
+        foo: list[int] = Field(default_factory=list)
         bar: str = 'Baz'
 
     m = Model.model_construct()

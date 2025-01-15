@@ -1,8 +1,7 @@
 import dataclasses
 import re
-import sys
 import typing
-from typing import List, Optional, Type, Union
+from typing import Optional, Union
 
 import pytest
 import typing_extensions
@@ -101,7 +100,7 @@ def test_recursive_model_with_subclass_override(Self):
 def test_self_type_with_field(Self):
     class SelfRef(BaseModel):
         x: int
-        refs: typing.List[Self] = Field(gt=0)
+        refs: list[Self] = Field(gt=0)
 
     with pytest.raises(TypeError, match=re.escape("Unable to apply constraint 'gt' to supplied value []")):
         SelfRef(x=1, refs=[SelfRef(x=2, refs=[])])
@@ -110,7 +109,7 @@ def test_self_type_with_field(Self):
 def test_self_type_json_schema(Self):
     class SelfRef(BaseModel):
         x: int
-        refs: Optional[List[Self]] = []
+        refs: Optional[list[Self]] = []
 
     assert SelfRef.model_json_schema() == {
         '$defs': {
@@ -185,31 +184,28 @@ def test_invalid_validate_call_of_method(Self):
 
 def test_type_of_self(Self):
     class A(BaseModel):
-        self_type: Type[Self]
+        self_type: type[Self]
 
         @computed_field
-        def self_types1(self) -> List[Type[Self]]:
+        def self_types1(self) -> list[type[Self]]:
             return [type(self), self.self_type]
 
         # make sure forward refs are supported:
         @computed_field
-        def self_types2(self) -> List[Type['Self']]:
+        def self_types2(self) -> list[type['Self']]:
             return [type(self), self.self_type]
 
         @computed_field
-        def self_types3(self) -> 'List[Type[Self]]':
+        def self_types3(self) -> 'list[type[Self]]':
             return [type(self), self.self_type]
 
-        if sys.version_info >= (3, 9):
-            # standard container types are supported in 3.9+
+        @computed_field
+        def self_types4(self) -> 'list[type[Self]]':
+            return [type(self), self.self_type]
 
-            @computed_field
-            def self_types4(self) -> 'list[type[Self]]':
-                return [type(self), self.self_type]
-
-            @computed_field
-            def self_types5(self) -> list['type[Self]']:
-                return [type(self), self.self_type]
+        @computed_field
+        def self_types5(self) -> list['type[Self]']:
+            return [type(self), self.self_type]
 
     class B(A): ...
 

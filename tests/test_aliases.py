@@ -1,6 +1,7 @@
+from contextlib import AbstractContextManager
 from contextlib import nullcontext as does_not_raise
 from inspect import signature
-from typing import Any, ContextManager, List, Optional
+from typing import Any, Optional
 
 import pytest
 from dirty_equals import IsStr
@@ -24,7 +25,7 @@ def test_alias_generator():
 
     class MyModel(BaseModel):
         model_config = ConfigDict(alias_generator=to_camel)
-        a: List[str] = None
+        a: list[str] = None
         foo_bar: str
 
     data = {'A': ['foo', 'bar'], 'FooBar': 'foobar'}
@@ -397,7 +398,7 @@ def test_populate_by_name_config(
     use_construct: bool,
     populate_by_name_config: bool,
     arg_name: str,
-    expectation: ContextManager,
+    expectation: AbstractContextManager,
 ):
     expected_value: int = 7
 

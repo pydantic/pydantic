@@ -5,9 +5,10 @@ from __future__ import annotations as _annotations
 import dataclasses
 import warnings
 from copy import copy
-from functools import lru_cache
+from functools import cache
 from inspect import Parameter, ismethoddescriptor, signature
-from typing import TYPE_CHECKING, Any, Callable, Pattern
+from re import Pattern
+from typing import TYPE_CHECKING, Any, Callable
 
 from pydantic_core import PydanticUndefined
 from typing_extensions import TypeIs
@@ -50,7 +51,7 @@ def pydantic_general_metadata(**metadata: Any) -> BaseMetadata:
     return _general_metadata_cls()(metadata)  # type: ignore
 
 
-@lru_cache(maxsize=None)
+@cache
 def _general_metadata_cls() -> type[BaseMetadata]:
     """Do it this way to avoid importing `annotated_types` at import time."""
     from annotated_types import BaseMetadata

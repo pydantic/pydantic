@@ -32,7 +32,7 @@ To apply constraints or attach [`Field()`][pydantic.fields.Field] functions to a
 supports the [`Annotated`][typing.Annotated] typing construct to attach metadata to an annotation:
 
 ```python
-from typing_extensions import Annotated
+from typing import Annotated
 
 from pydantic import BaseModel, Field, WithJsonSchema
 
@@ -65,15 +65,13 @@ assignment form instead.
     [validation constraints](#field-constraints) can be added this way:
 
     ```python
-    from typing import List
-
-    from typing_extensions import Annotated
+    from typing import Annotated
 
     from pydantic import BaseModel, Field
 
 
     class Model(BaseModel):
-        int_list: List[Annotated[int, Field(gt=0)]]
+        int_list: list[Annotated[int, Field(gt=0)]]
         # Valid: [1, 3]
         # Invalid: [-1, 2]
     ```
@@ -166,13 +164,11 @@ While the same thing can be done in Pydantic, it is not required. In the event t
 Pydantic will create a deep copy of the default value when creating each instance of the model:
 
 ```python
-from typing import Dict, List
-
 from pydantic import BaseModel
 
 
 class Model(BaseModel):
-    item_counts: List[Dict[str, int]] = [{}]
+    item_counts: list[dict[str, int]] = [{}]
 
 
 m1 = Model()
@@ -314,7 +310,7 @@ print(user.model_dump(by_alias=True))  # (2)!
     can be used (which is only understood by Pydantic):
 
     ```python
-    from typing_extensions import Annotated
+    from typing import Annotated
 
     from pydantic import BaseModel, ConfigDict, Field
 
@@ -469,9 +465,7 @@ positive=1 non_negative=0 negative=-1 non_positive=0 even=2 love_for_pydantic=in
     you can use `Annotated`:
 
     ```python
-    from typing import Optional
-
-    from typing_extensions import Annotated
+    from typing import Annotated, Optional
 
     from pydantic import BaseModel, Field
 
@@ -666,9 +660,7 @@ print(Model.model_validate({'pet': {'pet_type': 'cat', 'age': 12}}))  # (1)!
 The following example shows how to use the `discriminator` keyword argument with a `Discriminator` instance:
 
 ```python
-from typing import Literal, Union
-
-from typing_extensions import Annotated
+from typing import Annotated, Literal, Union
 
 from pydantic import BaseModel, Discriminator, Field, Tag
 
@@ -803,7 +795,7 @@ You can set the `deprecated` parameter as one of:
 ### `deprecated` as a string
 
 ```python
-from typing_extensions import Annotated
+from typing import Annotated
 
 from pydantic import BaseModel, Field
 
@@ -824,9 +816,9 @@ print(Model.model_json_schema()['properties']['deprecated_field'])
 
 ```python {test="skip"}
 import importlib.metadata
+from typing import Annotated, deprecated
 
 from packaging.version import Version
-from typing_extensions import Annotated, deprecated
 
 from pydantic import BaseModel, Field
 
@@ -844,7 +836,7 @@ if Version(importlib.metadata.version('typing_extensions')) >= Version('4.9'):
 ### `deprecated` as a boolean
 
 ```python
-from typing_extensions import Annotated
+from typing import Annotated
 
 from pydantic import BaseModel, Field
 
