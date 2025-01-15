@@ -13,6 +13,7 @@ from decimal import Decimal
 from fractions import Fraction
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from typing import Any, Callable, TypeVar, Union, cast, get_origin
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import typing_extensions
 from pydantic_core import PydanticCustomError, core_schema
@@ -477,6 +478,15 @@ def get_defaultdict_default_default_factory(values_source_type: Any) -> Callable
     else:
         default_default_factory = infer_default()
     return default_default_factory
+
+
+def validate_str_is_valid_iana_tz(value: Any, /) -> ZoneInfo:
+    if isinstance(value, ZoneInfo):
+        return value
+    try:
+        return ZoneInfo(value)
+    except (ZoneInfoNotFoundError, ValueError, TypeError):
+        raise PydanticCustomError('zoneinfo_str', 'invalid timezone: {value}', {'value': value})
 
 
 NUMERIC_VALIDATOR_LOOKUP: dict[str, Callable] = {

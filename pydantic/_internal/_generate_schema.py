@@ -1677,15 +1677,7 @@ class GenerateSchema:
 
     def _zoneinfo_schema(self) -> core_schema.CoreSchema:
         """Generate schema for a zone_info.ZoneInfo object"""
-        from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
-
-        def validate_str_is_valid_iana_tz(value: Any, /) -> ZoneInfo:
-            if isinstance(value, ZoneInfo):
-                return value
-            try:
-                return ZoneInfo(value)
-            except (ZoneInfoNotFoundError, ValueError, TypeError):
-                raise PydanticCustomError('zoneinfo_str', 'invalid timezone: {value}', {'value': value})
+        from ._validators import validate_str_is_valid_iana_tz
 
         metadata = {'pydantic_js_functions': [lambda _1, _2: {'type': 'string', 'format': 'zoneinfo'}]}
         return core_schema.no_info_plain_validator_function(
