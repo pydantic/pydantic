@@ -53,16 +53,31 @@ except ImportError:
     TypesUnionType = ()
 
 
-def evaluate_forwardref(type_: ForwardRef, globalns: Any, localns: Any) -> Any:
-    # Even though it is the right signature for python 3.9, mypy complains with
-    # `error: Too many arguments for "_evaluate" of "ForwardRef"` hence the cast...
-    # Python 3.13/3.12.4+ made `recursive_guard` a kwarg, so name it explicitly to avoid:
-    # TypeError: ForwardRef._evaluate() missing 1 required keyword-only argument: 'recursive_guard'
-    return cast(Any, type_)._evaluate(globalns, localns, recursive_guard=set())
+if sys.version_info < (3, 9):
+
+    def evaluate_forwardref(type_: ForwardRef, globalns: Any, localns: Any) -> Any:
+        return type_._evaluate(globalns, localns)
+
+else:
+
+    def evaluate_forwardref(type_: ForwardRef, globalns: Any, localns: Any) -> Any:
+        # Even though it is the right signature for python 3.9, mypy complains with
+        # `error: Too many arguments for "_evaluate" of "ForwardRef"` hence the cast...
+        # Python 3.13/3.12.4+ made `recursive_guard` a kwarg, so name it explicitly to avoid:
+        # TypeError: ForwardRef._evaluate() missing 1 required keyword-only argument: 'recursive_guard'
+        return cast(Any, type_)._evaluate(globalns, localns, recursive_guard=set())
 
 
-def get_all_type_hints(obj: Any, globalns: Any = None, localns: Any = None) -> Any:
-    return get_type_hints(obj, globalns, localns, include_extras=True)
+if sys.version_info < (3, 9):
+    # Ensure we always get all the whole `Annotated` hint, not just the annotated type.
+    # For 3.7 to 3.8, `get_type_hints` doesn't recognize `typing_extensions.Annotated`,
+    # so it already returns the full annotation
+    get_all_type_hints = get_type_hints
+
+else:
+
+    def get_all_type_hints(obj: Any, globalns: Any = None, localns: Any = None) -> Any:
+        return get_type_hints(obj, globalns, localns, include_extras=True)
 
 
 _T = TypeVar('_T')
@@ -165,49 +180,61 @@ else:
         return _typing_get_args(tp) or getattr(tp, '__args__', ()) or _generic_get_args(tp)
 
 
-from typing import _UnionGenericAlias  # type: ignore
+if sys.version_info < (3, 9):
 
-from typing_extensions import _AnnotatedAlias
+    def convert_generics(tp: Type[Any]) -> Type[Any]:
+        """Python 3.9 and older only supports generics from `typing` module.
+        They convert strings to ForwardRef automatically.
 
-def convert_generics(tp: Type[Any]) -> Type[Any]:
-    """
-    Recursively searches for `str` type hints and replaces them with ForwardRef.
-
-    Examples::
-        convert_generics(list['Hero']) == list[ForwardRef('Hero')]
-        convert_generics(dict['Hero', 'Team']) == dict[ForwardRef('Hero'), ForwardRef('Team')]
-        convert_generics(typing.Dict['Hero', 'Team']) == typing.Dict[ForwardRef('Hero'), ForwardRef('Team')]
-        convert_generics(list[str | 'Hero'] | int) == list[str | ForwardRef('Hero')] | int
-    """
-    origin = get_origin(tp)
-    if not origin or not hasattr(tp, '__args__'):
+        Examples::
+            typing.List['Hero'] == typing.List[ForwardRef('Hero')]
+        """
         return tp
 
-    args = get_args(tp)
+else:
+    from typing import _UnionGenericAlias  # type: ignore
 
-    # typing.Annotated needs special treatment
-    if origin is Annotated:
-        return _AnnotatedAlias(convert_generics(args[0]), args[1:])
+    from typing_extensions import _AnnotatedAlias
 
-    # recursively replace `str` instances inside of `GenericAlias` with `ForwardRef(arg)`
-    converted = tuple(
-        ForwardRef(arg) if isinstance(arg, str) and isinstance(tp, TypingGenericAlias) else convert_generics(arg)
-        for arg in args
-    )
+    def convert_generics(tp: Type[Any]) -> Type[Any]:
+        """
+        Recursively searches for `str` type hints and replaces them with ForwardRef.
 
-    if converted == args:
-        return tp
-    elif isinstance(tp, TypingGenericAlias):
-        return TypingGenericAlias(origin, converted)
-    elif isinstance(tp, TypesUnionType):
-        # recreate types.UnionType (PEP604, Python >= 3.10)
-        return _UnionGenericAlias(origin, converted)
-    else:
-        try:
-            setattr(tp, '__args__', converted)
-        except AttributeError:
-            pass
-        return tp
+        Examples::
+            convert_generics(list['Hero']) == list[ForwardRef('Hero')]
+            convert_generics(dict['Hero', 'Team']) == dict[ForwardRef('Hero'), ForwardRef('Team')]
+            convert_generics(typing.Dict['Hero', 'Team']) == typing.Dict[ForwardRef('Hero'), ForwardRef('Team')]
+            convert_generics(list[str | 'Hero'] | int) == list[str | ForwardRef('Hero')] | int
+        """
+        origin = get_origin(tp)
+        if not origin or not hasattr(tp, '__args__'):
+            return tp
+
+        args = get_args(tp)
+
+        # typing.Annotated needs special treatment
+        if origin is Annotated:
+            return _AnnotatedAlias(convert_generics(args[0]), args[1:])
+
+        # recursively replace `str` instances inside of `GenericAlias` with `ForwardRef(arg)`
+        converted = tuple(
+            ForwardRef(arg) if isinstance(arg, str) and isinstance(tp, TypingGenericAlias) else convert_generics(arg)
+            for arg in args
+        )
+
+        if converted == args:
+            return tp
+        elif isinstance(tp, TypingGenericAlias):
+            return TypingGenericAlias(origin, converted)
+        elif isinstance(tp, TypesUnionType):
+            # recreate types.UnionType (PEP604, Python >= 3.10)
+            return _UnionGenericAlias(origin, converted)
+        else:
+            try:
+                setattr(tp, '__args__', converted)
+            except AttributeError:
+                pass
+            return tp
 
 
 if sys.version_info < (3, 10):

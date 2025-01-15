@@ -157,7 +157,7 @@ def dataclass(
           `x: int = dataclasses.field(default=pydantic.Field(..., kw_only=True), kw_only=True)`
         """
         for annotation_cls in cls.__mro__:
-            annotations = getattr(annotation_cls, '__annotations__', [])
+            annotations: dict[str, Any] = getattr(annotation_cls, '__annotations__', {})
             for field_name in annotations:
                 field_value = getattr(cls, field_name, None)
                 # Process only if this is an instance of `FieldInfo`.
@@ -176,8 +176,8 @@ def dataclass(
                     field_args['repr'] = field_value.repr
 
                 setattr(cls, field_name, dataclasses.field(**field_args))
-                # When subclassing, information is pulled from cls.__dict__['__annotations__'] for annotations,
-                # so we must make sure it's initialized before we add to it.
+                # In Python 3.9, when subclassing, information is pulled from cls.__dict__['__annotations__']
+                # for annotations, so we must make sure it's initialized before we add to it.
                 if cls.__dict__.get('__annotations__') is None:
                     cls.__annotations__ = {}
                 cls.__annotations__[field_name] = annotations[field_name]
@@ -280,7 +280,7 @@ def dataclass(
 
 __getattr__ = getattr_migration(__name__)
 
-if (3, 9) <= sys.version_info < (3, 11):
+if sys.version_info < (3, 11):
     # Monkeypatch dataclasses.InitVar so that typing doesn't error if it occurs as a type when evaluating type hints
     # Starting in 3.11, typing.get_type_hints will not raise an error if the retrieved type hints are not callable.
 

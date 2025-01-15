@@ -22,7 +22,7 @@ from inspect import Parameter, _ParameterKind, signature
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from itertools import chain
 from operator import attrgetter
-from types import FunctionType, LambdaType, MethodType
+from types import FunctionType, GenericAlias, LambdaType, MethodType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -908,8 +908,6 @@ class GenerateSchema:
     def _get_args_resolving_forward_refs(self, obj: Any, required: bool = False) -> tuple[Any, ...] | None:
         args = get_args(obj)
         if args:
-            from types import GenericAlias
-
             if isinstance(obj, GenericAlias):
                 # PEP 585 generic aliases don't convert args to ForwardRefs, unlike `typing.List/Dict` etc.
                 args = (_typing_extra._make_forward_ref(a) if isinstance(a, str) else a for a in args)
@@ -1727,7 +1725,7 @@ class GenerateSchema:
             if not inspect.isclass(type_param):
                 # when using type[None], this doesn't type convert to type[NoneType], and None isn't a class
                 # so we handle it manually here
-                if _typing_extra.is_none_type(type_param):
+                if type_param is None:
                     return core_schema.is_subclass_schema(_typing_extra.NoneType)
                 raise TypeError(f'Expected a class, got {type_param!r}')
             return core_schema.is_subclass_schema(type_param)
