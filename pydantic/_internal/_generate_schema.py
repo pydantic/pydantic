@@ -75,6 +75,7 @@ from ._core_utils import (
     is_function_with_inner_schema,
     is_list_like_schema_with_items_schema,
     simplify_schema_references,
+    validate_core_schema,
 )
 from ._decorators import (
     Decorator,
@@ -646,6 +647,7 @@ class GenerateSchema:
         if collect_invalid_schemas(schema):
             raise self.CollectedInvalid()
         schema = _discriminated_union.apply_discriminators(schema)
+        schema = validate_core_schema(schema)
         return schema
 
     def _add_js_function(self, metadata_schema: CoreSchema, js_function: Callable[..., Any]) -> None:

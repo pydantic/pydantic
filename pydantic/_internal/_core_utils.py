@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import os
 from collections import defaultdict
 from typing import Any, Callable, Hashable, TypeVar, Union
 
 from pydantic_core import CoreSchema, core_schema
+from pydantic_core import validate_core_schema as _validate_core_schema
 from typing_extensions import TypeGuard, get_args, get_origin
 
 from ..errors import PydanticUserError
@@ -595,3 +597,9 @@ def pretty_print_core_schema(
         schema = _strip_metadata(schema)
 
     return print(schema)
+
+
+def validate_core_schema(schema: CoreSchema) -> CoreSchema:
+    if 'PYDANTIC_VALIDATE_CORE_SCHEMAS' in os.environ:
+        return schema
+    return _validate_core_schema(schema)
