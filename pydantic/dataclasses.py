@@ -264,6 +264,10 @@ def dataclass(
             **kwargs,
         )
 
+        # This is an undocumented attribute to distinguish stdlib/Pydantic dataclasses.
+        # It should be set as early as possible:
+        cls.__is_pydantic_dataclass__ = True
+
         cls.__pydantic_decorators__ = decorators  # type: ignore
         cls.__doc__ = original_doc
         cls.__module__ = original_cls.__module__
@@ -360,6 +364,6 @@ def is_pydantic_dataclass(class_: type[Any], /) -> TypeGuard[type[PydanticDatacl
         `True` if the class is a pydantic dataclass, `False` otherwise.
     """
     try:
-        return '__pydantic_validator__' in class_.__dict__ and dataclasses.is_dataclass(class_)
+        return '__is_pydantic_dataclass__' in class_.__dict__ and dataclasses.is_dataclass(class_)
     except AttributeError:
         return False
