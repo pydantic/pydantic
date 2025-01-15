@@ -687,6 +687,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     @classmethod
     def __get_pydantic_core_schema__(cls, source: type[BaseModel], handler: GetCoreSchemaHandler, /) -> CoreSchema:
+        # This warning is only emitted when calling `super().__get_pydantic_core_schema__` from a model subclass.
+        # In the generate schema logic, this method (`BaseModel.__get_pydantic_core_schema__`) is special cased to
+        # *not* be called if not overridden.
         warnings.warn(
             'The `__get_pydantic_core_schema__` method of the `BaseModel` class is deprecated. If you are calling '
             '`super().__get_pydantic_core_schema__` when overriding the method on a Pydantic model, consider using '
