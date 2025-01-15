@@ -9,7 +9,7 @@ import typing
 import warnings
 import weakref
 from abc import ABCMeta
-from functools import lru_cache, partial
+from functools import cache, partial
 from types import FunctionType
 from typing import Any, Callable, Generic, Literal, NoReturn, cast
 
@@ -760,7 +760,7 @@ def unpack_lenient_weakvaluedict(d: dict[str, Any] | None) -> dict[str, Any] | N
     return result
 
 
-@lru_cache(maxsize=None)
+@cache
 def default_ignored_types() -> tuple[type[Any], ...]:
     from ..fields import ComputedFieldInfo
 

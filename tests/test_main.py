@@ -4,11 +4,12 @@ import re
 import sys
 import warnings
 from collections import defaultdict
+from collections.abc import Mapping
 from copy import deepcopy
 from dataclasses import dataclass
 from datetime import date, datetime
 from enum import Enum
-from functools import partial
+from functools import cache, partial
 from typing import (
     Annotated,
     Any,
@@ -17,10 +18,7 @@ from typing import (
     Final,
     Generic,
     Literal,
-    Mapping,
     Optional,
-    Set,
-    Type,
     TypeVar,
     Union,
     get_type_hints,
@@ -689,8 +687,6 @@ def test_default_hash_function_overrides_default_hash_function():
 
 
 def test_hash_method_is_inherited_for_frozen_models():
-    from functools import lru_cache
-
     class MyBaseModel(BaseModel):
         """A base model with sensible configurations."""
 
@@ -702,7 +698,7 @@ def test_hash_method_is_inherited_for_frozen_models():
     class MySubClass(MyBaseModel):
         x: dict[str, int]
 
-        @lru_cache(maxsize=None)
+        @cache
         def cached_method(self):
             return len(self.x)
 
@@ -988,7 +984,7 @@ def test_type_type_validation_fails(TypeTypeModel, input_value):
     ]
 
 
-@pytest.mark.parametrize('bare_type', [type, Type])
+@pytest.mark.parametrize('bare_type', [type, type])
 def test_bare_type_type_validation_success(bare_type):
     class TypeTypeModel(BaseModel):
         t: bare_type
@@ -998,7 +994,7 @@ def test_bare_type_type_validation_success(bare_type):
     assert m.t == arbitrary_type_class
 
 
-@pytest.mark.parametrize('bare_type', [type, Type])
+@pytest.mark.parametrize('bare_type', [type, type])
 def test_bare_type_type_validation_fails(bare_type):
     class TypeTypeModel(BaseModel):
         t: bare_type
@@ -1876,7 +1872,7 @@ def test_inherited_model_field_copy():
             return id(self)
 
     class Item(BaseModel):
-        images: Set[Image]
+        images: set[Image]
 
     image_1 = Image(path='my_image1.png')
     image_2 = Image(path='my_image2.png')

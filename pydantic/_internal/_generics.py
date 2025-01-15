@@ -4,10 +4,11 @@ import sys
 import types
 import typing
 from collections import ChainMap
+from collections.abc import Iterator, Mapping, MutableMapping
 from contextlib import contextmanager
 from contextvars import ContextVar
 from types import prepare_class
-from typing import TYPE_CHECKING, Any, Iterator, Mapping, MutableMapping, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 from weakref import WeakValueDictionary
 
 import typing_extensions

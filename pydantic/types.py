@@ -5,10 +5,12 @@ from __future__ import annotations as _annotations
 import base64
 import dataclasses as _dataclasses
 import re
+from collections.abc import Hashable, Iterator
 from datetime import date, datetime
 from decimal import Decimal
 from enum import Enum
 from pathlib import Path
+from re import Pattern
 from types import ModuleType
 from typing import (
     TYPE_CHECKING,
@@ -16,13 +18,8 @@ from typing import (
     Any,
     Callable,
     ClassVar,
-    FrozenSet,
     Generic,
-    Hashable,
-    Iterator,
     Literal,
-    Pattern,
-    Set,
     TypeVar,
     Union,
     cast,
@@ -847,7 +844,7 @@ def conset(
     Returns:
         The wrapped set type.
     """
-    return Annotated[Set[item_type], annotated_types.Len(min_length or 0, max_length)]  # pyright: ignore[reportReturnType]
+    return Annotated[set[item_type], annotated_types.Len(min_length or 0, max_length)]  # pyright: ignore[reportReturnType]
 
 
 def confrozenset(
@@ -863,7 +860,7 @@ def confrozenset(
     Returns:
         The wrapped frozenset type.
     """
-    return Annotated[FrozenSet[item_type], annotated_types.Len(min_length or 0, max_length)]  # pyright: ignore[reportReturnType]
+    return Annotated[frozenset[item_type], annotated_types.Len(min_length or 0, max_length)]  # pyright: ignore[reportReturnType]
 
 
 AnyItemType = TypeVar('AnyItemType')

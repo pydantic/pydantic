@@ -11,8 +11,6 @@ from typing import (
     Annotated,
     Any,
     Callable,
-    Deque,
-    FrozenSet,
     Literal,
     NamedTuple,
     Optional,
@@ -263,7 +261,7 @@ def test_int_overflow_validation(value):
 
 def test_frozenset_validation():
     class Model(BaseModel):
-        a: FrozenSet[int]
+        a: frozenset[int]
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='snap')
@@ -279,7 +277,7 @@ def test_frozenset_validation():
 
 def test_deque_validation():
     class Model(BaseModel):
-        a: Deque[int]
+        a: deque[int]
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='snap')

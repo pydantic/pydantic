@@ -1,9 +1,10 @@
 import re
 import sys
+from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import Enum, IntEnum
 from types import SimpleNamespace
-from typing import Annotated, Any, Callable, Generic, Literal, Optional, Sequence, TypeVar, Union
+from typing import Annotated, Any, Callable, Generic, Literal, Optional, TypeVar, Union
 
 import pytest
 from dirty_equals import HasRepr, IsStr

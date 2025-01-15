@@ -1,8 +1,9 @@
 import datetime as dt
 import sys
+from collections.abc import Iterator
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import Annotated, Any, Callable, Generic, Iterator, Optional, Set, TypeVar
+from typing import Annotated, Any, Callable, Generic, Optional, TypeVar
 
 import pytest
 import pytz
@@ -256,7 +257,7 @@ def test_annotated_alias_at_low_level() -> None:
 
 
 def test_get_pydantic_core_schema_source_type() -> None:
-    types: Set[Any] = set()
+    types: set[Any] = set()
 
     class PydanticMarker:
         def __get_pydantic_core_schema__(self, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:

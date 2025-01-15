@@ -3,12 +3,12 @@
 from __future__ import annotations as _annotations
 
 import sys
+from collections.abc import Iterable
 from dataclasses import is_dataclass
 from types import FrameType
 from typing import (
     Any,
     Generic,
-    Iterable,
     Literal,
     TypeVar,
     cast,

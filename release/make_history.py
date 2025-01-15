@@ -1,3 +1,4 @@
+"""Construct history and update HISTORY.md file as part of the automated release process."""
 from __future__ import annotations as _annotations
 
 import argparse
@@ -12,6 +13,7 @@ import requests
 
 
 def main():
+    """Generate release notes and prepend them to HISTORY.md."""
     root_dir = Path(__file__).parent.parent
 
     parser = argparse.ArgumentParser()
@@ -30,7 +32,6 @@ def main():
 
     # use ( to avoid matching beta versions
     if f'## v{new_version} (' in history_content:
-        print(f'WARNING: v{new_version} already in history, stopping')
         sys.exit(1)
 
     date_today_str = f'{date.today():%Y-%m-%d}'
@@ -42,30 +43,25 @@ def main():
         f'{notes}\n\n'
     )
     if args.preview:
-        print(new_chunk)
         return
     history = new_chunk + history_content
 
     history_path.write_text(history)
-    print(f'\nSUCCESS: added "{title}" section to {history_path.relative_to(root_dir)}')
 
     citation_path = root_dir / 'CITATION.cff'
     citation_text = citation_path.read_text()
 
-    if not (alpha_version := 'a' in new_version) and not (beta_version := 'b' in new_version):
+    # a or b in version indicates a pre-release version
+    if 'a' not in new_version and 'b' not in new_version:
         citation_text = re.sub(r'(?<=\nversion: ).*', f'v{new_version}', citation_text)
         citation_text = re.sub(r'(?<=date-released: ).*', date_today_str, citation_text)
         citation_path.write_text(citation_text)
-        print(
-            f'SUCCESS: updated version=v{new_version} and date-released={date_today_str} in {citation_path.relative_to(root_dir)}'
-        )
     else:
-        print(
-            f'WARNING: not updating CITATION.cff because version is {"alpha" if alpha_version else "beta"} version {new_version}'
-        )
+        pass
 
 
 def get_notes(new_version: str) -> str:
+    """Fetch auto-generated release notes from github."""
     last_tag = get_last_tag()
     auth_token = get_gh_auth_token()
 
@@ -108,14 +104,17 @@ def get_notes(new_version: str) -> str:
 
 
 def get_last_tag():
+    """Get the last tag in the git history."""
     return run('git', 'describe', '--tags', '--abbrev=0')
 
 
 def get_gh_auth_token():
+    """Get the GitHub auth token for the release process."""
     return run('gh', 'auth', 'token')
 
 
 def run(*args: str) -> str:
+    """Run CLI command and return stdout."""
     p = subprocess.run(args, stdout=subprocess.PIPE, check=True, encoding='utf-8')
     return p.stdout.strip()
 

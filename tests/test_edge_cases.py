@@ -2,25 +2,19 @@ import functools
 import importlib.util
 import re
 import sys
+import typing
 from abc import ABC, abstractmethod
-from collections.abc import Hashable
+from collections.abc import Hashable, Sequence
 from decimal import Decimal
 from enum import Enum, auto
 from typing import (
     Annotated,
     Any,
     Callable,
-    Dict,
     ForwardRef,
-    FrozenSet,
     Generic,
-    List,
     Literal,
     Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Type,
     TypeVar,
     Union,
 )
@@ -172,7 +166,7 @@ def test_typed_list():
 
 def test_typed_set():
     class Model(BaseModel):
-        v: Set[int] = ...
+        v: set[int] = ...
 
     assert Model(v={1, 2, '3'}).v == {1, 2, 3}
     assert Model(v=[1, 2, '3']).v == {1, 2, 3}
@@ -304,7 +298,7 @@ def test_tuple_more():
 @pytest.mark.parametrize(
     'dict_cls,frozenset_cls,list_cls,set_cls,tuple_cls,type_cls',
     [
-        (Dict, FrozenSet, List, Set, Tuple, Type),
+        (typing.Dict, typing.FrozenSet, typing.List, typing.Set, typing.Tuple, typing.Type),  # noqa: UP006
         (dict, frozenset, list, set, tuple, type),
     ],
 )
@@ -317,19 +311,19 @@ def test_pep585_generic_types(dict_cls, frozenset_cls, list_cls, set_cls, tuple_
 
     class Model(BaseModel, arbitrary_types_allowed=True):
         a: dict_cls
-        a1: 'dict_cls[str, int]'
+        a1: dict_cls[str, int]
         b: frozenset_cls
-        b1: 'frozenset_cls[int]'
+        b1: frozenset_cls[int]
         c: list_cls
-        c1: 'list_cls[int]'
+        c1: list_cls[int]
         d: set_cls
-        d1: 'set_cls[int]'
+        d1: set_cls[int]
         e: tuple_cls
-        e1: 'tuple_cls[int]'
-        e2: 'tuple_cls[int, ...]'
-        e3: 'tuple_cls[()]'
+        e1: tuple_cls[int]
+        e2: tuple_cls[int, ...]
+        e3: tuple_cls[()]
         f: type_cls
-        f1: 'type_cls[Type1]'
+        f1: type_cls[Type1]
 
     default_model_kwargs = dict(
         a={},
@@ -1488,9 +1482,10 @@ def test_typing_type_on_generic_alias() -> None:
     error_msg = 'Instead of using type[typing.List[int]], use type[list].'
 
     with pytest.raises(PydanticUserError) as exc_info:
-
+        # Note: this only works with typing.List, list behaves differently in Python 3.9 and sometimes 3.10,
+        # so thus we use typing.List here.
         class Model(BaseModel):
-            a: type[List[int]]
+            a: type[typing.List[int]]  # noqa: UP006
 
     assert error_msg in exc_info.value.message
 
@@ -1630,10 +1625,10 @@ class DisplayGen(Generic[T1, T2]):
         (Union[int, str, bytes], 'Union[int, str, bytes]'),
         (list[int], 'list[int]'),
         (tuple[int, str, bytes], 'tuple[int, str, bytes]'),
-        (Union[list[int], Set[bytes]], 'Union[list[int], Set[bytes]]'),
+        (Union[list[int], set[bytes]], 'Union[list[int], set[bytes]]'),
         (list[tuple[int, int]], 'list[tuple[int, int]]'),
         (dict[int, str], 'dict[int, str]'),
-        (FrozenSet[int], 'FrozenSet[int]'),
+        (frozenset[int], 'frozenset[int]'),
         (tuple[int, ...], 'tuple[int, ...]'),
         (Optional[list[int]], 'Union[list[int], NoneType]'),
         (dict, 'dict'),
@@ -1736,7 +1731,7 @@ def test_type_var_bound():
 
 def test_dict_bare():
     class MyModel(BaseModel):
-        foo: Dict
+        foo: dict
 
     m = MyModel(foo={'x': 'a', 'y': None})
     assert m.foo == {'x': 'a', 'y': None}
@@ -1744,7 +1739,7 @@ def test_dict_bare():
 
 def test_list_bare():
     class MyModel(BaseModel):
-        foo: List
+        foo: list
 
     m = MyModel(foo=[1, 2, None])
     assert m.foo == [1, 2, None]

@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import os
 from collections import defaultdict
-from typing import Any, Callable, Hashable, TypeVar, Union
+from collections.abc import Hashable
+from typing import Any, Callable, TypeVar, Union
 
 from pydantic_core import CoreSchema, core_schema
 from pydantic_core import validate_core_schema as _validate_core_schema

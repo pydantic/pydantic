@@ -5,7 +5,7 @@ from __future__ import annotations
 import datetime
 import warnings
 from decimal import Decimal
-from typing import Annotated, Any, Callable, FrozenSet, Set, Union
+from typing import Annotated, Any, Callable, Union
 
 import pytest
 import pytz
@@ -122,14 +122,14 @@ def test_interval_constraints(type_: Any, pipeline: Any, valid_cases: list[Any],
         ),
         (tuple[int, ...], validate_as(tuple[int, ...]).len(min_len=1, max_len=2), [(1,), (1, 2)], [(), (1, 2, 3)]),
         (
-            Set[int],
-            validate_as(Set[int]).len(min_len=2, max_len=4),
+            set[int],
+            validate_as(set[int]).len(min_len=2, max_len=4),
             [{1, 2}, {1, 2, 3}, {1, 2, 3, 4}],
             [{1}, {1, 2, 3, 4, 5}],
         ),
         (
-            FrozenSet[int],
-            validate_as(FrozenSet[int]).len(min_len=2, max_len=3),
+            frozenset[int],
+            validate_as(frozenset[int]).len(min_len=2, max_len=3),
             [frozenset({1, 2}), frozenset({1, 2, 3})],
             [frozenset({1}), frozenset({1, 2, 3, 4})],
         ),

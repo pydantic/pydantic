@@ -17,22 +17,18 @@ import math
 import os
 import re
 import warnings
-from collections import defaultdict
+from collections import Counter, defaultdict
+from collections.abc import Hashable, Iterable, Sequence
 from copy import deepcopy
 from enum import Enum
+from re import Pattern
 from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
     Callable,
-    Counter,
-    Dict,
-    Hashable,
-    Iterable,
     Literal,
     NewType,
-    Pattern,
-    Sequence,
     TypeVar,
     Union,
     cast,
@@ -75,7 +71,7 @@ A type alias for defined schema types that represents a union of
 `core_schema.CoreSchemaFieldType`.
 """
 
-JsonSchemaValue = Dict[str, Any]
+JsonSchemaValue = dict[str, Any]
 """
 A type alias for a JSON schema value. This is a dictionary of string keys to arbitrary JSON values.
 """

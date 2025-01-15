@@ -1,6 +1,7 @@
 import datetime
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Annotated, Generic, Literal, Sequence, TypeVar, Union
+from typing import Annotated, Generic, Literal, TypeVar, Union
 
 import pytest
 from annotated_types import MaxLen

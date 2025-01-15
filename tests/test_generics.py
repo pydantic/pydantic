@@ -4,25 +4,17 @@ import json
 import platform
 import re
 import sys
-from collections import deque
+from collections import Counter, OrderedDict, defaultdict, deque
+from collections.abc import Iterable, Mapping, Sequence
 from enum import Enum, IntEnum
 from typing import (
+    Annotated,
     Any,
     Callable,
     ClassVar,
-    Counter,
-    DefaultDict,
-    Deque,
-    FrozenSet,
     Generic,
-    Iterable,
-    Mapping,
     NamedTuple,
     Optional,
-    OrderedDict,
-    Sequence,
-    Set,
-    Tuple,
     TypeVar,
     Union,
 )
@@ -31,7 +23,6 @@ import pytest
 from dirty_equals import HasRepr, IsStr
 from pydantic_core import CoreSchema, core_schema
 from typing_extensions import (
-    Annotated,
     Literal,
     Never,
     NotRequired,
@@ -1156,18 +1147,18 @@ def test_replace_types_with_user_defined_generic_type_field():  # noqa: C901
         def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
             return core_schema.no_info_after_validator_function(cls, handler(Counter[get_args(source_type)[0]]))
 
-    class CustomDefaultDict(DefaultDict[KT, VT]):
+    class CustomDefaultDict(defaultdict[KT, VT]):
         @classmethod
         def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
             keys_type, values_type = get_args(source_type)
             return core_schema.no_info_after_validator_function(
-                lambda x: cls(x.default_factory, x), handler(DefaultDict[keys_type, values_type])
+                lambda x: cls(x.default_factory, x), handler(defaultdict[keys_type, values_type])
             )
 
-    class CustomDeque(Deque[T]):
+    class CustomDeque(deque[T]):
         @classmethod
         def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-            return core_schema.no_info_after_validator_function(cls, handler(Deque[get_args(source_type)[0]]))
+            return core_schema.no_info_after_validator_function(cls, handler(deque[get_args(source_type)[0]]))
 
     class CustomDict(dict[KT, VT]):
         @classmethod
@@ -1175,10 +1166,10 @@ def test_replace_types_with_user_defined_generic_type_field():  # noqa: C901
             keys_type, values_type = get_args(source_type)
             return core_schema.no_info_after_validator_function(cls, handler(dict[keys_type, values_type]))
 
-    class CustomFrozenset(FrozenSet[T]):
+    class CustomFrozenset(frozenset[T]):
         @classmethod
         def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-            return core_schema.no_info_after_validator_function(cls, handler(FrozenSet[get_args(source_type)[0]]))
+            return core_schema.no_info_after_validator_function(cls, handler(frozenset[get_args(source_type)[0]]))
 
     class CustomIterable(Iterable[T]):
         def __init__(self, iterable):
@@ -1211,10 +1202,10 @@ def test_replace_types_with_user_defined_generic_type_field():  # noqa: C901
             keys_type, values_type = get_args(source_type)
             return core_schema.no_info_after_validator_function(cls, handler(OrderedDict[keys_type, values_type]))
 
-    class CustomSet(Set[T]):
+    class CustomSet(set[T]):
         @classmethod
         def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-            return core_schema.no_info_after_validator_function(cls, handler(Set[get_args(source_type)[0]]))
+            return core_schema.no_info_after_validator_function(cls, handler(set[get_args(source_type)[0]]))
 
     class CustomTuple(tuple[T]):
         @classmethod
@@ -2206,9 +2197,9 @@ def test_generics_memory_use():
 
     containers = [
         list,
-        Tuple,
-        Set,
-        FrozenSet,
+        tuple,
+        set,
+        frozenset,
     ]
 
     all = [*types, *[container[tp] for container in containers for tp in types]]

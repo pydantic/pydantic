@@ -1,9 +1,10 @@
 import platform
 import re
+from collections.abc import Iterable
 from datetime import date, timedelta
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Any, Iterable, Literal
+from typing import Any, Literal
 
 import pytest
 from pydantic_core import CoreSchema, core_schema

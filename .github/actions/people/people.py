@@ -4,13 +4,18 @@ This logic is inspired by that of @tiangolo's
 [FastAPI people script](https://github.com/tiangolo/fastapi/blob/master/.github/actions/people/app/main.py).
 """
 
+# TODO: add docstrings to classes and functions (good first issue)
+# ruff: noqa: D101
+# ruff: noqa: D103
+
 import logging
 import subprocess
 import sys
 from collections import Counter
+from collections.abc import Container
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Container, Set, Union
+from typing import Any, Union
 
 import requests
 import yaml
@@ -465,8 +470,8 @@ def get_contributors(settings: Settings):
         if pr.author:
             authors[pr.author.login] = pr.author
             author_name = pr.author.login
-        pr_commentors: Set[str] = set()
-        pr_reviewers: Set[str] = set()
+        pr_commentors: set[str] = set()
+        pr_reviewers: set[str] = set()
         for comment in pr.comments.nodes:
             if comment.author:
                 authors[comment.author.login] = comment.author

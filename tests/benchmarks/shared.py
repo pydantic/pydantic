@@ -1,4 +1,5 @@
 from collections import deque
+from collections.abc import Iterable, Sequence
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, IntEnum
@@ -15,14 +16,9 @@ from re import Pattern
 from typing import (
     Any,
     Callable,
-    Deque,
-    FrozenSet,
-    Iterable,
     Literal,
     NamedTuple,
     Optional,
-    Sequence,
-    Set,
     Union,
 )
 from uuid import UUID, uuid4, uuid5
@@ -117,10 +113,10 @@ class Foo:
 
 StdLibTypes = [
     deque,  # collections.deque
-    Deque[str],  # typing.Deque
-    Deque[int],  # typing.Deque
-    Deque[float],  # typing.Deque
-    Deque[bytes],  # typing.Deque
+    deque[str],  # collections.deque
+    deque[int],  # collections.deque
+    deque[float],  # collections.deque
+    deque[bytes],  # collections.deque
     str,  # str
     int,  # int
     float,  # float
@@ -147,24 +143,24 @@ StdLibTypes = [
     uuid5,  # uuid.uuid5
     Point,  # named tuple
     list,  # built-in list
-    list[int],  # typing.List
-    list[str],  # typing.List
-    list[bytes],  # typing.List
-    list[float],  # typing.List
+    list[int],  # built-in list
+    list[str],  # built-in list
+    list[bytes],  # built-in list
+    list[float],  # built-in list
     dict,  # built-in dict
-    dict[str, float],  # typing.Dict
-    dict[str, bytes],  # typing.Dict
-    dict[str, int],  # typing.Dict
-    dict[str, str],  # typing.Dict
+    dict[str, float],  # built-in dict
+    dict[str, bytes],  # built-in dict
+    dict[str, int],  # built-in dict
+    dict[str, str],  # built-in dict
     User,  # TypedDict
     tuple,  # tuple
-    tuple[int, str, float],  # typing.Tuple
+    tuple[int, str, float],  # built-in tuple
     set,  # built-in set
-    Set[int],  # typing.Set
-    Set[str],  # typing.Set
+    set[int],  # set
+    set[str],  # set
     frozenset,  # built-in frozenset
-    FrozenSet[int],  # typing.FrozenSet
-    FrozenSet[str],  # typing.FrozenSet
+    frozenset[int],  # built-in frozenset
+    frozenset[str],  # built-in frozenset
     Optional[int],  # typing.Optional
     Optional[str],  # typing.Optional
     Optional[float],  # typing.Optional

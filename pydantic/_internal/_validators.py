@@ -13,7 +13,6 @@ from decimal import Decimal
 from fractions import Fraction
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from typing import Any, Callable, TypeVar, Union, cast, get_origin
-from typing import OrderedDict as TypingExtensionsOrderedDict
 
 import typing_extensions
 from pydantic_core import PydanticCustomError, core_schema
@@ -428,14 +427,11 @@ def get_defaultdict_default_default_factory(values_source_type: Any) -> Callable
 
     def infer_default() -> Callable[[], Any]:
         allowed_default_types: dict[Any, Any] = {
-            typing.Tuple: tuple,
             tuple: tuple,
             collections.abc.Sequence: tuple,
             collections.abc.MutableSequence: list,
-            typing.List: list,
             list: list,
             typing.Sequence: list,
-            typing.Set: set,
             set: set,
             typing.MutableSet: set,
             collections.abc.MutableSet: set,
@@ -507,12 +503,13 @@ IP_VALIDATOR_LOOKUP: dict[type[IpType], Callable] = {
 }
 
 MAPPING_ORIGIN_MAP: dict[Any, Any] = {
-    typing.DefaultDict: collections.defaultdict,
+    typing.DefaultDict: collections.defaultdict,  # noqa: UP006
     collections.defaultdict: collections.defaultdict,
+    typing.OrderedDict: collections.OrderedDict,  # noqa: UP006
     collections.OrderedDict: collections.OrderedDict,
-    TypingExtensionsOrderedDict: collections.OrderedDict,
-    collections.Counter: collections.Counter,
+    typing_extensions.OrderedDict: collections.OrderedDict,
     typing.Counter: collections.Counter,
+    collections.Counter: collections.Counter,
     # this doesn't handle subclasses of these
     typing.Mapping: dict,
     typing.MutableMapping: dict,

@@ -9,7 +9,8 @@ import re
 import sys
 import typing
 import uuid
-from collections import OrderedDict, defaultdict, deque
+from collections import Counter, OrderedDict, defaultdict, deque
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta, timezone
 from decimal import Decimal
@@ -17,24 +18,14 @@ from enum import Enum, IntEnum
 from fractions import Fraction
 from numbers import Number
 from pathlib import Path
+from re import Pattern
 from typing import (
     Annotated,
     Any,
     Callable,
-    Counter,
-    DefaultDict,
-    Deque,
-    Dict,
-    FrozenSet,
-    Iterable,
-    List,
     Literal,
     NewType,
     Optional,
-    Pattern,
-    Sequence,
-    Set,
-    Tuple,
     TypeVar,
     Union,
 )
@@ -609,7 +600,7 @@ def test_constrained_set_item_type_fails():
 
 def test_conset():
     class Model(BaseModel):
-        foo: Set[int] = Field(min_length=2, max_length=4)
+        foo: set[int] = Field(min_length=2, max_length=4)
         bar: conset(str, min_length=1, max_length=4) = None
 
     assert Model(foo=[1, 2], bar=['spoon']).model_dump() == {'foo': {1, 2}, 'bar': {'spoon'}}
@@ -650,7 +641,7 @@ def test_conset():
 
 def test_conset_not_required():
     class Model(BaseModel):
-        foo: Optional[Set[int]] = None
+        foo: Optional[set[int]] = None
 
     assert Model(foo=None).foo is None
     assert Model().foo is None
@@ -658,7 +649,7 @@ def test_conset_not_required():
 
 def test_confrozenset():
     class Model(BaseModel):
-        foo: FrozenSet[int] = Field(min_length=2, max_length=4)
+        foo: frozenset[int] = Field(min_length=2, max_length=4)
         bar: confrozenset(str, min_length=1, max_length=4) = None
 
     m = Model(foo=[1, 2], bar=['spoon'])
@@ -702,7 +693,7 @@ def test_confrozenset():
 
 def test_confrozenset_not_required():
     class Model(BaseModel):
-        foo: Optional[FrozenSet[int]] = None
+        foo: Optional[frozenset[int]] = None
 
     assert Model(foo=None).foo is None
     assert Model().foo is None
@@ -1235,8 +1226,8 @@ def check_model_fixture():
         timedelta_check: timedelta = timedelta(days=1)
         list_check: list[str] = ['1', '2']
         tuple_check: tuple[str, ...] = ('1', '2')
-        set_check: Set[str] = {'1', '2'}
-        frozenset_check: FrozenSet[str] = frozenset(['1', '2'])
+        set_check: set[str] = {'1', '2'}
+        frozenset_check: frozenset[str] = frozenset(['1', '2'])
 
     return CheckModel
 
@@ -1811,11 +1802,11 @@ def test_enum_with_no_cases() -> None:
             for constraint_name in ['gt', 'lt', 'ge', 'le', 'multiple_of']
         ]
         + [
-            ({constraint_name: 0}, Set[int], {1, 2, 3, 4, 5})
+            ({constraint_name: 0}, set[int], {1, 2, 3, 4, 5})
             for constraint_name in ['gt', 'lt', 'ge', 'le', 'multiple_of']
         ]
         + [
-            ({constraint_name: 0}, FrozenSet[int], frozenset({1, 2, 3, 4, 5}))
+            ({constraint_name: 0}, frozenset[int], frozenset({1, 2, 3, 4, 5}))
             for constraint_name in ['gt', 'lt', 'ge', 'le', 'multiple_of']
         ]
         + [({constraint_name: 0}, Decimal, Decimal('1.0')) for constraint_name in ['max_length', 'min_length']]
@@ -2149,7 +2140,7 @@ def test_list_type_fails():
 
 def test_set_type_fails():
     class Model(BaseModel):
-        v: Set[int]
+        v: set[int]
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v='123')
@@ -2166,7 +2157,7 @@ def test_set_type_fails():
         (int, (1, 2, 3), (1, 2, 3)),
         (int, range(5), [0, 1, 2, 3, 4]),
         (int, deque((1, 2, 3)), deque((1, 2, 3))),
-        (Set[int], [{1, 2}, {3, 4}, {5, 6}], [{1, 2}, {3, 4}, {5, 6}]),
+        (set[int], [{1, 2}, {3, 4}, {5, 6}], [{1, 2}, {3, 4}, {5, 6}]),
         (tuple[int, str], ((1, 'a'), (2, 'b'), (3, 'c')), ((1, 'a'), (2, 'b'), (3, 'c'))),
     ),
 )
@@ -2401,7 +2392,7 @@ def test_sequence_generator_fails():
             ],
         ),
         (
-            Set[int],
+            set[int],
             [{1, 2}, {2, 3}, {'d'}],
             [
                 {
@@ -2481,12 +2472,12 @@ def test_list_strict() -> None:
 
 def test_set_strict() -> None:
     class LaxModel(BaseModel):
-        v: Set[int]
+        v: set[int]
 
         model_config = ConfigDict(strict=False)
 
     class StrictModel(BaseModel):
-        v: Set[int]
+        v: set[int]
 
         model_config = ConfigDict(strict=True)
 
@@ -2514,12 +2505,12 @@ def test_set_strict() -> None:
 
 def test_frozenset_strict() -> None:
     class LaxModel(BaseModel):
-        v: FrozenSet[int]
+        v: frozenset[int]
 
         model_config = ConfigDict(strict=False)
 
     class StrictModel(BaseModel):
-        v: FrozenSet[int]
+        v: frozenset[int]
 
         model_config = ConfigDict(strict=True)
 
@@ -4244,7 +4235,7 @@ def test_compiled_pattern_in_field(use_field):
 def test_pattern_with_invalid_param():
     with pytest.raises(
         PydanticSchemaGenerationError,
-        match=re.escape('Unable to generate pydantic-core schema for typing.Pattern[int].'),
+        match=re.escape('Unable to generate pydantic-core schema for re.Pattern[int].'),
     ):
 
         class Foo(BaseModel):
@@ -4802,9 +4793,9 @@ def test_secret_bytes_min_max_length():
 
 def test_generic_without_params():
     class Model(BaseModel):
-        generic_list: List
-        generic_dict: Dict
-        generic_tuple: Tuple
+        generic_list: list
+        generic_dict: dict
+        generic_tuple: tuple
 
     m = Model(generic_list=[0, 'a'], generic_dict={0: 'a', 'a': 0}, generic_tuple=(1, 'q'))
     assert m.model_dump() == {'generic_list': [0, 'a'], 'generic_dict': {0: 'a', 'a': 0}, 'generic_tuple': (1, 'q')}
@@ -4812,9 +4803,9 @@ def test_generic_without_params():
 
 def test_generic_without_params_error():
     class Model(BaseModel):
-        generic_list: List
-        generic_dict: Dict
-        generic_tuple: Tuple
+        generic_list: list
+        generic_dict: dict
+        generic_tuple: tuple
 
     with pytest.raises(ValidationError) as exc_info:
         Model(generic_list=0, generic_dict=0, generic_tuple=0)
@@ -4876,7 +4867,7 @@ def test_literal_multiple():
 
 
 def test_typing_mutable_set():
-    s1 = TypeAdapter(Set[int]).core_schema
+    s1 = TypeAdapter(set[int]).core_schema
     s1.pop('metadata', None)
     s2 = TypeAdapter(typing.MutableSet[int]).core_schema
     s2.pop('metadata', None)
@@ -4885,7 +4876,7 @@ def test_typing_mutable_set():
 
 def test_frozenset_field():
     class FrozenSetModel(BaseModel):
-        set: FrozenSet[int]
+        set: frozenset[int]
 
     test_set = frozenset({1, 2, 3})
     object_under_test = FrozenSetModel(set=test_set)
@@ -4904,7 +4895,7 @@ def test_frozenset_field():
 )
 def test_frozenset_field_conversion(value, result):
     class FrozenSetModel(BaseModel):
-        set: FrozenSet[int]
+        set: frozenset[int]
 
     object_under_test = FrozenSetModel(set=value)
 
@@ -4913,7 +4904,7 @@ def test_frozenset_field_conversion(value, result):
 
 def test_frozenset_field_not_convertible():
     class FrozenSetModel(BaseModel):
-        set: FrozenSet[int]
+        set: frozenset[int]
 
     with pytest.raises(ValidationError, match=r'frozenset'):
         FrozenSetModel(set=42)
@@ -5015,7 +5006,7 @@ def test_deque_success():
         (int, (1, 2, 3), deque((1, 2, 3))),
         (int, deque((1, 2, 3)), deque((1, 2, 3))),
         (float, [1.0, 2.0, 3.0], deque([1.0, 2.0, 3.0])),
-        (Set[int], [{1, 2}, {3, 4}, {5, 6}], deque([{1, 2}, {3, 4}, {5, 6}])),
+        (set[int], [{1, 2}, {3, 4}, {5, 6}], deque([{1, 2}, {3, 4}, {5, 6}])),
         (tuple[int, str], ((1, 'a'), (2, 'b'), (3, 'c')), deque(((1, 'a'), (2, 'b'), (3, 'c')))),
         (str, 'one two three'.split(), deque(['one', 'two', 'three'])),
         (
@@ -5047,7 +5038,7 @@ def test_deque_success():
 )
 def test_deque_generic_success(cls, value, result):
     class Model(BaseModel):
-        v: Deque[cls]
+        v: deque[cls]
 
     assert Model(v=value).v == result
 
@@ -5061,7 +5052,7 @@ def test_deque_generic_success(cls, value, result):
 )
 def test_deque_generic_success_strict(cls, value: Any, result):
     class Model(BaseModel):
-        v: Deque[cls]
+        v: deque[cls]
 
         model_config = ConfigDict(strict=True)
 
@@ -5118,7 +5109,7 @@ def test_deque_generic_success_strict(cls, value: Any, result):
 )
 def test_deque_fails(cls, value, expected_error):
     class Model(BaseModel):
-        v: Deque[cls]
+        v: deque[cls]
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=value)
@@ -5132,7 +5123,7 @@ def test_deque_model():
         x: int
 
     class Model(BaseModel):
-        v: Deque[Model2]
+        v: deque[Model2]
 
     seq = [Model2(x=1), Model2(x=2)]
     assert Model(v=seq).v == deque(seq)
@@ -5140,7 +5131,7 @@ def test_deque_model():
 
 def test_deque_json():
     class Model(BaseModel):
-        v: Deque[int]
+        v: deque[int]
 
     assert Model(v=deque((1, 2, 3))).model_dump_json() == '{"v":[1,2,3]}'
 
@@ -5169,20 +5160,20 @@ def test_deque_any_maxlen():
 
 def test_deque_typed_maxlen():
     class DequeModel1(BaseModel):
-        field: Deque[int]
+        field: deque[int]
 
     assert DequeModel1(field=deque()).field.maxlen is None
     assert DequeModel1(field=deque(maxlen=8)).field.maxlen == 8
 
     class DequeModel2(BaseModel):
-        field: Deque[int] = deque()
+        field: deque[int] = deque()
 
     assert DequeModel2().field.maxlen is None
     assert DequeModel2(field=deque()).field.maxlen is None
     assert DequeModel2(field=deque(maxlen=8)).field.maxlen == 8
 
     class DequeModel3(BaseModel):
-        field: Deque[int] = deque(maxlen=5)
+        field: deque[int] = deque(maxlen=5)
 
     assert DequeModel3().field.maxlen == 5
     assert DequeModel3(field=deque()).field.maxlen is None
@@ -5191,7 +5182,7 @@ def test_deque_typed_maxlen():
 
 def test_deque_enforces_maxlen():
     class DequeModel1(BaseModel):
-        field: Annotated[Deque[int], Field(max_length=3)]
+        field: Annotated[deque[int], Field(max_length=3)]
 
     with pytest.raises(ValidationError):
         DequeModel1(field=deque([1, 2, 3, 4]))
@@ -5726,7 +5717,7 @@ def test_sequence_subclass_without_core_schema() -> None:
 
 def test_typing_coercion_defaultdict():
     class Model(BaseModel):
-        x: DefaultDict[int, str]
+        x: defaultdict[int, str]
 
     d = defaultdict(str)
     d['1']
@@ -5790,18 +5781,18 @@ def test_defaultdict_unknown_default_factory() -> None:
     """
     with pytest.raises(
         PydanticSchemaGenerationError,
-        match=r'Unable to infer a default factory for keys of type typing.DefaultDict\[int, int\]',
+        match=r'Unable to infer a default factory for keys of type collections.defaultdict\[int, int\]',
     ):
 
         class Model(BaseModel):
-            d: DefaultDict[int, DefaultDict[int, int]]
+            d: defaultdict[int, defaultdict[int, int]]
 
 
 def test_defaultdict_infer_default_factory() -> None:
     class Model(BaseModel):
-        a: DefaultDict[int, list[int]]
-        b: DefaultDict[int, int]
-        c: DefaultDict[int, set]
+        a: defaultdict[int, list[int]]
+        b: defaultdict[int, int]
+        c: defaultdict[int, set]
 
     m = Model(a={}, b={}, c={})
     assert m.a.default_factory is not None
@@ -5817,7 +5808,7 @@ def test_defaultdict_explicit_default_factory() -> None:
         pass
 
     class Model(BaseModel):
-        a: DefaultDict[int, Annotated[list[int], Field(default_factory=lambda: MyList())]]
+        a: defaultdict[int, Annotated[list[int], Field(default_factory=lambda: MyList())]]
 
     m = Model(a={})
     assert m.a.default_factory is not None
@@ -5826,7 +5817,7 @@ def test_defaultdict_explicit_default_factory() -> None:
 
 def test_defaultdict_default_factory_preserved() -> None:
     class Model(BaseModel):
-        a: DefaultDict[int, list[int]]
+        a: defaultdict[int, list[int]]
 
     class MyList(list[int]):
         pass
@@ -5840,12 +5831,12 @@ def test_custom_default_dict() -> None:
     KT = TypeVar('KT')
     VT = TypeVar('VT')
 
-    class CustomDefaultDict(DefaultDict[KT, VT]):
+    class CustomDefaultDict(defaultdict[KT, VT]):
         @classmethod
         def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
             keys_type, values_type = get_args(source_type)
             return core_schema.no_info_after_validator_function(
-                lambda x: cls(x.default_factory, x), handler(DefaultDict[keys_type, values_type])
+                lambda x: cls(x.default_factory, x), handler(defaultdict[keys_type, values_type])
             )
 
     ta = TypeAdapter(CustomDefaultDict[str, int])
@@ -6889,8 +6880,8 @@ def test_constraints_on_str_like() -> None:
     [
         pytest.param(list[int], id='list'),
         pytest.param(tuple[int, ...], id='tuple'),
-        pytest.param(Set[int], id='set'),
-        pytest.param(FrozenSet[int], id='frozenset'),
+        pytest.param(set[int], id='set'),
+        pytest.param(frozenset[int], id='frozenset'),
     ],
 )
 @pytest.mark.parametrize(

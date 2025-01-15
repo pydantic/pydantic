@@ -1,5 +1,3 @@
-from typing import List
-
 import pytest
 from pydantic_core import CoreSchema
 
@@ -250,7 +248,7 @@ def test_parse_nested_custom_root():
     m = MyModel.model_validate(nested)
     assert isinstance(m, MyModel)
     assert isinstance(m.root, NestedModel)
-    assert isinstance(m.root.root, List)
+    assert isinstance(m.root.root, list)
     assert isinstance(m.root.root[0], str)
 
 

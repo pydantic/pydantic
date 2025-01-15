@@ -184,7 +184,7 @@ unconfirmed_label = 'pending'
 
 [tool.ruff]
 line-length = 120
-target-version = 'py38'
+target-version = 'py39'
 extend-exclude = ['pydantic/v1', 'tests/mypy/']
 
 [tool.ruff.lint]

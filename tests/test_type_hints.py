@@ -10,7 +10,6 @@ from typing import (
     Any,
     Generic,
     Optional,
-    Set,
     TypeVar,
 )
 
@@ -85,7 +84,7 @@ def get_type_checking_only_ns():
 
 
 def inspect_type_hints(
-    obj_type, members: Optional[Set[str]] = None, exclude_members: Optional[Set[str]] = None, recursion_limit: int = 3
+    obj_type, members: Optional[set[str]] = None, exclude_members: Optional[set[str]] = None, recursion_limit: int = 3
 ):
     """
     Test an object and its members to make sure type hints can be resolved.
@@ -125,7 +124,7 @@ def inspect_type_hints(
         (RootModel, None, DEPRECATED_MODEL_MEMBERS),
     ],
 )
-def test_obj_type_hints(obj_type, members: Optional[Set[str]], exclude_members: Optional[Set[str]]):
+def test_obj_type_hints(obj_type, members: Optional[set[str]], exclude_members: Optional[set[str]]):
     """
     Test an object and its members to make sure type hints can be resolved.
     :param obj_type: Type to check

@@ -10,10 +10,10 @@ import typing
 import warnings
 from functools import partial
 from typing import TYPE_CHECKING, Any, Callable, cast
+from zoneinfo import ZoneInfo
 
 import typing_extensions
 from typing_extensions import ParamSpec, TypeAliasType, TypeIs, deprecated, get_args, get_origin
-from zoneinfo import ZoneInfo
 
 from ._namespace_utils import GlobalsNamespace, MappingNamespace, NsResolver, get_module_ns_of
 

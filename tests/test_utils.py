@@ -5,7 +5,7 @@ import pickle
 import sys
 import time
 from copy import copy, deepcopy
-from typing import Annotated, Callable, Generic, List, Literal, NewType, TypeVar, Union
+from typing import Annotated, Callable, Generic, Literal, NewType, TypeVar, Union
 
 import pytest
 from dirty_equals import IsList
@@ -66,10 +66,8 @@ class LoggedVar(Generic[T]):
         (str, 'str'),
         ('foobar', 'str'),
         ('SomeForwardRefString', 'str'),  # included to document current behavior; could be changed
-        (List['SomeForwardRef'], "List[ForwardRef('SomeForwardRef')]"),  # noqa: F821
         (Union[str, int], 'Union[str, int]'),
         (list, 'list'),
-        (List, 'List'),
         ([1, 2, 3], 'list'),
         (list[dict[str, int]], 'list[dict[str, int]]'),
         (tuple[str, int, float], 'tuple[str, int, float]'),
@@ -91,10 +89,8 @@ def test_display_as_type(value, expected):
     [
         (lambda: str, 'str'),
         (lambda: 'SomeForwardRefString', 'str'),  # included to document current behavior; could be changed
-        (lambda: List['SomeForwardRef'], "List[ForwardRef('SomeForwardRef')]"),  # noqa: F821
         (lambda: str | int, 'Union[str, int]'),
         (lambda: list, 'list'),
-        (lambda: List, 'List'),
         (lambda: list[int], 'list[int]'),
         (lambda: list[int], 'list[int]'),
         (lambda: list[dict[str, int]], 'list[dict[str, int]]'),

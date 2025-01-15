@@ -1,8 +1,8 @@
 from datetime import timezone
 from typing import Union
+from zoneinfo import ZoneInfo
 
 import pytest
-from zoneinfo import ZoneInfo
 
 from pydantic import BaseModel, ConfigDict, TypeAdapter, ValidationError
 

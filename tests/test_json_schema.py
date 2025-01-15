@@ -5,29 +5,23 @@ import math
 import re
 import sys
 import typing
+from collections import deque
+from collections.abc import Iterable, Sequence
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, IntEnum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
+from re import Pattern
 from typing import (
     Annotated,
     Any,
     Callable,
-    Deque,
-    Dict,
-    FrozenSet,
     Generic,
-    Iterable,
-    List,
     Literal,
     NamedTuple,
     NewType,
     Optional,
-    Pattern,
-    Sequence,
-    Set,
-    Tuple,
     TypedDict,
     TypeVar,
     Union,
@@ -619,7 +613,7 @@ def test_any():
 
 def test_set():
     class Model(BaseModel):
-        a: Set[int]
+        a: set[int]
         b: set
         c: set = {1}
 
@@ -639,7 +633,6 @@ def test_set():
     'field_type,extra_props',
     [
         pytest.param(tuple, {'items': {}}, id='tuple'),
-        pytest.param(Tuple, {'items': {}}, id='Tuple'),
         pytest.param(
             tuple[str, int, Union[str, int, float], float],
             {
@@ -677,7 +670,7 @@ def test_tuple(field_type, extra_props):
 
 def test_deque():
     class Model(BaseModel):
-        a: Deque[str]
+        a: deque[str]
 
     assert Model.model_json_schema() == {
         'title': 'Model',
@@ -2263,7 +2256,7 @@ def test_field_with_validator():
 
 def test_unparameterized_schema_generation():
     class FooList(BaseModel):
-        d: List
+        d: list
 
     class BarList(BaseModel):
         d: list
@@ -2281,7 +2274,7 @@ def test_unparameterized_schema_generation():
     assert foo_list_schema == bar_list_schema
 
     class FooDict(BaseModel):
-        d: Dict
+        d: dict
 
     class BarDict(BaseModel):
         d: dict
@@ -2860,10 +2853,9 @@ def test_path_modify_schema():
 
 def test_frozen_set():
     class Model(BaseModel):
-        a: FrozenSet[int] = frozenset({1, 2, 3})
-        b: FrozenSet = frozenset({1, 2, 3})
-        c: frozenset = frozenset({1, 2, 3})
-        d: frozenset = ...
+        a: frozenset[int] = frozenset({1, 2, 3})
+        b: frozenset = frozenset({1, 2, 3})
+        c: frozenset = ...
 
     assert Model.model_json_schema() == {
         'title': 'Model',
@@ -2877,10 +2869,9 @@ def test_frozen_set():
                 'uniqueItems': True,
             },
             'b': {'title': 'B', 'default': [1, 2, 3], 'type': 'array', 'items': {}, 'uniqueItems': True},
-            'c': {'title': 'C', 'default': [1, 2, 3], 'type': 'array', 'items': {}, 'uniqueItems': True},
-            'd': {'title': 'D', 'type': 'array', 'items': {}, 'uniqueItems': True},
+            'c': {'title': 'C', 'type': 'array', 'items': {}, 'uniqueItems': True},
         },
-        'required': ['d'],
+        'required': ['c'],
     }
 
 
@@ -3482,7 +3473,7 @@ def test_advanced_generic_schema():  # noqa: C901
         data1: Gen[CustomType] = Field(title='Data1 title', description='Data 1 description')
         data2: GenTwoParams[CustomType, UUID4] = Field(title='Data2 title', description='Data 2')
         # check Tuple because changes in code touch that type
-        data3: Tuple
+        data3: tuple
         data4: tuple[CustomType]
         data5: tuple[CustomType, str]
 
@@ -4995,7 +4986,7 @@ def test_mappings_str_int_json_schema(mapping_type: Any):
     }
 
 
-@pytest.mark.parametrize(('sequence_type'), [pytest.param(List), pytest.param(Sequence)])
+@pytest.mark.parametrize(('sequence_type'), [pytest.param(list), pytest.param(Sequence)])
 def test_sequence_schema(sequence_type):
     class Model(BaseModel):
         field: sequence_type[int]
@@ -5010,7 +5001,7 @@ def test_sequence_schema(sequence_type):
     }
 
 
-@pytest.mark.parametrize(('sequence_type',), [pytest.param(List), pytest.param(Sequence)])
+@pytest.mark.parametrize(('sequence_type',), [pytest.param(list), pytest.param(Sequence)])
 def test_sequence_schema_with_max_length(sequence_type):
     class Model(BaseModel):
         field: sequence_type[int] = Field(max_length=5)
@@ -5025,7 +5016,7 @@ def test_sequence_schema_with_max_length(sequence_type):
     }
 
 
-@pytest.mark.parametrize(('sequence_type',), [pytest.param(List), pytest.param(Sequence)])
+@pytest.mark.parametrize(('sequence_type',), [pytest.param(list), pytest.param(Sequence)])
 def test_sequence_schema_with_min_length(sequence_type):
     class Model(BaseModel):
         field: sequence_type[int] = Field(min_length=1)
@@ -5040,7 +5031,7 @@ def test_sequence_schema_with_min_length(sequence_type):
     }
 
 
-@pytest.mark.parametrize(('sequence_type',), [pytest.param(List), pytest.param(Sequence)])
+@pytest.mark.parametrize(('sequence_type',), [pytest.param(list), pytest.param(Sequence)])
 def test_sequences_int_json_schema(sequence_type):
     class Model(BaseModel):
         int_seq: sequence_type[int]

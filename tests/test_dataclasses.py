@@ -13,11 +13,9 @@ from typing import (
     Any,
     Callable,
     ClassVar,
-    FrozenSet,
     Generic,
     Literal,
     Optional,
-    Set,
     TypeVar,
     Union,
 )
@@ -696,7 +694,7 @@ def test_classvar():
 def test_frozenset_field():
     @pydantic.dataclasses.dataclass
     class TestFrozenSet:
-        set: FrozenSet[int]
+        set: frozenset[int]
 
     test_set = frozenset({1, 2, 3})
     object_under_test = TestFrozenSet(set=test_set)
@@ -1407,7 +1405,7 @@ def test_discriminated_union_basemodel_instance_value():
 def test_post_init_after_validation():
     @dataclasses.dataclass
     class SetWrapper:
-        set: Set[int]
+        set: set[int]
 
         def __post_init__(self):
             assert isinstance(self.set, set), (

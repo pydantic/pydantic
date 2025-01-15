@@ -12,6 +12,7 @@ import re
 import sys
 import typing
 import warnings
+from collections.abc import Generator, Iterable, Iterator, Mapping
 from contextlib import contextmanager
 from copy import copy
 from decimal import Decimal
@@ -29,11 +30,7 @@ from typing import (
     Callable,
     Final,
     ForwardRef,
-    Generator,
-    Iterable,
-    Iterator,
     Literal,
-    Mapping,
     TypeVar,
     Union,
     cast,
@@ -120,13 +117,16 @@ AnyFieldDecorator = Union[
 ModifyCoreSchemaWrapHandler = GetCoreSchemaHandler
 GetCoreSchemaFunction = Callable[[Any, ModifyCoreSchemaWrapHandler], core_schema.CoreSchema]
 
-TUPLE_TYPES: list[type] = [tuple, typing.Tuple]
-LIST_TYPES: list[type] = [list, typing.List, collections.abc.MutableSequence]
-SET_TYPES: list[type] = [set, typing.Set, collections.abc.MutableSet]
-FROZEN_SET_TYPES: list[type] = [frozenset, typing.FrozenSet, collections.abc.Set]
-DICT_TYPES: list[type] = [dict, typing.Dict]
+TUPLE_TYPES: list[type] = [typing.Tuple, tuple]  # noqa: UP006
+LIST_TYPES: list[type] = [typing.List, list, collections.abc.MutableSequence]  # noqa: UP006
+SET_TYPES: list[type] = [typing.Set, set, collections.abc.MutableSet]  # noqa: UP006
+FROZEN_SET_TYPES: list[type] = [typing.FrozenSet, frozenset, collections.abc.Set]  # noqa: UP006
+DICT_TYPES: list[type] = [typing.Dict, dict]  # noqa: UP006
 IP_TYPES: list[type] = [IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network]
 SEQUENCE_TYPES: list[type] = [typing.Sequence, collections.abc.Sequence]
+ITERABLE_TYPES: list[type] = [typing.Iterable, collections.abc.Iterable, typing.Generator, collections.abc.Generator]
+TYPE_TYPES: list[type] = [typing.Type, type]  # noqa: UP006
+PATTERN_TYPES: list[type] = [typing.Pattern, re.Pattern]
 PATH_TYPES: list[type] = [
     os.PathLike,
     pathlib.Path,
@@ -142,11 +142,11 @@ MAPPING_TYPES = [
     collections.abc.MutableMapping,
     collections.OrderedDict,
     typing_extensions.OrderedDict,
-    typing.DefaultDict,
+    typing.DefaultDict,  # noqa: UP006
     collections.defaultdict,
 ]
 COUNTER_TYPES = [collections.Counter, typing.Counter]
-DEQUE_TYPES: list[type] = [collections.deque, typing.Deque]
+DEQUE_TYPES: list[type] = [collections.deque, typing.Deque]  # noqa: UP006
 
 # Note: This does not play very well with type checkers. For example,
 # `a: LambdaType = lambda x: x` will raise a type error by Pyright.
@@ -746,7 +746,7 @@ class GenerateSchema:
                                     *self._types_namespace,
                                 )
                             tp = get_origin(extras_annotation)
-                            if tp not in (typing.Dict, dict):
+                            if tp not in DICT_TYPES:
                                 raise PydanticSchemaGenerationError(
                                     'The type annotation for `__pydantic_extra__` must be `dict[str, ...]`'
                                 )
@@ -1015,6 +1015,8 @@ class GenerateSchema:
             return self._frozenset_schema(Any)
         elif obj in SEQUENCE_TYPES:
             return self._sequence_schema(Any)
+        elif obj in ITERABLE_TYPES:
+            return self._iterable_schema(obj)
         elif obj in DICT_TYPES:
             return self._dict_schema(Any, Any)
         elif obj in PATH_TYPES:
@@ -1040,7 +1042,7 @@ class GenerateSchema:
         elif _typing_extra.is_new_type(obj):
             # NewType, can't use isinstance because it fails <3.10
             return self.generate_schema(obj.__supertype__)
-        elif obj is re.Pattern:
+        elif obj in PATTERN_TYPES:
             return self._pattern_schema(obj)
         elif _typing_extra.is_hashable(obj):
             return self._hashable_schema()
@@ -1108,13 +1110,13 @@ class GenerateSchema:
             return self._mapping_schema(origin, self._get_first_arg_or_any(obj), int)
         elif is_typeddict(origin):
             return self._typed_dict_schema(obj, origin)
-        elif origin in (typing.Type, type):
+        elif origin in TYPE_TYPES:
             return self._subclass_schema(obj)
         elif origin in SEQUENCE_TYPES:
             return self._sequence_schema(self._get_first_arg_or_any(obj))
-        elif origin in {typing.Iterable, collections.abc.Iterable, typing.Generator, collections.abc.Generator}:
+        elif origin in ITERABLE_TYPES:
             return self._iterable_schema(obj)
-        elif origin in (re.Pattern, typing.Pattern):
+        elif origin in PATTERN_TYPES:
             return self._pattern_schema(obj)
 
         if self._arbitrary_types:
@@ -1469,9 +1471,12 @@ class GenerateSchema:
         """
         FieldInfo = import_cached_field_info()
 
-        with self.model_type_stack.push(typed_dict_cls), self.defs.get_schema_or_ref(typed_dict_cls) as (
-            typed_dict_ref,
-            maybe_schema,
+        with (
+            self.model_type_stack.push(typed_dict_cls),
+            self.defs.get_schema_or_ref(typed_dict_cls) as (
+                typed_dict_ref,
+                maybe_schema,
+            ),
         ):
             if maybe_schema is not None:
                 return maybe_schema
@@ -1558,9 +1563,12 @@ class GenerateSchema:
 
     def _namedtuple_schema(self, namedtuple_cls: Any, origin: Any) -> core_schema.CoreSchema:
         """Generate schema for a NamedTuple."""
-        with self.model_type_stack.push(namedtuple_cls), self.defs.get_schema_or_ref(namedtuple_cls) as (
-            namedtuple_ref,
-            maybe_schema,
+        with (
+            self.model_type_stack.push(namedtuple_cls),
+            self.defs.get_schema_or_ref(namedtuple_cls) as (
+                namedtuple_ref,
+                maybe_schema,
+            ),
         ):
             if maybe_schema is not None:
                 return maybe_schema
@@ -1803,9 +1811,12 @@ class GenerateSchema:
         self, dataclass: type[StandardDataclass], origin: type[StandardDataclass] | None
     ) -> core_schema.CoreSchema:
         """Generate schema for a dataclass."""
-        with self.model_type_stack.push(dataclass), self.defs.get_schema_or_ref(dataclass) as (
-            dataclass_ref,
-            maybe_schema,
+        with (
+            self.model_type_stack.push(dataclass),
+            self.defs.get_schema_or_ref(dataclass) as (
+                dataclass_ref,
+                maybe_schema,
+            ),
         ):
             if maybe_schema is not None:
                 return maybe_schema

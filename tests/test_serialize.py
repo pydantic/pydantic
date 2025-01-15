@@ -7,7 +7,8 @@ import re
 import sys
 from enum import Enum
 from functools import partial, partialmethod
-from typing import Annotated, Any, Callable, ClassVar, Optional, Pattern, Union
+from re import Pattern
+from typing import Annotated, Any, Callable, ClassVar, Optional, Union
 
 import pytest
 from pydantic_core import PydanticSerializationError, core_schema, to_jsonable_python

@@ -1,6 +1,7 @@
 import sys
+from collections.abc import Iterable
 from inspect import Parameter, Signature, signature
-from typing import Annotated, Any, Generic, Iterable, Optional, TypeVar, Union
+from typing import Annotated, Any, Generic, Optional, TypeVar, Union
 
 import pytest
 
