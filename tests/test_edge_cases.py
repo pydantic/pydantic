@@ -2994,7 +2994,7 @@ def test_get_pydantic_core_schema_on_referenceable_type() -> None:
     class Model(BaseModel):
         @classmethod
         def __get_pydantic_core_schema__(
-            cls, source: Type[BaseModel], handler: GetCoreSchemaHandler, /
+            cls, source: type[BaseModel], handler: GetCoreSchemaHandler, /
         ) -> core_schema.CoreSchema:
             rv = handler(source)
             nonlocal counter
