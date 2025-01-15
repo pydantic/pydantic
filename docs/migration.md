@@ -334,7 +334,8 @@ will be merged, and for any settings defined in both, those from `Model2` will o
     * `fields` — this was the source of various bugs, so has been removed.
       You should be able to use `Annotated` on fields to modify them as desired.
     * `getter_dict` — `orm_mode` has been removed, and this implementation detail is no longer necessary.
-    * `smart_union`.
+    * `smart_union` - the Pydantic V2 behavior is now the same as if this was always set
+      to `True` in Pydantic V1.
     * `underscore_attrs_are_private` — the Pydantic V2 behavior is now the same as if this was always set
       to `True` in Pydantic V1.
     * `json_loads`
