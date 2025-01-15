@@ -5022,10 +5022,7 @@ is set to <code>'allow'</code>.</p>
 <span class="normal">1546</span>
 <span class="normal">1547</span>
 <span class="normal">1548</span>
-<span class="normal">1549</span>
-<span class="normal">1550</span>
-<span class="normal">1551</span>
-<span class="normal">1552</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">BaseModel</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">_model_construction</span><span class="o">.</span><span class="n">ModelMetaclass</span><span class="p">):</span>
+<span class="normal">1549</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">BaseModel</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">_model_construction</span><span class="o">.</span><span class="n">ModelMetaclass</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;!!! abstract &quot;Usage Documentation&quot;</span>
 <span class="sd">        [Models](../concepts/models.md)</span>
 
@@ -5616,23 +5613,20 @@ is set to <code>'allow'</code>.</p>
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">__get_pydantic_core_schema__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">source</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">BaseModel</span><span class="p">],</span> <span class="n">handler</span><span class="p">:</span> <span class="n">GetCoreSchemaHandler</span><span class="p">,</span> <span class="o">/</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CoreSchema</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Hook into generating the model&#39;s CoreSchema.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            source: The class we are generating a schema for.</span>
-<span class="sd">                This will generally be the same as the `cls` argument if this is a classmethod.</span>
-<span class="sd">            handler: A callable that calls into Pydantic&#39;s internal CoreSchema generation logic.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            A `pydantic-core` `CoreSchema`.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Only use the cached value from this _exact_ class; we don&#39;t want one from a parent class</span>
-        <span class="c1"># This is why we check `cls.__dict__` and don&#39;t use `cls.__pydantic_core_schema__` or similar.</span>
+        <span class="c1"># This warning is only emitted when calling `super().__get_pydantic_core_schema__` from a model subclass.</span>
+        <span class="c1"># In the generate schema logic, this method (`BaseModel.__get_pydantic_core_schema__`) is special cased to</span>
+        <span class="c1"># *not* be called if not overridden.</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+            <span class="s1">&#39;The `__get_pydantic_core_schema__` method of the `BaseModel` class is deprecated. If you are calling &#39;</span>
+            <span class="s1">&#39;`super().__get_pydantic_core_schema__` when overriding the method on a Pydantic model, consider using &#39;</span>
+            <span class="s1">&#39;`handler(source)` instead. However, note that overriding this method on models can lead to unexpected &#39;</span>
+            <span class="s1">&#39;side effects.&#39;</span><span class="p">,</span>
+            <span class="n">PydanticDeprecatedSince211</span><span class="p">,</span>
+            <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="c1"># Logic copied over from `GenerateSchema._model_schema`:</span>
         <span class="n">schema</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;__pydantic_core_schema__&#39;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">schema</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">schema</span><span class="p">,</span> <span class="n">_mock_val_ser</span><span class="o">.</span><span class="n">MockCoreSchema</span><span class="p">):</span>
-            <span class="c1"># Due to the way generic classes are built, it&#39;s possible that an invalid schema may be temporarily</span>
-            <span class="c1"># set on generic classes. I think we could resolve this to ensure that we get proper schema caching</span>
-            <span class="c1"># for generics, but for simplicity for now, we just always rebuild if the class has a generic origin.</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="bp">cls</span><span class="o">.</span><span class="n">__pydantic_generic_metadata__</span><span class="p">[</span><span class="s1">&#39;origin&#39;</span><span class="p">]:</span>
                 <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">__pydantic_core_schema__</span>
 
@@ -9494,7 +9488,10 @@ validators <a href="https://docs.pydantic.dev/2.9/concepts/validators/#field-val
 
             <details class="quote">
               <summary>Source code in <code>pydantic/main.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1588</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1585</span>
+<span class="normal">1586</span>
+<span class="normal">1587</span>
+<span class="normal">1588</span>
 <span class="normal">1589</span>
 <span class="normal">1590</span>
 <span class="normal">1591</span>
@@ -9588,10 +9585,7 @@ validators <a href="https://docs.pydantic.dev/2.9/concepts/validators/#field-val
 <span class="normal">1679</span>
 <span class="normal">1680</span>
 <span class="normal">1681</span>
-<span class="normal">1682</span>
-<span class="normal">1683</span>
-<span class="normal">1684</span>
-<span class="normal">1685</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">create_model</span><span class="p">(</span>  <span class="c1"># noqa: C901</span>
+<span class="normal">1682</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">create_model</span><span class="p">(</span>  <span class="c1"># noqa: C901</span>
     <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="o">/</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
