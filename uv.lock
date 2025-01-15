@@ -1,7 +1,8 @@
 version = 1
 requires-python = ">=3.8"
 resolution-markers = [
-    "(python_full_version < '3.12' and sys_platform != 'win32') or (python_full_version < '3.9' and sys_platform == 'win32')",
+    "python_full_version < '3.9' or (python_full_version < '3.12' and platform_system != 'Windows' and sys_platform != 'win32')",
+    "python_full_version >= '3.9' and python_full_version < '3.12' and platform_system == 'Windows' and sys_platform != 'win32'",
     "python_version < '0'",
     "python_full_version >= '3.12' and sys_platform != 'win32'",
     "python_full_version >= '3.9' and python_full_version < '3.12' and sys_platform == 'win32'",
@@ -46,8 +47,8 @@ name = "astunparse"
 version = "1.6.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "six", marker = "(python_full_version < '3.12' and sys_platform != 'win32') or (python_full_version < '3.9' and sys_platform == 'win32')" },
-    { name = "wheel", marker = "(python_full_version < '3.12' and sys_platform != 'win32') or (python_full_version < '3.9' and sys_platform == 'win32')" },
+    { name = "six", marker = "python_full_version < '3.9' or (python_full_version < '3.12' and platform_system != 'Windows' and sys_platform != 'win32')" },
+    { name = "wheel", marker = "python_full_version < '3.9' or (python_full_version < '3.12' and platform_system != 'Windows' and sys_platform != 'win32')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/f3/af/4182184d3c338792894f34a62672919db7ca008c89abee9b564dd34d8029/astunparse-1.6.3.tar.gz", hash = "sha256:5ad93a8456f0d084c3456d059fd9a92cce667963232cbf763eac3bc5b7940872", size = 18290 }
 wheels = [
@@ -344,7 +345,7 @@ name = "click"
 version = "8.1.7"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "colorama", marker = "sys_platform == 'win32'" },
+    { name = "colorama", marker = "platform_system == 'Windows'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/96/d3/f04c7bfcf5c1862a2a5b845c6b2b360488cf47af55dfa79c98f6a6bf98b5/click-8.1.7.tar.gz", hash = "sha256:ca9853ad459e787e2192211578cc907e7594e294c7ccc834310722b41b9ca6de", size = 336121 }
 wheels = [
@@ -757,7 +758,7 @@ name = "linkify-it-py"
 version = "2.0.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "uc-micro-py", marker = "python_full_version < '3.9' or sys_platform != 'win32'" },
+    { name = "uc-micro-py", marker = "python_full_version < '3.9' or python_full_version >= '3.12' or platform_system != 'Windows' or sys_platform == 'win32'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/2a/ae/bb56c6828e4797ba5a4821eec7c43b8bf40f69cda4d4f5f8c8a2810ec96a/linkify-it-py-2.0.3.tar.gz", hash = "sha256:68cda27e162e9215c17d786649d1da0021a451bdc436ef9e0fa0ba5234b9b048", size = 27946 }
 wheels = [
@@ -790,10 +791,10 @@ wheels = [
 
 [package.optional-dependencies]
 linkify = [
-    { name = "linkify-it-py", marker = "python_full_version < '3.9' or sys_platform != 'win32'" },
+    { name = "linkify-it-py", marker = "python_full_version < '3.9' or python_full_version >= '3.12' or platform_system != 'Windows' or sys_platform == 'win32'" },
 ]
 plugins = [
-    { name = "mdit-py-plugins", marker = "python_full_version < '3.9' or sys_platform != 'win32'" },
+    { name = "mdit-py-plugins", marker = "python_full_version < '3.9' or python_full_version >= '3.12' or platform_system != 'Windows' or sys_platform == 'win32'" },
 ]
 
 [[package]]
@@ -859,7 +860,7 @@ name = "mdit-py-plugins"
 version = "0.4.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "markdown-it-py", marker = "python_full_version < '3.9' or sys_platform != 'win32'" },
+    { name = "markdown-it-py", marker = "python_full_version < '3.9' or python_full_version >= '3.12' or platform_system != 'Windows' or sys_platform == 'win32'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/19/03/a2ecab526543b152300717cf232bb4bb8605b6edb946c845016fa9c9c9fd/mdit_py_plugins-0.4.2.tar.gz", hash = "sha256:5f2cd1fdb606ddf152d37ec30e46101a60512bc0e5fa1a7002c36647b09e26b5", size = 43542 }
 wheels = [
@@ -880,9 +881,9 @@ name = "memray"
 version = "1.15.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "jinja2", marker = "python_full_version < '3.9' or sys_platform != 'win32'" },
-    { name = "rich", marker = "python_full_version < '3.9' or sys_platform != 'win32'" },
-    { name = "textual", marker = "python_full_version < '3.9' or sys_platform != 'win32'" },
+    { name = "jinja2", marker = "python_full_version < '3.9' or python_full_version >= '3.12' or platform_system != 'Windows' or sys_platform == 'win32'" },
+    { name = "rich", marker = "python_full_version < '3.9' or python_full_version >= '3.12' or platform_system != 'Windows' or sys_platform == 'win32'" },
+    { name = "textual", marker = "python_full_version < '3.9' or python_full_version >= '3.12' or platform_system != 'Windows' or sys_platform == 'win32'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/e8/d3/b2a01137e2391917928187c4c2837c2750cc832c99a6aecd6e0d6ea07c58/memray-1.15.0.tar.gz", hash = "sha256:1beffa2bcba3dbe0f095d547927286eca46e272798b83026dd1b5db58e16ed56", size = 1025344 }
 wheels = [
@@ -960,7 +961,7 @@ version = "1.6.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "click" },
-    { name = "colorama", marker = "sys_platform == 'win32'" },
+    { name = "colorama", marker = "platform_system == 'Windows'" },
     { name = "ghp-import" },
     { name = "importlib-metadata", marker = "python_full_version < '3.10'" },
     { name = "jinja2" },
@@ -1337,7 +1338,7 @@ email = [
     { name = "email-validator" },
 ]
 timezone = [
-    { name = "tzdata", marker = "python_full_version >= '3.9' and sys_platform == 'win32'" },
+    { name = "tzdata", marker = "python_full_version >= '3.9' and platform_system == 'Windows'" },
 ]
 
 [package.dev-dependencies]
@@ -1367,7 +1368,7 @@ all = [
     { name = "pytest-benchmark" },
     { name = "pytest-codspeed" },
     { name = "pytest-examples" },
-    { name = "pytest-memray", marker = "platform_python_implementation == 'CPython' and sys_platform != 'win32'" },
+    { name = "pytest-memray", marker = "platform_python_implementation == 'CPython' and platform_system != 'Windows'" },
     { name = "pytest-mock" },
     { name = "pytest-pretty" },
     { name = "pytz" },
@@ -1388,7 +1389,7 @@ dev = [
     { name = "pytest-benchmark" },
     { name = "pytest-codspeed" },
     { name = "pytest-examples" },
-    { name = "pytest-memray", marker = "platform_python_implementation == 'CPython' and sys_platform != 'win32'" },
+    { name = "pytest-memray", marker = "platform_python_implementation == 'CPython' and platform_system != 'Windows'" },
     { name = "pytest-mock" },
     { name = "pytest-pretty" },
     { name = "pytz" },
@@ -1431,7 +1432,7 @@ requires-dist = [
     { name = "email-validator", marker = "extra == 'email'", specifier = ">=2.0.0" },
     { name = "pydantic-core", specifier = "==2.27.2" },
     { name = "typing-extensions", specifier = ">=4.12.2" },
-    { name = "tzdata", marker = "python_full_version >= '3.9' and sys_platform == 'win32' and extra == 'timezone'" },
+    { name = "tzdata", marker = "python_full_version >= '3.9' and platform_system == 'Windows' and extra == 'timezone'" },
 ]
 
 [package.metadata.requires-dev]
@@ -1461,7 +1462,7 @@ all = [
     { name = "pytest-benchmark" },
     { name = "pytest-codspeed" },
     { name = "pytest-examples" },
-    { name = "pytest-memray", marker = "platform_python_implementation == 'CPython' and sys_platform != 'win32'" },
+    { name = "pytest-memray", marker = "platform_python_implementation == 'CPython' and platform_system != 'Windows'" },
     { name = "pytest-mock" },
     { name = "pytest-pretty" },
     { name = "pytz" },
@@ -1482,7 +1483,7 @@ dev = [
     { name = "pytest-benchmark" },
     { name = "pytest-codspeed" },
     { name = "pytest-examples" },
-    { name = "pytest-memray", marker = "platform_python_implementation == 'CPython' and sys_platform != 'win32'" },
+    { name = "pytest-memray", marker = "platform_python_implementation == 'CPython' and platform_system != 'Windows'" },
     { name = "pytest-mock" },
     { name = "pytest-pretty" },
     { name = "pytz" },
@@ -1768,8 +1769,8 @@ name = "pytest-memray"
 version = "1.7.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "memray", marker = "python_full_version < '3.9' or sys_platform != 'win32'" },
-    { name = "pytest", marker = "python_full_version < '3.9' or sys_platform != 'win32'" },
+    { name = "memray", marker = "python_full_version < '3.9' or python_full_version >= '3.12' or platform_system != 'Windows' or sys_platform == 'win32'" },
+    { name = "pytest", marker = "python_full_version < '3.9' or python_full_version >= '3.12' or platform_system != 'Windows' or sys_platform == 'win32'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/4b/33/31536fa35fae6b040f7bb31375c6b95d025eb38e16416c23c0daa36bcb1f/pytest_memray-1.7.0.tar.gz", hash = "sha256:c18fa907d2210b42f4096c093e2d3416dfc002dcaa450ef3f9ba819bc3dd8f5f", size = 240564 }
 wheels = [
@@ -2277,9 +2278,9 @@ name = "textual"
 version = "0.73.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "markdown-it-py", extra = ["linkify", "plugins"], marker = "python_full_version < '3.9' or sys_platform != 'win32'" },
-    { name = "rich", marker = "python_full_version < '3.9' or sys_platform != 'win32'" },
-    { name = "typing-extensions", marker = "python_full_version < '3.9' or sys_platform != 'win32'" },
+    { name = "markdown-it-py", extra = ["linkify", "plugins"], marker = "python_full_version < '3.9' or python_full_version >= '3.12' or platform_system != 'Windows' or sys_platform == 'win32'" },
+    { name = "rich", marker = "python_full_version < '3.9' or python_full_version >= '3.12' or platform_system != 'Windows' or sys_platform == 'win32'" },
+    { name = "typing-extensions", marker = "python_full_version < '3.9' or python_full_version >= '3.12' or platform_system != 'Windows' or sys_platform == 'win32'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/d8/e9/4939bf72d4a7d1a37aa5d55ad4438594a9d5e59875195dd89e9d8c14a9a9/textual-0.73.0.tar.gz", hash = "sha256:ccd1e873370577f557dfdf2b3411f2a4f68b57d4365f9d83a00d084afb15f5a6", size = 1291992 }
 wheels = [
