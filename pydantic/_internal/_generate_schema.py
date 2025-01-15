@@ -103,6 +103,9 @@ if TYPE_CHECKING:
     from ._dataclasses import StandardDataclass
     from ._schema_generation_shared import GetJsonSchemaFunction
 
+BaseModel_ = import_cached_base_model()
+FieldInfo_ = import_cached_field_info()
+
 _SUPPORTS_TYPEDDICT = sys.version_info >= (3, 12)
 
 FieldDecoratorInfo = Union[ValidatorDecoratorInfo, FieldValidatorDecoratorInfo, FieldSerializerDecoratorInfo]
@@ -820,8 +823,6 @@ class GenerateSchema:
         return obj
 
     def _generate_schema_from_get_schema_method(self, obj: Any, source: Any) -> core_schema.CoreSchema | None:
-        BaseModel_ = import_cached_base_model()
-
         get_schema = getattr(obj, '__get_pydantic_core_schema__', None)
         is_base_model_get_schema = (
             getattr(get_schema, '__func__', None) is BaseModel_.__get_pydantic_core_schema__.__func__  # pyright: ignore[reportFunctionMemberAccess]
@@ -947,9 +948,7 @@ class GenerateSchema:
         if isinstance(obj, ForwardRef):
             return self.generate_schema(self._resolve_forward_ref(obj))
 
-        BaseModel = import_cached_base_model()
-
-        if lenient_issubclass(obj, BaseModel):
+        if lenient_issubclass(obj, BaseModel_):
             with self.model_type_stack.push(obj):
                 return self._model_schema(obj)
 
@@ -1301,7 +1300,6 @@ class GenerateSchema:
         self, name: str, field_info: FieldInfo, decorators: DecoratorInfos
     ) -> _CommonField:
         # Update FieldInfo annotation if appropriate:
-        FieldInfo = import_cached_field_info()
         if not field_info.evaluated:
             # TODO Can we use field_info.apply_typevars_map here?
             try:
@@ -1311,7 +1309,7 @@ class GenerateSchema:
             evaluated_type = replace_types(evaluated_type, self._typevars_map)
             field_info.evaluated = True
             if not has_instance_in_type(evaluated_type, PydanticRecursiveRef):
-                new_field_info = FieldInfo.from_annotation(evaluated_type)
+                new_field_info = FieldInfo_.from_annotation(evaluated_type)
                 field_info.annotation = new_field_info.annotation
 
                 # Handle any field info attributes that may have been obtained from now-resolved annotations
@@ -1471,8 +1469,6 @@ class GenerateSchema:
         Hence to avoid creating validators that do not do what users expect we only
         support typing.TypedDict on Python >= 3.12 or typing_extension.TypedDict on all versions
         """
-        FieldInfo = import_cached_field_info()
-
         with (
             self.model_type_stack.push(typed_dict_cls),
             self.defs.get_schema_or_ref(typed_dict_cls) as (
@@ -1536,7 +1532,7 @@ class GenerateSchema:
                             required=True,
                         )[0]
 
-                    field_info = FieldInfo.from_annotation(annotation)
+                    field_info = FieldInfo_.from_annotation(annotation)
                     if (
                         field_docstrings is not None
                         and field_info.description is None
@@ -1614,12 +1610,10 @@ class GenerateSchema:
         mode: Literal['positional_only', 'positional_or_keyword', 'keyword_only'] | None = None,
     ) -> core_schema.ArgumentsParameter:
         """Prepare a ArgumentsParameter to represent a field in a namedtuple or function signature."""
-        FieldInfo = import_cached_field_info()
-
         if default is Parameter.empty:
-            field = FieldInfo.from_annotation(annotation)
+            field = FieldInfo_.from_annotation(annotation)
         else:
-            field = FieldInfo.from_annotated_attribute(annotation, default)
+            field = FieldInfo_.from_annotated_attribute(annotation, default)
         assert field.annotation is not None, 'field.annotation should not be None when generating a schema'
         with self.field_name_stack.push(name):
             schema = self._apply_annotations(field.annotation, [field])
@@ -2060,7 +2054,6 @@ class GenerateSchema:
 
     def _annotated_schema(self, annotated_type: Any) -> core_schema.CoreSchema:
         """Generate schema for an Annotated type, e.g. `Annotated[int, Field(...)]` or `Annotated[int, Gt(0)]`."""
-        FieldInfo = import_cached_field_info()
         # Ideally, we should delegate all this to `_typing_extra.unpack_annotated`, e.g.:
         # `typ, annotations = _typing_extra.unpack_annotated(annotated_type); schema = self.apply_annotations(...)`
         # if it was able to use a `NsResolver`. But because `unpack_annotated` is also used
@@ -2083,7 +2076,7 @@ class GenerateSchema:
         # put the default validator last so that TypeAdapter.get_default_value() works
         # even if there are function validators involved
         for annotation in annotations:
-            if isinstance(annotation, FieldInfo):
+            if isinstance(annotation, FieldInfo_):
                 schema = wrap_default(annotation, schema)
         return schema
 
@@ -2132,9 +2125,7 @@ class GenerateSchema:
         return _add_custom_serialization_from_json_encoders(self._config_wrapper.json_encoders, source_type, schema)
 
     def _apply_single_annotation(self, schema: core_schema.CoreSchema, metadata: Any) -> core_schema.CoreSchema:
-        FieldInfo = import_cached_field_info()
-
-        if isinstance(metadata, FieldInfo):
+        if isinstance(metadata, FieldInfo_):
             for field_metadata in metadata.metadata:
                 schema = self._apply_single_annotation(schema, field_metadata)
 
@@ -2176,9 +2167,7 @@ class GenerateSchema:
     def _apply_single_annotation_json_schema(
         self, schema: core_schema.CoreSchema, metadata: Any
     ) -> core_schema.CoreSchema:
-        FieldInfo = import_cached_field_info()
-
-        if isinstance(metadata, FieldInfo):
+        if isinstance(metadata, FieldInfo_):
             for field_metadata in metadata.metadata:
                 schema = self._apply_single_annotation_json_schema(schema, field_metadata)
 
@@ -2452,11 +2441,9 @@ def _extract_get_pydantic_json_schema(tp: Any) -> GetJsonSchemaFunction | None:
     js_modify_function = getattr(tp, '__get_pydantic_json_schema__', None)
 
     if hasattr(tp, '__modify_schema__'):
-        BaseModel = import_cached_base_model()
-
         has_custom_v2_modify_js_func = (
             js_modify_function is not None
-            and BaseModel.__get_pydantic_json_schema__.__func__  # type: ignore
+            and BaseModel_.__get_pydantic_json_schema__.__func__  # type: ignore
             not in (js_modify_function, getattr(js_modify_function, '__func__', None))
         )
 

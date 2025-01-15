@@ -51,6 +51,9 @@ else:
 
 object_setattr = object.__setattr__
 
+FieldInfo_ = import_cached_field_info()
+BaseModel_ = import_cached_base_model()
+
 
 class _ModelNamespaceDict(dict):
     """A dictionary subclass that intercepts attribute setting on model classes and
@@ -133,7 +136,6 @@ class ModelMetaclass(ABCMeta):
             namespace['__private_attributes__'] = {**base_private_attributes, **private_attributes}
 
             cls = cast('type[BaseModel]', super().__new__(mcs, cls_name, bases, namespace, **kwargs))
-            BaseModel_ = import_cached_base_model()
 
             mro = cls.__mro__
             if Generic in mro and mro.index(Generic) < mro.index(BaseModel_):
@@ -284,13 +286,11 @@ class ModelMetaclass(ABCMeta):
 
     @staticmethod
     def _collect_bases_data(bases: tuple[type[Any], ...]) -> tuple[set[str], set[str], dict[str, ModelPrivateAttr]]:
-        BaseModel = import_cached_base_model()
-
         field_names: set[str] = set()
         class_vars: set[str] = set()
         private_attributes: dict[str, ModelPrivateAttr] = {}
         for base in bases:
-            if issubclass(base, BaseModel) and base is not BaseModel:
+            if issubclass(base, BaseModel_) and base is not BaseModel_:
                 # model_fields might not be defined yet in the case of generics, so we use getattr here:
                 field_names.update(getattr(base, '__pydantic_fields__', {}).keys())
                 class_vars.update(base.__class_vars__)
@@ -337,10 +337,8 @@ def get_model_post_init(namespace: dict[str, Any], bases: tuple[type[Any], ...])
     if 'model_post_init' in namespace:
         return namespace['model_post_init']
 
-    BaseModel = import_cached_base_model()
-
     model_post_init = get_attribute_from_bases(bases, 'model_post_init')
-    if model_post_init is not BaseModel.model_post_init:
+    if model_post_init is not BaseModel_.model_post_init:
         return model_post_init
 
 
@@ -371,8 +369,6 @@ def inspect_namespace(  # noqa C901
             - If a field on base class was overridden by a non-annotated attribute.
     """
     from ..fields import ModelPrivateAttr, PrivateAttr
-
-    FieldInfo = import_cached_field_info()
 
     all_ignored_types = ignored_types + default_ignored_types()
 
@@ -410,7 +406,7 @@ def inspect_namespace(  # noqa C901
                 )
             private_attributes[var_name] = value
             del namespace[var_name]
-        elif isinstance(value, FieldInfo) and not is_valid_field_name(var_name):
+        elif isinstance(value, FieldInfo_) and not is_valid_field_name(var_name):
             suggested_name = var_name.lstrip('_') or 'my_field'  # don't suggest '' for all-underscore name
             raise NameError(
                 f'Fields must not use names with leading underscores;'
@@ -432,7 +428,7 @@ def inspect_namespace(  # noqa C901
                     f'All field definitions, including overrides, require a type annotation.',
                     code='model-field-overridden',
                 )
-            elif isinstance(value, FieldInfo):
+            elif isinstance(value, FieldInfo_):
                 raise PydanticUserError(
                     f'Field {var_name!r} requires a type annotation', code='model-field-missing-annotation'
                 )

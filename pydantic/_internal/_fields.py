@@ -32,6 +32,9 @@ if TYPE_CHECKING:
     from ._dataclasses import StandardDataclass
     from ._decorators import DecoratorInfos
 
+BaseModel_ = import_cached_base_model()
+FieldInfo_ = import_cached_field_info()
+
 
 class PydanticMetadata(Representation):
     """Base class for annotation markers like `Strict`."""
@@ -102,9 +105,6 @@ def collect_model_fields(  # noqa: C901
             - If there is a field other than `root` in `RootModel`.
             - If a field shadows an attribute in the parent model.
     """
-    BaseModel = import_cached_base_model()
-    FieldInfo_ = import_cached_field_info()
-
     parent_fields_lookup: dict[str, FieldInfo] = {}
     for base in reversed(bases):
         if model_fields := getattr(base, '__pydantic_fields__', None):
@@ -135,7 +135,7 @@ def collect_model_fields(  # noqa: C901
             if ns_violation:
                 for b in bases:
                     if hasattr(b, ann_name):
-                        if not (issubclass(b, BaseModel) and ann_name in getattr(b, '__pydantic_fields__', {})):
+                        if not (issubclass(b, BaseModel_) and ann_name in getattr(b, '__pydantic_fields__', {})):
                             raise NameError(
                                 f'Field "{ann_name}" conflicts with member {getattr(b, ann_name)}'
                                 f' of protected namespace "{protected_namespace}".'
@@ -309,8 +309,6 @@ def collect_dataclass_fields(
     Returns:
         The dataclass fields.
     """
-    FieldInfo_ = import_cached_field_info()
-
     fields: dict[str, FieldInfo] = {}
     ns_resolver = ns_resolver or NsResolver()
     dataclass_fields = cls.__dataclass_fields__

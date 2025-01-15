@@ -91,9 +91,9 @@ def pydantic_encoder(obj: Any) -> Any:
     )
     from dataclasses import asdict, is_dataclass
 
-    BaseModel = import_cached_base_model()
+    BaseModel_ = import_cached_base_model()
 
-    if isinstance(obj, BaseModel):
+    if isinstance(obj, BaseModel_):
         return obj.model_dump()
     elif is_dataclass(obj):
         return asdict(obj)  # type: ignore
