@@ -17,21 +17,18 @@ import math
 import os
 import re
 import warnings
-from collections import defaultdict
+from collections import Counter, defaultdict
+from collections.abc import Hashable, Iterable, Sequence
 from copy import deepcopy
 from enum import Enum
+from re import Pattern
 from typing import (
     TYPE_CHECKING,
+    Annotated,
     Any,
     Callable,
-    Counter,
-    Dict,
-    Hashable,
-    Iterable,
+    Literal,
     NewType,
-    Pattern,
-    Sequence,
-    Tuple,
     TypeVar,
     Union,
     cast,
@@ -41,7 +38,7 @@ from typing import (
 import pydantic_core
 from pydantic_core import CoreSchema, PydanticOmit, core_schema, to_jsonable_python
 from pydantic_core.core_schema import ComputedField
-from typing_extensions import Annotated, Literal, TypeAlias, assert_never, deprecated, final
+from typing_extensions import TypeAlias, assert_never, deprecated, final
 
 from pydantic.warnings import PydanticDeprecatedSince26, PydanticDeprecatedSince29
 
@@ -74,7 +71,7 @@ A type alias for defined schema types that represents a union of
 `core_schema.CoreSchemaFieldType`.
 """
 
-JsonSchemaValue = Dict[str, Any]
+JsonSchemaValue = dict[str, Any]
 """
 A type alias for a JSON schema value. This is a dictionary of string keys to arbitrary JSON values.
 """
@@ -125,7 +122,7 @@ DefsRef = NewType('DefsRef', str)
 #       * By default, these look like "#/$defs/MyModel", as in {"$ref": "#/$defs/MyModel"}
 JsonRef = NewType('JsonRef', str)
 
-CoreModeRef = Tuple[CoreRef, JsonSchemaMode]
+CoreModeRef = tuple[CoreRef, JsonSchemaMode]
 JsonSchemaKeyT = TypeVar('JsonSchemaKeyT', bound=Hashable)
 
 
@@ -923,8 +920,8 @@ class GenerateJsonSchema:
         return self.tuple_schema(schema)
 
     def tuple_schema(self, schema: core_schema.TupleSchema) -> JsonSchemaValue:
-        """Generates a JSON schema that matches a tuple schema e.g. `Tuple[int,
-        str, bool]` or `Tuple[int, ...]`.
+        """Generates a JSON schema that matches a tuple schema e.g. `tuple[int,
+        str, bool]` or `tuple[int, ...]`.
 
         Args:
             schema: The core schema.
@@ -2420,7 +2417,7 @@ def models_json_schema(
 
 
 _HashableJsonValue: TypeAlias = Union[
-    int, float, str, bool, None, Tuple['_HashableJsonValue', ...], Tuple[Tuple[str, '_HashableJsonValue'], ...]
+    int, float, str, bool, None, tuple['_HashableJsonValue', ...], tuple[tuple[str, '_HashableJsonValue'], ...]
 ]
 
 
@@ -2584,12 +2581,11 @@ else:
 
         Example:
             ```python
+            from pprint import pprint
             from typing import Union
 
             from pydantic import BaseModel
             from pydantic.json_schema import SkipJsonSchema
-
-            from pprint import pprint
 
             class Model(BaseModel):
                 a: Union[int, None] = None  # (1)!

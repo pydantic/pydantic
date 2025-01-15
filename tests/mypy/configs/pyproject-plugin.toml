@@ -31,9 +31,7 @@ disallow_untyped_defs = true
 
 python_version = '3.10'
 
-# TODO 3.9 drop the following line:
-force_uppercase_builtins = true
-# TODO 3.10 drop the following line:
+# TODO: when we drop 3.9, drop the following line:
 force_union_syntax = true
 
 [[tool.mypy.overrides]]

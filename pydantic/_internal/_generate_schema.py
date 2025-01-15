@@ -12,8 +12,9 @@ import re
 import sys
 import typing
 import warnings
+from collections.abc import Generator, Iterable, Iterator, Mapping
 from contextlib import contextmanager
-from copy import copy, deepcopy
+from copy import copy
 from decimal import Decimal
 from enum import Enum
 from fractions import Fraction
@@ -22,19 +23,14 @@ from inspect import Parameter, _ParameterKind, signature
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from itertools import chain
 from operator import attrgetter
-from types import FunctionType, LambdaType, MethodType
+from types import FunctionType, GenericAlias, LambdaType, MethodType
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Dict,
     Final,
     ForwardRef,
-    Generator,
-    Iterable,
-    Iterator,
-    Mapping,
-    Type,
+    Literal,
     TypeVar,
     Union,
     cast,
@@ -54,7 +50,7 @@ from pydantic_core import (
     core_schema,
     to_jsonable_python,
 )
-from typing_extensions import Literal, TypeAliasType, TypedDict, get_args, get_origin, is_typeddict
+from typing_extensions import TypeAliasType, TypedDict, get_args, get_origin, is_typeddict
 
 from ..aliases import AliasChoices, AliasGenerator, AliasPath
 from ..annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
@@ -120,13 +116,16 @@ AnyFieldDecorator = Union[
 ModifyCoreSchemaWrapHandler = GetCoreSchemaHandler
 GetCoreSchemaFunction = Callable[[Any, ModifyCoreSchemaWrapHandler], core_schema.CoreSchema]
 
-TUPLE_TYPES: list[type] = [tuple, typing.Tuple]
-LIST_TYPES: list[type] = [list, typing.List, collections.abc.MutableSequence]
-SET_TYPES: list[type] = [set, typing.Set, collections.abc.MutableSet]
-FROZEN_SET_TYPES: list[type] = [frozenset, typing.FrozenSet, collections.abc.Set]
-DICT_TYPES: list[type] = [dict, typing.Dict]
+TUPLE_TYPES: list[type] = [typing.Tuple, tuple]  # noqa: UP006
+LIST_TYPES: list[type] = [typing.List, list, collections.abc.MutableSequence]  # noqa: UP006
+SET_TYPES: list[type] = [typing.Set, set, collections.abc.MutableSet]  # noqa: UP006
+FROZEN_SET_TYPES: list[type] = [typing.FrozenSet, frozenset, collections.abc.Set]  # noqa: UP006
+DICT_TYPES: list[type] = [typing.Dict, dict]  # noqa: UP006
 IP_TYPES: list[type] = [IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network]
 SEQUENCE_TYPES: list[type] = [typing.Sequence, collections.abc.Sequence]
+ITERABLE_TYPES: list[type] = [typing.Iterable, collections.abc.Iterable, typing.Generator, collections.abc.Generator]
+TYPE_TYPES: list[type] = [typing.Type, type]  # noqa: UP006
+PATTERN_TYPES: list[type] = [typing.Pattern, re.Pattern]
 PATH_TYPES: list[type] = [
     os.PathLike,
     pathlib.Path,
@@ -142,11 +141,11 @@ MAPPING_TYPES = [
     collections.abc.MutableMapping,
     collections.OrderedDict,
     typing_extensions.OrderedDict,
-    typing.DefaultDict,
+    typing.DefaultDict,  # noqa: UP006
     collections.defaultdict,
 ]
 COUNTER_TYPES = [collections.Counter, typing.Counter]
-DEQUE_TYPES: list[type] = [collections.deque, typing.Deque]
+DEQUE_TYPES: list[type] = [collections.deque, typing.Deque]  # noqa: UP006
 
 # Note: This does not play very well with type checkers. For example,
 # `a: LambdaType = lambda x: x` will raise a type error by Pyright.
@@ -264,7 +263,7 @@ def _extract_json_schema_info_from_field_info(
     return (json_schema_updates or None, info.json_schema_extra)
 
 
-JsonEncoders = Dict[Type[Any], JsonEncoder]
+JsonEncoders = dict[type[Any], JsonEncoder]
 
 
 def _add_custom_serialization_from_json_encoders(
@@ -755,9 +754,9 @@ class GenerateSchema:
                                     *self._types_namespace,
                                 )
                             tp = get_origin(extras_annotation)
-                            if tp not in (Dict, dict):
+                            if tp not in DICT_TYPES:
                                 raise PydanticSchemaGenerationError(
-                                    'The type annotation for `__pydantic_extra__` must be `Dict[str, ...]`'
+                                    'The type annotation for `__pydantic_extra__` must be `dict[str, ...]`'
                                 )
                             extra_items_type = self._get_args_resolving_forward_refs(
                                 extras_annotation,
@@ -908,12 +907,9 @@ class GenerateSchema:
     def _get_args_resolving_forward_refs(self, obj: Any, required: bool = False) -> tuple[Any, ...] | None:
         args = get_args(obj)
         if args:
-            if sys.version_info >= (3, 9):
-                from types import GenericAlias
-
-                if isinstance(obj, GenericAlias):
-                    # PEP 585 generic aliases don't convert args to ForwardRefs, unlike `typing.List/Dict` etc.
-                    args = (_typing_extra._make_forward_ref(a) if isinstance(a, str) else a for a in args)
+            if isinstance(obj, GenericAlias):
+                # PEP 585 generic aliases don't convert args to ForwardRefs, unlike `typing.List/Dict` etc.
+                args = (_typing_extra._make_forward_ref(a) if isinstance(a, str) else a for a in args)
             args = tuple(self._resolve_forward_ref(a) if isinstance(a, ForwardRef) else a for a in args)
         elif required:  # pragma: no cover
             raise TypeError(f'Expected {obj} to have generic parameters but it had none')
@@ -1021,6 +1017,8 @@ class GenerateSchema:
             return self._frozenset_schema(Any)
         elif obj in SEQUENCE_TYPES:
             return self._sequence_schema(Any)
+        elif obj in ITERABLE_TYPES:
+            return self._iterable_schema(obj)
         elif obj in DICT_TYPES:
             return self._dict_schema(Any, Any)
         elif obj in PATH_TYPES:
@@ -1046,7 +1044,7 @@ class GenerateSchema:
         elif _typing_extra.is_new_type(obj):
             # NewType, can't use isinstance because it fails <3.10
             return self.generate_schema(obj.__supertype__)
-        elif obj is re.Pattern:
+        elif obj in PATTERN_TYPES:
             return self._pattern_schema(obj)
         elif _typing_extra.is_hashable(obj):
             return self._hashable_schema()
@@ -1114,13 +1112,13 @@ class GenerateSchema:
             return self._mapping_schema(origin, self._get_first_arg_or_any(obj), int)
         elif is_typeddict(origin):
             return self._typed_dict_schema(obj, origin)
-        elif origin in (typing.Type, type):
+        elif origin in TYPE_TYPES:
             return self._subclass_schema(obj)
         elif origin in SEQUENCE_TYPES:
             return self._sequence_schema(self._get_first_arg_or_any(obj))
-        elif origin in {typing.Iterable, collections.abc.Iterable, typing.Generator, collections.abc.Generator}:
+        elif origin in ITERABLE_TYPES:
             return self._iterable_schema(obj)
-        elif origin in (re.Pattern, typing.Pattern):
+        elif origin in PATTERN_TYPES:
             return self._pattern_schema(obj)
 
         if self._arbitrary_types:
@@ -1475,9 +1473,12 @@ class GenerateSchema:
         """
         FieldInfo = import_cached_field_info()
 
-        with self.model_type_stack.push(typed_dict_cls), self.defs.get_schema_or_ref(typed_dict_cls) as (
-            typed_dict_ref,
-            maybe_schema,
+        with (
+            self.model_type_stack.push(typed_dict_cls),
+            self.defs.get_schema_or_ref(typed_dict_cls) as (
+                typed_dict_ref,
+                maybe_schema,
+            ),
         ):
             if maybe_schema is not None:
                 return maybe_schema
@@ -1564,9 +1565,12 @@ class GenerateSchema:
 
     def _namedtuple_schema(self, namedtuple_cls: Any, origin: Any) -> core_schema.CoreSchema:
         """Generate schema for a NamedTuple."""
-        with self.model_type_stack.push(namedtuple_cls), self.defs.get_schema_or_ref(namedtuple_cls) as (
-            namedtuple_ref,
-            maybe_schema,
+        with (
+            self.model_type_stack.push(namedtuple_cls),
+            self.defs.get_schema_or_ref(namedtuple_cls) as (
+                namedtuple_ref,
+                maybe_schema,
+            ),
         ):
             if maybe_schema is not None:
                 return maybe_schema
@@ -1660,7 +1664,7 @@ class GenerateSchema:
                 # TODO: something like https://github.com/pydantic/pydantic/issues/5952
                 raise ValueError('Variable tuples can only have one type')
         elif len(params) == 1 and params[0] == ():
-            # special case for `Tuple[()]` which means `Tuple[]` - an empty tuple
+            # special case for `tuple[()]` which means `tuple[]` - an empty tuple
             # NOTE: This conditional can be removed when we drop support for Python 3.10.
             return core_schema.tuple_schema([])
         else:
@@ -1675,20 +1679,7 @@ class GenerateSchema:
 
     def _zoneinfo_schema(self) -> core_schema.CoreSchema:
         """Generate schema for a zone_info.ZoneInfo object"""
-        # we're def >=py3.9 if ZoneInfo was included in input
-        if sys.version_info < (3, 9):
-            assert False, 'Unreachable'
-
-        # import in this path is safe
-        from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
-
-        def validate_str_is_valid_iana_tz(value: Any, /) -> ZoneInfo:
-            if isinstance(value, ZoneInfo):
-                return value
-            try:
-                return ZoneInfo(value)
-            except (ZoneInfoNotFoundError, ValueError, TypeError):
-                raise PydanticCustomError('zoneinfo_str', 'invalid timezone: {value}', {'value': value})
+        from ._validators import validate_str_is_valid_iana_tz
 
         metadata = {'pydantic_js_functions': [lambda _1, _2: {'type': 'string', 'format': 'zoneinfo'}]}
         return core_schema.no_info_plain_validator_function(
@@ -1698,12 +1689,12 @@ class GenerateSchema:
         )
 
     def _union_is_subclass_schema(self, union_type: Any) -> core_schema.CoreSchema:
-        """Generate schema for `Type[Union[X, ...]]`."""
+        """Generate schema for `type[Union[X, ...]]`."""
         args = self._get_args_resolving_forward_refs(union_type, required=True)
-        return core_schema.union_schema([self.generate_schema(typing.Type[args]) for args in args])
+        return core_schema.union_schema([self.generate_schema(type[args]) for args in args])
 
     def _subclass_schema(self, type_: Any) -> core_schema.CoreSchema:
-        """Generate schema for a Type, e.g. `Type[int]`."""
+        """Generate schema for a type, e.g. `type[int]`."""
         type_param = self._get_first_arg_or_any(type_)
 
         # Assume `type[Annotated[<typ>, ...]]` is equivalent to `type[<typ>]`:
@@ -1712,16 +1703,14 @@ class GenerateSchema:
         if _typing_extra.is_any(type_param):
             return self._type_schema()
         elif _typing_extra.is_type_alias_type(type_param):
-            return self.generate_schema(typing.Type[type_param.__value__])
+            return self.generate_schema(type[type_param.__value__])
         elif isinstance(type_param, typing.TypeVar):
             if type_param.__bound__:
                 if _typing_extra.origin_is_union(get_origin(type_param.__bound__)):
                     return self._union_is_subclass_schema(type_param.__bound__)
                 return core_schema.is_subclass_schema(type_param.__bound__)
             elif type_param.__constraints__:
-                return core_schema.union_schema(
-                    [self.generate_schema(typing.Type[c]) for c in type_param.__constraints__]
-                )
+                return core_schema.union_schema([self.generate_schema(type[c]) for c in type_param.__constraints__])
             else:
                 return self._type_schema()
         elif _typing_extra.origin_is_union(get_origin(type_param)):
@@ -1736,6 +1725,10 @@ class GenerateSchema:
                     code=None,
                 )
             if not inspect.isclass(type_param):
+                # when using type[None], this doesn't type convert to type[NoneType], and None isn't a class
+                # so we handle it manually here
+                if type_param is None:
+                    return core_schema.is_subclass_schema(_typing_extra.NoneType)
                 raise TypeError(f'Expected a class, got {type_param!r}')
             return core_schema.is_subclass_schema(type_param)
 
@@ -1812,9 +1805,12 @@ class GenerateSchema:
         self, dataclass: type[StandardDataclass], origin: type[StandardDataclass] | None
     ) -> core_schema.CoreSchema:
         """Generate schema for a dataclass."""
-        with self.model_type_stack.push(dataclass), self.defs.get_schema_or_ref(dataclass) as (
-            dataclass_ref,
-            maybe_schema,
+        with (
+            self.model_type_stack.push(dataclass),
+            self.defs.get_schema_or_ref(dataclass) as (
+                dataclass_ref,
+                maybe_schema,
+            ),
         ):
             if maybe_schema is not None:
                 return maybe_schema
@@ -1842,7 +1838,11 @@ class GenerateSchema:
 
             with self._ns_resolver.push(dataclass), self._config_wrapper_stack.push(config):
                 if is_pydantic_dataclass(dataclass):
-                    fields = deepcopy(dataclass.__pydantic_fields__)
+                    # Copy the field info instances to avoid mutating the `FieldInfo` instances
+                    # of the generic dataclass generic origin (e.g. `apply_typevars_map` below).
+                    # Note that we don't apply `deepcopy` on `__pydantic_fields__` because we
+                    # don't want to copy the `FieldInfo` attributes:
+                    fields = {f_name: copy(field_info) for f_name, field_info in dataclass.__pydantic_fields__.items()}
                     if typevars_map:
                         for field in fields.values():
                             field.apply_typevars_map(typevars_map, *self._types_namespace)
@@ -1850,6 +1850,7 @@ class GenerateSchema:
                     fields = collect_dataclass_fields(
                         dataclass,
                         typevars_map=typevars_map,
+                        config_wrapper=self._config_wrapper,
                     )
 
                 if self._config_wrapper.extra == 'allow':

@@ -1,5 +1,3 @@
-from typing import List
-
 import pytest
 
 from pydantic import BaseModel
@@ -30,7 +28,7 @@ def test_complex_model_serialization(benchmark):
 @pytest.mark.benchmark(group='model_serialization')
 def test_list_of_models_serialization(benchmark):
     class SimpleListModel(BaseModel):
-        items: List[SimpleModel]
+        items: list[SimpleModel]
 
     model = SimpleListModel(items=[SimpleModel(field1=f'test{i}', field2=i, field3=float(i)) for i in range(10)])
     benchmark(model.model_dump)

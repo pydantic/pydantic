@@ -3,12 +3,12 @@
 from __future__ import annotations as _annotations
 
 import sys
+from collections.abc import Iterable
 from dataclasses import is_dataclass
 from types import FrameType
 from typing import (
     Any,
     Generic,
-    Iterable,
     Literal,
     TypeVar,
     cast,
@@ -137,10 +137,8 @@ class TypeAdapter(Generic[T]):
         For example, take the following:
 
         ```python {title="a.py"}
-        from typing import Dict, List
-
-        IntList = List[int]
-        OuterDict = Dict[str, 'IntList']
+        IntList = list[int]
+        OuterDict = dict[str, 'IntList']
         ```
 
         ```python {test="skip" title="b.py"}

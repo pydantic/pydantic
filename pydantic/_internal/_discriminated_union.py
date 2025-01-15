@@ -1,6 +1,7 @@
 from __future__ import annotations as _annotations
 
-from typing import TYPE_CHECKING, Any, Hashable, Sequence, cast
+from collections.abc import Hashable, Sequence
+from typing import TYPE_CHECKING, Any, cast
 
 from pydantic_core import CoreSchema, core_schema
 

@@ -5,9 +5,10 @@ from __future__ import annotations as _annotations
 import dataclasses
 import warnings
 from copy import copy
-from functools import lru_cache
+from functools import cache
 from inspect import Parameter, ismethoddescriptor, signature
-from typing import TYPE_CHECKING, Any, Callable, Pattern
+from re import Pattern
+from typing import TYPE_CHECKING, Any, Callable
 
 from pydantic_core import PydanticUndefined
 from typing_extensions import TypeIs
@@ -50,7 +51,7 @@ def pydantic_general_metadata(**metadata: Any) -> BaseMetadata:
     return _general_metadata_cls()(metadata)  # type: ignore
 
 
-@lru_cache(maxsize=None)
+@cache
 def _general_metadata_cls() -> type[BaseMetadata]:
     """Do it this way to avoid importing `annotated_types` at import time."""
     from annotated_types import BaseMetadata
@@ -64,12 +65,11 @@ def _general_metadata_cls() -> type[BaseMetadata]:
     return _PydanticGeneralMetadata  # type: ignore
 
 
-def _update_fields_from_docstrings(cls: type[Any], fields: dict[str, FieldInfo], config_wrapper: ConfigWrapper) -> None:
-    if config_wrapper.use_attribute_docstrings:
-        fields_docs = extract_docstrings_from_cls(cls)
-        for ann_name, field_info in fields.items():
-            if field_info.description is None and ann_name in fields_docs:
-                field_info.description = fields_docs[ann_name]
+def _update_fields_from_docstrings(cls: type[Any], fields: dict[str, FieldInfo], use_inspect: bool = False) -> None:
+    fields_docs = extract_docstrings_from_cls(cls, use_inspect=use_inspect)
+    for ann_name, field_info in fields.items():
+        if field_info.description is None and ann_name in fields_docs:
+            field_info.description = fields_docs[ann_name]
 
 
 def collect_model_fields(  # noqa: C901
@@ -255,7 +255,8 @@ def collect_model_fields(  # noqa: C901
         for field in fields.values():
             field.apply_typevars_map(typevars_map)
 
-    _update_fields_from_docstrings(cls, fields, config_wrapper)
+    if config_wrapper.use_attribute_docstrings:
+        _update_fields_from_docstrings(cls, fields)
     return fields, class_vars
 
 
@@ -372,8 +373,14 @@ def collect_dataclass_fields(
             # Can't we juste use `_generics.replace_types`?
             field.apply_typevars_map(typevars_map)
 
-    if config_wrapper is not None:
-        _update_fields_from_docstrings(cls, fields, config_wrapper)
+    if config_wrapper is not None and config_wrapper.use_attribute_docstrings:
+        _update_fields_from_docstrings(
+            cls,
+            fields,
+            # We can't rely on the (more reliable) frame inspection method
+            # for stdlib dataclasses:
+            use_inspect=not hasattr(cls, '__is_pydantic_dataclass__'),
+        )
 
     return fields
 

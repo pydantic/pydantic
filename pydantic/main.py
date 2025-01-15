@@ -1,5 +1,9 @@
 """Logic for creating models."""
 
+# Because `dict` is in the local namespace of the `BaseModel` class, we use `Dict` for annotations.
+# TODO v3 fallback to `dict` when the deprecated `dict` method gets removed.
+# ruff: noqa: UP035
+
 from __future__ import annotations as _annotations
 
 import operator
@@ -7,6 +11,7 @@ import sys
 import types
 import typing
 import warnings
+from collections.abc import Generator, Mapping
 from copy import copy, deepcopy
 from functools import cached_property
 from typing import (
@@ -15,11 +20,7 @@ from typing import (
     Callable,
     ClassVar,
     Dict,
-    Generator,
     Literal,
-    Mapping,
-    Set,
-    Tuple,
     TypeVar,
     Union,
     cast,
@@ -71,11 +72,11 @@ else:
 __all__ = 'BaseModel', 'create_model'
 
 # Keep these type aliases available at runtime:
-TupleGenerator: TypeAlias = Generator[Tuple[str, Any], None, None]
+TupleGenerator: TypeAlias = Generator[tuple[str, Any], None, None]
 # NOTE: In reality, `bool` should be replaced by `Literal[True]` but mypy fails to correctly apply bidirectional
 # type inference (e.g. when using `{'a': {'b': True}}`):
 # NOTE: Keep this type alias in sync with the stub definition in `pydantic-core`:
-IncEx: TypeAlias = Union[Set[int], Set[str], Mapping[int, Union['IncEx', bool]], Mapping[str, Union['IncEx', bool]]]
+IncEx: TypeAlias = Union[set[int], set[str], Mapping[int, Union['IncEx', bool]], Mapping[str, Union['IncEx', bool]]]
 
 _object_setattr = _model_construction.object_setattr
 
@@ -134,8 +135,6 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     Configuration for the model, should be a dictionary conforming to [`ConfigDict`][pydantic.config.ConfigDict].
     """
 
-    # Because `dict` is in the local namespace of the `BaseModel` class, we use `Dict` for annotations.
-    # TODO v3 fallback to `dict` when the deprecated `dict` method gets removed.
     __class_vars__: ClassVar[set[str]]
     """The names of the class variables defined on the model."""
 

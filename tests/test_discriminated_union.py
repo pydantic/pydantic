@@ -1,14 +1,15 @@
 import re
 import sys
+from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import Enum, IntEnum
 from types import SimpleNamespace
-from typing import Any, Callable, Generic, List, Optional, Sequence, TypeVar, Union
+from typing import Annotated, Any, Callable, Generic, Literal, Optional, TypeVar, Union
 
 import pytest
 from dirty_equals import HasRepr, IsStr
 from pydantic_core import SchemaValidator, core_schema
-from typing_extensions import Annotated, Literal, TypedDict
+from typing_extensions import TypedDict
 
 from pydantic import (
     BaseModel,
@@ -408,7 +409,6 @@ if sys.version_info >= (3, 11):
     ENUM_TEST_CASES.append((StrEnum, {'a': 'v_a', 'b': 'v_b'}))
 
 
-@pytest.mark.skipif(sys.version_info[:2] == (3, 8), reason='https://github.com/python/cpython/issues/103592')
 @pytest.mark.parametrize('base_class,choices', ENUM_TEST_CASES)
 def test_discriminated_union_enum(base_class, choices):
     EnumValue = base_class('EnumValue', choices)
@@ -871,7 +871,7 @@ def test_invalid_list_discriminated_union_type():
 
         class Model(BaseModel):
             # Note: `int`/`str` is invalid but we just want to test the `list` error message:
-            pets: List[Union[int, str]] = Field(discriminator='pet_type')
+            pets: list[Union[int, str]] = Field(discriminator='pet_type')
 
 
 def test_invalid_alias() -> None:
@@ -1817,7 +1817,7 @@ def test_presence_of_discriminator_when_generating_type_adaptor_json_schema_defi
 
     class CreateObjectDto(BaseModel):
         id: int
-        items: List[
+        items: list[
             Annotated[
                 Union[
                     CreateItem1,
@@ -1885,7 +1885,7 @@ def test_nested_discriminator() -> None:
 
     class MyModel(BaseModel):
         type: Literal['mixed']
-        sub_models: List['SubModel']
+        sub_models: list['SubModel']
         steps: Union[Step_A, Step_B] = Field(
             default=None,
             discriminator='type',
@@ -2105,12 +2105,12 @@ def test_discriminated_union_with_unsubstituted_type_var() -> None:
 
     class Dog(BaseModel, Generic[T]):
         type_: Literal['dog']
-        friends: List['GenericPet']
+        friends: list['GenericPet']
         id: T
 
     class Cat(BaseModel, Generic[T]):
         type_: Literal['cat']
-        friends: List['GenericPet']
+        friends: list['GenericPet']
         id: T
 
     GenericPet = Annotated[Union[Dog[T], Cat[T]], Field(discriminator='type_')]

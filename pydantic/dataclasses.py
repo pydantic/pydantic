@@ -5,10 +5,10 @@ from __future__ import annotations as _annotations
 import dataclasses
 import sys
 import types
-from typing import TYPE_CHECKING, Any, Callable, Generic, NoReturn, TypeVar, overload
+from typing import TYPE_CHECKING, Any, Callable, Generic, Literal, NoReturn, TypeVar, overload
 from warnings import warn
 
-from typing_extensions import Literal, TypeGuard, dataclass_transform
+from typing_extensions import TypeGuard, dataclass_transform
 
 from ._internal import _config, _decorators, _namespace_utils, _typing_extra
 from ._internal import _dataclasses as _pydantic_dataclasses
@@ -157,9 +157,7 @@ def dataclass(
           `x: int = dataclasses.field(default=pydantic.Field(..., kw_only=True), kw_only=True)`
         """
         for annotation_cls in cls.__mro__:
-            # In Python < 3.9, `__annotations__` might not be present if there are no fields.
-            # we therefore need to use `getattr` to avoid an `AttributeError`.
-            annotations = getattr(annotation_cls, '__annotations__', [])
+            annotations: dict[str, Any] = getattr(annotation_cls, '__annotations__', {})
             for field_name in annotations:
                 field_value = getattr(cls, field_name, None)
                 # Process only if this is an instance of `FieldInfo`.
@@ -178,8 +176,8 @@ def dataclass(
                     field_args['repr'] = field_value.repr
 
                 setattr(cls, field_name, dataclasses.field(**field_args))
-                # In Python 3.8, dataclasses checks cls.__dict__['__annotations__'] for annotations,
-                # so we must make sure it's initialized before we add to it.
+                # In Python 3.9, when subclassing, information is pulled from cls.__dict__['__annotations__']
+                # for annotations, so we must make sure it's initialized before we add to it.
                 if cls.__dict__.get('__annotations__') is None:
                     cls.__annotations__ = {}
                 cls.__annotations__[field_name] = annotations[field_name]
@@ -266,6 +264,10 @@ def dataclass(
             **kwargs,
         )
 
+        # This is an undocumented attribute to distinguish stdlib/Pydantic dataclasses.
+        # It should be set as early as possible:
+        cls.__is_pydantic_dataclass__ = True
+
         cls.__pydantic_decorators__ = decorators  # type: ignore
         cls.__doc__ = original_doc
         cls.__module__ = original_cls.__module__
@@ -282,7 +284,7 @@ def dataclass(
 
 __getattr__ = getattr_migration(__name__)
 
-if (3, 8) <= sys.version_info < (3, 11):
+if sys.version_info < (3, 11):
     # Monkeypatch dataclasses.InitVar so that typing doesn't error if it occurs as a type when evaluating type hints
     # Starting in 3.11, typing.get_type_hints will not raise an error if the retrieved type hints are not callable.
 
@@ -362,6 +364,6 @@ def is_pydantic_dataclass(class_: type[Any], /) -> TypeGuard[type[PydanticDatacl
         `True` if the class is a pydantic dataclass, `False` otherwise.
     """
     try:
-        return '__pydantic_validator__' in class_.__dict__ and dataclasses.is_dataclass(class_)
+        return '__is_pydantic_dataclass__' in class_.__dict__ and dataclasses.is_dataclass(class_)
     except AttributeError:
         return False

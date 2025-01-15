@@ -9,13 +9,13 @@ import typing
 from copy import copy
 from dataclasses import Field as DataclassField
 from functools import cached_property
-from typing import Any, Callable, ClassVar, TypeVar, cast, overload
+from typing import Annotated, Any, Callable, ClassVar, Literal, TypeVar, cast, overload
 from warnings import warn
 
 import annotated_types
 import typing_extensions
 from pydantic_core import PydanticUndefined
-from typing_extensions import Literal, TypeAlias, Unpack, deprecated
+from typing_extensions import TypeAlias, Unpack, deprecated
 
 from . import types
 from ._internal import _decorators, _fields, _generics, _internal_dataclass, _repr, _typing_extra, _utils
@@ -295,8 +295,9 @@ class FieldInfo(_repr.Representation):
         one of the (not first) arguments in `Annotated` is an instance of `FieldInfo`, e.g.:
 
         ```python
+        from typing import Annotated
+
         import annotated_types
-        from typing_extensions import Annotated
 
         import pydantic
 
@@ -364,8 +365,9 @@ class FieldInfo(_repr.Representation):
         This is used in cases like the following:
 
         ```python
+        from typing import Annotated
+
         import annotated_types
-        from typing_extensions import Annotated
 
         import pydantic
 
@@ -645,7 +647,7 @@ class FieldInfo(_repr.Representation):
             return self.annotation
         else:
             # Annotated arguments must be a tuple
-            return typing_extensions.Annotated[(self.annotation, *self.metadata)]  # type: ignore
+            return Annotated[(self.annotation, *self.metadata)]  # type: ignore
 
     def apply_typevars_map(
         self,

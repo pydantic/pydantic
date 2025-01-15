@@ -189,18 +189,18 @@ If you'd still like to use said arguments, you can use [this workaround](https:/
 * JSON serialization of non-string key values is generally done with `str(key)`, leading to some changes in behavior such as the following:
 
 ```python
-from typing import Dict, Optional
+from typing import Optional
 
 from pydantic import BaseModel as V2BaseModel
 from pydantic.v1 import BaseModel as V1BaseModel
 
 
 class V1Model(V1BaseModel):
-    a: Dict[Optional[str], int]
+    a: dict[Optional[str], int]
 
 
 class V2Model(V2BaseModel):
-    a: Dict[Optional[str], int]
+    a: dict[Optional[str], int]
 
 
 v1_model = V1Model(a={None: 123})
@@ -220,18 +220,17 @@ That being said, you can easily modify the separators used in `json.dumps()` res
 
 ```python
 import json
-from typing import List
 
 from pydantic import BaseModel as V2BaseModel
 from pydantic.v1 import BaseModel as V1BaseModel
 
 
 class V1Model(V1BaseModel):
-    a: List[str]
+    a: list[str]
 
 
 class V2Model(V2BaseModel):
-    a: List[str]
+    a: list[str]
 
 
 v1_model = V1Model(a=['fancy', 'sushi'])
@@ -366,7 +365,7 @@ See the [`ConfigDict` API reference][pydantic.config.ConfigDict] for more detail
     * The new `@field_validator` decorator does not have the `each_item` keyword argument; validators you want to
         apply to items within a generic container should be added by annotating the type argument. See
         [validators in Annotated metadata](concepts/types.md#using-the-annotated-pattern) for details.
-        This looks like `List[Annotated[int, Field(ge=0)]]`
+        This looks like `list[Annotated[int, Field(ge=0)]]`
     * Even if you keep using the deprecated `@validator` decorator, you can no longer add the `field` or
         `config` arguments to the signature of validator functions. If you need access to these, you'll need
         to migrate to `@field_validator` — see the [next section](#changes-to-validators-allowed-signatures)
@@ -536,9 +535,7 @@ print(type(v))
 If you want the output type to be a specific type, consider annotating it as such or implementing a custom validator:
 
 ```python
-from typing import Any, Mapping, TypeVar
-
-from typing_extensions import Annotated
+from typing import Annotated, Any, Mapping, TypeVar
 
 from pydantic import (
     TypeAdapter,
@@ -751,11 +748,9 @@ and also covers some of the use cases of "root" models. ([`RootModel`](concepts/
 [discussed above](#changes-to-pydanticbasemodel), covers the others.)
 
 ```python
-from typing import List
-
 from pydantic import TypeAdapter
 
-adapter = TypeAdapter(List[int])
+adapter = TypeAdapter(list[int])
 assert adapter.validate_python(['1', '2', '3']) == [1, 2, 3]
 print(adapter.json_schema())
 #> {'items': {'type': 'integer'}, 'type': 'array'}
@@ -893,7 +888,7 @@ class Model(BaseModel):
 ...becomes:
 
 ```python
-from typing_extensions import Annotated
+from typing import Annotated
 
 from pydantic import BaseModel, Field
 

@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import sys
-from collections.abc import Generator
+from collections.abc import Generator, Iterator, Mapping
 from contextlib import contextmanager
 from functools import cached_property
-from typing import Any, Callable, Iterator, Mapping, NamedTuple, TypeVar
+from typing import Any, Callable, NamedTuple, TypeVar
 
 from typing_extensions import ParamSpec, TypeAlias, TypeAliasType, TypeVarTuple
 

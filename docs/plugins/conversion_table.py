@@ -3,13 +3,15 @@ from __future__ import annotations as _annotations
 import collections
 import typing
 from collections import deque
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, IntEnum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
-from typing import Any, Iterable, Mapping, Pattern, Sequence, Type
+from re import Pattern
+from typing import Any
 from uuid import UUID
 
 from pydantic_core import CoreSchema, core_schema
@@ -1056,8 +1058,8 @@ table_rows: list[Row] = [
         core_schemas=[core_schema.GeneratorSchema],
     ),
     Row(
-        Type,
-        Type,
+        type,
+        type,
         strict=True,
         python_input=True,
         core_schemas=[core_schema.IsSubclassSchema],

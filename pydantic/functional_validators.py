@@ -6,11 +6,11 @@ import dataclasses
 import sys
 from functools import partialmethod
 from types import FunctionType
-from typing import TYPE_CHECKING, Any, Callable, TypeVar, Union, cast, overload
+from typing import TYPE_CHECKING, Annotated, Any, Callable, Literal, TypeVar, Union, cast, overload
 
 from pydantic_core import PydanticUndefined, core_schema
 from pydantic_core import core_schema as _core_schema
-from typing_extensions import Annotated, Literal, Self, TypeAlias
+from typing_extensions import Self, TypeAlias
 
 from ._internal import _decorators, _generics, _internal_dataclass
 from .annotated_handlers import GetCoreSchemaHandler
@@ -36,7 +36,7 @@ class AfterValidator:
 
     Example:
         ```python
-        from typing_extensions import Annotated
+        from typing import Annotated
 
         from pydantic import AfterValidator, BaseModel, ValidationError
 
@@ -99,7 +99,7 @@ class BeforeValidator:
 
     Example:
         ```python
-        from typing_extensions import Annotated
+        from typing import Annotated
 
         from pydantic import BaseModel, BeforeValidator
 
@@ -172,9 +172,7 @@ class PlainValidator:
 
     Example:
         ```python
-        from typing import Union
-
-        from typing_extensions import Annotated
+        from typing import Annotated, Union
 
         from pydantic import BaseModel, PlainValidator
 
@@ -266,8 +264,7 @@ class WrapValidator:
 
     ```python
     from datetime import datetime
-
-    from typing_extensions import Annotated
+    from typing import Annotated
 
     from pydantic import BaseModel, ValidationError, WrapValidator
 

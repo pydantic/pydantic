@@ -389,7 +389,7 @@ from pydantic import BaseModel
 import typing as t
 
 class BaseConfig(BaseModel):
-    _FIELD_UPDATE_STRATEGY: t.ClassVar[t.Dict[str, t.Any]] = {}
+    _FIELD_UPDATE_STRATEGY: t.ClassVar[t.dict[str, t.Any]] = {}
 """
     )
 

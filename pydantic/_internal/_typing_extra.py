@@ -10,6 +10,7 @@ import typing
 import warnings
 from functools import partial
 from typing import TYPE_CHECKING, Any, Callable, cast
+from zoneinfo import ZoneInfo
 
 import typing_extensions
 from typing_extensions import ParamSpec, TypeAliasType, TypeIs, deprecated, get_args, get_origin
@@ -88,9 +89,6 @@ def literal_values(tp: Any, /) -> list[Any]:
     *doesn't* check that the type alias is referencing a `Literal` special form,
     so unexpected values could be unpacked.
     """
-    # TODO When we drop support for Python 3.8, there's no need to check of `is_literal`
-    # here, as Python unpacks nested `Literal` forms in 3.9+.
-    # (see https://docs.python.org/3/whatsnew/3.9.html#id4).
     if not is_literal(tp):
         # Note: we could also check for generic aliases with a type alias as an origin.
         # However, it is very unlikely that this happens as type variables can't appear in
@@ -107,33 +105,20 @@ def literal_values(tp: Any, /) -> list[Any]:
     return [x for value in values for x in literal_values(value)]
 
 
+_t_annotated = typing.Annotated
 _te_annotated = typing_extensions.Annotated
 
-if sys.version_info >= (3, 9):
-    _t_annotated = typing.Annotated
 
-    def is_annotated(tp: Any, /) -> bool:
-        """Return whether the provided argument is a `Annotated` special form.
+def is_annotated(tp: Any, /) -> bool:
+    """Return whether the provided argument is a `Annotated` special form.
 
-        ```python {test="skip" lint="skip"}
-        is_annotated(Annotated[int, ...])
-        #> True
-        ```
-        """
-        origin = get_origin(tp)
-        return origin is _t_annotated or origin is _te_annotated
-
-else:
-
-    def is_annotated(tp: Any, /) -> bool:
-        """Return whether the provided argument is a `Annotated` special form.
-
-        ```python {test="skip" lint="skip"}
-        is_annotated(Annotated[int, ...])
-        #> True
-        ```
-        """
-        return get_origin(tp) is _te_annotated
+    ```python {test="skip" lint="skip"}
+    is_annotated(Annotated[int, ...])
+    #> True
+    ```
+    """
+    origin = get_origin(tp)
+    return origin is _t_annotated or origin is _te_annotated
 
 
 def annotated_type(tp: Any, /) -> Any | None:
@@ -569,19 +554,13 @@ def is_namedtuple(tp: Any, /) -> bool:
     return lenient_issubclass(tp, tuple) and hasattr(tp, '_fields')
 
 
-if sys.version_info < (3, 9):
+def is_zoneinfo_type(tp: Any, /) -> TypeIs[type[ZoneInfo]]:
+    """Return whether the provided argument is the `zoneinfo.ZoneInfo` type."""
+    return tp is ZoneInfo
 
-    def is_zoneinfo_type(tp: Any, /) -> bool:
-        """Return whether the provided argument is the `zoneinfo.ZoneInfo` type."""
-        return False
 
-else:
-    from zoneinfo import ZoneInfo
-
-    def is_zoneinfo_type(tp: Any, /) -> TypeIs[type[ZoneInfo]]:
-        """Return whether the provided argument is the `zoneinfo.ZoneInfo` type."""
-        return tp is ZoneInfo
-
+_t_union = typing.Union
+_te_union = typing_extensions.Union
 
 _t_union = typing.Union
 _te_union = typing_extensions.Union
@@ -592,24 +571,20 @@ if sys.version_info < (3, 10):
         """Return whether the provided argument is the `Union` special form."""
         return tp is _t_union or tp is _te_union
 
-    def is_generic_alias(type_: type[Any]) -> bool:
-        return isinstance(type_, typing._GenericAlias)  # pyright: ignore[reportAttributeAccessIssue]
-
 else:
 
     def origin_is_union(tp: Any, /) -> bool:
         """Return whether the provided argument is the `Union` special form or the `UnionType`."""
         return tp is _t_union or tp is _te_union or tp is types.UnionType
 
-    def is_generic_alias(tp: Any, /) -> bool:
-        return isinstance(tp, (types.GenericAlias, typing._GenericAlias))  # pyright: ignore[reportAttributeAccessIssue]
+
+def is_generic_alias(tp: Any, /) -> bool:
+    return isinstance(tp, (types.GenericAlias, typing._GenericAlias))  # pyright: ignore[reportAttributeAccessIssue]
 
 
 # TODO: Ideally, we should avoid relying on the private `typing` constructs:
 
-if sys.version_info < (3, 9):
-    WithArgsTypes: tuple[Any, ...] = (typing._GenericAlias,)  # pyright: ignore[reportAttributeAccessIssue]
-elif sys.version_info < (3, 10):
+if sys.version_info < (3, 10):
     WithArgsTypes: tuple[Any, ...] = (typing._GenericAlias, types.GenericAlias)  # pyright: ignore[reportAttributeAccessIssue]
 else:
     WithArgsTypes: tuple[Any, ...] = (typing._GenericAlias, types.GenericAlias, types.UnionType)  # pyright: ignore[reportAttributeAccessIssue]
@@ -907,12 +882,7 @@ def _eval_type(
 def is_backport_fixable_error(e: TypeError) -> bool:
     msg = str(e)
 
-    return (
-        sys.version_info < (3, 10)
-        and msg.startswith('unsupported operand type(s) for |: ')
-        or sys.version_info < (3, 9)
-        and "' object is not subscriptable" in msg
-    )
+    return sys.version_info < (3, 10) and msg.startswith('unsupported operand type(s) for |: ')
 
 
 def get_function_type_hints(

@@ -1,9 +1,8 @@
 import json
-from typing import Any, Union
+from typing import Annotated, Any, Union
 
 import pytest
 from pydantic_core import PydanticCustomError, PydanticSerializationError, Url
-from typing_extensions import Annotated
 
 from pydantic import (
     AfterValidator,
