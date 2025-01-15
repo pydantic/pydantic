@@ -645,8 +645,6 @@ class GenerateSchema:
             schema = self.defs.finalize_schema(schema)
         except GatherInvalidDefinitionError:
             raise GenerateSchema.CollectedInvalid
-        if collect_invalid_schemas(schema):
-            raise GenerateSchema.CollectedInvalid
         schema = validate_core_schema(schema)
         return schema
 
@@ -795,9 +793,6 @@ class GenerateSchema:
                         model_name=cls.__name__,
                     )
                     inner_schema = apply_validators(fields_schema, decorators.root_validators.values(), None)
-                    new_inner_schema = define_expected_missing_refs(inner_schema, recursively_defined_type_refs())
-                    if new_inner_schema is not None:
-                        inner_schema = new_inner_schema
                     inner_schema = apply_model_validators(inner_schema, model_validators, 'inner')
 
                     model_schema = core_schema.model_schema(
