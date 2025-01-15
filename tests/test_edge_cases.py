@@ -2981,3 +2981,29 @@ def test_setattr_handler_does_not_memoize_on_validate_assignment_field_failure()
     assert not Model.__pydantic_setattr_handlers__
     m.a = 2
     assert 'a' in Model.__pydantic_setattr_handlers__
+
+
+def test_get_pydantic_core_schema_on_referenceable_type() -> None:
+    # This ensures that even if you define the method, it won't actually
+    # be called twice and the cached definition will be used instead.
+    # Note that what is important here is that the `Test` definition does
+    # not raise a `LookupError` when calling the `handler` (see
+    # `CallbackGetCoreSchemaHandler.__call__` calling `resolve_ref_schema`).
+    counter = 0
+
+    class Model(BaseModel):
+        @classmethod
+        def __get_pydantic_core_schema__(
+            cls, source: type[BaseModel], handler: GetCoreSchemaHandler, /
+        ) -> core_schema.CoreSchema:
+            rv = handler(source)
+            nonlocal counter
+            counter += 1
+            return rv
+
+    counter = 0  # reset the counter to only account for the `Test` definition
+
+    class Test(Model):
+        t: 'Test'
+
+    assert counter == 1

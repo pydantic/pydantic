@@ -32,6 +32,7 @@ import typing_extensions
 from pydantic_core import PydanticUndefined
 from typing_extensions import Self, TypeAlias, Unpack
 
+from . import PydanticDeprecatedSince20, PydanticDeprecatedSince211
 from ._internal import (
     _config,
     _decorators,
@@ -52,7 +53,6 @@ from .config import ConfigDict
 from .errors import PydanticUndefinedAnnotation, PydanticUserError
 from .json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema, JsonSchemaMode, JsonSchemaValue, model_json_schema
 from .plugin._schema_validator import PluggableSchemaValidator
-from .warnings import PydanticDeprecatedSince20
 
 if TYPE_CHECKING:
     from inspect import Signature
@@ -686,23 +686,20 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     @classmethod
     def __get_pydantic_core_schema__(cls, source: type[BaseModel], handler: GetCoreSchemaHandler, /) -> CoreSchema:
-        """Hook into generating the model's CoreSchema.
-
-        Args:
-            source: The class we are generating a schema for.
-                This will generally be the same as the `cls` argument if this is a classmethod.
-            handler: A callable that calls into Pydantic's internal CoreSchema generation logic.
-
-        Returns:
-            A `pydantic-core` `CoreSchema`.
-        """
-        # Only use the cached value from this _exact_ class; we don't want one from a parent class
-        # This is why we check `cls.__dict__` and don't use `cls.__pydantic_core_schema__` or similar.
+        # This warning is only emitted when calling `super().__get_pydantic_core_schema__` from a model subclass.
+        # In the generate schema logic, this method (`BaseModel.__get_pydantic_core_schema__`) is special cased to
+        # *not* be called if not overridden.
+        warnings.warn(
+            'The `__get_pydantic_core_schema__` method of the `BaseModel` class is deprecated. If you are calling '
+            '`super().__get_pydantic_core_schema__` when overriding the method on a Pydantic model, consider using '
+            '`handler(source)` instead. However, note that overriding this method on models can lead to unexpected '
+            'side effects.',
+            PydanticDeprecatedSince211,
+            stacklevel=2,
+        )
+        # Logic copied over from `GenerateSchema._model_schema`:
         schema = cls.__dict__.get('__pydantic_core_schema__')
         if schema is not None and not isinstance(schema, _mock_val_ser.MockCoreSchema):
-            # Due to the way generic classes are built, it's possible that an invalid schema may be temporarily
-            # set on generic classes. I think we could resolve this to ensure that we get proper schema caching
-            # for generics, but for simplicity for now, we just always rebuild if the class has a generic origin.
             if not cls.__pydantic_generic_metadata__['origin']:
                 return cls.__pydantic_core_schema__
 

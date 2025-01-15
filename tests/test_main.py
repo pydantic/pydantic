@@ -2953,8 +2953,8 @@ def test_get_core_schema_unpacks_refs_for_source_type() -> None:
     assert 'inner was here' in str(ta.core_schema)
 
     assert received_schemas == {
-        'InnerModel': ['model', 'model', 'model'],
-        'Marker("inner")': ['definition-ref', 'definition-ref'],
+        'InnerModel': ['model', 'model'],
+        'Marker("inner")': ['definition-ref'],
         'OuterModel': ['model', 'model'],
         'Marker("outer")': ['definition-ref'],
     }
