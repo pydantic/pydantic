@@ -94,7 +94,7 @@ def collect_model_fields(  # noqa: C901
         typevars_map: A dictionary mapping type variables to their concrete types.
 
     Returns:
-        A tuple contains fields and class variables.
+        A tuple containing fields and class variables.
 
     Raises:
         NameError:

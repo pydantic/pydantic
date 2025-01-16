@@ -2070,14 +2070,11 @@ class GenerateSchema:
         # For now, we at least resolve the annotated type if it is a forward ref, but note that
         # unexpected results will happen if you have something like `Annotated[Alias, ...]` and
         # `Alias` is a PEP 695 type alias containing forward references.
-        typ, *annotations = get_args(annotated_type)
+        typ, annotations = _typing_extra.unpack_annotated(annotated_type, True)
         if isinstance(typ, str):
             typ = _typing_extra._make_forward_ref(typ)
         if isinstance(typ, ForwardRef):
             typ = self._resolve_forward_ref(typ)
-
-        typ, sub_annotations = _typing_extra.unpack_annotated(typ)
-        annotations = sub_annotations + annotations
 
         schema = self._apply_annotations(typ, annotations)
         # put the default validator last so that TypeAdapter.get_default_value() works

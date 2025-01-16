@@ -126,7 +126,7 @@ def annotated_type(tp: Any, /) -> Any | None:
     return get_args(tp)[0] if is_annotated(tp) else None
 
 
-def unpack_annotated(annotation: Any, /) -> tuple[Any, list[Any]]:
+def unpack_annotated(annotation: Any, is_annotated_guaranteed: bool | None = None, /) -> tuple[Any, list[Any]]:
     """Unpack the annotation if it is wrapped with the `Annotated` type qualifier.
 
     This function also unpacks PEP 695 type aliases if necessary (and also generic
@@ -156,7 +156,7 @@ def unpack_annotated(annotation: Any, /) -> tuple[Any, list[Any]]:
             wrapped with `Annotated` in the first place, it is returned as is and the
             metadata list is empty.
     """
-    if is_annotated(annotation):
+    if is_annotated_guaranteed or is_annotated(annotation):
         typ, *metadata = get_args(annotation)
         # The annotated type might be a PEP 695 type alias, so we need to recursively
         # unpack it. Note that we could make an optimization here: the following next
