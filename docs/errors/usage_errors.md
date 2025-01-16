@@ -99,7 +99,7 @@ and the second a callable `handler` that receives a `CoreSchema` as parameter, a
 below:
 
 ```python {title="New way"}
-from typing import Any, Dict
+from typing import Any
 
 from pydantic_core import CoreSchema
 
@@ -110,7 +110,7 @@ class Model(BaseModel):
     @classmethod
     def __get_pydantic_json_schema__(
         cls, core_schema: CoreSchema, handler: GetJsonSchemaHandler
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         json_schema = super().__get_pydantic_json_schema__(core_schema, handler)
         json_schema = handler.resolve_ref_schema(json_schema)
         json_schema.update(examples=['example'])
@@ -356,9 +356,7 @@ assert Model(pet={'pet_type': 'kitten'}).pet.pet_type == 'cat'
 This error is raised when a `Union` that uses a callable `Discriminator` doesn't have `Tag` annotations for all cases.
 
 ```python
-from typing import Union
-
-from typing_extensions import Annotated
+from typing import Annotated, Union
 
 from pydantic import BaseModel, Discriminator, PydanticUserError, Tag
 
@@ -620,7 +618,7 @@ See the [Migration Guide](../migration.md) for more information.
 
 ## `create_model` field definitions {#create-model-field-definitions}
 
-This error is raised when you provide field definitions input in `create_model` that is not valid.
+This error is raised when you provide invalid field definitions in [`create_model()`][pydantic.create_model].
 
 ```python
 from pydantic import PydanticUserError, create_model
@@ -631,18 +629,8 @@ except PydanticUserError as exc_info:
     assert exc_info.code == 'create-model-field-definitions'
 ```
 
-Or when you use [`typing.Annotated`][] with invalid input
+The fields definition syntax can be found in the [dynamic model creation](../concepts/models.md#dynamic-model-creation) documentation.
 
-```python
-from typing_extensions import Annotated
-
-from pydantic import PydanticUserError, create_model
-
-try:
-    create_model('FooModel', foo=Annotated[str, 'NotFieldInfoValue'])
-except PydanticUserError as exc_info:
-    assert exc_info.code == 'create-model-field-definitions'
-```
 
 ## `create_model` config base {#create-model-config-base}
 
@@ -1012,7 +1000,7 @@ except PydanticUserError as exc_info:
 This error is raised when an annotation cannot annotate a type.
 
 ```python
-from typing_extensions import Annotated
+from typing import Annotated
 
 from pydantic import BaseModel, FutureDate, PydanticUserError
 
@@ -1207,7 +1195,9 @@ except PydanticUserError as exc_info:
 
 ## Unsupported type for `validate_call` {#validate-call-type}
 
-`validate_call` has some limitations on the callables it can validate. This error is raised when you try to use it with an unsupported callable. Currently the supported callables are functions (including lambdas) and methods and instances of [`partial`][functools.partial]. In the case of [`partial`][functools.partial], the function being partially applied must be one of the supported callables.
+`validate_call` has some limitations on the callables it can validate. This error is raised when you try to use it with an unsupported callable.
+Currently the supported callables are functions (including lambdas, but not built-ins) and methods and instances of [`partial`][functools.partial].
+In the case of [`partial`][functools.partial], the function being partially applied must be one of the supported callables.
 
 ### `@classmethod`, `@staticmethod`, and `@property`
 
@@ -1260,9 +1250,10 @@ class A2:
     def __new__(cls): ...
 ```
 
-### Custom callable
+### Callable instances
 
-Although you can create custom callable types in Python by implementing a `__call__` method, currently the instances of these types cannot be validated with `validate_call`. This may change in the future, but for now, you should use `validate_call` explicitly on `__call__` instead.
+Although instances can be callable by implementing a `__call__` method, currently the instances of these types cannot be validated with `validate_call`.
+This may change in the future, but for now, you should use `validate_call` explicitly on `__call__` instead.
 
 ```python
 from pydantic import PydanticUserError, validate_call

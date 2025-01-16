@@ -1,12 +1,11 @@
 import json
-import sys
 from dataclasses import dataclass
 from datetime import date, datetime
-from typing import Any, Dict, ForwardRef, Generic, List, NamedTuple, Optional, Tuple, TypeVar, Union
+from typing import Annotated, Any, ForwardRef, Generic, NamedTuple, Optional, TypeVar, Union
 
 import pytest
 from pydantic_core import ValidationError
-from typing_extensions import Annotated, TypeAlias, TypedDict
+from typing_extensions import TypeAlias, TypedDict
 
 from pydantic import BaseModel, Field, TypeAdapter, ValidationInfo, create_model, field_validator
 from pydantic._internal import _mock_val_ser
@@ -18,7 +17,7 @@ from pydantic.type_adapter import _type_has_config
 
 ItemType = TypeVar('ItemType')
 
-NestedList = List[List[ItemType]]
+NestedList = list[list[ItemType]]
 
 
 class PydanticModel(BaseModel):
@@ -47,11 +46,11 @@ class SomeNamedTuple(NamedTuple):
         (PydanticModel, {'x': 1}, PydanticModel(x=1)),
         (SomeTypedDict, {'x': 1}, {'x': 1}),
         (SomeNamedTuple, SomeNamedTuple(x=1), SomeNamedTuple(x=1)),
-        (List[str], ['1', '2'], ['1', '2']),
-        (Tuple[str], ('1',), ('1',)),
-        (Tuple[str, int], ('1', 1), ('1', 1)),
-        (Tuple[str, ...], ('1',), ('1',)),
-        (Dict[str, int], {'foo': 123}, {'foo': 123}),
+        (list[str], ['1', '2'], ['1', '2']),
+        (tuple[str], ('1',), ('1',)),
+        (tuple[str, int], ('1', 1), ('1', 1)),
+        (tuple[str, ...], ('1',), ('1',)),
+        (dict[str, int], {'foo': 123}, {'foo': 123}),
         (Union[int, str], 1, 1),
         (Union[int, str], '2', '2'),
         (GenericPydanticModel[int], {'x': [[1]]}, GenericPydanticModel[int](x=[[1]])),
@@ -65,8 +64,8 @@ def test_types(tp: Any, val: Any, expected: Any):
     assert expected == v(val)
 
 
-IntList = List[int]
-OuterDict = Dict[str, 'IntList']
+IntList = list[int]
+OuterDict = dict[str, 'IntList']
 
 
 @pytest.mark.parametrize('defer_build', [False, True])
@@ -115,8 +114,8 @@ def test_model_global_namespace_variables(defer_build: bool, method: str, genera
 @pytest.mark.parametrize('defer_build', [False, True])
 @pytest.mark.parametrize('method', ['validate', 'serialize', 'json_schema', 'json_schemas'])
 def test_local_namespace_variables(defer_build: bool, method: str, generate_schema_calls):
-    IntList = List[int]  # noqa: F841
-    OuterDict = Dict[str, 'IntList']
+    IntList = list[int]  # noqa: F841
+    OuterDict = dict[str, 'IntList']
 
     config = ConfigDict(defer_build=True) if defer_build else None
     ta = TypeAdapter(OuterDict, config=config)
@@ -138,11 +137,11 @@ def test_local_namespace_variables(defer_build: bool, method: str, generate_sche
 @pytest.mark.parametrize('defer_build', [False, True])
 @pytest.mark.parametrize('method', ['validate', 'serialize', 'json_schema', 'json_schemas'])
 def test_model_local_namespace_variables(defer_build: bool, method: str, generate_schema_calls):
-    IntList = List[int]  # noqa: F841
+    IntList = list[int]  # noqa: F841
 
     class MyModel(BaseModel):
         model_config = ConfigDict(defer_build=defer_build)
-        x: Dict[str, 'IntList']
+        x: dict[str, 'IntList']
 
     ta = TypeAdapter(MyModel)
 
@@ -162,7 +161,6 @@ def test_model_local_namespace_variables(defer_build: bool, method: str, generat
 
 @pytest.mark.parametrize('defer_build', [False, True])
 @pytest.mark.parametrize('method', ['validate', 'serialize', 'json_schema', 'json_schemas'])
-@pytest.mark.skipif(sys.version_info < (3, 9), reason="ForwardRef doesn't accept module as a parameter in Python < 3.9")
 def test_top_level_fwd_ref(defer_build: bool, method: str, generate_schema_calls):
     config = ConfigDict(defer_build=True) if defer_build else None
 
@@ -187,7 +185,7 @@ MyUnion: TypeAlias = 'Union[str, int]'
 
 
 def test_type_alias():
-    MyList = List[MyUnion]
+    MyList = list[MyUnion]
     v = TypeAdapter(MyList).validate_python
     res = v([1, '2'])
     assert res == [1, '2']
@@ -257,7 +255,7 @@ def test_validate_json_strict() -> None:
 
 
 def test_validate_python_context() -> None:
-    contexts: List[Any] = [None, None, {'foo': 'bar'}]
+    contexts: list[Any] = [None, None, {'foo': 'bar'}]
 
     class Model(BaseModel):
         x: int
@@ -275,7 +273,7 @@ def test_validate_python_context() -> None:
 
 
 def test_validate_json_context() -> None:
-    contexts: List[Any] = [None, None, {'foo': 'bar'}]
+    contexts: list[Any] = [None, None, {'foo': 'bar'}]
 
     class Model(BaseModel):
         x: int
@@ -408,7 +406,7 @@ def test_validate_strings(
 
 @pytest.mark.parametrize('strict', [True, False])
 def test_validate_strings_dict(strict):
-    assert TypeAdapter(Dict[int, date]).validate_strings({'1': '2017-01-01', '2': '2017-01-02'}, strict=strict) == {
+    assert TypeAdapter(dict[int, date]).validate_strings({'1': '2017-01-01', '2': '2017-01-02'}, strict=strict) == {
         1: date(2017, 1, 1),
         2: date(2017, 1, 2),
     }
@@ -442,7 +440,7 @@ def test_ta_config_with_annotated_type() -> None:
 
     # cases where SchemaSerializer is constructed within TypeAdapter's __init__
     assert TypeAdapter(Annotated[TestSerializer, ...]).dump_python(result, mode='json') == {'some_bytes': 'qg=='}
-    assert TypeAdapter(Annotated[List[TestSerializer], ...]).dump_python([result], mode='json') == [
+    assert TypeAdapter(Annotated[list[TestSerializer], ...]).dump_python([result], mode='json') == [
         {'some_bytes': 'qg=='}
     ]
 
@@ -475,7 +473,7 @@ def test_eval_type_backport():
     ]
 
 
-def defer_build_test_models(config: ConfigDict) -> List[Any]:
+def defer_build_test_models(config: ConfigDict) -> list[Any]:
     class Model(BaseModel):
         model_config = config
         x: int
@@ -503,7 +501,7 @@ def defer_build_test_models(config: ConfigDict) -> List[Any]:
         DataClassModel,
         SubDataClassModel,
         TypedDictModel,
-        Dict[str, int],
+        dict[str, int],
     ]
     return [
         *models,
@@ -516,7 +514,7 @@ CONFIGS = [
     ConfigDict(defer_build=False),
     ConfigDict(defer_build=True),
 ]
-MODELS_CONFIGS: List[Tuple[Any, ConfigDict]] = [
+MODELS_CONFIGS: list[tuple[Any, ConfigDict]] = [
     (model, config) for config in CONFIGS for model in defer_build_test_models(config)
 ]
 
@@ -525,7 +523,7 @@ MODELS_CONFIGS: List[Tuple[Any, ConfigDict]] = [
 @pytest.mark.parametrize('method', ['schema', 'validate', 'dump'])
 def test_core_schema_respects_defer_build(model: Any, config: ConfigDict, method: str, generate_schema_calls) -> None:
     type_ = annotated_type(model) or model
-    dumped = dict(x=1) if 'Dict[' in str(type_) else type_(x=1)
+    dumped = dict(x=1) if 'dict[' in str(type_) else type_(x=1)
     generate_schema_calls.reset()
 
     type_adapter = TypeAdapter(model) if _type_has_config(model) else TypeAdapter(model, config=config)
@@ -536,11 +534,11 @@ def test_core_schema_respects_defer_build(model: Any, config: ConfigDict, method
         assert isinstance(type_adapter.validator, _mock_val_ser.MockValSer), 'Should be initialized deferred'
         assert isinstance(type_adapter.serializer, _mock_val_ser.MockValSer), 'Should be initialized deferred'
     else:
-        built_inside_type_adapter = 'Dict' in str(model) or 'Annotated' in str(model)
+        built_inside_type_adapter = 'dict' in str(model).lower() or 'Annotated' in str(model)
         assert generate_schema_calls.count == (1 if built_inside_type_adapter else 0), f'Should be built ({model})'
-        assert not isinstance(
-            type_adapter.core_schema, _mock_val_ser.MockCoreSchema
-        ), 'Should be initialized before usage'
+        assert not isinstance(type_adapter.core_schema, _mock_val_ser.MockCoreSchema), (
+            'Should be initialized before usage'
+        )
         assert not isinstance(type_adapter.validator, _mock_val_ser.MockValSer), 'Should be initialized before usage'
         assert not isinstance(type_adapter.validator, _mock_val_ser.MockValSer), 'Should be initialized before usage'
 
@@ -559,9 +557,9 @@ def test_core_schema_respects_defer_build(model: Any, config: ConfigDict, method
         assert json.loads(raw.decode())['x'] == 1  # Sanity check
         assert generate_schema_calls.count < 2, 'Should not build duplicates'
 
-    assert not isinstance(
-        type_adapter.core_schema, _mock_val_ser.MockCoreSchema
-    ), 'Should be initialized after the usage'
+    assert not isinstance(type_adapter.core_schema, _mock_val_ser.MockCoreSchema), (
+        'Should be initialized after the usage'
+    )
     assert not isinstance(type_adapter.validator, _mock_val_ser.MockValSer), 'Should be initialized after the usage'
     assert not isinstance(type_adapter.validator, _mock_val_ser.MockValSer), 'Should be initialized after the usage'
 
@@ -588,7 +586,7 @@ class SimpleDataclass:
     x: int
 
 
-@pytest.mark.parametrize('type_,repr_', [(int, 'int'), (List[int], 'List[int]'), (SimpleDataclass, 'SimpleDataclass')])
+@pytest.mark.parametrize('type_,repr_', [(int, 'int'), (list[int], 'list[int]'), (SimpleDataclass, 'SimpleDataclass')])
 def test_ta_repr(type_: Any, repr_: str) -> None:
     ta = TypeAdapter(type_)
     assert repr(ta) == f'TypeAdapter({repr_})'

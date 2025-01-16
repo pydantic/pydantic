@@ -4,13 +4,18 @@ This logic is inspired by that of @tiangolo's
 [FastAPI people script](https://github.com/tiangolo/fastapi/blob/master/.github/actions/people/app/main.py).
 """
 
+# TODO: add docstrings to classes and functions (good first issue)
+# ruff: noqa: D101
+# ruff: noqa: D103
+
 import logging
 import subprocess
 import sys
 from collections import Counter
+from collections.abc import Container
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Container, Dict, List, Set, Union
+from typing import Any, Union
 
 import requests
 import yaml
@@ -23,7 +28,7 @@ github_graphql_url = 'https://api.github.com/graphql'
 
 discussions_query = """
 query Q($after: String) {
-  repository(name: "pydantic", owner: "samuelcolvin") {
+  repository(name: "pydantic", owner: "pydantic") {
     discussions(first: 100, after: $after) {
       edges {
         cursor
@@ -161,7 +166,7 @@ class CommentsNode(BaseModel):
 
 
 class Replies(BaseModel):
-    nodes: List[CommentsNode]
+    nodes: list[CommentsNode]
 
 
 class DiscussionsCommentsNode(CommentsNode):
@@ -169,11 +174,11 @@ class DiscussionsCommentsNode(CommentsNode):
 
 
 class Comments(BaseModel):
-    nodes: List[CommentsNode]
+    nodes: list[CommentsNode]
 
 
 class DiscussionsComments(BaseModel):
-    nodes: List[DiscussionsCommentsNode]
+    nodes: list[DiscussionsCommentsNode]
 
 
 class IssuesNode(BaseModel):
@@ -204,11 +209,11 @@ class DiscussionsEdge(BaseModel):
 
 
 class Issues(BaseModel):
-    edges: List[IssuesEdge]
+    edges: list[IssuesEdge]
 
 
 class Discussions(BaseModel):
-    edges: List[DiscussionsEdge]
+    edges: list[DiscussionsEdge]
 
 
 class IssuesRepository(BaseModel):
@@ -243,7 +248,7 @@ class LabelNode(BaseModel):
 
 
 class Labels(BaseModel):
-    nodes: List[LabelNode]
+    nodes: list[LabelNode]
 
 
 class ReviewNode(BaseModel):
@@ -252,7 +257,7 @@ class ReviewNode(BaseModel):
 
 
 class Reviews(BaseModel):
-    nodes: List[ReviewNode]
+    nodes: list[ReviewNode]
 
 
 class PullRequestNode(BaseModel):
@@ -272,7 +277,7 @@ class PullRequestEdge(BaseModel):
 
 
 class PullRequests(BaseModel):
-    edges: List[PullRequestEdge]
+    edges: list[PullRequestEdge]
 
 
 class PRsRepository(BaseModel):
@@ -298,7 +303,7 @@ def get_graphql_response(
     settings: Settings,
     query: str,
     after: Union[str, None] = None,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     headers = {'Authorization': f'token {settings.input_token.get_secret_value()}'}
     variables = {'after': after}
     response = requests.post(
@@ -347,7 +352,7 @@ def get_graphql_pr_edges(*, settings: Settings, after: Union[str, None] = None):
 
 
 def get_issues_experts(settings: Settings):
-    issue_nodes: List[IssuesNode] = []
+    issue_nodes: list[IssuesNode] = []
     issue_edges = get_graphql_issue_edges(settings=settings)
 
     while issue_edges:
@@ -358,7 +363,7 @@ def get_issues_experts(settings: Settings):
 
     commentors = Counter()
     last_month_commentors = Counter()
-    authors: Dict[str, Author] = {}
+    authors: dict[str, Author] = {}
 
     now = datetime.now(tz=timezone.utc)
     one_month_ago = now - timedelta(days=30)
@@ -383,7 +388,7 @@ def get_issues_experts(settings: Settings):
 
 
 def get_discussions_experts(settings: Settings):
-    discussion_nodes: List[DiscussionsNode] = []
+    discussion_nodes: list[DiscussionsNode] = []
     discussion_edges = get_graphql_question_discussion_edges(settings=settings)
 
     while discussion_edges:
@@ -394,7 +399,7 @@ def get_discussions_experts(settings: Settings):
 
     commentors = Counter()
     last_month_commentors = Counter()
-    authors: Dict[str, Author] = {}
+    authors: dict[str, Author] = {}
 
     now = datetime.now(tz=timezone.utc)
     one_month_ago = now - timedelta(days=30)
@@ -446,7 +451,7 @@ def get_experts(settings: Settings):
 
 
 def get_contributors(settings: Settings):
-    pr_nodes: List[PullRequestNode] = []
+    pr_nodes: list[PullRequestNode] = []
     pr_edges = get_graphql_pr_edges(settings=settings)
 
     while pr_edges:
@@ -458,15 +463,15 @@ def get_contributors(settings: Settings):
     contributors = Counter()
     commentors = Counter()
     reviewers = Counter()
-    authors: Dict[str, Author] = {}
+    authors: dict[str, Author] = {}
 
     for pr in pr_nodes:
         author_name = None
         if pr.author:
             authors[pr.author.login] = pr.author
             author_name = pr.author.login
-        pr_commentors: Set[str] = set()
-        pr_reviewers: Set[str] = set()
+        pr_commentors: set[str] = set()
+        pr_reviewers: set[str] = set()
         for comment in pr.comments.nodes:
             if comment.author:
                 authors[comment.author.login] = comment.author
@@ -490,7 +495,7 @@ def get_top_users(
     *,
     counter: Counter,
     min_count: int,
-    authors: Dict[str, Author],
+    authors: dict[str, Author],
     skip_users: Container[str],
 ):
     users = []
@@ -528,6 +533,7 @@ if __name__ == '__main__':
         'davidhewitt',
         'sydney-runkle',
         'alexmojaki',
+        'Viicos',
     }
     bot_names = {'codecov', 'github-actions', 'pre-commit-ci', 'dependabot'}
     maintainers = []

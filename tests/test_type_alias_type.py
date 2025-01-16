@@ -1,20 +1,21 @@
 import datetime
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Dict, Generic, List, Sequence, Tuple, TypeVar, Union
+from typing import Annotated, Generic, Literal, TypeVar, Union
 
 import pytest
 from annotated_types import MaxLen
-from typing_extensions import Annotated, Literal, TypeAliasType
+from typing_extensions import TypeAliasType
 
 from pydantic import BaseModel, Field, PydanticUserError, TypeAdapter, ValidationError
 
 T = TypeVar('T')
 
-JsonType = TypeAliasType('JsonType', Union[List['JsonType'], Dict[str, 'JsonType'], str, int, float, bool, None])
+JsonType = TypeAliasType('JsonType', Union[list['JsonType'], dict[str, 'JsonType'], str, int, float, bool, None])
 RecursiveGenericAlias = TypeAliasType(
-    'RecursiveGenericAlias', List[Union['RecursiveGenericAlias[T]', T]], type_params=(T,)
+    'RecursiveGenericAlias', list[Union['RecursiveGenericAlias[T]', T]], type_params=(T,)
 )
-MyList = TypeAliasType('MyList', List[T], type_params=(T,))
+MyList = TypeAliasType('MyList', list[T], type_params=(T,))
 # try mixing with implicit type aliases
 ShortMyList = Annotated[MyList[T], MaxLen(1)]
 ShortRecursiveGenericAlias = Annotated[RecursiveGenericAlias[T], MaxLen(1)]
@@ -167,7 +168,7 @@ def test_type_alias_annotated() -> None:
 
 def test_type_alias_annotated_defs() -> None:
     # force use of refs by referencing the schema in multiple places
-    t = TypeAdapter(Tuple[ShortMyList[int], ShortMyList[int]])
+    t = TypeAdapter(tuple[ShortMyList[int], ShortMyList[int]])
 
     assert t.validate_python((['1'], ['2'])) == ([1], [2])
 
@@ -275,7 +276,7 @@ def test_recursive_generic_type_alias_annotated() -> None:
 
 def test_recursive_generic_type_alias_annotated_defs() -> None:
     # force use of refs by referencing the schema in multiple places
-    t = TypeAdapter(Tuple[ShortRecursiveGenericAlias[int], ShortRecursiveGenericAlias[int]])
+    t = TypeAdapter(tuple[ShortRecursiveGenericAlias[int], ShortRecursiveGenericAlias[int]])
 
     assert t.validate_python(([[]], [[]])) == ([[]], [[]])
 
@@ -314,28 +315,14 @@ def test_recursive_generic_type_alias_annotated_defs() -> None:
     }
 
 
-@pytest.mark.xfail(reason='description is currently dropped')
-def test_field() -> None:
-    SomeAlias = TypeAliasType('SomeAlias', Annotated[int, Field(description='number')])
-
-    ta = TypeAdapter(Annotated[SomeAlias, Field(title='abc')])
-
-    # insert_assert(ta.json_schema())
-    assert ta.json_schema() == {
-        '$defs': {'SomeAlias': {'type': 'integer', 'description': 'number'}},
-        '$ref': '#/$defs/SomeAlias',
-        'title': 'abc',
-    }
-
-
 def test_nested_generic_type_alias_type() -> None:
     class MyModel(BaseModel):
         field_1: MyList[bool]
         field_2: MyList[str]
 
-    model = MyModel(field_1=[True], field_2=['abc'])
+    MyModel(field_1=[True], field_2=['abc'])
 
-    assert model.model_json_schema() == {
+    assert MyModel.model_json_schema() == {
         '$defs': {
             'MyList_bool_': {'items': {'type': 'boolean'}, 'type': 'array'},
             'MyList_str_': {'items': {'type': 'string'}, 'type': 'array'},
@@ -370,7 +357,7 @@ def test_redefined_type_alias():
 def test_type_alias_to_type_with_ref():
     class Div(BaseModel):
         type: Literal['Div'] = 'Div'
-        components: List['AnyComponent']
+        components: list['AnyComponent']
 
     AnyComponent = TypeAliasType('AnyComponent', Div)
 
@@ -410,11 +397,11 @@ def test_intermediate_type_aliases() -> None:
 
 def test_intermediate_type_aliases_json_type() -> None:
     JSON = TypeAliasType('JSON', Union[str, int, bool, 'JSONSeq', 'JSONObj', None])
-    JSONObj = TypeAliasType('JSONObj', Dict[str, JSON])
-    JSONSeq = TypeAliasType('JSONSeq', List[JSON])
+    JSONObj = TypeAliasType('JSONObj', dict[str, JSON])
+    JSONSeq = TypeAliasType('JSONSeq', list[JSON])
     MyJSONAlias1 = TypeAliasType('MyJSONAlias1', JSON)
     MyJSONAlias2 = TypeAliasType('MyJSONAlias2', MyJSONAlias1)
-    JSONs = TypeAliasType('JSONs', List[MyJSONAlias2])
+    JSONs = TypeAliasType('JSONs', list[MyJSONAlias2])
 
     adapter = TypeAdapter(JSONs)
 
@@ -443,3 +430,45 @@ def test_circular_type_aliases() -> None:
 
     assert exc_info.value.code == 'circular-reference-schema'
     assert exc_info.value.message.startswith('tests.test_type_alias_type.C')
+
+
+## Tests related to (recursive) unpacking of annotated types, when PEP 695 type aliases are involved:
+
+
+def test_nested_annotated_with_type_aliases() -> None:
+    SomeAlias = TypeAliasType('SomeAlias', Annotated[int, Field(description='number')])
+
+    ta = TypeAdapter(Annotated[SomeAlias, Field(title='abc')])
+
+    assert ta.json_schema() == {'description': 'number', 'title': 'abc', 'type': 'integer'}
+
+
+@pytest.mark.xfail(
+    reason="When trying to recursively unpack the annotated form, we don't resolve "
+    'forward annotations in PEP 695 type aliases (due to current limitations) '
+    '(see https://github.com/pydantic/pydantic/issues/11122).',
+)
+def test_nested_annotated_with_type_aliases_and_forward_ref() -> None:
+    SomeAlias = TypeAliasType('SomeAlias', "Annotated[int, Field(description='number')]")
+
+    ta = TypeAdapter(Annotated[SomeAlias, Field(title='abc')])
+
+    assert ta.json_schema() == {'description': 'number', 'title': 'abc', 'type': 'integer'}
+
+
+def test_nested_annotated_model_field() -> None:
+    T = TypeVar('T')
+
+    InnerList = TypeAliasType('InnerList', Annotated[list[T], Field(alias='alias')], type_params=(T,))
+    MyList = TypeAliasType('MyList', Annotated[InnerList[T], Field(deprecated=True)], type_params=(T,))
+    MyIntList = TypeAliasType('MyIntList', MyList[int])
+
+    class Model(BaseModel):
+        f1: Annotated[MyIntList, Field(json_schema_extra={'extra': 'test'})]
+
+    f1_info = Model.model_fields['f1']
+
+    assert f1_info.annotation == list[int]
+    assert f1_info.alias == 'alias'
+    assert f1_info.deprecated
+    assert f1_info.json_schema_extra == {'extra': 'test'}

@@ -3,12 +3,12 @@
 from __future__ import annotations as _annotations
 
 import sys
+from collections.abc import Iterable
 from dataclasses import is_dataclass
 from types import FrameType
 from typing import (
     Any,
     Generic,
-    Iterable,
     Literal,
     TypeVar,
     cast,
@@ -67,7 +67,8 @@ def _type_has_config(type_: Any) -> bool:
 
 @final
 class TypeAdapter(Generic[T]):
-    """Usage docs: https://docs.pydantic.dev/2.10/concepts/type_adapter/
+    """!!! abstract "Usage Documentation"
+        [`TypeAdapter`](../concepts/type_adapter.md)
 
     Type adapters provide a flexible way to perform validation and serialization based on a Python type.
 
@@ -136,10 +137,8 @@ class TypeAdapter(Generic[T]):
         For example, take the following:
 
         ```python {title="a.py"}
-        from typing import Dict, List
-
-        IntList = List[int]
-        OuterDict = Dict[str, 'IntList']
+        IntList = list[int]
+        OuterDict = dict[str, 'IntList']
         ```
 
         ```python {test="skip" title="b.py"}
@@ -426,7 +425,8 @@ class TypeAdapter(Generic[T]):
         context: dict[str, Any] | None = None,
         experimental_allow_partial: bool | Literal['off', 'on', 'trailing-strings'] = False,
     ) -> T:
-        """Usage docs: https://docs.pydantic.dev/2.10/concepts/json/#json-parsing
+        """!!! abstract "Usage Documentation"
+            [JSON Parsing](../concepts/json.md#json-parsing)
 
         Validate a JSON string or bytes against the model.
 
@@ -556,7 +556,8 @@ class TypeAdapter(Generic[T]):
         serialize_as_any: bool = False,
         context: dict[str, Any] | None = None,
     ) -> bytes:
-        """Usage docs: https://docs.pydantic.dev/2.10/concepts/json/#json-serialization
+        """!!! abstract "Usage Documentation"
+            [JSON Serialization](../concepts/json.md#json-serialization)
 
         Serialize an instance of the adapted type to JSON.
 
@@ -658,9 +659,9 @@ class TypeAdapter(Generic[T]):
             # This is the same pattern we follow for model json schemas - we attempt a core schema rebuild if we detect a mock
             if isinstance(adapter.core_schema, _mock_val_ser.MockCoreSchema):
                 adapter.core_schema.rebuild()
-                assert not isinstance(
-                    adapter.core_schema, _mock_val_ser.MockCoreSchema
-                ), 'this is a bug! please report it'
+                assert not isinstance(adapter.core_schema, _mock_val_ser.MockCoreSchema), (
+                    'this is a bug! please report it'
+                )
             inputs_.append((key, mode, adapter.core_schema))
 
         json_schemas_map, definitions = schema_generator_instance.generate_definitions(inputs_)

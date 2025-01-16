@@ -1,3 +1,4 @@
+"""Construct history and update HISTORY.md file as part of the automated release process."""
 from __future__ import annotations as _annotations
 
 import argparse
@@ -12,6 +13,7 @@ import requests
 
 
 def main():
+    """Generate release notes and prepend them to HISTORY.md."""
     root_dir = Path(__file__).parent.parent
 
     parser = argparse.ArgumentParser()
@@ -66,6 +68,7 @@ def main():
 
 
 def get_notes(new_version: str) -> str:
+    """Fetch auto-generated release notes from github."""
     last_tag = get_last_tag()
     auth_token = get_gh_auth_token()
 
@@ -108,14 +111,17 @@ def get_notes(new_version: str) -> str:
 
 
 def get_last_tag():
+    """Get the last tag in the git history."""
     return run('git', 'describe', '--tags', '--abbrev=0')
 
 
 def get_gh_auth_token():
+    """Get the GitHub auth token for the release process."""
     return run('gh', 'auth', 'token')
 
 
 def run(*args: str) -> str:
+    """Run CLI command and return stdout."""
     p = subprocess.run(args, stdout=subprocess.PIPE, check=True, encoding='utf-8')
     return p.stdout.strip()
 

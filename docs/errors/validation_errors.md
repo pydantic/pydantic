@@ -1087,8 +1087,6 @@ except ValidationError as exc:
 This error is raised when the input value is not a subclass of the expected type:
 
 ```python
-from typing import Type
-
 from pydantic import BaseModel, ValidationError
 
 
@@ -1097,7 +1095,7 @@ class Nested:
 
 
 class Model(BaseModel):
-    y: Type[Nested]
+    y: type[Nested]
 
 
 try:
@@ -1133,8 +1131,6 @@ except ValidationError as exc:
 This error is raised when an error occurs during iteration:
 
 ```python
-from typing import List
-
 from pydantic import BaseModel, ValidationError
 
 
@@ -1144,7 +1140,7 @@ def gen():
 
 
 class Model(BaseModel):
-    x: List[int]
+    x: list[int]
 
 
 try:
@@ -1235,13 +1231,11 @@ except ValidationError as exc:
 This error is raised when the input value's type is not valid for a `list` field:
 
 ```python
-from typing import List
-
 from pydantic import BaseModel, ValidationError
 
 
 class Model(BaseModel):
-    x: List[int]
+    x: list[int]
 
 
 try:
@@ -1281,7 +1275,6 @@ This error is raised when a problem occurs during validation due to a failure in
 
 ```python
 from collections.abc import Mapping
-from typing import Dict
 
 from pydantic import BaseModel, ValidationError
 
@@ -1301,7 +1294,7 @@ class BadMapping(Mapping):
 
 
 class Model(BaseModel):
-    x: Dict[str, str]
+    x: dict[str, str]
 
 
 try:
@@ -1503,13 +1496,12 @@ For example, we cannot check `isinstance` or `issubclass` from JSON:
 
 ```python
 import json
-from typing import Type
 
 from pydantic import BaseModel, ValidationError
 
 
 class Model(BaseModel):
-    bm: Type[BaseModel]
+    bm: type[BaseModel]
 
 
 try:
@@ -1583,13 +1575,11 @@ except ValidationError as exc:
 This error is raised when a cyclic reference is detected:
 
 ```python
-from typing import List
-
 from pydantic import BaseModel, ValidationError
 
 
 class Model(BaseModel):
-    x: List['Model']
+    x: list['Model']
 
 
 d = {'x': []}
@@ -1881,13 +1871,11 @@ except ValidationError as exc:
 This error is raised when the input value's length is greater than the field's `max_length` constraint:
 
 ```python
-from typing import List
-
 from pydantic import BaseModel, Field, ValidationError
 
 
 class Model(BaseModel):
-    x: List[int] = Field(max_length=3)
+    x: list[int] = Field(max_length=3)
 
 
 try:
@@ -1902,13 +1890,11 @@ except ValidationError as exc:
 This error is raised when the value length is less than the field's `min_length` constraint:
 
 ```python
-from typing import List
-
 from pydantic import BaseModel, Field, ValidationError
 
 
 class Model(BaseModel):
-    x: List[int] = Field(min_length=3)
+    x: list[int] = Field(min_length=3)
 
 
 try:
@@ -1923,13 +1909,11 @@ except ValidationError as exc:
 This error is raised when the input value's type is not valid for a `tuple` field:
 
 ```python
-from typing import Tuple
-
 from pydantic import BaseModel, ValidationError
 
 
 class Model(BaseModel):
-    x: Tuple[int]
+    x: tuple[int]
 
 
 try:

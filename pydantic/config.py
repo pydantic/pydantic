@@ -3,9 +3,9 @@
 from __future__ import annotations as _annotations
 
 from re import Pattern
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Type, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, Literal, TypeVar, Union
 
-from typing_extensions import Literal, TypeAlias, TypedDict
+from typing_extensions import TypeAlias, TypedDict
 
 from ._migration import getattr_migration
 from .aliases import AliasGenerator
@@ -18,14 +18,14 @@ if TYPE_CHECKING:
 __all__ = ('ConfigDict', 'with_config')
 
 
-JsonValue: TypeAlias = Union[int, float, str, bool, None, List['JsonValue'], 'JsonDict']
-JsonDict: TypeAlias = Dict[str, JsonValue]
+JsonValue: TypeAlias = Union[int, float, str, bool, None, list['JsonValue'], 'JsonDict']
+JsonDict: TypeAlias = dict[str, JsonValue]
 
 JsonEncoder = Callable[[Any], Any]
 
 JsonSchemaExtraCallable: TypeAlias = Union[
     Callable[[JsonDict], None],
-    Callable[[JsonDict, Type[Any]], None],
+    Callable[[JsonDict, type[Any]], None],
 ]
 
 ExtraValues = Literal['allow', 'ignore', 'forbid']
@@ -59,69 +59,99 @@ class ConfigDict(TypedDict, total=False):
     """The maximum length for str types. Defaults to `None`."""
 
     extra: ExtraValues | None
-    """
-    Whether to ignore, allow, or forbid extra attributes during model initialization. Defaults to `'ignore'`.
+    '''
+    Whether to ignore, allow, or forbid extra data during model initialization. Defaults to `'ignore'`.
 
-    You can configure how pydantic handles the attributes that are not defined in the model:
+    Three configuration values are available:
 
-    * `allow` - Allow any extra attributes.
-    * `forbid` - Forbid any extra attributes.
-    * `ignore` - Ignore any extra attributes.
+    - `'ignore'`: Providing extra data is ignored (the default):
+      ```python
+      from pydantic import BaseModel, ConfigDict
 
-    ```python
-    from pydantic import BaseModel, ConfigDict
+      class User(BaseModel):
+          model_config = ConfigDict(extra='ignore')  # (1)!
 
-    class User(BaseModel):
-        model_config = ConfigDict(extra='ignore')  # (1)!
+          name: str
 
-        name: str
+      user = User(name='John Doe', age=20)  # (2)!
+      print(user)
+      #> name='John Doe'
+      ```
 
-    user = User(name='John Doe', age=20)  # (2)!
-    print(user)
-    #> name='John Doe'
-    ```
+        1. This is the default behaviour.
+        2. The `age` argument is ignored.
 
-    1. This is the default behaviour.
-    2. The `age` argument is ignored.
+    - `'forbid'`: Providing extra data is not permitted, and a [`ValidationError`][pydantic_core.ValidationError]
+      will be raised if this is the case:
+      ```python
+      from pydantic import BaseModel, ConfigDict, ValidationError
 
-    Instead, with `extra='allow'`, the `age` argument is included:
 
-    ```python
-    from pydantic import BaseModel, ConfigDict
+      class Model(BaseModel):
+          x: int
 
-    class User(BaseModel):
-        model_config = ConfigDict(extra='allow')
+          model_config = ConfigDict(extra='forbid')
 
-        name: str
 
-    user = User(name='John Doe', age=20)  # (1)!
-    print(user)
-    #> name='John Doe' age=20
-    ```
+      try:
+          Model(x=1, y='a')
+      except ValidationError as exc:
+          print(exc)
+          """
+          1 validation error for Model
+          y
+            Extra inputs are not permitted [type=extra_forbidden, input_value='a', input_type=str]
+          """
+      ```
 
-    1. The `age` argument is included.
+    - `'allow'`: Providing extra data is allowed and stored in the `__pydantic_extra__` dictionary attribute:
+      ```python
+      from pydantic import BaseModel, ConfigDict
 
-    With `extra='forbid'`, an error is raised:
 
-    ```python
-    from pydantic import BaseModel, ConfigDict, ValidationError
+      class Model(BaseModel):
+          x: int
 
-    class User(BaseModel):
-        model_config = ConfigDict(extra='forbid')
+          model_config = ConfigDict(extra='allow')
 
-        name: str
 
-    try:
-        User(name='John Doe', age=20)
-    except ValidationError as e:
-        print(e)
-        '''
-        1 validation error for User
-        age
-          Extra inputs are not permitted [type=extra_forbidden, input_value=20, input_type=int]
-        '''
-    ```
-    """
+      m = Model(x=1, y='a')
+      assert m.__pydantic_extra__ == {'y': 'a'}
+      ```
+      By default, no validation will be applied to these extra items, but you can set a type for the values by overriding
+      the type annotation for `__pydantic_extra__`:
+      ```python
+      from pydantic import BaseModel, ConfigDict, Field, ValidationError
+
+
+      class Model(BaseModel):
+          __pydantic_extra__: dict[str, int] = Field(init=False)  # (1)!
+
+          x: int
+
+          model_config = ConfigDict(extra='allow')
+
+
+      try:
+          Model(x=1, y='a')
+      except ValidationError as exc:
+          print(exc)
+          """
+          1 validation error for Model
+          y
+            Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='a', input_type=str]
+          """
+
+      m = Model(x=1, y='2')
+      assert m.x == 1
+      assert m.y == 2
+      assert m.model_dump() == {'x': 1, 'y': 2}
+      assert m.__pydantic_extra__ == {'y': 2}
+      ```
+
+        1. The `= Field(init=False)` does not have any effect at runtime, but prevents the `__pydantic_extra__` field from
+           being included as a parameter to the model's `__init__` method by type checkers.
+    '''
 
     frozen: bool
     """
@@ -441,15 +471,13 @@ class ConfigDict(TypedDict, total=False):
     By default, model and dataclass instances are not revalidated during validation.
 
     ```python
-    from typing import List
-
     from pydantic import BaseModel
 
     class User(BaseModel, revalidate_instances='never'):  # (1)!
-        hobbies: List[str]
+        hobbies: list[str]
 
     class SubUser(User):
-        sins: List[str]
+        sins: list[str]
 
     class Transaction(BaseModel):
         user: User
@@ -478,15 +506,13 @@ class ConfigDict(TypedDict, total=False):
     in the model's config.
 
     ```python
-    from typing import List
-
     from pydantic import BaseModel, ValidationError
 
     class User(BaseModel, revalidate_instances='always'):  # (1)!
-        hobbies: List[str]
+        hobbies: list[str]
 
     class SubUser(User):
-        sins: List[str]
+        sins: list[str]
 
     class Transaction(BaseModel):
         user: User
@@ -521,15 +547,13 @@ class ConfigDict(TypedDict, total=False):
     of subclasses of the model.
 
     ```python
-    from typing import List
-
     from pydantic import BaseModel
 
     class User(BaseModel, revalidate_instances='subclass-instances'):  # (1)!
-        hobbies: List[str]
+        hobbies: list[str]
 
     class SubUser(User):
-        sins: List[str]
+        sins: list[str]
 
     class Transaction(BaseModel):
         user: User
@@ -974,10 +998,12 @@ class ConfigDict(TypedDict, total=False):
     ```
     This requires the source code of the class to be available at runtime.
 
-    !!! warning "Usage with `TypedDict`"
-        Due to current limitations, attribute docstrings detection may not work as expected when using `TypedDict`
-        (in particular when multiple `TypedDict` classes have the same name in the same source file). The behavior
-        can be different depending on the Python version used.
+    !!! warning "Usage with `TypedDict` and stdlib dataclasses"
+        Due to current limitations, attribute docstrings detection may not work as expected when using
+        [`TypedDict`][typing.TypedDict] and stdlib dataclasses, in particular when:
+
+        - inheritance is being used.
+        - multiple classes have the same name in the same source file.
     '''
 
     cache_strings: bool | Literal['all', 'keys', 'none']
@@ -1004,7 +1030,8 @@ _TypeT = TypeVar('_TypeT', bound=type)
 
 
 def with_config(config: ConfigDict) -> Callable[[_TypeT], _TypeT]:
-    """Usage docs: https://docs.pydantic.dev/2.10/concepts/config/#configuration-with-dataclass-from-the-standard-library-or-typeddict
+    """!!! abstract "Usage Documentation"
+        [Configuration with a `dataclass` or `TypedDict`](../concepts/config.md#configuration-with-dataclass-from-the-standard-library-or-typeddict)
 
     A convenience decorator to set a [Pydantic configuration](config.md) on a `TypedDict` or a `dataclass` from the standard library.
 
