@@ -1,6 +1,6 @@
 import json
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import Optional
 
 import pytest
 from typing_extensions import TypedDict
@@ -50,7 +50,7 @@ def test_serialize_as_any_runtime() -> None:
 def test_serialize_as_any_runtime_recursive() -> None:
     class User(BaseModel):
         name: str
-        friends: List['User']
+        friends: list['User']
 
     class UserLogin(User):
         password: SecretStr
@@ -201,12 +201,12 @@ def test_serialize_as_any_annotation_with_inner_models() -> None:
 
 def test_serialize_as_any_flag_with_incorrect_list_el_type() -> None:
     # a warning is raised when using the `serialize_as_any` flag
-    ta = TypeAdapter(List[int])
+    ta = TypeAdapter(list[int])
     with pytest.warns(UserWarning, match='Expected `int` but got `str`'):
         assert ta.dump_python(['a', 'b', 'c'], serialize_as_any=False) == ['a', 'b', 'c']
 
 
 def test_serialize_as_any_annotation_with_incorrect_list_el_type() -> None:
     # notably, the warning is not raised when using the SerializeAsAny annotation
-    ta = TypeAdapter(SerializeAsAny[List[int]])
+    ta = TypeAdapter(SerializeAsAny[list[int]])
     assert ta.dump_python(['a', 'b', 'c']) == ['a', 'b', 'c']

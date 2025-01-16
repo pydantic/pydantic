@@ -5,16 +5,23 @@ Import of this module is deferred since it contains imports of many standard lib
 
 from __future__ import annotations as _annotations
 
+import collections.abc
 import math
 import re
 import typing
 from decimal import Decimal
 from fractions import Fraction
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
-from typing import Any, Callable, Union
+from typing import Any, Callable, TypeVar, Union, cast, get_origin
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
+import typing_extensions
 from pydantic_core import PydanticCustomError, core_schema
 from pydantic_core._pydantic_core import PydanticKnownError
+
+from pydantic._internal import _typing_extra
+from pydantic._internal._import_utils import import_cached_field_info
+from pydantic.errors import PydanticSchemaGenerationError
 
 
 def sequence_validator(
@@ -402,6 +409,86 @@ def decimal_places_validator(x: Any, decimal_places: Any) -> Any:
         raise TypeError(f"Unable to apply constraint 'decimal_places' to supplied value {x}")
 
 
+def deque_validator(input_value: Any, handler: core_schema.ValidatorFunctionWrapHandler) -> collections.deque[Any]:
+    return collections.deque(handler(input_value), maxlen=getattr(input_value, 'maxlen', None))
+
+
+def defaultdict_validator(
+    input_value: Any, handler: core_schema.ValidatorFunctionWrapHandler, default_default_factory: Callable[[], Any]
+) -> collections.defaultdict[Any, Any]:
+    if isinstance(input_value, collections.defaultdict):
+        default_factory = input_value.default_factory
+        return collections.defaultdict(default_factory, handler(input_value))
+    else:
+        return collections.defaultdict(default_default_factory, handler(input_value))
+
+
+def get_defaultdict_default_default_factory(values_source_type: Any) -> Callable[[], Any]:
+    FieldInfo = import_cached_field_info()
+
+    def infer_default() -> Callable[[], Any]:
+        allowed_default_types: dict[Any, Any] = {
+            tuple: tuple,
+            collections.abc.Sequence: tuple,
+            collections.abc.MutableSequence: list,
+            list: list,
+            typing.Sequence: list,
+            set: set,
+            typing.MutableSet: set,
+            collections.abc.MutableSet: set,
+            collections.abc.Set: frozenset,
+            typing.MutableMapping: dict,
+            typing.Mapping: dict,
+            collections.abc.Mapping: dict,
+            collections.abc.MutableMapping: dict,
+            float: float,
+            int: int,
+            str: str,
+            bool: bool,
+        }
+        values_type_origin = get_origin(values_source_type) or values_source_type
+        instructions = 'set using `DefaultDict[..., Annotated[..., Field(default_factory=...)]]`'
+        if isinstance(values_type_origin, TypeVar):
+
+            def type_var_default_factory() -> None:
+                raise RuntimeError(
+                    'Generic defaultdict cannot be used without a concrete value type or an'
+                    ' explicit default factory, ' + instructions
+                )
+
+            return type_var_default_factory
+        elif values_type_origin not in allowed_default_types:
+            # a somewhat subjective set of types that have reasonable default values
+            allowed_msg = ', '.join([t.__name__ for t in set(allowed_default_types.values())])
+            raise PydanticSchemaGenerationError(
+                f'Unable to infer a default factory for keys of type {values_source_type}.'
+                f' Only {allowed_msg} are supported, other types require an explicit default factory'
+                ' ' + instructions
+            )
+        return allowed_default_types[values_type_origin]
+
+    # Assume Annotated[..., Field(...)]
+    if _typing_extra.is_annotated(values_source_type):
+        field_info = next((v for v in typing_extensions.get_args(values_source_type) if isinstance(v, FieldInfo)), None)
+    else:
+        field_info = None
+    if field_info and field_info.default_factory:
+        # Assume the default factory does not take any argument:
+        default_default_factory = cast(Callable[[], Any], field_info.default_factory)
+    else:
+        default_default_factory = infer_default()
+    return default_default_factory
+
+
+def validate_str_is_valid_iana_tz(value: Any, /) -> ZoneInfo:
+    if isinstance(value, ZoneInfo):
+        return value
+    try:
+        return ZoneInfo(value)
+    except (ZoneInfoNotFoundError, ValueError, TypeError):
+        raise PydanticCustomError('zoneinfo_str', 'invalid timezone: {value}', {'value': value})
+
+
 NUMERIC_VALIDATOR_LOOKUP: dict[str, Callable] = {
     'gt': greater_than_validator,
     'ge': greater_than_or_equal_validator,
@@ -423,4 +510,20 @@ IP_VALIDATOR_LOOKUP: dict[type[IpType], Callable] = {
     IPv6Network: ip_v6_network_validator,
     IPv4Interface: ip_v4_interface_validator,
     IPv6Interface: ip_v6_interface_validator,
+}
+
+MAPPING_ORIGIN_MAP: dict[Any, Any] = {
+    typing.DefaultDict: collections.defaultdict,  # noqa: UP006
+    collections.defaultdict: collections.defaultdict,
+    typing.OrderedDict: collections.OrderedDict,  # noqa: UP006
+    collections.OrderedDict: collections.OrderedDict,
+    typing_extensions.OrderedDict: collections.OrderedDict,
+    typing.Counter: collections.Counter,
+    collections.Counter: collections.Counter,
+    # this doesn't handle subclasses of these
+    typing.Mapping: dict,
+    typing.MutableMapping: dict,
+    # parametrized typing.{Mutable}Mapping creates one of these
+    collections.abc.Mapping: dict,
+    collections.abc.MutableMapping: dict,
 }

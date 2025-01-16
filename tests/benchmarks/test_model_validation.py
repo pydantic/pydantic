@@ -1,5 +1,3 @@
-from typing import List
-
 import pytest
 
 from pydantic import BaseModel
@@ -38,7 +36,7 @@ def test_complex_model_validation(method: str, benchmark):
 
 def test_list_of_models_validation(method: str, benchmark):
     class SimpleListModel(BaseModel):
-        items: List[SimpleModel]
+        items: list[SimpleModel]
 
     data = {'items': [{'field1': f'test{i}', 'field2': i, 'field3': float(i)} for i in range(10)]}
     if method == '__init__':

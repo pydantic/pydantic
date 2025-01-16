@@ -143,13 +143,12 @@ This also works with the `TypeAdapter.validate_json` and `BaseModel.model_valida
 
 ```python
 import json
-from typing import List
 from uuid import UUID
 
 from pydantic import BaseModel, TypeAdapter, ValidationError
 
 try:
-    TypeAdapter(List[int]).validate_json('["1", 2, "3"]', strict=True)
+    TypeAdapter(list[int]).validate_json('["1", 2, "3"]', strict=True)
 except ValidationError as exc:
     print(exc)
     """
@@ -262,7 +261,9 @@ Note that `Field(strict=True)` (or with any other keyword arguments) can be used
 when working with `TypedDict`:
 
 ```python
-from typing_extensions import Annotated, TypedDict
+from typing import Annotated
+
+from typing_extensions import TypedDict
 
 from pydantic import Field, TypeAdapter, ValidationError
 
@@ -292,7 +293,7 @@ metadata with [`typing.Annotated`][] class; this annotation indicates that the a
 strict mode:
 
 ```python
-from typing_extensions import Annotated
+from typing import Annotated
 
 from pydantic import BaseModel, Strict, ValidationError
 

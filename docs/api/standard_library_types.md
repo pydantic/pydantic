@@ -5,6 +5,10 @@ description: Support for common types from the Python standard library.
 Pydantic supports many common types from the Python standard library. If you need stricter processing see
 [Strict Types](../concepts/types.md#strict-types), including if you need to constrain the values allowed (e.g. to require a positive `int`).
 
+!!! note
+    Pydantic still supports older (3.8-) typing constructs like `typing.List` and `typing.Dict`, but
+    it's best practice to use the newer types like `list` and `dict`.
+
 ## Booleans
 
 A standard `bool` field will raise a `ValidationError` if the value is not one of the following:
@@ -182,8 +186,7 @@ You can use a custom serializer to override this behavior if desired. For exampl
 
 ```python
 from decimal import Decimal
-
-from typing_extensions import Annotated
+from typing import Annotated
 
 from pydantic import BaseModel, PlainSerializer
 
@@ -272,19 +275,15 @@ except ValidationError as e:
 Allows [`list`][], [`tuple`][], [`set`][], [`frozenset`][], [`deque`][collections.deque], or generators and casts to a [`list`][].
 When a generic parameter is provided, the appropriate validation is applied to all items of the list.
 
-### [`typing.List`][]
-
-Handled the same as `list` above.
-
 ```python
-from typing import List, Optional
+from typing import Optional
 
 from pydantic import BaseModel
 
 
 class Model(BaseModel):
     simple_list: Optional[list] = None
-    list_of_ints: Optional[List[int]] = None
+    list_of_ints: Optional[list[int]] = None
 
 
 print(Model(simple_list=['1', '2', '3']).simple_list)
@@ -303,14 +302,14 @@ When generic parameters are provided, the appropriate validation is applied to t
 Handled the same as `tuple` above.
 
 ```python
-from typing import Optional, Tuple
+from typing import Optional
 
 from pydantic import BaseModel
 
 
 class Model(BaseModel):
     simple_tuple: Optional[tuple] = None
-    tuple_of_different_types: Optional[Tuple[int, float, bool]] = None
+    tuple_of_different_types: Optional[tuple[int, float, bool]] = None
 
 
 print(Model(simple_tuple=[1, 2, 3, 4]).simple_tuple)
@@ -570,41 +569,14 @@ except ValidationError as e:
 
 ### [`dict`][]
 
-`dict(v)` is used to attempt to convert a dictionary. see [`typing.Dict`][] below for sub-type constraints.
+`dict(v)` is used to attempt to convert a dictionary.
 
 ```python
 from pydantic import BaseModel, ValidationError
 
 
 class Model(BaseModel):
-    x: dict
-
-
-m = Model(x={'foo': 1})
-print(m.model_dump())
-#> {'x': {'foo': 1}}
-
-try:
-    Model(x='test')
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for Model
-    x
-      Input should be a valid dictionary [type=dict_type, input_value='test', input_type=str]
-    """
-```
-
-### [`typing.Dict`][]
-
-```python
-from typing import Dict
-
-from pydantic import BaseModel, ValidationError
-
-
-class Model(BaseModel):
-    x: Dict[str, int]
+    x: dict[str, int]
 
 
 m = Model(x={'foo': 1})
@@ -789,20 +761,12 @@ In case you want to constrain the UUID version, you can check the following type
 Pydantic has extensive support for union validation, both [`typing.Union`][] and Python 3.10's pipe syntax (`A | B`) are supported.
 Read more in the [`Unions`](../concepts/unions.md) section of the concepts docs.
 
-## [`Type`][typing.Type] and [`TypeVar`][typing.TypeVar]
-
-### [`type`][]
+## [`type`][]
 
 Pydantic supports the use of `type[T]` to specify that a field may only accept classes (not instances)
 that are subclasses of `T`.
 
-### [`typing.Type`][]
-
-Handled the same as `type` above.
-
 ```python
-from typing import Type
-
 from pydantic import BaseModel, ValidationError
 
 
@@ -819,7 +783,7 @@ class Other:
 
 
 class SimpleModel(BaseModel):
-    just_subclasses: Type[Foo]
+    just_subclasses: type[Foo]
 
 
 SimpleModel(just_subclasses=Foo)
@@ -835,11 +799,9 @@ except ValidationError as e:
     """
 ```
 
-You may also use `Type` to specify that any class is allowed.
+You may also use `type` to specify that any class is allowed.
 
 ```python {upgrade="skip"}
-from typing import Type
-
 from pydantic import BaseModel, ValidationError
 
 
@@ -848,7 +810,7 @@ class Foo:
 
 
 class LenientSimpleModel(BaseModel):
-    any_class_goes: Type
+    any_class_goes: type
 
 
 LenientSimpleModel(any_class_goes=int)
@@ -864,7 +826,7 @@ except ValidationError as e:
     """
 ```
 
-### [`typing.TypeVar`][]
+## [`typing.TypeVar`][]
 
 [`TypeVar`][typing.TypeVar] is supported either unconstrained, constrained or with a bound.
 
@@ -991,19 +953,19 @@ One benefit of this field type is that it can be used to check for equality with
 without needing to declare custom validators:
 
 ```python
-from typing import ClassVar, List, Literal, Union
+from typing import ClassVar, Literal, Union
 
 from pydantic import BaseModel, ValidationError
 
 
 class Cake(BaseModel):
     kind: Literal['cake']
-    required_utensils: ClassVar[List[str]] = ['fork', 'knife']
+    required_utensils: ClassVar[list[str]] = ['fork', 'knife']
 
 
 class IceCream(BaseModel):
     kind: Literal['icecream']
-    required_utensils: ClassVar[List[str]] = ['spoon']
+    required_utensils: ClassVar[list[str]] = ['spoon']
 
 
 class Meal(BaseModel):
@@ -1077,7 +1039,7 @@ Allows any value, including `None`.
 
 ## [`typing.Annotated`][]
 
-Allows wrapping another type with arbitrary metadata, as per [PEP-593](https://www.python.org/dev/peps/pep-0593/). The `Annotated` hint may contain a single call to the [`Field` function](../concepts/types.md#composing-types-via-annotated), but otherwise the additional metadata is ignored and the root type is used.
+Allows wrapping another type with arbitrary metadata, as per [PEP-593](https://www.python.org/dev/peps/pep-0593/). The `Annotated` hint may contain a single call to the [`Field` function](../concepts/types.md#using-the-annotated-pattern), but otherwise the additional metadata is ignored and the root type is used.
 
 
 ## [`typing.Pattern`][]

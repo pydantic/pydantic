@@ -1,10 +1,10 @@
 import sys
 import typing
 from collections import namedtuple
-from typing import Callable, ClassVar, ForwardRef, NamedTuple
+from typing import Annotated, Callable, ClassVar, ForwardRef, Literal, NamedTuple
 
 import pytest
-from typing_extensions import Annotated, Literal, get_origin
+from typing_extensions import get_origin
 
 from pydantic import BaseModel, Field  # noqa: F401
 from pydantic._internal._typing_extra import (
@@ -88,7 +88,7 @@ def test_is_literal_with_typing_literal():
 
 
 @pytest.mark.parametrize(
-    ['ann_type', 'extepcted'],
+    ['ann_type', 'expected'],
     (
         (None, False),
         (ForwardRef('Other[int]'), False),
@@ -103,22 +103,8 @@ def test_is_literal_with_typing_literal():
         (Annotated[ClassVar[int], ...], True),
     ),
 )
-def test_is_classvar_annotation(ann_type, extepcted):
-    assert is_classvar_annotation(ann_type) is extepcted
-
-
-def test_parent_frame_namespace(mocker):
-    assert parent_frame_namespace() is not None
-
-    from dataclasses import dataclass
-
-    @dataclass
-    class MockedFrame:
-        f_back = None
-        f_locals = {}
-
-    mocker.patch('sys._getframe', return_value=MockedFrame())
-    assert parent_frame_namespace() is None
+def test_is_classvar_annotation(ann_type, expected):
+    assert is_classvar_annotation(ann_type) is expected
 
 
 def test_get_function_type_hints_none_type():
@@ -128,7 +114,7 @@ def test_get_function_type_hints_none_type():
     assert get_function_type_hints(f) == {'return': int, 'x': int, 'y': NoneType}
 
 
-@pytest.mark.skipif(sys.version_info[:2] > (3, 9), reason='testing using a feature not supported by older Python')
+@pytest.mark.skipif(sys.version_info >= (3, 10), reason='testing using a feature not supported by older Python')
 def test_eval_type_backport_not_installed():
     sys.modules['eval_type_backport'] = None
     try:
@@ -160,13 +146,19 @@ def test_func_ns_excludes_default_globals() -> None:
         assert default_global_var not in func_ns
 
 
-module_foo = 'global_foo'
-module_ns = parent_frame_namespace(parent_depth=1)
+def test_parent_frame_namespace(create_module) -> None:
+    """Parent frame namespace should be `None` because we skip fetching data from the top module level."""
 
+    @create_module
+    def mod1() -> None:
+        from pydantic._internal._typing_extra import parent_frame_namespace
 
-def test_module_ns_is_none() -> None:
-    """Module namespace should be none because we skip fetching data from the top module level."""
-    assert module_ns is None
+        module_foo = 'global_foo'  # noqa: F841
+        module_ns = parent_frame_namespace(parent_depth=1)  # noqa: F841
+        module_ns_force = parent_frame_namespace(parent_depth=1, force=True)  # noqa: F841
+
+    assert mod1.module_ns is None
+    assert mod1.module_ns_force is not None
 
 
 def test_exotic_localns() -> None:

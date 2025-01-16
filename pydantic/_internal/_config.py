@@ -7,14 +7,12 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    Literal,
     cast,
 )
 
 from pydantic_core import core_schema
-from typing_extensions import (
-    Literal,
-    Self,
-)
+from typing_extensions import Self
 
 from ..aliases import AliasGenerator
 from ..config import ConfigDict, ExtraValues, JsonDict, JsonEncoder, JsonSchemaExtraCallable

@@ -228,8 +228,6 @@ plugins:
           merge_init_into_class: true
           show_signature_annotations: true
           signature_crossrefs: true
-          extensions:
-            - docs/plugins/griffe_doclinks.py
         import:
           - url: https://docs.python.org/3/objects.inv
             domains: [py, std]
