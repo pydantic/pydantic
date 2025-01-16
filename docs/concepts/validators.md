@@ -408,7 +408,7 @@ def is_even(value: int) -> int:
     return value
 
 
-EvenNumber = Annotated[str, AfterValidator(is_even)]
+EvenNumber = Annotated[int, AfterValidator(is_even)]
 
 
 class Model1(BaseModel):
