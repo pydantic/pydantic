@@ -3972,7 +3972,7 @@ will be merged, and for any settings defined in both, those from <code>Model2</c
 <li><code>fields</code> — this was the source of various bugs, so has been removed.
   You should be able to use <code>Annotated</code> on fields to modify them as desired.</li>
 <li><code>getter_dict</code> — <code>orm_mode</code> has been removed, and this implementation detail is no longer necessary.</li>
-<li><code>smart_union</code>.</li>
+<li><code>smart_union</code> - the default <code>union_mode</code> in Pydantic V2 is <code>'smart'</code>.</li>
 <li><code>underscore_attrs_are_private</code> — the Pydantic V2 behavior is now the same as if this was always set
   to <code>True</code> in Pydantic V1.</li>
 <li><code>json_loads</code></li>
