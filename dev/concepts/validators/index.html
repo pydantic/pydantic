@@ -3618,7 +3618,7 @@ validators reusable:</p>
     <span class="k">return</span> <span class="n">value</span>
 
 
-<span class="n">EvenNumber</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">AfterValidator</span><span class="p">(</span><span class="n">is_even</span><span class="p">)]</span>
+<span class="n">EvenNumber</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">AfterValidator</span><span class="p">(</span><span class="n">is_even</span><span class="p">)]</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Model1</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
