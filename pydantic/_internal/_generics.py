@@ -8,7 +8,7 @@ from collections.abc import Iterator, Mapping, MutableMapping
 from contextlib import contextmanager
 from contextvars import ContextVar
 from types import prepare_class
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar, Union
 from weakref import WeakValueDictionary
 
 import typing_extensions
@@ -382,21 +382,69 @@ def has_instance_in_type(type_: Any, isinstance_target: Any) -> bool:
     return False
 
 
-def check_parameters_count(cls: type[BaseModel], parameters: tuple[Any, ...]) -> None:
-    """Check the generic model parameters count is equal.
+def check_parameters_count(cls: type[BaseModel], parameters: tuple[Any, ...]) -> tuple[Any, ...]:
+    """Check if the number of provided generic parameters is valid, considering defaults.
 
     Args:
-        cls: The generic model.
+        cls: The generic model class.
         parameters: A tuple of passed parameters to the generic model.
 
-    Raises:
-        TypeError: If the passed parameters count is not equal to generic model parameters count.
+    Returns:
+        tuple: The parameters, potentially with defaults filled in.
     """
+    all_parameters = cls.__pydantic_generic_metadata__['parameters']
+    total_parameters = len(all_parameters)
+
+    default_parameters = []
+    for param in all_parameters:
+        is_optional = is_optional_typevar(param)
+
+        if is_optional:
+            default_parameters.append(param)
+
+    default_count = len(default_parameters)
     actual = len(parameters)
-    expected = len(cls.__pydantic_generic_metadata__['parameters'])
-    if actual != expected:
-        description = 'many' if actual > expected else 'few'
-        raise TypeError(f'Too {description} parameters for {cls}; actual {actual}, expected {expected}')
+    required_params = total_parameters - default_count
+
+    # Debugging output can be left here or removed
+    # print(f"Debug: All parameters: {all_parameters}")
+    # print(f"Debug: Default count: {default_count}")
+    # print(f"Debug: Required params: {required_params}")
+    # print(f"Debug: Actual params: {actual}")
+
+    if actual > total_parameters:
+        raise TypeError(f'Too many parameters for {cls}, actual {actual}, expected at most {total_parameters}')
+
+    if actual < required_params:
+        raise TypeError(f'Too few parameters for {cls}, actual {actual}, expected at least {required_params}')
+
+    if actual < total_parameters:
+        result = list(parameters)
+        for i in range(actual, total_parameters):
+            param = all_parameters[i]
+            if param in default_parameters:
+                result.append(None)  # Optional typevar
+        return tuple(result)
+
+    return parameters
+
+
+def is_optional_typevar(typevar: TypeVar) -> bool:
+    """Check if a TypeVar is optional (has None as a valid value).
+
+    Args:
+        typevar: The TypeVar to check.
+
+    Returns:
+        bool: True if the TypeVar is optional.
+    """
+    if hasattr(typevar, '__bound__'):
+        bound = typevar.__bound__
+        if bound is None:
+            return True
+        if hasattr(bound, '__origin__') and bound.__origin__ is Union:
+            return type(None) in bound.__args__
+    return False
 
 
 _generic_recursion_cache: ContextVar[set[str] | None] = ContextVar('_generic_recursion_cache', default=None)

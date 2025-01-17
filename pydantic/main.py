@@ -766,7 +766,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         if not isinstance(typevar_values, tuple):
             typevar_values = (typevar_values,)
-        _generics.check_parameters_count(cls, typevar_values)
+        typevar_values = _generics.check_parameters_count(cls, typevar_values)
 
         # Build map from generic typevars to passed params
         typevars_map: dict[TypeVar, type[Any]] = dict(
