@@ -95,6 +95,7 @@ DECORATOR_FULLNAMES = {
     'pydantic.deprecated.class_validators.validator',
     'pydantic.deprecated.class_validators.root_validator',
 }
+IMPLICIT_CLASSMETHOD_DECORATOR_FULLNAMES = DECORATOR_FULLNAMES - {'pydantic.functional_serializers.model_serializer'}
 
 
 MYPY_VERSION_TUPLE = parse_mypy_version(mypy_version)
@@ -489,7 +490,7 @@ class PydanticModelTransformer:
                 if (
                     isinstance(first_dec, CallExpr)
                     and isinstance(first_dec.callee, NameExpr)
-                    and first_dec.callee.fullname in DECORATOR_FULLNAMES
+                    and first_dec.callee.fullname in IMPLICIT_CLASSMETHOD_DECORATOR_FULLNAMES
                     # @model_validator(mode="after") is an exception, it expects a regular method
                     and not (
                         first_dec.callee.fullname == MODEL_VALIDATOR_FULLNAME
