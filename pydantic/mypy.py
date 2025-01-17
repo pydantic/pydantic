@@ -1040,15 +1040,17 @@ class PydanticModelTransformer:
             # Assigned value is not a call to pydantic.fields.Field
             return None, False
 
-        for i, arg_name in enumerate(expr.arg_names):
-            if arg_name != 'alias':
-                continue
-            arg = expr.args[i]
-            if isinstance(arg, StrExpr):
-                return arg.value, False
-            else:
-                return None, True
-        return None, False
+        if 'validation_alias' in expr.arg_names:
+            arg = expr.args[expr.arg_names.index('validation_alias')]
+        elif 'alias' in expr.arg_names:
+            arg = expr.args[expr.arg_names.index('alias')]
+        else:
+            return None, False
+
+        if isinstance(arg, StrExpr):
+            return arg.value, False
+        else:
+            return None, True
 
     @staticmethod
     def is_field_frozen(stmt: AssignmentStmt) -> bool:
