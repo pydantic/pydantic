@@ -93,6 +93,8 @@ except ValidationError as exc:
     #> 'bool_type'
 ```
 
+This error is also raised for strict fields when the input value is not an instance of `bool`.
+
 ## `bytes_invalid_encoding`
 
 This error is raised when a `bytes` value is invalid under the configured encoding.
@@ -114,7 +116,6 @@ except ValidationError as exc:
     #> 'bytes_invalid_encoding'
 ```
 
-This error is also raised for strict fields when the input value is not an instance of `bool`.
 
 ## `bytes_too_long`
 
@@ -673,8 +674,6 @@ except ValidationError as exc:
     print(repr(exc.errors()[0]['type']))
     #> 'decimal_whole_digits'
 ```
-
-This error is also raised for strict fields when the input value is not an instance of `Decimal`.
 
 ## `dict_type`
 
