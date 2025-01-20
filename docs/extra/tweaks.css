@@ -192,3 +192,24 @@ aside.blog img {
   font-size: 80%;
   text-align: center;
 }
+
+.md-search__output pre {
+    -webkit-box-decoration-break: slice;
+    background-color: var(--md-code-bg-color);
+    border-radius: .1rem;
+    box-decoration-break: slice;
+    box-shadow: none;
+    display: block;
+    font-size: .85em;
+    margin: 0;
+    outline-color: var(--md-accent-fg-color);
+    overflow: auto;
+    padding: .7720588235em 1.1764705882em;
+    scrollbar-color: var(--md-default-fg-color--lighter) #0000;
+    scrollbar-width: thin;
+    touch-action: auto;
+    word-break: break-word;
+}
+.md-search__output td>div>p{
+  margin: 0;
+}

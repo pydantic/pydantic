@@ -1,4 +1,53 @@
 {% extends "base.html" %}
+
+<!--
+  We're changing the config block so that we can change the worker script path to a custom web worker script that pulls search results from Algolia.
+  The rest of the block is the "stock" one, so it can safely be updated if something changes in MkDocs.
+-->
+
+{% block config %}
+      {%- set app = {
+        "base": base_url,
+        "features": features,
+        "translations": {},
+        "search": base_url + "/javascripts/search-worker.js" | url
+      } -%}
+
+      <!-- Versioning -->
+      {%- if config.extra.version -%}
+        {%- set mike = config.plugins.get("mike") -%}
+        {%- if not mike or mike.config.version_selector -%}
+          {%- set _ = app.update({ "version": config.extra.version }) -%}
+        {%- endif -%}
+      {%- endif -%}
+
+      <!-- Tags -->
+      {%- if config.extra.tags -%}
+        {%- set _ = app.update({ "tags": config.extra.tags }) -%}
+      {%- endif -%}
+
+      <!-- Translations -->
+      {%- set translations = app.translations -%}
+      {%- for key in [
+        "clipboard.copy",
+        "clipboard.copied",
+        "search.result.placeholder",
+        "search.result.none",
+        "search.result.one",
+        "search.result.other",
+        "search.result.more.one",
+        "search.result.more.other",
+        "search.result.term.missing",
+        "select.version"
+      ] -%}
+        {%- set _ = translations.update({ key: lang.t(key) }) -%}
+      {%- endfor -%}
+
+      <!-- Configuration -->
+      <script id="__config" type="application/json">
+        {{- app | tojson -}}
+      </script>
+{% endblock %}
 <!-- start announce block -->
 {% block announce %}
   {% include 'announce.html' ignore missing %}

@@ -66,6 +66,8 @@ jobs:
         ln -s .venv/lib/python*/site-packages/pydantic_extra_types pydantic_extra_types
 
     - run: uv run mkdocs build
+      env:
+        ALGOLIA_WRITE_API_KEY: ${{ secrets.ALGOLIA_WRITE_API_KEY }}
 
   test-memray:
     name: Test memray

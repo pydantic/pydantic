@@ -205,6 +205,7 @@ watch:
 
 hooks:
 - 'docs/plugins/main.py'
+- 'docs/plugins/algolia.py'
 
 plugins:
 - social

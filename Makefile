@@ -122,6 +122,10 @@ clean:
 docs:
 	uv run mkdocs build --strict
 
+.PHONY: docs-serve
+docs-serve: ## Build and serve the documentation, for local preview
+	uv run mkdocs serve --strict
+
 .PHONY: help  ## Display this message
 help:
 	@grep -E \
