@@ -1,0 +1,8 @@
+# See rule aliases: https://github.com/DavidAnson/markdownlint#rules--aliases
+
+# Allow same heading name if the parent is different
+no-duplicate-heading:
+  siblings_only: true
+
+# Allow inline HTML to support line breaks etc.
+no-inline-html: false
