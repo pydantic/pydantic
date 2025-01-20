@@ -6,3 +6,8 @@ no-duplicate-heading:
 
 # Allow inline HTML to support line breaks etc.
 no-inline-html: false
+
+# Need to disable in order to support PyMdown Tabbed extension and admonitions
+# See: https://facelessuser.github.io/pymdown-extensions/extensions/tabbed/
+# See: https://squidfunk.github.io/mkdocs-material/reference/admonitions/
+code-block-style: false
