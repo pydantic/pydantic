@@ -64,12 +64,9 @@ from . import _decorators, _discriminated_union, _known_annotated_metadata, _rep
 from ._config import ConfigWrapper, ConfigWrapperStack
 from ._core_metadata import CoreMetadata, update_core_metadata
 from ._core_utils import (
-    collect_invalid_schemas,
-    define_expected_missing_refs,
     get_ref,
     get_type_ref,
     is_list_like_schema_with_items_schema,
-    simplify_schema_references,
     validate_core_schema,
 )
 from ._decorators import (
@@ -89,11 +86,11 @@ from ._decorators import (
 from ._docs_extraction import extract_docstrings_from_cls
 from ._fields import collect_dataclass_fields, takes_validated_data_argument
 from ._forward_ref import PydanticRecursiveRef
-from ._generics import get_standard_typevars_map, has_instance_in_type, recursively_defined_type_refs, replace_types
+from ._generics import get_standard_typevars_map, has_instance_in_type, replace_types
 from ._import_utils import import_cached_base_model, import_cached_field_info
 from ._mock_val_ser import MockCoreSchema
 from ._namespace_utils import NamespacesTuple, NsResolver
-from ._schema_gather import gather_schemas_for_cleaning, GatherInvalidDefinitionError
+from ._schema_gather import MissingDefinitionError, gather_schemas_for_cleaning
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
 from ._utils import lenient_issubclass, smart_deepcopy
 
@@ -308,6 +305,10 @@ def _get_first_non_null(a: Any, b: Any) -> Any:
     This function will return serialization_alias, which is the first argument, even though it is an empty string.
     """
     return a if a is not None else b
+
+
+class InvalidSchemaError(Exception):
+    """The core schema is invalid."""
 
 
 class GenerateSchema:
@@ -637,14 +638,8 @@ class GenerateSchema:
             )
             return schema
 
-    class CollectedInvalid(Exception):
-        pass
-
     def clean_schema(self, schema: CoreSchema) -> CoreSchema:
-        try:
-            schema = self.defs.finalize_schema(schema)
-        except GatherInvalidDefinitionError:
-            raise GenerateSchema.CollectedInvalid
+        schema = self.defs.finalize_schema(schema)
         schema = validate_core_schema(schema)
         return schema
 
@@ -2510,7 +2505,14 @@ def _common_field(
         'metadata': metadata,
     }
 
-_NOT_INLINABLE_META_KEYS: set[str] = {*CoreMetadata.__annotations__.keys()}
+
+def _can_be_inlined(def_ref: core_schema.DefinitionReferenceSchema) -> bool:
+    """Return whether the `'definition-ref'` schema can be replaced by its definition.
+
+    This is true if no `'serialization'` schema is attached, or if it has at least one metadata entry.
+    """
+    return 'serialization' not in def_ref and not def_ref.get('metadata')
+
 
 class _Definitions:
     """Keeps track of references and definitions."""
@@ -2585,68 +2587,62 @@ class _Definitions:
         return core_schema.definition_reference_schema(ref)
 
     def unpack_definitions(self, schema: core_schema.DefinitionsSchema) -> CoreSchema:
-        """Store the definitions of the `'definitions` core schema and return the inner core schema."""
+        """Store the definitions of the `'definitions'` core schema and return the inner core schema."""
         for def_schema in schema['definitions']:
             self._unpacked_definitions[def_schema['ref']] = def_schema  # pyright: ignore
         return schema['schema']
 
     def finalize_schema(self, schema: CoreSchema) -> CoreSchema:
+        """Finalize the core schema.
+
+        This traverses the core schema and referenced definitions, replace `'definition-ref'` schemas
+        by the referenced definition if possible, and apply deferred discriminators.
+        """
         definitions = self._definitions
         if self._unpacked_definitions:
             definitions = {**self._unpacked_definitions, **definitions}
-        discriminator_meta_key = 'pydantic_internal_union_discriminator'
         try:
             gather_result = gather_schemas_for_cleaning(
                 schema,
                 definitions=definitions,
-                find_meta_with_keys={discriminator_meta_key},
             )
-        except GatherInvalidDefinitionError:
-            raise
-
-        if (schema_ref := schema.get('ref')) is not None and schema_ref in gather_result['recursive_refs']:
-            schema = self.create_definition_reference_schema(schema)  # self schema referenced recursively
+        except MissingDefinitionError as e:
+            raise InvalidSchemaError from e
 
         remaining_defs: dict[str, CoreSchema] = {}
 
-        for ref, inlinable_def_ref in gather_result['inlinable_def_refs'].items():
-            if inlinable_def_ref is not None and self._can_be_inlined(inlinable_def_ref):
-                # Mutate the definition reference directly to be the actual definition
-                inlinable_def_ref.clear()
-                inlinable_def_ref.update(self._resolve_definition(ref, definitions))
+        for ref, inlinable_def_ref in gather_result['collected_references'].items():
+            if inlinable_def_ref is not None and _can_be_inlined(inlinable_def_ref):
+                # `ref` was encountered, and only once:
+                #  - `inlinable_def_ref` is a `'definition-ref'` schema and is guaranteed to be
+                #    the only one. Transform it into the definition it points to.
+                #  - Do not store the definition in the `remaining_defs`.
+                inlinable_def_ref.clear()  # pyright: ignore[reportAttributeAccessIssue]
+                inlinable_def_ref.update(self._resolve_definition(ref, definitions))  # pyright: ignore
             else:
+                # `ref` was encountered, at least two times:
+                # - Do not inline the `'definition-ref'` schemas (they are not provided in the gather result anyway).
+                # - Store the the definition in the `remaining_defs`
                 remaining_defs[ref] = self._resolve_definition(ref, definitions)
 
-        schema_with_disc = (gather_result['schemas_with_meta_keys'] or {}).get(discriminator_meta_key) or []
-
-        for apply_to_schema in schema_with_disc:
-            discriminator = apply_to_schema['metadata'][discriminator_meta_key]  # type: ignore
-            applied = _discriminated_union.apply_discriminator(
-                apply_to_schema.copy(), discriminator, remaining_defs
-            )
+        for sc in gather_result['deferred_discriminator_schemas']:
+            discriminator = sc['metadata']['pydantic_internal_union_discriminator']  # pyright: ignore[reportTypedDictNotRequiredAccess]
+            applied = _discriminated_union.apply_discriminator(sc.copy(), discriminator, remaining_defs)
             # Mutate the schema directly to have the discriminator applied
-            apply_to_schema.clear()  # type: ignore
-            apply_to_schema.update(applied)  # type: ignore
+            sc.clear()  # pyright: ignore[reportAttributeAccessIssue]
+            sc.update(applied)  # pyright: ignore
 
         if remaining_defs:
             schema = core_schema.definitions_schema(schema=schema, definitions=[*remaining_defs.values()])
         return schema
-
-    def _can_be_inlined(self, def_ref: core_schema.DefinitionReferenceSchema) -> bool:
-        if 'serialization' in def_ref:
-            return False  # we need to keep this as a definition reference
-        if metadata := def_ref.get('metadata'):
-            for k in metadata:
-                if k in _NOT_INLINABLE_META_KEYS:
-                    return False  # we need to keep this as a definition reference
-        return True
 
     def _resolve_definition(self, ref: str, definitions: dict[str, CoreSchema]) -> CoreSchema:
         definition = definitions[ref]
         if definition['type'] != 'definition-ref':
             return definition
 
-        # Resolve TypeAliasType (coming via _type_alias_type_schema)
+        # Some `'definition-ref'` schemas might act as "intermediate" references (e.g. when using
+        # a PEP 695 type alias (which is referenceable) that references another PEP 695 type alias):
         visited: set[str] = set()
         while definition['type'] == 'definition-ref':
             schema_ref = definition['schema_ref']
@@ -2656,7 +2652,8 @@ class _Definitions:
                 )
             visited.add(schema_ref)
             definition = definitions[schema_ref]
-        return {**definition, 'ref': ref}  # type: ignore
+        return {**definition, 'ref': ref}  # pyright: ignore[reportReturnType]
+
 
 def resolve_original_schema(schema: CoreSchema, definitions: _Definitions) -> CoreSchema | None:
     if schema['type'] == 'definition-ref':

@@ -1,75 +1,84 @@
-from collections import defaultdict
+from dataclasses import dataclass, field
 from typing import TypedDict
 
 from pydantic_core.core_schema import CoreSchema, DefinitionReferenceSchema, SerSchema
 
 
 class GatherResult(TypedDict):
-    """Internal result of gathering schemas for cleaning."""
+    """Schema traversing result."""
 
-    inlinable_def_refs: dict[str, DefinitionReferenceSchema | None]
-    recursive_refs: set[str]
-    schemas_with_meta_keys: dict[str, list[CoreSchema]] | None
+    collected_references: dict[str, DefinitionReferenceSchema | None]
+    """The collected definition references.
+
+    If a definition reference schema can be inlined, it means that there is
+    only one in the whole core schema. As such, it is stored as the value.
+    Otherwise, the value is set to `None`.
+    """
+
+    deferred_discriminator_schemas: list[CoreSchema]
+    """The list of core schemas having the discriminator application deferred."""
 
 
-class GatherInvalidDefinitionError(Exception):
-    pass
+class MissingDefinitionError(LookupError):
+    """A reference was pointing to a non-existing core schema."""
+
+    def __init__(self, schema_reference: str, /) -> None:
+        self.schema_reference = schema_reference
 
 
+@dataclass
 class GatherContext:
-    def __init__(
-        self,
-        definitions: dict[str, CoreSchema],
-        find_meta_with_keys: set[str] | None,
-    ) -> None:
-        self.definitions = definitions
-        if find_meta_with_keys is None:
-            self.meta_with_keys = None
-        else:
-            self.meta_with_keys = (defaultdict[str, list[CoreSchema]](list), find_meta_with_keys)
-        self.inline_def_ref_candidates: dict[str, DefinitionReferenceSchema | None] = {}
-        self.recursive_def_refs: set[str] = set()
-        self.recursively_seen_refs: set[str] = set()
+    """The current context used during core schema traversing.
+
+    Context instances should only be used during schema traversing.
+    """
+
+    definitions: dict[str, CoreSchema]
+    """The available definitions."""
+
+    deferred_discriminator_schemas: list[CoreSchema] = field(init=False, default_factory=list)
+    """The list of core schemas having the discriminator application deferred.
+
+    Internally, these core schemas have a specific key set in the core metadata dict.
+    """
+
+    collected_references: dict[str, DefinitionReferenceSchema | None] = field(init=False, default_factory=dict)
+    """The collected definition references.
+
+    If a definition reference schema can be inlined, it means that there is
+    only one in the whole core schema. As such, it is stored as the value.
+    Otherwise, the value is set to `None`.
+
+    During schema traversing, definition reference schemas can be added as candidates, or removed
+    (by setting the value to `None`).
+    """
 
 
-def gather_meta(schema: CoreSchema, ctx: GatherContext):
-    if ctx.meta_with_keys is None:
-        return
-    res, find_keys = ctx.meta_with_keys
+def gather_meta(schema: CoreSchema, ctx: GatherContext) -> None:
     meta = schema.get('metadata')
-    if meta is None:
-        return
-    for k in find_keys:
-        if k in meta:
-            res[k].append(schema)
+    if meta is not None and 'pydantic_internal_union_discriminator' in meta:
+        ctx.deferred_discriminator_schemas.append(schema)
 
 
-def gather_definition_ref(schema_ref_dict: DefinitionReferenceSchema, ctx: GatherContext):
-    schema_ref = schema_ref_dict['schema_ref']
+def gather_definition_ref(def_ref_schema: DefinitionReferenceSchema, ctx: GatherContext) -> None:
+    schema_ref = def_ref_schema['schema_ref']
 
-    if schema_ref not in ctx.recursively_seen_refs:
-        if schema_ref not in ctx.inline_def_ref_candidates:
-            definition = ctx.definitions.get(schema_ref)
-            if definition is None:
-                raise GatherInvalidDefinitionError(schema_ref)
+    if schema_ref not in ctx.collected_references:
+        definition = ctx.definitions.get(schema_ref)
+        if definition is None:
+            raise MissingDefinitionError(schema_ref)
 
-            ctx.inline_def_ref_candidates[schema_ref] = schema_ref_dict
-            ctx.recursively_seen_refs.add(schema_ref)
-
-            gather_schema(definition, ctx)
-            if 'serialization' in schema_ref_dict:
-                gather_schema(schema_ref_dict['serialization'], ctx)
-            gather_meta(schema_ref_dict, ctx)
-
-            ctx.recursively_seen_refs.remove(schema_ref)
-        else:
-            ctx.inline_def_ref_candidates[schema_ref] = None
+        # The `'definition-ref'` schema was only encountered once, make it
+        # a candidate to be inlined:
+        ctx.collected_references[schema_ref] = def_ref_schema
+        gather_schema(definition, ctx)
+        if 'serialization' in def_ref_schema:
+            gather_schema(def_ref_schema['serialization'], ctx)
+        gather_meta(def_ref_schema, ctx)
     else:
-        ctx.inline_def_ref_candidates[schema_ref] = None
-        ctx.recursive_def_refs.add(schema_ref)
-        for seen_ref in ctx.recursively_seen_refs:
-            ctx.inline_def_ref_candidates[seen_ref] = None
-            ctx.recursive_def_refs.add(seen_ref)
+        # The `'definition-ref'` schema was already encountered, meaning
+        # the previously encountered schema (and this one) can't be inlined:
+        ctx.collected_references[schema_ref] = None
 
 
 def gather_schema(schema: CoreSchema | SerSchema, context: GatherContext) -> None:
@@ -154,16 +163,22 @@ def gather_schema(schema: CoreSchema | SerSchema, context: GatherContext) -> Non
         gather_schema(schema['serialization'], context)
     gather_meta(schema, context)
 
-def gather_schemas_for_cleaning(
-    schema: CoreSchema,
-    definitions: dict[str, CoreSchema],
-    find_meta_with_keys: set[str] | None,
-) -> GatherResult:
-    context = GatherContext(definitions, find_meta_with_keys)
+
+def gather_schemas_for_cleaning(schema: CoreSchema, definitions: dict[str, CoreSchema]) -> GatherResult:
+    """Traverse the core schema and definitions and return the necessary information for schema cleaning.
+
+    During the core schema traversing, any `'definition-ref'` schema is:
+
+    - Validated: the reference must point to an existing definition. If this is not the case, a
+      `MissingDefinitionError` exception is raised.
+    - Stored in the context: the actual reference is stored in the context. Depending on whether
+      the `'definition-ref'` schema is encountered twice or only once, the schema itself is also
+      saved in the context to be inlined (i.e. replaced by the definition it points to).
+    """
+    context = GatherContext(definitions)
     gather_schema(schema, context)
 
     return {
-        'inlinable_def_refs': context.inline_def_ref_candidates,
-        'recursive_refs': context.recursive_def_refs,
-        'schemas_with_meta_keys': context.meta_with_keys[0] if context.meta_with_keys is not None else None,
+        'collected_references': context.collected_references,
+        'deferred_discriminator_schemas': context.deferred_discriminator_schemas,
     }

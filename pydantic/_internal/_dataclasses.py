@@ -21,7 +21,7 @@ from ..plugin._schema_validator import PluggableSchemaValidator, create_schema_v
 from ..warnings import PydanticDeprecatedSince20
 from . import _config, _decorators
 from ._fields import collect_dataclass_fields
-from ._generate_schema import GenerateSchema
+from ._generate_schema import GenerateSchema, InvalidSchemaError
 from ._generics import get_standard_typevars_map
 from ._mock_val_ser import set_dataclass_mocks
 from ._namespace_utils import NsResolver
@@ -171,7 +171,7 @@ def complete_dataclass(
 
     try:
         schema = gen_schema.clean_schema(schema)
-    except gen_schema.CollectedInvalid:
+    except InvalidSchemaError:
         set_dataclass_mocks(cls)
         return False
 
