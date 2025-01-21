@@ -600,6 +600,6 @@ def pretty_print_core_schema(
 
 
 def validate_core_schema(schema: CoreSchema) -> CoreSchema:
-    if os.environ.get('PYDANTIC_VALIDATE_CORE_SCHEMAS') == 1:
+    if os.getenv('PYDANTIC_VALIDATE_CORE_SCHEMAS'):
         return _validate_core_schema(schema)
     return schema
