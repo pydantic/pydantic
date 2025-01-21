@@ -63,8 +63,7 @@ def test_any(py_and_json: PyAndJson, input_value, expected):
         pytest.param(
             'xx',
             Err(
-                'Invalid JSON: expected value at line 1 column 1 '
-                "[type=json_invalid, input_value='xx', input_type=str]"
+                "Invalid JSON: expected value at line 1 column 1 [type=json_invalid, input_value='xx', input_type=str]"
             ),
             id='str_invalid',
         ),

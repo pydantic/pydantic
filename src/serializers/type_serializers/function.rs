@@ -183,7 +183,7 @@ impl FunctionPlainSerializer {
     fn retry_with_lax_check(&self) -> bool {
         self.fallback_serializer
             .as_ref()
-            .map_or(false, |f| f.retry_with_lax_check())
+            .is_some_and(|f| f.retry_with_lax_check())
             || self.return_serializer.retry_with_lax_check()
     }
 }

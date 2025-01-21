@@ -49,7 +49,7 @@ impl Validator for ComplexValidator {
         Ok(res.into_pyobject(py)?.into())
     }
 
-    fn get_name(&self) -> &str {
+    fn get_name(&self) -> &'static str {
         "complex"
     }
 }

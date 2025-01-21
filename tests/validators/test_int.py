@@ -311,10 +311,7 @@ def test_int_strict(py_and_json: PyAndJson, input_value, expected):
         (
             {'ge': 0},
             -1,
-            Err(
-                'Input should be greater than or equal to 0 '
-                '[type=greater_than_equal, input_value=-1, input_type=int]'
-            ),
+            Err('Input should be greater than or equal to 0 [type=greater_than_equal, input_value=-1, input_type=int]'),
         ),
         ({'gt': 0}, 1, 1),
         ({'gt': 0}, 0, Err('Input should be greater than 0 [type=greater_than, input_value=0, input_type=int]')),

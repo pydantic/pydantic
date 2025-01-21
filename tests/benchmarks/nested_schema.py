@@ -40,7 +40,7 @@ def schema_using_defs() -> cs.CoreSchema:
                     'fields': {
                         str(c): {
                             'type': 'model-field',
-                            'schema': {'type': 'definition-ref', 'schema_ref': f'model_{level+1}'},
+                            'schema': {'type': 'definition-ref', 'schema_ref': f'model_{level + 1}'},
                         }
                         for c in range(N)
                     },

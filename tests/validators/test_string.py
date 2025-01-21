@@ -183,11 +183,7 @@ def test_invalid_regex(engine):
 
     if engine is None or engine == 'rust-regex':
         assert exc_info.value.args[0] == (
-            'Error building "str" validator:\n'
-            '  SchemaError: regex parse error:\n'
-            '    (abc\n'
-            '    ^\n'
-            'error: unclosed group'
+            'Error building "str" validator:\n  SchemaError: regex parse error:\n    (abc\n    ^\nerror: unclosed group'
         )
     elif engine == 'python-re':
         prefix = 'PatternError' if sys.version_info >= (3, 13) else 'error'
