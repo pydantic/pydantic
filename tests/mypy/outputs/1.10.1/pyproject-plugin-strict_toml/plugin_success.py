@@ -113,11 +113,15 @@ MultiInheritanceModel().f()
 
 
 class AliasModel(BaseModel):
-    x: str = Field(..., alias='y')
+    x: str = Field(alias='x_alias')
+    y: str = Field(validation_alias='y_alias')
+    z: str = Field(validation_alias='z_alias', alias='unused')
 
 
-alias_model = AliasModel(y='hello')
-assert alias_model.x == 'hello'
+alias_model = AliasModel(x_alias='a', y_alias='a', z_alias='a')
+assert alias_model.x == 'a'
+assert alias_model.y == 'a'
+assert alias_model.z == 'a'
 
 
 class ClassVarModel(BaseModel):
