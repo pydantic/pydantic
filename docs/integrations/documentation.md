@@ -25,7 +25,7 @@ Sphinx object inventory to cross-reference the Pydantic API documentation.
     plugins:
     - mkdocstrings:
         handlers:
-        pydantic:
+          python:
             import:
             - https://docs.pydantic.dev/latest/objects.inv  # (1)!
     ```
