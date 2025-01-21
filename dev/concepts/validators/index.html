@@ -3362,8 +3362,10 @@ this time using the <a class="autorefs autorefs-internal" href="../../api/functi
 <li>
 <p><strong><em>Before</em> validators</strong>: run before Pydantic's internal parsing and validation (e.g. coercion of a <code>str</code> to an <code>int</code>).
   These are more flexible than <a href="#field-after-validator"><em>after</em> validators</a>, but they also have to deal with the raw input, which
-  in theory could be any arbitrary object. The value returned from this callable is then validated against the provided type annotation
-  by Pydantic.</p>
+  in theory could be any arbitrary object. You should also avoid mutating the value directly if you are raising a
+  <a href="#raising-validation-errors">validation error</a> later in your validator function, as the mutated value may be passed to other
+  validators if using <a href="../unions/">unions</a>.</p>
+<p>The value returned from this callable is then validated against the provided type annotation by Pydantic.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Annotated pattern</label><label for="__tabbed_3_2">Decorator</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
@@ -3696,7 +3698,9 @@ decorator.</p>
 <ul>
 <li>
 <p><strong><em>Before</em> validators</strong>: are run before the model is instantiated. These are more flexible than <em>after</em> validators,
-  but they also have to deal with the raw input, which in theory could be any arbitrary object.
+  but they also have to deal with the raw input, which in theory could be any arbitrary object. You should also avoid
+  mutating the value directly if you are raising a <a href="#raising-validation-errors">validation error</a> later in your validator
+  function, as the mutated value may be passed to other validators if using <a href="../unions/">unions</a>.
   <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">model_validator</span>
