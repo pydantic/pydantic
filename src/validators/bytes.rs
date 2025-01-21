@@ -107,7 +107,7 @@ impl Validator for BytesConstrainedValidator {
         Ok(either_bytes.into_py_any(py)?)
     }
 
-    fn get_name(&self) -> &str {
+    fn get_name(&self) -> &'static str {
         "constrained-bytes"
     }
 }

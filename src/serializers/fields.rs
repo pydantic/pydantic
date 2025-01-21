@@ -458,7 +458,7 @@ impl TypeSerializer for GeneralFieldsSerializer {
         map.end()
     }
 
-    fn get_name(&self) -> &str {
+    fn get_name(&self) -> &'static str {
         "general-fields"
     }
 }
