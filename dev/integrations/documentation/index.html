@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://docs.pydantic.dev/latest/integrations/visual_studio_code/">
+        <link rel="canonical" href="https://docs.pydantic.dev/latest/integrations/documentation/">
       
       
-        <link rel="prev" href="../hypothesis/">
+        <link rel="prev" href="../linting/">
       
       
-        <link rel="next" href="../datamodel_code_generator/">
+        <link rel="next" href="../aws_lambda/">
       
       
       <link rel="icon" href="../../favicon.png">
@@ -24,7 +24,7 @@
     
     
       
-        <title>Visual Studio Code - Pydantic</title>
+        <title>Documentation - Pydantic</title>
       
     
     
@@ -67,11 +67,11 @@
       
         <meta  property="og:type"  content="website" >
       
-        <meta  property="og:title"  content="Visual Studio Code - Pydantic" >
+        <meta  property="og:title"  content="Documentation - Pydantic" >
       
         <meta  property="og:description"  content="Data validation using Python type hints" >
       
-        <meta  property="og:image"  content="https://docs.pydantic.dev/latest/assets/images/social/integrations/visual_studio_code.png" >
+        <meta  property="og:image"  content="https://docs.pydantic.dev/latest/assets/images/social/integrations/documentation.png" >
       
         <meta  property="og:image:type"  content="image/png" >
       
@@ -79,15 +79,15 @@
       
         <meta  property="og:image:height"  content="630" >
       
-        <meta  property="og:url"  content="https://docs.pydantic.dev/latest/integrations/visual_studio_code/" >
+        <meta  property="og:url"  content="https://docs.pydantic.dev/latest/integrations/documentation/" >
       
         <meta  name="twitter:card"  content="summary_large_image" >
       
-        <meta  name="twitter:title"  content="Visual Studio Code - Pydantic" >
+        <meta  name="twitter:title"  content="Documentation - Pydantic" >
       
         <meta  name="twitter:description"  content="Data validation using Python type hints" >
       
-        <meta  name="twitter:image"  content="https://docs.pydantic.dev/latest/assets/images/social/integrations/visual_studio_code.png" >
+        <meta  name="twitter:image"  content="https://docs.pydantic.dev/latest/assets/images/social/integrations/documentation.png" >
       
     
     
@@ -108,11 +108,6 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
-      
-        
-        <a href="#configure-vs-code" class="md-skip">
-          Skip to content
-        </a>
       
     </div>
     <div data-md-component="announce">
@@ -170,7 +165,7 @@ to help you monitor and understand your
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Visual Studio Code
+              Documentation
             
           </span>
         </div>
@@ -2636,28 +2631,10 @@ to help you monitor and understand your
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    Visual Studio Code
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../visual_studio_code/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2666,161 +2643,6 @@ to help you monitor and understand your
   
 
       </a>
-      
-        
-
-  
-
-<nav class="md-nav md-nav--secondary" aria-label="Page contents">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Page contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#configure-vs-code" class="md-nav__link">
-    <span class="md-ellipsis">
-      Configure VS Code
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Configure VS Code">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#install-pylance" class="md-nav__link">
-    <span class="md-ellipsis">
-      Install Pylance
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#configure-your-environment" class="md-nav__link">
-    <span class="md-ellipsis">
-      Configure your environment
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#configure-pylance" class="md-nav__link">
-    <span class="md-ellipsis">
-      Configure Pylance
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#configure-mypy" class="md-nav__link">
-    <span class="md-ellipsis">
-      Configure mypy
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#tips-and-tricks" class="md-nav__link">
-    <span class="md-ellipsis">
-      Tips and tricks
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Tips and tricks">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#strict-errors" class="md-nav__link">
-    <span class="md-ellipsis">
-      Strict errors
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Strict errors">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#disable-type-checks-in-a-line" class="md-nav__link">
-    <span class="md-ellipsis">
-      Disable type checks in a line
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#override-the-type-of-a-variable" class="md-nav__link">
-    <span class="md-ellipsis">
-      Override the type of a variable
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#override-the-type-of-a-value-with-cast" class="md-nav__link">
-    <span class="md-ellipsis">
-      Override the type of a value with cast
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#config-in-class-arguments" class="md-nav__link">
-    <span class="md-ellipsis">
-      Config in class arguments
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#adding-a-default-with-field" class="md-nav__link">
-    <span class="md-ellipsis">
-      Adding a default with Field
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#technical-details" class="md-nav__link">
-    <span class="md-ellipsis">
-      Technical Details
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -2914,10 +2736,17 @@ to help you monitor and understand your
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../documentation/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -2926,6 +2755,7 @@ to help you monitor and understand your
   
 
       </a>
+      
     </li>
   
 
@@ -3078,149 +2908,6 @@ to help you monitor and understand your
   
   
   
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Page contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#configure-vs-code" class="md-nav__link">
-    <span class="md-ellipsis">
-      Configure VS Code
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Configure VS Code">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#install-pylance" class="md-nav__link">
-    <span class="md-ellipsis">
-      Install Pylance
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#configure-your-environment" class="md-nav__link">
-    <span class="md-ellipsis">
-      Configure your environment
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#configure-pylance" class="md-nav__link">
-    <span class="md-ellipsis">
-      Configure Pylance
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#configure-mypy" class="md-nav__link">
-    <span class="md-ellipsis">
-      Configure mypy
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#tips-and-tricks" class="md-nav__link">
-    <span class="md-ellipsis">
-      Tips and tricks
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Tips and tricks">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#strict-errors" class="md-nav__link">
-    <span class="md-ellipsis">
-      Strict errors
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Strict errors">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#disable-type-checks-in-a-line" class="md-nav__link">
-    <span class="md-ellipsis">
-      Disable type checks in a line
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#override-the-type-of-a-variable" class="md-nav__link">
-    <span class="md-ellipsis">
-      Override the type of a variable
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#override-the-type-of-a-value-with-cast" class="md-nav__link">
-    <span class="md-ellipsis">
-      Override the type of a value with cast
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#config-in-class-arguments" class="md-nav__link">
-    <span class="md-ellipsis">
-      Config in class arguments
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#adding-a-default-with-field" class="md-nav__link">
-    <span class="md-ellipsis">
-      Adding a default with Field
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#technical-details" class="md-nav__link">
-    <span class="md-ellipsis">
-      Technical Details
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
 </nav>
                   </div>
                 </div>
@@ -3238,206 +2925,42 @@ to help you monitor and understand your
   
 
 
-  <h1>Visual Studio Code</h1>
+  <h1>Documentation</h1>
 
-<p>Pydantic works well with any editor or IDE out of the box because it's made on top of standard Python type annotations.</p>
-<p>When using <a href="https://code.visualstudio.com/">Visual Studio Code (VS Code)</a>, there are some <strong>additional editor features</strong> supported, comparable to the ones provided by the <a href="../pycharm/">PyCharm plugin</a>.</p>
-<p>This means that you will have <strong>autocompletion</strong> (or "IntelliSense") and <strong>error checks</strong> for types and required arguments even while creating new Pydantic model instances.</p>
-<p><img alt="pydantic autocompletion in VS Code" src="../../img/vs_code_01.png" /></p>
-<h2 id="configure-vs-code">Configure VS Code<a class="headerlink" href="#configure-vs-code" title="Permanent link">&para;</a></h2>
-<p>To take advantage of these features, you need to make sure you configure VS Code correctly, using the recommended settings.</p>
-<p>In case you have a different configuration, here's a short overview of the steps.</p>
-<h3 id="install-pylance">Install Pylance<a class="headerlink" href="#install-pylance" title="Permanent link">&para;</a></h3>
-<p>You should use the <a href="https://marketplace.visualstudio.com/items?itemName=ms-python.vscode-pylance">Pylance</a> extension for VS Code. It is the recommended, next-generation, official VS Code plug-in for Python.</p>
-<p>Pylance is installed as part of the <a href="https://marketplace.visualstudio.com/items?itemName=ms-python.python">Python Extension for VS Code</a> by default, so it should probably just work. Otherwise, you can double check it's installed and enabled in your editor.</p>
-<h3 id="configure-your-environment">Configure your environment<a class="headerlink" href="#configure-your-environment" title="Permanent link">&para;</a></h3>
-<p>Then you need to make sure your editor knows the <a href="https://code.visualstudio.com/docs/python/python-tutorial#_install-and-use-packages">Python environment</a> (probably a virtual environment) for your Python project.</p>
-<p>This would be the environment in where you installed Pydantic.</p>
-<h3 id="configure-pylance">Configure Pylance<a class="headerlink" href="#configure-pylance" title="Permanent link">&para;</a></h3>
-<p>With the default configurations, you will get support for autocompletion, but Pylance might not check for type errors.</p>
-<p>You can enable type error checks from Pylance with these steps:</p>
-<ul>
-<li>Open the "User Settings"</li>
-<li>Search for <code>Type Checking Mode</code></li>
-<li>You will find an option under <code>Python › Analysis: Type Checking Mode</code></li>
-<li>Set it to <code>basic</code> or <code>strict</code> (by default it's <code>off</code>)</li>
-</ul>
-<p><img alt="Type Checking Mode set to strict in VS Code" src="../../img/vs_code_02.png" /></p>
-<p>Now you will not only get autocompletion when creating new Pydantic model instances but also error checks for <strong>required arguments</strong>.</p>
-<p><img alt="Required arguments error checks in VS Code" src="../../img/vs_code_03.png" /></p>
-<p>And you will also get error checks for <strong>invalid data types</strong>.</p>
-<p><img alt="Invalid data types error checks in VS Code" src="../../img/vs_code_04.png" /></p>
-<div class="admonition note">
-<p class="admonition-title">Technical Details</p>
-<p>Pylance is the VS Code extension, it's closed source, but free to use. Underneath, Pylance uses an open source tool (also from Microsoft) called <a href="https://github.com/microsoft/pyright">Pyright</a> that does all the heavy lifting.</p>
-<p>You can read more about it in the <a href="https://github.com/microsoft/pylance-release/blob/main/FAQ.md#what-is-the-relationship-between-pylance-pyright-and-the-python-extension">Pylance Frequently Asked Questions</a>.</p>
+<p>Pydantic uses <a href="https://www.mkdocs.org/">MkDocs</a> for documentation, together with
+<a href="https://mkdocstrings.github.io/">mkdocstrings</a>. As such, you can make use of Pydantic's
+Sphinx object inventory to cross-reference the Pydantic API documentation.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Sphinx</label><label for="__tabbed_1_2">mkdocstrings</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<p>In your <a href="https://www.sphinx-doc.org/en/master/usage/configuration.html">Sphinx configuration</a>,
+add the following to the <a href="https://www.sphinx-doc.org/en/master/usage/extensions/intersphinx.html#configuration"><code>intersphinx</code> extension configuration</a>:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="n">intersphinx_mapping</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;pydantic&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;https://docs.pydantic.dev/latest&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>  <span class="c1"># (1)!</span>
+<span class="p">}</span>
+</code></pre></div>
+<ol>
+<li>You can also use <code>dev</code> instead of <code>latest</code> to target the latest documentation build, up to date
+   with the <a href="https://github.com/pydantic/pydantic/tree/main"><code>main</code></a> branch.</li>
+</ol>
 </div>
-<h3 id="configure-mypy">Configure mypy<a class="headerlink" href="#configure-mypy" title="Permanent link">&para;</a></h3>
-<p>You might also want to configure mypy in VS Code to get mypy error checks inline in your editor (alternatively/additionally to Pylance).</p>
-<p>This would include the errors detected by the <a href="../mypy/">Pydantic mypy plugin</a>, if you configured it.</p>
-<p>To enable mypy in VS Code, do the following:</p>
-<ul>
-<li>Open the "User Settings"</li>
-<li>Search for <code>Mypy Enabled</code></li>
-<li>You will find an option under <code>Python › Linting: Mypy Enabled</code></li>
-<li>Check the box (by default it's unchecked)</li>
-</ul>
-<p><img alt="mypy enabled in VS Code" src="../../img/vs_code_05.png" /></p>
-<h2 id="tips-and-tricks">Tips and tricks<a class="headerlink" href="#tips-and-tricks" title="Permanent link">&para;</a></h2>
-<p>Here are some additional tips and tricks to improve your developer experience when using VS Code with Pydantic.</p>
-<h3 id="strict-errors">Strict errors<a class="headerlink" href="#strict-errors" title="Permanent link">&para;</a></h3>
-<p>The way this additional editor support works is that Pylance will treat your Pydantic models as if they were Python's pure <code>dataclasses</code>.</p>
-<p>And it will show <strong>strict type error checks</strong> about the data types passed in arguments when creating a new Pydantic model instance.</p>
-<p>In this example you can see that it shows that a <code>str</code> of <code>'23'</code> is not a valid <code>int</code> for the argument <code>age</code>.</p>
-<p><img alt="VS Code strict type errors" src="../../img/vs_code_06.png" /></p>
-<p>It would expect <code>age=23</code> instead of <code>age='23'</code>.</p>
-<p>Nevertheless, the design, and one of the main features of Pydantic, is that it is very <strong>lenient with data types</strong>.</p>
-<p>It will actually accept the <code>str</code> with value <code>'23'</code> and will convert it to an <code>int</code> with value <code>23</code>.</p>
-<p>These strict error checks are <strong>very useful</strong> most of the time and can help you <strong>detect many bugs early</strong>. But there are cases, like with <code>age='23'</code>, where they could be inconvenient by reporting a "false positive" error.</p>
-<hr />
-<p>This example above with <code>age='23'</code> is intentionally simple, to show the error and the differences in types.</p>
-<p>But more common cases where these strict errors would be inconvenient would be when using more sophisticated data types, like <code>int</code> values for <code>datetime</code> fields, or <code>dict</code> values for Pydantic sub-models.</p>
-<p>For example, this is valid for Pydantic:</p>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Knight</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;blue&#39;</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Quest</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span>
-<span class="hll">    <span class="n">knight</span><span class="p">:</span> <span class="n">Knight</span>
-</span>
-
-<span class="n">quest</span> <span class="o">=</span> <span class="n">Quest</span><span class="p">(</span>
-    <span class="n">title</span><span class="o">=</span><span class="s1">&#39;To seek the Holy Grail&#39;</span><span class="p">,</span> <span class="n">knight</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="s1">&#39;Sir Lancelot&#39;</span><span class="p">,</span> <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="mi">23</span><span class="p">}</span>
-<span class="hll"><span class="p">)</span>
-</span></code></pre></div>
-<p>The type of the field <code>knight</code> is declared with the class <code>Knight</code> (a Pydantic model) and the code is passing a literal <code>dict</code> instead. This is still valid for Pydantic, and the <code>dict</code> would be automatically converted to a <code>Knight</code> instance.</p>
-<p>Nevertheless, it would be detected as a type error:</p>
-<p><img alt="VS Code strict type errors with model" src="../../img/vs_code_07.png" /></p>
-<p>In those cases, there are several ways to disable or ignore strict errors in very specific places, while still preserving them in the rest of the code.</p>
-<p>Below are several techniques to achieve it.</p>
-<h4 id="disable-type-checks-in-a-line">Disable type checks in a line<a class="headerlink" href="#disable-type-checks-in-a-line" title="Permanent link">&para;</a></h4>
-<p>You can disable the errors for a specific line using a comment of:</p>
-<div class="language-python highlight"><pre><span></span><code><span class="c1"># type: ignore</span>
+<div class="tabbed-block">
+<p>In your <a href="https://www.mkdocs.org/user-guide/configuration/">MkDocs configuration</a>, add the following
+import to your <a href="https://mkdocstrings.github.io/usage/#cross-references-to-other-projects-inventories">mkdocstrings plugin configuration</a>:</p>
+<div class="language-yaml highlight"><pre><span></span><code><span class="nt">plugins</span><span class="p">:</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">mkdocstrings</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">handlers</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">pydantic</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">import</span><span class="p">:</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">https://docs.pydantic.dev/latest/objects.inv</span><span class="w">  </span><span class="c1"># (1)!</span>
 </code></pre></div>
-<p>or (to be specific to pylance/pyright):</p>
-<div class="language-python highlight"><pre><span></span><code><span class="c1"># pyright: ignore</span>
-</code></pre></div>
-<p>(<a href="https://github.com/microsoft/pyright">pyright</a> is the language server used by Pylance.).</p>
-<p>coming back to the example with <code>age='23'</code>, it would be:</p>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Knight</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;blue&#39;</span>
-
-
-<span class="hll"><span class="n">lancelot</span> <span class="o">=</span> <span class="n">Knight</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;Sir Lancelot&#39;</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="s1">&#39;23&#39;</span><span class="p">)</span>  <span class="c1"># pyright: ignore</span>
-</span></code></pre></div>
-<p>that way Pylance and mypy will ignore errors in that line.</p>
-<p><strong>Pros</strong>: it's a simple change in that line to remove errors there.</p>
-<p><strong>Cons</strong>: any other error in that line will also be omitted, including type checks, misspelled arguments, required arguments not provided, etc.</p>
-<h4 id="override-the-type-of-a-variable">Override the type of a variable<a class="headerlink" href="#override-the-type-of-a-variable" title="Permanent link">&para;</a></h4>
-<p>You can also create a variable with the value you want to use and declare its type explicitly with <code>Any</code>.</p>
-<div class="language-python highlight"><pre><span></span><code><span class="hll"><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
-</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Knight</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;blue&#39;</span>
-
-<span class="hll">
-</span><span class="hll"><span class="n">age_str</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="s1">&#39;23&#39;</span>
-</span><span class="n">lancelot</span> <span class="o">=</span> <span class="n">Knight</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;Sir Lancelot&#39;</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="n">age_str</span><span class="p">)</span>
-</code></pre></div>
-<p>that way Pylance and mypy will interpret the variable <code>age_str</code> as if they didn't know its type, instead of knowing it has a type of <code>str</code> when an <code>int</code> was expected (and then showing the corresponding error).</p>
-<p><strong>Pros</strong>: errors will be ignored only for a specific value, and you will still see any additional errors for the other arguments.</p>
-<p><strong>Cons</strong>: it requires importing <code>Any</code> and a new variable in a new line for each argument that needs ignoring errors.</p>
-<h4 id="override-the-type-of-a-value-with-cast">Override the type of a value with <code>cast</code><a class="headerlink" href="#override-the-type-of-a-value-with-cast" title="Permanent link">&para;</a></h4>
-<p>The same idea from the previous example can be put on the same line with the help of <code>cast()</code>.</p>
-<p>This way, the type declaration of the value is overridden inline, without requiring another variable.</p>
-<div class="language-python highlight"><pre><span></span><code><span class="hll"><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">cast</span>
-</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Knight</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;blue&#39;</span>
-
-<span class="hll">
-</span><span class="n">lancelot</span> <span class="o">=</span> <span class="n">Knight</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;Sir Lancelot&#39;</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="n">cast</span><span class="p">(</span><span class="n">Any</span><span class="p">,</span> <span class="s1">&#39;23&#39;</span><span class="p">))</span>
-</code></pre></div>
-<p><code>cast(Any, '23')</code> doesn't affect the value, it's still just <code>'23'</code>, but now Pylance and mypy will assume it is of type <code>Any</code>, which means, they will act as if they didn't know the type of the value.</p>
-<p>So, this is the equivalent of the previous example, without the additional variable.</p>
-<p><strong>Pros</strong>: errors will be ignored only for a specific value, and you will still see any additional errors for the other arguments. There's no need for additional variables.</p>
-<p><strong>Cons</strong>: it requires importing <code>Any</code> and <code>cast</code>, and if you are not used to using <code>cast()</code>, it could seem strange at first.</p>
-<h3 id="config-in-class-arguments">Config in class arguments<a class="headerlink" href="#config-in-class-arguments" title="Permanent link">&para;</a></h3>
-<p>Pydantic has a rich set of <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict">Model Configurations</a> available.</p>
-<p>These configurations can be set in an internal <code>class Config</code> on each model:</p>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Knight</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">model_config</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;blue&#39;</span>
-</code></pre></div>
-<p>or passed as keyword arguments when defining the model class:</p>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
-
-
-<span class="hll"><span class="k">class</span><span class="w"> </span><span class="nc">Knight</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-</span>    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;blue&#39;</span>
-</code></pre></div>
-<p>The specific configuration <strong><code>frozen</code></strong> (in beta) has a special meaning.</p>
-<p>It prevents other code from changing a model instance once it's created, keeping it <strong>"frozen"</strong>.</p>
-<p>When using the second version to declare <code>frozen=True</code> (with <strong>keyword arguments</strong> in the class definition),
-Pylance can use it to help you check in your code and <strong>detect errors</strong> when something is trying to set values
-in a model that is "frozen".</p>
-<p><img alt="VS Code strict type errors with model" src="../../img/vs_code_08.png" /></p>
-<h2 id="adding-a-default-with-field">Adding a default with <code>Field</code><a class="headerlink" href="#adding-a-default-with-field" title="Permanent link">&para;</a></h2>
-<p>Pylance/pyright requires <code>default</code> to be a keyword argument to <code>Field</code> in order to infer that the field is optional.</p>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Knight</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s1">&#39;Sir Lancelot&#39;</span><span class="p">)</span>  <span class="c1"># this is okay</span>
-    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="mi">23</span>
-    <span class="p">)</span>  <span class="c1"># this works fine at runtime but will case an error for pyright</span>
-
-
-<span class="n">lance</span> <span class="o">=</span> <span class="n">Knight</span><span class="p">()</span>  <span class="c1"># error: Argument missing for parameter &quot;age&quot;</span>
-</code></pre></div>
-<p>This is a limitation of dataclass transforms and cannot be fixed in pydantic.</p>
-<h2 id="technical-details">Technical Details<a class="headerlink" href="#technical-details" title="Permanent link">&para;</a></h2>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>As a Pydantic user, you don't need the details below. Feel free to skip the rest of this section.</p>
-<p>These details are only useful for other library authors, etc.</p>
+<ol>
+<li>You can also use <code>dev</code> instead of <code>latest</code> to target the latest documentation build, up to date
+   with the <a href="https://github.com/pydantic/pydantic/tree/main"><code>main</code></a> branch.</li>
+</ol>
 </div>
-<p>This additional editor support works by implementing the proposed draft standard for <a href="https://peps.python.org/pep-0681/">Dataclass Transform (PEP 681)</a>.</p>
-<p>The proposed draft standard is written by Eric Traut, from the Microsoft team, the same author of the open source package Pyright (used by Pylance to provide Python support in VS Code).</p>
-<p>The intention of the standard is to provide a way for libraries like Pydantic and others to tell editors and tools that they (the editors) should treat these libraries (e.g. Pydantic) as if they were <code>dataclasses</code>, providing autocompletion, type checks, etc.</p>
-<p>The draft standard also includes an <a href="https://github.com/microsoft/pyright/blob/master/specs/dataclass_transforms.md#alternate-form">Alternate Form</a> for early adopters, like Pydantic, to add support for it right away, even before the new draft standard is finished and approved.</p>
-<p>This new draft standard, with the Alternate Form, is already supported by Pyright, so it can be used via Pylance in VS Code.</p>
-<p>As it is being proposed as an official standard for Python, other editors can also easily add support for it.</p>
-<p>And authors of other libraries similar to Pydantic can also easily adopt the standard right away (using the "Alternate Form") and get the benefits of these additional editor features.</p>
+</div>
+</div>
 
 
 
