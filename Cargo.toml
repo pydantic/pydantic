@@ -33,7 +33,7 @@ pyo3 = { version = "0.23.3", features = ["generate-import-lib", "num-bigint", "p
 regex = "1.11.1"
 strum = { version = "0.26.3", features = ["derive"] }
 strum_macros = "0.26.4"
-serde_json = {version = "1.0.133", features = ["arbitrary_precision", "preserve_order"]}
+serde_json = {version = "1.0.134", features = ["arbitrary_precision", "preserve_order"]}
 enum_dispatch = "0.3.13"
 serde = { version = "1.0.217", features = ["derive"] }
 speedate = "0.15.0"
