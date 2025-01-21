@@ -68,7 +68,7 @@ impl TypeSerializer for ComplexSerializer {
         }
     }
 
-    fn get_name(&self) -> &str {
+    fn get_name(&self) -> &'static str {
         "complex"
     }
 }

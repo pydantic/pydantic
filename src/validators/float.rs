@@ -168,7 +168,7 @@ impl Validator for ConstrainedFloatValidator {
         Ok(either_float.into_py_any(py)?)
     }
 
-    fn get_name(&self) -> &str {
+    fn get_name(&self) -> &'static str {
         "constrained-float"
     }
 }

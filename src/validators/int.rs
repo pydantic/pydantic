@@ -140,7 +140,7 @@ impl Validator for ConstrainedIntValidator {
         Ok(either_int.into_py_any(py)?)
     }
 
-    fn get_name(&self) -> &str {
+    fn get_name(&self) -> &'static str {
         "constrained-int"
     }
 }
