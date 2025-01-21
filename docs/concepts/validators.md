@@ -162,8 +162,11 @@ In its simplest form, a field validator is a callable taking the value to be val
 
 - __*Before* validators__: run before Pydantic's internal parsing and validation (e.g. coercion of a `str` to an `int`).
   These are more flexible than [*after* validators](#field-after-validator), but they also have to deal with the raw input, which
-  in theory could be any arbitrary object. The value returned from this callable is then validated against the provided type annotation
-  by Pydantic.
+  in theory could be any arbitrary object. You should also avoid mutating the value directly if you are raising a
+  [validation error](#raising-validation-errors) later in your validator function, as the mutated value may be passed to other
+  validators if using [unions](./unions.md).
+
+    The value returned from this callable is then validated against the provided type annotation by Pydantic.
 
     === "Annotated pattern"
 
@@ -493,7 +496,9 @@ decorator.
 [](){#model-before-validator}
 
 - __*Before* validators__: are run before the model is instantiated. These are more flexible than *after* validators,
-  but they also have to deal with the raw input, which in theory could be any arbitrary object.
+  but they also have to deal with the raw input, which in theory could be any arbitrary object. You should also avoid
+  mutating the value directly if you are raising a [validation error](#raising-validation-errors) later in your validator
+  function, as the mutated value may be passed to other validators if using [unions](./unions.md).
   ```python
   from typing import Any
 
