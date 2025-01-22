@@ -2,7 +2,7 @@ import re
 import sys
 from decimal import Decimal
 from numbers import Number
-from typing import Any, Dict, Union
+from typing import Any, Union
 
 import pytest
 
@@ -90,7 +90,7 @@ def test_str_not_json(input_value, expected):
         ({'min_length': 1}, '🐈 Hello', '🐈 Hello'),
     ],
 )
-def test_constrained_str(py_and_json: PyAndJson, kwargs: Dict[str, Any], input_value, expected):
+def test_constrained_str(py_and_json: PyAndJson, kwargs: dict[str, Any], input_value, expected):
     v = py_and_json({'type': 'str', **kwargs})
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
@@ -111,7 +111,7 @@ def test_constrained_str(py_and_json: PyAndJson, kwargs: Dict[str, Any], input_v
         ),
     ],
 )
-def test_constrained_str_py_only(kwargs: Dict[str, Any], input_value, expected):
+def test_constrained_str_py_only(kwargs: dict[str, Any], input_value, expected):
     v = SchemaValidator({'type': 'str', **kwargs})
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):

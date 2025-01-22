@@ -1,9 +1,10 @@
 import math
 import re
 import sys
+from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, List, Mapping, Union
+from typing import Any, Union
 
 import pytest
 from dirty_equals import FunctionCheck, HasRepr, IsStr
@@ -1182,7 +1183,7 @@ def test_from_attributes_extra_ignore_no_attributes_accessed() -> None:
         }
     )
 
-    accessed: List[str] = []
+    accessed: list[str] = []
 
     class Source:
         a = 1
@@ -1667,8 +1668,8 @@ def test_frozen_field():
 )
 def test_extra_behavior_allow(
     config: Union[core_schema.CoreConfig, None],
-    schema_extra_behavior_kw: Dict[str, Any],
-    extras_schema_kw: Dict[str, Any],
+    schema_extra_behavior_kw: dict[str, Any],
+    extras_schema_kw: dict[str, Any],
     expected_extra_value: Any,
 ):
     v = SchemaValidator(
@@ -1702,7 +1703,7 @@ def test_extra_behavior_allow(
         (core_schema.CoreConfig(extra_fields_behavior='allow'), {'extra_behavior': 'forbid'}),
     ],
 )
-def test_extra_behavior_forbid(config: Union[core_schema.CoreConfig, None], schema_extra_behavior_kw: Dict[str, Any]):
+def test_extra_behavior_forbid(config: Union[core_schema.CoreConfig, None], schema_extra_behavior_kw: dict[str, Any]):
     v = SchemaValidator(
         core_schema.model_fields_schema(
             {'f': core_schema.model_field(core_schema.str_schema())}, **schema_extra_behavior_kw
@@ -1749,7 +1750,7 @@ def test_extra_behavior_forbid(config: Union[core_schema.CoreConfig, None], sche
         (None, {'extra_behavior': None}),
     ],
 )
-def test_extra_behavior_ignore(config: Union[core_schema.CoreConfig, None], schema_extra_behavior_kw: Dict[str, Any]):
+def test_extra_behavior_ignore(config: Union[core_schema.CoreConfig, None], schema_extra_behavior_kw: dict[str, Any]):
     v = SchemaValidator(
         core_schema.model_fields_schema(
             {'f': core_schema.model_field(core_schema.str_schema())}, **schema_extra_behavior_kw

@@ -393,7 +393,7 @@ pub(crate) enum PathItem {
     /// string type key, used to get or identify items from a dict or anything that implements `__getitem__`
     /// as above we store both the string and pystring to save creating the pystring for python
     S(String, Py<PyString>),
-    /// integer key, used to get items from a list, tuple OR a dict with int keys `Dict[int, ...]` (python only)
+    /// integer key, used to get items from a list, tuple OR a dict with int keys `dict[int, ...]` (python only)
     Pos(usize),
     Neg(usize),
 }

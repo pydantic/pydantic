@@ -1,5 +1,5 @@
 import re
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 
@@ -55,7 +55,7 @@ def test_lax_bytes_validator():
         ({'min_length': 1, 'max_length': 6, 'strict': True}, b'bytes?', b'bytes?'),
     ],
 )
-def test_constrained_bytes_python_bytes(opts: Dict[str, Any], input, expected):
+def test_constrained_bytes_python_bytes(opts: dict[str, Any], input, expected):
     v = SchemaValidator({'type': 'bytes', **opts})
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
@@ -78,7 +78,7 @@ def test_constrained_bytes_python_bytes(opts: Dict[str, Any], input, expected):
         ({}, {}, Err('Input should be a valid bytes')),
     ],
 )
-def test_constrained_bytes(py_and_json: PyAndJson, opts: Dict[str, Any], input, expected):
+def test_constrained_bytes(py_and_json: PyAndJson, opts: dict[str, Any], input, expected):
     v = py_and_json({'type': 'bytes', **opts})
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):

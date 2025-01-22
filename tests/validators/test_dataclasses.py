@@ -4,7 +4,7 @@ import platform
 import re
 import sys
 import weakref
-from typing import Any, ClassVar, Dict, List, Optional, Union
+from typing import Any, ClassVar, Optional, Union
 
 import pytest
 from dirty_equals import IsListOrTuple, IsStr
@@ -968,7 +968,7 @@ def test_frozen_field():
         (core_schema.CoreConfig(extra_fields_behavior='allow'), {'extra_behavior': 'ignore'}),
     ],
 )
-def test_extra_behavior_ignore(config: Union[core_schema.CoreConfig, None], schema_extra_behavior_kw: Dict[str, Any]):
+def test_extra_behavior_ignore(config: Union[core_schema.CoreConfig, None], schema_extra_behavior_kw: dict[str, Any]):
     @dataclasses.dataclass
     class MyModel:
         f: str
@@ -1016,7 +1016,7 @@ def test_extra_behavior_ignore(config: Union[core_schema.CoreConfig, None], sche
         (core_schema.CoreConfig(extra_fields_behavior='ignore'), {'extra_behavior': 'forbid'}),
     ],
 )
-def test_extra_behavior_forbid(config: Union[core_schema.CoreConfig, None], schema_extra_behavior_kw: Dict[str, Any]):
+def test_extra_behavior_forbid(config: Union[core_schema.CoreConfig, None], schema_extra_behavior_kw: dict[str, Any]):
     @dataclasses.dataclass
     class MyModel:
         f: str
@@ -1062,7 +1062,7 @@ def test_extra_behavior_forbid(config: Union[core_schema.CoreConfig, None], sche
         (core_schema.CoreConfig(extra_fields_behavior='forbid'), {'extra_behavior': 'allow'}),
     ],
 )
-def test_extra_behavior_allow(config: Union[core_schema.CoreConfig, None], schema_extra_behavior_kw: Dict[str, Any]):
+def test_extra_behavior_allow(config: Union[core_schema.CoreConfig, None], schema_extra_behavior_kw: dict[str, Any]):
     @dataclasses.dataclass
     class MyModel:
         f: str
@@ -1090,7 +1090,7 @@ def test_extra_behavior_allow(config: Union[core_schema.CoreConfig, None], schem
 
 
 def test_function_validator_wrapping_args_schema_after() -> None:
-    calls: List[Any] = []
+    calls: list[Any] = []
 
     def func(*args: Any) -> Any:
         calls.append(args)
@@ -1122,7 +1122,7 @@ def test_function_validator_wrapping_args_schema_after() -> None:
 
 
 def test_function_validator_wrapping_args_schema_before() -> None:
-    calls: List[Any] = []
+    calls: list[Any] = []
 
     def func(*args: Any) -> Any:
         calls.append(args)
@@ -1154,7 +1154,7 @@ def test_function_validator_wrapping_args_schema_before() -> None:
 
 
 def test_function_validator_wrapping_args_schema_wrap() -> None:
-    calls: List[Any] = []
+    calls: list[Any] = []
 
     def func(*args: Any) -> Any:
         assert len(args) == 2

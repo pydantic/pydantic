@@ -63,7 +63,6 @@ jobs:
       fail-fast: false
       matrix:
         python-version:
-          - '3.8'
           - '3.9'
           - '3.10'
           - '3.11'
@@ -403,15 +402,15 @@ jobs:
           - os: linux
             manylinux: auto
             target: armv7
-            interpreter: 3.8 3.9 3.10 3.11 3.12 3.13
+            interpreter: 3.9 3.10 3.11 3.12 3.13
           - os: linux
             manylinux: auto
             target: ppc64le
-            interpreter: 3.8 3.9 3.10 3.11 3.12 3.13
+            interpreter: 3.9 3.10 3.11 3.12 3.13
           - os: linux
             manylinux: auto
             target: s390x
-            interpreter: 3.8 3.9 3.10 3.11 3.12 3.13
+            interpreter: 3.9 3.10 3.11 3.12 3.13
           - os: linux
             manylinux: auto
             target: x86_64
@@ -435,7 +434,7 @@ jobs:
             target: x86_64
           - os: macos
             target: aarch64
-            interpreter: 3.8 3.9 pypy3.9 pypy3.10
+            interpreter: 3.9 pypy3.9 pypy3.10
 
           # windows;
           # x86_64 pypy builds are not PGO optimized
@@ -447,7 +446,7 @@ jobs:
           - os: windows
             target: i686
             python-architecture: x86
-            interpreter: 3.8 3.9 3.10 3.11 3.12 3.13
+            interpreter: 3.9 3.10 3.11 3.12 3.13
           - os: windows
             target: aarch64
             interpreter: 3.11 3.12 3.13
@@ -477,10 +476,8 @@ jobs:
         with:
           target: ${{ matrix.target }}
           manylinux: ${{ matrix.manylinux }}
-          args: --release --out dist --interpreter ${{ matrix.interpreter || '3.8 3.9 3.10 3.11 3.12 3.13 pypy3.9 pypy3.10' }}
-          # Limit windows builds to 1.77 to keep Windows 7 support.
-          # FIXME: Unpin when Python 3.8 support is dropped. (3.9 requires Windows 10)
-          rust-toolchain: ${{ (matrix.os == 'windows' && '1.77') || 'stable' }}
+          args: --release --out dist --interpreter ${{ matrix.interpreter || '3.9 3.10 3.11 3.12 3.13 pypy3.9 pypy3.10' }}
+          rust-toolchain: stable
           docker-options: -e CI
 
       - run: ${{ (matrix.os == 'windows' && 'dir') || 'ls -lh' }} dist/
@@ -500,7 +497,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [linux, windows, macos]
-        interpreter: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
+        interpreter: ['3.9', '3.10', '3.11', '3.12', '3.13']
         include:
           # standard runners with override for macos arm
           - os: linux
@@ -512,8 +509,6 @@ jobs:
             runs-on: macos-latest-xlarge
         exclude:
           # macos arm only supported from 3.10 and up
-          - os: macos
-            interpreter: '3.8'
           - os: macos
             interpreter: '3.9'
 
@@ -531,9 +526,7 @@ jobs:
         uses: dtolnay/rust-toolchain@master
         with:
           components: llvm-tools
-          # Limit windows builds to 1.77 to keep Windows 7 support.
-          # FIXME: Unpin when Python 3.8 support is dropped. (3.9 requires Windows 10)
-          toolchain: ${{ (matrix.os == 'windows' && '1.77') || 'stable' }}
+          toolchain: stable
 
       - name: Build PGO wheel
         id: pgo-wheel

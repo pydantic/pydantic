@@ -2,7 +2,7 @@ import re
 import sys
 from copy import deepcopy
 from decimal import Decimal
-from typing import Any, Callable, Dict, List, Set, Tuple
+from typing import Any, Callable
 
 import pytest
 from dirty_equals import HasRepr, IsInstance
@@ -206,8 +206,8 @@ def test_model_class_root_validator_wrap():
             self.__dict__.update(kwargs)
 
     def f(
-        input_value: Dict[str, Any],
-        validator: Callable[[Dict[str, Any]], Dict[str, Any]],
+        input_value: dict[str, Any],
+        validator: Callable[[dict[str, Any]], dict[str, Any]],
         info: core_schema.ValidationInfo,
     ):
         assert input_value['field_a'] == 123
@@ -244,7 +244,7 @@ def test_model_class_root_validator_before():
         def __init__(self, **kwargs: Any) -> None:
             self.__dict__.update(kwargs)
 
-    def f(input_value: Dict[str, Any], info: core_schema.ValidationInfo):
+    def f(input_value: dict[str, Any], info: core_schema.ValidationInfo):
         assert input_value['field_a'] == 123
         return input_value
 
@@ -278,7 +278,7 @@ def test_model_class_root_validator_after():
         def __init__(self, **kwargs: Any) -> None:
             self.__dict__.update(kwargs)
 
-    def f(input_value_and_fields_set: Tuple[Dict[str, Any], Set[str]]):
+    def f(input_value_and_fields_set: tuple[dict[str, Any], set[str]]):
         input_value, _, _ = input_value_and_fields_set
         assert input_value['field_a'] == 123
         return input_value_and_fields_set
@@ -1078,7 +1078,7 @@ def test_validate_assignment_function():
         field_b: int
         field_c: int
 
-    calls: List[Any] = []
+    calls: list[Any] = []
 
     def func(x, info):
         calls.append(str(info))
@@ -1214,7 +1214,7 @@ def test_validate_assignment_model_validator_function(function_schema: Any, call
     class Model:
         __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
 
-    calls: List[Any] = []
+    calls: list[Any] = []
 
     def f(values_or_values_and_fields_set: Any, *args: Any) -> Any:
         if len(args) == 2:

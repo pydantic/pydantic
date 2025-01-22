@@ -14,11 +14,12 @@ import sys
 from collections.abc import Callable
 from datetime import date, datetime, time, timedelta
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, ForwardRef, List, Pattern, Set, Type, Union
+from re import Pattern
+from typing import TYPE_CHECKING, Any, ForwardRef, Union
 
 from typing_extensions import TypedDict, get_args, get_origin, is_typeddict
 
-TypingUnionType = Type[Union[str, int]]
+TypingUnionType = type[Union[str, int]]
 
 try:
     from types import UnionType as TypesUnionType
@@ -69,17 +70,17 @@ def get_schema(obj: Any, definitions: dict[str, core_schema.CoreSchema]) -> core
         expected = all_literal_values(obj)
         assert expected, f'literal "expected" cannot be empty, obj={obj}'
         return {'type': 'literal', 'expected': expected}
-    elif issubclass(origin, List):
+    elif issubclass(origin, list):
         return {'type': 'list', 'items_schema': get_schema(obj.__args__[0], definitions)}
-    elif issubclass(origin, Set):
+    elif issubclass(origin, set):
         return {'type': 'set', 'items_schema': get_schema(obj.__args__[0], definitions)}
-    elif issubclass(origin, Dict):
+    elif issubclass(origin, dict):
         return {
             'type': 'dict',
             'keys_schema': get_schema(obj.__args__[0], definitions),
             'values_schema': get_schema(obj.__args__[1], definitions),
         }
-    elif issubclass(origin, Type):
+    elif issubclass(origin, type):
         # can't really use 'is-instance' since this is used for the class_ parameter of 'is-instance' validators
         return {'type': 'any'}
     elif origin in (Pattern, re.Pattern):
@@ -90,7 +91,7 @@ def get_schema(obj: Any, definitions: dict[str, core_schema.CoreSchema]) -> core
         raise TypeError(f'Unknown type: {obj!r}')
 
 
-def tagged_union(std_union_schema: Dict[str, Any], discriminator_key: str, ref: str | None = None) -> Dict[str, Any]:
+def tagged_union(std_union_schema: dict[str, Any], discriminator_key: str, ref: str | None = None) -> dict[str, Any]:
     """
     Build a tagged union schema from a standard union schema.
     """
@@ -134,13 +135,13 @@ def type_dict_schema(  # noqa: C901
             if 'CoreSchema' == fr_arg or re.search('[^a-zA-Z]CoreSchema', fr_arg):
                 if fr_arg == 'CoreSchema':
                     schema = schema_ref_validator
-                elif fr_arg == 'List[CoreSchema]':
+                elif fr_arg == 'list[CoreSchema]':
                     schema = {'type': 'list', 'items_schema': schema_ref_validator}
-                elif fr_arg == 'Dict[str, CoreSchema]':
+                elif fr_arg == 'dict[str, CoreSchema]':
                     schema = {'type': 'dict', 'keys_schema': {'type': 'str'}, 'values_schema': schema_ref_validator}
-                elif fr_arg == 'Dict[Hashable, CoreSchema]':
+                elif fr_arg == 'dict[Hashable, CoreSchema]':
                     schema = {'type': 'dict', 'keys_schema': {'type': 'any'}, 'values_schema': schema_ref_validator}
-                elif fr_arg == 'List[Union[CoreSchema, Tuple[CoreSchema, str]]]':
+                elif fr_arg == 'list[Union[CoreSchema, tuple[CoreSchema, str]]]':
                     schema = {
                         'type': 'list',
                         'items_schema': {
@@ -193,9 +194,7 @@ def all_literal_values(type_: type[core_schema.Literal]) -> list[any]:
 
 
 def eval_forward_ref(type_: Any) -> Any:
-    if sys.version_info < (3, 9):
-        return type_._evaluate(core_schema.__dict__, None)
-    elif sys.version_info < (3, 12, 4):
+    if sys.version_info < (3, 12, 4):
         return type_._evaluate(core_schema.__dict__, None, recursive_guard=set())
     else:
         return type_._evaluate(core_schema.__dict__, None, type_params=set(), recursive_guard=set())
