@@ -13,8 +13,8 @@ class Model(BaseModel):
         return value
 
     @model_validator(mode='before')
-    def m_val_before(self, values: dict[str, object]) -> dict[str, object]:
-        reveal_type(self)
+    def m_val_before(cls, values: dict[str, object]) -> dict[str, object]:
+        reveal_type(cls)
 # MYPY: note: Revealed type is "type[tests.mypy.modules.decorator_implicit_classmethod.Model]"
         return values
 
