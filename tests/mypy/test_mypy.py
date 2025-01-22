@@ -88,6 +88,7 @@ cases: list[ParameterSet | tuple[str, str]] = [
             'plugin_success_baseConfig.py',
             'plugin_fail_baseConfig.py',
             'pydantic_settings.py',
+            'decorator_implicit_classmethod.py',
         ],
     ),
     # Strict plugin config
@@ -188,7 +189,7 @@ def test_mypy_results(config_filename: str, python_filename: str, request: pytes
         '--show-error-codes',
         '--show-traceback',
     ]
-    print(f"\nExecuting: mypy {' '.join(command)}")  # makes it easier to debug as necessary
+    print(f'\nExecuting: mypy {" ".join(command)}')  # makes it easier to debug as necessary
     mypy_out, mypy_err, mypy_returncode = mypy_api.run(command)
 
     # Need to strip filenames due to differences in formatting by OS
@@ -230,7 +231,7 @@ def test_bad_toml_config() -> None:
     full_filename = 'tests/mypy/modules/generics.py'  # File doesn't matter
 
     command = [full_filename, '--config-file', full_config_filename, '--show-error-codes']
-    print(f"\nExecuting: mypy {' '.join(command)}")  # makes it easier to debug as necessary
+    print(f'\nExecuting: mypy {" ".join(command)}')  # makes it easier to debug as necessary
     with pytest.raises(ValueError) as e:
         mypy_api.run(command)
 
