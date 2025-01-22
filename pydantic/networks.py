@@ -886,7 +886,7 @@ class ClickHouseDsn(AnyUrl):
     """
 
     _constraints = UrlConstraints(
-        allowed_schemes=['clickhouse+native', 'clickhouse+asynch'],
+        allowed_schemes=['clickhouse+native', 'clickhouse+asynch', "clickhouse", "clickhousedb"],
         default_host='localhost',
         default_port=9000,
     )
