@@ -1,7 +1,7 @@
 import json
 import re
 from decimal import Decimal
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 from dirty_equals import IsStr
@@ -325,7 +325,7 @@ def test_int_strict(py_and_json: PyAndJson, input_value, expected):
     ],
     ids=repr,
 )
-def test_int_kwargs(py_and_json: PyAndJson, kwargs: Dict[str, Any], input_value, expected):
+def test_int_kwargs(py_and_json: PyAndJson, kwargs: dict[str, Any], input_value, expected):
     v = py_and_json({'type': 'int', **kwargs})
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)) as exc_info:

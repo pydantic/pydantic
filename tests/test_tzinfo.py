@@ -4,11 +4,9 @@ import pickle
 import sys
 import unittest
 from datetime import datetime, timedelta, timezone, tzinfo
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic_core import SchemaValidator, TzInfo, core_schema
-
-if sys.version_info >= (3, 9):
-    from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 
 class _ALWAYS_EQ:
@@ -175,7 +173,7 @@ class TestTzInfo(unittest.TestCase):
         self.assertTrue(self.EST == estdatetime.tzinfo)
         self.assertTrue(tz > estdatetime.tzinfo)
 
-        if sys.version_info >= (3, 9) and sys.platform == 'linux':
+        if sys.platform == 'linux':
             try:
                 europe_london = ZoneInfo('Europe/London')
             except ZoneInfoNotFoundError:

@@ -1,7 +1,7 @@
 import re
 from datetime import date, datetime, time, timedelta, timezone
 from decimal import Decimal
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 
@@ -158,7 +158,7 @@ def test_time_strict_json(input_value, expected):
         ({'gt': time(12, 13, 14, 123_456)}, '12:13:14.123456', Err('Input should be greater than 12:13:14.123456')),
     ],
 )
-def test_time_kwargs(kwargs: Dict[str, Any], input_value, expected):
+def test_time_kwargs(kwargs: dict[str, Any], input_value, expected):
     v = SchemaValidator({'type': 'time', **kwargs})
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)) as exc_info:

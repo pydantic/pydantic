@@ -8,7 +8,7 @@ build-backend = 'maturin'
 [project]
 name = 'pydantic_core'
 description = "Core functionality for Pydantic validation and serialization"
-requires-python = '>=3.8'
+requires-python = '>=3.9'
 authors = [
     {name = 'Samuel Colvin', email = 's@muelcolvin.com'}
 ]
@@ -17,7 +17,6 @@ classifiers = [
     'Programming Language :: Python',
     'Programming Language :: Python :: 3',
     'Programming Language :: Python :: 3 :: Only',
-    'Programming Language :: Python :: 3.8',
     'Programming Language :: Python :: 3.9',
     'Programming Language :: Python :: 3.10',
     'Programming Language :: Python :: 3.11',
@@ -76,6 +75,7 @@ linting = [
     'pyright',
     'ruff',
     'mypy',
+    'pyupgrade',
 ]
 wasm = [
     'typing_extensions',
@@ -101,15 +101,19 @@ features = ["pyo3/extension-module"]
 
 [tool.ruff]
 line-length = 120
+target-version = 'py39'
 
 [tool.ruff.lint]
-extend-select = ['Q', 'RUF100', 'C90', 'I']
+extend-select = ['Q', 'RUF100', 'C90', 'I', 'UP']
 extend-ignore = [
     'E721',  # using type() instead of isinstance() - we use this in tests
 ]
 flake8-quotes = {inline-quotes = 'single', multiline-quotes = 'double'}
 mccabe = { max-complexity = 13 }
 isort = { known-first-party = ['pydantic_core', 'tests'] }
+
+[tool.ruff.lint.pyupgrade]
+keep-runtime-typing = true
 
 [tool.ruff.format]
 quote-style = 'single'

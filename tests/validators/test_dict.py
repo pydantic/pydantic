@@ -1,7 +1,7 @@
 import re
 from collections import OrderedDict
 from collections.abc import Mapping
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 from dirty_equals import HasRepr, IsStr
@@ -218,7 +218,7 @@ def test_mapping_error_yield_1(mapping_items):
         ),
     ],
 )
-def test_dict_length_constraints(kwargs: Dict[str, Any], input_value, expected):
+def test_dict_length_constraints(kwargs: dict[str, Any], input_value, expected):
     v = SchemaValidator({'type': 'dict', **kwargs})
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):

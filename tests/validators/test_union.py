@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import date, time
 from enum import Enum, IntEnum
 from itertools import permutations
-from typing import Any, List, Optional, Union
+from typing import Any, Optional, Union
 from uuid import UUID
 
 import pytest
@@ -808,7 +808,7 @@ def test_model_and_literal_union() -> None:
     assert validator.validate_python(True) is True
 
 
-def permute_choices(choices: List[core_schema.CoreSchema]) -> List[List[core_schema.CoreSchema]]:
+def permute_choices(choices: list[core_schema.CoreSchema]) -> list[list[core_schema.CoreSchema]]:
     return [list(p) for p in permutations(choices)]
 
 

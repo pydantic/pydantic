@@ -1,5 +1,3 @@
-from typing import List
-
 import pytest
 
 from pydantic_core import PydanticUndefined, SchemaValidator, ValidationError, core_schema
@@ -8,7 +6,7 @@ from pydantic_core import PydanticUndefined, SchemaValidator, ValidationError, c
 def test_model_root():
     class RootModel:
         __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
-        root: List[int]
+        root: list[int]
 
     v = SchemaValidator(
         core_schema.model_schema(RootModel, core_schema.list_schema(core_schema.int_schema()), root_model=True)
@@ -36,7 +34,7 @@ def test_model_root():
 def test_revalidate():
     class RootModel:
         __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
-        root: List[int]
+        root: list[int]
 
     v = SchemaValidator(
         core_schema.model_schema(

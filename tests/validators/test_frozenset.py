@@ -1,6 +1,6 @@
 import re
 from collections import deque
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 
@@ -165,7 +165,7 @@ def generate_repeats():
         ),
     ],
 )
-def test_frozenset_kwargs_python(kwargs: Dict[str, Any], input_value, expected):
+def test_frozenset_kwargs_python(kwargs: dict[str, Any], input_value, expected):
     v = SchemaValidator({'type': 'frozenset', **kwargs})
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):

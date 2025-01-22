@@ -3,7 +3,7 @@ import json
 import platform
 import warnings
 from random import randint
-from typing import Any, ClassVar, Dict
+from typing import Any, ClassVar
 
 try:
     from functools import cached_property
@@ -407,7 +407,7 @@ def test_advanced_exclude_nested_lists(exclude, expected):
 
     # class SubModel(BaseModel):
     #     k: int
-    #     subsubs: List[SubSubModel]
+    #     subsubs: list[SubSubModel]
 
     sub_model_schema = core_schema.model_schema(
         type('SubModel', (), {}),
@@ -420,7 +420,7 @@ def test_advanced_exclude_nested_lists(exclude, expected):
     )
 
     # class Model(BaseModel):
-    #     subs: List[SubModel]
+    #     subs: list[SubModel]
 
     model_schema = core_schema.model_schema(
         BasicModel,
@@ -1067,7 +1067,7 @@ def test_extra_config_nested_model():
 def test_extra_custom_serializer():
     class Model:
         __slots__ = ('__pydantic_extra__', '__dict__')
-        __pydantic_extra__: Dict[str, Any]
+        __pydantic_extra__: dict[str, Any]
 
     schema = core_schema.model_schema(
         Model,

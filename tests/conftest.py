@@ -7,11 +7,10 @@ import os
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Type
+from typing import Any, Literal
 
 import hypothesis
 import pytest
-from typing_extensions import Literal
 
 from pydantic_core import ArgsKwargs, SchemaValidator, ValidationError, validate_core_schema
 from pydantic_core.core_schema import CoreConfig
@@ -83,7 +82,7 @@ class PyAndJsonValidator:
             return self.validator.isinstance_python(py_input, strict=strict, context=context)
 
 
-PyAndJson = Type[PyAndJsonValidator]
+PyAndJson = type[PyAndJsonValidator]
 
 
 @pytest.fixture(params=['python', 'json'])
@@ -128,7 +127,7 @@ def tmp_work_path(tmp_path: Path):
 
 @pytest.fixture
 def import_execute(request, tmp_work_path: Path):
-    def _import_execute(source: str, *, custom_module_name: 'str | None' = None):
+    def _import_execute(source: str, *, custom_module_name: str | None = None):
         module_name = custom_module_name or request.node.name
 
         module_path = tmp_work_path / f'{module_name}.py'

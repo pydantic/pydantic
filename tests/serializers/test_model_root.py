@@ -1,6 +1,6 @@
 import json
 import platform
-from typing import Any, List, Union
+from typing import Any, Union
 
 import pytest
 
@@ -158,14 +158,14 @@ def test_root_model_dump_with_base_model(order):
     if order == 'BR':
 
         class Model(RootModel):
-            root: List[Union[BModel, RModel]]
+            root: list[Union[BModel, RModel]]
 
         choices = [b_schema, r_schema]
 
     elif order == 'RB':
 
         class Model(RootModel):
-            root: List[Union[RModel, BModel]]
+            root: list[Union[RModel, BModel]]
 
         choices = [r_schema, b_schema]
 
