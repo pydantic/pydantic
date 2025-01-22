@@ -3,7 +3,7 @@ import platform
 import sys
 import weakref
 from collections import deque
-from typing import Any, Callable, Dict, List, Union, cast
+from typing import Any, Callable, Union, cast
 
 import pytest
 
@@ -437,8 +437,8 @@ def test_deepcopy_mutable_defaults():
     stored_empty_dict = {}
 
     class Model:
-        int_list_with_default: List[int] = stored_empty_list
-        str_dict_with_default: Dict[str, str] = stored_empty_dict
+        int_list_with_default: list[int] = stored_empty_list
+        str_dict_with_default: dict[str, str] = stored_empty_dict
 
     v = SchemaValidator(
         {

@@ -2,6 +2,7 @@
 """
 Check the version in Cargo.toml matches the version from `GITHUB_REF` environment variable.
 """
+
 import os
 import re
 import sys
@@ -18,7 +19,7 @@ def main() -> int:
     if version_ref:
         version = re.sub('^refs/tags/v*', '', version_ref.lower())
     else:
-        print(f'✖ "GITHUB_REF" env variables not found')
+        print('✖ "GITHUB_REF" env variables not found')
         return 1
 
     # convert from python pre-release version to rust pre-release version

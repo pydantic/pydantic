@@ -9,7 +9,7 @@ import sys
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from enum import Enum
-from typing import Any, List
+from typing import Any
 from uuid import UUID
 
 import pytest
@@ -325,7 +325,7 @@ def test_definition_model_core(definition_model_data, benchmark):
     benchmark(v.validate_python, definition_model_data)
 
 
-@pytest.mark.benchmark(group='List[TypedDict]')
+@pytest.mark.benchmark(group='list[TypedDict]')
 def test_list_of_dict_models_core(benchmark):
     v = SchemaValidator(
         {
@@ -344,7 +344,7 @@ def test_list_of_dict_models_core(benchmark):
 list_of_ints_data = ([i for i in range(1000)], [str(i) for i in range(1000)])
 
 
-@pytest.mark.benchmark(group='List[int]')
+@pytest.mark.benchmark(group='list[int]')
 def test_list_of_ints_core_py(benchmark):
     v = SchemaValidator({'type': 'list', 'items_schema': {'type': 'int'}})
 
@@ -354,7 +354,7 @@ def test_list_of_ints_core_py(benchmark):
         v.validate_python(list_of_ints_data[1])
 
 
-@pytest.mark.benchmark(group='List[int] JSON')
+@pytest.mark.benchmark(group='list[int] JSON')
 def test_list_of_ints_core_json(benchmark):
     v = SchemaValidator({'type': 'list', 'items_schema': {'type': 'int'}})
 
@@ -392,7 +392,7 @@ def test_list_of_strs_json_uncached(benchmark):
     benchmark(v.validate_json, json_data)
 
 
-@pytest.mark.benchmark(group='List[Any]')
+@pytest.mark.benchmark(group='list[Any]')
 def test_list_of_any_core_py(benchmark):
     v = SchemaValidator({'type': 'list'})
 
@@ -481,7 +481,7 @@ def test_frozenset_of_ints_duplicates_core(benchmark):
 dict_of_ints_data = ({str(i): i for i in range(1000)}, {str(i): str(i) for i in range(1000)})
 
 
-@pytest.mark.benchmark(group='Dict[str, int]')
+@pytest.mark.benchmark(group='dict[str, int]')
 def test_dict_of_ints_core(benchmark):
     v = SchemaValidator({'type': 'dict', 'keys_schema': {'type': 'str'}, 'values_schema': {'type': 'int'}})
 
@@ -491,7 +491,7 @@ def test_dict_of_ints_core(benchmark):
         v.validate_python(dict_of_ints_data[1])
 
 
-@pytest.mark.benchmark(group='Dict[any, any]')
+@pytest.mark.benchmark(group='dict[any, any]')
 def test_dict_of_any_core(benchmark):
     v = SchemaValidator({'type': 'dict'})
 
@@ -501,7 +501,7 @@ def test_dict_of_any_core(benchmark):
         v.validate_python(dict_of_ints_data[1])
 
 
-@pytest.mark.benchmark(group='Dict[str, int] JSON')
+@pytest.mark.benchmark(group='dict[str, int] JSON')
 def test_dict_of_ints_core_json(benchmark):
     v = SchemaValidator({'type': 'dict', 'keys_schema': {'type': 'str'}, 'values_schema': {'type': 'int'}})
 
@@ -516,7 +516,7 @@ def test_dict_of_ints_core_json(benchmark):
 many_models_data = [{'age': i} for i in range(1000)]
 
 
-@pytest.mark.benchmark(group='List[DictSimpleMode]')
+@pytest.mark.benchmark(group='list[DictSimpleMode]')
 def test_many_models_core_dict(benchmark):
     model_schema = {
         'type': 'list',
@@ -529,7 +529,7 @@ def test_many_models_core_dict(benchmark):
     benchmark(v.validate_python, many_models_data)
 
 
-@pytest.mark.benchmark(group='List[SimpleMode]')
+@pytest.mark.benchmark(group='list[SimpleMode]')
 def test_many_models_core_model(benchmark):
     class MyCoreModel:
         __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
@@ -553,7 +553,7 @@ def test_many_models_core_model(benchmark):
 list_of_nullable_data = [None if i % 2 else i for i in range(1000)]
 
 
-@pytest.mark.benchmark(group='List[Nullable[int]]')
+@pytest.mark.benchmark(group='list[Nullable[int]]')
 def test_list_of_nullable_core(benchmark):
     v = SchemaValidator({'type': 'list', 'items_schema': {'type': 'nullable', 'schema': {'type': 'int'}}})
 
@@ -1221,7 +1221,7 @@ LARGE_STR_PREFIX = 'a' * 50
 )
 @pytest.mark.parametrize('py_or_json', ['python', 'json'])
 def test_validate_literal(
-    benchmark: Any, allowed_values: List[Any], input: Any, expected_val_res: Any, py_or_json: str
+    benchmark: Any, allowed_values: list[Any], input: Any, expected_val_res: Any, py_or_json: str
 ) -> None:
     validator = SchemaValidator(core_schema.literal_schema(expected=allowed_values))
 
@@ -1242,7 +1242,7 @@ def test_validate_literal(
 def test_core_root_model(benchmark):
     class MyModel:
         __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
-        root: List[int]
+        root: list[int]
 
     v = SchemaValidator(
         core_schema.model_schema(MyModel, core_schema.list_schema(core_schema.int_schema()), root_model=True)

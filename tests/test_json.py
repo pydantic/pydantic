@@ -1,7 +1,6 @@
 import json
 import platform
 import re
-from typing import List
 
 import pytest
 from dirty_equals import IsFloatNan, IsList
@@ -249,7 +248,7 @@ def test_to_jsonable_python_fallback():
 
 def test_to_jsonable_python_schema_serializer():
     class Foobar:
-        def __init__(self, my_foo: int, my_inners: List['Foobar']):
+        def __init__(self, my_foo: int, my_inners: list['Foobar']):
             self.my_foo = my_foo
             self.my_inners = my_inners
 

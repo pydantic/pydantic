@@ -1,6 +1,6 @@
 import re
 from copy import deepcopy
-from typing import Dict, Optional, Union
+from typing import Optional, Union
 
 import pytest
 from dirty_equals import HasRepr, IsInstance
@@ -1169,7 +1169,7 @@ def test_multi_host_url_bool() -> None:
 
 
 def test_multi_host_url_hash() -> None:
-    data: Dict[MultiHostUrl, int] = {}
+    data: dict[MultiHostUrl, int] = {}
 
     data[MultiHostUrl('http://example.com,www.example.com')] = 1
     assert data == {MultiHostUrl('http://example.com,www.example.com/'): 1}
@@ -1208,7 +1208,7 @@ def test_url_bool() -> None:
 
 
 def test_url_hash() -> None:
-    data: Dict[Url, int] = {}
+    data: dict[Url, int] = {}
 
     data[Url('http://example.com')] = 1
     assert data == {Url('http://example.com/'): 1}

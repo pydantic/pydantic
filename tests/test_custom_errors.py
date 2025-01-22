@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 from unittest import TestCase
 from unittest.mock import ANY
 
@@ -42,7 +42,7 @@ def test_validation_error_loc_overrides():
         @override
         def errors(
             self, *, include_url: bool = True, include_context: bool = True, include_input: bool = True
-        ) -> List[ErrorDetails]:
+        ) -> list[ErrorDetails]:
             errors = super().errors(
                 include_url=include_url, include_context=include_context, include_input=include_input
             )
@@ -131,7 +131,7 @@ def test_custom_pydantic_error_overrides():
     class CustomErrorWithCustomTemplate(PydanticCustomError):
         @override
         def __new__(
-            cls, error_type: LiteralString, my_custom_setting: str, context: Optional[Dict[str, Any]] = None
+            cls, error_type: LiteralString, my_custom_setting: str, context: Optional[dict[str, Any]] = None
         ) -> Self:
             message_template = (
                 "'{my_custom_value}' setting requires a specific my custom field value, got '{wrong_value}'"

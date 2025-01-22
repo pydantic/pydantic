@@ -1,6 +1,6 @@
 import re
 from enum import Enum
-from typing import Any, Callable, List
+from typing import Any, Callable
 
 import pytest
 
@@ -317,7 +317,7 @@ def test_int_enum_values():
         ),
     ],
 )
-def test_mix_int_enum_with_int(reverse: Callable[[List[Any]], List[Any]], err: Any):
+def test_mix_int_enum_with_int(reverse: Callable[[list[Any]], list[Any]], err: Any):
     class Foo(int, Enum):
         foo = 1
 
@@ -363,7 +363,7 @@ def test_mix_int_enum_with_int(reverse: Callable[[List[Any]], List[Any]], err: A
         ),
     ],
 )
-def test_mix_str_enum_with_str(reverse: Callable[[List[Any]], List[Any]], err: Any):
+def test_mix_str_enum_with_str(reverse: Callable[[list[Any]], list[Any]], err: Any):
     class Foo(str, Enum):
         foo = 'foo_val'
 

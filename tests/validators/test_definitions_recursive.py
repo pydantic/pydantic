@@ -1,7 +1,7 @@
 import datetime
 import platform
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import Optional
 
 import pytest
 from dirty_equals import AnyThing, HasAttributes, IsList, IsPartialDict, IsStr, IsTuple
@@ -145,7 +145,7 @@ def test_multiple_intertwined():
         height: int
         class Bar:
             width: int
-            bars: List['Bar']
+            bars: list['Bar']
             foo: Optional['Foo']
         bar = Bar
     """
@@ -852,7 +852,7 @@ def test_unsorted_definitions_schema() -> None:
 def test_validate_assignment(pydantic_version) -> None:
     @dataclass
     class Model:
-        x: List['Model']
+        x: list['Model']
 
     schema = core_schema.definitions_schema(
         core_schema.definition_reference_schema('model'),

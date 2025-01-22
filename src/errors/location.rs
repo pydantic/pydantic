@@ -20,7 +20,7 @@ pub enum LocItem {
     /// integer key, used to get:
     ///   * items from a list
     ///   * items from a tuple
-    ///   * dict with int keys `Dict[int, ...]` (python only)
+    ///   * dict with int keys `dict[int, ...]` (python only)
     ///   * with integer keys in tagged unions
     I(i64),
 }

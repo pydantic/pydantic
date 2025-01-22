@@ -5,10 +5,9 @@ import json
 import uuid
 import warnings
 from decimal import Decimal
-from typing import Any, ClassVar, Union
+from typing import Any, ClassVar, Literal, Union
 
 import pytest
-from typing_extensions import Literal
 
 from pydantic_core import PydanticSerializationUnexpectedValue, SchemaSerializer, core_schema
 

@@ -1,6 +1,6 @@
 import re
 from collections import deque
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 
@@ -146,7 +146,7 @@ def generate_repeats():
     ],
     ids=repr,
 )
-def test_set_kwargs(kwargs: Dict[str, Any], input_value, expected):
+def test_set_kwargs(kwargs: dict[str, Any], input_value, expected):
     v = SchemaValidator({'type': 'set', **kwargs})
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):

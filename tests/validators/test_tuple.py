@@ -1,6 +1,6 @@
 import re
 from collections import deque
-from typing import Any, Dict, Type
+from typing import Any
 
 import pytest
 from dirty_equals import IsNonNegative, IsTuple
@@ -82,7 +82,7 @@ def test_empty_positional_tuple(fail_fast):
     'variadic_item_index,items', [(0, [{'type': 'int'}]), (None, [{'type': 'int'}, {'type': 'int'}, {'type': 'int'}])]
 )
 @pytest.mark.parametrize('wrong_coll_type', [list, set, frozenset])
-def test_tuple_strict_fails_without_tuple(wrong_coll_type: Type[Any], variadic_item_index, items):
+def test_tuple_strict_fails_without_tuple(wrong_coll_type: type[Any], variadic_item_index, items):
     v = SchemaValidator(
         core_schema.tuple_schema(variadic_item_index=variadic_item_index, items_schema=items, strict=True)
     )
@@ -123,7 +123,7 @@ def test_tuple_strict_fails_without_tuple(wrong_coll_type: Type[Any], variadic_i
     ],
     ids=repr,
 )
-def test_tuple_var_len_kwargs(kwargs: Dict[str, Any], input_value, expected):
+def test_tuple_var_len_kwargs(kwargs: dict[str, Any], input_value, expected):
     v = SchemaValidator({'type': 'tuple', 'items_schema': [{'type': 'any'}], 'variadic_item_index': 0, **kwargs})
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):

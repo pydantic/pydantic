@@ -1,7 +1,7 @@
 import re
 from datetime import timedelta
 from decimal import Decimal
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 
@@ -178,7 +178,7 @@ def test_timedelta_strict_json(input_value, expected):
     ],
     ids=repr,
 )
-def test_timedelta_kwargs(kwargs: Dict[str, Any], input_value, expected):
+def test_timedelta_kwargs(kwargs: dict[str, Any], input_value, expected):
     v = SchemaValidator({'type': 'timedelta', **kwargs})
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):

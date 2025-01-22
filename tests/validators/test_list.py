@@ -1,8 +1,9 @@
 import collections.abc
 import re
 from collections import deque
+from collections.abc import Iterator
 from dataclasses import dataclass
-from typing import Any, Dict, Iterator, List, Union
+from typing import Any, Union
 
 import pytest
 from dirty_equals import Contains, HasRepr, IsInstance, IsList, IsStr
@@ -169,7 +170,7 @@ def test_list_error(input_value, index):
         ),
     ],
 )
-def test_list_length_constraints(kwargs: Dict[str, Any], input_value, expected):
+def test_list_length_constraints(kwargs: dict[str, Any], input_value, expected):
     v = SchemaValidator({'type': 'list', **kwargs})
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
@@ -443,7 +444,7 @@ def test_list_fail_fast(fail_fast, expected):
 
 
 class MySequence(collections.abc.Sequence):
-    def __init__(self, data: List[Any]):
+    def __init__(self, data: list[Any]):
         self._data = data
 
     def __getitem__(self, index: int) -> Any:
@@ -457,7 +458,7 @@ class MySequence(collections.abc.Sequence):
 
 
 class MyMapping(collections.abc.Mapping):
-    def __init__(self, data: Dict[Any, Any]) -> None:
+    def __init__(self, data: dict[Any, Any]) -> None:
         self._data = data
 
     def __getitem__(self, key: Any) -> Any:
@@ -480,7 +481,7 @@ class ListInputTestCase:
     strict: Union[bool, None] = None
 
 
-LAX_MODE_INPUTS: List[Any] = [
+LAX_MODE_INPUTS: list[Any] = [
     (1, 2, 3),
     frozenset((1, 2, 3)),
     {1, 2, 3},
