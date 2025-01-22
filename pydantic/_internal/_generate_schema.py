@@ -2506,6 +2506,15 @@ def _common_field(
     }
 
 
+def resolve_original_schema(schema: CoreSchema, definitions: _Definitions) -> CoreSchema | None:
+    if schema['type'] == 'definition-ref':
+        return definitions.get_schema_from_ref(schema['schema_ref'])
+    elif schema['type'] == 'definitions':
+        return schema['schema']
+    else:
+        return schema
+
+
 def _can_be_inlined(def_ref: core_schema.DefinitionReferenceSchema) -> bool:
     """Return whether the `'definition-ref'` schema can be replaced by its definition.
 
@@ -2595,8 +2604,8 @@ class _Definitions:
     def finalize_schema(self, schema: CoreSchema) -> CoreSchema:
         """Finalize the core schema.
 
-        This traverses the core schema and referenced definitions, replace `'definition-ref'` schemas
-        by the referenced definition if possible, and apply deferred discriminators.
+        This traverses the core schema and referenced definitions, replaces `'definition-ref'` schemas
+        by the referenced definition if possible, and applies deferred discriminators.
         """
         definitions = self._definitions
         if self._unpacked_definitions:
@@ -2625,12 +2634,12 @@ class _Definitions:
                 # - Store the the definition in the `remaining_defs`
                 remaining_defs[ref] = self._resolve_definition(ref, definitions)
 
-        for sc in gather_result['deferred_discriminator_schemas']:
-            discriminator = sc['metadata']['pydantic_internal_union_discriminator']  # pyright: ignore[reportTypedDictNotRequiredAccess]
-            applied = _discriminated_union.apply_discriminator(sc.copy(), discriminator, remaining_defs)
+        for cs in gather_result['deferred_discriminator_schemas']:
+            discriminator = cs['metadata']['pydantic_internal_union_discriminator']  # pyright: ignore[reportTypedDictNotRequiredAccess]
+            applied = _discriminated_union.apply_discriminator(cs.copy(), discriminator, remaining_defs)
             # Mutate the schema directly to have the discriminator applied
-            sc.clear()  # pyright: ignore[reportAttributeAccessIssue]
-            sc.update(applied)  # pyright: ignore
+            cs.clear()  # pyright: ignore[reportAttributeAccessIssue]
+            cs.update(applied)  # pyright: ignore
 
         if remaining_defs:
             schema = core_schema.definitions_schema(schema=schema, definitions=[*remaining_defs.values()])
@@ -2653,15 +2662,6 @@ class _Definitions:
             visited.add(schema_ref)
             definition = definitions[schema_ref]
         return {**definition, 'ref': ref}  # pyright: ignore[reportReturnType]
-
-
-def resolve_original_schema(schema: CoreSchema, definitions: _Definitions) -> CoreSchema | None:
-    if schema['type'] == 'definition-ref':
-        return definitions.get_schema_from_ref(schema['schema_ref'])
-    elif schema['type'] == 'definitions':
-        return schema['schema']
-    else:
-        return schema
 
 
 class _FieldNameStack:

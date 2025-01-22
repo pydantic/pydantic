@@ -54,7 +54,7 @@ class GatherContext:
     """
 
 
-def gather_meta(schema: CoreSchema, ctx: GatherContext) -> None:
+def gather_metadata(schema: CoreSchema, ctx: GatherContext) -> None:
     meta = schema.get('metadata')
     if meta is not None and 'pydantic_internal_union_discriminator' in meta:
         ctx.deferred_discriminator_schemas.append(schema)
@@ -74,7 +74,7 @@ def gather_definition_ref(def_ref_schema: DefinitionReferenceSchema, ctx: Gather
         gather_schema(definition, ctx)
         if 'serialization' in def_ref_schema:
             gather_schema(def_ref_schema['serialization'], ctx)
-        gather_meta(def_ref_schema, ctx)
+        gather_metadata(def_ref_schema, ctx)
     else:
         # The `'definition-ref'` schema was already encountered, meaning
         # the previously encountered schema (and this one) can't be inlined:
@@ -161,7 +161,7 @@ def gather_schema(schema: CoreSchema | SerSchema, context: GatherContext) -> Non
 
     if 'serialization' in schema:
         gather_schema(schema['serialization'], context)
-    gather_meta(schema, context)
+    gather_metadata(schema, context)
 
 
 def gather_schemas_for_cleaning(schema: CoreSchema, definitions: dict[str, CoreSchema]) -> GatherResult:
