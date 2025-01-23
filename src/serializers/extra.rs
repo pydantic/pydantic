@@ -1,3 +1,4 @@
+use std::convert::Infallible;
 use std::ffi::CString;
 use std::fmt;
 use std::sync::Mutex;
@@ -323,12 +324,16 @@ impl From<Option<&str>> for SerMode {
     }
 }
 
-impl ToPyObject for SerMode {
-    fn to_object(&self, py: Python<'_>) -> PyObject {
+impl<'py> IntoPyObject<'py> for &'_ SerMode {
+    type Target = PyString;
+    type Output = Bound<'py, PyString>;
+    type Error = Infallible;
+
+    fn into_pyobject(self, py: Python<'py>) -> Result<Self::Output, Self::Error> {
         match self {
-            SerMode::Python => intern!(py, "python").to_object(py),
-            SerMode::Json => intern!(py, "json").to_object(py),
-            SerMode::Other(s) => s.to_object(py),
+            SerMode::Python => Ok(intern!(py, "python").clone()),
+            SerMode::Json => Ok(intern!(py, "json").clone()),
+            SerMode::Other(s) => Ok(PyString::new(py, s)),
         }
     }
 }

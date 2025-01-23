@@ -5,6 +5,7 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PySet, PyString, PyType};
 
 use ahash::AHashMap;
+use pyo3::IntoPyObjectExt;
 
 use super::{
     infer_json_key, infer_json_key_known, infer_serialize, infer_to_python, py_err_se_err, BuildSerializer,
@@ -147,8 +148,7 @@ impl ModelSerializer {
 
         if self.has_extra {
             let model_extra = model.getattr(intern!(py, "__pydantic_extra__"))?;
-            let py_tuple = (attrs, model_extra).to_object(py).into_bound(py);
-            Ok(py_tuple)
+            (attrs, model_extra).into_bound_py_any(py)
         } else {
             Ok(attrs.into_any())
         }

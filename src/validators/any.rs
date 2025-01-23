@@ -35,7 +35,7 @@ impl Validator for AnyValidator {
     ) -> ValResult<PyObject> {
         // in a union, Any should be preferred to doing lax coercions
         state.floor_exactness(Exactness::Strict);
-        Ok(input.to_object(py))
+        Ok(input.to_object(py)?.unbind())
     }
 
     fn get_name(&self) -> &str {

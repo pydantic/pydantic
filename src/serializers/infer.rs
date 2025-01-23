@@ -213,7 +213,7 @@ pub(crate) fn infer_to_python_known(
                 let mut items = Vec::new();
                 let filter = AnyFilter::new();
 
-                for (index, r) in py_seq.iter()?.enumerate() {
+                for (index, r) in py_seq.try_iter()?.enumerate() {
                     let element = r?;
                     let op_next = filter.index_filter(index, include, exclude, None)?;
                     if let Some((next_include, next_exclude)) = op_next {
@@ -518,7 +518,7 @@ pub(crate) fn infer_serialize_known<S: Serializer>(
             let py_seq = value.downcast::<PyIterator>().map_err(py_err_se_err)?;
             let mut seq = serializer.serialize_seq(None)?;
             let filter = AnyFilter::new();
-            for (index, r) in py_seq.iter().map_err(py_err_se_err)?.enumerate() {
+            for (index, r) in py_seq.try_iter().map_err(py_err_se_err)?.enumerate() {
                 let element = r.map_err(py_err_se_err)?;
                 let op_next = filter
                     .index_filter(index, include, exclude, None)

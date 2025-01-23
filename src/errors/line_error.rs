@@ -169,12 +169,3 @@ pub enum InputValue {
     Python(PyObject),
     Json(JsonValue<'static>),
 }
-
-impl ToPyObject for InputValue {
-    fn to_object(&self, py: Python) -> PyObject {
-        match self {
-            Self::Python(input) => input.clone_ref(py),
-            Self::Json(input) => input.to_object(py),
-        }
-    }
-}

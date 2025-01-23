@@ -5,6 +5,7 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyString, PyTuple};
 
 use ahash::AHashSet;
+use pyo3::IntoPyObjectExt;
 
 use crate::build_tools::py_schema_err;
 use crate::build_tools::{schema_or_config_same, ExtraBehavior};
@@ -347,8 +348,10 @@ impl Validator for ArgumentsValidator {
                             },
                             VarKwargsMode::UnpackedTypedDict => {
                                 // Save to the remaining kwargs, we will validate as a single dict:
-                                remaining_kwargs
-                                    .set_item(either_str.as_py_string(py, state.cache_str()), value.to_object(py))?;
+                                remaining_kwargs.set_item(
+                                    either_str.as_py_string(py, state.cache_str()),
+                                    value.borrow_input().to_object(py)?,
+                                )?;
                             }
                         }
                     }
@@ -377,7 +380,7 @@ impl Validator for ArgumentsValidator {
         if !errors.is_empty() {
             Err(ValError::LineErrors(errors))
         } else {
-            Ok((PyTuple::new(py, output_args)?, output_kwargs).to_object(py))
+            Ok((PyTuple::new(py, output_args)?, output_kwargs).into_py_any(py)?)
         }
     }
 

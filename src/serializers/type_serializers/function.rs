@@ -544,6 +544,7 @@ struct SerializationInfo {
     exclude: Option<PyObject>,
     #[pyo3(get)]
     context: Option<PyObject>,
+    #[pyo3(get, name = "mode")]
     _mode: SerMode,
     #[pyo3(get)]
     by_alias: bool,
@@ -625,11 +626,6 @@ impl SerializationInfo {
 
 #[pymethods]
 impl SerializationInfo {
-    #[getter]
-    fn mode(&self, py: Python) -> PyObject {
-        self._mode.to_object(py)
-    }
-
     fn mode_is_json(&self) -> bool {
         self._mode.is_json()
     }
@@ -646,7 +642,7 @@ impl SerializationInfo {
         if let Some(ref context) = self.context {
             d.set_item("context", context)?;
         }
-        d.set_item("mode", self.mode(py))?;
+        d.set_item("mode", &self._mode)?;
         d.set_item("by_alias", self.by_alias)?;
         d.set_item("exclude_unset", self.exclude_unset)?;
         d.set_item("exclude_defaults", self.exclude_defaults)?;

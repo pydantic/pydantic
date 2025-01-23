@@ -5,6 +5,7 @@ use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
+use pyo3::types::PyString;
 use serde::ser::Error;
 
 use crate::definitions::DefinitionsBuilder;
@@ -56,7 +57,7 @@ impl TypeSerializer for JsonSerializer {
             let bytes = to_json_bytes(value, &self.serializer, include, exclude, extra, None, 0)?;
             let py = value.py();
             let s = from_utf8(&bytes).map_err(|e| utf8_py_error(py, e, &bytes))?;
-            Ok(s.to_object(py))
+            Ok(PyString::new(py, s).into())
         } else {
             self.serializer.to_python(value, include, exclude, extra)
         }
