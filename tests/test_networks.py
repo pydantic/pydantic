@@ -24,6 +24,7 @@ from pydantic import (
     NatsDsn,
     PostgresDsn,
     RedisDsn,
+    RtspUrl,
     SnowflakeDsn,
     Strict,
     TypeAdapter,
@@ -551,6 +552,54 @@ def test_snowflake_dsns(dsn):
         a: SnowflakeDsn
 
     assert str(Model(a=dsn).a) == dsn
+
+
+def test_rtsp_url_only_host():
+    class Model(BaseModel):
+        dsn: RtspUrl
+
+    rtsp = Model(dsn='rtsp://localhost/cam1').dsn
+    assert str(rtsp) == 'rtsp://localhost:554/cam1'
+    assert rtsp.username is None
+    assert rtsp.password is None
+
+
+def test_rtsp_url_with_username():
+    class Model(BaseModel):
+        dsn: RtspUrl
+
+    rtsp = Model(dsn='rtsp://user@localhost/cam1').dsn
+    assert str(rtsp) == 'rtsp://user@localhost:554/cam1'
+    assert rtsp.username == 'user'
+    assert rtsp.password is None
+
+
+def test_rtsp_url_user_pass():
+    class Model(BaseModel):
+        dsn: RtspUrl
+
+    rtsp = Model(dsn='rtsp://user:pass@localhost/cam1').dsn
+    assert str(rtsp) == 'rtsp://user:pass@localhost:554/cam1'
+    assert rtsp.username == 'user'
+    assert rtsp.password == 'pass'
+
+
+def test_rtsp_url_query():
+    class Model(BaseModel):
+        dsn: RtspUrl
+
+    rtsp = Model(dsn='rtsp://user:pass@localhost/cam1/?channel=08&subtype=1').dsn
+    assert str(rtsp) == 'rtsp://user:pass@localhost:554/cam1/?channel=08&subtype=1'
+    assert rtsp.query == 'channel=08&subtype=1'
+
+
+def test_rtsp_url_with_file_extension():
+    class Model(BaseModel):
+        dsn: RtspUrl
+
+    rtsp = Model(dsn='rtsp://user:pass@localhost/media.mp4').dsn
+    assert str(rtsp) == 'rtsp://user:pass@localhost:554/media.mp4'
+    assert rtsp.path == '/media.mp4'
 
 
 @pytest.mark.parametrize(
