@@ -6610,7 +6610,26 @@ def test_arbitrary_ref_in_json_schema() -> None:
         'type': 'object',
     }
 
-    # raises KeyError: '#/components/schemas/Pet'
+
+def test_examples_as_property_key() -> None:
+    """https://github.com/pydantic/pydantic/issues/11304.
+
+    A regression of https://github.com/pydantic/pydantic/issues/9981 (see `test_arbitrary_ref_in_json_schema`).
+    """
+
+    class Model1(BaseModel):
+        pass
+
+    class Model(BaseModel):
+        examples: Model1
+
+    assert Model.model_json_schema() == {
+        '$defs': {'Model1': {'properties': {}, 'title': 'Model1', 'type': 'object'}},
+        'properties': {'examples': {'$ref': '#/$defs/Model1'}},
+        'required': ['examples'],
+        'title': 'Model',
+        'type': 'object',
+    }
 
 
 def test_warn_on_mixed_compose() -> None:
