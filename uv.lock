@@ -493,10 +493,10 @@ version = "2.2.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "numpy", version = "2.0.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
-    { name = "numpy", version = "2.2.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
-    { name = "python-dateutil" },
-    { name = "pytz" },
-    { name = "tzdata" },
+    { name = "numpy", version = "2.2.2", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.10' and python_full_version < '3.13') or (python_full_version >= '3.10' and implementation_name != 'cpython') or (python_full_version >= '3.14' and implementation_name == 'cpython')" },
+    { name = "python-dateutil", marker = "python_full_version != '3.13.*' or implementation_name != 'cpython'" },
+    { name = "pytz", marker = "python_full_version != '3.13.*' or implementation_name != 'cpython'" },
+    { name = "tzdata", marker = "python_full_version != '3.13.*' or implementation_name != 'cpython'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/9c/d6/9f8431bacc2e19dca897724cd097b1bb224a6ad5433784a44b587c7c13af/pandas-2.2.3.tar.gz", hash = "sha256:4f18ba62b61d7e192368b84517265a99b4d7ee8912f8708660fb4a366cc82667", size = 4399213 }
 wheels = [
@@ -589,7 +589,6 @@ all = [
     { name = "pytest-speed" },
     { name = "pytest-timeout" },
     { name = "python-dateutil" },
-    { name = "pyupgrade" },
     { name = "ruff" },
     { name = "typing-extensions" },
     { name = "tzdata" },
@@ -601,7 +600,6 @@ linting = [
     { name = "griffe" },
     { name = "mypy" },
     { name = "pyright" },
-    { name = "pyupgrade" },
     { name = "ruff" },
 ]
 testing = [
@@ -653,7 +651,6 @@ all = [
     { name = "pytest-speed" },
     { name = "pytest-timeout" },
     { name = "python-dateutil" },
-    { name = "pyupgrade" },
     { name = "ruff" },
     { name = "typing-extensions" },
     { name = "tzdata" },
@@ -663,7 +660,6 @@ linting = [
     { name = "griffe" },
     { name = "mypy" },
     { name = "pyright" },
-    { name = "pyupgrade" },
     { name = "ruff" },
 ]
 testing = [
@@ -841,18 +837,6 @@ wheels = [
 ]
 
 [[package]]
-name = "pyupgrade"
-version = "3.19.1"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "tokenize-rt" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/35/3a/efa8e75cf84d53f1b3f0113387ab120ef460396a4068e41b6cf18a3d216d/pyupgrade-3.19.1.tar.gz", hash = "sha256:d10e8c5f54b8327211828769e98d95d95e4715de632a3414f1eef3f51357b9e2", size = 45116 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/dd/43/c6c1ff945c7900613f6e6ef2a8688639a247d62eb0ffa9935c599f69c08e/pyupgrade-3.19.1-py2.py3-none-any.whl", hash = "sha256:8c5b0bfacae5ff30fa136a53eb7f22c34ba007450d4099e9da8089dabb9e67c9", size = 62412 },
-]
-
-[[package]]
 name = "rich"
 version = "13.9.4"
 source = { registry = "https://pypi.org/simple" }
@@ -907,15 +891,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/e8/c4/ba2f8066cceb6f23394729afe52f3bf7adec04bf9ed2c820b39e19299111/sortedcontainers-2.4.0.tar.gz", hash = "sha256:25caa5a06cc30b6b83d11423433f65d1f9d76c4c6a0c90e3379eaa43b9bfdb88", size = 30594 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/32/46/9cb0e58b2deb7f82b84065f37f3bffeb12413f947f9388e4cac22c4621ce/sortedcontainers-2.4.0-py2.py3-none-any.whl", hash = "sha256:a163dcaede0f1c021485e957a39245190e74249897e2ae4b2aa38595db237ee0", size = 29575 },
-]
-
-[[package]]
-name = "tokenize-rt"
-version = "6.1.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/6b/0a/5854d8ced8c1e00193d1353d13db82d7f813f99bd5dcb776ce3e2a4c0d19/tokenize_rt-6.1.0.tar.gz", hash = "sha256:e8ee836616c0877ab7c7b54776d2fefcc3bde714449a206762425ae114b53c86", size = 5506 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/87/ba/576aac29b10dfa49a6ce650001d1bb31f81e734660555eaf144bfe5b8995/tokenize_rt-6.1.0-py2.py3-none-any.whl", hash = "sha256:d706141cdec4aa5f358945abe36b911b8cbdc844545da99e811250c0cee9b6fc", size = 6015 },
 ]
 
 [[package]]
