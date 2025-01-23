@@ -782,9 +782,7 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        expected = [v.value if isinstance(v, Enum) else v for v in schema['expected']]
-        # jsonify the expected values
-        expected = [to_jsonable_python(v) for v in expected]
+        expected = [to_jsonable_python(v.value if isinstance(v, Enum) else v) for v in schema['expected']]
 
         result: dict[str, Any] = {}
         if len(expected) == 1:
