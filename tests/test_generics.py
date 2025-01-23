@@ -306,6 +306,28 @@ def test_parameter_count():
     )
 
 
+def test_arguments_count_validation() -> None:
+    T = TypeVar('T')
+    S = TypeVar('S')
+    U = TypingExtensionsTypeVar('U', default=int)
+
+    class Model(BaseModel, Generic[T, S, U]):
+        t: T
+        s: S
+        u: U
+
+    model_repr = repr(Model)
+
+    with pytest.raises(TypeError, match=f'Too many arguments for {model_repr}; actual 4, expected 3'):
+        Model[int, int, int, int]
+
+    with pytest.raises(TypeError, match=f'Too few arguments for {model_repr}; actual 1, expected at least 2'):
+        Model[int]
+
+    assert Model[int, int].__pydantic_generic_metadata__['args'] == (int, int, int)
+    assert Model[int, int, str].__pydantic_generic_metadata__['args'] == (int, int, str)
+
+
 def test_cover_cache(clean_cache):
     cache_size = len(_GENERIC_TYPES_CACHE)
     T = TypeVar('T')
@@ -2778,7 +2800,7 @@ def test_serialize_unsubstituted_typevars_bound_default_supported() -> None:
     ids=['default', 'constraint'],
 )
 def test_serialize_unsubstituted_typevars_variants(
-    type_var: type[BaseModel],
+    type_var: TypeVar,
 ) -> None:
     class ErrorDetails(BaseModel):
         foo: str

@@ -766,12 +766,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         if not isinstance(typevar_values, tuple):
             typevar_values = (typevar_values,)
-        _generics.check_parameters_count(cls, typevar_values)
 
-        # Build map from generic typevars to passed params
-        typevars_map: dict[TypeVar, type[Any]] = dict(
-            zip(cls.__pydantic_generic_metadata__['parameters'], typevar_values)
-        )
+        typevars_map = _generics.map_generic_model_arguments(cls, typevar_values)
+        # In case type variables have defaults and a type wasn't provided, use the defaults:
+        typevar_values = tuple(v for v in typevars_map.values())
 
         if _utils.all_identical(typevars_map.keys(), typevars_map.values()) and typevars_map:
             submodel = cls  # if arguments are equal to parameters it's the same object
