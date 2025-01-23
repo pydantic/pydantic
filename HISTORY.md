@@ -1,8 +1,22 @@
+## v2.10.6 (2025-01-23)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.10.6)
+
+### What's Changed
+
+#### Fixes
+
+* Fix JSON Schema reference collection with `'examples'` keys by @Viicos in [#11325](https://github.com/pydantic/pydantic/pull/11325)
+* Fix url python serialization by @sydney-runkle in [#11331](https://github.com/pydantic/pydantic/pull/11331)
+
+
 ## v2.10.5 (2025-01-08)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.10.5)
 
 ### What's Changed
+
+#### Fixes
 
 * Remove custom MRO implementation of Pydantic models by @Viicos in [#11184](https://github.com/pydantic/pydantic/pull/11184)
 * Fix URL serialization for unions by @sydney-runkle in [#11233](https://github.com/pydantic/pydantic/pull/11233)
