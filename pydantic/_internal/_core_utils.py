@@ -410,10 +410,7 @@ def walk_core_schema(schema: core_schema.CoreSchema, f: Walk, *, copy: bool = Tr
     Returns:
         core_schema.CoreSchema: A processed CoreSchema.
     """
-    if copy:
-        return f(schema.copy(), _dispatch)
-    else:
-        return f(schema, _dispatch_no_copy)
+    return f(schema.copy() if copy else schema, _dispatch if copy else _dispatch_no_copy)
 
 
 def simplify_schema_references(schema: core_schema.CoreSchema) -> core_schema.CoreSchema:  # noqa: C901
