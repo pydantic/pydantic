@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::fmt;
 use std::fmt::{Display, Write};
 use std::str::from_utf8;
@@ -72,15 +73,15 @@ impl ValidationError {
                     Err(err) => return err,
                 };
                 let validation_error = Self::new(line_errors, title, input_type, hide_input);
-                match Py::new(py, validation_error) {
+                match Bound::new(py, validation_error) {
                     Ok(err) => {
                         if validation_error_cause {
                             // Will return an import error if the backport was needed and not installed:
-                            if let Some(cause_problem) = ValidationError::maybe_add_cause(err.borrow(py), py) {
+                            if let Some(cause_problem) = ValidationError::maybe_add_cause(err.borrow(), py) {
                                 return cause_problem;
                             }
                         }
-                        PyErr::from_value(err.into_bound(py).into_any())
+                        PyErr::from_value(err.into_any())
                     }
                     Err(err) => err,
                 }
@@ -125,16 +126,13 @@ impl ValidationError {
             } = &line_error.error_type
             {
                 let note = if let Location::Empty = &line_error.location {
-                    PyString::new(py, "Pydantic: cause of loc: root")
+                    Cow::Borrowed("Pydantic: cause of loc: root")
                 } else {
-                    PyString::new(
-                        py,
-                        &format!(
-                            "Pydantic: cause of loc: {}",
-                            // Location formats with a newline at the end, hence the trim()
-                            line_error.location.to_string().trim()
-                        ),
-                    )
+                    Cow::Owned(format!(
+                        "Pydantic: cause of loc: {}",
+                        // Location formats with a newline at the end, hence the trim()
+                        line_error.location.to_string().trim()
+                    ))
                 };
 
                 // Notes only support 3.11 upwards:
@@ -153,7 +151,7 @@ impl ValidationError {
                 {
                     use pyo3::exceptions::PyUserWarning;
 
-                    let wrapped = PyUserWarning::new_err((note.unbind(),));
+                    let wrapped = PyUserWarning::new_err((note,));
                     wrapped.set_cause(py, Some(PyErr::from_value(err.clone_ref(py).into_bound(py))));
                     user_py_errs.push(wrapped);
                 }
@@ -329,7 +327,7 @@ impl ValidationError {
         if let Some(err) = iteration_error {
             Err(err)
         } else {
-            Ok(list.into())
+            Ok(list.unbind())
         }
     }
 
@@ -396,12 +394,12 @@ impl ValidationError {
         let callable = slf.getattr("from_exception_data")?;
         let borrow = slf.try_borrow()?;
         let args = (
-            borrow.title.bind(py),
+            &borrow.title,
             borrow.errors(py, include_url_env(py), true, true)?,
-            borrow.input_type.into_pyobject(py)?,
+            borrow.input_type,
             borrow.hide_input,
         )
-            .into_pyobject(slf.py())?;
+            .into_pyobject(py)?;
         Ok((callable, args))
     }
 }
@@ -501,7 +499,7 @@ impl PyLineError {
     ) -> PyResult<Bound<'py, PyDict>> {
         let dict = PyDict::new(py);
         dict.set_item("type", self.error_type.type_string())?;
-        dict.set_item("loc", self.location.to_object(py))?;
+        dict.set_item("loc", &self.location)?;
         dict.set_item("msg", self.error_type.render_message(py, input_type)?)?;
         if include_input {
             dict.set_item("input", &self.input_value)?;

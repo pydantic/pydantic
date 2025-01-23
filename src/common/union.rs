@@ -15,7 +15,7 @@ pub enum Discriminator {
 impl Discriminator {
     pub fn new(py: Python, raw: &Bound<'_, PyAny>) -> PyResult<Self> {
         if raw.is_callable() {
-            return Ok(Self::Function(raw.to_object(py)));
+            return Ok(Self::Function(raw.clone().unbind()));
         }
 
         let lookup_key = LookupKey::from_py(py, raw, None)?;

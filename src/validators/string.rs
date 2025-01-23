@@ -260,7 +260,7 @@ impl Pattern {
             // so that any flags, etc. are preserved
             Ok(Self {
                 pattern: pattern_str,
-                engine: RegexEngine::PythonRe(pattern.to_object(py)),
+                engine: RegexEngine::PythonRe(pattern.unbind()),
             })
         } else {
             let engine = match engine {

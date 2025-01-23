@@ -378,10 +378,10 @@ impl Validator for TaggedUnionValidator {
                     Some((_, value)) => value,
                     None => return Err(self.tag_not_found(input)),
                 };
-                self.find_call_validator(py, tag.borrow_input().to_object(py).bind(py), input, state)
+                self.find_call_validator(py, &tag.borrow_input().to_object(py)?, input, state)
             }
             Discriminator::Function(func) => {
-                let tag: Py<PyAny> = func.call1(py, (input.to_object(py),))?;
+                let tag: Py<PyAny> = func.call1(py, (input.to_object(py)?,))?;
                 if tag.is_none(py) {
                     Err(self.tag_not_found(input))
                 } else {

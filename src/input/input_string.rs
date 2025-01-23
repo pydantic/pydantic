@@ -22,19 +22,10 @@ use super::{
     KeywordArgs, ValidatedDict, ValidationMatch,
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, IntoPyObject, IntoPyObjectRef)]
 pub enum StringMapping<'py> {
     String(Bound<'py, PyString>),
     Mapping(Bound<'py, PyDict>),
-}
-
-impl ToPyObject for StringMapping<'_> {
-    fn to_object(&self, py: Python<'_>) -> PyObject {
-        match self {
-            Self::String(s) => s.to_object(py),
-            Self::Mapping(d) => d.to_object(py),
-        }
-    }
 }
 
 impl<'py> StringMapping<'py> {
@@ -72,6 +63,11 @@ impl From<StringMapping<'_>> for LocItem {
 }
 
 impl<'py> Input<'py> for StringMapping<'py> {
+    #[inline]
+    fn py_converter(&self) -> impl IntoPyObject<'py> + '_ {
+        self
+    }
+
     fn as_error_value(&self) -> InputValue {
         match self {
             Self::String(s) => s.as_error_value(),

@@ -113,7 +113,7 @@ impl Validator for UuidValidator {
                     ));
                 }
             }
-            Ok(py_input.to_object(py))
+            Ok(py_input.clone().unbind())
         } else if state.strict_or(self.strict) && state.extra().input_type == InputType::Python {
             Err(ValError::new(
                 ErrorType::IsInstanceOf {

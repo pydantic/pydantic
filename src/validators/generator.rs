@@ -1,7 +1,7 @@
 use std::fmt;
 use std::sync::Arc;
 
-use pyo3::types::PyDict;
+use pyo3::types::{PyDict, PyString};
 use pyo3::{prelude::*, IntoPyObjectExt, PyTraverseError, PyVisit};
 
 use crate::errors::{ErrorType, LocItem, ValError, ValResult};
@@ -139,7 +139,7 @@ impl ValidatorIterator {
                                     );
                                     return Err(ValidationError::from_val_error(
                                         py,
-                                        "ValidatorIterator".to_object(py),
+                                        "ValidatorIterator".into_pyobject(py)?.into(),
                                         InputType::Python,
                                         val_error,
                                         None,
@@ -152,7 +152,7 @@ impl ValidatorIterator {
                                 .validate(py, next.borrow_input(), Some(index.into()))
                                 .map(Some)
                         }
-                        None => Ok(Some(next.to_object(py))),
+                        None => Ok(Some(next.into_pyobject(py)?.unbind())),
                     },
                     None => {
                         if let Some(min_length) = min_length {
@@ -168,7 +168,7 @@ impl ValidatorIterator {
                                 );
                                 return Err(ValidationError::from_val_error(
                                     py,
-                                    "ValidatorIterator".to_object(py),
+                                    "ValidatorIterator".into_pyobject(py)?.into(),
                                     InputType::Python,
                                     val_error,
                                     None,
@@ -288,7 +288,7 @@ impl InternalValidator {
             .map_err(|e| {
                 ValidationError::from_val_error(
                     py,
-                    self.name.to_object(py),
+                    PyString::new(py, &self.name).into(),
                     InputType::Python,
                     e,
                     outer_location,
@@ -320,7 +320,7 @@ impl InternalValidator {
         let result = self.validator.validate(py, input, &mut state).map_err(|e| {
             ValidationError::from_val_error(
                 py,
-                self.name.to_object(py),
+                PyString::new(py, &self.name).into(),
                 InputType::Python,
                 e,
                 outer_location,

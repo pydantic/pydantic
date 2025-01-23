@@ -331,7 +331,7 @@ impl Validator for TypedDictValidator {
                                         Err(err) => return Err(err),
                                     }
                                 } else {
-                                    self.output_dict.set_item(py_key, value.to_object(self.py))?;
+                                    self.output_dict.set_item(py_key, value.to_object(self.py)?)?;
                                 };
                             }
                         }
@@ -355,7 +355,7 @@ impl Validator for TypedDictValidator {
         }
 
         if errors.is_empty() {
-            Ok(output_dict.to_object(py))
+            Ok(output_dict.into())
         } else {
             Err(ValError::LineErrors(errors))
         }

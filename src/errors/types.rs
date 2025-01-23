@@ -3,9 +3,9 @@ use std::borrow::Cow;
 use std::fmt;
 
 use pyo3::exceptions::{PyKeyError, PyTypeError};
+use pyo3::prelude::*;
 use pyo3::sync::GILOnceCell;
 use pyo3::types::{PyDict, PyList};
-use pyo3::{prelude::*, IntoPyObjectExt};
 
 use ahash::AHashMap;
 use num_bigint::BigInt;
@@ -124,7 +124,7 @@ macro_rules! error_types {
                     $(
                         Self::$item { context, $($key,)* } => {
                             $(
-                                dict.set_item::<&str, Py<PyAny>>(stringify!($key), $key.to_object(py))?;
+                                dict.set_item(stringify!($key), $key)?;
                             )*
                             if let Some(ctx) = context {
                                 dict.update(ctx.bind(py).downcast::<PyMapping>()?)?;
@@ -822,10 +822,5 @@ impl fmt::Display for Number {
             Self::BigInt(i) => write!(f, "{i}"),
             Self::String(s) => write!(f, "{s}"),
         }
-    }
-}
-impl ToPyObject for Number {
-    fn to_object(&self, py: Python<'_>) -> PyObject {
-        self.into_py_any(py).unwrap()
     }
 }

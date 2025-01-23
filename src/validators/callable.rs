@@ -27,15 +27,17 @@ impl_py_gc_traverse!(CallableValidator {});
 impl Validator for CallableValidator {
     fn validate<'py>(
         &self,
-        py: Python<'py>,
+        _py: Python<'py>,
         input: &(impl Input<'py> + ?Sized),
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         state.floor_exactness(Exactness::Lax);
-        match input.as_python().is_some_and(PyAnyMethods::is_callable) {
-            true => Ok(input.to_object(py)),
-            false => Err(ValError::new(ErrorTypeDefaults::CallableType, input)),
+        if let Some(py_input) = input.as_python() {
+            if py_input.is_callable() {
+                return Ok(py_input.clone().unbind());
+            }
         }
+        Err(ValError::new(ErrorTypeDefaults::CallableType, input))
     }
 
     fn get_name(&self) -> &str {
