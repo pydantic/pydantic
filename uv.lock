@@ -285,7 +285,7 @@ name = "click"
 version = "8.1.8"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "colorama", marker = "sys_platform == 'win32'" },
+    { name = "colorama", marker = "platform_system == 'Windows'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/b9/2e/0090cbf739cee7d23781ad4b89a9894a41538e4fcf4c31dcdd705b78eb8b/click-8.1.8.tar.gz", hash = "sha256:ed53c9d8990d83c2a27deae68e4ee337473f6330c040a31d4225c9574d16096a", size = 226593 }
 wheels = [
@@ -869,7 +869,7 @@ version = "1.6.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "click" },
-    { name = "colorama", marker = "sys_platform == 'win32'" },
+    { name = "colorama", marker = "platform_system == 'Windows'" },
     { name = "ghp-import" },
     { name = "importlib-metadata", marker = "python_full_version < '3.10'" },
     { name = "jinja2" },
@@ -1227,7 +1227,7 @@ email = [
     { name = "email-validator" },
 ]
 timezone = [
-    { name = "tzdata", marker = "sys_platform == 'win32'" },
+    { name = "tzdata", marker = "platform_system == 'Windows'" },
 ]
 
 [package.dev-dependencies]
@@ -1257,7 +1257,7 @@ all = [
     { name = "pytest-benchmark" },
     { name = "pytest-codspeed" },
     { name = "pytest-examples" },
-    { name = "pytest-memray", marker = "platform_python_implementation == 'CPython' and sys_platform != 'win32'" },
+    { name = "pytest-memray", marker = "platform_python_implementation == 'CPython' and platform_system != 'Windows'" },
     { name = "pytest-mock" },
     { name = "pytest-pretty" },
     { name = "pytz" },
@@ -1278,7 +1278,7 @@ dev = [
     { name = "pytest-benchmark" },
     { name = "pytest-codspeed" },
     { name = "pytest-examples" },
-    { name = "pytest-memray", marker = "platform_python_implementation == 'CPython' and sys_platform != 'win32'" },
+    { name = "pytest-memray", marker = "platform_python_implementation == 'CPython' and platform_system != 'Windows'" },
     { name = "pytest-mock" },
     { name = "pytest-pretty" },
     { name = "pytz" },
@@ -1321,7 +1321,7 @@ requires-dist = [
     { name = "email-validator", marker = "extra == 'email'", specifier = ">=2.0.0" },
     { name = "pydantic-core", specifier = "==2.27.2" },
     { name = "typing-extensions", specifier = ">=4.12.2" },
-    { name = "tzdata", marker = "python_full_version >= '3.9' and sys_platform == 'win32' and extra == 'timezone'" },
+    { name = "tzdata", marker = "python_full_version >= '3.9' and platform_system == 'Windows' and extra == 'timezone'" },
 ]
 
 [package.metadata.requires-dev]
@@ -1351,7 +1351,7 @@ all = [
     { name = "pytest-benchmark" },
     { name = "pytest-codspeed" },
     { name = "pytest-examples" },
-    { name = "pytest-memray", marker = "platform_python_implementation == 'CPython' and sys_platform != 'win32'" },
+    { name = "pytest-memray", marker = "platform_python_implementation == 'CPython' and platform_system != 'Windows'" },
     { name = "pytest-mock" },
     { name = "pytest-pretty" },
     { name = "pytz" },
@@ -1372,7 +1372,7 @@ dev = [
     { name = "pytest-benchmark" },
     { name = "pytest-codspeed" },
     { name = "pytest-examples" },
-    { name = "pytest-memray", marker = "platform_python_implementation == 'CPython' and sys_platform != 'win32'" },
+    { name = "pytest-memray", marker = "platform_python_implementation == 'CPython' and platform_system != 'Windows'" },
     { name = "pytest-mock" },
     { name = "pytest-pretty" },
     { name = "pytz" },
