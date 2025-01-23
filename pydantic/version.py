@@ -2,6 +2,8 @@
 
 from __future__ import annotations as _annotations
 
+from importlib.metadata import version
+
 __all__ = 'VERSION', 'version_info'
 
 VERSION = '2.10.5'
@@ -61,6 +63,11 @@ def version_info() -> str:
         'commit': most_recent_commit,
     }
     return '\n'.join('{:>30} {}'.format(k + ':', str(v).replace('\n', ' ')) for k, v in info.items())
+
+
+def check_pydantic_core_version() -> bool:
+    """Check that the installed `pydantic-core` dependency is compatible."""
+    return version('pydantic_core') == '2.27.2'
 
 
 def parse_mypy_version(version: str) -> tuple[int, int, int]:

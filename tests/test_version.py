@@ -4,7 +4,7 @@ import pytest
 from packaging.version import parse as parse_version
 
 import pydantic
-from pydantic.version import version_info, version_short
+from pydantic.version import check_pydantic_core_version, version_info, version_short
 
 
 def test_version_info():
@@ -35,6 +35,10 @@ def test_version_attribute_is_present():
 
 def test_version_attribute_is_a_string():
     assert isinstance(pydantic.__version__, str)
+
+
+def test_check_pydantic_core_version() -> None:
+    assert check_pydantic_core_version()
 
 
 @pytest.mark.parametrize('version,expected', (('2.1', '2.1'), ('2.1.0', '2.1')))
