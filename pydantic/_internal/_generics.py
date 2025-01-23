@@ -4,7 +4,7 @@ import sys
 import types
 import typing
 from collections import ChainMap
-from collections.abc import Iterator, Mapping, MutableMapping
+from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from contextvars import ContextVar
 from types import prepare_class
@@ -35,30 +35,20 @@ GenericTypesCacheKey = tuple[Any, Any, tuple[Any, ...]]
 KT = TypeVar('KT')
 VT = TypeVar('VT')
 _LIMITED_DICT_SIZE = 100
-if TYPE_CHECKING:
 
-    class LimitedDict(dict, MutableMapping[KT, VT]):
-        def __init__(self, size_limit: int = _LIMITED_DICT_SIZE): ...
 
-else:
+class LimitedDict(dict[KT, VT]):
+    def __init__(self, size_limit: int = _LIMITED_DICT_SIZE) -> None:
+        self.size_limit = size_limit
+        super().__init__()
 
-    class LimitedDict(dict):
-        """Limit the size/length of a dict used for caching to avoid unlimited increase in memory usage.
-
-        Since the dict is ordered, and we always remove elements from the beginning, this is effectively a FIFO cache.
-        """
-
-        def __init__(self, size_limit: int = _LIMITED_DICT_SIZE):
-            self.size_limit = size_limit
-            super().__init__()
-
-        def __setitem__(self, key: Any, value: Any, /) -> None:
-            super().__setitem__(key, value)
-            if len(self) > self.size_limit:
-                excess = len(self) - self.size_limit + self.size_limit // 10
-                to_remove = list(self.keys())[:excess]
-                for k in to_remove:
-                    del self[k]
+    def __setitem__(self, key: KT, value: VT, /) -> None:
+        super().__setitem__(key, value)
+        if len(self) > self.size_limit:
+            excess = len(self) - self.size_limit + self.size_limit // 10
+            to_remove = list(self.keys())[:excess]
+            for k in to_remove:
+                del self[k]
 
 
 # weak dictionaries allow the dynamically created parametrized versions of generic models to get collected
