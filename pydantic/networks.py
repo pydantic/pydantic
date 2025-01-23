@@ -64,6 +64,7 @@ __all__ = [
     'MariaDBDsn',
     'ClickHouseDsn',
     'SnowflakeDsn',
+    'RtspUrl',
 ]
 
 
@@ -902,6 +903,28 @@ class SnowflakeDsn(AnyUrl):
 
     _constraints = UrlConstraints(
         allowed_schemes=['snowflake'],
+        host_required=True,
+    )
+
+    @property
+    def host(self) -> str:
+        """The required URL host."""
+        return self._url.host  # pyright: ignore[reportReturnType]
+
+
+class RtspUrl(AnyUrl):
+    """A type that will accept RTSP Url.
+
+    * User info not required
+    * TLD not required
+    * Host required (e.g., `rtsp://localhost`, `rtsp://user@localhost`)
+    * Port not required
+    """
+
+    _constraints = UrlConstraints(
+        allowed_schemes=['rtsp'],
+        default_host='localhost',
+        default_port=554,
         host_required=True,
     )
 

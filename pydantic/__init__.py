@@ -140,6 +140,7 @@ __all__ = (
     'MariaDBDsn',
     'ClickHouseDsn',
     'SnowflakeDsn',
+    'RtspUrl',
     'validate_email',
     # root_model
     'RootModel',
@@ -303,6 +304,7 @@ _dynamic_imports: 'dict[str, tuple[str, str]]' = {
     'MariaDBDsn': (__spec__.parent, '.networks'),
     'ClickHouseDsn': (__spec__.parent, '.networks'),
     'SnowflakeDsn': (__spec__.parent, '.networks'),
+    'RtspUrl': (__spec__.parent, '.networks'),
     'validate_email': (__spec__.parent, '.networks'),
     # root_model
     'RootModel': (__spec__.parent, '.root_model'),
