@@ -1063,8 +1063,10 @@ class GenerateSchema:
         elif _typing_extra.is_zoneinfo_type(obj):
             return self._zoneinfo_schema()
 
+        # dataclasses.is_dataclass coerces dc instances to types, but we only handle
+        # the case of a dc type here
         if dataclasses.is_dataclass(obj):
-            return self._dataclass_schema(obj, None)
+            return self._dataclass_schema(obj, None)  # pyright: ignore[reportArgumentType]
 
         origin = get_origin(obj)
         if origin is not None:

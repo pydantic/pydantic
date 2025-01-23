@@ -290,12 +290,14 @@ class _BaseUrl:
         )
 
     @classmethod
-    def serialize_url(cls, url: Any) -> str:
+    def serialize_url(cls, url: Any, info: core_schema.SerializationInfo) -> str | Self:
         if not isinstance(url, cls):
             raise PydanticSerializationUnexpectedValue(
                 f"Expected `{cls}` but got `{type(url)}` with value `'{url}'` - serialized value may not be as expected."
             )
-        return str(url)
+        if info.mode == 'json':
+            return str(url)
+        return url
 
     @classmethod
     def __get_pydantic_core_schema__(
@@ -314,7 +316,9 @@ class _BaseUrl:
         return core_schema.no_info_wrap_validator_function(
             wrap_val,
             schema=core_schema.url_schema(**cls._constraints.defined_constraints),
-            serialization=core_schema.plain_serializer_function_ser_schema(cls.serialize_url),
+            serialization=core_schema.plain_serializer_function_ser_schema(
+                cls.serialize_url, info_arg=True, when_used='always'
+            ),
         )
 
     @classmethod
@@ -465,12 +469,14 @@ class _BaseMultiHostUrl:
         )
 
     @classmethod
-    def serialize_url(cls, url: Any) -> str:
+    def serialize_url(cls, url: Any, info: core_schema.SerializationInfo) -> str | Self:
         if not isinstance(url, cls):
             raise PydanticSerializationUnexpectedValue(
                 f"Expected `{cls}` but got `{type(url)}` with value `'{url}'` - serialized value may not be as expected."
             )
-        return str(url)
+        if info.mode == 'json':
+            return str(url)
+        return url
 
     @classmethod
     def __get_pydantic_core_schema__(
@@ -489,7 +495,9 @@ class _BaseMultiHostUrl:
         return core_schema.no_info_wrap_validator_function(
             wrap_val,
             schema=core_schema.multi_host_url_schema(**cls._constraints.defined_constraints),
-            serialization=core_schema.plain_serializer_function_ser_schema(cls.serialize_url),
+            serialization=core_schema.plain_serializer_function_ser_schema(
+                cls.serialize_url, info_arg=True, when_used='always'
+            ),
         )
 
     @classmethod
