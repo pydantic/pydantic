@@ -531,6 +531,7 @@ def test_mariadb_dsns(dsn):
         'clickhouse+native://user:pass@localhost:9000/app',
         'clickhouse+asynch://user:pass@localhost:9000/app',
         'clickhouse://user:pass@localhost:9000/app',
+        'clickhouses://user:pass@localhost:9000/app',
         'clickhousedb://user:pass@localhost:9000/app',
     ],
 )
