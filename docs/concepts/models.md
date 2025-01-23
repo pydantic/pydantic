@@ -781,6 +781,12 @@ Here is an example using a generic Pydantic model to create an easily-reused HTT
     1. Declare a Pydantic model and add the list of type variables as type parameters.
     2. Use the type variables as annotations where you will want to replace them with other types.
 
+!!! warning
+    When parametrizing a model with a concrete type, Pydantic **does not** validate that the provided type
+    is [assignable to the type variable][spec-typevars-bound] if it has an upper bound.
+
+    [spec-typevars-bound]: https://typing.readthedocs.io/en/latest/spec/generics.html#type-variables-with-an-upper-bound
+
 Any [configuration](./config.md), [validation](./validators.md) or [serialization](./serialization.md) logic
 set on the generic model will also be applied to the parametrized classes, in the same way as when inheriting from
 a model class. Any custom methods or attributes will also be inherited.
