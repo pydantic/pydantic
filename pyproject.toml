@@ -75,7 +75,6 @@ linting = [
     'pyright',
     'ruff',
     'mypy',
-    'pyupgrade',
 ]
 wasm = [
     'typing_extensions',
