@@ -5,6 +5,7 @@ use pyo3::prelude::*;
 use pyo3::types::{PyBool, PyDict, PyList, PyString};
 
 use ahash::AHashSet;
+use pyo3::IntoPyObjectExt;
 use serde::Serialize;
 
 use crate::build_tools::py_schema_err;
@@ -119,12 +120,12 @@ impl TypeSerializer for LiteralSerializer {
         let py = value.py();
         match self.check(value, extra)? {
             OutputValue::OkInt(int) => match extra.mode {
-                SerMode::Json => Ok(int.to_object(py)),
-                _ => Ok(value.to_object(py)),
+                SerMode::Json => int.into_py_any(py),
+                _ => Ok(value.clone().unbind()),
             },
             OutputValue::OkStr(s) => match extra.mode {
-                SerMode::Json => Ok(s.to_object(py)),
-                _ => Ok(value.to_object(py)),
+                SerMode::Json => Ok(s.into()),
+                _ => Ok(value.clone().unbind()),
             },
             OutputValue::Ok => infer_to_python(value, include, exclude, extra),
             OutputValue::Fallback => {

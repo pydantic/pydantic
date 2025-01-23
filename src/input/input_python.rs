@@ -75,6 +75,11 @@ impl From<Bound<'_, PyAny>> for LocItem {
 }
 
 impl<'py> Input<'py> for Bound<'py, PyAny> {
+    #[inline]
+    fn py_converter(&self) -> impl IntoPyObject<'py> + '_ {
+        self
+    }
+
     fn as_error_value(&self) -> InputValue {
         InputValue::Python(self.clone().into())
     }
@@ -472,7 +477,7 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
     }
 
     fn validate_iter(&self) -> ValResult<GenericIterator<'static>> {
-        if self.iter().is_ok() {
+        if self.try_iter().is_ok() {
             Ok(self.into())
         } else {
             Err(ValError::new(ErrorTypeDefaults::IterableType, self))
@@ -851,7 +856,7 @@ impl<'py> ValidatedDict<'py> for GenericPyMapping<'_, 'py> {
             Self::Mapping(mapping) => mapping
                 .call_method0(intern!(mapping.py(), "keys"))
                 .ok()?
-                .iter()
+                .try_iter()
                 .ok()?
                 .last()?
                 .ok(),
@@ -891,7 +896,7 @@ fn extract_sequence_iterable<'a, 'py>(obj: &'a Bound<'py, PyAny>) -> ValResult<P
             || obj.is_instance_of::<PyDict>()
             || obj.downcast::<PyMapping>().is_ok())
         {
-            if let Ok(iter) = obj.iter() {
+            if let Ok(iter) = obj.try_iter() {
                 return Ok(PySequenceIterable::Iterator(iter));
             }
         }
@@ -920,7 +925,7 @@ impl<'py> PySequenceIterable<'_, 'py> {
             PySequenceIterable::Tuple(iter) => Ok(consumer.consume_iterator(iter.iter().map(Ok))),
             PySequenceIterable::Set(iter) => Ok(consumer.consume_iterator(iter.iter().map(Ok))),
             PySequenceIterable::FrozenSet(iter) => Ok(consumer.consume_iterator(iter.iter().map(Ok))),
-            PySequenceIterable::Iterator(iter) => Ok(consumer.consume_iterator(iter.iter()?)),
+            PySequenceIterable::Iterator(iter) => Ok(consumer.consume_iterator(iter.try_iter()?)),
         }
     }
 }

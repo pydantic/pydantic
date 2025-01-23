@@ -184,10 +184,10 @@ impl Validator for DecimalValidator {
             // fraction = (decimal / multiple_of) % 1
             let fraction = unsafe {
                 let division = decimal.div(multiple_of)?;
-                let one = 1.to_object(py);
+                let one = 1u8.into_pyobject(py)?;
                 Bound::from_owned_ptr_or_err(py, pyo3::ffi::PyNumber_Remainder(division.as_ptr(), one.as_ptr()))?
             };
-            let zero = 0.to_object(py);
+            let zero = 0u8.into_pyobject(py)?;
             if !fraction.eq(&zero)? {
                 return Err(ValError::new(
                     ErrorType::MultipleOf {

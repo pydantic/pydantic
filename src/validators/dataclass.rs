@@ -4,6 +4,7 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyString, PyTuple, PyType};
 
 use ahash::AHashSet;
+use pyo3::IntoPyObjectExt;
 
 use crate::build_tools::py_schema_err;
 use crate::build_tools::{is_strict, schema_or_config_same, ExtraBehavior};
@@ -328,7 +329,7 @@ impl Validator for DataclassArgsValidator {
                                         } else {
                                             output_dict.set_item(
                                                 either_str.as_py_string(py, state.cache_str()),
-                                                value.to_object(py),
+                                                value.borrow_input().to_object(py)?,
                                             )?;
                                         }
                                     }
@@ -353,9 +354,9 @@ impl Validator for DataclassArgsValidator {
 
         if errors.is_empty() {
             if let Some(init_only_args) = init_only_args {
-                Ok((output_dict, PyTuple::new(py, init_only_args)?).to_object(py))
+                Ok((output_dict, PyTuple::new(py, init_only_args)?).into_py_any(py)?)
             } else {
-                Ok((output_dict, py.None()).to_object(py))
+                Ok((output_dict, py.None()).into_py_any(py)?)
             }
         } else {
             Err(ValError::LineErrors(errors))
@@ -378,7 +379,7 @@ impl Validator for DataclassArgsValidator {
             // which doesn't make much sense in this context but we need to put something there
             // so that function validators that sit between DataclassValidator and DataclassArgsValidator
             // always get called the same shape of data.
-            Ok(PyTuple::new(py, vec![dict.to_object(py), py.None()])?.into())
+            Ok(PyTuple::new(py, [Some(dict), None])?.into())
         };
 
         if let Some(field) = self.fields.iter().find(|f| f.name == field_name) {
@@ -420,7 +421,7 @@ impl Validator for DataclassArgsValidator {
             match self.extra_behavior {
                 // For dataclasses we allow assigning unknown fields
                 // to match stdlib dataclass behavior
-                ExtraBehavior::Allow => ok(field_value.to_object(py)),
+                ExtraBehavior::Allow => ok(field_value.clone().unbind()),
                 _ => Err(ValError::new_with_loc(
                     ErrorType::NoSuchAttribute {
                         attribute: field_name.to_string(),
@@ -552,7 +553,7 @@ impl Validator for DataclassValidator {
                 self.set_dict_call(py, &dc, val_output, input)?;
                 Ok(dc.into())
             } else {
-                Ok(input.to_object(py))
+                Ok(input.to_object(py)?.unbind())
             }
         } else if state.strict_or(self.strict) && state.extra().input_type == InputType::Python {
             Err(ValError::new(
@@ -602,7 +603,7 @@ impl Validator for DataclassValidator {
             force_setattr(py, obj, intern!(py, "__dict__"), dc_dict)?;
         }
 
-        Ok(obj.to_object(py))
+        Ok(obj.clone().unbind())
     }
 
     fn get_name(&self) -> &str {

@@ -142,7 +142,7 @@ impl BuildValidator for WithDefaultValidator {
             validate_default: schema_or_config_same(schema, config, intern!(py, "validate_default"))?.unwrap_or(false),
             copy_default,
             name,
-            undefined: PydanticUndefinedType::new(py).to_object(py),
+            undefined: PydanticUndefinedType::new(py).into_any(),
         }
         .into())
     }

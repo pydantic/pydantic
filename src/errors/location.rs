@@ -85,15 +85,6 @@ impl From<PathItem> for LocItem {
     }
 }
 
-impl ToPyObject for LocItem {
-    fn to_object(&self, py: Python<'_>) -> PyObject {
-        match self {
-            Self::S(val) => val.to_object(py),
-            Self::I(val) => val.to_object(py),
-        }
-    }
-}
-
 impl Serialize for LocItem {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -128,15 +119,20 @@ impl Default for Location {
     }
 }
 
-static EMPTY_TUPLE: GILOnceCell<PyObject> = GILOnceCell::new();
+static EMPTY_TUPLE: GILOnceCell<Py<PyTuple>> = GILOnceCell::new();
 
-impl ToPyObject for Location {
-    fn to_object(&self, py: Python<'_>) -> PyObject {
+impl<'py> IntoPyObject<'py> for &'_ Location {
+    type Target = PyTuple;
+    type Output = Bound<'py, PyTuple>;
+    type Error = PyErr;
+
+    fn into_pyobject(self, py: Python<'py>) -> PyResult<Bound<'py, PyTuple>> {
         match self {
-            Self::List(loc) => PyTuple::new(py, loc.iter().rev()).unwrap().to_object(py),
-            Self::Empty => EMPTY_TUPLE
-                .get_or_init(py, || PyTuple::empty(py).to_object(py))
-                .clone_ref(py),
+            Location::List(loc) => PyTuple::new(py, loc.iter().rev()),
+            Location::Empty => Ok(EMPTY_TUPLE
+                .get_or_init(py, || PyTuple::empty(py).unbind())
+                .bind(py)
+                .clone()),
         }
     }
 }

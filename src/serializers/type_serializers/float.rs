@@ -1,5 +1,5 @@
 use pyo3::types::PyDict;
-use pyo3::{intern, prelude::*};
+use pyo3::{intern, prelude::*, IntoPyObjectExt};
 
 use std::borrow::Cow;
 
@@ -77,10 +77,7 @@ impl TypeSerializer for FloatSerializer {
             IsType::Subclass => match extra.check {
                 SerCheck::Strict => Err(PydanticSerializationUnexpectedValue::new_err(None)),
                 SerCheck::Lax | SerCheck::None => match extra.mode {
-                    SerMode::Json => {
-                        let rust_value = value.extract::<f64>()?;
-                        Ok(rust_value.to_object(py))
-                    }
+                    SerMode::Json => value.extract::<f64>()?.into_py_any(py),
                     _ => infer_to_python(value, include, exclude, extra),
                 },
             },

@@ -157,12 +157,9 @@ impl SchemaValidator {
         })
     }
 
-    pub fn __reduce__(slf: &Bound<Self>) -> PyResult<(PyObject, (PyObject, PyObject))> {
-        // Enables support for `pickle` serialization.
-        let py = slf.py();
-        let cls = slf.get_type().into();
-        let init_args = (slf.get().py_schema.to_object(py), slf.get().py_config.to_object(py));
-        Ok((cls, init_args))
+    pub fn __reduce__<'py>(slf: &Bound<'py, Self>) -> PyResult<(Bound<'py, PyType>, Bound<'py, PyTuple>)> {
+        let init_args = (&slf.get().py_schema, &slf.get().py_config).into_pyobject(slf.py())?;
+        Ok((slf.get_type(), init_args))
     }
 
     #[allow(clippy::too_many_arguments)]

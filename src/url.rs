@@ -469,13 +469,7 @@ impl fmt::Display for UrlHostParts {
 
 fn host_to_dict<'a>(py: Python<'a>, lib_url: &Url) -> PyResult<Bound<'a, PyDict>> {
     let dict = PyDict::new(py);
-    dict.set_item(
-        "username",
-        match lib_url.username() {
-            "" => py.None(),
-            user => user.to_object(py),
-        },
-    )?;
+    dict.set_item("username", Some(lib_url.username()).filter(|s| !s.is_empty()))?;
     dict.set_item("password", lib_url.password())?;
     dict.set_item("host", lib_url.host_str())?;
     dict.set_item("port", lib_url.port_or_known_default())?;

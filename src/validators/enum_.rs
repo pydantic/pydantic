@@ -103,8 +103,8 @@ impl<T: EnumValidateValue> Validator for EnumValidator<T> {
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         let class = self.class.bind(py);
-        if input.as_python().is_some_and(|any| any.is_exact_instance(class)) {
-            return Ok(input.to_object(py));
+        if let Some(exact_py_input) = input.as_python().filter(|any| any.is_exact_instance(class)) {
+            return Ok(exact_py_input.clone().unbind());
         }
         let strict = state.strict_or(self.strict);
         if strict && input.as_python().is_some() {
@@ -125,7 +125,7 @@ impl<T: EnumValidateValue> Validator for EnumValidator<T> {
         } else if let Ok(res) = class.as_unbound().call1(py, (input.as_python(),)) {
             return Ok(res);
         } else if let Some(ref missing) = self.missing {
-            let enum_value = missing.bind(py).call1((input.to_object(py),)).map_err(|_| {
+            let enum_value = missing.bind(py).call1((input.to_object(py)?,)).map_err(|_| {
                 ValError::new(
                     ErrorType::Enum {
                         expected: self.expected_repr.clone(),

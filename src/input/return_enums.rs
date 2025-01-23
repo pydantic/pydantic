@@ -185,7 +185,7 @@ impl BuildSet for Bound<'_, PyFrozenSet> {
         py_error_on_minusone(self.py(), unsafe {
             // Safety: self.as_ptr() the _only_ pointer to the `frozenset`, and it's allowed
             // to mutate this via the C API when nothing else can refer to it.
-            ffi::PySet_Add(self.as_ptr(), item.to_object(self.py()).as_ptr())
+            ffi::PySet_Add(self.as_ptr(), item.as_ptr())
         })
     }
 
@@ -266,7 +266,7 @@ pub(crate) fn no_validator_iter_to_vec<'py>(
         .map(|(index, result)| {
             let v = result.map_err(|e| any_next_error!(py, e, input, index))?;
             max_length_check.incr()?;
-            Ok(v.borrow_input().to_object(py))
+            Ok(v.borrow_input().to_object(py)?.unbind())
         })
         .collect()
 }
@@ -382,7 +382,7 @@ impl From<&Bound<'_, PyAny>> for GenericIterator<'_> {
     fn from(obj: &Bound<'_, PyAny>) -> Self {
         let py_iter = GenericPyIterator {
             obj: obj.clone().into(),
-            iter: obj.iter().unwrap().into(),
+            iter: obj.try_iter().unwrap().into(),
             index: 0,
         };
         Self::PyIterator(py_iter)
@@ -702,15 +702,6 @@ impl FromPyObject<'_> for Int {
         match extract_int(obj) {
             Some(i) => Ok(i),
             None => py_err!(PyTypeError; "Expected int, got {}", obj.get_type()),
-        }
-    }
-}
-
-impl ToPyObject for Int {
-    fn to_object(&self, py: Python<'_>) -> PyObject {
-        match self {
-            Self::I64(i) => i.to_object(py),
-            Self::Big(big_i) => big_i.to_object(py),
         }
     }
 }

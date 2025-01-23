@@ -44,6 +44,11 @@ impl From<JsonValue<'_>> for LocItem {
 }
 
 impl<'py, 'data> Input<'py> for JsonValue<'data> {
+    #[inline]
+    fn py_converter(&self) -> impl IntoPyObject<'py> + '_ {
+        self
+    }
+
     fn as_error_value(&self) -> InputValue {
         // cloning JsonValue is cheap due to use of Arc
         InputValue::Json(self.to_static())
@@ -58,7 +63,7 @@ impl<'py, 'data> Input<'py> for JsonValue<'data> {
             JsonValue::Object(object) => {
                 let dict = PyDict::new(py);
                 for (k, v) in LazyIndexMap::iter(object) {
-                    dict.set_item(k, v.to_object(py)).unwrap();
+                    dict.set_item(k, v).unwrap();
                 }
                 Some(dict)
             }
@@ -174,7 +179,7 @@ impl<'py, 'data> Input<'py> for JsonValue<'data> {
                 create_decimal(&PyString::new(py, &f.to_string()), self).map(ValidationMatch::strict)
             }
             JsonValue::Str(..) | JsonValue::Int(..) | JsonValue::BigInt(..) => {
-                create_decimal(self.to_object(py).bind(py), self).map(ValidationMatch::strict)
+                create_decimal(&self.into_pyobject(py)?, self).map(ValidationMatch::strict)
             }
             _ => Err(ValError::new(ErrorTypeDefaults::DecimalType, self)),
         }
@@ -348,6 +353,11 @@ impl<'py, 'data> Input<'py> for JsonValue<'data> {
 
 /// Required for JSON Object keys so the string can behave like an Input
 impl<'py> Input<'py> for str {
+    #[inline]
+    fn py_converter(&self) -> impl IntoPyObject<'py> + '_ {
+        self
+    }
+
     fn as_error_value(&self) -> InputValue {
         // Justification for the clone: this is on the error pathway and we are generally ok
         // with errors having a performance penalty
@@ -414,7 +424,7 @@ impl<'py> Input<'py> for str {
     }
 
     fn validate_decimal(&self, _strict: bool, py: Python<'py>) -> ValMatch<Bound<'py, PyAny>> {
-        create_decimal(self.to_object(py).bind(py), self).map(ValidationMatch::lax)
+        create_decimal(self.into_pyobject(py)?.as_any(), self).map(ValidationMatch::lax)
     }
 
     type Dict<'a> = Never;
@@ -483,7 +493,7 @@ impl<'py> Input<'py> for str {
 
     fn validate_complex(&self, _strict: bool, py: Python<'py>) -> ValResult<ValidationMatch<EitherComplex<'py>>> {
         Ok(ValidationMatch::strict(EitherComplex::Py(string_to_complex(
-            self.to_object(py).downcast_bound::<PyString>(py)?,
+            &self.into_pyobject(py)?,
             self,
         )?)))
     }
