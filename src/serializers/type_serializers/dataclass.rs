@@ -43,15 +43,17 @@ impl BuildSerializer for DataclassArgsBuilder {
 
             let key_py: Py<PyString> = PyString::new(py, &name).into();
 
-            if field_info.get_as(intern!(py, "serialization_exclude"))? == Some(true) {
-                fields.insert(name, SerField::new(py, key_py, None, None, true));
-            } else {
-                let schema = field_info.get_as_req(intern!(py, "schema"))?;
-                let serializer = CombinedSerializer::build(&schema, config, definitions)
-                    .map_err(|e| py_schema_error_type!("Field `{}`:\n  {}", index, e))?;
+            if !field_info.get_as(intern!(py, "init_only"))?.unwrap_or(false) {
+                if field_info.get_as(intern!(py, "serialization_exclude"))? == Some(true) {
+                    fields.insert(name, SerField::new(py, key_py, None, None, true));
+                } else {
+                    let schema = field_info.get_as_req(intern!(py, "schema"))?;
+                    let serializer = CombinedSerializer::build(&schema, config, definitions)
+                        .map_err(|e| py_schema_error_type!("Field `{}`:\n  {}", index, e))?;
 
-                let alias = field_info.get_as(intern!(py, "serialization_alias"))?;
-                fields.insert(name, SerField::new(py, key_py, alias, Some(serializer), true));
+                    let alias = field_info.get_as(intern!(py, "serialization_alias"))?;
+                    fields.insert(name, SerField::new(py, key_py, alias, Some(serializer), true));
+                }
             }
         }
 

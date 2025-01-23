@@ -192,3 +192,46 @@ def test_extra_custom_serializer():
     m = v.validate_python({'extra': 'extra'})
 
     assert s.to_python(m) == {'extra': 'extra bam!'}
+
+
+def test_dataclass_initvar_not_required_on_union_ser() -> None:
+    @dataclasses.dataclass
+    class Foo:
+        x: int
+        init_var: dataclasses.InitVar[int] = 1
+
+    @dataclasses.dataclass
+    class Bar:
+        x: int
+
+    schema = core_schema.union_schema(
+        [
+            core_schema.dataclass_schema(
+                Foo,
+                core_schema.dataclass_args_schema(
+                    'Foo',
+                    [
+                        core_schema.dataclass_field(name='x', schema=core_schema.int_schema()),
+                        core_schema.dataclass_field(
+                            name='init_var',
+                            init_only=True,
+                            schema=core_schema.with_default_schema(core_schema.int_schema(), default=1),
+                        ),
+                    ],
+                ),
+                ['x'],
+                post_init=True,
+            ),
+            core_schema.dataclass_schema(
+                Bar,
+                core_schema.dataclass_args_schema(
+                    'Bar', [core_schema.dataclass_field(name='x', schema=core_schema.int_schema())]
+                ),
+                ['x'],
+            ),
+        ]
+    )
+
+    s = SchemaSerializer(schema)
+    assert s.to_python(Foo(x=1), warnings='error') == {'x': 1}
+    assert s.to_python(Foo(x=1, init_var=2), warnings='error') == {'x': 1}
