@@ -34,7 +34,7 @@ This is the primary way of converting a model to a dictionary. Sub-models will b
 Example:
 
 ```python
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, Field, Json
 
@@ -87,7 +87,7 @@ print(
 
 
 class Model(BaseModel):
-    x: List[Json[Any]]
+    x: list[Json[Any]]
 
 
 print(Model(x=['{"a": 1}', '[1, 2]']).model_dump())
@@ -189,7 +189,7 @@ Serialization can be customised on a field using the
 
 ```python
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, field_serializer, model_serializer
 
@@ -216,7 +216,7 @@ class Model(BaseModel):
     x: str
 
     @model_serializer
-    def ser_model(self) -> Dict[str, Any]:
+    def ser_model(self) -> dict[str, Any]:
         return {'x': f'serialized {self.x}'}
 
 
@@ -239,7 +239,7 @@ Both serializers accept optional arguments including:
 `PlainSerializer` uses a simple function to modify the output of serialization.
 
 ```python
-from typing_extensions import Annotated
+from typing import Annotated
 
 from pydantic import BaseModel
 from pydantic.functional_serializers import PlainSerializer
@@ -264,9 +264,7 @@ print(MyModel(x=1234).model_dump(mode='json'))
 logic, and can modify the resulting value before returning it as the final output of serialization.
 
 ```python
-from typing import Any
-
-from typing_extensions import Annotated
+from typing import Annotated, Any
 
 from pydantic import BaseModel, SerializerFunctionWrapHandler
 from pydantic.functional_serializers import WrapSerializer
@@ -353,7 +351,7 @@ Subclasses of standard types are automatically dumped like their super-classes:
 
 ```python
 from datetime import date, timedelta
-from typing import Any, Type
+from typing import Any
 
 from pydantic_core import core_schema
 
@@ -368,7 +366,7 @@ class DayThisYear(date):
 
     @classmethod
     def __get_pydantic_core_schema__(
-        cls, source: Type[Any], handler: GetCoreSchemaHandler
+        cls, source: type[Any], handler: GetCoreSchemaHandler
     ) -> core_schema.CoreSchema:
         return core_schema.no_info_after_validator_function(
             cls.validate,
@@ -544,14 +542,12 @@ but not the base class, are not included in serialization.
 This setting even takes effect with nested and recursive patterns as well. For example:
 
 ```python
-from typing import List
-
 from pydantic import BaseModel
 
 
 class User(BaseModel):
     name: str
-    friends: List['User']
+    friends: list['User']
 
 
 class UserLogin(User):
@@ -602,13 +598,13 @@ You can override the default setting for `serialize_as_any` by configuring a sub
 For example, you could do the following if you want to use duck-typing serialization by default:
 
 ```python
-from typing import Any, Dict
+from typing import Any
 
 from pydantic import BaseModel, SecretStr
 
 
 class MyBaseModel(BaseModel):
-    def model_dump(self, **kwargs) -> Dict[str, Any]:
+    def model_dump(self, **kwargs) -> dict[str, Any]:
         return super().model_dump(serialize_as_any=True, **kwargs)
 
     def model_dump_json(self, **kwargs) -> str:
@@ -709,7 +705,6 @@ To exclude a field from **every** member of a list or tuple, the dictionary key 
 
 ```python
 import datetime
-from typing import List
 
 from pydantic import BaseModel, SecretStr
 
@@ -739,7 +734,7 @@ class User(BaseModel):
     second_name: str
     address: Address
     card_details: CardDetails
-    hobbies: List[Hobby]
+    hobbies: list[Hobby]
 
 
 user = User(

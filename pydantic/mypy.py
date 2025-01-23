@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import sys
+from collections.abc import Iterator
 from configparser import ConfigParser
-from typing import Any, Callable, Iterator
+from typing import Any, Callable, cast
 
 from mypy.errorcodes import ErrorCode
 from mypy.expandtype import expand_type, expand_type_by_instance
@@ -94,6 +95,7 @@ DECORATOR_FULLNAMES = {
     'pydantic.deprecated.class_validators.validator',
     'pydantic.deprecated.class_validators.root_validator',
 }
+IMPLICIT_CLASSMETHOD_DECORATOR_FULLNAMES = DECORATOR_FULLNAMES - {'pydantic.functional_serializers.model_serializer'}
 
 
 MYPY_VERSION_TUPLE = parse_mypy_version(mypy_version)
@@ -131,7 +133,7 @@ class PydanticPlugin(Plugin):
         sym = self.lookup_fully_qualified(fullname)
         if sym and isinstance(sym.node, TypeInfo):  # pragma: no branch
             # No branching may occur if the mypy cache has not been cleared
-            if any(base.fullname == BASEMODEL_FULLNAME for base in sym.node.mro):
+            if sym.node.has_base(BASEMODEL_FULLNAME):
                 return self._pydantic_model_class_maker_callback
         return None
 
@@ -235,7 +237,7 @@ def from_attributes_callback(ctx: MethodContext) -> Type:
     pydantic_metadata = model_type.type.metadata.get(METADATA_KEY)
     if pydantic_metadata is None:
         return ctx.default_return_type
-    if not any(base.fullname == BASEMODEL_FULLNAME for base in model_type.type.mro):
+    if not model_type.type.has_base(BASEMODEL_FULLNAME):
         # not a Pydantic v2 model
         return ctx.default_return_type
     from_attributes = pydantic_metadata.get('config', {}).get('from_attributes')
@@ -327,7 +329,15 @@ class PydanticModelField:
                     for arg in filled_with_typevars.args:
                         if isinstance(arg, TypeVarType):
                             arg.variance = INVARIANT
-                return expand_type(self.type, {self.info.self_type.id: filled_with_typevars})
+
+                expanded_type = expand_type(self.type, {self.info.self_type.id: filled_with_typevars})
+                if isinstance(expanded_type, Instance) and is_root_model(expanded_type.type):
+                    # When a root model is used as a field, Pydantic allows both an instance of the root model
+                    # as well as instances of the `root` field type:
+                    root_type = cast(Type, expanded_type.type['root'].type)
+                    expanded_root_type = expand_type_by_instance(root_type, expanded_type)
+                    expanded_type = UnionType([expanded_type, expanded_root_type])
+                return expanded_type
         return self.type
 
     def to_var(
@@ -441,9 +451,9 @@ class PydanticModelTransformer:
         * stores the fields, config, and if the class is settings in the mypy metadata for access by subclasses
         """
         info = self._cls.info
-        is_root_model = any(ROOT_MODEL_FULLNAME in base.fullname for base in info.mro[:-1])
+        is_a_root_model = is_root_model(info)
         config = self.collect_config()
-        fields, class_vars = self.collect_fields_and_class_vars(config, is_root_model)
+        fields, class_vars = self.collect_fields_and_class_vars(config, is_a_root_model)
         if fields is None or class_vars is None:
             # Some definitions are not ready. We need another pass.
             return False
@@ -451,9 +461,9 @@ class PydanticModelTransformer:
             if field.type is None:
                 return False
 
-        is_settings = any(base.fullname == BASESETTINGS_FULLNAME for base in info.mro[:-1])
-        self.add_initializer(fields, config, is_settings, is_root_model)
-        self.add_model_construct_method(fields, config, is_settings, is_root_model)
+        is_settings = info.has_base(BASESETTINGS_FULLNAME)
+        self.add_initializer(fields, config, is_settings, is_a_root_model)
+        self.add_model_construct_method(fields, config, is_settings, is_a_root_model)
         self.set_frozen(fields, self._api, frozen=config.frozen is True)
 
         self.adjust_decorator_signatures()
@@ -480,7 +490,7 @@ class PydanticModelTransformer:
                 if (
                     isinstance(first_dec, CallExpr)
                     and isinstance(first_dec.callee, NameExpr)
-                    and first_dec.callee.fullname in DECORATOR_FULLNAMES
+                    and first_dec.callee.fullname in IMPLICIT_CLASSMETHOD_DECORATOR_FULLNAMES
                     # @model_validator(mode="after") is an exception, it expects a regular method
                     and not (
                         first_dec.callee.fullname == MODEL_VALIDATOR_FULLNAME
@@ -761,6 +771,10 @@ class PydanticModelTransformer:
                 )
                 node.type = AnyType(TypeOfAny.from_error)
 
+        if node.is_final and has_default:
+            # TODO this path should be removed (see https://github.com/pydantic/pydantic/issues/11119)
+            return PydanticModelClassVar(lhs.name)
+
         alias, has_dynamic_alias = self.get_alias_info(stmt)
         if has_dynamic_alias and not model_config.populate_by_name and self.plugin_config.warn_required_dynamic_aliases:
             error_required_dynamic_aliases(self._api, stmt)
@@ -1027,15 +1041,17 @@ class PydanticModelTransformer:
             # Assigned value is not a call to pydantic.fields.Field
             return None, False
 
-        for i, arg_name in enumerate(expr.arg_names):
-            if arg_name != 'alias':
-                continue
-            arg = expr.args[i]
-            if isinstance(arg, StrExpr):
-                return arg.value, False
-            else:
-                return None, True
-        return None, False
+        if 'validation_alias' in expr.arg_names:
+            arg = expr.args[expr.arg_names.index('validation_alias')]
+        elif 'alias' in expr.arg_names:
+            arg = expr.args[expr.arg_names.index('alias')]
+        else:
+            return None, False
+
+        if isinstance(arg, StrExpr):
+            return arg.value, False
+        else:
+            return None, True
 
     @staticmethod
     def is_field_frozen(stmt: AssignmentStmt) -> bool:
@@ -1159,6 +1175,11 @@ class ModelConfigData:
         """Set default value for Pydantic model config if config value is `None`."""
         if getattr(self, key) is None:
             setattr(self, key, value)
+
+
+def is_root_model(info: TypeInfo) -> bool:
+    """Return whether the type info is a root model subclass (or the `RootModel` class itself)."""
+    return info.has_base(ROOT_MODEL_FULLNAME)
 
 
 ERROR_ORM = ErrorCode('pydantic-orm', 'Invalid from_attributes call', 'Pydantic')

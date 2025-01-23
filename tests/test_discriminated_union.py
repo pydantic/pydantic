@@ -1,14 +1,15 @@
 import re
 import sys
+from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import Enum, IntEnum
 from types import SimpleNamespace
-from typing import Any, Callable, Generic, List, Optional, Sequence, TypeVar, Union
+from typing import Annotated, Any, Callable, Generic, Literal, Optional, TypeVar, Union
 
 import pytest
 from dirty_equals import HasRepr, IsStr
 from pydantic_core import SchemaValidator, core_schema
-from typing_extensions import Annotated, Literal, TypedDict
+from typing_extensions import TypedDict
 
 from pydantic import (
     BaseModel,
@@ -16,6 +17,7 @@ from pydantic import (
     Discriminator,
     Field,
     PlainSerializer,
+    PlainValidator,
     TypeAdapter,
     ValidationError,
     field_validator,
@@ -29,10 +31,8 @@ from pydantic.json_schema import GenerateJsonSchema
 from pydantic.types import Tag
 
 
-def test_discriminated_union_type():
-    with pytest.raises(
-        TypeError, match="'str' is not a valid discriminated union variant; should be a `BaseModel` or `dataclass`"
-    ):
+def test_discriminated_union_type_invalid_single_variant():
+    with pytest.raises(TypeError, match="The core schema type 'str' is not a valid discriminated union variant."):
 
         class Model(BaseModel):
             x: str = Field(discriminator='qwe')
@@ -58,7 +58,7 @@ def test_discriminated_single_variant(union):
             'ctx': {'discriminator': "'qwe'", 'expected_tags': "'qwe'", 'tag': 'asd'},
             'input': {'qwe': 'asd', 'y': 'a'},
             'loc': ('x',),
-            'msg': "Input tag 'asd' found using 'qwe' does not match any of the expected " "tags: 'qwe'",
+            'msg': "Input tag 'asd' found using 'qwe' does not match any of the expected tags: 'qwe'",
             'type': 'union_tag_invalid',
         }
     ]
@@ -72,15 +72,6 @@ def test_discriminated_union_single_variant():
         x: Union[InnerModel] = Field(discriminator='qwe')
 
     assert Model(x={'qwe': 'qwe'}).x.qwe == 'qwe'
-
-
-def test_discriminated_union_invalid_type():
-    with pytest.raises(
-        TypeError, match="'str' is not a valid discriminated union variant; should be a `BaseModel` or `dataclass`"
-    ):
-
-        class Model(BaseModel):
-            x: Union[str, int] = Field(discriminator='qwe')
 
 
 def test_discriminated_union_defined_discriminator():
@@ -196,7 +187,7 @@ def test_discriminated_union_validation(color_discriminator_kind, pet_discrimina
         {
             'input': 'x',
             'loc': ('number',),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'type': 'int_parsing',
         },
     ]
@@ -286,7 +277,7 @@ def test_discriminated_annotated_union():
         {
             'input': 'x',
             'loc': ('number',),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'type': 'int_parsing',
         },
     ]
@@ -298,7 +289,7 @@ def test_discriminated_annotated_union():
             'ctx': {'discriminator': "'pet_type'", 'expected_tags': "'cat', 'dog'", 'tag': 'fish'},
             'input': {'pet_type': 'fish'},
             'loc': ('pet',),
-            'msg': "Input tag 'fish' found using 'pet_type' does not match any of the " "expected tags: 'cat', 'dog'",
+            'msg': "Input tag 'fish' found using 'pet_type' does not match any of the expected tags: 'cat', 'dog'",
             'type': 'union_tag_invalid',
         }
     ]
@@ -318,7 +309,7 @@ def test_discriminated_annotated_union():
             'ctx': {'discriminator': "'color'", 'expected_tags': "'black', 'white'", 'tag': 'red'},
             'input': {'color': 'red', 'pet_type': 'cat'},
             'loc': ('pet', 'cat'),
-            'msg': "Input tag 'red' found using 'color' does not match any of the " "expected tags: 'black', 'white'",
+            'msg': "Input tag 'red' found using 'color' does not match any of the expected tags: 'black', 'white'",
             'type': 'union_tag_invalid',
         }
     ]
@@ -391,7 +382,7 @@ def test_discriminated_union_int():
             'ctx': {'discriminator': "'m'", 'expected_tags': '1, 2', 'tag': '3'},
             'input': {'m': 3},
             'loc': ('sub',),
-            'msg': "Input tag '3' found using 'm' does not match any of the expected " 'tags: 1, 2',
+            'msg': "Input tag '3' found using 'm' does not match any of the expected tags: 1, 2",
             'type': 'union_tag_invalid',
         }
     ]
@@ -418,7 +409,6 @@ if sys.version_info >= (3, 11):
     ENUM_TEST_CASES.append((StrEnum, {'a': 'v_a', 'b': 'v_b'}))
 
 
-@pytest.mark.skipif(sys.version_info[:2] == (3, 8), reason='https://github.com/python/cpython/issues/103592')
 @pytest.mark.parametrize('base_class,choices', ENUM_TEST_CASES)
 def test_discriminated_union_enum(base_class, choices):
     EnumValue = base_class('EnumValue', choices)
@@ -590,7 +580,7 @@ def test_optional_union():
             'ctx': {'discriminator': "'pet_type'", 'expected_tags': "'cat', 'dog'", 'tag': 'lizard'},
             'input': {'pet_type': 'lizard'},
             'loc': ('pet',),
-            'msg': "Input tag 'lizard' found using 'pet_type' does not match any of the " "expected tags: 'cat', 'dog'",
+            'msg': "Input tag 'lizard' found using 'pet_type' does not match any of the expected tags: 'cat', 'dog'",
             'type': 'union_tag_invalid',
         }
     ]
@@ -632,7 +622,7 @@ def test_optional_union_with_defaults():
             'ctx': {'discriminator': "'pet_type'", 'expected_tags': "'cat', 'dog'", 'tag': 'lizard'},
             'input': {'pet_type': 'lizard'},
             'loc': ('pet',),
-            'msg': "Input tag 'lizard' found using 'pet_type' does not match any of the " "expected tags: 'cat', 'dog'",
+            'msg': "Input tag 'lizard' found using 'pet_type' does not match any of the expected tags: 'cat', 'dog'",
             'type': 'union_tag_invalid',
         }
     ]
@@ -806,7 +796,7 @@ def test_none_schema() -> None:
             'ctx': {'discriminator': "'kind'", 'expected_tags': "'cat', 'dog'", 'tag': 'lizard'},
             'input': {'kind': 'lizard'},
             'loc': (),
-            'msg': "Input tag 'lizard' found using 'kind' does not match any of the " "expected tags: 'cat', 'dog'",
+            'msg': "Input tag 'lizard' found using 'kind' does not match any of the expected tags: 'cat', 'dog'",
             'type': 'union_tag_invalid',
         }
     ]
@@ -837,7 +827,7 @@ def test_nested_unwrapping() -> None:
             'ctx': {'discriminator': "'kind'", 'expected_tags': "'cat', 'dog'", 'tag': 'lizard'},
             'input': {'kind': 'lizard'},
             'loc': (),
-            'msg': "Input tag 'lizard' found using 'kind' does not match any of the " "expected tags: 'cat', 'dog'",
+            'msg': "Input tag 'lizard' found using 'kind' does not match any of the expected tags: 'cat', 'dog'",
             'type': 'union_tag_invalid',
         }
     ]
@@ -863,12 +853,25 @@ def test_invalid_discriminated_union_type() -> None:
     class Dog(BaseModel):
         pet_type: Literal['dog'] = Field(alias='typeOfPet')
 
-    with pytest.raises(
-        TypeError, match="'str' is not a valid discriminated union variant; should be a `BaseModel` or `dataclass`"
-    ):
+    with pytest.raises(TypeError, match="The core schema type 'str' is not a valid discriminated union variant."):
 
         class Model(BaseModel):
             pet: Union[Cat, Dog, str] = Field(discriminator='pet_type')
+
+
+def test_invalid_list_discriminated_union_type():
+    with pytest.raises(
+        TypeError,
+        match=re.escape(
+            "The core schema type 'list' is not a valid discriminated union variant. "
+            'If you are making use of a list of union types, make sure the discriminator is applied to the '
+            'union type and not the list (e.g. `list[Annotated[<T> | <U>, Field(discriminator=...)]]`).'
+        ),
+    ):
+
+        class Model(BaseModel):
+            # Note: `int`/`str` is invalid but we just want to test the `list` error message:
+            pets: list[Union[int, str]] = Field(discriminator='pet_type')
 
 
 def test_invalid_alias() -> None:
@@ -941,14 +944,11 @@ def test_wrap_function_schema() -> None:
 def test_plain_function_schema_is_invalid() -> None:
     with pytest.raises(
         TypeError,
-        match="'function-plain' is not a valid discriminated union variant; " 'should be a `BaseModel` or `dataclass`',
+        match="The core schema type 'function-plain' is not a valid discriminated union variant.",
     ):
-        apply_discriminator(
-            core_schema.union_schema(
-                [core_schema.with_info_plain_validator_function(lambda x, y: None), core_schema.int_schema()]
-            ),
-            'kind',
-        )
+
+        class Model(BaseModel):
+            a: Union[Annotated[int, PlainValidator(lambda v: v)], str] = Field(discriminator='kind')
 
 
 def test_invalid_str_choice_discriminator_values() -> None:
@@ -965,9 +965,7 @@ def test_invalid_str_choice_discriminator_values() -> None:
         ]
     )
 
-    with pytest.raises(
-        TypeError, match="'str' is not a valid discriminated union variant; should be a `BaseModel` or `dataclass`"
-    ):
+    with pytest.raises(TypeError, match="The core schema type 'str' is not a valid discriminated union variant."):
         apply_discriminator(schema, 'kind')
 
 
@@ -1819,7 +1817,7 @@ def test_presence_of_discriminator_when_generating_type_adaptor_json_schema_defi
 
     class CreateObjectDto(BaseModel):
         id: int
-        items: List[
+        items: list[
             Annotated[
                 Union[
                     CreateItem1,
@@ -1887,7 +1885,7 @@ def test_nested_discriminator() -> None:
 
     class MyModel(BaseModel):
         type: Literal['mixed']
-        sub_models: List['SubModel']
+        sub_models: list['SubModel']
         steps: Union[Step_A, Step_B] = Field(
             default=None,
             discriminator='type',
@@ -2107,12 +2105,12 @@ def test_discriminated_union_with_unsubstituted_type_var() -> None:
 
     class Dog(BaseModel, Generic[T]):
         type_: Literal['dog']
-        friends: List['GenericPet']
+        friends: list['GenericPet']
         id: T
 
     class Cat(BaseModel, Generic[T]):
         type_: Literal['cat']
-        friends: List['GenericPet']
+        friends: list['GenericPet']
         id: T
 
     GenericPet = Annotated[Union[Dog[T], Cat[T]], Field(discriminator='type_')]

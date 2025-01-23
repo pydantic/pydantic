@@ -94,7 +94,7 @@ remaining recursion depth:
 ```python
 from contextlib import contextmanager
 from dataclasses import field
-from typing import Iterator, List
+from typing import Iterator
 
 from pydantic import BaseModel, ValidationError, field_validator
 
@@ -115,7 +115,7 @@ def suppress_recursion_validation_error() -> Iterator[None]:
 
 class Node(BaseModel):
     id: int
-    children: List['Node'] = field(default_factory=list)
+    children: list['Node'] = field(default_factory=list)
 
     @field_validator('children', mode='wrap')
     @classmethod
@@ -168,7 +168,7 @@ This can also be handled if desired:
 
 ```python
 from dataclasses import field
-from typing import Any, List
+from typing import Any
 
 from pydantic import (
     SerializerFunctionWrapHandler,
@@ -185,11 +185,11 @@ class NodeReference:
 
 @dataclass
 class Node(NodeReference):
-    children: List['Node'] = field(default_factory=list)
+    children: list['Node'] = field(default_factory=list)
 
     @field_serializer('children', mode='wrap')
     def serialize(
-        self, children: List['Node'], handler: SerializerFunctionWrapHandler
+        self, children: list['Node'], handler: SerializerFunctionWrapHandler
     ) -> Any:
         """
         Serialize a list of nodes, handling circular references by excluding the children.

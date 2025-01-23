@@ -1,7 +1,7 @@
 import dataclasses
 import gc
 import pickle
-from typing import Optional, Type
+from typing import Optional
 
 import pytest
 
@@ -72,7 +72,7 @@ class ImportableModel(BaseModel):
     val: PositiveFloat = 0.7
 
 
-def model_factory() -> Type:
+def model_factory() -> type:
     class NonImportableModel(BaseModel):
         foo: str
         bar: Optional[str] = None
@@ -91,7 +91,7 @@ def model_factory() -> Type:
         (model_factory(), True),
     ],
 )
-def test_pickle_model(model_type: Type, use_cloudpickle: bool):
+def test_pickle_model(model_type: type, use_cloudpickle: bool):
     if use_cloudpickle:
         model_type = cloudpickle.loads(cloudpickle.dumps(model_type))
     else:
@@ -119,7 +119,7 @@ class ImportableNestedModel(BaseModel):
     inner: ImportableModel
 
 
-def nested_model_factory() -> Type:
+def nested_model_factory() -> type:
     class NonImportableNestedModel(BaseModel):
         inner: ImportableModel
 
@@ -136,7 +136,7 @@ def nested_model_factory() -> Type:
         (nested_model_factory(), True),
     ],
 )
-def test_pickle_nested_model(model_type: Type, use_cloudpickle: bool):
+def test_pickle_nested_model(model_type: type, use_cloudpickle: bool):
     if use_cloudpickle:
         model_type = cloudpickle.loads(cloudpickle.dumps(model_type))
     else:
@@ -163,7 +163,7 @@ class ImportableDataclass:
     b: float
 
 
-def dataclass_factory() -> Type:
+def dataclass_factory() -> type:
     @pydantic.dataclasses.dataclass
     class NonImportableDataclass:
         a: int
@@ -178,7 +178,7 @@ class ImportableBuiltinDataclass:
     b: float
 
 
-def builtin_dataclass_factory() -> Type:
+def builtin_dataclass_factory() -> type:
     @dataclasses.dataclass
     class NonImportableBuiltinDataclass:
         a: int
@@ -191,7 +191,7 @@ class ImportableChildDataclass(ImportableDataclass):
     pass
 
 
-def child_dataclass_factory() -> Type:
+def child_dataclass_factory() -> type:
     class NonImportableChildDataclass(ImportableDataclass):
         pass
 
@@ -215,7 +215,7 @@ def child_dataclass_factory() -> Type:
         (pydantic.dataclasses.dataclass(builtin_dataclass_factory()), True),
     ],
 )
-def test_pickle_dataclass(dataclass_type: Type, use_cloudpickle: bool):
+def test_pickle_dataclass(dataclass_type: type, use_cloudpickle: bool):
     if use_cloudpickle:
         dataclass_type = cloudpickle.loads(cloudpickle.dumps(dataclass_type))
     else:
@@ -250,7 +250,7 @@ class ImportableNestedDataclassModel(BaseModel):
     inner: ImportableBuiltinDataclass
 
 
-def nested_dataclass_model_factory() -> Type:
+def nested_dataclass_model_factory() -> type:
     class NonImportableNestedDataclassModel(BaseModel):
         inner: ImportableBuiltinDataclass
 
@@ -267,7 +267,7 @@ def nested_dataclass_model_factory() -> Type:
         (nested_dataclass_model_factory(), True),
     ],
 )
-def test_pickle_dataclass_nested_in_model(model_type: Type, use_cloudpickle: bool):
+def test_pickle_dataclass_nested_in_model(model_type: type, use_cloudpickle: bool):
     if use_cloudpickle:
         model_type = cloudpickle.loads(cloudpickle.dumps(model_type))
     else:
@@ -290,7 +290,7 @@ class ImportableModelWithConfig(BaseModel):
     model_config = ConfigDict(title='MyTitle')
 
 
-def model_with_config_factory() -> Type:
+def model_with_config_factory() -> type:
     class NonImportableModelWithConfig(BaseModel):
         model_config = ConfigDict(title='MyTitle')
 
@@ -305,7 +305,7 @@ def model_with_config_factory() -> Type:
         (model_with_config_factory(), True),
     ],
 )
-def test_pickle_model_with_config(model_type: Type, use_cloudpickle: bool):
+def test_pickle_model_with_config(model_type: type, use_cloudpickle: bool):
     if use_cloudpickle:
         model_type = cloudpickle.loads(cloudpickle.dumps(model_type))
     else:

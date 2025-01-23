@@ -14,8 +14,7 @@ Using type hints also means that Pydantic integrates well with static typing too
 and IDEs (like [PyCharm](https://www.jetbrains.com/pycharm/) and [VSCode](https://code.visualstudio.com/)).
 
 ???+ example "Example - just type hints"
-    _(This example requires Python 3.9+)_
-    ```python {requires="3.9"}
+    ```python
     from typing import Annotated, Literal
 
     from annotated_types import Gt

@@ -13,8 +13,6 @@ If you'd prefer to use pure Pydantic with SQLAlchemy, we recommend using Pydanti
 as shown in the example below. In this case, we take advantage of Pydantic's aliases feature to name a `Column` after a reserved SQLAlchemy field, thus avoiding conflicts.
 
 ```python
-import typing
-
 import sqlalchemy as sa
 from sqlalchemy.orm import declarative_base
 
@@ -24,7 +22,7 @@ from pydantic import BaseModel, ConfigDict, Field
 class MyModel(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    metadata: typing.Dict[str, str] = Field(alias='metadata_')
+    metadata: dict[str, str] = Field(alias='metadata_')
 
 
 Base = declarative_base()

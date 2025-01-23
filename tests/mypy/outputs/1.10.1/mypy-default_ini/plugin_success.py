@@ -1,5 +1,5 @@
 from dataclasses import InitVar
-from typing import Any, ClassVar, Generic, List, Optional, TypeVar, Union
+from typing import Any, ClassVar, Generic, Optional, TypeVar, Union
 
 from typing_extensions import Self
 
@@ -115,11 +115,17 @@ MultiInheritanceModel().f()
 
 
 class AliasModel(BaseModel):
-    x: str = Field(..., alias='y')
+    x: str = Field(alias='x_alias')
+    y: str = Field(validation_alias='y_alias')
+    z: str = Field(validation_alias='z_alias', alias='unused')
 
 
-alias_model = AliasModel(y='hello')
-assert alias_model.x == 'hello'
+alias_model = AliasModel(x_alias='a', y_alias='a', z_alias='a')
+# MYPY: error: Unexpected keyword argument "y_alias" for "AliasModel"; did you mean "x_alias"?  [call-arg]
+# MYPY: error: Unexpected keyword argument "z_alias" for "AliasModel"; did you mean "x_alias"?  [call-arg]
+assert alias_model.x == 'a'
+assert alias_model.y == 'a'
+assert alias_model.z == 'a'
 
 
 class ClassVarModel(BaseModel):
@@ -227,7 +233,7 @@ def _default_factory_str() -> str:
     return 'x'
 
 
-def _default_factory_list() -> List[int]:
+def _default_factory_list() -> list[int]:
     return [1, 2, 3]
 
 
@@ -241,7 +247,7 @@ class FieldDefaultTestingModel(BaseModel):
     d: int = Field(1)
 
     # Default factory
-    g: List[int] = Field(default_factory=_default_factory_list)
+    g: list[int] = Field(default_factory=_default_factory_list)
     h: str = Field(default_factory=_default_factory_str)
     i: str = Field(default_factory=lambda: 'test')
 

@@ -1,14 +1,15 @@
-"""Usage docs: https://docs.pydantic.dev/2.10/concepts/plugins#build-a-plugin
+"""!!! abstract "Usage Documentation"
+    [Build a Plugin](../concepts/plugins.md#build-a-plugin)
 
 Plugin interface for Pydantic plugins, and related types.
 """
 
 from __future__ import annotations
 
-from typing import Any, Callable, NamedTuple
+from typing import Any, Callable, Literal, NamedTuple
 
 from pydantic_core import CoreConfig, CoreSchema, ValidationError
-from typing_extensions import Literal, Protocol, TypeAlias
+from typing_extensions import Protocol, TypeAlias
 
 __all__ = (
     'PydanticPluginProtocol',

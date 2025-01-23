@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import os
 from collections import defaultdict
-from typing import Any, Callable, Hashable, TypeVar, Union
+from collections.abc import Hashable
+from typing import Any, Callable, TypeVar, Union
 
 from pydantic_core import CoreSchema, core_schema
 from pydantic_core import validate_core_schema as _validate_core_schema
@@ -36,11 +37,6 @@ _CORE_SCHEMA_FIELD_TYPES = {'typed-dict-field', 'dataclass-field', 'model-field'
 _FUNCTION_WITH_INNER_SCHEMA_TYPES = {'function-before', 'function-after', 'function-wrap'}
 _LIST_LIKE_SCHEMA_WITH_ITEMS_TYPES = {'list', 'set', 'frozenset'}
 
-TAGGED_UNION_TAG_KEY = 'pydantic.internal.tagged_union_tag'
-"""
-Used in a `Tag` schema to specify the tag used for a discriminated union.
-"""
-
 
 def is_core_schema(
     schema: CoreSchemaOrField,
@@ -66,7 +62,7 @@ def is_list_like_schema_with_items_schema(
     return schema['type'] in _LIST_LIKE_SCHEMA_WITH_ITEMS_TYPES
 
 
-def get_type_ref(type_: type[Any], args_override: tuple[type[Any], ...] | None = None) -> str:
+def get_type_ref(type_: Any, args_override: tuple[type[Any], ...] | None = None) -> str:
     """Produces the ref to be used for this type by pydantic_core's core schemas.
 
     This `args_override` argument was added for the purpose of creating valid recursive references
@@ -184,7 +180,7 @@ class _WalkCoreSchema:
         mapping: dict[core_schema.CoreSchemaType, Recurse] = {}
         key: core_schema.CoreSchemaType
         for key in get_args(core_schema.CoreSchemaType):
-            method_name = f"handle_{key.replace('-', '_')}_schema"
+            method_name = f'handle_{key.replace("-", "_")}_schema'
             mapping[key] = getattr(self, method_name, self._handle_other_schemas)
         return mapping
 
@@ -280,11 +276,37 @@ class _WalkCoreSchema:
             schema['values_schema'] = self.walk(values_schema, f)
         return schema
 
-    def handle_function_schema(self, schema: AnyFunctionSchema, f: Walk) -> core_schema.CoreSchema:
-        if not is_function_with_inner_schema(schema):
-            return schema
+    def handle_function_after_schema(
+        self, schema: core_schema.AfterValidatorFunctionSchema, f: Walk
+    ) -> core_schema.CoreSchema:
         schema['schema'] = self.walk(schema['schema'], f)
         return schema
+
+    def handle_function_before_schema(
+        self, schema: core_schema.BeforeValidatorFunctionSchema, f: Walk
+    ) -> core_schema.CoreSchema:
+        schema['schema'] = self.walk(schema['schema'], f)
+        if 'json_schema_input_schema' in schema:
+            schema['json_schema_input_schema'] = self.walk(schema['json_schema_input_schema'], f)
+        return schema
+
+    # TODO duplicate schema types for serializers and validators, needs to be deduplicated:
+    def handle_function_plain_schema(
+        self, schema: core_schema.PlainValidatorFunctionSchema | core_schema.PlainSerializerFunctionSerSchema, f: Walk
+    ) -> core_schema.CoreSchema:
+        if 'json_schema_input_schema' in schema:
+            schema['json_schema_input_schema'] = self.walk(schema['json_schema_input_schema'], f)
+        return schema  # pyright: ignore[reportReturnType]
+
+    # TODO duplicate schema types for serializers and validators, needs to be deduplicated:
+    def handle_function_wrap_schema(
+        self, schema: core_schema.WrapValidatorFunctionSchema | core_schema.WrapSerializerFunctionSerSchema, f: Walk
+    ) -> core_schema.CoreSchema:
+        if 'schema' in schema:
+            schema['schema'] = self.walk(schema['schema'], f)
+        if 'json_schema_input_schema' in schema:
+            schema['json_schema_input_schema'] = self.walk(schema['json_schema_input_schema'], f)
+        return schema  # pyright: ignore[reportReturnType]
 
     def handle_union_schema(self, schema: core_schema.UnionSchema, f: Walk) -> core_schema.CoreSchema:
         new_choices: list[CoreSchema | tuple[CoreSchema, str]] = []
@@ -567,6 +589,6 @@ def pretty_print_core_schema(
 
 
 def validate_core_schema(schema: CoreSchema) -> CoreSchema:
-    if 'PYDANTIC_SKIP_VALIDATING_CORE_SCHEMAS' in os.environ:
-        return schema
-    return _validate_core_schema(schema)
+    if os.getenv('PYDANTIC_VALIDATE_CORE_SCHEMAS'):
+        return _validate_core_schema(schema)
+    return schema

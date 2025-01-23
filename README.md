@@ -11,7 +11,7 @@
 Data validation using Python type hints.
 
 Fast and extensible, Pydantic plays nicely with your linters/IDE/brain.
-Define how data should be in pure, canonical Python 3.8+; validate it with Pydantic.
+Define how data should be in pure, canonical Python 3.9+; validate it with Pydantic.
 
 ## Pydantic Logfire :fire:
 
@@ -40,14 +40,14 @@ see the [Install](https://docs.pydantic.dev/install/) section in the documentati
 
 ```python
 from datetime import datetime
-from typing import List, Optional
+from typing import Optional
 from pydantic import BaseModel
 
 class User(BaseModel):
     id: int
     name: str = 'John Doe'
     signup_ts: Optional[datetime] = None
-    friends: List[int] = []
+    friends: list[int] = []
 
 external_data = {'id': '123', 'signup_ts': '2017-06-01 12:22', 'friends': [1, '2', b'3']}
 user = User(**external_data)
