@@ -54,7 +54,7 @@ You can use both the Pydantic's [`Field()`][pydantic.Field] and the stdlib's [`f
 
 ```python
 import dataclasses
-from typing import List, Optional
+from typing import Optional
 
 from pydantic import Field, TypeAdapter
 from pydantic.dataclasses import dataclass
@@ -64,7 +64,7 @@ from pydantic.dataclasses import dataclass
 class User:
     id: int
     name: str = 'John Doe'
-    friends: List[int] = dataclasses.field(default_factory=lambda: [0])
+    friends: list[int] = dataclasses.field(default_factory=lambda: [0])
     age: Optional[int] = dataclasses.field(
         default=None,
         metadata={'title': 'The age of the user', 'description': 'do not lie!'},
@@ -141,6 +141,7 @@ class MyDataclass2:
     While Pydantic dataclasses support the [`extra`][pydantic.config.ConfigDict.extra] configuration value, some default
     behavior of stdlib dataclasses may prevail. For example, any extra fields present on a Pydantic dataclass with
     [`extra`][pydantic.config.ConfigDict.extra] set to `'allow'` are omitted in the dataclass' string representation.
+    There is also no way to provide validation [using the `__pydantic_extra__` attribute](./models.md#extra-data).
 
 ## Rebuilding dataclass schema
 

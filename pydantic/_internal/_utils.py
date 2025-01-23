@@ -8,16 +8,20 @@ from __future__ import annotations as _annotations
 import dataclasses
 import keyword
 import typing
+import warnings
 import weakref
 from collections import OrderedDict, defaultdict, deque
+from collections.abc import Mapping
 from copy import deepcopy
 from functools import cached_property
 from inspect import Parameter
 from itertools import zip_longest
 from types import BuiltinFunctionType, CodeType, FunctionType, GeneratorType, LambdaType, ModuleType
-from typing import Any, Callable, Mapping, TypeVar
+from typing import Any, Callable, Generic, TypeVar, overload
 
-from typing_extensions import TypeAlias, TypeGuard
+from typing_extensions import TypeAlias, TypeGuard, deprecated
+
+from pydantic import PydanticDeprecatedSince211
 
 from . import _repr, _typing_extra
 from ._import_utils import import_cached_base_model
@@ -387,3 +391,39 @@ class SafeGetItemProxy:
 
         def __contains__(self, key: str, /) -> bool:
             return self.wrapped.__contains__(key)
+
+
+_ModelT = TypeVar('_ModelT', bound='BaseModel')
+_RT = TypeVar('_RT')
+
+
+class deprecated_instance_property(Generic[_ModelT, _RT]):
+    """A decorator exposing the decorated class method as a property, with a warning on instance access.
+
+    This decorator takes a class method defined on the `BaseModel` class and transforms it into
+    an attribute. The attribute can be accessed on both the class and instances of the class. If accessed
+    via an instance, a deprecation warning is emitted stating that instance access will be removed in V3.
+    """
+
+    def __init__(self, fget: Callable[[type[_ModelT]], _RT], /) -> None:
+        # Note: fget should be a classmethod:
+        self.fget = fget
+
+    @overload
+    def __get__(self, instance: None, objtype: type[_ModelT]) -> _RT: ...
+    @overload
+    @deprecated(
+        'Accessing this attribute on the instance is deprecated, and will be removed in Pydantic V3. '
+        'Instead, you should access this attribute from the model class.',
+        category=None,
+    )
+    def __get__(self, instance: _ModelT, objtype: type[_ModelT]) -> _RT: ...
+    def __get__(self, instance: _ModelT | None, objtype: type[_ModelT]) -> _RT:
+        if instance is not None:
+            warnings.warn(
+                'Accessing this attribute on the instance is deprecated, and will be removed in Pydantic V3. '
+                'Instead, you should access this attribute from the model class.',
+                category=PydanticDeprecatedSince211,
+                stacklevel=2,
+            )
+        return self.fget.__get__(instance, objtype)()

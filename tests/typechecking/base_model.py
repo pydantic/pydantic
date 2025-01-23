@@ -34,5 +34,6 @@ k = Knight()  # type: ignore[call-arg]  # pyright: ignore[reportCallIssue]
 
 assert_type(Knight.model_fields, dict[str, FieldInfo])
 assert_type(Knight.model_computed_fields, dict[str, ComputedFieldInfo])
-assert_type(k.model_fields, dict[str, FieldInfo])
-assert_type(k.model_computed_fields, dict[str, ComputedFieldInfo])
+# Mypy does not report the deprecated access (https://github.com/python/mypy/issues/18323):
+assert_type(k.model_fields, dict[str, FieldInfo])  # pyright: ignore[reportDeprecated]
+assert_type(k.model_computed_fields, dict[str, ComputedFieldInfo])  # pyright: ignore[reportDeprecated]

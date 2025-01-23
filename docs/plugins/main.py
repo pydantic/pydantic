@@ -40,29 +40,8 @@ def on_pre_build(config: Config) -> None:
     """
     Before the build starts.
     """
-    import mkdocs_redirects.plugin
-
     add_changelog()
     add_mkdocs_run_deps()
-
-    # work around for very unfortunate bug in mkdocs-redirects:
-    # https://github.com/mkdocs/mkdocs-redirects/issues/65
-    mkdocs_redirects.plugin.HTML_TEMPLATE = """
-<!doctype html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <title>Redirecting...</title>
-    <link rel="canonical" href="{url}">
-    <!-- remove problematic tag here -->
-    <script>var anchor=window.location.hash.substr(1);location.href="{url}"+(anchor?"#"+anchor:"")</script>
-    <meta http-equiv="refresh" content="0; url={url}">
-</head>
-<body>
-Redirecting...
-</body>
-</html>
-"""
 
 
 def on_files(files: Files, config: Config) -> Files:
@@ -189,7 +168,10 @@ def upgrade_python(markdown: str) -> str:
         else:
             return '\n\n'.join(output)
 
-    return re.sub(r'^(``` *py.*?)\n(.+?)^```(\s+(?:^\d+\. .+?\n)*)', add_tabs, markdown, flags=re.M | re.S)
+    # Note: we should move away from this regex approach. It does not handle edge cases (indented code blocks inside
+    # other blocks, etc) and can lead to bugs in the rendering of annotations. Edit with care and make sure the rendered
+    # documentation does not break:
+    return re.sub(r'(``` *py.*?)\n(.+?)^```(\s+(?:^\d+\. (?:[^\n][\n]?)+\n?)*)', add_tabs, markdown, flags=re.M | re.S)
 
 
 def _upgrade_code(code: str, min_version: int) -> str:

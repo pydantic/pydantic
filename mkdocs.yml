@@ -73,6 +73,7 @@ validation:
   omitted_files: warn
   absolute_links: warn
   unrecognized_links: warn
+  anchors: warn
 
 extra_css:
   - 'extra/terminal.css'
@@ -176,6 +177,7 @@ nav:
     - devtools: integrations/devtools.md
     - Rich: integrations/rich.md
     - Linting: integrations/linting.md
+    - Documentation: integrations/documentation.md
   - Production Tools:
     - AWS Lambda: integrations/aws_lambda.md
 - Blog: https://blog.pydantic.dev/
@@ -228,8 +230,6 @@ plugins:
           merge_init_into_class: true
           show_signature_annotations: true
           signature_crossrefs: true
-          extensions:
-            - docs/plugins/griffe_doclinks.py
         import:
           - url: https://docs.python.org/3/objects.inv
             domains: [py, std]

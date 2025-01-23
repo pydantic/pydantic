@@ -80,11 +80,6 @@ test-examples: .uv
 	@echo "running examples"
 	@find docs/examples -type f -name '*.py' | xargs -I'{}' sh -c 'uv run python {} >/dev/null 2>&1 || (echo "{} failed")'
 
-.PHONY: test-fastapi  ## Run the FastAPI tests with this version of pydantic
-test-fastapi:
-	git clone https://github.com/tiangolo/fastapi.git --single-branch
-	./tests/test_fastapi.sh
-
 .PHONY: test-pydantic-settings  ## Run the pydantic-settings tests with this version of pydantic
 test-pydantic-settings: .uv
 	git clone https://github.com/pydantic/pydantic-settings.git --single-branch

@@ -9,9 +9,9 @@ import typing
 import warnings
 import weakref
 from abc import ABCMeta
-from functools import lru_cache, partial
+from functools import cache, partial, wraps
 from types import FunctionType
-from typing import Any, Callable, Generic, Literal, NoReturn, TypeVar, cast
+from typing import Any, Callable, Generic, Literal, NoReturn, cast
 
 from pydantic_core import PydanticUndefined, SchemaSerializer
 from typing_extensions import TypeAliasType, dataclass_transform, deprecated, get_args
@@ -27,7 +27,6 @@ from ._generics import PydanticGenericMetadata, get_model_typevars_map
 from ._import_utils import import_cached_base_model, import_cached_field_info
 from ._mock_val_ser import set_model_mocks
 from ._namespace_utils import NsResolver
-from ._schema_generation_shared import CallbackGetCoreSchemaHandler
 from ._signature import generate_pydantic_signature
 from ._typing_extra import (
     _make_forward_ref,
@@ -39,8 +38,8 @@ from ._typing_extra import (
 from ._utils import LazyClassAttribute, SafeGetItemProxy
 
 if typing.TYPE_CHECKING:
-    from ..fields import ComputedFieldInfo, FieldInfo, ModelPrivateAttr
     from ..fields import Field as PydanticModelField
+    from ..fields import FieldInfo, ModelPrivateAttr
     from ..fields import PrivateAttr as PydanticModelPrivateAttr
     from ..main import BaseModel
 else:
@@ -118,6 +117,7 @@ class ModelMetaclass(ABCMeta):
                 if original_model_post_init is not None:
                     # if there are private_attributes and a model_post_init function, we handle both
 
+                    @wraps(original_model_post_init)
                     def wrapped_model_post_init(self: BaseModel, context: Any, /) -> None:
                         """We need to both initialize private attributes and call the user-defined model_post_init
                         method.
@@ -131,8 +131,6 @@ class ModelMetaclass(ABCMeta):
 
             namespace['__class_vars__'] = class_vars
             namespace['__private_attributes__'] = {**base_private_attributes, **private_attributes}
-            if __pydantic_generic_metadata__:
-                namespace['__pydantic_generic_metadata__'] = __pydantic_generic_metadata__
 
             cls = cast('type[BaseModel]', super().__new__(mcs, cls_name, bases, namespace, **kwargs))
             BaseModel_ = import_cached_base_model()
@@ -256,60 +254,6 @@ class ModelMetaclass(ABCMeta):
             namespace.get('__annotations__', {}).clear()
             return super().__new__(mcs, cls_name, bases, namespace, **kwargs)
 
-    def mro(cls) -> list[type[Any]]:
-        original_mro = super().mro()
-
-        if cls.__bases__ == (object,):
-            return original_mro
-
-        generic_metadata: PydanticGenericMetadata | None = cls.__dict__.get('__pydantic_generic_metadata__')
-        if not generic_metadata:
-            return original_mro
-
-        assert_err_msg = 'Unexpected error occurred when generating MRO of generic subclass. Please report this issue on GitHub: https://github.com/pydantic/pydantic/issues.'
-
-        origin: type[BaseModel] | None
-        origin, args = (
-            generic_metadata['origin'],
-            generic_metadata['args'],
-        )
-        if not origin:
-            return original_mro
-
-        target_params = origin.__pydantic_generic_metadata__['parameters']
-        param_dict = dict(zip(target_params, args))
-
-        indexed_origins = {origin}
-
-        new_mro: list[type[Any]] = [cls]
-        for base in original_mro[1:]:
-            base_origin: type[BaseModel] | None = getattr(base, '__pydantic_generic_metadata__', {}).get('origin')
-            base_params: tuple[TypeVar, ...] = getattr(base, '__pydantic_generic_metadata__', {}).get('parameters', ())
-
-            if base_origin in indexed_origins:
-                continue
-            elif base not in indexed_origins and base_params:
-                assert set(base_params) <= param_dict.keys(), assert_err_msg
-                new_base_args = tuple(param_dict[param] for param in base_params)
-                new_base = base[new_base_args]  # type: ignore
-                new_mro.append(new_base)
-
-                indexed_origins.add(base_origin or base)
-
-                if base_origin is not None:
-                    # dropped previous indexed origins
-                    continue
-            else:
-                indexed_origins.add(base_origin or base)
-
-            # Avoid redundunt case such as
-            # class A(BaseModel, Generic[T]): ...
-            # A[T] is A  # True
-            if base is not new_mro[-1]:
-                new_mro.append(base)
-
-        return new_mro
-
     if not typing.TYPE_CHECKING:  # pragma: no branch
         # We put `__getattr__` in a non-TYPE_CHECKING block because otherwise, mypy allows arbitrary attribute access
 
@@ -325,11 +269,18 @@ class ModelMetaclass(ABCMeta):
         return _ModelNamespaceDict()
 
     def __instancecheck__(self, instance: Any) -> bool:
+        """Avoid calling ABC _abc_instancecheck unless we're pretty sure.
+
+        See #3829 and python/cpython#92810
+        """
+        return hasattr(instance, '__pydantic_decorators__') and super().__instancecheck__(instance)
+
+    def __subclasscheck__(self, subclass: type[Any]) -> bool:
         """Avoid calling ABC _abc_subclasscheck unless we're pretty sure.
 
         See #3829 and python/cpython#92810
         """
-        return hasattr(instance, '__pydantic_validator__') and super().__instancecheck__(instance)
+        return hasattr(subclass, '__pydantic_decorators__') and super().__subclasscheck__(subclass)
 
     @staticmethod
     def _collect_bases_data(bases: tuple[type[Any], ...]) -> tuple[set[str], set[str], dict[str, ModelPrivateAttr]]:
@@ -354,25 +305,7 @@ class ModelMetaclass(ABCMeta):
             PydanticDeprecatedSince20,
             stacklevel=2,
         )
-        return self.model_fields
-
-    @property
-    def model_fields(self) -> dict[str, FieldInfo]:
-        """Get metadata about the fields defined on the model.
-
-        Returns:
-            A mapping of field names to [`FieldInfo`][pydantic.fields.FieldInfo] objects.
-        """
         return getattr(self, '__pydantic_fields__', {})
-
-    @property
-    def model_computed_fields(self) -> dict[str, ComputedFieldInfo]:
-        """Get metadata about the computed fields defined on the model.
-
-        Returns:
-            A mapping of computed field names to [`ComputedFieldInfo`][pydantic.fields.ComputedFieldInfo] objects.
-        """
-        return getattr(self, '__pydantic_computed_fields__', {})
 
     def __dir__(self) -> list[str]:
         attributes = list(super().__dir__())
@@ -647,14 +580,8 @@ def complete_model_class(
         typevars_map,
     )
 
-    handler = CallbackGetCoreSchemaHandler(
-        partial(gen_schema.generate_schema, from_dunder_get_core_schema=False),
-        gen_schema,
-        ref_mode='unpack',
-    )
-
     try:
-        schema = cls.__get_pydantic_core_schema__(cls, handler)
+        schema = gen_schema.generate_schema(cls)
     except PydanticUndefinedAnnotation as e:
         if raise_errors:
             raise
@@ -827,7 +754,7 @@ def unpack_lenient_weakvaluedict(d: dict[str, Any] | None) -> dict[str, Any] | N
     return result
 
 
-@lru_cache(maxsize=None)
+@cache
 def default_ignored_types() -> tuple[type[Any], ...]:
     from ..fields import ComputedFieldInfo
 

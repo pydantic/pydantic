@@ -9,13 +9,13 @@ import typing
 from copy import copy
 from dataclasses import Field as DataclassField
 from functools import cached_property
-from typing import Any, Callable, ClassVar, TypeVar, cast, overload
+from typing import Annotated, Any, Callable, ClassVar, Literal, TypeVar, cast, overload
 from warnings import warn
 
 import annotated_types
 import typing_extensions
 from pydantic_core import PydanticUndefined
-from typing_extensions import Literal, TypeAlias, Unpack, deprecated
+from typing_extensions import TypeAlias, Unpack, deprecated
 
 from . import types
 from ._internal import _decorators, _fields, _generics, _internal_dataclass, _repr, _typing_extra, _utils
@@ -49,6 +49,7 @@ else:
 class _FromFieldInfoInputs(typing_extensions.TypedDict, total=False):
     """This class exists solely to add type checking for the `**kwargs` in `FieldInfo.from_field`."""
 
+    # TODO PEP 747: use TypeForm:
     annotation: type[Any] | None
     default_factory: Callable[[], Any] | Callable[[dict[str, Any]], Any] | None
     alias: str | None
@@ -207,7 +208,7 @@ class FieldInfo(_repr.Representation):
         """
         self._attributes_set = {k: v for k, v in kwargs.items() if v is not _Unset}
         kwargs = {k: _DefaultValues.get(k) if v is _Unset else v for k, v in kwargs.items()}  # type: ignore
-        self.annotation, annotation_metadata = self._extract_metadata(kwargs.get('annotation'))
+        self.annotation = kwargs.get('annotation')
         self.evaluated = False
 
         default = kwargs.pop('default', PydanticUndefined)
@@ -247,7 +248,7 @@ class FieldInfo(_repr.Representation):
         self.init_var = kwargs.pop('init_var', None)
         self.kw_only = kwargs.pop('kw_only', None)
 
-        self.metadata = self._collect_metadata(kwargs) + annotation_metadata  # type: ignore
+        self.metadata = self._collect_metadata(kwargs)  # type: ignore
 
     @staticmethod
     def from_field(default: Any = PydanticUndefined, **kwargs: Unpack[_FromFieldInfoInputs]) -> FieldInfo:
@@ -294,8 +295,9 @@ class FieldInfo(_repr.Representation):
         one of the (not first) arguments in `Annotated` is an instance of `FieldInfo`, e.g.:
 
         ```python
+        from typing import Annotated
+
         import annotated_types
-        from typing_extensions import Annotated
 
         import pydantic
 
@@ -310,34 +312,51 @@ class FieldInfo(_repr.Representation):
         Returns:
             An instance of the field metadata.
         """
-        final = False
-        if _typing_extra.is_finalvar(annotation):
-            final = True
-            if annotation is not typing_extensions.Final:
+        # 1. Check if the annotation is the `Final` type qualifier:
+        final = _typing_extra.is_finalvar(annotation)
+        if final:
+            if _typing_extra.is_generic_alias(annotation):
+                # 1.1. The annotation is a parametrized `Final`, e.g. `Final[int]`.
+                #      In this case, `annotation` will be `int`:
                 annotation = typing_extensions.get_args(annotation)[0]
+            else:
+                # 1.2. The annotation is a bare `Final`. Use `Any` as a type annotation:
+                return FieldInfo(annotation=Any, frozen=True)  # pyright: ignore[reportArgumentType] (PEP 747)
 
-        if _typing_extra.is_annotated(annotation):
-            first_arg, *extra_args = typing_extensions.get_args(annotation)
-            if _typing_extra.is_finalvar(first_arg):
-                final = True
-            field_info_annotations = [a for a in extra_args if isinstance(a, FieldInfo)]
-            field_info = FieldInfo.merge_field_infos(*field_info_annotations, annotation=first_arg)
+        # 2. Check if the annotation is an `Annotated` form.
+        #    In this case, `annotation` will be the annotated type:
+        annotation, metadata = _typing_extra.unpack_annotated(annotation)
+
+        # 3. If we have metadata, `annotation` was the annotated type:
+        if metadata:
+            # 3.1. Check if the annotated type is the `Final` type qualifier.
+            #      (i.e. `Annotated[Final[...], ...]`). Note that we only do
+            #      so if `final` isn't `True` already, because we don't want to
+            #      support the invalid `Final[Annotated[Final, ...]]` form.
+            if not final:
+                final = _typing_extra.is_finalvar(annotation)
+                if final and _typing_extra.is_generic_alias(annotation):
+                    annotation = typing_extensions.get_args(annotation)[0]
+
+            field_info_annotations = [a for a in metadata if isinstance(a, FieldInfo)]
+            field_info = FieldInfo.merge_field_infos(*field_info_annotations, annotation=annotation)
             if field_info:
                 new_field_info = copy(field_info)
-                new_field_info.annotation = first_arg
+                new_field_info.annotation = annotation
                 new_field_info.frozen = final or field_info.frozen
-                metadata: list[Any] = []
-                for a in extra_args:
+                field_metadata: list[Any] = []
+                for a in metadata:
                     if _typing_extra.is_deprecated_instance(a):
                         new_field_info.deprecated = a.message
                     elif not isinstance(a, FieldInfo):
-                        metadata.append(a)
+                        field_metadata.append(a)
                     else:
-                        metadata.extend(a.metadata)
-                new_field_info.metadata = metadata
+                        field_metadata.extend(a.metadata)
+                new_field_info.metadata = field_metadata
                 return new_field_info
 
-        return FieldInfo(annotation=annotation, frozen=final or None)  # pyright: ignore[reportArgumentType]
+        # 4. We don't have metadata:
+        return FieldInfo(annotation=annotation, frozen=final or None)  # pyright: ignore[reportArgumentType] (PEP 747)
 
     @staticmethod
     def from_annotated_attribute(annotation: type[Any], default: Any) -> FieldInfo:
@@ -346,8 +365,9 @@ class FieldInfo(_repr.Representation):
         This is used in cases like the following:
 
         ```python
+        from typing import Annotated
+
         import annotated_types
-        from typing_extensions import Annotated
 
         import pydantic
 
@@ -367,16 +387,16 @@ class FieldInfo(_repr.Representation):
         if annotation is default:
             raise PydanticUserError(
                 'Error when building FieldInfo from annotated attribute. '
-                "Make sure you don't have any field name clashing with a type annotation ",
+                "Make sure you don't have any field name clashing with a type annotation.",
                 code='unevaluable-type-annotation',
             )
 
         final = _typing_extra.is_finalvar(annotation)
-        if final and annotation is not typing_extensions.Final:
+        if final and _typing_extra.is_generic_alias(annotation):
             annotation = typing_extensions.get_args(annotation)[0]
 
         if isinstance(default, FieldInfo):
-            default.annotation, annotation_metadata = FieldInfo._extract_metadata(annotation)  # pyright: ignore[reportArgumentType]
+            default.annotation, annotation_metadata = _typing_extra.unpack_annotated(annotation)
             default.metadata += annotation_metadata
             default = default.merge_field_infos(
                 *[x for x in annotation_metadata if isinstance(x, FieldInfo)], default, annotation=default.annotation
@@ -394,7 +414,7 @@ class FieldInfo(_repr.Representation):
                 annotation = annotation.type
 
             pydantic_field = FieldInfo._from_dataclass_field(default)
-            pydantic_field.annotation, annotation_metadata = FieldInfo._extract_metadata(annotation)  # pyright: ignore[reportArgumentType]
+            pydantic_field.annotation, annotation_metadata = _typing_extra.unpack_annotated(annotation)
             pydantic_field.metadata += annotation_metadata
             pydantic_field = pydantic_field.merge_field_infos(
                 *[x for x in annotation_metadata if isinstance(x, FieldInfo)],
@@ -407,19 +427,20 @@ class FieldInfo(_repr.Representation):
             pydantic_field.kw_only = getattr(default, 'kw_only', None)
             return pydantic_field
 
-        if _typing_extra.is_annotated(annotation):
-            first_arg, *extra_args = typing_extensions.get_args(annotation)
-            field_infos = [a for a in extra_args if isinstance(a, FieldInfo)]
-            field_info = FieldInfo.merge_field_infos(*field_infos, annotation=first_arg, default=default)
-            metadata: list[Any] = []
-            for a in extra_args:
+        annotation, metadata = _typing_extra.unpack_annotated(annotation)
+
+        if metadata:
+            field_infos = [a for a in metadata if isinstance(a, FieldInfo)]
+            field_info = FieldInfo.merge_field_infos(*field_infos, annotation=annotation, default=default)
+            field_metadata: list[Any] = []
+            for a in metadata:
                 if _typing_extra.is_deprecated_instance(a):
                     field_info.deprecated = a.message
                 elif not isinstance(a, FieldInfo):
-                    metadata.append(a)
+                    field_metadata.append(a)
                 else:
-                    metadata.extend(a.metadata)
-            field_info.metadata = metadata
+                    field_metadata.extend(a.metadata)
+            field_info.metadata = field_metadata
             return field_info
 
         return FieldInfo(annotation=annotation, default=default, frozen=final or None)  # pyright: ignore[reportArgumentType]
@@ -517,23 +538,6 @@ class FieldInfo(_repr.Representation):
         return Field(default=default, default_factory=default_factory, repr=dc_field.repr, **dc_field_metadata)  # pyright: ignore[reportCallIssue]
 
     @staticmethod
-    def _extract_metadata(annotation: type[Any] | None) -> tuple[type[Any] | None, list[Any]]:
-        """Tries to extract metadata/constraints from an annotation if it uses `Annotated`.
-
-        Args:
-            annotation: The type hint annotation for which metadata has to be extracted.
-
-        Returns:
-            A tuple containing the extracted metadata type and the list of extra arguments.
-        """
-        if annotation is not None:
-            if _typing_extra.is_annotated(annotation):
-                first_arg, *extra_args = typing_extensions.get_args(annotation)
-                return first_arg, list(extra_args)
-
-        return annotation, []
-
-    @staticmethod
     def _collect_metadata(kwargs: dict[str, Any]) -> list[Any]:
         """Collect annotations from kwargs.
 
@@ -571,6 +575,15 @@ class FieldInfo(_repr.Representation):
             return 'deprecated' if self.deprecated else None
         return self.deprecated if isinstance(self.deprecated, str) else self.deprecated.message
 
+    @property
+    def default_factory_takes_validated_data(self) -> bool | None:
+        """Whether the provided default factory callable has a validated data parameter.
+
+        Returns `None` if no default factory is set.
+        """
+        if self.default_factory is not None:
+            return _fields.takes_validated_data_argument(self.default_factory)
+
     @overload
     def get_default(
         self, *, call_default_factory: Literal[True], validated_data: dict[str, Any] | None = None
@@ -596,14 +609,15 @@ class FieldInfo(_repr.Representation):
         if self.default_factory is None:
             return _utils.smart_deepcopy(self.default)
         elif call_default_factory:
-            if _fields.takes_validated_data_argument(self.default_factory):
+            if self.default_factory_takes_validated_data:
+                fac = cast('Callable[[dict[str, Any]], Any]', self.default_factory)
                 if validated_data is None:
                     raise ValueError(
                         "The default factory requires the 'validated_data' argument, which was not provided when calling 'get_default'."
                     )
-                return self.default_factory(validated_data)
+                return fac(validated_data)
             else:
-                fac = cast(Callable[[], Any], self.default_factory)  # Pyright doesn't narrow correctly
+                fac = cast('Callable[[], Any]', self.default_factory)
                 return fac()
         else:
             return None
@@ -633,7 +647,7 @@ class FieldInfo(_repr.Representation):
             return self.annotation
         else:
             # Annotated arguments must be a tuple
-            return typing_extensions.Annotated[(self.annotation, *self.metadata)]  # type: ignore
+            return Annotated[(self.annotation, *self.metadata)]  # type: ignore
 
     def apply_typevars_map(
         self,
@@ -926,7 +940,8 @@ def Field(  # noqa: C901
     fail_fast: bool | None = _Unset,
     **extra: Unpack[_EmptyKwargs],
 ) -> Any:
-    """Usage docs: https://docs.pydantic.dev/2.10/concepts/fields
+    """!!! abstract "Usage Documentation"
+        [Fields](../concepts/fields.md)
 
     Create a field for objects that can be configured.
 
@@ -1187,7 +1202,8 @@ def PrivateAttr(
     default_factory: Callable[[], Any] | None = None,
     init: Literal[False] = False,
 ) -> Any:
-    """Usage docs: https://docs.pydantic.dev/2.10/concepts/models/#private-model-attributes
+    """!!! abstract "Usage Documentation"
+        [Private Model Attributes](../concepts/models.md#private-model-attributes)
 
     Indicates that an attribute is intended for private use and not handled during normal validation/serialization.
 
@@ -1312,7 +1328,8 @@ def computed_field(
     repr: bool | None = None,
     return_type: Any = PydanticUndefined,
 ) -> PropertyT | typing.Callable[[PropertyT], PropertyT]:
-    """Usage docs: https://docs.pydantic.dev/2.10/concepts/fields#the-computed_field-decorator
+    """!!! abstract "Usage Documentation"
+        [The `computed_field` decorator](../concepts/fields.md#the-computed_field-decorator)
 
     Decorator to include `property` and `cached_property` when serializing models or dataclasses.
 

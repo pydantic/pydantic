@@ -11,7 +11,7 @@
 
 Pydantic is the most widely used data validation library for Python.
 
-Fast and extensible, Pydantic plays nicely with your linters/IDE/brain. Define how data should be in pure, canonical Python 3.8+; validate it with Pydantic.
+Fast and extensible, Pydantic plays nicely with your linters/IDE/brain. Define how data should be in pure, canonical Python 3.9+; validate it with Pydantic.
 
 !!! logfire "Monitor Pydantic with Logfire :fire:"
     Built by the same team as Pydantic, **[Logfire](https://pydantic.dev/logfire)** is an application monitoring tool that is as simple to use and powerful as Pydantic itself.
