@@ -4299,6 +4299,11 @@ for more details).</p>
 </div>
 </div>
 </div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>When parametrizing a model with a concrete type, Pydantic <strong>does not</strong> validate that the provided type
+is <a href="https://typing.readthedocs.io/en/latest/spec/generics.html#type-variables-with-an-upper-bound">assignable to the type variable</a> if it has an upper bound.</p>
+</div>
 <p>Any <a href="../config/">configuration</a>, <a href="../validators/">validation</a> or <a href="../serialization/">serialization</a> logic
 set on the generic model will also be applied to the parametrized classes, in the same way as when inheriting from
 a model class. Any custom methods or attributes will also be inherited.</p>
