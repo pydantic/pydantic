@@ -3989,7 +3989,8 @@ or via the <code>_env_prefix</code> keyword argument on instantiation:</p>
 </code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>The default <code>env_prefix</code> is <code>''</code> (empty string).</p>
+<p>The default <code>env_prefix</code> is <code>''</code> (empty string). <code>env_prefix</code> is not only for env settings but also for
+dotenv files, secrets, and other sources.</p>
 </div>
 <p>If you want to change the environment variable name for a single field, you can use an alias.</p>
 <p>There are two ways to do this:</p>
@@ -4600,9 +4601,10 @@ is customised</a>:</p>
 <span class="c1">#&gt; {&#39;first_name&#39;: &#39;John&#39;, &#39;last_name&#39;: &#39;Doe&#39;}</span>
 </code></pre></div>
 <h3 id="subcommands-and-positional-arguments">Subcommands and Positional Arguments<a class="headerlink" href="#subcommands-and-positional-arguments" title="Permanent link">&para;</a></h3>
-<p>Subcommands and positional arguments are expressed using the <code>CliSubCommand</code> and <code>CliPositionalArg</code> annotations. These
-annotations can only be applied to required fields (i.e. fields that do not have a default value). Furthermore,
-subcommands must be a valid type derived from either a pydantic <code>BaseModel</code> or pydantic.dataclasses <code>dataclass</code>.</p>
+<p>Subcommands and positional arguments are expressed using the <code>CliSubCommand</code> and <code>CliPositionalArg</code> annotations. The
+subcommand annotation can only be applied to required fields (i.e. fields that do not have a default value).
+Furthermore, subcommands must be a valid type derived from either a pydantic <code>BaseModel</code> or pydantic.dataclasses
+<code>dataclass</code>.</p>
 <p>Parsed subcommands can be retrieved from model instances using the <code>get_subcommand</code> utility function. If a subcommand is
 not required, set the <code>is_required</code> flag to <code>False</code> to disable raising an error if no subcommand is found.</p>
 <div class="admonition note">
@@ -5002,6 +5004,10 @@ sources provides the required value.</p>
 <p>However, if your use case <a href="#command-line-support">aligns more with #2</a>, using Pydantic models to define CLIs, you will
 likely want required fields to be <em>strictly required at the CLI</em>. We can enable this behavior by using
 <code>cli_enforce_required</code>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>A required <code>CliPositionalArg</code> field is always strictly required (enforced) at the CLI.</p>
+</div>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">sys</span>
 
@@ -5822,7 +5828,7 @@ need to add your own custom sources, <code>settings_customise_sources</code> mak
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.10.5", "pydantic-core==2.27.2", "pydantic-extra-types==2.10.0"]
+    window.mkdocs_run_deps = ["pydantic==2.10.6", "pydantic-core==2.27.2", "pydantic-extra-types==2.10.0"]
     </script>
 
               </article>
