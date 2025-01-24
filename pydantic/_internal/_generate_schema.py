@@ -1991,7 +1991,7 @@ class GenerateSchema:
         try:
             has_default = typevar.has_default()
         except AttributeError:
-            # Happens if using `typing.TypeVar` on Python < 3.13
+            # Happens if using `typing.TypeVar` (and not `typing_extensions`) on Python < 3.13
             pass
         else:
             if has_default:
