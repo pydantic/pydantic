@@ -54,13 +54,13 @@ class GatherContext:
     """
 
 
-def gather_metadata(schema: CoreSchema, ctx: GatherContext) -> None:
+def traverse_metadata(schema: CoreSchema, ctx: GatherContext) -> None:
     meta = schema.get('metadata')
     if meta is not None and 'pydantic_internal_union_discriminator' in meta:
         ctx.deferred_discriminator_schemas.append(schema)
 
 
-def gather_definition_ref(def_ref_schema: DefinitionReferenceSchema, ctx: GatherContext) -> None:
+def traverse_definition_ref(def_ref_schema: DefinitionReferenceSchema, ctx: GatherContext) -> None:
     schema_ref = def_ref_schema['schema_ref']
 
     if schema_ref not in ctx.collected_references:
@@ -71,97 +71,97 @@ def gather_definition_ref(def_ref_schema: DefinitionReferenceSchema, ctx: Gather
         # The `'definition-ref'` schema was only encountered once, make it
         # a candidate to be inlined:
         ctx.collected_references[schema_ref] = def_ref_schema
-        gather_schema(definition, ctx)
+        traverse_schema(definition, ctx)
         if 'serialization' in def_ref_schema:
-            gather_schema(def_ref_schema['serialization'], ctx)
-        gather_metadata(def_ref_schema, ctx)
+            traverse_schema(def_ref_schema['serialization'], ctx)
+        traverse_metadata(def_ref_schema, ctx)
     else:
         # The `'definition-ref'` schema was already encountered, meaning
         # the previously encountered schema (and this one) can't be inlined:
         ctx.collected_references[schema_ref] = None
 
 
-def gather_schema(schema: CoreSchema | SerSchema, context: GatherContext) -> None:
+def traverse_schema(schema: CoreSchema | SerSchema, context: GatherContext) -> None:
     match schema['type']:
         case 'definition-ref':
-            gather_definition_ref(schema, context)
+            traverse_definition_ref(schema, context)
             return
         case 'definitions':
-            gather_schema(schema['schema'], context)
+            traverse_schema(schema['schema'], context)
             for definition in schema['definitions']:
-                gather_schema(definition, context)
+                traverse_schema(definition, context)
         case 'list' | 'set' | 'frozenset' | 'generator':
             if 'items_schema' in schema:
-                gather_schema(schema['items_schema'], context)
+                traverse_schema(schema['items_schema'], context)
         case 'tuple':
             if 'items_schema' in schema:
                 for s in schema['items_schema']:
-                    gather_schema(s, context)
+                    traverse_schema(s, context)
         case 'dict':
             if 'keys_schema' in schema:
-                gather_schema(schema['keys_schema'], context)
+                traverse_schema(schema['keys_schema'], context)
             if 'values_schema' in schema:
-                gather_schema(schema['values_schema'], context)
+                traverse_schema(schema['values_schema'], context)
         case 'union':
             for choice in schema['choices']:
                 if isinstance(choice, tuple):
-                    gather_schema(choice[0], context)
+                    traverse_schema(choice[0], context)
                 else:
-                    gather_schema(choice, context)
+                    traverse_schema(choice, context)
         case 'tagged-union':
             for v in schema['choices'].values():
-                gather_schema(v, context)
+                traverse_schema(v, context)
         case 'chain':
             for step in schema['steps']:
-                gather_schema(step, context)
+                traverse_schema(step, context)
         case 'lax-or-strict':
-            gather_schema(schema['lax_schema'], context)
-            gather_schema(schema['strict_schema'], context)
+            traverse_schema(schema['lax_schema'], context)
+            traverse_schema(schema['strict_schema'], context)
         case 'json-or-python':
-            gather_schema(schema['json_schema'], context)
-            gather_schema(schema['python_schema'], context)
+            traverse_schema(schema['json_schema'], context)
+            traverse_schema(schema['python_schema'], context)
         case 'model-fields' | 'typed-dict':
             if 'extras_schema' in schema:
-                gather_schema(schema['extras_schema'], context)
+                traverse_schema(schema['extras_schema'], context)
             if 'computed_fields' in schema:
                 for s in schema['computed_fields']:
-                    gather_schema(s, context)
+                    traverse_schema(s, context)
             for s in schema['fields'].values():
-                gather_schema(s, context)
+                traverse_schema(s, context)
         case 'dataclass-args':
             if 'computed_fields' in schema:
                 for s in schema['computed_fields']:
-                    gather_schema(s, context)
+                    traverse_schema(s, context)
             for s in schema['fields']:
-                gather_schema(s, context)
+                traverse_schema(s, context)
         case 'arguments':
             for s in schema['arguments_schema']:
-                gather_schema(s['schema'], context)
+                traverse_schema(s['schema'], context)
             if 'var_args_schema' in schema:
-                gather_schema(schema['var_args_schema'], context)
+                traverse_schema(schema['var_args_schema'], context)
             if 'var_kwargs_schema' in schema:
-                gather_schema(schema['var_kwargs_schema'], context)
+                traverse_schema(schema['var_kwargs_schema'], context)
         case 'call':
-            gather_schema(schema['arguments_schema'], context)
+            traverse_schema(schema['arguments_schema'], context)
             if 'return_schema' in schema:
-                gather_schema(schema['return_schema'], context)
+                traverse_schema(schema['return_schema'], context)
         case 'computed-field' | 'function-plain':
             if 'return_schema' in schema:
-                gather_schema(schema['return_schema'], context)
+                traverse_schema(schema['return_schema'], context)
             if 'json_schema_input_schema' in schema:
-                gather_schema(schema['json_schema_input_schema'], context)
+                traverse_schema(schema['json_schema_input_schema'], context)
         case 'function-wrap':
             if 'return_schema' in schema:
-                gather_schema(schema['return_schema'], context)
+                traverse_schema(schema['return_schema'], context)
             if 'schema' in schema:
-                gather_schema(schema['schema'], context)
+                traverse_schema(schema['schema'], context)
         case _:
             if 'schema' in schema:
-                gather_schema(schema['schema'], context)
+                traverse_schema(schema['schema'], context)
 
     if 'serialization' in schema:
-        gather_schema(schema['serialization'], context)
-    gather_metadata(schema, context)
+        traverse_schema(schema['serialization'], context)
+    traverse_metadata(schema, context)
 
 
 def gather_schemas_for_cleaning(schema: CoreSchema, definitions: dict[str, CoreSchema]) -> GatherResult:
@@ -176,7 +176,7 @@ def gather_schemas_for_cleaning(schema: CoreSchema, definitions: dict[str, CoreS
       saved in the context to be inlined (i.e. replaced by the definition it points to).
     """
     context = GatherContext(definitions)
-    gather_schema(schema, context)
+    traverse_schema(schema, context)
 
     return {
         'collected_references': context.collected_references,
