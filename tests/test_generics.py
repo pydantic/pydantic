@@ -308,13 +308,13 @@ def test_parameter_count():
 
 def test_arguments_count_validation() -> None:
     T = TypeVar('T')
-    S = TypeVar('S')
-    U = TypingExtensionsTypeVar('U', default=int)
+    U = TypeVar('U')
+    V = TypingExtensionsTypeVar('V', default=int)
 
-    class Model(BaseModel, Generic[T, S, U]):
+    class Model(BaseModel, Generic[T, U, V]):
         t: T
-        s: S
         u: U
+        v: V
 
     model_repr = repr(Model)
 

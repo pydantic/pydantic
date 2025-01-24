@@ -386,8 +386,8 @@ def has_instance_in_type(type_: Any, isinstance_target: Any) -> bool:
 def map_generic_model_arguments(cls: type[BaseModel], args: tuple[Any, ...]) -> dict[TypeVar, Any]:
     """Return a mapping between the arguments of a generic model and the provided arguments during parametrization.
 
-    If the number of arguments does not match the parameters (e.g. if providing too few or too many arguments),
-    a `TypeError` is raised.
+    Raises:
+        TypeError: If the number of arguments does not match the parameters (i.e. if providing too few or too many arguments).
 
     Example:
         ```python {test="skip" lint="skip"}

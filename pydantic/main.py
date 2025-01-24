@@ -767,8 +767,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         if not isinstance(typevar_values, tuple):
             typevar_values = (typevar_values,)
 
+        # For a model `class Model[T, U, V = int](BaseModel): ...` parametrized with `(str, bool)`,
+        # this gives us `{T: str, U: bool, V: int}`:
         typevars_map = _generics.map_generic_model_arguments(cls, typevar_values)
-        # In case type variables have defaults and a type wasn't provided, use the defaults:
+        # We also update the provided args to use defaults values (`(str, bool)` becomes `(str, bool, int)`):
         typevar_values = tuple(v for v in typevars_map.values())
 
         if _utils.all_identical(typevars_map.keys(), typevars_map.values()) and typevars_map:
