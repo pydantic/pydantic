@@ -45,6 +45,7 @@ requires-python = '>=3.9'
 dependencies = [
     'typing-extensions>=4.12.2',
     'annotated-types>=0.6.0',
+    # Keep this in sync with the version in the `check_pydantic_core_version()` function:
     'pydantic-core==2.27.2',
 ]
 dynamic = ['version', 'readme']
