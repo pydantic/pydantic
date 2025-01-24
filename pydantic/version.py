@@ -2,7 +2,7 @@
 
 from __future__ import annotations as _annotations
 
-from importlib.metadata import version
+from pydantic_core import __version__ as __pydantic_core_version__
 
 __all__ = 'VERSION', 'version_info'
 
@@ -67,7 +67,8 @@ def version_info() -> str:
 
 def check_pydantic_core_version() -> bool:
     """Check that the installed `pydantic-core` dependency is compatible."""
-    return version('pydantic_core') == '2.27.2'
+    # Keep this in sync with the version constraint in the `pyproject.toml` dependencies:
+    return __pydantic_core_version__ == '2.27.2'
 
 
 def parse_mypy_version(version: str) -> tuple[int, int, int]:
