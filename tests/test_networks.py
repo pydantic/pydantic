@@ -562,6 +562,7 @@ def test_rtsp_url_only_host():
     assert str(rtsp) == 'rtsp://localhost:554/cam1'
     assert rtsp.username is None
     assert rtsp.password is None
+    assert rtsp.host == 'localhost'
 
 
 def test_rtsp_url_with_username():
@@ -600,6 +601,22 @@ def test_rtsp_url_with_file_extension():
     rtsp = Model(dsn='rtsp://user:pass@localhost/media.mp4').dsn
     assert str(rtsp) == 'rtsp://user:pass@localhost:554/media.mp4'
     assert rtsp.path == '/media.mp4'
+
+
+def test_rtsp_url_host_required():
+    class Model(BaseModel):
+        dsn: RtspUrl
+
+    with pytest.raises(ValidationError) as exc_info:
+        _ = Model(dsn='rtsp://user:pass@/media.mp4')
+    error = exc_info.value.errors(include_url=False)[0]
+    error.pop('ctx', None)
+    assert error == {
+        'type': 'url_parsing',
+        'loc': ('dsn',),
+        'msg': 'Input should be a valid URL, empty host',
+        'input': 'rtsp://user:pass@/media.mp4',
+    }
 
 
 @pytest.mark.parametrize(
