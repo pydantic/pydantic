@@ -5714,12 +5714,12 @@ is set to <code>'allow'</code>.</p>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">typevar_values</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
             <span class="n">typevar_values</span> <span class="o">=</span> <span class="p">(</span><span class="n">typevar_values</span><span class="p">,)</span>
-        <span class="n">_generics</span><span class="o">.</span><span class="n">check_parameters_count</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">typevar_values</span><span class="p">)</span>
 
-        <span class="c1"># Build map from generic typevars to passed params</span>
-        <span class="n">typevars_map</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">TypeVar</span><span class="p">,</span> <span class="nb">type</span><span class="p">[</span><span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
-            <span class="nb">zip</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">__pydantic_generic_metadata__</span><span class="p">[</span><span class="s1">&#39;parameters&#39;</span><span class="p">],</span> <span class="n">typevar_values</span><span class="p">)</span>
-        <span class="p">)</span>
+        <span class="c1"># For a model `class Model[T, U, V = int](BaseModel): ...` parametrized with `(str, bool)`,</span>
+        <span class="c1"># this gives us `{T: str, U: bool, V: int}`:</span>
+        <span class="n">typevars_map</span> <span class="o">=</span> <span class="n">_generics</span><span class="o">.</span><span class="n">map_generic_model_arguments</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">typevar_values</span><span class="p">)</span>
+        <span class="c1"># We also update the provided args to use defaults values (`(str, bool)` becomes `(str, bool, int)`):</span>
+        <span class="n">typevar_values</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">v</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">typevars_map</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
 
         <span class="k">if</span> <span class="n">_utils</span><span class="o">.</span><span class="n">all_identical</span><span class="p">(</span><span class="n">typevars_map</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="n">typevars_map</span><span class="o">.</span><span class="n">values</span><span class="p">())</span> <span class="ow">and</span> <span class="n">typevars_map</span><span class="p">:</span>
             <span class="n">submodel</span> <span class="o">=</span> <span class="bp">cls</span>  <span class="c1"># if arguments are equal to parameters it&#39;s the same object</span>
