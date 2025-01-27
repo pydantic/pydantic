@@ -51,7 +51,6 @@ from pydantic import (
     field_validator,
     model_validator,
 )
-from pydantic._internal._core_utils import collect_invalid_schemas
 from pydantic._internal._generics import (
     _GENERIC_TYPES_CACHE,
     _LIMITED_DICT_SIZE,
@@ -1813,17 +1812,16 @@ def test_generic_recursive_models_with_a_concrete_parameter(create_module):
 
         class M1(BaseModel, Generic[V1, V2]):
             a: V1
-            m: 'M2[V2]'
+            m2: 'M2[V2]'
 
         class M2(BaseModel, Generic[V3]):
-            m: Union[M1[int, V3], V3]
+            m1: Union[M1[int, V3], V3]
 
         M1.model_rebuild()
 
     M1 = module.M1
-
-    # assert M1.__pydantic_core_schema__ == {}
-    assert collect_invalid_schemas(M1.__pydantic_core_schema__) is False
+    M1[float, str].model_validate({'a': 1.5, 'm2': {'m1': 'foo'}})
+    M1[float, str].model_validate({'a': 1.5, 'm2': {'m1': {'a': 3, 'm2': {'m1': 'foo'}}}})
 
 
 def test_generic_recursive_models_complicated(create_module):
@@ -1837,7 +1835,9 @@ def test_generic_recursive_models_complicated(create_module):
 
     @create_module
     def module():
-        from typing import Generic, TypeVar, Union
+        # Noqa comment because linter/type checker think the `Optional` in the `B2.a2`
+        # annotation comes from the module:
+        from typing import Generic, Optional, TypeVar, Union  # noqa: F401
 
         from pydantic import BaseModel
 
@@ -1863,7 +1863,7 @@ def test_generic_recursive_models_complicated(create_module):
             a1: 'B2[S1]'
 
         class B2(BaseModel, Generic[S2]):
-            a2: 'B1[S2]'
+            a2: 'Optional[B1[S2]]' = None
 
         B1.model_rebuild()
 
@@ -1874,16 +1874,16 @@ def test_generic_recursive_models_complicated(create_module):
         class M1(BaseModel, Generic[V1, V2]):
             a: int
             b: B1[V2]
-            m: 'M2[V1]'
+            m2: 'M2[V1]'
 
         class M2(BaseModel, Generic[V3]):
-            m: Union[M1[V3, int], V3]
+            m1: Union[M1[V3, int], V3]
 
         M1.model_rebuild()
 
     M1 = module.M1
 
-    assert collect_invalid_schemas(M1.__pydantic_core_schema__) is False
+    M1[str, float].model_validate({'a': 1, 'b': {'a1': {'a2': {'a1': {'a2': {'a1': {}}}}}}, 'm2': {'m1': 'foo'}})
 
 
 def test_generic_recursive_models_in_container(create_module):

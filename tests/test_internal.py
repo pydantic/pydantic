@@ -3,185 +3,139 @@ Tests for internal things that are complex enough to warrant their own unit test
 """
 
 import sys
+from copy import deepcopy
 from dataclasses import dataclass
 from decimal import Decimal
+from typing import Any, Union
 
 import pytest
-from pydantic_core import CoreSchema, SchemaValidator
+from dirty_equals import Contains, IsPartialDict
+from pydantic_core import CoreSchema
 from pydantic_core import core_schema as cs
 
-from pydantic._internal._core_utils import (
-    Walk,
-    collect_invalid_schemas,
-    simplify_schema_references,
-    walk_core_schema,
-)
+from pydantic import BaseModel, TypeAdapter
+from pydantic._internal._config import ConfigWrapper
+from pydantic._internal._generate_schema import GenerateSchema
 from pydantic._internal._repr import Representation
 from pydantic._internal._validators import _extract_decimal_digits_info
 
 
-def remove_metadata(schema: CoreSchema) -> CoreSchema:
-    def inner(s: CoreSchema, recurse: Walk) -> CoreSchema:
-        s = s.copy()
-        s.pop('metadata', None)
-        return recurse(s, inner)
+def init_schema_and_cleaned_schema(type_: Any) -> tuple[CoreSchema, CoreSchema]:
+    gen = GenerateSchema(ConfigWrapper(None))
+    schema = gen.generate_schema(type_)
+    cleaned_schema = deepcopy(schema)
+    cleaned_schema = gen.clean_schema(cleaned_schema)
+    assert TypeAdapter(type_).pydantic_complete  # Just to make sure it works and test setup is sane
+    return schema, cleaned_schema
 
-    return walk_core_schema(schema, inner)
+
+def test_simple_core_schema_with_no_references() -> None:
+    init, cleaned = init_schema_and_cleaned_schema(list[int])
+    assert init == cs.list_schema(cs.int_schema())
+    assert cleaned == cs.list_schema(cs.int_schema())
 
 
-@pytest.mark.parametrize(
-    'input_schema,inlined',
-    [
-        # Test case 1: Simple schema with no references
-        (cs.list_schema(cs.int_schema()), cs.list_schema(cs.int_schema())),
-        # Test case 2: Schema with single-level nested references
-        (
-            cs.definitions_schema(
-                cs.list_schema(cs.definition_reference_schema('list_of_ints')),
-                definitions=[
-                    cs.list_schema(cs.definition_reference_schema('int'), ref='list_of_ints'),
-                    cs.int_schema(ref='int'),
-                ],
-            ),
-            cs.list_schema(cs.list_schema(cs.int_schema(ref='int'), ref='list_of_ints')),
-        ),
-        # Test case 3: Schema with multiple single-level nested references
-        (
-            cs.list_schema(
-                cs.definitions_schema(cs.definition_reference_schema('int'), definitions=[cs.int_schema(ref='int')])
-            ),
-            cs.list_schema(cs.int_schema(ref='int')),
-        ),
-        # Test case 4: A simple recursive schema
-        (
-            cs.list_schema(cs.definition_reference_schema(schema_ref='list'), ref='list'),
-            cs.definitions_schema(
-                cs.definition_reference_schema(schema_ref='list'),
-                definitions=[cs.list_schema(cs.definition_reference_schema(schema_ref='list'), ref='list')],
-            ),
-        ),
-        # Test case 5: Deeply nested schema with multiple references
-        (
-            cs.definitions_schema(
-                cs.list_schema(cs.definition_reference_schema('list_of_lists_of_ints')),
-                definitions=[
-                    cs.list_schema(cs.definition_reference_schema('list_of_ints'), ref='list_of_lists_of_ints'),
-                    cs.list_schema(cs.definition_reference_schema('int'), ref='list_of_ints'),
-                    cs.int_schema(ref='int'),
-                ],
-            ),
-            cs.list_schema(
-                cs.list_schema(
-                    cs.list_schema(cs.int_schema(ref='int'), ref='list_of_ints'), ref='list_of_lists_of_ints'
-                )
-            ),
-        ),
-        # Test case 6: More complex recursive schema
-        (
-            cs.definitions_schema(
-                cs.list_schema(cs.definition_reference_schema(schema_ref='list_of_ints_and_lists')),
-                definitions=[
-                    cs.list_schema(
-                        cs.definitions_schema(
-                            cs.definition_reference_schema(schema_ref='int_or_list'),
-                            definitions=[
-                                cs.int_schema(ref='int'),
-                                cs.tuple_variable_schema(
-                                    cs.definition_reference_schema(schema_ref='list_of_ints_and_lists'), ref='a tuple'
-                                ),
-                            ],
-                        ),
-                        ref='list_of_ints_and_lists',
-                    ),
-                    cs.int_schema(ref='int_or_list'),
-                ],
-            ),
-            cs.list_schema(cs.list_schema(cs.int_schema(ref='int_or_list'), ref='list_of_ints_and_lists')),
-        ),
-        # Test case 7: Schema with multiple definitions and nested references, some of which are unused
-        (
-            cs.definitions_schema(
-                cs.list_schema(cs.definition_reference_schema('list_of_ints')),
-                definitions=[
-                    cs.list_schema(
-                        cs.definitions_schema(
-                            cs.definition_reference_schema('int'), definitions=[cs.int_schema(ref='int')]
-                        ),
-                        ref='list_of_ints',
-                    )
-                ],
-            ),
-            cs.list_schema(cs.list_schema(cs.int_schema(ref='int'), ref='list_of_ints')),
-        ),
-        # Test case 8: Reference is used in multiple places
-        (
-            cs.definitions_schema(
-                cs.union_schema(
-                    [
-                        cs.definition_reference_schema('list_of_ints'),
-                        cs.tuple_variable_schema(cs.definition_reference_schema('int')),
-                    ]
-                ),
-                definitions=[
-                    cs.list_schema(cs.definition_reference_schema('int'), ref='list_of_ints'),
-                    cs.int_schema(ref='int'),
-                ],
-            ),
-            cs.definitions_schema(
-                cs.union_schema(
-                    [
-                        cs.list_schema(cs.definition_reference_schema('int'), ref='list_of_ints'),
-                        cs.tuple_variable_schema(cs.definition_reference_schema('int')),
-                    ]
-                ),
-                definitions=[cs.int_schema(ref='int')],
-            ),
-        ),
-        # Test case 9: https://github.com/pydantic/pydantic/issues/6270
-        (
-            cs.definitions_schema(
-                cs.definition_reference_schema('model'),
-                definitions=[
-                    cs.typed_dict_schema(
-                        {
-                            'a': cs.typed_dict_field(
-                                cs.nullable_schema(
-                                    cs.int_schema(ref='ref'),
-                                ),
-                            ),
-                            'b': cs.typed_dict_field(
-                                cs.nullable_schema(
-                                    cs.int_schema(ref='ref'),
-                                ),
-                            ),
-                        },
-                        ref='model',
-                    ),
-                ],
-            ),
-            cs.definitions_schema(
-                cs.typed_dict_schema(
-                    {
-                        'a': cs.typed_dict_field(
-                            cs.nullable_schema(cs.definition_reference_schema(schema_ref='ref')),
-                        ),
-                        'b': cs.typed_dict_field(
-                            cs.nullable_schema(cs.definition_reference_schema(schema_ref='ref')),
-                        ),
-                    },
-                    ref='model',
-                ),
-                definitions=[
-                    cs.int_schema(ref='ref'),
-                ],
-            ),
-        ),
-    ],
+@pytest.mark.parametrize('deep_ref', [False, True])
+def test_core_schema_with_different_reference_depths_gets_inlined(deep_ref: bool) -> None:
+    class M1(BaseModel):
+        a: int
+
+    class M2(BaseModel):
+        b: M1
+
+    init, cleaned = init_schema_and_cleaned_schema(list[M2] if deep_ref else M2)
+
+    inner = IsPartialDict(type='definition-ref', schema_ref=Contains('M2'))
+    assert init == (IsPartialDict(type='list', items_schema=inner) if deep_ref else inner)
+
+    inner = IsPartialDict(
+        type='model',
+        cls=M2,
+        schema=IsPartialDict(fields={'b': IsPartialDict(schema=IsPartialDict(type='model', cls=M1))}),
+    )
+    assert cleaned == (IsPartialDict(type='list', items_schema=inner) if deep_ref else inner)
+
+
+@pytest.mark.parametrize('deep_ref', [False, True])
+@pytest.mark.xfail(
+    reason=(
+        "While the cleaned schema is of type 'definitions', the inner schema is inlined. This is not an "
+        'issue, but the test is kept so that we notice the change when tweaking core schema generation.'
+    )
 )
-def test_build_schema_defs(input_schema: cs.CoreSchema, inlined: cs.CoreSchema):
-    actual_inlined = remove_metadata(simplify_schema_references(input_schema))
-    assert actual_inlined == inlined
-    SchemaValidator(actual_inlined)  # check for validity
+def test_core_schema_simple_recursive_schema_uses_refs(deep_ref: bool) -> None:
+    class M1(BaseModel):
+        a: 'M2'
+
+    class M2(BaseModel):
+        b: M1
+
+    init, cleaned = init_schema_and_cleaned_schema(list[M1] if deep_ref else M1)
+
+    inner = IsPartialDict(type='definition-ref', schema_ref=Contains('M1'))
+    assert init == (IsPartialDict(type='list', items_schema=inner) if deep_ref else inner)
+
+    inner = IsPartialDict(type='definition-ref', schema_ref=Contains('M1'))
+    assert cleaned == IsPartialDict(
+        type='definitions',
+        schema=IsPartialDict(type='list', items_schema=inner) if deep_ref else inner,
+        definitions=[IsPartialDict(type='model', ref=Contains('M1')), IsPartialDict(type='model', ref=Contains('M2'))],
+    )
+
+
+@pytest.mark.parametrize('deep_ref', [False, True])
+def test_core_schema_with_deeply_nested_schema_with_multiple_references_gets_inlined(deep_ref: bool) -> None:
+    class M1(BaseModel):
+        a: int
+
+    class M2(BaseModel):
+        b: M1
+
+    class M3(BaseModel):
+        c: M2
+        d: M1
+
+    init, cleaned = init_schema_and_cleaned_schema(list[M3] if deep_ref else M3)
+
+    inner = IsPartialDict(type='definition-ref', schema_ref=Contains('M3'))
+    assert init == (IsPartialDict(type='list', items_schema=inner) if deep_ref else inner)
+
+    inner = IsPartialDict(
+        type='model',
+        cls=M3,
+        schema=IsPartialDict(
+            fields={
+                'c': IsPartialDict(schema=IsPartialDict(type='model', cls=M2)),
+                'd': IsPartialDict(schema=IsPartialDict(type='model', cls=M1)),
+            }
+        ),
+    )
+    assert cleaned == (IsPartialDict(type='list', items_schema=inner) if deep_ref else inner)
+
+
+@pytest.mark.parametrize('deep_ref', [False, True])
+def test_core_schema_with_model_used_in_multiple_places(deep_ref: bool) -> None:
+    class M1(BaseModel):
+        a: int
+
+    class M2(BaseModel):
+        b: M1
+
+    class M3(BaseModel):
+        c: Union[M2, M1]
+        d: M1
+
+    init, cleaned = init_schema_and_cleaned_schema(list[M3] if deep_ref else M3)
+
+    inner = IsPartialDict(type='definition-ref', schema_ref=Contains('M3'))
+    assert init == (IsPartialDict(type='list', items_schema=inner) if deep_ref else inner)
+
+    inner = IsPartialDict(type='model', cls=M3)
+    assert cleaned == IsPartialDict(
+        type='definitions',
+        schema=(IsPartialDict(type='list', items_schema=inner) if deep_ref else inner),
+        definitions=[IsPartialDict(type='model', cls=M1)],  # This was used in multiple places
+    )
 
 
 def test_representation_integrations():
@@ -209,12 +163,6 @@ def test_representation_integrations():
             '    ) (Obj)',
         ]
     assert list(obj.__rich_repr__()) == [('int_attr', 42), ('str_attr', 'Marvin')]
-
-
-def test_schema_is_valid():
-    assert collect_invalid_schemas(cs.none_schema()) is False
-    assert collect_invalid_schemas(cs.invalid_schema()) is True
-    assert collect_invalid_schemas(cs.nullable_schema(cs.invalid_schema())) is True
 
 
 @pytest.mark.parametrize(

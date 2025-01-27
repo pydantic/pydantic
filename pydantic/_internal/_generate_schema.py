@@ -851,8 +851,10 @@ class GenerateSchema:
             if ref:
                 return self.defs.create_definition_reference_schema(schema)
 
-            # if schema['type'] == 'definition-ref':
-            #     return schema.copy()
+            if schema['type'] == 'definition-ref':
+                # As a safety measure (because `'definition-ref'` schemas are inlined
+                # in place -- i.e. mutated directly), copy the schema:
+                return schema.copy()
 
             else:
                 return schema
@@ -2544,10 +2546,15 @@ class _Definitions:
     manager.
     """
 
+    # TODO: more reasoning should be added as to why this is necessary (or at least used, as
+    # *not* making the distinction with other collected definitions does not break anything).
+    _unpacked_definitions: dict[str, core_schema.CoreSchema]
+    """Definitions coming from an external source (e.g. cached model schemas or from the `__get_pydantic_core_schema__` method)."""
+
     def __init__(self) -> None:
         self._recursively_seen = set()
         self._definitions = {}
-        self._unpacked_definitions: dict[str, CoreSchema] = {}
+        self._unpacked_definitions = {}
 
     @contextmanager
     def get_schema_or_ref(self, tp: Any, /) -> Generator[tuple[str, core_schema.DefinitionReferenceSchema | None]]:
