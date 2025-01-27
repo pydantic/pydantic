@@ -1058,6 +1058,13 @@ def test_decimal():
     assert m.model_dump() == {'v': Decimal('1.234')}
 
 
+def test_decimal_constraint_coerced() -> None:
+    ta = TypeAdapter(Annotated[Decimal, Field(gt=2)])
+
+    with pytest.raises(ValidationError):
+        ta.validate_python(Decimal(0))
+
+
 def test_decimal_allow_inf():
     class MyModel(BaseModel):
         value: Annotated[Decimal, AllowInfNan(True)]
