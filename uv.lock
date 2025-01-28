@@ -1239,7 +1239,6 @@ all = [
     { name = "dirty-equals" },
     { name = "eval-type-backport" },
     { name = "faker" },
-    { name = "greenlet", marker = "python_full_version < '3.13'" },
     { name = "jsonschema" },
     { name = "mike" },
     { name = "mkdocs" },
@@ -1305,7 +1304,6 @@ testing-extra = [
     { name = "ansi2html" },
     { name = "cloudpickle" },
     { name = "devtools" },
-    { name = "greenlet", marker = "python_full_version < '3.13'" },
     { name = "sqlalchemy" },
 ]
 typechecking = [
@@ -1333,7 +1331,6 @@ all = [
     { name = "dirty-equals" },
     { name = "eval-type-backport" },
     { name = "faker" },
-    { name = "greenlet", marker = "python_full_version < '3.13'" },
     { name = "jsonschema" },
     { name = "mike" },
     { name = "mkdocs" },
@@ -1399,7 +1396,6 @@ testing-extra = [
     { name = "ansi2html" },
     { name = "cloudpickle" },
     { name = "devtools" },
-    { name = "greenlet", marker = "python_full_version < '3.13'" },
     { name = "sqlalchemy" },
 ]
 typechecking = [
