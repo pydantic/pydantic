@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections import defaultdict
 from collections.abc import Iterable
 from copy import copy
+from decimal import Decimal
 from functools import lru_cache, partial
 from typing import TYPE_CHECKING, Any
 
@@ -219,7 +220,10 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
             if constraint == 'union_mode' and schema_type == 'union':
                 schema['mode'] = value  # type: ignore  # schema is UnionSchema
             else:
-                schema[constraint] = value
+                if schema_type == 'decimal' and constraint in {'multiple_of', 'le', 'ge', 'lt', 'gt'}:
+                    schema[constraint] = Decimal(value)
+                else:
+                    schema[constraint] = value
             continue
 
         #  else, apply a function after validator to the schema to enforce the corresponding constraint
