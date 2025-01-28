@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import inspect
 import os
-from typing import Any, Union
+from collections.abc import Mapping, Sequence
+from typing import TYPE_CHECKING, Any, Union
 
 from pydantic_core import CoreSchema, core_schema
 from pydantic_core import validate_core_schema as _validate_core_schema
@@ -9,6 +11,9 @@ from typing_extensions import TypeGuard, get_args, get_origin
 
 from . import _repr
 from ._typing_extra import is_generic_alias, is_type_alias_type
+
+if TYPE_CHECKING:
+    from rich.console import Console
 
 AnyFunctionSchema = Union[
     core_schema.AfterValidatorFunctionSchema,
@@ -107,3 +112,70 @@ def validate_core_schema(schema: CoreSchema) -> CoreSchema:
     if os.getenv('PYDANTIC_VALIDATE_CORE_SCHEMAS'):
         return _validate_core_schema(schema)
     return schema
+
+
+def _clean_schema_for_pretty_print(obj: Any, strip_metadata: bool = True) -> Any:  # pragma: nocover
+    """A utility function to remove irrelevant information from a core schema."""
+    if isinstance(obj, Mapping):
+        new_dct = {}
+        for k, v in obj.items():
+            if k == 'metadata' and strip_metadata:
+                new_metadata = {}
+
+                for meta_k, meta_v in v.items():
+                    if meta_k in ('pydantic_js_functions', 'pydantic_js_annotation_functions'):
+                        new_metadata['js_metadata'] = '<stripped>'
+                    else:
+                        new_metadata[meta_k] = _clean_schema_for_pretty_print(meta_v, strip_metadata=strip_metadata)
+
+                if list(new_metadata.keys()) == ['js_metadata']:
+                    new_metadata = {'<stripped>'}
+
+                new_dct[k] = new_metadata
+            # Remove some defaults:
+            elif k in ('custom_init', 'root_model') and not v:
+                continue
+            else:
+                new_dct[k] = _clean_schema_for_pretty_print(v, strip_metadata=strip_metadata)
+
+        return new_dct
+    elif isinstance(obj, Sequence) and not isinstance(obj, str):
+        return [_clean_schema_for_pretty_print(v, strip_metadata=strip_metadata) for v in obj]
+    else:
+        return obj
+
+
+def pretty_print_core_schema(
+    val: Any,
+    *,
+    console: Console | None = None,
+    max_depth: int | None = None,
+    strip_metadata: bool = True,
+) -> None:  # pragma: nocover
+    """Pretty-print a core schema using the `rich` library.
+
+    Args:
+        val: The core schema to print, or a Pydantic model/dataclass/type adapter
+            (in which case the cached core schema is fetched and printed).
+        console: A rich console to use when printing. Defaults to the global rich console instance.
+        max_depth: The number of nesting levels which may be printed.
+        strip_metadata: Whether to strip metadata in the output. If `True` any known core metadata
+            attributes will be stripped (but custom attributes are kept). Defaults to `True`.
+    """
+    # lazy import:
+    from rich.pretty import pprint
+
+    # circ. imports:
+    from pydantic import BaseModel, TypeAdapter
+    from pydantic.dataclasses import is_pydantic_dataclass
+
+    if (inspect.isclass(val) and issubclass(val, BaseModel)) or is_pydantic_dataclass(val):
+        val = val.__pydantic_core_schema__
+    if isinstance(val, TypeAdapter):
+        val = val.core_schema
+    cleaned_schema = _clean_schema_for_pretty_print(val, strip_metadata=strip_metadata)
+
+    pprint(cleaned_schema, console=console, max_depth=max_depth)
+
+
+pps = pretty_print_core_schema

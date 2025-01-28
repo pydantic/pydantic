@@ -2546,15 +2546,9 @@ class _Definitions:
     manager.
     """
 
-    # TODO: more reasoning should be added as to why this is necessary (or at least used, as
-    # *not* making the distinction with other collected definitions does not break anything).
-    _unpacked_definitions: dict[str, core_schema.CoreSchema]
-    """Definitions coming from an external source (e.g. cached model schemas or from the `__get_pydantic_core_schema__` method)."""
-
     def __init__(self) -> None:
         self._recursively_seen = set()
         self._definitions = {}
-        self._unpacked_definitions = {}
 
     @contextmanager
     def get_schema_or_ref(self, tp: Any, /) -> Generator[tuple[str, core_schema.DefinitionReferenceSchema | None]]:
@@ -2605,7 +2599,7 @@ class _Definitions:
     def unpack_definitions(self, schema: core_schema.DefinitionsSchema) -> CoreSchema:
         """Store the definitions of the `'definitions'` core schema and return the inner core schema."""
         for def_schema in schema['definitions']:
-            self._unpacked_definitions[def_schema['ref']] = def_schema  # pyright: ignore
+            self._definitions[def_schema['ref']] = def_schema  # pyright: ignore
         return schema['schema']
 
     def finalize_schema(self, schema: CoreSchema) -> CoreSchema:
@@ -2615,8 +2609,6 @@ class _Definitions:
         by the referenced definition if possible, and applies deferred discriminators.
         """
         definitions = self._definitions
-        if self._unpacked_definitions:
-            definitions = {**self._unpacked_definitions, **definitions}
         try:
             gather_result = gather_schemas_for_cleaning(
                 schema,

@@ -35,56 +35,56 @@ def test_simple_core_schema_with_no_references() -> None:
     assert cleaned == cs.list_schema(cs.int_schema())
 
 
-@pytest.mark.parametrize('deep_ref', [False, True])
-def test_core_schema_with_different_reference_depths_gets_inlined(deep_ref: bool) -> None:
+@pytest.mark.parametrize('nested_ref', [False, True])
+def test_core_schema_with_different_reference_depths_gets_inlined(nested_ref: bool) -> None:
     class M1(BaseModel):
         a: int
 
     class M2(BaseModel):
         b: M1
 
-    init, cleaned = init_schema_and_cleaned_schema(list[M2] if deep_ref else M2)
+    init, cleaned = init_schema_and_cleaned_schema(list[M2] if nested_ref else M2)
 
     inner = IsPartialDict(type='definition-ref', schema_ref=Contains('M2'))
-    assert init == (IsPartialDict(type='list', items_schema=inner) if deep_ref else inner)
+    assert init == (IsPartialDict(type='list', items_schema=inner) if nested_ref else inner)
 
     inner = IsPartialDict(
         type='model',
         cls=M2,
         schema=IsPartialDict(fields={'b': IsPartialDict(schema=IsPartialDict(type='model', cls=M1))}),
     )
-    assert cleaned == (IsPartialDict(type='list', items_schema=inner) if deep_ref else inner)
+    assert cleaned == (IsPartialDict(type='list', items_schema=inner) if nested_ref else inner)
 
 
-@pytest.mark.parametrize('deep_ref', [False, True])
+@pytest.mark.parametrize('nested_ref', [False, True])
 @pytest.mark.xfail(
     reason=(
         "While the cleaned schema is of type 'definitions', the inner schema is inlined. This is not an "
         'issue, but the test is kept so that we notice the change when tweaking core schema generation.'
     )
 )
-def test_core_schema_simple_recursive_schema_uses_refs(deep_ref: bool) -> None:
+def test_core_schema_simple_recursive_schema_uses_refs(nested_ref: bool) -> None:
     class M1(BaseModel):
         a: 'M2'
 
     class M2(BaseModel):
         b: M1
 
-    init, cleaned = init_schema_and_cleaned_schema(list[M1] if deep_ref else M1)
+    init, cleaned = init_schema_and_cleaned_schema(list[M1] if nested_ref else M1)
 
     inner = IsPartialDict(type='definition-ref', schema_ref=Contains('M1'))
-    assert init == (IsPartialDict(type='list', items_schema=inner) if deep_ref else inner)
+    assert init == (IsPartialDict(type='list', items_schema=inner) if nested_ref else inner)
 
     inner = IsPartialDict(type='definition-ref', schema_ref=Contains('M1'))
     assert cleaned == IsPartialDict(
         type='definitions',
-        schema=IsPartialDict(type='list', items_schema=inner) if deep_ref else inner,
+        schema=IsPartialDict(type='list', items_schema=inner) if nested_ref else inner,
         definitions=[IsPartialDict(type='model', ref=Contains('M1')), IsPartialDict(type='model', ref=Contains('M2'))],
     )
 
 
-@pytest.mark.parametrize('deep_ref', [False, True])
-def test_core_schema_with_deeply_nested_schema_with_multiple_references_gets_inlined(deep_ref: bool) -> None:
+@pytest.mark.parametrize('nested_ref', [False, True])
+def test_core_schema_with_deeply_nested_schema_with_multiple_references_gets_inlined(nested_ref: bool) -> None:
     class M1(BaseModel):
         a: int
 
@@ -95,10 +95,10 @@ def test_core_schema_with_deeply_nested_schema_with_multiple_references_gets_inl
         c: M2
         d: M1
 
-    init, cleaned = init_schema_and_cleaned_schema(list[M3] if deep_ref else M3)
+    init, cleaned = init_schema_and_cleaned_schema(list[M3] if nested_ref else M3)
 
     inner = IsPartialDict(type='definition-ref', schema_ref=Contains('M3'))
-    assert init == (IsPartialDict(type='list', items_schema=inner) if deep_ref else inner)
+    assert init == (IsPartialDict(type='list', items_schema=inner) if nested_ref else inner)
 
     inner = IsPartialDict(
         type='model',
@@ -110,11 +110,11 @@ def test_core_schema_with_deeply_nested_schema_with_multiple_references_gets_inl
             }
         ),
     )
-    assert cleaned == (IsPartialDict(type='list', items_schema=inner) if deep_ref else inner)
+    assert cleaned == (IsPartialDict(type='list', items_schema=inner) if nested_ref else inner)
 
 
-@pytest.mark.parametrize('deep_ref', [False, True])
-def test_core_schema_with_model_used_in_multiple_places(deep_ref: bool) -> None:
+@pytest.mark.parametrize('nested_ref', [False, True])
+def test_core_schema_with_model_used_in_multiple_places(nested_ref: bool) -> None:
     class M1(BaseModel):
         a: int
 
@@ -125,15 +125,15 @@ def test_core_schema_with_model_used_in_multiple_places(deep_ref: bool) -> None:
         c: Union[M2, M1]
         d: M1
 
-    init, cleaned = init_schema_and_cleaned_schema(list[M3] if deep_ref else M3)
+    init, cleaned = init_schema_and_cleaned_schema(list[M3] if nested_ref else M3)
 
     inner = IsPartialDict(type='definition-ref', schema_ref=Contains('M3'))
-    assert init == (IsPartialDict(type='list', items_schema=inner) if deep_ref else inner)
+    assert init == (IsPartialDict(type='list', items_schema=inner) if nested_ref else inner)
 
     inner = IsPartialDict(type='model', cls=M3)
     assert cleaned == IsPartialDict(
         type='definitions',
-        schema=(IsPartialDict(type='list', items_schema=inner) if deep_ref else inner),
+        schema=(IsPartialDict(type='list', items_schema=inner) if nested_ref else inner),
         definitions=[IsPartialDict(type='model', cls=M1)],  # This was used in multiple places
     )
 
