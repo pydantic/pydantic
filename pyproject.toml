@@ -108,7 +108,6 @@ testing-extra = [
     'devtools',
     # used in docs tests
     'sqlalchemy',
-    'greenlet; python_version < "3.13"',
 ]
 typechecking = [
     'mypy',
