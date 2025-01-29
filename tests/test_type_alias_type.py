@@ -387,8 +387,8 @@ def test_intermediate_type_aliases() -> None:
     assert MyModel(my_int_seq=range(1, 4)).my_int_seq == [1, 2, 3]
 
     assert MyModel.model_json_schema() == {
-        '$defs': {'MySeq_int_': {'items': {'type': 'integer'}, 'type': 'array'}},
-        'properties': {'my_int_seq': {'$ref': '#/$defs/MySeq_int_'}},
+        '$defs': {'MyIntSeq': {'items': {'type': 'integer'}, 'type': 'array'}},
+        'properties': {'my_int_seq': {'$ref': '#/$defs/MyIntSeq'}},
         'required': ['my_int_seq'],
         'title': 'MyModel',
         'type': 'object',
