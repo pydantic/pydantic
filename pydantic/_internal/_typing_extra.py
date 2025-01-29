@@ -15,6 +15,8 @@ from zoneinfo import ZoneInfo
 import typing_extensions
 from typing_extensions import ParamSpec, TypeAliasType, TypeIs, deprecated, get_args, get_origin
 
+from pydantic.version import version_short
+
 from ._namespace_utils import GlobalsNamespace, MappingNamespace, NsResolver, get_module_ns_of
 
 if sys.version_info < (3, 10):
@@ -831,6 +833,19 @@ def eval_type_backport(
             raise
         else:
             raise TypeError(message) from e
+    except RecursionError as e:
+        # TODO ideally recursion errors should be checked in `eval_type` above, `eval_type_backport`
+        # is used directly in some places.
+        message = (
+            "If you made use of an implicit recursive type alias (e.g. `MyType = list['MyType']), "
+            'consider using PEP 695 type aliases instead. For more details, refer to the documentation: '
+            f'https://docs.pydantic.dev/{version_short()}/concepts/types/#named-recursive-types'
+        )
+        if sys.version_info >= (3, 11):
+            e.add_note(message)
+            raise
+        else:
+            raise RecursionError(f'{e.args[0]}\n{message}')
 
 
 def _eval_type_backport(

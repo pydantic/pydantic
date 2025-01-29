@@ -1,4 +1,5 @@
 import dataclasses
+import platform
 import re
 import sys
 import typing
@@ -1417,3 +1418,14 @@ Model = func()
     )
 
     assert mod_1.Model.model_fields['a'].annotation is int
+
+
+@pytest.mark.skipif(
+    platform.python_implementation() == 'PyPy' and sys.version_info < (3, 11),
+    reason='Flaky on PyPy',
+)
+def test_implicit_type_alias_recursive_error_message() -> None:
+    Json = list['Json']
+
+    with pytest.raises(RecursionError, match='.*If you made use of an implicit recursive type alias.*'):
+        TypeAdapter(Json)
