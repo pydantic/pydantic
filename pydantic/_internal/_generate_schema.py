@@ -851,13 +851,9 @@ class GenerateSchema:
             if ref:
                 return self.defs.create_definition_reference_schema(schema)
 
-            if schema['type'] == 'definition-ref':
-                # As a safety measure (because `'definition-ref'` schemas are inlined
-                # in place -- i.e. mutated directly), copy the schema:
-                return schema.copy()
-
-            else:
-                return schema
+            # Note: if schema is of type `'definition-ref'`, we might want to copy it as a
+            # safety measure (because these are inlined in place -- i.e. mutated directly)
+            return schema
 
         if (validators := getattr(obj, '__get_validators__', None)) is not None:
             from pydantic.v1 import BaseModel as BaseModelV1
@@ -2521,6 +2517,7 @@ def _can_be_inlined(def_ref: core_schema.DefinitionReferenceSchema) -> bool:
     """Return whether the `'definition-ref'` schema can be replaced by its definition.
 
     This is true if no `'serialization'` schema is attached, or if it has at least one metadata entry.
+    Inlining such schemas would remove the `'serialization'` schema or metadata.
     """
     return 'serialization' not in def_ref and not def_ref.get('metadata')
 

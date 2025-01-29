@@ -189,7 +189,7 @@ def gather_schemas_for_cleaning(schema: CoreSchema, definitions: dict[str, CoreS
     - Validated: the reference must point to an existing definition. If this is not the case, a
       `MissingDefinitionError` exception is raised.
     - Stored in the context: the actual reference is stored in the context. Depending on whether
-      the `'definition-ref'` schema is encountered twice or only once, the schema itself is also
+      the `'definition-ref'` schema is encountered more that once, the schema itself is also
       saved in the context to be inlined (i.e. replaced by the definition it points to).
     """
     context = GatherContext(definitions)
