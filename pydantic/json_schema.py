@@ -2254,8 +2254,10 @@ class GenerateJsonSchema:
                             raise
 
                 for k, v in schema.items():
-                    if k == 'examples':
-                        continue  # skip refs processing for examples, allow arbitrary values / refs
+                    if k == 'examples' and isinstance(v, list):
+                        # Skip examples that may contain arbitrary values and references
+                        # (see the comment in `_get_all_json_refs` for more details).
+                        continue
                     _add_json_refs(v)
             elif isinstance(schema, list):
                 for v in schema:
