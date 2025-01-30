@@ -31,7 +31,7 @@ lint: .uv
 
 .PHONY: codespell  ## Use Codespell to do spellchecking
 codespell: .pre-commit
-	uvx pre-commit run codespell --all-files
+	uv run pre-commit run codespell --all-files
 
 .PHONY: typecheck  ## Perform type-checking
 typecheck: .pre-commit
