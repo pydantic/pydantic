@@ -16,6 +16,7 @@ This is an early alpha release, meant to collect early feedback from users havin
 * Regular `uv.lock` deps update by @sydney-runkle in [#11333](https://github.com/pydantic/pydantic/pull/11333)
 * Add a `check_pydantic_core_version()` function by @Viicos in [#11324](https://github.com/pydantic/pydantic/pull/11324)
 * Remove `greenlet` development dependency by @Viicos in [#11351](https://github.com/pydantic/pydantic/pull/11351)
+* Bump `pydantic-core` to v2.28.0 by @Viicos in [#11364](https://github.com/pydantic/pydantic/pull/11364)
 
 #### New Features
 
