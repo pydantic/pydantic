@@ -7,7 +7,7 @@ sources = pydantic tests docs/plugins
 
 .PHONY: .pre-commit  ## Check that pre-commit is installed
 .pre-commit: .uv
-	@uvx pre-commit -V || uv pip install pre-commit
+	@uv run pre-commit -V || uv pip install pre-commit
 
 .PHONY: install  ## Install the package, dependencies, and pre-commit for local development
 install: .uv
