@@ -35,7 +35,7 @@ codespell: .pre-commit
 
 .PHONY: typecheck  ## Perform type-checking
 typecheck: .pre-commit
-	uvx pre-commit run typecheck --all-files
+	uv run pre-commit run typecheck --all-files
 
 .PHONY: test-mypy  ## Run the mypy integration tests
 test-mypy: .uv
