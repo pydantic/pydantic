@@ -210,6 +210,14 @@ aside.blog img {
     touch-action: auto;
     word-break: break-word;
 }
-.md-search__output td>div>p{
+
+.md-search__output td>div>p {
   margin: 0;
+}
+
+.md-search__output em.search-highlight {
+  background-color: initial;
+  font-style: normal;
+  color: var(--md-accent-fg-color);
+  text-decoration: underline;
 }

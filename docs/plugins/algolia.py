@@ -31,6 +31,96 @@ ALGOLIA_WRITE_API_KEY = os.environ.get('ALGOLIA_WRITE_API_KEY')
 MAX_CONTENT_LENGTH = 95_000
 
 
+# Temporal words
+temporal_words = [
+    'before',
+    'after',
+    'during',
+    'between',
+    'since',
+    'until',
+    'from',
+    'to',
+    'yesterday',
+    'today',
+    'tomorrow',
+    'past',
+    'future',
+    'upcoming',
+    'recent',
+    'previous',
+    'next',
+    'early',
+    'late',
+    'now',
+    'current',
+    'former',
+    'latest',
+]
+
+# Articles and basic prepositions
+basic_words = ['the', 'a', 'an', 'in', 'on', 'at', 'by', 'for', 'with', 'to', 'of', 'from']
+
+# Common qualifiers
+qualifiers = [
+    'very',
+    'quite',
+    'rather',
+    'somewhat',
+    'mostly',
+    'almost',
+    'nearly',
+    'approximately',
+    'about',
+    'around',
+    'roughly',
+    'mainly',
+    'primarily',
+    'generally',
+    'typically',
+    'usually',
+    'normally',
+]
+
+# Action-related words
+action_words = [
+    'can',
+    'will',
+    'should',
+    'must',
+    'may',
+    'might',
+    'could',
+    'would',
+    'do',
+    'does',
+    'did',
+    'done',
+    'having',
+    'has',
+    'had',
+]
+
+# Connecting words
+connecting_words = [
+    'and',
+    'or',
+    'but',
+    'yet',
+    'so',
+    'because',
+    'therefore',
+    'however',
+    'although',
+    'despite',
+    'unless',
+    'whereas',
+]
+
+# Combine all categories
+optional_words = temporal_words + basic_words + qualifiers + action_words + connecting_words
+
+
 # Note: alternatively, we could use a tree processor as a markdown plugin
 # (see https://python-markdown.github.io/extensions/api/#treeprocessors).
 def on_page_content(html: str, page: Page, config: Config, files: Files) -> str:
@@ -125,6 +215,16 @@ def on_post_build(config: Config) -> None:
         return
 
     client = SearchClientSync(ALGOLIA_APP_ID, ALGOLIA_WRITE_API_KEY)
+
+    client.set_settings(
+        index_name=ALGOLIA_INDEX_NAME,
+        index_settings={
+            'optionalWords': optional_words,
+            'highlightPreTag': '<em class="search-highlight">',
+            'highlightPostTag': '</em>',
+            'attributesToSnippet': ['content:80'],
+        },
+    )
 
     client.clear_objects(index_name=ALGOLIA_INDEX_NAME)
 
