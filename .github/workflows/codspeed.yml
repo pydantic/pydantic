@@ -29,6 +29,20 @@ jobs:
       - name: install deps
         run: uv sync --python 3.12 --group testing-extra --extra email --frozen
 
+      # override pydantic-core from git - to report benchmarks
+      # FIXME DO NOT MERGE THIS
+
+      - uses: actions/checkout@v4
+        with:
+          repository: pydantic/pydantic-core
+          ref: prebuilt-variant
+          path: pydantic-core
+
+      - name: install rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - run: pdm run pip install ./pydantic-core
+
       - name: Run CodSpeed benchmarks
         uses: CodSpeedHQ/action@v3
         with:
