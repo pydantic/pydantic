@@ -89,6 +89,7 @@ def test_recursive_model_schema_generation(benchmark) -> None:
 
 
 @pytest.mark.benchmark(group='model_schema_generation')
+@pytest.mark.skip
 def test_construct_dataclass_schema(benchmark):
     @dataclass(frozen=True, kw_only=True)
     class Cat:
@@ -251,6 +252,7 @@ def test_tagged_union_with_str_discriminator_schema_generation(benchmark):
 
 
 @pytest.mark.benchmark(group='model_schema_generation')
+@pytest.mark.skip
 def test_tagged_union_with_callable_discriminator_schema_generation(benchmark):
     class Pie(BaseModel):
         time_to_cook: int

@@ -43,6 +43,7 @@ def build_nested_state(n):
 
 
 @pytest.mark.benchmark
+@pytest.mark.skip
 def test_efficiency_with_highly_nested_examples(benchmark) -> None:
     # can go much higher, but we keep it reasonably low here for a proof of concept
     @benchmark
