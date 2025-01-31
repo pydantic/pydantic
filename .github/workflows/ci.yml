@@ -11,6 +11,8 @@ on:
 env:
   COLUMNS: 150
   UV_FROZEN: true
+  # https://github.com/pytest-dev/pytest/issues/7443#issuecomment-656642591:
+  FORCE_COLOR: 1
 
 jobs:
   lint:
