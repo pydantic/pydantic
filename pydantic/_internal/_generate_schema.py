@@ -311,6 +311,51 @@ class InvalidSchemaError(Exception):
     """The core schema is invalid."""
 
 
+class AnnotationsHandler(Iterator[CoreSchema]):
+    def __init__(self, generate_schema: GenerateSchema, typ: Any, annotations: list[Any]) -> None:
+        self._generate_schema = generate_schema
+        self.typ = typ
+        self.ann_iter = reversed(annotations)
+        self._ref_mode = 'to-def'
+
+    def _get_types_namespace(self) -> NamespacesTuple:
+        return self._generate_schema._types_namespace
+
+    def generate_schema(self, typ: Any) -> CoreSchema:
+        return self._generate_schema.generate_schema(typ)
+
+    def __next__(self) -> CoreSchema:
+        # Ellipsis mark a missing implementation (implementation is still present to have a fair comparison)
+        try:
+            ann = next(self.ann_iter)
+        except StopIteration:
+            schema = self._generate_schema._generate_schema_from_get_schema_method(self.typ, self.typ)
+            if schema is None:
+                schema = self._generate_schema._generate_schema_inner(self.typ)
+            metadata_js_function = _extract_get_pydantic_json_schema(self.typ)
+            if metadata_js_function is not None:
+                ...
+        else:
+            annotation_get_schema = getattr(ann, '__get_pydantic_core_schema__', None)
+            if annotation_get_schema:
+                schema = annotation_get_schema(self)
+                if self._ref_mode == 'to-def':
+                    ref = schema.get('ref')
+                    if ref is not None:
+                        ...
+                else:
+                    ...
+            else:
+                schema = next(self)
+                schema = self._generate_schema._apply_single_annotation(schema, ann)
+                schema = self._generate_schema._apply_single_annotation_json_schema(schema, ann)
+
+            metadata_js_function = _extract_get_pydantic_json_schema(ann)
+            if metadata_js_function is not None:
+                ...
+        return schema
+
+
 class GenerateSchema:
     """Generate core schema for a Pydantic model, dataclass and types like `str`, `datetime`, ... ."""
 
@@ -2083,6 +2128,7 @@ class GenerateSchema:
                 schema = wrap_default(annotation, schema)
         return schema
 
+
     def _apply_annotations(
         self,
         source_type: Any,
@@ -2099,32 +2145,10 @@ class GenerateSchema:
 
         pydantic_js_annotation_functions: list[GetJsonSchemaFunction] = []
 
-        def inner_handler(obj: Any) -> CoreSchema:
-            schema = self._generate_schema_from_get_schema_method(obj, source_type)
+        annotations_handler = AnnotationsHandler(self, source_type, annotations)
 
-            if schema is None:
-                schema = self._generate_schema_inner(obj)
+        schema = next(annotations_handler)
 
-            metadata_js_function = _extract_get_pydantic_json_schema(obj)
-            if metadata_js_function is not None:
-                metadata_schema = resolve_original_schema(schema, self.defs)
-                if metadata_schema is not None:
-                    self._add_js_function(metadata_schema, metadata_js_function)
-            return transform_inner_schema(schema)
-
-        get_inner_schema = CallbackGetCoreSchemaHandler(inner_handler, self)
-
-        for annotation in annotations:
-            if annotation is None:
-                continue
-            get_inner_schema = self._get_wrapped_inner_schema(
-                get_inner_schema, annotation, pydantic_js_annotation_functions
-            )
-
-        schema = get_inner_schema(source_type)
-        if pydantic_js_annotation_functions:
-            core_metadata = schema.setdefault('metadata', {})
-            update_core_metadata(core_metadata, pydantic_js_annotation_functions=pydantic_js_annotation_functions)
         return _add_custom_serialization_from_json_encoders(self._config_wrapper.json_encoders, source_type, schema)
 
     def _apply_single_annotation(self, schema: core_schema.CoreSchema, metadata: Any) -> core_schema.CoreSchema:

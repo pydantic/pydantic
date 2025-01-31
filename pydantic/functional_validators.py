@@ -70,8 +70,8 @@ class AfterValidator:
 
     func: core_schema.NoInfoValidatorFunction | core_schema.WithInfoValidatorFunction
 
-    def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
-        schema = handler(source_type)
+    def __get_pydantic_core_schema__(self, handler) -> core_schema.CoreSchema:
+        schema = next(handler)
         info_arg = _inspect_validator(self.func, 'after')
         if info_arg:
             func = cast(core_schema.WithInfoValidatorFunction, self.func)
@@ -122,8 +122,8 @@ class BeforeValidator:
     func: core_schema.NoInfoValidatorFunction | core_schema.WithInfoValidatorFunction
     json_schema_input_type: Any = PydanticUndefined
 
-    def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
-        schema = handler(source_type)
+    def __get_pydantic_core_schema__(self, handler) -> core_schema.CoreSchema:
+        schema = next(handler)
         input_schema = (
             None
             if self.json_schema_input_type is PydanticUndefined
@@ -200,7 +200,7 @@ class PlainValidator:
     func: core_schema.NoInfoValidatorFunction | core_schema.WithInfoValidatorFunction
     json_schema_input_type: Any = Any
 
-    def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+    def __get_pydantic_core_schema__(self, handler) -> core_schema.CoreSchema:
         # Note that for some valid uses of PlainValidator, it is not possible to generate a core schema for the
         # source_type, so calling `handler(source_type)` will error, which prevents us from generating a proper
         # serialization schema. To work around this for use cases that will not involve serialization, we simply
@@ -209,7 +209,7 @@ class PlainValidator:
         from pydantic import PydanticSchemaGenerationError
 
         try:
-            schema = handler(source_type)
+            schema = next(handler)
             # TODO if `schema['serialization']` is one of `'include-exclude-dict/sequence',
             # schema validation will fail. That's why we use 'type ignore' comments below.
             serialization = schema.get(
@@ -217,7 +217,7 @@ class PlainValidator:
                 core_schema.wrap_serializer_function_ser_schema(
                     function=lambda v, h: h(v),
                     schema=schema,
-                    return_schema=handler.generate_schema(source_type),
+                    return_schema=handler.generate_schema(Any),
                 ),
             )
         except PydanticSchemaGenerationError:
@@ -293,8 +293,8 @@ class WrapValidator:
     func: core_schema.NoInfoWrapValidatorFunction | core_schema.WithInfoWrapValidatorFunction
     json_schema_input_type: Any = PydanticUndefined
 
-    def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
-        schema = handler(source_type)
+    def __get_pydantic_core_schema__(self, handler) -> core_schema.CoreSchema:
+        schema = next(handler)
         input_schema = (
             None
             if self.json_schema_input_type is PydanticUndefined

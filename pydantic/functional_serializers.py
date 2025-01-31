@@ -50,7 +50,7 @@ class PlainSerializer:
     return_type: Any = PydanticUndefined
     when_used: WhenUsed = 'always'
 
-    def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+    def __get_pydantic_core_schema__(self, handler) -> core_schema.CoreSchema:
         """Gets the Pydantic core schema.
 
         Args:
@@ -60,7 +60,7 @@ class PlainSerializer:
         Returns:
             The Pydantic core schema.
         """
-        schema = handler(source_type)
+        schema = next(handler)
         try:
             # Do not pass in globals as the function could be defined in a different module.
             # Instead, let `get_function_return_type` infer the globals to use, but still pass
@@ -150,7 +150,7 @@ class WrapSerializer:
     return_type: Any = PydanticUndefined
     when_used: WhenUsed = 'always'
 
-    def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+    def __get_pydantic_core_schema__(self, handler) -> core_schema.CoreSchema:
         """This method is used to get the Pydantic core schema of the class.
 
         Args:
@@ -160,7 +160,7 @@ class WrapSerializer:
         Returns:
             The generated core schema of the class.
         """
-        schema = handler(source_type)
+        schema = next(handler)
         globalns, localns = handler._get_types_namespace()
         try:
             # Do not pass in globals as the function could be defined in a different module.
