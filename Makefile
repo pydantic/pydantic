@@ -13,7 +13,7 @@ sources = pydantic tests docs/plugins
 install: .uv
 	uv sync --frozen --group all --all-extras
 	uv pip install pre-commit
-	pre-commit install --install-hooks
+	uv run pre-commit install --install-hooks
 
 .PHONY: rebuild-lockfiles  ## Rebuild lockfiles from scratch, updating all dependencies
 rebuild-lockfiles: .uv
@@ -31,11 +31,11 @@ lint: .uv
 
 .PHONY: codespell  ## Use Codespell to do spellchecking
 codespell: .pre-commit
-	pre-commit run codespell --all-files
+	uv run pre-commit run codespell --all-files
 
 .PHONY: typecheck  ## Perform type-checking
 typecheck: .pre-commit
-	pre-commit run typecheck --all-files
+	uv run pre-commit run typecheck --all-files
 
 .PHONY: test-mypy  ## Run the mypy integration tests
 test-mypy: .uv
