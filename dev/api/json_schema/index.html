@@ -8923,7 +8923,7 @@ str, bool]</code> or <code>tuple[int, ...]</code>.</p>
 <span class="sd">    Returns:</span>
 <span class="sd">        The generated JSON schema.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mode</span> <span class="o">==</span> <span class="s1">&#39;validation&#39;</span> <span class="ow">and</span> <span class="p">(</span><span class="n">input_schema</span> <span class="o">:=</span> <span class="n">schema</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;json_schema_input_schema&#39;</span><span class="p">)):</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;validation&#39;</span> <span class="ow">and</span> <span class="p">(</span><span class="n">input_schema</span> <span class="o">:=</span> <span class="n">schema</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;json_schema_input_schema&#39;</span><span class="p">)):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_inner</span><span class="p">(</span><span class="n">input_schema</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_inner</span><span class="p">(</span><span class="n">schema</span><span class="p">[</span><span class="s1">&#39;schema&#39;</span><span class="p">])</span>
@@ -9127,7 +9127,7 @@ str, bool]</code> or <code>tuple[int, ...]</code>.</p>
 <span class="sd">    Returns:</span>
 <span class="sd">        The generated JSON schema.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mode</span> <span class="o">==</span> <span class="s1">&#39;validation&#39;</span> <span class="ow">and</span> <span class="p">(</span><span class="n">input_schema</span> <span class="o">:=</span> <span class="n">schema</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;json_schema_input_schema&#39;</span><span class="p">)):</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;validation&#39;</span> <span class="ow">and</span> <span class="p">(</span><span class="n">input_schema</span> <span class="o">:=</span> <span class="n">schema</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;json_schema_input_schema&#39;</span><span class="p">)):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_inner</span><span class="p">(</span><span class="n">input_schema</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">handle_invalid_for_json_schema</span><span class="p">(</span>
@@ -9233,7 +9233,7 @@ str, bool]</code> or <code>tuple[int, ...]</code>.</p>
 <span class="sd">    Returns:</span>
 <span class="sd">        The generated JSON schema.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mode</span> <span class="o">==</span> <span class="s1">&#39;validation&#39;</span> <span class="ow">and</span> <span class="p">(</span><span class="n">input_schema</span> <span class="o">:=</span> <span class="n">schema</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;json_schema_input_schema&#39;</span><span class="p">)):</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;validation&#39;</span> <span class="ow">and</span> <span class="p">(</span><span class="n">input_schema</span> <span class="o">:=</span> <span class="n">schema</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;json_schema_input_schema&#39;</span><span class="p">)):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_inner</span><span class="p">(</span><span class="n">input_schema</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_inner</span><span class="p">(</span><span class="n">schema</span><span class="p">[</span><span class="s1">&#39;schema&#39;</span><span class="p">])</span>
