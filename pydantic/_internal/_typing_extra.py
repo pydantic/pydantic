@@ -834,7 +834,7 @@ def eval_type_backport(
         else:
             raise TypeError(message) from e
     except RecursionError as e:
-        # TODO ideally recursion errors should be checked in `eval_type` above, `eval_type_backport`
+        # TODO ideally recursion errors should be checked in `eval_type` above, but `eval_type_backport`
         # is used directly in some places.
         message = (
             "If you made use of an implicit recursive type alias (e.g. `MyType = list['MyType']), "
