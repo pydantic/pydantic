@@ -286,7 +286,7 @@ By leveraging the new [`type` statement](https://typing.readthedocs.io/en/latest
        would have been duplicated in both `'x'` and `'y'`.
 
 !!! note
-    As with implicit type aliases, [type variables][typing.TypeVar] can also be used inside the alias:
+    As with implicit type aliases, [type variables][typing.TypeVar] can also be used inside the generic alias:
 
     === "Python 3.9 and above"
 
