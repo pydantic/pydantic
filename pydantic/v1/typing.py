@@ -65,7 +65,10 @@ else:
         # `error: Too many arguments for "_evaluate" of "ForwardRef"` hence the cast...
         # Python 3.13/3.12.4+ made `recursive_guard` a kwarg, so name it explicitly to avoid:
         # TypeError: ForwardRef._evaluate() missing 1 required keyword-only argument: 'recursive_guard'
-        return cast(Any, type_)._evaluate(globalns, localns, recursive_guard=set())
+        if sys.version_info >= (3, 13):
+            return cast(Any, type_)._evaluate(globalns, localns, recursive_guard=set(), type_params=())
+        else:
+            return cast(Any, type_)._evaluate(globalns, localns, recursive_guard=set())
 
 
 if sys.version_info < (3, 9):
