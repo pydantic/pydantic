@@ -76,7 +76,7 @@ from typing import Annotated
 
 from pydantic import Field, TypeAdapter, ValidationError
 
-PositiveInt = Annotated[int, Field(gt=0)]
+PositiveInt = Annotated[int, Field(gt=0)]  # (1)!
 
 ta = TypeAdapter(PositiveInt)
 
@@ -93,32 +93,13 @@ except ValidationError as exc:
     """
 ```
 
-Note that you can also use constraints from [annotated-types](https://github.com/annotated-types/annotated-types)
-to make this Pydantic-agnostic:
+1. Note that you can also use constraints from the [annotated-types](https://github.com/annotated-types/annotated-types)
+  library to make this Pydantic-agnostic:
+  ```python {test="skip" lint="skip"}
+  from annotated_types import Gt
 
-```python
-from typing import Annotated
-
-from annotated_types import Gt
-
-from pydantic import TypeAdapter, ValidationError
-
-PositiveInt = Annotated[int, Gt(0)]
-
-ta = TypeAdapter(PositiveInt)
-
-print(ta.validate_python(1))
-#> 1
-
-try:
-    ta.validate_python(-1)
-except ValidationError as exc:
-    print(exc)
-    """
-    1 validation error for constrained-int
-      Input should be greater than 0 [type=greater_than, input_value=-1, input_type=int]
-    """
-```
+  PositiveInt = Annotated[int, Gt(0)]
+  ```
 
 #### Adding validation and serialization
 
@@ -158,221 +139,271 @@ assert ta.json_schema(mode='serialization') == {'type': 'string'}
 
 #### Generics
 
-You can use type variables within `Annotated` to make reusable modifications to types:
+[Type variables][typing.TypeVar] can be used within the [`Annotated`][typing.Annotated] type:
 
 ```python
-from typing import Annotated, Any, Sequence, TypeVar
+from typing import Annotated, TypeVar
 
 from annotated_types import Gt, Len
 
-from pydantic import ValidationError
-from pydantic.type_adapter import TypeAdapter
+from pydantic import TypeAdapter, ValidationError
 
-SequenceType = TypeVar('SequenceType', bound=Sequence[Any])
-
-
-ShortSequence = Annotated[SequenceType, Len(max_length=10)]
+T = TypeVar('T')
 
 
-ta = TypeAdapter(ShortSequence[list[int]])
+ShortList = Annotated[list[T], Len(max_length=4)]
 
-v = ta.validate_python([1, 2, 3, 4, 5])
-assert v == [1, 2, 3, 4, 5]
+
+ta = TypeAdapter(ShortList[int])
+
+v = ta.validate_python([1, 2, 3, 4])
+assert v == [1, 2, 3, 4]
 
 try:
-    ta.validate_python([1] * 100)
+    ta.validate_python([1, 2, 3, 4, 5])
 except ValidationError as exc:
     print(exc)
     """
     1 validation error for list[int]
-      List should have at most 10 items after validation, not 100 [type=too_long, input_value=[1, 1, 1, 1, 1, 1, 1, 1, ... 1, 1, 1, 1, 1, 1, 1, 1], input_type=list]
+      List should have at most 4 items after validation, not 5 [type=too_long, input_value=[1, 2, 3, 4, 5], input_type=list]
     """
 
-
-T = TypeVar('T')  # or a bound=SupportGt
 
 PositiveList = list[Annotated[T, Gt(0)]]
 
 ta = TypeAdapter(PositiveList[float])
 
-v = ta.validate_python([1])
+v = ta.validate_python([1.0])
 assert type(v[0]) is float
 
 
 try:
-    ta.validate_python([-1])
+    ta.validate_python([-1.0])
 except ValidationError as exc:
     print(exc)
     """
     1 validation error for list[constrained-float]
     0
-      Input should be greater than 0 [type=greater_than, input_value=-1, input_type=int]
+      Input should be greater than 0 [type=greater_than, input_value=-1.0, input_type=float]
     """
 ```
 
 ### Named type aliases
 
-The above examples make use of implicit type aliases.
-This means that they will not be able to have a `title` in JSON schemas and their schema will be copied between fields.
-You can use [PEP 695]'s `TypeAliasType` via its [typing-extensions] backport to make named aliases, allowing you to define a new type without creating subclasses.
-This new type can be as simple as a name or have complex validation logic attached to it:
+The above examples make use of *implicit* type aliases, assigned to a variable. At runtime, Pydantic
+has no way of knowing the name of the variable it was assigned to, and this can be problematic for
+two reasons:
 
-```python
-from typing import Annotated
+- The [JSON Schema](./json_schema.md) of the alias won't be converted into a
+  [definition](https://json-schema.org/understanding-json-schema/structuring#defs).
+  This is mostly useful when you are using the alias more than once in a model definition.
+- In most cases, [recursive type aliases](#named-recursive-types) won't work.
 
-from annotated_types import Gt
-from typing_extensions import TypeAliasType
+By leveraging the new [`type` statement](https://typing.readthedocs.io/en/latest/spec/aliases.html#type-statement)
+(introduced in [PEP 695]), you can define aliases as follows:
 
-from pydantic import BaseModel
+=== "Python 3.9 and above"
 
-ImplicitAliasPositiveIntList = list[Annotated[int, Gt(0)]]
+    ```python
+    from typing import Annotated
 
+    from annotated_types import Gt
+    from typing_extensions import TypeAliasType
 
-class Model1(BaseModel):
-    x: ImplicitAliasPositiveIntList
-    y: ImplicitAliasPositiveIntList
+    from pydantic import BaseModel
 
-
-print(Model1.model_json_schema())
-"""
-{
-    'properties': {
-        'x': {
-            'items': {'exclusiveMinimum': 0, 'type': 'integer'},
-            'title': 'X',
-            'type': 'array',
-        },
-        'y': {
-            'items': {'exclusiveMinimum': 0, 'type': 'integer'},
-            'title': 'Y',
-            'type': 'array',
-        },
-    },
-    'required': ['x', 'y'],
-    'title': 'Model1',
-    'type': 'object',
-}
-"""
-
-PositiveIntList = TypeAliasType('PositiveIntList', list[Annotated[int, Gt(0)]])
+    PositiveIntList = TypeAliasType('PositiveIntList', list[Annotated[int, Gt(0)]])
 
 
-class Model2(BaseModel):
-    x: PositiveIntList
-    y: PositiveIntList
+    class Model(BaseModel):
+        x: PositiveIntList
+        y: PositiveIntList
 
 
-print(Model2.model_json_schema())
-"""
-{
-    '$defs': {
-        'PositiveIntList': {
-            'items': {'exclusiveMinimum': 0, 'type': 'integer'},
-            'type': 'array',
-        }
-    },
-    'properties': {
-        'x': {'$ref': '#/$defs/PositiveIntList'},
-        'y': {'$ref': '#/$defs/PositiveIntList'},
-    },
-    'required': ['x', 'y'],
-    'title': 'Model2',
-    'type': 'object',
-}
-"""
-```
-
-These named type aliases can also be generic:
-
-```python
-from typing import Annotated, Generic, TypeVar
-
-from annotated_types import Gt
-from typing_extensions import TypeAliasType
-
-from pydantic import BaseModel, ValidationError
-
-T = TypeVar('T')  # or a `bound=SupportGt`
-
-PositiveList = TypeAliasType(
-    'PositiveList', list[Annotated[T, Gt(0)]], type_params=(T,)
-)
-
-
-class Model(BaseModel, Generic[T]):
-    x: PositiveList[T]
-
-
-assert Model[int].model_validate_json('{"x": ["1"]}').x == [1]
-
-try:
-    Model[int](x=[-1])
-except ValidationError as exc:
-    print(exc)
+    print(Model.model_json_schema())  # (1)!
     """
-    1 validation error for Model[int]
-    x.0
-      Input should be greater than 0 [type=greater_than, input_value=-1, input_type=int]
+    {
+        '$defs': {
+            'PositiveIntList': {
+                'items': {'exclusiveMinimum': 0, 'type': 'integer'},
+                'type': 'array',
+            }
+        },
+        'properties': {
+            'x': {'$ref': '#/$defs/PositiveIntList'},
+            'y': {'$ref': '#/$defs/PositiveIntList'},
+        },
+        'required': ['x', 'y'],
+        'title': 'Model',
+        'type': 'object',
+    }
     """
-```
+    ```
+
+    1. If `PositiveIntList` were to be defined as an implicit type alias, its definition
+       would have been duplicated in both `'x'` and `'y'`.
+
+
+=== "Python 3.12 and above (new syntax)"
+
+    ```python {requires="3.12" upgrade="skip" lint="skip"}
+    from typing import Annotated
+
+    from annotated_types import Gt
+    from typing_extensions import TypeAliasType
+
+    from pydantic import BaseModel
+
+    type PositiveIntList = list[Annotated[int, Gt(0)]]
+
+
+    class Model(BaseModel):
+        x: PositiveIntList
+        y: PositiveIntList
+
+
+    print(Model.model_json_schema())  # (1)!
+    """
+    {
+        '$defs': {
+            'PositiveIntList': {
+                'items': {'exclusiveMinimum': 0, 'type': 'integer'},
+                'type': 'array',
+            }
+        },
+        'properties': {
+            'x': {'$ref': '#/$defs/PositiveIntList'},
+            'y': {'$ref': '#/$defs/PositiveIntList'},
+        },
+        'required': ['x', 'y'],
+        'title': 'Model',
+        'type': 'object',
+    }
+    """
+    ```
+
+    1. If `PositiveIntList` were to be defined as an implicit type alias, its definition
+       would have been duplicated in both `'x'` and `'y'`.
+
+!!! note
+    As with implicit type aliases, [type variables][typing.TypeVar] can also be used inside the generic alias:
+
+    === "Python 3.9 and above"
+
+        ```python
+        from typing import Annotated, TypeVar
+
+        from annotated_types import Len
+        from typing_extensions import TypeAliasType
+
+        T = TypeVar('T')
+
+        ShortList = TypeAliasType(
+            'ShortList', Annotated[list[T], Len(max_length=4)], type_params=(T,)
+        )
+        ```
+
+    === "Python 3.12 and above (new syntax)"
+
+        ```python {requires="3.12" upgrade="skip" lint="skip"}
+        from typing import Annotated, TypeVar
+
+        from annotated_types import Len
+
+        type ShortList[T] = Annotated[list[T], Len(max_length=4)]
+        ```
 
 #### Named recursive types
 
-You can also use `TypeAliasType` to create recursive types:
+Named type aliases should be used whenever you need to define recursive type aliases (1).
+{ .annotate }
 
-```python
-from typing import Annotated, Any, Union
+1. For several reasons, Pydantic isn't able to support implicit recursive aliases. For
+   instance, it won't be able to resolve [forward annotations](./forward_annotations.md)
+   across modules.
 
-from pydantic_core import PydanticCustomError
-from typing_extensions import TypeAliasType
+For instance, here is an example definition of a JSON type:
 
-from pydantic import (
-    TypeAdapter,
-    ValidationError,
-    ValidationInfo,
-    ValidatorFunctionWrapHandler,
-    WrapValidator,
-)
+=== "Python 3.9 and above"
 
+    <!--- TODO enable lint once https://github.com/astral-sh/ruff/issues/15812 is solved. -->
 
-def json_custom_error_validator(
-    value: Any, handler: ValidatorFunctionWrapHandler, _info: ValidationInfo
-) -> Any:
-    """Simplify the error message to avoid a gross error stemming
-    from exhaustive checking of all union options.
+    ```python {lint="skip"}
+    from typing import Union
+
+    from typing_extensions import TypeAliasType
+
+    from pydantic import TypeAdapter
+
+    Json = TypeAliasType(
+        'Json',
+        'Union[dict[str, Json], list[Json], str, int, float, bool, None]',  # (1)!
+    )
+
+    ta = TypeAdapter(Json)
+    print(ta.json_schema())
     """
-    try:
-        return handler(value)
-    except ValidationError:
-        raise PydanticCustomError(
-            'invalid_json',
-            'Input is not valid json',
-        )
-
-
-Json = TypeAliasType(
-    'Json',
-    Annotated[
-        Union[dict[str, 'Json'], list['Json'], str, int, float, bool, None],
-        WrapValidator(json_custom_error_validator),
-    ],
-)
-
-
-ta = TypeAdapter(Json)
-
-v = ta.validate_python({'x': [1], 'y': {'z': True}})
-assert v == {'x': [1], 'y': {'z': True}}
-
-try:
-    ta.validate_python({'x': object()})
-except ValidationError as exc:
-    print(exc)
+    {
+        '$defs': {
+            'Json': {
+                'anyOf': [
+                    {
+                        'additionalProperties': {'$ref': '#/$defs/Json'},
+                        'type': 'object',
+                    },
+                    {'items': {'$ref': '#/$defs/Json'}, 'type': 'array'},
+                    {'type': 'string'},
+                    {'type': 'integer'},
+                    {'type': 'number'},
+                    {'type': 'boolean'},
+                    {'type': 'null'},
+                ]
+            }
+        },
+        '$ref': '#/$defs/Json',
+    }
     """
-    1 validation error for function-wrap[json_custom_error_validator()]
-      Input is not valid json [type=invalid_json, input_value={'x': <object object at 0x0123456789ab>}, input_type=dict]
+    ```
+
+    1. Wrapping the annotation in quotes is necessary as it is eagerly evaluated
+       (and `Json` has yet to be defined).
+
+=== "Python 3.12 and above (new syntax)"
+
+    ```python {requires="3.12" upgrade="skip" lint="skip"}
+    from pydantic import TypeAdapter
+
+    type Json = dict[str, Json] | list[Json] | str | int | float | bool | None  # (1)!
+
+    ta = TypeAdapter(Json)
+    print(ta.json_schema())
     """
-```
+    {
+        '$defs': {
+            'Json': {
+                'anyOf': [
+                    {
+                        'additionalProperties': {'$ref': '#/$defs/Json'},
+                        'type': 'object',
+                    },
+                    {'items': {'$ref': '#/$defs/Json'}, 'type': 'array'},
+                    {'type': 'string'},
+                    {'type': 'integer'},
+                    {'type': 'number'},
+                    {'type': 'boolean'},
+                    {'type': 'null'},
+                ]
+            }
+        },
+        '$ref': '#/$defs/Json',
+    }
+    """
+    ```
+
+    1. The value of a named type alias is lazily evaluated, so there's no need to use forward annotations.
+
+!!! tip
+    Pydantic defines a [`JsonValue`][pydantic.types.JsonValue] type as a convenience.
 
 ### Customizing validation with `__get_pydantic_core_schema__` <a name="customizing_validation_with_get_pydantic_core_schema"></a>
 
