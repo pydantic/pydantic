@@ -216,10 +216,6 @@ class ModelMetaclass(ABCMeta):
             if isinstance(parent_namespace, dict):
                 parent_namespace = unpack_lenient_weakvaluedict(parent_namespace)
 
-            ns_resolver = NsResolver(parent_namespace=parent_namespace)
-
-            set_model_fields(cls, bases, config_wrapper, ns_resolver)
-
             if config_wrapper.frozen and '__hash__' not in namespace:
                 set_default_hash_func(cls, bases)
 
@@ -227,7 +223,7 @@ class ModelMetaclass(ABCMeta):
                 cls,
                 config_wrapper,
                 raise_errors=False,
-                ns_resolver=ns_resolver,
+                ns_resolver=NsResolver(parent_namespace=parent_namespace),
                 create_model_module=_create_model_module,
             )
 
@@ -511,7 +507,6 @@ def make_hash_func(cls: type[BaseModel]) -> Any:
 
 def set_model_fields(
     cls: type[BaseModel],
-    bases: tuple[type[Any], ...],
     config_wrapper: ConfigWrapper,
     ns_resolver: NsResolver | None,
 ) -> None:
@@ -519,12 +514,11 @@ def set_model_fields(
 
     Args:
         cls: BaseModel or dataclass.
-        bases: Parents of the class, generally `cls.__bases__`.
         config_wrapper: The config wrapper instance.
         ns_resolver: Namespace resolver to use when getting model annotations.
     """
     typevars_map = get_model_typevars_map(cls)
-    fields, class_vars = collect_model_fields(cls, bases, config_wrapper, ns_resolver, typevars_map=typevars_map)
+    fields, class_vars = collect_model_fields(cls, config_wrapper, ns_resolver, typevars_map=typevars_map)
 
     cls.__pydantic_fields__ = fields
     cls.__class_vars__.update(class_vars)
@@ -572,6 +566,8 @@ def complete_model_class(
     if config_wrapper.defer_build:
         set_model_mocks(cls)
         return False
+
+    set_model_fields(cls, config_wrapper=config_wrapper, ns_resolver=ns_resolver)
 
     typevars_map = get_model_typevars_map(cls)
     gen_schema = GenerateSchema(

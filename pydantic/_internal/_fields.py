@@ -75,7 +75,6 @@ def _update_fields_from_docstrings(cls: type[Any], fields: dict[str, FieldInfo],
 
 def collect_model_fields(  # noqa: C901
     cls: type[BaseModel],
-    bases: tuple[type[Any], ...],
     config_wrapper: ConfigWrapper,
     ns_resolver: NsResolver | None,
     *,
@@ -89,7 +88,6 @@ def collect_model_fields(  # noqa: C901
 
     Args:
         cls: BaseModel or dataclass.
-        bases: Parents of the class, generally `cls.__bases__`.
         config_wrapper: The config wrapper instance.
         ns_resolver: Namespace resolver to use when getting model annotations.
         typevars_map: A dictionary mapping type variables to their concrete types.
@@ -106,6 +104,7 @@ def collect_model_fields(  # noqa: C901
     BaseModel = import_cached_base_model()
     FieldInfo_ = import_cached_field_info()
 
+    bases = cls.__bases__
     parent_fields_lookup: dict[str, FieldInfo] = {}
     for base in reversed(bases):
         if model_fields := getattr(base, '__pydantic_fields__', None):
