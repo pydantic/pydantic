@@ -147,6 +147,11 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     __pydantic_complete__: ClassVar[bool] = False
     """Whether model building is completed, or if there are still undefined fields."""
 
+    __pydantic_fields_complete__: ClassVar[bool] = False
+    """Whether the fields where successfully collected. This is a private attribute, not meant
+    to be used outside Pydantic.
+    """
+
     __pydantic_core_schema__: ClassVar[CoreSchema]
     """The core schema of the model."""
 

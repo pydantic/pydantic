@@ -156,7 +156,6 @@ class FieldInfo(_repr.Representation):
 
     __slots__ = (
         'annotation',
-        'evaluated',
         'default',
         'default_factory',
         'alias',
@@ -210,7 +209,6 @@ class FieldInfo(_repr.Representation):
         self._attributes_set = {k: v for k, v in kwargs.items() if v is not _Unset}
         kwargs = {k: _DefaultValues.get(k) if v is _Unset else v for k, v in kwargs.items()}  # type: ignore
         self.annotation = kwargs.get('annotation')
-        self.evaluated = False
 
         default = kwargs.pop('default', PydanticUndefined)
         if default is Ellipsis:
@@ -681,7 +679,7 @@ class FieldInfo(_repr.Representation):
         for s in self.__slots__:
             # TODO: properly make use of the protocol (https://rich.readthedocs.io/en/stable/pretty.html#rich-repr-protocol)
             # By yielding a three-tuple:
-            if s in ('_attributes_set', 'annotation', 'evaluated'):
+            if s in ('_attributes_set', 'annotation'):
                 continue
             elif s == 'metadata' and not self.metadata:
                 continue

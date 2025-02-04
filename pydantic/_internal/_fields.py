@@ -79,7 +79,7 @@ def collect_model_fields(  # noqa: C901
     ns_resolver: NsResolver | None,
     *,
     typevars_map: Mapping[TypeVar, Any] | None = None,
-) -> tuple[dict[str, FieldInfo], set[str]]:
+) -> tuple[dict[str, FieldInfo], set[str], bool]:
     """Collect the fields of a nascent pydantic model.
 
     Also collect the names of any ClassVars present in the type hints.
@@ -93,7 +93,8 @@ def collect_model_fields(  # noqa: C901
         typevars_map: A dictionary mapping type variables to their concrete types.
 
     Returns:
-        A tuple contains fields and class variables.
+        A three-tuple containing the model fields, the names of the class variables and a boolean indicating if
+            annotation evaluation a succeeded.
 
     Raises:
         NameError:
@@ -111,6 +112,7 @@ def collect_model_fields(  # noqa: C901
             parent_fields_lookup.update(model_fields)
 
     type_hints = _typing_extra.get_model_type_hints(cls, ns_resolver=ns_resolver)
+    evaluation_succeeded = True
 
     # https://docs.python.org/3/howto/annotations.html#accessing-the-annotations-dict-of-an-object-in-python-3-9-and-older
     # annotations is only used for finding fields in parent classes
@@ -180,6 +182,12 @@ def collect_model_fields(  # noqa: C901
                 f"Unexpected field with name {ann_name!r}; only 'root' is allowed as a field of a `RootModel`"
             )
 
+        # At this point, the field is not a private attribute/class variable. If the type annotation did not
+        # evaluate successfully, we set the `evaluation_succeeded` flag that is used to decide if we continue with
+        # core schema generation:
+        if evaluation_succeeded and not evaluated:
+            evaluation_succeeded = evaluated
+
         # when building a generic model with `MyModel[int]`, the generic_origin check makes sure we don't get
         # "... shadows an attribute" warnings
         generic_origin = getattr(cls, '__pydantic_generic_metadata__', {}).get('origin')
@@ -210,7 +218,6 @@ def collect_model_fields(  # noqa: C901
         if assigned_value is PydanticUndefined:
             if ann_name in annotations:
                 field_info = FieldInfo_.from_annotation(ann_type)
-                field_info.evaluated = evaluated
             else:
                 # if field has no default value and is not in __annotations__ this means that it is
                 # defined in a base class and we can take it from there
@@ -223,7 +230,6 @@ def collect_model_fields(  # noqa: C901
                     # generated thanks to models not being fully defined while initializing recursive models.
                     # Nothing stops us from just creating a new FieldInfo for this type hint, so we do this.
                     field_info = FieldInfo_.from_annotation(ann_type)
-                    field_info.evaluated = evaluated
         else:
             _warn_on_nested_alias_in_annotation(ann_type, ann_name)
             if isinstance(assigned_value, FieldInfo_) and ismethoddescriptor(assigned_value.default):
@@ -235,14 +241,6 @@ def collect_model_fields(  # noqa: C901
                 assigned_value.default = assigned_value.default.__get__(None, cls)
 
             field_info = FieldInfo_.from_annotated_attribute(ann_type, assigned_value)
-            field_info.evaluated = evaluated
-            # attributes which are fields are removed from the class namespace:
-            # 1. To match the behaviour of annotation-only fields
-            # 2. To avoid false positives in the NameError check above
-            try:
-                delattr(cls, ann_name)
-            except AttributeError:
-                pass  # indicates the attribute was on a parent class
 
         # Use cls.__dict__['__pydantic_decorators__'] instead of cls.__pydantic_decorators__
         # to make sure the decorators have already been built for this exact class
@@ -257,7 +255,7 @@ def collect_model_fields(  # noqa: C901
 
     if config_wrapper.use_attribute_docstrings:
         _update_fields_from_docstrings(cls, fields)
-    return fields, class_vars
+    return fields, class_vars, evaluation_succeeded
 
 
 def _warn_on_nested_alias_in_annotation(ann_type: type[Any], ann_name: str) -> None:
