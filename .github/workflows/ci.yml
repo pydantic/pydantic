@@ -11,6 +11,7 @@ on:
 env:
   COLUMNS: 150
   UV_FROZEN: true
+  FORCE_COLOR: 1
 
 jobs:
   lint:

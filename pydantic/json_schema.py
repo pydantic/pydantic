@@ -1049,7 +1049,7 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        if self._mode == 'validation' and (input_schema := schema.get('json_schema_input_schema')):
+        if self.mode == 'validation' and (input_schema := schema.get('json_schema_input_schema')):
             return self.generate_inner(input_schema)
 
         return self.generate_inner(schema['schema'])
@@ -1074,7 +1074,7 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        if self._mode == 'validation' and (input_schema := schema.get('json_schema_input_schema')):
+        if self.mode == 'validation' and (input_schema := schema.get('json_schema_input_schema')):
             return self.generate_inner(input_schema)
 
         return self.handle_invalid_for_json_schema(
@@ -1090,7 +1090,7 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        if self._mode == 'validation' and (input_schema := schema.get('json_schema_input_schema')):
+        if self.mode == 'validation' and (input_schema := schema.get('json_schema_input_schema')):
             return self.generate_inner(input_schema)
 
         return self.generate_inner(schema['schema'])
@@ -2254,8 +2254,10 @@ class GenerateJsonSchema:
                             raise
 
                 for k, v in schema.items():
-                    if k == 'examples':
-                        continue  # skip refs processing for examples, allow arbitrary values / refs
+                    if k == 'examples' and isinstance(v, list):
+                        # Skip examples that may contain arbitrary values and references
+                        # (see the comment in `_get_all_json_refs` for more details).
+                        continue
                     _add_json_refs(v)
             elif isinstance(schema, list):
                 for v in schema:

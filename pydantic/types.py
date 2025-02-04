@@ -395,6 +395,7 @@ class AllowInfNan(_fields.PydanticMetadata):
         from pydantic.types import AllowInfNan
 
         LaxFloat = Annotated[float, AllowInfNan()]
+        ```
     """
 
     allow_inf_nan: bool = True
