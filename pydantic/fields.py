@@ -177,7 +177,6 @@ class FieldInfo(_repr.Representation):
         'init_var',
         'kw_only',
         'metadata',
-        '_attributes_set',
     )
 
     # used to convert kwargs to metadata/constraints,
@@ -206,17 +205,12 @@ class FieldInfo(_repr.Representation):
 
         See the signature of `pydantic.fields.Field` for more details about the expected arguments.
         """
-        self._attributes_set = {k: v for k, v in kwargs.items() if v is not _Unset}
         kwargs = {k: _DefaultValues.get(k) if v is _Unset else v for k, v in kwargs.items()}  # type: ignore
         self.annotation = kwargs.get('annotation')
 
         default = kwargs.pop('default', PydanticUndefined)
         if default is Ellipsis:
             self.default = PydanticUndefined
-            # Also remove it from the attributes set, otherwise
-            # `GenerateSchema._common_field_schema` mistakenly
-            # uses it:
-            self._attributes_set.pop('default', None)
         else:
             self.default = default
 
@@ -456,7 +450,6 @@ class FieldInfo(_repr.Representation):
         if len(field_infos) == 1:
             # No merging necessary, but we still need to make a copy and apply the overrides
             field_info = copy(field_infos[0])
-            field_info._attributes_set.update(overrides)
 
             default_override = overrides.pop('default', PydanticUndefined)
             if default_override is Ellipsis:
@@ -471,10 +464,8 @@ class FieldInfo(_repr.Representation):
         merged_field_info_kwargs: dict[str, Any] = {}
         metadata = {}
         for field_info in field_infos:
-            attributes_set = field_info._attributes_set.copy()
-
-            try:
-                json_schema_extra = attributes_set.pop('json_schema_extra')
+            json_schema_extra = field_info.json_schema_extra
+            if json_schema_extra is not None:
                 existing_json_schema_extra = merged_field_info_kwargs.get('json_schema_extra')
 
                 if existing_json_schema_extra is None:
@@ -495,11 +486,6 @@ class FieldInfo(_repr.Representation):
                 elif callable(json_schema_extra):
                     # if ever there's a case of a callable, we'll just keep the last json schema extra spec
                     merged_field_info_kwargs['json_schema_extra'] = json_schema_extra
-            except KeyError:
-                pass
-
-            # later FieldInfo instances override everything except json_schema_extra from earlier FieldInfo instances
-            merged_field_info_kwargs.update(attributes_set)
 
             for x in field_info.metadata:
                 if not isinstance(x, FieldInfo):
@@ -679,7 +665,7 @@ class FieldInfo(_repr.Representation):
         for s in self.__slots__:
             # TODO: properly make use of the protocol (https://rich.readthedocs.io/en/stable/pretty.html#rich-repr-protocol)
             # By yielding a three-tuple:
-            if s in ('_attributes_set', 'annotation'):
+            if s == 'annotation':
                 continue
             elif s == 'metadata' and not self.metadata:
                 continue
