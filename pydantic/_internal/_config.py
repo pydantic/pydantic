@@ -173,7 +173,7 @@ class ConfigWrapper:
             )
 
         return core_schema.CoreConfig(
-            **{
+            **{  # pyright: ignore[reportArgumentType]
                 k: v
                 for k, v in (
                     ('title', config.get('title') or title or None),
