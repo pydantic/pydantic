@@ -1496,7 +1496,7 @@ if TYPE_CHECKING:
 
 else:
 
-    class ToJson:            
+    class ToJson:
         """A special type wrapper which dumps to JSON during serializing.
 
         You can use the `ToJson` data type to make Pydantic first dump a raw JSON string of the data
