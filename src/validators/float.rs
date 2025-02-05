@@ -109,9 +109,10 @@ impl Validator for ConstrainedFloatValidator {
             return Err(ValError::new(ErrorTypeDefaults::FiniteNumber, input));
         }
         if let Some(multiple_of) = self.multiple_of {
-            let rem = float % multiple_of;
-            let threshold = float.abs() / 1e9;
-            if rem.abs() > threshold && (rem - multiple_of).abs() > threshold {
+            let tolerance = 1e-9;
+            let rounded_div = (float / multiple_of).round();
+            let diff = (float - (rounded_div * multiple_of)).abs();
+            if diff > tolerance {
                 return Err(ValError::new(
                     ErrorType::MultipleOf {
                         multiple_of: multiple_of.into(),
