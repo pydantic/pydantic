@@ -4173,7 +4173,7 @@ def test_valid_simple_json_to_json_any():
     class Model(BaseModel):
         json_obj: ToJson[Json[Any]]
 
-    obj = '{"json_obj": "[1,2,3]"}'
+    obj = '"[1,2,3]"'
     assert Model(json_obj=obj).model_dump_json() == '{"json_obj":"[1,2,3]"}'
 
 
