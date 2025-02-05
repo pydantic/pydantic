@@ -3,7 +3,7 @@
 from __future__ import annotations as _annotations
 
 import sys
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from dataclasses import is_dataclass
 from types import FrameType
 from typing import (
@@ -501,6 +501,7 @@ class TypeAdapter(Generic[T]):
         exclude_none: bool = False,
         round_trip: bool = False,
         warnings: bool | Literal['none', 'warn', 'error'] = True,
+        fallback: Callable[[Any], Any] | None = None,
         serialize_as_any: bool = False,
         context: dict[str, Any] | None = None,
     ) -> Any:
@@ -518,6 +519,8 @@ class TypeAdapter(Generic[T]):
             round_trip: Whether to output the serialized data in a way that is compatible with deserialization.
             warnings: How to handle serialization errors. False/"none" ignores them, True/"warn" logs errors,
                 "error" raises a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError].
+            fallback: A function to call when an unknown value is encountered. If not provided,
+                a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError] error is raised.
             serialize_as_any: Whether to serialize fields with duck-typing serialization behavior.
             context: Additional context to pass to the serializer.
 
@@ -535,6 +538,7 @@ class TypeAdapter(Generic[T]):
             exclude_none=exclude_none,
             round_trip=round_trip,
             warnings=warnings,
+            fallback=fallback,
             serialize_as_any=serialize_as_any,
             context=context,
         )
@@ -553,6 +557,7 @@ class TypeAdapter(Generic[T]):
         exclude_none: bool = False,
         round_trip: bool = False,
         warnings: bool | Literal['none', 'warn', 'error'] = True,
+        fallback: Callable[[Any], Any] | None = None,
         serialize_as_any: bool = False,
         context: dict[str, Any] | None = None,
     ) -> bytes:
@@ -573,6 +578,8 @@ class TypeAdapter(Generic[T]):
             round_trip: Whether to serialize and deserialize the instance to ensure round-tripping.
             warnings: How to handle serialization errors. False/"none" ignores them, True/"warn" logs errors,
                 "error" raises a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError].
+            fallback: A function to call when an unknown value is encountered. If not provided,
+                a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError] error is raised.
             serialize_as_any: Whether to serialize fields with duck-typing serialization behavior.
             context: Additional context to pass to the serializer.
 
@@ -590,6 +597,7 @@ class TypeAdapter(Generic[T]):
             exclude_none=exclude_none,
             round_trip=round_trip,
             warnings=warnings,
+            fallback=fallback,
             serialize_as_any=serialize_as_any,
             context=context,
         )

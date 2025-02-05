@@ -1281,3 +1281,16 @@ def test_field_serializers_use_enum_ref() -> None:
 
     m = MyModel()
     assert m.model_dump()['computed_a_or_b'] == 'b'
+
+
+def test_serialization_fallback() -> None:
+    class Arbitrary:
+        value = 1
+
+    def fallback(v: Any) -> Any:
+        if isinstance(v, Arbitrary):
+            return v.value
+
+    ta = TypeAdapter(Any)
+
+    assert ta.dump_python(Arbitrary(), fallback=fallback) == 1
