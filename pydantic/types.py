@@ -72,6 +72,7 @@ __all__ = (
     'DirectoryPath',
     'NewPath',
     'Json',
+    'ToJson',
     'Secret',
     'SecretStr',
     'SecretBytes',
@@ -1497,17 +1498,17 @@ else:
 
     class ToJson:            
         """A special type wrapper which dumps to JSON during serializing.
-            
+
         You can use the `ToJson` data type to make Pydantic first dump a raw JSON string of the data
-        
+
         ```python
         from typing import Any
-        
+
         from pydantic import BaseModel, ToJson, ValidationError
-        
+
         class ToJsonModel(BaseModel):
             json_obj: ToJson[list[int]]
-        
+
         print(ToJsonModel(json_obj='[1, 2, 3]').model_dump_json()))
         #> {"json_obj":"[1,2,3]"}
         ```
