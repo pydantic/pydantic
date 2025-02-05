@@ -218,6 +218,14 @@ class ModelMetaclass(ABCMeta):
             if isinstance(parent_namespace, dict):
                 parent_namespace = unpack_lenient_weakvaluedict(parent_namespace)
 
+            # This is also set in `complete_model_class()`, after schema gen because they are recreated.
+            # We set them here as well for backwards compatibility:
+            cls.__pydantic_computed_fields__ = {
+                k: v.info for k, v in cls.__pydantic_decorators__.computed_fields.items()
+            }
+
+            # Any operation that requires accessing the field infos instances should be put inside
+            # `complete_model_class()`:
             complete_model_class(
                 cls,
                 config_wrapper,
@@ -228,14 +236,6 @@ class ModelMetaclass(ABCMeta):
 
             if config_wrapper.frozen and '__hash__' not in namespace:
                 set_default_hash_func(cls, bases)
-
-            # If this is placed before the complete_model_class call above,
-            # the generic computed fields return type is set to PydanticUndefined
-            cls.__pydantic_computed_fields__ = {
-                k: v.info for k, v in cls.__pydantic_decorators__.computed_fields.items()
-            }
-
-            set_deprecated_descriptors(cls)
 
             # using super(cls, cls) on the next line ensures we only call the parent class's __pydantic_init_subclass__
             # I believe the `type: ignore` is only necessary because mypy doesn't realize that this code branch is
@@ -621,7 +621,12 @@ def complete_model_class(
         set_model_mocks(cls)
         return False
 
-    # debug(schema)
+    # This needs to happen *after* model schema generation, as the return type
+    # of the properties are evaluated and the `ComputedFieldInfo` are recreated:
+    cls.__pydantic_computed_fields__ = {k: v.info for k, v in cls.__pydantic_decorators__.computed_fields.items()}
+
+    set_deprecated_descriptors(cls)
+
     cls.__pydantic_core_schema__ = schema
 
     cls.__pydantic_validator__ = create_schema_validator(
