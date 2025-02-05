@@ -3966,13 +3966,6 @@ def test_valid_simple_json_any():
     assert JsonModel(json_obj=obj).model_dump() == {'json_obj': {'a': 1, 'b': [2, 3]}}
 
 
-def test_valid_simple_to_json_any():
-    class Model(BaseModel):
-        json_obj: ToJson[Any]
-
-    assert Model(json_obj=[1, 2, 3]).model_dump_json() == '{"json_obj":"[1,2,3]"}'
-
-
 @pytest.mark.parametrize('gen_type', [lambda: Json, lambda: Json[Any]])
 def test_invalid_simple_json(gen_type):
     t = gen_type()
@@ -4166,6 +4159,21 @@ def test_json_required():
         JsonRequired(json_obj=None)
     with pytest.raises(ValidationError, match=r'Field required \[type=missing,'):
         JsonRequired()
+
+
+def test_valid_simple_to_json_any():
+    class Model(BaseModel):
+        json_obj: ToJson[Any]
+
+    assert Model(json_obj=[1, 2, 3]).model_dump_json() == '{"json_obj":"[1,2,3]"}'
+
+
+def test_valid_simple_json_to_json_any():
+    class Model(BaseModel):
+        json_obj: ToJson[Json[Any]]
+
+    obj = '{"json_obj": "[1,2,3]"}'
+    assert Model(json_obj=obj).model_dump_json() == '{"json_obj":"[1,2,3]"}'
 
 
 @pytest.mark.parametrize(
