@@ -28,13 +28,14 @@ from uuid import UUID
 
 import annotated_types
 from annotated_types import BaseMetadata, MaxLen, MinLen
-from pydantic_core import CoreSchema, PydanticCustomError, SchemaSerializer, core_schema
+from pydantic_core import CoreSchema, PydanticCustomError, SchemaSerializer, core_schema, to_json
 from typing_extensions import Protocol, TypeAlias, TypeAliasType, deprecated, get_args, get_origin
 
 from ._internal import _fields, _internal_dataclass, _typing_extra, _utils, _validators
 from ._migration import getattr_migration
 from .annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
 from .errors import PydanticUserError
+from .functional_serializers import PlainSerializer
 from .json_schema import JsonSchemaValue
 from .warnings import PydanticDeprecatedSince20
 
