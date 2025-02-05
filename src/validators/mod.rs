@@ -52,6 +52,7 @@ mod model;
 mod model_fields;
 mod none;
 mod nullable;
+mod prebuilt;
 mod set;
 mod string;
 mod time;
@@ -515,8 +516,15 @@ pub fn build_validator(
     definitions: &mut DefinitionsBuilder<CombinedValidator>,
 ) -> PyResult<CombinedValidator> {
     let dict = schema.downcast::<PyDict>()?;
-    let type_: Bound<'_, PyString> = dict.get_as_req(intern!(schema.py(), "type"))?;
+    let py = schema.py();
+    let type_: Bound<'_, PyString> = dict.get_as_req(intern!(py, "type"))?;
     let type_ = type_.to_str()?;
+
+    // if we have a SchemaValidator on the type already, use it
+    if let Ok(Some(prebuilt_validator)) = prebuilt::PrebuiltValidator::try_get_from_schema(type_, dict) {
+        return Ok(prebuilt_validator);
+    }
+
     validator_match!(
         type_,
         dict,
@@ -763,6 +771,8 @@ pub enum CombinedValidator {
     // input dependent
     JsonOrPython(json_or_python::JsonOrPython),
     Complex(complex::ComplexValidator),
+    // uses a reference to an existing SchemaValidator to reduce memory usage
+    Prebuilt(prebuilt::PrebuiltValidator),
 }
 
 /// This trait must be implemented by all validators, it allows various validators to be accessed consistently,
