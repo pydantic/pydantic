@@ -1611,6 +1611,26 @@ except ValidationError as exc:
     #> 'set_type'
 ```
 
+## `set_item_not_hashable`
+
+This error is raised when one of the values being added to a `set` field is not hashable:
+
+```python
+from typing import Set
+
+from pydantic import BaseModel, ValidationError
+
+
+class Model(BaseModel):
+    x: Set
+
+try:
+    Model(x=[{'a':'b'}])
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'set_item_not_hashable'
+```
+
 ## `string_pattern_mismatch`
 
 This error is raised when the input value doesn't match the field's `pattern` constraint:
