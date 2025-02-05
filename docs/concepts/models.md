@@ -67,7 +67,12 @@ from pydantic import BaseModel
 class User(BaseModel):
     id: int
     name: str = 'Jane Doe'
+
+    model_config = {'str_max_length': 10}  # (1)!
 ```
+
+1. Pydantic models support a variety of [configuration values](./config.md)
+   (see [here][pydantic.ConfigDict] for the available configuration values).
 
 In this example, `User` is a model with two fields:
 
