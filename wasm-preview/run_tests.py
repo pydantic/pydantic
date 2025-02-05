@@ -37,7 +37,9 @@ async def main(tests_zip: str, tag_name: str):
 
     print(f'Mounted {count} test files, installing dependencies...')
 
-    await micropip.install(['dirty-equals', 'hypothesis', 'pytest-speed', 'pytest-mock', pydantic_core_wheel, 'tzdata'])
+    await micropip.install(
+        ['dirty-equals', 'hypothesis', 'pytest-speed', 'pytest-mock', 'tzdata', 'inline-snapshot', pydantic_core_wheel]
+    )
     importlib.invalidate_caches()
 
     # print('installed packages:')
