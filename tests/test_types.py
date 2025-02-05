@@ -72,6 +72,7 @@ from pydantic import (
     ImportString,
     InstanceOf,
     Json,
+    ToJson,
     JsonValue,
     NaiveDatetime,
     NameEmail,
