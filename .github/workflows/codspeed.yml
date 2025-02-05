@@ -77,4 +77,4 @@ jobs:
       - name: Run CodSpeed benchmarks
         uses: CodSpeedHQ/action@v3
         with:
-          run: uv run pytest ./tests/benchmarks --codspeed
+          run: uv run --no-sync pytest ./tests/benchmarks --codspeed
