@@ -84,6 +84,8 @@ combined_serializer! {
         Function: super::type_serializers::function::FunctionPlainSerializer;
         FunctionWrap: super::type_serializers::function::FunctionWrapSerializer;
         Fields: super::fields::GeneralFieldsSerializer;
+        // prebuilt serializers are manually constructed, and thus manually added to the `CombinedSerializer` enum
+        Prebuilt: super::prebuilt::PrebuiltSerializer;
     }
     // `find_only` is for type_serializers which are built directly via the `type` key and `find_serializer`
     // but aren't actually used for serialization, e.g. their `build` method must return another serializer
@@ -195,7 +197,14 @@ impl CombinedSerializer {
         }
 
         let type_: Bound<'_, PyString> = schema.get_as_req(type_key)?;
-        Self::find_serializer(type_.to_str()?, schema, config, definitions)
+        let type_ = type_.to_str()?;
+
+        // if we have a SchemaValidator on the type already, use it
+        if let Ok(Some(prebuilt_serializer)) = super::prebuilt::PrebuiltSerializer::try_get_from_schema(type_, schema) {
+            return Ok(prebuilt_serializer);
+        }
+
+        Self::find_serializer(type_, schema, config, definitions)
     }
 }
 
@@ -219,6 +228,7 @@ impl PyGcTraverse for CombinedSerializer {
             CombinedSerializer::Function(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::FunctionWrap(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::Fields(inner) => inner.py_gc_traverse(visit),
+            CombinedSerializer::Prebuilt(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::None(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::Nullable(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::Int(inner) => inner.py_gc_traverse(visit),
