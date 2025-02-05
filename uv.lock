@@ -596,6 +596,9 @@ all = [
 codspeed = [
     { name = "pytest-codspeed", marker = "python_full_version == '3.13.*' and implementation_name == 'cpython'" },
 ]
+dev = [
+    { name = "maturin" },
+]
 linting = [
     { name = "griffe" },
     { name = "mypy" },
@@ -608,6 +611,7 @@ testing = [
     { name = "exceptiongroup", marker = "python_full_version < '3.11'" },
     { name = "hypothesis" },
     { name = "inline-snapshot" },
+    { name = "maturin" },
     { name = "numpy", version = "2.0.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10' and implementation_name == 'cpython' and platform_machine == 'x86_64'" },
     { name = "numpy", version = "2.2.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10' and python_full_version < '3.13' and implementation_name == 'cpython' and platform_machine == 'x86_64'" },
     { name = "pandas", marker = "python_full_version < '3.13' and implementation_name == 'cpython' and platform_machine == 'x86_64'" },
@@ -639,7 +643,7 @@ all = [
     { name = "griffe" },
     { name = "hypothesis" },
     { name = "inline-snapshot" },
-    { name = "maturin", specifier = ">=1,<2" },
+    { name = "maturin" },
     { name = "mypy" },
     { name = "numpy", marker = "python_full_version >= '3.9' and python_full_version < '3.13' and implementation_name == 'cpython' and platform_machine == 'x86_64'" },
     { name = "pandas", marker = "python_full_version >= '3.9' and python_full_version < '3.13' and implementation_name == 'cpython' and platform_machine == 'x86_64'" },
@@ -656,6 +660,7 @@ all = [
     { name = "tzdata" },
 ]
 codspeed = [{ name = "pytest-codspeed", marker = "python_full_version == '3.13.*' and implementation_name == 'cpython'" }]
+dev = [{ name = "maturin" }]
 linting = [
     { name = "griffe" },
     { name = "mypy" },
@@ -669,6 +674,7 @@ testing = [
     { name = "exceptiongroup", marker = "python_full_version < '3.11'" },
     { name = "hypothesis" },
     { name = "inline-snapshot" },
+    { name = "maturin" },
     { name = "numpy", marker = "python_full_version >= '3.9' and python_full_version < '3.13' and implementation_name == 'cpython' and platform_machine == 'x86_64'" },
     { name = "pandas", marker = "python_full_version >= '3.9' and python_full_version < '3.13' and implementation_name == 'cpython' and platform_machine == 'x86_64'" },
     { name = "pytest" },
@@ -682,7 +688,7 @@ testing = [
     { name = "tzdata" },
 ]
 wasm = [
-    { name = "maturin", specifier = ">=1,<2" },
+    { name = "maturin" },
     { name = "ruff" },
     { name = "typing-extensions" },
 ]

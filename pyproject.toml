@@ -1,17 +1,12 @@
 [build-system]
-requires = [
-    'maturin>=1,<2',
-    'typing-extensions >=4.6.0,!=4.7.0'
-]
+requires = ['maturin>=1,<2', 'typing-extensions >=4.6.0,!=4.7.0']
 build-backend = 'maturin'
 
 [project]
 name = 'pydantic_core'
 description = "Core functionality for Pydantic validation and serialization"
 requires-python = '>=3.9'
-authors = [
-    {name = 'Samuel Colvin', email = 's@muelcolvin.com'}
-]
+authors = [{ name = 'Samuel Colvin', email = 's@muelcolvin.com' }]
 classifiers = [
     'Development Status :: 3 - Alpha',
     'Programming Language :: Python',
@@ -32,15 +27,8 @@ classifiers = [
     'Operating System :: MacOS',
     'Typing :: Typed',
 ]
-dependencies = [
-    'typing-extensions >=4.6.0,!=4.7.0'
-]
-dynamic = [
-    'description',
-    'license',
-    'readme',
-    'version'
-]
+dependencies = ['typing-extensions >=4.6.0,!=4.7.0']
+dynamic = ['description', 'license', 'readme', 'version']
 
 [project.urls]
 Homepage = 'https://github.com/pydantic/pydantic-core'
@@ -48,7 +36,9 @@ Funding = 'https://github.com/sponsors/samuelcolvin'
 Source = 'https://github.com/pydantic/pydantic-core'
 
 [dependency-groups]
+dev = ["maturin"]
 testing = [
+    { include-group = "dev" },
     'backports.zoneinfo; python_version < "3.9"',
     'coverage',
     'dirty-equals',
@@ -70,26 +60,18 @@ testing = [
     'tzdata',
     'typing_extensions',
 ]
-linting = [
-    'griffe',
-    'pyright',
-    'ruff',
-    'mypy',
-]
-wasm = [
-    'typing_extensions',
-    'maturin>=1,<2',
-    'ruff',
-]
+linting = [{ include-group = "dev" }, 'griffe', 'pyright', 'ruff', 'mypy']
+wasm = [{ include-group = "dev" }, 'typing_extensions', 'ruff']
 codspeed = [
     # codspeed is only run on CI, with latest version of CPython
     'pytest-codspeed; python_version == "3.13" and implementation_name == "cpython"',
 ]
 
 all = [
-  { include-group = 'testing' },
-  { include-group = 'linting' },
-  { include-group = 'wasm' },
+    { include-group = "dev" },
+    { include-group = 'testing' },
+    { include-group = 'linting' },
+    { include-group = 'wasm' },
 ]
 
 [tool.maturin]
@@ -105,9 +87,9 @@ target-version = 'py39'
 [tool.ruff.lint]
 extend-select = ['Q', 'RUF100', 'C90', 'I', 'UP']
 extend-ignore = [
-    'E721',  # using type() instead of isinstance() - we use this in tests
+    'E721', # using type() instead of isinstance() - we use this in tests
 ]
-flake8-quotes = {inline-quotes = 'single', multiline-quotes = 'double'}
+flake8-quotes = { inline-quotes = 'single', multiline-quotes = 'double' }
 mccabe = { max-complexity = 13 }
 isort = { known-first-party = ['pydantic_core', 'tests'] }
 
@@ -130,10 +112,13 @@ timeout = 30
 xfail_strict = true
 # min, max, mean, stddev, median, iqr, outliers, ops, rounds, iterations
 addopts = [
-    '--benchmark-columns', 'min,mean,stddev,outliers,rounds,iterations',
-    '--benchmark-group-by', 'group',
-    '--benchmark-warmup', 'on',
-    '--benchmark-disable',  # this is enable by `make benchmark` when you actually want to run benchmarks
+    '--benchmark-columns',
+    'min,mean,stddev,outliers,rounds,iterations',
+    '--benchmark-group-by',
+    'group',
+    '--benchmark-warmup',
+    'on',
+    '--benchmark-disable',                        # this is enable by `make benchmark` when you actually want to run benchmarks
 ]
 
 [tool.coverage.run]
