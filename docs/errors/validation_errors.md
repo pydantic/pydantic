@@ -1624,10 +1624,15 @@ from pydantic import BaseModel, ValidationError
 class Model(BaseModel):
     x: Set
 
+class Unhasbable:
+    __hash__ = None
+
 try:
-    Model(x=[{'a':'b'}])
+    Model(x=[{'a':'b'}, Unhasbable()])
 except ValidationError as exc:
     print(repr(exc.errors()[0]['type']))
+    #> 'set_item_not_hashable'
+    print(repr(exc.errors()[1]['type']))
     #> 'set_item_not_hashable'
 ```
 
