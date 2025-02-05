@@ -1022,11 +1022,13 @@ class GenerateJsonSchema:
         # don't give a title to additionalProperties:
         values_schema.pop('title', None)
 
-        if values_schema or keys_pattern is not None:  # don't add additionalProperties if it's empty
+        if values_schema or keys_pattern is not None:
             if keys_pattern is None:
                 json_schema['additionalProperties'] = values_schema
             else:
                 json_schema['patternProperties'] = {keys_pattern: values_schema}
+        else:  # for `dict[str, Any]`, we allow any key and any value, since `str` is the default key type
+            json_schema['additionalProperties'] = True
 
         if (
             # The len check indicates that constraints are probably present:
