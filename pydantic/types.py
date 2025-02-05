@@ -1488,6 +1488,34 @@ else:
             return type(other) is type(self)
 
 
+if TYPE_CHECKING:
+    # ToJson[list[str]] will be recognized by type checkers as list[str]
+    ToJson = Annotated[AnyType, ...]
+
+else:
+
+    class ToJson:            
+        """A special type wrapper which dumps to JSON during serializing.
+            
+        You can use the `ToJson` data type to make Pydantic first dump a raw JSON string of the data
+        
+        ```python
+        from typing import Any
+        
+        from pydantic import BaseModel, ToJson, ValidationError
+        
+        class ToJsonModel(BaseModel):
+            json_obj: ToJson[list[int]]
+        
+        print(ToJsonModel(json_obj='[1, 2, 3]').model_dump_json()))
+        #> {"json_obj":"[1,2,3]"}
+        ```
+        """
+        @classmethod
+        def __class_getitem__(cls, item: AnyType) -> AnyType:
+            return Annotated[item, PlainSerializer(to_json)]
+
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ SECRET TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 SecretType = TypeVar('SecretType')
