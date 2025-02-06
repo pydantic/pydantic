@@ -71,6 +71,7 @@ def gen_ints():
     ],
     ids=repr,
 )
+@pytest.mark.thread_unsafe  # generators in parameters not compatible with pytest-run-parallel, https://github.com/Quansight-Labs/pytest-run-parallel/issues/14
 def test_list_int(input_value, expected):
     v = SchemaValidator({'type': 'list', 'items_schema': {'type': 'int'}})
     if isinstance(expected, Err):
@@ -170,6 +171,7 @@ def test_list_error(input_value, index):
         ),
     ],
 )
+@pytest.mark.thread_unsafe  # generators in parameters not compatible with pytest-run-parallel, https://github.com/Quansight-Labs/pytest-run-parallel/issues/14
 def test_list_length_constraints(kwargs: dict[str, Any], input_value, expected):
     v = SchemaValidator({'type': 'list', **kwargs})
     if isinstance(expected, Err):
@@ -511,6 +513,7 @@ LAX_MODE_INPUTS: list[Any] = [
     ],
     ids=repr,
 )
+@pytest.mark.thread_unsafe  # generators in parameters not compatible with pytest-run-parallel, https://github.com/Quansight-Labs/pytest-run-parallel/issues/14
 def test_list_allowed_inputs_python(testcase: ListInputTestCase):
     v = SchemaValidator(core_schema.list_schema(core_schema.int_schema(), strict=testcase.strict))
     if isinstance(testcase.output, Err):

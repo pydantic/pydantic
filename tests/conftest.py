@@ -1,13 +1,15 @@
 from __future__ import annotations as _annotations
 
 import functools
+import gc
 import importlib.util
 import json
 import os
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Literal
+from time import sleep, time
+from typing import Any, Callable, Literal
 
 import hypothesis
 import pytest
@@ -160,3 +162,20 @@ def infinite_generator():
     while True:
         yield i
         i += 1
+
+
+def assert_gc(test: Callable[[], bool], timeout: float = 10) -> None:
+    """Helper to retry garbage collection until the test passes or timeout is
+    reached.
+
+    This is useful on free-threading where the GC collect call finishes before
+    all cleanup is done.
+    """
+    start = now = time()
+    while now - start < timeout:
+        if test():
+            return
+        gc.collect()
+        sleep(0.1)
+        now = time()
+    raise AssertionError('Timeout waiting for GC')

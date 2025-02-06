@@ -1,4 +1,3 @@
-import gc
 import math
 import platform
 import re
@@ -11,7 +10,7 @@ from dirty_equals import FunctionCheck
 
 from pydantic_core import CoreConfig, SchemaError, SchemaValidator, ValidationError, core_schema, validate_core_schema
 
-from ..conftest import Err, PyAndJson
+from ..conftest import Err, PyAndJson, assert_gc
 
 
 class Cls:
@@ -1191,9 +1190,5 @@ def test_leak_typed_dict():
     assert ref() is not None
 
     del cycle
-    gc.collect(0)
-    gc.collect(1)
-    gc.collect(2)
-    gc.collect()
 
-    assert ref() is None
+    assert_gc(lambda: ref() is None)

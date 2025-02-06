@@ -1,10 +1,11 @@
-import gc
 import platform
 import weakref
 
 import pytest
 
 from pydantic_core import SchemaValidator, ValidationError, core_schema
+
+from ..conftest import assert_gc
 
 
 def test_nullable():
@@ -62,9 +63,5 @@ def test_leak_nullable():
     assert ref() is not None
 
     del cycle
-    gc.collect(0)
-    gc.collect(1)
-    gc.collect(2)
-    gc.collect()
 
-    assert ref() is None
+    assert_gc(lambda: ref() is None)
