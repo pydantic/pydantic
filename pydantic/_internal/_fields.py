@@ -4,11 +4,12 @@ from __future__ import annotations as _annotations
 
 import dataclasses
 import warnings
+from collections.abc import Mapping
 from copy import copy
 from functools import cache
 from inspect import Parameter, ismethoddescriptor, signature
 from re import Pattern
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any, Callable, TypeVar
 
 from pydantic_core import PydanticUndefined
 from typing_extensions import TypeIs
@@ -78,7 +79,7 @@ def collect_model_fields(  # noqa: C901
     config_wrapper: ConfigWrapper,
     ns_resolver: NsResolver | None,
     *,
-    typevars_map: dict[Any, Any] | None = None,
+    typevars_map: Mapping[TypeVar, Any] | None = None,
 ) -> tuple[dict[str, FieldInfo], set[str]]:
     """Collect the fields of a nascent pydantic model.
 

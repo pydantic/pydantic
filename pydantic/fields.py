@@ -6,6 +6,7 @@ import dataclasses
 import inspect
 import sys
 import typing
+from collections.abc import Mapping
 from copy import copy
 from dataclasses import Field as DataclassField
 from functools import cached_property
@@ -651,7 +652,7 @@ class FieldInfo(_repr.Representation):
 
     def apply_typevars_map(
         self,
-        typevars_map: dict[Any, Any] | None,
+        typevars_map: Mapping[TypeVar, Any] | None,
         globalns: GlobalsNamespace | None = None,
         localns: MappingNamespace | None = None,
     ) -> None:

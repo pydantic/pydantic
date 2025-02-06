@@ -223,7 +223,7 @@ def get_standard_typevars_map(cls: Any) -> dict[TypeVar, Any] | None:
     return dict(zip(parameters, args))
 
 
-def get_model_typevars_map(cls: type[BaseModel]) -> dict[TypeVar, Any] | None:
+def get_model_typevars_map(cls: type[BaseModel]) -> dict[TypeVar, Any]:
     """Package a generic BaseModel's typevars and concrete parametrization (if present) into a dictionary compatible
     with the `replace_types` function.
 
@@ -241,7 +241,7 @@ def get_model_typevars_map(cls: type[BaseModel]) -> dict[TypeVar, Any] | None:
     return dict(zip(iter_contained_typevars(origin), args))
 
 
-def replace_types(type_: Any, type_map: Mapping[Any, Any] | None) -> Any:
+def replace_types(type_: Any, type_map: Mapping[TypeVar, Any] | None) -> Any:
     """Return type with all occurrences of `type_map` keys recursively replaced with their values.
 
     Args:
