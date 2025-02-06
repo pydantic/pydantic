@@ -172,33 +172,37 @@ class ConfigWrapper:
                 stacklevel=2,
             )
 
-        core_config_values = {
-            'title': config.get('title') or title or None,
-            'extra_fields_behavior': config.get('extra'),
-            'allow_inf_nan': config.get('allow_inf_nan'),
-            'populate_by_name': config.get('populate_by_name'),
-            'str_strip_whitespace': config.get('str_strip_whitespace'),
-            'str_to_lower': config.get('str_to_lower'),
-            'str_to_upper': config.get('str_to_upper'),
-            'strict': config.get('strict'),
-            'ser_json_timedelta': config.get('ser_json_timedelta'),
-            'ser_json_bytes': config.get('ser_json_bytes'),
-            'val_json_bytes': config.get('val_json_bytes'),
-            'ser_json_inf_nan': config.get('ser_json_inf_nan'),
-            'from_attributes': config.get('from_attributes'),
-            'loc_by_alias': config.get('loc_by_alias'),
-            'revalidate_instances': config.get('revalidate_instances'),
-            'validate_default': config.get('validate_default'),
-            'str_max_length': config.get('str_max_length'),
-            'str_min_length': config.get('str_min_length'),
-            'hide_input_in_errors': config.get('hide_input_in_errors'),
-            'coerce_numbers_to_str': config.get('coerce_numbers_to_str'),
-            'regex_engine': config.get('regex_engine'),
-            'validation_error_cause': config.get('validation_error_cause'),
-            'cache_strings': config.get('cache_strings'),
-        }
-
-        return core_schema.CoreConfig(**{k: v for k, v in core_config_values.items() if v is not None})
+        return core_schema.CoreConfig(
+            **{  # pyright: ignore[reportArgumentType]
+                k: v
+                for k, v in (
+                    ('title', config.get('title') or title or None),
+                    ('extra_fields_behavior', config.get('extra')),
+                    ('allow_inf_nan', config.get('allow_inf_nan')),
+                    ('populate_by_name', config.get('populate_by_name')),
+                    ('str_strip_whitespace', config.get('str_strip_whitespace')),
+                    ('str_to_lower', config.get('str_to_lower')),
+                    ('str_to_upper', config.get('str_to_upper')),
+                    ('strict', config.get('strict')),
+                    ('ser_json_timedelta', config.get('ser_json_timedelta')),
+                    ('ser_json_bytes', config.get('ser_json_bytes')),
+                    ('val_json_bytes', config.get('val_json_bytes')),
+                    ('ser_json_inf_nan', config.get('ser_json_inf_nan')),
+                    ('from_attributes', config.get('from_attributes')),
+                    ('loc_by_alias', config.get('loc_by_alias')),
+                    ('revalidate_instances', config.get('revalidate_instances')),
+                    ('validate_default', config.get('validate_default')),
+                    ('str_max_length', config.get('str_max_length')),
+                    ('str_min_length', config.get('str_min_length')),
+                    ('hide_input_in_errors', config.get('hide_input_in_errors')),
+                    ('coerce_numbers_to_str', config.get('coerce_numbers_to_str')),
+                    ('regex_engine', config.get('regex_engine')),
+                    ('validation_error_cause', config.get('validation_error_cause')),
+                    ('cache_strings', config.get('cache_strings')),
+                )
+                if v is not None
+            }
+        )
 
     def __repr__(self):
         c = ', '.join(f'{k}={v!r}' for k, v in self.config_dict.items())
