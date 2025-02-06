@@ -1,6 +1,6 @@
-from __future__ import annotations as _annotations
+from __future__ import annotations
 
-import os
+from pathlib import Path
 
 from bs4 import BeautifulSoup
 from markdownify import MarkdownConverter
@@ -9,11 +9,11 @@ from mkdocs.structure.files import Files
 from mkdocs.structure.pages import Page
 
 
-def on_config(config: MkDocsConfig):
-    os.makedirs(config.site_dir, exist_ok=True)
-    llms_path = os.path.join(config.site_dir, 'llms.txt')
-    with open(llms_path, 'w') as f:
-        f.write('')
+def on_config(config: MkDocsConfig) -> None:
+    config_dir = Path(config.site_dir)
+    config_dir.mkdir(parents=True, exist_ok=True)
+    llms_path = config_dir / 'llms.txt'
+    llms_path.touch()
 
 
 def on_page_content(html: str, page: Page, config: MkDocsConfig, files: Files) -> str:
@@ -29,7 +29,8 @@ def on_page_content(html: str, page: Page, config: MkDocsConfig, files: Files) -
     for extra in soup.find_all('table', attrs={'class': 'highlighttable'}):
         extra.replace_with(BeautifulSoup(f'<pre>{extra.find("code").get_text()}</pre>', 'html.parser'))
 
-    with open(os.path.join(config.site_dir, 'llms.txt'), 'a', encoding='utf-8') as f:
-        f.write(MarkdownConverter().convert_soup(soup))  # type: ignore[reportUnknownMemberType]
+    llms_path = Path(config.site_dir) / 'llms.txt'
+    with llms_path.open(mode='a', encoding='utf-8') as f:
+        f.write(MarkdownConverter().convert_soup(soup))
 
     return html
