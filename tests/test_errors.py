@@ -306,6 +306,7 @@ all_errors = [
     ('iteration_error', 'Error iterating over object, error: foobar', {'error': 'foobar'}),
     ('list_type', 'Input should be a valid list', None),
     ('tuple_type', 'Input should be a valid tuple', None),
+    ('set_item_not_hashable', 'Set items should be hashable', None),
     ('set_type', 'Input should be a valid set', None),
     ('bool_type', 'Input should be a valid boolean', None),
     ('bool_parsing', 'Input should be a valid boolean, unable to interpret input', None),

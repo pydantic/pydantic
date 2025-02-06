@@ -4037,6 +4037,7 @@ ErrorType = Literal[
     'list_type',
     'tuple_type',
     'set_type',
+    'set_item_not_hashable',
     'bool_type',
     'bool_parsing',
     'int_type',
