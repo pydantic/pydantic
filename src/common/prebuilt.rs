@@ -12,11 +12,12 @@ pub fn get_prebuilt<T>(
 ) -> PyResult<Option<T>> {
     let py = schema.py();
 
-    // we can only use prebuilt validators / serializers from models, typed dicts, and dataclasses
-    // however, we don't want to use a prebuilt structure from dataclasses if we have a generic_origin
-    // because the validator / serializer is cached on the unparametrized dataclass
-    if !matches!(type_, "model" | "typed-dict")
-        || matches!(type_, "dataclass") && schema.contains(intern!(py, "generic_origin"))?
+    // we can only use prebuilt validators/serializers from models and Pydantic dataclasses.
+    // However, we don't want to use a prebuilt structure from dataclasses if we have a `generic_origin`
+    // as this means the dataclass was parametrized (so a generic alias instance), and `cls` in the
+    // core schema is still the (unparametrized) class, meaning we would fetch the wrong validator/serializer.
+    if !matches!(type_, "model" | "dataclass")
+        || (type_ == "dataclass" && schema.contains(intern!(py, "generic_origin"))?)
     {
         return Ok(None);
     }
