@@ -217,19 +217,17 @@ def collect_model_fields(  # noqa: C901
 
         if assigned_value is PydanticUndefined:
             if ann_name in annotations:
+                # field is present in the current model's annotations (and *not* from parent classes)
                 field_info = FieldInfo_.from_annotation(ann_type)
+            elif ann_name in parent_fields_lookup:
+                # The field was present on one of the (possibly multiple) base classes
+                # copy the field to make sure typevar substitutions don't cause issues with the base classes
+                field_info = copy(parent_fields_lookup[ann_name])
             else:
-                # if field has no default value and is not in __annotations__ this means that it is
-                # defined in a base class and we can take it from there
-                if ann_name in parent_fields_lookup:
-                    # The field was present on one of the (possibly multiple) base classes
-                    # copy the field to make sure typevar substitutions don't cause issues with the base classes
-                    field_info = copy(parent_fields_lookup[ann_name])
-                else:
-                    # The field was not found on any base classes; this seems to be caused by fields not getting
-                    # generated thanks to models not being fully defined while initializing recursive models.
-                    # Nothing stops us from just creating a new FieldInfo for this type hint, so we do this.
-                    field_info = FieldInfo_.from_annotation(ann_type)
+                # The field was not found on any base classes; this seems to be caused by fields not getting
+                # generated thanks to models not being fully defined while initializing recursive models.
+                # Nothing stops us from just creating a new FieldInfo for this type hint, so we do this.
+                field_info = FieldInfo_.from_annotation(ann_type)
         else:
             _warn_on_nested_alias_in_annotation(ann_type, ann_name)
             if isinstance(assigned_value, FieldInfo_) and ismethoddescriptor(assigned_value.default):
