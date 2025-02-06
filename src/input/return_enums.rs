@@ -194,6 +194,25 @@ impl BuildSet for Bound<'_, PyFrozenSet> {
     }
 }
 
+fn validate_add<'py>(
+    py: Python<'py>,
+    set: &impl BuildSet,
+    item: impl BorrowInput<'py>,
+    state: &mut ValidationState<'_, 'py>,
+    validator: &CombinedValidator,
+) -> ValResult<()> {
+    let validated_item = validator.validate(py, item.borrow_input(), state)?;
+    match set.build_add(validated_item) {
+        Ok(()) => Ok(()),
+        Err(err) => {
+            if err.matches(py, py.get_type::<PyTypeError>())? {
+                return Err(ValError::new(ErrorTypeDefaults::SetItemNotHashable, item));
+            }
+            Err(err)?
+        }
+    }
+}
+
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn validate_iter_to_set<'py>(
     py: Python<'py>,
@@ -216,9 +235,8 @@ pub(crate) fn validate_iter_to_set<'py>(
             false => PartialMode::Off,
         };
         let item = item_result.map_err(|e| any_next_error!(py, e, input, index))?;
-        match validator.validate(py, item.borrow_input(), state) {
-            Ok(item) => {
-                set.build_add(item)?;
+        match validate_add(py, set, item, state, validator) {
+            Ok(()) => {
                 if let Some(max_length) = max_length {
                     if set.build_len() > max_length {
                         return Err(ValError::new(

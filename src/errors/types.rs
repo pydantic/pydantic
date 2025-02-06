@@ -268,6 +268,7 @@ error_types! {
     // ---------------------
     // set errors
     SetType {},
+    SetItemNotHashable {},
     // ---------------------
     // bool errors
     BoolType {},
@@ -513,6 +514,7 @@ impl ErrorType {
             Self::ListType {..} => "Input should be a valid list",
             Self::TupleType {..} => "Input should be a valid tuple",
             Self::SetType {..} => "Input should be a valid set",
+            Self::SetItemNotHashable {..} => "Set items should be hashable",
             Self::BoolType {..} => "Input should be a valid boolean",
             Self::BoolParsing {..} => "Input should be a valid boolean, unable to interpret input",
             Self::IntType {..} => "Input should be a valid integer",
