@@ -147,11 +147,6 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     __pydantic_complete__: ClassVar[bool] = False
     """Whether model building is completed, or if there are still undefined fields."""
 
-    __pydantic_fields_complete__: ClassVar[bool] = False
-    """Whether the fields where successfully collected. This is a private attribute, not meant
-    to be used outside Pydantic.
-    """
-
     __pydantic_core_schema__: ClassVar[CoreSchema]
     """The core schema of the model."""
 
@@ -614,11 +609,28 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             parent_namespace={**rebuild_ns, **parent_ns},
         )
 
-        # manually override defer_build so complete_model_class doesn't skip building the model again
-        config = {**cls.model_config, 'defer_build': False}
+        if not cls.__pydantic_fields_complete__:
+            typevars_map = _generics.get_model_typevars_map(cls)
+            try:
+                cls.__pydantic_fields__ = _fields.rebuild_model_fields(
+                    cls,
+                    ns_resolver=ns_resolver,
+                    typevars_map=typevars_map,
+                    raise_errors=raise_errors,
+                )
+            except NameError as e:
+                if raise_errors:
+                    raise PydanticUndefinedAnnotation.from_name_error(e) from e
+
+            if not raise_errors and not cls.__pydantic_fields_complete__:
+                # No need to continue with schema gen, it is guaranteed to fail
+                return False
+
+            assert cls.__pydantic_fields_complete__
+
         return _model_construction.complete_model_class(
             cls,
-            _config.ConfigWrapper(config, check=False),
+            _config.ConfigWrapper(cls.model_config, check=False),
             raise_errors=raise_errors,
             ns_resolver=ns_resolver,
         )

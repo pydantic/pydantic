@@ -203,9 +203,7 @@ class ModelMetaclass(ABCMeta):
                     'parameters': parameters,
                 }
 
-            # Do not inherit these attributes from the parent model, if any:
-            cls.__pydantic_complete__ = False
-            cls.__pydantic_fields_complete__ = False
+            cls.__pydantic_complete__ = False  # Ensure this specific class gets completed
 
             # preserve `__set_name__` protocol defined in https://peps.python.org/pep-0487
             # for attributes not in `new_namespace` (e.g. private attributes)
@@ -218,21 +216,28 @@ class ModelMetaclass(ABCMeta):
             if isinstance(parent_namespace, dict):
                 parent_namespace = unpack_lenient_weakvaluedict(parent_namespace)
 
+            ns_resolver = NsResolver(parent_namespace=parent_namespace)
+
+            set_model_fields(cls, config_wrapper=config_wrapper, ns_resolver=ns_resolver)
+
             # This is also set in `complete_model_class()`, after schema gen because they are recreated.
             # We set them here as well for backwards compatibility:
             cls.__pydantic_computed_fields__ = {
                 k: v.info for k, v in cls.__pydantic_decorators__.computed_fields.items()
             }
 
-            # Any operation that requires accessing the field infos instances should be put inside
-            # `complete_model_class()`:
-            complete_model_class(
-                cls,
-                config_wrapper,
-                raise_errors=False,
-                ns_resolver=NsResolver(parent_namespace=parent_namespace),
-                create_model_module=_create_model_module,
-            )
+            if config_wrapper.defer_build or not cls.__pydantic_fields_complete__:
+                set_model_mocks(cls)
+            else:
+                # Any operation that requires accessing the field infos instances should be put inside
+                # `complete_model_class()`:
+                complete_model_class(
+                    cls,
+                    config_wrapper,
+                    raise_errors=False,
+                    ns_resolver=ns_resolver,
+                    create_model_module=_create_model_module,
+                )
 
             if config_wrapper.frozen and '__hash__' not in namespace:
                 set_default_hash_func(cls, bases)
@@ -304,6 +309,19 @@ class ModelMetaclass(ABCMeta):
             stacklevel=2,
         )
         return getattr(self, '__pydantic_fields__', {})
+
+    @property
+    def __pydantic_fields_complete__(self) -> bool:
+        """Whether the fields where successfully collected.
+
+        This is a private attribute, not meant to be used outside Pydantic.
+        """
+        if not hasattr(self, '__pydantic_fields__'):
+            return False
+
+        field_infos = cast('dict[str, FieldInfo]', self.__pydantic_fields__)  # pyright: ignore[reportAttributeAccessIssue]
+
+        return all(field_info._complete for field_info in field_infos.values())
 
     def __dir__(self) -> list[str]:
         attributes = list(super().__dir__())
@@ -511,7 +529,7 @@ def set_model_fields(
     cls: type[BaseModel],
     config_wrapper: ConfigWrapper,
     ns_resolver: NsResolver | None,
-) -> bool:
+) -> None:
     """Collect and set `cls.__pydantic_fields__` and `cls.__class_vars__`.
 
     Args:
@@ -520,22 +538,7 @@ def set_model_fields(
         ns_resolver: Namespace resolver to use when getting model annotations.
     """
     typevars_map = get_model_typevars_map(cls)
-    fields, class_vars, evaluation_succeeded = collect_model_fields(
-        cls, config_wrapper, ns_resolver, typevars_map=typevars_map
-    )
-
-    if evaluation_succeeded:
-        # attributes which are fields are removed from the class namespace:
-        # 1. To match the behaviour of annotation-only fields
-        # 2. To avoid false positives in the NameError check above.
-        # We only remove them if annotation evaluation succeeded, as otherwise
-        # fields collection may be performed one more time, and we need to keep
-        # assignments (so that we can call `FieldInfo.from_annotated_attribute()`).
-        for ann_name in fields:
-            try:
-                delattr(cls, ann_name)
-            except AttributeError:  # indicates the attribute was on a parent class
-                pass
+    fields, class_vars = collect_model_fields(cls, config_wrapper, ns_resolver, typevars_map=typevars_map)
 
     cls.__pydantic_fields__ = fields
     cls.__class_vars__.update(class_vars)
@@ -551,8 +554,6 @@ def set_model_fields(
         value = cls.__private_attributes__.pop(k, None)
         if value is not None and value.default is not PydanticUndefined:
             setattr(cls, k, value.default)
-
-    return evaluation_succeeded
 
 
 def complete_model_class(
@@ -582,22 +583,6 @@ def complete_model_class(
         PydanticUndefinedAnnotation: If `PydanticUndefinedAnnotation` occurs in`__get_pydantic_core_schema__`
             and `raise_errors=True`.
     """
-    if not cls.__pydantic_fields_complete__:
-        evaluation_succeeded = set_model_fields(cls, config_wrapper=config_wrapper, ns_resolver=ns_resolver)
-        if not evaluation_succeeded:
-            if raise_errors:
-                raise PydanticUndefinedAnnotation(
-                    name='<unknown>', message=f'An annotation is not defined in model {cls}'
-                )
-            set_model_mocks(cls)
-            return False
-
-    cls.__pydantic_fields_complete__ = True
-
-    if config_wrapper.defer_build:
-        set_model_mocks(cls)
-        return False
-
     typevars_map = get_model_typevars_map(cls)
     gen_schema = GenerateSchema(
         config_wrapper,

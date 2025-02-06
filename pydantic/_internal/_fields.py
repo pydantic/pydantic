@@ -17,7 +17,7 @@ from typing_extensions import TypeIs
 from pydantic import PydanticDeprecatedSince211
 from pydantic.errors import PydanticUserError
 
-from . import _typing_extra
+from . import _generics, _typing_extra
 from ._config import ConfigWrapper
 from ._docs_extraction import extract_docstrings_from_cls
 from ._import_utils import import_cached_base_model, import_cached_field_info
@@ -79,12 +79,15 @@ def collect_model_fields(  # noqa: C901
     ns_resolver: NsResolver | None,
     *,
     typevars_map: Mapping[TypeVar, Any] | None = None,
-) -> tuple[dict[str, FieldInfo], set[str], bool]:
-    """Collect the fields of a nascent pydantic model.
+) -> tuple[dict[str, FieldInfo], set[str]]:
+    """Collect the fields and class variables names of a nascent Pydantic model.
 
-    Also collect the names of any ClassVars present in the type hints.
+    The fields collection process is *lenient*, meaning it won't error if string annotations
+    fail to evaluate. If this happens, the original annotation (and assigned value, if any)
+    is stored on the created `FieldInfo` instance.
 
-    The returned value is a tuple of two items: the fields dict, and the set of ClassVar names.
+    The `rebuild_model_fields()` should be called at a later point (e.g. when rebuilding the model),
+    and will make use of these stored attributes.
 
     Args:
         cls: BaseModel or dataclass.
@@ -93,8 +96,7 @@ def collect_model_fields(  # noqa: C901
         typevars_map: A dictionary mapping type variables to their concrete types.
 
     Returns:
-        A three-tuple containing the model fields, the names of the class variables and a boolean indicating if
-            annotation evaluation a succeeded.
+        A two-tuple containing model fields and class variables names.
 
     Raises:
         NameError:
@@ -112,7 +114,6 @@ def collect_model_fields(  # noqa: C901
             parent_fields_lookup.update(model_fields)
 
     type_hints = _typing_extra.get_model_type_hints(cls, ns_resolver=ns_resolver)
-    evaluation_succeeded = True
 
     # https://docs.python.org/3/howto/annotations.html#accessing-the-annotations-dict-of-an-object-in-python-3-9-and-older
     # annotations is only used for finding fields in parent classes
@@ -182,12 +183,6 @@ def collect_model_fields(  # noqa: C901
                 f"Unexpected field with name {ann_name!r}; only 'root' is allowed as a field of a `RootModel`"
             )
 
-        # At this point, the field is not a private attribute/class variable. If the type annotation did not
-        # evaluate successfully, we set the `evaluation_succeeded` flag that is used to decide if we continue with
-        # core schema generation:
-        if evaluation_succeeded and not evaluated:
-            evaluation_succeeded = evaluated
-
         # when building a generic model with `MyModel[int]`, the generic_origin check makes sure we don't get
         # "... shadows an attribute" warnings
         generic_origin = getattr(cls, '__pydantic_generic_metadata__', {}).get('origin')
@@ -228,6 +223,12 @@ def collect_model_fields(  # noqa: C901
                 # generated thanks to models not being fully defined while initializing recursive models.
                 # Nothing stops us from just creating a new FieldInfo for this type hint, so we do this.
                 field_info = FieldInfo_.from_annotation(ann_type)
+
+            if not evaluated:
+                field_info._complete = False
+                # Store the original annotation that should be used to rebuild
+                # the field info later:
+                field_info._original_annotation = ann_type
         else:
             _warn_on_nested_alias_in_annotation(ann_type, ann_name)
             if isinstance(assigned_value, FieldInfo_) and ismethoddescriptor(assigned_value.default):
@@ -238,7 +239,26 @@ def collect_model_fields(  # noqa: C901
                 # `hasattr(assigned_value.default, '__get__')`).
                 assigned_value.default = assigned_value.default.__get__(None, cls)
 
+            # The `from_annotated_attribute()` call below mutates the assigned `Field()`, so make a copy:
+            original_assignment = (
+                copy(assigned_value) if not evaluated and isinstance(assigned_value, FieldInfo_) else assigned_value
+            )
+
             field_info = FieldInfo_.from_annotated_attribute(ann_type, assigned_value)
+            if not evaluated:
+                field_info._complete = False
+                # Store the original annotation and assignment value that should be used to rebuild
+                # the field info later:
+                field_info._original_annotation = ann_type
+                field_info._original_assignment = original_assignment
+
+            # attributes which are fields are removed from the class namespace:
+            # 1. To match the behaviour of annotation-only fields
+            # 2. To avoid false positives in the NameError check above
+            try:
+                delattr(cls, ann_name)
+            except AttributeError:
+                pass  # indicates the attribute was on a parent class
 
         # Use cls.__dict__['__pydantic_decorators__'] instead of cls.__pydantic_decorators__
         # to make sure the decorators have already been built for this exact class
@@ -249,11 +269,12 @@ def collect_model_fields(  # noqa: C901
 
     if typevars_map:
         for field in fields.values():
-            field.apply_typevars_map(typevars_map)
+            if field._complete:
+                field.apply_typevars_map(typevars_map)
 
     if config_wrapper.use_attribute_docstrings:
         _update_fields_from_docstrings(cls, fields)
-    return fields, class_vars, evaluation_succeeded
+    return fields, class_vars
 
 
 def _warn_on_nested_alias_in_annotation(ann_type: type[Any], ann_name: str) -> None:
@@ -284,6 +305,49 @@ def _is_finalvar_with_default_val(ann_type: type[Any], assigned_value: Any) -> b
         return False
     else:
         return True
+
+
+def rebuild_model_fields(
+    cls: type[BaseModel],
+    *,
+    ns_resolver: NsResolver,
+    typevars_map: dict[TypeVar, Any],
+    raise_errors: bool = True,
+) -> dict[str, FieldInfo]:
+    """Rebuild the (already present) model fields by trying to reevaluate annotations.
+
+    This function should be called whenever a model with incomplete fields is encountered.
+
+    Note:
+        This function *doesn't* mutate the model fields in place, as it can be called during
+        schema generation, where you don't want to mutate other model's fields.
+    """
+    FieldInfo_ = import_cached_field_info()
+
+    rebuilt_fields: dict[str, FieldInfo] = {}
+    with ns_resolver.push(cls):
+        for f_name, field_info in cls.__pydantic_fields__.items():
+            if field_info._complete:
+                rebuilt_fields[f_name] = field_info
+            else:
+                try:
+                    ann = _typing_extra.eval_type(
+                        field_info._original_annotation,
+                        *ns_resolver.types_namespace,
+                    )
+                    ann = _generics.replace_types(ann, typevars_map)
+                except NameError:
+                    if raise_errors:
+                        raise
+                    else:
+                        return cls.__pydantic_fields__
+
+                if (assign := field_info._original_assignment) is PydanticUndefined:
+                    rebuilt_fields[f_name] = FieldInfo_.from_annotation(ann)
+                else:
+                    rebuilt_fields[f_name] = FieldInfo_.from_annotated_attribute(ann, assign)
+
+    return rebuilt_fields
 
 
 def collect_dataclass_fields(

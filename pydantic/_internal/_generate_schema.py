@@ -84,7 +84,7 @@ from ._decorators import (
     inspect_validator,
 )
 from ._docs_extraction import extract_docstrings_from_cls
-from ._fields import collect_dataclass_fields, collect_model_fields, takes_validated_data_argument
+from ._fields import collect_dataclass_fields, rebuild_model_fields, takes_validated_data_argument
 from ._forward_ref import PydanticRecursiveRef
 from ._generics import get_standard_typevars_map, replace_types
 from ._import_utils import import_cached_base_model, import_cached_field_info
@@ -735,16 +735,15 @@ class GenerateSchema:
                 if cls.__pydantic_fields_complete__ or cls is BaseModel_:
                     fields = getattr(cls, '__pydantic_fields__', {})
                 else:
-                    fields, _, evaluation_succeeded = collect_model_fields(
-                        cls,
-                        config_wrapper=self._config_wrapper,
-                        ns_resolver=self._ns_resolver,
-                        typevars_map=self._typevars_map,
-                    )
-                    if not evaluation_succeeded:
-                        raise PydanticUndefinedAnnotation(
-                            name='<unknown>', message=f'An annotation is not defined in model {cls}'
+                    try:
+                        fields = rebuild_model_fields(
+                            cls,
+                            ns_resolver=self._ns_resolver,
+                            typevars_map=self._typevars_map or {},
+                            raise_errors=True,
                         )
+                    except NameError as e:
+                        raise PydanticUndefinedAnnotation.from_name_error(e) from e
 
                 decorators = cls.__pydantic_decorators__
                 computed_fields = decorators.computed_fields
