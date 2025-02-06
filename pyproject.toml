@@ -83,6 +83,8 @@ dev = [
 ]
 docs = [
     'autoflake',
+    "bs4>=0.0.2",
+    "markdownify>=0.14.1",
     'mkdocs',
     'mkdocs-exclude',
     'mkdocs-material[imaging]',
