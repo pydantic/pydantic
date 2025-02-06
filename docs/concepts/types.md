@@ -326,9 +326,7 @@ For instance, here is an example definition of a JSON type:
 
 === "Python 3.9 and above"
 
-    <!--- TODO enable lint once https://github.com/astral-sh/ruff/issues/15812 is solved. -->
-
-    ```python {lint="skip"}
+    ```python
     from typing import Union
 
     from typing_extensions import TypeAliasType
