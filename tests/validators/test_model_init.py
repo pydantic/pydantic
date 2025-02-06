@@ -1,4 +1,3 @@
-import gc
 import platform
 import weakref
 
@@ -6,6 +5,8 @@ import pytest
 from dirty_equals import IsInstance
 
 from pydantic_core import CoreConfig, SchemaValidator, core_schema
+
+from ..conftest import assert_gc
 
 
 class MyModel:
@@ -473,12 +474,8 @@ def test_leak_model(validator):
     assert ref() is not None
 
     del klass
-    gc.collect(0)
-    gc.collect(1)
-    gc.collect(2)
-    gc.collect()
 
-    assert ref() is None
+    assert_gc(lambda: ref() is None)
 
 
 def test_model_custom_init_with_union() -> None:
