@@ -506,7 +506,7 @@ jobs:
             ls: dir
             runs-on: windows-latest
           - os: macos
-            runs-on: macos-latest-xlarge
+            runs-on: macos-latest
         exclude:
           # macos arm only supported from 3.10 and up
           - os: macos
