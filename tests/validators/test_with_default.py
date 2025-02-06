@@ -1,4 +1,3 @@
-import gc
 import platform
 import sys
 import weakref
@@ -17,7 +16,7 @@ from pydantic_core import (
     core_schema,
 )
 
-from ..conftest import PyAndJson
+from ..conftest import PyAndJson, assert_gc
 
 
 def test_typed_dict_default():
@@ -662,12 +661,7 @@ def test_leak_with_default():
     assert ref() is not None
 
     del klass
-    gc.collect(0)
-    gc.collect(1)
-    gc.collect(2)
-    gc.collect()
-
-    assert ref() is None
+    assert_gc(lambda: ref() is None)
 
 
 validate_default_raises_examples = [

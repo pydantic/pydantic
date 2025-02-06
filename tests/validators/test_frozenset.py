@@ -82,6 +82,7 @@ def test_frozenset_no_validators_both(py_and_json: PyAndJson, input_value, expec
         ('abc', Err('Input should be a valid frozenset')),
     ],
 )
+@pytest.mark.thread_unsafe  # generators in parameters not compatible with pytest-run-parallel, https://github.com/Quansight-Labs/pytest-run-parallel/issues/14
 def test_frozenset_ints_python(input_value, expected):
     v = SchemaValidator({'type': 'frozenset', 'items_schema': {'type': 'int'}})
     if isinstance(expected, Err):
@@ -165,6 +166,7 @@ def generate_repeats():
         ),
     ],
 )
+@pytest.mark.thread_unsafe  # generators in parameters not compatible with pytest-run-parallel, https://github.com/Quansight-Labs/pytest-run-parallel/issues/14
 def test_frozenset_kwargs_python(kwargs: dict[str, Any], input_value, expected):
     v = SchemaValidator({'type': 'frozenset', **kwargs})
     if isinstance(expected, Err):

@@ -1,5 +1,4 @@
 import dataclasses
-import gc
 import platform
 import re
 import sys
@@ -11,7 +10,7 @@ from dirty_equals import IsListOrTuple, IsStr
 
 from pydantic_core import ArgsKwargs, SchemaValidator, ValidationError, core_schema
 
-from ..conftest import Err, PyAndJson
+from ..conftest import Err, PyAndJson, assert_gc
 
 
 @pytest.mark.parametrize(
@@ -1586,12 +1585,8 @@ def test_leak_dataclass(validator):
     assert ref() is not None
 
     del klass
-    gc.collect(0)
-    gc.collect(1)
-    gc.collect(2)
-    gc.collect()
 
-    assert ref() is None
+    assert_gc(lambda: ref() is None)
 
 
 init_test_cases = [

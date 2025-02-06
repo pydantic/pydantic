@@ -586,6 +586,7 @@ all = [
     { name = "pytest-examples", marker = "implementation_name == 'cpython' and platform_machine == 'x86_64'" },
     { name = "pytest-mock" },
     { name = "pytest-pretty" },
+    { name = "pytest-run-parallel" },
     { name = "pytest-speed" },
     { name = "pytest-timeout" },
     { name = "python-dateutil" },
@@ -601,6 +602,7 @@ dev = [
 ]
 linting = [
     { name = "griffe" },
+    { name = "maturin" },
     { name = "mypy" },
     { name = "pyright" },
     { name = "ruff" },
@@ -619,6 +621,7 @@ testing = [
     { name = "pytest-examples", marker = "implementation_name == 'cpython' and platform_machine == 'x86_64'" },
     { name = "pytest-mock" },
     { name = "pytest-pretty" },
+    { name = "pytest-run-parallel" },
     { name = "pytest-speed" },
     { name = "pytest-timeout" },
     { name = "python-dateutil" },
@@ -652,6 +655,7 @@ all = [
     { name = "pytest-examples", marker = "implementation_name == 'cpython' and platform_machine == 'x86_64'" },
     { name = "pytest-mock" },
     { name = "pytest-pretty" },
+    { name = "pytest-run-parallel" },
     { name = "pytest-speed" },
     { name = "pytest-timeout" },
     { name = "python-dateutil" },
@@ -663,6 +667,7 @@ codspeed = [{ name = "pytest-codspeed", marker = "python_full_version == '3.13.*
 dev = [{ name = "maturin" }]
 linting = [
     { name = "griffe" },
+    { name = "maturin" },
     { name = "mypy" },
     { name = "pyright" },
     { name = "ruff" },
@@ -681,6 +686,7 @@ testing = [
     { name = "pytest-examples", marker = "implementation_name == 'cpython' and platform_machine == 'x86_64'" },
     { name = "pytest-mock" },
     { name = "pytest-pretty" },
+    { name = "pytest-run-parallel" },
     { name = "pytest-speed" },
     { name = "pytest-timeout" },
     { name = "python-dateutil" },
@@ -793,6 +799,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/a5/18/30ad0408295f3157f7a4913f0eaa51a0a377ebad0ffa51ff239e833c6c72/pytest_pretty-1.2.0.tar.gz", hash = "sha256:105a355f128e392860ad2c478ae173ff96d2f03044692f9818ff3d49205d3a60", size = 6542 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/bf/fe/d44d391312c1b8abee2af58ee70fabb1c00b6577ac4e0bdf25b70c1caffb/pytest_pretty-1.2.0-py3-none-any.whl", hash = "sha256:6f79122bf53864ae2951b6c9e94d7a06a87ef753476acd4588aeac018f062036", size = 6180 },
+]
+
+[[package]]
+name = "pytest-run-parallel"
+version = "0.3.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pytest" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/fe/13/d3bcb2c52f63b774be612cbee51f33a5cf2fa97d2f60fe26264f6720477b/pytest_run_parallel-0.3.1.tar.gz", hash = "sha256:636306d3ed6838898d8d42b3cd379dac7b327ce6d68df1bcc30d55a208d5081e", size = 14142 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/4d/67/4943178bb5dacb2e0b745b4db4ab126112dafab66266f2262896e791dbbe/pytest_run_parallel-0.3.1-py3-none-any.whl", hash = "sha256:0675c9e4c8e843085333c66bc0ce6b8091e3509dc8e6df3429f05c28f5345b17", size = 9468 },
 ]
 
 [[package]]

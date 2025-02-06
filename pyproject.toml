@@ -52,6 +52,7 @@ testing = [
     'pytest-speed',
     'pytest-mock',
     'pytest-pretty',
+    'pytest-run-parallel',
     'pytest-timeout',
     'python-dateutil',
     # numpy doesn't offer prebuilt wheels for all versions and platforms we test in CI e.g. aarch64 musllinux
