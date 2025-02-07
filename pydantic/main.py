@@ -403,6 +403,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         exclude_none: bool = False,
         round_trip: bool = False,
         warnings: bool | Literal['none', 'warn', 'error'] = True,
+        fallback: Callable[[Any], Any] | None = None,
         serialize_as_any: bool = False,
     ) -> dict[str, Any]:
         """!!! abstract "Usage Documentation"
@@ -424,6 +425,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             round_trip: If True, dumped values should be valid as input for non-idempotent types such as Json[T].
             warnings: How to handle serialization errors. False/"none" ignores them, True/"warn" logs errors,
                 "error" raises a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError].
+            fallback: A function to call when an unknown value is encountered. If not provided,
+                a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError] error is raised.
             serialize_as_any: Whether to serialize fields with duck-typing serialization behavior.
 
         Returns:
@@ -441,6 +444,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             exclude_none=exclude_none,
             round_trip=round_trip,
             warnings=warnings,
+            fallback=fallback,
             serialize_as_any=serialize_as_any,
         )
 
@@ -457,6 +461,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         exclude_none: bool = False,
         round_trip: bool = False,
         warnings: bool | Literal['none', 'warn', 'error'] = True,
+        fallback: Callable[[Any], Any] | None = None,
         serialize_as_any: bool = False,
     ) -> str:
         """!!! abstract "Usage Documentation"
@@ -476,6 +481,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             round_trip: If True, dumped values should be valid as input for non-idempotent types such as Json[T].
             warnings: How to handle serialization errors. False/"none" ignores them, True/"warn" logs errors,
                 "error" raises a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError].
+            fallback: A function to call when an unknown value is encountered. If not provided,
+                a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError] error is raised.
             serialize_as_any: Whether to serialize fields with duck-typing serialization behavior.
 
         Returns:
@@ -493,6 +500,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             exclude_none=exclude_none,
             round_trip=round_trip,
             warnings=warnings,
+            fallback=fallback,
             serialize_as_any=serialize_as_any,
         ).decode()
 
