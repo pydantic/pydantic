@@ -3580,6 +3580,9 @@ For example, if you're validating against the following model:</p>
 <h4 id="some-invalid-but-complete-json-will-be-accepted">Some invalid but complete JSON will be accepted<a class="headerlink" href="#some-invalid-but-complete-json-will-be-accepted" title="Permanent link">&para;</a></h4>
 <p>The way <a href="https://github.com/pydantic/jiter">jiter</a> (the JSON parser used by Pydantic) works means it's currently not possible to differentiate between complete JSON like <code>{"a": 1, "b": "12"}</code> and incomplete JSON like <code>{"a": 1, "b": "12</code>.</p>
 <p>This means that some invalid JSON will be accepted by Pydantic when using <code>experimental_allow_partial</code>, e.g.:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.9 and above</label><label for="__tabbed_1_2">Python 3.13 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">annotated_types</span><span class="w"> </span><span class="kn">import</span> <span class="n">MinLen</span>
@@ -3611,6 +3614,42 @@ For example, if you're validating against the following model:</p>
 <li>This will pass validation as expected although the last field will be omitted as it failed validation.</li>
 <li>This will also pass validation since the binary representation of the JSON data passed to pydantic-core is indistinguishable from the previous case.</li>
 </ol>
+</div>
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">annotated_types</span><span class="w"> </span><span class="kn">import</span> <span class="n">MinLen</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TypedDict</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">TypeAdapter</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Foobar</span><span class="p">(</span><span class="n">TypedDict</span><span class="p">,</span> <span class="n">total</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="n">a</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">b</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">MinLen</span><span class="p">(</span><span class="mi">5</span><span class="p">)]</span>
+
+
+<span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">Foobar</span><span class="p">)</span>
+
+<span class="n">v</span> <span class="o">=</span> <span class="n">ta</span><span class="o">.</span><span class="n">validate_json</span><span class="p">(</span>
+    <span class="s1">&#39;{&quot;a&quot;: 1, &quot;b&quot;: &quot;12&#39;</span><span class="p">,</span> <span class="n">experimental_allow_partial</span><span class="o">=</span><span class="kc">True</span>  <span class="c1"># (1)!</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+<span class="c1">#&gt; {&#39;a&#39;: 1}</span>
+
+<span class="n">v</span> <span class="o">=</span> <span class="n">ta</span><span class="o">.</span><span class="n">validate_json</span><span class="p">(</span>
+    <span class="s1">&#39;{&quot;a&quot;: 1, &quot;b&quot;: &quot;12&quot;}&#39;</span><span class="p">,</span> <span class="n">experimental_allow_partial</span><span class="o">=</span><span class="kc">True</span>  <span class="c1"># (2)!</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+<span class="c1">#&gt; {&#39;a&#39;: 1}</span>
+</code></pre></div>
+<ol>
+<li>This will pass validation as expected although the last field will be omitted as it failed validation.</li>
+<li>This will also pass validation since the binary representation of the JSON data passed to pydantic-core is indistinguishable from the previous case.</li>
+</ol>
+</div>
+</div>
+</div>
 <h4 id="any-error-in-the-last-field-of-the-input-will-be-ignored">Any error in the last field of the input will be ignored<a class="headerlink" href="#any-error-in-the-last-field-of-the-input-will-be-ignored" title="Permanent link">&para;</a></h4>
 <p>As described <a href="#2-ignore-errors-in-last">above</a>, many errors can result from truncating the input. Rather than trying to specifically ignore errors that could result from truncation, Pydantic ignores all errors in the last element of the input in partial validation mode.</p>
 <p>This means clearly invalid data will pass validation if the error is in the last field of the input:</p>

@@ -3775,7 +3775,7 @@ This is equivalent to implementing <code>__get_validators__</code> in Pydantic V
 <h4 id="as-an-annotation">As an annotation<a class="headerlink" href="#as-an-annotation" title="Permanent link">&para;</a></h4>
 <p>Often you'll want to parametrize your custom type by more than just generic type parameters (which you can do via the type system and will be discussed later). Or you may not actually care (or want to) make an instance of your subclass; you actually want the original type, just with some extra validation done.</p>
 <p>For example, if you were to implement <code>pydantic.AfterValidator</code> (see <a href="#adding-validation-and-serialization">Adding validation and serialization</a>) yourself, you'd do something similar to the following:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">Python 3.8 and above</label><label for="__tabbed_4_2">Python 3.10 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">Python 3.9 and above</label><label for="__tabbed_4_2">Python 3.10 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
@@ -4031,7 +4031,7 @@ Then you can use the <code>handler</code> to generate a schema for them by calli
 Note that we do not do something like <code>handler(get_args(source_type)[0])</code> because we want to generate an unrelated
 schema for that generic parameter, not one that is influenced by the current context of <code>Annotated</code> metadata and such.
 This is less important for custom types, but crucial for annotated metadata that modifies schema building.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">Python 3.8 and above</label><label for="__tabbed_5_2">Python 3.10 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">Python 3.9 and above</label><label for="__tabbed_5_2">Python 3.10 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
@@ -4323,83 +4323,10 @@ This is less important for custom types, but crucial for annotated metadata that
 </div>
 <h4 id="generic-containers">Generic containers<a class="headerlink" href="#generic-containers" title="Permanent link">&para;</a></h4>
 <p>The same idea can be applied to create generic container types, like a custom <code>Sequence</code> type:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="6:3"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><input id="__tabbed_6_3" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">Python 3.8 and above</label><label for="__tabbed_6_2">Python 3.9 and above</label><label for="__tabbed_6_3">Python 3.10 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="6:2"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">Python 3.9 and above</label><label for="__tabbed_6_2">Python 3.10 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">TypeVar</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_core</span><span class="w"> </span><span class="kn">import</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">core_schema</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing_extensions</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_args</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">GetCoreSchemaHandler</span>
-
-<span class="n">T</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;T&#39;</span><span class="p">)</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">MySequence</span><span class="p">(</span><span class="n">Sequence</span><span class="p">[</span><span class="n">T</span><span class="p">]):</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">T</span><span class="p">]):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">v</span> <span class="o">=</span> <span class="n">v</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">v</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">v</span><span class="p">)</span>
-
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">__get_pydantic_core_schema__</span><span class="p">(</span>
-        <span class="bp">cls</span><span class="p">,</span> <span class="n">source</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">handler</span><span class="p">:</span> <span class="n">GetCoreSchemaHandler</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">CoreSchema</span><span class="p">:</span>
-        <span class="n">instance_schema</span> <span class="o">=</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">is_instance_schema</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
-
-        <span class="n">args</span> <span class="o">=</span> <span class="n">get_args</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">args</span><span class="p">:</span>
-            <span class="c1"># replace the type and rely on Pydantic to generate the right schema</span>
-            <span class="c1"># for `Sequence`</span>
-            <span class="n">sequence_t_schema</span> <span class="o">=</span> <span class="n">handler</span><span class="o">.</span><span class="n">generate_schema</span><span class="p">(</span><span class="n">Sequence</span><span class="p">[</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">sequence_t_schema</span> <span class="o">=</span> <span class="n">handler</span><span class="o">.</span><span class="n">generate_schema</span><span class="p">(</span><span class="n">Sequence</span><span class="p">)</span>
-
-        <span class="n">non_instance_schema</span> <span class="o">=</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">no_info_after_validator_function</span><span class="p">(</span>
-            <span class="n">MySequence</span><span class="p">,</span> <span class="n">sequence_t_schema</span>
-        <span class="p">)</span>
-        <span class="k">return</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">union_schema</span><span class="p">([</span><span class="n">instance_schema</span><span class="p">,</span> <span class="n">non_instance_schema</span><span class="p">])</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">M</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">model_config</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">validate_default</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-
-    <span class="n">s1</span><span class="p">:</span> <span class="n">MySequence</span> <span class="o">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">]</span>
-
-
-<span class="n">m</span> <span class="o">=</span> <span class="n">M</span><span class="p">()</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
-<span class="c1">#&gt; s1=&lt;__main__.MySequence object at 0x0123456789ab&gt;</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">s1</span><span class="o">.</span><span class="n">v</span><span class="p">)</span>
-<span class="c1">#&gt; [3]</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">M</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">s1</span><span class="p">:</span> <span class="n">MySequence</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
-
-
-<span class="n">M</span><span class="p">(</span><span class="n">s1</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">M</span><span class="p">(</span><span class="n">s1</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">])</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    2 validation errors for M</span>
-<span class="sd">    s1.is-instance[MySequence]</span>
-<span class="sd">      Input should be an instance of MySequence [type=is_instance_of, input_value=[&#39;a&#39;], input_type=list]</span>
-<span class="sd">    s1.function-after[MySequence(), json-or-python[json=list[int],python=chain[is-instance[Sequence],function-wrap[sequence_validator()]]]].0</span>
-<span class="sd">      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value=&#39;a&#39;, input_type=str]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-</code></pre></div>
-</div>
-<div class="tabbed-block">
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">TypeVar</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sequence</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_core</span><span class="w"> </span><span class="kn">import</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">core_schema</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing_extensions</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_args</span>

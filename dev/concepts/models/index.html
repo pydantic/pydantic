@@ -3705,7 +3705,7 @@ will avoid unnecessary checks.</p>
 <p>Pydantic dataclasses also support extra data (see the <a href="../dataclasses/#dataclass-config">dataclass configuration</a> section).</p>
 <h2 id="nested-models">Nested models<a class="headerlink" href="#nested-models" title="Permanent link">&para;</a></h2>
 <p>More complex hierarchical data structures can be defined using models themselves as types in annotations.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.8 and above</label><label for="__tabbed_1_2">Python 3.10 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.9 and above</label><label for="__tabbed_1_2">Python 3.10 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span>
@@ -3963,7 +3963,7 @@ will contain information about all of the errors and how they happened.</p>
   Learn more about JSON parsing in the <a href="../json/">JSON</a> section of the docs.</li>
 <li><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_validate_strings"><code>model_validate_strings()</code></a>: this takes a dictionary (can be nested) with string keys and values and validates the data in JSON mode so that said strings can be coerced into the correct types.</li>
 </ul>
-<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.8 and above</label><label for="__tabbed_2_2">Python 3.10 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.9 and above</label><label for="__tabbed_2_2">Python 3.10 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
@@ -4679,6 +4679,9 @@ types like <a class="autorefs autorefs-external" href="https://docs.python.org/3
 or a default value (as per <a href="https://peps.python.org/pep-0696/">PEP 696</a>) is being used, then the default type or constraints
 will be used for both validation and serialization if the type variable is not parametrized. You can override this behavior
 using <a href="../serialization/#serializeasany-annotation"><code>SerializeAsAny</code></a>:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">Python 3.9 and above</label><label for="__tabbed_5_2">Python 3.13 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Generic</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing_extensions</span><span class="w"> </span><span class="kn">import</span> <span class="n">TypeVar</span>
@@ -4734,6 +4737,66 @@ using <a href="../serialization/#serializeasany-annotation"><code>SerializeAsAny
     <span class="p">},</span>
 <span class="p">}</span>
 </code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Generic</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TypeVar</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">SerializeAsAny</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">ErrorDetails</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">foo</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="n">ErrorDataT</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;ErrorDataT&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">ErrorDetails</span><span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Error</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">Generic</span><span class="p">[</span><span class="n">ErrorDataT</span><span class="p">]):</span>
+    <span class="n">message</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">details</span><span class="p">:</span> <span class="n">ErrorDataT</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">MyErrorDetails</span><span class="p">(</span><span class="n">ErrorDetails</span><span class="p">):</span>
+    <span class="n">bar</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="c1"># serialized using the default&#39;s serializer</span>
+<span class="n">error</span> <span class="o">=</span> <span class="n">Error</span><span class="p">(</span>
+    <span class="n">message</span><span class="o">=</span><span class="s1">&#39;We just had an error&#39;</span><span class="p">,</span>
+    <span class="n">details</span><span class="o">=</span><span class="n">MyErrorDetails</span><span class="p">(</span><span class="n">foo</span><span class="o">=</span><span class="s1">&#39;var&#39;</span><span class="p">,</span> <span class="n">bar</span><span class="o">=</span><span class="s1">&#39;var2&#39;</span><span class="p">),</span>
+<span class="p">)</span>
+<span class="k">assert</span> <span class="n">error</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()</span> <span class="o">==</span> <span class="p">{</span>
+    <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;We just had an error&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;details&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;foo&#39;</span><span class="p">:</span> <span class="s1">&#39;var&#39;</span><span class="p">,</span>
+    <span class="p">},</span>
+<span class="p">}</span>
+<span class="c1"># If `ErrorDataT` was using an upper bound, `bar` would be present in `details`.</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">SerializeAsAnyError</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">Generic</span><span class="p">[</span><span class="n">ErrorDataT</span><span class="p">]):</span>
+    <span class="n">message</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">details</span><span class="p">:</span> <span class="n">SerializeAsAny</span><span class="p">[</span><span class="n">ErrorDataT</span><span class="p">]</span>
+
+
+<span class="c1"># serialized as Any</span>
+<span class="n">error</span> <span class="o">=</span> <span class="n">SerializeAsAnyError</span><span class="p">(</span>
+    <span class="n">message</span><span class="o">=</span><span class="s1">&#39;We just had an error&#39;</span><span class="p">,</span>
+    <span class="n">details</span><span class="o">=</span><span class="n">MyErrorDetails</span><span class="p">(</span><span class="n">foo</span><span class="o">=</span><span class="s1">&#39;var&#39;</span><span class="p">,</span> <span class="n">bar</span><span class="o">=</span><span class="s1">&#39;baz&#39;</span><span class="p">),</span>
+<span class="p">)</span>
+<span class="k">assert</span> <span class="n">error</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()</span> <span class="o">==</span> <span class="p">{</span>
+    <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;We just had an error&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;details&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;foo&#39;</span><span class="p">:</span> <span class="s1">&#39;var&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;bar&#39;</span><span class="p">:</span> <span class="s1">&#39;baz&#39;</span><span class="p">,</span>
+    <span class="p">},</span>
+<span class="p">}</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <h2 id="dynamic-model-creation">Dynamic model creation<a class="headerlink" href="#dynamic-model-creation" title="Permanent link">&para;</a></h2>
 <details class="api">
 <summary>API Documentation</summary>

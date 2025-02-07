@@ -3397,6 +3397,9 @@ This will cause strict-mode validation to be used for that field, even when the 
 <h3 id="using-field-as-an-annotation">Using <code>Field</code> as an annotation<a class="headerlink" href="#using-field-as-an-annotation" title="Permanent link">&para;</a></h3>
 <p>Note that <code>Field(strict=True)</code> (or with any other keyword arguments) can be used as an annotation if necessary, e.g.,
 when working with <code>TypedDict</code>:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.9 and above</label><label for="__tabbed_1_2">Python 3.13 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing_extensions</span><span class="w"> </span><span class="kn">import</span> <span class="n">TypedDict</span>
@@ -3418,6 +3421,32 @@ when working with <code>TypedDict</code>:</p>
 <span class="sd">      Input should be a valid integer [type=int_type, input_value=&#39;1&#39;, input_type=str]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TypedDict</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">Field</span><span class="p">,</span> <span class="n">TypeAdapter</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">MyDict</span><span class="p">(</span><span class="n">TypedDict</span><span class="p">):</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">)]</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">MyDict</span><span class="p">)</span><span class="o">.</span><span class="n">validate_python</span><span class="p">({</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="s1">&#39;1&#39;</span><span class="p">})</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for typed-dict</span>
+<span class="sd">    x</span>
+<span class="sd">      Input should be a valid integer [type=int_type, input_value=&#39;1&#39;, input_type=str]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <h2 id="strict-mode-with-annotated-strict">Strict mode with <code>Annotated[..., Strict()]</code><a class="headerlink" href="#strict-mode-with-annotated-strict" title="Permanent link">&para;</a></h2>
 <details class="api">
 <summary>API Documentation</summary>
@@ -3556,6 +3585,9 @@ you should use the <code>config</code> keyword argument to the <code>@pydantic.d
 with the <a href="#strict-mode-with-annotated-strict"><code>pydantic.types.Strict</code> annotation</a>.</p>
 <p>However, if this is <em>not</em> possible (e.g., when working with third-party types), you can set the config that Pydantic
 should use for the type by setting the <code>__pydantic_config__</code> attribute on the type:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.9 and above</label><label for="__tabbed_2_2">Python 3.13 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing_extensions</span><span class="w"> </span><span class="kn">import</span> <span class="n">TypedDict</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">TypeAdapter</span><span class="p">,</span> <span class="n">ValidationError</span>
@@ -3588,6 +3620,43 @@ should use for the type by setting the <code>__pydantic_config__</code> attribut
 <span class="sd">      Input should be a valid integer [type=int_type, input_value=&#39;2&#39;, input_type=str]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TypedDict</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">TypeAdapter</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Inner</span><span class="p">(</span><span class="n">TypedDict</span><span class="p">):</span>
+    <span class="n">y</span><span class="p">:</span> <span class="nb">int</span>
+
+
+<span class="n">Inner</span><span class="o">.</span><span class="n">__pydantic_config__</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Outer</span><span class="p">(</span><span class="n">TypedDict</span><span class="p">):</span>
+    <span class="n">x</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">inner</span><span class="p">:</span> <span class="n">Inner</span>
+
+
+<span class="n">adapter</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">Outer</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">adapter</span><span class="o">.</span><span class="n">validate_python</span><span class="p">({</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="s1">&#39;inner&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">}}))</span>
+<span class="c1">#&gt; {&#39;x&#39;: 1, &#39;inner&#39;: {&#39;y&#39;: 2}}</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">adapter</span><span class="o">.</span><span class="n">validate_python</span><span class="p">({</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="s1">&#39;inner&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="s1">&#39;2&#39;</span><span class="p">}})</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for typed-dict</span>
+<span class="sd">    inner.y</span>
+<span class="sd">      Input should be a valid integer [type=int_type, input_value=&#39;2&#39;, input_type=str]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <h3 id="typeadapter"><code>TypeAdapter</code><a class="headerlink" href="#typeadapter" title="Permanent link">&para;</a></h3>
 <p>You can also get strict mode through the use of the config keyword argument to the
 <a href="../../api/type_adapter/"><code>TypeAdapter</code></a> class:</p>

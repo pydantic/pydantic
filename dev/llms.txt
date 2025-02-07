@@ -12,7 +12,7 @@ Pydantic
 
 [![license](https://img.shields.io/github/license/pydantic/pydantic.svg)](https://github.com/pydantic/pydantic/blob/main/LICENSE)
 
-Documentation for development version: [53a86ed](https://github.com/pydantic/pydantic/commit/53a86ed3582882f632464f269e09349c8e8f112d).
+Documentation for development version: [398b4bb](https://github.com/pydantic/pydantic/commit/398b4bbeccc1acaf463595d995490fa93f347f9c).
 
 Pydantic is the most widely used data validation library for Python.
 
@@ -33912,27 +33912,6 @@ print(Model(set_of_ints=['1', '2', '3']).set_of_ints)
 
 
 ```
-from typing import Optional
-
-from pydantic import BaseModel
-
-
-class Model(BaseModel):
-    simple_set: Optional[set] = None
-    set_of_ints: Optional[set[int]] = None
-
-
-print(Model(simple_set={'1', '2', '3'}).simple_set)
-#> {'1', '2', '3'}
-print(Model(simple_set=['1', '2', '3']).simple_set)
-#> {'1', '2', '3'}
-print(Model(set_of_ints=['1', '2', '3']).set_of_ints)
-#> {1, 2, 3}
-
-```
-
-
-```
 from pydantic import BaseModel
 
 
@@ -33970,32 +33949,6 @@ from pydantic import BaseModel
 class Model(BaseModel):
     simple_frozenset: Optional[frozenset] = None
     frozenset_of_ints: Optional[FrozenSet[int]] = None
-
-
-m1 = Model(simple_frozenset=['1', '2', '3'])
-print(type(m1.simple_frozenset))
-#> <class 'frozenset'>
-print(sorted(m1.simple_frozenset))
-#> ['1', '2', '3']
-
-m2 = Model(frozenset_of_ints=['1', '2', '3'])
-print(type(m2.frozenset_of_ints))
-#> <class 'frozenset'>
-print(sorted(m2.frozenset_of_ints))
-#> [1, 2, 3]
-
-```
-
-
-```
-from typing import Optional
-
-from pydantic import BaseModel
-
-
-class Model(BaseModel):
-    simple_frozenset: Optional[frozenset] = None
-    frozenset_of_ints: Optional[frozenset[int]] = None
 
 
 m1 = Model(simple_frozenset=['1', '2', '3'])
@@ -34340,6 +34293,37 @@ except ValidationError as e:
 
 ```
 
+
+```
+from typing import TypedDict
+
+from pydantic import TypeAdapter, ValidationError
+
+
+class User(TypedDict):
+    name: str
+    id: int
+
+
+ta = TypeAdapter(User)
+
+print(ta.validate_python({'name': 'foo', 'id': 1}))
+#> {'name': 'foo', 'id': 1}
+
+try:
+    ta.validate_python({'name': 'foo'})
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for typed-dict
+    id
+      Field required [type=missing, input_value={'name': 'foo'}, input_type=dict]
+    """
+
+```
+
+
+
 You can define `__pydantic_config__` to change the model inherited from `TypedDict`.
 See the `ConfigDict` API reference for more details.
 
@@ -34417,6 +34401,76 @@ except ValidationError as e:
 
 ```
 from typing_extensions import TypedDict
+
+from pydantic import ConfigDict, TypeAdapter, ValidationError
+
+
+# `total=False` means keys are non-required
+class UserIdentity(TypedDict, total=False):
+    name: str | None
+    surname: str
+
+
+class User(TypedDict):
+    __pydantic_config__ = ConfigDict(extra='forbid')
+
+    identity: UserIdentity
+    age: int
+
+
+ta = TypeAdapter(User)
+
+print(
+    ta.validate_python(
+        {'identity': {'name': 'Smith', 'surname': 'John'}, 'age': 37}
+    )
+)
+#> {'identity': {'name': 'Smith', 'surname': 'John'}, 'age': 37}
+
+print(
+    ta.validate_python(
+        {'identity': {'name': None, 'surname': 'John'}, 'age': 37}
+    )
+)
+#> {'identity': {'name': None, 'surname': 'John'}, 'age': 37}
+
+print(ta.validate_python({'identity': {}, 'age': 37}))
+#> {'identity': {}, 'age': 37}
+
+
+try:
+    ta.validate_python(
+        {'identity': {'name': ['Smith'], 'surname': 'John'}, 'age': 24}
+    )
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for typed-dict
+    identity.name
+      Input should be a valid string [type=string_type, input_value=['Smith'], input_type=list]
+    """
+
+try:
+    ta.validate_python(
+        {
+            'identity': {'name': 'Smith', 'surname': 'John'},
+            'age': '37',
+            'email': 'john.smith@me.com',
+        }
+    )
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for typed-dict
+    email
+      Extra inputs are not permitted [type=extra_forbidden, input_value='john.smith@me.com', input_type=str]
+    """
+
+```
+
+
+```
+from typing import TypedDict
 
 from pydantic import ConfigDict, TypeAdapter, ValidationError
 
@@ -34691,50 +34745,6 @@ As a result, Pydantic raises a `ValidationError` if you attempt to pass a `str` 
 
 ```
 from typing import Optional, Sequence
-
-from pydantic import BaseModel, ValidationError
-
-
-class Model(BaseModel):
-    sequence_of_strs: Optional[Sequence[str]] = None
-    sequence_of_bytes: Optional[Sequence[bytes]] = None
-
-
-print(Model(sequence_of_strs=['a', 'bc']).sequence_of_strs)
-#> ['a', 'bc']
-print(Model(sequence_of_strs=('a', 'bc')).sequence_of_strs)
-#> ('a', 'bc')
-print(Model(sequence_of_bytes=[b'a', b'bc']).sequence_of_bytes)
-#> [b'a', b'bc']
-print(Model(sequence_of_bytes=(b'a', b'bc')).sequence_of_bytes)
-#> (b'a', b'bc')
-
-
-try:
-    Model(sequence_of_strs='abc')
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for Model
-    sequence_of_strs
-      'str' instances are not allowed as a Sequence value [type=sequence_str, input_value='abc', input_type=str]
-    """
-try:
-    Model(sequence_of_bytes=b'abc')
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for Model
-    sequence_of_bytes
-      'bytes' instances are not allowed as a Sequence value [type=sequence_str, input_value=b'abc', input_type=bytes]
-    """
-
-```
-
-
-```
-from typing import Optional
-from collections.abc import Sequence
 
 from pydantic import BaseModel, ValidationError
 
@@ -43599,6 +43609,40 @@ print(v)
 1. This will pass validation as expected although the last field will be omitted as it failed validation.
 2. This will also pass validation since the binary representation of the JSON data passed to pydantic-core is indistinguishable from the previous case.
 
+```
+from typing import Annotated
+
+from annotated_types import MinLen
+from typing import TypedDict
+
+from pydantic import TypeAdapter
+
+
+class Foobar(TypedDict, total=False):
+    a: int
+    b: Annotated[str, MinLen(5)]
+
+
+ta = TypeAdapter(Foobar)
+
+v = ta.validate_json(
+    '{"a": 1, "b": "12', experimental_allow_partial=True  # (1)!
+)
+print(v)
+#> {'a': 1}
+
+v = ta.validate_json(
+    '{"a": 1, "b": "12"}', experimental_allow_partial=True  # (2)!
+)
+print(v)
+#> {'a': 1}
+
+```
+
+1. This will pass validation as expected although the last field will be omitted as it failed validation.
+2. This will also pass validation since the binary representation of the JSON data passed to pydantic-core is indistinguishable from the previous case.
+
+
 #### Any error in the last field of the input will be ignored
 
 As described [above](#2-ignore-errors-in-last), many errors can result from truncating the input. Rather than trying to specifically ignore errors that could result from truncation, Pydantic ignores all errors in the last element of the input in partial validation mode.
@@ -48600,6 +48644,67 @@ assert error.model_dump() == {
 
 ```
 
+
+```
+from typing import Generic
+
+from typing import TypeVar
+
+from pydantic import BaseModel, SerializeAsAny
+
+
+class ErrorDetails(BaseModel):
+    foo: str
+
+
+ErrorDataT = TypeVar('ErrorDataT', default=ErrorDetails)
+
+
+class Error(BaseModel, Generic[ErrorDataT]):
+    message: str
+    details: ErrorDataT
+
+
+class MyErrorDetails(ErrorDetails):
+    bar: str
+
+
+# serialized using the default's serializer
+error = Error(
+    message='We just had an error',
+    details=MyErrorDetails(foo='var', bar='var2'),
+)
+assert error.model_dump() == {
+    'message': 'We just had an error',
+    'details': {
+        'foo': 'var',
+    },
+}
+# If `ErrorDataT` was using an upper bound, `bar` would be present in `details`.
+
+
+class SerializeAsAnyError(BaseModel, Generic[ErrorDataT]):
+    message: str
+    details: SerializeAsAny[ErrorDataT]
+
+
+# serialized as Any
+error = SerializeAsAnyError(
+    message='We just had an error',
+    details=MyErrorDetails(foo='var', bar='baz'),
+)
+assert error.model_dump() == {
+    'message': 'We just had an error',
+    'details': {
+        'foo': 'var',
+        'bar': 'baz',
+    },
+}
+
+```
+
+
+
 Dynamic model creation
 ----------------------
 
@@ -52954,6 +53059,33 @@ except ValidationError as exc:
 
 ```
 
+
+```
+from typing import Annotated
+
+from typing import TypedDict
+
+from pydantic import Field, TypeAdapter, ValidationError
+
+
+class MyDict(TypedDict):
+    x: Annotated[int, Field(strict=True)]
+
+
+try:
+    TypeAdapter(MyDict).validate_python({'x': '1'})
+except ValidationError as exc:
+    print(exc)
+    """
+    1 validation error for typed-dict
+    x
+      Input should be a valid integer [type=int_type, input_value='1', input_type=str]
+    """
+
+```
+
+
+
 Strict mode with `Annotated[..., Strict()]`
 -------------------------------------------
 
@@ -53156,6 +53288,45 @@ except ValidationError as exc:
     """
 
 ```
+
+
+```
+from typing import TypedDict
+
+from pydantic import ConfigDict, TypeAdapter, ValidationError
+
+
+class Inner(TypedDict):
+    y: int
+
+
+Inner.__pydantic_config__ = ConfigDict(strict=True)
+
+
+class Outer(TypedDict):
+    x: int
+    inner: Inner
+
+
+adapter = TypeAdapter(Outer)
+print(adapter.validate_python({'x': '1', 'inner': {'y': 2}}))
+#> {'x': 1, 'inner': {'y': 2}}
+
+
+try:
+    adapter.validate_python({'x': '1', 'inner': {'y': '2'}})
+except ValidationError as exc:
+    print(exc)
+    """
+    1 validation error for typed-dict
+    inner.y
+      Input should be a valid integer [type=int_type, input_value='2', input_type=str]
+    """
+
+```
+
+
+
 ### `TypeAdapter`
 
 You can also get strict mode through the use of the config keyword argument to the
@@ -53251,6 +53422,43 @@ print(repr(user_list_adapter.dump_json(user_list)))
 #> b'[{"name":"Fred","id":3}]'
 
 ```
+
+
+```
+from typing import TypedDict
+
+from pydantic import TypeAdapter, ValidationError
+
+
+class User(TypedDict):
+    name: str
+    id: int
+
+
+user_list_adapter = TypeAdapter(list[User])
+user_list = user_list_adapter.validate_python([{'name': 'Fred', 'id': '3'}])
+print(repr(user_list))
+#> [{'name': 'Fred', 'id': 3}]
+
+try:
+    user_list_adapter.validate_python(
+        [{'name': 'Fred', 'id': 'wrong', 'other': 'no'}]
+    )
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for list[typed-dict]
+    0.id
+      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='wrong', input_type=str]
+    """
+
+print(repr(user_list_adapter.dump_json(user_list)))
+#> b'[{"name":"Fred","id":3}]'
+
+```
+
+
+
 
 `dump_json` returns `bytes`
 
@@ -54366,81 +54574,6 @@ The same idea can be applied to create generic container types, like a custom `S
 
 ```
 from typing import Any, Sequence, TypeVar
-
-from pydantic_core import ValidationError, core_schema
-from typing_extensions import get_args
-
-from pydantic import BaseModel, GetCoreSchemaHandler
-
-T = TypeVar('T')
-
-
-class MySequence(Sequence[T]):
-    def __init__(self, v: Sequence[T]):
-        self.v = v
-
-    def __getitem__(self, i):
-        return self.v[i]
-
-    def __len__(self):
-        return len(self.v)
-
-    @classmethod
-    def __get_pydantic_core_schema__(
-        cls, source: Any, handler: GetCoreSchemaHandler
-    ) -> core_schema.CoreSchema:
-        instance_schema = core_schema.is_instance_schema(cls)
-
-        args = get_args(source)
-        if args:
-            # replace the type and rely on Pydantic to generate the right schema
-            # for `Sequence`
-            sequence_t_schema = handler.generate_schema(Sequence[args[0]])
-        else:
-            sequence_t_schema = handler.generate_schema(Sequence)
-
-        non_instance_schema = core_schema.no_info_after_validator_function(
-            MySequence, sequence_t_schema
-        )
-        return core_schema.union_schema([instance_schema, non_instance_schema])
-
-
-class M(BaseModel):
-    model_config = dict(validate_default=True)
-
-    s1: MySequence = [3]
-
-
-m = M()
-print(m)
-#> s1=<__main__.MySequence object at 0x0123456789ab>
-print(m.s1.v)
-#> [3]
-
-
-class M(BaseModel):
-    s1: MySequence[int]
-
-
-M(s1=[1])
-try:
-    M(s1=['a'])
-except ValidationError as exc:
-    print(exc)
-    """
-    2 validation errors for M
-    s1.is-instance[MySequence]
-      Input should be an instance of MySequence [type=is_instance_of, input_value=['a'], input_type=list]
-    s1.function-after[MySequence(), json-or-python[json=list[int],python=chain[is-instance[Sequence],function-wrap[sequence_validator()]]]].0
-      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='a', input_type=str]
-    """
-
-```
-
-
-```
-from typing import Any, TypeVar
-from collections.abc import Sequence
 
 from pydantic_core import ValidationError, core_schema
 from typing_extensions import get_args
@@ -58690,6 +58823,26 @@ except PydanticUserError as exc_info:
 
 ```
 
+
+```
+from typing import TypedDict
+
+from pydantic import ConfigDict, PydanticUserError, TypeAdapter
+
+
+class MyTypedDict(TypedDict):
+    x: int
+
+
+try:
+    TypeAdapter(MyTypedDict, config=ConfigDict(strict=True))
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'type-adapter-config-unused'
+
+```
+
+
+
 Instead you'll need to subclass the type and override or set the config on it:
 
 ```
@@ -58708,6 +58861,26 @@ class MyTypedDict(TypedDict):
 TypeAdapter(MyTypedDict)  # ok
 
 ```
+
+
+```
+from typing import TypedDict
+
+from pydantic import ConfigDict, TypeAdapter
+
+
+class MyTypedDict(TypedDict):
+    x: int
+
+    # or `model_config = ...` for BaseModel
+    __pydantic_config__ = ConfigDict(strict=True)
+
+
+TypeAdapter(MyTypedDict)  # ok
+
+```
+
+
 
 Cannot specify `model_config['extra']` with `RootModel`
 -------------------------------------------------------
@@ -59044,6 +59217,28 @@ except PydanticUserError as exc_info:
 ```
 from typing_extensions import TypedDict
 from typing import Unpack
+
+from pydantic import PydanticUserError, validate_call
+
+
+class TD(TypedDict):
+    a: int
+
+
+try:
+
+    @validate_call
+    def func(a: int, **kwargs: Unpack[TD]):
+        pass
+
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'overlapping-unpack-typed-dict'
+
+```
+
+
+```
+from typing import TypedDict, Unpack
 
 from pydantic import PydanticUserError, validate_call
 
