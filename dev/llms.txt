@@ -12,7 +12,7 @@ Pydantic
 
 [![license](https://img.shields.io/github/license/pydantic/pydantic.svg)](https://github.com/pydantic/pydantic/blob/main/LICENSE)
 
-Documentation for development version: [bf61067](https://github.com/pydantic/pydantic/commit/bf610677638acd58488d69209ba1d787d471e010).
+Documentation for development version: [61feb99](https://github.com/pydantic/pydantic/commit/61feb9981777a0c2c10713bba05cdc8eaca7ba64).
 
 Pydantic is the most widely used data validation library for Python.
 
@@ -7082,6 +7082,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         exclude_none: bool = False,
         round_trip: bool = False,
         warnings: bool | Literal['none', 'warn', 'error'] = True,
+        fallback: Callable[[Any], Any] | None = None,
         serialize_as_any: bool = False,
     ) -> dict[str, Any]:
         """!!! abstract "Usage Documentation"
@@ -7103,6 +7104,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             round_trip: If True, dumped values should be valid as input for non-idempotent types such as Json[T].
             warnings: How to handle serialization errors. False/"none" ignores them, True/"warn" logs errors,
                 "error" raises a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError].
+            fallback: A function to call when an unknown value is encountered. If not provided,
+                a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError] error is raised.
             serialize_as_any: Whether to serialize fields with duck-typing serialization behavior.
 
         Returns:
@@ -7120,6 +7123,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             exclude_none=exclude_none,
             round_trip=round_trip,
             warnings=warnings,
+            fallback=fallback,
             serialize_as_any=serialize_as_any,
         )
 
@@ -7136,6 +7140,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         exclude_none: bool = False,
         round_trip: bool = False,
         warnings: bool | Literal['none', 'warn', 'error'] = True,
+        fallback: Callable[[Any], Any] | None = None,
         serialize_as_any: bool = False,
     ) -> str:
         """!!! abstract "Usage Documentation"
@@ -7155,6 +7160,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             round_trip: If True, dumped values should be valid as input for non-idempotent types such as Json[T].
             warnings: How to handle serialization errors. False/"none" ignores them, True/"warn" logs errors,
                 "error" raises a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError].
+            fallback: A function to call when an unknown value is encountered. If not provided,
+                a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError] error is raised.
             serialize_as_any: Whether to serialize fields with duck-typing serialization behavior.
 
         Returns:
@@ -7172,6 +7179,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             exclude_none=exclude_none,
             round_trip=round_trip,
             warnings=warnings,
+            fallback=fallback,
             serialize_as_any=serialize_as_any,
         ).decode()
 
@@ -8596,6 +8604,7 @@ model_dump(
     warnings: (
         bool | Literal["none", "warn", "error"]
     ) = True,
+    fallback: Callable[[Any], Any] | None = None,
     serialize_as_any: bool = False
 ) -> dict[str, Any]
 
@@ -8621,6 +8630,7 @@ Parameters:
 | `exclude_none` | `bool` | Whether to exclude fields that have a value of `None`. | `False` |
 | `round_trip` | `bool` | If True, dumped values should be valid as input for non-idempotent types such as Json[T]. | `False` |
 | `warnings` | `bool | Literal['none', 'warn', 'error']` | How to handle serialization errors. False/"none" ignores them, True/"warn" logs errors, "error" raises a `PydanticSerializationError`. | `True` |
+| `fallback` | `Callable[[Any], Any] | None` | A function to call when an unknown value is encountered. If not provided, a `PydanticSerializationError` error is raised. | `None` |
 | `serialize_as_any` | `bool` | Whether to serialize fields with duck-typing serialization behavior. | `False` |
 
 Returns:
@@ -8644,6 +8654,7 @@ def model_dump(
     exclude_none: bool = False,
     round_trip: bool = False,
     warnings: bool | Literal['none', 'warn', 'error'] = True,
+    fallback: Callable[[Any], Any] | None = None,
     serialize_as_any: bool = False,
 ) -> dict[str, Any]:
     """!!! abstract "Usage Documentation"
@@ -8665,6 +8676,8 @@ def model_dump(
         round_trip: If True, dumped values should be valid as input for non-idempotent types such as Json[T].
         warnings: How to handle serialization errors. False/"none" ignores them, True/"warn" logs errors,
             "error" raises a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError].
+        fallback: A function to call when an unknown value is encountered. If not provided,
+            a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError] error is raised.
         serialize_as_any: Whether to serialize fields with duck-typing serialization behavior.
 
     Returns:
@@ -8682,6 +8695,7 @@ def model_dump(
         exclude_none=exclude_none,
         round_trip=round_trip,
         warnings=warnings,
+        fallback=fallback,
         serialize_as_any=serialize_as_any,
     )
 
@@ -8707,6 +8721,7 @@ model_dump_json(
     warnings: (
         bool | Literal["none", "warn", "error"]
     ) = True,
+    fallback: Callable[[Any], Any] | None = None,
     serialize_as_any: bool = False
 ) -> str
 
@@ -8732,6 +8747,7 @@ Parameters:
 | `exclude_none` | `bool` | Whether to exclude fields that have a value of `None`. | `False` |
 | `round_trip` | `bool` | If True, dumped values should be valid as input for non-idempotent types such as Json[T]. | `False` |
 | `warnings` | `bool | Literal['none', 'warn', 'error']` | How to handle serialization errors. False/"none" ignores them, True/"warn" logs errors, "error" raises a `PydanticSerializationError`. | `True` |
+| `fallback` | `Callable[[Any], Any] | None` | A function to call when an unknown value is encountered. If not provided, a `PydanticSerializationError` error is raised. | `None` |
 | `serialize_as_any` | `bool` | Whether to serialize fields with duck-typing serialization behavior. | `False` |
 
 Returns:
@@ -8755,6 +8771,7 @@ def model_dump_json(
     exclude_none: bool = False,
     round_trip: bool = False,
     warnings: bool | Literal['none', 'warn', 'error'] = True,
+    fallback: Callable[[Any], Any] | None = None,
     serialize_as_any: bool = False,
 ) -> str:
     """!!! abstract "Usage Documentation"
@@ -8774,6 +8791,8 @@ def model_dump_json(
         round_trip: If True, dumped values should be valid as input for non-idempotent types such as Json[T].
         warnings: How to handle serialization errors. False/"none" ignores them, True/"warn" logs errors,
             "error" raises a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError].
+        fallback: A function to call when an unknown value is encountered. If not provided,
+            a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError] error is raised.
         serialize_as_any: Whether to serialize fields with duck-typing serialization behavior.
 
     Returns:
@@ -8791,6 +8810,7 @@ def model_dump_json(
         exclude_none=exclude_none,
         round_trip=round_trip,
         warnings=warnings,
+        fallback=fallback,
         serialize_as_any=serialize_as_any,
     ).decode()
 
@@ -35552,6 +35572,7 @@ dump_python(
     warnings: (
         bool | Literal["none", "warn", "error"]
     ) = True,
+    fallback: Callable[[Any], Any] | None = None,
     serialize_as_any: bool = False,
     context: dict[str, Any] | None = None,
 ) -> Any
@@ -35574,6 +35595,7 @@ Parameters:
 | `exclude_none` | `bool` | Whether to exclude fields with None values. | `False` |
 | `round_trip` | `bool` | Whether to output the serialized data in a way that is compatible with deserialization. | `False` |
 | `warnings` | `bool | Literal['none', 'warn', 'error']` | How to handle serialization errors. False/"none" ignores them, True/"warn" logs errors, "error" raises a `PydanticSerializationError`. | `True` |
+| `fallback` | `Callable[[Any], Any] | None` | A function to call when an unknown value is encountered. If not provided, a `PydanticSerializationError` error is raised. | `None` |
 | `serialize_as_any` | `bool` | Whether to serialize fields with duck-typing serialization behavior. | `False` |
 | `context` | `dict[str, Any] | None` | Additional context to pass to the serializer. | `None` |
 
@@ -35599,6 +35621,7 @@ def dump_python(
     exclude_none: bool = False,
     round_trip: bool = False,
     warnings: bool | Literal['none', 'warn', 'error'] = True,
+    fallback: Callable[[Any], Any] | None = None,
     serialize_as_any: bool = False,
     context: dict[str, Any] | None = None,
 ) -> Any:
@@ -35616,6 +35639,8 @@ def dump_python(
         round_trip: Whether to output the serialized data in a way that is compatible with deserialization.
         warnings: How to handle serialization errors. False/"none" ignores them, True/"warn" logs errors,
             "error" raises a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError].
+        fallback: A function to call when an unknown value is encountered. If not provided,
+            a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError] error is raised.
         serialize_as_any: Whether to serialize fields with duck-typing serialization behavior.
         context: Additional context to pass to the serializer.
 
@@ -35633,6 +35658,7 @@ def dump_python(
         exclude_none=exclude_none,
         round_trip=round_trip,
         warnings=warnings,
+        fallback=fallback,
         serialize_as_any=serialize_as_any,
         context=context,
     )
@@ -35661,6 +35687,7 @@ dump_json(
     warnings: (
         bool | Literal["none", "warn", "error"]
     ) = True,
+    fallback: Callable[[Any], Any] | None = None,
     serialize_as_any: bool = False,
     context: dict[str, Any] | None = None,
 ) -> bytes
@@ -35687,6 +35714,7 @@ Parameters:
 | `exclude_none` | `bool` | Whether to exclude fields with a value of `None`. | `False` |
 | `round_trip` | `bool` | Whether to serialize and deserialize the instance to ensure round-tripping. | `False` |
 | `warnings` | `bool | Literal['none', 'warn', 'error']` | How to handle serialization errors. False/"none" ignores them, True/"warn" logs errors, "error" raises a `PydanticSerializationError`. | `True` |
+| `fallback` | `Callable[[Any], Any] | None` | A function to call when an unknown value is encountered. If not provided, a `PydanticSerializationError` error is raised. | `None` |
 | `serialize_as_any` | `bool` | Whether to serialize fields with duck-typing serialization behavior. | `False` |
 | `context` | `dict[str, Any] | None` | Additional context to pass to the serializer. | `None` |
 
@@ -35712,6 +35740,7 @@ def dump_json(
     exclude_none: bool = False,
     round_trip: bool = False,
     warnings: bool | Literal['none', 'warn', 'error'] = True,
+    fallback: Callable[[Any], Any] | None = None,
     serialize_as_any: bool = False,
     context: dict[str, Any] | None = None,
 ) -> bytes:
@@ -35732,6 +35761,8 @@ def dump_json(
         round_trip: Whether to serialize and deserialize the instance to ensure round-tripping.
         warnings: How to handle serialization errors. False/"none" ignores them, True/"warn" logs errors,
             "error" raises a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError].
+        fallback: A function to call when an unknown value is encountered. If not provided,
+            a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError] error is raised.
         serialize_as_any: Whether to serialize fields with duck-typing serialization behavior.
         context: Additional context to pass to the serializer.
 
@@ -35749,6 +35780,7 @@ def dump_json(
         exclude_none=exclude_none,
         round_trip=round_trip,
         warnings=warnings,
+        fallback=fallback,
         serialize_as_any=serialize_as_any,
         context=context,
     )
