@@ -12,7 +12,7 @@ Pydantic
 
 [![license](https://img.shields.io/github/license/pydantic/pydantic.svg)](https://github.com/pydantic/pydantic/blob/main/LICENSE)
 
-Documentation for development version: [deb9f96](https://github.com/pydantic/pydantic/commit/deb9f96c6f36bc8f1f34c1ba9d8df5e61a49f79e).
+Documentation for development version: [931d217](https://github.com/pydantic/pydantic/commit/931d217ea8b5c1a4f0855be7c6cf540e7c669516).
 
 Pydantic is the most widely used data validation library for Python.
 
@@ -6047,58 +6047,58 @@ At the time of writing there are 466,400 repositories on GitHub and 8,119 packag
 
 Some notable libraries that depend on Pydantic:
 
-* [`huggingface/transformers`](https://github.com/huggingface/transformers) 107,475 stars
-* [`tiangolo/fastapi`](https://github.com/tiangolo/fastapi) 60,355 stars
-* [`hwchase17/langchain`](https://github.com/hwchase17/langchain) 54,514 stars
-* [`apache/airflow`](https://github.com/apache/airflow) 30,955 stars
-* [`microsoft/DeepSpeed`](https://github.com/microsoft/DeepSpeed) 26,908 stars
-* [`ray-project/ray`](https://github.com/ray-project/ray) 26,600 stars
-* [`lm-sys/FastChat`](https://github.com/lm-sys/FastChat) 24,924 stars
-* [`Lightning-AI/lightning`](https://github.com/Lightning-AI/lightning) 24,034 stars
-* [`OpenBB-finance/OpenBBTerminal`](https://github.com/OpenBB-finance/OpenBBTerminal) 22,785 stars
-* [`gradio-app/gradio`](https://github.com/gradio-app/gradio) 19,726 stars
-* [`pola-rs/polars`](https://github.com/pola-rs/polars) 18,587 stars
-* [`mindsdb/mindsdb`](https://github.com/mindsdb/mindsdb) 17,242 stars
-* [`RasaHQ/rasa`](https://github.com/RasaHQ/rasa) 16,695 stars
-* [`mlflow/mlflow`](https://github.com/mlflow/mlflow) 14,780 stars
-* [`heartexlabs/label-studio`](https://github.com/heartexlabs/label-studio) 13,634 stars
-* [`spotDL/spotify-downloader`](https://github.com/spotDL/spotify-downloader) 12,124 stars
-* [`Sanster/lama-cleaner`](https://github.com/Sanster/lama-cleaner) 12,075 stars
-* [`airbytehq/airbyte`](https://github.com/airbytehq/airbyte) 11,174 stars
-* [`openai/evals`](https://github.com/openai/evals) 11,110 stars
-* [`matrix-org/synapse`](https://github.com/matrix-org/synapse) 11,071 stars
-* [`ydataai/ydata-profiling`](https://github.com/ydataai/ydata-profiling) 10,884 stars
-* [`pyodide/pyodide`](https://github.com/pyodide/pyodide) 10,245 stars
-* [`tiangolo/sqlmodel`](https://github.com/tiangolo/sqlmodel) 10,160 stars
-* [`lucidrains/DALLE2-pytorch`](https://github.com/lucidrains/DALLE2-pytorch) 9,916 stars
-* [`pynecone-io/reflex`](https://github.com/pynecone-io/reflex) 9,679 stars
-* [`PaddlePaddle/PaddleNLP`](https://github.com/PaddlePaddle/PaddleNLP) 9,663 stars
-* [`aws/serverless-application-model`](https://github.com/aws/serverless-application-model) 9,061 stars
-* [`modin-project/modin`](https://github.com/modin-project/modin) 8,808 stars
-* [`great-expectations/great_expectations`](https://github.com/great-expectations/great_expectations) 8,613 stars
-* [`dagster-io/dagster`](https://github.com/dagster-io/dagster) 7,908 stars
-* [`NVlabs/SPADE`](https://github.com/NVlabs/SPADE) 7,407 stars
-* [`brycedrennan/imaginAIry`](https://github.com/brycedrennan/imaginAIry) 7,217 stars
-* [`chroma-core/chroma`](https://github.com/chroma-core/chroma) 7,127 stars
-* [`lucidrains/imagen-pytorch`](https://github.com/lucidrains/imagen-pytorch) 7,089 stars
-* [`sqlfluff/sqlfluff`](https://github.com/sqlfluff/sqlfluff) 6,278 stars
-* [`deeppavlov/DeepPavlov`](https://github.com/deeppavlov/DeepPavlov) 6,278 stars
-* [`autogluon/autogluon`](https://github.com/autogluon/autogluon) 5,966 stars
-* [`bridgecrewio/checkov`](https://github.com/bridgecrewio/checkov) 5,747 stars
-* [`bentoml/BentoML`](https://github.com/bentoml/BentoML) 5,275 stars
-* [`replicate/cog`](https://github.com/replicate/cog) 5,089 stars
-* [`vitalik/django-ninja`](https://github.com/vitalik/django-ninja) 4,623 stars
-* [`apache/iceberg`](https://github.com/apache/iceberg) 4,479 stars
-* [`jina-ai/discoart`](https://github.com/jina-ai/discoart) 3,820 stars
-* [`embedchain/embedchain`](https://github.com/embedchain/embedchain) 3,493 stars
-* [`skypilot-org/skypilot`](https://github.com/skypilot-org/skypilot) 3,052 stars
-* [`PrefectHQ/marvin`](https://github.com/PrefectHQ/marvin) 2,985 stars
-* [`microsoft/FLAML`](https://github.com/microsoft/FLAML) 2,569 stars
-* [`docarray/docarray`](https://github.com/docarray/docarray) 2,353 stars
-* [`aws-powertools/powertools-lambda-python`](https://github.com/aws-powertools/powertools-lambda-python) 2,198 stars
-* [`NVIDIA/NeMo-Guardrails`](https://github.com/NVIDIA/NeMo-Guardrails) 1,830 stars
-* [`roman-right/beanie`](https://github.com/roman-right/beanie) 1,299 stars
-* [`art049/odmantic`](https://github.com/art049/odmantic) 807 stars
+* [`huggingface/transformers`](https://github.com/huggingface/transformers) 138,570 stars
+* [`hwchase17/langchain`](https://github.com/hwchase17/langchain) 99,542 stars
+* [`tiangolo/fastapi`](https://github.com/tiangolo/fastapi) 80,497 stars
+* [`apache/airflow`](https://github.com/apache/airflow) 38,577 stars
+* [`lm-sys/FastChat`](https://github.com/lm-sys/FastChat) 37,650 stars
+* [`microsoft/DeepSpeed`](https://github.com/microsoft/DeepSpeed) 36,521 stars
+* [`OpenBB-finance/OpenBBTerminal`](https://github.com/OpenBB-finance/OpenBBTerminal) 35,971 stars
+* [`gradio-app/gradio`](https://github.com/gradio-app/gradio) 35,740 stars
+* [`ray-project/ray`](https://github.com/ray-project/ray) 35,176 stars
+* [`pola-rs/polars`](https://github.com/pola-rs/polars) 31,698 stars
+* [`Lightning-AI/lightning`](https://github.com/Lightning-AI/lightning) 28,902 stars
+* [`mindsdb/mindsdb`](https://github.com/mindsdb/mindsdb) 27,141 stars
+* [`embedchain/embedchain`](https://github.com/embedchain/embedchain) 24,379 stars
+* [`pynecone-io/reflex`](https://github.com/pynecone-io/reflex) 21,558 stars
+* [`heartexlabs/label-studio`](https://github.com/heartexlabs/label-studio) 20,571 stars
+* [`Sanster/lama-cleaner`](https://github.com/Sanster/lama-cleaner) 20,313 stars
+* [`mlflow/mlflow`](https://github.com/mlflow/mlflow) 19,393 stars
+* [`RasaHQ/rasa`](https://github.com/RasaHQ/rasa) 19,337 stars
+* [`spotDL/spotify-downloader`](https://github.com/spotDL/spotify-downloader) 18,604 stars
+* [`chroma-core/chroma`](https://github.com/chroma-core/chroma) 17,393 stars
+* [`airbytehq/airbyte`](https://github.com/airbytehq/airbyte) 17,120 stars
+* [`openai/evals`](https://github.com/openai/evals) 15,437 stars
+* [`tiangolo/sqlmodel`](https://github.com/tiangolo/sqlmodel) 15,127 stars
+* [`ydataai/ydata-profiling`](https://github.com/ydataai/ydata-profiling) 12,687 stars
+* [`pyodide/pyodide`](https://github.com/pyodide/pyodide) 12,653 stars
+* [`dagster-io/dagster`](https://github.com/dagster-io/dagster) 12,440 stars
+* [`PaddlePaddle/PaddleNLP`](https://github.com/PaddlePaddle/PaddleNLP) 12,312 stars
+* [`matrix-org/synapse`](https://github.com/matrix-org/synapse) 11,857 stars
+* [`lucidrains/DALLE2-pytorch`](https://github.com/lucidrains/DALLE2-pytorch) 11,207 stars
+* [`great-expectations/great_expectations`](https://github.com/great-expectations/great_expectations) 10,164 stars
+* [`modin-project/modin`](https://github.com/modin-project/modin) 10,002 stars
+* [`aws/serverless-application-model`](https://github.com/aws/serverless-application-model) 9,402 stars
+* [`sqlfluff/sqlfluff`](https://github.com/sqlfluff/sqlfluff) 8,535 stars
+* [`replicate/cog`](https://github.com/replicate/cog) 8,344 stars
+* [`autogluon/autogluon`](https://github.com/autogluon/autogluon) 8,326 stars
+* [`lucidrains/imagen-pytorch`](https://github.com/lucidrains/imagen-pytorch) 8,164 stars
+* [`brycedrennan/imaginAIry`](https://github.com/brycedrennan/imaginAIry) 8,050 stars
+* [`vitalik/django-ninja`](https://github.com/vitalik/django-ninja) 7,685 stars
+* [`NVlabs/SPADE`](https://github.com/NVlabs/SPADE) 7,632 stars
+* [`bridgecrewio/checkov`](https://github.com/bridgecrewio/checkov) 7,340 stars
+* [`bentoml/BentoML`](https://github.com/bentoml/BentoML) 7,322 stars
+* [`skypilot-org/skypilot`](https://github.com/skypilot-org/skypilot) 7,113 stars
+* [`apache/iceberg`](https://github.com/apache/iceberg) 6,853 stars
+* [`deeppavlov/DeepPavlov`](https://github.com/deeppavlov/DeepPavlov) 6,777 stars
+* [`PrefectHQ/marvin`](https://github.com/PrefectHQ/marvin) 5,454 stars
+* [`NVIDIA/NeMo-Guardrails`](https://github.com/NVIDIA/NeMo-Guardrails) 4,383 stars
+* [`microsoft/FLAML`](https://github.com/microsoft/FLAML) 4,035 stars
+* [`jina-ai/discoart`](https://github.com/jina-ai/discoart) 3,846 stars
+* [`docarray/docarray`](https://github.com/docarray/docarray) 3,007 stars
+* [`aws-powertools/powertools-lambda-python`](https://github.com/aws-powertools/powertools-lambda-python) 2,980 stars
+* [`roman-right/beanie`](https://github.com/roman-right/beanie) 2,172 stars
+* [`art049/odmantic`](https://github.com/art049/odmantic) 1,096 stars
 
 More libraries using Pydantic can be found at [`Kludex/awesome-pydantic`](https://github.com/Kludex/awesome-pydantic).
 
