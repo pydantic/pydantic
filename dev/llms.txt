@@ -12,7 +12,7 @@ Pydantic
 
 [![license](https://img.shields.io/github/license/pydantic/pydantic.svg)](https://github.com/pydantic/pydantic/blob/main/LICENSE)
 
-Documentation for development version: [144e426](https://github.com/pydantic/pydantic/commit/144e426fa003ae2cdff979cd6ea2b6229291eb83).
+Documentation for development version: [5aa6d91](https://github.com/pydantic/pydantic/commit/5aa6d914963af4e86d10c0e8e49ce64f98f4d64d).
 
 Pydantic is the most widely used data validation library for Python.
 
@@ -61123,7 +61123,7 @@ except ValidationError as exc:
 `set_item_not_hashable`
 -----------------------
 
-This error is raised when an unhashable value is validated against a `set` or a `frozenset````
+This error is raised when an unhashable value is validated against a `set` or a `frozenset`:
 
 ```
 from pydantic import BaseModel, ValidationError
