@@ -1592,7 +1592,7 @@ except ValidationError as exc:
 
 ## `set_item_not_hashable`
 
-This error is raised when an unhashable value is validated against a [`set`][] or a [`frozenset`][]```
+This error is raised when an unhashable value is validated against a [`set`][] or a [`frozenset`][]:
 
 ```python
 from pydantic import BaseModel, ValidationError
