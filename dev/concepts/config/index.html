@@ -110,7 +110,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#configuration-with-dataclass-from-the-standard-library-or-typeddict" class="md-skip">
+        <a href="#configuration-on-pydantic-models" class="md-skip">
           Skip to content
         </a>
       
@@ -957,9 +957,36 @@ to help you monitor and understand your
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#configuration-with-dataclass-from-the-standard-library-or-typeddict" class="md-nav__link">
+  <a href="#configuration-on-pydantic-models" class="md-nav__link">
     <span class="md-ellipsis">
-      Configuration with dataclass from the standard library or TypedDict
+      Configuration on Pydantic models
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration-on-pydantic-dataclasses" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configuration on Pydantic dataclasses
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration-on-typeadapter" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configuration on TypeAdapter
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration-on-other-supported-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configuration on other supported types
     </span>
   </a>
   
@@ -969,6 +996,15 @@ to help you monitor and understand your
   <a href="#change-behaviour-globally" class="md-nav__link">
     <span class="md-ellipsis">
       Change behaviour globally
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration-propagation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configuration propagation
     </span>
   </a>
   
@@ -2960,9 +2996,36 @@ to help you monitor and understand your
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#configuration-with-dataclass-from-the-standard-library-or-typeddict" class="md-nav__link">
+  <a href="#configuration-on-pydantic-models" class="md-nav__link">
     <span class="md-ellipsis">
-      Configuration with dataclass from the standard library or TypedDict
+      Configuration on Pydantic models
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration-on-pydantic-dataclasses" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configuration on Pydantic dataclasses
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration-on-typeadapter" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configuration on TypeAdapter
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration-on-other-supported-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configuration on other supported types
     </span>
   </a>
   
@@ -2972,6 +3035,15 @@ to help you monitor and understand your
   <a href="#change-behaviour-globally" class="md-nav__link">
     <span class="md-ellipsis">
       Change behaviour globally
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration-propagation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configuration propagation
     </span>
   </a>
   
@@ -2998,69 +3070,69 @@ to help you monitor and understand your
 
   <h1>Configuration</h1>
 
-<p>Behaviour of Pydantic can be controlled via the <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_config"><code>BaseModel.model_config</code></a>,
-and as an argument to <a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic.type_adapter.TypeAdapter"><code>TypeAdapter</code></a>.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Before <strong>v2.0</strong>, the <code>Config</code> class was used. This is still supported, but <strong>deprecated</strong>.</p>
-</div>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
+<p>The behaviour of Pydantic can be controlled via a variety of configuration values, documented
+on the <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict"><code>ConfigDict</code></a> class. This page describes how configuration can be
+specified for Pydantic's supported types.</p>
+<h2 id="configuration-on-pydantic-models">Configuration on Pydantic models<a class="headerlink" href="#configuration-on-pydantic-models" title="Permanent link">&para;</a></h2>
+<p>On Pydantic models, configuration can be specified in two ways:</p>
+<ul>
+<li>
+<p>Using the <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_config"><code>model_config</code></a> class attribute:
+  <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">str_max_length</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">str_max_length</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>  <span class="c1"># (1)!</span>
 
     <span class="n">v</span><span class="p">:</span> <span class="nb">str</span>
 
 
 <span class="k">try</span><span class="p">:</span>
-    <span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">v</span><span class="o">=</span><span class="s1">&#39;x&#39;</span> <span class="o">*</span> <span class="mi">20</span><span class="p">)</span>
+    <span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">v</span><span class="o">=</span><span class="s1">&#39;abcdef&#39;</span><span class="p">)</span>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    1 validation error for Model</span>
 <span class="sd">    v</span>
-<span class="sd">      String should have at most 10 characters [type=string_too_long, input_value=&#39;xxxxxxxxxxxxxxxxxxxx&#39;, input_type=str]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-</code></pre></div>
-<p>Also, you can specify config options as model class kwargs:
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">extra</span><span class="o">=</span><span class="s1">&#39;forbid&#39;</span><span class="p">):</span>  <span class="c1"># (1)!</span>
-    <span class="n">a</span><span class="p">:</span> <span class="nb">str</span>
-
-
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">Model</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="s1">&#39;spam&#39;</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="s1">&#39;oh no&#39;</span><span class="p">)</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    1 validation error for Model</span>
-<span class="sd">    b</span>
-<span class="sd">      Extra inputs are not permitted [type=extra_forbidden, input_value=&#39;oh no&#39;, input_type=str]</span>
+<span class="sd">      String should have at most 5 characters [type=string_too_long, input_value=&#39;abcdef&#39;, input_type=str]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div></p>
 <ol>
-<li>See the <a href="../models/#extra-data">Extra data</a> section for more details.</li>
+<li>A plain dictionary (i.e. <code>{'str_max_length': 5}</code>) can also be used.</li>
 </ol>
-<p>Similarly, if using the <a class="autorefs autorefs-internal" href="../../api/dataclasses/#pydantic.dataclasses"><code>@dataclass</code></a> decorator from Pydantic:
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>In Pydantic V1, the <code>Config</code> class was used. This is still supported, but <strong>deprecated</strong>.</p>
+</div>
+</li>
+<li>
+<p>Using class arguments:
+  <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="n">a</span><span class="p">:</span> <span class="nb">str</span>  <span class="c1"># (1)!</span>
+</code></pre></div></p>
+<ol>
+<li>Unlike the <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_config"><code>model_config</code></a> class attribute,
+   static type checkers will recognize the <code>frozen</code> argument, and so any instance
+   mutation will be flagged as an type checking error.</li>
+</ol>
+</li>
+</ul>
+<h2 id="configuration-on-pydantic-dataclasses">Configuration on Pydantic dataclasses<a class="headerlink" href="#configuration-on-pydantic-dataclasses" title="Permanent link">&para;</a></h2>
+<p><a href="../dataclasses/">Pydantic dataclasses</a> also support configuration (read more in the
+<a href="../dataclasses/#dataclass-config">dedicated section</a>).</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic.dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
 
-<span class="n">config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">str_max_length</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">validate_assignment</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-
-<span class="nd">@dataclass</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">)</span>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="n">ConfigDict</span><span class="p">(</span><span class="n">str_max_length</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">validate_assignment</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">User</span><span class="p">:</span>
-    <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;John Doe&#39;</span>
-    <span class="n">signup_ts</span><span class="p">:</span> <span class="n">datetime</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
 
 
-<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="s1">&#39;42&#39;</span><span class="p">,</span> <span class="n">signup_ts</span><span class="o">=</span><span class="s1">&#39;2032-06-21T12:00&#39;</span><span class="p">)</span>
+<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;John Doe&#39;</span><span class="p">)</span>
 <span class="k">try</span><span class="p">:</span>
     <span class="n">user</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;x&#39;</span> <span class="o">*</span> <span class="mi">20</span>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
@@ -3070,11 +3142,24 @@ and as an argument to <a class="autorefs autorefs-internal" href="../../api/type
 <span class="sd">    name</span>
 <span class="sd">      String should have at most 10 characters [type=string_too_long, input_value=&#39;xxxxxxxxxxxxxxxxxxxx&#39;, input_type=str]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-</code></pre></div></p>
-<h2 id="configuration-with-dataclass-from-the-standard-library-or-typeddict">Configuration with <code>dataclass</code> from the standard library or <code>TypedDict</code><a class="headerlink" href="#configuration-with-dataclass-from-the-standard-library-or-typeddict" title="Permanent link">&para;</a></h2>
-<p>If using the <code>dataclass</code> from the standard library or <code>TypedDict</code>, you should use <code>__pydantic_config__</code> instead.</p>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
+</code></pre></div>
+<h2 id="configuration-on-typeadapter">Configuration on <code>TypeAdapter</code><a class="headerlink" href="#configuration-on-typeadapter" title="Permanent link">&para;</a></h2>
+<p><a href="../type_adapter/">Type adapters</a> (using the <a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic.type_adapter.TypeAdapter"><code>TypeAdapter</code></a> class) support configuration,
+by providing a <code>config</code> argument.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">TypeAdapter</span>
+
+<span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">config</span><span class="o">=</span><span class="n">ConfigDict</span><span class="p">(</span><span class="n">coerce_numbers_to_str</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]))</span>
+<span class="c1">#&gt; [&#39;1&#39;, &#39;2&#39;]</span>
+</code></pre></div>
+<h2 id="configuration-on-other-supported-types">Configuration on other supported types<a class="headerlink" href="#configuration-on-other-supported-types" title="Permanent link">&para;</a></h2>
+<p>If you are using <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/dataclasses.html#module-dataclasses">standard library dataclasses</a> or <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.TypedDict"><code>TypedDict</code></a> classes,
+the configuration can be set in two ways:</p>
+<ul>
+<li>
+<p>Using the <code>__pydantic_config__</code> class attribute:
+  <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConfigDict</span>
 
@@ -3085,10 +3170,12 @@ and as an argument to <a class="autorefs autorefs-internal" href="../../api/type
 
     <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;John Doe&#39;</span>
-    <span class="n">signup_ts</span><span class="p">:</span> <span class="n">datetime</span> <span class="o">=</span> <span class="kc">None</span>
-</code></pre></div>
-<p>Alternatively, the <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.with_config"><code>with_config</code></a> decorator can be used to comply with type checkers.</p>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing_extensions</span><span class="w"> </span><span class="kn">import</span> <span class="n">TypedDict</span>
+</code></pre></div></p>
+</li>
+<li>
+<p>Using the <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.with_config"><code>with_config</code></a> decorator (this avoids static type checking errors with
+  <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.TypedDict"><code>TypedDict</code></a>):
+  <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing_extensions</span><span class="w"> </span><span class="kn">import</span> <span class="n">TypedDict</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">with_config</span>
 
@@ -3096,10 +3183,12 @@ and as an argument to <a class="autorefs autorefs-internal" href="../../api/type
 <span class="nd">@with_config</span><span class="p">(</span><span class="n">ConfigDict</span><span class="p">(</span><span class="n">str_to_lower</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">TypedDict</span><span class="p">):</span>
     <span class="n">x</span><span class="p">:</span> <span class="nb">str</span>
-</code></pre></div>
+</code></pre></div></p>
+</li>
+</ul>
 <h2 id="change-behaviour-globally">Change behaviour globally<a class="headerlink" href="#change-behaviour-globally" title="Permanent link">&para;</a></h2>
-<p>If you wish to change the behaviour of Pydantic globally, you can create your own custom <code>BaseModel</code>
-with custom <code>model_config</code> since the config is inherited:</p>
+<p>If you wish to change the behaviour of Pydantic globally, you can create your own custom parent class
+with a custom configuration, as the configuration is inherited:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
 
 
@@ -3115,12 +3204,12 @@ with custom <code>model_config</code> since the config is inherited:</p>
 <span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
 <span class="c1">#&gt; {&#39;x&#39;: &#39;foo&#39;, &#39;y&#39;: &#39;bar&#39;}</span>
 </code></pre></div>
-<p>If you add a <code>model_config</code> to the <code>Model</code> class, it will <em>merge</em> with the <code>model_config</code> from <code>Parent</code>:</p>
+<p>If you provide configuration to the subclasses, it will be <em>merged</em> with the parent configuration:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Parent</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">extra</span><span class="o">=</span><span class="s1">&#39;allow&#39;</span><span class="p">)</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">extra</span><span class="o">=</span><span class="s1">&#39;allow&#39;</span><span class="p">,</span> <span class="n">str_to_lower</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">Parent</span><span class="p">):</span>
@@ -3132,8 +3221,33 @@ with custom <code>model_config</code> since the config is inherited:</p>
 <span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;FOO&#39;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s1">&#39;bar&#39;</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
 <span class="c1">#&gt; {&#39;x&#39;: &#39;foo&#39;, &#39;y&#39;: &#39;bar&#39;}</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_config</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="o">.</span><span class="n">model_config</span><span class="p">)</span>
 <span class="c1">#&gt; {&#39;extra&#39;: &#39;allow&#39;, &#39;str_to_lower&#39;: True}</span>
+</code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>If your model inherits from multiple bases, Pydantic currently <em>doesn't</em> follow the
+<a href="https://docs.python.org/3/glossary.html#term-method-resolution-order">MRO</a>. For more details, see <a href="https://github.com/pydantic/pydantic/issues/9992">this issue</a>.</p>
+</div>
+<h2 id="configuration-propagation">Configuration propagation<a class="headerlink" href="#configuration-propagation" title="Permanent link">&para;</a></h2>
+<p>Note that when using types that support configuration as field annotations on other types,
+configuration will <em>not</em> be propagated. In the following example, each model has its own
+"configuration boundary":</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Parent</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">user</span><span class="p">:</span> <span class="n">User</span>
+
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">str_max_length</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">Parent</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;John Doe&#39;</span><span class="p">}))</span>
+<span class="c1">#&gt; user=User(name=&#39;John Doe&#39;)</span>
 </code></pre></div>
 
 

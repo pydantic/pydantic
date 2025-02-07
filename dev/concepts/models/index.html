@@ -3525,13 +3525,19 @@ can be useful:</p>
 <li>The <a href="https://mypy.readthedocs.io/en/latest/">mypy documentation</a></li>
 </ul>
 </div>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;Jane Doe&#39;</span>
+
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">str_max_length</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>  <span class="c1"># (1)!</span>
 </code></pre></div>
+<ol>
+<li>Pydantic models support a variety of <a href="../config/">configuration values</a>
+   (see <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict">here</a> for the available configuration values).</li>
+</ol>
 <p>In this example, <code>User</code> is a model with two fields:</p>
 <ul>
 <li><code>id</code>, which is an integer and is required</li>
