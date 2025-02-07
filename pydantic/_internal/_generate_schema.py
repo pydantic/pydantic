@@ -502,6 +502,15 @@ class GenerateSchema:
             except TypeError as e:
                 raise PydanticCustomError('path_type', 'Input is not a valid path') from e
 
+        def ser_path(path: Any, info: core_schema.SerializationInfo) -> str | os.PathLike[Any]:
+            if not isinstance(path, (tp, str)):
+                raise PydanticSerializationUnexpectedValue(
+                    f"Expected `{tp}` but got `{type(path)}` with value `'{path}'` - serialized value may not be as expected."
+                )
+            if info.mode == 'python':
+                return path
+            return str(path)
+
         instance_schema = core_schema.json_or_python_schema(
             json_schema=core_schema.no_info_after_validator_function(path_validator, constrained_schema),
             python_schema=core_schema.is_instance_schema(tp),
@@ -518,7 +527,7 @@ class GenerateSchema:
                 strict=True,
             ),
             strict_schema=instance_schema,
-            serialization=core_schema.to_string_ser_schema(),
+            serialization=core_schema.plain_serializer_function_ser_schema(ser_path, info_arg=True, when_used='always'),
             metadata={'pydantic_js_functions': [lambda source, handler: {**handler(source), 'format': 'path'}]},
         )
         return schema

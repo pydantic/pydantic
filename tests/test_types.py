@@ -3767,6 +3767,20 @@ def test_new_path_validation_success(value, result):
     assert Model(foo=value).foo == result
 
 
+def test_path_union_ser() -> None:
+    class Model(BaseModel):
+        a: Path | list[Path]
+        b: list[Path] | Path
+
+    model = Model(a=Path('potato'), b=Path('potato'))
+    assert model.model_dump() == {'a': Path('potato'), 'b': Path('potato')}
+    assert model.model_dump_json() == '{"a":"potato","b":"potato"}'
+
+    model = Model(a=[Path('potato')], b=[Path('potato')])
+    assert model.model_dump() == {'a': [Path('potato')], 'b': [Path('potato')]}
+    assert model.model_dump_json() == '{"a":["potato"],"b":["potato"]}'
+
+
 def test_number_gt():
     class Model(BaseModel):
         a: conint(gt=-1) = 0
