@@ -12,7 +12,7 @@ Pydantic
 
 [![license](https://img.shields.io/github/license/pydantic/pydantic.svg)](https://github.com/pydantic/pydantic/blob/main/LICENSE)
 
-Documentation for development version: [931d217](https://github.com/pydantic/pydantic/commit/931d217ea8b5c1a4f0855be7c6cf540e7c669516).
+Documentation for development version: [bf61067](https://github.com/pydantic/pydantic/commit/bf610677638acd58488d69209ba1d787d471e010).
 
 Pydantic is the most widely used data validation library for Python.
 
@@ -13472,7 +13472,7 @@ def rebuild_annotation(self) -> Any:
 
 ```
 apply_typevars_map(
-    typevars_map: dict[Any, Any] | None,
+    typevars_map: Mapping[TypeVar, Any] | None,
     globalns: GlobalsNamespace | None = None,
     localns: MappingNamespace | None = None,
 ) -> None
@@ -13489,7 +13489,7 @@ Parameters:
 
 | Name | Type | Description | Default |
 | --- | --- | --- | --- |
-| `typevars_map` | `dict[Any, Any] | None` | A dictionary mapping type variables to their concrete types. | *required* |
+| `typevars_map` | `Mapping[TypeVar, Any] | None` | A dictionary mapping type variables to their concrete types. | *required* |
 | `globalns` | `GlobalsNamespace | None` | The globals namespace to use during type annotation evaluation. | `None` |
 | `localns` | `MappingNamespace | None` | The locals namespace to use during type annotation evaluation. | `None` |
 
@@ -13503,7 +13503,7 @@ Source code in `pydantic/fields.py`
 ```
 def apply_typevars_map(
     self,
-    typevars_map: dict[Any, Any] | None,
+    typevars_map: Mapping[TypeVar, Any] | None,
     globalns: GlobalsNamespace | None = None,
     localns: MappingNamespace | None = None,
 ) -> None:
@@ -17400,11 +17400,13 @@ def dict_schema(self, schema: core_schema.DictSchema) -> JsonSchemaValue:
     # don't give a title to additionalProperties:
     values_schema.pop('title', None)
 
-    if values_schema or keys_pattern is not None:  # don't add additionalProperties if it's empty
+    if values_schema or keys_pattern is not None:
         if keys_pattern is None:
             json_schema['additionalProperties'] = values_schema
         else:
             json_schema['patternProperties'] = {keys_pattern: values_schema}
+    else:  # for `dict[str, Any]`, we allow any key and any value, since `str` is the default key type
+        json_schema['additionalProperties'] = True
 
     if (
         # The len check indicates that constraints are probably present:
