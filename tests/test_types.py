@@ -5869,7 +5869,7 @@ def test_ordered_dict_from_ordered_dict(field_type):
     assert m.od_field is not od_value
 
     assert m.model_json_schema() == {
-        'properties': {'od_field': {'title': 'Od Field', 'type': 'object'}},
+        'properties': {'od_field': {'title': 'Od Field', 'type': 'object', 'additionalProperties': True}},
         'required': ['od_field'],
         'title': 'Model',
         'type': 'object',
@@ -5914,7 +5914,7 @@ def test_ordered_dict_from_dict(field_type):
     assert m.od_field == collections.OrderedDict(od_value)
 
     assert m.model_json_schema() == {
-        'properties': {'od_field': {'title': 'Od Field', 'type': 'object'}},
+        'properties': {'od_field': {'title': 'Od Field', 'type': 'object', 'additionalProperties': True}},
         'required': ['od_field'],
         'title': 'Model',
         'type': 'object',
