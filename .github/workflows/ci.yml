@@ -107,8 +107,6 @@ jobs:
           HYPOTHESIS_PROFILE: slow
           # TODO: remove --inline-snapshot=disable after https://github.com/15r10nk/inline-snapshot/issues/192
           PYTEST_ADDOPTS: ${{ endsWith(matrix.python-version, 't') && '--parallel-threads=2 --inline-snapshot=disable' || '' }}
-          # TODO: add `gil_used = false` to the PyO3 `#[pymodule]` when test suite is ok
-          PYTHON_GIL: ${{ endsWith(matrix.python-version, 't') && '0' || '1' }}
 
   test-os:
     name: test on ${{ matrix.os }}
@@ -505,7 +503,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [linux, windows, macos]
-        interpreter: ['3.9', '3.10', '3.11', '3.12', '3.13']
+        interpreter: ['3.9', '3.10', '3.11', '3.12', '3.13', '3.13t']
         include:
           # standard runners with override for macos arm
           - os: linux
