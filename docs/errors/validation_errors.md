@@ -1590,6 +1590,31 @@ except ValidationError as exc:
     #> 'recursion_loop'
 ```
 
+## `set_item_not_hashable`
+
+This error is raised when an unhashable value is validated against a [`set`][] or a [`frozenset`][]```
+
+```python
+from pydantic import BaseModel, ValidationError
+
+
+class Model(BaseModel):
+    x: set[object]
+
+
+class Unhasbable:
+    __hash__ = None
+
+
+try:
+    Model(x=[{'a': 'b'}, Unhasbable()])
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'set_item_not_hashable'
+    print(repr(exc.errors()[1]['type']))
+    #> 'set_item_not_hashable'
+```
+
 ## `set_type`
 
 This error is raised when the value type is not valid for a `set` field:
@@ -1609,29 +1634,6 @@ try:
 except ValidationError as exc:
     print(repr(exc.errors()[0]['type']))
     #> 'set_type'
-```
-
-## `set_item_not_hashable`
-
-This error is raised when an unhashable value is validated against a [`set`][] or a [`frozenset`][]```
-
-```python
-from pydantic import BaseModel, ValidationError
-
-
-class Model(BaseModel):
-    x: set[object]
-
-class Unhasbable:
-    __hash__ = None
-
-try:
-    Model(x=[{'a':'b'}, Unhasbable()])
-except ValidationError as exc:
-    print(repr(exc.errors()[0]['type']))
-    #> 'set_item_not_hashable'
-    print(repr(exc.errors()[1]['type']))
-    #> 'set_item_not_hashable'
 ```
 
 ## `string_pattern_mismatch`
