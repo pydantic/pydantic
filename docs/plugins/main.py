@@ -126,8 +126,8 @@ def add_mkdocs_run_deps() -> None:
     path.write_text(html)
 
 
-MIN_MINOR_VERSION = 8
-MAX_MINOR_VERSION = 12
+MIN_MINOR_VERSION = 9
+MAX_MINOR_VERSION = 13
 
 
 def upgrade_python(markdown: str) -> str:
