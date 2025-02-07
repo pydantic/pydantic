@@ -230,6 +230,29 @@ def test_model_validators_serializers(benchmark):
 
 
 @pytest.mark.benchmark(group='model_schema_generation')
+def test_failed_rebuild(benchmark):
+    """The defined model has 8 fields with some relatively complex annotations.
+
+    The last field has an undefined forward annotation, that will fail to resolve on model rebuild.
+    The benchmark is used to measure time spent in trying to rebuild a model knowing that it will
+    fail when encountering the last field.
+    """
+    fields: dict[str, Any] = {
+        f'f{i}': Annotated[Union[int, Annotated[str, Field(max_length=3)]], AfterValidator(lambda v: v)]
+        for i in range(8)
+    }
+    fields['f8'] = 'Undefined'
+
+    ModelWithUndefinedAnnotation = create_model(  # pyright: ignore[reportCallIssue]
+        'ModelWithUndefinedAnnotation',
+        __base__=DeferredModel,
+        **fields,
+    )
+
+    benchmark(rebuild_model, ModelWithUndefinedAnnotation, raise_errors=False)
+
+
+@pytest.mark.benchmark(group='model_schema_generation')
 def test_tagged_union_with_str_discriminator_schema_generation(benchmark):
     class Cat(BaseModel):
         pet_type: Literal['cat']
