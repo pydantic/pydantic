@@ -1613,16 +1613,14 @@ except ValidationError as exc:
 
 ## `set_item_not_hashable`
 
-This error is raised when one of the values being added to a `set` field is not hashable:
+This error is raised when an unhashable value is validated against a [`set`][] or a [`frozenset`][]```
 
 ```python
-from typing import Set
-
 from pydantic import BaseModel, ValidationError
 
 
 class Model(BaseModel):
-    x: Set
+    x: set[object]
 
 class Unhasbable:
     __hash__ = None
