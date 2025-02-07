@@ -106,33 +106,26 @@ pub fn build_info() -> String {
     )
 }
 
-#[pymodule]
-fn _pydantic_core(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
-    m.add("__version__", get_pydantic_core_version())?;
-    m.add("build_profile", env!("PROFILE"))?;
-    m.add("build_info", build_info())?;
-    m.add("_recursion_limit", recursion_guard::RECURSION_GUARD_LIMIT)?;
-    m.add("PydanticUndefined", PydanticUndefinedType::new(py))?;
-    m.add_class::<PydanticUndefinedType>()?;
-    m.add_class::<PySome>()?;
-    m.add_class::<SchemaValidator>()?;
-    m.add_class::<ValidationError>()?;
-    m.add_class::<SchemaError>()?;
-    m.add_class::<PydanticCustomError>()?;
-    m.add_class::<PydanticKnownError>()?;
-    m.add_class::<PydanticOmit>()?;
-    m.add_class::<PydanticUseDefault>()?;
-    m.add_class::<PydanticSerializationError>()?;
-    m.add_class::<PydanticSerializationUnexpectedValue>()?;
-    m.add_class::<PyUrl>()?;
-    m.add_class::<PyMultiHostUrl>()?;
-    m.add_class::<ArgsKwargs>()?;
-    m.add_class::<SchemaSerializer>()?;
-    m.add_class::<TzInfo>()?;
-    m.add_function(wrap_pyfunction!(to_json, m)?)?;
-    m.add_function(wrap_pyfunction!(from_json, m)?)?;
-    m.add_function(wrap_pyfunction!(to_jsonable_python, m)?)?;
-    m.add_function(wrap_pyfunction!(list_all_errors, m)?)?;
-    m.add_function(wrap_pyfunction!(validate_core_schema, m)?)?;
-    Ok(())
+#[pymodule(gil_used = false)]
+mod _pydantic_core {
+    #[allow(clippy::wildcard_imports)]
+    use super::*;
+
+    #[pymodule_export]
+    use crate::{
+        from_json, list_all_errors, to_json, to_jsonable_python, validate_core_schema, ArgsKwargs, PyMultiHostUrl,
+        PySome, PyUrl, PydanticCustomError, PydanticKnownError, PydanticOmit, PydanticSerializationError,
+        PydanticSerializationUnexpectedValue, PydanticUndefinedType, PydanticUseDefault, SchemaError, SchemaSerializer,
+        SchemaValidator, TzInfo, ValidationError,
+    };
+
+    #[pymodule_init]
+    fn module_init(m: &Bound<'_, PyModule>) -> PyResult<()> {
+        m.add("__version__", get_pydantic_core_version())?;
+        m.add("build_profile", env!("PROFILE"))?;
+        m.add("build_info", build_info())?;
+        m.add("_recursion_limit", recursion_guard::RECURSION_GUARD_LIMIT)?;
+        m.add("PydanticUndefined", PydanticUndefinedType::new(m.py()))?;
+        Ok(())
+    }
 }
