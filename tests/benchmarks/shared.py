@@ -230,5 +230,5 @@ class DeferredModel(BaseModel):
     model_config = {'defer_build': True}
 
 
-def rebuild_model(model: type[BaseModel]) -> None:
-    model.model_rebuild(force=True, _types_namespace={})
+def rebuild_model(model: type[BaseModel], raise_errors: bool = True) -> None:
+    model.model_rebuild(force=True, _types_namespace={}, raise_errors=raise_errors)

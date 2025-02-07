@@ -3767,6 +3767,26 @@ def test_new_path_validation_success(value, result):
     assert Model(foo=value).foo == result
 
 
+def test_path_union_ser() -> None:
+    class Model(BaseModel):
+        a: Union[Path, list[Path]]
+        b: Union[list[Path], Path]
+
+    model = Model(a=Path('potato'), b=Path('potato'))
+    assert model.model_dump() == {'a': Path('potato'), 'b': Path('potato')}
+    assert model.model_dump_json() == '{"a":"potato","b":"potato"}'
+
+    model = Model(a=[Path('potato')], b=[Path('potato')])
+    assert model.model_dump() == {'a': [Path('potato')], 'b': [Path('potato')]}
+    assert model.model_dump_json() == '{"a":["potato"],"b":["potato"]}'
+
+
+def test_ser_path_incorrect() -> None:
+    ta = TypeAdapter(Path)
+    with pytest.warns(UserWarning, match='serialized value may not be as expected.'):
+        ta.dump_python(123)
+
+
 def test_number_gt():
     class Model(BaseModel):
         a: conint(gt=-1) = 0
@@ -5869,7 +5889,7 @@ def test_ordered_dict_from_ordered_dict(field_type):
     assert m.od_field is not od_value
 
     assert m.model_json_schema() == {
-        'properties': {'od_field': {'title': 'Od Field', 'type': 'object'}},
+        'properties': {'od_field': {'title': 'Od Field', 'type': 'object', 'additionalProperties': True}},
         'required': ['od_field'],
         'title': 'Model',
         'type': 'object',
@@ -5914,7 +5934,7 @@ def test_ordered_dict_from_dict(field_type):
     assert m.od_field == collections.OrderedDict(od_value)
 
     assert m.model_json_schema() == {
-        'properties': {'od_field': {'title': 'Od Field', 'type': 'object'}},
+        'properties': {'od_field': {'title': 'Od Field', 'type': 'object', 'additionalProperties': True}},
         'required': ['od_field'],
         'title': 'Model',
         'type': 'object',

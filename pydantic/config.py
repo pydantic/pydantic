@@ -1031,7 +1031,7 @@ _TypeT = TypeVar('_TypeT', bound=type)
 
 def with_config(config: ConfigDict) -> Callable[[_TypeT], _TypeT]:
     """!!! abstract "Usage Documentation"
-        [Configuration with a `dataclass` or `TypedDict`](../concepts/config.md#configuration-with-dataclass-from-the-standard-library-or-typeddict)
+        [Configuration with other types](../concepts/config.md#configuration-on-other-supported-types)
 
     A convenience decorator to set a [Pydantic configuration](config.md) on a `TypedDict` or a `dataclass` from the standard library.
 

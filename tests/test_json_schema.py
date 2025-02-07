@@ -711,7 +711,7 @@ def test_dict():
     assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'a': {'title': 'A', 'type': 'object'}},
+        'properties': {'a': {'title': 'A', 'type': 'object', 'additionalProperties': True}},
         'required': ['a'],
     }
 
@@ -782,7 +782,10 @@ class Foo(BaseModel):
             Union[int, int],
             {'properties': {'a': {'title': 'A', 'type': 'integer'}}, 'required': ['a']},
         ),
-        (dict[str, Any], {'properties': {'a': {'title': 'A', 'type': 'object'}}, 'required': ['a']}),
+        (
+            dict[str, Any],
+            {'properties': {'a': {'title': 'A', 'type': 'object', 'additionalProperties': True}}, 'required': ['a']},
+        ),
     ],
 )
 def test_list_union_dict(field_type, expected_schema):
@@ -1377,7 +1380,7 @@ def test_byte_size_type():
         (
             dict[Any, Any],
             {(lambda x: x): 1},
-            {'callback': {'title': 'Callback', 'type': 'object'}},
+            {'callback': {'title': 'Callback', 'type': 'object', 'additionalProperties': True}},
         ),
         (
             Union[int, Callable[[int], int]],
@@ -2191,7 +2194,11 @@ def test_optional_dict():
         'title': 'Model',
         'type': 'object',
         'properties': {
-            'something': {'anyOf': [{'type': 'object'}, {'type': 'null'}], 'default': None, 'title': 'Something'}
+            'something': {
+                'anyOf': [{'type': 'object', 'additionalProperties': True}, {'type': 'null'}],
+                'default': None,
+                'title': 'Something',
+            }
         },
     }
 
@@ -2283,7 +2290,7 @@ def test_unparameterized_schema_generation():
     assert model_json_schema(FooDict) == {
         'title': 'FooDict',
         'type': 'object',
-        'properties': {'d': {'title': 'D', 'type': 'object'}},
+        'properties': {'d': {'title': 'D', 'type': 'object', 'additionalProperties': True}},
         'required': ['d'],
     }
 
@@ -6603,7 +6610,14 @@ def test_arbitrary_ref_in_json_schema() -> None:
         x: dict = Field(examples=[{'$ref': '#/components/schemas/Pet'}])
 
     assert Test.model_json_schema() == {
-        'properties': {'x': {'examples': [{'$ref': '#/components/schemas/Pet'}], 'title': 'X', 'type': 'object'}},
+        'properties': {
+            'x': {
+                'additionalProperties': True,
+                'examples': [{'$ref': '#/components/schemas/Pet'}],
+                'title': 'X',
+                'type': 'object',
+            }
+        },
         'required': ['x'],
         'title': 'Test',
         'type': 'object',
