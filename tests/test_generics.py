@@ -1640,6 +1640,23 @@ def test_generic_recursive_models_parametrized() -> None:
     Model2[str].model_rebuild()
 
 
+@pytest.mark.xfail(reason='Core schema generation is missing the M1 definition')
+def test_generic_recursive_models_inheritance() -> None:
+    """https://github.com/pydantic/pydantic/issues/9969"""
+
+    T = TypeVar('T')
+
+    class M1(BaseModel, Generic[T]):
+        bar: 'M1[T]'
+
+    class M2(M1[str]):
+        pass
+
+    M2.model_rebuild()
+
+    assert M2.__pydantic_complete__
+
+
 def test_generic_recursive_models_separate_parameters(create_module):
     @create_module
     def module():
