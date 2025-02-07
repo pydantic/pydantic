@@ -61,14 +61,14 @@ of the resultant model instance will conform to the field types defined on the m
     - The [mypy documentation](https://mypy.readthedocs.io/en/latest/)
 
 ```python {group="basic-model"}
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class User(BaseModel):
     id: int
     name: str = 'Jane Doe'
 
-    model_config = {'str_max_length': 10}  # (1)!
+    model_config = ConfigDict(str_max_length=10)  # (1)!
 ```
 
 1. Pydantic models support a variety of [configuration values](./config.md)

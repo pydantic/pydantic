@@ -1,6 +1,6 @@
 The behaviour of Pydantic can be controlled via a variety of configuration values, documented
-on the [`ConfigDict`][pydantic.ConfigDict] class. This page will describe how configuration
-can be specified on the supported types by Pydantic.
+on the [`ConfigDict`][pydantic.ConfigDict] class. This page describes how configuration can be
+specified for Pydantic's supported types.
 
 ## Configuration on Pydantic models
 
@@ -38,12 +38,13 @@ On Pydantic models, configuration can be specified in two ways:
   from pydantic import BaseModel
 
 
-  class Model(BaseModel, extra='forbid'):
+  class Model(BaseModel, frozen=True):
       a: str  # (1)!
   ```
 
-    1. See the [Extra data](models.md#extra-data) section for more details.
-
+    1. Unlike the [`model_config`][pydantic.BaseModel.model_config] class attribute,
+       static type checkers will recognize the `frozen` argument, and so any instance
+       mutation will be flagged as an type checking error.
 
 ## Configuration on Pydantic dataclasses
 
@@ -72,10 +73,10 @@ except ValidationError as e:
     """
 ```
 
-## Configuration on type adapters
+## Configuration on `TypeAdapter`
 
 [Type adapters](./type_adapter.md) (using the [`TypeAdapter`][pydantic.TypeAdapter] class) support configuration,
-using the `config` parameter.
+by providing a `config` argument.
 
 ```python
 from pydantic import ConfigDict, TypeAdapter
@@ -148,7 +149,7 @@ from pydantic import BaseModel, ConfigDict
 
 
 class Parent(BaseModel):
-    model_config = ConfigDict(extra='allow')
+    model_config = ConfigDict(extra='allow', str_to_lower=False)
 
 
 class Model(Parent):
@@ -160,14 +161,21 @@ class Model(Parent):
 m = Model(x='FOO', y='bar')
 print(m.model_dump())
 #> {'x': 'foo', 'y': 'bar'}
-print(m.model_config)
+print(Model.model_config)
 #> {'extra': 'allow', 'str_to_lower': True}
 ```
+
+!!! warning
+    If your model inherits from multiple bases, Pydantic currently *doesn't* follow the
+    [MRO]. For more details, see [this issue](https://github.com/pydantic/pydantic/issues/9992).
+
+    [MRO]: https://docs.python.org/3/glossary.html#term-method-resolution-order
 
 ## Configuration propagation
 
 Note that when using types that support configuration as field annotations on other types,
-configuration will *not* be propagated:
+configuration will *not* be propagated. In the following example, each model has its own
+"configuration boundary":
 
 ```python
 from pydantic import BaseModel, ConfigDict
