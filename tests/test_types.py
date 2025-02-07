@@ -3769,8 +3769,8 @@ def test_new_path_validation_success(value, result):
 
 def test_path_union_ser() -> None:
     class Model(BaseModel):
-        a: Path | list[Path]
-        b: list[Path] | Path
+        a: Union[Path, list[Path]]
+        b: Union[list[Path], Path]
 
     model = Model(a=Path('potato'), b=Path('potato'))
     assert model.model_dump() == {'a': Path('potato'), 'b': Path('potato')}
@@ -3779,6 +3779,12 @@ def test_path_union_ser() -> None:
     model = Model(a=[Path('potato')], b=[Path('potato')])
     assert model.model_dump() == {'a': [Path('potato')], 'b': [Path('potato')]}
     assert model.model_dump_json() == '{"a":["potato"],"b":["potato"]}'
+
+
+def test_ser_path_incorrect() -> None:
+    ta = TypeAdapter(Path)
+    with pytest.warns(UserWarning, match='serialized value may not be as expected.'):
+        ta.dump_python(123)
 
 
 def test_number_gt():
