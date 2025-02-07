@@ -327,7 +327,7 @@ class GenerateSchema:
         self,
         config_wrapper: ConfigWrapper,
         ns_resolver: NsResolver | None = None,
-        typevars_map: dict[Any, Any] | None = None,
+        typevars_map: Mapping[TypeVar, Any] | None = None,
     ) -> None:
         # we need a stack for recursing into nested models
         self._config_wrapper_stack = ConfigWrapperStack(config_wrapper)
