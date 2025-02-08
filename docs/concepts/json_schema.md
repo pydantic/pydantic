@@ -277,10 +277,7 @@ print(Model.model_json_schema(mode='validation'))
 {
     'properties': {
         'a': {
-            'anyOf': [
-                {'type': 'number'},
-                {'pattern': '^-?0*\\d{0,}(?:\\.\\d{0,})?$', 'type': 'string'},
-            ],
+            'anyOf': [{'type': 'number'}, {'type': 'string'}],
             'default': '12.34',
             'title': 'A',
         }
@@ -293,14 +290,7 @@ print(Model.model_json_schema(mode='validation'))
 print(Model.model_json_schema(mode='serialization'))
 """
 {
-    'properties': {
-        'a': {
-            'default': '12.34',
-            'pattern': '^-?(?:0|[1-9]\\d{0,})(?:\\.\\d{0,})?$',
-            'title': 'A',
-            'type': 'string',
-        }
-    },
+    'properties': {'a': {'default': '12.34', 'title': 'A', 'type': 'string'}},
     'title': 'Model',
     'type': 'object',
 }
