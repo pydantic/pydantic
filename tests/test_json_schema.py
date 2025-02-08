@@ -2018,14 +2018,14 @@ def test_docstring(docstring, description):
             {
                 'anyOf': [
                     {'type': 'number'},
-                    {'pattern': '^-?0*(?=\\d{0,4}$|[\\d\\.]{0,5}$)\\d{0,}(?:\\.\\d{0,})?$', 'type': 'string'},
+                    {'pattern': '^-?0*(?=\\d{0,4}$|[\\d\\.]{0,5}$)\\d{1,}(?:\\.\\d{0,})?$', 'type': 'string'},
                 ]
             },
         ),
         (
             {'decimal_places': 2},
             Decimal,
-            {'anyOf': [{'type': 'number'}, {'pattern': '^-?0*\\d{0,}(?:\\.\\d{0,2})?$', 'type': 'string'}]},
+            {'anyOf': [{'type': 'number'}, {'pattern': '^-?0*\\d{1,}(?:\\.\\d{0,2})?$', 'type': 'string'}]},
         ),
         (
             {'max_digits': 4, 'decimal_places': 2},
@@ -2033,7 +2033,7 @@ def test_docstring(docstring, description):
             {
                 'anyOf': [
                     {'type': 'number'},
-                    {'pattern': '^-?0*(?=\\d{0,4}$|[\\d\\.]{0,5}$)\\d{0,2}(?:\\.\\d{0,2})?$', 'type': 'string'},
+                    {'pattern': '^-?0*(?=\\d{0,4}$|[\\d\\.]{0,5}$)\\d{1,2}(?:\\.\\d{0,2})?$', 'type': 'string'},
                 ]
             },
         ),
