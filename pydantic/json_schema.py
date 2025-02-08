@@ -126,32 +126,37 @@ CoreModeRef = tuple[CoreRef, JsonSchemaMode]
 JsonSchemaKeyT = TypeVar('JsonSchemaKeyT', bound=Hashable)
 
 # ##### Regex for Decimal JSON Schema Generation #####
-_DECIMAL_JSON_VALIDATION_PATTERN = r"""
-    ^
-    -?                            # Minus sign (optional)
-    \d+                           # One or more digits for the integer part (allows leading zeros)
-    (                             # Optional decimal group
-        \.                        # Decimal point
-        \d{{0,{decimal_places}}}  # Up to {decimal_places} decimal digits
-    )?
-    $
-"""
 
-_DECIMAL_JSON_SERIALIZATION_PATTERN = r"""
-    ^
-    -?                            # Minus sign (optional)
-    (?:                           # Non-capturing group for integer part
-        0
-        |                         # Single zero OR Single non-zero digit
-        [1-9]
-        \d{{0,{integer_places}}}  # Up to {integer_places} additional digits
-    )
-    (                             # Optional decimal group
-        \.                        # Decimal point
-        \d{{0,{decimal_places}}}  # Up to {decimal_places} decimal digits
-    )?
-    $
-"""
+_DECIMAL_JSON_MAX_DIGIT_LOOKAHEAD_PATTERN = (
+    r'(?='
+    r'\d{{0,{max_digits}}}$'  # Positive lookahead for max_digits
+    r'|'
+    r'[\d\.]{{0,{max_digits_plus_dp}}}$'  # or max_digits +1 if there is a decimal point
+    r')'
+)
+
+_DECIMAL_JSON_VALIDATION_PATTERN = (
+    r'^-?'  # Minus sign (optional)
+    r'0*'  # Allow leading zeroes
+    r'{max_digit_lookahead}'  # Substitution for max digit lookahead if required
+    r'\d{{0,{integer_places}}}'  # One or more digits for the integer part
+    r'(?:'  # Optional non-capturing decimal group
+    r'\.'  # Decimal point
+    r'\d{{0,{decimal_places}}}'  # Up to {decimal_places} decimal digits
+    r')?$'
+)
+
+_DECIMAL_JSON_SERIALIZATION_PATTERN = (
+    r'^-?'  # Minus sign (optional)
+    r'{max_digit_lookahead}'  # Substitution for max digit lookahead if required
+    r'(?:'  # Non-capturing group integer digits
+    r'0|[1-9]\d{{0,{integer_places}}}'  # Single zero OR non-zero digit followed by additional digits
+    r')'
+    r'(?:'  # Optional non-capturing decimal group
+    r'\.'  # Decimal point
+    r'\d{{0,{decimal_places}}}'  # Up to {decimal_places} decimal digits
+    r')?$'
+)
 
 
 @dataclasses.dataclass(**_internal_dataclass.slots_true)
@@ -706,17 +711,34 @@ class GenerateJsonSchema:
         decimal_places = schema.get('decimal_places')
         str_schema = core_schema.str_schema()
 
-        if decimal_places is not None:
-            if self.mode == 'serialization' and max_digits is not None:
-                integer_places = max_digits - decimal_places - 1
-                pattern = _DECIMAL_JSON_SERIALIZATION_PATTERN.format(
-                    integer_places=integer_places, decimal_places=decimal_places
-                )
-            else:
-                pattern = _DECIMAL_JSON_VALIDATION_PATTERN.format(decimal_places=decimal_places)
+        # The _DECIMAL_JSON_MAX_DIGIT_LOOKAHEAD requires both max digits and max digits plus a decimal point
+        max_digit_lookahead = (
+            ''
+            if max_digits is None
+            else _DECIMAL_JSON_MAX_DIGIT_LOOKAHEAD_PATTERN.format(
+                max_digits=max_digits,
+                max_digits_plus_dp=max_digits + 1,
+            )
+        )
 
-            str_schema['pattern'] = re.compile(pattern, re.VERBOSE).pattern
+        if self.mode == 'validation':
+            decimal_regex_pattern = _DECIMAL_JSON_VALIDATION_PATTERN.format(
+                max_digit_lookahead=max_digit_lookahead,
+                integer_places='' if max_digits is None or decimal_places is None else max_digits - decimal_places,
+                decimal_places='' if decimal_places is None else decimal_places,
+            )
+        elif self.mode == 'serialization':
+            # The _DECIMAL_JSON_SERIALIZATION_PATTERN pattern matches the first integer digit separate from the rest
+            # to account for this we want our integer_places argument to be one less than max_digits - decimal_places
+            decimal_regex_pattern = _DECIMAL_JSON_SERIALIZATION_PATTERN.format(
+                max_digit_lookahead=max_digit_lookahead,
+                integer_places='' if max_digits is None or decimal_places is None else max_digits - decimal_places - 1,
+                decimal_places='' if decimal_places is None else decimal_places,
+            )
+        else:
+            decimal_regex_pattern = ''
 
+        str_schema['pattern'] = re.compile(decimal_regex_pattern).pattern
         json_schema = self.str_schema(str_schema)
 
         if self.mode == 'validation':
