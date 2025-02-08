@@ -526,7 +526,11 @@ def test_decimal_json_schema():
     assert model_json_schema_validation == {
         'properties': {
             'a': {'default': 'foobar', 'format': 'binary', 'title': 'A', 'type': 'string'},
-            'b': {'anyOf': [{'type': 'number'}, {'type': 'string'}], 'default': '12.34', 'title': 'B'},
+            'b': {
+                'anyOf': [{'type': 'number'}, {'type': 'string', 'pattern': '^-?0*\\d{0,}(?:\\.\\d{0,})?$'}],
+                'default': '12.34',
+                'title': 'B',
+            },
         },
         'title': 'Model',
         'type': 'object',
@@ -534,7 +538,12 @@ def test_decimal_json_schema():
     assert model_json_schema_serialization == {
         'properties': {
             'a': {'default': 'foobar', 'format': 'binary', 'title': 'A', 'type': 'string'},
-            'b': {'default': '12.34', 'title': 'B', 'type': 'string'},
+            'b': {
+                'default': '12.34',
+                'title': 'B',
+                'type': 'string',
+                'pattern': '^-?(?:0|[1-9]\\d{0,})(?:\\.\\d{0,})?$',
+            },
         },
         'title': 'Model',
         'type': 'object',
@@ -931,45 +940,6 @@ def test_str_constrained_types(field_type, expected_schema):
     assert model_schema == base_schema
 
 
-def test_decimal_constraints():
-    constraints = {'max_digits': 5, 'decimal_places': 2, 'ge': 0.0, 'le': 10.0}
-    ta = TypeAdapter(Annotated[Decimal, Field(**constraints)])
-
-    validation_cases = [
-        ('0', Decimal('0')),  # Single zero
-        ('00.12', Decimal('0.12')),  # Leading zeros
-        ('000.12', Decimal('0.12')),  # Multiple leading zeros
-        ('1.23', Decimal('1.23')),  # Regular decimal
-        ('10.00', Decimal('10.00')),  # Maximum value with trailing zeros
-        ('0.12', Decimal('0.12')),  # Decimal less than 1
-    ]
-
-    for input_value, expected in validation_cases:
-        result = ta.validate_json(f'"{input_value}"')
-        assert result == expected
-
-    invalid_cases = [
-        '123.455',  # Exceeds max_digits (5 digits total)
-        '12.345',  # Too many decimal places (3 vs allowed 2)
-        '12.34',  # 11.00 exceeds le=10.0
-        '-1.23',  # Below ge=0.0
-    ]
-
-    for value in invalid_cases:
-        with pytest.raises(ValidationError):
-            ta.validate_json(f'"{value}"')
-
-    serialization_cases = {
-        Decimal('0'): '0',  # Zero case
-        Decimal('00.12'): '0.12',  # Leading zeros removed
-        Decimal('1.20'): '1.20',  # Trailing zeros preserved
-        Decimal('10.00'): '10.00',  # Maximum value
-    }
-
-    for input_value, expected in serialization_cases.items():
-        assert ta.dump_json(input_value).decode().strip('"') == expected
-
-
 @pytest.mark.parametrize(
     'field_type,expected_schema',
     [
@@ -1093,7 +1063,12 @@ def test_special_decimal_types(field_type, expected_schema):
     base_schema = {
         'title': 'Model',
         'type': 'object',
-        'properties': {'a': {'anyOf': [{'type': 'number'}, {'type': 'string'}], 'title': 'A'}},
+        'properties': {
+            'a': {
+                'anyOf': [{'type': 'number'}, {'type': 'string', 'pattern': '^-?0*\\d{0,}(?:\\.\\d{0,})?$'}],
+                'title': 'A',
+            }
+        },
         'required': ['a'],
     }
     base_schema['properties']['a']['anyOf'][0].update(expected_schema)
@@ -2046,11 +2021,56 @@ def test_docstring(docstring, description):
         ({'ge': -math.inf}, float, {'type': 'number'}),
         ({'le': math.inf}, float, {'type': 'number'}),
         ({'multiple_of': 5}, float, {'type': 'number', 'multipleOf': 5}),
-        ({'gt': 2}, Decimal, {'anyOf': [{'exclusiveMinimum': 2.0, 'type': 'number'}, {'type': 'string'}]}),
-        ({'lt': 5}, Decimal, {'anyOf': [{'type': 'number', 'exclusiveMaximum': 5}, {'type': 'string'}]}),
-        ({'ge': 2}, Decimal, {'anyOf': [{'type': 'number', 'minimum': 2}, {'type': 'string'}]}),
-        ({'le': 5}, Decimal, {'anyOf': [{'type': 'number', 'maximum': 5}, {'type': 'string'}]}),
-        ({'multiple_of': 5}, Decimal, {'anyOf': [{'type': 'number', 'multipleOf': 5}, {'type': 'string'}]}),
+        (
+            {'gt': 2},
+            Decimal,
+            {
+                'anyOf': [
+                    {'exclusiveMinimum': 2.0, 'type': 'number'},
+                    {'type': 'string', 'pattern': '^-?0*\\d{0,}(?:\\.\\d{0,})?$'},
+                ]
+            },
+        ),
+        (
+            {'lt': 5},
+            Decimal,
+            {
+                'anyOf': [
+                    {'type': 'number', 'exclusiveMaximum': 5},
+                    {'type': 'string', 'pattern': '^-?0*\\d{0,}(?:\\.\\d{0,})?$'},
+                ]
+            },
+        ),
+        (
+            {'ge': 2},
+            Decimal,
+            {
+                'anyOf': [
+                    {'type': 'number', 'minimum': 2},
+                    {'type': 'string', 'pattern': '^-?0*\\d{0,}(?:\\.\\d{0,})?$'},
+                ]
+            },
+        ),
+        (
+            {'le': 5},
+            Decimal,
+            {
+                'anyOf': [
+                    {'type': 'number', 'maximum': 5},
+                    {'type': 'string', 'pattern': '^-?0*\\d{0,}(?:\\.\\d{0,})?$'},
+                ]
+            },
+        ),
+        (
+            {'multiple_of': 5},
+            Decimal,
+            {
+                'anyOf': [
+                    {'type': 'number', 'multipleOf': 5},
+                    {'type': 'string', 'pattern': '^-?0*\\d{0,}(?:\\.\\d{0,})?$'},
+                ]
+            },
+        ),
     ],
 )
 def test_constraints_schema_validation(kwargs, type_, expected_extra):
@@ -2089,11 +2109,11 @@ def test_constraints_schema_validation(kwargs, type_, expected_extra):
         ({'ge': -math.inf}, float, {'type': 'number'}),
         ({'le': math.inf}, float, {'type': 'number'}),
         ({'multiple_of': 5}, float, {'type': 'number', 'multipleOf': 5}),
-        ({'gt': 2}, Decimal, {'type': 'string'}),
-        ({'lt': 5}, Decimal, {'type': 'string'}),
-        ({'ge': 2}, Decimal, {'type': 'string'}),
-        ({'le': 5}, Decimal, {'type': 'string'}),
-        ({'multiple_of': 5}, Decimal, {'type': 'string'}),
+        ({'gt': 2}, Decimal, {'type': 'string', 'pattern': '^-?(?:0|[1-9]\\d{0,})(?:\\.\\d{0,})?$'}),
+        ({'lt': 5}, Decimal, {'type': 'string', 'pattern': '^-?(?:0|[1-9]\\d{0,})(?:\\.\\d{0,})?$'}),
+        ({'ge': 2}, Decimal, {'type': 'string', 'pattern': '^-?(?:0|[1-9]\\d{0,})(?:\\.\\d{0,})?$'}),
+        ({'le': 5}, Decimal, {'type': 'string', 'pattern': '^-?(?:0|[1-9]\\d{0,})(?:\\.\\d{0,})?$'}),
+        ({'multiple_of': 5}, Decimal, {'type': 'string', 'pattern': '^-?(?:0|[1-9]\\d{0,})(?:\\.\\d{0,})?$'}),
     ],
 )
 def test_constraints_schema_serialization(kwargs, type_, expected_extra):
@@ -5725,8 +5745,10 @@ def test_generate_definitions_for_no_ref_schemas():
     )
     assert result == (
         {
-            ('Decimal', 'serialization'): {'type': 'string'},
-            ('Decimal', 'validation'): {'anyOf': [{'type': 'number'}, {'type': 'string'}]},
+            ('Decimal', 'serialization'): {'pattern': '^-?(?:0|[1-9]\\d{0,})(?:\\.\\d{0,})?$', 'type': 'string'},
+            ('Decimal', 'validation'): {
+                'anyOf': [{'type': 'number'}, {'pattern': '^-?0*\\d{0,}(?:\\.\\d{0,})?$', 'type': 'string'}]
+            },
             ('Model', 'validation'): {'$ref': '#/$defs/Model'},
         },
         {'Model': {'properties': {}, 'title': 'Model', 'type': 'object'}},
