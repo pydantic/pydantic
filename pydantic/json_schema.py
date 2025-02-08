@@ -710,35 +710,36 @@ class GenerateJsonSchema:
         max_digits = schema.get('max_digits')
         decimal_places = schema.get('decimal_places')
         str_schema = core_schema.str_schema()
-
-        # The _DECIMAL_JSON_MAX_DIGIT_LOOKAHEAD requires both max digits and max digits plus a decimal point
-        max_digit_lookahead = (
-            ''
-            if max_digits is None
-            else _DECIMAL_JSON_MAX_DIGIT_LOOKAHEAD_PATTERN.format(
-                max_digits=max_digits,
-                max_digits_plus_dp=max_digits + 1,
+        if max_digits is not None or decimal_places is not None:
+            # The _DECIMAL_JSON_MAX_DIGIT_LOOKAHEAD requires both max digits and max digits plus a decimal point
+            max_digit_lookahead = (
+                ''
+                if max_digits is None
+                else _DECIMAL_JSON_MAX_DIGIT_LOOKAHEAD_PATTERN.format(
+                    max_digits=max_digits,
+                    max_digits_plus_dp=max_digits + 1,
+                )
             )
-        )
 
-        if self.mode == 'validation':
-            decimal_regex_pattern = _DECIMAL_JSON_VALIDATION_PATTERN.format(
-                max_digit_lookahead=max_digit_lookahead,
-                integer_places='' if max_digits is None or decimal_places is None else max_digits - decimal_places,
-                decimal_places='' if decimal_places is None else decimal_places,
-            )
-        elif self.mode == 'serialization':
-            # The _DECIMAL_JSON_SERIALIZATION_PATTERN pattern matches the first integer digit separate from the rest
-            # to account for this we want our integer_places argument to be one less than max_digits - decimal_places
-            decimal_regex_pattern = _DECIMAL_JSON_SERIALIZATION_PATTERN.format(
-                max_digit_lookahead=max_digit_lookahead,
-                integer_places='' if max_digits is None or decimal_places is None else max_digits - decimal_places - 1,
-                decimal_places='' if decimal_places is None else decimal_places,
-            )
-        else:
-            decimal_regex_pattern = ''
-
-        str_schema['pattern'] = re.compile(decimal_regex_pattern).pattern
+            if self.mode == 'validation':
+                decimal_regex_pattern = _DECIMAL_JSON_VALIDATION_PATTERN.format(
+                    max_digit_lookahead=max_digit_lookahead,
+                    integer_places='' if max_digits is None or decimal_places is None else max_digits - decimal_places,
+                    decimal_places='' if decimal_places is None else decimal_places,
+                )
+            elif self.mode == 'serialization':
+                # The _DECIMAL_JSON_SERIALIZATION_PATTERN matches the first integer digit separate from the rest, to
+                # account for this we want our integer_places argument to be one less than max_digits - decimal_places
+                decimal_regex_pattern = _DECIMAL_JSON_SERIALIZATION_PATTERN.format(
+                    max_digit_lookahead=max_digit_lookahead,
+                    integer_places=''
+                    if max_digits is None or decimal_places is None
+                    else max_digits - decimal_places - 1,
+                    decimal_places='' if decimal_places is None else decimal_places,
+                )
+            else:
+                decimal_regex_pattern = ''
+            str_schema['pattern'] = re.compile(decimal_regex_pattern).pattern
         json_schema = self.str_schema(str_schema)
 
         if self.mode == 'validation':
