@@ -129,7 +129,7 @@ JsonSchemaKeyT = TypeVar('JsonSchemaKeyT', bound=Hashable)
 
 _DECIMAL_JSON_MAX_DIGIT_LOOKAHEAD_PATTERN = (
     r'(?=\d{{0,{max_digits}}}$'  # Positive lookahead for max_digits
-    r'|[\d\.]{{0,{max_digits_plus_dp}}}$)'  # or max_digits +1 if there is a decimal point
+    r'|(?=.*\..*)[\d\.]{{0,{max_digits_plus_dp}}}$)'  # or max_digits +1 if there is a decimal point
 )
 
 _DECIMAL_JSON_VALIDATION_PATTERN = (
