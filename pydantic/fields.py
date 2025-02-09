@@ -360,6 +360,64 @@ class FieldInfo(_repr.Representation):
         return FieldInfo(annotation=annotation, frozen=final or None)  # pyright: ignore[reportArgumentType] (PEP 747)
 
     @staticmethod
+    def _check_default_annotation_clash(annotation: type[Any], default: Any) -> None:
+        if annotation is default:
+            raise PydanticUserError(
+                'Error when building FieldInfo from annotated attribute. '
+                "Make sure you don't have any field name clashing with a type annotation.",
+                code='unevaluable-type-annotation',
+            )
+
+    @staticmethod
+    def _handle_field_info_default(annotation: type[Any], default: Any, final: bool) -> FieldInfo:
+        default.annotation, annotation_metadata = _typing_extra.unpack_annotated(annotation)
+        default.metadata += annotation_metadata
+        default = default.merge_field_infos(
+            *[x for x in annotation_metadata if isinstance(x, FieldInfo)], default, annotation=default.annotation
+        )
+        default.frozen = final or default.frozen
+        return default
+
+    @staticmethod
+    def _handle_dataclasses_field_default(annotation: type[Any], default: Any, final: bool) -> FieldInfo:
+        init_var = False
+        if annotation is dataclasses.InitVar:
+            init_var = True
+            annotation = typing.cast(Any, Any)
+        elif isinstance(annotation, dataclasses.InitVar):
+            init_var = True
+            annotation = annotation.type
+
+        pydantic_field = FieldInfo._from_dataclass_field(default)
+        pydantic_field.annotation, annotation_metadata = _typing_extra.unpack_annotated(annotation)
+        pydantic_field.metadata += annotation_metadata
+        pydantic_field = pydantic_field.merge_field_infos(
+            *[x for x in annotation_metadata if isinstance(x, FieldInfo)],
+            pydantic_field,
+            annotation=pydantic_field.annotation,
+        )
+        pydantic_field.frozen = final or pydantic_field.frozen
+        pydantic_field.init_var = init_var
+        pydantic_field.init = getattr(default, 'init', None)
+        pydantic_field.kw_only = getattr(default, 'kw_only', None)
+        return pydantic_field
+
+    @staticmethod
+    def _handle_metadata(annotation: type[Any], metadata: list[Any], default: Any, final: bool) -> FieldInfo:
+        field_infos = [a for a in metadata if isinstance(a, FieldInfo)]
+        field_info = FieldInfo.merge_field_infos(*field_infos, annotation=annotation, default=default)
+        field_metadata: list[Any] = []
+        for a in metadata:
+            if _typing_extra.is_deprecated_instance(a):
+                field_info.deprecated = a.message
+            elif not isinstance(a, FieldInfo):
+                field_metadata.append(a)
+            else:
+                field_metadata.extend(a.metadata)
+        field_info.metadata = field_metadata
+        return field_info
+
+    @staticmethod
     def from_annotated_attribute(annotation: type[Any], default: Any) -> FieldInfo:
         """Create `FieldInfo` from an annotation with a default value.
 
@@ -385,64 +443,21 @@ class FieldInfo(_repr.Representation):
         Returns:
             A field object with the passed values.
         """
-        if annotation is default:
-            raise PydanticUserError(
-                'Error when building FieldInfo from annotated attribute. '
-                "Make sure you don't have any field name clashing with a type annotation.",
-                code='unevaluable-type-annotation',
-            )
+        FieldInfo._check_default_annotation_clash(annotation, default)
 
         final = _typing_extra.is_finalvar(annotation)
         if final and _typing_extra.is_generic_alias(annotation):
             annotation = typing_extensions.get_args(annotation)[0]
 
         if isinstance(default, FieldInfo):
-            default.annotation, annotation_metadata = _typing_extra.unpack_annotated(annotation)
-            default.metadata += annotation_metadata
-            default = default.merge_field_infos(
-                *[x for x in annotation_metadata if isinstance(x, FieldInfo)], default, annotation=default.annotation
-            )
-            default.frozen = final or default.frozen
-            return default
-
-        if isinstance(default, dataclasses.Field):
-            init_var = False
-            if annotation is dataclasses.InitVar:
-                init_var = True
-                annotation = typing.cast(Any, Any)
-            elif isinstance(annotation, dataclasses.InitVar):
-                init_var = True
-                annotation = annotation.type
-
-            pydantic_field = FieldInfo._from_dataclass_field(default)
-            pydantic_field.annotation, annotation_metadata = _typing_extra.unpack_annotated(annotation)
-            pydantic_field.metadata += annotation_metadata
-            pydantic_field = pydantic_field.merge_field_infos(
-                *[x for x in annotation_metadata if isinstance(x, FieldInfo)],
-                pydantic_field,
-                annotation=pydantic_field.annotation,
-            )
-            pydantic_field.frozen = final or pydantic_field.frozen
-            pydantic_field.init_var = init_var
-            pydantic_field.init = getattr(default, 'init', None)
-            pydantic_field.kw_only = getattr(default, 'kw_only', None)
-            return pydantic_field
+            return FieldInfo._handle_field_info_default(annotation, default, final)
+        elif isinstance(default, dataclasses.Field):
+            return FieldInfo._handle_dataclasses_field_default(annotation, default, final)
 
         annotation, metadata = _typing_extra.unpack_annotated(annotation)
 
         if metadata:
-            field_infos = [a for a in metadata if isinstance(a, FieldInfo)]
-            field_info = FieldInfo.merge_field_infos(*field_infos, annotation=annotation, default=default)
-            field_metadata: list[Any] = []
-            for a in metadata:
-                if _typing_extra.is_deprecated_instance(a):
-                    field_info.deprecated = a.message
-                elif not isinstance(a, FieldInfo):
-                    field_metadata.append(a)
-                else:
-                    field_metadata.extend(a.metadata)
-            field_info.metadata = field_metadata
-            return field_info
+            return FieldInfo._handle_metadata(annotation, metadata, default, final)
 
         return FieldInfo(annotation=annotation, default=default, frozen=final or None)  # pyright: ignore[reportArgumentType]
 
