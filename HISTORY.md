@@ -1,3 +1,41 @@
+## v2.11.0a2 (2025-02-10)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.11.0a2)
+
+### What's Changed
+
+Pydantic v2.11 is a version strongly focused on build time performance of Pydantic models (and core schema generation in general).
+This is another early alpha release, meant to collect early feedback from users having issues with core schema builds.
+
+#### Packaging
+
+* Bump `ruff` from 0.9.2 to 0.9.5 by @Viicos in [#11407](https://github.com/pydantic/pydantic/pull/11407)
+* Bump `pydantic-core` to v2.29.0 by @mikeedjones in [#11402](https://github.com/pydantic/pydantic/pull/11402)
+* Use locally-built rust with symbols & pgo by @davidhewitt in [#11403](https://github.com/pydantic/pydantic/pull/11403)
+
+
+#### Performance
+
+* Create a single dictionary when creating a `CoreConfig` instance by @sydney-runkle in [#11384](https://github.com/pydantic/pydantic/pull/11384)
+
+#### Fixes
+
+* Use the correct JSON Schema mode when handling function schemas by @Viicos in [#11367](https://github.com/pydantic/pydantic/pull/11367)
+* Fix JSON Schema reference logic with `examples` keys by @Viicos in [#11366](https://github.com/pydantic/pydantic/pull/11366)
+* Improve exception message when encountering recursion errors during type evaluation by @Viicos in [#11356](https://github.com/pydantic/pydantic/pull/11356)
+* Always include `additionalProperties: True` for arbitrary dictionary schemas by @austinyu in [#11392](https://github.com/pydantic/pydantic/pull/11392)
+* Expose `fallback` parameter in serialization methods by @Viicos in [#11398](https://github.com/pydantic/pydantic/pull/11398)
+* Fix path serialization behavior by @sydney-runkle in [#11416](https://github.com/pydantic/pydantic/pull/11416)
+
+### New Contributors
+
+* @kauabh made their first contribution in [#11369](https://github.com/pydantic/pydantic/pull/11369)
+* @jaceklaskowski made their first contribution in [#11353](https://github.com/pydantic/pydantic/pull/11353)
+* @tmpbeing made their first contribution in [#11375](https://github.com/pydantic/pydantic/pull/11375)
+* @petyosi made their first contribution in [#11405](https://github.com/pydantic/pydantic/pull/11405)
+* @austinyu made their first contribution in [#11392](https://github.com/pydantic/pydantic/pull/11392)
+* @mikeedjones made their first contribution in [#11402](https://github.com/pydantic/pydantic/pull/11402)
+
 ## v2.11.0a1 (2025-01-30)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.11.0a1)
