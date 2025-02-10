@@ -12,7 +12,7 @@ Pydantic
 
 [![license](https://img.shields.io/github/license/pydantic/pydantic.svg)](https://github.com/pydantic/pydantic/blob/main/LICENSE)
 
-Documentation for development version: [5aa6d91](https://github.com/pydantic/pydantic/commit/5aa6d914963af4e86d10c0e8e49ce64f98f4d64d).
+Documentation for development version: [a1f12c7](https://github.com/pydantic/pydantic/commit/a1f12c710c99d13f64becf696bf18ce49c5ea07c).
 
 Pydantic is the most widely used data validation library for Python.
 
@@ -271,6 +271,44 @@ For a more comprehensive list of open-source projects using Pydantic see the
 [list of dependents on github](https://github.com/pydantic/pydantic/network/dependents), or you can find some awesome projects using Pydantic in [awesome-pydantic](https://github.com/Kludex/awesome-pydantic).
 
 
+
+v2.11.0a2 (2025-02-10)
+----------------------
+
+ [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.11.0a2)
+
+### What's Changed
+
+Pydantic v2.11 is a version strongly focused on build time performance of Pydantic models (and core schema generation in general).
+This is another early alpha release, meant to collect early feedback from users having issues with core schema builds.
+
+#### Packaging
+
+* Bump `ruff` from 0.9.2 to 0.9.5 by [@Viicos](https://github.com/Viicos) in [#11407](https://github.com/pydantic/pydantic/pull/11407)
+* Bump `pydantic-core` to v2.29.0 by [@mikeedjones](https://github.com/mikeedjones) in [#11402](https://github.com/pydantic/pydantic/pull/11402)
+* Use locally-built rust with symbols & pgo by [@davidhewitt](https://github.com/davidhewitt) in [#11403](https://github.com/pydantic/pydantic/pull/11403)
+
+#### Performance
+
+* Create a single dictionary when creating a `CoreConfig` instance by [@sydney-runkle](https://github.com/sydney-runkle) in [#11384](https://github.com/pydantic/pydantic/pull/11384)
+
+#### Fixes
+
+* Use the correct JSON Schema mode when handling function schemas by [@Viicos](https://github.com/Viicos) in [#11367](https://github.com/pydantic/pydantic/pull/11367)
+* Fix JSON Schema reference logic with `examples` keys by [@Viicos](https://github.com/Viicos) in [#11366](https://github.com/pydantic/pydantic/pull/11366)
+* Improve exception message when encountering recursion errors during type evaluation by [@Viicos](https://github.com/Viicos) in [#11356](https://github.com/pydantic/pydantic/pull/11356)
+* Always include `additionalProperties: True` for arbitrary dictionary schemas by [@austinyu](https://github.com/austinyu) in [#11392](https://github.com/pydantic/pydantic/pull/11392)
+* Expose `fallback` parameter in serialization methods by [@Viicos](https://github.com/Viicos) in [#11398](https://github.com/pydantic/pydantic/pull/11398)
+* Fix path serialization behavior by [@sydney-runkle](https://github.com/sydney-runkle) in [#11416](https://github.com/pydantic/pydantic/pull/11416)
+
+### New Contributors
+
+* [@kauabh](https://github.com/kauabh) made their first contribution in [#11369](https://github.com/pydantic/pydantic/pull/11369)
+* [@jaceklaskowski](https://github.com/jaceklaskowski) made their first contribution in [#11353](https://github.com/pydantic/pydantic/pull/11353)
+* [@tmpbeing](https://github.com/tmpbeing) made their first contribution in [#11375](https://github.com/pydantic/pydantic/pull/11375)
+* [@petyosi](https://github.com/petyosi) made their first contribution in [#11405](https://github.com/pydantic/pydantic/pull/11405)
+* [@austinyu](https://github.com/austinyu) made their first contribution in [#11392](https://github.com/pydantic/pydantic/pull/11392)
+* [@mikeedjones](https://github.com/mikeedjones) made their first contribution in [#11402](https://github.com/pydantic/pydantic/pull/11402)
 
 v2.11.0a1 (2025-01-30)
 ----------------------
