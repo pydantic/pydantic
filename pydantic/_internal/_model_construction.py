@@ -312,7 +312,7 @@ class ModelMetaclass(ABCMeta):
 
     @property
     def __pydantic_fields_complete__(self) -> bool:
-        """Whether the fields where successfully collected.
+        """Whether the fields where successfully collected (i.e. type hints were successfully resolves).
 
         This is a private attribute, not meant to be used outside Pydantic.
         """

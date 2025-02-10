@@ -210,7 +210,7 @@ def collect_model_fields(  # noqa: C901
                     UserWarning,
                 )
 
-        if assigned_value is PydanticUndefined:
+        if assigned_value is PydanticUndefined:  # no assignment, just a plain annotation
             if ann_name in annotations:
                 # field is present in the current model's annotations (and *not* from parent classes)
                 field_info = FieldInfo_.from_annotation(ann_type)
@@ -229,7 +229,7 @@ def collect_model_fields(  # noqa: C901
                 # Store the original annotation that should be used to rebuild
                 # the field info later:
                 field_info._original_annotation = ann_type
-        else:
+        else:  # An assigned value is present (either the default value, or a `Field()` function)
             _warn_on_nested_alias_in_annotation(ann_type, ann_name)
             if isinstance(assigned_value, FieldInfo_) and ismethoddescriptor(assigned_value.default):
                 # `assigned_value` was fetched using `getattr`, which triggers a call to `__get__`
