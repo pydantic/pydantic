@@ -1388,7 +1388,6 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         exclude: AbstractSetIntStr | MappingIntStrAny | None = None,
         update: Dict[str, Any] | None = None,  # noqa UP006
         deep: bool = False,
-        unset_cached_properties: bool = False,
     ) -> Self:  # pragma: no cover
         """Returns a copy of the model.
 
@@ -1408,7 +1407,6 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             exclude: Optional set or mapping specifying which fields to exclude in the copied model.
             update: Optional dictionary of field-value pairs to override field values in the copied model.
             deep: If True, the values of fields that are Pydantic models will be deep-copied.
-            unset_cached_properties: Set to `True` to unset cached properties.
 
         Returns:
             A copy of the model with included, excluded and updated fields as specified.
@@ -1452,10 +1450,6 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         # removing excluded fields from `__pydantic_fields_set__`
         if exclude:
             fields_set -= set(exclude)
-
-        if unset_cached_properties:
-            for attr in self._get_cached_properties():
-                values.pop(attr, None)
 
         return copy_internals._copy_and_set_values(self, values, fields_set, extra, private, deep=deep)
 
