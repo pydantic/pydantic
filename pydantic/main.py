@@ -389,9 +389,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 copied.__dict__.update(update)
             copied.__pydantic_fields_set__.update(update.keys())
 
-        for attr in dir(copied):
-            if isinstance(getattr(type(copied), attr, None), cached_property):
-                copied.__dict__.pop(attr, None)
+        for attr in copied._get_cached_properties():
+            copied.__dict__.pop(attr, None)
 
         return copied
 
@@ -1016,6 +1015,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         }
         raise pydantic_core.ValidationError.from_exception_data(cls.__name__, [error])
 
+    def _get_cached_properties(self) -> set[str]:
+        return {attr for attr in dir(self) if isinstance(getattr(type(self), attr, None), cached_property)}
+
     def __getstate__(self) -> dict[Any, Any]:
         private = self.__pydantic_private__
         if private:
@@ -1442,6 +1444,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         # removing excluded fields from `__pydantic_fields_set__`
         if exclude:
             fields_set -= set(exclude)
+
+        for attr in dir(self):
+            if isinstance(getattr(type(self), attr, None), cached_property):
+                values.pop(attr, None)
 
         return copy_internals._copy_and_set_values(self, values, fields_set, extra, private, deep=deep)
 
