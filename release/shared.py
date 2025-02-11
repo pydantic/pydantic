@@ -9,8 +9,7 @@ def run_command(*args: str) -> str:
     return p.stdout.strip()
 
 
-REPO = 'pydantic/pydantic'
+REPO = 'austinyu/pydantic'
 HISTORY_FILE = 'HISTORY.md'
-ROOT_PYPROJECT = 'pyproject.toml'
 PACKAGE_VERSION_FILE = 'pydantic/version.py'
 GITHUB_TOKEN = run_command('gh', 'auth', 'token')

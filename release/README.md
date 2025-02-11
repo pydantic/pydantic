@@ -5,6 +5,11 @@
 Prerequisites:
 * `gh` cli is installed - see installation instructions [here](https://docs.github.com/en/github-cli/github-cli/quickstart)
   * Run `gh auth login` to authenticate with GitHub, which is needed for the API calls made in the release process.
+* Repository has all tags from previous releases.
+  * If your repository is a fork, you may need to fetch tags from the upstream repository:
+  * Run `git remote add upstream https://github.com/pydantic/pydantic.git` if you haven't already.
+  * Run `git fetch upstream --tags` to fetch all tags from the upstream repository.
+
 
 To create a new release:
 1. Edit `pydantic/version.py` to set the new version number and run `uv lock -P pydantic`

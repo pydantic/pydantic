@@ -11,10 +11,10 @@ from pathlib import Path
 import requests
 
 from release.shared import (
+    REPO,
     GITHUB_TOKEN,
     HISTORY_FILE,
     PACKAGE_VERSION_FILE,
-    ROOT_PYPROJECT,
     run_command,
 )
 
@@ -68,7 +68,7 @@ def get_notes(new_version: str) -> str:
         'tag_name': f'v{new_version}'
     }
     response = requests.post(
-        'https://api.github.com/repos/pydantic/pydantic/releases/generate-notes',
+        f'https://api.github.com/repos/{REPO}/releases/generate-notes',
         headers={
             'Accept': 'application/vnd.github+json',
             'Authorization': f'Bearer {auth_token}',
@@ -90,8 +90,8 @@ def get_notes(new_version: str) -> str:
 
     # Render PR links nicely
     body = re.sub(
-        pattern='https://github.com/pydantic/pydantic/pull/(\\d+)',
-        repl=r'[#\1](https://github.com/pydantic/pydantic/pull/\1)',
+        pattern=f'https://github.com/{REPO}/pull/(\\d+)',
+        repl=f'[#\\1](https://github.com/{REPO}/pull/\\1)',
         string=body,
     )
 
@@ -123,7 +123,7 @@ def update_history(new_version: str, dry_run: bool, force_update: bool) -> None:
     notes = get_notes(new_version)
     new_chunk = (
         f'## {title}\n\n'
-        f'[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v{new_version})\n\n'
+        f'[GitHub release](https://github.com/{REPO}/releases/tag/v{new_version})\n\n'
         f'{notes}\n\n'
     )
     if dry_run:
@@ -138,8 +138,8 @@ def update_history(new_version: str, dry_run: bool, force_update: bool) -> None:
     citation_text = citation_path.read_text()
 
     is_release_version = not ('a' in new_version or 'b' in new_version)
-    version_typ = 'alpha' if 'a' in new_version else 'beta'
     if not is_release_version:
+        version_typ = 'alpha' if 'a' in new_version else 'beta'
         warnings.warn(
             f'WARNING: not updating CITATION.cff because version is {version_typ} version {new_version}'
         )
