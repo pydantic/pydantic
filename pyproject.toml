@@ -221,6 +221,7 @@ pydocstyle = { convention = 'google' }
 'pydantic/color.py' = ['PYI']
 'pydantic/_internal/_decorators_v1.py' = ['PYI']
 'pydantic/json_schema.py' = ['D']
+"release/*.py" = ["T201"]
 
 [tool.ruff.lint.extend-per-file-ignores]
 "docs/**/*.py" = ['T']
