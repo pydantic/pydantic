@@ -388,6 +388,11 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             else:
                 copied.__dict__.update(update)
             copied.__pydantic_fields_set__.update(update.keys())
+
+        for attr in dir(copied):
+            if isinstance(getattr(type(copied), attr, None), cached_property):
+                copied.__dict__.pop(attr, None)
+
         return copied
 
     def model_dump(

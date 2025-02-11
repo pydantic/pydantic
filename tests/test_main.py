@@ -9,7 +9,7 @@ from copy import deepcopy
 from dataclasses import dataclass
 from datetime import date, datetime
 from enum import Enum
-from functools import cache, partial
+from functools import cache, cached_property, partial
 from typing import (
     Annotated,
     Any,
@@ -2472,6 +2472,19 @@ def test_model_copy_extra():
     m5 = m.model_copy(update={'x': 4, 'b': 3})
     assert m5.model_dump() == {'x': 4, 'b': 3}
     assert m5.model_extra == {'b': 3}
+
+
+def test_model_copy_cached_property():
+    class Model(BaseModel):
+        x: int
+
+        @cached_property
+        def bar(self):
+            return self.x + 1
+
+    m = Model(x=5)
+    updated_m = m.model_copy(update={'x': 123})
+    assert updated_m.bar == 124
 
 
 def test_model_parametrized_name_not_generic():
