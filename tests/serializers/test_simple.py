@@ -3,7 +3,7 @@ from enum import IntEnum
 
 import pytest
 
-from pydantic_core import SchemaSerializer, core_schema
+from pydantic_core import CoreConfig, SchemaSerializer, core_schema
 
 try:
     import numpy
@@ -149,15 +149,15 @@ def test_numpy():
         (float('-inf'), 'null', {}),
         (float('nan'), 'null', {}),
         # explicit values of ser_json_inf_nan
-        (float('inf'), 'null', {'ser_json_inf_nan': 'null'}),
-        (float('-inf'), 'null', {'ser_json_inf_nan': 'null'}),
-        (float('nan'), 'null', {'ser_json_inf_nan': 'null'}),
-        (float('inf'), 'Infinity', {'ser_json_inf_nan': 'constants'}),
-        (float('-inf'), '-Infinity', {'ser_json_inf_nan': 'constants'}),
-        (float('nan'), 'NaN', {'ser_json_inf_nan': 'constants'}),
-        (float('inf'), '"Infinity"', {'ser_json_inf_nan': 'strings'}),
-        (float('-inf'), '"-Infinity"', {'ser_json_inf_nan': 'strings'}),
-        (float('nan'), '"NaN"', {'ser_json_inf_nan': 'strings'}),
+        (float('inf'), 'null', CoreConfig(ser_json_inf_nan='null')),
+        (float('-inf'), 'null', CoreConfig(ser_json_inf_nan='null')),
+        (float('nan'), 'null', CoreConfig(ser_json_inf_nan='null')),
+        (float('inf'), 'Infinity', CoreConfig(ser_json_inf_nan='constants')),
+        (float('-inf'), '-Infinity', CoreConfig(ser_json_inf_nan='constants')),
+        (float('nan'), 'NaN', CoreConfig(ser_json_inf_nan='constants')),
+        (float('inf'), '"Infinity"', CoreConfig(ser_json_inf_nan='strings')),
+        (float('-inf'), '"-Infinity"', CoreConfig(ser_json_inf_nan='strings')),
+        (float('nan'), '"NaN"', CoreConfig(ser_json_inf_nan='strings')),
     ],
 )
 def test_float_inf_and_nan_serializers(value, expected_json, config):

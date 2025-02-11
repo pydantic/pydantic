@@ -3,7 +3,8 @@ import re
 import pytest
 from dirty_equals import HasRepr, IsStr
 
-from pydantic_core import SchemaValidator, ValidationError
+from pydantic_core import CoreConfig, SchemaValidator, ValidationError
+from pydantic_core import core_schema as cs
 
 from ..conftest import Err, PyAndJson
 
@@ -33,9 +34,9 @@ def test_generator_json_int(py_and_json: PyAndJson, input_value, expected):
 @pytest.mark.parametrize(
     'config,input_str',
     (
-        ({}, 'type=iterable_type, input_value=5, input_type=int'),
-        ({'hide_input_in_errors': False}, 'type=iterable_type, input_value=5, input_type=int'),
-        ({'hide_input_in_errors': True}, 'type=iterable_type'),
+        (CoreConfig(), 'type=iterable_type, input_value=5, input_type=int'),
+        (CoreConfig(hide_input_in_errors=False), 'type=iterable_type, input_value=5, input_type=int'),
+        (CoreConfig(hide_input_in_errors=True), 'type=iterable_type'),
     ),
 )
 def test_generator_json_hide_input(py_and_json: PyAndJson, config, input_str):
@@ -150,7 +151,7 @@ def gen():
 
 
 def test_generator_too_long():
-    v = SchemaValidator({'type': 'generator', 'items_schema': {'type': 'int'}, 'max_length': 2})
+    v = SchemaValidator(cs.generator_schema(items_schema=cs.int_schema(), max_length=2))
 
     validating_iterator = v.validate_python(gen())
 
@@ -174,7 +175,7 @@ def test_generator_too_long():
 
 
 def test_generator_too_short():
-    v = SchemaValidator({'type': 'generator', 'items_schema': {'type': 'int'}, 'min_length': 4})
+    v = SchemaValidator(cs.generator_schema(items_schema=cs.int_schema(), min_length=4))
 
     validating_iterator = v.validate_python(gen())
 

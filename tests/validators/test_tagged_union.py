@@ -209,36 +209,31 @@ def test_enum_keys():
         TWO = 'two'
 
     v = SchemaValidator(
-        {
-            'type': 'tagged-union',
-            'discriminator': 'foo',
-            'choices': {
-                BarEnum.ONE: {
-                    'type': 'typed-dict',
-                    'fields': {
-                        'foo': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
-                        'bar': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
-                    },
-                },
-                FooEnum.BANANA: {
-                    'type': 'typed-dict',
-                    'fields': {
-                        'foo': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
-                        'spam': {
-                            'type': 'typed-dict-field',
-                            'schema': {'type': 'list', 'items_schema': {'type': 'int'}},
-                        },
-                    },
-                },
-                PlainEnum.TWO: {
-                    'type': 'typed-dict',
-                    'fields': {
-                        'foo': {'type': 'typed-dict-field', 'schema': {'type': 'any'}},
-                        'baz': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
-                    },
-                },
+        core_schema.tagged_union_schema(
+            discriminator='foo',
+            choices={
+                BarEnum.ONE: core_schema.typed_dict_schema(
+                    fields={
+                        'foo': core_schema.typed_dict_field(schema=core_schema.int_schema()),
+                        'bar': core_schema.typed_dict_field(schema=core_schema.int_schema()),
+                    }
+                ),
+                FooEnum.BANANA: core_schema.typed_dict_schema(
+                    fields={
+                        'foo': core_schema.typed_dict_field(schema=core_schema.str_schema()),
+                        'spam': core_schema.typed_dict_field(
+                            schema=core_schema.list_schema(items_schema=core_schema.int_schema())
+                        ),
+                    }
+                ),
+                PlainEnum.TWO: core_schema.typed_dict_schema(
+                    fields={
+                        'foo': core_schema.typed_dict_field(schema=core_schema.any_schema()),
+                        'baz': core_schema.typed_dict_field(schema=core_schema.int_schema()),
+                    }
+                ),
             },
-        }
+        )
     )
 
     assert v.validate_python({'foo': FooEnum.BANANA, 'spam': [1, 2, '3']}) == {'foo': FooEnum.BANANA, 'spam': [1, 2, 3]}
@@ -457,27 +452,24 @@ def test_int_discriminator_function(py_and_json: PyAndJson, input_value, expecte
 
 def test_from_attributes():
     v = SchemaValidator(
-        {
-            'type': 'tagged-union',
-            'discriminator': 'foobar',
-            'choices': {
-                'apple': {
-                    'type': 'model-fields',
-                    'fields': {
-                        'a': {'type': 'model-field', 'schema': {'type': 'str'}},
-                        'b': {'type': 'model-field', 'schema': {'type': 'int'}},
-                    },
-                },
-                'banana': {
-                    'type': 'model-fields',
-                    'fields': {
-                        'c': {'type': 'model-field', 'schema': {'type': 'str'}},
-                        'd': {'type': 'model-field', 'schema': {'type': 'int'}},
-                    },
-                },
+        core_schema.tagged_union_schema(
+            discriminator='foobar',
+            choices={
+                'apple': core_schema.model_fields_schema(
+                    fields={
+                        'a': core_schema.model_field(schema=core_schema.str_schema()),
+                        'b': core_schema.model_field(schema=core_schema.int_schema()),
+                    }
+                ),
+                'banana': core_schema.model_fields_schema(
+                    fields={
+                        'c': core_schema.model_field(schema=core_schema.str_schema()),
+                        'd': core_schema.model_field(schema=core_schema.int_schema()),
+                    }
+                ),
             },
-        },
-        {'from_attributes': True},
+        ),
+        config=CoreConfig(from_attributes=True),
     )
     assert v.validate_python({'foobar': 'apple', 'a': 'apple', 'b': '13'}) == (
         {'a': 'apple', 'b': 13},
@@ -516,7 +508,9 @@ def test_use_ref():
 
 
 def test_downcast_error():
-    v = SchemaValidator({'type': 'tagged-union', 'discriminator': lambda x: 123, 'choices': {'str': {'type': 'str'}}})
+    v = SchemaValidator(
+        core_schema.tagged_union_schema(discriminator=lambda x: 123, choices={'str': core_schema.str_schema()})
+    )
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python('x')
         assert exc_info.value.errors(include_url=False) == [
@@ -531,31 +525,27 @@ def test_downcast_error():
 
 def test_custom_error():
     v = SchemaValidator(
-        {
-            'type': 'tagged-union',
-            'discriminator': 'foo',
-            'custom_error_type': 'snap',
-            'custom_error_message': 'Input should be a foo or bar',
-            'choices': {
-                'apple': {
-                    'type': 'typed-dict',
-                    'fields': {
-                        'foo': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
-                        'bar': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
-                    },
-                },
-                'banana': {
-                    'type': 'typed-dict',
-                    'fields': {
-                        'foo': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
-                        'spam': {
-                            'type': 'typed-dict-field',
-                            'schema': {'type': 'list', 'items_schema': {'type': 'int'}},
-                        },
-                    },
-                },
+        core_schema.tagged_union_schema(
+            discriminator='foo',
+            custom_error_type='snap',
+            custom_error_message='Input should be a foo or bar',
+            choices={
+                'apple': core_schema.typed_dict_schema(
+                    fields={
+                        'foo': core_schema.typed_dict_field(schema=core_schema.str_schema()),
+                        'bar': core_schema.typed_dict_field(schema=core_schema.int_schema()),
+                    }
+                ),
+                'banana': core_schema.typed_dict_schema(
+                    fields={
+                        'foo': core_schema.typed_dict_field(schema=core_schema.str_schema()),
+                        'spam': core_schema.typed_dict_field(
+                            schema=core_schema.list_schema(items_schema=core_schema.int_schema())
+                        ),
+                    }
+                ),
             },
-        }
+        )
     )
     assert v.validate_python({'foo': 'apple', 'bar': '123'}) == {'foo': 'apple', 'bar': 123}
     with pytest.raises(ValidationError) as exc_info:
@@ -573,30 +563,26 @@ def test_custom_error():
 
 def test_custom_error_type():
     v = SchemaValidator(
-        {
-            'type': 'tagged-union',
-            'discriminator': 'foo',
-            'custom_error_type': 'finite_number',
-            'choices': {
-                'apple': {
-                    'type': 'typed-dict',
-                    'fields': {
-                        'foo': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
-                        'bar': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
-                    },
-                },
-                'banana': {
-                    'type': 'typed-dict',
-                    'fields': {
-                        'foo': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
-                        'spam': {
-                            'type': 'typed-dict-field',
-                            'schema': {'type': 'list', 'items_schema': {'type': 'int'}},
-                        },
-                    },
-                },
+        core_schema.tagged_union_schema(
+            discriminator='foo',
+            custom_error_type='finite_number',
+            choices={
+                'apple': core_schema.typed_dict_schema(
+                    fields={
+                        'foo': core_schema.typed_dict_field(schema=core_schema.str_schema()),
+                        'bar': core_schema.typed_dict_field(schema=core_schema.int_schema()),
+                    }
+                ),
+                'banana': core_schema.typed_dict_schema(
+                    fields={
+                        'foo': core_schema.typed_dict_field(schema=core_schema.str_schema()),
+                        'spam': core_schema.typed_dict_field(
+                            schema=core_schema.list_schema(items_schema=core_schema.int_schema())
+                        ),
+                    }
+                ),
             },
-        }
+        )
     )
     assert v.validate_python({'foo': 'apple', 'bar': '123'}) == {'foo': 'apple', 'bar': 123}
     with pytest.raises(ValidationError) as exc_info:

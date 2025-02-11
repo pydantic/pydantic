@@ -7,6 +7,7 @@ import pytest
 from dirty_equals import IsStr
 
 from pydantic_core import SchemaValidator, ValidationError, core_schema
+from pydantic_core import core_schema as cs
 
 from ..conftest import Err, PyAndJson, plain_repr
 
@@ -141,7 +142,7 @@ def test_int_py_and_json(py_and_json: PyAndJson, input_value, expected):
     ids=repr,
 )
 def test_int(input_value, expected):
-    v = SchemaValidator({'type': 'int'})
+    v = SchemaValidator(cs.int_schema())
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
             v.validate_python(input_value)
@@ -187,7 +188,7 @@ def test_int(input_value, expected):
     ],
 )
 def test_positive_int(input_value, expected):
-    v = SchemaValidator({'type': 'int', 'gt': 0})
+    v = SchemaValidator(cs.int_schema(gt=0))
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
             v.validate_python(input_value)
@@ -208,7 +209,7 @@ def test_positive_int(input_value, expected):
     ],
 )
 def test_negative_int(input_value, expected):
-    v = SchemaValidator({'type': 'int', 'lt': 0})
+    v = SchemaValidator(cs.int_schema(lt=0))
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
             v.validate_python(input_value)
@@ -236,7 +237,7 @@ def test_negative_int(input_value, expected):
     ],
 )
 def test_positive_json(input_value, expected):
-    v = SchemaValidator({'type': 'int', 'gt': 0})
+    v = SchemaValidator(cs.int_schema(gt=0))
     json_input = json.dumps(input_value)
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
@@ -258,7 +259,7 @@ def test_positive_json(input_value, expected):
     ],
 )
 def test_negative_json(input_value, expected):
-    v = SchemaValidator({'type': 'int', 'lt': 0})
+    v = SchemaValidator(cs.int_schema(lt=0))
     json_input = json.dumps(input_value)
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
@@ -383,22 +384,22 @@ def test_union_int_simple(py_and_json: PyAndJson):
 
 
 def test_int_repr():
-    v = SchemaValidator({'type': 'int'})
+    v = SchemaValidator(cs.int_schema())
     assert (
         plain_repr(v)
         == 'SchemaValidator(title="int",validator=Int(IntValidator{strict:false}),definitions=[],cache_strings=True)'
     )
-    v = SchemaValidator({'type': 'int', 'strict': True})
+    v = SchemaValidator(cs.int_schema(strict=True))
     assert (
         plain_repr(v)
         == 'SchemaValidator(title="int",validator=Int(IntValidator{strict:true}),definitions=[],cache_strings=True)'
     )
-    v = SchemaValidator({'type': 'int', 'multiple_of': 7})
+    v = SchemaValidator(cs.int_schema(multiple_of=7))
     assert plain_repr(v).startswith('SchemaValidator(title="constrained-int",validator=ConstrainedInt(')
 
 
 def test_too_long(pydantic_version):
-    v = SchemaValidator({'type': 'int'})
+    v = SchemaValidator(cs.int_schema())
 
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python('1' * 4301)
@@ -421,7 +422,7 @@ def test_too_long(pydantic_version):
 
 
 def test_long_python():
-    v = SchemaValidator({'type': 'int'})
+    v = SchemaValidator(cs.int_schema())
 
     s = v.validate_python('1' * 4_300)
     assert s == int('1' * 4_300)
@@ -434,7 +435,7 @@ def test_long_python():
 
 
 def test_long_python_inequality():
-    v = SchemaValidator({'type': 'int', 'gt': 0, 'lt': int('1' * 4_300) - 5})
+    v = SchemaValidator(cs.int_schema(gt=0, lt=int('1' * 4_300) - 5))
 
     s = str(int('1' * 4_300) - 6)
     s = v.validate_python(s)
@@ -446,7 +447,7 @@ def test_long_python_inequality():
 
 
 def test_long_json():
-    v = SchemaValidator({'type': 'int'})
+    v = SchemaValidator(cs.int_schema())
 
     assert v.validate_json('-' + '1' * 400) == int('-' + '1' * 400)
 
@@ -463,7 +464,7 @@ def test_int_key(py_and_json: PyAndJson):
 
 
 def test_string_as_int_with_underscores() -> None:
-    v = SchemaValidator({'type': 'int'})
+    v = SchemaValidator(cs.int_schema())
     assert v.validate_python('1_000_000') == 1_000_000
     assert v.validate_json('"1_000_000"') == 1_000_000
 
@@ -479,7 +480,7 @@ class IntSubclass(int):
 
 
 def test_int_subclass() -> None:
-    v = SchemaValidator({'type': 'int'})
+    v = SchemaValidator(cs.int_schema())
     v_lax = v.validate_python(IntSubclass(1))
     assert v_lax == 1
     assert type(v_lax) == int
@@ -494,7 +495,7 @@ def test_int_subclass() -> None:
 
 
 def test_int_subclass_constraint() -> None:
-    v = SchemaValidator({'type': 'int', 'gt': 0})
+    v = SchemaValidator(cs.int_schema(gt=0))
     v_lax = v.validate_python(IntSubclass(1))
     assert v_lax == 1
     assert type(v_lax) == int
@@ -511,14 +512,14 @@ class FloatSubclass(float):
 
 
 def test_float_subclass() -> None:
-    v = SchemaValidator({'type': 'int'})
+    v = SchemaValidator(cs.int_schema())
     v_lax = v.validate_python(FloatSubclass(1))
     assert v_lax == 1
     assert type(v_lax) == int
 
 
 def test_int_subclass_plain_enum() -> None:
-    v = SchemaValidator({'type': 'int'})
+    v = SchemaValidator(cs.int_schema())
 
     from enum import Enum
 
@@ -531,7 +532,7 @@ def test_int_subclass_plain_enum() -> None:
 
 
 def test_allow_inf_nan_true_json() -> None:
-    v = SchemaValidator(core_schema.int_schema(), core_schema.CoreConfig(allow_inf_nan=True))
+    v = SchemaValidator(core_schema.int_schema(), config=core_schema.CoreConfig(allow_inf_nan=True))
 
     assert v.validate_json('123') == 123
     with pytest.raises(ValidationError, match=r'Input should be a finite number \[type=finite_number'):
@@ -543,7 +544,7 @@ def test_allow_inf_nan_true_json() -> None:
 
 
 def test_allow_inf_nan_false_json() -> None:
-    v = SchemaValidator(core_schema.int_schema(), core_schema.CoreConfig(allow_inf_nan=False))
+    v = SchemaValidator(core_schema.int_schema(), config=core_schema.CoreConfig(allow_inf_nan=False))
 
     assert v.validate_json('123') == 123
     with pytest.raises(ValidationError, match=r'Input should be a finite number \[type=finite_number'):
@@ -555,7 +556,7 @@ def test_allow_inf_nan_false_json() -> None:
 
 
 def test_json_big_int_key():
-    v = SchemaValidator({'type': 'dict', 'keys_schema': {'type': 'int'}, 'values_schema': {'type': 'str'}})
+    v = SchemaValidator(cs.dict_schema(keys_schema=cs.int_schema(), values_schema=cs.str_schema()))
     big_integer = 1433352099889938534014333520998899385340
     assert v.validate_python({big_integer: 'x'}) == {big_integer: 'x'}
     assert v.validate_json('{"' + str(big_integer) + '": "x"}') == {big_integer: 'x'}

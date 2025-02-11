@@ -1,12 +1,13 @@
 import pytest
 
 from pydantic_core import PydanticOmit, SchemaError, SchemaValidator, ValidationError, core_schema
+from pydantic_core import core_schema as cs
 
 from .conftest import PyAndJson
 
 
 def test_isinstance():
-    v = SchemaValidator({'type': 'int'})
+    v = SchemaValidator(cs.int_schema())
     assert v.validate_python(123) == 123
     assert v.isinstance_python(123) is True
     assert v.validate_python('123') == 123
@@ -19,7 +20,7 @@ def test_isinstance():
 
 
 def test_isinstance_strict():
-    v = SchemaValidator({'type': 'int', 'strict': True})
+    v = SchemaValidator(cs.int_schema(strict=True))
     assert v.validate_python(123) == 123
     assert v.isinstance_python(123) is True
 
@@ -31,11 +32,7 @@ def test_isinstance_strict():
 
 def test_internal_error():
     v = SchemaValidator(
-        {
-            'type': 'model',
-            'cls': int,
-            'schema': {'type': 'model-fields', 'fields': {'f': {'type': 'model-field', 'schema': {'type': 'int'}}}},
-        }
+        cs.model_schema(cls=int, schema=cs.model_fields_schema(fields={'f': cs.model_field(schema=cs.int_schema())}))
     )
     with pytest.raises(AttributeError, match="'int' object has no attribute '__dict__'"):
         v.validate_python({'f': 123})

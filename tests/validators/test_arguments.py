@@ -7,6 +7,7 @@ from typing import Any, get_type_hints
 import pytest
 
 from pydantic_core import ArgsKwargs, SchemaError, SchemaValidator, ValidationError, core_schema
+from pydantic_core import core_schema as cs
 
 from ..conftest import Err, PyAndJson, plain_repr
 
@@ -737,17 +738,16 @@ def test_default_factory(py_and_json: PyAndJson, input_value, expected):
 
 def test_repr():
     v = SchemaValidator(
-        {
-            'type': 'arguments',
-            'arguments_schema': [
-                {'name': 'b', 'mode': 'positional_or_keyword', 'schema': {'type': 'int'}},
+        cs.arguments_schema(
+            arguments=[
+                {'name': 'b', 'mode': 'positional_or_keyword', 'schema': cs.int_schema()},
                 {
                     'name': 'a',
                     'mode': 'keyword_only',
-                    'schema': {'type': 'default', 'schema': {'type': 'int'}, 'default_factory': lambda: 42},
+                    'schema': cs.with_default_schema(schema=cs.int_schema(), default_factory=lambda: 42),
                 },
-            ],
-        }
+            ]
+        )
     )
     assert 'positional_params_count:1,' in plain_repr(v)
 
@@ -755,17 +755,16 @@ def test_repr():
 def test_build_non_default_follows():
     with pytest.raises(SchemaError, match="Non-default argument 'b' follows default argument"):
         SchemaValidator(
-            {
-                'type': 'arguments',
-                'arguments_schema': [
+            schema=cs.arguments_schema(
+                arguments=[
                     {
                         'name': 'a',
                         'mode': 'positional_or_keyword',
-                        'schema': {'type': 'default', 'schema': {'type': 'int'}, 'default_factory': lambda: 42},
+                        'schema': cs.with_default_schema(schema=cs.int_schema(), default_factory=lambda: 42),
                     },
-                    {'name': 'b', 'mode': 'positional_or_keyword', 'schema': {'type': 'int'}},
-                ],
-            }
+                    {'name': 'b', 'mode': 'positional_or_keyword', 'schema': cs.int_schema()},
+                ]
+            )
         )
 
 
@@ -773,13 +772,7 @@ def test_build_missing_var_kwargs():
     with pytest.raises(
         SchemaError, match="`var_kwargs_schema` must be specified when `var_kwargs_mode` is `'unpacked-typed-dict'`"
     ):
-        SchemaValidator(
-            {
-                'type': 'arguments',
-                'arguments_schema': [],
-                'var_kwargs_mode': 'unpacked-typed-dict',
-            }
-        )
+        SchemaValidator(cs.arguments_schema(arguments=[], var_kwargs_mode='unpacked-typed-dict'))
 
 
 @pytest.mark.parametrize(
@@ -1104,21 +1097,15 @@ def test_function_args_kwargs():
 def test_invalid_schema():
     with pytest.raises(SchemaError, match="'default' and 'default_factory' cannot be used together"):
         SchemaValidator(
-            {
-                'type': 'arguments',
-                'arguments_schema': [
+            schema=cs.arguments_schema(
+                arguments=[
                     {
                         'name': 'a',
                         'mode': 'positional_or_keyword',
-                        'schema': {
-                            'type': 'default',
-                            'schema': {'type': 'int'},
-                            'default': 1,
-                            'default_factory': lambda: 2,
-                        },
+                        'schema': cs.with_default_schema(schema=cs.int_schema(), default=1, default_factory=lambda: 2),
                     }
-                ],
-            }
+                ]
+            )
         )
 
 

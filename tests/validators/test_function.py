@@ -7,7 +7,8 @@ from typing import Any
 import pytest
 from dirty_equals import HasRepr
 
-from pydantic_core import SchemaError, SchemaValidator, ValidationError, core_schema, validate_core_schema
+from pydantic_core import CoreConfig, SchemaError, SchemaValidator, ValidationError, core_schema, validate_core_schema
+from pydantic_core import core_schema as cs
 
 from ..conftest import plain_repr
 
@@ -67,7 +68,7 @@ def test_function_before_error():
         {
             'type': 'function-before',
             'function': {'type': 'with-info', 'function': my_function},
-            'schema': {'type': 'str', 'max_length': 5},
+            'schema': cs.str_schema(max_length=5),
         }
     )
 
@@ -90,8 +91,8 @@ def test_function_before_error():
     'config,input_str',
     (
         ({}, "type=string_too_long, input_value='12345x', input_type=str"),
-        ({'hide_input_in_errors': False}, "type=string_too_long, input_value='12345x', input_type=str"),
-        ({'hide_input_in_errors': True}, 'type=string_too_long'),
+        (CoreConfig(hide_input_in_errors=False), "type=string_too_long, input_value='12345x', input_type=str"),
+        (CoreConfig(hide_input_in_errors=True), 'type=string_too_long'),
     ),
 )
 def test_function_before_error_hide_input(config, input_str):
@@ -102,9 +103,9 @@ def test_function_before_error_hide_input(config, input_str):
         {
             'type': 'function-before',
             'function': {'type': 'with-info', 'function': my_function},
-            'schema': {'type': 'str', 'max_length': 5},
+            'schema': cs.str_schema(max_length=5),
         },
-        config,
+        config=config,
     )
 
     with pytest.raises(ValidationError, match=re.escape(f'String should have at most 5 characters [{input_str}]')):
@@ -121,10 +122,9 @@ def test_function_before_error_model():
         {
             'type': 'function-before',
             'function': {'type': 'with-info', 'function': f},
-            'schema': {
-                'type': 'typed-dict',
-                'fields': {'my_field': {'type': 'typed-dict-field', 'schema': {'type': 'str', 'max_length': 5}}},
-            },
+            'schema': cs.typed_dict_schema(
+                fields={'my_field': cs.typed_dict_field(schema=cs.str_schema(max_length=5))}
+            ),
         }
     )
 
@@ -148,7 +148,11 @@ def test_function_before_error_model():
         (None, {}, 'ValidationInfo(config=None, context=None, data=None, field_name=None)'),
         (None, {'context': {1: 2}}, 'ValidationInfo(config=None, context={1: 2}, data=None, field_name=None)'),
         (None, {'context': None}, 'ValidationInfo(config=None, context=None, data=None, field_name=None)'),
-        ({'title': 'hello'}, {}, "ValidationInfo(config={'title': 'hello'}, context=None, data=None, field_name=None)"),
+        (
+            CoreConfig(title='hello'),
+            {},
+            "ValidationInfo(config={'title': 'hello'}, context=None, data=None, field_name=None)",
+        ),
     ],
 )
 def test_val_info_repr(config, kwargs, expected_repr):
@@ -157,7 +161,7 @@ def test_val_info_repr(config, kwargs, expected_repr):
         assert str(info) == expected_repr
         return input_value
 
-    v = SchemaValidator(core_schema.with_info_before_validator_function(f, core_schema.str_schema()), config)
+    v = SchemaValidator(core_schema.with_info_before_validator_function(f, core_schema.str_schema()), config=config)
 
     assert v.validate_python('input value', **kwargs) == 'input value'
 
@@ -241,8 +245,8 @@ def test_wrap_error():
     'config,input_str',
     (
         ({}, "type=int_parsing, input_value='wrong', input_type=str"),
-        ({'hide_input_in_errors': False}, "type=int_parsing, input_value='wrong', input_type=str"),
-        ({'hide_input_in_errors': True}, 'type=int_parsing'),
+        (CoreConfig(hide_input_in_errors=False), "type=int_parsing, input_value='wrong', input_type=str"),
+        (CoreConfig(hide_input_in_errors=True), 'type=int_parsing'),
     ),
 )
 def test_function_wrap_error_hide_input(config, input_str):
@@ -254,7 +258,7 @@ def test_function_wrap_error_hide_input(config, input_str):
             assert str(e).startswith('1 validation error for ValidatorCallable\n')
             raise e
 
-    v = SchemaValidator(core_schema.with_info_wrap_validator_function(f, core_schema.int_schema()), config)
+    v = SchemaValidator(core_schema.with_info_wrap_validator_function(f, core_schema.int_schema()), config=config)
 
     with pytest.raises(
         ValidationError,
@@ -346,15 +350,15 @@ def test_function_after_raise():
     'config,input_str',
     (
         ({}, "type=value_error, input_value='input value', input_type=str"),
-        ({'hide_input_in_errors': False}, "type=value_error, input_value='input value', input_type=str"),
-        ({'hide_input_in_errors': True}, 'type=value_error'),
+        (CoreConfig(hide_input_in_errors=False), "type=value_error, input_value='input value', input_type=str"),
+        (CoreConfig(hide_input_in_errors=True), 'type=value_error'),
     ),
 )
 def test_function_after_error_hide_input(config, input_str):
     def f(input_value, info):
         raise ValueError('foobar')
 
-    v = SchemaValidator(core_schema.with_info_after_validator_function(f, core_schema.str_schema()), config)
+    v = SchemaValidator(core_schema.with_info_after_validator_function(f, core_schema.str_schema()), config=config)
 
     with pytest.raises(ValidationError, match=re.escape(f'Value error, foobar [{input_str}]')):
         v.validate_python('input value')
@@ -369,20 +373,18 @@ def test_function_after_config():
         return input_value + ' Changed'
 
     v = SchemaValidator(
-        {
-            'type': 'typed-dict',
-            'fields': {
-                'test_field': {
-                    'type': 'typed-dict-field',
-                    'schema': {
+        cs.typed_dict_schema(
+            fields={
+                'test_field': cs.typed_dict_field(
+                    schema={
                         'type': 'function-after',
                         'function': {'type': 'with-info', 'function': f, 'field_name': 'test_field'},
-                        'schema': {'type': 'str'},
-                    },
-                }
+                        'schema': cs.str_schema(),
+                    }
+                )
             },
-            'config': {'allow_inf_nan': True},
-        }
+            config=CoreConfig(allow_inf_nan=True),
+        )
     )
 
     assert v.validate_python({'test_field': b'321'}) == {'test_field': '321 Changed'}
@@ -499,7 +501,7 @@ def test_class_with_validator():
         {
             'type': 'function-after',
             'function': {'type': 'with-info', 'function': Foobar.__validate__},
-            'schema': {'type': 'str'},
+            'schema': cs.str_schema(),
         }
     )
 

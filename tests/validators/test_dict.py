@@ -7,6 +7,7 @@ import pytest
 from dirty_equals import HasRepr, IsStr
 
 from pydantic_core import SchemaValidator, ValidationError
+from pydantic_core import core_schema as cs
 
 from ..conftest import Err, PyAndJson
 
@@ -38,7 +39,7 @@ def test_dict(py_and_json: PyAndJson):
     ids=repr,
 )
 def test_dict_cases(input_value, expected):
-    v = SchemaValidator({'type': 'dict', 'keys_schema': {'type': 'str'}, 'values_schema': {'type': 'str'}})
+    v = SchemaValidator(cs.dict_schema(keys_schema=cs.str_schema(), values_schema=cs.str_schema()))
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
             v.validate_python(input_value)
@@ -62,7 +63,7 @@ def test_dict_value_error(py_and_json: PyAndJson):
 
 
 def test_dict_error_key_int():
-    v = SchemaValidator({'type': 'dict', 'values_schema': {'type': 'int'}})
+    v = SchemaValidator(cs.dict_schema(values_schema=cs.int_schema()))
     with pytest.raises(ValidationError, match='Input should be a valid integer') as exc_info:
         v.validate_python({1: 2, 3: 'wrong', -4: 'wrong2'})
     # insert_assert(exc_info.value.errors(include_url=False))
@@ -83,7 +84,7 @@ def test_dict_error_key_int():
 
 
 def test_dict_error_key_other():
-    v = SchemaValidator({'type': 'dict', 'values_schema': {'type': 'int'}})
+    v = SchemaValidator(cs.dict_schema(values_schema=cs.int_schema()))
     with pytest.raises(ValidationError, match='Input should be a valid integer') as exc_info:
         v.validate_python({1: 2, (1, 2): 'wrong'})
     assert exc_info.value.errors(include_url=False) == [
@@ -97,8 +98,8 @@ def test_dict_error_key_other():
 
 
 def test_dict_any_value():
-    v = SchemaValidator({'type': 'dict', 'keys_schema': {'type': 'str'}})
-    v = SchemaValidator({'type': 'dict', 'keys_schema': {'type': 'str'}})
+    v = SchemaValidator(cs.dict_schema(keys_schema=cs.str_schema()))
+    v = SchemaValidator(cs.dict_schema(keys_schema=cs.str_schema()))
     assert v.validate_python({'1': 1, '2': 'a', '3': None}) == {'1': 1, '2': 'a', '3': None}
 
 
@@ -116,17 +117,15 @@ def test_mapping():
         def __len__(self):
             return len(self._d)
 
-    v = SchemaValidator({'type': 'dict', 'keys_schema': {'type': 'int'}, 'values_schema': {'type': 'int'}})
+    v = SchemaValidator(cs.dict_schema(keys_schema=cs.int_schema(), values_schema=cs.int_schema()))
     assert v.validate_python(MyMapping({'1': 2, 3: '4'})) == {1: 2, 3: 4}
-    v = SchemaValidator(
-        {'type': 'dict', 'strict': True, 'keys_schema': {'type': 'int'}, 'values_schema': {'type': 'int'}}
-    )
+    v = SchemaValidator(cs.dict_schema(strict=True, keys_schema=cs.int_schema(), values_schema=cs.int_schema()))
     with pytest.raises(ValidationError, match='Input should be a valid dictionary'):
         v.validate_python(MyMapping({'1': 2, 3: '4'}))
 
 
 def test_key_error():
-    v = SchemaValidator({'type': 'dict', 'keys_schema': {'type': 'int'}, 'values_schema': {'type': 'int'}})
+    v = SchemaValidator(cs.dict_schema(keys_schema=cs.int_schema(), values_schema=cs.int_schema()))
     assert v.validate_python({'1': True}) == {1: 1}
     with pytest.raises(ValidationError, match=re.escape('x.[key]\n  Input should be a valid integer')) as exc_info:
         v.validate_python({'x': 1})
@@ -151,7 +150,7 @@ def test_mapping_error():
         def __len__(self):
             return 1
 
-    v = SchemaValidator({'type': 'dict', 'keys_schema': {'type': 'int'}, 'values_schema': {'type': 'int'}})
+    v = SchemaValidator(cs.dict_schema(keys_schema=cs.int_schema(), values_schema=cs.int_schema()))
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python(BadMapping())
 
@@ -181,7 +180,7 @@ def test_mapping_error_yield_1(mapping_items):
         def __len__(self):
             return 1
 
-    v = SchemaValidator({'type': 'dict', 'keys_schema': {'type': 'int'}, 'values_schema': {'type': 'int'}})
+    v = SchemaValidator(cs.dict_schema(keys_schema=cs.int_schema(), values_schema=cs.int_schema()))
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python(BadMapping())
 
@@ -219,7 +218,7 @@ def test_mapping_error_yield_1(mapping_items):
     ],
 )
 def test_dict_length_constraints(kwargs: dict[str, Any], input_value, expected):
-    v = SchemaValidator({'type': 'dict', **kwargs})
+    v = SchemaValidator(cs.dict_schema(**kwargs))
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
             v.validate_python(input_value)
@@ -228,7 +227,7 @@ def test_dict_length_constraints(kwargs: dict[str, Any], input_value, expected):
 
 
 def test_json_dict():
-    v = SchemaValidator({'type': 'dict', 'keys_schema': {'type': 'int'}, 'values_schema': {'type': 'int'}})
+    v = SchemaValidator(cs.dict_schema(keys_schema=cs.int_schema(), values_schema=cs.int_schema()))
     assert v.validate_json('{"1": 2, "3": 4}') == {1: 2, 3: 4}
     with pytest.raises(ValidationError) as exc_info:
         v.validate_json('1')
@@ -238,14 +237,12 @@ def test_json_dict():
 
 
 def test_dict_complex_key():
-    v = SchemaValidator(
-        {'type': 'dict', 'keys_schema': {'type': 'complex', 'strict': True}, 'values_schema': {'type': 'str'}}
-    )
+    v = SchemaValidator(cs.dict_schema(keys_schema=cs.complex_schema(strict=True), values_schema=cs.str_schema()))
     assert v.validate_python({complex(1, 2): '1'}) == {complex(1, 2): '1'}
     with pytest.raises(ValidationError, match='Input should be an instance of complex'):
         assert v.validate_python({'1+2j': b'1'}) == {complex(1, 2): '1'}
 
-    v = SchemaValidator({'type': 'dict', 'keys_schema': {'type': 'complex'}, 'values_schema': {'type': 'str'}})
+    v = SchemaValidator(cs.dict_schema(keys_schema=cs.complex_schema(), values_schema=cs.str_schema()))
     with pytest.raises(
         ValidationError, match='Input should be a valid python complex object, a number, or a valid complex string'
     ):
@@ -253,7 +250,7 @@ def test_dict_complex_key():
 
 
 def test_json_dict_complex_key():
-    v = SchemaValidator({'type': 'dict', 'keys_schema': {'type': 'complex'}, 'values_schema': {'type': 'int'}})
+    v = SchemaValidator(cs.dict_schema(keys_schema=cs.complex_schema(), values_schema=cs.int_schema()))
     assert v.validate_json('{"1+2j": 2, "-3": 4}') == {complex(1, 2): 2, complex(-3, 0): 4}
     assert v.validate_json('{"1+2j": 2, "infj": 4}') == {complex(1, 2): 2, complex(0, float('inf')): 4}
     with pytest.raises(ValidationError, match='Input should be a valid complex string'):

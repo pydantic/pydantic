@@ -6,6 +6,7 @@ from functools import partial
 import pytest
 
 from pydantic_core import ArgsKwargs, SchemaValidator, ValidationError
+from pydantic_core import core_schema as cs
 
 from ..conftest import Err, PyAndJson, plain_repr
 
@@ -68,9 +69,7 @@ def test_function_args_any(input_value, expected):
     def my_function(a, b, c):
         return a + b + c
 
-    v = SchemaValidator(
-        {'type': 'call', 'function': my_function, 'arguments_schema': {'type': 'any'}, 'return_schema': {'type': 'int'}}
-    )
+    v = SchemaValidator(cs.call_schema(function=my_function, arguments=cs.any_schema(), return_schema=cs.int_schema()))
 
     if isinstance(expected, Exception):
         with pytest.raises(type(expected), match=re.escape(str(expected))):
@@ -84,7 +83,7 @@ def test_function_return_any(input_value, expected):
     def my_function(a):
         return a
 
-    v = SchemaValidator({'type': 'call', 'function': my_function, 'arguments_schema': {'type': 'any'}})
+    v = SchemaValidator(cs.call_schema(function=my_function, arguments=cs.any_schema()))
     assert 'name:"call[my_function]"' in plain_repr(v)
 
     assert v.validate_python(input_value) == expected
@@ -95,20 +94,17 @@ def test_in_union():
         return a
 
     v = SchemaValidator(
-        {
-            'type': 'union',
-            'choices': [
-                {
-                    'type': 'call',
-                    'function': my_function,
-                    'arguments_schema': {
-                        'type': 'arguments',
-                        'arguments_schema': [{'name': 'a', 'mode': 'positional_or_keyword', 'schema': {'type': 'int'}}],
-                    },
-                },
-                {'type': 'int'},
-            ],
-        }
+        cs.union_schema(
+            choices=[
+                cs.call_schema(
+                    function=my_function,
+                    arguments=cs.arguments_schema(
+                        arguments=[{'name': 'a', 'mode': 'positional_or_keyword', 'schema': cs.int_schema()}]
+                    ),
+                ),
+                cs.int_schema(),
+            ]
+        )
     )
     assert v.validate_python((1,)) == 1
     with pytest.raises(ValidationError) as exc_info:
@@ -131,17 +127,15 @@ def test_dataclass():
         b: str
 
     v = SchemaValidator(
-        {
-            'type': 'call',
-            'function': my_dataclass,
-            'arguments_schema': {
-                'type': 'arguments',
-                'arguments_schema': [
-                    {'name': 'a', 'mode': 'positional_or_keyword', 'schema': {'type': 'int'}},
-                    {'name': 'b', 'mode': 'positional_or_keyword', 'schema': {'type': 'str'}},
-                ],
-            },
-        }
+        cs.call_schema(
+            function=my_dataclass,
+            arguments=cs.arguments_schema(
+                arguments=[
+                    {'name': 'a', 'mode': 'positional_or_keyword', 'schema': cs.int_schema()},
+                    {'name': 'b', 'mode': 'positional_or_keyword', 'schema': cs.str_schema()},
+                ]
+            ),
+        )
     )
     d = v.validate_python(('1', b'2'))
     assert dataclasses.is_dataclass(d)
@@ -158,17 +152,15 @@ def test_named_tuple():
     Point = namedtuple('Point', ['x', 'y'])
 
     v = SchemaValidator(
-        {
-            'type': 'call',
-            'function': Point,
-            'arguments_schema': {
-                'type': 'arguments',
-                'arguments_schema': [
-                    {'name': 'x', 'mode': 'positional_or_keyword', 'schema': {'type': 'float'}},
-                    {'name': 'y', 'mode': 'positional_or_keyword', 'schema': {'type': 'float'}},
-                ],
-            },
-        }
+        cs.call_schema(
+            function=Point,
+            arguments=cs.arguments_schema(
+                arguments=[
+                    {'name': 'x', 'mode': 'positional_or_keyword', 'schema': cs.float_schema()},
+                    {'name': 'y', 'mode': 'positional_or_keyword', 'schema': cs.float_schema()},
+                ]
+            ),
+        )
     )
     d = v.validate_python(('1.1', '2.2'))
     assert isinstance(d, Point)
@@ -186,17 +178,15 @@ def test_function_call_partial():
         return a + b + c
 
     v = SchemaValidator(
-        {
-            'type': 'call',
-            'function': partial(my_function, c=3),
-            'arguments_schema': {
-                'type': 'arguments',
-                'arguments_schema': [
-                    {'name': 'a', 'mode': 'positional_or_keyword', 'schema': {'type': 'int'}},
-                    {'name': 'b', 'mode': 'positional_or_keyword', 'schema': {'type': 'int'}},
-                ],
-            },
-        }
+        cs.call_schema(
+            function=partial(my_function, c=3),
+            arguments=cs.arguments_schema(
+                arguments=[
+                    {'name': 'a', 'mode': 'positional_or_keyword', 'schema': cs.int_schema()},
+                    {'name': 'b', 'mode': 'positional_or_keyword', 'schema': cs.int_schema()},
+                ]
+            ),
+        )
     )
     assert 'name:"call[my_function]"' in plain_repr(v)
     assert v.validate_python((1, 2)) == 6
@@ -208,15 +198,13 @@ def test_custom_name():
         return a
 
     v = SchemaValidator(
-        {
-            'type': 'call',
-            'function': my_function,
-            'function_name': 'foobar',
-            'arguments_schema': {
-                'type': 'arguments',
-                'arguments_schema': [{'name': 'a', 'mode': 'positional_or_keyword', 'schema': {'type': 'int'}}],
-            },
-        }
+        cs.call_schema(
+            function=my_function,
+            function_name='foobar',
+            arguments=cs.arguments_schema(
+                arguments=[{'name': 'a', 'mode': 'positional_or_keyword', 'schema': cs.int_schema()}]
+            ),
+        )
     )
     assert 'name:"call[foobar]"' in plain_repr(v)
     assert v.validate_python((1,)) == 1

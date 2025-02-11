@@ -263,7 +263,7 @@ def test_tuple_list():
     v = SchemaValidator(
         core_schema.tuple_positional_schema(
             [core_schema.list_schema(core_schema.int_schema()), core_schema.int_schema()]
-        ),
+        )
     )
     assert v.validate_python([['1', '2'], '3'], allow_partial=True) == snapshot(([1, 2], 3))
     with pytest.raises(ValidationError, match=r'1\s+Input should be a valid integer'):
