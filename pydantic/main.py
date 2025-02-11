@@ -1445,9 +1445,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         if exclude:
             fields_set -= set(exclude)
 
-        for attr in dir(self):
-            if isinstance(getattr(type(self), attr, None), cached_property):
-                values.pop(attr, None)
+        for attr in self._get_cached_properties():
+            values.pop(attr, None)
 
         return copy_internals._copy_and_set_values(self, values, fields_set, extra, private, deep=deep)
 
