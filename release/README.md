@@ -13,10 +13,10 @@
 ## Simi-automated Release Process:
 
 1. Run `uv run release/prepare.py {VERSION}` from the root of the repository. This will:
-    * Update the version number in the `version.py` file.
+    * Update the version number in the `version.py` file and run `uv lock -P pydantic` to update the lock file.
     * Add a new section to HISTORY.md with a title containing the version number tag and current date.
     * If you just want to see the effect of the script without making any changes, you can add the `--dry-run` flag.
-2. Curate the changes in number.md:
+2. Curate the changes in HISTORY.md:
    - make sure the markdown is valid; in particular, check text that should be in `code-blocks` is.
    - mark any breaking changes with `**Breaking Change:**`
    - curate the list of pydantic-core updates in the `packaging` section:

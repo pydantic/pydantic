@@ -73,6 +73,10 @@ def open_pull_request(rl_version: str):
     response.raise_for_status()
     return response.json()['html_url']
 
+def create_version_tag(rl_version: str):
+    """Create a version tag."""
+    run_command('git', 'tag', f'v{rl_version}')
+    run_command('git', 'push', 'upstream', f'v{rl_version}')
 
 def create_github_release(new_version: str, notes: str):
     """Create a new release on GitHub."""
@@ -98,9 +102,6 @@ def create_github_release(new_version: str, notes: str):
 
 def create_github_release_draft(rl_version: str, rl_release_notes: str):
     """Create a GitHub release draft."""
-    run_command('git', 'tag', f'v{rl_version}')
-    run_command('git', 'push', 'origin', f'v{rl_version}')
-
     url = f'https://api.github.com/repos/{REPO}/releases'
     headers = {'Authorization': f'token {GITHUB_TOKEN}'}
     data = {
@@ -130,6 +131,7 @@ if __name__ == '__main__':
     pr_url = open_pull_request(version)
     print(f'Opened PR: {pr_url}')
 
+    create_version_tag(version)
     draft_url = create_github_release_draft(version, release_notes)
     print(f'Release draft created: {draft_url}')
 
