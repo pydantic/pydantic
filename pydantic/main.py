@@ -361,7 +361,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         return m
 
-    def model_copy(self, *, update: Mapping[str, Any] | None = None, deep: bool = False) -> Self:
+    def model_copy(
+        self, *, update: Mapping[str, Any] | None = None, deep: bool = False, unset_cached_properties: bool = False
+    ) -> Self:
         """!!! abstract "Usage Documentation"
             [`model_copy`](../concepts/serialization.md#model_copy)
 
@@ -371,6 +373,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             update: Values to change/add in the new model. Note: the data is not validated
                 before creating the new model. You should trust this data.
             deep: Set to `True` to make a deep copy of the model.
+            unset_cached_properties: Set to `True` to unset cached properties.
 
         Returns:
             New model instance.
@@ -389,8 +392,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 copied.__dict__.update(update)
             copied.__pydantic_fields_set__.update(update.keys())
 
-        for attr in copied._get_cached_properties():
-            copied.__dict__.pop(attr, None)
+        if unset_cached_properties:
+            for attr in copied._get_cached_properties():
+                copied.__dict__.pop(attr, None)
 
         return copied
 
@@ -1016,7 +1020,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         raise pydantic_core.ValidationError.from_exception_data(cls.__name__, [error])
 
     def _get_cached_properties(self) -> set[str]:
-        return {attr for attr in dir(self) if isinstance(getattr(type(self), attr, None), cached_property)}
+        return {
+            attr for attr in self.__class__.model_fields if isinstance(getattr(type(self), attr, None), cached_property)
+        }
 
     def __getstate__(self) -> dict[Any, Any]:
         private = self.__pydantic_private__
@@ -1382,6 +1388,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         exclude: AbstractSetIntStr | MappingIntStrAny | None = None,
         update: Dict[str, Any] | None = None,  # noqa UP006
         deep: bool = False,
+        unset_cached_properties: bool = False,
     ) -> Self:  # pragma: no cover
         """Returns a copy of the model.
 
@@ -1401,6 +1408,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             exclude: Optional set or mapping specifying which fields to exclude in the copied model.
             update: Optional dictionary of field-value pairs to override field values in the copied model.
             deep: If True, the values of fields that are Pydantic models will be deep-copied.
+            unset_cached_properties: Set to `True` to unset cached properties.
 
         Returns:
             A copy of the model with included, excluded and updated fields as specified.
@@ -1445,8 +1453,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         if exclude:
             fields_set -= set(exclude)
 
-        for attr in self._get_cached_properties():
-            values.pop(attr, None)
+        if unset_cached_properties:
+            for attr in self._get_cached_properties():
+                values.pop(attr, None)
 
         return copy_internals._copy_and_set_values(self, values, fields_set, extra, private, deep=deep)
 

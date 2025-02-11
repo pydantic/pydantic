@@ -2483,7 +2483,7 @@ def test_model_copy_cached_property():
             return self.x + 1
 
     m = Model(x=5)
-    updated_m = m.model_copy(update={'x': 123})
+    updated_m = m.model_copy(update={'x': 123}, unset_cached_properties=True)
     assert updated_m.bar == 124
 
 
