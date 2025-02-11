@@ -4,7 +4,13 @@ from functools import partial
 
 import pytest
 
-from pydantic_core import PydanticSerializationError, SchemaError, SchemaSerializer, core_schema, validate_core_schema
+from pydantic_core import (
+    PydanticSerializationError,
+    SchemaError,
+    SchemaSerializer,
+    core_schema,
+    validate_core_schema,
+)
 
 
 def test_list_any():

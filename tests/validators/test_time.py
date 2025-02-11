@@ -33,7 +33,7 @@ from ..conftest import Err, PyAndJson
     ],
 )
 def test_time(input_value, expected):
-    v = SchemaValidator({'type': 'time'})
+    v = SchemaValidator(core_schema.time_schema())
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
             v.validate_python(input_value)
@@ -114,7 +114,7 @@ def test_time_error_microseconds_overflow(py_and_json: PyAndJson) -> None:
     ],
 )
 def test_time_strict(input_value, expected):
-    v = SchemaValidator({'type': 'time', 'strict': True})
+    v = SchemaValidator(core_schema.time_schema(strict=True))
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
             v.validate_python(input_value)
@@ -132,7 +132,7 @@ def test_time_strict(input_value, expected):
     ],
 )
 def test_time_strict_json(input_value, expected):
-    v = SchemaValidator({'type': 'time', 'strict': True})
+    v = SchemaValidator(core_schema.time_schema(strict=True))
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
             v.validate_json(input_value)
@@ -159,7 +159,7 @@ def test_time_strict_json(input_value, expected):
     ],
 )
 def test_time_kwargs(kwargs: dict[str, Any], input_value, expected):
-    v = SchemaValidator({'type': 'time', **kwargs})
+    v = SchemaValidator(core_schema.time_schema(**kwargs))
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)) as exc_info:
             v.validate_python(input_value)
@@ -174,7 +174,7 @@ def test_time_kwargs(kwargs: dict[str, Any], input_value, expected):
 
 
 def test_time_bound_ctx():
-    v = SchemaValidator({'type': 'time', 'gt': time(12, 13, 14, 123_456)})
+    v = SchemaValidator(core_schema.time_schema(gt=time(12, 13, 14, 123_456)))
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python('12:13')
 
@@ -195,7 +195,9 @@ def test_invalid_constraint():
 
 
 def test_dict_py():
-    v = SchemaValidator({'type': 'dict', 'keys_schema': {'type': 'time'}, 'values_schema': {'type': 'int'}})
+    v = SchemaValidator(
+        core_schema.dict_schema(keys_schema=core_schema.time_schema(), values_schema=core_schema.int_schema())
+    )
     assert v.validate_python({time(12, 1, 1): 2, time(12, 1, 2): 4}) == {time(12, 1, 1): 2, time(12, 1, 2): 4}
 
 
@@ -205,11 +207,11 @@ def test_dict(py_and_json: PyAndJson):
 
 
 def test_union():
-    v = SchemaValidator({'type': 'union', 'choices': [{'type': 'str'}, {'type': 'time'}]})
+    v = SchemaValidator(core_schema.union_schema(choices=[core_schema.str_schema(), core_schema.time_schema()]))
     assert v.validate_python('12:01:02') == '12:01:02'
     assert v.validate_python(time(12, 1, 2)) == time(12, 1, 2)
 
-    v = SchemaValidator({'type': 'union', 'choices': [{'type': 'time'}, {'type': 'str'}]})
+    v = SchemaValidator(core_schema.union_schema(choices=[core_schema.time_schema(), core_schema.str_schema()]))
     assert v.validate_python('12:01:02') == '12:01:02'
     assert v.validate_python(time(12, 1, 2)) == time(12, 1, 2)
 

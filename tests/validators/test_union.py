@@ -29,7 +29,7 @@ from ..conftest import plain_repr
     ],
 )
 def test_union_bool_int(input_value, expected_value):
-    v = SchemaValidator({'type': 'union', 'choices': [{'type': 'bool'}, {'type': 'int'}]})
+    v = SchemaValidator(core_schema.union_schema(choices=[core_schema.bool_schema(), core_schema.int_schema()]))
     assert v.validate_python(input_value) == expected_value
 
 
@@ -49,7 +49,7 @@ def test_union_bool_int(input_value, expected_value):
     ],
 )
 def test_union_int_bool(input_value, expected_value):
-    v = SchemaValidator({'type': 'union', 'choices': [{'type': 'int'}, {'type': 'bool'}]})
+    v = SchemaValidator(core_schema.union_schema(choices=[core_schema.int_schema(), core_schema.bool_schema()]))
     assert v.validate_python(input_value) == expected_value
 
 
@@ -63,33 +63,28 @@ class TestModelClass:
     @pytest.fixture(scope='class')
     def schema_validator(self) -> SchemaValidator:
         return SchemaValidator(
-            {
-                'type': 'union',
-                'choices': [
-                    {
-                        'type': 'model',
-                        'cls': self.ModelA,
-                        'schema': {
-                            'type': 'model-fields',
-                            'fields': {
-                                'a': {'type': 'model-field', 'schema': {'type': 'int'}},
-                                'b': {'type': 'model-field', 'schema': {'type': 'str'}},
-                            },
-                        },
-                    },
-                    {
-                        'type': 'model',
-                        'cls': self.ModelB,
-                        'schema': {
-                            'type': 'model-fields',
-                            'fields': {
-                                'c': {'type': 'model-field', 'schema': {'type': 'int'}},
-                                'd': {'type': 'model-field', 'schema': {'type': 'str'}},
-                            },
-                        },
-                    },
-                ],
-            }
+            schema=core_schema.union_schema(
+                choices=[
+                    core_schema.model_schema(
+                        cls=self.ModelA,
+                        schema=core_schema.model_fields_schema(
+                            fields={
+                                'a': core_schema.model_field(schema=core_schema.int_schema()),
+                                'b': core_schema.model_field(schema=core_schema.str_schema()),
+                            }
+                        ),
+                    ),
+                    core_schema.model_schema(
+                        cls=self.ModelB,
+                        schema=core_schema.model_fields_schema(
+                            fields={
+                                'c': core_schema.model_field(schema=core_schema.int_schema()),
+                                'd': core_schema.model_field(schema=core_schema.str_schema()),
+                            }
+                        ),
+                    ),
+                ]
+            )
         )
 
     def test_model_a(self, schema_validator: SchemaValidator):
@@ -131,37 +126,33 @@ class TestModelClassSimilar:
     @pytest.fixture(scope='class')
     def schema_validator(self) -> SchemaValidator:
         return SchemaValidator(
-            {
-                'type': 'union',
-                'choices': [
-                    {
-                        'type': 'model',
-                        'cls': self.ModelA,
-                        'schema': {
-                            'type': 'model-fields',
-                            'fields': {
-                                'a': {'type': 'model-field', 'schema': {'type': 'int'}},
-                                'b': {'type': 'model-field', 'schema': {'type': 'str'}},
-                            },
-                        },
-                    },
-                    {
-                        'type': 'model',
-                        'cls': self.ModelB,
-                        'schema': {
-                            'type': 'model-fields',
-                            'fields': {
-                                'a': {'type': 'model-field', 'schema': {'type': 'int'}},
-                                'b': {'type': 'model-field', 'schema': {'type': 'str'}},
-                                'c': {
-                                    'type': 'model-field',
-                                    'schema': {'type': 'default', 'schema': {'type': 'float'}, 'default': 1.0},
-                                },
-                            },
-                        },
-                    },
-                ],
-            }
+            schema=core_schema.union_schema(
+                choices=[
+                    core_schema.model_schema(
+                        cls=self.ModelA,
+                        schema=core_schema.model_fields_schema(
+                            fields={
+                                'a': core_schema.model_field(schema=core_schema.int_schema()),
+                                'b': core_schema.model_field(schema=core_schema.str_schema()),
+                            }
+                        ),
+                    ),
+                    core_schema.model_schema(
+                        cls=self.ModelB,
+                        schema=core_schema.model_fields_schema(
+                            fields={
+                                'a': core_schema.model_field(schema=core_schema.int_schema()),
+                                'b': core_schema.model_field(schema=core_schema.str_schema()),
+                                'c': core_schema.model_field(
+                                    schema=core_schema.with_default_schema(
+                                        schema=core_schema.float_schema(), default=1.0
+                                    )
+                                ),
+                            }
+                        ),
+                    ),
+                ]
+            )
         )
 
     def test_model_a(self, schema_validator: SchemaValidator):
@@ -194,7 +185,7 @@ class TestModelClassSimilar:
 
 
 def test_nullable_via_union():
-    v = SchemaValidator({'type': 'union', 'choices': [{'type': 'none'}, {'type': 'int'}]})
+    v = SchemaValidator(core_schema.union_schema(choices=[core_schema.none_schema(), core_schema.int_schema()]))
     assert v.validate_python(None) is None
     assert v.validate_python(1) == 1
     with pytest.raises(ValidationError) as exc_info:
@@ -212,13 +203,12 @@ def test_nullable_via_union():
 
 def test_union_list_bool_int():
     v = SchemaValidator(
-        {
-            'type': 'union',
-            'choices': [
-                {'type': 'list', 'items_schema': {'type': 'bool'}},
-                {'type': 'list', 'items_schema': {'type': 'int'}},
-            ],
-        }
+        core_schema.union_schema(
+            choices=[
+                core_schema.list_schema(items_schema=core_schema.bool_schema()),
+                core_schema.list_schema(items_schema=core_schema.int_schema()),
+            ]
+        )
     )
     assert v.validate_python(['true', True, 'no']) == [True, True, False]
     assert v.validate_python([5, 6, '789']) == [5, 6, 789]
@@ -260,11 +250,11 @@ def test_no_choices(pydantic_version):
 def test_empty_choices():
     msg = r'Error building "union" validator:\s+SchemaError: One or more union choices required'
     with pytest.raises(SchemaError, match=msg):
-        SchemaValidator({'type': 'union', 'choices': []})
+        SchemaValidator(core_schema.union_schema(choices=[]))
 
 
 def test_one_choice():
-    v = SchemaValidator({'type': 'union', 'choices': [{'type': 'str'}]})
+    v = SchemaValidator(core_schema.union_schema(choices=[core_schema.str_schema()]))
     assert (
         plain_repr(v)
         == 'SchemaValidator(title="str",validator=Str(StrValidator{strict:false,coerce_numbers_to_str:false}),definitions=[],cache_strings=True)'
@@ -273,7 +263,9 @@ def test_one_choice():
 
 
 def test_strict_union():
-    v = SchemaValidator({'type': 'union', 'strict': True, 'choices': [{'type': 'bool'}, {'type': 'int'}]})
+    v = SchemaValidator(
+        core_schema.union_schema(strict=True, choices=[core_schema.bool_schema(), core_schema.int_schema()])
+    )
     assert v.validate_python(1) == 1
     assert v.validate_python(123) == 123
 
@@ -288,12 +280,11 @@ def test_strict_union():
 
 def test_custom_error():
     v = SchemaValidator(
-        {
-            'type': 'union',
-            'choices': [{'type': 'str'}, {'type': 'bytes'}],
-            'custom_error_type': 'my_error',
-            'custom_error_message': 'Input should be a string or bytes',
-        }
+        core_schema.union_schema(
+            choices=[core_schema.str_schema(), core_schema.bytes_schema()],
+            custom_error_type='my_error',
+            custom_error_message='Input should be a string or bytes',
+        )
     )
     assert v.validate_python('hello') == 'hello'
     assert v.validate_python(b'hello') == b'hello'
@@ -307,7 +298,9 @@ def test_custom_error():
 
 def test_custom_error_type():
     v = SchemaValidator(
-        {'type': 'union', 'choices': [{'type': 'str'}, {'type': 'bytes'}], 'custom_error_type': 'string_type'}
+        core_schema.union_schema(
+            choices=[core_schema.str_schema(), core_schema.bytes_schema()], custom_error_type='string_type'
+        )
     )
     assert v.validate_python('hello') == 'hello'
     assert v.validate_python(b'hello') == b'hello'
@@ -321,12 +314,11 @@ def test_custom_error_type():
 
 def test_custom_error_type_context():
     v = SchemaValidator(
-        {
-            'type': 'union',
-            'choices': [{'type': 'str'}, {'type': 'bytes'}],
-            'custom_error_type': 'less_than',
-            'custom_error_context': {'lt': 42},
-        }
+        core_schema.union_schema(
+            choices=[core_schema.str_schema(), core_schema.bytes_schema()],
+            custom_error_type='less_than',
+            custom_error_context={'lt': 42},
+        )
     )
     assert v.validate_python('hello') == 'hello'
     assert v.validate_python(b'hello') == b'hello'
@@ -418,7 +410,9 @@ def test_strict_reference():
 
 def test_case_labels():
     v = SchemaValidator(
-        {'type': 'union', 'choices': [{'type': 'none'}, ({'type': 'int'}, 'my_label'), {'type': 'str'}]}
+        core_schema.union_schema(
+            choices=[core_schema.none_schema(), ({'type': 'int'}, 'my_label'), core_schema.str_schema()]
+        )
     )
     assert v.validate_python(None) is None
     assert v.validate_python(1) == 1
@@ -782,22 +776,17 @@ def test_model_and_literal_union() -> None:
         pass
 
     validator = SchemaValidator(
-        {
-            'type': 'union',
-            'choices': [
-                {
-                    'type': 'model',
-                    'cls': ModelA,
-                    'schema': {
-                        'type': 'model-fields',
-                        'fields': {
-                            'a': {'type': 'model-field', 'schema': {'type': 'int'}},
-                        },
-                    },
-                },
-                {'type': 'literal', 'expected': [True]},
-            ],
-        }
+        core_schema.union_schema(
+            choices=[
+                core_schema.model_schema(
+                    cls=ModelA,
+                    schema=core_schema.model_fields_schema(
+                        fields={'a': core_schema.model_field(schema=core_schema.int_schema())}
+                    ),
+                ),
+                core_schema.literal_schema(expected=[True]),
+            ]
+        )
     )
 
     # validation against Literal[True] fails bc of the unhashable dict
@@ -834,7 +823,7 @@ class TestSmartUnionWithSubclass:
 
     @pytest.mark.parametrize('choices', permute_choices([model_a_schema, model_b_schema]))
     def test_more_specific_data_matches_subclass(self, choices) -> None:
-        validator = SchemaValidator(schema=core_schema.union_schema(choices))
+        validator = SchemaValidator(core_schema.union_schema(choices))
         assert isinstance(validator.validate_python({'a': 1}), self.ModelA)
         assert isinstance(validator.validate_python({'a': 1, 'b': 2}), self.ModelB)
 
@@ -869,7 +858,7 @@ class TestSmartUnionWithDefaults:
 
     @pytest.mark.parametrize('choices', permute_choices([model_a_schema, model_b_schema]))
     def test_fields_set_ensures_best_match(self, choices) -> None:
-        validator = SchemaValidator(schema=core_schema.union_schema(choices))
+        validator = SchemaValidator(core_schema.union_schema(choices))
         assert isinstance(validator.validate_python({'a': 1}), self.ModelA)
         assert isinstance(validator.validate_python({'b': 1}), self.ModelB)
 
@@ -882,7 +871,7 @@ class TestSmartUnionWithDefaults:
             val: Optional[Union[self.ModelA, self.ModelB]] = None
 
         val = SchemaValidator(
-            core_schema.model_schema(
+            schema=core_schema.model_schema(
                 WrapModel,
                 core_schema.model_fields_schema(
                     fields={
@@ -1261,7 +1250,7 @@ def test_nested_unions_bubble_up_field_count() -> None:
     for model_a_schema in model_a_schema_options:
         for model_b_schema in model_b_schema_options:
             validator = SchemaValidator(
-                core_schema.union_schema(
+                schema=core_schema.union_schema(
                     [
                         core_schema.model_schema(
                             ModelA,

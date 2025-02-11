@@ -6,6 +6,7 @@ import sys
 import pytest
 
 from pydantic_core import SchemaValidator, ValidationError
+from pydantic_core import core_schema as cs
 
 from ..conftest import Err
 
@@ -45,7 +46,7 @@ EXPECTED_TYPE_ERROR_PY_STRICT_MESSAGE = 'Input should be an instance of complex'
     ids=repr,
 )
 def test_complex_cases(input_value, expected):
-    v = SchemaValidator({'type': 'complex'})
+    v = SchemaValidator(cs.complex_schema())
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
             v.validate_python(input_value)
@@ -76,7 +77,7 @@ def test_complex_cases(input_value, expected):
     ids=repr,
 )
 def test_complex_strict(input_value, expected):
-    v = SchemaValidator({'type': 'complex', 'strict': True})
+    v = SchemaValidator(cs.complex_schema(strict=True))
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
             v.validate_python(input_value)
@@ -89,12 +90,12 @@ def test_complex_strict(input_value, expected):
     reason='PyPy cannot process this string due to a bug, even if this string is considered valid in python',
 )
 def test_valid_complex_string_with_space():
-    v = SchemaValidator({'type': 'complex'})
+    v = SchemaValidator(cs.complex_schema())
     assert v.validate_python('\t( -1.23+4.5J )\n') == complex(-1.23, 4.5)
 
 
 def test_nan_inf_complex():
-    v = SchemaValidator({'type': 'complex'})
+    v = SchemaValidator(cs.complex_schema())
     c = v.validate_python('NaN+Infinityj')
     # c != complex(float('nan'), float('inf')) as nan != nan,
     # so we need to examine the values individually
@@ -105,7 +106,7 @@ def test_nan_inf_complex():
 def test_overflow_complex():
     # Python simply converts too large float values to inf, so these strings
     # are still valid, even if the numbers are out of range
-    v = SchemaValidator({'type': 'complex'})
+    v = SchemaValidator(cs.complex_schema())
 
     c = v.validate_python('5e600j')
     assert math.isinf(c.imag)
@@ -115,7 +116,7 @@ def test_overflow_complex():
 
 
 def test_json_complex():
-    v = SchemaValidator({'type': 'complex'})
+    v = SchemaValidator(cs.complex_schema())
     assert v.validate_json('"-1.23e+4+5.67e-8J"') == complex(-1.23e4, 5.67e-8)
     assert v.validate_json('1') == complex(1, 0)
     assert v.validate_json('1.0') == complex(1, 0)
@@ -135,7 +136,7 @@ def test_json_complex():
 
 
 def test_json_complex_strict():
-    v = SchemaValidator({'type': 'complex', 'strict': True})
+    v = SchemaValidator(cs.complex_schema(strict=True))
     assert v.validate_json('"-1.23e+4+5.67e-8J"') == complex(-1.23e4, 5.67e-8)
     # "1" is a valid complex string
     assert v.validate_json('"1"') == complex(1, 0)
@@ -149,7 +150,7 @@ def test_json_complex_strict():
 
 
 def test_string_complex():
-    v = SchemaValidator({'type': 'complex'})
+    v = SchemaValidator(cs.complex_schema())
     assert v.validate_strings('+1.23e-4-5.67e+8J') == complex(1.23e-4, -5.67e8)
     with pytest.raises(ValidationError, match=re.escape(EXPECTED_PARSE_ERROR_MESSAGE)):
         v.validate_strings("{'real': 1, 'imag': 0}")

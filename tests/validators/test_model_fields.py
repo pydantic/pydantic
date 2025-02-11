@@ -42,13 +42,12 @@ class Map(Mapping):
 
 def test_simple():
     v = SchemaValidator(
-        {
-            'type': 'model-fields',
-            'fields': {
-                'field_a': {'type': 'model-field', 'schema': {'type': 'str'}},
-                'field_b': {'type': 'model-field', 'schema': {'type': 'int'}},
-            },
-        }
+        core_schema.model_fields_schema(
+            fields={
+                'field_a': core_schema.model_field(schema=core_schema.str_schema()),
+                'field_b': core_schema.model_field(schema=core_schema.int_schema()),
+            }
+        )
     )
 
     assert v.validate_python({'field_a': b'abc', 'field_b': 1}) == (
@@ -67,7 +66,7 @@ def test_strict():
                 'field_b': {'type': 'model-field', 'schema': {'type': 'int'}},
             },
         },
-        {'strict': True},
+        CoreConfig(strict=True),
     )
 
     assert v.validate_python({'field_a': 'hello', 'field_b': 12}) == (
@@ -86,16 +85,14 @@ def test_strict():
 
 def test_with_default():
     v = SchemaValidator(
-        {
-            'type': 'model-fields',
-            'fields': {
-                'field_a': {'type': 'model-field', 'schema': {'type': 'str'}},
-                'field_b': {
-                    'type': 'model-field',
-                    'schema': {'type': 'default', 'schema': {'type': 'int'}, 'default': 666},
-                },
-            },
-        }
+        core_schema.model_fields_schema(
+            fields={
+                'field_a': core_schema.model_field(schema=core_schema.str_schema()),
+                'field_b': core_schema.model_field(
+                    schema=core_schema.with_default_schema(schema=core_schema.int_schema(), default=666)
+                ),
+            }
+        )
     )
 
     assert v.validate_python({'field_a': b'abc'}) == ({'field_a': 'abc', 'field_b': 666}, None, {'field_a'})
@@ -108,13 +105,12 @@ def test_with_default():
 
 def test_missing_error(pydantic_version):
     v = SchemaValidator(
-        {
-            'type': 'model-fields',
-            'fields': {
-                'field_a': {'type': 'model-field', 'schema': {'type': 'str'}},
-                'field_b': {'type': 'model-field', 'schema': {'type': 'int'}},
-            },
-        }
+        core_schema.model_fields_schema(
+            fields={
+                'field_a': core_schema.model_field(schema=core_schema.str_schema()),
+                'field_b': core_schema.model_field(schema=core_schema.int_schema()),
+            }
+        )
     )
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python({'field_a': b'abc'})
@@ -135,17 +131,21 @@ field_b
         ({}, Map(a=123), ({'a': 123, 'b': 4.2}, None, {'a'})),
         ({}, {b'a': '123'}, Err('Field required [type=missing,')),
         ({}, {'a': '123', 'c': 4}, ({'a': 123, 'b': 4.2}, None, {'a'})),
-        ({'extra_fields_behavior': 'allow'}, {'a': '123', 'c': 4}, ({'a': 123, 'b': 4.2}, {'c': 4}, {'a', 'c'})),
-        ({'extra_fields_behavior': 'allow'}, {'a': '123', b'c': 4}, Err('Keys should be strings [type=invalid_key,')),
+        (CoreConfig(extra_fields_behavior='allow'), {'a': '123', 'c': 4}, ({'a': 123, 'b': 4.2}, {'c': 4}, {'a', 'c'})),
         (
-            {'strict': True},
+            CoreConfig(extra_fields_behavior='allow'),
+            {'a': '123', b'c': 4},
+            Err('Keys should be strings [type=invalid_key,'),
+        ),
+        (
+            CoreConfig(strict=True),
             Map(a=123),
             Err('Input should be a valid dictionary or instance of Model [type=model_type,'),
         ),
         ({}, {'a': '123', 'b': '4.7'}, ({'a': 123, 'b': 4.7}, None, {'a', 'b'})),
         ({}, {'a': '123', 'b': 'nan'}, ({'a': 123, 'b': FunctionCheck(math.isnan)}, None, {'a', 'b'})),
         (
-            {'allow_inf_nan': False},
+            CoreConfig(allow_inf_nan=False),
             {'a': '123', 'b': 'nan'},
             Err('Input should be a finite number [type=finite_number,'),
         ),
@@ -154,17 +154,15 @@ field_b
 )
 def test_config(config: CoreConfig, input_value, expected):
     v = SchemaValidator(
-        {
-            'type': 'model-fields',
-            'fields': {
-                'a': {'type': 'model-field', 'schema': {'type': 'int'}},
-                'b': {
-                    'type': 'model-field',
-                    'schema': {'type': 'default', 'schema': {'type': 'float'}, 'default': 4.2},
-                },
-            },
-        },
-        config,
+        core_schema.model_fields_schema(
+            fields={
+                'a': core_schema.model_field(schema=core_schema.int_schema()),
+                'b': core_schema.model_field(
+                    schema=core_schema.with_default_schema(schema=core_schema.float_schema(), default=4.2)
+                ),
+            }
+        ),
+        config=config,
     )
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
@@ -177,13 +175,12 @@ def test_config(config: CoreConfig, input_value, expected):
 
 def test_ignore_extra():
     v = SchemaValidator(
-        {
-            'type': 'model-fields',
-            'fields': {
-                'field_a': {'type': 'model-field', 'schema': {'type': 'str'}},
-                'field_b': {'type': 'model-field', 'schema': {'type': 'int'}},
-            },
-        }
+        core_schema.model_fields_schema(
+            fields={
+                'field_a': core_schema.model_field(schema=core_schema.str_schema()),
+                'field_b': core_schema.model_field(schema=core_schema.int_schema()),
+            }
+        )
     )
 
     assert v.validate_python({'field_a': b'123', 'field_b': 1, 'field_c': 123}) == (
@@ -195,11 +192,9 @@ def test_ignore_extra():
 
 def test_forbid_extra():
     v = SchemaValidator(
-        {
-            'type': 'model-fields',
-            'fields': {'field_a': {'type': 'model-field', 'schema': {'type': 'str'}}},
-            'extra_behavior': 'forbid',
-        }
+        core_schema.model_fields_schema(
+            fields={'field_a': core_schema.model_field(schema=core_schema.str_schema())}, extra_behavior='forbid'
+        )
     )
 
     with pytest.raises(ValidationError) as exc_info:
@@ -213,19 +208,23 @@ def test_forbid_extra():
 def test_allow_extra_invalid():
     with pytest.raises(SchemaError, match='extras_schema can only be used if extra_behavior=allow'):
         SchemaValidator(
-            {'type': 'model-fields', 'fields': {}, 'extras_schema': {'type': 'int'}, 'extra_behavior': 'ignore'}
+            schema=core_schema.model_fields_schema(
+                fields={}, extras_schema=core_schema.int_schema(), extra_behavior='ignore'
+            )
         )
 
 
 def test_allow_extra_wrong():
     with pytest.raises(SchemaError, match='Invalid extra_behavior: `wrong`'):
-        SchemaValidator({'type': 'model-fields', 'fields': {}}, {'extra_fields_behavior': 'wrong'})
+        SchemaValidator(
+            schema=core_schema.model_fields_schema(fields={}), config=CoreConfig(extra_fields_behavior='wrong')
+        )
 
 
 def test_str_config():
     v = SchemaValidator(
-        {'type': 'model-fields', 'fields': {'field_a': {'type': 'model-field', 'schema': {'type': 'str'}}}},
-        {'str_max_length': 5},
+        core_schema.model_fields_schema(fields={'field_a': core_schema.model_field(schema=core_schema.str_schema())}),
+        config=CoreConfig(str_max_length=5),
     )
     assert v.validate_python({'field_a': 'test'}) == ({'field_a': 'test'}, None, {'field_a'})
 
@@ -235,7 +234,7 @@ def test_str_config():
 
 def test_validate_assignment():
     v = SchemaValidator(
-        {'type': 'model-fields', 'fields': {'field_a': {'type': 'model-field', 'schema': {'type': 'str'}}}}
+        core_schema.model_fields_schema(fields={'field_a': core_schema.model_field(schema=core_schema.str_schema())})
     )
 
     assert v.validate_python({'field_a': 'test'}) == ({'field_a': 'test'}, None, {'field_a'})
@@ -247,10 +246,9 @@ def test_validate_assignment():
 
 def test_validate_assignment_strict_field():
     v = SchemaValidator(
-        {
-            'type': 'model-fields',
-            'fields': {'field_a': {'type': 'model-field', 'schema': {'type': 'str', 'strict': True}}},
-        }
+        core_schema.model_fields_schema(
+            fields={'field_a': core_schema.model_field(schema=core_schema.str_schema(strict=True))}
+        )
     )
 
     assert v.validate_python({'field_a': 'test'}) == ({'field_a': 'test'}, None, {'field_a'})
@@ -274,27 +272,24 @@ def test_validate_assignment_functions():
         return input_value / 2
 
     v = SchemaValidator(
-        {
-            'type': 'model-fields',
-            'fields': {
-                'field_a': {
-                    'type': 'model-field',
-                    'schema': {
+        core_schema.model_fields_schema(
+            fields={
+                'field_a': core_schema.model_field(
+                    schema={
                         'type': 'function-after',
                         'function': {'type': 'with-info', 'function': func_a},
-                        'schema': {'type': 'str'},
-                    },
-                },
-                'field_b': {
-                    'type': 'model-field',
-                    'schema': {
+                        'schema': core_schema.str_schema(),
+                    }
+                ),
+                'field_b': core_schema.model_field(
+                    schema={
                         'type': 'function-after',
                         'function': {'type': 'with-info', 'function': func_b},
-                        'schema': {'type': 'int'},
-                    },
-                },
-            },
-        }
+                        'schema': core_schema.int_schema(),
+                    }
+                ),
+            }
+        )
     )
 
     assert v.validate_python({'field_a': 'test', 'field_b': 12.0}) == (
@@ -316,7 +311,7 @@ def test_validate_assignment_functions():
 
 def test_validate_assignment_ignore_extra():
     v = SchemaValidator(
-        {'type': 'model-fields', 'fields': {'field_a': {'type': 'model-field', 'schema': {'type': 'str'}}}}
+        core_schema.model_fields_schema(fields={'field_a': core_schema.model_field(schema=core_schema.str_schema())})
     )
 
     assert v.validate_python({'field_a': 'test'}) == ({'field_a': 'test'}, None, {'field_a'})
@@ -338,11 +333,9 @@ def test_validate_assignment_ignore_extra():
 
 def test_validate_assignment_allow_extra():
     v = SchemaValidator(
-        {
-            'type': 'model-fields',
-            'fields': {'field_a': {'type': 'model-field', 'schema': {'type': 'str'}}},
-            'extra_behavior': 'allow',
-        }
+        core_schema.model_fields_schema(
+            fields={'field_a': core_schema.model_field(schema=core_schema.str_schema())}, extra_behavior='allow'
+        )
     )
 
     assert v.validate_python({'field_a': 'test'}) == ({'field_a': 'test'}, {}, {'field_a'})
@@ -356,12 +349,11 @@ def test_validate_assignment_allow_extra():
 
 def test_validate_assignment_allow_extra_validate():
     v = SchemaValidator(
-        {
-            'type': 'model-fields',
-            'fields': {'field_a': {'type': 'model-field', 'schema': {'type': 'str'}}},
-            'extras_schema': {'type': 'int'},
-            'extra_behavior': 'allow',
-        }
+        core_schema.model_fields_schema(
+            fields={'field_a': core_schema.model_field(schema=core_schema.str_schema())},
+            extras_schema=core_schema.int_schema(),
+            extra_behavior='allow',
+        )
     )
 
     assert v.validate_assignment({'field_a': 'test'}, 'other_field', '456') == (
@@ -384,13 +376,12 @@ def test_validate_assignment_allow_extra_validate():
 
 def test_validate_assignment_with_strict():
     v = SchemaValidator(
-        {
-            'type': 'model-fields',
-            'fields': {
-                'x': {'type': 'model-field', 'schema': {'type': 'str'}},
-                'y': {'type': 'model-field', 'schema': {'type': 'int'}},
-            },
-        }
+        core_schema.model_fields_schema(
+            fields={
+                'x': core_schema.model_field(schema=core_schema.str_schema()),
+                'y': core_schema.model_field(schema=core_schema.int_schema()),
+            }
+        )
     )
 
     r, model_extra, fields_set = v.validate_python({'x': 'a', 'y': '123'})
@@ -411,10 +402,13 @@ def test_validate_assignment_with_strict():
 
 def test_json_error():
     v = SchemaValidator(
-        {
-            'type': 'model-fields',
-            'fields': {'field_a': {'type': 'model-field', 'schema': {'type': 'list', 'items_schema': {'type': 'int'}}}},
-        }
+        core_schema.model_fields_schema(
+            fields={
+                'field_a': core_schema.model_field(
+                    schema=core_schema.list_schema(items_schema=core_schema.int_schema())
+                )
+            }
+        )
     )
     with pytest.raises(ValidationError) as exc_info:
         v.validate_json('{"field_a": [123, "wrong"]}')
@@ -437,13 +431,12 @@ def test_missing_schema_key():
 def test_fields_required_by_default():
     """By default all fields should be required"""
     v = SchemaValidator(
-        {
-            'type': 'model-fields',
-            'fields': {
-                'x': {'type': 'model-field', 'schema': {'type': 'str'}},
-                'y': {'type': 'model-field', 'schema': {'type': 'str'}},
-            },
-        }
+        core_schema.model_fields_schema(
+            fields={
+                'x': core_schema.model_field(schema=core_schema.str_schema()),
+                'y': core_schema.model_field(schema=core_schema.str_schema()),
+            }
+        )
     )
 
     assert v.validate_python({'x': 'pika', 'y': 'chu'}) == ({'x': 'pika', 'y': 'chu'}, None, {'x', 'y'})
@@ -458,16 +451,14 @@ def test_fields_required_by_default():
 
 def test_fields_required_by_default_with_default():
     v = SchemaValidator(
-        {
-            'type': 'model-fields',
-            'fields': {
-                'x': {'type': 'model-field', 'schema': {'type': 'str'}},
-                'y': {
-                    'type': 'model-field',
-                    'schema': {'type': 'default', 'schema': {'type': 'str'}, 'default': 'bulbi'},
-                },
-            },
-        }
+        core_schema.model_fields_schema(
+            fields={
+                'x': core_schema.model_field(schema=core_schema.str_schema()),
+                'y': core_schema.model_field(
+                    schema=core_schema.with_default_schema(schema=core_schema.str_schema(), default='bulbi')
+                ),
+            }
+        )
     )
 
     assert v.validate_python({'x': 'pika', 'y': 'chu'}) == ({'x': 'pika', 'y': 'chu'}, None, {'x', 'y'})
@@ -611,11 +602,10 @@ def test_aliases_path_multiple(py_and_json: PyAndJson, input_value, expected):
 )
 def test_aliases_path_negative(input_value, expected):
     v = SchemaValidator(
-        {
-            'type': 'model-fields',
-            'fields': {'field_a': {'validation_alias': ['foo', -2], 'type': 'model-field', 'schema': {'type': 'int'}}},
-        },
-        {'loc_by_alias': False},
+        core_schema.model_fields_schema(
+            fields={'field_a': core_schema.model_field(validation_alias=['foo', -2], schema=core_schema.int_schema())}
+        ),
+        config=CoreConfig(loc_by_alias=False),
     )
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=expected.message):
@@ -653,16 +643,13 @@ def test_aliases_path_negative_json(py_and_json: PyAndJson, input_value, expecte
 
 def test_aliases_debug():
     v = SchemaValidator(
-        {
-            'type': 'model-fields',
-            'fields': {
-                'field_a': {
-                    'validation_alias': [['foo', 'bar', 'bat'], ['foo', 3]],
-                    'type': 'model-field',
-                    'schema': {'type': 'int'},
-                }
-            },
-        }
+        core_schema.model_fields_schema(
+            fields={
+                'field_a': core_schema.model_field(
+                    validation_alias=[['foo', 'bar', 'bat'], ['foo', 3]], schema=core_schema.int_schema()
+                )
+            }
+        )
     )
     print(repr(v))
     assert repr(v).startswith('SchemaValidator(title="model-fields", validator=ModelFields(')
@@ -671,16 +658,13 @@ def test_aliases_debug():
 
 def get_int_key():
     v = SchemaValidator(
-        {
-            'type': 'model-fields',
-            'fields': {
-                'field_a': {
-                    'validation_alias': [['foo', 3], ['spam']],
-                    'type': 'model-field',
-                    'schema': {'type': 'int'},
-                }
-            },
-        }
+        core_schema.model_fields_schema(
+            fields={
+                'field_a': core_schema.model_field(
+                    validation_alias=[['foo', 3], ['spam']], schema=core_schema.int_schema()
+                )
+            }
+        )
     )
     assert v.validate_python({'foo': {3: 33}}) == ({'field_a': 33}, {}, {'field_a'})
 
@@ -693,10 +677,9 @@ class GetItemThing:
 
 def get_custom_getitem():
     v = SchemaValidator(
-        {
-            'type': 'model-fields',
-            'fields': {'field_a': {'validation_alias': ['foo'], 'type': 'model-field', 'schema': {'type': 'int'}}},
-        }
+        core_schema.model_fields_schema(
+            fields={'field_a': core_schema.model_field(validation_alias=['foo'], schema=core_schema.int_schema())}
+        )
     )
     assert v.validate_python(GetItemThing()) == ({'field_a': 321}, {}, {'field_a'})
     assert v.validate_python({'bar': GetItemThing()}) == ({'field_a': 321}, {}, {'field_a'})
@@ -735,7 +718,7 @@ def test_paths_allow_by_name(py_and_json: PyAndJson, input_value):
 def test_alias_build_error(alias_schema, error):
     with pytest.raises(SchemaError, match=error):
         SchemaValidator(
-            validate_core_schema(
+            schema=validate_core_schema(
                 {
                     'type': 'model-fields',
                     'fields': {'field_a': {'type': 'model-field', 'schema': {'type': 'int'}, **alias_schema}},
@@ -838,7 +821,7 @@ def test_alias_error_loc_field_names(py_and_json: PyAndJson):
 
 
 def test_empty_model():
-    v = SchemaValidator({'type': 'model-fields', 'fields': {}})
+    v = SchemaValidator(core_schema.model_fields_schema(fields={}))
     assert v.validate_python({}) == ({}, None, set())
     with pytest.raises(
         ValidationError, match=re.escape('Input should be a valid dictionary or instance of Model [type=model_type,')
@@ -848,31 +831,26 @@ def test_empty_model():
 
 def test_model_fields_deep():
     v = SchemaValidator(
-        {
-            'type': 'model-fields',
-            'fields': {
-                'field_a': {'type': 'model-field', 'schema': {'type': 'str'}},
-                'field_b': {
-                    'type': 'model-field',
-                    'schema': {
-                        'type': 'model-fields',
-                        'fields': {
-                            'field_c': {'type': 'model-field', 'schema': {'type': 'str'}},
-                            'field_d': {
-                                'type': 'model-field',
-                                'schema': {
-                                    'type': 'model-fields',
-                                    'fields': {
-                                        'field_e': {'type': 'model-field', 'schema': {'type': 'str'}},
-                                        'field_f': {'type': 'model-field', 'schema': {'type': 'int'}},
-                                    },
-                                },
-                            },
-                        },
-                    },
-                },
-            },
-        }
+        core_schema.model_fields_schema(
+            fields={
+                'field_a': core_schema.model_field(schema=core_schema.str_schema()),
+                'field_b': core_schema.model_field(
+                    schema=core_schema.model_fields_schema(
+                        fields={
+                            'field_c': core_schema.model_field(schema=core_schema.str_schema()),
+                            'field_d': core_schema.model_field(
+                                schema=core_schema.model_fields_schema(
+                                    fields={
+                                        'field_e': core_schema.model_field(schema=core_schema.str_schema()),
+                                        'field_f': core_schema.model_field(schema=core_schema.int_schema()),
+                                    }
+                                )
+                            ),
+                        }
+                    )
+                ),
+            }
+        )
     )
     model_dict, model_extra, fields_set = v.validate_python(
         {'field_a': '1', 'field_b': {'field_c': '2', 'field_d': {'field_e': '4', 'field_f': 4}}}
@@ -943,15 +921,14 @@ class MyDataclass:
 @pytest.mark.parametrize('from_attributes_mode', ['schema', 'validation'])
 def test_from_attributes(input_value, expected, from_attributes_mode):
     v = SchemaValidator(
-        {
-            'type': 'model-fields',
-            'fields': {
-                'a': {'type': 'model-field', 'schema': {'type': 'int'}},
-                'b': {'type': 'model-field', 'schema': {'type': 'int'}},
-                'c': {'type': 'model-field', 'schema': {'type': 'str'}},
+        core_schema.model_fields_schema(
+            fields={
+                'a': core_schema.model_field(schema=core_schema.int_schema()),
+                'b': core_schema.model_field(schema=core_schema.int_schema()),
+                'c': core_schema.model_field(schema=core_schema.str_schema()),
             },
-            'from_attributes': from_attributes_mode == 'schema',
-        }
+            from_attributes=from_attributes_mode == 'schema',
+        )
     )
     kwargs = {}
     if from_attributes_mode == 'validation':
@@ -967,16 +944,15 @@ def test_from_attributes(input_value, expected, from_attributes_mode):
 
 def test_from_attributes_type_error():
     v = SchemaValidator(
-        {
-            'type': 'model-fields',
-            'fields': {
-                'a': {'type': 'model-field', 'schema': {'type': 'int'}},
-                'b': {'type': 'model-field', 'schema': {'type': 'int'}},
-                'c': {'type': 'model-field', 'schema': {'type': 'str'}},
+        core_schema.model_fields_schema(
+            fields={
+                'a': core_schema.model_field(schema=core_schema.int_schema()),
+                'b': core_schema.model_field(schema=core_schema.int_schema()),
+                'c': core_schema.model_field(schema=core_schema.str_schema()),
             },
-            'from_attributes': True,
-            'model_name': 'MyModel',
-        }
+            from_attributes=True,
+            model_name='MyModel',
+        )
     )
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python('123')
@@ -1006,12 +982,11 @@ def test_from_attributes_type_error():
 
 def test_from_attributes_by_name():
     v = SchemaValidator(
-        {
-            'type': 'model-fields',
-            'fields': {'a': {'type': 'model-field', 'schema': {'type': 'int'}, 'validation_alias': 'a_alias'}},
-            'from_attributes': True,
-            'populate_by_name': True,
-        }
+        core_schema.model_fields_schema(
+            fields={'a': core_schema.model_field(schema=core_schema.int_schema(), validation_alias='a_alias')},
+            from_attributes=True,
+            populate_by_name=True,
+        )
     )
     assert v.validate_python(Cls(a_alias=1)) == ({'a': 1}, None, {'a'})
     assert v.validate_python(Cls(a=1)) == ({'a': 1}, None, {'a'})
@@ -1019,11 +994,9 @@ def test_from_attributes_by_name():
 
 def test_from_attributes_override_true():
     v = SchemaValidator(
-        {
-            'type': 'model-fields',
-            'fields': {'a': {'type': 'model-field', 'schema': {'type': 'int'}}},
-            'from_attributes': False,
-        }
+        core_schema.model_fields_schema(
+            fields={'a': core_schema.model_field(schema=core_schema.int_schema())}, from_attributes=False
+        )
     )
     with pytest.raises(ValidationError, match='Input should be a valid dictionary'):
         v.validate_python(Cls(a=1))
@@ -1035,11 +1008,9 @@ def test_from_attributes_override_true():
 
 def test_from_attributes_override_false():
     v = SchemaValidator(
-        {
-            'type': 'model-fields',
-            'fields': {'a': {'type': 'model-field', 'schema': {'type': 'int'}}},
-            'from_attributes': True,
-        }
+        core_schema.model_fields_schema(
+            fields={'a': core_schema.model_field(schema=core_schema.int_schema())}, from_attributes=True
+        )
     )
     with pytest.raises(ValidationError, match='Input should be a valid dictionary'):
         v.validate_python(Cls(a=1), from_attributes=False)
@@ -1056,15 +1027,14 @@ def test_from_attributes_missing():
             self.b = 2
 
     v = SchemaValidator(
-        {
-            'type': 'model-fields',
-            'fields': {
-                'a': {'type': 'model-field', 'schema': {'type': 'int'}},
-                'b': {'type': 'model-field', 'schema': {'type': 'int'}},
-                'c': {'type': 'model-field', 'schema': {'type': 'str'}},
+        core_schema.model_fields_schema(
+            fields={
+                'a': core_schema.model_field(schema=core_schema.int_schema()),
+                'b': core_schema.model_field(schema=core_schema.int_schema()),
+                'c': core_schema.model_field(schema=core_schema.str_schema()),
             },
-            'from_attributes': True,
-        }
+            from_attributes=True,
+        )
     )
 
     with pytest.raises(ValidationError) as exc_info:
@@ -1090,14 +1060,13 @@ def test_from_attributes_error():
             raise RuntimeError('intentional error')
 
     v = SchemaValidator(
-        {
-            'type': 'model-fields',
-            'fields': {
-                'a': {'type': 'model-field', 'schema': {'type': 'int'}},
-                'b': {'type': 'model-field', 'schema': {'type': 'int'}},
+        core_schema.model_fields_schema(
+            fields={
+                'a': core_schema.model_field(schema=core_schema.int_schema()),
+                'b': core_schema.model_field(schema=core_schema.int_schema()),
             },
-            'from_attributes': True,
-        }
+            from_attributes=True,
+        )
     )
 
     with pytest.raises(ValidationError) as exc_info:
@@ -1158,12 +1127,11 @@ def test_from_attributes_extra():
         _d: int = 4
 
     v = SchemaValidator(
-        {
-            'type': 'model-fields',
-            'fields': {'a': {'type': 'model-field', 'schema': {'type': 'int'}}},
-            'from_attributes': True,
-            'extra_behavior': 'allow',
-        }
+        core_schema.model_fields_schema(
+            fields={'a': core_schema.model_field(schema=core_schema.int_schema())},
+            from_attributes=True,
+            extra_behavior='allow',
+        )
     )
 
     assert v.validate_python(Foobar()) == ({'a': 1}, {}, {'a'})
@@ -1175,12 +1143,11 @@ def test_from_attributes_extra():
 
 def test_from_attributes_extra_ignore_no_attributes_accessed() -> None:
     v = SchemaValidator(
-        {
-            'type': 'model-fields',
-            'fields': {'a': {'type': 'model-field', 'schema': {'type': 'int'}}},
-            'from_attributes': True,
-            'extra_behavior': 'ignore',
-        }
+        core_schema.model_fields_schema(
+            fields={'a': core_schema.model_field(schema=core_schema.int_schema())},
+            from_attributes=True,
+            extra_behavior='ignore',
+        )
     )
 
     accessed: list[str] = []
@@ -1203,12 +1170,11 @@ def test_from_attributes_extra_forbid() -> None:
         b = 2
 
     v = SchemaValidator(
-        {
-            'type': 'model-fields',
-            'fields': {'a': {'type': 'model-field', 'schema': {'type': 'int'}}},
-            'from_attributes': True,
-            'extra_behavior': 'forbid',
-        }
+        core_schema.model_fields_schema(
+            fields={'a': core_schema.model_field(schema=core_schema.int_schema())},
+            from_attributes=True,
+            extra_behavior='forbid',
+        )
     )
 
     assert v.validate_python(Source()) == ({'a': 1}, None, {'a'})
@@ -1231,11 +1197,9 @@ def foobar():
 )
 def test_from_attributes_function(input_value, expected):
     v = SchemaValidator(
-        {
-            'type': 'model-fields',
-            'fields': {'a': {'type': 'model-field', 'schema': {'type': 'any'}}},
-            'from_attributes': True,
-        }
+        core_schema.model_fields_schema(
+            fields={'a': core_schema.model_field(schema=core_schema.any_schema())}, from_attributes=True
+        )
     )
 
     model_dict, model_extra, fields_set = v.validate_python(input_value)
@@ -1255,11 +1219,9 @@ def test_from_attributes_error_error():
             raise BadError('intentional error')
 
     v = SchemaValidator(
-        {
-            'type': 'model-fields',
-            'fields': {'x': {'type': 'model-field', 'schema': {'type': 'int'}}},
-            'from_attributes': True,
-        }
+        core_schema.model_fields_schema(
+            fields={'x': core_schema.model_field(schema=core_schema.int_schema())}, from_attributes=True
+        )
     )
 
     with pytest.raises(ValidationError) as exc_info:
@@ -1314,18 +1276,15 @@ def test_from_attributes_error_error():
 )
 def test_from_attributes_path(input_value, expected):
     v = SchemaValidator(
-        {
-            'type': 'model-fields',
-            'fields': {
-                'my_field': {
-                    'validation_alias': [['foo', 'bar', 'bat'], ['foo', 3], ['spam']],
-                    'type': 'model-field',
-                    'schema': {'type': 'int'},
-                }
+        core_schema.model_fields_schema(
+            fields={
+                'my_field': core_schema.model_field(
+                    validation_alias=[['foo', 'bar', 'bat'], ['foo', 3], ['spam']], schema=core_schema.int_schema()
+                )
             },
-            'from_attributes': True,
-        },
-        {'loc_by_alias': False},
+            from_attributes=True,
+        ),
+        config=CoreConfig(loc_by_alias=False),
     )
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=expected.message):
@@ -1345,17 +1304,14 @@ def test_from_attributes_path_error():
             raise RuntimeError('intentional error')
 
     v = SchemaValidator(
-        {
-            'type': 'model-fields',
-            'fields': {
-                'my_field': {
-                    'validation_alias': [['foo', 'bar', 'bat'], ['foo', 3], ['spam']],
-                    'type': 'model-field',
-                    'schema': {'type': 'int'},
-                }
+        core_schema.model_fields_schema(
+            fields={
+                'my_field': core_schema.model_field(
+                    validation_alias=[['foo', 'bar', 'bat'], ['foo', 3], ['spam']], schema=core_schema.int_schema()
+                )
             },
-            'from_attributes': True,
-        }
+            from_attributes=True,
+        )
     )
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python(PropertyError())
@@ -1405,18 +1361,15 @@ def test_alias_extra(py_and_json: PyAndJson):
 
 def test_alias_extra_from_attributes():
     v = SchemaValidator(
-        {
-            'type': 'model-fields',
-            'extra_behavior': 'allow',
-            'from_attributes': True,
-            'fields': {
-                'field_a': {
-                    'validation_alias': [['FieldA'], ['foo', 2]],
-                    'type': 'model-field',
-                    'schema': {'type': 'int'},
-                }
+        core_schema.model_fields_schema(
+            extra_behavior='allow',
+            from_attributes=True,
+            fields={
+                'field_a': core_schema.model_field(
+                    validation_alias=[['FieldA'], ['foo', 2]], schema=core_schema.int_schema()
+                )
             },
-        }
+        )
     )
     assert v.validate_python({'FieldA': 1}) == ({'field_a': 1}, {}, {'field_a'})
     assert v.validate_python(Cls(FieldA=1)) == ({'field_a': 1}, {}, {'field_a'})
@@ -1453,15 +1406,15 @@ def test_alias_extra_forbid(py_and_json: PyAndJson):
 
 def test_with_default_factory():
     v = SchemaValidator(
-        {
-            'type': 'model-fields',
-            'fields': {
-                'x': {
-                    'type': 'model-field',
-                    'schema': {'type': 'default', 'schema': {'type': 'str'}, 'default_factory': lambda: 'pikachu'},
-                }
-            },
-        }
+        core_schema.model_fields_schema(
+            fields={
+                'x': core_schema.model_field(
+                    schema=core_schema.with_default_schema(
+                        schema=core_schema.str_schema(), default_factory=lambda: 'pikachu'
+                    )
+                )
+            }
+        )
     )
 
     assert v.validate_python({}) == ({'x': 'pikachu'}, None, set())
@@ -1477,15 +1430,15 @@ def test_with_default_factory():
 )
 def test_bad_default_factory(default_factory, error_message):
     v = SchemaValidator(
-        {
-            'type': 'model-fields',
-            'fields': {
-                'x': {
-                    'type': 'model-field',
-                    'schema': {'type': 'default', 'schema': {'type': 'str'}, 'default_factory': default_factory},
-                }
-            },
-        }
+        core_schema.model_fields_schema(
+            fields={
+                'x': core_schema.model_field(
+                    schema=core_schema.with_default_schema(
+                        schema=core_schema.str_schema(), default_factory=default_factory
+                    )
+                )
+            }
+        )
     )
     with pytest.raises(TypeError, match=re.escape(error_message)):
         v.validate_python({})
@@ -1509,15 +1462,13 @@ class TestOnError:
     def test_on_error_bad_default(self):
         with pytest.raises(SchemaError, match="'on_error = default' requires a `default` or `default_factory`"):
             SchemaValidator(
-                {
-                    'type': 'model-fields',
-                    'fields': {
-                        'x': {
-                            'type': 'model-field',
-                            'schema': {'type': 'default', 'schema': {'type': 'str'}, 'on_error': 'default'},
-                        }
-                    },
-                }
+                schema=core_schema.model_fields_schema(
+                    fields={
+                        'x': core_schema.model_field(
+                            schema=core_schema.with_default_schema(schema=core_schema.str_schema(), on_error='default')
+                        )
+                    }
+                )
             )
 
     def test_on_error_raise_by_default(self, py_and_json: PyAndJson):
@@ -1625,18 +1576,15 @@ class TestOnError:
 
 def test_frozen_field():
     v = SchemaValidator(
-        {
-            'type': 'model-fields',
-            'fields': {
-                'name': {'type': 'model-field', 'schema': {'type': 'str'}},
-                'age': {'type': 'model-field', 'schema': {'type': 'int'}},
-                'is_developer': {
-                    'type': 'model-field',
-                    'schema': {'type': 'default', 'schema': {'type': 'bool'}, 'default': True},
-                    'frozen': True,
-                },
-            },
-        }
+        core_schema.model_fields_schema(
+            fields={
+                'name': core_schema.model_field(schema=core_schema.str_schema()),
+                'age': core_schema.model_field(schema=core_schema.int_schema()),
+                'is_developer': core_schema.model_field(
+                    schema=core_schema.with_default_schema(schema=core_schema.bool_schema(), default=True), frozen=True
+                ),
+            }
+        )
     )
     r1, model_extra, fields_set = v.validate_python({'name': 'Samuel', 'age': '36'})
     assert r1 == {'name': 'Samuel', 'age': 36, 'is_developer': True}

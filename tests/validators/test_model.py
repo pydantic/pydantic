@@ -7,7 +7,7 @@ from typing import Any, Callable
 import pytest
 from dirty_equals import HasRepr, IsInstance
 
-from pydantic_core import SchemaError, SchemaValidator, ValidationError, core_schema
+from pydantic_core import CoreConfig, SchemaError, SchemaValidator, ValidationError, core_schema
 
 
 def test_model_class():
@@ -184,14 +184,12 @@ def test_model_class_setattr():
     setattr_calls.clear()
 
     v = SchemaValidator(
-        {
-            'type': 'model',
-            'cls': MyModel,
-            'schema': {
-                'type': 'model-fields',
-                'fields': {'field_a': {'type': 'model-field', 'schema': {'type': 'str'}}},
-            },
-        }
+        core_schema.model_schema(
+            cls=MyModel,
+            schema=core_schema.model_fields_schema(
+                fields={'field_a': core_schema.model_field(schema=core_schema.str_schema())}
+            ),
+        )
     )
     m = v.validate_python({'field_a': 'test'})
     assert isinstance(m, MyModel)
@@ -317,18 +315,16 @@ def test_function_ask(mode):
         return input_value
 
     SchemaValidator(
-        {
-            'type': 'model',
-            'cls': MyModel,
-            'schema': {
+        core_schema.model_schema(
+            cls=MyModel,
+            schema={
                 'type': f'function-{mode}',
                 'function': {'type': 'with-info', 'function': f},
-                'schema': {
-                    'type': 'model-fields',
-                    'fields': {'field_a': {'type': 'model-field', 'schema': {'type': 'str'}}},
-                },
+                'schema': core_schema.model_fields_schema(
+                    fields={'field_a': core_schema.model_field(schema=core_schema.str_schema())}
+                ),
             },
-        }
+        )
     )
 
 
@@ -339,7 +335,7 @@ def test_function_plain_ask():
     def f(input_value):
         return input_value, {1: 2}, {'field_a'}
 
-    v = SchemaValidator({'type': 'model', 'cls': MyModel, 'schema': core_schema.no_info_plain_validator_function(f)})
+    v = SchemaValidator(core_schema.model_schema(cls=MyModel, schema=core_schema.no_info_plain_validator_function(f)))
     m = v.validate_python({'field_a': 'test'})
     assert isinstance(m, MyModel)
     assert m.__dict__ == {'field_a': 'test'}
@@ -352,17 +348,19 @@ def test_union_sub_schema():
         __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
 
     v = SchemaValidator(
-        {
-            'type': 'model',
-            'cls': MyModel,
-            'schema': {
-                'type': 'union',
-                'choices': [
-                    {'type': 'model-fields', 'fields': {'foo': {'type': 'model-field', 'schema': {'type': 'int'}}}},
-                    {'type': 'model-fields', 'fields': {'bar': {'type': 'model-field', 'schema': {'type': 'int'}}}},
-                ],
-            },
-        }
+        core_schema.model_schema(
+            cls=MyModel,
+            schema=core_schema.union_schema(
+                choices=[
+                    core_schema.model_fields_schema(
+                        fields={'foo': core_schema.model_field(schema=core_schema.int_schema())}
+                    ),
+                    core_schema.model_fields_schema(
+                        fields={'bar': core_schema.model_field(schema=core_schema.int_schema())}
+                    ),
+                ]
+            ),
+        )
     )
     m = v.validate_python({'foo': '123'})
     assert isinstance(m, MyModel)
@@ -379,33 +377,28 @@ def test_tagged_union_sub_schema():
         pass
 
     v = SchemaValidator(
-        {
-            'type': 'model',
-            'cls': MyModel,
-            'schema': {
-                'type': 'tagged-union',
-                'discriminator': 'foo',
-                'choices': {
-                    'apple': {
-                        'type': 'model-fields',
-                        'fields': {
-                            'foo': {'type': 'model-field', 'schema': {'type': 'str'}},
-                            'bar': {'type': 'model-field', 'schema': {'type': 'int'}},
-                        },
-                    },
-                    'banana': {
-                        'type': 'model-fields',
-                        'fields': {
-                            'foo': {'type': 'model-field', 'schema': {'type': 'str'}},
-                            'spam': {
-                                'type': 'model-field',
-                                'schema': {'type': 'list', 'items_schema': {'type': 'int'}},
-                            },
-                        },
-                    },
+        core_schema.model_schema(
+            cls=MyModel,
+            schema=core_schema.tagged_union_schema(
+                discriminator='foo',
+                choices={
+                    'apple': core_schema.model_fields_schema(
+                        fields={
+                            'foo': core_schema.model_field(schema=core_schema.str_schema()),
+                            'bar': core_schema.model_field(schema=core_schema.int_schema()),
+                        }
+                    ),
+                    'banana': core_schema.model_fields_schema(
+                        fields={
+                            'foo': core_schema.model_field(schema=core_schema.str_schema()),
+                            'spam': core_schema.model_field(
+                                schema=core_schema.list_schema(items_schema=core_schema.int_schema())
+                            ),
+                        }
+                    ),
                 },
-            },
-        }
+            ),
+        )
     )
     m = v.validate_python({'foo': 'apple', 'bar': '123'})
     assert isinstance(m, MyModel)
@@ -433,7 +426,7 @@ def test_bad_sub_schema():
     class MyModel:
         pass
 
-    v = SchemaValidator({'type': 'model', 'cls': MyModel, 'schema': {'type': 'int'}})
+    v = SchemaValidator(core_schema.model_schema(cls=MyModel, schema=core_schema.int_schema()))
     with pytest.raises(TypeError):
         v.validate_python(123)
 
@@ -447,18 +440,16 @@ def test_model_class_function_after():
         return input_value
 
     v = SchemaValidator(
-        {
-            'type': 'model',
-            'cls': MyModel,
-            'schema': {
+        core_schema.model_schema(
+            cls=MyModel,
+            schema={
                 'type': 'function-after',
                 'function': {'type': 'with-info', 'function': f},
-                'schema': {
-                    'type': 'model-fields',
-                    'fields': {'field_a': {'type': 'model-field', 'schema': {'type': 'str'}}},
-                },
+                'schema': core_schema.model_fields_schema(
+                    fields={'field_a': core_schema.model_field(schema=core_schema.str_schema())}
+                ),
             },
-        }
+        )
     )
     m = v.validate_python({'field_a': 'test'})
     assert isinstance(m, MyModel)
@@ -469,14 +460,12 @@ def test_model_class_function_after():
 def test_model_class_not_type():
     with pytest.raises(SchemaError, match=re.escape("TypeError: 'int' object cannot be converted to 'PyType'")):
         SchemaValidator(
-            {
-                'type': 'model',
-                'cls': 123,
-                'schema': {
-                    'type': 'model-fields',
-                    'fields': {'field_a': {'type': 'model-field', 'schema': {'type': 'str'}}},
-                },
-            }
+            schema=core_schema.model_schema(
+                cls=123,
+                schema=core_schema.model_fields_schema(
+                    fields={'field_a': core_schema.model_field(schema=core_schema.str_schema())}
+                ),
+            )
         )
 
 
@@ -489,14 +478,12 @@ def test_model_class_instance_direct():
             self.field_a = 'init'
 
     v = SchemaValidator(
-        {
-            'type': 'model',
-            'cls': MyModel,
-            'schema': {
-                'type': 'model-fields',
-                'fields': {'field_a': {'type': 'model-field', 'schema': {'type': 'str'}}},
-            },
-        }
+        core_schema.model_schema(
+            cls=MyModel,
+            schema=core_schema.model_fields_schema(
+                fields={'field_a': core_schema.model_field(schema=core_schema.str_schema())}
+            ),
+        )
     )
     m1 = v.validate_python({'field_a': 'test'})
     assert isinstance(m1, MyModel)
@@ -530,15 +517,13 @@ def test_model_class_instance_subclass():
             self.field_b = 'init_b'
 
     v = SchemaValidator(
-        {
-            'type': 'model',
-            'cls': MyModel,
-            'schema': {
-                'type': 'model-fields',
-                'fields': {'field_a': {'type': 'model-field', 'schema': {'type': 'str'}}},
-            },
-            'post_init': 'model_post_init',
-        }
+        core_schema.model_schema(
+            cls=MyModel,
+            schema=core_schema.model_fields_schema(
+                fields={'field_a': core_schema.model_field(schema=core_schema.str_schema())}
+            ),
+            post_init='model_post_init',
+        )
     )
 
     m2 = MySubModel()
@@ -579,16 +564,14 @@ def test_model_class_instance_subclass_revalidate():
             self.field_b = 'init_b'
 
     v = SchemaValidator(
-        {
-            'type': 'model',
-            'cls': MyModel,
-            'schema': {
-                'type': 'model-fields',
-                'fields': {'field_a': {'type': 'model-field', 'schema': {'type': 'str'}}},
-            },
-            'post_init': 'model_post_init',
-            'revalidate_instances': 'always',
-        }
+        core_schema.model_schema(
+            cls=MyModel,
+            schema=core_schema.model_fields_schema(
+                fields={'field_a': core_schema.model_field(schema=core_schema.str_schema())}
+            ),
+            post_init='model_post_init',
+            revalidate_instances='always',
+        )
     )
 
     m2 = MySubModel()
@@ -619,18 +602,16 @@ def test_model_class_strict():
             self.field_b = 'init_b'
 
     v = SchemaValidator(
-        {
-            'type': 'model',
-            'strict': True,
-            'cls': MyModel,
-            'schema': {
-                'type': 'model-fields',
-                'fields': {
-                    'field_a': {'type': 'model-field', 'schema': {'type': 'str'}},
-                    'field_b': {'type': 'model-field', 'schema': {'type': 'int'}},
-                },
-            },
-        }
+        core_schema.model_schema(
+            strict=True,
+            cls=MyModel,
+            schema=core_schema.model_fields_schema(
+                fields={
+                    'field_a': core_schema.model_field(schema=core_schema.str_schema()),
+                    'field_b': core_schema.model_field(schema=core_schema.int_schema()),
+                }
+            ),
+        )
     )
     assert re.search(r'revalidate: \w+', repr(v)).group(0) == 'revalidate: Never'
     m = MyModel()
@@ -666,22 +647,19 @@ def test_model_class_strict_json():
         field_c: int
 
     v = SchemaValidator(
-        {
-            'type': 'model',
-            'strict': True,
-            'cls': MyModel,
-            'schema': {
-                'type': 'model-fields',
-                'fields': {
-                    'field_a': {'type': 'model-field', 'schema': {'type': 'str'}},
-                    'field_b': {'type': 'model-field', 'schema': {'type': 'int'}},
-                    'field_c': {
-                        'type': 'model-field',
-                        'schema': {'type': 'default', 'default': 42, 'schema': {'type': 'int'}},
-                    },
-                },
-            },
-        }
+        core_schema.model_schema(
+            strict=True,
+            cls=MyModel,
+            schema=core_schema.model_fields_schema(
+                fields={
+                    'field_a': core_schema.model_field(schema=core_schema.str_schema()),
+                    'field_b': core_schema.model_field(schema=core_schema.int_schema()),
+                    'field_c': core_schema.model_field(
+                        schema=core_schema.with_default_schema(default=42, schema=core_schema.int_schema())
+                    ),
+                }
+            ),
+        )
     )
     m = v.validate_json('{"field_a": "foobar", "field_b": "123"}')
     assert isinstance(m, MyModel)
@@ -693,11 +671,12 @@ def test_model_class_strict_json():
 
 def test_internal_error():
     v = SchemaValidator(
-        {
-            'type': 'model',
-            'cls': int,
-            'schema': {'type': 'model-fields', 'fields': {'f': {'type': 'model-field', 'schema': {'type': 'int'}}}},
-        }
+        core_schema.model_schema(
+            cls=int,
+            schema=core_schema.model_fields_schema(
+                fields={'f': core_schema.model_field(schema=core_schema.int_schema())}
+            ),
+        )
     )
     with pytest.raises(AttributeError, match=re.escape("'int' object has no attribute '__dict__'")):
         v.validate_python({'f': 123})
@@ -715,18 +694,16 @@ def test_revalidate_always():
                 self.__pydantic_fields_set__ = fields_set
 
     v = SchemaValidator(
-        {
-            'type': 'model',
-            'cls': MyModel,
-            'revalidate_instances': 'always',
-            'schema': {
-                'type': 'model-fields',
-                'fields': {
-                    'field_a': {'type': 'model-field', 'schema': {'type': 'str'}},
-                    'field_b': {'type': 'model-field', 'schema': {'type': 'int'}},
-                },
-            },
-        }
+        core_schema.model_schema(
+            cls=MyModel,
+            revalidate_instances='always',
+            schema=core_schema.model_fields_schema(
+                fields={
+                    'field_a': core_schema.model_field(schema=core_schema.str_schema()),
+                    'field_b': core_schema.model_field(schema=core_schema.int_schema()),
+                }
+            ),
+        )
     )
     assert re.search(r'revalidate: \w+', repr(v)).group(0) == 'revalidate: Always'
 
@@ -773,18 +750,16 @@ def test_revalidate_subclass_instances():
             self.field_c = 'init_c'
 
     v = SchemaValidator(
-        {
-            'type': 'model',
-            'cls': MyModel,
-            'revalidate_instances': 'subclass-instances',
-            'schema': {
-                'type': 'model-fields',
-                'fields': {
-                    'field_a': {'type': 'model-field', 'schema': {'type': 'str'}},
-                    'field_b': {'type': 'model-field', 'schema': {'type': 'int'}},
-                },
-            },
-        }
+        core_schema.model_schema(
+            cls=MyModel,
+            revalidate_instances='subclass-instances',
+            schema=core_schema.model_fields_schema(
+                fields={
+                    'field_a': core_schema.model_field(schema=core_schema.str_schema()),
+                    'field_b': core_schema.model_field(schema=core_schema.int_schema()),
+                }
+            ),
+        )
     )
 
     m1 = MyModel()
@@ -816,19 +791,17 @@ def test_revalidate_extra():
             self.__dict__.update(kwargs)
 
     v = SchemaValidator(
-        {
-            'type': 'model',
-            'cls': MyModel,
-            'schema': {
-                'type': 'model-fields',
-                'extra_behavior': 'allow',
-                'fields': {
-                    'field_a': {'type': 'model-field', 'schema': {'type': 'str'}},
-                    'field_b': {'type': 'model-field', 'schema': {'type': 'int'}},
+        core_schema.model_schema(
+            cls=MyModel,
+            schema=core_schema.model_fields_schema(
+                extra_behavior='allow',
+                fields={
+                    'field_a': core_schema.model_field(schema=core_schema.str_schema()),
+                    'field_b': core_schema.model_field(schema=core_schema.int_schema()),
                 },
-            },
-            'config': {'revalidate_instances': 'always'},
-        }
+            ),
+            config=CoreConfig(revalidate_instances='always'),
+        )
     )
 
     m = v.validate_python({'field_a': 'test', 'field_b': 12, 'more': (1, 2, 3)})
@@ -867,18 +840,16 @@ def test_post_init():
             assert self.__pydantic_fields_set__ == {'field_a', 'field_b'}
 
     v = SchemaValidator(
-        {
-            'type': 'model',
-            'cls': MyModel,
-            'post_init': 'call_me_maybe',
-            'schema': {
-                'type': 'model-fields',
-                'fields': {
-                    'field_a': {'type': 'model-field', 'schema': {'type': 'str'}},
-                    'field_b': {'type': 'model-field', 'schema': {'type': 'int'}},
-                },
-            },
-        }
+        core_schema.model_schema(
+            cls=MyModel,
+            post_init='call_me_maybe',
+            schema=core_schema.model_fields_schema(
+                fields={
+                    'field_a': core_schema.model_field(schema=core_schema.str_schema()),
+                    'field_b': core_schema.model_field(schema=core_schema.int_schema()),
+                }
+            ),
+        )
     )
     m = v.validate_python({'field_a': 'test', 'field_b': 12})
     assert isinstance(m, MyModel)
@@ -897,19 +868,17 @@ def test_revalidate_post_init():
             assert context is None
 
     v = SchemaValidator(
-        {
-            'type': 'model',
-            'cls': MyModel,
-            'post_init': 'call_me_maybe',
-            'schema': {
-                'type': 'model-fields',
-                'fields': {
-                    'field_a': {'type': 'model-field', 'schema': {'type': 'str'}},
-                    'field_b': {'type': 'model-field', 'schema': {'type': 'int'}},
-                },
-            },
-            'config': {'revalidate_instances': 'always'},
-        }
+        core_schema.model_schema(
+            cls=MyModel,
+            post_init='call_me_maybe',
+            schema=core_schema.model_fields_schema(
+                fields={
+                    'field_a': core_schema.model_field(schema=core_schema.str_schema()),
+                    'field_b': core_schema.model_field(schema=core_schema.int_schema()),
+                }
+            ),
+            config=CoreConfig(revalidate_instances='always'),
+        )
     )
     assert re.search(r'revalidate: \w+', repr(v)).group(0) == 'revalidate: Always'
 
@@ -943,15 +912,13 @@ def test_post_init_validation_error():
                 raise ValueError(f'this is broken: {self.field_a}')
 
     v = SchemaValidator(
-        {
-            'type': 'model',
-            'cls': MyModel,
-            'post_init': 'call_me_maybe',
-            'schema': {
-                'type': 'model-fields',
-                'fields': {'field_a': {'type': 'model-field', 'schema': {'type': 'str'}}},
-            },
-        }
+        core_schema.model_schema(
+            cls=MyModel,
+            post_init='call_me_maybe',
+            schema=core_schema.model_fields_schema(
+                fields={'field_a': core_schema.model_field(schema=core_schema.str_schema())}
+            ),
+        )
     )
     m = v.validate_python({'field_a': 'test'})
     assert isinstance(m, MyModel)
@@ -979,15 +946,13 @@ def test_post_init_internal_error():
             pass
 
     v = SchemaValidator(
-        {
-            'type': 'model',
-            'cls': MyModel,
-            'post_init': 'wrong_signature',
-            'schema': {
-                'type': 'model-fields',
-                'fields': {'field_a': {'type': 'model-field', 'schema': {'type': 'str'}}},
-            },
-        }
+        core_schema.model_schema(
+            cls=MyModel,
+            post_init='wrong_signature',
+            schema=core_schema.model_fields_schema(
+                fields={'field_a': core_schema.model_field(schema=core_schema.str_schema())}
+            ),
+        )
     )
     with pytest.raises(TypeError, match=r'wrong_signature\(\) takes 1 positional argument but 2 were given'):
         v.validate_python({'field_a': 'test'})
@@ -1004,18 +969,16 @@ def test_post_init_mutate():
             self.__pydantic_fields_set__ = {'field_a'}
 
     v = SchemaValidator(
-        {
-            'type': 'model',
-            'cls': MyModel,
-            'post_init': 'call_me_maybe',
-            'schema': {
-                'type': 'model-fields',
-                'fields': {
-                    'field_a': {'type': 'model-field', 'schema': {'type': 'str'}},
-                    'field_b': {'type': 'model-field', 'schema': {'type': 'int'}},
-                },
-            },
-        }
+        core_schema.model_schema(
+            cls=MyModel,
+            post_init='call_me_maybe',
+            schema=core_schema.model_fields_schema(
+                fields={
+                    'field_a': core_schema.model_field(schema=core_schema.str_schema()),
+                    'field_b': core_schema.model_field(schema=core_schema.int_schema()),
+                }
+            ),
+        )
     )
     m = v.validate_python({'field_a': 'test', 'field_b': 12})
     assert isinstance(m, MyModel)
@@ -1125,17 +1088,15 @@ def test_validate_assignment_no_fields_set():
             self.__pydantic_extra__ = None
 
     v = SchemaValidator(
-        {
-            'type': 'model',
-            'cls': MyModel,
-            'schema': {
-                'type': 'model-fields',
-                'fields': {
-                    'field_a': {'type': 'model-field', 'schema': {'type': 'str'}},
-                    'field_b': {'type': 'model-field', 'schema': {'type': 'int'}},
-                },
-            },
-        }
+        core_schema.model_schema(
+            cls=MyModel,
+            schema=core_schema.model_fields_schema(
+                fields={
+                    'field_a': core_schema.model_field(schema=core_schema.str_schema()),
+                    'field_b': core_schema.model_field(schema=core_schema.int_schema()),
+                }
+            ),
+        )
     )
 
     m = MyModel()

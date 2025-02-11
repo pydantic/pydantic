@@ -5,7 +5,7 @@ import re
 import pytest
 from typing_extensions import get_args
 
-from pydantic_core import CoreSchema, CoreSchemaType, PydanticUndefined, core_schema
+from pydantic_core import CoreConfig, CoreSchema, CoreSchemaType, PydanticUndefined, core_schema
 from pydantic_core._pydantic_core import (
     SchemaError,
     SchemaValidator,
@@ -42,7 +42,7 @@ def test_schema_error():
 
 
 def test_validation_error(pydantic_version):
-    v = SchemaValidator({'type': 'int'})
+    v = SchemaValidator(core_schema.int_schema())
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python(1.5)
 
@@ -73,7 +73,7 @@ def test_validation_error(pydantic_version):
 
 
 def test_validation_error_include_context():
-    v = SchemaValidator({'type': 'list', 'max_length': 2})
+    v = SchemaValidator(core_schema.list_schema(max_length=2))
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python([1, 2, 3])
 
@@ -101,7 +101,7 @@ def test_validation_error_include_context():
 
 
 def test_custom_title():
-    v = SchemaValidator({'type': 'int'}, {'title': 'MyInt'})
+    v = SchemaValidator(core_schema.int_schema(), config=CoreConfig(title='MyInt'))
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python(1.5)
 
@@ -116,17 +116,15 @@ def test_validation_error_multiple(pydantic_version):
         field_b: int
 
     v = SchemaValidator(
-        {
-            'type': 'model',
-            'cls': MyModel,
-            'schema': {
-                'type': 'model-fields',
-                'fields': {
-                    'x': {'type': 'model-field', 'schema': {'type': 'float'}},
-                    'y': {'type': 'model-field', 'schema': {'type': 'int'}},
-                },
-            },
-        }
+        core_schema.model_schema(
+            cls=MyModel,
+            schema=core_schema.model_fields_schema(
+                fields={
+                    'x': core_schema.model_field(schema=core_schema.float_schema()),
+                    'y': core_schema.model_field(schema=core_schema.int_schema()),
+                }
+            ),
+        )
     )
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python({'x': 'x' * 60, 'y': 'y'})
@@ -193,9 +191,7 @@ def test_undefined():
 def test_unicode_error_input_repr() -> None:
     """https://github.com/pydantic/pydantic/issues/6448"""
 
-    schema = core_schema.int_schema()
-
-    validator = SchemaValidator(schema)
+    validator = SchemaValidator(core_schema.int_schema())
 
     danger_str = 'ÿ' * 1000
     expected = "1 validation error for int\n  Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='ÿÿÿÿÿÿÿÿÿÿÿÿ...ÿÿÿÿÿÿÿÿÿÿÿ', input_type=str]"

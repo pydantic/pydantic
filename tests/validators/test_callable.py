@@ -1,6 +1,7 @@
 import pytest
 
 from pydantic_core import SchemaValidator, ValidationError
+from pydantic_core import core_schema as cs
 
 
 def func():
@@ -17,7 +18,7 @@ class CallableClass:
 
 
 def test_callable():
-    v = SchemaValidator({'type': 'callable'})
+    v = SchemaValidator(cs.callable_schema())
     assert v.validate_python(func) == func
     assert v.isinstance_python(func) is True
 
@@ -47,12 +48,12 @@ def test_callable():
     ],
 )
 def test_callable_cases(input_value, expected):
-    v = SchemaValidator({'type': 'callable'})
+    v = SchemaValidator(cs.callable_schema())
     assert v.isinstance_python(input_value) == expected
 
 
 def test_repr():
-    v = SchemaValidator({'type': 'union', 'choices': [{'type': 'int'}, {'type': 'callable'}]})
+    v = SchemaValidator(cs.union_schema(choices=[cs.int_schema(), cs.callable_schema()]))
     assert v.isinstance_python(4) is True
     assert v.isinstance_python(func) is True
     assert v.isinstance_python('foo') is False

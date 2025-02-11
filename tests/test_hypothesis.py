@@ -15,7 +15,7 @@ from pydantic_core import core_schema as cs
 
 @pytest.fixture(scope='module')
 def datetime_schema():
-    return SchemaValidator({'type': 'datetime'})
+    return SchemaValidator(cs.datetime_schema())
 
 
 @given(strategies.datetimes())
@@ -137,7 +137,7 @@ def test_definition_broken(definition_schema):
 @given(strategies.timedeltas())
 @pytest.mark.thread_unsafe  # https://github.com/Quansight-Labs/pytest-run-parallel/issues/20
 def test_pytimedelta_as_timedelta(dt):
-    v = SchemaValidator({'type': 'timedelta', 'gt': dt})
+    v = SchemaValidator(cs.timedelta_schema(gt=dt))
     # simplest way to check `pytimedelta_as_timedelta` is correct is to extract duration from repr of the validator
     m = re.search(r'Duration ?\{\s+positive: ?(\w+),\s+day: ?(\d+),\s+second: ?(\d+),\s+microsecond: ?(\d+)', repr(v))
     pos, day, sec, micro = m.groups()
@@ -148,7 +148,7 @@ def test_pytimedelta_as_timedelta(dt):
 
 @pytest.fixture(scope='module')
 def url_validator():
-    return SchemaValidator({'type': 'url'})
+    return SchemaValidator(cs.url_schema())
 
 
 # Parsing errors which hypothesis is likely to hit
@@ -169,7 +169,7 @@ def test_urls_text(url_validator, text):
 
 @pytest.fixture(scope='module')
 def multi_host_url_validator():
-    return SchemaValidator({'type': 'multi-host-url'})
+    return SchemaValidator(cs.multi_host_url_schema())
 
 
 @given(strategies.text())

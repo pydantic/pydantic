@@ -3,6 +3,7 @@ import typing
 import pytest
 
 from pydantic_core import SchemaError, SchemaValidator, ValidationError, core_schema
+from pydantic_core import core_schema as cs
 
 
 class Foo:
@@ -18,14 +19,14 @@ class Spam:
 
 
 def test_validate_json() -> None:
-    v = SchemaValidator({'type': 'is-instance', 'cls': Foo})
+    v = SchemaValidator(cs.is_instance_schema(cls=Foo))
     with pytest.raises(ValidationError) as exc_info:
         v.validate_json('"foo"')
         assert exc_info.value.errors()[0]['type'] == 'needs_python_object'
 
 
 def test_is_instance():
-    v = SchemaValidator({'type': 'is-instance', 'cls': Foo})
+    v = SchemaValidator(cs.is_instance_schema(cls=Foo))
     foo = Foo()
     assert v.validate_python(foo) == foo
     assert v.isinstance_python(foo) is True
@@ -65,14 +66,14 @@ def test_is_instance():
     ],
 )
 def test_is_instance_cases(schema_class, input_val, value):
-    v = SchemaValidator({'type': 'is-instance', 'cls': schema_class})
+    v = SchemaValidator(cs.is_instance_schema(cls=schema_class))
     assert v.isinstance_python(input_val) == value
 
 
 @pytest.mark.parametrize('input_cls', [123, 'foo', Foo(), [], {1: 2}])
 def test_is_instance_invalid(input_cls):
     with pytest.raises(SchemaError, match="SchemaError: 'cls' must be valid as the first argument to 'isinstance'"):
-        SchemaValidator({'type': 'is-instance', 'cls': input_cls})
+        SchemaValidator(cs.is_instance_schema(cls=input_cls))
 
 
 class HasIsInstanceMeta(type):
@@ -88,7 +89,7 @@ class HasIsInstance(metaclass=HasIsInstanceMeta):
 
 
 def test_instancecheck():
-    v = SchemaValidator({'type': 'is-instance', 'cls': HasIsInstance})
+    v = SchemaValidator(cs.is_instance_schema(cls=HasIsInstance))
     assert v.validate_python('true') == 'true'
 
     with pytest.raises(ValidationError, match='type=is_instance_of'):
@@ -99,7 +100,7 @@ def test_instancecheck():
 
 
 def test_repr():
-    v = SchemaValidator({'type': 'union', 'choices': [{'type': 'int'}, {'type': 'is-instance', 'cls': Foo}]})
+    v = SchemaValidator(cs.union_schema(choices=[cs.int_schema(), cs.is_instance_schema(cls=Foo)]))
     assert v.isinstance_python(4) is True
     assert v.isinstance_python(Bar()) is True
     assert v.isinstance_python('foo') is False
@@ -122,7 +123,7 @@ def test_repr():
     ],
 )
 def test_is_type(input_val, value):
-    v = SchemaValidator({'type': 'is-instance', 'cls': type})
+    v = SchemaValidator(cs.is_instance_schema(cls=type))
     assert v.isinstance_python(input_val) == value
 
 

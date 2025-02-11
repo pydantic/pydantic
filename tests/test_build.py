@@ -28,7 +28,7 @@ def test_build_error_deep():
 
 
 def test_schema_as_string():
-    v = SchemaValidator({'type': 'bool'})
+    v = SchemaValidator(cs.bool_schema())
     assert v.validate_python('tRuE') is True
 
 
@@ -53,7 +53,7 @@ def test_schema_wrong_type(pydantic_version):
 
 @pytest.mark.parametrize('pickle_protocol', range(1, pickle.HIGHEST_PROTOCOL + 1))
 def test_pickle(pickle_protocol: int) -> None:
-    v1 = SchemaValidator({'type': 'bool'})
+    v1 = SchemaValidator(cs.bool_schema())
     assert v1.validate_python('tRuE') is True
     p = pickle.dumps(v1, protocol=pickle_protocol)
     v2 = pickle.loads(p)
@@ -98,7 +98,7 @@ def test_function_no_mode():
 
 def test_try_self_schema_discriminator():
     """Trying to use self-schema when it shouldn't be used"""
-    v = SchemaValidator({'type': 'tagged-union', 'choices': {'int': {'type': 'int'}}, 'discriminator': 'self-schema'})
+    v = SchemaValidator(cs.tagged_union_schema(choices={'int': cs.int_schema()}, discriminator='self-schema'))
     assert 'discriminator: LookupKey' in repr(v)
 
 

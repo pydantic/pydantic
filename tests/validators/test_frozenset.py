@@ -5,6 +5,7 @@ from typing import Any
 import pytest
 
 from pydantic_core import SchemaValidator, ValidationError
+from pydantic_core import core_schema as cs
 
 from ..conftest import Err, PyAndJson, infinite_generator, plain_repr
 
@@ -25,14 +26,14 @@ def test_frozenset_ints_both(py_and_json: PyAndJson, input_value, expected):
     [([], frozenset()), ([1, '2', b'3'], {1, '2', b'3'}), (frozenset([1, '2', b'3']), {1, '2', b'3'})],
 )
 def test_frozenset_any(input_value, expected):
-    v = SchemaValidator({'type': 'frozenset'})
+    v = SchemaValidator(cs.frozenset_schema())
     output = v.validate_python(input_value)
     assert output == expected
     assert isinstance(output, frozenset)
 
 
 def test_no_copy():
-    v = SchemaValidator({'type': 'frozenset'})
+    v = SchemaValidator(cs.frozenset_schema())
     input_value = frozenset([1, 2, 3])
     output = v.validate_python(input_value)
     assert output == input_value
@@ -84,7 +85,7 @@ def test_frozenset_no_validators_both(py_and_json: PyAndJson, input_value, expec
 )
 @pytest.mark.thread_unsafe  # generators in parameters not compatible with pytest-run-parallel, https://github.com/Quansight-Labs/pytest-run-parallel/issues/14
 def test_frozenset_ints_python(input_value, expected):
-    v = SchemaValidator({'type': 'frozenset', 'items_schema': {'type': 'int'}})
+    v = SchemaValidator(cs.frozenset_schema(items_schema=cs.int_schema()))
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
             v.validate_python(input_value)
@@ -99,14 +100,14 @@ def test_frozenset_ints_python(input_value, expected):
     [(frozenset([1, 2.5, '3']), {1, 2.5, '3'}), ([1, 2.5, '3'], {1, 2.5, '3'}), ([(1, 2), (3, 4)], {(1, 2), (3, 4)})],
 )
 def test_frozenset_no_validators_python(input_value, expected):
-    v = SchemaValidator({'type': 'frozenset'})
+    v = SchemaValidator(cs.frozenset_schema())
     output = v.validate_python(input_value)
     assert output == expected
     assert isinstance(output, frozenset)
 
 
 def test_frozenset_multiple_errors():
-    v = SchemaValidator({'type': 'frozenset', 'items_schema': {'type': 'int'}})
+    v = SchemaValidator(cs.frozenset_schema(items_schema=cs.int_schema()))
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python(['a', (1, 2), []])
     assert exc_info.value.errors(include_url=False) == [
@@ -168,7 +169,7 @@ def generate_repeats():
 )
 @pytest.mark.thread_unsafe  # generators in parameters not compatible with pytest-run-parallel, https://github.com/Quansight-Labs/pytest-run-parallel/issues/14
 def test_frozenset_kwargs_python(kwargs: dict[str, Any], input_value, expected):
-    v = SchemaValidator({'type': 'frozenset', **kwargs})
+    v = SchemaValidator(cs.frozenset_schema(**kwargs))
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
             v.validate_python(input_value)
@@ -180,7 +181,7 @@ def test_frozenset_kwargs_python(kwargs: dict[str, Any], input_value, expected):
 
 @pytest.mark.parametrize('input_value,expected', [({1, 2, 3}, {1, 2, 3}), ([1, 2, 3], [1, 2, 3])])
 def test_union_frozenset_list(input_value, expected):
-    v = SchemaValidator({'type': 'union', 'choices': [{'type': 'frozenset'}, {'type': 'list'}]})
+    v = SchemaValidator(cs.union_schema(choices=[cs.frozenset_schema(), cs.list_schema()]))
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
             v.validate_python(input_value)
@@ -218,13 +219,12 @@ def test_union_frozenset_list(input_value, expected):
 )
 def test_union_frozenset_int_frozenset_str(input_value, expected):
     v = SchemaValidator(
-        {
-            'type': 'union',
-            'choices': [
-                {'type': 'frozenset', 'items_schema': {'type': 'int', 'strict': True}},
-                {'type': 'frozenset', 'items_schema': {'type': 'str', 'strict': True}},
-            ],
-        }
+        cs.union_schema(
+            choices=[
+                cs.frozenset_schema(items_schema=cs.int_schema(strict=True)),
+                cs.frozenset_schema(items_schema=cs.str_schema(strict=True)),
+            ]
+        )
     )
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)) as exc_info:
@@ -244,7 +244,7 @@ def test_frozenset_as_dict_keys(py_and_json: PyAndJson):
 
 
 def test_repr():
-    v = SchemaValidator({'type': 'frozenset', 'strict': True, 'min_length': 42})
+    v = SchemaValidator(cs.frozenset_schema(strict=True, min_length=42))
     assert plain_repr(v) == (
         'SchemaValidator('
         'title="frozenset[any]",'
@@ -266,7 +266,7 @@ def test_generator_error():
             raise RuntimeError('my error')
         yield 3
 
-    v = SchemaValidator({'type': 'frozenset', 'items_schema': {'type': 'int'}})
+    v = SchemaValidator(cs.frozenset_schema(items_schema=cs.int_schema()))
     r = v.validate_python(gen(False))
     assert r == {1, 2, 3}
     assert isinstance(r, frozenset)
@@ -295,7 +295,7 @@ def test_generator_error():
     ],
 )
 def test_frozenset_from_dict_items(input_value, items_schema, expected):
-    v = SchemaValidator({'type': 'frozenset', 'items_schema': items_schema})
+    v = SchemaValidator(cs.frozenset_schema(items_schema=items_schema))
     output = v.validate_python(input_value)
     assert isinstance(output, frozenset)
     assert output == expected
@@ -337,7 +337,7 @@ def test_frozenset_from_dict_items(input_value, items_schema, expected):
     ],
 )
 def test_frozenset_fail_fast(fail_fast, expected):
-    v = SchemaValidator({'type': 'frozenset', 'items_schema': {'type': 'int'}, 'fail_fast': fail_fast})
+    v = SchemaValidator(cs.frozenset_schema(items_schema=cs.int_schema(), fail_fast=fail_fast))
 
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python([1, 'not-num', 'again'])
