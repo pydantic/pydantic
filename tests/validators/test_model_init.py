@@ -18,17 +18,15 @@ class MyModel:
 
 def test_model_init():
     v = SchemaValidator(
-        {
-            'type': 'model',
-            'cls': MyModel,
-            'schema': {
-                'type': 'model-fields',
-                'fields': {
-                    'field_a': {'type': 'model-field', 'schema': {'type': 'str'}},
-                    'field_b': {'type': 'model-field', 'schema': {'type': 'int'}},
-                },
-            },
-        }
+        core_schema.model_schema(
+            cls=MyModel,
+            schema=core_schema.model_fields_schema(
+                fields={
+                    'field_a': core_schema.model_field(schema=core_schema.str_schema()),
+                    'field_b': core_schema.model_field(schema=core_schema.int_schema()),
+                }
+            ),
+        )
     )
     m = v.validate_python({'field_a': 'test', 'field_b': 12})
     assert isinstance(m, MyModel)
@@ -50,30 +48,25 @@ def test_model_init_nested():
         __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
 
     v = SchemaValidator(
-        {
-            'type': 'model',
-            'cls': MyModel,
-            'schema': {
-                'type': 'model-fields',
-                'fields': {
-                    'field_a': {'type': 'model-field', 'schema': {'type': 'str'}},
-                    'field_b': {
-                        'type': 'model-field',
-                        'schema': {
-                            'type': 'model',
-                            'cls': MyModel,
-                            'schema': {
-                                'type': 'model-fields',
-                                'fields': {
-                                    'x_a': {'type': 'model-field', 'schema': {'type': 'str'}},
-                                    'x_b': {'type': 'model-field', 'schema': {'type': 'int'}},
-                                },
-                            },
-                        },
-                    },
-                },
-            },
-        }
+        core_schema.model_schema(
+            cls=MyModel,
+            schema=core_schema.model_fields_schema(
+                fields={
+                    'field_a': core_schema.model_field(schema=core_schema.str_schema()),
+                    'field_b': core_schema.model_field(
+                        schema=core_schema.model_schema(
+                            cls=MyModel,
+                            schema=core_schema.model_fields_schema(
+                                fields={
+                                    'x_a': core_schema.model_field(schema=core_schema.str_schema()),
+                                    'x_b': core_schema.model_field(schema=core_schema.int_schema()),
+                                }
+                            ),
+                        )
+                    ),
+                }
+            ),
+        )
     )
     m = v.validate_python({'field_a': 'test', 'field_b': {'x_a': 'foo', 'x_b': 12}})
     assert isinstance(m, MyModel)
@@ -102,17 +95,15 @@ def test_function_before():
         {
             'type': 'function-before',
             'function': {'type': 'with-info', 'function': f},
-            'schema': {
-                'type': 'model',
-                'cls': MyModel,
-                'schema': {
-                    'type': 'model-fields',
-                    'fields': {
-                        'field_a': {'type': 'model-field', 'schema': {'type': 'str'}},
-                        'field_b': {'type': 'model-field', 'schema': {'type': 'int'}},
-                    },
-                },
-            },
+            'schema': core_schema.model_schema(
+                cls=MyModel,
+                schema=core_schema.model_fields_schema(
+                    fields={
+                        'field_a': core_schema.model_field(schema=core_schema.str_schema()),
+                        'field_b': core_schema.model_field(schema=core_schema.int_schema()),
+                    }
+                ),
+            ),
         }
     )
 
@@ -138,17 +129,15 @@ def test_function_after():
         {
             'type': 'function-after',
             'function': {'type': 'with-info', 'function': f},
-            'schema': {
-                'type': 'model',
-                'cls': MyModel,
-                'schema': {
-                    'type': 'model-fields',
-                    'fields': {
-                        'field_a': {'type': 'model-field', 'schema': {'type': 'str'}},
-                        'field_b': {'type': 'model-field', 'schema': {'type': 'int'}},
-                    },
-                },
-            },
+            'schema': core_schema.model_schema(
+                cls=MyModel,
+                schema=core_schema.model_fields_schema(
+                    fields={
+                        'field_a': core_schema.model_field(schema=core_schema.str_schema()),
+                        'field_b': core_schema.model_field(schema=core_schema.int_schema()),
+                    }
+                ),
+            ),
         }
     )
 
@@ -176,17 +165,15 @@ def test_function_wrap():
         {
             'type': 'function-wrap',
             'function': {'type': 'with-info', 'function': f},
-            'schema': {
-                'type': 'model',
-                'cls': MyModel,
-                'schema': {
-                    'type': 'model-fields',
-                    'fields': {
-                        'field_a': {'type': 'model-field', 'schema': {'type': 'str'}},
-                        'field_b': {'type': 'model-field', 'schema': {'type': 'int'}},
-                    },
-                },
-            },
+            'schema': core_schema.model_schema(
+                cls=MyModel,
+                schema=core_schema.model_fields_schema(
+                    fields={
+                        'field_a': core_schema.model_field(schema=core_schema.str_schema()),
+                        'field_b': core_schema.model_field(schema=core_schema.int_schema()),
+                    }
+                ),
+            ),
         }
     )
 
@@ -202,7 +189,7 @@ def test_function_wrap():
 
 
 def test_simple():
-    v = SchemaValidator({'type': 'str'})
+    v = SchemaValidator(core_schema.str_schema())
     assert v.validate_python(b'abc') == 'abc'
     assert v.isinstance_python(b'abc') is True
 

@@ -9,7 +9,7 @@ from ..conftest import assert_gc
 
 
 def test_nullable():
-    v = SchemaValidator({'type': 'nullable', 'schema': {'type': 'int'}})
+    v = SchemaValidator(core_schema.nullable_schema(schema=core_schema.int_schema()))
     assert v.validate_python(None) is None
     assert v.validate_python(1) == 1
     assert v.validate_python('123') == 123
@@ -27,13 +27,12 @@ def test_nullable():
 
 def test_union_nullable_bool_int():
     v = SchemaValidator(
-        {
-            'type': 'union',
-            'choices': [
-                {'type': 'nullable', 'schema': {'type': 'bool'}},
-                {'type': 'nullable', 'schema': {'type': 'int'}},
-            ],
-        }
+        core_schema.union_schema(
+            choices=[
+                core_schema.nullable_schema(schema=core_schema.bool_schema()),
+                core_schema.nullable_schema(schema=core_schema.int_schema()),
+            ]
+        )
     )
     assert v.validate_python(None) is None
     assert v.validate_python(True) is True

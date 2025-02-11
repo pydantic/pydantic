@@ -5,7 +5,7 @@ from typing import Optional, Union
 import pytest
 from dirty_equals import HasRepr, IsInstance
 
-from pydantic_core import MultiHostUrl, SchemaError, SchemaValidator, Url, ValidationError, core_schema
+from pydantic_core import CoreConfig, MultiHostUrl, SchemaError, SchemaValidator, Url, ValidationError, core_schema
 
 from ..conftest import Err, PyAndJson
 
@@ -367,7 +367,7 @@ def test_multi_host_default_host_no_comma():
 
 @pytest.fixture(scope='module', name='strict_url_validator')
 def strict_url_validator_fixture():
-    return SchemaValidator(core_schema.url_schema(), {'strict': True})
+    return SchemaValidator(core_schema.url_schema(), config=CoreConfig(strict=True))
 
 
 @pytest.mark.parametrize(

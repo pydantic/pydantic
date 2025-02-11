@@ -4,12 +4,13 @@ from typing import Any
 import pytest
 
 from pydantic_core import SchemaValidator, ValidationError
+from pydantic_core import core_schema as cs
 
 from ..conftest import Err, PyAndJson
 
 
 def test_strict_bytes_validator():
-    v = SchemaValidator({'type': 'bytes', 'strict': True})
+    v = SchemaValidator(cs.bytes_schema(strict=True))
 
     assert v.validate_python(b'foo') == b'foo'
     assert v.validate_json('"foo"') == b'foo'
@@ -21,7 +22,7 @@ def test_strict_bytes_validator():
 
 
 def test_lax_bytes_validator():
-    v = SchemaValidator({'type': 'bytes'})
+    v = SchemaValidator(cs.bytes_schema())
 
     assert v.validate_python(b'foo') == b'foo'
     assert v.validate_python('foo') == b'foo'
@@ -56,7 +57,7 @@ def test_lax_bytes_validator():
     ],
 )
 def test_constrained_bytes_python_bytes(opts: dict[str, Any], input, expected):
-    v = SchemaValidator({'type': 'bytes', **opts})
+    v = SchemaValidator(cs.bytes_schema(**opts))
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
             v.validate_python(input)
@@ -90,13 +91,13 @@ def test_constrained_bytes(py_and_json: PyAndJson, opts: dict[str, Any], input, 
 
 
 def test_union():
-    v = SchemaValidator({'type': 'union', 'choices': [{'type': 'str'}, {'type': 'bytes'}], 'strict': True})
+    v = SchemaValidator(cs.union_schema(choices=[cs.str_schema(), cs.bytes_schema()], strict=True))
     assert v.validate_python('oh, a string') == 'oh, a string'
     assert v.validate_python(b'oh, bytes') == b'oh, bytes'
 
 
 def test_length_ctx():
-    v = SchemaValidator({'type': 'bytes', 'min_length': 2, 'max_length': 3})
+    v = SchemaValidator(cs.bytes_schema(min_length=2, max_length=3))
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python(b'1')
     assert exc_info.value.errors(include_url=False) == [

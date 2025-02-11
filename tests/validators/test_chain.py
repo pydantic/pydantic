@@ -3,16 +3,16 @@ from decimal import Decimal
 import pytest
 
 from pydantic_core import SchemaError, SchemaValidator, ValidationError, core_schema
+from pydantic_core import core_schema as cs
 
 from ..conftest import PyAndJson
 
 
 def test_chain():
     validator = SchemaValidator(
-        {
-            'type': 'chain',
-            'steps': [{'type': 'str'}, core_schema.with_info_plain_validator_function(lambda v, info: Decimal(v))],
-        }
+        cs.chain_schema(
+            steps=[cs.str_schema(), core_schema.with_info_plain_validator_function(lambda v, info: Decimal(v))]
+        )
     )
 
     assert validator.validate_python('1.44') == Decimal('1.44')
@@ -21,22 +21,21 @@ def test_chain():
 
 def test_chain_many():
     validator = SchemaValidator(
-        {
-            'type': 'chain',
-            'steps': [
+        cs.chain_schema(
+            steps=[
                 core_schema.with_info_plain_validator_function(lambda v, info: f'{v}-1'),
                 core_schema.with_info_plain_validator_function(lambda v, info: f'{v}-2'),
                 core_schema.with_info_plain_validator_function(lambda v, info: f'{v}-3'),
                 core_schema.with_info_plain_validator_function(lambda v, info: f'{v}-4'),
-            ],
-        }
+            ]
+        )
     )
 
     assert validator.validate_python('input') == 'input-1-2-3-4'
 
 
 def test_chain_error():
-    validator = SchemaValidator({'type': 'chain', 'steps': [{'type': 'str'}, {'type': 'int'}]})
+    validator = SchemaValidator(cs.chain_schema(steps=[cs.str_schema(), cs.int_schema()]))
 
     assert validator.validate_python('123') == 123
     assert validator.validate_python(b'123') == 123
@@ -74,13 +73,11 @@ def test_json(py_and_json: PyAndJson, input_value, expected):
 
 def test_flatten():
     validator = SchemaValidator(
-        {
-            'type': 'chain',
-            'steps': [
+        cs.chain_schema(
+            steps=[
                 core_schema.with_info_plain_validator_function(lambda v, info: f'{v}-1'),
-                {
-                    'type': 'chain',
-                    'steps': [
+                cs.chain_schema(
+                    steps=[
                         {
                             'type': 'function-plain',
                             'function': {'type': 'with-info', 'function': lambda v, info: f'{v}-2'},
@@ -89,10 +86,10 @@ def test_flatten():
                             'type': 'function-plain',
                             'function': {'type': 'with-info', 'function': lambda v, info: f'{v}-3'},
                         },
-                    ],
-                },
-            ],
-        }
+                    ]
+                ),
+            ]
+        )
     )
 
     assert validator.validate_python('input') == 'input-1-2-3'
@@ -101,12 +98,12 @@ def test_flatten():
 
 def test_chain_empty():
     with pytest.raises(SchemaError, match='One or more steps are required for a chain validator'):
-        SchemaValidator({'type': 'chain', 'steps': []})
+        SchemaValidator(cs.chain_schema(steps=[]))
 
 
 def test_chain_one():
     validator = SchemaValidator(
-        {'type': 'chain', 'steps': [core_schema.with_info_plain_validator_function(lambda v, info: f'{v}-1')]}
+        cs.chain_schema(steps=[core_schema.with_info_plain_validator_function(lambda v, info: f'{v}-1')])
     )
     assert validator.validate_python('input') == 'input-1'
     assert validator.title == 'function-plain[<lambda>()]'

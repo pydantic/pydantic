@@ -57,7 +57,7 @@ def test_gc_schema_validator() -> None:
 
         def __init_subclass__(cls) -> None:
             cls.__validator__ = SchemaValidator(
-                core_schema.model_schema(cls, GC_TEST_SCHEMA_INNER),
+                schema=core_schema.model_schema(cls, GC_TEST_SCHEMA_INNER),
                 config=core_schema.CoreConfig(extra_fields_behavior='allow'),
             )
 
@@ -89,7 +89,7 @@ def test_gc_validator_iterator() -> None:
             core_schema.model_fields_schema(
                 {'iter': core_schema.model_field(core_schema.generator_schema(core_schema.int_schema()))}
             ),
-        ),
+        )
     )
 
     class MyIterable:

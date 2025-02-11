@@ -40,5 +40,7 @@ def test_custom_error_invalid():
     msg = "custom_error_message should not be provided if 'custom_error_type' matches a known error"
     with pytest.raises(SchemaError, match=msg):
         SchemaValidator(
-            core_schema.custom_error_schema(core_schema.int_schema(), 'recursion_loop', custom_error_message='xxx')
+            schema=core_schema.custom_error_schema(
+                core_schema.int_schema(), 'recursion_loop', custom_error_message='xxx'
+            )
         )
