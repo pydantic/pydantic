@@ -101,8 +101,6 @@ def create_github_release_draft(rl_version: str, rl_release_notes: str):
     run_command('git', 'tag', f'v{rl_version}')
     run_command('git', 'push', 'origin', f'v{rl_version}')
 
-    time.sleep(10)  # Wait for the tag to be available on GitHub
-
     url = f'https://api.github.com/repos/{REPO}/releases'
     headers = {'Authorization': f'token {GITHUB_TOKEN}'}
     data = {

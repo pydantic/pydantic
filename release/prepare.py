@@ -54,7 +54,7 @@ def update_version(new_version: str, dry_run: bool) -> None:
     with open(version_file_path, 'w', encoding='utf8') as f:
         new_content = content.replace(old_version_stm, new_version_stm)
         f.write(new_content)
-    run_command('​uv', 'lock', '-P', 'pydantic')
+    run_command('uv', 'lock', '-P', 'pydantic')
 
 
 def get_notes(new_version: str) -> str:
