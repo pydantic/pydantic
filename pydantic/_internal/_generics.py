@@ -340,39 +340,6 @@ def replace_types(type_: Any, type_map: Mapping[TypeVar, Any] | None) -> Any:
     return type_map.get(type_, type_)
 
 
-def has_instance_in_type(type_: Any, isinstance_target: Any) -> bool:
-    """Checks if the type, or any of its arbitrary nested args, satisfy
-    `isinstance(<type>, isinstance_target)`.
-    """
-    if isinstance(type_, isinstance_target):
-        return True
-    if _typing_extra.is_annotated(type_):
-        return has_instance_in_type(type_.__origin__, isinstance_target)
-    if _typing_extra.is_literal(type_):
-        return False
-
-    type_args = get_args(type_)
-
-    # Having type args is a good indicator that this is a typing module
-    # class instantiation or a generic alias of some sort.
-    for arg in type_args:
-        if has_instance_in_type(arg, isinstance_target):
-            return True
-
-    # Handle special case for typehints that can have lists as arguments.
-    # `typing.Callable[[int, str], int]` is an example for this.
-    if (
-        isinstance(type_, list)
-        # On Python < 3.10, typing_extensions implements `ParamSpec` as a subclass of `list`:
-        and not isinstance(type_, typing_extensions.ParamSpec)
-    ):
-        for element in type_:
-            if has_instance_in_type(element, isinstance_target):
-                return True
-
-    return False
-
-
 def map_generic_model_arguments(cls: type[BaseModel], args: tuple[Any, ...]) -> dict[TypeVar, Any]:
     """Return a mapping between the arguments of a generic model and the provided arguments during parametrization.
 

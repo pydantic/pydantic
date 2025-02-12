@@ -84,9 +84,9 @@ from ._decorators import (
     inspect_validator,
 )
 from ._docs_extraction import extract_docstrings_from_cls
-from ._fields import collect_dataclass_fields, takes_validated_data_argument
+from ._fields import collect_dataclass_fields, rebuild_model_fields, takes_validated_data_argument
 from ._forward_ref import PydanticRecursiveRef
-from ._generics import get_standard_typevars_map, has_instance_in_type, replace_types
+from ._generics import get_standard_typevars_map, replace_types
 from ._import_utils import import_cached_base_model, import_cached_field_info
 from ._mock_val_ser import MockCoreSchema
 from ._namespace_utils import NamespacesTuple, NsResolver
@@ -704,6 +704,8 @@ class GenerateSchema:
 
     def _model_schema(self, cls: type[BaseModel]) -> core_schema.CoreSchema:
         """Generate schema for a Pydantic model."""
+        BaseModel_ = import_cached_base_model()
+
         with self.defs.get_schema_or_ref(cls) as (model_ref, maybe_schema):
             if maybe_schema is not None:
                 return maybe_schema
@@ -725,22 +727,36 @@ class GenerateSchema:
                 else:
                     return schema
 
-            fields = getattr(cls, '__pydantic_fields__', {})
-            decorators = cls.__pydantic_decorators__
-            computed_fields = decorators.computed_fields
-            check_decorator_fields_exist(
-                chain(
-                    decorators.field_validators.values(),
-                    decorators.field_serializers.values(),
-                    decorators.validators.values(),
-                ),
-                {*fields.keys(), *computed_fields.keys()},
-            )
             config_wrapper = ConfigWrapper(cls.model_config, check=False)
-            core_config = config_wrapper.core_config(title=cls.__name__)
-            model_validators = decorators.model_validators.values()
 
             with self._config_wrapper_stack.push(config_wrapper), self._ns_resolver.push(cls):
+                core_config = self._config_wrapper.core_config(title=cls.__name__)
+
+                if cls.__pydantic_fields_complete__ or cls is BaseModel_:
+                    fields = getattr(cls, '__pydantic_fields__', {})
+                else:
+                    try:
+                        fields = rebuild_model_fields(
+                            cls,
+                            ns_resolver=self._ns_resolver,
+                            typevars_map=self._typevars_map or {},
+                        )
+                    except NameError as e:
+                        raise PydanticUndefinedAnnotation.from_name_error(e) from e
+
+                decorators = cls.__pydantic_decorators__
+                computed_fields = decorators.computed_fields
+                check_decorator_fields_exist(
+                    chain(
+                        decorators.field_validators.values(),
+                        decorators.field_serializers.values(),
+                        decorators.validators.values(),
+                    ),
+                    {*fields.keys(), *computed_fields.keys()},
+                )
+
+                model_validators = decorators.model_validators.values()
+
                 extras_schema = None
                 if core_config.get('extra_fields_behavior') == 'allow':
                     assert cls.__mro__[0] is cls
@@ -1305,32 +1321,6 @@ class GenerateSchema:
     def _common_field_schema(  # C901
         self, name: str, field_info: FieldInfo, decorators: DecoratorInfos
     ) -> _CommonField:
-        # Update FieldInfo annotation if appropriate:
-        FieldInfo = import_cached_field_info()
-        if not field_info.evaluated:
-            # TODO Can we use field_info.apply_typevars_map here?
-            try:
-                evaluated_type = _typing_extra.eval_type(field_info.annotation, *self._types_namespace)
-            except NameError as e:
-                raise PydanticUndefinedAnnotation.from_name_error(e) from e
-            evaluated_type = replace_types(evaluated_type, self._typevars_map)
-            field_info.evaluated = True
-            if not has_instance_in_type(evaluated_type, PydanticRecursiveRef):
-                new_field_info = FieldInfo.from_annotation(evaluated_type)
-                field_info.annotation = new_field_info.annotation
-
-                # Handle any field info attributes that may have been obtained from now-resolved annotations
-                for k, v in new_field_info._attributes_set.items():
-                    # If an attribute is already set, it means it was set by assigning to a call to Field (or just a
-                    # default value), and that should take the highest priority. So don't overwrite existing attributes.
-                    # We skip over "attributes" that are present in the metadata_lookup dict because these won't
-                    # actually end up as attributes of the `FieldInfo` instance.
-                    if k not in field_info._attributes_set and k not in field_info.metadata_lookup:
-                        setattr(field_info, k, v)
-
-                # Finally, ensure the field info also reflects all the `_attributes_set` that are actually metadata.
-                field_info.metadata = [*new_field_info.metadata, *field_info.metadata]
-
         source_type, annotations = field_info.annotation, field_info.metadata
 
         def set_discriminator(schema: CoreSchema) -> CoreSchema:
