@@ -616,11 +616,12 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                     cls,
                     ns_resolver=ns_resolver,
                     typevars_map=typevars_map,
-                    raise_errors=raise_errors,
                 )
             except NameError as e:
+                exc = PydanticUndefinedAnnotation.from_name_error(e)
+                _mock_val_ser.set_model_mocks(cls, f'`{exc.name}`')
                 if raise_errors:
-                    raise PydanticUndefinedAnnotation.from_name_error(e) from e
+                    raise exc from e
 
             if not raise_errors and not cls.__pydantic_fields_complete__:
                 # No need to continue with schema gen, it is guaranteed to fail

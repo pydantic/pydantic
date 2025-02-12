@@ -740,7 +740,6 @@ class GenerateSchema:
                             cls,
                             ns_resolver=self._ns_resolver,
                             typevars_map=self._typevars_map or {},
-                            raise_errors=True,
                         )
                     except NameError as e:
                         raise PydanticUndefinedAnnotation.from_name_error(e) from e

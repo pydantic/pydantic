@@ -226,7 +226,10 @@ class ModelMetaclass(ABCMeta):
                 k: v.info for k, v in cls.__pydantic_decorators__.computed_fields.items()
             }
 
-            if config_wrapper.defer_build or not cls.__pydantic_fields_complete__:
+            if config_wrapper.defer_build:
+                # TODO we can also stop there if `__pydantic_fields_complete__` is False.
+                # However, `set_model_fields()` is currently lenient and we don't have access to the `NameError`.
+                # (which is useful as we can provide the name in the error message: `set_model_mock(cls, e.name)`)
                 set_model_mocks(cls)
             else:
                 # Any operation that requires accessing the field infos instances should be put inside

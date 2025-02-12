@@ -311,8 +311,7 @@ def rebuild_model_fields(
     cls: type[BaseModel],
     *,
     ns_resolver: NsResolver,
-    typevars_map: dict[TypeVar, Any],
-    raise_errors: bool = True,
+    typevars_map: Mapping[TypeVar, Any],
 ) -> dict[str, FieldInfo]:
     """Rebuild the (already present) model fields by trying to reevaluate annotations.
 
@@ -330,17 +329,11 @@ def rebuild_model_fields(
             if field_info._complete:
                 rebuilt_fields[f_name] = field_info
             else:
-                try:
-                    ann = _typing_extra.eval_type(
-                        field_info._original_annotation,
-                        *ns_resolver.types_namespace,
-                    )
-                    ann = _generics.replace_types(ann, typevars_map)
-                except NameError:
-                    if raise_errors:
-                        raise
-                    else:
-                        return cls.__pydantic_fields__
+                ann = _typing_extra.eval_type(
+                    field_info._original_annotation,
+                    *ns_resolver.types_namespace,
+                )
+                ann = _generics.replace_types(ann, typevars_map)
 
                 if (assign := field_info._original_assignment) is PydanticUndefined:
                     rebuilt_fields[f_name] = FieldInfo_.from_annotation(ann)
