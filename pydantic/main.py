@@ -81,6 +81,19 @@ IncEx: TypeAlias = Union[set[int], set[str], Mapping[int, Union['IncEx', bool]],
 _object_setattr = _model_construction.object_setattr
 
 
+def _check_frozen(model_cls: type[BaseModel], name: str, value: Any) -> None:
+    if model_cls.model_config.get('frozen'):
+        error_type = 'frozen_instance'
+    elif getattr(model_cls.__pydantic_fields__.get(name), 'frozen', False):
+        error_type = 'frozen_field'
+    else:
+        return
+
+    raise ValidationError.from_exception_data(
+        model_cls.__name__, [{'type': error_type, 'loc': (name,), 'input': value}]
+    )
+
+
 def _model_field_setattr_handler(model: BaseModel, name: str, val: Any) -> None:
     model.__dict__[name] = val
     model.__pydantic_fields_set__.add(name)
@@ -951,19 +964,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             if isinstance(attr, cached_property):
                 return _SIMPLE_SETATTR_HANDLERS['cached_property']
 
-            model_frozen = cls.model_config.get('frozen')
-            field_frozen = getattr(cls.__pydantic_fields__.get(name), 'frozen', False)
-            if model_frozen or field_frozen:
-                raise ValidationError.from_exception_data(
-                    cls.__name__,
-                    [
-                        {
-                            'type': 'frozen_field' if field_frozen else 'frozen_instance',
-                            'loc': (name,),
-                            'input': value,
-                        }
-                    ],
-                )
+            _check_frozen(cls, name, value)
 
             # We allow properties to be set only on non frozen models for now (to match dataclasses).
             # This can be changed if it ever gets requested.
@@ -1001,34 +1002,16 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 except KeyError as exc:
                     raise AttributeError(f'{cls.__name__!r} object has no attribute {item!r}') from exc
 
-            model_frozen = cls.model_config.get('frozen', False)
+            # Allow cached properties to be deleted (even if the class is frozen):
+            attr = getattr(cls, item, None)
+            if isinstance(attr, cached_property):
+                return object.__delattr__(self, item)
 
-            field_info = self.__pydantic_fields__.get(item)
-            if field_info is not None:
-                if model_frozen or field_info.frozen:
-                    raise ValidationError.from_exception_data(
-                        cls.__name__,
-                        [
-                            {
-                                'type': 'frozen_field' if field_info.frozen else 'frozen_instance',
-                                'loc': (item,),
-                                'input': None,
-                            }
-                        ],
-                    )
+            _check_frozen(cls, name=item, value=None)
+
+            if item in self.__pydantic_fields__:
                 object.__delattr__(self, item)
             elif self.__pydantic_extra__ is not None and item in self.__pydantic_extra__:
-                if model_frozen:
-                    raise ValidationError.from_exception_data(
-                        cls.__name__,
-                        [
-                            {
-                                'type': 'frozen_instance',
-                                'loc': (item,),
-                                'input': None,
-                            }
-                        ],
-                    )
                 del self.__pydantic_extra__[item]
             else:
                 try:
