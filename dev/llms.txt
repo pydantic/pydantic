@@ -12,7 +12,7 @@ Pydantic
 
 [![license](https://img.shields.io/github/license/pydantic/pydantic.svg)](https://github.com/pydantic/pydantic/blob/main/LICENSE)
 
-Documentation for development version: [53f8ece](https://github.com/pydantic/pydantic/commit/53f8eced2b3f79a8571106a9fc5160e6e27702b5).
+Documentation for development version: [72c77bf](https://github.com/pydantic/pydantic/commit/72c77bfff341b447b26f0d129aa0d5134da3037b).
 
 Pydantic is the most widely used data validation library for Python.
 
@@ -7326,11 +7326,29 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             parent_namespace={**rebuild_ns, **parent_ns},
         )
 
-        # manually override defer_build so complete_model_class doesn't skip building the model again
-        config = {**cls.model_config, 'defer_build': False}
+        if not cls.__pydantic_fields_complete__:
+            typevars_map = _generics.get_model_typevars_map(cls)
+            try:
+                cls.__pydantic_fields__ = _fields.rebuild_model_fields(
+                    cls,
+                    ns_resolver=ns_resolver,
+                    typevars_map=typevars_map,
+                )
+            except NameError as e:
+                exc = PydanticUndefinedAnnotation.from_name_error(e)
+                _mock_val_ser.set_model_mocks(cls, f'`{exc.name}`')
+                if raise_errors:
+                    raise exc from e
+
+            if not raise_errors and not cls.__pydantic_fields_complete__:
+                # No need to continue with schema gen, it is guaranteed to fail
+                return False
+
+            assert cls.__pydantic_fields_complete__
+
         return _model_construction.complete_model_class(
             cls,
-            _config.ConfigWrapper(config, check=False),
+            _config.ConfigWrapper(cls.model_config, check=False),
             raise_errors=raise_errors,
             ns_resolver=ns_resolver,
         )
@@ -9096,11 +9114,29 @@ def model_rebuild(
         parent_namespace={**rebuild_ns, **parent_ns},
     )
 
-    # manually override defer_build so complete_model_class doesn't skip building the model again
-    config = {**cls.model_config, 'defer_build': False}
+    if not cls.__pydantic_fields_complete__:
+        typevars_map = _generics.get_model_typevars_map(cls)
+        try:
+            cls.__pydantic_fields__ = _fields.rebuild_model_fields(
+                cls,
+                ns_resolver=ns_resolver,
+                typevars_map=typevars_map,
+            )
+        except NameError as e:
+            exc = PydanticUndefinedAnnotation.from_name_error(e)
+            _mock_val_ser.set_model_mocks(cls, f'`{exc.name}`')
+            if raise_errors:
+                raise exc from e
+
+        if not raise_errors and not cls.__pydantic_fields_complete__:
+            # No need to continue with schema gen, it is guaranteed to fail
+            return False
+
+        assert cls.__pydantic_fields_complete__
+
     return _model_construction.complete_model_class(
         cls,
-        _config.ConfigWrapper(config, check=False),
+        _config.ConfigWrapper(cls.model_config, check=False),
         raise_errors=raise_errors,
         ns_resolver=ns_resolver,
     )
@@ -11152,7 +11188,7 @@ dataclass(
  
 ```
 dataclass(
-    _cls: type[_T] | None = None,
+    _cls: type[_T" optional hover>_T] | None = None,
     *,
     init: Literal[False] = False,
     repr: bool = True,
@@ -12874,14 +12910,10 @@ def __init__(self, **kwargs: Unpack[_FieldInfoInputs]) -> None:
     self._attributes_set = {k: v for k, v in kwargs.items() if v is not _Unset}
     kwargs = {k: _DefaultValues.get(k) if v is _Unset else v for k, v in kwargs.items()}  # type: ignore
     self.annotation = kwargs.get('annotation')
-    self.evaluated = False
 
     default = kwargs.pop('default', PydanticUndefined)
     if default is Ellipsis:
         self.default = PydanticUndefined
-        # Also remove it from the attributes set, otherwise
-        # `GenerateSchema._common_field_schema` mistakenly
-        # uses it:
         self._attributes_set.pop('default', None)
     else:
         self.default = default
@@ -12914,6 +12946,11 @@ def __init__(self, **kwargs: Unpack[_FieldInfoInputs]) -> None:
     self.kw_only = kwargs.pop('kw_only', None)
 
     self.metadata = self._collect_metadata(kwargs)  # type: ignore
+
+    # Private attributes, used to rebuild FieldInfo instances:
+    self._complete = True
+    self._original_annotation: Any = PydanticUndefined
+    self._original_assignment: Any = PydanticUndefined
 
 ```
 
