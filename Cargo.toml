@@ -39,7 +39,7 @@ serde = { version = "1.0.217", features = ["derive"] }
 speedate = "0.15.0"
 smallvec = "1.13.2"
 ahash = "0.8.10"
-url = "2.5.0"
+url = "2.5.4"
 # idna is already required by url, added here to be explicit
 idna = "1.0.3"
 base64 = "0.22.1"
