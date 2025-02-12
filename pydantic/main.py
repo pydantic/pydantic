@@ -588,8 +588,13 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         if not force and cls.__pydantic_complete__:
             return None
 
-        if '__pydantic_core_schema__' in cls.__dict__:
-            delattr(cls, '__pydantic_core_schema__')  # delete cached value to ensure full rebuild happens
+        for attr in ('__pydantic_core_schema__', '__pydantic_validator__', '__pydantic_serializer__'):
+            if attr in cls.__dict__:
+                # Deleting the validator/serializer is necessary as otherwise they can get reused in
+                # pydantic-core. Same applies for the core schema that can be reused in schema generation.
+                delattr(cls, attr)
+
+        cls.__pydantic_complete__ = False
 
         if _types_namespace is not None:
             rebuild_ns = _types_namespace
@@ -604,11 +609,29 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             parent_namespace={**rebuild_ns, **parent_ns},
         )
 
-        # manually override defer_build so complete_model_class doesn't skip building the model again
-        config = {**cls.model_config, 'defer_build': False}
+        if not cls.__pydantic_fields_complete__:
+            typevars_map = _generics.get_model_typevars_map(cls)
+            try:
+                cls.__pydantic_fields__ = _fields.rebuild_model_fields(
+                    cls,
+                    ns_resolver=ns_resolver,
+                    typevars_map=typevars_map,
+                )
+            except NameError as e:
+                exc = PydanticUndefinedAnnotation.from_name_error(e)
+                _mock_val_ser.set_model_mocks(cls, f'`{exc.name}`')
+                if raise_errors:
+                    raise exc from e
+
+            if not raise_errors and not cls.__pydantic_fields_complete__:
+                # No need to continue with schema gen, it is guaranteed to fail
+                return False
+
+            assert cls.__pydantic_fields_complete__
+
         return _model_construction.complete_model_class(
             cls,
-            _config.ConfigWrapper(config, check=False),
+            _config.ConfigWrapper(cls.model_config, check=False),
             raise_errors=raise_errors,
             ns_resolver=ns_resolver,
         )

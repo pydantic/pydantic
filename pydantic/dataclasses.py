@@ -327,8 +327,13 @@ def rebuild_dataclass(
     if not force and cls.__pydantic_complete__:
         return None
 
-    if '__pydantic_core_schema__' in cls.__dict__:
-        delattr(cls, '__pydantic_core_schema__')  # delete cached value to ensure full rebuild happens
+    for attr in ('__pydantic_core_schema__', '__pydantic_validator__', '__pydantic_serializer__'):
+        if attr in cls.__dict__:
+            # Deleting the validator/serializer is necessary as otherwise they can get reused in
+            # pycantic-core. Same applies for the core schema that can be reused in schema generation.
+            delattr(cls, attr)
+
+    cls.__pydantic_complete__ = False
 
     if _types_namespace is not None:
         rebuild_ns = _types_namespace

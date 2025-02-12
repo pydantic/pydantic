@@ -58,16 +58,14 @@ def test_forward_ref_auto_update_no_model(create_module):
             b: 'Foo'
 
     assert module.Bar.__pydantic_complete__ is True
-    assert repr(module.Bar.model_fields['b']) == 'FieldInfo(annotation=Foo, required=True)'
+    assert module.Bar.model_fields['b']._complete
 
     # Bar should be complete and ready to use
     b = module.Bar(b={'a': {'b': {}}})
     assert b.model_dump() == {'b': {'a': {'b': {'a': None}}}}
 
-    # model_fields is complete on Foo
-    assert repr(module.Foo.model_fields['a']) == (
-        'FieldInfo(annotation=Union[Bar, NoneType], required=False, default=None)'
-    )
+    # model_fields is *not* complete on Foo
+    assert not module.Foo.model_fields['a']._complete
 
     assert module.Foo.__pydantic_complete__ is False
     # Foo gets auto-rebuilt during the first attempt at validation

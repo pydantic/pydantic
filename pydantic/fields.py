@@ -156,7 +156,6 @@ class FieldInfo(_repr.Representation):
 
     __slots__ = (
         'annotation',
-        'evaluated',
         'default',
         'default_factory',
         'alias',
@@ -179,6 +178,9 @@ class FieldInfo(_repr.Representation):
         'kw_only',
         'metadata',
         '_attributes_set',
+        '_complete',
+        '_original_assignment',
+        '_original_annotation',
     )
 
     # used to convert kwargs to metadata/constraints,
@@ -210,14 +212,10 @@ class FieldInfo(_repr.Representation):
         self._attributes_set = {k: v for k, v in kwargs.items() if v is not _Unset}
         kwargs = {k: _DefaultValues.get(k) if v is _Unset else v for k, v in kwargs.items()}  # type: ignore
         self.annotation = kwargs.get('annotation')
-        self.evaluated = False
 
         default = kwargs.pop('default', PydanticUndefined)
         if default is Ellipsis:
             self.default = PydanticUndefined
-            # Also remove it from the attributes set, otherwise
-            # `GenerateSchema._common_field_schema` mistakenly
-            # uses it:
             self._attributes_set.pop('default', None)
         else:
             self.default = default
@@ -250,6 +248,11 @@ class FieldInfo(_repr.Representation):
         self.kw_only = kwargs.pop('kw_only', None)
 
         self.metadata = self._collect_metadata(kwargs)  # type: ignore
+
+        # Private attributes, used to rebuild FieldInfo instances:
+        self._complete = True
+        self._original_annotation: Any = PydanticUndefined
+        self._original_assignment: Any = PydanticUndefined
 
     @staticmethod
     def from_field(default: Any = PydanticUndefined, **kwargs: Unpack[_FromFieldInfoInputs]) -> FieldInfo:
@@ -681,7 +684,7 @@ class FieldInfo(_repr.Representation):
         for s in self.__slots__:
             # TODO: properly make use of the protocol (https://rich.readthedocs.io/en/stable/pretty.html#rich-repr-protocol)
             # By yielding a three-tuple:
-            if s in ('_attributes_set', 'annotation', 'evaluated'):
+            if s in ('annotation', '_attributes_set', '_complete', '_original_assignment', '_original_annotation'):
                 continue
             elif s == 'metadata' and not self.metadata:
                 continue

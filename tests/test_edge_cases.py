@@ -3008,3 +3008,18 @@ def test_get_pydantic_core_schema_on_referenceable_type() -> None:
         t: 'Test'
 
     assert counter == 1
+
+
+def test_validator_and_serializer_not_reused_during_rebuild() -> None:
+    # Make sure validators and serializers are deleted before model rebuild,
+    # so that they don't end up being reused in pydantic-core (since we look
+    # for `cls.__pydantic_validator/serializer__`).
+    # This test makes the assertion on the serialization behavior.
+    class Model(BaseModel):
+        a: int
+
+    Model.model_fields['a'].exclude = True
+    Model.model_rebuild(force=True)
+
+    m = Model(a=1)
+    assert m.model_dump() == {}
