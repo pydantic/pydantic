@@ -29,7 +29,7 @@ from typing import (
 
 import pydantic_core
 import typing_extensions
-from pydantic_core import PydanticUndefined
+from pydantic_core import PydanticUndefined, ValidationError
 from typing_extensions import Self, TypeAlias, Unpack
 
 from . import PydanticDeprecatedSince20, PydanticDeprecatedSince211
@@ -366,6 +366,11 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             [`model_copy`](../concepts/serialization.md#model_copy)
 
         Returns a copy of the model.
+
+        !!! note
+            The underlying instance's [`__dict__`][object.__dict__] attribute is copied. This
+            might have unexpected side effects if you store anything in it, on top of the model
+            fields (e.g. the value of [cached properties][functools.cached_property]).
 
         Args:
             update: Values to change/add in the new model. Note: the data is not validated
@@ -938,17 +943,32 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                     _object_setattr(self, name, value)
                     return None  # Can not return memoized handler with possibly freeform attr names
 
-            cls._check_frozen(name, value)
-
             attr = getattr(cls, name, None)
             # NOTE: We currently special case properties and `cached_property`, but we might need
             # to generalize this to all data/non-data descriptors at some point. For non-data descriptors
             # (such as `cached_property`), it isn't obvious though. `cached_property` caches the value
             # to the instance's `__dict__`, but other non-data descriptors might do things differently.
+            if isinstance(attr, cached_property):
+                return _SIMPLE_SETATTR_HANDLERS['cached_property']
+
+            model_frozen = cls.model_config.get('frozen')
+            field_frozen = getattr(cls.__pydantic_fields__.get(name), 'frozen', False)
+            if model_frozen or field_frozen:
+                raise ValidationError.from_exception_data(
+                    cls.__name__,
+                    [
+                        {
+                            'type': 'frozen_field' if field_frozen else 'frozen_instance',
+                            'loc': (name,),
+                            'input': value,
+                        }
+                    ],
+                )
+
+            # We allow properties to be set only on non frozen models for now (to match dataclasses).
+            # This can be changed if it ever gets requested.
             if isinstance(attr, property):
                 return lambda model, _name, val: attr.__set__(model, val)
-            elif isinstance(attr, cached_property):
-                return _SIMPLE_SETATTR_HANDLERS['cached_property']
             elif cls.model_config.get('validate_assignment'):
                 return _SIMPLE_SETATTR_HANDLERS['validate_assignment']
             elif name not in cls.__pydantic_fields__:
@@ -966,6 +986,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 return _SIMPLE_SETATTR_HANDLERS['model_field']
 
         def __delattr__(self, item: str) -> Any:
+            cls = self.__class__
+
             if item in self.__private_attributes__:
                 attribute = self.__private_attributes__[item]
                 if hasattr(attribute, '__delete__'):
@@ -977,13 +999,36 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                     del self.__pydantic_private__[item]  # type: ignore
                     return
                 except KeyError as exc:
-                    raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
+                    raise AttributeError(f'{cls.__name__!r} object has no attribute {item!r}') from exc
 
-            self._check_frozen(item, None)
+            model_frozen = cls.model_config.get('frozen', False)
 
-            if item in self.__pydantic_fields__:
+            field_info = self.__pydantic_fields__.get(item)
+            if field_info is not None:
+                if model_frozen or field_info.frozen:
+                    raise ValidationError.from_exception_data(
+                        cls.__name__,
+                        [
+                            {
+                                'type': 'frozen_field' if field_info.frozen else 'frozen_instance',
+                                'loc': (item,),
+                                'input': None,
+                            }
+                        ],
+                    )
                 object.__delattr__(self, item)
             elif self.__pydantic_extra__ is not None and item in self.__pydantic_extra__:
+                if model_frozen:
+                    raise ValidationError.from_exception_data(
+                        cls.__name__,
+                        [
+                            {
+                                'type': 'frozen_instance',
+                                'loc': (item,),
+                                'input': None,
+                            }
+                        ],
+                    )
                 del self.__pydantic_extra__[item]
             else:
                 try:
@@ -995,21 +1040,6 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         # type checkers, so we define the implementation in this `if not TYPE_CHECKING:` block:
         def __replace__(self, **changes: Any) -> Self:
             return self.model_copy(update=changes)
-
-    @classmethod
-    def _check_frozen(cls, name: str, value: Any) -> None:
-        if cls.model_config.get('frozen', None):
-            typ = 'frozen_instance'
-        elif getattr(cls.__pydantic_fields__.get(name), 'frozen', False):
-            typ = 'frozen_field'
-        else:
-            return
-        error: pydantic_core.InitErrorDetails = {
-            'type': typ,
-            'loc': (name,),
-            'input': value,
-        }
-        raise pydantic_core.ValidationError.from_exception_data(cls.__name__, [error])
 
     def __getstate__(self) -> dict[Any, Any]:
         private = self.__pydantic_private__
