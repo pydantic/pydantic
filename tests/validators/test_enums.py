@@ -487,3 +487,20 @@ def support_custom_new_method() -> None:
     assert v.validate_python('meow') is Animal.CAT
     assert v.validate_python('dog') is Animal.DOG
     assert v.validate_python('woof') is Animal.DOG
+
+
+def test_strict_enum_wrap_json() -> None:
+    """https://github.com/pydantic/pydantic/issues/11070"""
+
+    class Animal(str, Enum):
+        CAT = 'cat'
+        DOG = 'dog'
+
+    schema = core_schema.no_info_wrap_validator_function(
+        lambda v, handler: handler(v),
+        core_schema.enum_schema(Animal, list(Animal.__members__.values()), sub_type='str', strict=True),
+    )
+    v = SchemaValidator(schema)
+
+    assert v.validate_python(Animal.CAT) == Animal.CAT
+    assert v.validate_json('"dog"') == Animal.DOG
