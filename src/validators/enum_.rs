@@ -8,7 +8,7 @@ use pyo3::types::{PyDict, PyFloat, PyInt, PyList, PyString, PyType};
 
 use crate::build_tools::{is_strict, py_schema_err};
 use crate::errors::{ErrorType, ValError, ValResult};
-use crate::input::Input;
+use crate::input::{Input, InputType};
 use crate::tools::{safe_repr, SchemaDict};
 
 use super::is_instance::class_repr;
@@ -107,7 +107,7 @@ impl<T: EnumValidateValue> Validator for EnumValidator<T> {
             return Ok(exact_py_input.clone().unbind());
         }
         let strict = state.strict_or(self.strict);
-        if strict && input.as_python().is_some() {
+        if strict && state.extra().input_type == InputType::Python {
             // TODO what about instances of subclasses?
             return Err(ValError::new(
                 ErrorType::IsInstanceOf {
