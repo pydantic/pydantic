@@ -125,9 +125,9 @@ def url_test_case_helper(
         ('http://1...1', Err('invalid IPv4 address')),
         ('https://[2001:0db8:85a3:0000:0000:8a2e:0370:7334[', Err('invalid IPv6 address')),
         ('https://[', Err('invalid IPv6 address')),
-        ('https://example com', Err('invalid domain character')),
-        ('http://exam%ple.com', Err('invalid domain character')),
-        ('http:// /', Err('invalid domain character')),
+        ('https://example com', Err('invalid international domain name')),
+        ('http://exam%ple.com', Err('invalid international domain name')),
+        ('http:// /', Err('invalid international domain name')),
         ('/more', Err('relative URL without a base')),
         ('http://example.com./foobar', {'str()': 'http://example.com./foobar'}),
         # works since we're in lax mode
@@ -172,7 +172,7 @@ def url_test_case_helper(
         ('https:more', {'str()': 'https://more/', 'host': 'more'}),
         ('file:///foobar', {'str()': 'file:///foobar', 'host': None, 'unicode_host()': None}),
         ('file:///:80', {'str()': 'file:///:80'}),
-        ('file://:80', Err('invalid domain character')),
+        ('file://:80', Err('invalid international domain name')),
         ('foobar://:80', Err('empty host')),
         # with bashslashes
         ('file:\\\\foobar\\more', {'str()': 'file://foobar/more', 'host': 'foobar', 'path': '/more'}),
@@ -383,7 +383,7 @@ def strict_url_validator_fixture():
         ('https:/more', Err('expected //', 'url_syntax_violation')),
         ('https:more', Err('expected //', 'url_syntax_violation')),
         ('file:///foobar', {'str()': 'file:///foobar', 'host': None, 'unicode_host()': None}),
-        ('file://:80', Err('invalid domain character', 'url_parsing')),
+        ('file://:80', Err('invalid international domain name', 'url_parsing')),
         ('file:/xx', Err('expected // after file:', 'url_syntax_violation')),
         ('foobar://:80', Err('empty host', 'url_parsing')),
         ('mongodb+srv://server.example.com/', 'mongodb+srv://server.example.com/'),
@@ -1046,7 +1046,7 @@ def test_zero_schemas():
         (
             'http://127.0.0.1%0d%0aConnection%3a%20keep-alive',
             # dict(scheme='http', host='127.0.0.1%0d%0aconnection%3a%20keep-alive'), CHANGED
-            Err('Input should be a valid URL, invalid domain character [type=url_parsing,'),
+            Err('Input should be a valid URL, invalid international domain name [type=url_parsing,'),
         ),
         # NodeJS unicode -> double dot
         ('http://google.com/\uff2e\uff2e/abc', dict(scheme='http', host='google.com', path='/%EF%BC%AE%EF%BC%AE/abc')),
