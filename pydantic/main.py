@@ -109,6 +109,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         __pydantic_complete__: Whether model building is completed, or if there are still undefined fields.
         __pydantic_core_schema__: The core schema of the model.
         __pydantic_custom_init__: Whether the model has a custom `__init__` function.
+        __pydantic_cached_property_types__: The different types of cached properties.
         __pydantic_decorators__: Metadata containing the decorators defined on the model.
             This replaces `Model.__validators__` and `Model.__root_validators__` from Pydantic V1.
         __pydantic_generic_metadata__: Metadata for generic models; contains data used for a similar purpose to
@@ -152,6 +153,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     __pydantic_custom_init__: ClassVar[bool]
     """Whether the model has a custom `__init__` method."""
+
+    __pydantic_cached_property_types__: ClassVar[tuple[type[Any], ...]] = (cached_property,)
+    """The different types of cached properties."""
 
     # Must be set for `GenerateSchema.model_schema` to work for a plain `BaseModel` annotation.
     __pydantic_decorators__: ClassVar[_decorators.DecoratorInfos] = _decorators.DecoratorInfos()
@@ -1021,7 +1025,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     def _get_cached_properties(self) -> set[str]:
         return {
-            attr for attr in self.__class__.model_fields if isinstance(getattr(type(self), attr, None), cached_property)
+            attr
+            for attr in self.__class__.model_fields
+            if isinstance(getattr(type(self), attr, None), self.__pydantic_cached_property_types__)
         }
 
     def __getstate__(self) -> dict[Any, Any]:
