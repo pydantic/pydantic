@@ -4160,6 +4160,51 @@ collects values for sub model fields separately, and you may get unexpected resu
 </ol>
 <p><code>env_nested_delimiter</code> can be configured via the <code>model_config</code> as shown above, or via the
 <code>_env_nested_delimiter</code> keyword argument on instantiation.</p>
+<p>By default environment variables are split by <code>env_nested_delimiter</code> into arbitrarily deep nested fields. You can limit
+the depth of the nested fields with the <code>env_nested_max_split</code> config setting. A common use case this is particularly useful
+is for two-level deep settings, where the <code>env_nested_delimiter</code> (usually a single <code>_</code>) may be a substring of model
+field names. For example:</p>
+<div class="language-bash highlight"><pre><span></span><code><span class="c1"># your environment</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">GENERATION_LLM_PROVIDER</span><span class="o">=</span><span class="s1">&#39;anthropic&#39;</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">GENERATION_LLM_API_KEY</span><span class="o">=</span><span class="s1">&#39;your-api-key&#39;</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">GENERATION_LLM_API_VERSION</span><span class="o">=</span><span class="s1">&#39;2024-03-15&#39;</span>
+</code></pre></div>
+<p>You could load them into the following settings model:</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">SettingsConfigDict</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">LLMConfig</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">provider</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;openai&#39;</span>
+    <span class="n">api_key</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">api_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;azure&#39;</span>
+    <span class="n">api_version</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;2023-03-15-preview&#39;</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">GenerationConfig</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">SettingsConfigDict</span><span class="p">(</span>
+        <span class="n">env_nested_delimiter</span><span class="o">=</span><span class="s1">&#39;_&#39;</span><span class="p">,</span> <span class="n">env_nested_max_split</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">env_prefix</span><span class="o">=</span><span class="s1">&#39;GENERATION_&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">llm</span><span class="p">:</span> <span class="n">LLMConfig</span>
+    <span class="o">...</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">GenerationConfig</span><span class="p">()</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">{</span>
+<span class="sd">    &#39;llm&#39;: {</span>
+<span class="sd">        &#39;provider&#39;: &#39;anthropic&#39;,</span>
+<span class="sd">        &#39;api_key&#39;: &#39;your-api-key&#39;,</span>
+<span class="sd">        &#39;api_type&#39;: &#39;azure&#39;,</span>
+<span class="sd">        &#39;api_version&#39;: &#39;2024-03-15&#39;,</span>
+<span class="sd">    }</span>
+<span class="sd">}</span>
+<span class="sd">&quot;&quot;&quot;</span>
+</code></pre></div>
+<p>Without <code>env_nested_max_split=1</code> set, <code>GENERATION_LLM_API_KEY</code> would be parsed as <code>llm.api.key</code> instead of <code>llm.api_key</code>
+and it would raise a <code>ValidationError</code>.</p>
 <p>Nested environment variables take precedence over the top-level environment variable JSON
 (e.g. in the example above, <code>SUB_MODEL__V2</code> trumps <code>SUB_MODEL</code>).</p>
 <p>You may also populate a complex type by providing your own source class.</p>

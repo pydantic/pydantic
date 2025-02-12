@@ -12,7 +12,7 @@ Pydantic
 
 [![license](https://img.shields.io/github/license/pydantic/pydantic.svg)](https://github.com/pydantic/pydantic/blob/main/LICENSE)
 
-Documentation for development version: [a1f12c7](https://github.com/pydantic/pydantic/commit/a1f12c710c99d13f64becf696bf18ce49c5ea07c).
+Documentation for development version: [53f8ece](https://github.com/pydantic/pydantic/commit/53f8eced2b3f79a8571106a9fc5160e6e27702b5).
 
 Pydantic is the most widely used data validation library for Python.
 
@@ -7305,8 +7305,13 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         if not force and cls.__pydantic_complete__:
             return None
 
-        if '__pydantic_core_schema__' in cls.__dict__:
-            delattr(cls, '__pydantic_core_schema__')  # delete cached value to ensure full rebuild happens
+        for attr in ('__pydantic_core_schema__', '__pydantic_validator__', '__pydantic_serializer__'):
+            if attr in cls.__dict__:
+                # Deleting the validator/serializer is necessary as otherwise they can get reused in
+                # pydantic-core. Same applies for the core schema that can be reused in schema generation.
+                delattr(cls, attr)
+
+        cls.__pydantic_complete__ = False
 
         if _types_namespace is not None:
             rebuild_ns = _types_namespace
@@ -9070,8 +9075,13 @@ def model_rebuild(
     if not force and cls.__pydantic_complete__:
         return None
 
-    if '__pydantic_core_schema__' in cls.__dict__:
-        delattr(cls, '__pydantic_core_schema__')  # delete cached value to ensure full rebuild happens
+    for attr in ('__pydantic_core_schema__', '__pydantic_validator__', '__pydantic_serializer__'):
+        if attr in cls.__dict__:
+            # Deleting the validator/serializer is necessary as otherwise they can get reused in
+            # pydantic-core. Same applies for the core schema that can be reused in schema generation.
+            delattr(cls, attr)
+
+    cls.__pydantic_complete__ = False
 
     if _types_namespace is not None:
         rebuild_ns = _types_namespace
@@ -11462,8 +11472,13 @@ def rebuild_dataclass(
     if not force and cls.__pydantic_complete__:
         return None
 
-    if '__pydantic_core_schema__' in cls.__dict__:
-        delattr(cls, '__pydantic_core_schema__')  # delete cached value to ensure full rebuild happens
+    for attr in ('__pydantic_core_schema__', '__pydantic_validator__', '__pydantic_serializer__'):
+        if attr in cls.__dict__:
+            # Deleting the validator/serializer is necessary as otherwise they can get reused in
+            # pycantic-core. Same applies for the core schema that can be reused in schema generation.
+            delattr(cls, attr)
+
+    cls.__pydantic_complete__ = False
 
     if _types_namespace is not None:
         rebuild_ns = _types_namespace
@@ -49833,6 +49848,60 @@ print(Settings().model_dump())
 
 `env_nested_delimiter` can be configured via the `model_config` as shown above, or via the
 `_env_nested_delimiter` keyword argument on instantiation.
+
+By default environment variables are split by `env_nested_delimiter` into arbitrarily deep nested fields. You can limit
+the depth of the nested fields with the `env_nested_max_split` config setting. A common use case this is particularly useful
+is for two-level deep settings, where the `env_nested_delimiter` (usually a single `_`) may be a substring of model
+field names. For example:
+
+```
+# your environment
+export GENERATION_LLM_PROVIDER='anthropic'
+export GENERATION_LLM_API_KEY='your-api-key'
+export GENERATION_LLM_API_VERSION='2024-03-15'
+
+```
+
+You could load them into the following settings model:
+
+```
+from pydantic import BaseModel
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class LLMConfig(BaseModel):
+    provider: str = 'openai'
+    api_key: str
+    api_type: str = 'azure'
+    api_version: str = '2023-03-15-preview'
+
+
+class GenerationConfig(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_nested_delimiter='_', env_nested_max_split=1, env_prefix='GENERATION_'
+    )
+
+    llm: LLMConfig
+    ...
+
+
+print(GenerationConfig().model_dump())
+"""
+{
+    'llm': {
+        'provider': 'anthropic',
+        'api_key': 'your-api-key',
+        'api_type': 'azure',
+        'api_version': '2024-03-15',
+    }
+}
+"""
+
+```
+
+Without `env_nested_max_split=1` set, `GENERATION_LLM_API_KEY` would be parsed as `llm.api.key` instead of `llm.api_key`
+and it would raise a `ValidationError`.
 
 Nested environment variables take precedence over the top-level environment variable JSON
 (e.g. in the example above, `SUB_MODEL__V2` trumps `SUB_MODEL`).
