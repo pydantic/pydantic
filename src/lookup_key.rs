@@ -1,4 +1,4 @@
-use core::slice::Iter;
+use std::convert::Infallible;
 use std::fmt;
 
 use pyo3::exceptions::{PyAttributeError, PyTypeError};
@@ -9,29 +9,17 @@ use pyo3::IntoPyObjectExt;
 use jiter::{JsonObject, JsonValue};
 
 use crate::build_tools::py_schema_err;
-use crate::errors::{py_err_string, ErrorType, ToErrorValue, ValError, ValLineError, ValResult};
+use crate::errors::{py_err_string, ErrorType, LocItem, Location, ToErrorValue, ValError, ValLineError, ValResult};
 use crate::input::StringMapping;
 use crate::tools::{extract_i64, py_err};
 
 /// Used for getting items from python dicts, python objects, or JSON objects, in different ways
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub(crate) enum LookupKey {
     /// simply look up a key in a dict, equivalent to `d.get(key)`
-    /// we save both the string and pystring to save creating the pystring for python
-    Simple {
-        key: String,
-        py_key: Py<PyString>,
-        path: LookupPath,
-    },
+    Simple(LookupPath),
     /// look up a key by either string, equivalent to `d.get(choice1, d.get(choice2))`
-    Choice {
-        key1: String,
-        py_key1: Py<PyString>,
-        path1: LookupPath,
-        key2: String,
-        py_key2: Py<PyString>,
-        path2: LookupPath,
-    },
+    Choice { path1: LookupPath, path2: LookupPath },
     /// look up keys by one or more "paths" a path might be `['foo', 'bar']` to get `d.?foo.?bar`
     /// ints are also supported to index arrays/lists/tuples and dicts with int keys
     /// we reuse Location as the enum is the same, and the meaning is the same
@@ -41,8 +29,13 @@ pub(crate) enum LookupKey {
 impl fmt::Display for LookupKey {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Simple { key, .. } => write!(f, "'{key}'"),
-            Self::Choice { key1, key2, .. } => write!(f, "'{key1}' | '{key2}'"),
+            Self::Simple(path) => write!(f, "'{key}'", key = path.first_key()),
+            Self::Choice { path1, path2 } => write!(
+                f,
+                "'{key1}' | '{key2}'",
+                key1 = path1.first_key(),
+                key2 = path2.first_key()
+            ),
             Self::PathChoices(paths) => write!(
                 f,
                 "{}",
@@ -59,14 +52,10 @@ impl LookupKey {
             let path1 = LookupPath::from_str(py, &alias, Some(alias_py.clone()));
             match alt_alias {
                 Some(alt_alias) => Ok(Self::Choice {
-                    key1: alias.to_string(),
-                    py_key1: alias_py.clone().into(),
                     path1,
-                    key2: alt_alias.to_string(),
-                    py_key2: PyString::new(py, alt_alias).into(),
                     path2: LookupPath::from_str(py, alt_alias, None),
                 }),
-                None => Ok(Self::simple(py, &alias, Some(alias_py.clone()))),
+                None => Ok(Self::Simple(path1)),
             }
         } else {
             let list = value.downcast::<PyList>()?;
@@ -95,15 +84,7 @@ impl LookupKey {
     }
 
     fn simple(py: Python, key: &str, opt_py_key: Option<Bound<'_, PyString>>) -> Self {
-        let py_key = match &opt_py_key {
-            Some(py_key) => py_key.clone(),
-            None => PyString::new(py, key),
-        };
-        Self::Simple {
-            key: key.to_string(),
-            py_key: py_key.into(),
-            path: LookupPath::from_str(py, key, opt_py_key),
-        }
+        Self::Simple(LookupPath::from_str(py, key, opt_py_key))
     }
 
     pub fn py_get_dict_item<'py, 's>(
@@ -111,28 +92,34 @@ impl LookupKey {
         dict: &Bound<'py, PyDict>,
     ) -> ValResult<Option<(&'s LookupPath, Bound<'py, PyAny>)>> {
         match self {
-            Self::Simple { py_key, path, .. } => match dict.get_item(py_key)? {
-                Some(value) => Ok(Some((path, value))),
+            Self::Simple(path) => match dict.get_item(&path.first_item.py_key)? {
+                Some(value) => {
+                    debug_assert!(path.rest.is_empty());
+                    Ok(Some((path, value)))
+                }
                 None => Ok(None),
             },
-            Self::Choice {
-                py_key1,
-                path1,
-                py_key2,
-                path2,
-                ..
-            } => match dict.get_item(py_key1)? {
-                Some(value) => Ok(Some((path1, value))),
-                None => match dict.get_item(py_key2)? {
-                    Some(value) => Ok(Some((path2, value))),
+            Self::Choice { path1, path2, .. } => match dict.get_item(&path1.first_item.py_key)? {
+                Some(value) => {
+                    debug_assert!(path1.rest.is_empty());
+                    Ok(Some((path1, value)))
+                }
+                None => match dict.get_item(&path2.first_item.py_key)? {
+                    Some(value) => {
+                        debug_assert!(path2.rest.is_empty());
+                        Ok(Some((path2, value)))
+                    }
                     None => Ok(None),
                 },
             },
             Self::PathChoices(path_choices) => {
                 for path in path_choices {
-                    // iterate over the path and plug each value into the py_any from the last step, starting with dict
+                    let Some(first_value) = dict.get_item(&path.first_item.py_key)? else {
+                        continue;
+                    };
+                    // iterate over the path and plug each value into the py_any from the last step,
                     // this could just be a loop but should be somewhat faster with a functional design
-                    if let Some(v) = path.iter().try_fold((**dict).clone(), |d, loc| loc.py_get_item(&d)) {
+                    if let Some(v) = path.rest.iter().try_fold(first_value, |d, loc| loc.py_get_item(&d)) {
                         // Successfully found an item, return it
                         return Ok(Some((path, v)));
                     }
@@ -160,28 +147,34 @@ impl LookupKey {
         dict: &Bound<'py, PyMapping>,
     ) -> ValResult<Option<(&'s LookupPath, Bound<'py, PyAny>)>> {
         match self {
-            Self::Simple { py_key, path, .. } => match dict.get_item(py_key) {
-                Ok(value) => Ok(Some((path, value))),
+            Self::Simple(path) => match dict.get_item(&path.first_item.py_key) {
+                Ok(value) => {
+                    debug_assert!(path.rest.is_empty());
+                    Ok(Some((path, value)))
+                }
                 _ => Ok(None),
             },
-            Self::Choice {
-                py_key1,
-                path1,
-                py_key2,
-                path2,
-                ..
-            } => match dict.get_item(py_key1) {
-                Ok(value) => Ok(Some((path1, value))),
-                _ => match dict.get_item(py_key2) {
-                    Ok(value) => Ok(Some((path2, value))),
+            Self::Choice { path1, path2, .. } => match dict.get_item(&path1.first_item.py_key) {
+                Ok(value) => {
+                    debug_assert!(path1.rest.is_empty());
+                    Ok(Some((path1, value)))
+                }
+                _ => match dict.get_item(&path2.first_item.py_key) {
+                    Ok(value) => {
+                        debug_assert!(path2.rest.is_empty());
+                        Ok(Some((path2, value)))
+                    }
                     _ => Ok(None),
                 },
             },
             Self::PathChoices(path_choices) => {
                 for path in path_choices {
-                    // iterate over the path and plug each value into the py_any from the last step, starting with dict
+                    let Some(first_value) = dict.get_item(&path.first_item.py_key).ok() else {
+                        continue;
+                    };
+                    // iterate over the path and plug each value into the py_any from the last step,
                     // this could just be a loop but should be somewhat faster with a functional design
-                    if let Some(v) = path.iter().try_fold((**dict).clone(), |d, loc| loc.py_get_item(&d)) {
+                    if let Some(v) = path.rest.iter().try_fold(first_value, |d, loc| loc.py_get_item(&d)) {
                         // Successfully found an item, return it
                         return Ok(Some((path, v)));
                     }
@@ -197,20 +190,23 @@ impl LookupKey {
         obj: &Bound<'py, PyAny>,
     ) -> PyResult<Option<(&'s LookupPath, Bound<'py, PyAny>)>> {
         match self {
-            Self::Simple { py_key, path, .. } => match py_get_attrs(obj, py_key)? {
-                Some(value) => Ok(Some((path, value))),
+            Self::Simple(path) => match py_get_attrs(obj, &path.first_item.py_key)? {
+                Some(value) => {
+                    debug_assert!(path.rest.is_empty());
+                    Ok(Some((path, value)))
+                }
                 None => Ok(None),
             },
-            Self::Choice {
-                py_key1,
-                path1,
-                py_key2,
-                path2,
-                ..
-            } => match py_get_attrs(obj, py_key1)? {
-                Some(value) => Ok(Some((path1, value))),
-                None => match py_get_attrs(obj, py_key2)? {
-                    Some(value) => Ok(Some((path2, value))),
+            Self::Choice { path1, path2, .. } => match py_get_attrs(obj, &path1.first_item.py_key)? {
+                Some(value) => {
+                    debug_assert!(path1.rest.is_empty());
+                    Ok(Some((path1, value)))
+                }
+                None => match py_get_attrs(obj, &path2.first_item.py_key)? {
+                    Some(value) => {
+                        debug_assert!(path2.rest.is_empty());
+                        Ok(Some((path2, value)))
+                    }
                     None => Ok(None),
                 },
             },
@@ -218,8 +214,10 @@ impl LookupKey {
                 'outer: for path in path_choices {
                     // similar to above, but using `py_get_attrs`, we can't use try_fold because of the extra Err
                     // so we have to loop manually
-                    let mut v = obj.clone();
-                    for loc in path.iter() {
+                    let Some(mut v) = path.first_item.py_get_attrs(obj)? else {
+                        continue;
+                    };
+                    for loc in &path.rest {
                         v = match loc.py_get_attrs(&v) {
                             Ok(Some(v)) => v,
                             Ok(None) => {
@@ -265,33 +263,36 @@ impl LookupKey {
         dict: &'a JsonObject<'data>,
     ) -> ValResult<Option<(&'s LookupPath, &'a JsonValue<'data>)>> {
         match self {
-            Self::Simple { key, path, .. } => match dict.get(key.as_str()) {
-                Some(value) => Ok(Some((path, value))),
+            Self::Simple(path) => match dict.get(path.first_key()) {
+                Some(value) => {
+                    debug_assert!(path.rest.is_empty());
+                    Ok(Some((path, value)))
+                }
                 None => Ok(None),
             },
-            Self::Choice {
-                key1,
-                path1,
-                key2,
-                path2,
-                ..
-            } => match dict.get(key1.as_str()) {
-                Some(value) => Ok(Some((path1, value))),
-                None => match dict.get(key2.as_str()) {
-                    Some(value) => Ok(Some((path2, value))),
+            Self::Choice { path1, path2 } => match dict.get(path1.first_key()) {
+                Some(value) => {
+                    debug_assert!(path1.rest.is_empty());
+                    Ok(Some((path1, value)))
+                }
+                None => match dict.get(path2.first_key()) {
+                    Some(value) => {
+                        debug_assert!(path2.rest.is_empty());
+                        Ok(Some((path2, value)))
+                    }
                     None => Ok(None),
                 },
             },
             Self::PathChoices(path_choices) => {
                 for path in path_choices {
-                    let mut path_iter = path.iter();
-
                     // first step is different from the rest as we already know dict is JsonObject
                     // because of above checks, we know that path should have at least one element, hence unwrap
-                    let v: &JsonValue = match path_iter.next().unwrap().json_obj_get(dict) {
+                    let v: &JsonValue = match dict.get(path.first_item.key.as_str()) {
                         Some(v) => v,
                         None => continue,
                     };
+
+                    let mut path_iter = path.rest.iter();
 
                     // similar to above
                     // iterate over the path and plug each value into the JsonValue from the last step, starting with v
@@ -316,27 +317,37 @@ impl LookupKey {
     ) -> ValLineError {
         if loc_by_alias {
             let lookup_path = match self {
-                Self::Simple { path, .. } => path,
+                Self::Simple(path, ..) => path,
                 Self::Choice { path1, .. } => path1,
                 Self::PathChoices(paths) => paths.first().unwrap(),
             };
-            ValLineError::new_with_full_loc(error_type, input, lookup_path.into())
+
+            let mut location = Vec::with_capacity(1 + lookup_path.rest.len());
+            for item in lookup_path.rest.iter().rev() {
+                location.push(item.to_loc_item());
+            }
+            location.push(LocItem::from(&lookup_path.first_item.key));
+
+            ValLineError::new_with_full_loc(error_type, input, Location::List(location))
         } else {
             ValLineError::new_with_loc(error_type, input, field_name.to_string())
         }
     }
 }
 
-#[derive(Debug, Clone)]
-pub(crate) struct LookupPath(Vec<PathItem>);
+#[derive(Debug)]
+pub(crate) struct LookupPath {
+    /// All paths must start with a string key
+    first_item: PathItemString,
+    /// Most paths will have no extra items, though some do so we encode this here
+    rest: Vec<PathItem>,
+}
 
 impl fmt::Display for LookupPath {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        for (i, item) in self.0.iter().enumerate() {
-            if i != 0 {
-                write!(f, ".")?;
-            }
-            write!(f, "{item}")?;
+        write!(f, "{first_key}", first_key = &self.first_item)?;
+        for item in &self.rest {
+            write!(f, ".{item}")?;
         }
         Ok(())
     }
@@ -348,63 +359,84 @@ impl LookupPath {
             Some(py_key) => py_key,
             None => PyString::new(py, key),
         };
-        Self(vec![PathItem::S(key.to_string(), py_key.into())])
+        Self {
+            first_item: PathItemString {
+                key: key.to_string(),
+                py_key: py_key.clone().unbind(),
+            },
+            rest: Vec::new(),
+        }
     }
 
     fn from_list(obj: &Bound<'_, PyAny>) -> PyResult<LookupPath> {
-        let v = obj
-            .downcast::<PyList>()?
-            .iter()
-            .enumerate()
-            .map(|(index, obj)| PathItem::from_py(index, &obj))
-            .collect::<PyResult<Vec<PathItem>>>()?;
+        let mut iter = obj.downcast::<PyList>()?.iter();
 
-        if v.is_empty() {
-            py_schema_err!("Each alias path should have at least one element")
-        } else {
-            Ok(Self(v))
-        }
+        let Some(first_item) = iter.next() else {
+            return py_schema_err!("Each alias path should have at least one element");
+        };
+
+        let Ok(first_item_py_str) = first_item.downcast_into::<PyString>() else {
+            return py_err!(PyTypeError; "The first item in an alias path should be a string");
+        };
+
+        let first_item = PathItemString {
+            key: first_item_py_str.to_str()?.to_owned(),
+            py_key: first_item_py_str.clone().unbind(),
+        };
+
+        let rest = iter.map(PathItem::from_py).collect::<PyResult<_>>()?;
+
+        Ok(Self { first_item, rest })
     }
 
     pub fn apply_error_loc(&self, mut line_error: ValLineError, loc_by_alias: bool, field_name: &str) -> ValLineError {
         if loc_by_alias {
-            for path_item in self.iter().rev() {
-                line_error = line_error.with_outer_location(path_item.clone());
+            for path_item in self.rest.iter().rev() {
+                line_error = line_error.with_outer_location(path_item.to_loc_item());
             }
+            line_error = line_error.with_outer_location(&self.first_item.key);
             line_error
         } else {
             line_error.with_outer_location(field_name)
         }
     }
 
-    pub fn iter(&self) -> Iter<PathItem> {
-        self.0.iter()
-    }
-
     /// get the `str` from the first item in the path, note paths always have length > 0, and the first item
     /// is always a string
     pub fn first_key(&self) -> &str {
-        self.0.first().unwrap().get_key()
+        &self.first_item.key
     }
 }
 
 #[derive(Debug, Clone)]
 pub(crate) enum PathItem {
-    /// string type key, used to get or identify items from a dict or anything that implements `__getitem__`
-    /// as above we store both the string and pystring to save creating the pystring for python
-    S(String, Py<PyString>),
+    S(PathItemString),
     /// integer key, used to get items from a list, tuple OR a dict with int keys `dict[int, ...]` (python only)
     Pos(usize),
     Neg(usize),
 }
 
+/// string type key, used to get or identify items from a dict or anything that implements `__getitem__`
+/// we store both the string and pystring to save creating the pystring for python
+#[derive(Debug, Clone)]
+pub(crate) struct PathItemString {
+    key: String,
+    py_key: Py<PyString>,
+}
+
 impl fmt::Display for PathItem {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::S(key, _) => write!(f, "'{key}'"),
+            Self::S(key) => key.fmt(f),
             Self::Pos(key) => write!(f, "{key}"),
             Self::Neg(key) => write!(f, "-{key}"),
         }
+    }
+}
+
+impl fmt::Display for PathItemString {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "'{key}'", key = &self.key)
     }
 }
 
@@ -415,7 +447,7 @@ impl<'py> IntoPyObject<'py> for &'_ PathItem {
 
     fn into_pyobject(self, py: Python<'py>) -> Result<Self::Output, Self::Error> {
         match self {
-            PathItem::S(_, val) => Ok(val.bind(py).clone().into_any()),
+            PathItem::S(path_item_string) => path_item_string.into_bound_py_any(py),
             PathItem::Pos(val) => val.into_bound_py_any(py),
             PathItem::Neg(val) => {
                 let neg_value = -(*val as i64);
@@ -425,23 +457,33 @@ impl<'py> IntoPyObject<'py> for &'_ PathItem {
     }
 }
 
+impl<'a, 'py> IntoPyObject<'py> for &'a PathItemString {
+    type Target = PyString;
+    type Output = Borrowed<'a, 'py, PyString>;
+    type Error = Infallible;
+
+    fn into_pyobject(self, py: Python<'py>) -> Result<Self::Output, Self::Error> {
+        Ok(self.py_key.bind_borrowed(py))
+    }
+}
+
 impl PathItem {
-    pub fn from_py(index: usize, obj: &Bound<'_, PyAny>) -> PyResult<Self> {
-        if let Ok(py_str_key) = obj.downcast::<PyString>() {
-            let str_key = py_str_key.to_str()?.to_string();
-            Ok(Self::S(str_key, py_str_key.clone().into()))
-        } else if let Ok(usize_key) = obj.extract::<usize>() {
-            if index == 0 {
-                py_err!(PyTypeError; "The first item in an alias path should be a string")
-            } else {
-                Ok(Self::Pos(usize_key))
+    pub fn from_py(obj: Bound<'_, PyAny>) -> PyResult<Self> {
+        let obj = match obj.downcast_into::<PyString>() {
+            Ok(py_str_key) => {
+                let str_key = py_str_key.to_str()?.to_string();
+                return Ok(Self::S(PathItemString {
+                    key: str_key,
+                    py_key: py_str_key.unbind(),
+                }));
             }
-        } else if let Some(int_key) = extract_i64(obj) {
-            if index == 0 {
-                py_err!(PyTypeError; "The first item in an alias path should be a string")
-            } else {
-                Ok(Self::Neg(int_key.unsigned_abs() as usize))
-            }
+            Err(e) => e.into_inner(),
+        };
+
+        if let Ok(usize_key) = obj.extract::<usize>() {
+            Ok(Self::Pos(usize_key))
+        } else if let Some(int_key) = extract_i64(&obj) {
+            Ok(Self::Neg(int_key.unsigned_abs() as usize))
         } else {
             py_err!(PyTypeError; "Item in an alias path should be a string or int")
         }
@@ -457,23 +499,9 @@ impl PathItem {
         }
     }
 
-    pub fn get_key(&self) -> &str {
-        match self {
-            Self::S(key, _) => key.as_str(),
-            _ => unreachable!(),
-        }
-    }
-
     pub fn py_get_attrs<'py>(&self, obj: &Bound<'py, PyAny>) -> PyResult<Option<Bound<'py, PyAny>>> {
         match self {
-            Self::S(_, py_key) => {
-                // if obj is a dict, we want to use get_item, not getattr
-                if obj.downcast::<PyDict>().is_ok() {
-                    Ok(self.py_get_item(obj))
-                } else {
-                    py_get_attrs(obj, py_key)
-                }
-            }
+            Self::S(path_item_string) => path_item_string.py_get_attrs(obj),
             // int, we fall back to py_get_item - e.g. we want to use get_item for a list, tuple, dict, etc.
             _ => Ok(self.py_get_item(obj)),
         }
@@ -499,9 +527,39 @@ impl PathItem {
 
     pub fn json_obj_get<'a, 'data>(&self, json_obj: &'a JsonObject<'data>) -> Option<&'a JsonValue<'data>> {
         match self {
-            Self::S(key, _) => json_obj.get(key.as_str()),
+            Self::S(PathItemString { key, .. }) => json_obj.get(key.as_str()),
             _ => None,
         }
+    }
+
+    fn to_loc_item(&self) -> LocItem {
+        match self {
+            Self::S(PathItemString { key, .. }) => LocItem::from(key),
+            Self::Pos(index) => LocItem::from(*index),
+            Self::Neg(index) => LocItem::from(-(*index as i64)),
+        }
+    }
+}
+
+impl PathItemString {
+    fn py_get_attrs<'py>(&self, obj: &Bound<'py, PyAny>) -> PyResult<Option<Bound<'py, PyAny>>> {
+        // if obj is a dict, we want to use get_item, not getattr
+        if obj.downcast::<PyDict>().is_ok() {
+            Ok(py_get_item(obj, self))
+        } else {
+            py_get_attrs(obj, &self.py_key)
+        }
+    }
+}
+
+/// wrapper around `getitem` that excludes string indexing `None` for strings
+fn py_get_item<'py>(py_any: &Bound<'py, PyAny>, index: impl IntoPyObject<'py>) -> Option<Bound<'py, PyAny>> {
+    // we definitely don't want to index strings, so explicitly omit this case
+    if py_any.is_instance_of::<PyString>() {
+        None
+    } else {
+        // otherwise, blindly try getitem on v since no better logic is realistic
+        py_any.get_item(index).ok()
     }
 }
 
