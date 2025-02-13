@@ -1,3 +1,16 @@
+## v2.11.0 (2025-02-13)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.11.0)
+
+### What's Changed
+
+#### Fixes
+
+* Do not reuse validators and serializers during model rebuild by @Viicos in [#11429](https://github.com/pydantic/pydantic/pull/11429)
+* Collect model fields when rebuilding a model by @Viicos in [#11388](https://github.com/pydantic/pydantic/pull/11388)
+* Allow cached properties to be altered on frozen models by @Viicos in [#11432](https://github.com/pydantic/pydantic/pull/11432)
+* Fix tuple serialization for `Sequence` types by @sydney-runkle in [#11435](https://github.com/pydantic/pydantic/pull/11435)
+
 ## v2.11.0a2 (2025-02-10)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.11.0a2)
