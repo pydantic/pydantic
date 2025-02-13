@@ -70,13 +70,18 @@ def open_pull_request(rl_version: str):
         'body': f'Bumping version to v{rl_version}.',
     }
     response = requests.post(url, json=data, headers=headers, timeout=10)
-    response.raise_for_status()
+    try:
+        response.raise_for_status()
+    except requests.exceptions.HTTPError as e:
+        print(f"HTTP error occurred: {e}")
+        print(f"Response content: {response.content.decode()}")
+        raise e
     return response.json()['html_url']
 
 def create_version_tag(rl_version: str):
     """Create a version tag."""
     run_command('git', 'tag', f'v{rl_version}')
-    run_command('git', 'push', 'upstream', f'v{rl_version}')
+    run_command('git', 'push', 'origin', f'v{rl_version}')
 
 def create_github_release(new_version: str, notes: str):
     """Create a new release on GitHub."""
@@ -98,7 +103,12 @@ def create_github_release(new_version: str, notes: str):
         json=data,
         timeout=10,
     )
-    response.raise_for_status()
+    try:
+        response.raise_for_status()
+    except requests.exceptions.HTTPError as e:
+        print(f"HTTP error occurred: {e}")
+        print(f"Response content: {response.content.decode()}")
+        raise e
 
 def create_github_release_draft(rl_version: str, rl_release_notes: str):
     """Create a GitHub release draft."""
