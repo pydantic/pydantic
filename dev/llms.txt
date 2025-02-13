@@ -12,7 +12,7 @@ Pydantic
 
 [![license](https://img.shields.io/github/license/pydantic/pydantic.svg)](https://github.com/pydantic/pydantic/blob/main/LICENSE)
 
-Documentation for development version: [0abe442](https://github.com/pydantic/pydantic/commit/0abe442f54a985cbe9d441d581a5c816ae1e9d0b).
+Documentation for development version: [2f3e1ac](https://github.com/pydantic/pydantic/commit/2f3e1ac12b86f57a401a9421bb15747395f56cdf).
 
 Pydantic is the most widely used data validation library for Python.
 
@@ -7453,8 +7453,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         # Logic copied over from `GenerateSchema._model_schema`:
         schema = cls.__dict__.get('__pydantic_core_schema__')
         if schema is not None and not isinstance(schema, _mock_val_ser.MockCoreSchema):
-            if not cls.__pydantic_generic_metadata__['origin']:
-                return cls.__pydantic_core_schema__
+            return cls.__pydantic_core_schema__
 
         return handler(source)
 
