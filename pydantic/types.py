@@ -67,6 +67,7 @@ __all__ = (
     'UUID3',
     'UUID4',
     'UUID5',
+    'UUID7',
     'FilePath',
     'DirectoryPath',
     'NewPath',
@@ -1138,7 +1139,7 @@ class UuidVersion:
     Use this class as an annotation via [`Annotated`](https://docs.python.org/3/library/typing.html#typing.Annotated), as seen below.
 
     Attributes:
-        uuid_version: The version of the UUID. Must be one of 1, 3, 4, or 5.
+        uuid_version: The version of the UUID. Must be one of 1, 3, 4, 5, or 7.
 
     Example:
         ```python
@@ -1151,7 +1152,7 @@ class UuidVersion:
         ```
     """
 
-    uuid_version: Literal[1, 3, 4, 5]
+    uuid_version: Literal[1, 3, 4, 5, 7]
 
     def __get_pydantic_json_schema__(
         self, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
@@ -1232,7 +1233,20 @@ class Model(BaseModel):
 Model(uuid5=uuid.uuid5(uuid.NAMESPACE_DNS, 'pydantic.org'))
 ```
 """
+UUID7 = Annotated[UUID, UuidVersion(7)]
+"""A [UUID](https://docs.python.org/3/library/uuid.html) that must be version 7.
 
+```python
+import uuid
+
+from pydantic import UUID7, BaseModel
+
+class Model(BaseModel):
+    uuid7: UUID7
+
+Model(uuid7=uuid.UUID('0194fdcb-1c47-7a09-b52c-561154de0b4a'))
+```
+"""
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ PATH TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
