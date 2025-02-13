@@ -9,7 +9,7 @@ from copy import deepcopy
 from dataclasses import dataclass
 from datetime import date, datetime
 from enum import Enum
-from functools import cache, partial
+from functools import cache, cached_property, partial
 from typing import (
     Annotated,
     Any,
@@ -544,6 +544,25 @@ def test_frozen_model():
     ]
 
     assert m.a == 10
+
+
+def test_frozen_model_cached_property():
+    class FrozenModel(BaseModel):
+        model_config = ConfigDict(frozen=True)
+
+        a: int
+
+        @cached_property
+        def test(self) -> int:
+            return self.a + 1
+
+    m = FrozenModel(a=1)
+
+    assert m.test == 2
+    # This shouldn't raise:
+    del m.test
+    m.test = 3
+    assert m.test == 3
 
 
 def test_frozen_field():

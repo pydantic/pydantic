@@ -12,6 +12,8 @@ SEQUENCE_ORIGIN_MAP: dict[Any, Any] = {
     collections.deque: collections.deque,
     list: list,
     typing.List: list,  # noqa: UP006
+    tuple: tuple,
+    typing.Tuple: tuple,  # noqa: UP006
     set: set,
     typing.AbstractSet: set,
     typing.Set: set,  # noqa: UP006
