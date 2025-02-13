@@ -17,7 +17,7 @@
    - make sure the markdown is valid; in particular, check text that should be in `code-blocks` is.
    - mark any breaking changes with `**Breaking Change:**`
    - curate the list of pydantic-core updates in the `packaging` section:
-     - check the corresponding pydantic-core releases for any highlights to manually add to the history
+     - check the corresponding Pydantic-core releases for any highlights to manually add to the history
    - deduplicate the `packaging` entries to include only the most recent version bumps for each package
 3. Run `uv run release/push.py` from the root of the repository. This will:
    * Create a PR with the changes you made in the previous steps.
