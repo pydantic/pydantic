@@ -42,6 +42,7 @@ enum Version {
     UUIDv3 = 3,
     UUIDv4 = 4,
     UUIDv5 = 5,
+    UUIDv7 = 7,
 }
 
 impl From<Version> for usize {
@@ -57,6 +58,7 @@ impl From<u8> for Version {
             3 => Version::UUIDv3,
             4 => Version::UUIDv4,
             5 => Version::UUIDv5,
+            7 => Version::UUIDv7,
             _ => unreachable!(),
         }
     }

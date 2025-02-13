@@ -1437,7 +1437,7 @@ def callable_schema(
 
 class UuidSchema(TypedDict, total=False):
     type: Required[Literal['uuid']]
-    version: Literal[1, 3, 4, 5]
+    version: Literal[1, 3, 4, 5, 7]
     strict: bool
     ref: str
     metadata: dict[str, Any]
@@ -1446,7 +1446,7 @@ class UuidSchema(TypedDict, total=False):
 
 def uuid_schema(
     *,
-    version: Literal[1, 3, 4, 5] | None = None,
+    version: Literal[1, 3, 4, 5, 7] | None = None,
     strict: bool | None = None,
     ref: str | None = None,
     metadata: dict[str, Any] | None = None,
