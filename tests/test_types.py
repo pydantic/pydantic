@@ -7092,3 +7092,15 @@ def test_custom_serializer_override_secret_str() -> None:
 
     u = User(name='sam', password='hi')
     assert u.model_dump()['password'] == 'secret: **********'
+
+
+@pytest.mark.parametrize('sequence_type', [list, tuple, deque])
+def test_sequence_with_nested_type(sequence_type: type) -> None:
+    class Model(BaseModel):
+        a: int
+
+    class OuterModel(BaseModel):
+        inner: Sequence[Model]
+
+    models = sequence_type([Model(a=1), Model(a=2)])
+    assert OuterModel(inner=models).model_dump() == {'inner': sequence_type([{'a': 1}, {'a': 2}])}
