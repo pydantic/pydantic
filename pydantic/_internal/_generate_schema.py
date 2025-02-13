@@ -711,14 +711,7 @@ class GenerateSchema:
                 return maybe_schema
 
             schema = cls.__dict__.get('__pydantic_core_schema__')
-            if (
-                schema is not None
-                and not isinstance(schema, MockCoreSchema)
-                # Due to the way generic classes are built, it's possible that an invalid schema may be temporarily
-                # set on generic classes. Probably we could resolve this to ensure that we get proper schema caching
-                # for generics, but for simplicity for now, we just always rebuild if the class has a generic origin:
-                and not cls.__pydantic_generic_metadata__['origin']
-            ):
+            if schema is not None and not isinstance(schema, MockCoreSchema):
                 if schema['type'] == 'definitions':
                     schema = self.defs.unpack_definitions(schema)
                 ref = get_ref(schema)

@@ -749,8 +749,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         # Logic copied over from `GenerateSchema._model_schema`:
         schema = cls.__dict__.get('__pydantic_core_schema__')
         if schema is not None and not isinstance(schema, _mock_val_ser.MockCoreSchema):
-            if not cls.__pydantic_generic_metadata__['origin']:
-                return cls.__pydantic_core_schema__
+            return cls.__pydantic_core_schema__
 
         return handler(source)
 
