@@ -13,11 +13,11 @@ Pydantic supports many common types from the Python standard library. If you nee
 
 A standard `bool` field will raise a `ValidationError` if the value is not one of the following:
 
-* A valid boolean (i.e. `True` or `False`),
-* The integers `0` or `1`,
-* a `str` which when converted to lower case is one of
+- A valid boolean (i.e. `True` or `False`),
+- The integers `0` or `1`,
+- a `str` which when converted to lower case is one of
   `'0', 'off', 'f', 'false', 'n', 'no', '1', 'on', 't', 'true', 'y', 'yes'`
-* a `bytes` which is valid per the previous rule when decoded to `str`
+- a `bytes` which is valid per the previous rule when decoded to `str`
 
 !!! note
     If you want stricter boolean logic (e.g. a field which only permits `True` and `False`) you can
@@ -56,16 +56,17 @@ Pydantic supports the following [datetime](https://docs.python.org/library/datet
 types:
 
 ### [`datetime.datetime`][]
-* `datetime` fields will accept values of type:
 
-    * `datetime`; an existing `datetime` object
-    * `int` or `float`; assumed as Unix time, i.e. seconds (if >= `-2e10` and <= `2e10`) or milliseconds
+- `datetime` fields will accept values of type:
+
+  - `datetime`; an existing `datetime` object
+  - `int` or `float`; assumed as Unix time, i.e. seconds (if >= `-2e10` and <= `2e10`) or milliseconds
       (if < `-2e10`or > `2e10`) since 1 January 1970
-    * `str`; the following formats are accepted:
-        * `YYYY-MM-DD[T]HH:MM[:SS[.ffffff]][Z or [±]HH[:]MM]`
-        * `YYYY-MM-DD` is accepted in lax mode, but not in strict mode
-        * `int` or `float` as a string (assumed as Unix time)
-    * [`datetime.date`][] instances are accepted in lax mode, but not in strict mode
+  - `str`; the following formats are accepted:
+    - `YYYY-MM-DD[T]HH:MM[:SS[.ffffff]][Z or [±]HH[:]MM]`
+    - `YYYY-MM-DD` is accepted in lax mode, but not in strict mode
+    - `int` or `float` as a string (assumed as Unix time)
+  - [`datetime.date`][] instances are accepted in lax mode, but not in strict mode
 
 ```python
 from datetime import datetime
@@ -86,13 +87,14 @@ print(event.model_dump())
 ```
 
 ### [`datetime.date`][]
-* `date` fields will accept values of type:
 
-    * `date`; an existing `date` object
-    * `int` or `float`; handled the same as described for `datetime` above
-    * `str`; the following formats are accepted:
-        * `YYYY-MM-DD`
-        * `int` or `float` as a string (assumed as Unix time)
+- `date` fields will accept values of type:
+
+  - `date`; an existing `date` object
+  - `int` or `float`; handled the same as described for `datetime` above
+  - `str`; the following formats are accepted:
+    - `YYYY-MM-DD`
+    - `int` or `float` as a string (assumed as Unix time)
 
 ```python
 from datetime import date
@@ -111,11 +113,12 @@ print(my_birthday.model_dump())
 ```
 
 ### [`datetime.time`][]
-* `time` fields will accept values of type:
 
-    * `time`; an existing `time` object
-    * `str`; the following formats are accepted:
-        * `HH:MM[:SS[.ffffff]][Z or [±]HH[:]MM]`
+- `time` fields will accept values of type:
+
+  - `time`; an existing `time` object
+  - `str`; the following formats are accepted:
+    - `HH:MM[:SS[.ffffff]][Z or [±]HH[:]MM]`
 
 ```python
 from datetime import time
@@ -134,14 +137,15 @@ print(m.model_dump())
 ```
 
 ### [`datetime.timedelta`][]
-* `timedelta` fields will accept values of type:
 
-    * `timedelta`; an existing `timedelta` object
-    * `int` or `float`; assumed to be seconds
-    * `str`; the following formats are accepted:
-        * `[-][[DD]D,]HH:MM:SS[.ffffff]`
+- `timedelta` fields will accept values of type:
+
+  - `timedelta`; an existing `timedelta` object
+  - `int` or `float`; assumed to be seconds
+  - `str`; the following formats are accepted:
+    - `[-][[DD]D,]HH:MM:SS[.ffffff]`
             * Ex: `'1d,01:02:03.000004'` or `'1D01:02:03.000004'` or `'01:02:03'`
-        * `[±]P[DD]DT[HH]H[MM]M[SS]S` ([ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) format for timedelta)
+    - `[±]P[DD]DT[HH]H[MM]M[SS]S` ([ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) format for timedelta)
 
 ```python
 from datetime import timedelta
@@ -165,23 +169,23 @@ Pydantic supports the following numeric types from the Python standard library:
 
 ### [`int`][]
 
-* Pydantic uses `int(v)` to coerce types to an `int`;
+- Pydantic uses `int(v)` to coerce types to an `int`;
   see [Data conversion](../concepts/models.md#data-conversion) for details on loss of information during data conversion.
 
 ### [`float`][]
 
-* Pydantic uses `float(v)` to coerce values to floats.
+- Pydantic uses `float(v)` to coerce values to floats.
 
 ### [`enum.IntEnum`][]
 
-* Validation: Pydantic checks that the value is a valid `IntEnum` instance.
-* Validation for subclass of `enum.IntEnum`: checks that the value is a valid member of the integer enum;
+- Validation: Pydantic checks that the value is a valid `IntEnum` instance.
+- Validation for subclass of `enum.IntEnum`: checks that the value is a valid member of the integer enum;
   see [Enums and Choices](#enum) for more details.
 
 ### [`decimal.Decimal`][]
 
-* Validation: Pydantic attempts to convert the value to a string, then passes the string to `Decimal(v)`.
-* Serialization: Pydantic serializes [`Decimal`][decimal.Decimal] types as strings.
+- Validation: Pydantic attempts to convert the value to a string, then passes the string to `Decimal(v)`.
+- Serialization: Pydantic serializes [`Decimal`][decimal.Decimal] types as strings.
 You can use a custom serializer to override this behavior if desired. For example:
 
 ```python
@@ -217,13 +221,13 @@ print(my_model.model_dump_json())  # (3)!
 
 ### [`complex`][]
 
-* Validation: Pydantic supports `complex` types or `str` values that can be converted to a `complex` type.
-* Serialization: Pydantic serializes [`complex`][] types as strings.
+- Validation: Pydantic supports `complex` types or `str` values that can be converted to a `complex` type.
+- Serialization: Pydantic serializes [`complex`][] types as strings.
 
 ### [`fractions.Fraction`][fractions.Fraction]
 
-* Validation: Pydantic attempts to convert the value to a `Fraction` using `Fraction(v)`.
-* Serialization: Pydantic serializes [`Fraction`][fractions.Fraction] types as strings.
+- Validation: Pydantic attempts to convert the value to a `Fraction` using `Fraction(v)`.
+- Serialization: Pydantic serializes [`Fraction`][fractions.Fraction] types as strings.
 
 ## [`Enum`][enum.Enum]
 
@@ -439,7 +443,6 @@ print(sorted(m2.frozenset_of_ints))
 #> [1, 2, 3]
 ```
 
-
 ## Other Iterables
 
 ### [`typing.Sequence`][]
@@ -482,7 +485,7 @@ If you have a generator you want to validate, you can still use `Sequence` as de
 In that case, the generator will be consumed and stored on the model as a list and its values will be
 validated against the type parameter of the `Sequence` (e.g. `int` in `Sequence[int]`).
 
-However, if you have a generator that you _don't_ want to be eagerly consumed (e.g. an infinite
+However, if you have a generator that you *don't* want to be eagerly consumed (e.g. an infinite
 generator or a remote data loader), you can use a field of type [`Iterable`][typing.Iterable]:
 
 ```python
@@ -528,7 +531,6 @@ for i in m.infinite:
 !!! warning
     During initial validation, `Iterable` fields only perform a simple check that the provided argument is iterable.
     To prevent it from being consumed, no validation of the yielded values is performed eagerly.
-
 
 Though the yielded values are not validated eagerly, they are still validated when yielded, and will raise a
 `ValidationError` at yield time when appropriate:
@@ -735,12 +737,12 @@ print(m)
 
 ## IP Address Types
 
-* [`ipaddress.IPv4Address`][]: Uses the type itself for validation by passing the value to `IPv4Address(v)`.
-* [`ipaddress.IPv4Interface`][]: Uses the type itself for validation by passing the value to `IPv4Address(v)`.
-* [`ipaddress.IPv4Network`][]: Uses the type itself for validation by passing the value to `IPv4Network(v)`.
-* [`ipaddress.IPv6Address`][]: Uses the type itself for validation by passing the value to `IPv6Address(v)`.
-* [`ipaddress.IPv6Interface`][]: Uses the type itself for validation by passing the value to `IPv6Interface(v)`.
-* [`ipaddress.IPv6Network`][]: Uses the type itself for validation by passing the value to `IPv6Network(v)`.
+- [`ipaddress.IPv4Address`][]: Uses the type itself for validation by passing the value to `IPv4Address(v)`.
+- [`ipaddress.IPv4Interface`][]: Uses the type itself for validation by passing the value to `IPv4Address(v)`.
+- [`ipaddress.IPv4Network`][]: Uses the type itself for validation by passing the value to `IPv4Network(v)`.
+- [`ipaddress.IPv6Address`][]: Uses the type itself for validation by passing the value to `IPv6Address(v)`.
+- [`ipaddress.IPv6Interface`][]: Uses the type itself for validation by passing the value to `IPv6Interface(v)`.
+- [`ipaddress.IPv6Network`][]: Uses the type itself for validation by passing the value to `IPv6Network(v)`.
 
 See [Network Types](../api/networks.md) for other custom IP address types.
 
@@ -751,10 +753,10 @@ There's a fallback to `UUID(bytes=v)` for `bytes` and `bytearray`.
 
 In case you want to constrain the UUID version, you can check the following types:
 
-* [`UUID1`][pydantic.types.UUID1]: requires UUID version 1.
-* [`UUID3`][pydantic.types.UUID3]: requires UUID version 3.
-* [`UUID4`][pydantic.types.UUID4]: requires UUID version 4.
-* [`UUID5`][pydantic.types.UUID5]: requires UUID version 5.
+- [`UUID1`][pydantic.types.UUID1]: requires UUID version 1.
+- [`UUID3`][pydantic.types.UUID3]: requires UUID version 3.
+- [`UUID4`][pydantic.types.UUID4]: requires UUID version 4.
+- [`UUID5`][pydantic.types.UUID5]: requires UUID version 5.
 
 ## Union
 
@@ -921,7 +923,6 @@ except ValidationError as e:
 
 [`bytes`][] are accepted as-is. [`bytearray`][] is converted using `bytes(v)`. `str` are converted using `v.encode()`. `int`, `float`, and `Decimal` are coerced using `str(v).encode()`. See [ByteSize](types.md#pydantic.types.ByteSize) for more details.
 
-
 ## [`typing.Literal`][]
 
 Pydantic supports the use of [`typing.Literal`][] as a lightweight way to specify that a field may accept only specific literal values:
@@ -1034,18 +1035,16 @@ Allows any value, including `None`.
 
 ## [`typing.Hashable`][]
 
-* From Python, supports any data that passes an `isinstance(v, Hashable)` check.
-* From JSON, first loads the data via an `Any` validator, then checks if the data is hashable with `isinstance(v, Hashable)`.
+- From Python, supports any data that passes an `isinstance(v, Hashable)` check.
+- From JSON, first loads the data via an `Any` validator, then checks if the data is hashable with `isinstance(v, Hashable)`.
 
 ## [`typing.Annotated`][]
 
 Allows wrapping another type with arbitrary metadata, as per [PEP-593](https://www.python.org/dev/peps/pep-0593/). The `Annotated` hint may contain a single call to the [`Field` function](../concepts/types.md#using-the-annotated-pattern), but otherwise the additional metadata is ignored and the root type is used.
 
-
 ## [`typing.Pattern`][]
 
 Will cause the input value to be passed to `re.compile(v)` to create a regular expression pattern.
-
 
 ## [`pathlib.Path`][]
 

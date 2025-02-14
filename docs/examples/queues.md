@@ -9,6 +9,7 @@ In order to run this example locally, you'll first need to [install Redis](https
 and start your server up locally.
 
 Here's a simple example of how you can use Pydantic to:
+
 1. Serialize data to push to the queue
 2. Deserialize and validate data when it's popped from the queue
 

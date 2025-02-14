@@ -9,9 +9,9 @@
 
 Pydantic provides builtin JSON parsing, which helps achieve:
 
-* Significant performance improvements without the cost of using a 3rd party library
-* Support for custom errors
-* Support for `strict` specifications
+- Significant performance improvements without the cost of using a 3rd party library
+- Support for custom errors
+- Support for `strict` specifications
 
 Here's an example of Pydantic's builtin JSON parsing via the [`model_validate_json`][pydantic.main.BaseModel.model_validate_json] method, showcasing the support for `strict` specifications while parsing JSON data that doesn't match the model's type annotations:
 
@@ -190,9 +190,9 @@ The `cache_strings` setting is exposed via both [model config][pydantic.config.C
 
 The `cache_strings` setting can take any of the following values:
 
-* `True` or `'all'` (the default): cache all strings
-* `'keys'`: cache only dictionary keys, this **only** applies when used with [`pydantic_core.from_json`][pydantic_core.from_json] or when parsing JSON using [`Json`][pydantic.types.Json]
-* `False` or `'none'`: no caching
+- `True` or `'all'` (the default): cache all strings
+- `'keys'`: cache only dictionary keys, this **only** applies when used with [`pydantic_core.from_json`][pydantic_core.from_json] or when parsing JSON using [`Json`][pydantic.types.Json]
+- `False` or `'none'`: no caching
 
 Using the string caching feature results in performance improvements, but increases memory usage slightly.
 
@@ -203,7 +203,6 @@ Using the string caching feature results in performance improvements, but increa
     2. Only strings where `len(string) < 64` are cached.
     3. There is some overhead to looking up the cache, which is normally worth it to avoid constructing strings.
     However, if you know there will be very few repeated strings in your data, you might get a performance boost by disabling this setting with `cache_strings=False`.
-
 
 ## JSON Serialization
 

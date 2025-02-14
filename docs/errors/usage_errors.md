@@ -631,7 +631,6 @@ except PydanticUserError as exc_info:
 
 The fields definition syntax can be found in the [dynamic model creation](../concepts/models.md#dynamic-model-creation) documentation.
 
-
 ## `create_model` config base {#create-model-config-base}
 
 This error is raised when you use both `__config__` and `__base__` together in `create_model`.
@@ -1117,7 +1116,7 @@ class A:
 
 The above snippet results in the following error during schema building for the `A` dataclass:
 
-```
+```output
 pydantic.errors.PydanticUserError: Field a has `init=False` and dataclass has config setting `extra="allow"`.
 This combination is not allowed.
 ```

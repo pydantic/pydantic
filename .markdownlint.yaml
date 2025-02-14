@@ -1,5 +1,19 @@
 # See rule aliases: https://github.com/DavidAnson/markdownlint#rules--aliases
 
+# temp
+reference-links-images: false
+link-fragments: false
+no-empty-links: false
+
+line-length: false
+ul-style:
+  style: dash
+emphasis-style:
+  style: asterisk
+
+# H1 headings are automatically inserted by mkdocs
+first-line-h1: false
+
 # Allow same heading name if the parent is different
 no-duplicate-heading:
   siblings_only: true

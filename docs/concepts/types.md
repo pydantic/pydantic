@@ -9,12 +9,10 @@ If no existing type suits your purpose you can also implement your [own Pydantic
 
 The following sections describe the types supported by Pydantic.
 
-
-* [Standard Library Types](../api/standard_library_types.md) &mdash; types from the Python standard library.
-* [Strict Types](#strict-types) &mdash; types that enable you to prevent coercion from compatible types.
-* [Custom Data Types](#custom-types) &mdash; create your own custom data types.
-* [Field Type Conversions](../concepts/conversion_table.md) &mdash; strict and lax conversion between different field types.
-
+- [Standard Library Types](../api/standard_library_types.md) &mdash; types from the Python standard library.
+- [Strict Types](#strict-types) &mdash; types that enable you to prevent coercion from compatible types.
+- [Custom Data Types](#custom-types) &mdash; create your own custom data types.
+- [Field Type Conversions](../concepts/conversion_table.md) &mdash; strict and lax conversion between different field types.
 
 ## Type conversion
 
@@ -23,7 +21,6 @@ During validation, Pydantic can coerce data into expected types.
 There are two modes of coercion: strict and lax. See [Conversion Table](../concepts/conversion_table.md) for more details on how Pydantic converts data in both strict and lax modes.
 
 See [Strict mode](../concepts/strict_mode.md) and [Strict Types](#strict-types) for details on enabling strict coercion.
-
 
 ## Strict Types
 
@@ -61,7 +58,6 @@ The following caveats apply:
 
 Besides the above, you can also have a [`FiniteFloat`][pydantic.types.FiniteFloat] type that will only accept finite values (i.e. not `inf`, `-inf` or `nan`).
 
-
 ## Custom Types
 
 You can also define your own custom data types. There are several ways to achieve it.
@@ -95,6 +91,7 @@ except ValidationError as exc:
 
 1. Note that you can also use constraints from the [annotated-types](https://github.com/annotated-types/annotated-types)
   library to make this Pydantic-agnostic:
+
   ```python {test="skip" lint="skip"}
   from annotated_types import Gt
 
@@ -242,7 +239,6 @@ By leveraging the new [`type` statement](https://typing.readthedocs.io/en/latest
 
     1. If `PositiveIntList` were to be defined as an implicit type alias, its definition
        would have been duplicated in both `'x'` and `'y'`.
-
 
 === "Python 3.12 and above (new syntax)"
 
@@ -971,7 +967,3 @@ m = MyModel(my_field=1)
 print(m.my_field)
 #> <1 'my_field'>
 ```
-
-[PEP 593]: https://peps.python.org/pep-0593/
-[PEP 695]: https://peps.python.org/pep-0695/
-[typing-extensions]: https://github.com/python/typing_extensions
