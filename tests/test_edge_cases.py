@@ -3025,7 +3025,7 @@ def test_validator_and_serializer_not_reused_during_rebuild() -> None:
     assert m.model_dump() == {}
 
 
-@pytest.mark.filterwarnings("ignore:.*`__get_validators__`.*:DeprecationWarning")
+@pytest.mark.filterwarnings('ignore:.*`__get_validators__`.*:DeprecationWarning')
 def test_get_schema_on_classes_with_both_v1_and_v2_apis() -> None:
     class Model(BaseModel):
         a: int
