@@ -67,7 +67,9 @@ __all__ = (
     'UUID3',
     'UUID4',
     'UUID5',
+    'UUID6',
     'UUID7',
+    'UUID8',
     'FilePath',
     'DirectoryPath',
     'NewPath',
@@ -1152,7 +1154,7 @@ class UuidVersion:
         ```
     """
 
-    uuid_version: Literal[1, 3, 4, 5, 7]
+    uuid_version: Literal[1, 3, 4, 5, 6, 7, 8]
 
     def __get_pydantic_json_schema__(
         self, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
@@ -1233,6 +1235,20 @@ class Model(BaseModel):
 Model(uuid5=uuid.uuid5(uuid.NAMESPACE_DNS, 'pydantic.org'))
 ```
 """
+UUID6 = Annotated[UUID, UuidVersion(6)]
+"""A [UUID](https://docs.python.org/3/library/uuid.html) that must be version 6.
+
+```python
+import uuid
+
+from pydantic import UUID6, BaseModel
+
+class Model(BaseModel):
+    uuid6: UUID6
+
+Model(uuid6=uuid.UUID('1efea953-c2d6-6790-aa0a-69db8c87df97'))
+```
+"""
 UUID7 = Annotated[UUID, UuidVersion(7)]
 """A [UUID](https://docs.python.org/3/library/uuid.html) that must be version 7.
 
@@ -1245,6 +1261,20 @@ class Model(BaseModel):
     uuid7: UUID7
 
 Model(uuid7=uuid.UUID('0194fdcb-1c47-7a09-b52c-561154de0b4a'))
+```
+"""
+UUID8 = Annotated[UUID, UuidVersion(8)]
+"""A [UUID](https://docs.python.org/3/library/uuid.html) that must be version 8.
+
+```python
+import uuid
+
+from pydantic import UUID8, BaseModel
+
+class Model(BaseModel):
+    uuid8: UUID8
+
+Model(uuid8=uuid.UUID('81a0b92e-6078-8551-9c81-8ccb666bdab8'))
 ```
 """
 
