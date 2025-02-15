@@ -163,11 +163,10 @@ While the namespace fetching logic is trying to be as accurate as possible, we s
     # pydantic.errors.PydanticUndefinedAnnotation: name 'A' is not defined
     ```
 
-[](){#backwards-compatibility-logic}
-
 For backwards compatibility reasons, and to be able to support valid use cases without having to rebuild models,
-the namespace logic described above is a bit different when it comes to core schema generation. Taking the
-following example:
+the namespace logic described above is a bit different when it comes to core schema generation.
+Taking the following example:
+{#backwards-compatibility-logic}
 
 ```python
 from dataclasses import dataclass
@@ -248,9 +247,8 @@ Foo.__pydantic_core_schema__
 #> {'type': 'model', 'schema': {...}, ...}
 ```
 
-[](){#model-rebuild-semantics}
-
 The [`model_rebuild()`][pydantic.BaseModel.model_rebuild] method uses a *rebuild namespace*, with the following semantics:
+{#model-rebuild-semantics}
 
 - If an explicit `_types_namespace` argument is provided, it is used as the rebuild namespace.
 - If no namespace is provided, the namespace where the method is called will be used as the rebuild namespace.

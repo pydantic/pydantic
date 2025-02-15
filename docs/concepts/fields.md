@@ -62,7 +62,7 @@ assignment form instead.
 
 !!! tip
     The annotated pattern can also be used to add metadata to specific parts of the type. For instance,
-    [validation constraints](#field-constraints) can be added this way:
+    [validation constraints](#numeric-constraints) can be added this way:
 
     ```python
     from typing import Annotated
@@ -360,8 +360,6 @@ print(user.model_dump(by_alias=True))  # (2)!
     print(m.model_dump(by_alias=True))
     #> {'my_field': 1}
     ```
-
-[](){#field-constraints}
 
 ## Numeric Constraints
 

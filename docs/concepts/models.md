@@ -225,6 +225,7 @@ Besides, using these abstract types can also lead to [poor validation performanc
 will avoid unnecessary checks.
 
 <!-- old anchor added for backwards compatibility -->
+<!-- markdownlint-disable-next-line no-empty-links -->
 [](){#extra-fields}
 
 ## Extra data

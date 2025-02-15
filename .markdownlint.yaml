@@ -1,10 +1,5 @@
 # See rule aliases: https://github.com/DavidAnson/markdownlint#rules--aliases
 
-# temp
-reference-links-images: false
-link-fragments: false
-no-empty-links: false
-
 line-length: false
 ul-style:
   style: dash
@@ -25,3 +20,9 @@ no-inline-html: false
 # See: https://facelessuser.github.io/pymdown-extensions/extensions/tabbed/
 # See: https://squidfunk.github.io/mkdocs-material/reference/admonitions/
 code-block-style: false
+
+# Disabled in order to support references to API
+reference-links-images: false
+
+# Anchors via attribute lists are not detected, let mkdocs handle anchor validation
+link-fragments: false
