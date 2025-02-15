@@ -2,8 +2,8 @@ Unions are fundamentally different to all other types Pydantic validates - inste
 
 This leads to some nuance around how to validate unions:
 
-* which member(s) of the union should you validate data against, and in which order?
-* which errors to raise when validation fails?
+- which member(s) of the union should you validate data against, and in which order?
+- which errors to raise when validation fails?
 
 Validating unions feels like adding another orthogonal dimension to the validation process.
 

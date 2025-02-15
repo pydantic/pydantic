@@ -6,7 +6,6 @@
 > to using the [`pytest-mypy-plugins`][https://github.com/TypedDjango/pytest-mypy-plugins] library, which
 > provides more flexibility when it comes to merging different mypy configurations.
 
-
 The `test_mypy_results` test defined in [`test_mypy.py`](./test_mypy.py) runs Mypy on the files
 defined in [`modules/`](./modules/), using the configuration files from [`configs/`](./configs/).
 
