@@ -1,6 +1,6 @@
 # Release Instructions
 
-**Note:** *This should only apply to maintainers when prepare for and publishing a new release.*
+**Note:** *This should only apply to maintainers when preparing for and publishing a new release.*
 
 ## Prerequisites
 

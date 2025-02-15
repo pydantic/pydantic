@@ -1,4 +1,4 @@
-In addition to Pydantic's [built-in validation capabilities](./fields.md#numeric-constraints),
+In addition to Pydantic's [built-in validation capabilities](./fields.md#field-constraints),
 you can leverage custom validators at the field and model levels to enforce more complex constraints
 and ensure the integrity of your data.
 
