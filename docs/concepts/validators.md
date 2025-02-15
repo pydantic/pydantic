@@ -475,6 +475,7 @@ decorator.
 - __*After* validators__: run after the whole model has been validated. As such, they are defined as
   *instance* methods and can be seen as post-initialization hooks. Important note: the validated instance
   should be returned.
+
   ```python
   from typing_extensions import Self
 
@@ -499,6 +500,7 @@ decorator.
   but they also have to deal with the raw input, which in theory could be any arbitrary object. You should also avoid
   mutating the value directly if you are raising a [validation error](#raising-validation-errors) later in your validator
   function, as the mutated value may be passed to other validators if using [unions](./unions.md).
+
   ```python
   from typing import Any
 
@@ -528,6 +530,7 @@ decorator.
 - __*Wrap* validators__: are the most flexible of all. You can run code before or after Pydantic and
   other validators process the input data, or you can terminate validation immediately, either by returning
   the data early or by raising an error.
+
   ```python {lint="skip"}
   import logging
   from typing import Any
@@ -563,6 +566,7 @@ To raise a validation error, three types of exceptions can be used:
 - [`AssertionError`][]: using the [assert][] statement also works, but be aware that these statements
   are skipped when Python is run with the [-O][] optimization flag.
 - [`PydanticCustomError`][pydantic_core.PydanticCustomError]: a bit more verbose, but provides extra flexibility:
+
   ```python
   from pydantic_core import PydanticCustomError
 
@@ -750,6 +754,7 @@ logic applies.
 Pydantic provides a few special utilities that can be used to customize validation.
 
 - [`InstanceOf`][pydantic.functional_validators.InstanceOf] can be used to validate that a value is an instance of a given class.
+
   ```python
   from pydantic import BaseModel, InstanceOf, ValidationError
 
@@ -783,6 +788,7 @@ Pydantic provides a few special utilities that can be used to customize validati
   ```
 
 - [`SkipValidation`][pydantic.functional_validators.SkipValidation] can be used to skip validation on a field.
+
   ```python
   from pydantic import BaseModel, SkipValidation
 
@@ -805,6 +811,7 @@ Pydantic provides a few special utilities that can be used to customize validati
 
 - [`PydanticUseDefault`][pydantic_core.PydanticUseDefault] can be used to notify Pydantic that the default value
   should be used.
+
   ```python
   from typing import Annotated, Any
 
