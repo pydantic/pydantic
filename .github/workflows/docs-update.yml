@@ -69,7 +69,11 @@ jobs:
         with:
           python-version: '3.12'
 
-      - run: uv sync --group docs
+      - run: uv sync --group docs --group docs-upload
+
+      - run: uv run python docs/plugins/algolia.py upload
+        env:
+          ALGOLIA_WRITE_API_KEY: ${{ secrets.ALGOLIA_WRITE_API_KEY }}
 
       - run: uv pip install --default-index https://pydantic:${PPPR_TOKEN}@pppr.pydantic.dev/simple/ mkdocs-material
         env:

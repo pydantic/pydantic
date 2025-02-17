@@ -79,6 +79,9 @@ extra_css:
   - 'extra/terminal.css'
   - 'extra/tweaks.css'
 extra_javascript:
+  - "https://cdn.jsdelivr.net/npm/algoliasearch@5.20.0/dist/lite/builds/browser.umd.js"
+  - "https://cdn.jsdelivr.net/npm/instantsearch.js@4.77.3/dist/instantsearch.production.min.js"
+  - 'extra/algolia.js'
   - 'extra/feedback.js'
   - 'extra/fluff.js'
   - 'https://samuelcolvin.github.io/mkdocs-run-code/run_code_main.js'
@@ -206,6 +209,7 @@ watch:
 hooks:
 - 'docs/plugins/main.py'
 - 'docs/plugins/build_llms_txt.py'
+- 'docs/plugins/algolia.py'
 
 plugins:
 - social
