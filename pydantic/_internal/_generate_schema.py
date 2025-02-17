@@ -2001,19 +2001,20 @@ class GenerateSchema:
         d: Decorator[ComputedFieldInfo],
         field_serializers: dict[str, Decorator[FieldSerializerDecoratorInfo]],
     ) -> core_schema.ComputedField:
-        try:
-            # Do not pass in globals as the function could be defined in a different module.
-            # Instead, let `get_function_return_type` infer the globals to use, but still pass
-            # in locals that may contain a parent/rebuild namespace:
-            return_type = _decorators.get_function_return_type(
-                d.func, d.info.return_type, localns=self._types_namespace.locals
-            )
-        except NameError as e:
-            raise PydanticUndefinedAnnotation.from_name_error(e) from e
+        if d.info.return_type is not PydanticUndefined:
+            return_type = d.info.return_type
+        else:
+            try:
+                # Do not pass in globals as the function could be defined in a different module.
+                # Instead, let `get_function_return_type` infer the globals to use, but still pass
+                # in locals that may contain a parent/rebuild namespace:
+                return_type = _decorators.get_function_return_type(d.func, localns=self._types_namespace.locals)
+            except NameError as e:
+                raise PydanticUndefinedAnnotation.from_name_error(e) from e
         if return_type is PydanticUndefined:
             raise PydanticUserError(
                 'Computed field is missing return type annotation or specifying `return_type`'
-                ' to the `@computed_field` decorator (e.g. `@computed_field(return_type=int|str)`)',
+                ' to the `@computed_field` decorator (e.g. `@computed_field(return_type=int | str)`)',
                 code='model-field-missing-annotation',
             )
 
@@ -2219,15 +2220,18 @@ class GenerateSchema:
             serializer = serializers[-1]
             is_field_serializer, info_arg = inspect_field_serializer(serializer.func, serializer.info.mode)
 
-            try:
-                # Do not pass in globals as the function could be defined in a different module.
-                # Instead, let `get_function_return_type` infer the globals to use, but still pass
-                # in locals that may contain a parent/rebuild namespace:
-                return_type = _decorators.get_function_return_type(
-                    serializer.func, serializer.info.return_type, localns=self._types_namespace.locals
-                )
-            except NameError as e:
-                raise PydanticUndefinedAnnotation.from_name_error(e) from e
+            if serializer.info.return_type is not PydanticUndefined:
+                return_type = serializer.info.return_type
+            else:
+                try:
+                    # Do not pass in globals as the function could be defined in a different module.
+                    # Instead, let `get_function_return_type` infer the globals to use, but still pass
+                    # in locals that may contain a parent/rebuild namespace:
+                    return_type = _decorators.get_function_return_type(
+                        serializer.func, localns=self._types_namespace.locals
+                    )
+                except NameError as e:
+                    raise PydanticUndefinedAnnotation.from_name_error(e) from e
 
             if return_type is PydanticUndefined:
                 return_schema = None
@@ -2262,15 +2266,19 @@ class GenerateSchema:
             serializer = list(serializers)[-1]
             info_arg = inspect_model_serializer(serializer.func, serializer.info.mode)
 
-            try:
-                # Do not pass in globals as the function could be defined in a different module.
-                # Instead, let `get_function_return_type` infer the globals to use, but still pass
-                # in locals that may contain a parent/rebuild namespace:
-                return_type = _decorators.get_function_return_type(
-                    serializer.func, serializer.info.return_type, localns=self._types_namespace.locals
-                )
-            except NameError as e:
-                raise PydanticUndefinedAnnotation.from_name_error(e) from e
+            if serializer.info.return_type is not PydanticUndefined:
+                return_type = serializer.info.return_type
+            else:
+                try:
+                    # Do not pass in globals as the function could be defined in a different module.
+                    # Instead, let `get_function_return_type` infer the globals to use, but still pass
+                    # in locals that may contain a parent/rebuild namespace:
+                    return_type = _decorators.get_function_return_type(
+                        serializer.func, localns=self._types_namespace.locals
+                    )
+                except NameError as e:
+                    raise PydanticUndefinedAnnotation.from_name_error(e) from e
+
             if return_type is PydanticUndefined:
                 return_schema = None
             else:

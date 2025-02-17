@@ -10,7 +10,7 @@ from inspect import Parameter, Signature, isdatadescriptor, ismethoddescriptor, 
 from itertools import islice
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generic, Literal, TypeVar, Union
 
-from pydantic_core import PydanticUndefined, core_schema
+from pydantic_core import PydanticUndefined, PydanticUndefinedType, core_schema
 from typing_extensions import TypeAlias, is_typeddict
 
 from ..errors import PydanticUserError
@@ -756,35 +756,26 @@ def unwrap_wrapped_function(
 
 def get_function_return_type(
     func: Any,
-    explicit_return_type: Any,
     globalns: GlobalsNamespace | None = None,
     localns: MappingNamespace | None = None,
-) -> Any:
+) -> Any | PydanticUndefinedType:
     """Get the function return type.
-
-    It gets the return type from the type annotation if `explicit_return_type` is `None`.
-    Otherwise, it returns `explicit_return_type`.
 
     Args:
         func: The function to get its return type.
-        explicit_return_type: The explicit return type.
         globalns: The globals namespace to use during type annotation evaluation.
         localns: The locals namespace to use during type annotation evaluation.
 
     Returns:
         The function return type.
     """
-    if explicit_return_type is PydanticUndefined:
-        # try to get it from the type annotation
-        hints = get_function_type_hints(
-            unwrap_wrapped_function(func),
-            include_keys={'return'},
-            globalns=globalns,
-            localns=localns,
-        )
-        return hints.get('return', PydanticUndefined)
-    else:
-        return explicit_return_type
+    hints = get_function_type_hints(
+        unwrap_wrapped_function(func),
+        include_keys={'return'},
+        globalns=globalns,
+        localns=localns,
+    )
+    return hints.get('return', PydanticUndefined)
 
 
 def count_positional_required_params(sig: Signature) -> int:
