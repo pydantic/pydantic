@@ -42,7 +42,9 @@ enum Version {
     UUIDv3 = 3,
     UUIDv4 = 4,
     UUIDv5 = 5,
+    UUIDv6 = 6,
     UUIDv7 = 7,
+    UUIDv8 = 8,
 }
 
 impl From<Version> for usize {
@@ -58,7 +60,9 @@ impl From<u8> for Version {
             3 => Version::UUIDv3,
             4 => Version::UUIDv4,
             5 => Version::UUIDv5,
+            6 => Version::UUIDv6,
             7 => Version::UUIDv7,
+            8 => Version::UUIDv8,
             _ => unreachable!(),
         }
     }
@@ -136,8 +140,8 @@ impl Validator for UuidValidator {
             }
             let uuid = self.get_uuid(input)?;
             // This block checks if the UUID version matches the expected version and
-            // if the UUID variant conforms to RFC 4122. When dealing with Python inputs,
-            // UUIDs must adhere to RFC 4122 standards.
+            // if the UUID variant conforms to RFC 9562 (superseding RFC 4122).
+            // When dealing with Python inputs, UUIDs must adhere to RFC 9562 standards.
             if let Some(expected_version) = self.version {
                 if uuid.get_version_num() != expected_version || uuid.get_variant() != Variant::RFC4122 {
                     return Err(ValError::new(
