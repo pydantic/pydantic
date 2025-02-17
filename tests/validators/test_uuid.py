@@ -26,7 +26,9 @@ class MyStr(str): ...
         ('6ba7b810-9dad-11d1-80b4-00c04fd430c8', UUID('6ba7b810-9dad-11d1-80b4-00c04fd430c8')),
         ('886313e1-3b8a-5372-9b90-0c9aee199e5d', UUID('886313e1-3b8a-5372-9b90-0c9aee199e5d')),
         ('c0a8f9a8-aa5e-482b-a067-9cb3a51f5c11', UUID('c0a8f9a8-aa5e-482b-a067-9cb3a51f5c11')),
+        ('1efea93d-7bb8-6ea0-afdc-e76cbc0c8e05', UUID('1efea93d-7bb8-6ea0-afdc-e76cbc0c8e05')),
         ('0194fdc2-5d6a-733c-97f9-2feeb9d2a609', UUID('0194fdc2-5d6a-733c-97f9-2feeb9d2a609')),
+        ('c0a8f9a8-aa5e-882b-a067-9cb3a51f5c11', UUID('c0a8f9a8-aa5e-882b-a067-9cb3a51f5c11')),
         ('00000000-8000-4000-8000-000000000000', UUID('00000000-8000-4000-8000-000000000000')),
         ('00000000-0000-4000-0000-000000000000', UUID('00000000-0000-4000-0000-000000000000')),
         (MyStr('00000000-0000-4000-0000-000000000000'), UUID('00000000-0000-4000-0000-000000000000')),
@@ -126,6 +128,11 @@ def test_uuid_strict(input_value, expected):
         ('0e7ac198-9acd-4c0c-b4b4-761974bf71d7', 4, UUID('0e7ac198-9acd-4c0c-b4b4-761974bf71d7')),
         (UUID('0e7ac198-9acd-4c0c-b4b4-761974bf71d7'), 4, UUID('0e7ac198-9acd-4c0c-b4b4-761974bf71d7')),
         ('0194fdc2-5d6a-733c-97f9-2feeb9d2a609', 7, UUID('0194fdc2-5d6a-733c-97f9-2feeb9d2a609')),
+        (UUID('0194fdc2-5d6a-733c-97f9-2feeb9d2a609'), 7, UUID('0194fdc2-5d6a-733c-97f9-2feeb9d2a609')),
+        ('1efea93d-7bb8-6ea0-afdc-e76cbc0c8e05', 6, UUID('1efea93d-7bb8-6ea0-afdc-e76cbc0c8e05')),
+        (UUID('1efea93d-7bb8-6ea0-afdc-e76cbc0c8e05'), 6, UUID('1efea93d-7bb8-6ea0-afdc-e76cbc0c8e05')),
+        ('c0a8f9a8-aa5e-882b-a067-9cb3a51f5c11', 8, UUID('c0a8f9a8-aa5e-882b-a067-9cb3a51f5c11')),
+        (UUID('c0a8f9a8-aa5e-882b-a067-9cb3a51f5c11'), 8, UUID('c0a8f9a8-aa5e-882b-a067-9cb3a51f5c11')),
         # Cases from pydantic#7355 and pydantic#7537
         # `UUID.version` makes sense for RFC 4122 UUIDs only. For non RFC 4122 UUIDs Python uses `UUID.version=None`
         ('00000000-8000-4000-8000-000000000000', 4, UUID('00000000-8000-4000-8000-000000000000')),
@@ -139,6 +146,10 @@ def test_uuid_strict(input_value, expected):
         (UUID('b34b6755-f49c-3bd2-6f06-131a708c2bf3'), None, UUID('b34b6755-f49c-3bd2-6f06-131a708c2bf3')),
         (UUID('b34b6755-f49c-3bd2-6f06-131a708c2bf3'), 4, Err('UUID version 4 expected')),
         # Invalid UUIDs
+        ('1efea93d-7bb8-6ea0-afdc-e76cbc0c8e05', 8, Err('UUID version 8 expected')),
+        (UUID('1efea93d-7bb8-6ea0-afdc-e76cbc0c8e05'), 8, Err('UUID version 8 expected')),
+        ('c0a8f9a8-aa5e-882b-a067-9cb3a51f5c11', 6, Err('UUID version 6 expected')),
+        (UUID('c0a8f9a8-aa5e-882b-a067-9cb3a51f5c11'), 6, Err('UUID version 6 expected')),
         ('a6cc5730-2261-11ee-9c43-2eb5a363657c', 7, Err('UUID version 7 expected')),
         (UUID('a6cc5730-2261-11ee-9c43-2eb5a363657c'), 7, Err('UUID version 7 expected')),
         ('a6cc5730-2261-11ee-9c43-2eb5a363657c', 5, Err('UUID version 5 expected')),
