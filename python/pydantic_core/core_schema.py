@@ -1446,7 +1446,7 @@ class UuidSchema(TypedDict, total=False):
 
 def uuid_schema(
     *,
-    version: Literal[1, 3, 4, 5, 7] | None = None,
+    version: Literal[1, 3, 4, 5, 6, 7, 8] | None = None,
     strict: bool | None = None,
     ref: str | None = None,
     metadata: dict[str, Any] | None = None,
