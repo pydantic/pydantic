@@ -71,10 +71,6 @@ jobs:
 
       - run: uv sync --group docs --group docs-upload
 
-      - run: uv run python docs/plugins/algolia.py upload
-        env:
-          ALGOLIA_WRITE_API_KEY: ${{ secrets.ALGOLIA_WRITE_API_KEY }}
-
       - run: uv pip install --default-index https://pydantic:${PPPR_TOKEN}@pppr.pydantic.dev/simple/ mkdocs-material
         env:
           PPPR_TOKEN: ${{ secrets.PPPR_TOKEN }}
@@ -110,3 +106,7 @@ jobs:
         if: "(github.ref == 'refs/heads/docs-update' || startsWith(github.ref, 'refs/tags/')) && !fromJSON(steps.check-version.outputs.IS_PRERELEASE)"
         env:
           PYDANTIC_VERSION: v${{ steps.check-version.outputs.VERSION }}
+
+      - run: uv run python docs/plugins/algolia.py upload
+        env:
+          ALGOLIA_WRITE_API_KEY: ${{ secrets.ALGOLIA_WRITE_API_KEY }}
