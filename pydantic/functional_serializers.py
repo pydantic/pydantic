@@ -66,9 +66,9 @@ class PlainSerializer:
         else:
             try:
                 # Do not pass in globals as the function could be defined in a different module.
-                # Instead, let `get_function_return_type` infer the globals to use, but still pass
+                # Instead, let `get_callable_return_type` infer the globals to use, but still pass
                 # in locals that may contain a parent/rebuild namespace:
-                return_type = _decorators.get_function_return_type(
+                return_type = _decorators.get_callable_return_type(
                     self.func,
                     localns=handler._get_types_namespace().locals,
                 )
@@ -169,9 +169,9 @@ class WrapSerializer:
         else:
             try:
                 # Do not pass in globals as the function could be defined in a different module.
-                # Instead, let `get_function_return_type` infer the globals to use, but still pass
+                # Instead, let `get_callable_return_type` infer the globals to use, but still pass
                 # in locals that may contain a parent/rebuild namespace:
-                return_type = _decorators.get_function_return_type(
+                return_type = _decorators.get_callable_return_type(
                     self.func,
                     localns=handler._get_types_namespace().locals,
                 )

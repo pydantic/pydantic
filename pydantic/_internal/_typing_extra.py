@@ -911,8 +911,6 @@ def get_function_type_hints(
 
     This is similar to the `typing.get_type_hints` function, with a few differences:
     - Support `functools.partial` by using the underlying `func` attribute.
-    - If `function` happens to be a built-in type (e.g. `int`), assume it doesn't have annotations
-      but specify the `return` key as being the actual type.
     - Do not wrap type annotation of a parameter with `Optional` if it has a default value of `None`
       (related bug: https://github.com/python/cpython/issues/90353, only fixed in 3.11+).
     """
@@ -922,13 +920,8 @@ def get_function_type_hints(
         else:
             annotations = function.__annotations__
     except AttributeError:
-        type_hints = get_type_hints(function)
-        if isinstance(function, type):
-            # `type[...]` is a callable, which returns an instance of itself.
-            # At some point, we might even look into the return type of `__new__`
-            # if it returns something else.
-            type_hints.setdefault('return', function)
-        return type_hints
+        # Some functions (e.g. builtins) don't have annotations:
+        return {}
 
     if globalns is None:
         globalns = get_module_ns_of(function)

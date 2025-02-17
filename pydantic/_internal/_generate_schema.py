@@ -2006,9 +2006,9 @@ class GenerateSchema:
         else:
             try:
                 # Do not pass in globals as the function could be defined in a different module.
-                # Instead, let `get_function_return_type` infer the globals to use, but still pass
+                # Instead, let `get_callable_return_type` infer the globals to use, but still pass
                 # in locals that may contain a parent/rebuild namespace:
-                return_type = _decorators.get_function_return_type(d.func, localns=self._types_namespace.locals)
+                return_type = _decorators.get_callable_return_type(d.func, localns=self._types_namespace.locals)
             except NameError as e:
                 raise PydanticUndefinedAnnotation.from_name_error(e) from e
         if return_type is PydanticUndefined:
@@ -2225,9 +2225,9 @@ class GenerateSchema:
             else:
                 try:
                     # Do not pass in globals as the function could be defined in a different module.
-                    # Instead, let `get_function_return_type` infer the globals to use, but still pass
+                    # Instead, let `get_callable_return_type` infer the globals to use, but still pass
                     # in locals that may contain a parent/rebuild namespace:
-                    return_type = _decorators.get_function_return_type(
+                    return_type = _decorators.get_callable_return_type(
                         serializer.func, localns=self._types_namespace.locals
                     )
                 except NameError as e:
@@ -2271,9 +2271,9 @@ class GenerateSchema:
             else:
                 try:
                     # Do not pass in globals as the function could be defined in a different module.
-                    # Instead, let `get_function_return_type` infer the globals to use, but still pass
+                    # Instead, let `get_callable_return_type` infer the globals to use, but still pass
                     # in locals that may contain a parent/rebuild namespace:
-                    return_type = _decorators.get_function_return_type(
+                    return_type = _decorators.get_callable_return_type(
                         serializer.func, localns=self._types_namespace.locals
                     )
                 except NameError as e:
