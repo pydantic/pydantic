@@ -873,7 +873,7 @@ class GenerateSchema:
             # safety measure (because these are inlined in place -- i.e. mutated directly)
             return schema
 
-        if (validators := getattr(obj, '__get_validators__', None)) is not None:
+        if get_schema is None and (validators := getattr(obj, '__get_validators__', None)) is not None:
             from pydantic.v1 import BaseModel as BaseModelV1
 
             if issubclass(obj, BaseModelV1):

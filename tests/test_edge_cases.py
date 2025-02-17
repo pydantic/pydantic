@@ -3023,3 +3023,17 @@ def test_validator_and_serializer_not_reused_during_rebuild() -> None:
 
     m = Model(a=1)
     assert m.model_dump() == {}
+
+
+@pytest.mark.filterwarnings('ignore:.*`__get_validators__`.*:DeprecationWarning')
+def test_get_schema_on_classes_with_both_v1_and_v2_apis() -> None:
+    class Model(BaseModel):
+        a: int
+
+        @model_validator(mode='after')
+        def my_model_validator(self):
+            return self
+
+        @classmethod
+        def __get_validators__(cls):
+            raise AssertionError('This should not be called')
