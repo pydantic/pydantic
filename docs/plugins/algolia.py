@@ -191,4 +191,4 @@ if __name__ == '__main__':
         algolia_upload()
     else:
         print('Run with "upload" argument to upload records to Algolia.')
-        exit(1)
+        sys.exit(1)
