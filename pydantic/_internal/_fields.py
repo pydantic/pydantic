@@ -264,7 +264,10 @@ def collect_model_fields(  # noqa: C901
         # to make sure the decorators have already been built for this exact class
         decorators: DecoratorInfos = cls.__dict__['__pydantic_decorators__']
         if ann_name in decorators.computed_fields:
-            raise ValueError("you can't override a field with a computed field")
+            raise TypeError(
+                f'Field "{ann_name}" of class "{cls.__name__}" overrides symbol of same name in "{cls.__bases__[0].__name__}".\n'
+                'This override with a computed_field is incompatible.'
+            )
         fields[ann_name] = field_info
 
     if typevars_map:
