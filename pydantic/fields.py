@@ -1421,9 +1421,11 @@ def computed_field(
             def a(self) -> str:
                 return 'new a'
 
-    except ValueError as e:
-        print(repr(e))
-        #> ValueError("you can't override a field with a computed field")
+    except TypeError as e:
+        print(e)
+        '''
+        Field 'a' of class 'Child' overrides symbol of same name in a parent class. This override with a computed_field is incompatible.
+        '''
     ```
 
     Private properties decorated with `@computed_field` have `repr=False` by default.
