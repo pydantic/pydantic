@@ -287,16 +287,14 @@ print(user.model_dump(by_alias=True))  # (2)!
 
     1. Accepted by type checkers.
 
-    This means that when using the [`populate_by_name`][pydantic.config.ConfigDict.populate_by_name] model
-    setting (which allows both the field name and alias to be used during model validation), type checkers
-    will error when the actual field name is used:
+    This means that when using the [`validate_by_name`][pydantic.config.ConfigDict.validate_by_name] model setting (which allows both the field name and alias to be used during model validation), type checkers will error when the actual field name is used:
 
     ```python
     from pydantic import BaseModel, ConfigDict, Field
 
 
     class User(BaseModel):
-        model_config = ConfigDict(populate_by_name=True)
+        model_config = ConfigDict(validate_by_name=True)
 
         name: str = Field(alias='username')
 
@@ -316,7 +314,7 @@ print(user.model_dump(by_alias=True))  # (2)!
 
 
     class User(BaseModel):
-        model_config = ConfigDict(populate_by_name=True)
+        model_config = ConfigDict(validate_by_name=True, validate_by_alias=True)
 
         name: Annotated[str, Field(alias='username')]
 

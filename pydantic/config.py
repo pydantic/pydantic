@@ -168,30 +168,37 @@ class ConfigDict(TypedDict, total=False):
     Whether an aliased field may be populated by its name as given by the model
     attribute, as well as the alias. Defaults to `False`.
 
-    Note:
-        The name of this configuration setting was changed in **v2.0** from
-        `allow_population_by_field_name` to `populate_by_name`.
+    !!! warning
+        `populate_by_name` is deprecated in v2.10 in favor of the [`validate_by_name`][pydantic.config.ConfigDict.validate_by_name] configuration setting.
 
-    ```python
-    from pydantic import BaseModel, ConfigDict, Field
+        In v2.11, we also introduced a [`validate_by_alias`][pydantic.config.ConfigDict.validate_by_alias] setting that introduces more fine grained
+        control for validation behavior.
 
-    class User(BaseModel):
-        model_config = ConfigDict(populate_by_name=True)
+        Here's how you might go about using the new settings to achieve the same behavior:
 
-        name: str = Field(alias='full_name')  # (1)!
-        age: int
+        ```py
+        from datetime import datetime
 
-    user = User(full_name='John Doe', age=20)  # (2)!
-    print(user)
-    #> name='John Doe' age=20
-    user = User(name='John Doe', age=20)  # (3)!
-    print(user)
-    #> name='John Doe' age=20
-    ```
+        from pydantic import BaseModel, ConfigDict, Field
 
-    1. The field `'name'` has an alias `'full_name'`.
-    2. The model is populated by the alias `'full_name'`.
-    3. The model is populated by the field name `'name'`.
+        class User(BaseModel):
+            model_config = ConfigDict(validate_by_name=True, validate_by_alias=True)
+
+            date_of_birth: datetime = Field(alias='DOB')  # (1)!
+            name: str
+
+        user = User(DOB='2022-01-01', name='John Doe')  # (2)!
+        print(user)
+        #> date_of_birth=datetime.datetime(2022, 1, 1, 0, 0) name='John Doe'
+
+        user = User(date_of_birth='2022-01-01', name='John Doe')  # (3)!
+        print(user)
+        #> date_of_birth=datetime.datetime(2022, 1, 1, 0, 0) name='John Doe'
+        ```
+
+        1. The field `'date_of_birth'` has an alias `'DOB'`.
+        2. The model is populated by the alias `'DOB'`.
+        3. The model is populated by the attribute name `'date_of_birth'`.
     """
 
     use_enum_values: bool
@@ -1023,6 +1030,106 @@ class ConfigDict(TypedDict, total=False):
     !!! tip
         If repeated strings are rare, it's recommended to use `'keys'` or `'none'` to reduce memory usage,
         as the performance difference is minimal if repeated strings are rare.
+    """
+
+    validate_by_alias: bool
+    """
+    Whether an aliased field may be populated by its alias. Defaults to `True`.
+
+    !!! note
+        In v2.11, `validate_by_alias` was introduced in conjunction with [`validate_by_name`][pydantic.ConfigDict.validate_by_name]
+        to empower users with more fine grained validation control. In <v2.11, disabling validation by alias was not possible.
+
+    !!! tip
+        If you set `validate_by_alias` to `False`, you should set `validate_by_name` to `True` to ensure that the field can still be populated.
+
+    Here's an example of disabling validation by alias:
+
+    ```py
+    from datetime import datetime
+
+    from pydantic import BaseModel, ConfigDict, Field
+
+    class User(BaseModel):
+        model_config = ConfigDict(validate_by_name=True, validate_by_alias=False)
+
+        date_of_birth: datetime = Field(alias='DOB')  # (1)!
+        name: str
+
+    user = User(date_of_birth='2022-01-01', name='John Doe')  # (2)!
+    print(user)
+    #> date_of_birth=datetime.datetime(2022, 1, 1, 0, 0) name='John Doe'
+    ```
+
+    1. The field `'date_of_birth'` has an alias `'DOB'`.
+    2. The model can only be populated by the attribute name `'date_of_birth'`.
+    """
+
+    validate_by_name: bool
+    """
+    Whether an aliased field may be populated by its name as given by the model
+    attribute. Defaults to `False`.
+
+    !!! note
+        In v2.0-v2.10, the `populate_by_name` configuration setting was used to specify
+        whether or not a field could be populated by its name **and** alias.
+
+        In v2.11, `validate_by_name` was introduced in conjunction with [`validate_by_alias`][pydantic.ConfigDict.validate_by_alias]
+        to empower users with more fine grained validation behavior control.
+
+    ```python
+    from datetime import datetime
+
+    from pydantic import BaseModel, ConfigDict, Field
+
+    class User(BaseModel):
+        model_config = ConfigDict(validate_by_name=True, validate_by_alias=True)
+
+        date_of_birth: datetime = Field(alias='DOB')  # (1)!
+        name: str
+
+    user = User(DOB='2022-01-01', name='John Doe')  # (2)!
+    print(user)
+    #> date_of_birth=datetime.datetime(2022, 1, 1, 0, 0) name='John Doe'
+
+    user = User(date_of_birth='2022-01-01', name='John Doe')  # (3)!
+    print(user)
+    #> date_of_birth=datetime.datetime(2022, 1, 1, 0, 0) name='John Doe'
+    ```
+
+    1. The field `'date_of_birth'` has an alias `'DOB'`.
+    2. The model is populated by the alias `'DOB'`.
+    3. The model is populated by the attribute name `'date_of_birth'`.
+    """
+
+    serialize_by_alias: bool
+    """
+    Whether an aliased field should be serialized by its alias. Defaults to `False`.
+
+    Note: In v2.11, `serialize_by_alias` was introduced to address the
+    [popular request](https://github.com/pydantic/pydantic/issues/8379)
+    for consistency with alias behavior for validation and serialization settings.
+
+    The defaults are inconsistent in V2 (aliases are used by default for validation,
+    but not for serialization), and we anticipate changing this in V3. However, as a patch for now,
+    we've introduced this configuration setting to allow users to control this behavior.
+
+    ```python
+    from pydantic import BaseModel, ConfigDict, Field
+
+    class User(BaseModel):
+        model_config = ConfigDict(serialize_by_alias=True)
+
+        date_of_birth: str = Field(alias='DOB')  # (1)!
+        name: str
+
+    user = User(DOB='2022-01-01', name='John Doe')
+    print(user.model_dump())
+    #> {'DOB': '2022-01-01', 'name': 'John Doe'}  # (2)!
+    ```
+
+    1. The field `'date_of_birth'` has an alias `'DOB'`.
+    2. The model is serialized using the alias `'DOB'` for the `'date_of_birth'` attribute.
     """
 
 

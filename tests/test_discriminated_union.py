@@ -347,7 +347,7 @@ def test_discriminated_union_basemodel_instance_value_with_alias():
         literal: Literal['a'] = Field(alias='lit')
 
     class B(BaseModel):
-        model_config = ConfigDict(populate_by_name=True)
+        model_config = ConfigDict(validate_by_name=True)
         literal: Literal['b'] = Field(alias='lit')
 
     class Top(BaseModel):

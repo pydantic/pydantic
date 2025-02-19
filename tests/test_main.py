@@ -475,7 +475,7 @@ def test_any():
 
 def test_population_by_field_name():
     class Model(BaseModel):
-        model_config = ConfigDict(populate_by_name=True)
+        model_config = ConfigDict(validate_by_name=True)
         a: str = Field(alias='_a')
 
     assert Model(a='different').a == 'different'
@@ -1101,7 +1101,7 @@ def test_exclude_unset_recursive():
 
 def test_dict_exclude_unset_populated_by_alias():
     class MyModel(BaseModel):
-        model_config = ConfigDict(populate_by_name=True)
+        model_config = ConfigDict(validate_by_name=True)
         a: str = Field('default', alias='alias_a')
         b: str = Field('default', alias='alias_b')
 

@@ -119,7 +119,7 @@ def test_annotation_config():
 
 def test_pop_by_field_name():
     class Model(BaseModel):
-        model_config = ConfigDict(extra='forbid', populate_by_name=True)
+        model_config = ConfigDict(extra='forbid', validate_by_name=True)
         last_updated_by: Optional[str] = Field(None, alias='lastUpdatedBy')
 
     assert Model(lastUpdatedBy='foo').model_dump() == {'last_updated_by': 'foo'}
@@ -183,7 +183,7 @@ def test_alias_override_behavior():
 
 def test_alias_generator_parent():
     class Parent(BaseModel):
-        model_config = ConfigDict(populate_by_name=True, alias_generator=lambda f_name: f_name + '1')
+        model_config = ConfigDict(validate_by_name=True, alias_generator=lambda f_name: f_name + '1')
         x: int
 
     class Child(Parent):
@@ -382,7 +382,7 @@ def test_empty_string_alias():
 
 
 @pytest.mark.parametrize(
-    'use_construct, populate_by_name_config, arg_name, expectation',
+    'use_construct, validate_by_name_config, arg_name, expectation',
     [
         [False, True, 'bar', does_not_raise()],
         [False, True, 'bar_', does_not_raise()],
@@ -394,16 +394,16 @@ def test_empty_string_alias():
         [True, False, 'bar_', does_not_raise()],
     ],
 )
-def test_populate_by_name_config(
+def test_validate_by_name_config(
     use_construct: bool,
-    populate_by_name_config: bool,
+    validate_by_name_config: bool,
     arg_name: str,
     expectation: AbstractContextManager,
 ):
     expected_value: int = 7
 
     class Foo(BaseModel):
-        model_config = ConfigDict(populate_by_name=populate_by_name_config)
+        model_config = ConfigDict(validate_by_name=validate_by_name_config)
         bar_: int = Field(alias='bar')
 
     with expectation:
@@ -662,7 +662,7 @@ def test_alias_generator_with_positional_arg() -> None:
 @pytest.mark.parametrize('alias_generator', upper_alias_generator)
 def test_alias_generator_with_computed_field(alias_generator) -> None:
     class Rectangle(BaseModel):
-        model_config = ConfigDict(populate_by_name=True, alias_generator=alias_generator)
+        model_config = ConfigDict(validate_by_name=True, alias_generator=alias_generator)
 
         width: int
         height: int

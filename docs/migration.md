@@ -343,7 +343,7 @@ will be merged, and for any settings defined in both, those from `Model2` will o
     * `post_init_call`
 
 * The following config settings have been renamed:
-    * `allow_population_by_field_name` → `populate_by_name`
+    * `allow_population_by_field_name` → `validate_by_name`
     * `anystr_lower` → `str_to_lower`
     * `anystr_strip_whitespace` → `str_strip_whitespace`
     * `anystr_upper` → `str_to_upper`

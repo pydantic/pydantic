@@ -88,7 +88,7 @@ that the version support policy is subject to change at discretion of contributo
 
 * Any required fields that don't have dynamically-determined aliases will be included as required
   keyword arguments.
-* If the [`populate_by_name`][pydantic.ConfigDict.populate_by_name] model configuration value is set to
+* If the [`validate_by_name`][pydantic.ConfigDict.validate_by_name] model configuration value is set to
   `True`, the generated signature will use the field names rather than aliases.
 * The [`init_forbid_extra`](#init_forbid_extra) and [`init_typed`](#init_typed) plugin configuration
   values can further fine-tune the synthesized `__init__` method.
@@ -196,7 +196,7 @@ For this reason, the plugin will add an extra `**kwargs: Any` parameter when syn
 ### `warn_required_dynamic_aliases`
 
 Whether to error when using a dynamically-determined alias or alias generator on a model with
-[`populate_by_name`][pydantic.ConfigDict.populate_by_name] set to `False`. If such aliases are
+[`validate_by_name`][pydantic.ConfigDict.validate_by_name] set to `False`. If such aliases are
 present, mypy cannot properly type check calls to `__init__`. In this case, it will default to
 treating all arguments as not required.
 
