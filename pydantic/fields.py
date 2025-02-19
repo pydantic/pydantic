@@ -1424,8 +1424,7 @@ def computed_field(
     except TypeError as e:
         print(e)
         '''
-        Field "a" of class "Child" overrides symbol of same name in "Parent".
-        This override with a computed_field is incompatible.
+        Field 'a' of class 'Child' overrides symbol of same name in a parent class. This override with a computed_field is incompatible.
         '''
     ```
 
