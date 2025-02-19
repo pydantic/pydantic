@@ -3429,7 +3429,7 @@ to help you monitor and understand your
     <span class="o">**</span><span class="n">extra</span><span class="p">:</span> <span class="n"><span title="typing_extensions.Unpack">Unpack</span></span><span class="p">[</span><span class="n"><span title="pydantic.fields._EmptyKwargs">_EmptyKwargs</span></span><span class="p">]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span>
 </code></pre></div><div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">Field</span><span class="p">(</span>
-    <span class="n">default</span><span class="p">:</span> <span class="n"><span title="pydantic.fields.<autoref identifier=">_T</span>" optional hover><span title="pydantic.fields._T">_T</span></autoref></span><span class="p">,</span>
+    <span class="n">default</span><span class="p">:</span> <span class="n"><span title="pydantic.fields._T">_T</span></span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">alias</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n"><span title="pydantic.fields._Unset">_Unset</span></span><span class="p">,</span>
     <span class="n">alias_priority</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n"><span title="pydantic.fields._Unset">_Unset</span></span><span class="p">,</span>
@@ -7100,9 +7100,11 @@ See the example below:</p>
         <span class="k">def</span><span class="w"> </span><span class="nf">a</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
             <span class="k">return</span> <span class="s1">&#39;new a&#39;</span>
 
-<span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
-    <span class="c1">#&gt; ValueError(&quot;you can&#39;t override a field with a computed field&quot;)</span>
+<span class="k">except</span> <span class="ne">TypeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Field &#39;a&#39; of class &#39;Child&#39; overrides symbol of same name in a parent class. This override with a computed_field is incompatible.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
 </code></pre></div>
 <p>Private properties decorated with <code>@computed_field</code> have <code>repr=False</code> by default.</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">cached_property</span>
@@ -7545,7 +7547,9 @@ objects.</p>
 <span class="normal">1512</span>
 <span class="normal">1513</span>
 <span class="normal">1514</span>
-<span class="normal">1515</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">computed_field</span><span class="p">(</span>
+<span class="normal">1515</span>
+<span class="normal">1516</span>
+<span class="normal">1517</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">computed_field</span><span class="p">(</span>
     <span class="n">func</span><span class="p">:</span> <span class="n">PropertyT</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">/</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -7649,9 +7653,11 @@ objects.</p>
 <span class="sd">            def a(self) -&gt; str:</span>
 <span class="sd">                return &#39;new a&#39;</span>
 
-<span class="sd">    except ValueError as e:</span>
-<span class="sd">        print(repr(e))</span>
-<span class="sd">        #&gt; ValueError(&quot;you can&#39;t override a field with a computed field&quot;)</span>
+<span class="sd">    except TypeError as e:</span>
+<span class="sd">        print(e)</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+<span class="sd">        Field &#39;a&#39; of class &#39;Child&#39; overrides symbol of same name in a parent class. This override with a computed_field is incompatible.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
 <span class="sd">    ```</span>
 
 <span class="sd">    Private properties decorated with `@computed_field` have `repr=False` by default.</span>

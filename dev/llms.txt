@@ -12,7 +12,7 @@ Pydantic
 
 [![license](https://img.shields.io/github/license/pydantic/pydantic.svg)](https://github.com/pydantic/pydantic/blob/main/LICENSE)
 
-Documentation for development version: [588436e](https://github.com/pydantic/pydantic/commit/588436ec2609ce488e3810a91a55cf29b9dd81d6).
+Documentation for development version: [7ccad67](https://github.com/pydantic/pydantic/commit/7ccad67149c3b97b7aa7d7c892a3e64db0d80e10).
 
 Pydantic is the most widely used data validation library for Python.
 
@@ -12392,7 +12392,7 @@ Field(
 ```
 ```
 Field(
-    default: _T" optional hover>_T,
+    default: _T,
     *,
     alias: str | None = _Unset,
     alias_priority: int | None = _Unset,
@@ -13988,9 +13988,11 @@ try:
         def a(self) -> str:
             return 'new a'
 
-except ValueError as e:
-    print(repr(e))
-    #> ValueError("you can't override a field with a computed field")
+except TypeError as e:
+    print(e)
+    '''
+    Field 'a' of class 'Child' overrides symbol of same name in a parent class. This override with a computed_field is incompatible.
+    '''
 
 ```
 
@@ -14148,9 +14150,11 @@ def computed_field(
             def a(self) -> str:
                 return 'new a'
 
-    except ValueError as e:
-        print(repr(e))
-        #> ValueError("you can't override a field with a computed field")
+    except TypeError as e:
+        print(e)
+        '''
+        Field 'a' of class 'Child' overrides symbol of same name in a parent class. This override with a computed_field is incompatible.
+        '''
     ```
 
     Private properties decorated with `@computed_field` have `repr=False` by default.
