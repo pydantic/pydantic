@@ -265,7 +265,7 @@ def collect_model_fields(  # noqa: C901
         decorators: DecoratorInfos = cls.__dict__['__pydantic_decorators__']
         if ann_name in decorators.computed_fields:
             raise TypeError(
-                f'Field "{ann_name}" of class "{cls.__name__}" overrides symbol of same name in "{cls.__bases__[0].__name__}".\n'
+                f'Field {ann_name!r} of class {cls.__name__!r} overrides symbol of same name in {cls.__bases__[0].__name__!r}. '
                 'This override with a computed_field is incompatible.'
             )
         fields[ann_name] = field_info
