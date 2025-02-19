@@ -1320,6 +1320,30 @@ to help you monitor and understand your
 </li>
         
           <li class="md-nav__item">
+  <a href="#asynchronous-cli-commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      Asynchronous CLI Commands
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Asynchronous CLI Commands">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#asynchronous-subcommands" class="md-nav__link">
+    <span class="md-ellipsis">
+      Asynchronous Subcommands
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#mutually-exclusive-groups" class="md-nav__link">
     <span class="md-ellipsis">
       Mutually Exclusive Groups
@@ -3568,6 +3592,30 @@ to help you monitor and understand your
 </li>
         
           <li class="md-nav__item">
+  <a href="#asynchronous-cli-commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      Asynchronous CLI Commands
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Asynchronous CLI Commands">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#asynchronous-subcommands" class="md-nav__link">
+    <span class="md-ellipsis">
+      Asynchronous Subcommands
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#mutually-exclusive-groups" class="md-nav__link">
     <span class="md-ellipsis">
       Mutually Exclusive Groups
@@ -4870,6 +4918,63 @@ defined) after instantiation:</p>
 <li><code>cli_implicit_flags=True</code></li>
 <li><code>cli_kebab_case=True</code></li>
 </ul>
+<h3 id="asynchronous-cli-commands">Asynchronous CLI Commands<a class="headerlink" href="#asynchronous-cli-commands" title="Permanent link">&para;</a></h3>
+<p>Pydantic settings supports running asynchronous CLI commands via <code>CliApp.run</code> and <code>CliApp.run_subcommand</code>. With this feature, you can define async def methods within your Pydantic models (including subcommands) and have them executed just like their synchronous counterparts. Specifically:</p>
+<ol>
+<li>Asynchronous methods are supported: You can now mark your cli_cmd or similar CLI entrypoint methods as async def and have CliApp execute them.</li>
+<li>Subcommands may also be asynchronous: If you have nested CLI subcommands, the final (lowest-level) subcommand methods can likewise be asynchronous.</li>
+<li>Limit asynchronous methods to final subcommands: Defining parent commands as asynchronous is not recommended, because it can result in additional threads and event loops being created. For best performance and to avoid unnecessary resource usage, only implement your deepest (child) subcommands as async def.</li>
+</ol>
+<p>Below is a simple example demonstrating an asynchronous top-level command:</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">CliApp</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">AsyncSettings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">cli_cmd</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Hello from an async CLI method!&#39;</span><span class="p">)</span>
+        <span class="c1">#&gt; Hello from an async CLI method!</span>
+
+
+<span class="c1"># If an event loop is already running, a new thread will be used;</span>
+<span class="c1"># otherwise, asyncio.run() is used to execute this async method.</span>
+<span class="k">assert</span> <span class="n">CliApp</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">AsyncSettings</span><span class="p">,</span> <span class="n">cli_args</span><span class="o">=</span><span class="p">[])</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()</span> <span class="o">==</span> <span class="p">{}</span>
+</code></pre></div>
+<h4 id="asynchronous-subcommands">Asynchronous Subcommands<a class="headerlink" href="#asynchronous-subcommands" title="Permanent link">&para;</a></h4>
+<p>As mentioned above, you can also define subcommands as async. However, only do so for the leaf (lowest-level) subcommand to avoid spawning new threads and event loops unnecessarily in parent commands:</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_settings</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">BaseSettings</span><span class="p">,</span>
+    <span class="n">CliApp</span><span class="p">,</span>
+    <span class="n">CliPositionalArg</span><span class="p">,</span>
+    <span class="n">CliSubCommand</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Clone</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">repository</span><span class="p">:</span> <span class="n">CliPositionalArg</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="n">directory</span><span class="p">:</span> <span class="n">CliPositionalArg</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">cli_cmd</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Perform async tasks here, e.g. network or I/O operations</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Cloning async from &quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">repository</span><span class="si">}</span><span class="s1">&quot; into &quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">directory</span><span class="si">}</span><span class="s1">&quot;&#39;</span><span class="p">)</span>
+        <span class="c1">#&gt; Cloning async from &quot;repo&quot; into &quot;dir&quot;</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Git</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+    <span class="n">clone</span><span class="p">:</span> <span class="n">CliSubCommand</span><span class="p">[</span><span class="n">Clone</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">cli_cmd</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Run the final subcommand (clone/init). It is recommended to define async methods only at the deepest level.</span>
+        <span class="n">CliApp</span><span class="o">.</span><span class="n">run_subcommand</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+
+<span class="n">CliApp</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">Git</span><span class="p">,</span> <span class="n">cli_args</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;clone&#39;</span><span class="p">,</span> <span class="s1">&#39;repo&#39;</span><span class="p">,</span> <span class="s1">&#39;dir&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()</span> <span class="o">==</span> <span class="p">{</span>
+    <span class="s1">&#39;repository&#39;</span><span class="p">:</span> <span class="s1">&#39;repo&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;directory&#39;</span><span class="p">:</span> <span class="s1">&#39;dir&#39;</span><span class="p">,</span>
+<span class="p">}</span>
+</code></pre></div>
+<p>When executing a subcommand with an asynchronous cli_cmd, Pydantic settings automatically detects whether the current thread already has an active event loop. If so, the async command is run in a fresh thread to avoid conflicts. Otherwise, it uses asyncio.run() in the current thread. This handling ensures your asynchronous subcommands “just work” without additional manual setup.</p>
 <h3 id="mutually-exclusive-groups">Mutually Exclusive Groups<a class="headerlink" href="#mutually-exclusive-groups" title="Permanent link">&para;</a></h3>
 <p>CLI mutually exclusive groups can be created by inheriting from the <code>CliMutuallyExclusiveGroup</code> class.</p>
 <div class="admonition note">
