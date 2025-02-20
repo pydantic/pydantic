@@ -502,6 +502,48 @@ jobs:
         working-directory: ./python
         run: uv run --frozen pytest ./tests/unit
 
+  test-langchain:
+    name: Test LangChain (main branch) on Python ${{ matrix.python-version }}
+    # If 'schedule' was the trigger, don't run it on contributors' forks
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.9', '3.10', '3.11', '3.12']
+
+    steps:
+      - name: Checkout Langchain
+        uses: actions/checkout@v4
+        with:
+          repository: langchain-ai/langchain
+
+      - name: Checkout Pydantic
+        uses: actions/checkout@v4
+        with:
+          path: pydantic-latest
+
+      - name: Install UV
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install LangChain dependencies
+        run: |
+          uv sync --group test
+          uv pip uninstall pydantic
+          uv pip install -e ./pydantic-latest
+
+      - name: Run LangChain tests
+        working-directory: ./libs/core
+        run: make test
+
   create-issue-on-failure:
     name: Create an issue if tests failed
     runs-on: ubuntu-latest
@@ -515,6 +557,7 @@ jobs:
       - test-polar
       - test-bentoml
       - test-semantic-kernel
+      - test-langchain
     if: |
       github.repository == 'pydantic/pydantic' &&
       github.event_name == 'schedule' &&
@@ -527,7 +570,8 @@ jobs:
         needs.test-odmantic.result == 'failure' ||
         needs.test-polar.result == 'failure' ||
         needs.test-semantic-kernel.result == 'failure' ||
-        needs.test-bentoml.result == 'failure'
+        needs.test-bentoml.result == 'failure' ||
+        needs.test-langchain.result == 'failure'
       )
     permissions:
       issues: write
