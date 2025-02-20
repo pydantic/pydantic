@@ -662,6 +662,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         strict: bool | None = None,
         from_attributes: bool | None = None,
         context: Any | None = None,
+        by_alias: bool | None = None,
+        by_name: bool | None = None,
     ) -> Self:
         """Validate a pydantic model instance.
 
@@ -670,6 +672,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             strict: Whether to enforce types strictly.
             from_attributes: Whether to extract data from object attributes.
             context: Additional context to pass to the validator.
+            by_alias: Whether to use the field's alias to match the input data to an attribute.
+            by_name: Whether to use the field's name to match the input data to an attribute.
 
         Raises:
             ValidationError: If the object could not be validated.
@@ -680,7 +684,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         # `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks
         __tracebackhide__ = True
         return cls.__pydantic_validator__.validate_python(
-            obj, strict=strict, from_attributes=from_attributes, context=context
+            obj, strict=strict, from_attributes=from_attributes, context=context, by_alias=by_alias, by_name=by_name
         )
 
     @classmethod
@@ -690,6 +694,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         *,
         strict: bool | None = None,
         context: Any | None = None,
+        by_alias: bool | None = None,
+        by_name: bool | None = None,
     ) -> Self:
         """!!! abstract "Usage Documentation"
             [JSON Parsing](../concepts/json.md#json-parsing)
@@ -700,6 +706,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             json_data: The JSON data to validate.
             strict: Whether to enforce types strictly.
             context: Extra variables to pass to the validator.
+            by_alias: Whether to use the field's alias to match the input data to an attribute.
+            by_name: Whether to use the field's name to match the input data to an attribute.
 
         Returns:
             The validated Pydantic model.
@@ -709,7 +717,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         """
         # `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks
         __tracebackhide__ = True
-        return cls.__pydantic_validator__.validate_json(json_data, strict=strict, context=context)
+        return cls.__pydantic_validator__.validate_json(
+            json_data, strict=strict, context=context, by_alias=by_alias, by_name=by_name
+        )
 
     @classmethod
     def model_validate_strings(
@@ -718,6 +728,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         *,
         strict: bool | None = None,
         context: Any | None = None,
+        by_alias: bool | None = None,
+        by_name: bool | None = None,
     ) -> Self:
         """Validate the given object with string data against the Pydantic model.
 
@@ -725,13 +737,17 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             obj: The object containing string data to validate.
             strict: Whether to enforce types strictly.
             context: Extra variables to pass to the validator.
+            by_alias: Whether to use the field's alias to match the input data to an attribute.
+            by_name: Whether to use the field's name to match the input data to an attribute.
 
         Returns:
             The validated Pydantic model.
         """
         # `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks
         __tracebackhide__ = True
-        return cls.__pydantic_validator__.validate_strings(obj, strict=strict, context=context)
+        return cls.__pydantic_validator__.validate_strings(
+            obj, strict=strict, context=context, by_alias=by_alias, by_name=by_name
+        )
 
     @classmethod
     def __get_pydantic_core_schema__(cls, source: type[BaseModel], handler: GetCoreSchemaHandler, /) -> CoreSchema:
