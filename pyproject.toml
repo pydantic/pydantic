@@ -27,7 +27,6 @@ classifiers = [
     'Programming Language :: Python :: Implementation :: PyPy',
     'Programming Language :: Python :: 3',
     'Programming Language :: Python :: 3 :: Only',
-    'Programming Language :: Python :: 3.8',
     'Programming Language :: Python :: 3.9',
     'Programming Language :: Python :: 3.10',
     'Programming Language :: Python :: 3.11',
@@ -42,11 +41,12 @@ classifiers = [
     'Topic :: Software Development :: Libraries :: Python Modules',
     'Topic :: Internet',
 ]
-requires-python = '>=3.8'
+requires-python = '>=3.9'
 dependencies = [
     'typing-extensions>=4.12.2',
     'annotated-types>=0.6.0',
-    'pydantic-core==2.27.0',
+    # Keep this in sync with the version in the `check_pydantic_core_version()` function:
+    'pydantic-core==2.29.0',
 ]
 dynamic = ['version', 'readme']
 
@@ -83,6 +83,8 @@ dev = [
 ]
 docs = [
     'autoflake',
+    "bs4>=0.0.2",
+    "markdownify>=0.14.1",
     'mkdocs',
     'mkdocs-exclude',
     'mkdocs-material[imaging]',
@@ -92,8 +94,12 @@ docs = [
     'pyupgrade',
     'mike',
     'pydantic-settings',
-    'pydantic-extra-types @ git+https://github.com/pydantic/pydantic-extra-types.git@main',
+    # remove once docs issue is fixed in pydantic-extra-types
+    'pydantic-extra-types==2.10',
     'requests',
+]
+docs-upload = [
+    "algoliasearch>=4.12.0",
 ]
 linting = [
     'eval-type-backport',
@@ -107,7 +113,6 @@ testing-extra = [
     'devtools',
     # used in docs tests
     'sqlalchemy',
-    'greenlet; python_version < "3.13"',
 ]
 typechecking = [
     'mypy',
@@ -184,7 +189,7 @@ unconfirmed_label = 'pending'
 
 [tool.ruff]
 line-length = 120
-target-version = 'py38'
+target-version = 'py39'
 extend-exclude = ['pydantic/v1', 'tests/mypy/']
 
 [tool.ruff.lint]
@@ -200,6 +205,9 @@ select = [
     'T20',    # flake8-print
     'C4',     # flake8-comprehensions
     'PYI006', # flake8-pyi
+    'PYI062', # flake8-pyi
+    'PYI063', # flake8-pyi
+    'PYI066', # flake8-pyi
 ]
 ignore = ['D105', 'D107', 'D205', 'D415', 'E501', 'B011', 'B028', 'B904']
 flake8-quotes = {inline-quotes = 'single', multiline-quotes = 'double'}
@@ -212,8 +220,11 @@ pydocstyle = { convention = 'google' }
 'pydantic/__init__.py' = ['F405', 'F403', 'D']
 'tests/test_forward_ref.py' = ['F821']
 'tests/*' = ['D', 'B', 'C4']
-'pydantic/deprecated/*' = ['D']
+'pydantic/deprecated/*' = ['D', 'PYI']
+'pydantic/color.py' = ['PYI']
+'pydantic/_internal/_decorators_v1.py' = ['PYI']
 'pydantic/json_schema.py' = ['D']
+"release/*.py" = ["T201"]  # print statements in release scripts
 
 [tool.ruff.lint.extend-per-file-ignores]
 "docs/**/*.py" = ['T']

@@ -73,11 +73,15 @@ validation:
   omitted_files: warn
   absolute_links: warn
   unrecognized_links: warn
+  anchors: warn
 
 extra_css:
   - 'extra/terminal.css'
   - 'extra/tweaks.css'
 extra_javascript:
+  - "https://cdn.jsdelivr.net/npm/algoliasearch@5.20.0/dist/lite/builds/browser.umd.js"
+  - "https://cdn.jsdelivr.net/npm/instantsearch.js@4.77.3/dist/instantsearch.production.min.js"
+  - 'extra/algolia.js'
   - 'extra/feedback.js'
   - 'extra/fluff.js'
   - 'https://samuelcolvin.github.io/mkdocs-run-code/run_code_main.js'
@@ -176,6 +180,7 @@ nav:
     - devtools: integrations/devtools.md
     - Rich: integrations/rich.md
     - Linting: integrations/linting.md
+    - Documentation: integrations/documentation.md
   - Production Tools:
     - AWS Lambda: integrations/aws_lambda.md
 - Blog: https://blog.pydantic.dev/
@@ -203,6 +208,8 @@ watch:
 
 hooks:
 - 'docs/plugins/main.py'
+- 'docs/plugins/build_llms_txt.py'
+- 'docs/plugins/algolia.py'
 
 plugins:
 - social
@@ -228,8 +235,6 @@ plugins:
           merge_init_into_class: true
           show_signature_annotations: true
           signature_crossrefs: true
-          extensions:
-            - docs/plugins/griffe_doclinks.py
         import:
           - url: https://docs.python.org/3/objects.inv
             domains: [py, std]

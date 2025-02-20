@@ -21,11 +21,10 @@ from ..plugin._schema_validator import PluggableSchemaValidator, create_schema_v
 from ..warnings import PydanticDeprecatedSince20
 from . import _config, _decorators
 from ._fields import collect_dataclass_fields
-from ._generate_schema import GenerateSchema
+from ._generate_schema import GenerateSchema, InvalidSchemaError
 from ._generics import get_standard_typevars_map
 from ._mock_val_ser import set_dataclass_mocks
 from ._namespace_utils import NsResolver
-from ._schema_generation_shared import CallbackGetCoreSchemaHandler
 from ._signature import generate_pydantic_signature
 from ._utils import LazyClassAttribute
 
@@ -125,6 +124,8 @@ def complete_dataclass(
     cls.__init__ = __init__  # type: ignore
     cls.__pydantic_config__ = config_wrapper.config_dict  # type: ignore
 
+    set_dataclass_fields(cls, ns_resolver, config_wrapper=config_wrapper)
+
     if not _force_build and config_wrapper.defer_build:
         set_dataclass_mocks(cls)
         return False
@@ -134,8 +135,6 @@ def complete_dataclass(
             'Support for `__post_init_post_parse__` has been dropped, the method will not be called', DeprecationWarning
         )
 
-    set_dataclass_fields(cls, ns_resolver, config_wrapper=config_wrapper)
-
     typevars_map = get_standard_typevars_map(cls)
     gen_schema = GenerateSchema(
         config_wrapper,
@@ -143,14 +142,15 @@ def complete_dataclass(
         typevars_map=typevars_map,
     )
 
-    # set __signature__ attr only for model class, but not for its instances
+    # set __signature__ attr only for the class, but not for its instances
     # (because instances can define `__call__`, and `inspect.signature` shouldn't
     # use the `__signature__` attribute and instead generate from `__call__`).
     cls.__signature__ = LazyClassAttribute(
         '__signature__',
         partial(
             generate_pydantic_signature,
-            # It's' important that we reference the original_init here
+            # It's important that we reference the `original_init` here,
+            # as it is the one synthesized by the stdlib `dataclass` module:
             init=original_init,
             fields=cls.__pydantic_fields__,  # type: ignore
             populate_by_name=config_wrapper.populate_by_name,
@@ -158,19 +158,9 @@ def complete_dataclass(
             is_dataclass=True,
         ),
     )
-    get_core_schema = getattr(cls, '__get_pydantic_core_schema__', None)
+
     try:
-        if get_core_schema:
-            schema = get_core_schema(
-                cls,
-                CallbackGetCoreSchemaHandler(
-                    partial(gen_schema.generate_schema, from_dunder_get_core_schema=False),
-                    gen_schema,
-                    ref_mode='unpack',
-                ),
-            )
-        else:
-            schema = gen_schema.generate_schema(cls, from_dunder_get_core_schema=False)
+        schema = gen_schema.generate_schema(cls)
     except PydanticUndefinedAnnotation as e:
         if raise_errors:
             raise
@@ -181,7 +171,7 @@ def complete_dataclass(
 
     try:
         schema = gen_schema.clean_schema(schema)
-    except gen_schema.CollectedInvalid:
+    except InvalidSchemaError:
         set_dataclass_mocks(cls)
         return False
 
@@ -216,7 +206,7 @@ def is_builtin_dataclass(_cls: type[Any]) -> TypeGuard[type[StandardDataclass]]:
     - `_cls` does not inherit from a processed pydantic dataclass (and thus have a `__pydantic_validator__`)
     - `_cls` does not have any annotations that are not dataclass fields
     e.g.
-    ```py
+    ```python
     import dataclasses
 
     import pydantic.dataclasses

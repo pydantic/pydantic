@@ -5,6 +5,10 @@ description: Support for common types from the Python standard library.
 Pydantic supports many common types from the Python standard library. If you need stricter processing see
 [Strict Types](../concepts/types.md#strict-types), including if you need to constrain the values allowed (e.g. to require a positive `int`).
 
+!!! note
+    Pydantic still supports older (3.8-) typing constructs like `typing.List` and `typing.Dict`, but
+    it's best practice to use the newer types like `list` and `dict`.
+
 ## Booleans
 
 A standard `bool` field will raise a `ValidationError` if the value is not one of the following:
@@ -21,7 +25,7 @@ A standard `bool` field will raise a `ValidationError` if the value is not one o
 
 Here is a script demonstrating some of these behaviors:
 
-```py
+```python
 from pydantic import BaseModel, ValidationError
 
 
@@ -63,7 +67,7 @@ types:
         * `int` or `float` as a string (assumed as Unix time)
     * [`datetime.date`][] instances are accepted in lax mode, but not in strict mode
 
-```py
+```python
 from datetime import datetime
 
 from pydantic import BaseModel
@@ -90,7 +94,7 @@ print(event.model_dump())
         * `YYYY-MM-DD`
         * `int` or `float` as a string (assumed as Unix time)
 
-```py
+```python
 from datetime import date
 
 from pydantic import BaseModel
@@ -113,7 +117,7 @@ print(my_birthday.model_dump())
     * `str`; the following formats are accepted:
         * `HH:MM[:SS[.ffffff]][Z or [±]HH[:]MM]`
 
-```py
+```python
 from datetime import time
 
 from pydantic import BaseModel
@@ -139,7 +143,7 @@ print(m.model_dump())
             * Ex: `'1d,01:02:03.000004'` or `'1D01:02:03.000004'` or `'01:02:03'`
         * `[±]P[DD]DT[HH]H[MM]M[SS]S` ([ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) format for timedelta)
 
-```py
+```python
 from datetime import timedelta
 
 from pydantic import BaseModel
@@ -180,10 +184,9 @@ Pydantic supports the following numeric types from the Python standard library:
 * Serialization: Pydantic serializes [`Decimal`][decimal.Decimal] types as strings.
 You can use a custom serializer to override this behavior if desired. For example:
 
-```py
+```python
 from decimal import Decimal
-
-from typing_extensions import Annotated
+from typing import Annotated
 
 from pydantic import BaseModel, PlainSerializer
 
@@ -229,7 +232,7 @@ Pydantic uses Python's standard [`enum`][] classes to define choices.
 `enum.Enum` checks that the value is a valid `Enum` instance.
 Subclass of `enum.Enum` checks that the value is a valid member of the enum.
 
-```py
+```python
 from enum import Enum, IntEnum
 
 from pydantic import BaseModel, ValidationError
@@ -272,19 +275,15 @@ except ValidationError as e:
 Allows [`list`][], [`tuple`][], [`set`][], [`frozenset`][], [`deque`][collections.deque], or generators and casts to a [`list`][].
 When a generic parameter is provided, the appropriate validation is applied to all items of the list.
 
-### [`typing.List`][]
-
-Handled the same as `list` above.
-
-```py
-from typing import List, Optional
+```python
+from typing import Optional
 
 from pydantic import BaseModel
 
 
 class Model(BaseModel):
     simple_list: Optional[list] = None
-    list_of_ints: Optional[List[int]] = None
+    list_of_ints: Optional[list[int]] = None
 
 
 print(Model(simple_list=['1', '2', '3']).simple_list)
@@ -302,15 +301,15 @@ When generic parameters are provided, the appropriate validation is applied to t
 
 Handled the same as `tuple` above.
 
-```py
-from typing import Optional, Tuple
+```python
+from typing import Optional
 
 from pydantic import BaseModel
 
 
 class Model(BaseModel):
     simple_tuple: Optional[tuple] = None
-    tuple_of_different_types: Optional[Tuple[int, float, bool]] = None
+    tuple_of_different_types: Optional[tuple[int, float, bool]] = None
 
 
 print(Model(simple_tuple=[1, 2, 3, 4]).simple_tuple)
@@ -326,7 +325,7 @@ Subclasses of [`typing.NamedTuple`][] are similar to `tuple`, but create instanc
 Subclasses of [`collections.namedtuple`][] are similar to subclass of [`typing.NamedTuple`][], but since field types are not specified,
 all fields are treated as having type [`Any`][typing.Any].
 
-```py
+```python
 from typing import NamedTuple
 
 from pydantic import BaseModel, ValidationError
@@ -363,7 +362,7 @@ When generic parameters are provided, the appropriate validation is applied to t
 
 Handled the same as `deque` above.
 
-```py
+```python
 from typing import Deque, Optional
 
 from pydantic import BaseModel
@@ -388,7 +387,7 @@ When a generic parameter is provided, the appropriate validation is applied to a
 
 Handled the same as `set` above.
 
-```py
+```python
 from typing import Optional, Set
 
 from pydantic import BaseModel
@@ -416,7 +415,7 @@ When a generic parameter is provided, the appropriate validation is applied to a
 
 Handled the same as `frozenset` above.
 
-```py
+```python
 from typing import FrozenSet, Optional
 
 from pydantic import BaseModel
@@ -461,7 +460,7 @@ is provided, the post-validation value of a field of type [`typing.Iterable`][] 
 
 Here is a simple example using [`typing.Sequence`][]:
 
-```py
+```python
 from typing import Sequence
 
 from pydantic import BaseModel
@@ -486,7 +485,7 @@ validated against the type parameter of the `Sequence` (e.g. `int` in `Sequence[
 However, if you have a generator that you _don't_ want to be eagerly consumed (e.g. an infinite
 generator or a remote data loader), you can use a field of type [`Iterable`][typing.Iterable]:
 
-```py
+```python
 from typing import Iterable
 
 from pydantic import BaseModel
@@ -570,41 +569,14 @@ except ValidationError as e:
 
 ### [`dict`][]
 
-`dict(v)` is used to attempt to convert a dictionary. see [`typing.Dict`][] below for sub-type constraints.
+`dict(v)` is used to attempt to convert a dictionary.
 
-```py
+```python
 from pydantic import BaseModel, ValidationError
 
 
 class Model(BaseModel):
-    x: dict
-
-
-m = Model(x={'foo': 1})
-print(m.model_dump())
-#> {'x': {'foo': 1}}
-
-try:
-    Model(x='test')
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for Model
-    x
-      Input should be a valid dictionary [type=dict_type, input_value='test', input_type=str]
-    """
-```
-
-### [`typing.Dict`][]
-
-```py
-from typing import Dict
-
-from pydantic import BaseModel, ValidationError
-
-
-class Model(BaseModel):
-    x: Dict[str, int]
+    x: dict[str, int]
 
 
 m = Model(x={'foo': 1})
@@ -635,7 +607,7 @@ its instances to have a certain set of keys, where each key is associated with a
 
 It is same as [`dict`][] but Pydantic will validate the dictionary since keys are annotated.
 
-```py
+```python
 from typing_extensions import TypedDict
 
 from pydantic import TypeAdapter, ValidationError
@@ -665,7 +637,7 @@ except ValidationError as e:
 You can define `__pydantic_config__` to change the model inherited from [`TypedDict`][typing.TypedDict].
 See the [`ConfigDict` API reference][pydantic.config.ConfigDict] for more details.
 
-```py
+```python
 from typing import Optional
 
 from typing_extensions import TypedDict
@@ -741,7 +713,7 @@ See below for more detail on parsing and validation
 
 Fields can also be of type [`Callable`][typing.Callable]:
 
-```py
+```python
 from typing import Callable
 
 from pydantic import BaseModel
@@ -789,20 +761,12 @@ In case you want to constrain the UUID version, you can check the following type
 Pydantic has extensive support for union validation, both [`typing.Union`][] and Python 3.10's pipe syntax (`A | B`) are supported.
 Read more in the [`Unions`](../concepts/unions.md) section of the concepts docs.
 
-## [`Type`][typing.Type] and [`TypeVar`][typing.TypeVar]
-
-### [`type`][]
+## [`type`][]
 
 Pydantic supports the use of `type[T]` to specify that a field may only accept classes (not instances)
 that are subclasses of `T`.
 
-### [`typing.Type`][]
-
-Handled the same as `type` above.
-
-```py
-from typing import Type
-
+```python
 from pydantic import BaseModel, ValidationError
 
 
@@ -819,7 +783,7 @@ class Other:
 
 
 class SimpleModel(BaseModel):
-    just_subclasses: Type[Foo]
+    just_subclasses: type[Foo]
 
 
 SimpleModel(just_subclasses=Foo)
@@ -835,11 +799,9 @@ except ValidationError as e:
     """
 ```
 
-You may also use `Type` to specify that any class is allowed.
+You may also use `type` to specify that any class is allowed.
 
-```py upgrade="skip"
-from typing import Type
-
+```python {upgrade="skip"}
 from pydantic import BaseModel, ValidationError
 
 
@@ -848,7 +810,7 @@ class Foo:
 
 
 class LenientSimpleModel(BaseModel):
-    any_class_goes: Type
+    any_class_goes: type
 
 
 LenientSimpleModel(any_class_goes=int)
@@ -864,11 +826,11 @@ except ValidationError as e:
     """
 ```
 
-### [`typing.TypeVar`][]
+## [`typing.TypeVar`][]
 
 [`TypeVar`][typing.TypeVar] is supported either unconstrained, constrained or with a bound.
 
-```py
+```python
 from typing import TypeVar
 
 from pydantic import BaseModel
@@ -914,7 +876,7 @@ All other types cause an error.
     As a result, Pydantic raises a `ValidationError` if you attempt to pass a `str` or `bytes` instance into a field of type
     `Sequence[str]` or `Sequence[bytes]`:
 
-```py
+```python
 from typing import Optional, Sequence
 
 from pydantic import BaseModel, ValidationError
@@ -964,7 +926,7 @@ except ValidationError as e:
 
 Pydantic supports the use of [`typing.Literal`][] as a lightweight way to specify that a field may accept only specific literal values:
 
-```py
+```python
 from typing import Literal
 
 from pydantic import BaseModel, ValidationError
@@ -990,20 +952,20 @@ except ValidationError as e:
 One benefit of this field type is that it can be used to check for equality with one or more specific values
 without needing to declare custom validators:
 
-```py
-from typing import ClassVar, List, Literal, Union
+```python
+from typing import ClassVar, Literal, Union
 
 from pydantic import BaseModel, ValidationError
 
 
 class Cake(BaseModel):
     kind: Literal['cake']
-    required_utensils: ClassVar[List[str]] = ['fork', 'knife']
+    required_utensils: ClassVar[list[str]] = ['fork', 'knife']
 
 
 class IceCream(BaseModel):
     kind: Literal['icecream']
-    required_utensils: ClassVar[List[str]] = ['spoon']
+    required_utensils: ClassVar[list[str]] = ['spoon']
 
 
 class Meal(BaseModel):
@@ -1029,7 +991,7 @@ except ValidationError as e:
 
 With proper ordering in an annotated `Union`, you can use this to parse types of decreasing specificity:
 
-```py
+```python
 from typing import Literal, Optional, Union
 
 from pydantic import BaseModel
@@ -1077,7 +1039,7 @@ Allows any value, including `None`.
 
 ## [`typing.Annotated`][]
 
-Allows wrapping another type with arbitrary metadata, as per [PEP-593](https://www.python.org/dev/peps/pep-0593/). The `Annotated` hint may contain a single call to the [`Field` function](../concepts/types.md#composing-types-via-annotated), but otherwise the additional metadata is ignored and the root type is used.
+Allows wrapping another type with arbitrary metadata, as per [PEP-593](https://www.python.org/dev/peps/pep-0593/). The `Annotated` hint may contain a single call to the [`Field` function](../concepts/types.md#using-the-annotated-pattern), but otherwise the additional metadata is ignored and the root type is used.
 
 
 ## [`typing.Pattern`][]

@@ -1,4 +1,4 @@
-from typing import Any, Dict, Generic, Optional, TypeVar
+from typing import Any, Generic, Optional, TypeVar
 
 from typing_extensions import assert_type
 
@@ -14,7 +14,7 @@ class Response(BaseModel, Generic[Tbody]):
 
 class JsonBody(BaseModel):
     raw: str
-    data: Dict[str, Any]
+    data: dict[str, Any]
 
 
 class HtmlBody(BaseModel):

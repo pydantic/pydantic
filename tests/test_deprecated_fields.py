@@ -1,8 +1,9 @@
 import importlib.metadata
+from typing import Annotated
 
 import pytest
 from packaging.version import Version
-from typing_extensions import Annotated, Self, deprecated
+from typing_extensions import Self, deprecated
 
 from pydantic import BaseModel, Field, computed_field, field_validator, model_validator
 
@@ -250,3 +251,19 @@ def test_computed_field_deprecated_subclass() -> None:
 
     class Sub(Base):
         pass
+
+
+def test_deprecated_field_forward_annotation() -> None:
+    """https://github.com/pydantic/pydantic/issues/11390"""
+
+    class Model(BaseModel):
+        a: "Annotated[Test, deprecated('test')]" = 2
+
+    Test = int
+
+    Model.model_rebuild()
+    assert Model.model_fields['a'].deprecated == 'test'
+
+    m = Model()
+
+    pytest.warns(DeprecationWarning, lambda: m.a, match='test')

@@ -8,11 +8,14 @@ import sys
 import types
 import typing
 import warnings
-from functools import lru_cache, partial
-from typing import Any, Callable, Literal, overload
+from functools import partial
+from typing import TYPE_CHECKING, Any, Callable, cast
+from zoneinfo import ZoneInfo
 
 import typing_extensions
-from typing_extensions import TypeIs, deprecated, get_args, get_origin
+from typing_extensions import ParamSpec, TypeAliasType, TypeIs, deprecated, get_args, get_origin
+
+from pydantic.version import version_short
 
 from ._namespace_utils import GlobalsNamespace, MappingNamespace, NsResolver, get_module_ns_of
 
@@ -23,86 +26,101 @@ else:
     from types import EllipsisType as EllipsisType
     from types import NoneType as NoneType
 
+if TYPE_CHECKING:
+    from pydantic import BaseModel
 
-# See https://typing-extensions.readthedocs.io/en/latest/#runtime-use-of-types:
+# As per https://typing-extensions.readthedocs.io/en/latest/#runtime-use-of-types,
+# always check for both `typing` and `typing_extensions` variants of a typing construct.
+# (this is implemented differently than the suggested approach in the `typing_extensions`
+# docs for performance).
 
-
-@lru_cache(maxsize=None)
-def _get_typing_objects_by_name_of(name: str) -> tuple[Any, ...]:
-    """Get the member named `name` from both `typing` and `typing-extensions` (if it exists)."""
-    result = tuple(getattr(module, name) for module in (typing, typing_extensions) if hasattr(module, name))
-    if not result:
-        raise ValueError(f'Neither `typing` nor `typing_extensions` has an object called {name!r}')
-    return result
-
-
-# As suggested by the `typing-extensions` documentation, we could apply caching to this method,
-# but it doesn't seem to improve performance. This also requires `obj` to be hashable, which
-# might not be always the case:
-def _is_typing_name(obj: object, name: str) -> bool:
-    """Return whether `obj` is the member of the typing modules (includes the `typing-extensions` one) named `name`."""
-    # Using `any()` is slower:
-    for thing in _get_typing_objects_by_name_of(name):
-        if obj is thing:
-            return True
-    return False
+_t_any = typing.Any
+_te_any = typing_extensions.Any
 
 
 def is_any(tp: Any, /) -> bool:
     """Return whether the provided argument is the `Any` special form.
 
-    ```python test="skip" lint="skip"
+    ```python {test="skip" lint="skip"}
     is_any(Any)
     #> True
     ```
     """
-    return _is_typing_name(tp, name='Any')
+    return tp is _t_any or tp is _te_any
+
+
+_t_union = typing.Union
+_te_union = typing_extensions.Union
 
 
 def is_union(tp: Any, /) -> bool:
     """Return whether the provided argument is a `Union` special form.
 
-    ```python test="skip" lint="skip"
+    ```python {test="skip" lint="skip"}
     is_union(Union[int, str])
     #> True
     is_union(int | str)
     #> False
     ```
     """
-    return _is_typing_name(get_origin(tp), name='Union')
+    origin = get_origin(tp)
+    return origin is _t_union or origin is _te_union
+
+
+_t_literal = typing.Literal
+_te_literal = typing_extensions.Literal
 
 
 def is_literal(tp: Any, /) -> bool:
     """Return whether the provided argument is a `Literal` special form.
 
-    ```python test="skip" lint="skip"
+    ```python {test="skip" lint="skip"}
     is_literal(Literal[42])
     #> True
     ```
     """
-    return _is_typing_name(get_origin(tp), name='Literal')
+    origin = get_origin(tp)
+    return origin is _t_literal or origin is _te_literal
 
 
-# TODO remove and replace with `get_args` when we drop support for Python 3.8
-# (see https://docs.python.org/3/whatsnew/3.9.html#id4).
 def literal_values(tp: Any, /) -> list[Any]:
-    """Return the values contained in the provided `Literal` special form."""
+    """Return the values contained in the provided `Literal` special form.
+
+    If one of the literal values is a PEP 695 type alias, recursively parse
+    the type alias' `__value__` to unpack literal values as well. This function
+    *doesn't* check that the type alias is referencing a `Literal` special form,
+    so unexpected values could be unpacked.
+    """
     if not is_literal(tp):
+        # Note: we could also check for generic aliases with a type alias as an origin.
+        # However, it is very unlikely that this happens as type variables can't appear in
+        # `Literal` forms, so the only valid (but unnecessary) use case would be something like:
+        # `type Test[T] = Literal['whatever']` (and then use `Test[SomeType]`).
+        if is_type_alias_type(tp):
+            # Note: accessing `__value__` could raise a `NameError`, but we just let
+            # the exception be raised as there's not much we can do if this happens.
+            return literal_values(tp.__value__)
+
         return [tp]
 
     values = get_args(tp)
     return [x for value in values for x in literal_values(value)]
 
 
+_t_annotated = typing.Annotated
+_te_annotated = typing_extensions.Annotated
+
+
 def is_annotated(tp: Any, /) -> bool:
     """Return whether the provided argument is a `Annotated` special form.
 
-    ```python test="skip" lint="skip"
+    ```python {test="skip" lint="skip"}
     is_annotated(Annotated[int, ...])
     #> True
     ```
     """
-    return _is_typing_name(get_origin(tp), name='Annotated')
+    origin = get_origin(tp)
+    return origin is _t_annotated or origin is _te_annotated
 
 
 def annotated_type(tp: Any, /) -> Any | None:
@@ -110,15 +128,205 @@ def annotated_type(tp: Any, /) -> Any | None:
     return get_args(tp)[0] if is_annotated(tp) else None
 
 
-def is_unpack(tp: Any, /) -> bool:
-    """Return whether the provided argument is a `Unpack` special form.
+def unpack_annotated(annotation: Any, /) -> tuple[Any, list[Any]]:
+    """Unpack the annotation if it is wrapped with the `Annotated` type qualifier.
 
-    ```python test="skip" lint="skip"
-    is_unpack(Unpack[Ts])
-    #> True
-    ```
+    This function also unpacks PEP 695 type aliases if necessary (and also generic
+    aliases with a PEP 695 type alias origin). However, it does *not* try to evaluate
+    forward references, so users should make sure the type alias' `__value__` does not
+    contain unresolvable forward references.
+
+    Example:
+        ```python {test="skip" lint="skip"}
+        from typing import Annotated
+
+        type InnerList[T] = Annotated[list[T], 'meta_1']
+        type MyList[T] = Annotated[InnerList[T], 'meta_2']
+        type MyIntList = MyList[int]
+
+        _unpack_annotated(MyList)
+        #> (list[T], ['meta_1', 'meta_2'])
+        _unpack_annotated(MyList[int])
+        #> (list[int], ['meta_1', 'meta_2'])
+        _unpack_annotated(MyIntList)
+        #> (list[int], ['meta_1', 'meta_2'])
+        ```
+
+    Returns:
+        A two-tuple, the first element is the annotated type and the second element
+            is a list containing the annotated metadata. If the annotation wasn't
+            wrapped with `Annotated` in the first place, it is returned as is and the
+            metadata list is empty.
     """
-    return _is_typing_name(get_origin(tp), name='Unpack')
+    if is_annotated(annotation):
+        typ, *metadata = get_args(annotation)
+        # The annotated type might be a PEP 695 type alias, so we need to recursively
+        # unpack it. Note that we could make an optimization here: the following next
+        # call to `_unpack_annotated` could omit the `is_annotated` check, because Python
+        # already flattens `Annotated[Annotated[<type>, ...], ...]` forms. However, we would
+        # need to "re-enable" the check for further recursive calls.
+        typ, sub_meta = unpack_annotated(typ)
+        metadata = sub_meta + metadata
+        return typ, metadata
+    elif is_type_alias_type(annotation):
+        try:
+            value = annotation.__value__
+        except NameError:
+            # The type alias value contains an unresolvable reference. Note that even if it
+            # resolves successfully, it might contain string annotations, and because of design
+            # limitations we don't evaluate the type (we don't have access to a `NsResolver` instance).
+            pass
+        else:
+            typ, metadata = unpack_annotated(value)
+            if metadata:
+                # Having metadata means the type alias' `__value__` was an `Annotated` form
+                # (or, recursively, a type alias to an `Annotated` form). It is important to
+                # check for this as we don't want to unpack "normal" type aliases (e.g. `type MyInt = int`).
+                return typ, metadata
+            return annotation, []
+    elif is_generic_alias(annotation):
+        # When parametrized, a PEP 695 type alias becomes a generic alias
+        # (e.g. with `type MyList[T] = Annotated[list[T], ...]`, `MyList[int]`
+        # is a generic alias).
+        origin = get_origin(annotation)
+        if is_type_alias_type(origin):
+            try:
+                value = origin.__value__
+            except NameError:
+                pass
+            else:
+                # Circular import (note that these two functions should probably be defined in `_typing_extra`):
+                from ._generics import get_standard_typevars_map, replace_types
+
+                # While Python already handles type variable replacement for simple `Annotated` forms,
+                # we need to manually apply the same logic for PEP 695 type aliases:
+                # - With `MyList = Annotated[list[T], ...]`, `MyList[int] == Annotated[list[int], ...]`
+                # - With `type MyList = Annotated[list[T], ...]`, `MyList[int].__value__ == Annotated[list[T], ...]`.
+                value = replace_types(value, get_standard_typevars_map(annotation))
+                typ, metadata = unpack_annotated(value)
+                if metadata:
+                    return typ, metadata
+                return annotation, []
+
+    return annotation, []
+
+
+_te_unpack = typing_extensions.Unpack
+_te_self = typing_extensions.Self
+_te_required = typing_extensions.Required
+_te_notrequired = typing_extensions.NotRequired
+_te_never = typing_extensions.Never
+
+if sys.version_info >= (3, 11):
+    _t_unpack = typing.Unpack
+    _t_self = typing.Self
+    _t_required = typing.Required
+    _t_notrequired = typing.NotRequired
+    _t_never = typing.Never
+
+    def is_unpack(tp: Any, /) -> bool:
+        """Return whether the provided argument is a `Unpack` special form.
+
+        ```python {test="skip" lint="skip"}
+        is_unpack(Unpack[Ts])
+        #> True
+        ```
+        """
+        origin = get_origin(tp)
+        return origin is _t_unpack or origin is _te_unpack
+
+    def is_self(tp: Any, /) -> bool:
+        """Return whether the provided argument is the `Self` special form.
+
+        ```python {test="skip" lint="skip"}
+        is_self(Self)
+        #> True
+        ```
+        """
+        return tp is _t_self or tp is _te_self
+
+    def is_required(tp: Any, /) -> bool:
+        """Return whether the provided argument is a `Required` special form.
+
+        ```python {test="skip" lint="skip"}
+        is_required(Required[int])
+        #> True
+        """
+        origin = get_origin(tp)
+        return origin is _t_required or origin is _te_required
+
+    def is_not_required(tp: Any, /) -> bool:
+        """Return whether the provided argument is a `NotRequired` special form.
+
+        ```python {test="skip" lint="skip"}
+        is_required(Required[int])
+        #> True
+        """
+        origin = get_origin(tp)
+        return origin is _t_notrequired or origin is _te_notrequired
+
+    def is_never(tp: Any, /) -> bool:
+        """Return whether the provided argument is the `Never` special form.
+
+        ```python {test="skip" lint="skip"}
+        is_never(Never)
+        #> True
+        ```
+        """
+        return tp is _t_never or tp is _te_never
+
+else:
+
+    def is_unpack(tp: Any, /) -> bool:
+        """Return whether the provided argument is a `Unpack` special form.
+
+        ```python {test="skip" lint="skip"}
+        is_unpack(Unpack[Ts])
+        #> True
+        ```
+        """
+        origin = get_origin(tp)
+        return origin is _te_unpack
+
+    def is_self(tp: Any, /) -> bool:
+        """Return whether the provided argument is the `Self` special form.
+
+        ```python {test="skip" lint="skip"}
+        is_self(Self)
+        #> True
+        ```
+        """
+        return tp is _te_self
+
+    def is_required(tp: Any, /) -> bool:
+        """Return whether the provided argument is a `Required` special form.
+
+        ```python {test="skip" lint="skip"}
+        is_required(Required[int])
+        #> True
+        """
+        origin = get_origin(tp)
+        return origin is _te_required
+
+    def is_not_required(tp: Any, /) -> bool:
+        """Return whether the provided argument is a `NotRequired` special form.
+
+        ```python {test="skip" lint="skip"}
+        is_required(Required[int])
+        #> True
+        """
+        origin = get_origin(tp)
+        return origin is _te_notrequired
+
+    def is_never(tp: Any, /) -> bool:
+        """Return whether the provided argument is the `Never` special form.
+
+        ```python {test="skip" lint="skip"}
+        is_never(Never)
+        #> True
+        ```
+        """
+        return tp is _te_never
 
 
 def unpack_type(tp: Any, /) -> Any | None:
@@ -126,21 +334,10 @@ def unpack_type(tp: Any, /) -> Any | None:
     return get_args(tp)[0] if is_unpack(tp) else None
 
 
-def is_self(tp: Any, /) -> bool:
-    """Return whether the provided argument is the `Self` special form.
-
-    ```python test="skip" lint="skip"
-    is_self(Self)
-    #> True
-    ```
-    """
-    return _is_typing_name(tp, name='Self')
-
-
 def is_new_type(tp: Any, /) -> bool:
     """Return whether the provided argument is a `NewType`.
 
-    ```python test="skip" lint="skip"
+    ```python {test="skip" lint="skip"}
     is_new_type(NewType('MyInt', int))
     #> True
     ```
@@ -149,13 +346,13 @@ def is_new_type(tp: Any, /) -> bool:
         # On Python < 3.10, `typing.NewType` is a function
         return hasattr(tp, '__supertype__')
     else:
-        return _is_typing_name(type(tp), name='NewType')
+        return type(tp) is typing.NewType or type(tp) is typing_extensions.NewType
 
 
 def is_hashable(tp: Any, /) -> bool:
     """Return whether the provided argument is the `Hashable` class.
 
-    ```python test="skip" lint="skip"
+    ```python {test="skip" lint="skip"}
     is_hashable(Hashable)
     #> True
     ```
@@ -168,7 +365,7 @@ def is_hashable(tp: Any, /) -> bool:
 def is_callable(tp: Any, /) -> bool:
     """Return whether the provided argument is a `Callable`, parametrized or not.
 
-    ```python test="skip" lint="skip"
+    ```python {test="skip" lint="skip"}
     is_callable(Callable[[int], str])
     #> True
     is_callable(typing.Callable)
@@ -182,7 +379,7 @@ def is_callable(tp: Any, /) -> bool:
     return tp is collections.abc.Callable or get_origin(tp) is collections.abc.Callable
 
 
-_PARAMSPEC_TYPES: tuple[type[typing_extensions.ParamSpec], ...] = (typing_extensions.ParamSpec,)
+_PARAMSPEC_TYPES: tuple[type[ParamSpec], ...] = (typing_extensions.ParamSpec,)
 if sys.version_info >= (3, 10):
     _PARAMSPEC_TYPES = (*_PARAMSPEC_TYPES, typing.ParamSpec)  # pyright: ignore[reportAssignmentType]
 
@@ -190,7 +387,7 @@ if sys.version_info >= (3, 10):
 def is_paramspec(tp: Any, /) -> bool:
     """Return whether the provided argument is a `ParamSpec`.
 
-    ```python test="skip" lint="skip"
+    ```python {test="skip" lint="skip"}
     P = ParamSpec('P')
     is_paramspec(P)
     #> True
@@ -199,15 +396,17 @@ def is_paramspec(tp: Any, /) -> bool:
     return isinstance(tp, _PARAMSPEC_TYPES)
 
 
-_TYPE_ALIAS_TYPES: tuple[type[typing_extensions.TypeAliasType], ...] = (typing_extensions.TypeAliasType,)
+_TYPE_ALIAS_TYPES: tuple[type[TypeAliasType], ...] = (typing_extensions.TypeAliasType,)
 if sys.version_info >= (3, 12):
     _TYPE_ALIAS_TYPES = (*_TYPE_ALIAS_TYPES, typing.TypeAliasType)
 
+_IS_PY310 = sys.version_info[:2] == (3, 10)
 
-def is_type_alias_type(tp: Any, /) -> TypeIs[typing_extensions.TypeAliasType]:
+
+def is_type_alias_type(tp: Any, /) -> TypeIs[TypeAliasType]:
     """Return whether the provided argument is an instance of `TypeAliasType`.
 
-    ```python test="skip" lint="skip"
+    ```python {test="skip" lint="skip"}
     type Int = int
     is_type_alias_type(Int)
     #> True
@@ -216,7 +415,18 @@ def is_type_alias_type(tp: Any, /) -> TypeIs[typing_extensions.TypeAliasType]:
     #> True
     ```
     """
-    return isinstance(tp, _TYPE_ALIAS_TYPES)
+    if _IS_PY310:
+        # Parametrized PEP 695 type aliases are instances of `types.GenericAlias` in typing_extensions>=4.13.0.
+        # On Python 3.10, with `Alias[int]` being such an instance of `GenericAlias`,
+        # `isinstance(Alias[int], TypeAliasType)` returns `True`.
+        # See https://github.com/python/cpython/issues/89828.
+        return type(tp) is not types.GenericAlias and isinstance(tp, _TYPE_ALIAS_TYPES)
+    else:
+        return isinstance(tp, _TYPE_ALIAS_TYPES)
+
+
+_t_classvar = typing.ClassVar
+_te_classvar = typing_extensions.ClassVar
 
 
 def is_classvar(tp: Any, /) -> bool:
@@ -226,14 +436,17 @@ def is_classvar(tp: Any, /) -> bool:
     which is used to check if an annotation (in the context of a Pydantic model or dataclass)
     should be treated as being a class variable.
 
-    ```python test="skip" lint="skip"
+    ```python {test="skip" lint="skip"}
     is_classvar(ClassVar[int])
     #> True
     is_classvar(ClassVar)
     #> True
     """
     # ClassVar is not necessarily parametrized:
-    return _is_typing_name(tp, name='ClassVar') or _is_typing_name(get_origin(tp), name='ClassVar')
+    if tp is _t_classvar or tp is _te_classvar:
+        return True
+    origin = get_origin(tp)
+    return origin is _t_classvar or origin is _te_classvar
 
 
 _classvar_re = re.compile(r'((\w+\.)?Annotated\[)?(\w+\.)?ClassVar\[')
@@ -267,63 +480,43 @@ def is_classvar_annotation(tp: Any, /) -> bool:
     return False
 
 
+_t_final = typing.Final
+_te_final = typing_extensions.Final
+
+
 # TODO implement `is_finalvar_annotation` as Final can be wrapped with other special forms:
 def is_finalvar(tp: Any, /) -> bool:
     """Return whether the provided argument is a `Final` special form, parametrized or not.
 
-    ```python test="skip" lint="skip"
+    ```python {test="skip" lint="skip"}
     is_finalvar(Final[int])
     #> True
     is_finalvar(Final)
     #> True
     """
     # Final is not necessarily parametrized:
-    return _is_typing_name(tp, name='Final') or _is_typing_name(get_origin(tp), name='Final')
+    if tp is _t_final or tp is _te_final:
+        return True
+    origin = get_origin(tp)
+    return origin is _t_final or origin is _te_final
 
 
-def is_required(tp: Any, /) -> bool:
-    """Return whether the provided argument is a `Required` special form.
-
-    ```python test="skip" lint="skip"
-    is_required(Required[int])
-    #> True
-    """
-    return _is_typing_name(get_origin(tp), name='Required')
-
-
-def is_not_required(tp: Any, /) -> bool:
-    """Return whether the provided argument is a `NotRequired` special form.
-
-    ```python test="skip" lint="skip"
-    is_required(Required[int])
-    #> True
-    """
-    return _is_typing_name(get_origin(tp), name='NotRequired')
+_t_noreturn = typing.NoReturn
+_te_noreturn = typing_extensions.NoReturn
 
 
 def is_no_return(tp: Any, /) -> bool:
     """Return whether the provided argument is the `NoReturn` special form.
 
-    ```python test="skip" lint="skip"
+    ```python {test="skip" lint="skip"}
     is_no_return(NoReturn)
     #> True
     ```
     """
-    return _is_typing_name(tp, name='NoReturn')
+    return tp is _t_noreturn or tp is _te_noreturn
 
 
-def is_never(tp: Any, /) -> bool:
-    """Return whether the provided argument is the `Never` special form.
-
-    ```python test="skip" lint="skip"
-    is_never(Never)
-    #> True
-    ```
-    """
-    return _is_typing_name(tp, name='Never')
-
-
-_DEPRECATED_TYPES: tuple[type[typing_extensions.deprecated], ...] = (typing_extensions.deprecated,)
+_DEPRECATED_TYPES: tuple[type[deprecated], ...] = (typing_extensions.deprecated,)
 if hasattr(warnings, 'deprecated'):
     _DEPRECATED_TYPES = (*_DEPRECATED_TYPES, warnings.deprecated)  # pyright: ignore[reportAttributeAccessIssue]
 
@@ -339,7 +532,7 @@ _NONE_TYPES: tuple[Any, ...] = (None, NoneType, typing.Literal[None], typing_ext
 def is_none_type(tp: Any, /) -> bool:
     """Return whether the argument represents the `None` type as part of an annotation.
 
-    ```python test="skip" lint="skip"
+    ```python {test="skip" lint="skip"}
     is_none_type(None)
     #> True
     is_none_type(NoneType)
@@ -363,44 +556,37 @@ def is_namedtuple(tp: Any, /) -> bool:
     return lenient_issubclass(tp, tuple) and hasattr(tp, '_fields')
 
 
-if sys.version_info < (3, 9):
+def is_zoneinfo_type(tp: Any, /) -> TypeIs[type[ZoneInfo]]:
+    """Return whether the provided argument is the `zoneinfo.ZoneInfo` type."""
+    return tp is ZoneInfo
 
-    def is_zoneinfo_type(tp: Any, /) -> bool:
-        """Return whether the provided argument is the `zoneinfo.ZoneInfo` type."""
-        return False
 
-else:
-    from zoneinfo import ZoneInfo
+_t_union = typing.Union
+_te_union = typing_extensions.Union
 
-    def is_zoneinfo_type(tp: Any, /) -> TypeIs[type[ZoneInfo]]:
-        """Return whether the provided argument is the `zoneinfo.ZoneInfo` type."""
-        return tp is ZoneInfo
-
+_t_union = typing.Union
+_te_union = typing_extensions.Union
 
 if sys.version_info < (3, 10):
 
     def origin_is_union(tp: Any, /) -> bool:
         """Return whether the provided argument is the `Union` special form."""
-        return _is_typing_name(tp, name='Union')
-
-    def is_generic_alias(type_: type[Any]) -> bool:
-        return isinstance(type_, typing._GenericAlias)  # pyright: ignore[reportAttributeAccessIssue]
+        return tp is _t_union or tp is _te_union
 
 else:
 
     def origin_is_union(tp: Any, /) -> bool:
         """Return whether the provided argument is the `Union` special form or the `UnionType`."""
-        return _is_typing_name(tp, name='Union') or tp is types.UnionType
+        return tp is _t_union or tp is _te_union or tp is types.UnionType
 
-    def is_generic_alias(tp: Any, /) -> bool:
-        return isinstance(tp, (types.GenericAlias, typing._GenericAlias))  # pyright: ignore[reportAttributeAccessIssue]
+
+def is_generic_alias(tp: Any, /) -> bool:
+    return isinstance(tp, (types.GenericAlias, typing._GenericAlias))  # pyright: ignore[reportAttributeAccessIssue]
 
 
 # TODO: Ideally, we should avoid relying on the private `typing` constructs:
 
-if sys.version_info < (3, 9):
-    WithArgsTypes: tuple[Any, ...] = (typing._GenericAlias,)  # pyright: ignore[reportAttributeAccessIssue]
-elif sys.version_info < (3, 10):
+if sys.version_info < (3, 10):
     WithArgsTypes: tuple[Any, ...] = (typing._GenericAlias, types.GenericAlias)  # pyright: ignore[reportAttributeAccessIssue]
 else:
     WithArgsTypes: tuple[Any, ...] = (typing._GenericAlias, types.GenericAlias, types.UnionType)  # pyright: ignore[reportAttributeAccessIssue]
@@ -414,35 +600,63 @@ typing_base: Any = typing._Final  # pyright: ignore[reportAttributeAccessIssue]
 
 
 def parent_frame_namespace(*, parent_depth: int = 2, force: bool = False) -> dict[str, Any] | None:
-    """We allow use of items in parent namespace to get around the issue with `get_type_hints` only looking in the
-    global module namespace. See https://github.com/pydantic/pydantic/issues/2678#issuecomment-1008139014 -> Scope
-    and suggestion at the end of the next comment by @gvanrossum.
+    """Fetch the local namespace of the parent frame where this function is called.
 
-    WARNING 1: it matters exactly where this is called. By default, this function will build a namespace from the
-    parent of where it is called.
+    Using this function is mostly useful to resolve forward annotations pointing to members defined in a local namespace,
+    such as assignments inside a function. Using the standard library tools, it is currently not possible to resolve
+    such annotations:
 
-    WARNING 2: this only looks in the parent namespace, not other parents since (AFAIK) there's no way to collect a
-    dict of exactly what's in scope. Using `f_back` would work sometimes but would be very wrong and confusing in many
-    other cases. See https://discuss.python.org/t/is-there-a-way-to-access-parent-nested-namespaces/20659.
+    ```python {lint="skip" test="skip"}
+    from typing import get_type_hints
 
-    There are some cases where we want to force fetching the parent namespace, ex: during a `model_rebuild` call.
-    In this case, we want both the namespace of the class' module, if applicable, and the parent namespace of the
-    module where the rebuild is called.
+    def func() -> None:
+        Alias = int
 
-    In other cases, like during initial schema build, if a class is defined at the top module level, we don't need to
-    fetch that module's namespace, because the class' __module__ attribute can be used to access the parent namespace.
-    This is done in `_namespace_utils.get_module_ns_of`. Thus, there's no need to cache the parent frame namespace in this case.
+        class C:
+            a: 'Alias'
+
+        # Raises a `NameError: 'Alias' is not defined`
+        get_type_hints(C)
+    ```
+
+    Pydantic uses this function when a Pydantic model is being defined to fetch the parent frame locals. However,
+    this only allows us to fetch the parent frame namespace and not other parents (e.g. a model defined in a function,
+    itself defined in another function). Inspecting the next outer frames (using `f_back`) is not reliable enough
+    (see https://discuss.python.org/t/20659).
+
+    Because this function is mostly used to better resolve forward annotations, nothing is returned if the parent frame's
+    code object is defined at the module level. In this case, the locals of the frame will be the same as the module
+    globals where the class is defined (see `_namespace_utils.get_module_ns_of`). However, if you still want to fetch
+    the module globals (e.g. when rebuilding a model, where the frame where the rebuild call is performed might contain
+    members that you want to use for forward annotations evaluation), you can use the `force` parameter.
+
+    Args:
+        parent_depth: The depth at which to get the frame. Defaults to 2, meaning the parent frame where this function
+            is called will be used.
+        force: Whether to always return the frame locals, even if the frame's code object is defined at the module level.
+
+    Returns:
+        The locals of the namespace, or `None` if it was skipped as per the described logic.
     """
     frame = sys._getframe(parent_depth)
 
-    # note, we don't copy frame.f_locals here (or during the last return call), because we don't expect the namespace to be modified down the line
-    # if this becomes a problem, we could implement some sort of frozen mapping structure to enforce this
+    if frame.f_code.co_name.startswith('<generic parameters of'):
+        # As `parent_frame_namespace` is mostly called in `ModelMetaclass.__new__`,
+        # the parent frame can be the annotation scope if the PEP 695 generic syntax is used.
+        # (see https://docs.python.org/3/reference/executionmodel.html#annotation-scopes,
+        # https://docs.python.org/3/reference/compound_stmts.html#generic-classes).
+        # In this case, the code name is set to `<generic parameters of MyClass>`,
+        # and we need to skip this frame as it is irrelevant.
+        frame = cast(types.FrameType, frame.f_back)  # guaranteed to not be `None`
+
+    # note, we don't copy frame.f_locals here (or during the last return call), because we don't expect the namespace to be
+    # modified down the line if this becomes a problem, we could implement some sort of frozen mapping structure to enforce this.
     if force:
         return frame.f_locals
 
-    # if either of the following conditions are true, the class is defined at the top module level
-    # to better understand why we need both of these checks, see
-    # https://github.com/pydantic/pydantic/pull/10113#discussion_r1714981531
+    # If either of the following conditions are true, the class is defined at the top module level.
+    # To better understand why we need both of these checks, see
+    # https://github.com/pydantic/pydantic/pull/10113#discussion_r1714981531.
     if frame.f_back is None or frame.f_code.co_name == '<module>':
         return None
 
@@ -467,34 +681,21 @@ def _type_convert(arg: Any) -> Any:
     return arg
 
 
-@overload
-def get_cls_type_hints(
-    obj: type[Any],
+def get_model_type_hints(
+    obj: type[BaseModel],
     *,
     ns_resolver: NsResolver | None = None,
-    lenient: Literal[True],
-) -> dict[str, tuple[Any, bool]]: ...
-@overload
-def get_cls_type_hints(
-    obj: type[Any],
-    *,
-    ns_resolver: NsResolver | None = None,
-    lenient: Literal[False] = ...,
-) -> dict[str, Any]: ...
-def get_cls_type_hints(
-    obj: type[Any],
-    *,
-    ns_resolver: NsResolver | None = None,
-    lenient: bool = False,
-) -> dict[str, Any] | dict[str, tuple[Any, bool]]:
-    """Collect annotations from a class, including those from parent classes.
+) -> dict[str, tuple[Any, bool]]:
+    """Collect annotations from a Pydantic model class, including those from parent classes.
 
     Args:
-        obj: The class to inspect.
+        obj: The Pydantic model to inspect.
         ns_resolver: A namespace resolver instance to use. Defaults to an empty instance.
-        lenient: Whether to keep unresolvable annotations as is or re-raise the `NameError` exception.
-            If lenient, an extra boolean flag is set for each annotation value to indicate whether the
-            evaluation succeeded or not. Default: re-raise.
+
+    Returns:
+        A dictionary mapping annotation names to a two-tuple: the first element is the evaluated
+        type or the original annotation if a `NameError` occurred, the second element is a boolean
+        indicating if whether the evaluation succeeded.
     """
     hints: dict[str, Any] | dict[str, tuple[Any, bool]] = {}
     ns_resolver = ns_resolver or NsResolver()
@@ -506,10 +707,43 @@ def get_cls_type_hints(
         with ns_resolver.push(base):
             globalns, localns = ns_resolver.types_namespace
             for name, value in ann.items():
-                if lenient:
-                    hints[name] = try_eval_type(value, globalns, localns)
+                if name.startswith('_'):
+                    # For private attributes, we only need the annotation to detect the `ClassVar` special form.
+                    # For this reason, we still try to evaluate it, but we also catch any possible exception (on
+                    # top of the `NameError`s caught in `try_eval_type`) that could happen so that users are free
+                    # to use any kind of forward annotation for private fields (e.g. circular imports, new typing
+                    # syntax, etc).
+                    try:
+                        hints[name] = try_eval_type(value, globalns, localns)
+                    except Exception:
+                        hints[name] = (value, False)
                 else:
-                    hints[name] = eval_type(value, globalns, localns)
+                    hints[name] = try_eval_type(value, globalns, localns)
+    return hints
+
+
+def get_cls_type_hints(
+    obj: type[Any],
+    *,
+    ns_resolver: NsResolver | None = None,
+) -> dict[str, Any]:
+    """Collect annotations from a class, including those from parent classes.
+
+    Args:
+        obj: The class to inspect.
+        ns_resolver: A namespace resolver instance to use. Defaults to an empty instance.
+    """
+    hints: dict[str, Any] | dict[str, tuple[Any, bool]] = {}
+    ns_resolver = ns_resolver or NsResolver()
+
+    for base in reversed(obj.__mro__):
+        ann: dict[str, Any] | None = base.__dict__.get('__annotations__')
+        if not ann or isinstance(ann, types.GetSetDescriptorType):
+            continue
+        with ns_resolver.push(base):
+            globalns, localns = ns_resolver.types_namespace
+            for name, value in ann.items():
+                hints[name] = eval_type(value, globalns, localns)
     return hints
 
 
@@ -599,6 +833,19 @@ def eval_type_backport(
             raise
         else:
             raise TypeError(message) from e
+    except RecursionError as e:
+        # TODO ideally recursion errors should be checked in `eval_type` above, but `eval_type_backport`
+        # is used directly in some places.
+        message = (
+            "If you made use of an implicit recursive type alias (e.g. `MyType = list['MyType']), "
+            'consider using PEP 695 type aliases instead. For more details, refer to the documentation: '
+            f'https://docs.pydantic.dev/{version_short()}/concepts/types/#named-recursive-types'
+        )
+        if sys.version_info >= (3, 11):
+            e.add_note(message)
+            raise
+        else:
+            raise RecursionError(f'{e.args[0]}\n{message}')
 
 
 def _eval_type_backport(
@@ -650,12 +897,7 @@ def _eval_type(
 def is_backport_fixable_error(e: TypeError) -> bool:
     msg = str(e)
 
-    return (
-        sys.version_info < (3, 10)
-        and msg.startswith('unsupported operand type(s) for |: ')
-        or sys.version_info < (3, 9)
-        and "' object is not subscriptable" in msg
-    )
+    return sys.version_info < (3, 10) and msg.startswith('unsupported operand type(s) for |: ')
 
 
 def get_function_type_hints(
@@ -669,8 +911,6 @@ def get_function_type_hints(
 
     This is similar to the `typing.get_type_hints` function, with a few differences:
     - Support `functools.partial` by using the underlying `func` attribute.
-    - If `function` happens to be a built-in type (e.g. `int`), assume it doesn't have annotations
-      but specify the `return` key as being the actual type.
     - Do not wrap type annotation of a parameter with `Optional` if it has a default value of `None`
       (related bug: https://github.com/python/cpython/issues/90353, only fixed in 3.11+).
     """
@@ -680,13 +920,8 @@ def get_function_type_hints(
         else:
             annotations = function.__annotations__
     except AttributeError:
-        type_hints = get_type_hints(function)
-        if isinstance(function, type):
-            # `type[...]` is a callable, which returns an instance of itself.
-            # At some point, we might even look into the return type of `__new__`
-            # if it returns something else.
-            type_hints.setdefault('return', function)
-        return type_hints
+        # Some functions (e.g. builtins) don't have annotations:
+        return {}
 
     if globalns is None:
         globalns = get_module_ns_of(function)
@@ -849,7 +1084,7 @@ else:
             if isinstance(obj, typing._allowed_types):  # type: ignore
                 return {}
             else:
-                raise TypeError(f'{obj!r} is not a module, class, method, ' 'or function.')
+                raise TypeError(f'{obj!r} is not a module, class, method, or function.')
         defaults = typing._get_defaults(obj)  # type: ignore
         hints = dict(hints)
         for name, value in hints.items():

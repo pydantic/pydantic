@@ -4,10 +4,12 @@ import sys
 import types
 import typing
 from collections import ChainMap
+from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from contextvars import ContextVar
+from itertools import zip_longest
 from types import prepare_class
-from typing import TYPE_CHECKING, Any, Iterator, Mapping, MutableMapping, Tuple, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 from weakref import WeakValueDictionary
 
 import typing_extensions
@@ -23,7 +25,7 @@ if sys.version_info >= (3, 10):
 if TYPE_CHECKING:
     from ..main import BaseModel
 
-GenericTypesCacheKey = Tuple[Any, Any, Tuple[Any, ...]]
+GenericTypesCacheKey = tuple[Any, Any, tuple[Any, ...]]
 
 # Note: We want to remove LimitedDict, but to do this, we'd need to improve the handling of generics caching.
 #   Right now, to handle recursive generics, we some types must remain cached for brief periods without references.
@@ -34,38 +36,25 @@ GenericTypesCacheKey = Tuple[Any, Any, Tuple[Any, ...]]
 KT = TypeVar('KT')
 VT = TypeVar('VT')
 _LIMITED_DICT_SIZE = 100
-if TYPE_CHECKING:
 
-    class LimitedDict(dict, MutableMapping[KT, VT]):
-        def __init__(self, size_limit: int = _LIMITED_DICT_SIZE): ...
 
-else:
+class LimitedDict(dict[KT, VT]):
+    def __init__(self, size_limit: int = _LIMITED_DICT_SIZE) -> None:
+        self.size_limit = size_limit
+        super().__init__()
 
-    class LimitedDict(dict):
-        """Limit the size/length of a dict used for caching to avoid unlimited increase in memory usage.
-
-        Since the dict is ordered, and we always remove elements from the beginning, this is effectively a FIFO cache.
-        """
-
-        def __init__(self, size_limit: int = _LIMITED_DICT_SIZE):
-            self.size_limit = size_limit
-            super().__init__()
-
-        def __setitem__(self, key: Any, value: Any, /) -> None:
-            super().__setitem__(key, value)
-            if len(self) > self.size_limit:
-                excess = len(self) - self.size_limit + self.size_limit // 10
-                to_remove = list(self.keys())[:excess]
-                for k in to_remove:
-                    del self[k]
+    def __setitem__(self, key: KT, value: VT, /) -> None:
+        super().__setitem__(key, value)
+        if len(self) > self.size_limit:
+            excess = len(self) - self.size_limit + self.size_limit // 10
+            to_remove = list(self.keys())[:excess]
+            for k in to_remove:
+                del self[k]
 
 
 # weak dictionaries allow the dynamically created parametrized versions of generic models to get collected
 # once they are no longer referenced by the caller.
-if sys.version_info >= (3, 9):  # Typing for weak dictionaries available at 3.9
-    GenericTypesCache = WeakValueDictionary[GenericTypesCacheKey, 'type[BaseModel]']
-else:
-    GenericTypesCache = WeakValueDictionary
+GenericTypesCache = WeakValueDictionary[GenericTypesCacheKey, 'type[BaseModel]']
 
 if TYPE_CHECKING:
 
@@ -234,7 +223,7 @@ def get_standard_typevars_map(cls: Any) -> dict[TypeVar, Any] | None:
     return dict(zip(parameters, args))
 
 
-def get_model_typevars_map(cls: type[BaseModel]) -> dict[TypeVar, Any] | None:
+def get_model_typevars_map(cls: type[BaseModel]) -> dict[TypeVar, Any]:
     """Package a generic BaseModel's typevars and concrete parametrization (if present) into a dictionary compatible
     with the `replace_types` function.
 
@@ -246,10 +235,13 @@ def get_model_typevars_map(cls: type[BaseModel]) -> dict[TypeVar, Any] | None:
     generic_metadata = cls.__pydantic_generic_metadata__
     origin = generic_metadata['origin']
     args = generic_metadata['args']
+    if not args:
+        # No need to go into `iter_contained_typevars`:
+        return {}
     return dict(zip(iter_contained_typevars(origin), args))
 
 
-def replace_types(type_: Any, type_map: Mapping[Any, Any] | None) -> Any:
+def replace_types(type_: Any, type_map: Mapping[TypeVar, Any] | None) -> Any:
     """Return type with all occurrences of `type_map` keys recursively replaced with their values.
 
     Args:
@@ -261,13 +253,13 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any] | None) -> Any:
         `typevar_map` keys recursively replaced.
 
     Example:
-        ```py
-        from typing import List, Tuple, Union
+        ```python
+        from typing import List, Union
 
         from pydantic._internal._generics import replace_types
 
-        replace_types(Tuple[str, Union[List[str], float]], {str: int})
-        #> Tuple[int, Union[List[int], float]]
+        replace_types(tuple[str, Union[List[str], float]], {str: int})
+        #> tuple[int, Union[List[int], float]]
         ```
     """
     if not type_map:
@@ -279,7 +271,7 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any] | None) -> Any:
         annotated_type, *annotations = type_args
         annotated = replace_types(annotated_type, type_map)
         for annotation in annotations:
-            annotated = typing_extensions.Annotated[annotated, annotation]
+            annotated = typing.Annotated[annotated, annotation]
         return annotated
 
     origin_type = get_origin(type_)
@@ -348,54 +340,55 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any] | None) -> Any:
     return type_map.get(type_, type_)
 
 
-def has_instance_in_type(type_: Any, isinstance_target: Any) -> bool:
-    """Checks if the type, or any of its arbitrary nested args, satisfy
-    `isinstance(<type>, isinstance_target)`.
-    """
-    if isinstance(type_, isinstance_target):
-        return True
-    if _typing_extra.is_annotated(type_):
-        return has_instance_in_type(type_.__origin__, isinstance_target)
-    if _typing_extra.is_literal(type_):
-        return False
-
-    type_args = get_args(type_)
-
-    # Having type args is a good indicator that this is a typing module
-    # class instantiation or a generic alias of some sort.
-    for arg in type_args:
-        if has_instance_in_type(arg, isinstance_target):
-            return True
-
-    # Handle special case for typehints that can have lists as arguments.
-    # `typing.Callable[[int, str], int]` is an example for this.
-    if (
-        isinstance(type_, list)
-        # On Python < 3.10, typing_extensions implements `ParamSpec` as a subclass of `list`:
-        and not isinstance(type_, typing_extensions.ParamSpec)
-    ):
-        for element in type_:
-            if has_instance_in_type(element, isinstance_target):
-                return True
-
-    return False
-
-
-def check_parameters_count(cls: type[BaseModel], parameters: tuple[Any, ...]) -> None:
-    """Check the generic model parameters count is equal.
-
-    Args:
-        cls: The generic model.
-        parameters: A tuple of passed parameters to the generic model.
+def map_generic_model_arguments(cls: type[BaseModel], args: tuple[Any, ...]) -> dict[TypeVar, Any]:
+    """Return a mapping between the arguments of a generic model and the provided arguments during parametrization.
 
     Raises:
-        TypeError: If the passed parameters count is not equal to generic model parameters count.
+        TypeError: If the number of arguments does not match the parameters (i.e. if providing too few or too many arguments).
+
+    Example:
+        ```python {test="skip" lint="skip"}
+        class Model[T, U, V = int](BaseModel): ...
+
+        map_generic_model_arguments(Model, (str, bytes))
+        #> {T: str, U: bytes, V: int}
+
+        map_generic_model_arguments(Model, (str,))
+        #> TypeError: Too few arguments for <class '__main__.Model'>; actual 1, expected at least 2
+
+        map_generic_model_argumenst(Model, (str, bytes, int, complex))
+        #> TypeError: Too many arguments for <class '__main__.Model'>; actual 4, expected 3
+        ```
+
+    Note:
+        This function is analogous to the private `typing._check_generic_specialization` function.
     """
-    actual = len(parameters)
-    expected = len(cls.__pydantic_generic_metadata__['parameters'])
-    if actual != expected:
-        description = 'many' if actual > expected else 'few'
-        raise TypeError(f'Too {description} parameters for {cls}; actual {actual}, expected {expected}')
+    parameters = cls.__pydantic_generic_metadata__['parameters']
+    expected_len = len(parameters)
+    typevars_map: dict[TypeVar, Any] = {}
+
+    _missing = object()
+    for parameter, argument in zip_longest(parameters, args, fillvalue=_missing):
+        if parameter is _missing:
+            raise TypeError(f'Too many arguments for {cls}; actual {len(args)}, expected {expected_len}')
+
+        if argument is _missing:
+            param = typing.cast(TypeVar, parameter)
+            try:
+                has_default = param.has_default()
+            except AttributeError:
+                # Happens if using `typing.TypeVar` (and not `typing_extensions`) on Python < 3.13.
+                has_default = False
+            if has_default:
+                typevars_map[param] = param.__default__
+            else:
+                expected_len -= sum(hasattr(p, 'has_default') and p.has_default() for p in parameters)
+                raise TypeError(f'Too few arguments for {cls}; actual {len(args)}, expected at least {expected_len}')
+        else:
+            param = typing.cast(TypeVar, parameter)
+            typevars_map[param] = argument
+
+    return typevars_map
 
 
 _generic_recursion_cache: ContextVar[set[str] | None] = ContextVar('_generic_recursion_cache', default=None)
@@ -426,7 +419,8 @@ def generic_recursion_self_type(
             yield self_type
         else:
             previously_seen_type_refs.add(type_ref)
-            yield None
+            yield
+            previously_seen_type_refs.remove(type_ref)
     finally:
         if token:
             _generic_recursion_cache.reset(token)

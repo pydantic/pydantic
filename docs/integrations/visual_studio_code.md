@@ -95,7 +95,7 @@ But more common cases where these strict errors would be inconvenient would be w
 
 For example, this is valid for Pydantic:
 
-```Python hl_lines="12 17"
+```python {hl_lines="12 17"}
 from pydantic import BaseModel
 
 
@@ -129,13 +129,13 @@ Below are several techniques to achieve it.
 
 You can disable the errors for a specific line using a comment of:
 
-```py
+```python
 # type: ignore
 ```
 
 or (to be specific to pylance/pyright):
 
-```py
+```python
 # pyright: ignore
 ```
 
@@ -143,7 +143,7 @@ or (to be specific to pylance/pyright):
 
 coming back to the example with `age='23'`, it would be:
 
-```Python hl_lines="10"
+```python {hl_lines="10"}
 from pydantic import BaseModel
 
 
@@ -166,7 +166,7 @@ that way Pylance and mypy will ignore errors in that line.
 
 You can also create a variable with the value you want to use and declare its type explicitly with `Any`.
 
-```Python hl_lines="1 11-12"
+```python {hl_lines="1 11-12"}
 from typing import Any
 
 from pydantic import BaseModel
@@ -194,7 +194,7 @@ The same idea from the previous example can be put on the same line with the hel
 
 This way, the type declaration of the value is overridden inline, without requiring another variable.
 
-```Python hl_lines="1 11"
+```python {hl_lines="1 11"}
 from typing import Any, cast
 
 from pydantic import BaseModel
@@ -223,7 +223,7 @@ Pydantic has a rich set of [Model Configurations][pydantic.config.ConfigDict] av
 
 These configurations can be set in an internal `class Config` on each model:
 
-```Python hl_lines="9-10"
+```python {hl_lines="9-10"}
 from pydantic import BaseModel
 
 
@@ -236,7 +236,7 @@ class Knight(BaseModel):
 
 or passed as keyword arguments when defining the model class:
 
-```Python hl_lines="4"
+```python {hl_lines="4"}
 from pydantic import BaseModel
 
 
@@ -260,7 +260,7 @@ in a model that is "frozen".
 
 Pylance/pyright requires `default` to be a keyword argument to `Field` in order to infer that the field is optional.
 
-```py
+```python
 from pydantic import BaseModel, Field
 
 

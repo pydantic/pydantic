@@ -4,11 +4,11 @@ import re
 import sys
 from datetime import datetime, timezone
 from functools import partial
-from typing import Any, List, Literal, Tuple, Union
+from typing import Annotated, Any, Literal, Union
 
 import pytest
 from pydantic_core import ArgsKwargs
-from typing_extensions import Annotated, Required, TypedDict, Unpack
+from typing_extensions import Required, TypedDict, Unpack
 
 from pydantic import (
     AfterValidator,
@@ -64,6 +64,14 @@ def test_func_type() -> None:
         validate_call([])
 
 
+def validate_bare_none() -> None:
+    @validate_call
+    def func(f: None):
+        return f
+
+    assert func(f=None) is None
+
+
 def test_validate_class() -> None:
     class A:
         @validate_call
@@ -113,17 +121,9 @@ def test_validate_custom_callable() -> None:
 
 
 def test_invalid_signature() -> None:
-    # In some versions, these functions may not have a valid signature
-    for func in (max, min, breakpoint, sorted, compile, print, [].append, {}.popitem, int().bit_length):
-        try:
-            inspect.signature(func)
-            assert validate_call(func).__name__ == func.__name__
-            assert validate_call(func).__qualname__ == func.__qualname__
-            assert validate_call(partial(func)).__name__ == f'partial({func.__name__})'
-            assert validate_call(partial(func)).__qualname__ == f'partial({func.__qualname__})'
-        except ValueError:
-            with pytest.raises(PydanticUserError, match=(f"Input function `{func}` doesn't have a valid signature")):
-                validate_call(func)
+    # Builtins functions not supported:
+    with pytest.raises(PydanticUserError, match=(f'Input built-in function `{breakpoint}` is not supported')):
+        validate_call(breakpoint)
 
     class A:
         def f(): ...
@@ -230,7 +230,7 @@ def test_kwargs():
         {
             'input': 'x',
             'loc': ('b',),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'type': 'int_parsing',
         }
     ]
@@ -485,7 +485,7 @@ def test_async():
 
 def test_string_annotation():
     @validate_call
-    def foo(a: 'List[int]', b: 'float'):
+    def foo(a: 'list[int]', b: 'float'):
         return f'a={a!r} b={b!r}'
 
     assert foo([1, 2, 3], 22) == 'a=[1, 2, 3] b=22.0'
@@ -506,7 +506,7 @@ def test_string_annotation():
 
 
 def test_local_annotation():
-    ListInt = List[int]
+    ListInt = list[int]
 
     @validate_call
     def foo(a: ListInt):
@@ -609,7 +609,7 @@ def test_json_schema():
     with pytest.raises(
         PydanticInvalidForJsonSchema,
         match=(
-            'Unable to generate JSON schema for arguments validator ' 'with positional-only and keyword-only arguments'
+            'Unable to generate JSON schema for arguments validator with positional-only and keyword-only arguments'
         ),
     ):
         TypeAdapter(foo).json_schema()
@@ -693,7 +693,7 @@ def test_config_arbitrary_types_allowed():
 
 def test_config_strict():
     @validate_call(config=dict(strict=True))
-    def foo(a: int, b: List[str]):
+    def foo(a: int, b: list[str]):
         return f'{a}, {b[0]}'
 
     assert foo(1, ['bar', 'foobar']) == '1, bar'
@@ -921,7 +921,7 @@ def test_model_as_arg() -> None:
         y: int
 
     @validate_call(validate_return=True)
-    def f1(m1: Model1, m2: Model2) -> Tuple[Model1, Model2]:
+    def f1(m1: Model1, m2: Model2) -> tuple[Model1, Model2]:
         return (m1, m2.model_dump())  # type: ignore
 
     res = f1({'x': '1'}, {'y': '2'})  # type: ignore
@@ -1129,11 +1129,11 @@ from typing import Iterable
 from pydantic import validate_call
 
 @validate_call
-def find_max_no_validate_return[T](args: Iterable[T]) -> T:
+def find_max_no_validate_return[T](args: 'Iterable[T]') -> T:
     return sorted(args, reverse=True)[0]
 
 @validate_call(validate_return=True)
-def find_max_validate_return[T](args: Iterable[T]) -> T:
+def find_max_validate_return[T](args: 'Iterable[T]') -> T:
     return sorted(args, reverse=True)[0]
         """
     )

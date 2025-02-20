@@ -1,4 +1,5 @@
 from collections import deque
+from collections.abc import Iterable, Sequence
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, IntEnum
@@ -15,22 +16,14 @@ from re import Pattern
 from typing import (
     Any,
     Callable,
-    Deque,
-    Dict,
-    FrozenSet,
-    Iterable,
-    List,
+    Literal,
     NamedTuple,
     Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Type,
     Union,
 )
 from uuid import UUID, uuid4, uuid5
 
-from typing_extensions import Literal, TypedDict
+from typing_extensions import TypedDict
 
 from pydantic import (
     UUID1,
@@ -77,8 +70,8 @@ class SimpleModel(BaseModel):
 
 class NestedModel(BaseModel):
     field1: str
-    field2: List[int]
-    field3: Dict[str, float]
+    field2: list[int]
+    field3: dict[str, float]
 
 
 class OuterModel(BaseModel):
@@ -88,8 +81,8 @@ class OuterModel(BaseModel):
 
 class ComplexModel(BaseModel):
     field1: Union[str, int, float]
-    field2: List[Dict[str, Union[int, float]]]
-    field3: Optional[List[Union[str, int]]]
+    field2: list[dict[str, Union[int, float]]]
+    field3: Optional[list[Union[str, int]]]
 
 
 class Color(Enum):
@@ -120,10 +113,10 @@ class Foo:
 
 StdLibTypes = [
     deque,  # collections.deque
-    Deque[str],  # typing.Deque
-    Deque[int],  # typing.Deque
-    Deque[float],  # typing.Deque
-    Deque[bytes],  # typing.Deque
+    deque[str],  # collections.deque
+    deque[int],  # collections.deque
+    deque[float],  # collections.deque
+    deque[bytes],  # collections.deque
     str,  # str
     int,  # int
     float,  # float
@@ -150,24 +143,24 @@ StdLibTypes = [
     uuid5,  # uuid.uuid5
     Point,  # named tuple
     list,  # built-in list
-    List[int],  # typing.List
-    List[str],  # typing.List
-    List[bytes],  # typing.List
-    List[float],  # typing.List
+    list[int],  # built-in list
+    list[str],  # built-in list
+    list[bytes],  # built-in list
+    list[float],  # built-in list
     dict,  # built-in dict
-    Dict[str, float],  # typing.Dict
-    Dict[str, bytes],  # typing.Dict
-    Dict[str, int],  # typing.Dict
-    Dict[str, str],  # typing.Dict
+    dict[str, float],  # built-in dict
+    dict[str, bytes],  # built-in dict
+    dict[str, int],  # built-in dict
+    dict[str, str],  # built-in dict
     User,  # TypedDict
     tuple,  # tuple
-    Tuple[int, str, float],  # typing.Tuple
+    tuple[int, str, float],  # built-in tuple
     set,  # built-in set
-    Set[int],  # typing.Set
-    Set[str],  # typing.Set
+    set[int],  # set
+    set[str],  # set
     frozenset,  # built-in frozenset
-    FrozenSet[int],  # typing.FrozenSet
-    FrozenSet[str],  # typing.FrozenSet
+    frozenset[int],  # built-in frozenset
+    frozenset[str],  # built-in frozenset
     Optional[int],  # typing.Optional
     Optional[str],  # typing.Optional
     Optional[float],  # typing.Optional
@@ -183,8 +176,8 @@ StdLibTypes = [
     Iterable[float],  # typing.Iterable
     Callable[[int], int],  # typing.Callable
     Callable[[str], str],  # typing.Callable
-    Literal['apple', 'pumpkin'],  #
-    Type[Foo],  # typing.Type
+    Literal['apple', 'pumpkin'],  # typing.Literal
+    type[Foo],  # typing.Type
     Any,  # typing.Any
 ]
 
@@ -214,11 +207,11 @@ PydanticTypes = [
     OnErrorOmit,
     ImportString,
     Json[Any],
-    Json[List[int]],
-    Json[List[str]],
-    Json[List[bytes]],
-    Json[List[float]],
-    Json[List[Any]],
+    Json[list[int]],
+    Json[list[str]],
+    Json[list[bytes]],
+    Json[list[float]],
+    Json[list[Any]],
     Secret[bool],
     Secret[int],
     Secret[float],
@@ -237,5 +230,5 @@ class DeferredModel(BaseModel):
     model_config = {'defer_build': True}
 
 
-def rebuild_model(model: Type[BaseModel]) -> None:
-    model.model_rebuild(force=True, _types_namespace={})
+def rebuild_model(model: type[BaseModel], raise_errors: bool = True) -> None:
+    model.model_rebuild(force=True, _types_namespace={}, raise_errors=raise_errors)

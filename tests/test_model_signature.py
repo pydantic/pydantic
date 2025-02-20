@@ -1,9 +1,9 @@
 import sys
+from collections.abc import Iterable
 from inspect import Parameter, Signature, signature
-from typing import Any, Generic, Iterable, Optional, TypeVar, Union
+from typing import Annotated, Any, Generic, Optional, TypeVar, Union
 
 import pytest
-from typing_extensions import Annotated
 
 from pydantic import BaseModel, ConfigDict, Field, create_model
 from pydantic._internal._typing_extra import is_annotated

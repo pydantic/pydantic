@@ -1,17 +1,18 @@
 import json
-from typing import Union
+from typing import Annotated, Any, Union
 
 import pytest
-from pydantic_core import PydanticCustomError, Url
-from typing_extensions import Annotated
+from pydantic_core import PydanticCustomError, PydanticSerializationError, Url
 
 from pydantic import (
+    AfterValidator,
     AmqpDsn,
     AnyHttpUrl,
     AnyUrl,
     BaseModel,
     ClickHouseDsn,
     CockroachDsn,
+    Field,
     FileUrl,
     FtpUrl,
     HttpUrl,
@@ -529,6 +530,10 @@ def test_mariadb_dsns(dsn):
     [
         'clickhouse+native://user:pass@localhost:9000/app',
         'clickhouse+asynch://user:pass@localhost:9000/app',
+        'clickhouse+http://user:pass@localhost:9000/app',
+        'clickhouse://user:pass@localhost:9000/app',
+        'clickhouses://user:pass@localhost:9000/app',
+        'clickhousedb://user:pass@localhost:9000/app',
     ],
 )
 def test_clickhouse_dsns(dsn):
@@ -759,8 +764,7 @@ def test_mongodb_dsns():
             'mongodb+srv://user:pass@localhost/app',
             marks=pytest.mark.xfail(
                 reason=(
-                    'This case is not supported. '
-                    'Check https://github.com/pydantic/pydantic/pull/7116 for more details.'
+                    'This case is not supported. Check https://github.com/pydantic/pydantic/pull/7116 for more details.'
                 )
             ),
         ),
@@ -1065,6 +1069,15 @@ def test_url_equality() -> None:
     )
 
 
+def test_equality_independent_of_init() -> None:
+    ta = TypeAdapter(HttpUrl)
+    from_str = ta.validate_python('http://example.com/something')
+    from_url = ta.validate_python(HttpUrl('http://example.com/something'))
+    from_validated = ta.validate_python(from_str)
+
+    assert from_str == from_url == from_validated
+
+
 def test_url_subclasses_any_url() -> None:
     http_url = AnyHttpUrl('https://localhost')
     assert isinstance(http_url, AnyUrl)
@@ -1072,3 +1085,121 @@ def test_url_subclasses_any_url() -> None:
 
     url = TypeAdapter(AnyUrl).validate_python(http_url)
     assert url is http_url
+
+
+def test_custom_constraints() -> None:
+    HttpUrl = Annotated[AnyUrl, UrlConstraints(allowed_schemes=['http', 'https'])]
+    ta = TypeAdapter(HttpUrl)
+    assert ta.validate_python('https://example.com')
+
+    with pytest.raises(ValidationError):
+        ta.validate_python('ftp://example.com')
+
+
+def test_after_validator() -> None:
+    def remove_trailing_slash(url: AnyUrl) -> str:
+        """Custom url -> str transformer that removes trailing slash."""
+        return str(url._url).rstrip('/')
+
+    HttpUrl = Annotated[
+        AnyUrl,
+        UrlConstraints(allowed_schemes=['http', 'https']),
+        AfterValidator(lambda url: remove_trailing_slash(url)),
+    ]
+    ta = TypeAdapter(HttpUrl)
+    assert ta.validate_python('https://example.com/') == 'https://example.com'
+
+
+def test_serialize_as_any() -> None:
+    ta = TypeAdapter(Any)
+    assert ta.dump_python(HttpUrl('https://example.com')) == HttpUrl('https://example.com/')
+    assert ta.dump_json('https://example.com') == b'"https://example.com"'
+
+
+def test_any_url_hashable() -> None:
+    example_url_1a = AnyUrl('https://example1.com')
+    example_url_1b = AnyUrl('https://example1.com')
+    example_url_2 = AnyUrl('https://example2.com')
+
+    assert hash(example_url_1a) == hash(example_url_1b)
+    assert hash(example_url_1a) != hash(example_url_2)
+    assert len({example_url_1a, example_url_1b, example_url_2}) == 2
+
+    example_multi_host_url_1a = PostgresDsn('postgres://user:pass@host1:5432,host2:5432/app')
+    example_multi_host_url_1b = PostgresDsn('postgres://user:pass@host1:5432,host2:5432/app')
+    example_multi_host_url_2 = PostgresDsn('postgres://user:pass@host1:5432,host3:5432/app')
+
+    assert hash(example_multi_host_url_1a) == hash(example_multi_host_url_1b)
+    assert hash(example_multi_host_url_1a) != hash(example_multi_host_url_2)
+    assert len({example_multi_host_url_1a, example_multi_host_url_1b, example_multi_host_url_2}) == 2
+
+
+def test_host_not_required_for_2_9_compatibility() -> None:
+    data_uri = 'file:///path/to/data'
+    url = AnyUrl(data_uri)
+    assert url.host is None
+
+
+def test_json_schema() -> None:
+    ta = TypeAdapter(HttpUrl)
+    val_json_schema = ta.json_schema(mode='validation')
+    assert val_json_schema == {'type': 'string', 'format': 'uri', 'minLength': 1, 'maxLength': 2083}
+
+    ser_json_schema = ta.json_schema(mode='serialization')
+    assert ser_json_schema == {'type': 'string', 'format': 'uri', 'minLength': 1, 'maxLength': 2083}
+
+
+def test_any_url_comparison() -> None:
+    first_url = AnyUrl('https://a.com')
+    second_url = AnyUrl('https://b.com')
+
+    assert first_url < second_url
+    assert second_url > first_url
+    assert first_url <= second_url
+    assert second_url >= first_url
+
+
+def test_max_length_base_url() -> None:
+    class Model(BaseModel):
+        url: AnyUrl = Field(max_length=20)
+
+    # _BaseUrl/AnyUrl adds trailing slash: https://github.com/pydantic/pydantic/issues/7186
+    # once solved the second expected line can be removed
+    expected = 'https://example.com'
+    expected = f'{expected}/'
+    assert len(Model(url='https://example.com').url) == len(expected)
+
+    with pytest.raises(ValidationError, match=r'Value should have at most 20 items after validation'):
+        Model(url='https://example.com/longer')
+
+
+def test_max_length_base_multi_host() -> None:
+    class Model(BaseModel):
+        postgres: PostgresDsn = Field(max_length=45)
+
+    expected = 'postgres://user:pass@localhost:5432/foobar'
+    assert len(Model(postgres=expected).postgres) == len(expected)
+
+    with pytest.raises(ValidationError, match=r'Value should have at most 45 items after validation'):
+        Model(postgres='postgres://user:pass@localhost:5432/foobarbazfoo')
+
+
+def test_unexpected_ser() -> None:
+    ta = TypeAdapter(HttpUrl)
+    with pytest.raises(
+        PydanticSerializationError,
+        match="Expected `<class 'pydantic.networks.HttpUrl'>` but got `<class 'str'>` with value `'http://example.com'`",
+    ):
+        ta.dump_python('http://example.com', warnings='error')
+
+
+def test_url_ser() -> None:
+    ta = TypeAdapter(HttpUrl)
+    assert ta.dump_python(HttpUrl('http://example.com')) == HttpUrl('http://example.com')
+    assert ta.dump_json(HttpUrl('http://example.com')) == b'"http://example.com/"'
+
+
+def test_url_ser_as_any() -> None:
+    ta = TypeAdapter(Any)
+    assert ta.dump_python(HttpUrl('http://example.com')) == HttpUrl('http://example.com')
+    assert ta.dump_json(HttpUrl('http://example.com')) == b'"http://example.com/"'

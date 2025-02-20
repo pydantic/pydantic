@@ -11,9 +11,8 @@ Pydantic integrates with *devtools* by implementing the `__pretty__` method on m
 In particular `debug()` is useful when inspecting models:
 
 
-```py test="no-print-intercept"
+```python {test="no-print-intercept"}
 from datetime import datetime
-from typing import List
 
 from devtools import debug
 
@@ -31,7 +30,7 @@ class User(BaseModel):
     id: int
     name: str
     signup_ts: datetime
-    friends: List[int]
+    friends: list[int]
     address: Address
 
 

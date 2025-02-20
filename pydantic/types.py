@@ -5,43 +5,41 @@ from __future__ import annotations as _annotations
 import base64
 import dataclasses as _dataclasses
 import re
+from collections.abc import Hashable, Iterator
 from datetime import date, datetime
 from decimal import Decimal
 from enum import Enum
 from pathlib import Path
+from re import Pattern
 from types import ModuleType
 from typing import (
     TYPE_CHECKING,
+    Annotated,
     Any,
     Callable,
     ClassVar,
-    Dict,
-    FrozenSet,
     Generic,
-    Hashable,
-    Iterator,
-    List,
-    Pattern,
-    Set,
+    Literal,
     TypeVar,
     Union,
     cast,
-    get_args,
-    get_origin,
 )
 from uuid import UUID
 
 import annotated_types
 from annotated_types import BaseMetadata, MaxLen, MinLen
-from pydantic_core import CoreSchema, PydanticCustomError, core_schema
-from typing_extensions import Annotated, Literal, Protocol, TypeAlias, TypeAliasType, deprecated
+from pydantic_core import CoreSchema, PydanticCustomError, SchemaSerializer, core_schema
+from typing_extensions import Protocol, TypeAlias, TypeAliasType, deprecated, get_args, get_origin
 
-from ._internal import _core_utils, _fields, _internal_dataclass, _typing_extra, _utils, _validators
+from ._internal import _fields, _internal_dataclass, _typing_extra, _utils, _validators
 from ._migration import getattr_migration
 from .annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
 from .errors import PydanticUserError
 from .json_schema import JsonSchemaValue
 from .warnings import PydanticDeprecatedSince20
+
+if TYPE_CHECKING:
+    from ._internal._core_metadata import CoreMetadata
 
 __all__ = (
     'Strict',
@@ -113,7 +111,8 @@ T = TypeVar('T')
 
 @_dataclasses.dataclass
 class Strict(_fields.PydanticMetadata, BaseMetadata):
-    """Usage docs: https://docs.pydantic.dev/2.10/concepts/strict_mode/#strict-mode-with-annotated-strict
+    """!!! abstract "Usage Documentation"
+        [Strict Mode with `Annotated` `Strict`](../concepts/strict_mode.md#strict-mode-with-annotated-strict)
 
     A field metadata class to indicate that a field should be validated in strict mode.
     Use this class as an annotation via [`Annotated`](https://docs.python.org/3/library/typing.html#typing.Annotated), as seen below.
@@ -123,7 +122,7 @@ class Strict(_fields.PydanticMetadata, BaseMetadata):
 
     Example:
         ```python
-        from typing_extensions import Annotated
+        from typing import Annotated
 
         from pydantic.types import Strict
 
@@ -165,7 +164,7 @@ def conint(
         The reason is that `conint` returns a type, which doesn't play well with static analysis tools.
 
         === ":x: Don't do this"
-            ```py
+            ```python
             from pydantic import BaseModel, conint
 
             class Foo(BaseModel):
@@ -173,8 +172,8 @@ def conint(
             ```
 
         === ":white_check_mark: Do this"
-            ```py
-            from typing_extensions import Annotated
+            ```python
+            from typing import Annotated
 
             from pydantic import BaseModel, Field
 
@@ -195,7 +194,7 @@ def conint(
     Returns:
         The wrapped integer type.
 
-    ```py
+    ```python
     from pydantic import BaseModel, ValidationError, conint
 
     class ConstrainedExample(BaseModel):
@@ -235,7 +234,7 @@ def conint(
 PositiveInt = Annotated[int, annotated_types.Gt(0)]
 """An integer that must be greater than zero.
 
-```py
+```python
 from pydantic import BaseModel, PositiveInt, ValidationError
 
 class Model(BaseModel):
@@ -266,7 +265,7 @@ except ValidationError as e:
 NegativeInt = Annotated[int, annotated_types.Lt(0)]
 """An integer that must be less than zero.
 
-```py
+```python
 from pydantic import BaseModel, NegativeInt, ValidationError
 
 class Model(BaseModel):
@@ -297,7 +296,7 @@ except ValidationError as e:
 NonPositiveInt = Annotated[int, annotated_types.Le(0)]
 """An integer that must be less than or equal to zero.
 
-```py
+```python
 from pydantic import BaseModel, NonPositiveInt, ValidationError
 
 class Model(BaseModel):
@@ -328,7 +327,7 @@ except ValidationError as e:
 NonNegativeInt = Annotated[int, annotated_types.Ge(0)]
 """An integer that must be greater than or equal to zero.
 
-```py
+```python
 from pydantic import BaseModel, NonNegativeInt, ValidationError
 
 class Model(BaseModel):
@@ -359,7 +358,7 @@ except ValidationError as e:
 StrictInt = Annotated[int, Strict()]
 """An integer that must be validated in strict mode.
 
-```py
+```python
 from pydantic import BaseModel, StrictInt, ValidationError
 
 class StrictIntModel(BaseModel):
@@ -391,11 +390,12 @@ class AllowInfNan(_fields.PydanticMetadata):
 
     Example:
         ```python
-        from typing_extensions import Annotated
+        from typing import Annotated
 
         from pydantic.types import AllowInfNan
 
         LaxFloat = Annotated[float, AllowInfNan()]
+        ```
     """
 
     allow_inf_nan: bool = True
@@ -425,7 +425,7 @@ def confloat(
         The reason is that `confloat` returns a type, which doesn't play well with static analysis tools.
 
         === ":x: Don't do this"
-            ```py
+            ```python
             from pydantic import BaseModel, confloat
 
             class Foo(BaseModel):
@@ -433,8 +433,8 @@ def confloat(
             ```
 
         === ":white_check_mark: Do this"
-            ```py
-            from typing_extensions import Annotated
+            ```python
+            from typing import Annotated
 
             from pydantic import BaseModel, Field
 
@@ -456,7 +456,7 @@ def confloat(
     Returns:
         The wrapped float type.
 
-    ```py
+    ```python
     from pydantic import BaseModel, ValidationError, confloat
 
     class ConstrainedExample(BaseModel):
@@ -496,7 +496,7 @@ def confloat(
 PositiveFloat = Annotated[float, annotated_types.Gt(0)]
 """A float that must be greater than zero.
 
-```py
+```python
 from pydantic import BaseModel, PositiveFloat, ValidationError
 
 class Model(BaseModel):
@@ -527,7 +527,7 @@ except ValidationError as e:
 NegativeFloat = Annotated[float, annotated_types.Lt(0)]
 """A float that must be less than zero.
 
-```py
+```python
 from pydantic import BaseModel, NegativeFloat, ValidationError
 
 class Model(BaseModel):
@@ -558,7 +558,7 @@ except ValidationError as e:
 NonPositiveFloat = Annotated[float, annotated_types.Le(0)]
 """A float that must be less than or equal to zero.
 
-```py
+```python
 from pydantic import BaseModel, NonPositiveFloat, ValidationError
 
 class Model(BaseModel):
@@ -589,7 +589,7 @@ except ValidationError as e:
 NonNegativeFloat = Annotated[float, annotated_types.Ge(0)]
 """A float that must be greater than or equal to zero.
 
-```py
+```python
 from pydantic import BaseModel, NonNegativeFloat, ValidationError
 
 class Model(BaseModel):
@@ -620,7 +620,7 @@ except ValidationError as e:
 StrictFloat = Annotated[float, Strict(True)]
 """A float that must be validated in strict mode.
 
-```py
+```python
 from pydantic import BaseModel, StrictFloat, ValidationError
 
 class StrictFloatModel(BaseModel):
@@ -640,7 +640,7 @@ except ValidationError as e:
 FiniteFloat = Annotated[float, AllowInfNan(False)]
 """A float that must be finite (not ``-inf``, ``inf``, or ``nan``).
 
-```py
+```python
 from pydantic import BaseModel, FiniteFloat
 
 class Model(BaseModel):
@@ -688,7 +688,8 @@ StrictBytes = Annotated[bytes, Strict()]
 
 @_dataclasses.dataclass(frozen=True)
 class StringConstraints(annotated_types.GroupedMetadata):
-    """Usage docs: https://docs.pydantic.dev/2.10/concepts/fields/#string-constraints
+    """!!! abstract "Usage Documentation"
+        [`StringConstraints`](../concepts/fields.md#string-constraints)
 
     A field metadata class to apply constraints to `str` types.
     Use this class as an annotation via [`Annotated`](https://docs.python.org/3/library/typing.html#typing.Annotated), as seen below.
@@ -704,7 +705,7 @@ class StringConstraints(annotated_types.GroupedMetadata):
 
     Example:
         ```python
-        from typing_extensions import Annotated
+        from typing import Annotated
 
         from pydantic.types import StringConstraints
 
@@ -762,7 +763,7 @@ def constr(
         The reason is that `constr` returns a type, which doesn't play well with static analysis tools.
 
         === ":x: Don't do this"
-            ```py
+            ```python
             from pydantic import BaseModel, constr
 
             class Foo(BaseModel):
@@ -770,8 +771,8 @@ def constr(
             ```
 
         === ":white_check_mark: Do this"
-            ```py
-            from typing_extensions import Annotated
+            ```python
+            from typing import Annotated
 
             from pydantic import BaseModel, StringConstraints
 
@@ -786,7 +787,7 @@ def constr(
 
     A wrapper around `str` that allows for additional constraints.
 
-    ```py
+    ```python
     from pydantic import BaseModel, constr
 
     class Foo(BaseModel):
@@ -844,7 +845,7 @@ def conset(
     Returns:
         The wrapped set type.
     """
-    return Annotated[Set[item_type], annotated_types.Len(min_length or 0, max_length)]  # pyright: ignore[reportReturnType]
+    return Annotated[set[item_type], annotated_types.Len(min_length or 0, max_length)]  # pyright: ignore[reportReturnType]
 
 
 def confrozenset(
@@ -860,7 +861,7 @@ def confrozenset(
     Returns:
         The wrapped frozenset type.
     """
-    return Annotated[FrozenSet[item_type], annotated_types.Len(min_length or 0, max_length)]  # pyright: ignore[reportReturnType]
+    return Annotated[frozenset[item_type], annotated_types.Len(min_length or 0, max_length)]  # pyright: ignore[reportReturnType]
 
 
 AnyItemType = TypeVar('AnyItemType')
@@ -873,7 +874,7 @@ def conlist(
     max_length: int | None = None,
     unique_items: bool | None = None,
 ) -> type[list[AnyItemType]]:
-    """A wrapper around typing.List that adds validation.
+    """A wrapper around [`list`][] that adds validation.
 
     Args:
         item_type: The type of the items in the list.
@@ -895,7 +896,7 @@ def conlist(
             ),
             code='removed-kwargs',
         )
-    return Annotated[List[item_type], annotated_types.Len(min_length or 0, max_length)]  # pyright: ignore[reportReturnType]
+    return Annotated[list[item_type], annotated_types.Len(min_length or 0, max_length)]  # pyright: ignore[reportReturnType]
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~ IMPORT STRING TYPE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -916,7 +917,7 @@ else:
         On model instantiation, pointers will be evaluated and imported. There is
         some nuance to this behavior, demonstrated in the examples below.
 
-        ```py
+        ```python
         import math
 
         from pydantic import BaseModel, Field, ImportString, ValidationError
@@ -970,7 +971,7 @@ else:
 
         Serializing an `ImportString` type to json is also possible.
 
-        ```py
+        ```python
         from pydantic import BaseModel, ImportString
 
         class ImportThings(BaseModel):
@@ -1056,7 +1057,7 @@ def condecimal(
         The reason is that `condecimal` returns a type, which doesn't play well with static analysis tools.
 
         === ":x: Don't do this"
-            ```py
+            ```python
             from pydantic import BaseModel, condecimal
 
             class Foo(BaseModel):
@@ -1064,10 +1065,9 @@ def condecimal(
             ```
 
         === ":white_check_mark: Do this"
-            ```py
+            ```python
             from decimal import Decimal
-
-            from typing_extensions import Annotated
+            from typing import Annotated
 
             from pydantic import BaseModel, Field
 
@@ -1088,7 +1088,7 @@ def condecimal(
         decimal_places: The number of decimal places. Defaults to `None`.
         allow_inf_nan: Whether to allow infinity and NaN. Defaults to `None`.
 
-    ```py
+    ```python
     from decimal import Decimal
 
     from pydantic import BaseModel, ValidationError, condecimal
@@ -1142,9 +1142,8 @@ class UuidVersion:
 
     Example:
         ```python
+        from typing import Annotated
         from uuid import UUID
-
-        from typing_extensions import Annotated
 
         from pydantic.types import UuidVersion
 
@@ -1180,7 +1179,7 @@ class UuidVersion:
 UUID1 = Annotated[UUID, UuidVersion(1)]
 """A [UUID](https://docs.python.org/3/library/uuid.html) that must be version 1.
 
-```py
+```python
 import uuid
 
 from pydantic import UUID1, BaseModel
@@ -1194,7 +1193,7 @@ Model(uuid1=uuid.uuid1())
 UUID3 = Annotated[UUID, UuidVersion(3)]
 """A [UUID](https://docs.python.org/3/library/uuid.html) that must be version 3.
 
-```py
+```python
 import uuid
 
 from pydantic import UUID3, BaseModel
@@ -1208,7 +1207,7 @@ Model(uuid3=uuid.uuid3(uuid.NAMESPACE_DNS, 'pydantic.org'))
 UUID4 = Annotated[UUID, UuidVersion(4)]
 """A [UUID](https://docs.python.org/3/library/uuid.html) that must be version 4.
 
-```py
+```python
 import uuid
 
 from pydantic import UUID4, BaseModel
@@ -1222,7 +1221,7 @@ Model(uuid4=uuid.uuid4())
 UUID5 = Annotated[UUID, UuidVersion(5)]
 """A [UUID](https://docs.python.org/3/library/uuid.html) that must be version 5.
 
-```py
+```python
 import uuid
 
 from pydantic import UUID5, BaseModel
@@ -1300,7 +1299,7 @@ class PathType:
 FilePath = Annotated[Path, PathType('file')]
 """A path that must point to a file.
 
-```py
+```python
 from pathlib import Path
 
 from pydantic import BaseModel, FilePath, ValidationError
@@ -1342,7 +1341,7 @@ except ValidationError as e:
 DirectoryPath = Annotated[Path, PathType('dir')]
 """A path that must point to a directory.
 
-```py
+```python
 from pathlib import Path
 
 from pydantic import BaseModel, DirectoryPath, ValidationError
@@ -1401,8 +1400,8 @@ else:
         You can use the `Json` data type to make Pydantic first load a raw JSON string before
         validating the loaded data into the parametrized type:
 
-        ```py
-        from typing import Any, List
+        ```python
+        from typing import Any
 
         from pydantic import BaseModel, Json, ValidationError
 
@@ -1410,7 +1409,7 @@ else:
             json_obj: Json[Any]
 
         class ConstrainedJsonModel(BaseModel):
-            json_obj: Json[List[int]]
+            json_obj: Json[list[int]]
 
         print(AnyJsonModel(json_obj='{"b": 1}'))
         #> json_obj={'b': 1}
@@ -1453,13 +1452,11 @@ else:
         When you dump the model using `model_dump` or `model_dump_json`, the dumped value will be the result of validation,
         not the original JSON string. However, you can use the argument `round_trip=True` to get the original JSON string back:
 
-        ```py
-        from typing import List
-
+        ```python
         from pydantic import BaseModel, Json
 
         class ConstrainedJsonModel(BaseModel):
-            json_obj: Json[List[int]]
+            json_obj: Json[list[int]]
 
         print(ConstrainedJsonModel(json_obj='[1, 2, 3]').model_dump_json())
         #> {"json_obj":[1,2,3]}
@@ -1524,6 +1521,13 @@ class _SecretBase(Generic[SecretType]):
         raise NotImplementedError
 
 
+def _serialize_secret(value: Secret[SecretType], info: core_schema.SerializationInfo) -> str | Secret[SecretType]:
+    if info.mode == 'json':
+        return str(value)
+    else:
+        return value
+
+
 class Secret(_SecretBase[SecretType]):
     """A generic base class used for defining a field with sensitive information that you do not want to be visible in logging or tracebacks.
 
@@ -1533,7 +1537,7 @@ class Secret(_SecretBase[SecretType]):
 
     1. Directly parametrizing `Secret` with a type:
 
-    ```py
+    ```python
     from pydantic import BaseModel, Secret
 
     SecretBool = Secret[bool]
@@ -1554,7 +1558,7 @@ class Secret(_SecretBase[SecretType]):
 
     2. Subclassing from parametrized `Secret`:
 
-    ```py
+    ```python
     from datetime import date
 
     from pydantic import BaseModel, Secret
@@ -1582,8 +1586,8 @@ class Secret(_SecretBase[SecretType]):
     You can enforce constraints on the underlying type through annotations:
     For example:
 
-    ```py
-    from typing_extensions import Annotated
+    ```python
+    from typing import Annotated
 
     from pydantic import BaseModel, Field, Secret, ValidationError
 
@@ -1660,12 +1664,6 @@ class Secret(_SecretBase[SecretType]):
             validated_inner = handler(value)
             return cls(validated_inner)
 
-        def serialize(value: Secret[SecretType], info: core_schema.SerializationInfo) -> str | Secret[SecretType]:
-            if info.mode == 'json':
-                return str(value)
-            else:
-                return value
-
         return core_schema.json_or_python_schema(
             python_schema=core_schema.no_info_wrap_validator_function(
                 validate_secret_value,
@@ -1673,15 +1671,36 @@ class Secret(_SecretBase[SecretType]):
             ),
             json_schema=core_schema.no_info_after_validator_function(lambda x: cls(x), inner_schema),
             serialization=core_schema.plain_serializer_function_ser_schema(
-                serialize,
+                _serialize_secret,
                 info_arg=True,
                 when_used='always',
             ),
         )
 
+    __pydantic_serializer__ = SchemaSerializer(
+        core_schema.any_schema(
+            serialization=core_schema.plain_serializer_function_ser_schema(
+                _serialize_secret,
+                info_arg=True,
+                when_used='always',
+            )
+        )
+    )
+
 
 def _secret_display(value: SecretType) -> str:  # type: ignore
     return '**********' if value else ''
+
+
+def _serialize_secret_field(
+    value: _SecretField[SecretType], info: core_schema.SerializationInfo
+) -> str | _SecretField[SecretType]:
+    if info.mode == 'json':
+        # we want the output to always be string without the `b'` prefix for bytes,
+        # hence we just use `secret_display`
+        return _secret_display(value.get_secret_value())
+    else:
+        return value
 
 
 class _SecretField(_SecretBase[SecretType]):
@@ -1690,16 +1709,6 @@ class _SecretField(_SecretBase[SecretType]):
 
     @classmethod
     def __get_pydantic_core_schema__(cls, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
-        def serialize(
-            value: _SecretField[SecretType], info: core_schema.SerializationInfo
-        ) -> str | _SecretField[SecretType]:
-            if info.mode == 'json':
-                # we want the output to always be string without the `b'` prefix for bytes,
-                # hence we just use `secret_display`
-                return _secret_display(value.get_secret_value())
-            else:
-                return value
-
         def get_json_schema(_core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
             json_schema = handler(cls._inner_schema)
             _utils.update_not_none(
@@ -1727,10 +1736,9 @@ class _SecretField(_SecretBase[SecretType]):
                 ),
                 json_schema=json_schema,
                 serialization=core_schema.plain_serializer_function_ser_schema(
-                    serialize,
+                    _serialize_secret_field,
                     info_arg=True,
-                    return_schema=core_schema.str_schema(),
-                    when_used='json',
+                    when_used='always',
                 ),
             )
 
@@ -1740,6 +1748,16 @@ class _SecretField(_SecretBase[SecretType]):
             metadata={'pydantic_js_functions': [get_json_schema]},
         )
 
+    __pydantic_serializer__ = SchemaSerializer(
+        core_schema.any_schema(
+            serialization=core_schema.plain_serializer_function_ser_schema(
+                _serialize_secret_field,
+                info_arg=True,
+                when_used='always',
+            )
+        )
+    )
+
 
 class SecretStr(_SecretField[str]):
     """A string used for storing sensitive information that you do not want to be visible in logging or tracebacks.
@@ -1747,7 +1765,7 @@ class SecretStr(_SecretField[str]):
     When the secret value is nonempty, it is displayed as `'**********'` instead of the underlying value in
     calls to `repr()` and `str()`. If the value _is_ empty, it is displayed as `''`.
 
-    ```py
+    ```python
     from pydantic import BaseModel, SecretStr
 
     class User(BaseModel):
@@ -1770,7 +1788,7 @@ class SecretStr(_SecretField[str]):
     You can use the [`field_serializer`][pydantic.functional_serializers.field_serializer] to dump the
     secret as plain-text when serializing to json.
 
-    ```py
+    ```python
     from pydantic import BaseModel, SecretBytes, SecretStr, field_serializer
 
     class Model(BaseModel):
@@ -1815,7 +1833,7 @@ class SecretBytes(_SecretField[bytes]):
     When the secret value is nonempty, it is displayed as `b'**********'` instead of the underlying value in
     calls to `repr()` and `str()`. If the value _is_ empty, it is displayed as `b''`.
 
-    ```py
+    ```python
     from pydantic import BaseModel, SecretBytes
 
     class User(BaseModel):
@@ -1978,7 +1996,7 @@ class ByteSize(int):
     !!! info
         Note that `1b` will be parsed as "1 byte" and not "1 bit".
 
-    ```py
+    ```python
     from pydantic import BaseModel, ByteSize
 
     class MyModel(BaseModel):
@@ -2417,8 +2435,8 @@ class EncodedBytes:
 
     `EncodedBytes` needs an encoder that implements `EncoderProtocol` to operate.
 
-    ```py
-    from typing_extensions import Annotated
+    ```python
+    from typing import Annotated
 
     from pydantic import BaseModel, EncodedBytes, EncoderProtocol, ValidationError
 
@@ -2516,8 +2534,8 @@ class EncodedStr:
 
     `EncodedStr` needs an encoder that implements `EncoderProtocol` to operate.
 
-    ```py
-    from typing_extensions import Annotated
+    ```python
+    from typing import Annotated
 
     from pydantic import BaseModel, EncodedStr, EncoderProtocol, ValidationError
 
@@ -2627,12 +2645,11 @@ Warning:
     If you'd still like to use these legacy encoders / decoders, you can achieve this by creating a custom annotated type,
     like follows:
 
-    ```py
+    ```python
     import base64
-    from typing import Literal
+    from typing import Annotated, Literal
 
     from pydantic_core import PydanticCustomError
-    from typing_extensions import Annotated
 
     from pydantic import EncodedBytes, EncoderProtocol
 
@@ -2659,7 +2676,7 @@ Warning:
     LegacyBase64Bytes = Annotated[bytes, EncodedBytes(encoder=LegacyBase64Encoder)]
     ```
 
-```py
+```python
 from pydantic import Base64Bytes, BaseModel, ValidationError
 
 class Model(BaseModel):
@@ -2706,7 +2723,7 @@ Warning:
     See the [`Base64Bytes`][pydantic.types.Base64Bytes] type for more information on how to
     replicate the old behavior with the legacy encoders / decoders.
 
-```py
+```python
 from pydantic import Base64Str, BaseModel, ValidationError
 
 class Model(BaseModel):
@@ -2745,7 +2762,7 @@ Note:
     As a result, the `Base64UrlBytes` type can be used to faithfully decode "vanilla" base64 data
     (using `'+'` and `'/'`).
 
-```py
+```python
 from pydantic import Base64UrlBytes, BaseModel
 
 class Model(BaseModel):
@@ -2766,7 +2783,7 @@ Note:
 
     As a result, the `Base64UrlStr` type can be used to faithfully decode "vanilla" base64 data (using `'+'` and `'/'`).
 
-```py
+```python
 from pydantic import Base64UrlStr, BaseModel
 
 class Model(BaseModel):
@@ -2785,7 +2802,8 @@ __getattr__ = getattr_migration(__name__)
 
 @_dataclasses.dataclass(**_internal_dataclass.slots_true)
 class GetPydanticSchema:
-    """Usage docs: https://docs.pydantic.dev/2.10/concepts/types/#using-getpydanticschema-to-reduce-boilerplate
+    """!!! abstract "Usage Documentation"
+        [Using `GetPydanticSchema` to Reduce Boilerplate](../concepts/types.md#using-getpydanticschema-to-reduce-boilerplate)
 
     A convenience class for creating an annotation that provides pydantic custom type hooks.
 
@@ -2794,9 +2812,7 @@ class GetPydanticSchema:
 
     For example, to have a field treated by type checkers as `int`, but by pydantic as `Any`, you can do:
     ```python
-    from typing import Any
-
-    from typing_extensions import Annotated
+    from typing import Annotated, Any
 
     from pydantic import BaseModel, GetPydanticSchema
 
@@ -2845,10 +2861,8 @@ class Tag:
     The primary role of the `Tag` here is to map the return value from the callable `Discriminator` function to
     the appropriate member of the `Union` in question.
 
-    ```py
-    from typing import Any, Union
-
-    from typing_extensions import Annotated, Literal
+    ```python
+    from typing import Annotated, Any, Literal, Union
 
     from pydantic import BaseModel, Discriminator, Tag
 
@@ -2913,15 +2927,15 @@ class Tag:
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
         schema = handler(source_type)
-        metadata = schema.setdefault('metadata', {})
-        assert isinstance(metadata, dict)
-        metadata[_core_utils.TAGGED_UNION_TAG_KEY] = self.tag
+        metadata = cast('CoreMetadata', schema.setdefault('metadata', {}))
+        metadata['pydantic_internal_union_tag_key'] = self.tag
         return schema
 
 
 @_dataclasses.dataclass(**_internal_dataclass.slots_true, frozen=True)
 class Discriminator:
-    """Usage docs: https://docs.pydantic.dev/2.10/concepts/unions/#discriminated-unions-with-callable-discriminator
+    """!!! abstract "Usage Documentation"
+        [Discriminated Unions with `Callable` `Discriminator`](../concepts/unions.md#discriminated-unions-with-callable-discriminator)
 
     Provides a way to use a custom callable as the way to extract the value of a union discriminator.
 
@@ -2934,10 +2948,8 @@ class Discriminator:
     Consider this example, which is much more performant with the use of `Discriminator` and thus a `TaggedUnion`
     than it would be as a normal `Union`.
 
-    ```py
-    from typing import Any, Union
-
-    from typing_extensions import Annotated, Literal
+    ```python
+    from typing import Annotated, Any, Literal, Union
 
     from pydantic import BaseModel, Discriminator, Tag
 
@@ -3034,11 +3046,9 @@ class Discriminator:
             tag = None
             if isinstance(choice, tuple):
                 choice, tag = choice
-            metadata = choice.get('metadata')
+            metadata = cast('CoreMetadata | None', choice.get('metadata'))
             if metadata is not None:
-                metadata_tag = metadata.get(_core_utils.TAGGED_UNION_TAG_KEY)
-                if metadata_tag is not None:
-                    tag = metadata_tag
+                tag = metadata.get('pydantic_internal_union_tag_key') or tag
             if tag is None:
                 raise PydanticUserError(
                     f'`Tag` not provided for choice {choice} used with `Discriminator`',
@@ -3107,8 +3117,8 @@ class _AllowAnyJson:
 if TYPE_CHECKING:
     # This seems to only be necessary for mypy
     JsonValue: TypeAlias = Union[
-        List['JsonValue'],
-        Dict[str, 'JsonValue'],
+        list['JsonValue'],
+        dict[str, 'JsonValue'],
         str,
         bool,
         int,
@@ -3119,8 +3129,8 @@ if TYPE_CHECKING:
 
     It may be one of:
 
-    * `List['JsonValue']`
-    * `Dict[str, 'JsonValue']`
+    * `list['JsonValue']`
+    * `dict[str, 'JsonValue']`
     * `str`
     * `bool`
     * `int`
@@ -3130,7 +3140,7 @@ if TYPE_CHECKING:
     The following example demonstrates how to use `JsonValue` to validate JSON data,
     and what kind of errors to expect when input data is not json serializable.
 
-    ```py
+    ```python
     import json
 
     from pydantic import BaseModel, JsonValue, ValidationError
@@ -3163,8 +3173,8 @@ else:
         'JsonValue',
         Annotated[
             Union[
-                Annotated[List['JsonValue'], Tag('list')],
-                Annotated[Dict[str, 'JsonValue'], Tag('dict')],
+                Annotated[list['JsonValue'], Tag('list')],
+                Annotated[dict[str, 'JsonValue'], Tag('dict')],
                 Annotated[str, Tag('str')],
                 Annotated[bool, Tag('bool')],
                 Annotated[int, Tag('int')],
@@ -3208,15 +3218,13 @@ class FailFast(_fields.PydanticMetadata, BaseMetadata):
     You might want to enable this setting if you want to validate your data faster (basically, if you use this,
     validation will be more performant with the caveat that you get less information).
 
-    ```py
-    from typing import List
-
-    from typing_extensions import Annotated
+    ```python
+    from typing import Annotated
 
     from pydantic import BaseModel, FailFast, ValidationError
 
     class Model(BaseModel):
-        x: Annotated[List[int], FailFast()]
+        x: Annotated[list[int], FailFast()]
 
     # This will raise a single error for the first invalid value and stop validation
     try:

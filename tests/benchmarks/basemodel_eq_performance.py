@@ -8,8 +8,9 @@ import operator
 import sys
 import textwrap
 import timeit
+from collections.abc import Iterable, Sized
 from importlib import metadata
-from typing import TYPE_CHECKING, Any, Callable, Generic, Iterable, Sized, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, Generic, TypeVar
 
 # Do not import additional dependencies at top-level
 if TYPE_CHECKING:
@@ -604,7 +605,7 @@ if __name__ == '__main__':
         if args.output_path.suffix:
             filepath = args.output_path
         else:
-            filepath = args.output_path / f"eq-benchmark_python-{PYTHON_VERSION.replace('.', '-')}.png"
+            filepath = args.output_path / f'eq-benchmark_python-{PYTHON_VERSION.replace(".", "-")}.png'
         fig.savefig(
             filepath,
             dpi=200,

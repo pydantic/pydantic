@@ -40,29 +40,8 @@ def on_pre_build(config: Config) -> None:
     """
     Before the build starts.
     """
-    import mkdocs_redirects.plugin
-
     add_changelog()
     add_mkdocs_run_deps()
-
-    # work around for very unfortunate bug in mkdocs-redirects:
-    # https://github.com/mkdocs/mkdocs-redirects/issues/65
-    mkdocs_redirects.plugin.HTML_TEMPLATE = """
-<!doctype html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <title>Redirecting...</title>
-    <link rel="canonical" href="{url}">
-    <!-- remove problematic tag here -->
-    <script>var anchor=window.location.hash.substr(1);location.href="{url}"+(anchor?"#"+anchor:"")</script>
-    <meta http-equiv="refresh" content="0; url={url}">
-</head>
-<body>
-Redirecting...
-</body>
-</html>
-"""
 
 
 def on_files(files: Files, config: Config) -> Files:
@@ -78,7 +57,6 @@ def on_page_markdown(markdown: str, page: Page, config: Config, files: Files) ->
     """
     markdown = upgrade_python(markdown)
     markdown = insert_json_output(markdown)
-    markdown = remove_code_fence_attributes(markdown)
     if md := render_index(markdown, page):
         return md
     if md := render_why(markdown, page):
@@ -148,8 +126,8 @@ def add_mkdocs_run_deps() -> None:
     path.write_text(html)
 
 
-MIN_MINOR_VERSION = 8
-MAX_MINOR_VERSION = 12
+MIN_MINOR_VERSION = 9
+MAX_MINOR_VERSION = 13
 
 
 def upgrade_python(markdown: str) -> str:
@@ -190,7 +168,10 @@ def upgrade_python(markdown: str) -> str:
         else:
             return '\n\n'.join(output)
 
-    return re.sub(r'^(``` *py.*?)\n(.+?)^```(\s+(?:^\d+\. .+?\n)*)', add_tabs, markdown, flags=re.M | re.S)
+    # Note: we should move away from this regex approach. It does not handle edge cases (indented code blocks inside
+    # other blocks, etc) and can lead to bugs in the rendering of annotations. Edit with care and make sure the rendered
+    # documentation does not break:
+    return re.sub(r'(``` *py.*?)\n(.+?)^```(\s+(?:^\d+\. (?:[^\n][\n]?)+\n?)*)', add_tabs, markdown, flags=re.M | re.S)
 
 
 def _upgrade_code(code: str, min_version: int) -> str:
@@ -224,23 +205,6 @@ def insert_json_output(markdown: str) -> str:
         return f'{start}{attrs}{code}{start}\n'
 
     return re.sub(r'(^ *```)([^\n]*?output="json"[^\n]*?\n)(.+?)\1', replace_json, markdown, flags=re.M | re.S)
-
-
-def remove_code_fence_attributes(markdown: str) -> str:
-    """
-    There's no way to add attributes to code fences that works with both pycharm and mkdocs, hence we use
-    `py key="value"` to provide attributes to pytest-examples, then remove those attributes here.
-
-    https://youtrack.jetbrains.com/issue/IDEA-297873 & https://python-markdown.github.io/extensions/fenced_code_blocks/
-    """
-
-    def remove_attrs(match: re.Match[str]) -> str:
-        suffix = re.sub(
-            r' (?:test|lint|upgrade|group|requires|output|rewrite_assert)=".+?"', '', match.group(2), flags=re.M
-        )
-        return f'{match.group(1)}{suffix}'
-
-    return re.sub(r'^( *``` *py)(.*)', remove_attrs, markdown, flags=re.M)
 
 
 def get_orgs_data() -> list[dict[str, str]]:

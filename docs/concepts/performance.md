@@ -23,32 +23,28 @@ the function is called. Instead, instantiate it once, and reuse it.
 
 === ":x: Bad"
 
-    ```py lint="skip"
-    from typing import List
-
+    ```python {lint="skip"}
     from pydantic import TypeAdapter
 
 
     def my_func():
-        adapter = TypeAdapter(List[int])
+        adapter = TypeAdapter(list[int])
         # do something with adapter
     ```
 
 === ":white_check_mark: Good"
 
-    ```py lint="skip"
-    from typing import List
-
+    ```python {lint="skip"}
     from pydantic import TypeAdapter
 
-    adapter = TypeAdapter(List[int])
+    adapter = TypeAdapter(list[int])
 
     def my_func():
         ...
         # do something with adapter
     ```
 
-## `Sequence` vs `list` or `tuple` - `Mapping` vs `dict`
+## `Sequence` vs `list` or `tuple` with `Mapping` vs `dict`
 
 When using `Sequence`, Pydantic calls `isinstance(value, Sequence)` to check if the value is a sequence.
 Also, Pydantic will try to validate against different types of sequences, like `list` and `tuple`.
@@ -57,11 +53,11 @@ If you know the value is a `list` or `tuple`, use `list` or `tuple` instead of `
 The same applies to `Mapping` and `dict`.
 If you know the value is a `dict`, use `dict` instead of `Mapping`.
 
-## Don't do validation when you don't have to - use `Any` to keep the value unchanged
+## Don't do validation when you don't have to, use `Any` to keep the value unchanged
 
 If you don't need to validate a value, use `Any` to keep the value unchanged.
 
-```py
+```python
 from typing import Any
 
 from pydantic import BaseModel
@@ -78,7 +74,7 @@ model = Model(a=1)
 
 === "Don't do this"
 
-    ```py
+    ```python
     class CompletedStr(str):
         def __init__(self, s: str):
             self.s = s
@@ -87,7 +83,7 @@ model = Model(a=1)
 
 === "Do this"
 
-    ```py
+    ```python
     from pydantic import BaseModel
 
 
@@ -100,7 +96,7 @@ model = Model(a=1)
 
 Tagged union (or discriminated union) is a union with a field that indicates which type it is.
 
-```py test="skip"
+```python {test="skip"}
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field
@@ -145,7 +141,7 @@ Instead of using nested models, use `TypedDict` to define the structure of the d
 ??? info "Performance comparison"
     With a simple benchmark, `TypedDict` is about ~2.5x faster than nested models:
 
-    ```py test="skip"
+    ```python {test="skip"}
     from timeit import timeit
 
     from typing_extensions import TypedDict
@@ -193,14 +189,12 @@ Starting in v2.8+, you can apply the `FailFast` annotation to sequence types to 
 If you use this annotation, you won't get validation errors for the rest of the items in the sequence if one fails, so you're effectively
 trading off visibility for performance.
 
-```py
-from typing import List
-
-from typing_extensions import Annotated
+```python
+from typing import Annotated
 
 from pydantic import FailFast, TypeAdapter, ValidationError
 
-ta = TypeAdapter(Annotated[List[bool], FailFast()])
+ta = TypeAdapter(Annotated[list[bool], FailFast()])
 try:
     ta.validate_python([True, 'invalid', False, 'also invalid'])
 except ValidationError as exc:

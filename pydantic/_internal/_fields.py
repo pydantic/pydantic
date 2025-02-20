@@ -4,17 +4,20 @@ from __future__ import annotations as _annotations
 
 import dataclasses
 import warnings
+from collections.abc import Mapping
 from copy import copy
-from functools import lru_cache
+from functools import cache
 from inspect import Parameter, ismethoddescriptor, signature
-from typing import TYPE_CHECKING, Any, Callable, Pattern
+from re import Pattern
+from typing import TYPE_CHECKING, Any, Callable, TypeVar
 
 from pydantic_core import PydanticUndefined
 from typing_extensions import TypeIs
 
+from pydantic import PydanticDeprecatedSince211
 from pydantic.errors import PydanticUserError
 
-from . import _typing_extra
+from . import _generics, _typing_extra
 from ._config import ConfigWrapper
 from ._docs_extraction import extract_docstrings_from_cls
 from ._import_utils import import_cached_base_model, import_cached_field_info
@@ -49,7 +52,7 @@ def pydantic_general_metadata(**metadata: Any) -> BaseMetadata:
     return _general_metadata_cls()(metadata)  # type: ignore
 
 
-@lru_cache(maxsize=None)
+@cache
 def _general_metadata_cls() -> type[BaseMetadata]:
     """Do it this way to avoid importing `annotated_types` at import time."""
     from annotated_types import BaseMetadata
@@ -63,37 +66,37 @@ def _general_metadata_cls() -> type[BaseMetadata]:
     return _PydanticGeneralMetadata  # type: ignore
 
 
-def _update_fields_from_docstrings(cls: type[Any], fields: dict[str, FieldInfo], config_wrapper: ConfigWrapper) -> None:
-    if config_wrapper.use_attribute_docstrings:
-        fields_docs = extract_docstrings_from_cls(cls)
-        for ann_name, field_info in fields.items():
-            if field_info.description is None and ann_name in fields_docs:
-                field_info.description = fields_docs[ann_name]
+def _update_fields_from_docstrings(cls: type[Any], fields: dict[str, FieldInfo], use_inspect: bool = False) -> None:
+    fields_docs = extract_docstrings_from_cls(cls, use_inspect=use_inspect)
+    for ann_name, field_info in fields.items():
+        if field_info.description is None and ann_name in fields_docs:
+            field_info.description = fields_docs[ann_name]
 
 
 def collect_model_fields(  # noqa: C901
     cls: type[BaseModel],
-    bases: tuple[type[Any], ...],
     config_wrapper: ConfigWrapper,
     ns_resolver: NsResolver | None,
     *,
-    typevars_map: dict[Any, Any] | None = None,
+    typevars_map: Mapping[TypeVar, Any] | None = None,
 ) -> tuple[dict[str, FieldInfo], set[str]]:
-    """Collect the fields of a nascent pydantic model.
+    """Collect the fields and class variables names of a nascent Pydantic model.
 
-    Also collect the names of any ClassVars present in the type hints.
+    The fields collection process is *lenient*, meaning it won't error if string annotations
+    fail to evaluate. If this happens, the original annotation (and assigned value, if any)
+    is stored on the created `FieldInfo` instance.
 
-    The returned value is a tuple of two items: the fields dict, and the set of ClassVar names.
+    The `rebuild_model_fields()` should be called at a later point (e.g. when rebuilding the model),
+    and will make use of these stored attributes.
 
     Args:
         cls: BaseModel or dataclass.
-        bases: Parents of the class, generally `cls.__bases__`.
         config_wrapper: The config wrapper instance.
         ns_resolver: Namespace resolver to use when getting model annotations.
         typevars_map: A dictionary mapping type variables to their concrete types.
 
     Returns:
-        A tuple contains fields and class variables.
+        A two-tuple containing model fields and class variables names.
 
     Raises:
         NameError:
@@ -104,12 +107,13 @@ def collect_model_fields(  # noqa: C901
     BaseModel = import_cached_base_model()
     FieldInfo_ = import_cached_field_info()
 
+    bases = cls.__bases__
     parent_fields_lookup: dict[str, FieldInfo] = {}
     for base in reversed(bases):
         if model_fields := getattr(base, '__pydantic_fields__', None):
             parent_fields_lookup.update(model_fields)
 
-    type_hints = _typing_extra.get_cls_type_hints(cls, ns_resolver=ns_resolver, lenient=True)
+    type_hints = _typing_extra.get_model_type_hints(cls, ns_resolver=ns_resolver)
 
     # https://docs.python.org/3/howto/annotations.html#accessing-the-annotations-dict-of-an-object-in-python-3-9-and-older
     # annotations is only used for finding fields in parent classes
@@ -158,7 +162,18 @@ def collect_model_fields(  # noqa: C901
         if _typing_extra.is_classvar_annotation(ann_type):
             class_vars.add(ann_name)
             continue
-        if _is_finalvar_with_default_val(ann_type, getattr(cls, ann_name, PydanticUndefined)):
+
+        assigned_value = getattr(cls, ann_name, PydanticUndefined)
+
+        if _is_finalvar_with_default_val(ann_type, assigned_value):
+            warnings.warn(
+                f'Annotation {ann_name!r} is marked as final and has a default value. Pydantic treats {ann_name!r} as a '
+                'class variable, but it will be considered as a normal field in V3 to be aligned with dataclasses. If you '
+                f'still want {ann_name!r} to be considered as a class variable, annotate it as: `ClassVar[<type>] = <default>.`',
+                category=PydanticDeprecatedSince211,
+                # Incorrect when `create_model` is used, but the chance that final with a default is used is low in that case:
+                stacklevel=4,
+            )
             class_vars.add(ann_name)
             continue
         if not is_valid_field_name(ann_name):
@@ -195,39 +210,48 @@ def collect_model_fields(  # noqa: C901
                     UserWarning,
                 )
 
-        try:
-            default = getattr(cls, ann_name, PydanticUndefined)
-            if default is PydanticUndefined:
-                raise AttributeError
-        except AttributeError:
+        if assigned_value is PydanticUndefined:  # no assignment, just a plain annotation
             if ann_name in annotations:
+                # field is present in the current model's annotations (and *not* from parent classes)
                 field_info = FieldInfo_.from_annotation(ann_type)
-                field_info.evaluated = evaluated
+            elif ann_name in parent_fields_lookup:
+                # The field was present on one of the (possibly multiple) base classes
+                # copy the field to make sure typevar substitutions don't cause issues with the base classes
+                field_info = copy(parent_fields_lookup[ann_name])
             else:
-                # if field has no default value and is not in __annotations__ this means that it is
-                # defined in a base class and we can take it from there
-                if ann_name in parent_fields_lookup:
-                    # The field was present on one of the (possibly multiple) base classes
-                    # copy the field to make sure typevar substitutions don't cause issues with the base classes
-                    field_info = copy(parent_fields_lookup[ann_name])
-                else:
-                    # The field was not found on any base classes; this seems to be caused by fields not getting
-                    # generated thanks to models not being fully defined while initializing recursive models.
-                    # Nothing stops us from just creating a new FieldInfo for this type hint, so we do this.
-                    field_info = FieldInfo_.from_annotation(ann_type)
-                    field_info.evaluated = evaluated
+                # The field was not found on any base classes; this seems to be caused by fields not getting
+                # generated thanks to models not being fully defined while initializing recursive models.
+                # Nothing stops us from just creating a new FieldInfo for this type hint, so we do this.
+                field_info = FieldInfo_.from_annotation(ann_type)
 
-        else:
+            if not evaluated:
+                field_info._complete = False
+                # Store the original annotation that should be used to rebuild
+                # the field info later:
+                field_info._original_annotation = ann_type
+        else:  # An assigned value is present (either the default value, or a `Field()` function)
             _warn_on_nested_alias_in_annotation(ann_type, ann_name)
-            if isinstance(default, FieldInfo_) and ismethoddescriptor(default.default):
-                # the `getattr` call above triggers a call to `__get__` for descriptors, so we do
-                # the same if the `= field(default=...)` form is used. Note that we only do this
-                # for method descriptors for now, we might want to extend this to any descriptor
-                # in the future (by simply checking for `hasattr(default.default, '__get__')`).
-                default.default = default.default.__get__(None, cls)
+            if isinstance(assigned_value, FieldInfo_) and ismethoddescriptor(assigned_value.default):
+                # `assigned_value` was fetched using `getattr`, which triggers a call to `__get__`
+                # for descriptors, so we do the same if the `= field(default=...)` form is used.
+                # Note that we only do this for method descriptors for now, we might want to
+                # extend this to any descriptor in the future (by simply checking for
+                # `hasattr(assigned_value.default, '__get__')`).
+                assigned_value.default = assigned_value.default.__get__(None, cls)
 
-            field_info = FieldInfo_.from_annotated_attribute(ann_type, default)
-            field_info.evaluated = evaluated
+            # The `from_annotated_attribute()` call below mutates the assigned `Field()`, so make a copy:
+            original_assignment = (
+                copy(assigned_value) if not evaluated and isinstance(assigned_value, FieldInfo_) else assigned_value
+            )
+
+            field_info = FieldInfo_.from_annotated_attribute(ann_type, assigned_value)
+            if not evaluated:
+                field_info._complete = False
+                # Store the original annotation and assignment value that should be used to rebuild
+                # the field info later:
+                field_info._original_annotation = ann_type
+                field_info._original_assignment = original_assignment
+
             # attributes which are fields are removed from the class namespace:
             # 1. To match the behaviour of annotation-only fields
             # 2. To avoid false positives in the NameError check above
@@ -240,14 +264,19 @@ def collect_model_fields(  # noqa: C901
         # to make sure the decorators have already been built for this exact class
         decorators: DecoratorInfos = cls.__dict__['__pydantic_decorators__']
         if ann_name in decorators.computed_fields:
-            raise ValueError("you can't override a field with a computed field")
+            raise TypeError(
+                f'Field {ann_name!r} of class {cls.__name__!r} overrides symbol of same name in a parent class. '
+                'This override with a computed_field is incompatible.'
+            )
         fields[ann_name] = field_info
 
     if typevars_map:
         for field in fields.values():
-            field.apply_typevars_map(typevars_map)
+            if field._complete:
+                field.apply_typevars_map(typevars_map)
 
-    _update_fields_from_docstrings(cls, fields, config_wrapper)
+    if config_wrapper.use_attribute_docstrings:
+        _update_fields_from_docstrings(cls, fields)
     return fields, class_vars
 
 
@@ -267,17 +296,54 @@ def _warn_on_nested_alias_in_annotation(ann_type: type[Any], ann_name: str) -> N
                         return
 
 
-def _is_finalvar_with_default_val(type_: type[Any], val: Any) -> bool:
+def _is_finalvar_with_default_val(ann_type: type[Any], assigned_value: Any) -> bool:
+    if assigned_value is PydanticUndefined:
+        return False
+
     FieldInfo = import_cached_field_info()
 
-    if not _typing_extra.is_finalvar(type_):
+    if isinstance(assigned_value, FieldInfo) and assigned_value.is_required():
         return False
-    elif val is PydanticUndefined:
-        return False
-    elif isinstance(val, FieldInfo) and (val.default is PydanticUndefined and val.default_factory is None):
+    elif not _typing_extra.is_finalvar(ann_type):
         return False
     else:
         return True
+
+
+def rebuild_model_fields(
+    cls: type[BaseModel],
+    *,
+    ns_resolver: NsResolver,
+    typevars_map: Mapping[TypeVar, Any],
+) -> dict[str, FieldInfo]:
+    """Rebuild the (already present) model fields by trying to reevaluate annotations.
+
+    This function should be called whenever a model with incomplete fields is encountered.
+
+    Note:
+        This function *doesn't* mutate the model fields in place, as it can be called during
+        schema generation, where you don't want to mutate other model's fields.
+    """
+    FieldInfo_ = import_cached_field_info()
+
+    rebuilt_fields: dict[str, FieldInfo] = {}
+    with ns_resolver.push(cls):
+        for f_name, field_info in cls.__pydantic_fields__.items():
+            if field_info._complete:
+                rebuilt_fields[f_name] = field_info
+            else:
+                ann = _typing_extra.eval_type(
+                    field_info._original_annotation,
+                    *ns_resolver.types_namespace,
+                )
+                ann = _generics.replace_types(ann, typevars_map)
+
+                if (assign := field_info._original_assignment) is PydanticUndefined:
+                    rebuilt_fields[f_name] = FieldInfo_.from_annotation(ann)
+                else:
+                    rebuilt_fields[f_name] = FieldInfo_.from_annotated_attribute(ann, assign)
+
+    return rebuilt_fields
 
 
 def collect_dataclass_fields(
@@ -363,8 +429,14 @@ def collect_dataclass_fields(
             # Can't we juste use `_generics.replace_types`?
             field.apply_typevars_map(typevars_map)
 
-    if config_wrapper is not None:
-        _update_fields_from_docstrings(cls, fields, config_wrapper)
+    if config_wrapper is not None and config_wrapper.use_attribute_docstrings:
+        _update_fields_from_docstrings(
+            cls,
+            fields,
+            # We can't rely on the (more reliable) frame inspection method
+            # for stdlib dataclasses:
+            use_inspect=not hasattr(cls, '__is_pydantic_dataclass__'),
+        )
 
     return fields
 

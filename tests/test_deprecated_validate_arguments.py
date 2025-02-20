@@ -1,11 +1,10 @@
 import asyncio
 import inspect
 from pathlib import Path
-from typing import List
+from typing import Annotated
 
 import pytest
 from dirty_equals import IsInstance
-from typing_extensions import Annotated
 
 from pydantic import BaseModel, Field, PydanticDeprecatedSince20, ValidationError
 from pydantic.deprecated.decorator import ValidatedFunction
@@ -43,7 +42,7 @@ def test_args():
         {
             'input': 'x',
             'loc': ('b',),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'type': 'int_parsing',
         }
     ]
@@ -97,7 +96,7 @@ def test_kwargs():
         {
             'input': 'x',
             'loc': ('b',),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'type': 'int_parsing',
         }
     ]
@@ -239,7 +238,7 @@ def test_async():
 
 def test_string_annotation():
     @validate_arguments
-    def foo(a: 'List[int]', b: 'Path'):
+    def foo(a: 'list[int]', b: 'Path'):
         return f'a={a!r} b={b!r}'
 
     assert foo([1, 2, 3], '/')
@@ -250,7 +249,7 @@ def test_string_annotation():
         {
             'input': 'x',
             'loc': ('a', 0),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'type': 'int_parsing',
         },
         {'input': {'a': ['x']}, 'loc': ('b',), 'msg': 'Field required', 'type': 'missing'},
@@ -350,7 +349,7 @@ def test_config_arbitrary_types_allowed():
             'ctx': {'class': 'test_config_arbitrary_types_allowed.<locals>.EggBox'},
             'input': 2,
             'loc': ('b',),
-            'msg': 'Input should be an instance of ' 'test_config_arbitrary_types_allowed.<locals>.EggBox',
+            'msg': 'Input should be an instance of test_config_arbitrary_types_allowed.<locals>.EggBox',
             'type': 'is_instance_of',
         }
     ]

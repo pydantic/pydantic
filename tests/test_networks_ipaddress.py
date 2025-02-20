@@ -1,6 +1,6 @@
 import json
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
-from typing import Any, List
+from typing import Any
 
 import pytest
 
@@ -158,7 +158,7 @@ def test_ipv4address_success(value):
         ),
     ],
 )
-def test_ip_strict(tp: Any, value: Any, errors: List[Any]) -> None:
+def test_ip_strict(tp: Any, value: Any, errors: list[Any]) -> None:
     class Model(BaseModel):
         v: tp
 

@@ -1,5 +1,5 @@
 You may have types that are not `BaseModel`s that you want to validate data against.
-Or you may want to validate a `List[SomeModel]`, or dump it to JSON.
+Or you may want to validate a `list[SomeModel]`, or dump it to JSON.
 
 ??? api "API Documentation"
     [`pydantic.type_adapter.TypeAdapter`][pydantic.type_adapter.TypeAdapter]<br>
@@ -12,9 +12,7 @@ A [`TypeAdapter`][pydantic.type_adapter.TypeAdapter] instance exposes some of th
 [`BaseModel`][pydantic.main.BaseModel] instance methods for types that do not have such methods
 (such as dataclasses, primitive types, and more):
 
-```py
-from typing import List
-
+```python
 from typing_extensions import TypedDict
 
 from pydantic import TypeAdapter, ValidationError
@@ -25,7 +23,7 @@ class User(TypedDict):
     id: int
 
 
-user_list_adapter = TypeAdapter(List[User])
+user_list_adapter = TypeAdapter(list[User])
 user_list = user_list_adapter.validate_python([{'name': 'Fred', 'id': '3'}])
 print(repr(user_list))
 #> [{'name': 'Fred', 'id': 3}]
@@ -67,9 +65,7 @@ but works with arbitrary Pydantic-compatible types.
 This is especially useful when you want to parse results into a type that is not a direct subclass of
 [`BaseModel`][pydantic.main.BaseModel]. For example:
 
-```py
-from typing import List
-
+```python
 from pydantic import BaseModel, TypeAdapter
 
 
@@ -82,7 +78,7 @@ class Item(BaseModel):
 # item_data = requests.get('https://my-api.com/items').json()
 item_data = [{'id': 1, 'name': 'My Item'}]
 
-items = TypeAdapter(List[Item]).validate_python(item_data)
+items = TypeAdapter(list[Item]).validate_python(item_data)
 print(items)
 #> [Item(id=1, name='My Item')]
 ```
@@ -113,7 +109,7 @@ Pydantic will defer building the core schema until the first time it is needed (
 In order to manually trigger the building of the core schema, you can call the
 [`rebuild`][pydantic.type_adapter.TypeAdapter.rebuild] method on the [`TypeAdapter`][pydantic.type_adapter.TypeAdapter] instance:
 
-```py
+```python
 from pydantic import ConfigDict, TypeAdapter
 
 ta = TypeAdapter('MyInt', config=ConfigDict(defer_build=True))

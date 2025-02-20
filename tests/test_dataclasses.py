@@ -8,12 +8,21 @@ from collections.abc import Hashable
 from dataclasses import InitVar
 from datetime import date, datetime
 from pathlib import Path
-from typing import Any, Callable, ClassVar, Dict, FrozenSet, Generic, List, Optional, Set, TypeVar, Union
+from typing import (
+    Annotated,
+    Any,
+    Callable,
+    ClassVar,
+    Generic,
+    Literal,
+    Optional,
+    TypeVar,
+    Union,
+)
 
 import pytest
 from dirty_equals import HasRepr
 from pydantic_core import ArgsKwargs, SchemaValidator
-from typing_extensions import Annotated, Literal
 
 import pydantic
 from pydantic import (
@@ -21,7 +30,6 @@ from pydantic import (
     BeforeValidator,
     ConfigDict,
     PydanticDeprecatedSince20,
-    PydanticSchemaGenerationError,
     PydanticUndefinedAnnotation,
     PydanticUserError,
     RootModel,
@@ -532,7 +540,7 @@ def test_default_factory_field(field_constructor: Callable):
     @pydantic.dataclasses.dataclass
     class User:
         id: int
-        other: Dict[str, str] = field_constructor(default_factory=lambda: {'John': 'Joey'})
+        other: dict[str, str] = field_constructor(default_factory=lambda: {'John': 'Joey'})
 
     user = User(id=123)
 
@@ -566,7 +574,7 @@ def test_schema():
     class User:
         id: int
         name: str = 'John Doe'
-        aliases: Dict[str, str] = dataclasses.field(default_factory=lambda: {'John': 'Joey'})
+        aliases: dict[str, str] = dataclasses.field(default_factory=lambda: {'John': 'Joey'})
         signup_ts: datetime = None
         age: Optional[int] = dataclasses.field(
             default=None, metadata=dict(title='The age of the user', description='do not lie!')
@@ -686,7 +694,7 @@ def test_classvar():
 def test_frozenset_field():
     @pydantic.dataclasses.dataclass
     class TestFrozenSet:
-        set: FrozenSet[int]
+        set: frozenset[int]
 
     test_set = frozenset({1, 2, 3})
     object_under_test = TestFrozenSet(set=test_set)
@@ -1397,12 +1405,12 @@ def test_discriminated_union_basemodel_instance_value():
 def test_post_init_after_validation():
     @dataclasses.dataclass
     class SetWrapper:
-        set: Set[int]
+        set: set[int]
 
         def __post_init__(self):
-            assert isinstance(
-                self.set, set
-            ), f"self.set should be a set but it's {self.set!r} of type {type(self.set).__name__}"
+            assert isinstance(self.set, set), (
+                f"self.set should be a set but it's {self.set!r} of type {type(self.set).__name__}"
+            )
 
     class Model(pydantic.BaseModel):
         set_wrapper: SetWrapper
@@ -1601,8 +1609,7 @@ def test_cross_module_cyclic_reference_dataclass(create_module):
     with pytest.raises(
         PydanticUserError,
         match=re.escape(
-            '`D1` is not fully defined; you should define `D2`, then call'
-            ' `pydantic.dataclasses.rebuild_dataclass(D1)`.'
+            '`D1` is not fully defined; you should define `D2`, then call `pydantic.dataclasses.rebuild_dataclass(D1)`.'
         ),
     ):
         D1()
@@ -1809,7 +1816,7 @@ def test_extra_forbid_list_no_error():
 
     @pydantic.dataclasses.dataclass
     class Foo:
-        a: List[Bar]
+        a: list[Bar]
 
     assert isinstance(Foo(a=[Bar()]).a[0], Bar)
 
@@ -1992,7 +1999,7 @@ def test_validator_info_field_name_data_before():
     ],
     ids=['pydantic', 'stdlib'],
 )
-def test_inheritance_replace(decorator1: Callable[[Any], Any], expected_parent: List[str], expected_child: List[str]):
+def test_inheritance_replace(decorator1: Callable[[Any], Any], expected_parent: list[str], expected_child: list[str]):
     """We promise that if you add a validator
     with the same _function_ name as an existing validator
     it replaces the existing validator and is run instead of it.
@@ -2000,23 +2007,23 @@ def test_inheritance_replace(decorator1: Callable[[Any], Any], expected_parent: 
 
     @decorator1
     class Parent:
-        a: List[str]
+        a: list[str]
 
         @field_validator('a')
         @classmethod
-        def parent_val_before(cls, v: List[str]):
+        def parent_val_before(cls, v: list[str]):
             v.append('parent before')
             return v
 
         @field_validator('a')
         @classmethod
-        def val(cls, v: List[str]):
+        def val(cls, v: list[str]):
             v.append('parent')
             return v
 
         @field_validator('a')
         @classmethod
-        def parent_val_after(cls, v: List[str]):
+        def parent_val_after(cls, v: list[str]):
             v.append('parent after')
             return v
 
@@ -2024,19 +2031,19 @@ def test_inheritance_replace(decorator1: Callable[[Any], Any], expected_parent: 
     class Child(Parent):
         @field_validator('a')
         @classmethod
-        def child_val_before(cls, v: List[str]):
+        def child_val_before(cls, v: list[str]):
             v.append('child before')
             return v
 
         @field_validator('a')
         @classmethod
-        def val(cls, v: List[str]):
+        def val(cls, v: list[str]):
             v.append('child')
             return v
 
         @field_validator('a')
         @classmethod
-        def child_val_after(cls, v: List[str]):
+        def child_val_after(cls, v: list[str]):
             v.append('child after')
             return v
 
@@ -2144,7 +2151,7 @@ def test_unparametrized_generic_dataclass(dataclass_decorator):
                 {
                     'input': 'a',
                     'loc': ('x',),
-                    'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+                    'msg': 'Input should be a valid integer, unable to parse string as an integer',
                     'type': 'int_parsing',
                 }
             ],
@@ -2222,7 +2229,6 @@ def test_recursive_dataclasses_gh_4509(create_module) -> None:
     @create_module
     def module():
         import dataclasses
-        from typing import List
 
         import pydantic
 
@@ -2232,7 +2238,7 @@ def test_recursive_dataclasses_gh_4509(create_module) -> None:
 
         @dataclasses.dataclass
         class Cook:
-            recipes: List[Recipe]
+            recipes: list[Recipe]
 
         @pydantic.dataclasses.dataclass
         class Foo(Cook):
@@ -3054,21 +3060,24 @@ def test_warns_on_double_config() -> None:
             __pydantic_config__ = ConfigDict(title='from __pydantic_config__')
 
 
-def test_do_not_leak_config_from_other_types_during_building() -> None:
-    """Regression test, where dataclasses without any config would use the precedent type's config."""
-
+def test_config_pushdown_vanilla_dc() -> None:
     class ArbitraryType:
         pass
 
     @dataclasses.dataclass
     class DC:
         a: ArbitraryType
-        b: str
 
-    with pytest.raises(PydanticSchemaGenerationError):
+    class Model(BaseModel):
+        model_config = ConfigDict(arbitrary_types_allowed=True)
 
-        class Model(BaseModel):
-            model_config = ConfigDict(arbitrary_types_allowed=True)
+        dc: DC
 
-            dc: DC
-            other: str
+
+def test_deferred_dataclass_fields_available() -> None:
+    # This aligns with deferred Pydantic models:
+    @pydantic.dataclasses.dataclass(config={'defer_build': True})
+    class A:
+        a: int
+
+    assert 'a' in A.__pydantic_fields__  # pyright: ignore[reportAttributeAccessIssue]

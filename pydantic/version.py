@@ -2,9 +2,11 @@
 
 from __future__ import annotations as _annotations
 
+from pydantic_core import __version__ as __pydantic_core_version__
+
 __all__ = 'VERSION', 'version_info'
 
-VERSION = '2.10.0b2'
+VERSION = '2.11.0a2'
 """The version of Pydantic."""
 
 
@@ -61,6 +63,12 @@ def version_info() -> str:
         'commit': most_recent_commit,
     }
     return '\n'.join('{:>30} {}'.format(k + ':', str(v).replace('\n', ' ')) for k, v in info.items())
+
+
+def check_pydantic_core_version() -> bool:
+    """Check that the installed `pydantic-core` dependency is compatible."""
+    # Keep this in sync with the version constraint in the `pyproject.toml` dependencies:
+    return __pydantic_core_version__ == '2.29.0'
 
 
 def parse_mypy_version(version: str) -> tuple[int, int, int]:

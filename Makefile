@@ -6,13 +6,14 @@ sources = pydantic tests docs/plugins
 	@uv -V || echo 'Please install uv: https://docs.astral.sh/uv/getting-started/installation/'
 
 .PHONY: .pre-commit  ## Check that pre-commit is installed
-.pre-commit:
-	@pre-commit -V || echo 'Please install pre-commit: https://pre-commit.com/'
+.pre-commit: .uv
+	@uv run pre-commit -V || uv pip install pre-commit
 
 .PHONY: install  ## Install the package, dependencies, and pre-commit for local development
-install: .uv .pre-commit
+install: .uv
 	uv sync --frozen --group all --all-extras
-	pre-commit install --install-hooks
+	uv pip install pre-commit
+	uv run pre-commit install --install-hooks
 
 .PHONY: rebuild-lockfiles  ## Rebuild lockfiles from scratch, updating all dependencies
 rebuild-lockfiles: .uv
@@ -30,11 +31,11 @@ lint: .uv
 
 .PHONY: codespell  ## Use Codespell to do spellchecking
 codespell: .pre-commit
-	pre-commit run codespell --all-files
+	uv run pre-commit run codespell --all-files
 
 .PHONY: typecheck  ## Perform type-checking
 typecheck: .pre-commit
-	pre-commit run typecheck --all-files
+	uv run pre-commit run typecheck --all-files
 
 .PHONY: test-mypy  ## Run the mypy integration tests
 test-mypy: .uv
@@ -79,11 +80,6 @@ test-examples: .uv
 	@echo "running examples"
 	@find docs/examples -type f -name '*.py' | xargs -I'{}' sh -c 'uv run python {} >/dev/null 2>&1 || (echo "{} failed")'
 
-.PHONY: test-fastapi  ## Run the FastAPI tests with this version of pydantic
-test-fastapi:
-	git clone https://github.com/tiangolo/fastapi.git --single-branch
-	./tests/test_fastapi.sh
-
 .PHONY: test-pydantic-settings  ## Run the pydantic-settings tests with this version of pydantic
 test-pydantic-settings: .uv
 	git clone https://github.com/pydantic/pydantic-settings.git --single-branch
@@ -125,6 +121,10 @@ clean:
 .PHONY: docs  ## Generate the docs
 docs:
 	uv run mkdocs build --strict
+
+.PHONY: docs-serve
+docs-serve: ## Build and serve the documentation, for local preview
+	uv run mkdocs serve --strict
 
 .PHONY: help  ## Display this message
 help:

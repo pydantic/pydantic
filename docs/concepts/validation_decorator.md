@@ -10,7 +10,7 @@ to your code with minimal boilerplate.
 
 Example of usage:
 
-```py
+```python
 from pydantic import ValidationError, validate_call
 
 
@@ -44,7 +44,7 @@ except ValidationError as exc:
 Parameter types are inferred from type annotations on the function, or as [`Any`][typing.Any] if not annotated. All types listed in [types](types.md) can be validated, including Pydantic models and [custom types](types.md#custom-types).
 As with the rest of Pydantic, types are by default coerced by the decorator before they're passed to the actual function:
 
-```py
+```python
 from datetime import date
 
 from pydantic import validate_call
@@ -86,7 +86,7 @@ using all possible [parameter configurations][parameter] and all possible combin
 
 ??? example
 
-    ```py
+    ```python
     from pydantic import validate_call
 
 
@@ -191,13 +191,13 @@ using all possible [parameter configurations][parameter] and all possible combin
 ## Using the [`Field()`][pydantic.Field] function to describe function parameters
 
 The [`Field()` function](fields.md) can also be used with the decorator to provide extra information about
-the field and validations. In general it should be used in a type hint with [Annotated](types.md#composing-types-via-annotated),
-unless `default_factory` is specified, in which case it should be used as the default value of the field:
+the field and validations. If you don't make use of the `default` or `default_factory` parameter, it is
+recommended to use the [annotated pattern](./fields.md#the-annotated-pattern) (so that type checkers
+infer the parameter as being required). Otherwise, the [`Field()`][pydantic.Field] function can be used
+as a default value (again, to trick type checkers into thinking a default value is provided for the parameter).
 
-```py
-from datetime import datetime
-
-from typing_extensions import Annotated
+```python
+from typing import Annotated
 
 from pydantic import Field, ValidationError, validate_call
 
@@ -219,18 +219,18 @@ except ValidationError as e:
 
 
 @validate_call
-def when(dt: datetime = Field(default_factory=datetime.now)):
-    return dt
+def return_value(value: str = Field(default='default value')):
+    return value
 
 
-print(type(when()))
-#> <class 'datetime.datetime'>
+print(return_value())
+#> default value
 ```
 
 [Aliases](fields.md#field-aliases) can be used with the decorator as normal:
 
-```py
-from typing_extensions import Annotated
+```python
+from typing import Annotated
 
 from pydantic import Field, validate_call
 
@@ -248,7 +248,7 @@ how_many(number=42)
 The original function which was decorated can still be accessed by using the `raw_function` attribute.
 This is useful if in some scenarios you trust your input arguments and want to call the function in the most efficient way (see [notes on performance](#performance) below):
 
-```py
+```python
 from pydantic import validate_call
 
 
@@ -271,7 +271,7 @@ print(b)
 
 [`validate_call()`][pydantic.validate_call] can also be used on async functions:
 
-```py
+```python
 class Connection:
     async def execute(self, sql, *args):
         return 'testing@example.com'
@@ -331,7 +331,7 @@ need to suppress the error using (usually with a `# type: ignore` comment).
 
 Similarly to Pydantic models, the `config` parameter of the decorator can be used to specify a custom configuration:
 
-```py
+```python
 from pydantic import ConfigDict, ValidationError, validate_call
 
 
@@ -375,7 +375,7 @@ This might be useful when a particular function is costly/time consuming.
 
 Here's an example of a workaround you can use for that pattern:
 
-```py
+```python
 from pydantic import validate_call
 
 

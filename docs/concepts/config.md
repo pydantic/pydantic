@@ -1,70 +1,67 @@
-Behaviour of Pydantic can be controlled via the [`BaseModel.model_config`][pydantic.BaseModel.model_config],
-and as an argument to [`TypeAdapter`][pydantic.TypeAdapter].
+The behaviour of Pydantic can be controlled via a variety of configuration values, documented
+on the [`ConfigDict`][pydantic.ConfigDict] class. This page describes how configuration can be
+specified for Pydantic's supported types.
 
-!!! note
-    Before **v2.0**, the `Config` class was used. This is still supported, but **deprecated**.
+## Configuration on Pydantic models
 
-```py
-from pydantic import BaseModel, ConfigDict, ValidationError
+On Pydantic models, configuration can be specified in two ways:
 
-
-class Model(BaseModel):
-    model_config = ConfigDict(str_max_length=10)
-
-    v: str
+- Using the [`model_config`][pydantic.BaseModel.model_config] class attribute:
+  ```python
+  from pydantic import BaseModel, ConfigDict, ValidationError
 
 
-try:
-    m = Model(v='x' * 20)
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for Model
-    v
-      String should have at most 10 characters [type=string_too_long, input_value='xxxxxxxxxxxxxxxxxxxx', input_type=str]
-    """
-```
+  class Model(BaseModel):
+      model_config = ConfigDict(str_max_length=5)  # (1)!
 
-Also, you can specify config options as model class kwargs:
-```py
-from pydantic import BaseModel, ValidationError
+      v: str
 
 
-class Model(BaseModel, extra='forbid'):  # (1)!
-    a: str
+  try:
+      m = Model(v='abcdef')
+  except ValidationError as e:
+      print(e)
+      """
+      1 validation error for Model
+      v
+        String should have at most 5 characters [type=string_too_long, input_value='abcdef', input_type=str]
+      """
+  ```
+
+    1. A plain dictionary (i.e. `{'str_max_length': 5}`) can also be used.
+
+    !!! note
+        In Pydantic V1, the `Config` class was used. This is still supported, but **deprecated**.
+
+- Using class arguments:
+  ```python
+  from pydantic import BaseModel
 
 
-try:
-    Model(a='spam', b='oh no')
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for Model
-    b
-      Extra inputs are not permitted [type=extra_forbidden, input_value='oh no', input_type=str]
-    """
-```
+  class Model(BaseModel, frozen=True):
+      a: str  # (1)!
+  ```
 
-1. See the [Extra Attributes](models.md#extra-fields) section for more details.
+    1. Unlike the [`model_config`][pydantic.BaseModel.model_config] class attribute,
+       static type checkers will recognize the `frozen` argument, and so any instance
+       mutation will be flagged as an type checking error.
 
-Similarly, if using the [`@dataclass`][pydantic.dataclasses] decorator from Pydantic:
-```py
-from datetime import datetime
+## Configuration on Pydantic dataclasses
 
+[Pydantic dataclasses](./dataclasses.md) also support configuration (read more in the
+[dedicated section](./dataclasses.md#dataclass-config)).
+
+```python
 from pydantic import ConfigDict, ValidationError
 from pydantic.dataclasses import dataclass
 
-config = ConfigDict(str_max_length=10, validate_assignment=True)
 
-
-@dataclass(config=config)
+@dataclass(config=ConfigDict(str_max_length=10, validate_assignment=True))
 class User:
-    id: int
-    name: str = 'John Doe'
-    signup_ts: datetime = None
+    name: str
 
 
-user = User(id='42', signup_ts='2032-06-21T12:00')
+user = User(name='John Doe')
 try:
     user.name = 'x' * 20
 except ValidationError as e:
@@ -76,45 +73,59 @@ except ValidationError as e:
     """
 ```
 
-## Configuration with `dataclass` from the standard library or `TypedDict`
+## Configuration on `TypeAdapter`
 
-If using the `dataclass` from the standard library or `TypedDict`, you should use `__pydantic_config__` instead.
+[Type adapters](./type_adapter.md) (using the [`TypeAdapter`][pydantic.TypeAdapter] class) support configuration,
+by providing a `config` argument.
 
-```py
-from dataclasses import dataclass
-from datetime import datetime
+```python
+from pydantic import ConfigDict, TypeAdapter
 
-from pydantic import ConfigDict
+ta = TypeAdapter(list[str], config=ConfigDict(coerce_numbers_to_str=True))
 
-
-@dataclass
-class User:
-    __pydantic_config__ = ConfigDict(strict=True)
-
-    id: int
-    name: str = 'John Doe'
-    signup_ts: datetime = None
+print(ta.validate_python([1, 2]))
+#> ['1', '2']
 ```
 
-Alternatively, the [`with_config`][pydantic.config.with_config] decorator can be used to comply with type checkers.
+## Configuration on other supported types
 
-```py
-from typing_extensions import TypedDict
+If you are using [standard library dataclasses][dataclasses] or [`TypedDict`][typing.TypedDict] classes,
+the configuration can be set in two ways:
 
-from pydantic import ConfigDict, with_config
+- Using the `__pydantic_config__` class attribute:
+  ```python
+  from dataclasses import dataclass
+
+  from pydantic import ConfigDict
 
 
-@with_config(ConfigDict(str_to_lower=True))
-class Model(TypedDict):
-    x: str
-```
+  @dataclass
+  class User:
+      __pydantic_config__ = ConfigDict(strict=True)
+
+      id: int
+      name: str = 'John Doe'
+  ```
+
+- Using the [`with_config`][pydantic.config.with_config] decorator (this avoids static type checking errors with
+  [`TypedDict`][typing.TypedDict]):
+  ```python
+  from typing_extensions import TypedDict
+
+  from pydantic import ConfigDict, with_config
+
+
+  @with_config(ConfigDict(str_to_lower=True))
+  class Model(TypedDict):
+      x: str
+  ```
 
 ## Change behaviour globally
 
-If you wish to change the behaviour of Pydantic globally, you can create your own custom `BaseModel`
-with custom `model_config` since the config is inherited:
+If you wish to change the behaviour of Pydantic globally, you can create your own custom parent class
+with a custom configuration, as the configuration is inherited:
 
-```py
+```python
 from pydantic import BaseModel, ConfigDict
 
 
@@ -131,18 +142,18 @@ print(m.model_dump())
 #> {'x': 'foo', 'y': 'bar'}
 ```
 
-If you add a `model_config` to the `Model` class, it will _merge_ with the `model_config` from `Parent`:
+If you provide configuration to the subclasses, it will be _merged_ with the parent configuration:
 
-```py
+```python
 from pydantic import BaseModel, ConfigDict
 
 
 class Parent(BaseModel):
-    model_config = ConfigDict(extra='allow')
+    model_config = ConfigDict(extra='allow', str_to_lower=False)
 
 
 class Model(Parent):
-    model_config = ConfigDict(str_to_lower=True)  # (1)!
+    model_config = ConfigDict(str_to_lower=True)
 
     x: str
 
@@ -150,6 +161,36 @@ class Model(Parent):
 m = Model(x='FOO', y='bar')
 print(m.model_dump())
 #> {'x': 'foo', 'y': 'bar'}
-print(m.model_config)
+print(Model.model_config)
 #> {'extra': 'allow', 'str_to_lower': True}
+```
+
+!!! warning
+    If your model inherits from multiple bases, Pydantic currently *doesn't* follow the
+    [MRO]. For more details, see [this issue](https://github.com/pydantic/pydantic/issues/9992).
+
+    [MRO]: https://docs.python.org/3/glossary.html#term-method-resolution-order
+
+## Configuration propagation
+
+Note that when using types that support configuration as field annotations on other types,
+configuration will *not* be propagated. In the following example, each model has its own
+"configuration boundary":
+
+```python
+from pydantic import BaseModel, ConfigDict
+
+
+class User(BaseModel):
+    name: str
+
+
+class Parent(BaseModel):
+    user: User
+
+    model_config = ConfigDict(str_max_length=2)
+
+
+print(Parent(user={'name': 'John Doe'}))
+#> user=User(name='John Doe')
 ```

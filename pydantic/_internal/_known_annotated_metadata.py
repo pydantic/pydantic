@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from collections.abc import Iterable
 from copy import copy
+from decimal import Decimal
 from functools import lru_cache, partial
-from typing import TYPE_CHECKING, Any, Iterable
+from typing import TYPE_CHECKING, Any
 
 from pydantic_core import CoreSchema, PydanticCustomError, ValidationError, to_jsonable_python
 from pydantic_core import core_schema as cs
@@ -112,7 +114,7 @@ def expand_grouped_metadata(annotations: Iterable[Any]) -> Iterable[Any]:
         An iterable of expanded annotations.
 
     Example:
-        ```py
+        ```python
         from annotated_types import Ge, Len
 
         from pydantic._internal._known_annotated_metadata import expand_grouped_metadata
@@ -218,7 +220,10 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
             if constraint == 'union_mode' and schema_type == 'union':
                 schema['mode'] = value  # type: ignore  # schema is UnionSchema
             else:
-                schema[constraint] = value
+                if schema_type == 'decimal' and constraint in {'multiple_of', 'le', 'ge', 'lt', 'gt'}:
+                    schema[constraint] = Decimal(value)
+                else:
+                    schema[constraint] = value
             continue
 
         #  else, apply a function after validator to the schema to enforce the corresponding constraint
@@ -338,7 +343,7 @@ def collect_known_metadata(annotations: Iterable[Any]) -> tuple[dict[str, Any], 
         A tuple contains a dict of known metadata and a list of unknown annotations.
 
     Example:
-        ```py
+        ```python
         from annotated_types import Gt, Len
 
         from pydantic._internal._known_annotated_metadata import collect_known_metadata

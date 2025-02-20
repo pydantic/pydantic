@@ -2,7 +2,7 @@ import random
 import sys
 from abc import ABC, abstractmethod
 from functools import cached_property, lru_cache, singledispatchmethod
-from typing import Any, Callable, ClassVar, Generic, List, Tuple, TypeVar
+from typing import Any, Callable, ClassVar, Generic, TypeVar
 
 import pytest
 from pydantic_core import ValidationError, core_schema
@@ -44,13 +44,13 @@ def test_computed_fields_get():
             return self.width * 2
 
     rect = Rectangle(width=10, length=5)
-    assert set(rect.model_fields) == {'width', 'length'}
-    assert set(rect.model_computed_fields) == {'area', 'area2'}
+    assert set(Rectangle.model_fields) == {'width', 'length'}
+    assert set(Rectangle.model_computed_fields) == {'area', 'area2'}
     assert rect.__dict__ == {'width': 10, 'length': 5}
 
-    assert rect.model_computed_fields['area'].description == 'An awesome area'
-    assert rect.model_computed_fields['area2'].title == 'Pikarea'
-    assert rect.model_computed_fields['area2'].description == 'Another area'
+    assert Rectangle.model_computed_fields['area'].description == 'An awesome area'
+    assert Rectangle.model_computed_fields['area2'].title == 'Pikarea'
+    assert Rectangle.model_computed_fields['area2'].description == 'Another area'
 
     assert rect.area == 50
     assert rect.double_width == 20
@@ -290,11 +290,11 @@ def test_include_exclude():
         y: int
 
         @computed_field
-        def x_list(self) -> List[int]:
+        def x_list(self) -> list[int]:
             return [self.x, self.x + 1]
 
         @computed_field
-        def y_list(self) -> List[int]:
+        def y_list(self) -> list[int]:
             return [self.y, self.y + 1, self.y + 2]
 
     m = Model(x=1, y=2)
@@ -330,7 +330,7 @@ def test_expected_type():
         y: int
 
         @computed_field
-        def x_list(self) -> List[int]:
+        def x_list(self) -> list[int]:
             return [self.x, self.x + 1]
 
         @computed_field
@@ -349,7 +349,7 @@ def test_expected_type_wrong():
         x: int
 
         @computed_field
-        def x_list(self) -> List[int]:
+        def x_list(self) -> list[int]:
             return 'not a list'
 
     m = Model(x=1)
@@ -406,7 +406,7 @@ def test_free_function():
         double = computed_field(double_func)
 
     m = MyModel(x=2)
-    assert set(m.model_fields) == {'x'}
+    assert set(MyModel.model_fields) == {'x'}
     assert m.__private_attributes__ == {}
     assert m.double == 4
     assert repr(m) == 'MyModel(x=2, double=4)'
@@ -429,7 +429,7 @@ def test_private_computed_field():
 
 
 @pytest.mark.skipif(
-    sys.version_info < (3, 9) or sys.version_info >= (3, 13),
+    sys.version_info >= (3, 13),
     reason='@computed_field @classmethod @property only works in 3.9-3.12',
 )
 def test_classmethod():
@@ -533,7 +533,7 @@ def test_abstractmethod():
         (BaseModel,),
     ],
 )
-def test_abstractmethod_missing(bases: Tuple[Any, ...]):
+def test_abstractmethod_missing(bases: tuple[Any, ...]):
     class AbstractSquare(*bases):
         side: float
 
@@ -754,9 +754,9 @@ def test_generic_computed_field():
     assert A[int](x=1).model_dump() == {'x': 1, 'double_x': 2}
     assert A[str](x='abc').model_dump() == {'x': 'abc', 'double_x': 'abcabc'}
 
-    assert A(x='xxxxxx').model_computed_fields['double_x'].return_type == T
-    assert A[int](x=123).model_computed_fields['double_x'].return_type == int
-    assert A[str](x='x').model_computed_fields['double_x'].return_type == str
+    assert A.model_computed_fields['double_x'].return_type is T
+    assert A[int].model_computed_fields['double_x'].return_type is int
+    assert A[str].model_computed_fields['double_x'].return_type is str
 
     class B(BaseModel, Generic[T]):
         @computed_field
@@ -774,7 +774,9 @@ def test_computed_field_override_raises():
     class Model(BaseModel):
         name: str = 'foo'
 
-    with pytest.raises(ValueError, match="you can't override a field with a computed field"):
+    with pytest.raises(
+        TypeError, match="Field 'name' of class 'SubModel' overrides symbol of same name in a parent class"
+    ):
 
         class SubModel(Model):
             @computed_field
@@ -814,26 +816,3 @@ def test_computed_field_with_field_serializer():
             return f'{info.field_name} = {value}'
 
     assert MyModel().model_dump() == {'my_field': 'my_field = foo', 'other_field': 'other_field = 42'}
-
-
-def test_fields_on_instance_and_cls() -> None:
-    """For now, we support `model_fields` and `model_computed_fields` access on both instances and classes.
-
-    In V3, we should only support class access, though we need to preserve the current behavior for V2 compatibility."""
-
-    class Rectangle(BaseModel):
-        x: int
-        y: int
-
-        @computed_field
-        @property
-        def area(self) -> int:
-            return self.x * self.y
-
-    r = Rectangle(x=10, y=5)
-
-    for attr in {'model_fields', 'model_computed_fields'}:
-        assert getattr(r, attr) == getattr(Rectangle, attr)
-
-    assert set(r.model_fields) == {'x', 'y'}
-    assert set(r.model_computed_fields) == {'area'}

@@ -4,13 +4,13 @@ Tests for TypedDict
 
 import sys
 import typing
-from typing import Any, Dict, Generic, List, Optional, TypeVar
+from typing import Annotated, Any, Generic, Optional, TypeVar
 
 import pytest
 import typing_extensions
 from annotated_types import Lt
 from pydantic_core import core_schema
-from typing_extensions import Annotated, TypedDict
+from typing_extensions import TypedDict
 
 from pydantic import (
     BaseModel,
@@ -497,12 +497,6 @@ def test_typeddict_annotated(TypedDict, input_value, expected):
 
 
 def test_recursive_typeddict():
-    from typing import Optional
-
-    from typing_extensions import TypedDict
-
-    from pydantic import BaseModel
-
     class RecursiveTypedDict(TypedDict):
         foo: Optional['RecursiveTypedDict']
 
@@ -528,7 +522,7 @@ T = TypeVar('T')
 def test_generic_typeddict_in_concrete_model():
     T = TypeVar('T')
 
-    class GenericTypedDict(typing_extensions.TypedDict, Generic[T]):
+    class GenericTypedDict(TypedDict, Generic[T]):
         x: T
 
     class Model(BaseModel):
@@ -541,7 +535,7 @@ def test_generic_typeddict_in_concrete_model():
         {
             'input': 'a',
             'loc': ('y', 'x'),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'type': 'int_parsing',
         }
     ]
@@ -550,7 +544,7 @@ def test_generic_typeddict_in_concrete_model():
 def test_generic_typeddict_in_generic_model():
     T = TypeVar('T')
 
-    class GenericTypedDict(typing_extensions.TypedDict, Generic[T]):
+    class GenericTypedDict(TypedDict, Generic[T]):
         x: T
 
     class Model(BaseModel, Generic[T]):
@@ -563,7 +557,7 @@ def test_generic_typeddict_in_generic_model():
         {
             'input': 'a',
             'loc': ('y', 'x'),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'type': 'int_parsing',
         }
     ]
@@ -572,7 +566,7 @@ def test_generic_typeddict_in_generic_model():
 def test_recursive_generic_typeddict_in_module(create_module):
     @create_module
     def module():
-        from typing import Generic, List, Optional, TypeVar
+        from typing import Generic, Optional, TypeVar
 
         from typing_extensions import TypedDict
 
@@ -585,7 +579,7 @@ def test_recursive_generic_typeddict_in_module(create_module):
 
         class RecursiveGenTypedDict(TypedDict, Generic[T]):
             foo: Optional['RecursiveGenTypedDict[T]']
-            ls: List[T]
+            ls: list[T]
 
     int_data: module.RecursiveGenTypedDict[int] = {'foo': {'foo': None, 'ls': [1]}, 'ls': [1]}
     assert module.RecursiveGenTypedDictModel[int](rec=int_data).rec == int_data
@@ -597,13 +591,13 @@ def test_recursive_generic_typeddict_in_module(create_module):
         {
             'input': 'a',
             'loc': ('rec', 'foo', 'ls', 0),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'type': 'int_parsing',
         },
         {
             'input': 'a',
             'loc': ('rec', 'ls', 0),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'type': 'int_parsing',
         },
     ]
@@ -615,7 +609,7 @@ def test_recursive_generic_typeddict_in_function_1():
     # First ordering: typed dict first
     class RecursiveGenTypedDict(TypedDict, Generic[T]):
         foo: Optional['RecursiveGenTypedDict[T]']
-        ls: List[T]
+        ls: list[T]
 
     class RecursiveGenTypedDictModel(BaseModel, Generic[T]):
         rec: 'RecursiveGenTypedDict[T]'
@@ -633,13 +627,13 @@ def test_recursive_generic_typeddict_in_function_1():
         {
             'input': 'a',
             'loc': ('rec', 'foo', 'ls', 0),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'type': 'int_parsing',
         },
         {
             'input': 'a',
             'loc': ('rec', 'ls', 0),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'type': 'int_parsing',
         },
     ]
@@ -654,7 +648,7 @@ def test_recursive_generic_typeddict_in_function_2():
 
     class RecursiveGenTypedDict(TypedDict, Generic[T]):
         foo: Optional['RecursiveGenTypedDict[T]']
-        ls: List[T]
+        ls: list[T]
 
     int_data: RecursiveGenTypedDict[int] = {'foo': {'foo': None, 'ls': [1]}, 'ls': [1]}
     assert RecursiveGenTypedDictModel[int](rec=int_data).rec == int_data
@@ -666,13 +660,13 @@ def test_recursive_generic_typeddict_in_function_2():
         {
             'input': 'a',
             'loc': ('rec', 'foo', 'ls', 0),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'type': 'int_parsing',
         },
         {
             'input': 'a',
             'loc': ('rec', 'ls', 0),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'type': 'int_parsing',
         },
     ]
@@ -688,7 +682,7 @@ def test_recursive_generic_typeddict_in_function_3():
 
     class RecursiveGenTypedDict(TypedDict, Generic[T]):
         foo: Optional['RecursiveGenTypedDict[T]']
-        ls: List[T]
+        ls: list[T]
 
     int_data: RecursiveGenTypedDict[int] = {'foo': {'foo': None, 'ls': [1]}, 'ls': [1]}
     assert IntModel(rec=int_data).rec == int_data
@@ -700,13 +694,13 @@ def test_recursive_generic_typeddict_in_function_3():
         {
             'input': 'a',
             'loc': ('rec', 'foo', 'ls', 0),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'type': 'int_parsing',
         },
         {
             'input': 'a',
             'loc': ('rec', 'ls', 0),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'type': 'int_parsing',
         },
     ]
@@ -749,42 +743,42 @@ def test_typeddict_inheritance(TypedDict: Any) -> None:
 
 def test_typeddict_field_validator(TypedDict: Any) -> None:
     class Parent(TypedDict):
-        a: List[str]
+        a: list[str]
 
         @field_validator('a')
         @classmethod
-        def parent_val_before(cls, v: List[str]):
+        def parent_val_before(cls, v: list[str]):
             v.append('parent before')
             return v
 
         @field_validator('a')
         @classmethod
-        def val(cls, v: List[str]):
+        def val(cls, v: list[str]):
             v.append('parent')
             return v
 
         @field_validator('a')
         @classmethod
-        def parent_val_after(cls, v: List[str]):
+        def parent_val_after(cls, v: list[str]):
             v.append('parent after')
             return v
 
     class Child(Parent):
         @field_validator('a')
         @classmethod
-        def child_val_before(cls, v: List[str]):
+        def child_val_before(cls, v: list[str]):
             v.append('child before')
             return v
 
         @field_validator('a')
         @classmethod
-        def val(cls, v: List[str]):
+        def val(cls, v: list[str]):
             v.append('child')
             return v
 
         @field_validator('a')
         @classmethod
-        def child_val_after(cls, v: List[str]):
+        def child_val_after(cls, v: list[str]):
             v.append('child after')
             return v
 
@@ -808,7 +802,7 @@ def test_typeddict_model_validator(TypedDict) -> None:
 
         @model_validator(mode='before')
         @classmethod
-        def val_model_before(cls, value: Dict[str, Any]) -> Dict[str, Any]:
+        def val_model_before(cls, value: dict[str, Any]) -> dict[str, Any]:
             return dict(x=value['x'] + 1, y=value['y'] + 2)
 
         @model_validator(mode='after')
@@ -822,18 +816,18 @@ def test_typeddict_model_validator(TypedDict) -> None:
 
 def test_typeddict_field_serializer(TypedDict: Any) -> None:
     class Parent(TypedDict):
-        a: List[str]
+        a: list[str]
 
         @field_serializer('a')
         @classmethod
-        def ser(cls, v: List[str]):
+        def ser(cls, v: list[str]):
             v.append('parent')
             return v
 
     class Child(Parent):
         @field_serializer('a')
         @classmethod
-        def ser(cls, v: List[str]):
+        def ser(cls, v: list[str]):
             v.append('child')
             return v
 
@@ -850,7 +844,7 @@ def test_typeddict_model_serializer(TypedDict) -> None:
         y: float
 
         @model_serializer(mode='plain')
-        def ser_model(self) -> Dict[str, Any]:
+        def ser_model(self) -> dict[str, Any]:
             return {'x': self['x'] * 2, 'y': self['y'] * 3}
 
     ta = TypeAdapter(Model)
@@ -916,3 +910,16 @@ def test_typeddict_with_config_decorator():
     ta = TypeAdapter(Model)
 
     assert ta.validate_python({'x': 'ABC'}) == {'x': 'abc'}
+
+
+def test_config_pushdown_typed_dict() -> None:
+    class ArbitraryType:
+        pass
+
+    class TD(TypedDict):
+        a: ArbitraryType
+
+    class Model(BaseModel):
+        model_config = ConfigDict(arbitrary_types_allowed=True)
+
+        td: TD

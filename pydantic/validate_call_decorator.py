@@ -4,6 +4,7 @@ from __future__ import annotations as _annotations
 
 import inspect
 from functools import partial
+from types import BuiltinFunctionType
 from typing import TYPE_CHECKING, Any, Callable, TypeVar, cast, overload
 
 from ._internal import _generate_schema, _typing_extra, _validate_call
@@ -42,6 +43,8 @@ def _check_function_type(function: object) -> None:
 
         return
 
+    if isinstance(function, BuiltinFunctionType):
+        raise PydanticUserError(f'Input built-in function `{function}` is not supported', code=_INVALID_TYPE_ERROR_CODE)
     if isinstance(function, (classmethod, staticmethod, property)):
         name = type(function).__name__
         raise PydanticUserError(
@@ -83,7 +86,8 @@ def validate_call(
     config: ConfigDict | None = None,
     validate_return: bool = False,
 ) -> AnyCallableT | Callable[[AnyCallableT], AnyCallableT]:
-    """Usage docs: https://docs.pydantic.dev/2.10/concepts/validation_decorator/
+    """!!! abstract "Usage Documentation"
+        [Validation Decorator](../concepts/validation_decorator.md)
 
     Returns a decorated wrapper around the function that validates the arguments and, optionally, the return value.
 

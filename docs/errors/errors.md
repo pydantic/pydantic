@@ -34,9 +34,7 @@ The first item in the `loc` list will be the field where the error occurred, and
 
 As a demonstration:
 
-```py
-from typing import List
-
+```python
 from pydantic import BaseModel, ValidationError, conint
 
 
@@ -48,7 +46,7 @@ class Location(BaseModel):
 class Model(BaseModel):
     is_required: float
     gt_int: conint(gt=42)
-    list_of_ints: List[int] = None
+    list_of_ints: list[int] = None
     a_float: float = None
     recursive_model: Location = None
 
@@ -135,7 +133,7 @@ In your custom data types or validators you should use `ValueError` or `Assertio
 
 See [validators](../concepts/validators.md) for more details on use of the `@validator` decorator.
 
-```py
+```python
 from pydantic import BaseModel, ValidationError, field_validator
 
 
@@ -176,7 +174,7 @@ except ValidationError as e:
 
 You can also use [`PydanticCustomError`][pydantic_core.PydanticCustomError], to fully control the error structure:
 
-```py
+```python
 from pydantic_core import PydanticCustomError
 
 from pydantic import BaseModel, ValidationError, field_validator
@@ -220,9 +218,7 @@ We've provided documentation for default error codes in the following sections:
 
 You can customize error messages by creating a custom error handler.
 
-```py
-from typing import Dict, List
-
+```python
 from pydantic_core import ErrorDetails
 
 from pydantic import BaseModel, HttpUrl, ValidationError
@@ -234,9 +230,9 @@ CUSTOM_MESSAGES = {
 
 
 def convert_errors(
-    e: ValidationError, custom_messages: Dict[str, str]
-) -> List[ErrorDetails]:
-    new_errors: List[ErrorDetails] = []
+    e: ValidationError, custom_messages: dict[str, str]
+) -> list[ErrorDetails]:
+    new_errors: list[ErrorDetails] = []
     for error in e.errors():
         custom_message = custom_messages.get(error['type'])
         if custom_message:
@@ -285,13 +281,13 @@ dictionary of translations.
 
 Another example is customizing the way that the `'loc'` value of an error is represented.
 
-```py
-from typing import Any, Dict, List, Tuple, Union
+```python
+from typing import Any, Union
 
 from pydantic import BaseModel, ValidationError
 
 
-def loc_to_dot_sep(loc: Tuple[Union[str, int], ...]) -> str:
+def loc_to_dot_sep(loc: tuple[Union[str, int], ...]) -> str:
     path = ''
     for i, x in enumerate(loc):
         if isinstance(x, str):
@@ -305,8 +301,8 @@ def loc_to_dot_sep(loc: Tuple[Union[str, int], ...]) -> str:
     return path
 
 
-def convert_errors(e: ValidationError) -> List[Dict[str, Any]]:
-    new_errors: List[Dict[str, Any]] = e.errors()
+def convert_errors(e: ValidationError) -> list[dict[str, Any]]:
+    new_errors: list[dict[str, Any]] = e.errors()
     for error in new_errors:
         error['loc'] = loc_to_dot_sep(error['loc'])
     return new_errors
@@ -318,7 +314,7 @@ class TestNestedModel(BaseModel):
 
 
 class TestModel(BaseModel):
-    items: List[TestNestedModel]
+    items: list[TestNestedModel]
 
 
 data = {'items': [{'key': 'foo', 'value': 'bar'}, {'key': 'baz'}]}
@@ -353,5 +349,5 @@ except ValidationError as e:
     """
 ```
 
-1. By default, `e.errors()` produces a List of errors with `loc` values that take the form of tuples.
+1. By default, `e.errors()` produces a list of errors with `loc` values that take the form of tuples.
 2. With our custom `loc_to_dot_sep` function, we've modified the form of the `loc` representation.
