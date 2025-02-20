@@ -405,6 +405,103 @@ jobs:
       working-directory: ./server
       run: uv run pytest -n auto --no-cov
 
+  test-bentoml:
+    name: Test BentoML (main branch) on Python ${{ matrix.python-version }}
+    # If 'schedule' was the trigger, don't run it on contributors' forks
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.9', '3.11', '3.12']
+
+    steps:
+      - name: Checkout BentoML
+        uses: actions/checkout@v4
+        with:
+          repository: bentoml/BentoML
+
+      - name: Checkout Pydantic
+        uses: actions/checkout@v4
+        with:
+          path: pydantic-latest
+
+      # Note: BentoML workflow uses nox sessions which don't allow installing
+      # the custom Pydantic version. Instead, we manually set up the env.
+      - name: Set up PDM
+        uses: pdm-project/setup-pdm@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install BentoML dependencies
+        run: |
+          pdm sync -G grpc,io,testing --quiet
+          pdm run python -m ensurepip
+          pdm run python -m pip uninstall --yes pydantic
+          pdm run python -m pip install -e ./pydantic-latest
+
+      - name: List installed dependencies
+        run: pdm list
+
+      - name: Run BentoML tests
+        run: pdm run pytest -n auto tests/unit
+        env:
+          BENTOML_DO_NOT_TRACK: True
+          PYTEST_PLUGINS: bentoml.testing.pytest.plugin
+
+  test-semantic-kernel:
+    name: Test Semantic Kernel (main branch) on Python ${{ matrix.python-version }}
+    # If 'schedule' was the trigger, don't run it on contributors' forks
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.10', '3.11', '3.12']
+
+    steps:
+      - name: Checkout Semantic Kernel
+        uses: actions/checkout@v4
+        with:
+          repository: microsoft/semantic-kernel
+
+      - name: Checkout Pydantic
+        uses: actions/checkout@v4
+        with:
+          path: pydantic-latest
+
+      # TODO: specifying a python-version to the action creates a venv,
+      # and there's currently no way to have the venv created in a subdir
+      # (see https://github.com/astral-sh/setup-uv/issues/251).
+      - name: Install UV
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Semantic Kernel dependencies
+        working-directory: ./python
+        run: |
+          uv sync --all-extras --dev --prerelease=if-necessary-or-explicit
+          uv pip uninstall pydantic
+          uv pip install -e ../pydantic-latest
+
+      - name: List installed dependencies
+        working-directory: ./python
+        run: uv pip list
+
+      - name: Run Semantic Kernel tests
+        working-directory: ./python
+        run: uv run --frozen pytest ./tests/unit
+
   create-issue-on-failure:
     name: Create an issue if tests failed
     runs-on: ubuntu-latest
@@ -416,6 +513,8 @@ jobs:
       - test-pandera
       - test-odmantic
       - test-polar
+      - test-bentoml
+      - test-semantic-kernel
     if: |
       github.repository == 'pydantic/pydantic' &&
       github.event_name == 'schedule' &&
@@ -426,7 +525,9 @@ jobs:
         needs.test-openapi-python-client.result == 'failure' ||
         needs.test-pandera.result == 'failure' ||
         needs.test-odmantic.result == 'failure' ||
-        needs.test-polar.result == 'failure'
+        needs.test-polar.result == 'failure' ||
+        needs.test-semantic-kernel.result == 'failure' ||
+        needs.test-bentoml.result == 'failure'
       )
     permissions:
       issues: write
