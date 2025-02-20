@@ -540,8 +540,12 @@ jobs:
           uv pip uninstall pydantic
           uv pip install -e ./pydantic-latest
 
-      - name: Run LangChain tests
+      - name: Run LangChain core tests
         working-directory: ./libs/core
+        run: make test
+
+      - name: Run LangChain main tests
+        working-directory: ./libs/langchain
         run: make test
 
   create-issue-on-failure:
