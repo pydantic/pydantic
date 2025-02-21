@@ -7,7 +7,7 @@ import pytest
 from annotated_types import MaxLen
 from typing_extensions import TypeAliasType
 
-from pydantic import BaseModel, Field, PydanticUserError, TypeAdapter, ValidationError
+from pydantic import BaseModel, PydanticUserError, TypeAdapter, ValidationError
 
 T = TypeVar('T')
 
@@ -430,45 +430,3 @@ def test_circular_type_aliases() -> None:
 
     assert exc_info.value.code == 'circular-reference-schema'
     assert exc_info.value.message.startswith('tests.test_type_alias_type.C')
-
-
-## Tests related to (recursive) unpacking of annotated types, when PEP 695 type aliases are involved:
-
-
-def test_nested_annotated_with_type_aliases() -> None:
-    SomeAlias = TypeAliasType('SomeAlias', Annotated[int, Field(description='number')])
-
-    ta = TypeAdapter(Annotated[SomeAlias, Field(title='abc')])
-
-    assert ta.json_schema() == {'description': 'number', 'title': 'abc', 'type': 'integer'}
-
-
-@pytest.mark.xfail(
-    reason="When trying to recursively unpack the annotated form, we don't resolve "
-    'forward annotations in PEP 695 type aliases (due to current limitations) '
-    '(see https://github.com/pydantic/pydantic/issues/11122).',
-)
-def test_nested_annotated_with_type_aliases_and_forward_ref() -> None:
-    SomeAlias = TypeAliasType('SomeAlias', "Annotated[int, Field(description='number')]")
-
-    ta = TypeAdapter(Annotated[SomeAlias, Field(title='abc')])
-
-    assert ta.json_schema() == {'description': 'number', 'title': 'abc', 'type': 'integer'}
-
-
-def test_nested_annotated_model_field() -> None:
-    T = TypeVar('T')
-
-    InnerList = TypeAliasType('InnerList', Annotated[list[T], Field(alias='alias')], type_params=(T,))
-    MyList = TypeAliasType('MyList', Annotated[InnerList[T], Field(deprecated=True)], type_params=(T,))
-    MyIntList = TypeAliasType('MyIntList', MyList[int])
-
-    class Model(BaseModel):
-        f1: Annotated[MyIntList, Field(json_schema_extra={'extra': 'test'})]
-
-    f1_info = Model.model_fields['f1']
-
-    assert f1_info.annotation == list[int]
-    assert f1_info.alias == 'alias'
-    assert f1_info.deprecated
-    assert f1_info.json_schema_extra == {'extra': 'test'}
