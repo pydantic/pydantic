@@ -12,7 +12,7 @@ Pydantic
 
 [![license](https://img.shields.io/github/license/pydantic/pydantic.svg)](https://github.com/pydantic/pydantic/blob/main/LICENSE)
 
-Documentation for development version: [980d276](https://github.com/pydantic/pydantic/commit/980d2763eb24d972221c847bda61f1049fdbeeb1).
+Documentation for development version: [6eeb99b](https://github.com/pydantic/pydantic/commit/6eeb99b224ea8acf2a47a5b649ade8fac3f2d9a6).
 
 Pydantic is the most widely used data validation library for Python.
 
@@ -11198,7 +11198,7 @@ dataclass(
  
 ```
 dataclass(
-    _cls: type[_T] | None = None,
+    _cls: type[_T" optional hover>_T] | None = None,
     *,
     init: Literal[False] = False,
     repr: bool = True,
