@@ -528,17 +528,17 @@ jobs:
 
       - name: Install UV
         uses: astral-sh/setup-uv@v5
-
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+            python-version: ${{ matrix.python-version }}
 
       - name: Install LangChain dependencies
         run: |
           uv sync --group test
           uv pip uninstall pydantic
           uv pip install -e ./pydantic-latest
+
+      - name: List installed dependencies
+        run: uv pip list
 
       - name: Run LangChain core tests
         working-directory: ./libs/core
