@@ -2019,7 +2019,7 @@ def test_docstring(docstring, description):
                 'anyOf': [
                     {'type': 'number'},
                     {
-                        'pattern': '^-?0*(?=\\d{0,4}$|(?=.*\\..*)[\\d\\.]{0,5}$)\\d{1,}(?:\\.\\d{0,})?$',
+                        'pattern': '^-?0*(?=\\d{0,4}0*$|(?=.*\\..*)[\\d\\.]{0,5}0*$)\\d{1,}(?:\\.\\d{0,})?0*$',
                         'type': 'string',
                     },
                 ]
@@ -2028,7 +2028,7 @@ def test_docstring(docstring, description):
         (
             {'decimal_places': 2},
             Decimal,
-            {'anyOf': [{'type': 'number'}, {'pattern': '^-?0*\\d{1,}(?:\\.\\d{0,2})?$', 'type': 'string'}]},
+            {'anyOf': [{'type': 'number'}, {'pattern': '^-?0*\\d{1,}(?:\\.\\d{0,2})?0*$', 'type': 'string'}]},
         ),
         (
             {'max_digits': 4, 'decimal_places': 2},
@@ -2037,7 +2037,7 @@ def test_docstring(docstring, description):
                 'anyOf': [
                     {'type': 'number'},
                     {
-                        'pattern': '^-?0*(?=\\d{0,4}$|(?=.*\\..*)[\\d\\.]{0,5}$)\\d{1,2}(?:\\.\\d{0,2})?$',
+                        'pattern': '^-?0*\\d{1,2}(?:\\.\\d{0,2})?0*$',
                         'type': 'string',
                     },
                 ]
@@ -2099,7 +2099,7 @@ def test_constraints_schema_validation(kwargs, type_, expected_extra):
             {'max_digits': 4, 'decimal_places': 2},
             Decimal,
             {
-                'pattern': '^-?(?=\\d{0,4}$|(?=.*\\..*)[\\d\\.]{0,5}$)(?:0|[1-9]\\d{0,1})(?:\\.\\d{0,2})?$',
+                'pattern': '^-?(?:0|[1-9]\\d{0,1})(?:\\.\\d{0,2})?$',
                 'type': 'string',
             },
         ),
