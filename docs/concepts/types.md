@@ -250,7 +250,6 @@ By leveraging the new [`type` statement](https://typing.readthedocs.io/en/latest
     from typing import Annotated
 
     from annotated_types import Gt
-    from typing_extensions import TypeAliasType
 
     from pydantic import BaseModel
 
@@ -284,6 +283,45 @@ By leveraging the new [`type` statement](https://typing.readthedocs.io/en/latest
 
     1. If `PositiveIntList` were to be defined as an implicit type alias, its definition
        would have been duplicated in both `'x'` and `'y'`.
+
+!!! warning "When to use named type aliases"
+
+    While (named) PEP 695 and implicit type aliases are meant to be equivalent for static type checkers,
+    Pydantic will *not* understand field-specific metadata inside named aliases. That is, metadata such as
+    `alias`, `default`, `deprecated`, *cannot* be used:
+
+    === "Python 3.9 and above"
+
+        ```python
+        from typing import Annotated
+
+        from typing_extensions import TypeAliasType
+
+        from pydantic import BaseModel, Field
+
+        MyAlias = TypeAliasType('MyAlias', Annotated[int, Field(default=1)])
+
+
+        class Model(BaseModel):
+            x: MyAlias  # This is not allowed
+        ```
+
+    === "Python 3.12 and above (new syntax)"
+
+        ```python {requires="3.12" upgrade="skip" lint="skip"}
+        from typing import Annotated
+
+        from pydantic import BaseModel, Field
+
+        type MyAlias = Annotated[int, Field(default=1)]
+
+
+        class Model(BaseModel):
+            x: MyAlias  # This is not allowed
+        ```
+
+    Only metadata that can be applied to the annotated type itself is allowed
+    (e.g. [validation constraints](./fields.md#field-constraints), JSON metadata).
 
 !!! note
     As with implicit type aliases, [type variables][typing.TypeVar] can also be used inside the generic alias:
