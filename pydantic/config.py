@@ -1063,6 +1063,13 @@ class ConfigDict(TypedDict, total=False):
 
     1. The field `'date_of_birth'` has an alias `'DOB'`.
     2. The model can only be populated by the attribute name `'date_of_birth'`.
+
+    !!! warning
+        You cannot set both `validate_by_alias` and `validate_by_name` to `False`.
+        This would make it impossible to populate an attribute. A [`PydanticUserError`][pydantic.errors.PydanticUserError]
+        will be raised if you try to do this.
+
+        See [usage errors](../errors/usage_errors.md#validate-by-alias-and-name-false) for an example.
     """
 
     validate_by_name: bool
@@ -1100,6 +1107,16 @@ class ConfigDict(TypedDict, total=False):
     1. The field `'date_of_birth'` has an alias `'DOB'`.
     2. The model is populated by the alias `'DOB'`.
     3. The model is populated by the attribute name `'date_of_birth'`.
+
+    !!! warning
+        You cannot set both `validate_by_alias` and `validate_by_name` to `False`.
+        This would make it impossible to populate an attribute. A [`PydanticUserError`][pydantic.errors.PydanticUserError]
+        will be raised if you try to do this.
+
+        This also means you can't set `validate_by_alias` to `False` and leave `validate_by_name` unset,
+        as `validate_by_name` defaults to `False.
+
+        See [usage errors](../errors/usage_errors.md#validate-by-alias-and-name-false) for an example.
     """
 
     serialize_by_alias: bool
@@ -1124,8 +1141,8 @@ class ConfigDict(TypedDict, total=False):
         name: str
 
     user = User(DOB='2022-01-01', name='John Doe')
-    print(user.model_dump())
-    #> {'DOB': '2022-01-01', 'name': 'John Doe'}  # (2)!
+    print(user.model_dump())  # (2)!
+    #> {'DOB': '2022-01-01', 'name': 'John Doe'}
     ```
 
     1. The field `'date_of_birth'` has an alias `'DOB'`.

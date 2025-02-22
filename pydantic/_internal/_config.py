@@ -186,6 +186,12 @@ class ConfigWrapper:
             if config.get('validate_by_name') is None:
                 config['validate_by_name'] = populate_by_name
 
+        if (not config.get('validate_by_alias', True)) and (not config.get('validate_by_name', False)):
+            raise PydanticUserError(
+                'At least one of `validate_by_alias` or `validate_by_name` must be set to True.',
+                code='validate-by-alias-and-name-false',
+            )
+
         return core_schema.CoreConfig(
             **{  # pyright: ignore[reportArgumentType]
                 k: v
@@ -261,6 +267,7 @@ config_defaults = ConfigDict(
     # let the model / dataclass decide how to handle it
     extra=None,
     frozen=False,
+    populate_by_name=False,
     use_enum_values=False,
     validate_assignment=False,
     arbitrary_types_allowed=False,
@@ -336,7 +343,7 @@ V2_REMOVED_KEYS = {
     'post_init_call',
 }
 V2_RENAMED_KEYS = {
-    'allow_population_by_field_name': 'populate_by_name',
+    'allow_population_by_field_name': 'validate_by_name',
     'anystr_lower': 'str_to_lower',
     'anystr_strip_whitespace': 'str_strip_whitespace',
     'anystr_upper': 'str_to_upper',

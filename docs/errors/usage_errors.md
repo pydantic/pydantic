@@ -1381,3 +1381,24 @@ try:
 except PydanticUserError as exc_info:
     assert exc_info.code == 'invalid-self-type'
 ```
+
+## `validate_by_alias` and `validate_by_name` `False` {#validate-by-alias-and-name-false}
+
+This error is raised when you set `validate_by_alias` and `validate_by_name` to `False` in a model's configuration.
+
+This is not allowed because it would make it impossible to populate attributes.
+
+```python
+from pydantic import BaseModel, ConfigDict, Field, PydanticUserError
+
+try:
+
+    class Model(BaseModel):
+        a: int = Field(alias='A')
+
+        model_config = ConfigDict(
+            validate_by_alias=False, validate_by_name=False
+        )
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'validate-by-alias-and-name-false'
+```
