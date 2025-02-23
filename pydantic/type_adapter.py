@@ -412,6 +412,12 @@ class TypeAdapter(Generic[T]):
         Returns:
             The validated object.
         """
+        if by_alias is False and by_name is not True:
+            raise PydanticUserError(
+                'At least one of `by_alias` or `by_name` must be set to True.',
+                code='validate-by-alias-and-name-false',
+            )
+
         return self.validator.validate_python(
             object,
             strict=strict,
@@ -453,6 +459,12 @@ class TypeAdapter(Generic[T]):
         Returns:
             The validated object.
         """
+        if by_alias is False and by_name is not True:
+            raise PydanticUserError(
+                'At least one of `by_alias` or `by_name` must be set to True.',
+                code='validate-by-alias-and-name-false',
+            )
+
         return self.validator.validate_json(
             data,
             strict=strict,
@@ -490,6 +502,12 @@ class TypeAdapter(Generic[T]):
         Returns:
             The validated object.
         """
+        if by_alias is False and by_name is not True:
+            raise PydanticUserError(
+                'At least one of `by_alias` or `by_name` must be set to True.',
+                code='validate-by-alias-and-name-false',
+            )
+
         return self.validator.validate_strings(
             obj,
             strict=strict,

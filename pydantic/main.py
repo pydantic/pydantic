@@ -683,6 +683,13 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         """
         # `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks
         __tracebackhide__ = True
+
+        if by_alias is False and by_name is not True:
+            raise PydanticUserError(
+                'At least one of `by_alias` or `by_name` must be set to True.',
+                code='validate-by-alias-and-name-false',
+            )
+
         return cls.__pydantic_validator__.validate_python(
             obj, strict=strict, from_attributes=from_attributes, context=context, by_alias=by_alias, by_name=by_name
         )
@@ -717,6 +724,13 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         """
         # `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks
         __tracebackhide__ = True
+
+        if by_alias is False and by_name is not True:
+            raise PydanticUserError(
+                'At least one of `by_alias` or `by_name` must be set to True.',
+                code='validate-by-alias-and-name-false',
+            )
+
         return cls.__pydantic_validator__.validate_json(
             json_data, strict=strict, context=context, by_alias=by_alias, by_name=by_name
         )
@@ -745,6 +759,13 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         """
         # `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks
         __tracebackhide__ = True
+
+        if by_alias is False and by_name is not True:
+            raise PydanticUserError(
+                'At least one of `by_alias` or `by_name` must be set to True.',
+                code='validate-by-alias-and-name-false',
+            )
+
         return cls.__pydantic_validator__.validate_strings(
             obj, strict=strict, context=context, by_alias=by_alias, by_name=by_name
         )
