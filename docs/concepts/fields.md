@@ -221,7 +221,10 @@ print(user.model_dump(by_alias=True))  # (2)!
     Note that the `by_alias` keyword argument defaults to `False`, and must be specified explicitly to dump
     models using the field (serialization) aliases.
 
-    When `by_alias=True`, the alias `'username'` is also used during serialization.
+    You can also use [`ConfigDict.serialize_by_alias`][pydantic.config.ConfigDict.serialize_by_alias] to
+    configure this behavior at the model level.
+
+    When `by_alias=True`, the alias `'username'` used during serialization.
 
 If you want to use an alias _only_ for validation, you can use the `validation_alias` parameter:
 

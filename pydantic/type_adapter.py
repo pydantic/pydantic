@@ -387,6 +387,8 @@ class TypeAdapter(Generic[T]):
         from_attributes: bool | None = None,
         context: dict[str, Any] | None = None,
         experimental_allow_partial: bool | Literal['off', 'on', 'trailing-strings'] = False,
+        by_alias: bool | None = None,
+        by_name: bool | None = None,
     ) -> T:
         """Validate a Python object against the model.
 
@@ -400,6 +402,8 @@ class TypeAdapter(Generic[T]):
                 * False / 'off': Default behavior, no partial validation.
                 * True / 'on': Enable partial validation.
                 * 'trailing-strings': Enable partial validation and allow trailing strings in the input.
+            by_alias: Whether to use the field's alias to match the input data to an attribute.
+            by_name: Whether to use the field's name to match the input data to an attribute.
 
         !!! note
             When using `TypeAdapter` with a Pydantic `dataclass`, the use of the `from_attributes`
@@ -414,6 +418,8 @@ class TypeAdapter(Generic[T]):
             from_attributes=from_attributes,
             context=context,
             allow_partial=experimental_allow_partial,
+            by_alias=by_alias,
+            by_name=by_name,
         )
 
     def validate_json(
@@ -424,6 +430,8 @@ class TypeAdapter(Generic[T]):
         strict: bool | None = None,
         context: dict[str, Any] | None = None,
         experimental_allow_partial: bool | Literal['off', 'on', 'trailing-strings'] = False,
+        by_alias: bool | None = None,
+        by_name: bool | None = None,
     ) -> T:
         """!!! abstract "Usage Documentation"
             [JSON Parsing](../concepts/json.md#json-parsing)
@@ -439,12 +447,19 @@ class TypeAdapter(Generic[T]):
                 * False / 'off': Default behavior, no partial validation.
                 * True / 'on': Enable partial validation.
                 * 'trailing-strings': Enable partial validation and allow trailing strings in the input.
+            by_alias: Whether to use the field's alias to match the input data to an attribute.
+            by_name: Whether to use the field's name to match the input data to an attribute.
 
         Returns:
             The validated object.
         """
         return self.validator.validate_json(
-            data, strict=strict, context=context, allow_partial=experimental_allow_partial
+            data,
+            strict=strict,
+            context=context,
+            allow_partial=experimental_allow_partial,
+            by_alias=by_alias,
+            by_name=by_name,
         )
 
     def validate_strings(
@@ -455,6 +470,8 @@ class TypeAdapter(Generic[T]):
         strict: bool | None = None,
         context: dict[str, Any] | None = None,
         experimental_allow_partial: bool | Literal['off', 'on', 'trailing-strings'] = False,
+        by_alias: bool | None = None,
+        by_name: bool | None = None,
     ) -> T:
         """Validate object contains string data against the model.
 
@@ -467,12 +484,19 @@ class TypeAdapter(Generic[T]):
                 * False / 'off': Default behavior, no partial validation.
                 * True / 'on': Enable partial validation.
                 * 'trailing-strings': Enable partial validation and allow trailing strings in the input.
+            by_alias: Whether to use the field's alias to match the input data to an attribute.
+            by_name: Whether to use the field's name to match the input data to an attribute.
 
         Returns:
             The validated object.
         """
         return self.validator.validate_strings(
-            obj, strict=strict, context=context, allow_partial=experimental_allow_partial
+            obj,
+            strict=strict,
+            context=context,
+            allow_partial=experimental_allow_partial,
+            by_alias=by_alias,
+            by_name=by_name,
         )
 
     def get_default_value(self, *, strict: bool | None = None, context: dict[str, Any] | None = None) -> Some[T] | None:
@@ -495,7 +519,7 @@ class TypeAdapter(Generic[T]):
         mode: Literal['json', 'python'] = 'python',
         include: IncEx | None = None,
         exclude: IncEx | None = None,
-        by_alias: bool = False,
+        by_alias: bool | None = None,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
@@ -551,7 +575,7 @@ class TypeAdapter(Generic[T]):
         indent: int | None = None,
         include: IncEx | None = None,
         exclude: IncEx | None = None,
-        by_alias: bool = False,
+        by_alias: bool | None = None,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,

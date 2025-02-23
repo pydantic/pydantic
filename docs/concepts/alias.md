@@ -201,3 +201,74 @@ You may set `alias_priority` on a field to change this behavior:
 
 The same precedence applies to `validation_alias` and `serialization_alias`.
 See more about the different field aliases under [field aliases](../concepts/fields.md#field-aliases).
+
+
+## Alias Use Configuration
+
+You can use [`ConfigDict`][pydantic.config.ConfigDict] settings or runtime validation / serialization
+settings to control whether or not aliases are used.
+
+### `ConfigDict` Settings
+
+You can use [`ConfigDict`][pydantic.config.ConfigDict] settings to control, at the model level,
+whether or not aliases are used for validation and serialization. If you would like to control
+this behavior for nested models / surpassing the config-model boundary, use [runtime settings](#runtime-settings).
+
+#### Validation
+
+When validating data, you can enable population of attributes by attribute name, alias, or both.
+**By default**, Pydantic uses aliases for validation. Further configuration is available via:
+
+* [`ConfigDict.validate_by_alias`][pydantic.config.ConfigDict.validate_by_alias]: `True` by default
+* [`ConfigDict.validate_by_name`][pydantic.config.ConfigDict.validate_by_name]: `False` by default
+
+!!! warning
+    You cannot set both `validate_by_alias` and `validate_by_name` to `False`.
+    A [user error](../errors/usage_errors.md#validate-by-alias-and-name-false) is raised in this case.
+
+#### Serialization
+
+When serializing data, you can enable serialization by alias, which is disabled by default.
+See the [`ConfigDict.serialize_by_alias`][pydantic.config.ConfigDict.serialize_by_alias] API documentation
+for an example.
+
+!!! note
+    The fact that serialization by alias is disabled by default is notably inconsistent with the default for
+    validation (where aliases are used by default). We anticipate changing this default in V3.
+
+### Runtime Settings
+
+You can use runtime alias flags to control alias use for validation and serialization
+on a per-call basis. If you would like to control this behavior on a model level, use
+[`ConfigDict` settings](#configdict-settings).
+
+#### Validation
+
+When validating data, you can enable population of attributes by attribute name, alias, or both.
+
+The `by_alias` and `by_name` flags are available on the [`model_validate`][pydantic.main.BaseModel.model_validate],
+[`model_validate_json`][pydantic.main.BaseModel.model_validate_json], and [`model_validate_strings`][pydantic.main.BaseModel.model_validate_strings] methods.
+
+By default:
+* `by_alias` is `True`
+* `by_name` is `False`
+
+These settings are also available on [`TypeAdapter`][pydantic.type_adapter.TypeAdapter] validation methods.
+
+!!! warning
+    You cannot set both `by_alias` and `by_name` to `False`.
+    A [user error](../errors/usage_errors.md#validate-by-alias-and-name-false) is raised in this case.
+
+#### Serialization
+
+When serializing data, you can enable serialization by alias via the `by_alias` flag
+which is available on the [`model_dump`][pydantic.main.BaseModel.model_dump] and
+[`model_dump_json`][pydantic.main.BaseModel.model_dump_json] methods.
+
+By default, `by_alias` is `False`.
+
+These settings are also available on [`TypeAdapter`][pydantic.type_adapter.TypeAdapter] serialization methods.
+
+!!! note
+    The fact that serialization by alias is disabled by default is notably inconsistent with the default for
+    validation (where aliases are used by default). We anticipate changing this default in V3.
