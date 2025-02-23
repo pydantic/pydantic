@@ -12,14 +12,14 @@ import typing
 from decimal import Decimal
 from fractions import Fraction
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
-from typing import Any, Callable, TypeVar, Union, cast, get_origin
+from typing import Any, Callable, Union, cast, get_origin
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import typing_extensions
 from pydantic_core import PydanticCustomError, core_schema
 from pydantic_core._pydantic_core import PydanticKnownError
+from typing_inspection import typing_objects
 
-from pydantic._internal import _typing_extra
 from pydantic._internal._import_utils import import_cached_field_info
 from pydantic.errors import PydanticSchemaGenerationError
 
@@ -427,6 +427,8 @@ def defaultdict_validator(
 def get_defaultdict_default_default_factory(values_source_type: Any) -> Callable[[], Any]:
     FieldInfo = import_cached_field_info()
 
+    values_type_origin = get_origin(values_source_type)
+
     def infer_default() -> Callable[[], Any]:
         allowed_default_types: dict[Any, Any] = {
             tuple: tuple,
@@ -447,9 +449,9 @@ def get_defaultdict_default_default_factory(values_source_type: Any) -> Callable
             str: str,
             bool: bool,
         }
-        values_type_origin = get_origin(values_source_type) or values_source_type
+        values_type = values_type_origin or values_source_type
         instructions = 'set using `DefaultDict[..., Annotated[..., Field(default_factory=...)]]`'
-        if isinstance(values_type_origin, TypeVar):
+        if typing_objects.is_typevar(values_type):
 
             def type_var_default_factory() -> None:
                 raise RuntimeError(
@@ -458,7 +460,7 @@ def get_defaultdict_default_default_factory(values_source_type: Any) -> Callable
                 )
 
             return type_var_default_factory
-        elif values_type_origin not in allowed_default_types:
+        elif values_type not in allowed_default_types:
             # a somewhat subjective set of types that have reasonable default values
             allowed_msg = ', '.join([t.__name__ for t in set(allowed_default_types.values())])
             raise PydanticSchemaGenerationError(
@@ -466,10 +468,10 @@ def get_defaultdict_default_default_factory(values_source_type: Any) -> Callable
                 f' Only {allowed_msg} are supported, other types require an explicit default factory'
                 ' ' + instructions
             )
-        return allowed_default_types[values_type_origin]
+        return allowed_default_types[values_type]
 
     # Assume Annotated[..., Field(...)]
-    if _typing_extra.is_annotated(values_source_type):
+    if typing_objects.is_annotated(values_type_origin):
         field_info = next((v for v in typing_extensions.get_args(values_source_type) if isinstance(v, FieldInfo)), None)
     else:
         field_info = None

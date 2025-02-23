@@ -14,7 +14,8 @@ from types import FunctionType
 from typing import Any, Callable, Generic, Literal, NoReturn, cast
 
 from pydantic_core import PydanticUndefined, SchemaSerializer
-from typing_extensions import TypeAliasType, dataclass_transform, deprecated, get_args
+from typing_extensions import TypeAliasType, dataclass_transform, deprecated, get_args, get_origin
+from typing_inspection import typing_objects
 
 from ..errors import PydanticUndefinedAnnotation, PydanticUserError
 from ..plugin._schema_validator import create_schema_validator
@@ -31,7 +32,6 @@ from ._signature import generate_pydantic_signature
 from ._typing_extra import (
     _make_forward_ref,
     eval_type_backport,
-    is_annotated,
     is_classvar_annotation,
     parent_frame_namespace,
 )
@@ -488,7 +488,7 @@ def inspect_namespace(  # noqa C901
                     except (NameError, TypeError):
                         pass
 
-            if is_annotated(ann_type):
+            if typing_objects.is_annotated(get_origin(ann_type)):
                 _, *metadata = get_args(ann_type)
                 private_attr = next((v for v in metadata if isinstance(v, ModelPrivateAttr)), None)
                 if private_attr is not None:

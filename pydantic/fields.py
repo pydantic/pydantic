@@ -17,6 +17,7 @@ import annotated_types
 import typing_extensions
 from pydantic_core import PydanticUndefined
 from typing_extensions import TypeAlias, Unpack, deprecated
+from typing_inspection import typing_objects
 
 from . import types
 from ._internal import _decorators, _fields, _generics, _internal_dataclass, _repr, _typing_extra, _utils
@@ -349,7 +350,7 @@ class FieldInfo(_repr.Representation):
                 new_field_info.frozen = final or field_info.frozen
                 field_metadata: list[Any] = []
                 for a in metadata:
-                    if _typing_extra.is_deprecated_instance(a):
+                    if typing_objects.is_deprecated(a):
                         new_field_info.deprecated = a.message
                     elif not isinstance(a, FieldInfo):
                         field_metadata.append(a)
@@ -446,7 +447,7 @@ class FieldInfo(_repr.Representation):
             field_info = FieldInfo.merge_field_infos(*field_infos, annotation=annotation, default=default)
             field_metadata: list[Any] = []
             for a in metadata:
-                if _typing_extra.is_deprecated_instance(a):
+                if typing_objects.is_deprecated(a):
                     field_info.deprecated = a.message
                 elif not isinstance(a, FieldInfo):
                     field_metadata.append(a)

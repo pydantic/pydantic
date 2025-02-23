@@ -12,7 +12,8 @@ from re import Pattern
 from typing import TYPE_CHECKING, Any, Callable, TypeVar
 
 from pydantic_core import PydanticUndefined
-from typing_extensions import TypeIs
+from typing_extensions import TypeIs, get_origin
+from typing_inspection import typing_objects
 
 from pydantic import PydanticDeprecatedSince211
 from pydantic.errors import PydanticUserError
@@ -286,7 +287,7 @@ def _warn_on_nested_alias_in_annotation(ann_type: type[Any], ann_name: str) -> N
     args = getattr(ann_type, '__args__', None)
     if args:
         for anno_arg in args:
-            if _typing_extra.is_annotated(anno_arg):
+            if typing_objects.is_annotated(get_origin(anno_arg)):
                 for anno_type_arg in _typing_extra.get_args(anno_arg):
                     if isinstance(anno_type_arg, FieldInfo) and anno_type_arg.alias is not None:
                         warnings.warn(
