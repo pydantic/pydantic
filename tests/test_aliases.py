@@ -1,7 +1,7 @@
 from contextlib import AbstractContextManager
 from contextlib import nullcontext as does_not_raise
 from inspect import signature
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 import pytest
 from dirty_equals import IsStr
@@ -14,6 +14,7 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    PydanticUserError,
     ValidationError,
     computed_field,
 )
@@ -767,10 +768,87 @@ def test_alias_gen_with_empty_string_and_computed_field() -> None:
     assert Model.model_computed_fields['b'].alias == ''
 
 
-def test_validation_alias_settings() -> None: ...
+@pytest.mark.parametrize('config_by_alias', [None, True, False])
+@pytest.mark.parametrize('config_by_name', [None, True, False])
+@pytest.mark.parametrize('runtime_by_alias', [None, True, False])
+@pytest.mark.parametrize('runtime_by_name', [None, True, False])
+def test_validation_alias_settings(
+    config_by_alias: Union[bool, None],
+    config_by_name: Union[bool, None],
+    runtime_by_alias: Union[bool, None],
+    runtime_by_name: Union[bool, None],
+) -> None:
+    """This test reflects the priority that applies for config vs runtime validation alias configuration.
+
+    Runtime values take precedence over config values, when set.
+    By default, `by_alias` is True and `by_name` is False.
+    """
+
+    if (config_by_alias is False and config_by_name is not True) or (
+        runtime_by_alias is False and runtime_by_name is not True
+    ):
+        pytest.skip("Can't have both validate_by_alias and validate_by_name as effectively False")
+
+    config_dict = {
+        **({'validate_by_alias': config_by_alias} if config_by_alias is not None else {}),
+        **({'validate_by_name': config_by_name} if config_by_name is not None else {}),
+    }
+
+    class Model(BaseModel):
+        model_config = ConfigDict(**config_dict)
+
+        a: int = Field(validation_alias='A')
+
+    alias_allowed = next(x for x in (runtime_by_alias, config_by_alias, True) if x is not None)
+    name_allowed = next(x for x in (runtime_by_name, config_by_name, False) if x is not None)
+
+    if alias_allowed:
+        assert Model.model_validate({'A': 1}, by_alias=runtime_by_alias, by_name=runtime_by_name).a == 1
+    if name_allowed:
+        assert Model.model_validate({'a': 1}, by_alias=runtime_by_alias, by_name=runtime_by_name).a == 1
 
 
-def test_serialization_alias_settings() -> None: ...
+def test_user_error_on_validation_methods() -> None:
+    class Model(BaseModel):
+        a: int = Field(alias='A')
+
+    with pytest.raises(PydanticUserError, match='At least one of `by_alias` or `by_name` must be set to True.'):
+        Model.model_validate({'A': 1}, by_alias=False, by_name=False)
+
+    with pytest.raises(PydanticUserError, match='At least one of `by_alias` or `by_name` must be set to True.'):
+        Model.model_validate_json("{'A': 1}", by_alias=False, by_name=False)
+
+    with pytest.raises(PydanticUserError, match='At least one of `by_alias` or `by_name` must be set to True.'):
+        Model.model_validate_strings("{'A': 1}", by_alias=False, by_name=False)
 
 
-def test_user_error_on_validation_methods() -> None: ...
+@pytest.mark.parametrize(
+    'config,runtime,expected',
+    [
+        (True, True, {'A': 1}),
+        (True, False, {'a': 1}),
+        (True, None, {'A': 1}),
+        (False, True, {'A': 1}),
+        (False, False, {'a': 1}),
+        (False, None, {'a': 1}),
+        (None, True, {'A': 1}),
+        (None, False, {'a': 1}),
+        (None, None, {'a': 1}),
+    ],
+)
+def test_serialization_alias_settings(
+    config: Union[bool, None], runtime: Union[bool, None], expected: dict[str, int]
+) -> None:
+    """This test reflects the priority that applies for config vs runtime serialization alias configuration.
+
+    Runtime value (by_alias) takes precedence over config value (serialize_by_alias).
+    If neither are set, the default, False, is used.
+    """
+
+    class Model(BaseModel):
+        model_config = ConfigDict(serialize_by_alias=config)
+
+        a: int = Field(serialization_alias='A')
+
+    model = Model(a=1)
+    assert model.model_dump(by_alias=runtime) == expected
