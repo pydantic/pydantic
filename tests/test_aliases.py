@@ -765,3 +765,12 @@ def test_alias_gen_with_empty_string_and_computed_field() -> None:
     assert Model.model_fields['a'].serialization_alias == ''
     assert Model.model_fields['a'].alias == 'a_alias'
     assert Model.model_computed_fields['b'].alias == ''
+
+
+def test_validation_alias_settings() -> None: ...
+
+
+def test_serialization_alias_settings() -> None: ...
+
+
+def test_user_error_on_validation_methods() -> None: ...

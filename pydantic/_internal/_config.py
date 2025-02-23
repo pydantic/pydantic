@@ -184,6 +184,7 @@ class ConfigWrapper:
             # We include this patch for backwards compatibility purposes, but this config setting will be officially removed in v3.0.
             # Thus, the above warning and this patch can be removed then as well.
             if config.get('validate_by_name') is None:
+                config['validate_by_alias'] = True
                 config['validate_by_name'] = populate_by_name
 
         if (not config.get('validate_by_alias', True)) and (not config.get('validate_by_name', False)):
