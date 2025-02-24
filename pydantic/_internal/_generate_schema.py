@@ -483,7 +483,10 @@ class GenerateSchema:
             )
 
         path_constructor = pathlib.PurePath if tp is os.PathLike else tp
-        constrained_schema = core_schema.bytes_schema() if (path_type is bytes) else core_schema.str_schema()
+        strict_inner_schema = (
+            core_schema.bytes_schema(strict=True) if (path_type is bytes) else core_schema.str_schema(strict=True)
+        )
+        lax_inner_schema = core_schema.bytes_schema() if (path_type is bytes) else core_schema.str_schema()
 
         def path_validator(input_value: str | bytes) -> os.PathLike[Any]:  # type: ignore
             try:
@@ -512,7 +515,7 @@ class GenerateSchema:
             return str(path)
 
         instance_schema = core_schema.json_or_python_schema(
-            json_schema=core_schema.no_info_after_validator_function(path_validator, constrained_schema),
+            json_schema=core_schema.no_info_after_validator_function(path_validator, lax_inner_schema),
             python_schema=core_schema.is_instance_schema(tp),
         )
 
@@ -520,11 +523,10 @@ class GenerateSchema:
             lax_schema=core_schema.union_schema(
                 [
                     instance_schema,
-                    core_schema.no_info_after_validator_function(path_validator, constrained_schema),
+                    core_schema.no_info_after_validator_function(path_validator, strict_inner_schema),
                 ],
                 custom_error_type='path_type',
                 custom_error_message=f'Input is not a valid path for {tp}',
-                strict=True,
             ),
             strict_schema=instance_schema,
             serialization=core_schema.plain_serializer_function_ser_schema(ser_path, info_arg=True, when_used='always'),
