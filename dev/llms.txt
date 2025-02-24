@@ -12,7 +12,7 @@ Pydantic
 
 [![license](https://img.shields.io/github/license/pydantic/pydantic.svg)](https://github.com/pydantic/pydantic/blob/main/LICENSE)
 
-Documentation for development version: [6eeb99b](https://github.com/pydantic/pydantic/commit/6eeb99b224ea8acf2a47a5b649ade8fac3f2d9a6).
+Documentation for development version: [67e4f59](https://github.com/pydantic/pydantic/commit/67e4f597028635b73baaaf65fb50db7fda34c92b).
 
 Pydantic is the most widely used data validation library for Python.
 
@@ -11198,7 +11198,7 @@ dataclass(
  
 ```
 dataclass(
-    _cls: type[_T" optional hover>_T] | None = None,
+    _cls: type[_T] | None = None,
     *,
     init: Literal[False] = False,
     repr: bool = True,
@@ -13140,11 +13140,10 @@ def from_annotation(annotation: type[Any]) -> FieldInfo:
 
     # 2. Check if the annotation is an `Annotated` form.
     #    In this case, `annotation` will be the annotated type:
-    annotation, metadata = _typing_extra.unpack_annotated(annotation)
+    if _typing_extra.is_annotated(annotation):
+        annotation, *metadata = typing_extensions.get_args(annotation)
 
-    # 3. If we have metadata, `annotation` was the annotated type:
-    if metadata:
-        # 3.1. Check if the annotated type is the `Final` type qualifier.
+        # 2.1. Check if the annotated type is the `Final` type qualifier.
         #      (i.e. `Annotated[Final[...], ...]`). Note that we only do
         #      so if `final` isn't `True` already, because we don't want to
         #      support the invalid `Final[Annotated[Final, ...]]` form.
@@ -13170,7 +13169,7 @@ def from_annotation(annotation: type[Any]) -> FieldInfo:
             new_field_info.metadata = field_metadata
             return new_field_info
 
-    # 4. We don't have metadata:
+    # 3. We don't have metadata:
     return FieldInfo(annotation=annotation, frozen=final or None)  # pyright: ignore[reportArgumentType] (PEP 747)
 
 ```
@@ -13258,7 +13257,12 @@ def from_annotated_attribute(annotation: type[Any], default: Any) -> FieldInfo:
         annotation = typing_extensions.get_args(annotation)[0]
 
     if isinstance(default, FieldInfo):
-        default.annotation, annotation_metadata = _typing_extra.unpack_annotated(annotation)
+        if _typing_extra.is_annotated(annotation):
+            annotation, *annotation_metadata = typing_extensions.get_args(annotation)
+        else:
+            annotation_metadata = []
+
+        default.annotation = annotation
         default.metadata += annotation_metadata
         default = default.merge_field_infos(
             *[x for x in annotation_metadata if isinstance(x, FieldInfo)], default, annotation=default.annotation
@@ -13276,7 +13280,12 @@ def from_annotated_attribute(annotation: type[Any], default: Any) -> FieldInfo:
             annotation = annotation.type
 
         pydantic_field = FieldInfo._from_dataclass_field(default)
-        pydantic_field.annotation, annotation_metadata = _typing_extra.unpack_annotated(annotation)
+        if _typing_extra.is_annotated(annotation):
+            annotation, *annotation_metadata = typing_extensions.get_args(annotation)
+        else:
+            annotation_metadata = []
+
+        pydantic_field.annotation = annotation
         pydantic_field.metadata += annotation_metadata
         pydantic_field = pydantic_field.merge_field_infos(
             *[x for x in annotation_metadata if isinstance(x, FieldInfo)],
@@ -13289,9 +13298,8 @@ def from_annotated_attribute(annotation: type[Any], default: Any) -> FieldInfo:
         pydantic_field.kw_only = getattr(default, 'kw_only', None)
         return pydantic_field
 
-    annotation, metadata = _typing_extra.unpack_annotated(annotation)
-
-    if metadata:
+    if _typing_extra.is_annotated(annotation):
+        annotation, *metadata = typing_extensions.get_args(annotation)
         field_infos = [a for a in metadata if isinstance(a, FieldInfo)]
         field_info = FieldInfo.merge_field_infos(*field_infos, annotation=annotation, default=default)
         field_metadata: list[Any] = []
@@ -16285,8 +16293,7 @@ def generate_inner(self, schema: CoreSchemaOrField) -> JsonSchemaValue:  # noqa:
                 json_schema = generate_for_schema_type(schema_or_field)
             else:
                 raise TypeError(f'Unexpected schema type: schema={schema_or_field}')
-        if _core_utils.is_core_schema(schema_or_field):
-            json_schema = populate_defs(schema_or_field, json_schema)
+
         return json_schema
 
     current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(self, handler_func)
@@ -16347,10 +16354,7 @@ def generate_inner(self, schema: CoreSchemaOrField) -> JsonSchemaValue:  # noqa:
             current_handler: GetJsonSchemaHandler = current_handler,
             js_modify_function: GetJsonSchemaFunction = js_modify_function,
         ) -> JsonSchemaValue:
-            json_schema = js_modify_function(schema_or_field, current_handler)
-            if _core_utils.is_core_schema(schema_or_field):
-                json_schema = populate_defs(schema_or_field, json_schema)
-            return json_schema
+            return js_modify_function(schema_or_field, current_handler)
 
         current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(self, new_handler_func)
 
@@ -54019,7 +54023,6 @@ print(Model.model_json_schema())  # (1)!
 from typing import Annotated
 
 from annotated_types import Gt
-from typing_extensions import TypeAliasType
 
 from pydantic import BaseModel
 
@@ -54055,6 +54058,47 @@ print(Model.model_json_schema())  # (1)!
 1. If `PositiveIntList` were to be defined as an implicit type alias, its definition
    would have been duplicated in both `'x'` and `'y'`.
 
+
+
+When to use named type aliases
+
+While (named) PEP 695 and implicit type aliases are meant to be equivalent for static type checkers,
+Pydantic will *not* understand field-specific metadata inside named aliases. That is, metadata such as
+`alias`, `default`, `deprecated`, *cannot* be used:
+
+```
+from typing import Annotated
+
+from typing_extensions import TypeAliasType
+
+from pydantic import BaseModel, Field
+
+MyAlias = TypeAliasType('MyAlias', Annotated[int, Field(default=1)])
+
+
+class Model(BaseModel):
+    x: MyAlias  # This is not allowed
+
+```
+
+
+```
+from typing import Annotated
+
+from pydantic import BaseModel, Field
+
+type MyAlias = Annotated[int, Field(default=1)]
+
+
+class Model(BaseModel):
+    x: MyAlias  # This is not allowed
+
+```
+
+
+
+Only metadata that can be applied to the annotated type itself is allowed
+(e.g. [validation constraints](../fields/#field-constraints) and JSON metadata).
 
 
 Note

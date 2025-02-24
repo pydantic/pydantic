@@ -3575,7 +3575,6 @@ two reasons:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">annotated_types</span><span class="w"> </span><span class="kn">import</span> <span class="n">Gt</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing_extensions</span><span class="w"> </span><span class="kn">import</span> <span class="n">TypeAliasType</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
 
@@ -3613,10 +3612,48 @@ two reasons:</p>
 </div>
 </div>
 </div>
+<div class="admonition warning">
+<p class="admonition-title">When to use named type aliases</p>
+<p>While (named) PEP 695 and implicit type aliases are meant to be equivalent for static type checkers,
+Pydantic will <em>not</em> understand field-specific metadata inside named aliases. That is, metadata such as
+<code>alias</code>, <code>default</code>, <code>deprecated</code>, <em>cannot</em> be used:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.9 and above</label><label for="__tabbed_2_2">Python 3.12 and above (new syntax)</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing_extensions</span><span class="w"> </span><span class="kn">import</span> <span class="n">TypeAliasType</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+
+<span class="n">MyAlias</span> <span class="o">=</span> <span class="n">TypeAliasType</span><span class="p">(</span><span class="s1">&#39;MyAlias&#39;</span><span class="p">,</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">1</span><span class="p">)])</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">MyAlias</span>  <span class="c1"># This is not allowed</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+
+<span class="nb">type</span> <span class="n">MyAlias</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">1</span><span class="p">)]</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">MyAlias</span>  <span class="c1"># This is not allowed</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p>Only metadata that can be applied to the annotated type itself is allowed
+(e.g. <a href="../fields/#field-constraints">validation constraints</a> and JSON metadata).</p>
+</div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>As with implicit type aliases, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.TypeVar">type variables</a> can also be used inside the generic alias:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.9 and above</label><label for="__tabbed_2_2">Python 3.12 and above (new syntax)</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.9 and above</label><label for="__tabbed_3_2">Python 3.12 and above (new syntax)</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span><span class="p">,</span> <span class="n">TypeVar</span>
@@ -3650,7 +3687,7 @@ two reasons:</p>
    across modules.</li>
 </ol>
 <p>For instance, here is an example definition of a JSON type:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.9 and above</label><label for="__tabbed_3_2">Python 3.12 and above (new syntax)</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">Python 3.9 and above</label><label for="__tabbed_4_2">Python 3.12 and above (new syntax)</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Union</span>
@@ -3773,7 +3810,7 @@ This is equivalent to implementing <code>__get_validators__</code> in Pydantic V
 <h4 id="as-an-annotation">As an annotation<a class="headerlink" href="#as-an-annotation" title="Permanent link">&para;</a></h4>
 <p>Often you'll want to parametrize your custom type by more than just generic type parameters (which you can do via the type system and will be discussed later). Or you may not actually care (or want to) make an instance of your subclass; you actually want the original type, just with some extra validation done.</p>
 <p>For example, if you were to implement <code>pydantic.AfterValidator</code> (see <a href="#adding-validation-and-serialization">Adding validation and serialization</a>) yourself, you'd do something similar to the following:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">Python 3.9 and above</label><label for="__tabbed_4_2">Python 3.10 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">Python 3.9 and above</label><label for="__tabbed_5_2">Python 3.10 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
@@ -4029,7 +4066,7 @@ Then you can use the <code>handler</code> to generate a schema for them by calli
 Note that we do not do something like <code>handler(get_args(source_type)[0])</code> because we want to generate an unrelated
 schema for that generic parameter, not one that is influenced by the current context of <code>Annotated</code> metadata and such.
 This is less important for custom types, but crucial for annotated metadata that modifies schema building.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">Python 3.9 and above</label><label for="__tabbed_5_2">Python 3.10 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="6:2"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">Python 3.9 and above</label><label for="__tabbed_6_2">Python 3.10 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
@@ -4321,7 +4358,7 @@ This is less important for custom types, but crucial for annotated metadata that
 </div>
 <h4 id="generic-containers">Generic containers<a class="headerlink" href="#generic-containers" title="Permanent link">&para;</a></h4>
 <p>The same idea can be applied to create generic container types, like a custom <code>Sequence</code> type:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="6:2"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">Python 3.9 and above</label><label for="__tabbed_6_2">Python 3.10 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="7:2"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><div class="tabbed-labels"><label for="__tabbed_7_1">Python 3.9 and above</label><label for="__tabbed_7_2">Python 3.10 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">TypeVar</span>
