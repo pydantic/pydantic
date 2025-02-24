@@ -169,7 +169,8 @@ class ConfigDict(TypedDict, total=False):
     attribute, as well as the alias. Defaults to `False`.
 
     !!! warning
-        `populate_by_name` is deprecated in v2.10 in favor of the [`validate_by_name`][pydantic.config.ConfigDict.validate_by_name] configuration setting.
+        `populate_by_name` usage is not recommended in v2.11+ and will be deprecated in v3.
+         Instead, you should use the [`validate_by_name`][pydantic.config.ConfigDict.validate_by_name] configuration setting.
 
         In v2.11, we also introduced a [`validate_by_alias`][pydantic.config.ConfigDict.validate_by_alias] setting that introduces more fine grained
         control for validation behavior.

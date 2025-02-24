@@ -35,7 +35,7 @@ from pydantic.dataclasses import rebuild_dataclass
 from pydantic.errors import PydanticUserError
 from pydantic.fields import ComputedFieldInfo, FieldInfo
 from pydantic.type_adapter import TypeAdapter
-from pydantic.warnings import PydanticDeprecatedSince210, PydanticDeprecatedSince211, PydanticDeprecationWarning
+from pydantic.warnings import PydanticDeprecatedSince210, PydanticDeprecationWarning
 
 from .conftest import CallCounter
 
@@ -946,17 +946,6 @@ def test_generate_schema_deprecation_warning() -> None:
             model_config = ConfigDict(schema_generator=GenerateSchema)
 
 
-def test_populate_by_name_deprecation_warning() -> None:
-    with pytest.warns(
-        PydanticDeprecatedSince211,
-        match='The `populate_by_name` setting has been deprecated since v2.11. Instead, use the `validate_by_name` setting to control this behavior.',
-    ):
-
-        class Model(BaseModel):
-            model_config = ConfigDict(populate_by_name=True)
-
-
-@pytest.mark.filterwarnings('ignore::pydantic.warnings.PydanticDeprecatedSince211')
 def test_populate_by_name_still_effective() -> None:
     class Model(BaseModel):
         model_config = ConfigDict(populate_by_name=True)

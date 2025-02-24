@@ -17,7 +17,7 @@ from typing_extensions import Self
 from ..aliases import AliasGenerator
 from ..config import ConfigDict, ExtraValues, JsonDict, JsonEncoder, JsonSchemaExtraCallable
 from ..errors import PydanticUserError
-from ..warnings import PydanticDeprecatedSince20, PydanticDeprecatedSince210, PydanticDeprecatedSince211
+from ..warnings import PydanticDeprecatedSince20, PydanticDeprecatedSince210
 
 if not TYPE_CHECKING:
     # See PyCharm issues https://youtrack.jetbrains.com/issue/PY-21915
@@ -176,11 +176,6 @@ class ConfigWrapper:
             )
 
         if (populate_by_name := config.get('populate_by_name')) is not None:
-            warnings.warn(
-                'The `populate_by_name` setting has been deprecated since v2.11. Instead, use the `validate_by_name` setting to control this behavior.',
-                PydanticDeprecatedSince211,
-            )
-
             # We include this patch for backwards compatibility purposes, but this config setting will be officially removed in v3.0.
             # Thus, the above warning and this patch can be removed then as well.
             if config.get('validate_by_name') is None:
