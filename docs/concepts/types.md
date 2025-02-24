@@ -321,7 +321,7 @@ By leveraging the new [`type` statement](https://typing.readthedocs.io/en/latest
         ```
 
     Only metadata that can be applied to the annotated type itself is allowed
-    (e.g. [validation constraints](./fields.md#field-constraints), JSON metadata).
+    (e.g. [validation constraints](./fields.md#field-constraints) and JSON metadata).
 
 !!! note
     As with implicit type aliases, [type variables][typing.TypeVar] can also be used inside the generic alias:
