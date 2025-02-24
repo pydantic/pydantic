@@ -400,7 +400,7 @@ impl PyMultiHostUrl {
                     username: username.map(Into::into),
                     password: password.map(Into::into),
                     host: host.map(Into::into),
-                    port: port.map(Into::into),
+                    port,
                 };
                 format!("{scheme}://{url_host}")
             } else {
