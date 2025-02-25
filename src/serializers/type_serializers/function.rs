@@ -547,7 +547,7 @@ struct SerializationInfo {
     #[pyo3(get, name = "mode")]
     _mode: SerMode,
     #[pyo3(get)]
-    by_alias: bool,
+    by_alias: Option<bool>,
     #[pyo3(get)]
     exclude_unset: bool,
     #[pyo3(get)]
@@ -668,7 +668,7 @@ impl SerializationInfo {
                 None => "None".to_owned(),
             },
             self._mode,
-            py_bool(self.by_alias),
+            py_bool(self.by_alias.unwrap_or(false)),
             py_bool(self.exclude_unset),
             py_bool(self.exclude_defaults),
             py_bool(self.exclude_none),

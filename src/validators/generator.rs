@@ -279,6 +279,8 @@ impl InternalValidator {
             context: self.context.as_ref().map(|data| data.bind(py)),
             self_instance: self.self_instance.as_ref().map(|data| data.bind(py)),
             cache_str: self.cache_str,
+            by_alias: None,
+            by_name: None,
         };
         let mut state = ValidationState::new(extra, &mut self.recursion_guard, false.into());
         state.exactness = self.exactness;
@@ -314,6 +316,8 @@ impl InternalValidator {
             context: self.context.as_ref().map(|data| data.bind(py)),
             self_instance: self.self_instance.as_ref().map(|data| data.bind(py)),
             cache_str: self.cache_str,
+            by_alias: None,
+            by_name: None,
         };
         let mut state = ValidationState::new(extra, &mut self.recursion_guard, false.into());
         state.exactness = self.exactness;

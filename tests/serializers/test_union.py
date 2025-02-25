@@ -760,8 +760,8 @@ def test_tagged_union_with_aliases() -> None:
 
     model_a = ModelA(field=1)
     model_b = ModelB(field=1)
-    assert s.to_python(model_a) == {'field': 1, 'TAG': 'a'}
-    assert s.to_python(model_b) == {'field': 1, 'TAG': 'b'}
+    assert s.to_python(model_a, by_alias=True) == {'field': 1, 'TAG': 'a'}
+    assert s.to_python(model_b, by_alias=True) == {'field': 1, 'TAG': 'b'}
 
 
 def test_union_model_wrap_serializer():

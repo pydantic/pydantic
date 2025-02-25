@@ -98,7 +98,7 @@ impl ComputedFields {
                     exclude: next_exclude.as_ref(),
                     extra: &field_extra,
                 };
-                let key = match extra.by_alias {
+                let key = match extra.serialize_by_alias_or(computed_field.serialize_by_alias) {
                     true => computed_field.alias.as_str(),
                     false => computed_field.property_name.as_str(),
                 };
@@ -116,6 +116,7 @@ struct ComputedField {
     serializer: CombinedSerializer,
     alias: String,
     alias_py: Py<PyString>,
+    serialize_by_alias: Option<bool>,
 }
 
 impl ComputedField {
@@ -139,6 +140,7 @@ impl ComputedField {
             serializer,
             alias: alias_py.extract()?,
             alias_py: alias_py.into(),
+            serialize_by_alias: config.get_as(intern!(py, "serialize_by_alias"))?,
         })
     }
 
@@ -163,7 +165,7 @@ impl ComputedField {
             if extra.exclude_none && value.is_none(py) {
                 return Ok(());
             }
-            let key = match extra.by_alias {
+            let key = match extra.serialize_by_alias_or(self.serialize_by_alias) {
                 true => self.alias_py.bind(py),
                 false => property_name_py,
             };

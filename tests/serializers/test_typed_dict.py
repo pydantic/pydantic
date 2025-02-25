@@ -114,16 +114,16 @@ def test_alias():
         )
     )
     value = {'cat': 0, 'dog': 1, 'bird': 2}
-    assert s.to_python(value) == IsStrictDict(Meow=0, Woof=1, bird=2)
-    assert s.to_python(value, exclude={'dog'}) == IsStrictDict(Meow=0, bird=2)
+    assert s.to_python(value, by_alias=True) == IsStrictDict(Meow=0, Woof=1, bird=2)
+    assert s.to_python(value, exclude={'dog'}, by_alias=True) == IsStrictDict(Meow=0, bird=2)
     assert s.to_python(value, by_alias=False) == IsStrictDict(cat=0, dog=1, bird=2)
 
-    assert s.to_python(value, mode='json') == IsStrictDict(Meow=0, Woof=1, bird=2)
-    assert s.to_python(value, mode='json', include={'cat'}) == IsStrictDict(Meow=0)
+    assert s.to_python(value, mode='json', by_alias=True) == IsStrictDict(Meow=0, Woof=1, bird=2)
+    assert s.to_python(value, mode='json', include={'cat'}, by_alias=True) == IsStrictDict(Meow=0)
     assert s.to_python(value, mode='json', by_alias=False) == IsStrictDict(cat=0, dog=1, bird=2)
 
-    assert json.loads(s.to_json(value)) == IsStrictDict(Meow=0, Woof=1, bird=2)
-    assert json.loads(s.to_json(value, include={'cat', 'bird'})) == IsStrictDict(Meow=0, bird=2)
+    assert json.loads(s.to_json(value, by_alias=True)) == IsStrictDict(Meow=0, Woof=1, bird=2)
+    assert json.loads(s.to_json(value, include={'cat', 'bird'}, by_alias=True)) == IsStrictDict(Meow=0, bird=2)
     assert json.loads(s.to_json(value, by_alias=False)) == IsStrictDict(cat=0, dog=1, bird=2)
 
 
@@ -333,3 +333,37 @@ def test_extra_custom_serializer():
     m = {'extra': 'extra'}
 
     assert s.to_python(m) == {'extra': 'extra bam!'}
+
+
+@pytest.mark.parametrize(
+    'config,runtime,expected',
+    [
+        (True, True, {'my_alias': 1}),
+        (True, False, {'my_field': 1}),
+        (True, None, {'my_alias': 1}),
+        (False, True, {'my_alias': 1}),
+        (False, False, {'my_field': 1}),
+        (False, None, {'my_field': 1}),
+        (None, True, {'my_alias': 1}),
+        (None, False, {'my_field': 1}),
+        (None, None, {'my_field': 1}),
+    ],
+)
+def test_by_alias_and_name_config_interaction(config, runtime, expected) -> None:
+    """This test reflects the priority that applies for config vs runtime serialization alias configuration.
+
+    If the runtime value (by_alias) is set, that value is used.
+    If the runtime value is unset, the config value (serialize_by_alias) is used.
+    If neither are set, the default, False, is used.
+    """
+
+    class Model(TypedDict):
+        my_field: int
+
+    schema = core_schema.typed_dict_schema(
+        {
+            'my_field': core_schema.typed_dict_field(core_schema.int_schema(), serialization_alias='my_alias'),
+        },
+    )
+    s = SchemaSerializer(schema, config=core_schema.CoreConfig(serialize_by_alias=config or False))
+    assert s.to_python(Model(my_field=1), by_alias=runtime) == expected

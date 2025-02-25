@@ -37,6 +37,8 @@ impl BuildSerializer for DataclassArgsBuilder {
             _ => FieldsMode::SimpleDict,
         };
 
+        let serialize_by_alias = config.get_as(intern!(py, "serialize_by_alias"))?;
+
         for (index, item) in fields_list.iter().enumerate() {
             let field_info = item.downcast::<PyDict>()?;
             let name: String = field_info.get_as_req(intern!(py, "name"))?;
@@ -45,14 +47,17 @@ impl BuildSerializer for DataclassArgsBuilder {
 
             if !field_info.get_as(intern!(py, "init_only"))?.unwrap_or(false) {
                 if field_info.get_as(intern!(py, "serialization_exclude"))? == Some(true) {
-                    fields.insert(name, SerField::new(py, key_py, None, None, true));
+                    fields.insert(name, SerField::new(py, key_py, None, None, true, serialize_by_alias));
                 } else {
                     let schema = field_info.get_as_req(intern!(py, "schema"))?;
                     let serializer = CombinedSerializer::build(&schema, config, definitions)
                         .map_err(|e| py_schema_error_type!("Field `{}`:\n  {}", index, e))?;
 
                     let alias = field_info.get_as(intern!(py, "serialization_alias"))?;
-                    fields.insert(name, SerField::new(py, key_py, alias, Some(serializer), true));
+                    fields.insert(
+                        name,
+                        SerField::new(py, key_py, alias, Some(serializer), true, serialize_by_alias),
+                    );
                 }
             }
         }
