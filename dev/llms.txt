@@ -12,7 +12,7 @@ Pydantic
 
 [![license](https://img.shields.io/github/license/pydantic/pydantic.svg)](https://github.com/pydantic/pydantic/blob/main/LICENSE)
 
-Documentation for development version: [67e4f59](https://github.com/pydantic/pydantic/commit/67e4f597028635b73baaaf65fb50db7fda34c92b).
+Documentation for development version: [0f54b6f](https://github.com/pydantic/pydantic/commit/0f54b6f78c975cc458da715c03e45b84dbb18ee4).
 
 Pydantic is the most widely used data validation library for Python.
 
