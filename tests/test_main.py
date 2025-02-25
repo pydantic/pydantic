@@ -2033,6 +2033,34 @@ def test_deprecated_final_field_decl_with_default_val(ann):
     assert 'a' not in Model.model_fields
 
 
+@pytest.mark.parametrize(
+    'ann',
+    [Final, Final[int]],
+    ids=['no-arg', 'with-arg'],
+)
+def test_deprecated_annotated_final_field_decl_with_default_val(ann):
+    with pytest.warns(PydanticDeprecatedSince211):
+
+        class Model(BaseModel):
+            a: Annotated[ann, ...] = 10
+
+    assert 'a' in Model.__class_vars__
+    assert 'a' not in Model.model_fields
+
+
+@pytest.mark.xfail(reason="When rebuilding fields, we don't consider the field as a class variable")
+def test_deprecated_final_field_with_default_val_rebuild():
+    class Model(BaseModel):
+        a: 'Final[MyInt]' = 1
+
+    MyInt = int
+
+    Model.model_rebuild()
+
+    assert 'a' in Model.__class_vars__
+    assert 'a' not in Model.model_fields
+
+
 def test_final_field_reassignment():
     class Model(BaseModel):
         model_config = ConfigDict(validate_assignment=True)
