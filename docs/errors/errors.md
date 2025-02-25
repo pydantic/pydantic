@@ -37,7 +37,7 @@ The first item in the [`loc`][pydantic_core.ErrorDetails.loc] list will be the f
 As a demonstration:
 
 ```python
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field, ValidationError, field_validator
 
 
 class Location(BaseModel):
@@ -52,10 +52,17 @@ class Model(BaseModel):
     a_float: float
     recursive_model: Location
 
+    @field_validator('a_float', mode='after')
+    @classmethod
+    def validate_float(cls, value: float) -> float:
+        if value > 2.0:
+            raise ValueError('Invalid float value')
+        return value
+
 
 data = {
     'list_of_ints': ['1', 2, 'bad'],
-    'a_float': 'not a float',
+    'a_float': 3.0,
     'recursive_model': {'lat': 4.2, 'lng': 'New York'},
     'gt_int': 21,
 }
@@ -73,7 +80,7 @@ except ValidationError as e:
     list_of_ints.2
       Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='bad', input_type=str]
     a_float
-      Input should be a valid number, unable to parse string as a number [type=float_parsing, input_value='not a float', input_type=str]
+      Value error, Invalid float value [type=value_error, input_value=3.0, input_type=float]
     recursive_model.lng
       Input should be a valid number, unable to parse string as a number [type=float_parsing, input_value='New York', input_type=str]
     """
@@ -90,7 +97,7 @@ except ValidationError as e:
             'msg': 'Field required',
             'input': {
                 'list_of_ints': ['1', 2, 'bad'],
-                'a_float': 'not a float',
+                'a_float': 3.0,
                 'recursive_model': {'lat': 4.2, 'lng': 'New York'},
                 'gt_int': 21,
             },
@@ -112,11 +119,12 @@ except ValidationError as e:
             'url': 'https://errors.pydantic.dev/2/v/int_parsing',
         },
         {
-            'type': 'float_parsing',
+            'type': 'value_error',
             'loc': ('a_float',),
-            'msg': 'Input should be a valid number, unable to parse string as a number',
-            'input': 'not a float',
-            'url': 'https://errors.pydantic.dev/2/v/float_parsing',
+            'msg': 'Value error, Invalid float value',
+            'input': 3.0,
+            'ctx': {'error': ValueError('Invalid float value')},
+            'url': 'https://errors.pydantic.dev/2/v/value_error',
         },
         {
             'type': 'float_parsing',
