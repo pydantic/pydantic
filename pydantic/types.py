@@ -1763,12 +1763,12 @@ class _SecretField(_SecretBase[SecretType]):
             )
             return json_schema
 
-        json_schema = core_schema.no_info_after_validator_function(
-            source,  # construct the type
-            cls._inner_schema,
-        )
-
         def get_secret_schema(strict: bool) -> CoreSchema:
+            inner_schema = {**cls._inner_schema, 'strict': strict}
+            json_schema = core_schema.no_info_after_validator_function(
+                source,  # construct the type
+                inner_schema,  # pyright: ignore[reportArgumentType]
+            )
             return core_schema.json_or_python_schema(
                 python_schema=core_schema.union_schema(
                     [
@@ -1776,7 +1776,6 @@ class _SecretField(_SecretBase[SecretType]):
                         json_schema,
                     ],
                     custom_error_type=cls._error_kind,
-                    strict=strict,
                 ),
                 json_schema=json_schema,
                 serialization=core_schema.plain_serializer_function_ser_schema(
