@@ -1052,7 +1052,7 @@ class ConfigDict(TypedDict, total=False):
     ```py
     from pydantic import BaseModel, ConfigDict, Field
 
-    class User(BaseModel):
+    class Model(BaseModel):
         model_config = ConfigDict(validate_by_name=True, validate_by_alias=False)
 
         my_field: str = Field(validation_alias='my_alias')  # (1)!
@@ -1087,7 +1087,7 @@ class ConfigDict(TypedDict, total=False):
     ```python
     from pydantic import BaseModel, ConfigDict, Field
 
-    class User(BaseModel):
+    class Model(BaseModel):
         model_config = ConfigDict(validate_by_name=True, validate_by_alias=True)
 
         my_field: str = Field(validation_alias='my_alias')  # (1)!

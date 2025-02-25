@@ -202,7 +202,6 @@ You may set `alias_priority` on a field to change this behavior:
 The same precedence applies to `validation_alias` and `serialization_alias`.
 See more about the different field aliases under [field aliases](../concepts/fields.md#field-aliases).
 
-
 ## Alias Use Configuration
 
 You can use [`ConfigDict`][pydantic.config.ConfigDict] settings or runtime validation / serialization
@@ -228,17 +227,17 @@ When validating data, you can enable population of attributes by attribute name,
     from pydantic import BaseModel, ConfigDict, Field
 
 
-    class User(BaseModel):
-        name: str = Field(validation_alias='username')
+    class Model(BaseModel):
+        my_field: str = Field(validation_alias='my_alias')
 
         model_config = ConfigDict(validate_by_alias=True, validate_by_name=False)
 
 
-    print(repr(User(username='tomato')))  # (1)!
-    #> User(name='tomato')
+    print(repr(Model(my_alias='foo')))  # (1)!
+    #> Model(my_field='foo')
     ```
 
-    1. The alias `username` is used for validation.
+    1. The alias `my_alias` is used for validation.
 
 === "`validate_by_name`"
 
@@ -246,17 +245,17 @@ When validating data, you can enable population of attributes by attribute name,
     from pydantic import BaseModel, ConfigDict, Field
 
 
-    class User(BaseModel):
-        name: str = Field(validation_alias='username')
+    class Model(BaseModel):
+        my_field: str = Field(validation_alias='my_alias')
 
         model_config = ConfigDict(validate_by_alias=False, validate_by_name=True)
 
 
-    print(repr(User(name='tomato')))  # (1)!
-    #> User(name='tomato')
+    print(repr(Model(my_field='foo')))  # (1)!
+    #> Model(my_field='foo')
     ```
 
-    1. the attribute identifier `name` is used for validation.
+    1. the attribute identifier `my_field` is used for validation.
 
 === "`validate_by_alias` and `validate_by_name`"
 
@@ -264,21 +263,21 @@ When validating data, you can enable population of attributes by attribute name,
     from pydantic import BaseModel, ConfigDict, Field
 
 
-    class User(BaseModel):
-        name: str = Field(validation_alias='username')
+    class Model(BaseModel):
+        my_field: str = Field(validation_alias='my_alias')
 
         model_config = ConfigDict(validate_by_alias=True, validate_by_name=True)
 
 
-    print(repr(User(username='tomato')))  # (1)!
-    #> User(name='tomato')
+    print(repr(Model(my_alias='foo')))  # (1)!
+    #> Model(my_field='foo')
 
-    print(repr(User(name='tomato')))  # (2)!
-    #> User(name='tomato')
+    print(repr(Model(my_field='foo')))  # (2)!
+    #> Model(my_field='foo')
     ```
 
-    1. The alias `username` is used for validation.
-    2. the attribute identifier `name` is used for validation.
+    1. The alias `my_alias` is used for validation.
+    2. the attribute identifier `my_field` is used for validation.
 
 !!! warning
     You cannot set both `validate_by_alias` and `validate_by_name` to `False`.
@@ -294,18 +293,18 @@ for an example.
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class User(BaseModel):
-    name: str = Field(serialization_alias='username')
+class Model(BaseModel):
+    my_field: str = Field(serialization_alias='my_alias')
 
     model_config = ConfigDict(serialize_by_alias=True)
 
 
-user = User(name='tomato')
-print(user.model_dump())  # (1)!
-#> {'username': 'tomato'}
+m = Model(my_field='foo')
+print(m.model_dump())  # (1)!
+#> {'my_alias': 'foo'}
 ```
 
-1. The alias `username` is used for serialization.
+1. The alias `my_alias` is used for serialization.
 
 !!! note
     The fact that serialization by alias is disabled by default is notably inconsistent with the default for
@@ -336,20 +335,20 @@ These settings are also available on [`TypeAdapter`][pydantic.type_adapter.TypeA
     from pydantic import BaseModel, Field
 
 
-    class User(BaseModel):
-        name: str = Field(validation_alias='username')
+    class Model(BaseModel):
+        my_field: str = Field(validation_alias='my_alias')
 
 
-    user = User.model_validate(
-        {'username': 'tomato'},  # (1)!
+    m = Model.model_validate(
+        {'my_alias': 'foo'},  # (1)!
         by_alias=True,
         by_name=False,
     )
-    print(repr(user))
-    #> User(name='tomato')
+    print(repr(m))
+    #> Model(my_field='foo')
     ```
 
-    1. The alias `username` is used for validation.
+    1. The alias `my_alias` is used for validation.
 
 === "`by_name`"
 
@@ -357,18 +356,18 @@ These settings are also available on [`TypeAdapter`][pydantic.type_adapter.TypeA
     from pydantic import BaseModel, Field
 
 
-    class User(BaseModel):
-        name: str = Field(validation_alias='username')
+    class Model(BaseModel):
+        my_field: str = Field(validation_alias='my_alias')
 
 
-    user = User.model_validate(
-        {'name': 'tomato'}, by_alias=False, by_name=True  # (1)!
+    m = Model.model_validate(
+        {'my_field': 'foo'}, by_alias=False, by_name=True  # (1)!
     )
-    print(repr(user))
-    #> User(name='tomato')
+    print(repr(m))
+    #> Model(my_field='foo')
     ```
 
-    1. the attribute identifier `name` is used for validation.
+    1. the attribute identifier `my_field` is used for validation.
 
 === "`validate_by_alias` and `validate_by_name`"
 
@@ -376,25 +375,25 @@ These settings are also available on [`TypeAdapter`][pydantic.type_adapter.TypeA
     from pydantic import BaseModel, Field
 
 
-    class User(BaseModel):
-        name: str = Field(validation_alias='username')
+    class Model(BaseModel):
+        my_field: str = Field(validation_alias='my_alias')
 
 
-    user = User.model_validate(
-        {'username': 'tomato'}, by_alias=True, by_name=True  # (1)!
+    m = Model.model_validate(
+        {'my_alias': 'foo'}, by_alias=True, by_name=True  # (1)!
     )
-    print(repr(user))
-    #> User(name='tomato')
+    print(repr(m))
+    #> Model(my_field='foo')
 
-    user = User.model_validate(
-        {'name': 'tomato'}, by_alias=True, by_name=True  # (2)!
+    m = Model.model_validate(
+        {'my_field': 'foo'}, by_alias=True, by_name=True  # (2)!
     )
-    print(repr(user))
-    #> User(name='tomato')
+    print(repr(m))
+    #> Model(my_field='foo')
     ```
 
-    1. The alias `username` is used for validation.
-    2. the attribute identifier `name` is used for validation.
+    1. The alias `my_alias` is used for validation.
+    2. the attribute identifier `my_field` is used for validation.
 
 !!! warning
     You cannot set both `by_alias` and `by_name` to `False`.
@@ -414,16 +413,16 @@ These settings are also available on [`TypeAdapter`][pydantic.type_adapter.TypeA
 from pydantic import BaseModel, Field
 
 
-class User(BaseModel):
-    name: str = Field(serialization_alias='username')
+class Model(BaseModel):
+    my_field: str = Field(serialization_alias='my_alias')
 
 
-user = User(name='tomato')
-print(user.model_dump(by_alias=True))  # (1)!
-#> {'username': 'tomato'}
+m = Model(my_field='foo')
+print(m.model_dump(by_alias=True))  # (1)!
+#> {'my_alias': 'foo'}
 ```
 
-1. The alias `username` is used for serialization.
+1. The alias `my_alias` is used for serialization.
 
 !!! note
     The fact that serialization by alias is disabled by default is notably inconsistent with the default for
