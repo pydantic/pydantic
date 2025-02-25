@@ -46,7 +46,7 @@ dependencies = [
     'typing-extensions>=4.12.2',
     'annotated-types>=0.6.0',
     # Keep this in sync with the version in the `check_pydantic_core_version()` function:
-    'pydantic-core==2.29.0',
+    'pydantic-core==2.30.0',
 ]
 dynamic = ['version', 'readme']
 
@@ -97,6 +97,9 @@ docs = [
     # remove once docs issue is fixed in pydantic-extra-types
     'pydantic-extra-types==2.10',
     'requests',
+]
+docs-upload = [
+    "algoliasearch>=4.12.0",
 ]
 linting = [
     'eval-type-backport',
@@ -221,6 +224,7 @@ pydocstyle = { convention = 'google' }
 'pydantic/color.py' = ['PYI']
 'pydantic/_internal/_decorators_v1.py' = ['PYI']
 'pydantic/json_schema.py' = ['D']
+"release/*.py" = ["T201"]  # print statements in release scripts
 
 [tool.ruff.lint.extend-per-file-ignores]
 "docs/**/*.py" = ['T']

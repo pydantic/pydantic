@@ -128,89 +128,6 @@ def annotated_type(tp: Any, /) -> Any | None:
     return get_args(tp)[0] if is_annotated(tp) else None
 
 
-def unpack_annotated(annotation: Any, /) -> tuple[Any, list[Any]]:
-    """Unpack the annotation if it is wrapped with the `Annotated` type qualifier.
-
-    This function also unpacks PEP 695 type aliases if necessary (and also generic
-    aliases with a PEP 695 type alias origin). However, it does *not* try to evaluate
-    forward references, so users should make sure the type alias' `__value__` does not
-    contain unresolvable forward references.
-
-    Example:
-        ```python {test="skip" lint="skip"}
-        from typing import Annotated
-
-        type InnerList[T] = Annotated[list[T], 'meta_1']
-        type MyList[T] = Annotated[InnerList[T], 'meta_2']
-        type MyIntList = MyList[int]
-
-        _unpack_annotated(MyList)
-        #> (list[T], ['meta_1', 'meta_2'])
-        _unpack_annotated(MyList[int])
-        #> (list[int], ['meta_1', 'meta_2'])
-        _unpack_annotated(MyIntList)
-        #> (list[int], ['meta_1', 'meta_2'])
-        ```
-
-    Returns:
-        A two-tuple, the first element is the annotated type and the second element
-            is a list containing the annotated metadata. If the annotation wasn't
-            wrapped with `Annotated` in the first place, it is returned as is and the
-            metadata list is empty.
-    """
-    if is_annotated(annotation):
-        typ, *metadata = get_args(annotation)
-        # The annotated type might be a PEP 695 type alias, so we need to recursively
-        # unpack it. Note that we could make an optimization here: the following next
-        # call to `_unpack_annotated` could omit the `is_annotated` check, because Python
-        # already flattens `Annotated[Annotated[<type>, ...], ...]` forms. However, we would
-        # need to "re-enable" the check for further recursive calls.
-        typ, sub_meta = unpack_annotated(typ)
-        metadata = sub_meta + metadata
-        return typ, metadata
-    elif is_type_alias_type(annotation):
-        try:
-            value = annotation.__value__
-        except NameError:
-            # The type alias value contains an unresolvable reference. Note that even if it
-            # resolves successfully, it might contain string annotations, and because of design
-            # limitations we don't evaluate the type (we don't have access to a `NsResolver` instance).
-            pass
-        else:
-            typ, metadata = unpack_annotated(value)
-            if metadata:
-                # Having metadata means the type alias' `__value__` was an `Annotated` form
-                # (or, recursively, a type alias to an `Annotated` form). It is important to
-                # check for this as we don't want to unpack "normal" type aliases (e.g. `type MyInt = int`).
-                return typ, metadata
-            return annotation, []
-    elif is_generic_alias(annotation):
-        # When parametrized, a PEP 695 type alias becomes a generic alias
-        # (e.g. with `type MyList[T] = Annotated[list[T], ...]`, `MyList[int]`
-        # is a generic alias).
-        origin = get_origin(annotation)
-        if is_type_alias_type(origin):
-            try:
-                value = origin.__value__
-            except NameError:
-                pass
-            else:
-                # Circular import (note that these two functions should probably be defined in `_typing_extra`):
-                from ._generics import get_standard_typevars_map, replace_types
-
-                # While Python already handles type variable replacement for simple `Annotated` forms,
-                # we need to manually apply the same logic for PEP 695 type aliases:
-                # - With `MyList = Annotated[list[T], ...]`, `MyList[int] == Annotated[list[int], ...]`
-                # - With `type MyList = Annotated[list[T], ...]`, `MyList[int].__value__ == Annotated[list[T], ...]`.
-                value = replace_types(value, get_standard_typevars_map(annotation))
-                typ, metadata = unpack_annotated(value)
-                if metadata:
-                    return typ, metadata
-                return annotation, []
-
-    return annotation, []
-
-
 _te_unpack = typing_extensions.Unpack
 _te_self = typing_extensions.Self
 _te_required = typing_extensions.Required
@@ -911,8 +828,6 @@ def get_function_type_hints(
 
     This is similar to the `typing.get_type_hints` function, with a few differences:
     - Support `functools.partial` by using the underlying `func` attribute.
-    - If `function` happens to be a built-in type (e.g. `int`), assume it doesn't have annotations
-      but specify the `return` key as being the actual type.
     - Do not wrap type annotation of a parameter with `Optional` if it has a default value of `None`
       (related bug: https://github.com/python/cpython/issues/90353, only fixed in 3.11+).
     """
@@ -922,13 +837,8 @@ def get_function_type_hints(
         else:
             annotations = function.__annotations__
     except AttributeError:
-        type_hints = get_type_hints(function)
-        if isinstance(function, type):
-            # `type[...]` is a callable, which returns an instance of itself.
-            # At some point, we might even look into the return type of `__new__`
-            # if it returns something else.
-            type_hints.setdefault('return', function)
-        return type_hints
+        # Some functions (e.g. builtins) don't have annotations:
+        return {}
 
     if globalns is None:
         globalns = get_module_ns_of(function)

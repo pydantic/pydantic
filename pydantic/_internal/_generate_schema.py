@@ -711,14 +711,7 @@ class GenerateSchema:
                 return maybe_schema
 
             schema = cls.__dict__.get('__pydantic_core_schema__')
-            if (
-                schema is not None
-                and not isinstance(schema, MockCoreSchema)
-                # Due to the way generic classes are built, it's possible that an invalid schema may be temporarily
-                # set on generic classes. Probably we could resolve this to ensure that we get proper schema caching
-                # for generics, but for simplicity for now, we just always rebuild if the class has a generic origin:
-                and not cls.__pydantic_generic_metadata__['origin']
-            ):
+            if schema is not None and not isinstance(schema, MockCoreSchema):
                 if schema['type'] == 'definitions':
                     schema = self.defs.unpack_definitions(schema)
                 ref = get_ref(schema)
@@ -880,7 +873,7 @@ class GenerateSchema:
             # safety measure (because these are inlined in place -- i.e. mutated directly)
             return schema
 
-        if (validators := getattr(obj, '__get_validators__', None)) is not None:
+        if get_schema is None and (validators := getattr(obj, '__get_validators__', None)) is not None:
             from pydantic.v1 import BaseModel as BaseModelV1
 
             if issubclass(obj, BaseModelV1):
@@ -2008,19 +2001,20 @@ class GenerateSchema:
         d: Decorator[ComputedFieldInfo],
         field_serializers: dict[str, Decorator[FieldSerializerDecoratorInfo]],
     ) -> core_schema.ComputedField:
-        try:
-            # Do not pass in globals as the function could be defined in a different module.
-            # Instead, let `get_function_return_type` infer the globals to use, but still pass
-            # in locals that may contain a parent/rebuild namespace:
-            return_type = _decorators.get_function_return_type(
-                d.func, d.info.return_type, localns=self._types_namespace.locals
-            )
-        except NameError as e:
-            raise PydanticUndefinedAnnotation.from_name_error(e) from e
+        if d.info.return_type is not PydanticUndefined:
+            return_type = d.info.return_type
+        else:
+            try:
+                # Do not pass in globals as the function could be defined in a different module.
+                # Instead, let `get_callable_return_type` infer the globals to use, but still pass
+                # in locals that may contain a parent/rebuild namespace:
+                return_type = _decorators.get_callable_return_type(d.func, localns=self._types_namespace.locals)
+            except NameError as e:
+                raise PydanticUndefinedAnnotation.from_name_error(e) from e
         if return_type is PydanticUndefined:
             raise PydanticUserError(
                 'Computed field is missing return type annotation or specifying `return_type`'
-                ' to the `@computed_field` decorator (e.g. `@computed_field(return_type=int|str)`)',
+                ' to the `@computed_field` decorator (e.g. `@computed_field(return_type=int | str)`)',
                 code='model-field-missing-annotation',
             )
 
@@ -2056,25 +2050,11 @@ class GenerateSchema:
     def _annotated_schema(self, annotated_type: Any) -> core_schema.CoreSchema:
         """Generate schema for an Annotated type, e.g. `Annotated[int, Field(...)]` or `Annotated[int, Gt(0)]`."""
         FieldInfo = import_cached_field_info()
-        # Ideally, we should delegate all this to `_typing_extra.unpack_annotated`, e.g.:
-        # `typ, annotations = _typing_extra.unpack_annotated(annotated_type); schema = self.apply_annotations(...)`
-        # if it was able to use a `NsResolver`. But because `unpack_annotated` is also used
-        # when constructing `FieldInfo` instances (where we don't have access to a `NsResolver`),
-        # the implementation of the function does *not* resolve forward annotations. This could
-        # be solved by calling `unpack_annotated` directly inside `collect_model_fields`.
-        # For now, we at least resolve the annotated type if it is a forward ref, but note that
-        # unexpected results will happen if you have something like `Annotated[Alias, ...]` and
-        # `Alias` is a PEP 695 type alias containing forward references.
-        typ, *annotations = get_args(annotated_type)
-        if isinstance(typ, str):
-            typ = _typing_extra._make_forward_ref(typ)
-        if isinstance(typ, ForwardRef):
-            typ = self._resolve_forward_ref(typ)
-
-        typ, sub_annotations = _typing_extra.unpack_annotated(typ)
-        annotations = sub_annotations + annotations
-
-        schema = self._apply_annotations(typ, annotations)
+        source_type, *annotations = self._get_args_resolving_forward_refs(
+            annotated_type,
+            required=True,
+        )
+        schema = self._apply_annotations(source_type, annotations)
         # put the default validator last so that TypeAdapter.get_default_value() works
         # even if there are function validators involved
         for annotation in annotations:
@@ -2226,15 +2206,18 @@ class GenerateSchema:
             serializer = serializers[-1]
             is_field_serializer, info_arg = inspect_field_serializer(serializer.func, serializer.info.mode)
 
-            try:
-                # Do not pass in globals as the function could be defined in a different module.
-                # Instead, let `get_function_return_type` infer the globals to use, but still pass
-                # in locals that may contain a parent/rebuild namespace:
-                return_type = _decorators.get_function_return_type(
-                    serializer.func, serializer.info.return_type, localns=self._types_namespace.locals
-                )
-            except NameError as e:
-                raise PydanticUndefinedAnnotation.from_name_error(e) from e
+            if serializer.info.return_type is not PydanticUndefined:
+                return_type = serializer.info.return_type
+            else:
+                try:
+                    # Do not pass in globals as the function could be defined in a different module.
+                    # Instead, let `get_callable_return_type` infer the globals to use, but still pass
+                    # in locals that may contain a parent/rebuild namespace:
+                    return_type = _decorators.get_callable_return_type(
+                        serializer.func, localns=self._types_namespace.locals
+                    )
+                except NameError as e:
+                    raise PydanticUndefinedAnnotation.from_name_error(e) from e
 
             if return_type is PydanticUndefined:
                 return_schema = None
@@ -2269,15 +2252,19 @@ class GenerateSchema:
             serializer = list(serializers)[-1]
             info_arg = inspect_model_serializer(serializer.func, serializer.info.mode)
 
-            try:
-                # Do not pass in globals as the function could be defined in a different module.
-                # Instead, let `get_function_return_type` infer the globals to use, but still pass
-                # in locals that may contain a parent/rebuild namespace:
-                return_type = _decorators.get_function_return_type(
-                    serializer.func, serializer.info.return_type, localns=self._types_namespace.locals
-                )
-            except NameError as e:
-                raise PydanticUndefinedAnnotation.from_name_error(e) from e
+            if serializer.info.return_type is not PydanticUndefined:
+                return_type = serializer.info.return_type
+            else:
+                try:
+                    # Do not pass in globals as the function could be defined in a different module.
+                    # Instead, let `get_callable_return_type` infer the globals to use, but still pass
+                    # in locals that may contain a parent/rebuild namespace:
+                    return_type = _decorators.get_callable_return_type(
+                        serializer.func, localns=self._types_namespace.locals
+                    )
+                except NameError as e:
+                    raise PydanticUndefinedAnnotation.from_name_error(e) from e
+
             if return_type is PydanticUndefined:
                 return_schema = None
             else:

@@ -1227,6 +1227,21 @@ def test_plain_serializer_with_std_type() -> None:
     }
 
 
+def test_plain_serializer_dunder_call() -> None:
+    class Replacer:
+        def __init__(self, from_: str, to_: str) -> None:
+            self._from = from_
+            self._to = to_
+
+        def __call__(self, s: str) -> str:
+            return s.replace(self._from, self._to)
+
+    class MyModel(BaseModel):
+        x: Annotated[str, PlainSerializer(Replacer('__', '.'))]
+
+    assert MyModel(x='a__b').model_dump() == {'x': 'a.b'}
+
+
 @pytest.mark.xfail(reason='Waiting for union serialization fixes via https://github.com/pydantic/pydantic/issues/9688.')
 def smart_union_serialization() -> None:
     """Initially reported via https://github.com/pydantic/pydantic/issues/9417, effectively a round tripping problem with type consistency."""
