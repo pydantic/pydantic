@@ -164,7 +164,7 @@ impl SchemaValidator {
     }
 
     #[allow(clippy::too_many_arguments)]
-    #[pyo3(signature = (input, *, strict=None, from_attributes=None, context=None, self_instance=None, allow_partial=PartialMode::Off))]
+    #[pyo3(signature = (input, *, strict=None, from_attributes=None, context=None, self_instance=None, allow_partial=PartialMode::Off, by_alias=None, by_name=None))]
     pub fn validate_python(
         &self,
         py: Python,
@@ -174,6 +174,8 @@ impl SchemaValidator {
         context: Option<&Bound<'_, PyAny>>,
         self_instance: Option<&Bound<'_, PyAny>>,
         allow_partial: PartialMode,
+        by_alias: Option<bool>,
+        by_name: Option<bool>,
     ) -> PyResult<PyObject> {
         #[allow(clippy::used_underscore_items)]
         self._validate(
@@ -185,11 +187,14 @@ impl SchemaValidator {
             context,
             self_instance,
             allow_partial,
+            by_alias,
+            by_name,
         )
         .map_err(|e| self.prepare_validation_err(py, e, InputType::Python))
     }
 
-    #[pyo3(signature = (input, *, strict=None, from_attributes=None, context=None, self_instance=None))]
+    #[allow(clippy::too_many_arguments)]
+    #[pyo3(signature = (input, *, strict=None, from_attributes=None, context=None, self_instance=None, by_alias=None, by_name=None))]
     pub fn isinstance_python(
         &self,
         py: Python,
@@ -198,6 +203,8 @@ impl SchemaValidator {
         from_attributes: Option<bool>,
         context: Option<&Bound<'_, PyAny>>,
         self_instance: Option<&Bound<'_, PyAny>>,
+        by_alias: Option<bool>,
+        by_name: Option<bool>,
     ) -> PyResult<bool> {
         #[allow(clippy::used_underscore_items)]
         match self._validate(
@@ -209,6 +216,8 @@ impl SchemaValidator {
             context,
             self_instance,
             false.into(),
+            by_alias,
+            by_name,
         ) {
             Ok(_) => Ok(true),
             Err(ValError::InternalErr(err)) => Err(err),
@@ -218,7 +227,8 @@ impl SchemaValidator {
         }
     }
 
-    #[pyo3(signature = (input, *, strict=None, context=None, self_instance=None, allow_partial=PartialMode::Off))]
+    #[allow(clippy::too_many_arguments)]
+    #[pyo3(signature = (input, *, strict=None, context=None, self_instance=None, allow_partial=PartialMode::Off, by_alias=None, by_name=None))]
     pub fn validate_json(
         &self,
         py: Python,
@@ -227,6 +237,8 @@ impl SchemaValidator {
         context: Option<&Bound<'_, PyAny>>,
         self_instance: Option<&Bound<'_, PyAny>>,
         allow_partial: PartialMode,
+        by_alias: Option<bool>,
+        by_name: Option<bool>,
     ) -> PyResult<PyObject> {
         let r = match json::validate_json_bytes(input) {
             #[allow(clippy::used_underscore_items)]
@@ -238,13 +250,16 @@ impl SchemaValidator {
                 context,
                 self_instance,
                 allow_partial,
+                by_alias,
+                by_name,
             ),
             Err(err) => Err(err),
         };
         r.map_err(|e| self.prepare_validation_err(py, e, InputType::Json))
     }
 
-    #[pyo3(signature = (input, *, strict=None, context=None, allow_partial=PartialMode::Off))]
+    #[allow(clippy::too_many_arguments)]
+    #[pyo3(signature = (input, *, strict=None, context=None, allow_partial=PartialMode::Off, by_alias=None, by_name=None))]
     pub fn validate_strings(
         &self,
         py: Python,
@@ -252,19 +267,32 @@ impl SchemaValidator {
         strict: Option<bool>,
         context: Option<&Bound<'_, PyAny>>,
         allow_partial: PartialMode,
+        by_alias: Option<bool>,
+        by_name: Option<bool>,
     ) -> PyResult<PyObject> {
         let t = InputType::String;
         let string_mapping = StringMapping::new_value(input).map_err(|e| self.prepare_validation_err(py, e, t))?;
 
         #[allow(clippy::used_underscore_items)]
-        match self._validate(py, &string_mapping, t, strict, None, context, None, allow_partial) {
+        match self._validate(
+            py,
+            &string_mapping,
+            t,
+            strict,
+            None,
+            context,
+            None,
+            allow_partial,
+            by_alias,
+            by_name,
+        ) {
             Ok(r) => Ok(r),
             Err(e) => Err(self.prepare_validation_err(py, e, t)),
         }
     }
 
     #[allow(clippy::too_many_arguments)]
-    #[pyo3(signature = (obj, field_name, field_value, *, strict=None, from_attributes=None, context=None))]
+    #[pyo3(signature = (obj, field_name, field_value, *, strict=None, from_attributes=None, context=None, by_alias=None, by_name=None))]
     pub fn validate_assignment(
         &self,
         py: Python,
@@ -274,6 +302,8 @@ impl SchemaValidator {
         strict: Option<bool>,
         from_attributes: Option<bool>,
         context: Option<&Bound<'_, PyAny>>,
+        by_alias: Option<bool>,
+        by_name: Option<bool>,
     ) -> PyResult<PyObject> {
         let extra = Extra {
             input_type: InputType::Python,
@@ -283,6 +313,8 @@ impl SchemaValidator {
             context,
             self_instance: None,
             cache_str: self.cache_str,
+            by_alias,
+            by_name,
         };
 
         let guard = &mut RecursionState::default();
@@ -307,6 +339,8 @@ impl SchemaValidator {
             context,
             self_instance: None,
             cache_str: self.cache_str,
+            by_alias: None,
+            by_name: None,
         };
         let recursion_guard = &mut RecursionState::default();
         let mut state = ValidationState::new(extra, recursion_guard, false.into());
@@ -356,6 +390,8 @@ impl SchemaValidator {
         context: Option<&Bound<'py, PyAny>>,
         self_instance: Option<&Bound<'py, PyAny>>,
         allow_partial: PartialMode,
+        by_alias: Option<bool>,
+        by_name: Option<bool>,
     ) -> ValResult<PyObject> {
         let mut recursion_guard = RecursionState::default();
         let mut state = ValidationState::new(
@@ -366,6 +402,8 @@ impl SchemaValidator {
                 self_instance,
                 input_type,
                 self.cache_str,
+                by_alias,
+                by_name,
             ),
             &mut recursion_guard,
             allow_partial,
@@ -383,6 +421,8 @@ impl SchemaValidator {
         context: Option<&Bound<'_, PyAny>>,
         self_instance: Option<&Bound<'_, PyAny>>,
         allow_partial: PartialMode,
+        by_alias: Option<bool>,
+        by_name: Option<bool>,
     ) -> ValResult<PyObject> {
         let json_value = jiter::JsonValue::parse_with_config(json_data, true, allow_partial)
             .map_err(|e| json::map_json_err(input, e, json_data))?;
@@ -396,6 +436,8 @@ impl SchemaValidator {
             context,
             self_instance,
             allow_partial,
+            by_alias,
+            by_name,
         )
     }
 
@@ -432,7 +474,7 @@ impl<'py> SelfValidator<'py> {
         let py = schema.py();
         let mut recursion_guard = RecursionState::default();
         let mut state = ValidationState::new(
-            Extra::new(strict, None, None, None, InputType::Python, true.into()),
+            Extra::new(strict, None, None, None, InputType::Python, true.into(), None, None),
             &mut recursion_guard,
             false.into(),
         );
@@ -638,9 +680,14 @@ pub struct Extra<'a, 'py> {
     self_instance: Option<&'a Bound<'py, PyAny>>,
     /// Whether to use a cache of short strings to accelerate python string construction
     cache_str: StringCacheMode,
+    /// Whether to use the field's alias to match the input data to an attribute.
+    by_alias: Option<bool>,
+    /// Whether to use the field's name to match the input data to an attribute.
+    by_name: Option<bool>,
 }
 
 impl<'a, 'py> Extra<'a, 'py> {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         strict: Option<bool>,
         from_attributes: Option<bool>,
@@ -648,6 +695,8 @@ impl<'a, 'py> Extra<'a, 'py> {
         self_instance: Option<&'a Bound<'py, PyAny>>,
         input_type: InputType,
         cache_str: StringCacheMode,
+        by_alias: Option<bool>,
+        by_name: Option<bool>,
     ) -> Self {
         Extra {
             input_type,
@@ -657,6 +706,8 @@ impl<'a, 'py> Extra<'a, 'py> {
             context,
             self_instance,
             cache_str,
+            by_alias,
+            by_name,
         }
     }
 }
@@ -671,6 +722,8 @@ impl Extra<'_, '_> {
             context: self.context,
             self_instance: self.self_instance,
             cache_str: self.cache_str,
+            by_alias: self.by_alias,
+            by_name: self.by_name,
         }
     }
 }

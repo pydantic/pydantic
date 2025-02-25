@@ -2,7 +2,7 @@ import re
 import sys
 from functools import wraps
 from inspect import Parameter, signature
-from typing import Any, get_type_hints
+from typing import Any, Union, get_type_hints
 
 import pytest
 
@@ -883,14 +883,14 @@ def test_alias(py_and_json: PyAndJson, input_value, expected):
     ],
     ids=repr,
 )
-def test_alias_populate_by_name(py_and_json: PyAndJson, input_value, expected):
+def test_alias_validate_by_name(py_and_json: PyAndJson, input_value, expected):
     v = py_and_json(
         {
             'type': 'arguments',
             'arguments_schema': [
                 {'name': 'a', 'mode': 'positional_or_keyword', 'schema': {'type': 'int'}, 'alias': 'Foo'}
             ],
-            'populate_by_name': True,
+            'validate_by_name': True,
         }
     )
     if isinstance(expected, Err):
@@ -898,6 +898,34 @@ def test_alias_populate_by_name(py_and_json: PyAndJson, input_value, expected):
             v.validate_test(input_value)
     else:
         assert v.validate_test(input_value) == expected
+
+
+def test_only_validate_by_name(py_and_json) -> None:
+    schema = core_schema.arguments_schema(
+        [
+            core_schema.arguments_parameter(name='a', schema=core_schema.str_schema(), alias='FieldA'),
+        ],
+        validate_by_name=True,
+        validate_by_alias=False,
+    )
+    v = py_and_json(schema)
+    assert v.validate_test(ArgsKwargs((), {'a': 'hello'})) == ((), {'a': 'hello'})
+    with pytest.raises(ValidationError, match=r'a\n +Missing required argument \[type=missing_argument,'):
+        assert v.validate_test(ArgsKwargs((), {'FieldA': 'hello'}))
+
+
+def test_only_allow_alias(py_and_json) -> None:
+    schema = core_schema.arguments_schema(
+        [
+            core_schema.arguments_parameter(name='a', schema=core_schema.str_schema(), alias='FieldA'),
+        ],
+        validate_by_name=False,
+        validate_by_alias=True,
+    )
+    v = py_and_json(schema)
+    assert v.validate_test(ArgsKwargs((), {'FieldA': 'hello'})) == ((), {'a': 'hello'})
+    with pytest.raises(ValidationError, match=r'FieldA\n +Missing required argument \[type=missing_argument,'):
+        assert v.validate_test(ArgsKwargs((), {'a': 'hello'}))
 
 
 def validate(config=None):
@@ -1145,3 +1173,50 @@ def test_error_display(pydantic_version):
         '[{"type":"missing_argument","loc":["b"],"msg":"Missing required argument",'
         '"input":"ArgsKwargs((), {\'a\': 1})"}]'
     )
+
+
+@pytest.mark.parametrize('config_by_alias', [None, True, False])
+@pytest.mark.parametrize('config_by_name', [None, True, False])
+@pytest.mark.parametrize('runtime_by_alias', [None, True, False])
+@pytest.mark.parametrize('runtime_by_name', [None, True, False])
+def test_by_alias_and_name_config_interaction(
+    config_by_alias: Union[bool, None],
+    config_by_name: Union[bool, None],
+    runtime_by_alias: Union[bool, None],
+    runtime_by_name: Union[bool, None],
+) -> None:
+    """This test reflects the priority that applies for config vs runtime validation alias configuration.
+
+    Runtime values take precedence over config values, when set.
+    By default, by_alias is True and by_name is False.
+    """
+
+    if config_by_alias is False and config_by_name is False and runtime_by_alias is False and runtime_by_name is False:
+        pytest.skip("Can't have both by_alias and by_name as effectively False")
+
+    schema = core_schema.arguments_schema(
+        arguments=[
+            core_schema.arguments_parameter(name='my_field', schema=core_schema.int_schema(), alias='my_alias'),
+        ],
+        **({'validate_by_alias': config_by_alias} if config_by_alias is not None else {}),
+        **({'validate_by_name': config_by_name} if config_by_name is not None else {}),
+    )
+    s = SchemaValidator(schema)
+
+    alias_allowed = next(x for x in (runtime_by_alias, config_by_alias, True) if x is not None)
+    name_allowed = next(x for x in (runtime_by_name, config_by_name, False) if x is not None)
+
+    if alias_allowed:
+        assert s.validate_python(
+            ArgsKwargs((), {'my_alias': 1}), by_alias=runtime_by_alias, by_name=runtime_by_name
+        ) == (
+            (),
+            {'my_field': 1},
+        )
+    if name_allowed:
+        assert s.validate_python(
+            ArgsKwargs((), {'my_field': 1}), by_alias=runtime_by_alias, by_name=runtime_by_name
+        ) == (
+            (),
+            {'my_field': 1},
+        )

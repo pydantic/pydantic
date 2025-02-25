@@ -506,15 +506,41 @@ def test_alias_allow_pop(py_and_json: PyAndJson):
     v = py_and_json(
         {
             'type': 'model-fields',
-            'populate_by_name': True,
             'fields': {'field_a': {'validation_alias': 'FieldA', 'type': 'model-field', 'schema': {'type': 'int'}}},
-        }
+        },
+        config=CoreConfig(validate_by_name=True),
     )
     assert v.validate_test({'FieldA': '123'}) == ({'field_a': 123}, None, {'field_a'})
     assert v.validate_test({'field_a': '123'}) == ({'field_a': 123}, None, {'field_a'})
     assert v.validate_test({'FieldA': '1', 'field_a': '2'}) == ({'field_a': 1}, None, {'field_a'})
     with pytest.raises(ValidationError, match=r'FieldA\n +Field required \[type=missing,'):
         assert v.validate_test({'foobar': '123'})
+
+
+def test_only_validate_by_name(py_and_json) -> None:
+    v = py_and_json(
+        {
+            'type': 'model-fields',
+            'fields': {'field_a': {'validation_alias': 'FieldA', 'type': 'model-field', 'schema': {'type': 'int'}}},
+        },
+        config=CoreConfig(validate_by_name=True, validate_by_alias=False),
+    )
+    assert v.validate_test({'field_a': '123'}) == ({'field_a': 123}, None, {'field_a'})
+    with pytest.raises(ValidationError, match=r'field_a\n +Field required \[type=missing,'):
+        assert v.validate_test({'FieldA': '123'})
+
+
+def test_only_allow_alias(py_and_json) -> None:
+    v = py_and_json(
+        {
+            'type': 'model-fields',
+            'fields': {'field_a': {'validation_alias': 'FieldA', 'type': 'model-field', 'schema': {'type': 'int'}}},
+        },
+        config=CoreConfig(validate_by_name=False, validate_by_alias=True),
+    )
+    assert v.validate_test({'FieldA': '123'}) == ({'field_a': 123}, None, {'field_a'})
+    with pytest.raises(ValidationError, match=r'FieldA\n +Field required \[type=missing,'):
+        assert v.validate_test({'field_a': '123'})
 
 
 @pytest.mark.parametrize(
@@ -697,8 +723,8 @@ def test_paths_allow_by_name(py_and_json: PyAndJson, input_value):
                     'schema': {'type': 'int'},
                 }
             },
-            'populate_by_name': True,
-        }
+        },
+        config=CoreConfig(validate_by_name=True),
     )
     assert v.validate_test(input_value) == ({'field_a': 42}, None, {'field_a'})
 
@@ -985,8 +1011,8 @@ def test_from_attributes_by_name():
         core_schema.model_fields_schema(
             fields={'a': core_schema.model_field(schema=core_schema.int_schema(), validation_alias='a_alias')},
             from_attributes=True,
-            populate_by_name=True,
-        )
+        ),
+        config=CoreConfig(validate_by_name=True),
     )
     assert v.validate_python(Cls(a_alias=1)) == ({'a': 1}, None, {'a'})
     assert v.validate_python(Cls(a=1)) == ({'a': 1}, None, {'a'})
@@ -1383,9 +1409,9 @@ def test_alias_extra_by_name(py_and_json: PyAndJson):
             'type': 'model-fields',
             'extra_behavior': 'allow',
             'from_attributes': True,
-            'populate_by_name': True,
             'fields': {'field_a': {'validation_alias': 'FieldA', 'type': 'model-field', 'schema': {'type': 'int'}}},
-        }
+        },
+        config=CoreConfig(validate_by_name=True),
     )
     assert v.validate_test({'FieldA': 1}) == ({'field_a': 1}, {}, {'field_a'})
     assert v.validate_test({'field_a': 1}) == ({'field_a': 1}, {}, {'field_a'})
@@ -1730,3 +1756,51 @@ def test_extra_behavior_ignore(config: Union[core_schema.CoreConfig, None], sche
         }
     ]
     assert 'not_f' not in m
+
+
+@pytest.mark.parametrize('config_by_alias', [None, True, False])
+@pytest.mark.parametrize('config_by_name', [None, True, False])
+@pytest.mark.parametrize('runtime_by_alias', [None, True, False])
+@pytest.mark.parametrize('runtime_by_name', [None, True, False])
+def test_by_alias_and_name_config_interaction(
+    config_by_alias: Union[bool, None],
+    config_by_name: Union[bool, None],
+    runtime_by_alias: Union[bool, None],
+    runtime_by_name: Union[bool, None],
+) -> None:
+    """This test reflects the priority that applies for config vs runtime validation alias configuration.
+
+    Runtime values take precedence over config values, when set.
+    By default, by_alias is True and by_name is False.
+    """
+
+    if config_by_alias is False and config_by_name is False and runtime_by_alias is False and runtime_by_name is False:
+        pytest.skip("Can't have both by_alias and by_name as effectively False")
+
+    class Model:
+        def __init__(self, my_field: int) -> None:
+            self.my_field = my_field
+
+    core_config = {
+        **({'validate_by_alias': config_by_alias} if config_by_alias is not None else {}),
+        **({'validate_by_name': config_by_name} if config_by_name is not None else {}),
+    }
+
+    schema = core_schema.model_schema(
+        Model,
+        core_schema.model_fields_schema(
+            {
+                'my_field': core_schema.model_field(core_schema.int_schema(), validation_alias='my_alias'),
+            }
+        ),
+        config=core_schema.CoreConfig(**core_config),
+    )
+    s = SchemaValidator(schema)
+
+    alias_allowed = next(x for x in (runtime_by_alias, config_by_alias, True) if x is not None)
+    name_allowed = next(x for x in (runtime_by_name, config_by_name, False) if x is not None)
+
+    if alias_allowed:
+        assert s.validate_python({'my_alias': 1}, by_alias=runtime_by_alias, by_name=runtime_by_name).my_field == 1
+    if name_allowed:
+        assert s.validate_python({'my_field': 1}, by_alias=runtime_by_alias, by_name=runtime_by_name).my_field == 1
