@@ -53,7 +53,7 @@ from pydantic_core import (
 )
 from typing_extensions import TypeAliasType, TypedDict, get_args, get_origin, is_typeddict
 from typing_inspection import typing_objects
-from typing_inspection.introspection import get_literal_values, is_union_origin
+from typing_inspection.introspection import AnnotationSource, get_literal_values, is_union_origin
 
 from ..aliases import AliasChoices, AliasGenerator, AliasPath
 from ..annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
@@ -1592,6 +1592,7 @@ class GenerateSchema:
                     self._generate_parameter_schema(
                         field_name,
                         annotation,
+                        source=AnnotationSource.NAMED_TUPLE,
                         default=namedtuple_cls._field_defaults.get(field_name, Parameter.empty),
                     )
                     for field_name, annotation in annotations.items()
@@ -1605,6 +1606,7 @@ class GenerateSchema:
         self,
         name: str,
         annotation: type[Any],
+        source: AnnotationSource,
         default: Any = Parameter.empty,
         mode: Literal['positional_only', 'positional_or_keyword', 'keyword_only'] | None = None,
     ) -> core_schema.ArgumentsParameter:
@@ -1612,7 +1614,7 @@ class GenerateSchema:
         FieldInfo = import_cached_field_info()
 
         if default is Parameter.empty:
-            field = FieldInfo.from_annotation(annotation)
+            field = FieldInfo.from_annotation(annotation, _source=source)
         else:
             field = FieldInfo.from_annotated_attribute(annotation, default)
         assert field.annotation is not None, 'field.annotation should not be None when generating a schema'
@@ -1930,7 +1932,9 @@ class GenerateSchema:
 
             parameter_mode = mode_lookup.get(p.kind)
             if parameter_mode is not None:
-                arg_schema = self._generate_parameter_schema(name, annotation, p.default, parameter_mode)
+                arg_schema = self._generate_parameter_schema(
+                    name, annotation, AnnotationSource.FUNCTION, p.default, parameter_mode
+                )
                 arguments_list.append(arg_schema)
             elif p.kind == Parameter.VAR_POSITIONAL:
                 var_args_schema = self.generate_schema(annotation)
