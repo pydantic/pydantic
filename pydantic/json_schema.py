@@ -2158,15 +2158,15 @@ class GenerateJsonSchema:
             default = (
                 dft
                 if _type_has_config(type(dft))
-                else TypeAdapter(type(dft), config=config.config_dict).dump_python(dft, mode='json')
+                else TypeAdapter(type(dft), config=config.config_dict).dump_python(
+                    dft, by_alias=self.by_alias, mode='json'
+                )
             )
         except PydanticSchemaGenerationError:
             raise pydantic_core.PydanticSerializationError(f'Unable to encode default value {dft}')
 
         return pydantic_core.to_jsonable_python(
-            default,
-            timedelta_mode=config.ser_json_timedelta,
-            bytes_mode=config.ser_json_bytes,
+            default, timedelta_mode=config.ser_json_timedelta, bytes_mode=config.ser_json_bytes, by_alias=self.by_alias
         )
 
     def update_with_validations(
