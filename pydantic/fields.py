@@ -329,11 +329,10 @@ class FieldInfo(_repr.Representation):
 
         # 2. Check if the annotation is an `Annotated` form.
         #    In this case, `annotation` will be the annotated type:
-        annotation, metadata = _typing_extra.unpack_annotated(annotation)
+        if _typing_extra.is_annotated(annotation):
+            annotation, *metadata = typing_extensions.get_args(annotation)
 
-        # 3. If we have metadata, `annotation` was the annotated type:
-        if metadata:
-            # 3.1. Check if the annotated type is the `Final` type qualifier.
+            # 2.1. Check if the annotated type is the `Final` type qualifier.
             #      (i.e. `Annotated[Final[...], ...]`). Note that we only do
             #      so if `final` isn't `True` already, because we don't want to
             #      support the invalid `Final[Annotated[Final, ...]]` form.
@@ -359,7 +358,7 @@ class FieldInfo(_repr.Representation):
                 new_field_info.metadata = field_metadata
                 return new_field_info
 
-        # 4. We don't have metadata:
+        # 3. We don't have metadata:
         return FieldInfo(annotation=annotation, frozen=final or None)  # pyright: ignore[reportArgumentType] (PEP 747)
 
     @staticmethod
@@ -400,7 +399,12 @@ class FieldInfo(_repr.Representation):
             annotation = typing_extensions.get_args(annotation)[0]
 
         if isinstance(default, FieldInfo):
-            default.annotation, annotation_metadata = _typing_extra.unpack_annotated(annotation)
+            if _typing_extra.is_annotated(annotation):
+                annotation, *annotation_metadata = typing_extensions.get_args(annotation)
+            else:
+                annotation_metadata = []
+
+            default.annotation = annotation
             default.metadata += annotation_metadata
             default = default.merge_field_infos(
                 *[x for x in annotation_metadata if isinstance(x, FieldInfo)], default, annotation=default.annotation
@@ -418,7 +422,12 @@ class FieldInfo(_repr.Representation):
                 annotation = annotation.type
 
             pydantic_field = FieldInfo._from_dataclass_field(default)
-            pydantic_field.annotation, annotation_metadata = _typing_extra.unpack_annotated(annotation)
+            if _typing_extra.is_annotated(annotation):
+                annotation, *annotation_metadata = typing_extensions.get_args(annotation)
+            else:
+                annotation_metadata = []
+
+            pydantic_field.annotation = annotation
             pydantic_field.metadata += annotation_metadata
             pydantic_field = pydantic_field.merge_field_infos(
                 *[x for x in annotation_metadata if isinstance(x, FieldInfo)],
@@ -431,9 +440,8 @@ class FieldInfo(_repr.Representation):
             pydantic_field.kw_only = getattr(default, 'kw_only', None)
             return pydantic_field
 
-        annotation, metadata = _typing_extra.unpack_annotated(annotation)
-
-        if metadata:
+        if _typing_extra.is_annotated(annotation):
+            annotation, *metadata = typing_extensions.get_args(annotation)
             field_infos = [a for a in metadata if isinstance(a, FieldInfo)]
             field_info = FieldInfo.merge_field_infos(*field_infos, annotation=annotation, default=default)
             field_metadata: list[Any] = []
