@@ -7104,3 +7104,14 @@ def test_sequence_with_nested_type(sequence_type: type) -> None:
 
     models = sequence_type([Model(a=1), Model(a=2)])
     assert OuterModel(inner=models).model_dump() == {'inner': sequence_type([{'a': 1}, {'a': 2}])}
+
+
+def test_union_respects_local_strict() -> None:
+    class MyBaseModel(BaseModel):
+        model_config = ConfigDict(strict=True)
+
+    class Model(MyBaseModel):
+        a: int | Annotated[tuple[int, int], Strict(False)] = Field(default=(1, 2))
+
+    m = Model(a=[1, 2])
+    assert m.a == (1, 2)
