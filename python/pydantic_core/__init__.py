@@ -98,7 +98,7 @@ class ErrorDetails(_TypedDict):
 
 class InitErrorDetails(_TypedDict):
     type: str | PydanticCustomError
-    """The type of error that occurred, this should a "slug" identifier that changes rarely or never."""
+    """The type of error that occurred, this should be a "slug" identifier that changes rarely or never."""
     loc: _NotRequired[tuple[int | str, ...]]
     """Tuple of strings and ints identifying where in the schema the error occurred."""
     input: _Any
