@@ -8,7 +8,7 @@ from uuid import UUID
 import pytest
 from dirty_equals import IsFloat, IsInt
 
-from pydantic_core import SchemaError, SchemaValidator, ValidationError, core_schema, validate_core_schema
+from pydantic_core import CoreConfig, SchemaError, SchemaValidator, ValidationError, core_schema, validate_core_schema
 
 from ..conftest import plain_repr
 
@@ -262,16 +262,47 @@ def test_one_choice():
     assert v.validate_python('hello') == 'hello'
 
 
-def test_strict_union():
+def test_strict_union_flag() -> None:
+    v = SchemaValidator(core_schema.union_schema(choices=[core_schema.bool_schema(), core_schema.int_schema()]))
+    assert v.validate_python(1, strict=True) == 1
+    assert v.validate_python(123, strict=True) == 123
+
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python('123', strict=True)
+
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'bool_type', 'loc': ('bool',), 'msg': 'Input should be a valid boolean', 'input': '123'},
+        {'type': 'int_type', 'loc': ('int',), 'msg': 'Input should be a valid integer', 'input': '123'},
+    ]
+
+
+def test_strict_union_config_level() -> None:
     v = SchemaValidator(
-        core_schema.union_schema(strict=True, choices=[core_schema.bool_schema(), core_schema.int_schema()])
+        core_schema.union_schema(choices=[core_schema.bool_schema(), core_schema.int_schema()]),
+        config=CoreConfig(strict=True),
     )
+
     assert v.validate_python(1) == 1
     assert v.validate_python(123) == 123
 
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python('123')
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'bool_type', 'loc': ('bool',), 'msg': 'Input should be a valid boolean', 'input': '123'},
+        {'type': 'int_type', 'loc': ('int',), 'msg': 'Input should be a valid integer', 'input': '123'},
+    ]
 
+
+def test_strict_union_member_level() -> None:
+    v = SchemaValidator(
+        core_schema.union_schema(choices=[core_schema.bool_schema(strict=True), core_schema.int_schema(strict=True)])
+    )
+
+    assert v.validate_python(1) == 1
+    assert v.validate_python(123) == 123
+
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python('123')
     assert exc_info.value.errors(include_url=False) == [
         {'type': 'bool_type', 'loc': ('bool',), 'msg': 'Input should be a valid boolean', 'input': '123'},
         {'type': 'int_type', 'loc': ('int',), 'msg': 'Input should be a valid integer', 'input': '123'},
@@ -469,10 +500,10 @@ def test_left_to_right_union():
 
 
 def test_left_to_right_union_strict():
-    choices = [core_schema.int_schema(), core_schema.float_schema()]
+    choices = [core_schema.int_schema(strict=True), core_schema.float_schema(strict=True)]
 
     # left_to_right union will select not cast if int first (strict int will not accept float)
-    v = SchemaValidator(core_schema.union_schema(choices, mode='left_to_right', strict=True))
+    v = SchemaValidator(core_schema.union_schema(choices, mode='left_to_right'))
     out = v.validate_python(1)
     assert out == 1
     assert isinstance(out, int)
@@ -482,7 +513,12 @@ def test_left_to_right_union_strict():
     assert isinstance(out, float)
 
     # reversing union will select float always (as strict float will accept int)
-    v = SchemaValidator(core_schema.union_schema(list(reversed(choices)), mode='left_to_right', strict=True))
+    v = SchemaValidator(
+        core_schema.union_schema(
+            list(reversed(choices)),
+            mode='left_to_right',
+        )
+    )
     out = v.validate_python(1.0)
     assert out == 1.0
     assert isinstance(out, float)

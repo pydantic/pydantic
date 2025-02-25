@@ -686,8 +686,9 @@ class TestBenchmarkUnion:
     def test_strict_union_core(self, benchmark):
         v = SchemaValidator(
             schema=core_schema.union_schema(
-                strict=True, choices=[core_schema.bool_schema(), core_schema.int_schema(), core_schema.str_schema()]
-            )
+                choices=[core_schema.bool_schema(), core_schema.int_schema(), core_schema.str_schema()]
+            ),
+            config=CoreConfig(strict=True),
         )
 
         benchmark(v.validate_python, 1)
@@ -695,7 +696,8 @@ class TestBenchmarkUnion:
     @pytest.mark.benchmark(group='strict-union-error')
     def test_strict_union_error_core(self, benchmark):
         v = SchemaValidator(
-            schema=core_schema.union_schema(strict=True, choices=[core_schema.bool_schema(), core_schema.str_schema()])
+            schema=core_schema.union_schema(choices=[core_schema.bool_schema(), core_schema.str_schema()]),
+            config=CoreConfig(strict=True),
         )
 
         def validate_with_expected_error():

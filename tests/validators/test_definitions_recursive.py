@@ -611,11 +611,11 @@ def test_union_cycle(strict: bool):
                                 'foobar': core_schema.typed_dict_field(
                                     core_schema.list_schema(core_schema.definition_reference_schema('root-schema'))
                                 )
-                            }
+                            },
+                            strict=strict,
                         )
                     ],
                     auto_collapse=False,
-                    strict=strict,
                     ref='root-schema',
                 )
             ],
@@ -700,11 +700,11 @@ def test_function_change_id(strict: bool):
                         )
                     ],
                     auto_collapse=False,
-                    strict=strict,
                     ref='root-schema',
                 )
             ],
-        )
+        ),
+        config=CoreConfig(strict=strict),
     )
 
     with pytest.raises(ValidationError) as exc_info:
