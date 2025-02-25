@@ -8,7 +8,7 @@ use pyo3::{intern, PyTraverseError, PyVisit};
 use smallvec::SmallVec;
 
 use crate::build_tools::py_schema_err;
-use crate::build_tools::{is_strict, schema_or_config};
+use crate::build_tools::schema_or_config;
 use crate::common::union::{Discriminator, SMALL_UNION_THRESHOLD};
 use crate::errors::{ErrorType, ToErrorValue, ValError, ValLineError, ValResult};
 use crate::input::{BorrowInput, Input, ValidatedDict};
@@ -43,7 +43,6 @@ pub struct UnionValidator {
     mode: UnionMode,
     choices: Vec<(CombinedValidator, Option<String>)>,
     custom_error: Option<CustomError>,
-    strict: bool,
     name: String,
 }
 
@@ -91,7 +90,6 @@ impl BuildValidator for UnionValidator {
                     mode,
                     choices,
                     custom_error: CustomError::build(schema, config, definitions)?,
-                    strict: is_strict(schema, config)?,
                     name: format!("{}[{descr}]", Self::EXPECTED_TYPE),
                 }
                 .into())
@@ -110,17 +108,11 @@ impl UnionValidator {
         let old_exactness = state.exactness;
         let old_fields_set_count = state.fields_set_count;
 
-        let strict = state.strict_or(self.strict);
         let mut errors = MaybeErrors::new(self.custom_error.as_ref());
 
         let mut best_match: Option<(Py<PyAny>, Exactness, Option<usize>)> = None;
 
         for (choice, label) in &self.choices {
-            let state = &mut state.rebind_extra(|extra| {
-                if strict {
-                    extra.strict = Some(strict);
-                }
-            });
             state.exactness = Some(Exactness::Exact);
             state.fields_set_count = None;
             let result = choice.validate(py, input, state);
@@ -196,14 +188,6 @@ impl UnionValidator {
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         let mut errors = MaybeErrors::new(self.custom_error.as_ref());
-
-        let mut rebound_state;
-        let state = if state.strict_or(self.strict) {
-            rebound_state = state.rebind_extra(|extra| extra.strict = Some(true));
-            &mut rebound_state
-        } else {
-            state
-        };
 
         for (validator, label) in &self.choices {
             match validator.validate(py, input, state) {
@@ -300,7 +284,6 @@ pub struct TaggedUnionValidator {
     discriminator: Discriminator,
     lookup: LiteralLookup<CombinedValidator>,
     from_attributes: bool,
-    strict: bool,
     custom_error: Option<CustomError>,
     tags_repr: String,
     discriminator_repr: String,
@@ -349,7 +332,6 @@ impl BuildValidator for TaggedUnionValidator {
             discriminator,
             lookup,
             from_attributes,
-            strict: is_strict(schema, config)?,
             custom_error: CustomError::build(schema, config, definitions)?,
             tags_repr,
             discriminator_repr,
@@ -371,7 +353,7 @@ impl Validator for TaggedUnionValidator {
         match &self.discriminator {
             Discriminator::LookupKey(lookup_key) => {
                 let from_attributes = state.extra().from_attributes.unwrap_or(self.from_attributes);
-                let dict = input.validate_model_fields(self.strict, from_attributes)?;
+                let dict = input.validate_model_fields(state.strict_or(false), from_attributes)?;
                 // note this methods returns PyResult<Option<(data, data)>>, the outer Err is just for
                 // errors when getting attributes which should be "raised"
                 let tag = match dict.get_item(lookup_key)? {

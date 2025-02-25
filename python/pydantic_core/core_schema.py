@@ -2525,7 +2525,6 @@ def union_schema(
     custom_error_message: str | None = None,
     custom_error_context: dict[str, str | int] | None = None,
     mode: Literal['smart', 'left_to_right'] | None = None,
-    strict: bool | None = None,
     ref: str | None = None,
     metadata: dict[str, Any] | None = None,
     serialization: SerSchema | None = None,
@@ -2551,7 +2550,6 @@ def union_schema(
         mode: How to select which choice to return
             * `smart` (default) will try to return the choice which is the closest match to the input value
             * `left_to_right` will return the first choice in `choices` which succeeds validation
-        strict: Whether the underlying schemas should be validated with strict mode
         ref: optional unique identifier of the schema, used to reference the schema in other places
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
@@ -2564,7 +2562,6 @@ def union_schema(
         custom_error_message=custom_error_message,
         custom_error_context=custom_error_context,
         mode=mode,
-        strict=strict,
         ref=ref,
         metadata=metadata,
         serialization=serialization,
