@@ -177,7 +177,7 @@ class ConfigDict(TypedDict, total=False):
 
         Here's how you might go about using the new settings to achieve the same behavior:
 
-        ```py
+        ```python
         from datetime import datetime
 
         from pydantic import BaseModel, ConfigDict, Field
@@ -1115,7 +1115,7 @@ class ConfigDict(TypedDict, total=False):
         will be raised if you try to do this.
 
         This also means you can't set `validate_by_alias` to `False` and leave `validate_by_name` unset,
-        as `validate_by_name` defaults to `False.
+        as `validate_by_name` defaults to `False`.
 
         See [usage errors](../errors/usage_errors.md#validate-by-alias-and-name-false) for an example.
     """
