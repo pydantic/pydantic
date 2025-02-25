@@ -1512,26 +1512,16 @@ class GenerateSchema:
                 except NameError as e:
                     raise PydanticUndefinedAnnotation.from_name_error(e) from e
 
+                readonly_fields: list[str] = []
+
                 for field_name, annotation in annotations.items():
-                    annotation = replace_types(annotation, typevars_map)
-                    required = field_name in required_keys
+                    field_info = FieldInfo.from_annotation(annotation, _source=AnnotationSource.TYPED_DICT)
+                    field_info.annotation = replace_types(field_info.annotation, typevars_map)
 
-                    ann_origin = get_origin(annotation)
+                    required = field_name in required_keys or 'required' in field_info._qualifiers
+                    if 'read_only' in field_info._qualifiers:
+                        readonly_fields.append(field_name)
 
-                    if typing_objects.is_required(ann_origin):
-                        required = True
-                        annotation = self._get_args_resolving_forward_refs(
-                            annotation,
-                            required=True,
-                        )[0]
-                    elif typing_objects.is_notrequired(ann_origin):
-                        required = False
-                        annotation = self._get_args_resolving_forward_refs(
-                            annotation,
-                            required=True,
-                        )[0]
-
-                    field_info = FieldInfo.from_annotation(annotation)
                     if (
                         field_docstrings is not None
                         and field_info.description is None
@@ -1541,6 +1531,16 @@ class GenerateSchema:
                     self._apply_field_title_generator_to_field_info(self._config_wrapper, field_info, field_name)
                     fields[field_name] = self._generate_td_field_schema(
                         field_name, field_info, decorators, required=required
+                    )
+
+                if readonly_fields:
+                    fields_repr = ', '.join(repr(f) for f in readonly_fields)
+                    plural = len(readonly_fields) >= 2
+                    warnings.warn(
+                        f'Item{"s" if plural else ""} {fields_repr} on TypedDict class {typed_dict_cls.__name__!r} '
+                        f'{"are" if plural else "is"} using the `ReadOnly` qualifier. Pydantic will not protect items '
+                        'from any mutation on dictionary instances.',
+                        UserWarning,
                     )
 
                 td_schema = core_schema.typed_dict_schema(
