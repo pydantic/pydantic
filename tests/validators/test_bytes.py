@@ -91,7 +91,7 @@ def test_constrained_bytes(py_and_json: PyAndJson, opts: dict[str, Any], input, 
 
 
 def test_union():
-    v = SchemaValidator(cs.union_schema(choices=[cs.str_schema(), cs.bytes_schema()], strict=True))
+    v = SchemaValidator(cs.union_schema(choices=[cs.str_schema(strict=True), cs.bytes_schema(strict=True)]))
     assert v.validate_python('oh, a string') == 'oh, a string'
     assert v.validate_python(b'oh, bytes') == b'oh, bytes'
 
