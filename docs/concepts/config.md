@@ -7,6 +7,7 @@ specified for Pydantic's supported types.
 On Pydantic models, configuration can be specified in two ways:
 
 - Using the [`model_config`][pydantic.BaseModel.model_config] class attribute:
+
   ```python
   from pydantic import BaseModel, ConfigDict, ValidationError
 
@@ -34,6 +35,7 @@ On Pydantic models, configuration can be specified in two ways:
         In Pydantic V1, the `Config` class was used. This is still supported, but **deprecated**.
 
 - Using class arguments:
+
   ```python
   from pydantic import BaseModel
 
@@ -93,6 +95,7 @@ If you are using [standard library dataclasses][dataclasses] or [`TypedDict`][ty
 the configuration can be set in two ways:
 
 - Using the `__pydantic_config__` class attribute:
+
   ```python
   from dataclasses import dataclass
 
@@ -109,6 +112,7 @@ the configuration can be set in two ways:
 
 - Using the [`with_config`][pydantic.config.with_config] decorator (this avoids static type checking errors with
   [`TypedDict`][typing.TypedDict]):
+
   ```python
   from typing_extensions import TypedDict
 
@@ -142,7 +146,7 @@ print(m.model_dump())
 #> {'x': 'foo', 'y': 'bar'}
 ```
 
-If you provide configuration to the subclasses, it will be _merged_ with the parent configuration:
+If you provide configuration to the subclasses, it will be *merged* with the parent configuration:
 
 ```python
 from pydantic import BaseModel, ConfigDict

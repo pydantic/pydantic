@@ -33,10 +33,10 @@ Generally, the pipeline API is used to define a sequence of steps to apply to in
 
 Each step in the pipeline can be:
 
-* A validation step that runs pydantic validation on the provided type
-* A transformation step that modifies the data
-* A constraint step that checks the data against a condition
-* A predicate step that checks the data against a condition and raises an error if it returns `False`
+- A validation step that runs pydantic validation on the provided type
+- A transformation step that modifies the data
+- A constraint step that checks the data against a condition
+- A predicate step that checks the data against a condition and raises an error if it returns `False`
 
 <!-- TODO: (@sydney-runkle) add more documentation once we solidify the API during the experimental phase -->
 
@@ -113,7 +113,6 @@ Annotated[
 2. Multiply an integer by 2 after parsing it.
 3. Strip whitespace from a string, validate it as an integer, then multiply it by 2.
 
-
 ### Alternative patterns
 
 There are many alternative patterns to use depending on the scenario.
@@ -165,9 +164,9 @@ Partial validation can be enabled when using the three validation methods on `Ty
 The `experimental_allow_partial` flag can be passed to these methods to enable partial validation.
 It can take the following values (and is `False`, by default):
 
-* `False` or `'off'` - disable partial validation
-* `True` or `'on'` - enable partial validation, but don't support trailing strings
-* `'trailing-strings'` - enable partial validation and support trailing strings
+- `False` or `'off'` - disable partial validation
+- `True` or `'on'` - enable partial validation, but don't support trailing strings
+- `'trailing-strings'` - enable partial validation and support trailing strings
 
 !!! info "`'trailing-strings'` mode"
     `'trailing-strings'` mode allows for trailing incomplete strings at the end of partial JSON to be included in the output.
@@ -281,10 +280,10 @@ Only having access to part of the input data means errors can commonly occur in 
 
 For example:
 
-* if a string has a constraint `MinLen(5)`, when you only see part of the input, validation might fail because part of the string is missing (e.g. `{"name": "Sam` instead of `{"name": "Samuel"}`)
-* if an `int` field has a constraint `Ge(10)`, when you only see part of the input, validation might fail because the number is too small (e.g. `1` instead of `10`)
-* if a `TypedDict` field has 3 required fields, but the partial input only has two of the fields, validation would fail because some field are missing
-* etc. etc. — there are lost more cases like this
+- if a string has a constraint `MinLen(5)`, when you only see part of the input, validation might fail because part of the string is missing (e.g. `{"name": "Sam` instead of `{"name": "Samuel"}`)
+- if an `int` field has a constraint `Ge(10)`, when you only see part of the input, validation might fail because the number is too small (e.g. `1` instead of `10`)
+- if a `TypedDict` field has 3 required fields, but the partial input only has two of the fields, validation would fail because some field are missing
+- etc. etc. — there are lost more cases like this
 
 The point is that if you only see part of some valid input data, validation errors can often occur in the last element of a sequence or last value of mapping.
 

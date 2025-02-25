@@ -2,14 +2,14 @@ An alias is an alternative name for a field, used when serializing and deseriali
 
 You can specify an alias in the following ways:
 
-* `alias` on the [`Field`][pydantic.fields.Field]
-    * must be a `str`
-* `validation_alias` on the [`Field`][pydantic.fields.Field]
-    * can be an instance of `str`, [`AliasPath`][pydantic.aliases.AliasPath], or [`AliasChoices`][pydantic.aliases.AliasChoices]
-* `serialization_alias` on the [`Field`][pydantic.fields.Field]
-    * must be a `str`
-* `alias_generator` on the [`Config`][pydantic.config.ConfigDict.alias_generator]
-    * can be a callable or an instance of [`AliasGenerator`][pydantic.aliases.AliasGenerator]
+- `alias` on the [`Field`][pydantic.fields.Field]
+  - must be a `str`
+- `validation_alias` on the [`Field`][pydantic.fields.Field]
+  - can be an instance of `str`, [`AliasPath`][pydantic.aliases.AliasPath], or [`AliasChoices`][pydantic.aliases.AliasChoices]
+- `serialization_alias` on the [`Field`][pydantic.fields.Field]
+  - must be a `str`
+- `alias_generator` on the [`Config`][pydantic.config.ConfigDict.alias_generator]
+  - can be a callable or an instance of [`AliasGenerator`][pydantic.aliases.AliasGenerator]
 
 For examples of how to use `alias`, `validation_alias`, and `serialization_alias`, see [Field aliases](../concepts/fields.md#field-aliases).
 
@@ -102,7 +102,6 @@ want to specify the alias for each field individually.
     [`to_camel`][pydantic.alias_generators.to_camel]<br>
     [`to_snake`][pydantic.alias_generators.to_snake]<br>
 
-
 ### Using a callable
 
 Here's a basic example using a callable:
@@ -131,7 +130,6 @@ print(t.model_dump(by_alias=True))
 ??? api "API Documentation"
 
     [`pydantic.aliases.AliasGenerator`][pydantic.aliases.AliasGenerator]<br>
-
 
 `AliasGenerator` is a class that allows you to specify multiple alias generators for a model.
 You can use an `AliasGenerator` to specify different alias generators for validation and serialization.
@@ -193,11 +191,11 @@ print(voice.model_dump(by_alias=True))
 
 You may set `alias_priority` on a field to change this behavior:
 
-* `alias_priority=2` the alias will *not* be overridden by the alias generator.
-* `alias_priority=1` the alias *will* be overridden by the alias generator.
-* `alias_priority` not set:
-    * alias is set: the alias will *not* be overridden by the alias generator.
-    * alias is not set: the alias *will* be overridden by the alias generator.
+- `alias_priority=2` the alias will *not* be overridden by the alias generator.
+- `alias_priority=1` the alias *will* be overridden by the alias generator.
+- `alias_priority` not set:
+  - alias is set: the alias will *not* be overridden by the alias generator.
+  - alias is not set: the alias *will* be overridden by the alias generator.
 
 The same precedence applies to `validation_alias` and `serialization_alias`.
 See more about the different field aliases under [field aliases](../concepts/fields.md#field-aliases).

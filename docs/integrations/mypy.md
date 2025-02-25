@@ -28,7 +28,7 @@ Model()  # will raise a validation error for age and list_of_ints
 Without any special configuration, mypy does not catch the [missing model field annotation](../errors/usage_errors.md#model-field-missing-annotation)
 and errors about the `list_of_ints` argument which Pydantic parses correctly:
 
-```
+```output
 15: error: List item 1 has incompatible type "str"; expected "int"  [list-item]
 15: error: List item 2 has incompatible type "bytes"; expected "int"  [list-item]
 16: error: "Model" has no attribute "middle_name"  [attr-defined]
@@ -37,7 +37,8 @@ and errors about the `list_of_ints` argument which Pydantic parses correctly:
 ```
 
 But [with the plugin enabled](#enabling-the-plugin), it gives the correct errors:
-```
+
+```output
 9: error: Untyped fields disallowed  [pydantic-field]
 16: error: "Model" has no attribute "middle_name"  [attr-defined]
 17: error: Missing named argument "age" for "Model"  [call-arg]
@@ -86,32 +87,32 @@ that the version support policy is subject to change at discretion of contributo
 
 ### Generate a `__init__` signature for Pydantic models
 
-* Any required fields that don't have dynamically-determined aliases will be included as required
+- Any required fields that don't have dynamically-determined aliases will be included as required
   keyword arguments.
-* If the [`populate_by_name`][pydantic.ConfigDict.populate_by_name] model configuration value is set to
+- If the [`populate_by_name`][pydantic.ConfigDict.populate_by_name] model configuration value is set to
   `True`, the generated signature will use the field names rather than aliases.
-* The [`init_forbid_extra`](#init_forbid_extra) and [`init_typed`](#init_typed) plugin configuration
+- The [`init_forbid_extra`](#init_forbid_extra) and [`init_typed`](#init_typed) plugin configuration
   values can further fine-tune the synthesized `__init__` method.
 
 ### Generate a typed signature for `model_construct`
 
-* The [`model_construct`][pydantic.BaseModel.model_construct] method is an alternative to model validation when input data is
+- The [`model_construct`][pydantic.BaseModel.model_construct] method is an alternative to model validation when input data is
   known to be valid and should not be parsed (see the [documentation](../concepts/models.md#creating-models-without-validation)).
   Because this method performs no runtime validation, static checking is important to detect errors.
 
 ### Support for frozen models
 
-* If the [`frozen`][pydantic.ConfigDict.frozen] configuration is set to `True`, you will get
+- If the [`frozen`][pydantic.ConfigDict.frozen] configuration is set to `True`, you will get
   an error if you try mutating a model field (see [faux immutability](../concepts/models.md#faux-immutability))
 
 ### Respect the type of the `Field`'s `default` and `default_factory`
 
-* Field with both a `default` and a `default_factory` will result in an error during static checking.
-* The type of the `default` and `default_factory` value must be compatible with the one of the field.
+- Field with both a `default` and a `default_factory` will result in an error during static checking.
+- The type of the `default` and `default_factory` value must be compatible with the one of the field.
 
 ### Warn about the use of untyped fields
 
-* While defining a field without an annotation will result in a [runtime error](../errors/usage_errors.md#model-field-missing-annotation),
+- While defining a field without an annotation will result in a [runtime error](../errors/usage_errors.md#model-field-missing-annotation),
   the plugin will also emit a type checking error.
 
 ### Prevent the use of required dynamic aliases

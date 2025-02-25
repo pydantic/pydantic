@@ -4,15 +4,15 @@
 Pydantic allows automatic creation and customization of JSON schemas from models.
 The generated JSON schemas are compliant with the following specifications:
 
-* [JSON Schema Draft 2020-12](https://json-schema.org/draft/2020-12/release-notes.html)
-* [OpenAPI Specification v3.1.0](https://github.com/OAI/OpenAPI-Specification).
+- [JSON Schema Draft 2020-12](https://json-schema.org/draft/2020-12/release-notes.html)
+- [OpenAPI Specification v3.1.0](https://github.com/OAI/OpenAPI-Specification).
 
 ## Generating JSON Schema
 
 Use the following functions to generate JSON schema:
 
-* [`BaseModel.model_json_schema`][pydantic.main.BaseModel.model_json_schema] returns a jsonable dict of a model's schema.
-* [`TypeAdapter.json_schema`][pydantic.type_adapter.TypeAdapter.json_schema] returns a jsonable dict of an adapted type's schema.
+- [`BaseModel.model_json_schema`][pydantic.main.BaseModel.model_json_schema] returns a jsonable dict of a model's schema.
+- [`TypeAdapter.json_schema`][pydantic.type_adapter.TypeAdapter.json_schema] returns a jsonable dict of an adapted type's schema.
 
 !!! note
     These methods are not to be confused with [`BaseModel.model_dump_json`][pydantic.main.BaseModel.model_dump_json]
@@ -27,7 +27,6 @@ Use the following functions to generate JSON schema:
     calling `json.dumps(m.model_json_schema())`on some `BaseModel` `m` returns a valid JSON string. Similarly, for
     [`TypeAdapter.json_schema`][pydantic.type_adapter.TypeAdapter.json_schema], calling
     `json.dumps(TypeAdapter(<some_type>).json_schema())` returns a valid JSON string.
-
 
 !!! tip
     Pydantic offers support for both of:
@@ -257,8 +256,8 @@ Specify the mode of JSON schema generation via the `mode` parameter in the
 
 The [`JsonSchemaMode`][pydantic.json_schema.JsonSchemaMode] is a type alias that represents the available options for the `mode` parameter:
 
-* `'validation'`
-* `'serialization'`
+- `'validation'`
+- `'serialization'`
 
 Here's an example of how to specify the `mode` parameter, and how it affects the generated JSON schema:
 
@@ -297,7 +296,6 @@ print(Model.model_json_schema(mode='serialization'))
 """
 ```
 
-
 ## Customizing JSON Schema
 
 The generated JSON schema can be customized at both the field level and model level via:
@@ -322,11 +320,11 @@ and validations.
 
 Some field parameters are used exclusively to customize the generated JSON Schema:
 
-* `title`: The title of the field.
-* `description`: The description of the field.
-* `examples`: The examples of the field.
-* `json_schema_extra`: Extra JSON Schema properties to be added to the field.
-* `field_title_generator`: A function that programmatically sets the field's title, based on its name and info.
+- `title`: The title of the field.
+- `description`: The description of the field.
+- `examples`: The examples of the field.
+- `json_schema_extra`: Extra JSON Schema properties to be added to the field.
+- `field_title_generator`: A function that programmatically sets the field's title, based on its name and info.
 
 Here's an example:
 
@@ -527,11 +525,11 @@ print(json.dumps(Person.model_json_schema(), indent=2))
 You can also use [model config][pydantic.config.ConfigDict] to customize JSON schema generation on a model.
 Specifically, the following config options are relevant:
 
-* [`title`][pydantic.config.ConfigDict.title]
-* [`json_schema_extra`][pydantic.config.ConfigDict.json_schema_extra]
-* [`json_schema_mode_override`][pydantic.config.ConfigDict.json_schema_mode_override]
-* [`field_title_generator`][pydantic.config.ConfigDict.field_title_generator]
-* [`model_title_generator`][pydantic.config.ConfigDict.model_title_generator]
+- [`title`][pydantic.config.ConfigDict.title]
+- [`json_schema_extra`][pydantic.config.ConfigDict.json_schema_extra]
+- [`json_schema_mode_override`][pydantic.config.ConfigDict.json_schema_mode_override]
+- [`field_title_generator`][pydantic.config.ConfigDict.field_title_generator]
+- [`model_title_generator`][pydantic.config.ConfigDict.model_title_generator]
 
 ### Using `json_schema_extra`
 
@@ -1048,7 +1046,6 @@ print(json.dumps(TypeAdapter(Person).json_schema(), indent=2))
 """
 ```
 
-
 ### Using `field_title_generator`
 
 The `field_title_generator` parameter can be used to programmatically generate the title for a field based on its name and info.
@@ -1152,7 +1149,6 @@ following priority order (when there is an equivalent available):
 The field schema mapping from Python or Pydantic to JSON schema is done as follows:
 
 {{ schema_mappings_table }}
-
 
 ## Top-level schema generation
 
@@ -1440,14 +1436,14 @@ print(
 
 ## Miscellaneous Notes on JSON Schema Generation
 
-* The JSON schema for `Optional` fields indicates that the value `null` is allowed.
-* The `Decimal` type is exposed in JSON schema (and serialized) as a string.
-* Since the `namedtuple` type doesn't exist in JSON, a model's JSON schema does not preserve `namedtuple`s as `namedtuple`s.
-* Sub-models used are added to the `$defs` JSON attribute and referenced, as per the spec.
-* Sub-models with modifications (via the `Field` class) like a custom title, description, or default value,
+- The JSON schema for `Optional` fields indicates that the value `null` is allowed.
+- The `Decimal` type is exposed in JSON schema (and serialized) as a string.
+- Since the `namedtuple` type doesn't exist in JSON, a model's JSON schema does not preserve `namedtuple`s as `namedtuple`s.
+- Sub-models used are added to the `$defs` JSON attribute and referenced, as per the spec.
+- Sub-models with modifications (via the `Field` class) like a custom title, description, or default value,
     are recursively included instead of referenced.
-* The `description` for models is taken from either the docstring of the class or the argument `description` to
+- The `description` for models is taken from either the docstring of the class or the argument `description` to
     the `Field` class.
-* The schema is generated by default using aliases as keys, but it can be generated using model
+- The schema is generated by default using aliases as keys, but it can be generated using model
     property names instead by calling [`model_json_schema()`][pydantic.main.BaseModel.model_json_schema] or
     [`model_dump_json()`][pydantic.main.BaseModel.model_dump_json] with the `by_alias=False` keyword argument.

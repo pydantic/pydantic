@@ -16,6 +16,10 @@ repos:
     additional_dependencies:
       - tomli
     exclude: '^uv\.lock$'
+- repo: https://github.com/DavidAnson/markdownlint-cli2
+  rev: v0.17.2
+  hooks:
+  - id: markdownlint-cli2
 - repo: local
   hooks:
   - id: lint

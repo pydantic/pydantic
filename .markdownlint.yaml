@@ -1,0 +1,28 @@
+# See rule aliases: https://github.com/DavidAnson/markdownlint#rules--aliases
+
+line-length: false
+ul-style:
+  style: dash
+emphasis-style:
+  style: asterisk
+
+# H1 headings are automatically inserted by mkdocs
+first-line-h1: false
+
+# Allow same heading name if the parent is different
+no-duplicate-heading:
+  siblings_only: true
+
+# Allow inline HTML to support line breaks etc.
+no-inline-html: false
+
+# Need to disable in order to support PyMdown Tabbed extension and admonitions
+# See: https://facelessuser.github.io/pymdown-extensions/extensions/tabbed/
+# See: https://squidfunk.github.io/mkdocs-material/reference/admonitions/
+code-block-style: false
+
+# Disabled in order to support references to API
+reference-links-images: false
+
+# Anchors via attribute lists are not detected, let mkdocs handle anchor validation
+link-fragments: false

@@ -38,12 +38,12 @@ except ValidationError as exc:
 
 There are various ways to get strict-mode validation while using Pydantic, which will be discussed in more detail below:
 
-* [Passing `strict=True` to the validation methods](#strict-mode-in-method-calls), such as `BaseModel.model_validate`,
+- [Passing `strict=True` to the validation methods](#strict-mode-in-method-calls), such as `BaseModel.model_validate`,
   `TypeAdapter.validate_python`, and similar for JSON
-* [Using `Field(strict=True)`](#strict-mode-with-field) with fields of a `BaseModel`, `dataclass`, or `TypedDict`
-* [Using `pydantic.types.Strict` as a type annotation](#strict-mode-with-annotated-strict) on a field
-  * Pydantic provides some type aliases that are already annotated with `Strict`, such as `pydantic.types.StrictInt`
-* [Using `ConfigDict(strict=True)`](#strict-mode-with-configdict)
+- [Using `Field(strict=True)`](#strict-mode-with-field) with fields of a `BaseModel`, `dataclass`, or `TypedDict`
+- [Using `pydantic.types.Strict` as a type annotation](#strict-mode-with-annotated-strict) on a field
+  - Pydantic provides some type aliases that are already annotated with `Strict`, such as `pydantic.types.StrictInt`
+- [Using `ConfigDict(strict=True)`](#strict-mode-with-configdict)
 
 ## Type coercions in strict mode
 
@@ -118,6 +118,7 @@ except ValidationError as exc:
 ```
 
 Note this also works even when using more "complex" types in `TypeAdapter`:
+
 ```python
 from dataclasses import dataclass
 
@@ -191,7 +192,6 @@ except ValidationError as exc:
       Input should be a valid integer [type=int_type, input_value='1', input_type=str]
     """
 ```
-
 
 ## Strict mode with `Field`
 
@@ -439,7 +439,7 @@ you should use the `config` keyword argument to the `@pydantic.dataclasses.datac
 When possible, you can achieve nested strict mode for vanilla dataclasses or `TypedDict` subclasses by annotating fields
 with the [`pydantic.types.Strict` annotation](#strict-mode-with-annotated-strict).
 
-However, if this is _not_ possible (e.g., when working with third-party types), you can set the config that Pydantic
+However, if this is *not* possible (e.g., when working with third-party types), you can set the config that Pydantic
 should use for the type by setting the `__pydantic_config__` attribute on the type:
 
 ```python

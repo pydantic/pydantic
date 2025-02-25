@@ -50,6 +50,7 @@ Let's say we have the following `.json` file:
 ```
 
 This data is flawed for three reasons:
+
 1. It's missing the `name` field.
 2. The `age` field is negative.
 3. The `email` field is not a valid email address.

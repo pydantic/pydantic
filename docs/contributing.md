@@ -10,7 +10,9 @@ To make it as simple as possible for us to help you, please include the output o
 ```bash
 python -c "import pydantic.version; print(pydantic.version.version_info())"
 ```
+
 If you're using Pydantic prior to **v2.0** please use:
+
 ```bash
 python -c "import pydantic.utils; print(pydantic.utils.version_info())"
 ```
@@ -142,7 +144,6 @@ Commit your changes, push your branch to GitHub, and create a pull request.
 Please follow the pull request template and fill in as much information as possible. Link to any relevant issues and include a description of your changes.
 
 When your pull request is ready for review, add a comment with the message "please review" and we'll take a look as soon as we can.
-
 
 ## Documentation style
 

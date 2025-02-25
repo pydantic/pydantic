@@ -36,14 +36,14 @@ User(id=42, name='John Doe', signup_ts=datetime.datetime(2032, 6, 21, 12, 0))
 
 Similarities between Pydantic dataclasses and models include support for:
 
-* [Configuration](#dataclass-config) support
-* [Nested](./models.md#nested-models) classes
-* [Generics](./models.md#generic-models)
+- [Configuration](#dataclass-config) support
+- [Nested](./models.md#nested-models) classes
+- [Generics](./models.md#generic-models)
 
 Some differences between Pydantic dataclasses and models include:
 
-*  [validators](#validators-and-initialization-hooks)
-*  The behavior with the [`extra`][pydantic.ConfigDict.extra] configuration value
+- [validators](#validators-and-initialization-hooks)
+- The behavior with the [`extra`][pydantic.ConfigDict.extra] configuration value
 
 Similarly to Pydantic models, arguments used to instantiate the dataclass are [copied](./models.md#attribute-copies).
 
@@ -113,8 +113,8 @@ of a `config` parameter.
 
 If you want to modify the configuration like you would with a [`BaseModel`][pydantic.BaseModel], you have two options:
 
-* Use the `config` argument of the decorator.
-* Define the configuration with the `__pydantic_config__` attribute.
+- Use the `config` argument of the decorator.
+- Define the configuration with the `__pydantic_config__` attribute.
 
 ```python
 from pydantic import ConfigDict
@@ -359,6 +359,7 @@ print(DemoDataclass(product_id=2468))
 #> DemoDataclass(product_id='02468')
 ```
 
+<!-- markdownlint-disable-next-line strong-style -->
 The dataclass [`__post_init__()`][dataclasses.__post_init__] method is also supported, and will
 be called between the calls to *before* and *after* model validators.
 

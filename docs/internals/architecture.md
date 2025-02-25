@@ -83,7 +83,7 @@ the serialization logic is also defined in the core schema.
 If we were to define a custom serialization function for `foo` (1), the `serialization` key would look like:
 { .annotate }
 
-1.  For example using the [`field_serializer`][pydantic.functional_serializers.field_serializer] decorator:
+1. For example using the [`field_serializer`][pydantic.functional_serializers.field_serializer] decorator:
 
     ```python {test="skip" lint="skip"}
     class Model(BaseModel):
@@ -184,7 +184,7 @@ When the `GenerateSchema` class builds the core schema for `Annotated[int, MyStr
 create an instance of a `GetCoreSchemaHandler` to be passed to the `MyGt.__get_pydantic_core_schema__` method. (1)
 { .annotate }
 
-1.  In the case of our [`Annotated`][typing.Annotated] pattern, the `GetCoreSchemaHandler` is defined in a nested way.
+1. In the case of our [`Annotated`][typing.Annotated] pattern, the `GetCoreSchemaHandler` is defined in a nested way.
     Calling it will recursively call the other `__get_pydantic_core_schema__` methods until it reaches the `int` annotation,
     where a simple `{'type': 'int'}` schema is returned.
 
@@ -194,8 +194,8 @@ the `source` will be the actual class where `__get_pydantic_core_schema__` is de
 
 ## Model validation and serialization
 
-While model definition was scoped to the _class_ level (i.e. when defining your model), model validation
-and serialization happens at the _instance_ level. Both these concepts are handled in `pydantic-core`
+While model definition was scoped to the *class* level (i.e. when defining your model), model validation
+and serialization happens at the *instance* level. Both these concepts are handled in `pydantic-core`
 (providing a 5 to 20 performance increase compared to Pydantic V1), by using the previously built core schema.
 
 `pydantic-core` exposes a [`SchemaValidator`][pydantic_core.SchemaValidator] and

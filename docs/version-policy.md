@@ -18,11 +18,11 @@ Of course, some apparently safe changes and bug fixes will inevitably break some
 
 The following changes will **NOT** be considered breaking changes, and may occur in minor releases:
 
-* Changing the format of JSON Schema [references](https://json-schema.org/understanding-json-schema/structuring#dollarref).
-* Changing the `msg`, `ctx`, and `loc` fields of [`ValidationError`][pydantic_core.ValidationError] exceptions. `type` will not change &mdash; if you're programmatically parsing error messages, you should use `type`.
-* Adding new keys to [`ValidationError`][pydantic_core.ValidationError] exceptions &mdash; e.g. we intend to add `line_number` and `column_number` to errors when validating JSON once we migrate to a new JSON parser.
-* Adding new [`ValidationError`][pydantic_core.ValidationError] errors.
-* Changing how `__repr__` behaves, even of public classes.
+- Changing the format of JSON Schema [references](https://json-schema.org/understanding-json-schema/structuring#dollarref).
+- Changing the `msg`, `ctx`, and `loc` fields of [`ValidationError`][pydantic_core.ValidationError] exceptions. `type` will not change &mdash; if you're programmatically parsing error messages, you should use `type`.
+- Adding new keys to [`ValidationError`][pydantic_core.ValidationError] exceptions &mdash; e.g. we intend to add `line_number` and `column_number` to errors when validating JSON once we migrate to a new JSON parser.
+- Adding new [`ValidationError`][pydantic_core.ValidationError] errors.
+- Changing how `__repr__` behaves, even of public classes.
 
 In all cases we will aim to minimize churn and do so only when justified by the increase of quality of Pydantic for users.
 
@@ -77,7 +77,6 @@ warnings.filterwarnings('ignore', category=PydanticExperimentalWarning)
 
     c. As a last step, the experimental version of the feature is entirely removed from the codebase.
 
-
 If the feature is unsuccessful or unpopular, it's removed with little notice. A stub will remain in the location of the deprecated feature with an error message.
 
 Thanks to [streamlit](https://docs.streamlit.io/develop/quick-reference/prerelease) for the inspiration for the lifecycle and naming conventions of our new experimental feature patterns.
@@ -86,5 +85,5 @@ Thanks to [streamlit](https://docs.streamlit.io/develop/quick-reference/prerelea
 
 Pydantic will drop support for a Python version when the following conditions are met:
 
-* The Python version has reached its [expected end of life](https://devguide.python.org/versions/).
-* less than 5% of downloads of the most recent minor release are using that version.
+- The Python version has reached its [expected end of life](https://devguide.python.org/versions/).
+- less than 5% of downloads of the most recent minor release are using that version.

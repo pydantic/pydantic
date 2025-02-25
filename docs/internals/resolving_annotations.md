@@ -19,7 +19,7 @@ class Node:
 
 To circumvent this issue, forward references can be used (by wrapping the annotation in quotes).
 
-In Python 3.7, [PEP 563] introduced the concept of _postponed evaluation of annotations_, meaning
+In Python 3.7, [PEP 563] introduced the concept of *postponed evaluation of annotations*, meaning
 with the `from __future__ import annotations` [future statement], type hints are stringified by default:
 
 ```python {requires="3.12" lint="skip"}
@@ -138,14 +138,14 @@ While the namespace fetching logic is trying to be as accurate as possible, we s
 - When the `Model` class is being created inside a function, we keep a copy of the [locals][frame.f_locals] of the frame.
   This copy only includes the symbols defined in the locals when `Model` is being defined, meaning `InnerType2` won't be included
   (and will **not be** if doing a model rebuild at a later point!).
-    - To avoid memory leaks, we use [weak references][weakref] to the locals of the function, meaning some forward references might
+  - To avoid memory leaks, we use [weak references][weakref] to the locals of the function, meaning some forward references might
     not resolve outside the function (1).
-    - Locals of the function are only taken into account for Pydantic models, but this pattern does not apply to dataclasses, typed
+  - Locals of the function are only taken into account for Pydantic models, but this pattern does not apply to dataclasses, typed
     dictionaries or named tuples.
 
 </div>
 
-1.  Here is an example:
+1. Here is an example:
 
     ```python {test="skip" lint="skip"}
     def func():
@@ -163,11 +163,10 @@ While the namespace fetching logic is trying to be as accurate as possible, we s
     # pydantic.errors.PydanticUndefinedAnnotation: name 'A' is not defined
     ```
 
-[](){#backwards-compatibility-logic}
-
 For backwards compatibility reasons, and to be able to support valid use cases without having to rebuild models,
-the namespace logic described above is a bit different when it comes to core schema generation. Taking the
-following example:
+the namespace logic described above is a bit different when it comes to core schema generation.
+Taking the following example:
+{#backwards-compatibility-logic}
 
 ```python
 from dataclasses import dataclass
@@ -196,7 +195,7 @@ and the `{Bar.__name__: Bar}` namespace are included in the locals during annota
 (with the lowest priority) (1).
 { .annotate }
 
-1.  This backwards compatibility logic can introduce some inconsistencies, such as the following:
+1. This backwards compatibility logic can introduce some inconsistencies, such as the following:
 
     ```python {lint="skip"}
     from dataclasses import dataclass
@@ -248,9 +247,8 @@ Foo.__pydantic_core_schema__
 #> {'type': 'model', 'schema': {...}, ...}
 ```
 
-[](){#model-rebuild-semantics}
-
 The [`model_rebuild()`][pydantic.BaseModel.model_rebuild] method uses a *rebuild namespace*, with the following semantics:
+{#model-rebuild-semantics}
 
 - If an explicit `_types_namespace` argument is provided, it is used as the rebuild namespace.
 - If no namespace is provided, the namespace where the method is called will be used as the rebuild namespace.
@@ -264,5 +262,5 @@ This *rebuild namespace* will be merged with the model's parent namespace (if it
 [PEP 649]: https://peps.python.org/pep-0649/
 [future statement]: https://docs.python.org/3/reference/simple_stmts.html#future
 
-[^1]: This is done unconditionally, as forward annotations can be only present _as part_ of a type hint (e.g. `Optional['int']`), as dictated by
+[^1]: This is done unconditionally, as forward annotations can be only present *as part* of a type hint (e.g. `Optional['int']`), as dictated by
       the [typing specification](https://typing.readthedocs.io/en/latest/spec/annotations.html#string-annotations).
