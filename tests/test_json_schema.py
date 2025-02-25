@@ -2387,6 +2387,37 @@ def test_literal_schema_type_aliases() -> None:
     }
 
 
+def test_annotated_typealiastype() -> None:
+    Alias = TypeAliasType(
+        'Alias',
+        Annotated[str, Field(description='alias desc', examples=['alias example'])],
+    )
+
+    class Model(BaseModel):
+        alias_1: Alias
+        alias_2: Alias = Field(description='field_desc')
+
+    assert Model.model_json_schema() == {
+        '$defs': {
+            'Alias': {
+                'type': 'string',
+                'description': 'alias desc',
+                'examples': ['alias example'],
+            }
+        },
+        'properties': {
+            'alias_1': {'$ref': '#/$defs/Alias'},
+            'alias_2': {
+                '$ref': '#/$defs/Alias',
+                'description': 'field_desc',
+            },
+        },
+        'required': ['alias_1', 'alias_2'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
 def test_literal_enum():
     class MyEnum(str, Enum):
         FOO = 'foo'

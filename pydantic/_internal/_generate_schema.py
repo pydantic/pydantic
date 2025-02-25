@@ -483,7 +483,10 @@ class GenerateSchema:
             )
 
         path_constructor = pathlib.PurePath if tp is os.PathLike else tp
-        constrained_schema = core_schema.bytes_schema() if (path_type is bytes) else core_schema.str_schema()
+        strict_inner_schema = (
+            core_schema.bytes_schema(strict=True) if (path_type is bytes) else core_schema.str_schema(strict=True)
+        )
+        lax_inner_schema = core_schema.bytes_schema() if (path_type is bytes) else core_schema.str_schema()
 
         def path_validator(input_value: str | bytes) -> os.PathLike[Any]:  # type: ignore
             try:
@@ -512,7 +515,7 @@ class GenerateSchema:
             return str(path)
 
         instance_schema = core_schema.json_or_python_schema(
-            json_schema=core_schema.no_info_after_validator_function(path_validator, constrained_schema),
+            json_schema=core_schema.no_info_after_validator_function(path_validator, lax_inner_schema),
             python_schema=core_schema.is_instance_schema(tp),
         )
 
@@ -520,11 +523,10 @@ class GenerateSchema:
             lax_schema=core_schema.union_schema(
                 [
                     instance_schema,
-                    core_schema.no_info_after_validator_function(path_validator, constrained_schema),
+                    core_schema.no_info_after_validator_function(path_validator, strict_inner_schema),
                 ],
                 custom_error_type='path_type',
                 custom_error_message=f'Input is not a valid path for {tp}',
-                strict=True,
             ),
             strict_schema=instance_schema,
             serialization=core_schema.plain_serializer_function_ser_schema(ser_path, info_arg=True, when_used='always'),
@@ -2050,25 +2052,11 @@ class GenerateSchema:
     def _annotated_schema(self, annotated_type: Any) -> core_schema.CoreSchema:
         """Generate schema for an Annotated type, e.g. `Annotated[int, Field(...)]` or `Annotated[int, Gt(0)]`."""
         FieldInfo = import_cached_field_info()
-        # Ideally, we should delegate all this to `_typing_extra.unpack_annotated`, e.g.:
-        # `typ, annotations = _typing_extra.unpack_annotated(annotated_type); schema = self.apply_annotations(...)`
-        # if it was able to use a `NsResolver`. But because `unpack_annotated` is also used
-        # when constructing `FieldInfo` instances (where we don't have access to a `NsResolver`),
-        # the implementation of the function does *not* resolve forward annotations. This could
-        # be solved by calling `unpack_annotated` directly inside `collect_model_fields`.
-        # For now, we at least resolve the annotated type if it is a forward ref, but note that
-        # unexpected results will happen if you have something like `Annotated[Alias, ...]` and
-        # `Alias` is a PEP 695 type alias containing forward references.
-        typ, *annotations = get_args(annotated_type)
-        if isinstance(typ, str):
-            typ = _typing_extra._make_forward_ref(typ)
-        if isinstance(typ, ForwardRef):
-            typ = self._resolve_forward_ref(typ)
-
-        typ, sub_annotations = _typing_extra.unpack_annotated(typ)
-        annotations = sub_annotations + annotations
-
-        schema = self._apply_annotations(typ, annotations)
+        source_type, *annotations = self._get_args_resolving_forward_refs(
+            annotated_type,
+            required=True,
+        )
+        schema = self._apply_annotations(source_type, annotations)
         # put the default validator last so that TypeAdapter.get_default_value() works
         # even if there are function validators involved
         for annotation in annotations:
