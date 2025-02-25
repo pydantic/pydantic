@@ -135,7 +135,7 @@ jobs:
 
     - name: Test without email-validator
       # speed up by skipping this step on pypy
-      if: "!startsWith(matrix.python-version, 'pypy')"
+      if: ${{ !startsWith(matrix.python-version, 'pypy') }}
       run: make test
       env:
         COVERAGE_FILE: coverage/.coverage.${{ runner.os }}-py${{ matrix.python-version }}-without-deps
