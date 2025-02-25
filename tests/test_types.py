@@ -7111,7 +7111,7 @@ def test_union_respects_local_strict() -> None:
         model_config = ConfigDict(strict=True)
 
     class Model(MyBaseModel):
-        a: int | Annotated[tuple[int, int], Strict(False)] = Field(default=(1, 2))
+        a: Union[int, Annotated[tuple[int, int], Strict(False)]] = Field(default=(1, 2))
 
     m = Model(a=[1, 2])
     assert m.a == (1, 2)
