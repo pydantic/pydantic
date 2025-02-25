@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 from bs4 import BeautifulSoup
@@ -17,6 +18,9 @@ def on_config(config: MkDocsConfig) -> None:
 
 
 def on_page_content(html: str, page: Page, config: MkDocsConfig, files: Files) -> str:
+    if not os.getenv('CI'):
+        return html
+
     soup = BeautifulSoup(html, 'html.parser')
 
     # Clean up presentational and UI elements
