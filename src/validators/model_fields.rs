@@ -12,7 +12,7 @@ use crate::errors::LocItem;
 use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValLineError, ValResult};
 use crate::input::ConsumeIterator;
 use crate::input::{BorrowInput, Input, ValidatedDict, ValidationMatch};
-use crate::lookup_key::LookupKey;
+use crate::lookup_key::LookupKeyCollection;
 use crate::tools::SchemaDict;
 
 use super::{build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
@@ -20,7 +20,7 @@ use super::{build_validator, BuildValidator, CombinedValidator, DefinitionsBuild
 #[derive(Debug)]
 struct Field {
     name: String,
-    lookup_key: LookupKey,
+    lookup_key_collection: LookupKeyCollection,
     name_py: Py<PyString>,
     validator: CombinedValidator,
     frozen: bool,
@@ -37,6 +37,8 @@ pub struct ModelFieldsValidator {
     strict: bool,
     from_attributes: bool,
     loc_by_alias: bool,
+    validate_by_alias: Option<bool>,
+    validate_by_name: Option<bool>,
 }
 
 impl BuildValidator for ModelFieldsValidator {
@@ -48,10 +50,10 @@ impl BuildValidator for ModelFieldsValidator {
         definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();
+
         let strict = is_strict(schema, config)?;
 
         let from_attributes = schema_or_config_same(schema, config, intern!(py, "from_attributes"))?.unwrap_or(false);
-        let populate_by_name = schema_or_config_same(schema, config, intern!(py, "populate_by_name"))?.unwrap_or(false);
 
         let extra_behavior = ExtraBehavior::from_schema_or_config(py, schema, config, ExtraBehavior::Ignore)?;
 
@@ -79,17 +81,12 @@ impl BuildValidator for ModelFieldsValidator {
                 Err(err) => return py_schema_err!("Field \"{}\":\n  {}", field_name, err),
             };
 
-            let lookup_key = match field_info.get_item(intern!(py, "validation_alias"))? {
-                Some(alias) => {
-                    let alt_alias = if populate_by_name { Some(field_name) } else { None };
-                    LookupKey::from_py(py, &alias, alt_alias)?
-                }
-                None => LookupKey::from_string(py, field_name),
-            };
+            let validation_alias = field_info.get_item(intern!(py, "validation_alias"))?;
+            let lookup_key_collection = LookupKeyCollection::new(py, validation_alias, field_name)?;
 
             fields.push(Field {
                 name: field_name.to_string(),
-                lookup_key,
+                lookup_key_collection,
                 name_py: field_name_py.into(),
                 validator,
                 frozen: field_info.get_as::<bool>(intern!(py, "frozen"))?.unwrap_or(false),
@@ -104,6 +101,8 @@ impl BuildValidator for ModelFieldsValidator {
             strict,
             from_attributes,
             loc_by_alias: config.get_as(intern!(py, "loc_by_alias"))?.unwrap_or(true),
+            validate_by_alias: config.get_as(intern!(py, "validate_by_alias"))?,
+            validate_by_name: config.get_as(intern!(py, "validate_by_name"))?,
         }
         .into())
     }
@@ -156,6 +155,9 @@ impl Validator for ModelFieldsValidator {
         let mut fields_set_vec: Vec<Py<PyString>> = Vec::with_capacity(self.fields.len());
         let mut fields_set_count: usize = 0;
 
+        let validate_by_alias = state.validate_by_alias_or(self.validate_by_alias);
+        let validate_by_name = state.validate_by_name_or(self.validate_by_name);
+
         // we only care about which keys have been used if we're iterating over the object for extra after
         // the first pass
         let mut used_keys: Option<AHashSet<&str>> =
@@ -169,7 +171,10 @@ impl Validator for ModelFieldsValidator {
             let state = &mut state.rebind_extra(|extra| extra.data = Some(model_dict.clone()));
 
             for field in &self.fields {
-                let op_key_value = match dict.get_item(&field.lookup_key) {
+                let lookup_key = field
+                    .lookup_key_collection
+                    .select(validate_by_alias, validate_by_name)?;
+                let op_key_value = match dict.get_item(lookup_key) {
                     Ok(v) => v,
                     Err(ValError::LineErrors(line_errors)) => {
                         for err in line_errors {
@@ -209,7 +214,7 @@ impl Validator for ModelFieldsValidator {
                     }
                     Ok(None) => {
                         // This means there was no default value
-                        errors.push(field.lookup_key.error(
+                        errors.push(lookup_key.error(
                             ErrorTypeDefaults::Missing,
                             input,
                             self.loc_by_alias,

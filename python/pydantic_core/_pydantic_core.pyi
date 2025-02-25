@@ -97,6 +97,8 @@ class SchemaValidator:
         context: Any | None = None,
         self_instance: Any | None = None,
         allow_partial: bool | Literal['off', 'on', 'trailing-strings'] = False,
+        by_alias: bool | None = None,
+        by_name: bool | None = None,
     ) -> Any:
         """
         Validate a Python object against the schema and return the validated object.
@@ -114,6 +116,8 @@ class SchemaValidator:
             allow_partial: Whether to allow partial validation; if `True` errors in the last element of sequences
                 and mappings are ignored.
                 `'trailing-strings'` means any final unfinished JSON string is included in the result.
+            by_alias: Whether to use the field's alias when validating against the provided input data.
+            by_name: Whether to use the field's name when validating against the provided input data.
 
         Raises:
             ValidationError: If validation fails.
@@ -130,6 +134,8 @@ class SchemaValidator:
         from_attributes: bool | None = None,
         context: Any | None = None,
         self_instance: Any | None = None,
+        by_alias: bool | None = None,
+        by_name: bool | None = None,
     ) -> bool:
         """
         Similar to [`validate_python()`][pydantic_core.SchemaValidator.validate_python] but returns a boolean.
@@ -148,6 +154,8 @@ class SchemaValidator:
         context: Any | None = None,
         self_instance: Any | None = None,
         allow_partial: bool | Literal['off', 'on', 'trailing-strings'] = False,
+        by_alias: bool | None = None,
+        by_name: bool | None = None,
     ) -> Any:
         """
         Validate JSON data directly against the schema and return the validated Python object.
@@ -168,6 +176,8 @@ class SchemaValidator:
             allow_partial: Whether to allow partial validation; if `True` incomplete JSON will be parsed successfully
                 and errors in the last element of sequences and mappings are ignored.
                 `'trailing-strings'` means any final unfinished JSON string is included in the result.
+            by_alias: Whether to use the field's alias when validating against the provided input data.
+            by_name: Whether to use the field's name when validating against the provided input data.
 
         Raises:
             ValidationError: If validation fails or if the JSON data is invalid.
@@ -183,6 +193,8 @@ class SchemaValidator:
         strict: bool | None = None,
         context: Any | None = None,
         allow_partial: bool | Literal['off', 'on', 'trailing-strings'] = False,
+        by_alias: bool | None = None,
+        by_name: bool | None = None,
     ) -> Any:
         """
         Validate a string against the schema and return the validated Python object.
@@ -199,6 +211,8 @@ class SchemaValidator:
             allow_partial: Whether to allow partial validation; if `True` errors in the last element of sequences
                 and mappings are ignored.
                 `'trailing-strings'` means any final unfinished JSON string is included in the result.
+            by_alias: Whether to use the field's alias when validating against the provided input data.
+            by_name: Whether to use the field's name when validating against the provided input data.
 
         Raises:
             ValidationError: If validation fails or if the JSON data is invalid.
@@ -216,6 +230,8 @@ class SchemaValidator:
         strict: bool | None = None,
         from_attributes: bool | None = None,
         context: Any | None = None,
+        by_alias: bool | None = None,
+        by_name: bool | None = None,
     ) -> dict[str, Any] | tuple[dict[str, Any], dict[str, Any] | None, set[str]]:
         """
         Validate an assignment to a field on a model.
@@ -230,6 +246,8 @@ class SchemaValidator:
                 If `None`, the value of [`CoreConfig.from_attributes`][pydantic_core.core_schema.CoreConfig] is used.
             context: The context to use for validation, this is passed to functional validators as
                 [`info.context`][pydantic_core.core_schema.ValidationInfo.context].
+            by_alias: Whether to use the field's alias when validating against the provided input data.
+            by_name: Whether to use the field's name when validating against the provided input data.
 
         Raises:
             ValidationError: If validation fails.
@@ -283,7 +301,7 @@ class SchemaSerializer:
         mode: str | None = None,
         include: _IncEx | None = None,
         exclude: _IncEx | None = None,
-        by_alias: bool = True,
+        by_alias: bool | None = None,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
@@ -329,7 +347,7 @@ class SchemaSerializer:
         indent: int | None = None,
         include: _IncEx | None = None,
         exclude: _IncEx | None = None,
-        by_alias: bool = True,
+        by_alias: bool | None = None,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
@@ -374,7 +392,7 @@ def to_json(
     indent: int | None = None,
     include: _IncEx | None = None,
     exclude: _IncEx | None = None,
-    by_alias: bool = True,
+    by_alias: bool | None = None,
     exclude_none: bool = False,
     round_trip: bool = False,
     timedelta_mode: Literal['iso8601', 'float'] = 'iso8601',
@@ -450,7 +468,7 @@ def to_jsonable_python(
     *,
     include: _IncEx | None = None,
     exclude: _IncEx | None = None,
-    by_alias: bool = True,
+    by_alias: bool | None = None,
     exclude_none: bool = False,
     round_trip: bool = False,
     timedelta_mode: Literal['iso8601', 'float'] = 'iso8601',

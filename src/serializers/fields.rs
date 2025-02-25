@@ -29,6 +29,7 @@ pub(super) struct SerField {
     // None serializer means exclude
     pub serializer: Option<CombinedSerializer>,
     pub required: bool,
+    pub serialize_by_alias: Option<bool>,
 }
 
 impl_py_gc_traverse!(SerField { serializer });
@@ -40,6 +41,7 @@ impl SerField {
         alias: Option<String>,
         serializer: Option<CombinedSerializer>,
         required: bool,
+        serialize_by_alias: Option<bool>,
     ) -> Self {
         let alias_py = alias.as_ref().map(|alias| PyString::new(py, alias.as_str()).into());
         Self {
@@ -48,11 +50,12 @@ impl SerField {
             alias_py,
             serializer,
             required,
+            serialize_by_alias,
         }
     }
 
     pub fn get_key_py<'py>(&self, py: Python<'py>, extra: &Extra) -> &Bound<'py, PyAny> {
-        if extra.by_alias {
+        if extra.serialize_by_alias_or(self.serialize_by_alias) {
             if let Some(ref alias_py) = self.alias_py {
                 return alias_py.bind(py);
             }
@@ -61,7 +64,7 @@ impl SerField {
     }
 
     pub fn get_key_json<'a>(&'a self, key_str: &'a str, extra: &Extra) -> Cow<'a, str> {
-        if extra.by_alias {
+        if extra.serialize_by_alias_or(self.serialize_by_alias) {
             if let Some(ref alias) = self.alias {
                 return Cow::Borrowed(alias.as_str());
             }

@@ -344,7 +344,7 @@ impl ValidationError {
         let extra = state.extra(
             py,
             &SerMode::Json,
-            true,
+            None,
             false,
             false,
             true,

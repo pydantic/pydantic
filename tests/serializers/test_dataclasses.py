@@ -84,9 +84,9 @@ def test_serialization_alias():
         ['a', 'b'],
     )
     s = SchemaSerializer(schema)
-    assert s.to_python(Foo(a='hello', b=b'more')) == IsStrictDict(a='hello', BAR=b'more')
-    assert s.to_python(Foo(a='hello', b=b'more'), mode='json') == IsStrictDict(a='hello', BAR='more')
-    j = s.to_json(Foo(a='hello', b=b'more'))
+    assert s.to_python(Foo(a='hello', b=b'more'), by_alias=True) == IsStrictDict(a='hello', BAR=b'more')
+    assert s.to_python(Foo(a='hello', b=b'more'), mode='json', by_alias=True) == IsStrictDict(a='hello', BAR='more')
+    j = s.to_json(Foo(a='hello', b=b'more'), by_alias=True)
 
     if on_pypy:
         assert json.loads(j) == {'a': 'hello', 'BAR': 'more'}
@@ -235,3 +235,46 @@ def test_dataclass_initvar_not_required_on_union_ser() -> None:
     s = SchemaSerializer(schema)
     assert s.to_python(Foo(x=1), warnings='error') == {'x': 1}
     assert s.to_python(Foo(x=1, init_var=2), warnings='error') == {'x': 1}
+
+
+@pytest.mark.parametrize(
+    'config,runtime,expected',
+    [
+        (True, True, {'my_alias': 'hello'}),
+        (True, False, {'my_field': 'hello'}),
+        (True, None, {'my_alias': 'hello'}),
+        (False, True, {'my_alias': 'hello'}),
+        (False, False, {'my_field': 'hello'}),
+        (False, None, {'my_field': 'hello'}),
+        (None, True, {'my_alias': 'hello'}),
+        (None, False, {'my_field': 'hello'}),
+        (None, None, {'my_field': 'hello'}),
+    ],
+)
+def test_by_alias_and_name_config_interaction(config, runtime, expected) -> None:
+    """This test reflects the priority that applies for config vs runtime serialization alias configuration.
+
+    If the runtime value (by_alias) is set, that value is used.
+    If the runtime value is unset, the config value (serialize_by_alias) is used.
+    If neither are set, the default, False, is used.
+    """
+
+    @dataclasses.dataclass
+    class Foo:
+        my_field: str
+
+    schema = core_schema.dataclass_schema(
+        Foo,
+        core_schema.dataclass_args_schema(
+            'Foo',
+            [
+                core_schema.dataclass_field(
+                    name='my_field', schema=core_schema.str_schema(), serialization_alias='my_alias'
+                ),
+            ],
+        ),
+        ['my_field'],
+        config=core_schema.CoreConfig(serialize_by_alias=config or False),
+    )
+    s = SchemaSerializer(schema)
+    assert s.to_python(Foo(my_field='hello'), by_alias=runtime) == expected

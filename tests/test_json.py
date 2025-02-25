@@ -282,9 +282,9 @@ def test_to_jsonable_python_schema_serializer():
     Foobar.__pydantic_serializer__ = s
 
     instance = Foobar(my_foo=1, my_inners=[Foobar(my_foo=2, my_inners=[])])
-    assert to_jsonable_python(instance) == {'myFoo': 1, 'myInners': [{'myFoo': 2, 'myInners': []}]}
+    assert to_jsonable_python(instance, by_alias=True) == {'myFoo': 1, 'myInners': [{'myFoo': 2, 'myInners': []}]}
     assert to_jsonable_python(instance, by_alias=False) == {'my_foo': 1, 'my_inners': [{'my_foo': 2, 'my_inners': []}]}
-    assert to_json(instance) == b'{"myFoo":1,"myInners":[{"myFoo":2,"myInners":[]}]}'
+    assert to_json(instance, by_alias=True) == b'{"myFoo":1,"myInners":[{"myFoo":2,"myInners":[]}]}'
     assert to_json(instance, by_alias=False) == b'{"my_foo":1,"my_inners":[{"my_foo":2,"my_inners":[]}]}'
 
 

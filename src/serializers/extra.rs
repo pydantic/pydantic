@@ -84,7 +84,7 @@ impl SerializationState {
         &'py self,
         py: Python<'py>,
         mode: &'py SerMode,
-        by_alias: bool,
+        by_alias: Option<bool>,
         exclude_none: bool,
         round_trip: bool,
         serialize_unknown: bool,
@@ -122,7 +122,7 @@ pub(crate) struct Extra<'a> {
     pub mode: &'a SerMode,
     pub ob_type_lookup: &'a ObTypeLookup,
     pub warnings: &'a CollectWarnings,
-    pub by_alias: bool,
+    pub by_alias: Option<bool>,
     pub exclude_unset: bool,
     pub exclude_defaults: bool,
     pub exclude_none: bool,
@@ -147,7 +147,7 @@ impl<'a> Extra<'a> {
     pub fn new(
         py: Python<'a>,
         mode: &'a SerMode,
-        by_alias: bool,
+        by_alias: Option<bool>,
         warnings: &'a CollectWarnings,
         exclude_unset: bool,
         exclude_defaults: bool,
@@ -204,6 +204,10 @@ impl<'a> Extra<'a> {
     pub(crate) fn model_type_name(&self) -> Option<Bound<'a, PyString>> {
         self.model.and_then(|model| model.get_type().name().ok())
     }
+
+    pub fn serialize_by_alias_or(&self, serialize_by_alias: Option<bool>) -> bool {
+        self.by_alias.or(serialize_by_alias).unwrap_or(false)
+    }
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -228,7 +232,7 @@ impl SerCheck {
 pub(crate) struct ExtraOwned {
     mode: SerMode,
     warnings: CollectWarnings,
-    by_alias: bool,
+    by_alias: Option<bool>,
     exclude_unset: bool,
     exclude_defaults: bool,
     exclude_none: bool,

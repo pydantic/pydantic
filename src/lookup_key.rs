@@ -577,3 +577,47 @@ fn py_get_attrs<'py>(obj: &Bound<'py, PyAny>, attr_name: &Py<PyString>) -> PyRes
         }
     }
 }
+
+#[derive(Debug)]
+#[allow(clippy::struct_field_names)]
+pub struct LookupKeyCollection {
+    by_name: LookupKey,
+    by_alias: Option<LookupKey>,
+    by_alias_then_name: Option<LookupKey>,
+}
+
+impl LookupKeyCollection {
+    pub fn new(py: Python, validation_alias: Option<Bound<'_, PyAny>>, field_name: &str) -> PyResult<Self> {
+        let by_name = LookupKey::from_string(py, field_name);
+
+        if let Some(va) = validation_alias {
+            let by_alias = Some(LookupKey::from_py(py, &va, None)?);
+            let by_alias_then_name = Some(LookupKey::from_py(py, &va, Some(field_name))?);
+            Ok(Self {
+                by_name,
+                by_alias,
+                by_alias_then_name,
+            })
+        } else {
+            Ok(Self {
+                by_name,
+                by_alias: None,
+                by_alias_then_name: None,
+            })
+        }
+    }
+
+    pub fn select(&self, validate_by_alias: bool, validate_by_name: bool) -> PyResult<&LookupKey> {
+        let lookup_key_selection = match (validate_by_alias, validate_by_name) {
+            (true, true) => self.by_alias_then_name.as_ref().unwrap_or(&self.by_name),
+            (true, false) => self.by_alias.as_ref().unwrap_or(&self.by_name),
+            (false, true) => &self.by_name,
+            (false, false) => {
+                // Note: we shouldn't hit this branch much, as this is enforced in `pydantic` with a `PydanticUserError`
+                // at config creation time / validation function call time.
+                return py_schema_err!("`validate_by_name` and `validate_by_alias` cannot both be set to `False`.");
+            }
+        };
+        Ok(lookup_key_selection)
+    }
+}
