@@ -170,7 +170,10 @@ class ConfigDict(TypedDict, total=False):
 
     !!! warning
         `populate_by_name` usage is not recommended in v2.11+ and will be deprecated in v3.
-         Instead, you should use the [`validate_by_name`][pydantic.config.ConfigDict.validate_by_name] configuration setting.
+        Instead, you should use the [`validate_by_name`][pydantic.config.ConfigDict.validate_by_name] configuration setting.
+
+        When `validate_by_name=True` and `validate_by_alias=True`, this is strictly equivalent to the
+        previous behavior of `populate_by_name=True`.
 
         In v2.11, we also introduced a [`validate_by_alias`][pydantic.config.ConfigDict.validate_by_alias] setting that introduces more fine grained
         control for validation behavior.
@@ -1047,28 +1050,24 @@ class ConfigDict(TypedDict, total=False):
     Here's an example of disabling validation by alias:
 
     ```py
-    from datetime import datetime
-
     from pydantic import BaseModel, ConfigDict, Field
 
     class User(BaseModel):
         model_config = ConfigDict(validate_by_name=True, validate_by_alias=False)
 
-        date_of_birth: datetime = Field(alias='DOB')  # (1)!
-        name: str
+        my_field: str = Field(validation_alias='my_alias')  # (1)!
 
-    user = User(date_of_birth='2022-01-01', name='John Doe')  # (2)!
-    print(user)
-    #> date_of_birth=datetime.datetime(2022, 1, 1, 0, 0) name='John Doe'
+    m = Model(my_field='foo')  # (2)!
+    print(m)
+    #> my_field='foo'
     ```
 
-    1. The field `'date_of_birth'` has an alias `'DOB'`.
-    2. The model can only be populated by the attribute name `'date_of_birth'`.
+    1. The field `'my_field'` has an alias `'my_alias'`.
+    2. The model can only be populated by the attribute name `'my_field'`.
 
     !!! warning
         You cannot set both `validate_by_alias` and `validate_by_name` to `False`.
-        This would make it impossible to populate an attribute. A [`PydanticUserError`][pydantic.errors.PydanticUserError]
-        will be raised if you try to do this.
+        This would make it impossible to populate an attribute.
 
         See [usage errors](../errors/usage_errors.md#validate-by-alias-and-name-false) for an example.
     """
@@ -1086,33 +1085,29 @@ class ConfigDict(TypedDict, total=False):
         to empower users with more fine grained validation behavior control.
 
     ```python
-    from datetime import datetime
-
     from pydantic import BaseModel, ConfigDict, Field
 
     class User(BaseModel):
         model_config = ConfigDict(validate_by_name=True, validate_by_alias=True)
 
-        date_of_birth: datetime = Field(alias='DOB')  # (1)!
-        name: str
+        my_field: str = Field(validation_alias='my_alias')  # (1)!
 
-    user = User(DOB='2022-01-01', name='John Doe')  # (2)!
-    print(user)
-    #> date_of_birth=datetime.datetime(2022, 1, 1, 0, 0) name='John Doe'
+    m = Model(my_alias='foo')  # (2)!
+    print(m)
+    #> my_field='foo'
 
-    user = User(date_of_birth='2022-01-01', name='John Doe')  # (3)!
-    print(user)
-    #> date_of_birth=datetime.datetime(2022, 1, 1, 0, 0) name='John Doe'
+    m = Model(my_field='foo')  # (3)!
+    print(m)
+    #> my_field='foo'
     ```
 
-    1. The field `'date_of_birth'` has an alias `'DOB'`.
-    2. The model is populated by the alias `'DOB'`.
-    3. The model is populated by the attribute name `'date_of_birth'`.
+    1. The field `'my_field'` has an alias `'my_alias'`.
+    2. The model is populated by the alias `'my_alias'`.
+    3. The model is populated by the attribute name `'my_field'`.
 
     !!! warning
         You cannot set both `validate_by_alias` and `validate_by_name` to `False`.
-        This would make it impossible to populate an attribute. A [`PydanticUserError`][pydantic.errors.PydanticUserError]
-        will be raised if you try to do this.
+        This would make it impossible to populate an attribute.
 
         This also means you can't set `validate_by_alias` to `False` and leave `validate_by_name` unset,
         as `validate_by_name` defaults to `False`.
@@ -1127,27 +1122,23 @@ class ConfigDict(TypedDict, total=False):
     Note: In v2.11, `serialize_by_alias` was introduced to address the
     [popular request](https://github.com/pydantic/pydantic/issues/8379)
     for consistency with alias behavior for validation and serialization settings.
-
-    The defaults are inconsistent in V2 (aliases are used by default for validation,
-    but not for serialization), and we anticipate changing this in V3. However, as a patch for now,
-    we've introduced this configuration setting to allow users to control this behavior.
+    In v3, the default value is expected to change to `True` for consistency with the validation default.
 
     ```python
     from pydantic import BaseModel, ConfigDict, Field
 
-    class User(BaseModel):
+    class Model(BaseModel):
         model_config = ConfigDict(serialize_by_alias=True)
 
-        date_of_birth: str = Field(alias='DOB')  # (1)!
-        name: str
+        my_field: str = Field(serialization_alias='my_alias')  # (1)!
 
-    user = User(DOB='2022-01-01', name='John Doe')
-    print(user.model_dump())  # (2)!
-    #> {'DOB': '2022-01-01', 'name': 'John Doe'}
+    m = Model(my_field='foo')
+    print(m.model_dump())  # (2)!
+    #> {'my_alias': 'foo'}
     ```
 
-    1. The field `'date_of_birth'` has an alias `'DOB'`.
-    2. The model is serialized using the alias `'DOB'` for the `'date_of_birth'` attribute.
+    1. The field `'my_field'` has an alias `'my_alias'`.
+    2. The model is serialized using the alias `'my_alias'` for the `'my_field'` attribute.
     """
 
 
