@@ -577,6 +577,7 @@ jobs:
       - test-semantic-kernel
       - test-langchain
     if: |
+      always() &&
       github.repository == 'pydantic/pydantic' &&
       github.event_name == 'schedule' &&
       (
