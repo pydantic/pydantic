@@ -321,14 +321,12 @@ on a per-call basis. If you would like to control this behavior on a model level
 When validating data, you can enable population of attributes by attribute name, alias, or both.
 
 The `by_alias` and `by_name` flags are available on the [`model_validate()`][pydantic.main.BaseModel.model_validate],
-[`model_validate_json()`][pydantic.main.BaseModel.model_validate_json], and [`model_validate_strings()`][pydantic.main.BaseModel.model_validate_strings] methods.
+[`model_validate_json()`][pydantic.main.BaseModel.model_validate_json], and [`model_validate_strings()`][pydantic.main.BaseModel.model_validate_strings] methods, as well as the [`TypeAdapter`][pydantic.type_adapter.TypeAdapter] validation methods.
 
 By default:
 
 * `by_alias` is `True`
 * `by_name` is `False`
-
-These settings are also available on [`TypeAdapter`][pydantic.type_adapter.TypeAdapter] validation methods.
 
 === "`by_alias`"
 
@@ -408,8 +406,6 @@ which is available on the [`model_dump()`][pydantic.main.BaseModel.model_dump] a
 the [`TypeAdapter`][pydantic.type_adapter.TypeAdapter] ones.
 
 By default, `by_alias` is `False`.
-
-These settings are also available on [`TypeAdapter`][pydantic.type_adapter.TypeAdapter] serialization methods.
 
 ```py
 from pydantic import BaseModel, Field
