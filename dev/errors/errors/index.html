@@ -110,7 +110,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#custom-errors" class="md-skip">
+        <a href="#error-messages" class="md-skip">
           Skip to content
         </a>
       
@@ -2442,15 +2442,6 @@ to help you monitor and understand your
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#custom-errors" class="md-nav__link">
-    <span class="md-ellipsis">
-      Custom Errors
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#error-messages" class="md-nav__link">
     <span class="md-ellipsis">
       Error messages
@@ -2973,15 +2964,6 @@ to help you monitor and understand your
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#custom-errors" class="md-nav__link">
-    <span class="md-ellipsis">
-      Custom Errors
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#error-messages" class="md-nav__link">
     <span class="md-ellipsis">
       Error messages
@@ -3029,12 +3011,13 @@ to help you monitor and understand your
 <p>Pydantic will raise a <a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.ValidationError"><code>ValidationError</code></a> whenever it finds an error in the data it's validating.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Validation code should not raise <code>ValidationError</code> itself, but rather raise a <code>ValueError</code> or
-<code>AssertionError</code> (or subclass thereof) which will be caught and used to populate
-<code>ValidationError</code>.</p>
+<p>Validation code should not raise the <a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.ValidationError"><code>ValidationError</code></a> itself,
+but rather raise a <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#ValueError"><code>ValueError</code></a> or a <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#AssertionError"><code>AssertionError</code></a> (or subclass thereof) which will
+be caught and used to populate the final <a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.ValidationError"><code>ValidationError</code></a>.</p>
+<p>For more details, refer to the <a href="../../concepts/validators/#raising-validation-errors">dedicated section</a>
+of the validators documentation.</p>
 </div>
-<p>One exception will be raised regardless of the number of errors found, that <code>ValidationError</code> will
-contain information about all the errors and how they happened.</p>
+<p>That <a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.ValidationError"><code>ValidationError</code></a> will contain information about all the errors and how they happened.</p>
 <p>You can access these errors in several ways:</p>
 <table>
 <thead>
@@ -3045,16 +3028,16 @@ contain information about all the errors and how they happened.</p>
 </thead>
 <tbody>
 <tr>
-<td><code>e.errors()</code></td>
-<td>Returns a list of errors found in the input data.</td>
+<td><a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.ValidationError.errors"><code>errors()</code></a></td>
+<td>Returns a list of <a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.ErrorDetails"><code>ErrorDetails</code></a> errors found in the input data.</td>
 </tr>
 <tr>
-<td><code>e.error_count()</code></td>
-<td>Returns the number of errors found in <code>errors</code>.</td>
+<td><a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.ValidationError.error_count"><code>error_count()</code></a></td>
+<td>Returns the number of errors.</td>
 </tr>
 <tr>
-<td><code>e.json()</code></td>
-<td>Returns a JSON representation of <code>errors</code>.</td>
+<td><a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.ValidationError.json"><code>json()</code></a></td>
+<td>Returns a JSON representation of the list errors.</td>
 </tr>
 <tr>
 <td><code>str(e)</code></td>
@@ -3062,7 +3045,7 @@ contain information about all the errors and how they happened.</p>
 </tr>
 </tbody>
 </table>
-<p>Each error object contains:</p>
+<p>The <a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.ErrorDetails"><code>ErrorDetails</code></a> object is a dictionary. It contains the following:</p>
 <table>
 <thead>
 <tr>
@@ -3072,35 +3055,35 @@ contain information about all the errors and how they happened.</p>
 </thead>
 <tbody>
 <tr>
-<td><code>ctx</code></td>
+<td><a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.ErrorDetails.ctx"><code>ctx</code></a></td>
 <td>An optional object which contains values required to render the error message.</td>
 </tr>
 <tr>
-<td><code>input</code></td>
+<td><a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.ErrorDetails.input"><code>input</code></a></td>
 <td>The input provided for validation.</td>
 </tr>
 <tr>
-<td><code>loc</code></td>
+<td><a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.ErrorDetails.loc"><code>loc</code></a></td>
 <td>The error's location as a list.</td>
 </tr>
 <tr>
-<td><code>msg</code></td>
+<td><a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.ErrorDetails.msg"><code>msg</code></a></td>
 <td>A human-readable explanation of the error.</td>
 </tr>
 <tr>
-<td><code>type</code></td>
+<td><a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.ErrorDetails.type"><code>type</code></a></td>
 <td>A computer-readable identifier of the error type.</td>
 </tr>
 <tr>
-<td><code>url</code></td>
-<td>The URL to further information about the error.</td>
+<td><a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.ErrorDetails.url"><code>url</code></a></td>
+<td>The documentation URL giving information about the error.</td>
 </tr>
 </tbody>
 </table>
-<p>The first item in the <code>loc</code> list will be the field where the error occurred, and if the field is a
+<p>The first item in the <a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.ErrorDetails.loc"><code>loc</code></a> list will be the field where the error occurred, and if the field is a
 <a href="../../concepts/models/#nested-models">sub-model</a>, subsequent items will be present to indicate the nested location of the error.</p>
 <p>As a demonstration:</p>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">conint</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">field_validator</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Location</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -3110,18 +3093,25 @@ contain information about all the errors and how they happened.</p>
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">is_required</span><span class="p">:</span> <span class="nb">float</span>
-    <span class="n">gt_int</span><span class="p">:</span> <span class="n">conint</span><span class="p">(</span><span class="n">gt</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
-    <span class="n">list_of_ints</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">a_float</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">recursive_model</span><span class="p">:</span> <span class="n">Location</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">gt_int</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">gt</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
+    <span class="n">list_of_ints</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+    <span class="n">a_float</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">recursive_model</span><span class="p">:</span> <span class="n">Location</span>
+
+    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;a_float&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;after&#39;</span><span class="p">)</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">validate_float</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="o">&gt;</span> <span class="mf">2.0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Invalid float value&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">value</span>
 
 
-<span class="n">data</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
-    <span class="n">list_of_ints</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;bad&#39;</span><span class="p">],</span>
-    <span class="n">a_float</span><span class="o">=</span><span class="s1">&#39;not a float&#39;</span><span class="p">,</span>
-    <span class="n">recursive_model</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;lat&#39;</span><span class="p">:</span> <span class="mf">4.2</span><span class="p">,</span> <span class="s1">&#39;lng&#39;</span><span class="p">:</span> <span class="s1">&#39;New York&#39;</span><span class="p">},</span>
-    <span class="n">gt_int</span><span class="o">=</span><span class="mi">21</span><span class="p">,</span>
-<span class="p">)</span>
+<span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;list_of_ints&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;bad&#39;</span><span class="p">],</span>
+    <span class="s1">&#39;a_float&#39;</span><span class="p">:</span> <span class="mf">3.0</span><span class="p">,</span>
+    <span class="s1">&#39;recursive_model&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;lat&#39;</span><span class="p">:</span> <span class="mf">4.2</span><span class="p">,</span> <span class="s1">&#39;lng&#39;</span><span class="p">:</span> <span class="s1">&#39;New York&#39;</span><span class="p">},</span>
+    <span class="s1">&#39;gt_int&#39;</span><span class="p">:</span> <span class="mi">21</span><span class="p">,</span>
+<span class="p">}</span>
 
 <span class="k">try</span><span class="p">:</span>
     <span class="n">Model</span><span class="p">(</span><span class="o">**</span><span class="n">data</span><span class="p">)</span>
@@ -3136,7 +3126,7 @@ contain information about all the errors and how they happened.</p>
 <span class="sd">    list_of_ints.2</span>
 <span class="sd">      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value=&#39;bad&#39;, input_type=str]</span>
 <span class="sd">    a_float</span>
-<span class="sd">      Input should be a valid number, unable to parse string as a number [type=float_parsing, input_value=&#39;not a float&#39;, input_type=str]</span>
+<span class="sd">      Value error, Invalid float value [type=value_error, input_value=3.0, input_type=float]</span>
 <span class="sd">    recursive_model.lng</span>
 <span class="sd">      Input should be a valid number, unable to parse string as a number [type=float_parsing, input_value=&#39;New York&#39;, input_type=str]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -3153,7 +3143,7 @@ contain information about all the errors and how they happened.</p>
 <span class="sd">            &#39;msg&#39;: &#39;Field required&#39;,</span>
 <span class="sd">            &#39;input&#39;: {</span>
 <span class="sd">                &#39;list_of_ints&#39;: [&#39;1&#39;, 2, &#39;bad&#39;],</span>
-<span class="sd">                &#39;a_float&#39;: &#39;not a float&#39;,</span>
+<span class="sd">                &#39;a_float&#39;: 3.0,</span>
 <span class="sd">                &#39;recursive_model&#39;: {&#39;lat&#39;: 4.2, &#39;lng&#39;: &#39;New York&#39;},</span>
 <span class="sd">                &#39;gt_int&#39;: 21,</span>
 <span class="sd">            },</span>
@@ -3175,11 +3165,12 @@ contain information about all the errors and how they happened.</p>
 <span class="sd">            &#39;url&#39;: &#39;https://errors.pydantic.dev/2/v/int_parsing&#39;,</span>
 <span class="sd">        },</span>
 <span class="sd">        {</span>
-<span class="sd">            &#39;type&#39;: &#39;float_parsing&#39;,</span>
+<span class="sd">            &#39;type&#39;: &#39;value_error&#39;,</span>
 <span class="sd">            &#39;loc&#39;: (&#39;a_float&#39;,),</span>
-<span class="sd">            &#39;msg&#39;: &#39;Input should be a valid number, unable to parse string as a number&#39;,</span>
-<span class="sd">            &#39;input&#39;: &#39;not a float&#39;,</span>
-<span class="sd">            &#39;url&#39;: &#39;https://errors.pydantic.dev/2/v/float_parsing&#39;,</span>
+<span class="sd">            &#39;msg&#39;: &#39;Value error, Invalid float value&#39;,</span>
+<span class="sd">            &#39;input&#39;: 3.0,</span>
+<span class="sd">            &#39;ctx&#39;: {&#39;error&#39;: ValueError(&#39;Invalid float value&#39;)},</span>
+<span class="sd">            &#39;url&#39;: &#39;https://errors.pydantic.dev/2/v/value_error&#39;,</span>
 <span class="sd">        },</span>
 <span class="sd">        {</span>
 <span class="sd">            &#39;type&#39;: &#39;float_parsing&#39;,</span>
@@ -3191,82 +3182,11 @@ contain information about all the errors and how they happened.</p>
 <span class="sd">    ]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
-<h3 id="custom-errors">Custom Errors<a class="headerlink" href="#custom-errors" title="Permanent link">&para;</a></h3>
-<p>In your custom data types or validators you should use <code>ValueError</code> or <code>AssertionError</code> to raise errors.</p>
-<p>See <a href="../../concepts/validators/">validators</a> for more details on use of the <code>@validator</code> decorator.</p>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">field_validator</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">foo</span><span class="p">:</span> <span class="nb">str</span>
-
-    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;foo&#39;</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">value_must_equal_bar</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">v</span> <span class="o">!=</span> <span class="s1">&#39;bar&#39;</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;value must be &quot;bar&quot;&#39;</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">v</span>
-
-
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">Model</span><span class="p">(</span><span class="n">foo</span><span class="o">=</span><span class="s1">&#39;ber&#39;</span><span class="p">)</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    1 validation error for Model</span>
-<span class="sd">    foo</span>
-<span class="sd">      Value error, value must be &quot;bar&quot; [type=value_error, input_value=&#39;ber&#39;, input_type=str]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">errors</span><span class="p">())</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    [</span>
-<span class="sd">        {</span>
-<span class="sd">            &#39;type&#39;: &#39;value_error&#39;,</span>
-<span class="sd">            &#39;loc&#39;: (&#39;foo&#39;,),</span>
-<span class="sd">            &#39;msg&#39;: &#39;Value error, value must be &quot;bar&quot;&#39;,</span>
-<span class="sd">            &#39;input&#39;: &#39;ber&#39;,</span>
-<span class="sd">            &#39;ctx&#39;: {&#39;error&#39;: ValueError(&#39;value must be &quot;bar&quot;&#39;)},</span>
-<span class="sd">            &#39;url&#39;: &#39;https://errors.pydantic.dev/2/v/value_error&#39;,</span>
-<span class="sd">        }</span>
-<span class="sd">    ]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-</code></pre></div>
-<p>You can also use <a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.PydanticCustomError"><code>PydanticCustomError</code></a>, to fully control the error structure:</p>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_core</span><span class="w"> </span><span class="kn">import</span> <span class="n">PydanticCustomError</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">field_validator</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">foo</span><span class="p">:</span> <span class="nb">str</span>
-
-    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;foo&#39;</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">value_must_equal_bar</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">v</span> <span class="o">!=</span> <span class="s1">&#39;bar&#39;</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">PydanticCustomError</span><span class="p">(</span>
-                <span class="s1">&#39;not_a_bar&#39;</span><span class="p">,</span>
-                <span class="s1">&#39;value is not &quot;bar&quot;, got &quot;</span><span class="si">{wrong_value}</span><span class="s1">&quot;&#39;</span><span class="p">,</span>
-                <span class="nb">dict</span><span class="p">(</span><span class="n">wrong_value</span><span class="o">=</span><span class="n">v</span><span class="p">),</span>
-            <span class="p">)</span>
-        <span class="k">return</span> <span class="n">v</span>
-
-
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">Model</span><span class="p">(</span><span class="n">foo</span><span class="o">=</span><span class="s1">&#39;ber&#39;</span><span class="p">)</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    1 validation error for Model</span>
-<span class="sd">    foo</span>
-<span class="sd">      value is not &quot;bar&quot;, got &quot;ber&quot; [type=not_a_bar, input_value=&#39;ber&#39;, input_type=str]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-</code></pre></div>
 <h2 id="error-messages">Error messages<a class="headerlink" href="#error-messages" title="Permanent link">&para;</a></h2>
-<p>Pydantic attempts to provide useful default error messages for validation and usage errors.</p>
-<p>We've provided documentation for default error codes in the following sections:</p>
+<p>Pydantic attempts to provide useful default error messages for validation and usage errors, which can be found here:</p>
 <ul>
-<li><a href="../validation_errors/">Validation Errors</a></li>
-<li><a href="../usage_errors/">Usage Errors</a></li>
+<li><a href="../validation_errors/">Validation Errors</a>: Errors that happen during data validation.</li>
+<li><a href="../usage_errors/">Usage Errors</a>: Errors that happen when using Pydantic.</li>
 </ul>
 <h3 id="customize-error-messages">Customize error messages<a class="headerlink" href="#customize-error-messages" title="Permanent link">&para;</a></h3>
 <p>You can customize error messages by creating a custom error handler.</p>
@@ -3537,7 +3457,7 @@ dictionary of translations.</p>
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.11.0a2", "pydantic-core==2.29.0", "pydantic-extra-types==2.10.0"]
+    window.mkdocs_run_deps = ["pydantic==2.11.0a2", "pydantic-core==2.30.0", "pydantic-extra-types==2.10.0"]
     </script>
 
               </article>

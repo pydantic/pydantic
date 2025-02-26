@@ -3354,7 +3354,7 @@ that the version support policy is subject to change at discretion of contributo
 <ul>
 <li>Any required fields that don't have dynamically-determined aliases will be included as required
   keyword arguments.</li>
-<li>If the <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.populate_by_name"><code>populate_by_name</code></a> model configuration value is set to
+<li>If the <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.validate_by_name"><code>validate_by_name</code></a> model configuration value is set to
   <code>True</code>, the generated signature will use the field names rather than aliases.</li>
 <li>The <a href="#init_forbid_extra"><code>init_forbid_extra</code></a> and <a href="#init_typed"><code>init_typed</code></a> plugin configuration
   values can further fine-tune the synthesized <code>__init__</code> method.</li>
@@ -3446,7 +3446,7 @@ unless <code>init_typed</code> is set or <a href="../../concepts/strict_mode/">s
 <code>init_forbid_extra</code> is set or the <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.extra"><code>extra</code></a> is set to <code>'forbid'</code>.</p>
 <h3 id="warn_required_dynamic_aliases"><code>warn_required_dynamic_aliases</code><a class="headerlink" href="#warn_required_dynamic_aliases" title="Permanent link">&para;</a></h3>
 <p>Whether to error when using a dynamically-determined alias or alias generator on a model with
-<a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.populate_by_name"><code>populate_by_name</code></a> set to <code>False</code>. If such aliases are
+<a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.validate_by_name"><code>validate_by_name</code></a> set to <code>False</code>. If such aliases are
 present, mypy cannot properly type check calls to <code>__init__</code>. In this case, it will default to
 treating all arguments as not required.</p>
 <div class="admonition note">
@@ -3515,7 +3515,7 @@ to enable both <code>init_forbid_extra</code> and <code>init_typed</code>.</p>
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.11.0a2", "pydantic-core==2.29.0", "pydantic-extra-types==2.10.0"]
+    window.mkdocs_run_deps = ["pydantic==2.11.0a2", "pydantic-core==2.30.0", "pydantic-extra-types==2.10.0"]
     </script>
 
               </article>

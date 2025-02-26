@@ -14082,15 +14082,15 @@ and returns both the produced defs_ref and the JSON schema that will refer to th
         <span class="n">default</span> <span class="o">=</span> <span class="p">(</span>
             <span class="n">dft</span>
             <span class="k">if</span> <span class="n">_type_has_config</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">dft</span><span class="p">))</span>
-            <span class="k">else</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">dft</span><span class="p">),</span> <span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">config_dict</span><span class="p">)</span><span class="o">.</span><span class="n">dump_python</span><span class="p">(</span><span class="n">dft</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;json&#39;</span><span class="p">)</span>
+            <span class="k">else</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">dft</span><span class="p">),</span> <span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">config_dict</span><span class="p">)</span><span class="o">.</span><span class="n">dump_python</span><span class="p">(</span>
+                <span class="n">dft</span><span class="p">,</span> <span class="n">by_alias</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">by_alias</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;json&#39;</span>
+            <span class="p">)</span>
         <span class="p">)</span>
     <span class="k">except</span> <span class="n">PydanticSchemaGenerationError</span><span class="p">:</span>
         <span class="k">raise</span> <span class="n">pydantic_core</span><span class="o">.</span><span class="n">PydanticSerializationError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Unable to encode default value </span><span class="si">{</span><span class="n">dft</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">pydantic_core</span><span class="o">.</span><span class="n">to_jsonable_python</span><span class="p">(</span>
-        <span class="n">default</span><span class="p">,</span>
-        <span class="n">timedelta_mode</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">ser_json_timedelta</span><span class="p">,</span>
-        <span class="n">bytes_mode</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">ser_json_bytes</span><span class="p">,</span>
+        <span class="n">default</span><span class="p">,</span> <span class="n">timedelta_mode</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">ser_json_timedelta</span><span class="p">,</span> <span class="n">bytes_mode</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">ser_json_bytes</span><span class="p">,</span> <span class="n">by_alias</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">by_alias</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -15309,7 +15309,7 @@ If <code>False</code>, fields will be serialized according to their attribute na
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.11.0a2", "pydantic-core==2.29.0", "pydantic-extra-types==2.10.0"]
+    window.mkdocs_run_deps = ["pydantic==2.11.0a2", "pydantic-core==2.30.0", "pydantic-extra-types==2.10.0"]
     </script>
 
               </article>

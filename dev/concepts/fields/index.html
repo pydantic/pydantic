@@ -3530,7 +3530,9 @@ and <code>serialization_alias</code> parameters, which will apply only in their 
 <p>We are using <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_dump"><code>model_dump()</code></a> to convert the model into a serializable format.</p>
 <p>Note that the <code>by_alias</code> keyword argument defaults to <code>False</code>, and must be specified explicitly to dump
 models using the field (serialization) aliases.</p>
-<p>When <code>by_alias=True</code>, the alias <code>'username'</code> is also used during serialization.</p>
+<p>You can also use <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.serialize_by_alias"><code>ConfigDict.serialize_by_alias</code></a> to
+configure this behavior at the model level.</p>
+<p>When <code>by_alias=True</code>, the alias <code>'username'</code> used during serialization.</p>
 </li>
 </ol>
 <p>If you want to use an alias <em>only</em> for validation, you can use the <code>validation_alias</code> parameter:</p>
@@ -3592,14 +3594,12 @@ of the actual field name to synthesize the <code>__init__</code> method:</p>
 <ol>
 <li>Accepted by type checkers.</li>
 </ol>
-<p>This means that when using the <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.populate_by_name"><code>populate_by_name</code></a> model
-setting (which allows both the field name and alias to be used during model validation), type checkers
-will error when the actual field name is used:</p>
+<p>This means that when using the <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.validate_by_name"><code>validate_by_name</code></a> model setting (which allows both the field name and alias to be used during model validation), type checkers will error when the actual field name is used:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">Field</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">populate_by_name</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">validate_by_name</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">alias</span><span class="o">=</span><span class="s1">&#39;username&#39;</span><span class="p">)</span>
 
@@ -3617,7 +3617,7 @@ can be used (which is only understood by Pydantic):</p>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">populate_by_name</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">validate_by_name</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">validate_by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="n">name</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">alias</span><span class="o">=</span><span class="s1">&#39;username&#39;</span><span class="p">)]</span>
 
@@ -4347,7 +4347,7 @@ are expensive to be computed (and thus, are cached if using <a class="autorefs a
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.11.0a2", "pydantic-core==2.29.0", "pydantic-extra-types==2.10.0"]
+    window.mkdocs_run_deps = ["pydantic==2.11.0a2", "pydantic-core==2.30.0", "pydantic-extra-types==2.10.0"]
     </script>
 
               </article>

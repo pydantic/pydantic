@@ -999,6 +999,87 @@ to help you monitor and understand your
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#alias-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Alias Configuration
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Alias Configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#configdict-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      ConfigDict Settings
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ConfigDict Settings">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Validation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#serialization" class="md-nav__link">
+    <span class="md-ellipsis">
+      Serialization
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#runtime-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      Runtime Settings
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Runtime Settings">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#validation_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Validation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#serialization_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Serialization
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -3071,6 +3152,87 @@ to help you monitor and understand your
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#alias-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Alias Configuration
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Alias Configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#configdict-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      ConfigDict Settings
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ConfigDict Settings">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Validation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#serialization" class="md-nav__link">
+    <span class="md-ellipsis">
+      Serialization
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#runtime-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      Runtime Settings
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Runtime Settings">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#validation_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Validation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#serialization_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Serialization
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -3275,6 +3437,219 @@ but you don't want to specify the validation and serialization aliases for each 
 </ul>
 <p>The same precedence applies to <code>validation_alias</code> and <code>serialization_alias</code>.
 See more about the different field aliases under <a href="../fields/#field-aliases">field aliases</a>.</p>
+<h2 id="alias-configuration">Alias Configuration<a class="headerlink" href="#alias-configuration" title="Permanent link">&para;</a></h2>
+<p>You can use <a href="../config/"><code>ConfigDict</code></a> settings or runtime validation/serialization
+settings to control whether or not aliases are used.</p>
+<h3 id="configdict-settings"><code>ConfigDict</code> Settings<a class="headerlink" href="#configdict-settings" title="Permanent link">&para;</a></h3>
+<p>You can use <a href="../config/">configuration settings</a> to control, at the model level,
+whether or not aliases are used for validation and serialization. If you would like to control
+this behavior for nested models/surpassing the config-model boundary, use <a href="#runtime-settings">runtime settings</a>.</p>
+<h4 id="validation">Validation<a class="headerlink" href="#validation" title="Permanent link">&para;</a></h4>
+<p>When validating data, you can enable population of attributes by attribute name, alias, or both.
+<strong>By default</strong>, Pydantic uses aliases for validation. Further configuration is available via:</p>
+<ul>
+<li><a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.validate_by_alias"><code>ConfigDict.validate_by_alias</code></a>: <code>True</code> by default</li>
+<li><a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.validate_by_name"><code>ConfigDict.validate_by_name</code></a>: <code>False</code> by default</li>
+</ul>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:3"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1"><code>validate_by_alias</code></label><label for="__tabbed_1_2"><code>validate_by_name</code></label><label for="__tabbed_1_3"><code>validate_by_alias</code> and <code>validate_by_name</code></label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">Field</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">my_field</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">validation_alias</span><span class="o">=</span><span class="s1">&#39;my_alias&#39;</span><span class="p">)</span>
+
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">validate_by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">validate_by_name</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">my_alias</span><span class="o">=</span><span class="s1">&#39;foo&#39;</span><span class="p">)))</span>  <span class="c1"># (1)!</span>
+<span class="c1">#&gt; Model(my_field=&#39;foo&#39;)</span>
+</code></pre></div>
+<ol>
+<li>The alias <code>my_alias</code> is used for validation.</li>
+</ol>
+</div>
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">Field</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">my_field</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">validation_alias</span><span class="o">=</span><span class="s1">&#39;my_alias&#39;</span><span class="p">)</span>
+
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">validate_by_alias</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">validate_by_name</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">my_field</span><span class="o">=</span><span class="s1">&#39;foo&#39;</span><span class="p">)))</span>  <span class="c1"># (1)!</span>
+<span class="c1">#&gt; Model(my_field=&#39;foo&#39;)</span>
+</code></pre></div>
+<ol>
+<li>the attribute identifier <code>my_field</code> is used for validation.</li>
+</ol>
+</div>
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">Field</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">my_field</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">validation_alias</span><span class="o">=</span><span class="s1">&#39;my_alias&#39;</span><span class="p">)</span>
+
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">validate_by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">validate_by_name</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">my_alias</span><span class="o">=</span><span class="s1">&#39;foo&#39;</span><span class="p">)))</span>  <span class="c1"># (1)!</span>
+<span class="c1">#&gt; Model(my_field=&#39;foo&#39;)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">my_field</span><span class="o">=</span><span class="s1">&#39;foo&#39;</span><span class="p">)))</span>  <span class="c1"># (2)!</span>
+<span class="c1">#&gt; Model(my_field=&#39;foo&#39;)</span>
+</code></pre></div>
+<ol>
+<li>The alias <code>my_alias</code> is used for validation.</li>
+<li>the attribute identifier <code>my_field</code> is used for validation.</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>You cannot set both <code>validate_by_alias</code> and <code>validate_by_name</code> to <code>False</code>.
+A <a href="../../errors/usage_errors/#validate-by-alias-and-name-false">user error</a> is raised in this case.</p>
+</div>
+<h4 id="serialization">Serialization<a class="headerlink" href="#serialization" title="Permanent link">&para;</a></h4>
+<p>When serializing data, you can enable serialization by alias, which is disabled by default.
+See the <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.serialize_by_alias"><code>ConfigDict.serialize_by_alias</code></a> API documentation
+for more details.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">Field</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">my_field</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">serialization_alias</span><span class="o">=</span><span class="s1">&#39;my_alias&#39;</span><span class="p">)</span>
+
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">serialize_by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+
+<span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">my_field</span><span class="o">=</span><span class="s1">&#39;foo&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>  <span class="c1"># (1)!</span>
+<span class="c1">#&gt; {&#39;my_alias&#39;: &#39;foo&#39;}</span>
+</code></pre></div>
+<ol>
+<li>The alias <code>my_alias</code> is used for serialization.</li>
+</ol>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The fact that serialization by alias is disabled by default is notably inconsistent with the default for
+validation (where aliases are used by default). We anticipate changing this default in V3.</p>
+</div>
+<h3 id="runtime-settings">Runtime Settings<a class="headerlink" href="#runtime-settings" title="Permanent link">&para;</a></h3>
+<p>You can use runtime alias flags to control alias use for validation and serialization
+on a per-call basis. If you would like to control this behavior on a model level, use
+<a href="#configdict-settings"><code>ConfigDict</code> settings</a>.</p>
+<h4 id="validation_1">Validation<a class="headerlink" href="#validation_1" title="Permanent link">&para;</a></h4>
+<p>When validating data, you can enable population of attributes by attribute name, alias, or both.</p>
+<p>The <code>by_alias</code> and <code>by_name</code> flags are available on the <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_validate"><code>model_validate()</code></a>,
+<a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_validate_json"><code>model_validate_json()</code></a>, and <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_validate_strings"><code>model_validate_strings()</code></a> methods, as well as the <a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic.type_adapter.TypeAdapter"><code>TypeAdapter</code></a> validation methods.</p>
+<p>By default:</p>
+<ul>
+<li><code>by_alias</code> is <code>True</code></li>
+<li><code>by_name</code> is <code>False</code></li>
+</ul>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:3"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><input id="__tabbed_2_3" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1"><code>by_alias</code></label><label for="__tabbed_2_2"><code>by_name</code></label><label for="__tabbed_2_3"><code>validate_by_alias</code> and <code>validate_by_name</code></label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">my_field</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">validation_alias</span><span class="o">=</span><span class="s1">&#39;my_alias&#39;</span><span class="p">)</span>
+
+
+<span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span>
+    <span class="p">{</span><span class="s1">&#39;my_alias&#39;</span><span class="p">:</span> <span class="s1">&#39;foo&#39;</span><span class="p">},</span>  <span class="c1"># (1)!</span>
+    <span class="n">by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">by_name</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">m</span><span class="p">))</span>
+<span class="c1">#&gt; Model(my_field=&#39;foo&#39;)</span>
+</code></pre></div>
+<ol>
+<li>The alias <code>my_alias</code> is used for validation.</li>
+</ol>
+</div>
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">my_field</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">validation_alias</span><span class="o">=</span><span class="s1">&#39;my_alias&#39;</span><span class="p">)</span>
+
+
+<span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span>
+    <span class="p">{</span><span class="s1">&#39;my_field&#39;</span><span class="p">:</span> <span class="s1">&#39;foo&#39;</span><span class="p">},</span> <span class="n">by_alias</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">by_name</span><span class="o">=</span><span class="kc">True</span>  <span class="c1"># (1)!</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">m</span><span class="p">))</span>
+<span class="c1">#&gt; Model(my_field=&#39;foo&#39;)</span>
+</code></pre></div>
+<ol>
+<li>The attribute name <code>my_field</code> is used for validation.</li>
+</ol>
+</div>
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">my_field</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">validation_alias</span><span class="o">=</span><span class="s1">&#39;my_alias&#39;</span><span class="p">)</span>
+
+
+<span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span>
+    <span class="p">{</span><span class="s1">&#39;my_alias&#39;</span><span class="p">:</span> <span class="s1">&#39;foo&#39;</span><span class="p">},</span> <span class="n">by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">by_name</span><span class="o">=</span><span class="kc">True</span>  <span class="c1"># (1)!</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">m</span><span class="p">))</span>
+<span class="c1">#&gt; Model(my_field=&#39;foo&#39;)</span>
+
+<span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span>
+    <span class="p">{</span><span class="s1">&#39;my_field&#39;</span><span class="p">:</span> <span class="s1">&#39;foo&#39;</span><span class="p">},</span> <span class="n">by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">by_name</span><span class="o">=</span><span class="kc">True</span>  <span class="c1"># (2)!</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">m</span><span class="p">))</span>
+<span class="c1">#&gt; Model(my_field=&#39;foo&#39;)</span>
+</code></pre></div>
+<ol>
+<li>The alias <code>my_alias</code> is used for validation.</li>
+<li>The attribute name <code>my_field</code> is used for validation.</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>You cannot set both <code>by_alias</code> and <code>by_name</code> to <code>False</code>.
+A <a href="../../errors/usage_errors/#validate-by-alias-and-name-false">user error</a> is raised in this case.</p>
+</div>
+<h4 id="serialization_1">Serialization<a class="headerlink" href="#serialization_1" title="Permanent link">&para;</a></h4>
+<p>When serializing data, you can enable serialization by alias via the <code>by_alias</code> flag
+which is available on the <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_dump"><code>model_dump()</code></a> and
+<a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_dump_json"><code>model_dump_json()</code></a> methods, as well as
+the <a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic.type_adapter.TypeAdapter"><code>TypeAdapter</code></a> ones.</p>
+<p>By default, <code>by_alias</code> is <code>False</code>.</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">my_field</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">serialization_alias</span><span class="o">=</span><span class="s1">&#39;my_alias&#39;</span><span class="p">)</span>
+
+
+<span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">my_field</span><span class="o">=</span><span class="s1">&#39;foo&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>  <span class="c1"># (1)!</span>
+<span class="c1">#&gt; {&#39;my_alias&#39;: &#39;foo&#39;}</span>
+</code></pre></div>
+<ol>
+<li>The alias <code>my_alias</code> is used for serialization.</li>
+</ol>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The fact that serialization by alias is disabled by default is notably inconsistent with the default for
+validation (where aliases are used by default). We anticipate changing this default in V3.</p>
+</div>
 
 
 
@@ -3335,7 +3710,7 @@ See more about the different field aliases under <a href="../fields/#field-alias
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.11.0a2", "pydantic-core==2.29.0", "pydantic-extra-types==2.10.0"]
+    window.mkdocs_run_deps = ["pydantic==2.11.0a2", "pydantic-core==2.30.0", "pydantic-extra-types==2.10.0"]
     </script>
 
               </article>

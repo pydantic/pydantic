@@ -1835,6 +1835,33 @@ to help you monitor and understand your
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#pydantic.config.ConfigDict.validate_by_alias" class="md-nav__link">
+    <span class="md-ellipsis">
+      validate_by_alias
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pydantic.config.ConfigDict.validate_by_name" class="md-nav__link">
+    <span class="md-ellipsis">
+      validate_by_name
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pydantic.config.ConfigDict.serialize_by_alias" class="md-nav__link">
+    <span class="md-ellipsis">
+      serialize_by_alias
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -3793,6 +3820,33 @@ to help you monitor and understand your
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#pydantic.config.ConfigDict.validate_by_alias" class="md-nav__link">
+    <span class="md-ellipsis">
+      validate_by_alias
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pydantic.config.ConfigDict.validate_by_name" class="md-nav__link">
+    <span class="md-ellipsis">
+      validate_by_name
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pydantic.config.ConfigDict.serialize_by_alias" class="md-nav__link">
+    <span class="md-ellipsis">
+      serialize_by_alias
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -4339,32 +4393,36 @@ attributes are hashable. Defaults to <code>False</code>.</p>
 
         <p>Whether an aliased field may be populated by its name as given by the model
 attribute, as well as the alias. Defaults to <code>False</code>.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p><code>populate_by_name</code> usage is not recommended in v2.11+ and will be deprecated in v3.
+Instead, you should use the <a class="autorefs autorefs-internal" href="#pydantic.config.ConfigDict.validate_by_name"><code>validate_by_name</code></a> configuration setting.</p>
+<p>When <code>validate_by_name=True</code> and <code>validate_by_alias=True</code>, this is strictly equivalent to the
+previous behavior of <code>populate_by_name=True</code>.</p>
+<p>In v2.11, we also introduced a <a class="autorefs autorefs-internal" href="#pydantic.config.ConfigDict.validate_by_alias"><code>validate_by_alias</code></a> setting that introduces more fine grained
+control for validation behavior.</p>
+<p>Here's how you might go about using the new settings to achieve the same behavior:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">Field</span>
 
+<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">validate_by_name</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">validate_by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-<details class="note" open>
-  <summary>Note</summary>
-  <p>The name of this configuration setting was changed in <strong>v2.0</strong> from
-<code>allow_population_by_field_name</code> to <code>populate_by_name</code>.</p>
-</details>        <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">Field</span>
+    <span class="n">my_field</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">alias</span><span class="o">=</span><span class="s1">&#39;my_alias&#39;</span><span class="p">)</span>  <span class="c1"># (1)!</span>
 
-<span class="k">class</span><span class="w"> </span><span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">populate_by_name</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">my_alias</span><span class="o">=</span><span class="s1">&#39;foo&#39;</span><span class="p">)</span>  <span class="c1"># (2)!</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+<span class="c1">#&gt; my_field=&#39;foo&#39;</span>
 
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">alias</span><span class="o">=</span><span class="s1">&#39;full_name&#39;</span><span class="p">)</span>  <span class="c1"># (1)!</span>
-    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
-
-<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">full_name</span><span class="o">=</span><span class="s1">&#39;John Doe&#39;</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>  <span class="c1"># (2)!</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
-<span class="c1">#&gt; name=&#39;John Doe&#39; age=20</span>
-<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;John Doe&#39;</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>  <span class="c1"># (3)!</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
-<span class="c1">#&gt; name=&#39;John Doe&#39; age=20</span>
+<span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">my_alias</span><span class="o">=</span><span class="s1">&#39;foo&#39;</span><span class="p">)</span>  <span class="c1"># (3)!</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+<span class="c1">#&gt; my_field=&#39;foo&#39;</span>
 </code></pre></div>
 <ol>
-<li>The field <code>'name'</code> has an alias <code>'full_name'</code>.</li>
-<li>The model is populated by the alias <code>'full_name'</code>.</li>
-<li>The model is populated by the field name <code>'name'</code>.</li>
+<li>The field <code>'my_field'</code> has an alias <code>'my_alias'</code>.</li>
+<li>The model is populated by the alias <code>'my_alias'</code>.</li>
+<li>The model is populated by the attribute name <code>'my_field'</code>.</li>
 </ol>
+</div>
     </div>
 
 </div>
@@ -5866,6 +5924,176 @@ as the performance difference is minimal if repeated strings are rare.</p>
 
 
 
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="pydantic.config.ConfigDict.validate_by_alias" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">validate_by_alias</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#pydantic.config.ConfigDict.validate_by_alias" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">validate_by_alias</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Whether an aliased field may be populated by its alias. Defaults to <code>True</code>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>In v2.11, <code>validate_by_alias</code> was introduced in conjunction with <a class="autorefs autorefs-internal" href="#pydantic.config.ConfigDict.validate_by_name"><code>validate_by_name</code></a>
+to empower users with more fine grained validation control. In &lt;v2.11, disabling validation by alias was not possible.</p>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>If you set <code>validate_by_alias</code> to <code>False</code>, you should set <code>validate_by_name</code> to <code>True</code> to ensure that the field can still be populated.</p>
+</div>
+<p>Here's an example of disabling validation by alias:</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">Field</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">validate_by_name</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">validate_by_alias</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="n">my_field</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">validation_alias</span><span class="o">=</span><span class="s1">&#39;my_alias&#39;</span><span class="p">)</span>  <span class="c1"># (1)!</span>
+
+<span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">my_field</span><span class="o">=</span><span class="s1">&#39;foo&#39;</span><span class="p">)</span>  <span class="c1"># (2)!</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+<span class="c1">#&gt; my_field=&#39;foo&#39;</span>
+</code></pre></div>
+<ol>
+<li>The field <code>'my_field'</code> has an alias <code>'my_alias'</code>.</li>
+<li>The model can only be populated by the attribute name <code>'my_field'</code>.</li>
+</ol>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>You cannot set both <code>validate_by_alias</code> and <code>validate_by_name</code> to <code>False</code>.
+This would make it impossible to populate an attribute.</p>
+<p>See <a href="../../errors/usage_errors/#validate-by-alias-and-name-false">usage errors</a> for an example.</p>
+</div>
+    </div>
+
+</div>
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="pydantic.config.ConfigDict.validate_by_name" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">validate_by_name</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#pydantic.config.ConfigDict.validate_by_name" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">validate_by_name</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Whether an aliased field may be populated by its name as given by the model
+attribute. Defaults to <code>False</code>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>In v2.0-v2.10, the <code>populate_by_name</code> configuration setting was used to specify
+whether or not a field could be populated by its name <strong>and</strong> alias.</p>
+<p>In v2.11, <code>validate_by_name</code> was introduced in conjunction with <a class="autorefs autorefs-internal" href="#pydantic.config.ConfigDict.validate_by_alias"><code>validate_by_alias</code></a>
+to empower users with more fine grained validation behavior control.</p>
+</div>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">Field</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">validate_by_name</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">validate_by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">my_field</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">validation_alias</span><span class="o">=</span><span class="s1">&#39;my_alias&#39;</span><span class="p">)</span>  <span class="c1"># (1)!</span>
+
+<span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">my_alias</span><span class="o">=</span><span class="s1">&#39;foo&#39;</span><span class="p">)</span>  <span class="c1"># (2)!</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+<span class="c1">#&gt; my_field=&#39;foo&#39;</span>
+
+<span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">my_field</span><span class="o">=</span><span class="s1">&#39;foo&#39;</span><span class="p">)</span>  <span class="c1"># (3)!</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+<span class="c1">#&gt; my_field=&#39;foo&#39;</span>
+</code></pre></div>
+<ol>
+<li>The field <code>'my_field'</code> has an alias <code>'my_alias'</code>.</li>
+<li>The model is populated by the alias <code>'my_alias'</code>.</li>
+<li>The model is populated by the attribute name <code>'my_field'</code>.</li>
+</ol>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>You cannot set both <code>validate_by_alias</code> and <code>validate_by_name</code> to <code>False</code>.
+This would make it impossible to populate an attribute.</p>
+<p>This also means you can't set <code>validate_by_alias</code> to <code>False</code> and leave <code>validate_by_name</code> unset,
+as <code>validate_by_name</code> defaults to <code>False</code>.</p>
+<p>See <a href="../../errors/usage_errors/#validate-by-alias-and-name-false">usage errors</a> for an example.</p>
+</div>
+    </div>
+
+</div>
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="pydantic.config.ConfigDict.serialize_by_alias" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">serialize_by_alias</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#pydantic.config.ConfigDict.serialize_by_alias" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">serialize_by_alias</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Whether an aliased field should be serialized by its alias. Defaults to <code>False</code>.</p>
+<p>Note: In v2.11, <code>serialize_by_alias</code> was introduced to address the
+<a href="https://github.com/pydantic/pydantic/issues/8379">popular request</a>
+for consistency with alias behavior for validation and serialization settings.
+In v3, the default value is expected to change to <code>True</code> for consistency with the validation default.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">Field</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">serialize_by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">my_field</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">serialization_alias</span><span class="o">=</span><span class="s1">&#39;my_alias&#39;</span><span class="p">)</span>  <span class="c1"># (1)!</span>
+
+<span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">my_field</span><span class="o">=</span><span class="s1">&#39;foo&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>  <span class="c1"># (2)!</span>
+<span class="c1">#&gt; {&#39;my_alias&#39;: &#39;foo&#39;}</span>
+</code></pre></div>
+<ol>
+<li>The field <code>'my_field'</code> has an alias <code>'my_alias'</code>.</li>
+<li>The model is serialized using the alias <code>'my_alias'</code> for the <code>'my_field'</code> attribute.</li>
+</ol>
+    </div>
+
+</div>
+
+
+
+
   </div>
 
     </div>
@@ -5918,48 +6146,48 @@ especially with <code>TypedDict</code>.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/config.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1032</span>
-<span class="normal">1033</span>
-<span class="normal">1034</span>
-<span class="normal">1035</span>
-<span class="normal">1036</span>
-<span class="normal">1037</span>
-<span class="normal">1038</span>
-<span class="normal">1039</span>
-<span class="normal">1040</span>
-<span class="normal">1041</span>
-<span class="normal">1042</span>
-<span class="normal">1043</span>
-<span class="normal">1044</span>
-<span class="normal">1045</span>
-<span class="normal">1046</span>
-<span class="normal">1047</span>
-<span class="normal">1048</span>
-<span class="normal">1049</span>
-<span class="normal">1050</span>
-<span class="normal">1051</span>
-<span class="normal">1052</span>
-<span class="normal">1053</span>
-<span class="normal">1054</span>
-<span class="normal">1055</span>
-<span class="normal">1056</span>
-<span class="normal">1057</span>
-<span class="normal">1058</span>
-<span class="normal">1059</span>
-<span class="normal">1060</span>
-<span class="normal">1061</span>
-<span class="normal">1062</span>
-<span class="normal">1063</span>
-<span class="normal">1064</span>
-<span class="normal">1065</span>
-<span class="normal">1066</span>
-<span class="normal">1067</span>
-<span class="normal">1068</span>
-<span class="normal">1069</span>
-<span class="normal">1070</span>
-<span class="normal">1071</span>
-<span class="normal">1072</span>
-<span class="normal">1073</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">with_config</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="n">ConfigDict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_TypeT</span><span class="p">],</span> <span class="n">_TypeT</span><span class="p">]:</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1145</span>
+<span class="normal">1146</span>
+<span class="normal">1147</span>
+<span class="normal">1148</span>
+<span class="normal">1149</span>
+<span class="normal">1150</span>
+<span class="normal">1151</span>
+<span class="normal">1152</span>
+<span class="normal">1153</span>
+<span class="normal">1154</span>
+<span class="normal">1155</span>
+<span class="normal">1156</span>
+<span class="normal">1157</span>
+<span class="normal">1158</span>
+<span class="normal">1159</span>
+<span class="normal">1160</span>
+<span class="normal">1161</span>
+<span class="normal">1162</span>
+<span class="normal">1163</span>
+<span class="normal">1164</span>
+<span class="normal">1165</span>
+<span class="normal">1166</span>
+<span class="normal">1167</span>
+<span class="normal">1168</span>
+<span class="normal">1169</span>
+<span class="normal">1170</span>
+<span class="normal">1171</span>
+<span class="normal">1172</span>
+<span class="normal">1173</span>
+<span class="normal">1174</span>
+<span class="normal">1175</span>
+<span class="normal">1176</span>
+<span class="normal">1177</span>
+<span class="normal">1178</span>
+<span class="normal">1179</span>
+<span class="normal">1180</span>
+<span class="normal">1181</span>
+<span class="normal">1182</span>
+<span class="normal">1183</span>
+<span class="normal">1184</span>
+<span class="normal">1185</span>
+<span class="normal">1186</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">with_config</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="n">ConfigDict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_TypeT</span><span class="p">],</span> <span class="n">_TypeT</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;!!! abstract &quot;Usage Documentation&quot;</span>
 <span class="sd">        [Configuration with other types](../concepts/config.md#configuration-on-other-supported-types)</span>
 
@@ -6462,7 +6690,7 @@ especially with <code>TypedDict</code>.</p>
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.11.0a2", "pydantic-core==2.29.0", "pydantic-extra-types==2.10.0"]
+    window.mkdocs_run_deps = ["pydantic==2.11.0a2", "pydantic-core==2.30.0", "pydantic-extra-types==2.10.0"]
     </script>
 
               </article>
