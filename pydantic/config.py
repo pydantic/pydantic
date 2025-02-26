@@ -181,28 +181,25 @@ class ConfigDict(TypedDict, total=False):
         Here's how you might go about using the new settings to achieve the same behavior:
 
         ```python
-        from datetime import datetime
-
         from pydantic import BaseModel, ConfigDict, Field
 
-        class User(BaseModel):
+        class Model(BaseModel):
             model_config = ConfigDict(validate_by_name=True, validate_by_alias=True)
 
-            date_of_birth: datetime = Field(alias='DOB')  # (1)!
-            name: str
+            my_field: str = Field(alias='my_alias')  # (1)!
 
-        user = User(DOB='2022-01-01', name='John Doe')  # (2)!
-        print(user)
-        #> date_of_birth=datetime.datetime(2022, 1, 1, 0, 0) name='John Doe'
+        m = Model(my_alias='foo')  # (2)!
+        print(m)
+        #> my_field='foo'
 
-        user = User(date_of_birth='2022-01-01', name='John Doe')  # (3)!
-        print(user)
-        #> date_of_birth=datetime.datetime(2022, 1, 1, 0, 0) name='John Doe'
+        m = Model(my_alias='foo')  # (3)!
+        print(m)
+        #> my_field='foo'
         ```
 
-        1. The field `'date_of_birth'` has an alias `'DOB'`.
-        2. The model is populated by the alias `'DOB'`.
-        3. The model is populated by the attribute name `'date_of_birth'`.
+        1. The field `'my_field'` has an alias `'my_alias'`.
+        2. The model is populated by the alias `'my_alias'`.
+        3. The model is populated by the attribute name `'my_field'`.
     """
 
     use_enum_values: bool

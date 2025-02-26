@@ -797,43 +797,43 @@ def test_validation_alias_settings(
     class Model(BaseModel):
         model_config = ConfigDict(**config_dict)
 
-        a: int = Field(validation_alias='A')
+        my_field: int = Field(validation_alias='my_alias')
 
     alias_allowed = next(x for x in (runtime_by_alias, config_by_alias, True) if x is not None)
     name_allowed = next(x for x in (runtime_by_name, config_by_name, False) if x is not None)
 
     if alias_allowed:
-        assert Model.model_validate({'A': 1}, by_alias=runtime_by_alias, by_name=runtime_by_name).a == 1
+        assert Model.model_validate({'my_alias': 1}, by_alias=runtime_by_alias, by_name=runtime_by_name).my_field == 1
     if name_allowed:
-        assert Model.model_validate({'a': 1}, by_alias=runtime_by_alias, by_name=runtime_by_name).a == 1
+        assert Model.model_validate({'my_field': 1}, by_alias=runtime_by_alias, by_name=runtime_by_name).my_field == 1
 
 
 def test_user_error_on_validation_methods() -> None:
     class Model(BaseModel):
-        a: int = Field(alias='A')
+        my_field: int = Field(alias='my_alias')
 
     with pytest.raises(PydanticUserError, match='At least one of `by_alias` or `by_name` must be set to True.'):
-        Model.model_validate({'A': 1}, by_alias=False, by_name=False)
+        Model.model_validate({'my_alias': 1}, by_alias=False, by_name=False)
 
     with pytest.raises(PydanticUserError, match='At least one of `by_alias` or `by_name` must be set to True.'):
-        Model.model_validate_json("{'A': 1}", by_alias=False, by_name=False)
+        Model.model_validate_json("{'my_alias': 1}", by_alias=False, by_name=False)
 
     with pytest.raises(PydanticUserError, match='At least one of `by_alias` or `by_name` must be set to True.'):
-        Model.model_validate_strings("{'A': 1}", by_alias=False, by_name=False)
+        Model.model_validate_strings("{'my_alias': 1}", by_alias=False, by_name=False)
 
 
 @pytest.mark.parametrize(
     'config,runtime,expected',
     [
-        (True, True, {'A': 1}),
-        (True, False, {'a': 1}),
-        (True, None, {'A': 1}),
-        (False, True, {'A': 1}),
-        (False, False, {'a': 1}),
-        (False, None, {'a': 1}),
-        (None, True, {'A': 1}),
-        (None, False, {'a': 1}),
-        (None, None, {'a': 1}),
+        (True, True, {'my_alias': 1}),
+        (True, False, {'my_field': 1}),
+        (True, None, {'my_alias': 1}),
+        (False, True, {'my_alias': 1}),
+        (False, False, {'my_field': 1}),
+        (False, None, {'my_field': 1}),
+        (None, True, {'my_alias': 1}),
+        (None, False, {'my_field': 1}),
+        (None, None, {'my_field': 1}),
     ],
 )
 def test_serialization_alias_settings(
@@ -848,7 +848,7 @@ def test_serialization_alias_settings(
     class Model(BaseModel):
         model_config = ConfigDict(serialize_by_alias=config)
 
-        a: int = Field(serialization_alias='A')
+        my_field: int = Field(serialization_alias='my_alias')
 
-    model = Model(a=1)
+    model = Model(my_field=1)
     assert model.model_dump(by_alias=runtime) == expected

@@ -402,8 +402,8 @@ class TypeAdapter(Generic[T]):
                 * False / 'off': Default behavior, no partial validation.
                 * True / 'on': Enable partial validation.
                 * 'trailing-strings': Enable partial validation and allow trailing strings in the input.
-            by_alias: Whether to use the field's alias to match the input data to an attribute.
-            by_name: Whether to use the field's name to match the input data to an attribute.
+            by_alias: Whether to use the field's alias when validating against the provided input data.
+            by_name: Whether to use the field's name when validating against the provided input data.
 
         !!! note
             When using `TypeAdapter` with a Pydantic `dataclass`, the use of the `from_attributes`
@@ -453,8 +453,8 @@ class TypeAdapter(Generic[T]):
                 * False / 'off': Default behavior, no partial validation.
                 * True / 'on': Enable partial validation.
                 * 'trailing-strings': Enable partial validation and allow trailing strings in the input.
-            by_alias: Whether to use the field's alias to match the input data to an attribute.
-            by_name: Whether to use the field's name to match the input data to an attribute.
+            by_alias: Whether to use the field's alias when validating against the provided input data.
+            by_name: Whether to use the field's name when validating against the provided input data.
 
         Returns:
             The validated object.
@@ -496,8 +496,8 @@ class TypeAdapter(Generic[T]):
                 * False / 'off': Default behavior, no partial validation.
                 * True / 'on': Enable partial validation.
                 * 'trailing-strings': Enable partial validation and allow trailing strings in the input.
-            by_alias: Whether to use the field's alias to match the input data to an attribute.
-            by_name: Whether to use the field's name to match the input data to an attribute.
+            by_alias: Whether to use the field's alias when validating against the provided input data.
+            by_name: Whether to use the field's name when validating against the provided input data.
 
         Returns:
             The validated object.

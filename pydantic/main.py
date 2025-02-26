@@ -672,8 +672,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             strict: Whether to enforce types strictly.
             from_attributes: Whether to extract data from object attributes.
             context: Additional context to pass to the validator.
-            by_alias: Whether to use the field's alias to match the input data to an attribute.
-            by_name: Whether to use the field's name to match the input data to an attribute.
+            by_alias: Whether to use the field's alias when validating against the provided input data.
+            by_name: Whether to use the field's name when validating against the provided input data.
 
         Raises:
             ValidationError: If the object could not be validated.
@@ -713,8 +713,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             json_data: The JSON data to validate.
             strict: Whether to enforce types strictly.
             context: Extra variables to pass to the validator.
-            by_alias: Whether to use the field's alias to match the input data to an attribute.
-            by_name: Whether to use the field's name to match the input data to an attribute.
+            by_alias: Whether to use the field's alias when validating against the provided input data.
+            by_name: Whether to use the field's name when validating against the provided input data.
 
         Returns:
             The validated Pydantic model.
@@ -751,8 +751,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             obj: The object containing string data to validate.
             strict: Whether to enforce types strictly.
             context: Extra variables to pass to the validator.
-            by_alias: Whether to use the field's alias to match the input data to an attribute.
-            by_name: Whether to use the field's name to match the input data to an attribute.
+            by_alias: Whether to use the field's alias when validating against the provided input data.
+            by_name: Whether to use the field's name when validating against the provided input data.
 
         Returns:
             The validated Pydantic model.
