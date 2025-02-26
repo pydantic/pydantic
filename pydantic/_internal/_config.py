@@ -176,7 +176,7 @@ class ConfigWrapper:
             )
 
         if (populate_by_name := config.get('populate_by_name')) is not None:
-            # We include this patch for backwards compatibility purposes, but this config setting will be officially removed in v3.0.
+            # We include this patch for backwards compatibility purposes, but this config setting will be deprecated in v3.0, and likely removed in v4.0.
             # Thus, the above warning and this patch can be removed then as well.
             if config.get('validate_by_name') is None:
                 config['validate_by_alias'] = True
