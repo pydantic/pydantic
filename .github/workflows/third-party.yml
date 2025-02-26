@@ -393,7 +393,9 @@ jobs:
       working-directory: ./server
       env:
         POLAR_ENV: testing
-      run: uv run task db_migrate
+      run: |
+        uv run task emails
+        uv run task db_migrate
 
     - name: ⚗️ alembic check
       working-directory: ./server

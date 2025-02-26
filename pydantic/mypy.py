@@ -845,7 +845,7 @@ class PydanticModelTransformer:
 
         typed = self.plugin_config.init_typed
         model_strict = bool(config.strict)
-        use_alias = config.validate_by_alias is not False
+        use_alias = config.validate_by_name is not True
         requires_dynamic_aliases = bool(config.has_alias_generator and not config.validate_by_name)
         args = self.get_field_arguments(
             fields,

@@ -3055,7 +3055,7 @@ class Discriminator:
     A `str` discriminator must be the name of a field to discriminate against.
     """
     custom_error_type: str | None = None
-    """Type to use in [custom errors](../errors/errors.md#custom-errors) replacing the standard discriminated union
+    """Type to use in [custom errors](../errors/errors.md) replacing the standard discriminated union
     validation errors.
     """
     custom_error_message: str | None = None
