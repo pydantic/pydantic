@@ -316,3 +316,38 @@ class Foo(BaseModel):
 
 class Bar(Foo, RootModel[int]):
     pass
+
+
+class Model1(BaseModel):
+    model_config = ConfigDict(validate_by_alias=False, validate_by_name=True)
+
+    my_field: str = Field(alias='my_alias')
+
+m1 = Model1(my_field='foo')
+
+class Model2(BaseModel):
+    model_config = ConfigDict(validate_by_alias=True, validate_by_name=False)
+
+    my_field: str = Field(alias='my_alias')
+
+m2 = Model2(my_alias='foo')
+
+class Model3(BaseModel):
+    model_config = ConfigDict(validate_by_alias=True, validate_by_name=True)
+
+    my_field: str = Field(alias='my_alias')
+
+# for this case, we prefer the field name over the alias
+m3 = Model3(my_field='foo')
+
+class Model4(BaseModel):
+    my_field: str = Field(alias='my_alias')
+
+m4 = Model4(my_alias='foo')
+
+class Model5(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    my_field: str = Field(alias='my_alias')
+
+m5 = Model5(my_field='foo')

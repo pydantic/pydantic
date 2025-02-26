@@ -612,7 +612,7 @@ def test_alias_generator():
             return self.my_standard_field + 4
 
     class MySubModel(MyModel):
-        model_config = dict(alias_generator=to_camel, populate_by_name=True)
+        model_config = dict(alias_generator=to_camel, validate_by_name=True)
 
     model = MyModel(my_standard_field=1)
     assert model.model_dump() == {

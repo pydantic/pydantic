@@ -87,6 +87,9 @@ class ConfigWrapper:
     validation_error_cause: bool
     use_attribute_docstrings: bool
     cache_strings: bool | Literal['all', 'keys', 'none']
+    validate_by_alias: bool
+    validate_by_name: bool
+    serialize_by_alias: bool
 
     def __init__(self, config: ConfigDict | dict[str, Any] | type[Any] | None, *, check: bool = True):
         if check:
@@ -172,6 +175,19 @@ class ConfigWrapper:
                 stacklevel=2,
             )
 
+        if (populate_by_name := config.get('populate_by_name')) is not None:
+            # We include this patch for backwards compatibility purposes, but this config setting will be deprecated in v3.0, and likely removed in v4.0.
+            # Thus, the above warning and this patch can be removed then as well.
+            if config.get('validate_by_name') is None:
+                config['validate_by_alias'] = True
+                config['validate_by_name'] = populate_by_name
+
+        if (not config.get('validate_by_alias', True)) and (not config.get('validate_by_name', False)):
+            raise PydanticUserError(
+                'At least one of `validate_by_alias` or `validate_by_name` must be set to True.',
+                code='validate-by-alias-and-name-false',
+            )
+
         return core_schema.CoreConfig(
             **{  # pyright: ignore[reportArgumentType]
                 k: v
@@ -179,7 +195,6 @@ class ConfigWrapper:
                     ('title', config.get('title') or title or None),
                     ('extra_fields_behavior', config.get('extra')),
                     ('allow_inf_nan', config.get('allow_inf_nan')),
-                    ('populate_by_name', config.get('populate_by_name')),
                     ('str_strip_whitespace', config.get('str_strip_whitespace')),
                     ('str_to_lower', config.get('str_to_lower')),
                     ('str_to_upper', config.get('str_to_upper')),
@@ -199,6 +214,9 @@ class ConfigWrapper:
                     ('regex_engine', config.get('regex_engine')),
                     ('validation_error_cause', config.get('validation_error_cause')),
                     ('cache_strings', config.get('cache_strings')),
+                    ('validate_by_alias', config.get('validate_by_alias')),
+                    ('validate_by_name', config.get('validate_by_name')),
+                    ('serialize_by_alias', config.get('serialize_by_alias')),
                 )
                 if v is not None
             }
@@ -278,6 +296,9 @@ config_defaults = ConfigDict(
     validation_error_cause=False,
     use_attribute_docstrings=False,
     cache_strings=True,
+    validate_by_alias=True,
+    validate_by_name=False,
+    serialize_by_alias=False,
 )
 
 
@@ -318,7 +339,7 @@ V2_REMOVED_KEYS = {
     'post_init_call',
 }
 V2_RENAMED_KEYS = {
-    'allow_population_by_field_name': 'populate_by_name',
+    'allow_population_by_field_name': 'validate_by_name',
     'anystr_lower': 'str_to_lower',
     'anystr_strip_whitespace': 'str_strip_whitespace',
     'anystr_upper': 'str_to_upper',

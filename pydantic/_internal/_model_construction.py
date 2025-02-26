@@ -638,7 +638,7 @@ def complete_model_class(
             generate_pydantic_signature,
             init=cls.__init__,
             fields=cls.__pydantic_fields__,
-            populate_by_name=config_wrapper.populate_by_name,
+            validate_by_name=config_wrapper.validate_by_name,
             extra=config_wrapper.extra,
         ),
     )

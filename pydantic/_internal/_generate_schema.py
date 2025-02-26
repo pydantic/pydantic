@@ -1969,7 +1969,7 @@ class GenerateSchema:
                 var_args_schema=var_args_schema,
                 var_kwargs_mode=var_kwargs_mode,
                 var_kwargs_schema=var_kwargs_schema,
-                populate_by_name=config_wrapper.populate_by_name,
+                validate_by_name=config_wrapper.validate_by_name,
             ),
             function,
             return_schema=return_schema,

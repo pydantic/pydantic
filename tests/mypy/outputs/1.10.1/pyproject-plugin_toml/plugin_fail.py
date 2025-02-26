@@ -183,7 +183,7 @@ class DynamicAliasModel2(BaseModel):
     x: str = Field(..., alias=x_alias)
     z: int
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(validate_by_name=True)
 
 
 DynamicAliasModel2(y='y', z=1)
@@ -191,7 +191,7 @@ DynamicAliasModel2(y='y', z=1)
 DynamicAliasModel2(x='y', z=1)
 
 
-class KwargsDynamicAliasModel(BaseModel, populate_by_name=True):
+class KwargsDynamicAliasModel(BaseModel, validate_by_name=True):
     x: str = Field(..., alias=x_alias)
     z: int
 

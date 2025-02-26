@@ -124,10 +124,13 @@ def test_any_url_success(value):
     [
         ('http:///', 'url_parsing', 'Input should be a valid URL, empty host'),
         ('http://??', 'url_parsing', 'Input should be a valid URL, empty host'),
-        (
+        pytest.param(
             'https://example.org more',
             'url_parsing',
-            'Input should be a valid URL, invalid domain character',
+            'Input should be a valid URL, invalid international domain name',
+            marks=pytest.mark.skip(
+                reason='Skipping until pydantic-core version with url validation updates is available'
+            ),
         ),
         ('$https://example.org', 'url_parsing', 'Input should be a valid URL, relative URL without a base'),
         ('../icons/logo.gif', 'url_parsing', 'Input should be a valid URL, relative URL without a base'),

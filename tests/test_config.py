@@ -142,7 +142,7 @@ class TestsBaseConfig:
         class Foo(BaseModel):
             foo: str = Field(alias='this is invalid')
 
-            model_config = ConfigDict(populate_by_name=True)
+            model_config = ConfigDict(validate_by_name=True)
 
         assert _equals(str(signature(Foo)), '(*, foo: str) -> None')
 
@@ -150,7 +150,7 @@ class TestsBaseConfig:
         class Foo(BaseModel):
             from_: str = Field(alias='from')
 
-            model_config = ConfigDict(populate_by_name=True)
+            model_config = ConfigDict(validate_by_name=True)
 
         assert _equals(str(signature(Foo)), '(*, from_: str) -> None')
 
@@ -300,7 +300,7 @@ class TestsBaseConfig:
                 x: Tup
 
     @pytest.mark.parametrize(
-        'use_construct, populate_by_name_config, arg_name, expectation',
+        'use_construct, validate_by_name_config, arg_name, expectation',
         [
             [False, True, 'bar', does_not_raise()],
             [False, True, 'bar_', does_not_raise()],
@@ -312,10 +312,10 @@ class TestsBaseConfig:
             [True, False, 'bar_', does_not_raise()],
         ],
     )
-    def test_populate_by_name_config(
+    def test_validate_by_name_config(
         self,
         use_construct: bool,
-        populate_by_name_config: bool,
+        validate_by_name_config: bool,
         arg_name: str,
         expectation: AbstractContextManager,
     ):
@@ -324,7 +324,7 @@ class TestsBaseConfig:
         class Foo(BaseModel):
             bar_: int = Field(alias='bar')
 
-            model_config = dict(populate_by_name=populate_by_name_config)
+            model_config = dict(validate_by_name=validate_by_name_config)
 
         with expectation:
             if use_construct:
@@ -416,7 +416,7 @@ def test_config_key_deprecation():
 
     warning_message = """
 Valid config keys have changed in V2:
-* 'allow_population_by_field_name' has been renamed to 'populate_by_name'
+* 'allow_population_by_field_name' has been renamed to 'validate_by_name'
 * 'anystr_lower' has been renamed to 'str_to_lower'
 * 'anystr_strip_whitespace' has been renamed to 'str_strip_whitespace'
 * 'anystr_upper' has been renamed to 'str_to_upper'
@@ -489,25 +489,25 @@ def test_multiple_inheritance_config():
         model_config = ConfigDict(use_enum_values=True)
 
     class Child(Mixin, Parent):
-        model_config = ConfigDict(populate_by_name=True)
+        model_config = ConfigDict(validate_by_name=True)
 
     assert BaseModel.model_config.get('frozen') is None
-    assert BaseModel.model_config.get('populate_by_name') is None
+    assert BaseModel.model_config.get('validate_by_name') is None
     assert BaseModel.model_config.get('extra') is None
     assert BaseModel.model_config.get('use_enum_values') is None
 
     assert Parent.model_config.get('frozen') is True
-    assert Parent.model_config.get('populate_by_name') is None
+    assert Parent.model_config.get('validate_by_name') is None
     assert Parent.model_config.get('extra') == 'forbid'
     assert Parent.model_config.get('use_enum_values') is None
 
     assert Mixin.model_config.get('frozen') is None
-    assert Mixin.model_config.get('populate_by_name') is None
+    assert Mixin.model_config.get('validate_by_name') is None
     assert Mixin.model_config.get('extra') is None
     assert Mixin.model_config.get('use_enum_values') is True
 
     assert Child.model_config.get('frozen') is True
-    assert Child.model_config.get('populate_by_name') is True
+    assert Child.model_config.get('validate_by_name') is True
     assert Child.model_config.get('extra') == 'forbid'
     assert Child.model_config.get('use_enum_values') is True
 
@@ -944,3 +944,22 @@ def test_generate_schema_deprecation_warning() -> None:
 
         class Model(BaseModel):
             model_config = ConfigDict(schema_generator=GenerateSchema)
+
+
+def test_populate_by_name_still_effective() -> None:
+    class Model(BaseModel):
+        model_config = ConfigDict(populate_by_name=True)
+
+        a: int = Field(alias='A')
+
+    assert Model.model_validate({'A': 1}).a == 1
+    assert Model.model_validate({'a': 1}).a == 1
+
+
+def test_user_error_on_alias_settings() -> None:
+    with pytest.raises(
+        PydanticUserError, match='At least one of `validate_by_alias` or `validate_by_name` must be set to True.'
+    ):
+
+        class Model(BaseModel):
+            model_config = ConfigDict(validate_by_alias=False, validate_by_name=False)

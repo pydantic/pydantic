@@ -168,30 +168,38 @@ class ConfigDict(TypedDict, total=False):
     Whether an aliased field may be populated by its name as given by the model
     attribute, as well as the alias. Defaults to `False`.
 
-    Note:
-        The name of this configuration setting was changed in **v2.0** from
-        `allow_population_by_field_name` to `populate_by_name`.
+    !!! warning
+        `populate_by_name` usage is not recommended in v2.11+ and will be deprecated in v3.
+        Instead, you should use the [`validate_by_name`][pydantic.config.ConfigDict.validate_by_name] configuration setting.
 
-    ```python
-    from pydantic import BaseModel, ConfigDict, Field
+        When `validate_by_name=True` and `validate_by_alias=True`, this is strictly equivalent to the
+        previous behavior of `populate_by_name=True`.
 
-    class User(BaseModel):
-        model_config = ConfigDict(populate_by_name=True)
+        In v2.11, we also introduced a [`validate_by_alias`][pydantic.config.ConfigDict.validate_by_alias] setting that introduces more fine grained
+        control for validation behavior.
 
-        name: str = Field(alias='full_name')  # (1)!
-        age: int
+        Here's how you might go about using the new settings to achieve the same behavior:
 
-    user = User(full_name='John Doe', age=20)  # (2)!
-    print(user)
-    #> name='John Doe' age=20
-    user = User(name='John Doe', age=20)  # (3)!
-    print(user)
-    #> name='John Doe' age=20
-    ```
+        ```python
+        from pydantic import BaseModel, ConfigDict, Field
 
-    1. The field `'name'` has an alias `'full_name'`.
-    2. The model is populated by the alias `'full_name'`.
-    3. The model is populated by the field name `'name'`.
+        class Model(BaseModel):
+            model_config = ConfigDict(validate_by_name=True, validate_by_alias=True)
+
+            my_field: str = Field(alias='my_alias')  # (1)!
+
+        m = Model(my_alias='foo')  # (2)!
+        print(m)
+        #> my_field='foo'
+
+        m = Model(my_alias='foo')  # (3)!
+        print(m)
+        #> my_field='foo'
+        ```
+
+        1. The field `'my_field'` has an alias `'my_alias'`.
+        2. The model is populated by the alias `'my_alias'`.
+        3. The model is populated by the attribute name `'my_field'`.
     """
 
     use_enum_values: bool
@@ -1023,6 +1031,111 @@ class ConfigDict(TypedDict, total=False):
     !!! tip
         If repeated strings are rare, it's recommended to use `'keys'` or `'none'` to reduce memory usage,
         as the performance difference is minimal if repeated strings are rare.
+    """
+
+    validate_by_alias: bool
+    """
+    Whether an aliased field may be populated by its alias. Defaults to `True`.
+
+    !!! note
+        In v2.11, `validate_by_alias` was introduced in conjunction with [`validate_by_name`][pydantic.ConfigDict.validate_by_name]
+        to empower users with more fine grained validation control. In <v2.11, disabling validation by alias was not possible.
+
+    !!! tip
+        If you set `validate_by_alias` to `False`, you should set `validate_by_name` to `True` to ensure that the field can still be populated.
+
+    Here's an example of disabling validation by alias:
+
+    ```py
+    from pydantic import BaseModel, ConfigDict, Field
+
+    class Model(BaseModel):
+        model_config = ConfigDict(validate_by_name=True, validate_by_alias=False)
+
+        my_field: str = Field(validation_alias='my_alias')  # (1)!
+
+    m = Model(my_field='foo')  # (2)!
+    print(m)
+    #> my_field='foo'
+    ```
+
+    1. The field `'my_field'` has an alias `'my_alias'`.
+    2. The model can only be populated by the attribute name `'my_field'`.
+
+    !!! warning
+        You cannot set both `validate_by_alias` and `validate_by_name` to `False`.
+        This would make it impossible to populate an attribute.
+
+        See [usage errors](../errors/usage_errors.md#validate-by-alias-and-name-false) for an example.
+    """
+
+    validate_by_name: bool
+    """
+    Whether an aliased field may be populated by its name as given by the model
+    attribute. Defaults to `False`.
+
+    !!! note
+        In v2.0-v2.10, the `populate_by_name` configuration setting was used to specify
+        whether or not a field could be populated by its name **and** alias.
+
+        In v2.11, `validate_by_name` was introduced in conjunction with [`validate_by_alias`][pydantic.ConfigDict.validate_by_alias]
+        to empower users with more fine grained validation behavior control.
+
+    ```python
+    from pydantic import BaseModel, ConfigDict, Field
+
+    class Model(BaseModel):
+        model_config = ConfigDict(validate_by_name=True, validate_by_alias=True)
+
+        my_field: str = Field(validation_alias='my_alias')  # (1)!
+
+    m = Model(my_alias='foo')  # (2)!
+    print(m)
+    #> my_field='foo'
+
+    m = Model(my_field='foo')  # (3)!
+    print(m)
+    #> my_field='foo'
+    ```
+
+    1. The field `'my_field'` has an alias `'my_alias'`.
+    2. The model is populated by the alias `'my_alias'`.
+    3. The model is populated by the attribute name `'my_field'`.
+
+    !!! warning
+        You cannot set both `validate_by_alias` and `validate_by_name` to `False`.
+        This would make it impossible to populate an attribute.
+
+        This also means you can't set `validate_by_alias` to `False` and leave `validate_by_name` unset,
+        as `validate_by_name` defaults to `False`.
+
+        See [usage errors](../errors/usage_errors.md#validate-by-alias-and-name-false) for an example.
+    """
+
+    serialize_by_alias: bool
+    """
+    Whether an aliased field should be serialized by its alias. Defaults to `False`.
+
+    Note: In v2.11, `serialize_by_alias` was introduced to address the
+    [popular request](https://github.com/pydantic/pydantic/issues/8379)
+    for consistency with alias behavior for validation and serialization settings.
+    In v3, the default value is expected to change to `True` for consistency with the validation default.
+
+    ```python
+    from pydantic import BaseModel, ConfigDict, Field
+
+    class Model(BaseModel):
+        model_config = ConfigDict(serialize_by_alias=True)
+
+        my_field: str = Field(serialization_alias='my_alias')  # (1)!
+
+    m = Model(my_field='foo')
+    print(m.model_dump())  # (2)!
+    #> {'my_alias': 'foo'}
+    ```
+
+    1. The field `'my_field'` has an alias `'my_alias'`.
+    2. The model is serialized using the alias `'my_alias'` for the `'my_field'` attribute.
     """
 
 

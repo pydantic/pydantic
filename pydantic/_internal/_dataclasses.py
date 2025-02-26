@@ -153,7 +153,7 @@ def complete_dataclass(
             # as it is the one synthesized by the stdlib `dataclass` module:
             init=original_init,
             fields=cls.__pydantic_fields__,  # type: ignore
-            populate_by_name=config_wrapper.populate_by_name,
+            validate_by_name=config_wrapper.validate_by_name,
             extra=config_wrapper.extra,
             is_dataclass=True,
         ),

@@ -423,6 +423,8 @@ class PydanticModelTransformer:
         'frozen',
         'from_attributes',
         'populate_by_name',
+        'validate_by_alias',
+        'validate_by_name',
         'alias_generator',
         'strict',
     }
@@ -564,7 +566,7 @@ class PydanticModelTransformer:
             if (
                 stmt
                 and config.has_alias_generator
-                and not config.populate_by_name
+                and not (config.validate_by_name or config.populate_by_name)
                 and self.plugin_config.warn_required_dynamic_aliases
             ):
                 error_required_dynamic_aliases(self._api, stmt)
@@ -776,7 +778,11 @@ class PydanticModelTransformer:
             return PydanticModelClassVar(lhs.name)
 
         alias, has_dynamic_alias = self.get_alias_info(stmt)
-        if has_dynamic_alias and not model_config.populate_by_name and self.plugin_config.warn_required_dynamic_aliases:
+        if (
+            has_dynamic_alias
+            and not (model_config.validate_by_name or model_config.populate_by_name)
+            and self.plugin_config.warn_required_dynamic_aliases
+        ):
             error_required_dynamic_aliases(self._api, stmt)
         is_frozen = self.is_field_frozen(stmt)
 
@@ -844,8 +850,8 @@ class PydanticModelTransformer:
 
         typed = self.plugin_config.init_typed
         model_strict = bool(config.strict)
-        use_alias = config.populate_by_name is not True
-        requires_dynamic_aliases = bool(config.has_alias_generator and not config.populate_by_name)
+        use_alias = not (config.validate_by_name or config.populate_by_name) and config.validate_by_alias is not False
+        requires_dynamic_aliases = bool(config.has_alias_generator and not config.validate_by_name)
         args = self.get_field_arguments(
             fields,
             typed=typed,
@@ -1116,7 +1122,7 @@ class PydanticModelTransformer:
         We disallow arbitrary kwargs if the extra config setting is "forbid", or if the plugin config says to,
         *unless* a required dynamic alias is present (since then we can't determine a valid signature).
         """
-        if not config.populate_by_name:
+        if not (config.validate_by_name or config.populate_by_name):
             if self.is_dynamic_alias_present(fields, bool(config.has_alias_generator)):
                 return False
         if config.forbid_extra:
@@ -1147,6 +1153,8 @@ class ModelConfigData:
         frozen: bool | None = None,
         from_attributes: bool | None = None,
         populate_by_name: bool | None = None,
+        validate_by_alias: bool | None = None,
+        validate_by_name: bool | None = None,
         has_alias_generator: bool | None = None,
         strict: bool | None = None,
     ):
@@ -1154,6 +1162,8 @@ class ModelConfigData:
         self.frozen = frozen
         self.from_attributes = from_attributes
         self.populate_by_name = populate_by_name
+        self.validate_by_alias = validate_by_alias
+        self.validate_by_name = validate_by_name
         self.has_alias_generator = has_alias_generator
         self.strict = strict
 
