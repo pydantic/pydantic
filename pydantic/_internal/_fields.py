@@ -204,7 +204,7 @@ def collect_model_fields(  # noqa: C901
         if assigned_value is PydanticUndefined:  # no assignment, just a plain annotation
             if ann_name in annotations:
                 # field is present in the current model's annotations (and *not* from parent classes)
-                field_info = FieldInfo_.from_annotation(ann_type)
+                field_info = FieldInfo_.from_annotation(ann_type, _source=AnnotationSource.CLASS)
             elif ann_name in parent_fields_lookup:
                 # The field was present on one of the (possibly multiple) base classes
                 # copy the field to make sure typevar substitutions don't cause issues with the base classes

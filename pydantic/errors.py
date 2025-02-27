@@ -19,6 +19,7 @@ __all__ = (
     'PydanticImportError',
     'PydanticSchemaGenerationError',
     'PydanticInvalidForJsonSchema',
+    'PydanticForbiddenQualifier',
     'PydanticErrorCodes',
 )
 
