@@ -182,6 +182,11 @@ class ConfigWrapper:
                 config['validate_by_alias'] = True
                 config['validate_by_name'] = populate_by_name
 
+        # We dynamically patch validate_by_name to be True if validate_by_alias is set to False
+        # and validate_by_name is not explicitly set.
+        if config.get('validate_by_alias') is False and config.get('validate_by_name') is None:
+            config['validate_by_name'] = True
+
         if (not config.get('validate_by_alias', True)) and (not config.get('validate_by_name', False)):
             raise PydanticUserError(
                 'At least one of `validate_by_alias` or `validate_by_name` must be set to True.',

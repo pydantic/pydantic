@@ -963,3 +963,10 @@ def test_user_error_on_alias_settings() -> None:
 
         class Model(BaseModel):
             model_config = ConfigDict(validate_by_alias=False, validate_by_name=False)
+
+
+def test_dynamic_default() -> None:
+    class Model(BaseModel):
+        model_config = ConfigDict(validate_by_alias=False)
+
+    assert Model.model_config == {'validate_by_alias': False, 'validate_by_name': True}
