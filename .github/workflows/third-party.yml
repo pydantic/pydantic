@@ -128,7 +128,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13' ]
+        # Testing on a single version to avoid reaching Docker API limits:
+        python-version: ['3.13']
     steps:
     - name: Checkout Beanie
       uses: actions/checkout@v4
