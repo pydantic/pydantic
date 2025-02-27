@@ -332,16 +332,20 @@ class FieldInfo(_repr.Representation):
 
         # TODO check for classvar and error?
 
-        # No assigned value, so infer the type as `Any` if no type expression is available (in the case of `Final`):
+        # No assigned value, this happens when using a bare `Final` qualifier (also for other
+        # qualifiers, but they shouldn't appear here). In this case we infer the type as `Any`
+        # because we don't have any assigned value.
         type_expr: Any = Any if inspected_ann.type is UNKNOWN else inspected_ann.type
         final = 'final' in inspected_ann.qualifiers
         metadata = inspected_ann.metadata
 
         if not metadata:
+            # No metadata, e.g. `field: int`, or `field: Final[str]`:
             field_info = FieldInfo(annotation=type_expr, frozen=final or None)
             field_info._qualifiers = inspected_ann.qualifiers
             return field_info
 
+        # With metadata, e.g. `field: Annotated[int, Field(...), Gt(1)]`:
         field_info_annotations = [a for a in metadata if isinstance(a, FieldInfo)]
         field_info = FieldInfo.merge_field_infos(*field_info_annotations, annotation=type_expr)
 
@@ -406,12 +410,14 @@ class FieldInfo(_repr.Representation):
 
         # TODO check for classvar and error?
 
-        # TODO infer from the default
+        # TODO infer from the default, this can be done in v3 once we treat final fields with
+        # a default as proper fields and not class variables:
         type_expr: Any = Any if inspected_ann.type is UNKNOWN else inspected_ann.type
         final = 'final' in inspected_ann.qualifiers
         metadata = inspected_ann.metadata
 
         if isinstance(default, FieldInfo):
+            # e.g. `field: int = Field(...)`
             default.annotation = type_expr
             default.metadata += metadata
             merged_default = FieldInfo.merge_field_infos(
@@ -424,6 +430,7 @@ class FieldInfo(_repr.Representation):
             return merged_default
 
         if isinstance(default, dataclasses.Field):
+            # `collect_dataclass_fields()` passes the dataclass Field as a default.
             pydantic_field = FieldInfo._from_dataclass_field(default)
             pydantic_field.annotation = type_expr
             pydantic_field.metadata += metadata
@@ -440,10 +447,12 @@ class FieldInfo(_repr.Representation):
             return pydantic_field
 
         if not metadata:
+            # No metadata, e.g. `field: int = ...`, or `field: Final[str] = ...`:
             field_info = FieldInfo(annotation=type_expr, default=default, frozen=final or None)
             field_info._qualifiers = inspected_ann.qualifiers
             return field_info
 
+        # With metadata, e.g. `field: Annotated[int, Field(...), Gt(1)] = ...`:
         field_infos = [a for a in metadata if isinstance(a, FieldInfo)]
         field_info = FieldInfo.merge_field_infos(*field_infos, annotation=type_expr, default=default)
         field_metadata: list[Any] = []

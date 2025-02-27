@@ -11,7 +11,7 @@ from functools import partial
 from typing import TYPE_CHECKING, Any, Callable, cast
 
 import typing_extensions
-from typing_extensions import TypeAliasType, TypeIs, deprecated, get_args, get_origin
+from typing_extensions import deprecated, get_args, get_origin
 from typing_inspection import typing_objects
 
 from pydantic.version import version_short
@@ -88,35 +88,6 @@ def is_callable(tp: Any, /) -> bool:
     # `get_origin` is documented as normalizing any typing-module aliases to `collections` classes,
     # hence the second check:
     return tp is collections.abc.Callable or get_origin(tp) is collections.abc.Callable
-
-
-_TYPE_ALIAS_TYPES: tuple[type[TypeAliasType], ...] = (typing_extensions.TypeAliasType,)
-if sys.version_info >= (3, 12):
-    _TYPE_ALIAS_TYPES = (*_TYPE_ALIAS_TYPES, typing.TypeAliasType)
-
-_IS_PY310 = sys.version_info[:2] == (3, 10)
-
-
-def is_type_alias_type(tp: Any, /) -> TypeIs[TypeAliasType]:
-    """Return whether the provided argument is an instance of `TypeAliasType`.
-
-    ```python {test="skip" lint="skip"}
-    type Int = int
-    is_type_alias_type(Int)
-    #> True
-    Str = TypeAliasType('Str', str)
-    is_type_alias_type(Str)
-    #> True
-    ```
-    """
-    if _IS_PY310:
-        # Parametrized PEP 695 type aliases are instances of `types.GenericAlias` in typing_extensions>=4.13.0.
-        # On Python 3.10, with `Alias[int]` being such an instance of `GenericAlias`,
-        # `isinstance(Alias[int], TypeAliasType)` returns `True`.
-        # See https://github.com/python/cpython/issues/89828.
-        return type(tp) is not types.GenericAlias and isinstance(tp, _TYPE_ALIAS_TYPES)
-    else:
-        return isinstance(tp, _TYPE_ALIAS_TYPES)
 
 
 _classvar_re = re.compile(r'((\w+\.)?Annotated\[)?(\w+\.)?ClassVar\[')
