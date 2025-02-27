@@ -58,6 +58,7 @@ from mypy.plugins.common import (
 from mypy.semanal import set_callable_name
 from mypy.server.trigger import make_wildcard_trigger
 from mypy.state import state
+from mypy.type_visitor import TypeTranslator
 from mypy.typeops import map_type_from_supertype
 from mypy.types import (
     AnyType,
@@ -876,6 +877,13 @@ class PydanticModelTransformer:
                         if arg_name is None or arg_name.startswith('__') or not arg_name.startswith('_'):
                             continue
                         analyzed_variable_type = self._api.anal_type(func_type.arg_types[arg_idx])
+                        if analyzed_variable_type is not None and arg_name == '_cli_settings_source':
+                            # _cli_settings_source is defined as CliSettingsSource[Any], and as such
+                            # the Any causes issues with --disallow-any-explicit. As a workaround, change
+                            # the Any type (as if CliSettingsSource was left unparameterized):
+                            analyzed_variable_type = analyzed_variable_type.accept(
+                                ChangeExplicitTypeOfAny(TypeOfAny.from_omitted_generics)
+                            )
                         variable = Var(arg_name, analyzed_variable_type)
                         args.append(Argument(variable, analyzed_variable_type, None, ARG_OPT))
 
@@ -1142,6 +1150,20 @@ class PydanticModelTransformer:
                 if field.alias is None:
                     return True
         return False
+
+
+class ChangeExplicitTypeOfAny(TypeTranslator):
+    """A type translator used to change type of Any's, if explicit."""
+
+    def __init__(self, type_of_any: int) -> None:
+        self._type_of_any = type_of_any
+        super().__init__()
+
+    def visit_any(self, t: AnyType) -> Type:  # noqa: D102
+        if t.type_of_any == TypeOfAny.explicit:
+            return t.copy_modified(type_of_any=self._type_of_any)
+        else:
+            return t
 
 
 class ModelConfigData:
