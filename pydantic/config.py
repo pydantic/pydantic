@@ -1041,10 +1041,6 @@ class ConfigDict(TypedDict, total=False):
         In v2.11, `validate_by_alias` was introduced in conjunction with [`validate_by_name`][pydantic.ConfigDict.validate_by_name]
         to empower users with more fine grained validation control. In <v2.11, disabling validation by alias was not possible.
 
-    !!! tip
-        If you set `validate_by_alias` to `False`, under the hood, Pydantic dynamically sets
-        `validate_by_name` to `True` to ensure that validation can still occur.
-
     Here's an example of disabling validation by alias:
 
     ```py
@@ -1068,6 +1064,9 @@ class ConfigDict(TypedDict, total=False):
         This would make it impossible to populate an attribute.
 
         See [usage errors](../errors/usage_errors.md#validate-by-alias-and-name-false) for an example.
+
+        If you set `validate_by_alias` to `False`, under the hood, Pydantic dynamically sets
+        `validate_by_name` to `True` to ensure that validation can still occur.
     """
 
     validate_by_name: bool
