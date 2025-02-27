@@ -5950,10 +5950,6 @@ as the performance difference is minimal if repeated strings are rare.</p>
 <p>In v2.11, <code>validate_by_alias</code> was introduced in conjunction with <a class="autorefs autorefs-internal" href="#pydantic.config.ConfigDict.validate_by_name"><code>validate_by_name</code></a>
 to empower users with more fine grained validation control. In &lt;v2.11, disabling validation by alias was not possible.</p>
 </div>
-<div class="admonition tip">
-<p class="admonition-title">Tip</p>
-<p>If you set <code>validate_by_alias</code> to <code>False</code>, you should set <code>validate_by_name</code> to <code>True</code> to ensure that the field can still be populated.</p>
-</div>
 <p>Here's an example of disabling validation by alias:</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">Field</span>
 
@@ -5975,6 +5971,8 @@ to empower users with more fine grained validation control. In &lt;v2.11, disabl
 <p>You cannot set both <code>validate_by_alias</code> and <code>validate_by_name</code> to <code>False</code>.
 This would make it impossible to populate an attribute.</p>
 <p>See <a href="../../errors/usage_errors/#validate-by-alias-and-name-false">usage errors</a> for an example.</p>
+<p>If you set <code>validate_by_alias</code> to <code>False</code>, under the hood, Pydantic dynamically sets
+<code>validate_by_name</code> to <code>True</code> to ensure that validation can still occur.</p>
 </div>
     </div>
 
@@ -6036,8 +6034,6 @@ to empower users with more fine grained validation behavior control.</p>
 <p class="admonition-title">Warning</p>
 <p>You cannot set both <code>validate_by_alias</code> and <code>validate_by_name</code> to <code>False</code>.
 This would make it impossible to populate an attribute.</p>
-<p>This also means you can't set <code>validate_by_alias</code> to <code>False</code> and leave <code>validate_by_name</code> unset,
-as <code>validate_by_name</code> defaults to <code>False</code>.</p>
 <p>See <a href="../../errors/usage_errors/#validate-by-alias-and-name-false">usage errors</a> for an example.</p>
 </div>
     </div>
@@ -6146,7 +6142,10 @@ especially with <code>TypedDict</code>.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/config.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1145</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1142</span>
+<span class="normal">1143</span>
+<span class="normal">1144</span>
+<span class="normal">1145</span>
 <span class="normal">1146</span>
 <span class="normal">1147</span>
 <span class="normal">1148</span>
@@ -6184,10 +6183,7 @@ especially with <code>TypedDict</code>.</p>
 <span class="normal">1180</span>
 <span class="normal">1181</span>
 <span class="normal">1182</span>
-<span class="normal">1183</span>
-<span class="normal">1184</span>
-<span class="normal">1185</span>
-<span class="normal">1186</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">with_config</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="n">ConfigDict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_TypeT</span><span class="p">],</span> <span class="n">_TypeT</span><span class="p">]:</span>
+<span class="normal">1183</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">with_config</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="n">ConfigDict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_TypeT</span><span class="p">],</span> <span class="n">_TypeT</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;!!! abstract &quot;Usage Documentation&quot;</span>
 <span class="sd">        [Configuration with other types](../concepts/config.md#configuration-on-other-supported-types)</span>
 
