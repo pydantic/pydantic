@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Any, Callable, cast
 import typing_extensions
 from typing_extensions import deprecated, get_args, get_origin
 from typing_inspection import typing_objects
+from typing_inspection.introspection import is_union_origin
 
 from pydantic.version import version_short
 
@@ -180,6 +181,11 @@ def is_namedtuple(tp: Any, /) -> bool:
     from ._utils import lenient_issubclass  # circ. import
 
     return lenient_issubclass(tp, tuple) and hasattr(tp, '_fields')
+
+
+# TODO In 2.12, delete this export. It is currently defined only to not break
+# pydantic-settings which relies on it:
+origin_is_union = is_union_origin
 
 
 def is_generic_alias(tp: Any, /) -> bool:
