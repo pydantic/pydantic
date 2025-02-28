@@ -114,7 +114,7 @@ def validate_core_schema(schema: CoreSchema) -> CoreSchema:
     return schema
 
 
-def _clean_schema_for_pretty_print(obj: Any, strip_metadata: bool = True) -> Any:  # pragma: nocover
+def _clean_schema_for_pretty_print(obj: Any, strip_metadata: bool = True) -> Any:  # pragma: no cover
     """A utility function to remove irrelevant information from a core schema."""
     if isinstance(obj, Mapping):
         new_dct = {}
@@ -151,7 +151,7 @@ def pretty_print_core_schema(
     console: Console | None = None,
     max_depth: int | None = None,
     strip_metadata: bool = True,
-) -> None:  # pragma: nocover
+) -> None:  # pragma: no cover
     """Pretty-print a core schema using the `rich` library.
 
     Args:

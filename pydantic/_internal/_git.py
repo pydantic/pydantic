@@ -11,7 +11,7 @@ def is_git_repo(dir: str) -> bool:
     return os.path.exists(os.path.join(dir, '.git'))
 
 
-def have_git() -> bool:
+def have_git() -> bool:  # pragma: no cover
     """Can we run the git executable?"""
     try:
         subprocess.check_output(['git', '--help'])
