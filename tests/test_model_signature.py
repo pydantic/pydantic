@@ -4,9 +4,10 @@ from inspect import Parameter, Signature, signature
 from typing import Annotated, Any, Generic, Optional, TypeVar, Union
 
 import pytest
+from typing_extensions import get_origin
+from typing_inspection import typing_objects
 
 from pydantic import BaseModel, ConfigDict, Field, create_model
-from pydantic._internal._typing_extra import is_annotated
 
 
 def _equals(a: Union[str, Iterable[str]], b: Union[str, Iterable[str]]) -> bool:
@@ -180,7 +181,7 @@ def test_annotated_field():
     sig = signature(Model)
     assert str(sig) == '(*, foo: Annotated[int, Gt(gt=1)] = 1) -> None'
     # check that the `Annotated` we created is a valid `Annotated`
-    assert is_annotated(sig.parameters['foo'].annotation)
+    assert typing_objects.is_annotated(get_origin(sig.parameters['foo'].annotation))
 
 
 @pytest.mark.skipif(sys.version_info < (3, 10), reason='repr different on older versions')

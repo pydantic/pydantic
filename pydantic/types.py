@@ -30,8 +30,9 @@ import annotated_types
 from annotated_types import BaseMetadata, MaxLen, MinLen
 from pydantic_core import CoreSchema, PydanticCustomError, SchemaSerializer, core_schema
 from typing_extensions import Protocol, TypeAlias, TypeAliasType, deprecated, get_args, get_origin
+from typing_inspection.introspection import is_union_origin
 
-from ._internal import _fields, _internal_dataclass, _typing_extra, _utils, _validators
+from ._internal import _fields, _internal_dataclass, _utils, _validators
 from ._migration import getattr_migration
 from .annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
 from .errors import PydanticUserError
@@ -3064,8 +3065,7 @@ class Discriminator:
     """Context to use in custom errors."""
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-        origin = _typing_extra.get_origin(source_type)
-        if not origin or not _typing_extra.origin_is_union(origin):
+        if not is_union_origin(get_origin(source_type)):
             raise TypeError(f'{type(self).__name__} must be used with a Union type, not {source_type}')
 
         if isinstance(self.discriminator, str):

@@ -104,6 +104,7 @@ __all__ = (
     'PydanticImportError',
     'PydanticUndefinedAnnotation',
     'PydanticInvalidForJsonSchema',
+    'PydanticForbiddenQualifier',
     # fields
     'Field',
     'computed_field',
@@ -270,6 +271,7 @@ _dynamic_imports: 'dict[str, tuple[str, str]]' = {
     'PydanticImportError': (__spec__.parent, '.errors'),
     'PydanticUndefinedAnnotation': (__spec__.parent, '.errors'),
     'PydanticInvalidForJsonSchema': (__spec__.parent, '.errors'),
+    'PydanticForbiddenQualifier': (__spec__.parent, '.errors'),
     # fields
     'Field': (__spec__.parent, '.fields'),
     'computed_field': (__spec__.parent, '.fields'),

@@ -39,6 +39,7 @@ import pydantic_core
 from pydantic_core import CoreSchema, PydanticOmit, core_schema, to_jsonable_python
 from pydantic_core.core_schema import ComputedField
 from typing_extensions import TypeAlias, assert_never, deprecated, final
+from typing_inspection.introspection import get_literal_values
 
 from pydantic.warnings import PydanticDeprecatedSince26, PydanticDeprecatedSince29
 
@@ -50,7 +51,6 @@ from ._internal import (
     _internal_dataclass,
     _mock_val_ser,
     _schema_generation_shared,
-    _typing_extra,
 )
 from .annotated_handlers import GetJsonSchemaHandler
 from .config import JsonDict, JsonValue
@@ -306,9 +306,7 @@ class GenerateJsonSchema:
             TypeError: If no method has been defined for generating a JSON schema for a given pydantic core schema type.
         """
         mapping: dict[CoreSchemaOrFieldType, Callable[[CoreSchemaOrField], JsonSchemaValue]] = {}
-        core_schema_types: list[CoreSchemaOrFieldType] = _typing_extra.literal_values(
-            CoreSchemaOrFieldType  # type: ignore
-        )
+        core_schema_types: list[CoreSchemaOrFieldType] = list(get_literal_values(CoreSchemaOrFieldType))
         for key in core_schema_types:
             method_name = f'{key.replace("-", "_")}_schema'
             try:

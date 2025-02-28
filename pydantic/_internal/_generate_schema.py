@@ -38,6 +38,7 @@ from typing import (
 )
 from uuid import UUID
 from warnings import warn
+from zoneinfo import ZoneInfo
 
 import typing_extensions
 from pydantic_core import (
@@ -51,6 +52,8 @@ from pydantic_core import (
     to_jsonable_python,
 )
 from typing_extensions import TypeAliasType, TypedDict, get_args, get_origin, is_typeddict
+from typing_inspection import typing_objects
+from typing_inspection.introspection import AnnotationSource, get_literal_values, is_union_origin
 
 from ..aliases import AliasChoices, AliasGenerator, AliasPath
 from ..annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
@@ -477,7 +480,7 @@ class GenerateSchema:
         )
 
     def _path_schema(self, tp: Any, path_type: Any) -> CoreSchema:
-        if tp is os.PathLike and (path_type not in {str, bytes} and not _typing_extra.is_any(path_type)):
+        if tp is os.PathLike and (path_type not in {str, bytes} and not typing_objects.is_any(path_type)):
             raise PydanticUserError(
                 '`os.PathLike` can only be used with `str`, `bytes` or `Any`', code='schema-for-unknown-type'
             )
@@ -777,7 +780,7 @@ class GenerateSchema:
                                 extras_annotation,
                                 required=True,
                             )[1]
-                            if not _typing_extra.is_any(extra_items_type):
+                            if not typing_objects.is_any(extra_items_type):
                                 extras_schema = self.generate_schema(extra_items_type)
                                 break
 
@@ -945,10 +948,10 @@ class GenerateSchema:
         return args[0], args[1]
 
     def _generate_schema_inner(self, obj: Any) -> core_schema.CoreSchema:
-        if _typing_extra.is_self(obj):
+        if typing_objects.is_self(obj):
             obj = self._resolve_self_type(obj)
 
-        if _typing_extra.is_annotated(obj):
+        if typing_objects.is_annotated(get_origin(obj)):
             return self._annotated_schema(obj)
 
         if isinstance(obj, dict):
@@ -997,7 +1000,7 @@ class GenerateSchema:
             return core_schema.bool_schema()
         elif obj is complex:
             return core_schema.complex_schema()
-        elif _typing_extra.is_any(obj) or obj is object:
+        elif typing_objects.is_any(obj) or obj is object:
             return core_schema.any_schema()
         elif obj is datetime.date:
             return core_schema.date_schema()
@@ -1043,19 +1046,19 @@ class GenerateSchema:
             return self._mapping_schema(obj, Any, Any)
         elif obj in COUNTER_TYPES:
             return self._mapping_schema(obj, Any, int)
-        elif _typing_extra.is_type_alias_type(obj):
+        elif typing_objects.is_typealiastype(obj):
             return self._type_alias_type_schema(obj)
         elif obj is type:
             return self._type_schema()
         elif _typing_extra.is_callable(obj):
             return core_schema.callable_schema()
-        elif _typing_extra.is_literal(obj):
+        elif typing_objects.is_literal(get_origin(obj)):
             return self._literal_schema(obj)
         elif is_typeddict(obj):
             return self._typed_dict_schema(obj, None)
         elif _typing_extra.is_namedtuple(obj):
             return self._namedtuple_schema(obj, None)
-        elif _typing_extra.is_new_type(obj):
+        elif typing_objects.is_newtype(obj):
             # NewType, can't use isinstance because it fails <3.10
             return self.generate_schema(obj.__supertype__)
         elif obj in PATTERN_TYPES:
@@ -1074,7 +1077,7 @@ class GenerateSchema:
             return self._call_schema(obj)
         elif inspect.isclass(obj) and issubclass(obj, Enum):
             return self._enum_schema(obj)
-        elif _typing_extra.is_zoneinfo_type(obj):
+        elif obj is ZoneInfo:
             return self._zoneinfo_schema()
 
         # dataclasses.is_dataclass coerces dc instances to types, but we only handle
@@ -1104,9 +1107,9 @@ class GenerateSchema:
         if schema is not None:
             return schema
 
-        if _typing_extra.is_type_alias_type(origin):
+        if typing_objects.is_typealiastype(origin):
             return self._type_alias_type_schema(obj)
-        elif _typing_extra.origin_is_union(origin):
+        elif is_union_origin(origin):
             return self._union_schema(obj)
         elif origin in TUPLE_TYPES:
             return self._tuple_schema(obj)
@@ -1434,7 +1437,7 @@ class GenerateSchema:
 
     def _literal_schema(self, literal_type: Any) -> CoreSchema:
         """Generate schema for a Literal."""
-        expected = _typing_extra.literal_values(literal_type)
+        expected = list(get_literal_values(literal_type, type_check=False, unpack_type_aliases='eager'))
         assert expected, f'literal "expected" cannot be empty, obj={literal_type}'
         schema = core_schema.literal_schema(expected)
 
@@ -1509,24 +1512,16 @@ class GenerateSchema:
                 except NameError as e:
                     raise PydanticUndefinedAnnotation.from_name_error(e) from e
 
+                readonly_fields: list[str] = []
+
                 for field_name, annotation in annotations.items():
-                    annotation = replace_types(annotation, typevars_map)
-                    required = field_name in required_keys
+                    field_info = FieldInfo.from_annotation(annotation, _source=AnnotationSource.TYPED_DICT)
+                    field_info.annotation = replace_types(field_info.annotation, typevars_map)
 
-                    if _typing_extra.is_required(annotation):
-                        required = True
-                        annotation = self._get_args_resolving_forward_refs(
-                            annotation,
-                            required=True,
-                        )[0]
-                    elif _typing_extra.is_not_required(annotation):
-                        required = False
-                        annotation = self._get_args_resolving_forward_refs(
-                            annotation,
-                            required=True,
-                        )[0]
+                    required = field_name in required_keys or 'required' in field_info._qualifiers
+                    if 'read_only' in field_info._qualifiers:
+                        readonly_fields.append(field_name)
 
-                    field_info = FieldInfo.from_annotation(annotation)
                     if (
                         field_docstrings is not None
                         and field_info.description is None
@@ -1536,6 +1531,16 @@ class GenerateSchema:
                     self._apply_field_title_generator_to_field_info(self._config_wrapper, field_info, field_name)
                     fields[field_name] = self._generate_td_field_schema(
                         field_name, field_info, decorators, required=required
+                    )
+
+                if readonly_fields:
+                    fields_repr = ', '.join(repr(f) for f in readonly_fields)
+                    plural = len(readonly_fields) >= 2
+                    warnings.warn(
+                        f'Item{"s" if plural else ""} {fields_repr} on TypedDict class {typed_dict_cls.__name__!r} '
+                        f'{"are" if plural else "is"} using the `ReadOnly` qualifier. Pydantic will not protect items '
+                        'from any mutation on dictionary instances.',
+                        UserWarning,
                     )
 
                 td_schema = core_schema.typed_dict_schema(
@@ -1587,6 +1592,7 @@ class GenerateSchema:
                     self._generate_parameter_schema(
                         field_name,
                         annotation,
+                        source=AnnotationSource.NAMED_TUPLE,
                         default=namedtuple_cls._field_defaults.get(field_name, Parameter.empty),
                     )
                     for field_name, annotation in annotations.items()
@@ -1600,6 +1606,7 @@ class GenerateSchema:
         self,
         name: str,
         annotation: type[Any],
+        source: AnnotationSource,
         default: Any = Parameter.empty,
         mode: Literal['positional_only', 'positional_or_keyword', 'keyword_only'] | None = None,
     ) -> core_schema.ArgumentsParameter:
@@ -1607,7 +1614,7 @@ class GenerateSchema:
         FieldInfo = import_cached_field_info()
 
         if default is Parameter.empty:
-            field = FieldInfo.from_annotation(annotation)
+            field = FieldInfo.from_annotation(annotation, _source=source)
         else:
             field = FieldInfo.from_annotated_attribute(annotation, default)
         assert field.annotation is not None, 'field.annotation should not be None when generating a schema'
@@ -1690,23 +1697,23 @@ class GenerateSchema:
         # Assume `type[Annotated[<typ>, ...]]` is equivalent to `type[<typ>]`:
         type_param = _typing_extra.annotated_type(type_param) or type_param
 
-        if _typing_extra.is_any(type_param):
+        if typing_objects.is_any(type_param):
             return self._type_schema()
-        elif _typing_extra.is_type_alias_type(type_param):
+        elif typing_objects.is_typealiastype(type_param):
             return self.generate_schema(type[type_param.__value__])
-        elif isinstance(type_param, typing.TypeVar):
+        elif typing_objects.is_typevar(type_param):
             if type_param.__bound__:
-                if _typing_extra.origin_is_union(get_origin(type_param.__bound__)):
+                if is_union_origin(get_origin(type_param.__bound__)):
                     return self._union_is_subclass_schema(type_param.__bound__)
                 return core_schema.is_subclass_schema(type_param.__bound__)
             elif type_param.__constraints__:
                 return core_schema.union_schema([self.generate_schema(type[c]) for c in type_param.__constraints__])
             else:
                 return self._type_schema()
-        elif _typing_extra.origin_is_union(get_origin(type_param)):
+        elif is_union_origin(get_origin(type_param)):
             return self._union_is_subclass_schema(type_param)
         else:
-            if _typing_extra.is_self(type_param):
+            if typing_objects.is_self(type_param):
                 type_param = self._resolve_self_type(type_param)
             if _typing_extra.is_generic_alias(type_param):
                 raise PydanticUserError(
@@ -1731,7 +1738,7 @@ class GenerateSchema:
 
         json_schema = smart_deepcopy(list_schema)
         python_schema = core_schema.is_instance_schema(typing.Sequence, cls_repr='Sequence')
-        if not _typing_extra.is_any(items_type):
+        if not typing_objects.is_any(items_type):
             from ._validators import sequence_validator
 
             python_schema = core_schema.chain_schema(
@@ -1925,7 +1932,9 @@ class GenerateSchema:
 
             parameter_mode = mode_lookup.get(p.kind)
             if parameter_mode is not None:
-                arg_schema = self._generate_parameter_schema(name, annotation, p.default, parameter_mode)
+                arg_schema = self._generate_parameter_schema(
+                    name, annotation, AnnotationSource.FUNCTION, p.default, parameter_mode
+                )
                 arguments_list.append(arg_schema)
             elif p.kind == Parameter.VAR_POSITIONAL:
                 var_args_schema = self.generate_schema(annotation)
@@ -2452,11 +2461,10 @@ def _extract_get_pydantic_json_schema(tp: Any) -> GetJsonSchemaFunction | None:
                 code='custom-json-schema',
             )
 
-    # handle GenericAlias' but ignore Annotated which "lies" about its origin (in this case it would be `int`)
-    if hasattr(tp, '__origin__') and not _typing_extra.is_annotated(tp):
+    if (origin := get_origin(tp)) is not None:
         # Generic aliases proxy attribute access to the origin, *except* dunder attributes,
         # such as `__get_pydantic_json_schema__`, hence the explicit check.
-        return _extract_get_pydantic_json_schema(tp.__origin__)
+        return _extract_get_pydantic_json_schema(origin)
 
     if js_modify_function is None:
         return None

@@ -9,10 +9,12 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from itertools import zip_longest
 from types import prepare_class
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Annotated, Any, TypeVar
 from weakref import WeakValueDictionary
 
 import typing_extensions
+from typing_inspection import typing_objects
+from typing_inspection.introspection import is_union_origin
 
 from . import _typing_extra
 from ._core_utils import get_type_ref
@@ -266,15 +268,13 @@ def replace_types(type_: Any, type_map: Mapping[TypeVar, Any] | None) -> Any:
         return type_
 
     type_args = get_args(type_)
-
-    if _typing_extra.is_annotated(type_):
-        annotated_type, *annotations = type_args
-        annotated = replace_types(annotated_type, type_map)
-        for annotation in annotations:
-            annotated = typing.Annotated[annotated, annotation]
-        return annotated
-
     origin_type = get_origin(type_)
+
+    if typing_objects.is_annotated(origin_type):
+        annotated_type, *annotations = type_args
+        annotated_type = replace_types(annotated_type, type_map)
+        # TODO remove parentheses when we drop support for Python 3.10:
+        return Annotated[(annotated_type, *annotations)]
 
     # Having type args is a good indicator that this is a typing special form
     # instance or a generic alias of some sort.
@@ -297,15 +297,15 @@ def replace_types(type_: Any, type_map: Mapping[TypeVar, Any] | None) -> Any:
             origin_type = getattr(typing, type_._name)
         assert origin_type is not None
 
-        if _typing_extra.origin_is_union(origin_type):
-            if any(_typing_extra.is_any(arg) for arg in resolved_type_args):
+        if is_union_origin(origin_type):
+            if any(typing_objects.is_any(arg) for arg in resolved_type_args):
                 # `Any | T` ~ `Any`:
                 resolved_type_args = (Any,)
             # `Never | T` ~ `T`:
             resolved_type_args = tuple(
                 arg
                 for arg in resolved_type_args
-                if not (_typing_extra.is_no_return(arg) or _typing_extra.is_never(arg))
+                if not (typing_objects.is_noreturn(arg) or typing_objects.is_never(arg))
             )
 
         # PEP-604 syntax (Ex.: list | str) is represented with a types.UnionType object that does not have __getitem__.
@@ -499,7 +499,7 @@ def _union_orderings_key(typevar_values: Any) -> Any:
         for value in typevar_values:
             args_data.append(_union_orderings_key(value))
         return tuple(args_data)
-    elif _typing_extra.is_union(typevar_values):
+    elif typing_objects.is_union(typing_extensions.get_origin(typevar_values)):
         return get_args(typevar_values)
     else:
         return ()
