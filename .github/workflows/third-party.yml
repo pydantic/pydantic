@@ -297,7 +297,8 @@ jobs:
         run: pip list
 
       - name: Run ODMantic tests
-        run: pytest tests
+        # Disabled tests, as per https://github.com/art049/odmantic/issues/512:
+        run: pytest tests -k 'not test_custom_bson_serializable and not test_sync_custom_bson_serializable and not test_with_bson_serializer_override_builtin_bson'
         env:
           TEST_MONGO_URI: ${{ steps.mongo-service.outputs.connection-string }}
           TEST_MONGO_MODE: standalone
