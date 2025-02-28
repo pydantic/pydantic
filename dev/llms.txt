@@ -12,7 +12,7 @@ Pydantic
 
 [![license](https://img.shields.io/github/license/pydantic/pydantic.svg)](https://github.com/pydantic/pydantic/blob/main/LICENSE)
 
-Documentation for development version: [98348d0](https://github.com/pydantic/pydantic/commit/98348d0ce8e26c42ac9d32278ef97f6545446dd9).
+Documentation for development version: [6558a2b](https://github.com/pydantic/pydantic/commit/6558a2b1f569a25984d14d6af4b484fe27dc4d17).
 
 Pydantic is the most widely used data validation library for Python.
 
@@ -12047,6 +12047,37 @@ def __init__(self, message: str) -> None:
 
 
 
+PydanticForbiddenQualifier
+--------------------------
+
+```
+PydanticForbiddenQualifier(
+    qualifier: Qualifier, annotation: Any
+)
+
+```
+
+Bases: `PydanticUserError`
+
+An error raised if a forbidden type qualifier is found in a type annotation.
+
+Source code in `pydantic/errors.py`
+```
+def __init__(self, qualifier: Qualifier, annotation: Any) -> None:
+    super().__init__(
+        message=(
+            f'The annotation {_repr.display_as_type(annotation)!r} contains the {self._qualifier_repr_map[qualifier]!r} '
+            f'type qualifier, which is invalid in the context it is defined.'
+        ),
+        code=None,
+    )
+
+```
+
+
+
+
+
 
 
 
@@ -13180,7 +13211,9 @@ def __init__(self, **kwargs: Unpack[_FieldInfoInputs]) -> None:
 
     self.metadata = self._collect_metadata(kwargs)  # type: ignore
 
-    # Private attributes, used to rebuild FieldInfo instances:
+    # Private attributes:
+    self._qualifiers: set[Qualifier] = set()
+    # Used to rebuild FieldInfo instances:
     self._complete = True
     self._original_annotation: Any = PydanticUndefined
     self._original_assignment: Any = PydanticUndefined
@@ -13270,7 +13303,11 @@ def from_field(default: Any = PydanticUndefined, **kwargs: Unpack[_FromFieldInfo
 ### from\_annotation `staticmethod`
 
 ```
-from_annotation(annotation: type[Any]) -> FieldInfo
+from_annotation(
+    annotation: type[Any],
+    *,
+    _source: AnnotationSource = ANY
+) -> FieldInfo
 
 ```
 
@@ -13317,7 +13354,7 @@ Returns:
 Source code in `pydantic/fields.py`
 ```
 @staticmethod
-def from_annotation(annotation: type[Any]) -> FieldInfo:
+def from_annotation(annotation: type[Any], *, _source: AnnotationSource = AnnotationSource.ANY) -> FieldInfo:
     """Creates a `FieldInfo` instance from a bare annotation.
 
     This function is used internally to create a `FieldInfo` from a bare annotation like this:
@@ -13350,50 +13387,48 @@ def from_annotation(annotation: type[Any]) -> FieldInfo:
     Returns:
         An instance of the field metadata.
     """
-    # 1. Check if the annotation is the `Final` type qualifier:
-    final = _typing_extra.is_finalvar(annotation)
-    if final:
-        if _typing_extra.is_generic_alias(annotation):
-            # 1.1. The annotation is a parametrized `Final`, e.g. `Final[int]`.
-            #      In this case, `annotation` will be `int`:
-            annotation = typing_extensions.get_args(annotation)[0]
+    try:
+        inspected_ann = inspect_annotation(
+            annotation,
+            annotation_source=_source,
+            unpack_type_aliases='skip',
+        )
+    except ForbiddenQualifier as e:
+        raise PydanticForbiddenQualifier(e.qualifier, annotation)
+
+    # TODO check for classvar and error?
+
+    # No assigned value, this happens when using a bare `Final` qualifier (also for other
+    # qualifiers, but they shouldn't appear here). In this case we infer the type as `Any`
+    # because we don't have any assigned value.
+    type_expr: Any = Any if inspected_ann.type is UNKNOWN else inspected_ann.type
+    final = 'final' in inspected_ann.qualifiers
+    metadata = inspected_ann.metadata
+
+    if not metadata:
+        # No metadata, e.g. `field: int`, or `field: Final[str]`:
+        field_info = FieldInfo(annotation=type_expr, frozen=final or None)
+        field_info._qualifiers = inspected_ann.qualifiers
+        return field_info
+
+    # With metadata, e.g. `field: Annotated[int, Field(...), Gt(1)]`:
+    field_info_annotations = [a for a in metadata if isinstance(a, FieldInfo)]
+    field_info = FieldInfo.merge_field_infos(*field_info_annotations, annotation=type_expr)
+
+    new_field_info = copy(field_info)
+    new_field_info.annotation = type_expr
+    new_field_info.frozen = final or field_info.frozen
+    field_metadata: list[Any] = []
+    for a in metadata:
+        if typing_objects.is_deprecated(a):
+            new_field_info.deprecated = a.message
+        elif not isinstance(a, FieldInfo):
+            field_metadata.append(a)
         else:
-            # 1.2. The annotation is a bare `Final`. Use `Any` as a type annotation:
-            return FieldInfo(annotation=Any, frozen=True)  # pyright: ignore[reportArgumentType] (PEP 747)
-
-    # 2. Check if the annotation is an `Annotated` form.
-    #    In this case, `annotation` will be the annotated type:
-    if _typing_extra.is_annotated(annotation):
-        annotation, *metadata = typing_extensions.get_args(annotation)
-
-        # 2.1. Check if the annotated type is the `Final` type qualifier.
-        #      (i.e. `Annotated[Final[...], ...]`). Note that we only do
-        #      so if `final` isn't `True` already, because we don't want to
-        #      support the invalid `Final[Annotated[Final, ...]]` form.
-        if not final:
-            final = _typing_extra.is_finalvar(annotation)
-            if final and _typing_extra.is_generic_alias(annotation):
-                annotation = typing_extensions.get_args(annotation)[0]
-
-        field_info_annotations = [a for a in metadata if isinstance(a, FieldInfo)]
-        field_info = FieldInfo.merge_field_infos(*field_info_annotations, annotation=annotation)
-        if field_info:
-            new_field_info = copy(field_info)
-            new_field_info.annotation = annotation
-            new_field_info.frozen = final or field_info.frozen
-            field_metadata: list[Any] = []
-            for a in metadata:
-                if _typing_extra.is_deprecated_instance(a):
-                    new_field_info.deprecated = a.message
-                elif not isinstance(a, FieldInfo):
-                    field_metadata.append(a)
-                else:
-                    field_metadata.extend(a.metadata)
-            new_field_info.metadata = field_metadata
-            return new_field_info
-
-    # 3. We don't have metadata:
-    return FieldInfo(annotation=annotation, frozen=final or None)  # pyright: ignore[reportArgumentType] (PEP 747)
+            field_metadata.extend(a.metadata)
+        new_field_info.metadata = field_metadata
+    new_field_info._qualifiers = inspected_ann.qualifiers
+    return new_field_info
 
 ```
 
@@ -13404,7 +13439,10 @@ def from_annotation(annotation: type[Any]) -> FieldInfo:
 
 ```
 from_annotated_attribute(
-    annotation: type[Any], default: Any
+    annotation: type[Any],
+    default: Any,
+    *,
+    _source: AnnotationSource = ANY
 ) -> FieldInfo
 
 ```
@@ -13443,7 +13481,9 @@ Returns:
 Source code in `pydantic/fields.py`
 ```
 @staticmethod
-def from_annotated_attribute(annotation: type[Any], default: Any) -> FieldInfo:
+def from_annotated_attribute(
+    annotation: type[Any], default: Any, *, _source: AnnotationSource = AnnotationSource.ANY
+) -> FieldInfo:
     """Create `FieldInfo` from an annotation with a default value.
 
     This is used in cases like the following:
@@ -13475,68 +13515,73 @@ def from_annotated_attribute(annotation: type[Any], default: Any) -> FieldInfo:
             code='unevaluable-type-annotation',
         )
 
-    final = _typing_extra.is_finalvar(annotation)
-    if final and _typing_extra.is_generic_alias(annotation):
-        annotation = typing_extensions.get_args(annotation)[0]
+    try:
+        inspected_ann = inspect_annotation(
+            annotation,
+            annotation_source=_source,
+            unpack_type_aliases='skip',
+        )
+    except ForbiddenQualifier as e:
+        raise PydanticForbiddenQualifier(e.qualifier, annotation)
+
+    # TODO check for classvar and error?
+
+    # TODO infer from the default, this can be done in v3 once we treat final fields with
+    # a default as proper fields and not class variables:
+    type_expr: Any = Any if inspected_ann.type is UNKNOWN else inspected_ann.type
+    final = 'final' in inspected_ann.qualifiers
+    metadata = inspected_ann.metadata
 
     if isinstance(default, FieldInfo):
-        if _typing_extra.is_annotated(annotation):
-            annotation, *annotation_metadata = typing_extensions.get_args(annotation)
-        else:
-            annotation_metadata = []
-
-        default.annotation = annotation
-        default.metadata += annotation_metadata
-        default = default.merge_field_infos(
-            *[x for x in annotation_metadata if isinstance(x, FieldInfo)], default, annotation=default.annotation
+        # e.g. `field: int = Field(...)`
+        default.annotation = type_expr
+        default.metadata += metadata
+        merged_default = FieldInfo.merge_field_infos(
+            *[x for x in metadata if isinstance(x, FieldInfo)],
+            default,
+            annotation=default.annotation,
         )
-        default.frozen = final or default.frozen
-        return default
+        merged_default.frozen = final or merged_default.frozen
+        merged_default._qualifiers = inspected_ann.qualifiers
+        return merged_default
 
     if isinstance(default, dataclasses.Field):
-        init_var = False
-        if annotation is dataclasses.InitVar:
-            init_var = True
-            annotation = typing.cast(Any, Any)
-        elif isinstance(annotation, dataclasses.InitVar):
-            init_var = True
-            annotation = annotation.type
-
+        # `collect_dataclass_fields()` passes the dataclass Field as a default.
         pydantic_field = FieldInfo._from_dataclass_field(default)
-        if _typing_extra.is_annotated(annotation):
-            annotation, *annotation_metadata = typing_extensions.get_args(annotation)
-        else:
-            annotation_metadata = []
-
-        pydantic_field.annotation = annotation
-        pydantic_field.metadata += annotation_metadata
-        pydantic_field = pydantic_field.merge_field_infos(
-            *[x for x in annotation_metadata if isinstance(x, FieldInfo)],
+        pydantic_field.annotation = type_expr
+        pydantic_field.metadata += metadata
+        pydantic_field = FieldInfo.merge_field_infos(
+            *[x for x in metadata if isinstance(x, FieldInfo)],
             pydantic_field,
             annotation=pydantic_field.annotation,
         )
         pydantic_field.frozen = final or pydantic_field.frozen
-        pydantic_field.init_var = init_var
+        pydantic_field.init_var = 'init_var' in inspected_ann.qualifiers
         pydantic_field.init = getattr(default, 'init', None)
         pydantic_field.kw_only = getattr(default, 'kw_only', None)
+        pydantic_field._qualifiers = inspected_ann.qualifiers
         return pydantic_field
 
-    if _typing_extra.is_annotated(annotation):
-        annotation, *metadata = typing_extensions.get_args(annotation)
-        field_infos = [a for a in metadata if isinstance(a, FieldInfo)]
-        field_info = FieldInfo.merge_field_infos(*field_infos, annotation=annotation, default=default)
-        field_metadata: list[Any] = []
-        for a in metadata:
-            if _typing_extra.is_deprecated_instance(a):
-                field_info.deprecated = a.message
-            elif not isinstance(a, FieldInfo):
-                field_metadata.append(a)
-            else:
-                field_metadata.extend(a.metadata)
-        field_info.metadata = field_metadata
+    if not metadata:
+        # No metadata, e.g. `field: int = ...`, or `field: Final[str] = ...`:
+        field_info = FieldInfo(annotation=type_expr, default=default, frozen=final or None)
+        field_info._qualifiers = inspected_ann.qualifiers
         return field_info
 
-    return FieldInfo(annotation=annotation, default=default, frozen=final or None)  # pyright: ignore[reportArgumentType]
+    # With metadata, e.g. `field: Annotated[int, Field(...), Gt(1)] = ...`:
+    field_infos = [a for a in metadata if isinstance(a, FieldInfo)]
+    field_info = FieldInfo.merge_field_infos(*field_infos, annotation=type_expr, default=default)
+    field_metadata: list[Any] = []
+    for a in metadata:
+        if typing_objects.is_deprecated(a):
+            field_info.deprecated = a.message
+        elif not isinstance(a, FieldInfo):
+            field_metadata.append(a)
+        else:
+            field_metadata.extend(a.metadata)
+    field_info.metadata = field_metadata
+    field_info._qualifiers = inspected_ann.qualifiers
+    return field_info
 
 ```
 
@@ -16215,9 +16260,7 @@ def build_schema_type_to_method(
         TypeError: If no method has been defined for generating a JSON schema for a given pydantic core schema type.
     """
     mapping: dict[CoreSchemaOrFieldType, Callable[[CoreSchemaOrField], JsonSchemaValue]] = {}
-    core_schema_types: list[CoreSchemaOrFieldType] = _typing_extra.literal_values(
-        CoreSchemaOrFieldType  # type: ignore
-    )
+    core_schema_types: list[CoreSchemaOrFieldType] = list(get_literal_values(CoreSchemaOrFieldType))
     for key in core_schema_types:
         method_name = f'{key.replace("-", "_")}_schema'
         try:
@@ -40726,8 +40769,7 @@ class Discriminator:
     """Context to use in custom errors."""
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-        origin = _typing_extra.get_origin(source_type)
-        if not origin or not _typing_extra.origin_is_union(origin):
+        if not is_union_origin(get_origin(source_type)):
             raise TypeError(f'{type(self).__name__} must be used with a Union type, not {source_type}')
 
         if isinstance(self.discriminator, str):
