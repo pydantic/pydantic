@@ -12,7 +12,7 @@ Pydantic
 
 [![license](https://img.shields.io/github/license/pydantic/pydantic.svg)](https://github.com/pydantic/pydantic/blob/main/LICENSE)
 
-Documentation for development version: [39bab2e](https://github.com/pydantic/pydantic/commit/39bab2ef0e543f182977b23f2cc720d24e467901).
+Documentation for development version: [f6725ba](https://github.com/pydantic/pydantic/commit/f6725ba21e4409cbd867427203adf85c39e42630).
 
 Pydantic is the most widely used data validation library for Python.
 
@@ -5155,10 +5155,6 @@ These are the current maintainers of the Pydantic repository. Feel free to tag u
 
 @hramezani](https://github.com/hramezani)
 
-[![](https://avatars.githubusercontent.com/u/35119617?u=540f30c937a6450812628b9592a1dfe91bbe148e&v=4)
-
-@dmontagu](https://github.com/dmontagu)
-
 [![](https://avatars.githubusercontent.com/u/1755071?u=612704256e38d6ac9cbed24f10e4b6ac2da74ecb&v=4)
 
 @adriangb](https://github.com/adriangb)
@@ -5167,32 +5163,36 @@ These are the current maintainers of the Pydantic repository. Feel free to tag u
 
 @Viicos](https://github.com/Viicos)
 
+[![](https://avatars.githubusercontent.com/u/35119617?u=540f30c937a6450812628b9592a1dfe91bbe148e&v=4)
+
+@dmontagu](https://github.com/dmontagu)
+
+[![](https://avatars.githubusercontent.com/u/1939362?u=b4b48981c3a097daaad16c4c5417aa7a3e5e32d9&v=4)
+
+@davidhewitt](https://github.com/davidhewitt)
+
 [![](https://avatars.githubusercontent.com/u/7353520?u=df8a3f06ba8f55ae1967a3e2d5ed882903a4e330&v=4)
 
 @Kludex](https://github.com/Kludex)
-
-[![](https://avatars.githubusercontent.com/u/4039449?u=42eb3b833047c8c4b4f647a031eaef148c16d93f&v=4)
-
-@samuelcolvin](https://github.com/samuelcolvin)
 
 [![](https://avatars.githubusercontent.com/u/54324534?u=3a4ffd00a8270b607922250d3a2d9c9af38b9cf9&v=4)
 
 @sydney-runkle](https://github.com/sydney-runkle)
 
+[![](https://avatars.githubusercontent.com/u/4039449?u=42eb3b833047c8c4b4f647a031eaef148c16d93f&v=4)
+
+@samuelcolvin](https://github.com/samuelcolvin)
+
 [![](https://avatars.githubusercontent.com/u/3627481?u=9bb2e0cf1c5ef3d0609d2e639a135b7b4ca8b463&v=4)
 
 @alexmojaki](https://github.com/alexmojaki)
-
-[![](https://avatars.githubusercontent.com/u/1939362?u=b4b48981c3a097daaad16c4c5417aa7a3e5e32d9&v=4)
-
-@davidhewitt](https://github.com/davidhewitt)
 
 Experts
 -------
 
 These are the users that have helped others the most with questions in GitHub through *all time*.
 
-[![](https://avatars.githubusercontent.com/u/18406791?u=20a4953f7d7e9d49d054b81e1582b08e87b2125f&v=4)
+[![](https://avatars.githubusercontent.com/u/18406791?u=4853940cf5eeffb5bbb9ba06ad862f28bc68d69e&v=4)
 
 @PrettyWood](https://github.com/PrettyWood)
 Questions replied: 143
@@ -5200,7 +5200,7 @@ Questions replied: 143
 [![](https://avatars.githubusercontent.com/u/32038156?u=a27b65a9ec3420586a827a0facccbb8b6df1ffb3&v=4)
 
 @uriyyo](https://github.com/uriyyo)
-Questions replied: 95
+Questions replied: 96
 
 [![](https://avatars.githubusercontent.com/u/2184855?u=5670768b7efda993c4887d91df3cf330dc7bc9de&v=4)
 
@@ -5226,17 +5226,12 @@ Questions replied: None
 
 These are the users that have helped others the most with questions in GitHub during the last month.
 
-[![](https://avatars.githubusercontent.com/u/48211033?u=e9c1dd6ff60473e8f35179fd91be02ea8af569ef&v=4)
-
-@janas-adam](https://github.com/janas-adam)
-Questions replied: 6
-
 Top contributors
 ----------------
 
 These are the users that have created the most pull requests that have been *merged*.
 
-[![](https://avatars.githubusercontent.com/u/18406791?u=20a4953f7d7e9d49d054b81e1582b08e87b2125f&v=4)
+[![](https://avatars.githubusercontent.com/u/18406791?u=4853940cf5eeffb5bbb9ba06ad862f28bc68d69e&v=4)
 
 @PrettyWood](https://github.com/PrettyWood)
 Contributions: 122
@@ -5276,6 +5271,11 @@ Contributions: 19
 @Gr1N](https://github.com/Gr1N)
 Contributions: 17
 
+[![](https://avatars.githubusercontent.com/u/1271289?u=b83b0a82b2c95990d93cefbeb8f548d9f2f090c2&v=4)
+
+@misrasaurabh1](https://github.com/misrasaurabh1)
+Contributions: 16
+
 [![](https://avatars.githubusercontent.com/u/32038156?u=a27b65a9ec3420586a827a0facccbb8b6df1ffb3&v=4)
 
 @uriyyo](https://github.com/uriyyo)
@@ -5289,11 +5289,6 @@ Contributions: 12
 [![](https://avatars.githubusercontent.com/u/52716203?u=d7062cbc6eb7671d5dc9cc0e32a24ae335e0f225&v=4)
 
 @yezz123](https://github.com/yezz123)
-Contributions: 12
-
-[![](https://avatars.githubusercontent.com/u/1271289?u=b83b0a82b2c95990d93cefbeb8f548d9f2f090c2&v=4)
-
-@misrasaurabh1](https://github.com/misrasaurabh1)
 Contributions: 12
 
 [![](https://avatars.githubusercontent.com/u/89458301?u=75f53e971fcba3ff61836c389505a420bddd865c&v=4)
@@ -5316,7 +5311,7 @@ Contributions: 9
 @cdce8p](https://github.com/cdce8p)
 Contributions: 9
 
-[![](https://avatars.githubusercontent.com/u/19784933?u=2f45a312b73e7fb29f3b6f8676e5be6f7220da25&v=4)
+[![](https://avatars.githubusercontent.com/u/19784933?v=4)
 
 @aminalaee](https://github.com/aminalaee)
 Contributions: 8
@@ -5336,6 +5331,11 @@ Contributions: 7
 @daviskirk](https://github.com/daviskirk)
 Contributions: 7
 
+[![](https://avatars.githubusercontent.com/u/1609449?u=922abf0524b47739b37095e553c99488814b05db&v=4)
+
+@tlambert03](https://github.com/tlambert03)
+Contributions: 7
+
 [![](https://avatars.githubusercontent.com/u/1769841?u=44e83d7974f0ab5c431340f1669d98f781594980&v=4)
 
 @dgasmith](https://github.com/dgasmith)
@@ -5344,11 +5344,6 @@ Contributions: 6
 [![](https://avatars.githubusercontent.com/u/202696?v=4)
 
 @Atheuz](https://github.com/Atheuz)
-Contributions: 6
-
-[![](https://avatars.githubusercontent.com/u/1609449?u=922abf0524b47739b37095e553c99488814b05db&v=4)
-
-@tlambert03](https://github.com/tlambert03)
 Contributions: 6
 
 [![](https://avatars.githubusercontent.com/u/16639270?u=faa71bcfb3273a32cd81711a56998e115bca7fcc&v=4)
@@ -5391,6 +5386,11 @@ Contributions: 4
 @commonism](https://github.com/commonism)
 Contributions: 4
 
+[![](https://avatars.githubusercontent.com/u/12939780?v=4)
+
+@MarkusSintonen](https://github.com/MarkusSintonen)
+Contributions: 4
+
 [![](https://avatars.githubusercontent.com/u/59469646?u=86d6a20768cc4cc65622eafd86672147321bd8f8&v=4)
 
 @JensHeinrich](https://github.com/JensHeinrich)
@@ -5416,12 +5416,17 @@ Contributions: 4
 @dAIsySHEng1](https://github.com/dAIsySHEng1)
 Contributions: 4
 
+[![](https://avatars.githubusercontent.com/u/9328433?u=8546519cb04223cd878285d72c27850b5f3f0882&v=4)
+
+@mschoettle](https://github.com/mschoettle)
+Contributions: 4
+
 Top Reviewers
 -------------
 
 These are the users that have reviewed the most Pull Requests from others, assisting with code quality, documentation, bug fixes, feature requests, etc.
 
-[![](https://avatars.githubusercontent.com/u/18406791?u=20a4953f7d7e9d49d054b81e1582b08e87b2125f&v=4)
+[![](https://avatars.githubusercontent.com/u/18406791?u=4853940cf5eeffb5bbb9ba06ad862f28bc68d69e&v=4)
 
 @PrettyWood](https://github.com/PrettyWood)
 Reviews: 211
@@ -5436,15 +5441,15 @@ Reviews: 103
 @tpdorsey](https://github.com/tpdorsey)
 Reviews: 77
 
+[![](https://avatars.githubusercontent.com/in/718456?v=4)
+
+@hyperlint-ai](https://github.com/apps/hyperlint-ai)
+Reviews: 56
+
 [![](https://avatars.githubusercontent.com/u/1326112?u=cb5d06e73a9e1998141b1641aa88e443c6717651&v=4)
 
 @tiangolo](https://github.com/tiangolo)
 Reviews: 44
-
-[![](https://avatars.githubusercontent.com/in/718456?v=4)
-
-@hyperlint-ai](https://github.com/apps/hyperlint-ai)
-Reviews: 41
 
 [![](https://avatars.githubusercontent.com/u/36469655?u=f67d8fa6d67d35d2f5ebd5b15e24efeb41036fd3&v=4)
 
@@ -5464,7 +5469,7 @@ Reviews: 17
 [![](https://avatars.githubusercontent.com/u/12939780?v=4)
 
 @MarkusSintonen](https://github.com/MarkusSintonen)
-Reviews: 15
+Reviews: 16
 
 [![](https://avatars.githubusercontent.com/u/40807730?u=b417e3cea56fd0f67983006108f6a1a83d4652a0&v=4)
 
@@ -5536,7 +5541,7 @@ Reviews: 5
 @nix010](https://github.com/nix010)
 Reviews: 5
 
-[![](https://avatars.githubusercontent.com/u/413772?u=64b77b6aa405c68a9c6bcf45f84257c66eea5f32&v=4)
+[![](https://avatars.githubusercontent.com/u/413772?v=4)
 
 @graingert](https://github.com/graingert)
 Reviews: 4
