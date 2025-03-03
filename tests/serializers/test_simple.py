@@ -110,19 +110,19 @@ def test_simple_serializers_fallback(schema_type):
     s = SchemaSerializer({'type': schema_type})
     with pytest.warns(
         UserWarning,
-        match=f'Expected `{schema_type}` but got `list` with value `\\[1, 2, 3\\]` - serialized value may not be as expected',
+        match=rf'Expected `{schema_type}` - serialized value may not be as expected \[input_value=\[1, 2, 3\], input_type=list\]',
     ):
         assert s.to_python([1, 2, 3]) == [1, 2, 3]
 
     with pytest.warns(
         UserWarning,
-        match=f"Expected `{schema_type}` but got `list` with value `\\[1, 2, b'bytes'\\]` - serialized value may not be as expected",
+        match=rf"Expected `{schema_type}` - serialized value may not be as expected \[input_value=\[1, 2, b'bytes'\], input_type=list\]",
     ):
         assert s.to_python([1, 2, b'bytes'], mode='json') == [1, 2, 'bytes']
 
     with pytest.warns(
         UserWarning,
-        match=f'Expected `{schema_type}` but got `list` with value `\\[1, 2, 3\\]` - serialized value may not be as expected',
+        match=rf'Expected `{schema_type}` - serialized value may not be as expected \[input_value=\[1, 2, 3\], input_type=list\]',
     ):
         assert s.to_json([1, 2, 3]) == b'[1,2,3]'
 

@@ -194,7 +194,7 @@ fn on_error(py: Python, err: PyErr, function_name: &str, extra: &Extra) -> PyRes
         if extra.check.enabled() {
             Err(err)
         } else {
-            extra.warnings.custom_warning(ser_err.__repr__());
+            extra.warnings.register_warning(ser_err);
             Ok(())
         }
     } else if let Ok(err) = exception.extract::<PydanticSerializationError>() {

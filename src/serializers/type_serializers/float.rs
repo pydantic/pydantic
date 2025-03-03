@@ -75,7 +75,7 @@ impl TypeSerializer for FloatSerializer {
         match extra.ob_type_lookup.is_type(value, ObType::Float) {
             IsType::Exact => Ok(value.clone().unbind()),
             IsType::Subclass => match extra.check {
-                SerCheck::Strict => Err(PydanticSerializationUnexpectedValue::new_err(None)),
+                SerCheck::Strict => Err(PydanticSerializationUnexpectedValue::new_from_msg(None).to_py_err()),
                 SerCheck::Lax | SerCheck::None => match extra.mode {
                     SerMode::Json => value.extract::<f64>()?.into_py_any(py),
                     _ => infer_to_python(value, include, exclude, extra),

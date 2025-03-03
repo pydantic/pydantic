@@ -190,7 +190,7 @@ impl TypeSerializer for ModelSerializer {
             let py = value.py();
             let root = value.getattr(intern!(py, ROOT_FIELD)).map_err(|original_err| {
                 if root_extra.check.enabled() {
-                    PydanticSerializationUnexpectedValue::new_err(None)
+                    PydanticSerializationUnexpectedValue::new_from_msg(None).to_py_err()
                 } else {
                     original_err
                 }
