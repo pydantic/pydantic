@@ -18,11 +18,13 @@ def test_plain_enum():
     assert v.to_json(MyEnum.a) == b'1'
 
     with pytest.warns(
-        UserWarning, match='Expected `enum` but got `int` with value `1` - serialized value may not be as expected'
+        UserWarning,
+        match=r'Expected `enum` - serialized value may not be as expected \[input_value=1, input_type=int\]',
     ):
         assert v.to_python(1) == 1
     with pytest.warns(
-        UserWarning, match='Expected `enum` but got `int` with value `1` - serialized value may not be as expected'
+        UserWarning,
+        match=r'Expected `enum` - serialized value may not be as expected \[input_value=1, input_type=int\]',
     ):
         assert v.to_json(1) == b'1'
 
@@ -40,11 +42,13 @@ def test_int_enum():
     assert v.to_json(MyEnum.a) == b'1'
 
     with pytest.warns(
-        UserWarning, match='Expected `enum` but got `int` with value `1` - serialized value may not be as expected'
+        UserWarning,
+        match=r'Expected `enum` - serialized value may not be as expected \[input_value=1, input_type=int\]',
     ):
         assert v.to_python(1) == 1
     with pytest.warns(
-        UserWarning, match='Expected `enum` but got `int` with value `1` - serialized value may not be as expected'
+        UserWarning,
+        match=r'Expected `enum` - serialized value may not be as expected \[input_value=1, input_type=int\]',
     ):
         assert v.to_json(1) == b'1'
 
@@ -62,11 +66,13 @@ def test_str_enum():
     assert v.to_json(MyEnum.a) == b'"a"'
 
     with pytest.warns(
-        UserWarning, match="Expected `enum` but got `str` with value `'a'` - serialized value may not be as expected"
+        UserWarning,
+        match=r"Expected `enum` - serialized value may not be as expected \[input_value='a', input_type=str\]",
     ):
         assert v.to_python('a') == 'a'
     with pytest.warns(
-        UserWarning, match="Expected `enum` but got `str` with value `'a'` - serialized value may not be as expected"
+        UserWarning,
+        match=r"Expected `enum` - serialized value may not be as expected \[input_value='a', input_type=str\]",
     ):
         assert v.to_json('a') == b'"a"'
 
@@ -89,11 +95,13 @@ def test_plain_dict_key():
     assert v.to_json({MyEnum.a: 'x'}) == b'{"1":"x"}'
 
     with pytest.warns(
-        UserWarning, match="Expected `enum` but got `str` with value `'x'` - serialized value may not be as expected"
+        UserWarning,
+        match=r"Expected `enum` - serialized value may not be as expected \[input_value='x', input_type=str\]",
     ):
         assert v.to_python({'x': 'x'}) == {'x': 'x'}
     with pytest.warns(
-        UserWarning, match="Expected `enum` but got `str` with value `'x'` - serialized value may not be as expected"
+        UserWarning,
+        match=r"Expected `enum` - serialized value may not be as expected \[input_value='x', input_type=str\]",
     ):
         assert v.to_json({'x': 'x'}) == b'{"x":"x"}'
 
@@ -116,10 +124,12 @@ def test_int_dict_key():
     assert v.to_json({MyEnum.a: 'x'}) == b'{"1":"x"}'
 
     with pytest.warns(
-        UserWarning, match="Expected `enum` but got `str` with value `'x'` - serialized value may not be as expected"
+        UserWarning,
+        match=r"Expected `enum` - serialized value may not be as expected \[input_value='x', input_type=str\]",
     ):
         assert v.to_python({'x': 'x'}) == {'x': 'x'}
     with pytest.warns(
-        UserWarning, match="Expected `enum` but got `str` with value `'x'` - serialized value may not be as expected"
+        UserWarning,
+        match=r"Expected `enum` - serialized value may not be as expected \[input_value='x', input_type=str\]",
     ):
         assert v.to_json({'x': 'x'}) == b'{"x":"x"}'

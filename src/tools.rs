@@ -118,6 +118,7 @@ pub fn safe_repr<'py>(v: &Bound<'py, PyAny>) -> ReprOutput<'py> {
     }
 }
 
+// warning: this function can be incredibly slow, so use with caution
 pub fn truncate_safe_repr(v: &Bound<'_, PyAny>, max_len: Option<usize>) -> String {
     let max_len = max_len.unwrap_or(50); // default to 100 bytes
     let input_str = safe_repr(v);

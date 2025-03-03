@@ -17,7 +17,6 @@ use crate::recursion_guard::ContainsRecursionState;
 use crate::recursion_guard::RecursionError;
 use crate::recursion_guard::RecursionGuard;
 use crate::recursion_guard::RecursionState;
-use crate::tools::truncate_safe_repr;
 use crate::PydanticSerializationError;
 
 /// this is ugly, would be much better if extra could be stored in `SerializationState`
@@ -384,7 +383,7 @@ impl From<bool> for WarningsMode {
 pub(crate) struct CollectWarnings {
     mode: WarningsMode,
     // FIXME: mutex is to satisfy PyO3 0.23, we should be able to refactor this away
-    warnings: Mutex<Vec<String>>,
+    warnings: Mutex<Vec<PydanticSerializationUnexpectedValue>>,
 }
 
 impl Clone for CollectWarnings {
@@ -404,9 +403,9 @@ impl CollectWarnings {
         }
     }
 
-    pub fn custom_warning(&self, warning: String) {
+    pub fn register_warning(&self, warning: PydanticSerializationUnexpectedValue) {
         if self.mode != WarningsMode::None {
-            self.add_warning(warning);
+            self.warnings.lock().expect("lock poisoned").push(warning);
         }
     }
 
@@ -415,15 +414,11 @@ impl CollectWarnings {
         if value.is_none() {
             Ok(())
         } else if extra.check.enabled() {
-            let type_name = value
-                .get_type()
-                .qualname()
-                .unwrap_or_else(|_| PyString::new(value.py(), "<unknown python object>"));
-
-            let value_str = truncate_safe_repr(value, None);
-            Err(PydanticSerializationUnexpectedValue::new_err(Some(format!(
-                "Expected `{field_type}` but got `{type_name}` with value `{value_str}` - serialized value may not be as expected"
-            ))))
+            Err(PydanticSerializationUnexpectedValue::new_from_parts(
+                Some(field_type.to_string()),
+                Some(value.clone().unbind()),
+            )
+            .to_py_err())
         } else {
             self.fallback_warning(field_type, value);
             Ok(())
@@ -452,21 +447,11 @@ impl CollectWarnings {
 
     fn fallback_warning(&self, field_type: &str, value: &Bound<'_, PyAny>) {
         if self.mode != WarningsMode::None {
-            let type_name = value
-                .get_type()
-                .qualname()
-                .unwrap_or_else(|_| PyString::new(value.py(), "<unknown python object>"));
-
-            let value_str = truncate_safe_repr(value, None);
-
-            self.add_warning(format!(
-                "Expected `{field_type}` but got `{type_name}` with value `{value_str}` - serialized value may not be as expected"
+            self.register_warning(PydanticSerializationUnexpectedValue::new_from_parts(
+                Some(field_type.to_string()),
+                Some(value.clone().unbind()),
             ));
         }
-    }
-
-    fn add_warning(&self, message: String) {
-        self.warnings.lock().expect("lock poisoned").push(message);
     }
 
     pub fn final_check(&self, py: Python) -> PyResult<()> {
@@ -479,7 +464,9 @@ impl CollectWarnings {
             return Ok(());
         }
 
-        let message = format!("Pydantic serializer warnings:\n  {}", warnings.join("\n  "));
+        let formatted_warnings: Vec<String> = warnings.iter().map(|w| w.__repr__(py).to_string()).collect();
+
+        let message = format!("Pydantic serializer warnings:\n  {}", formatted_warnings.join("\n  "));
         if self.mode == WarningsMode::Warn {
             let user_warning_type = PyUserWarning::type_object(py);
             PyErr::warn(py, &user_warning_type, &CString::new(message)?, 0)

@@ -45,7 +45,8 @@ def test_lax_or_strict():
 
     assert s.to_json('abc') == b'"abc"'
     with pytest.warns(
-        UserWarning, match='Expected `str` but got `int` with value `123` - serialized value may not be as expected'
+        UserWarning,
+        match=r'Expected `str` - serialized value may not be as expected \[input_value=123, input_type=int\]',
     ):
         assert s.to_json(123) == b'123'
 

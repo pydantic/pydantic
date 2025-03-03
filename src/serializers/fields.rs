@@ -9,7 +9,6 @@ use smallvec::SmallVec;
 
 use crate::serializers::extra::SerCheck;
 use crate::serializers::DuckTypingSerMode;
-use crate::tools::truncate_safe_repr;
 use crate::PydanticSerializationUnexpectedValue;
 
 use super::computed_fields::ComputedFields;
@@ -201,15 +200,12 @@ impl GeneralFieldsSerializer {
                     };
                     output_dict.set_item(key, value)?;
                 } else if field_extra.check == SerCheck::Strict {
-                    let type_name = field_extra.model_type_name();
-                    return Err(PydanticSerializationUnexpectedValue::new_err(Some(format!(
-                        "Unexpected field `{key}`{for_type_name}",
-                        for_type_name = if let Some(type_name) = type_name {
-                            format!(" for type `{type_name}`")
-                        } else {
-                            String::new()
-                        },
-                    ))));
+                    return Err(PydanticSerializationUnexpectedValue::new(
+                        Some(format!("Unexpected field `{key}`")),
+                        field_extra.model_type_name().map(|bound| bound.to_string()),
+                        None,
+                    )
+                    .to_py_err());
                 }
             }
         }
@@ -221,16 +217,13 @@ impl GeneralFieldsSerializer {
             && self.required_fields > used_req_fields
         {
             let required_fields = self.required_fields;
-            let type_name = extra.model_type_name();
-            let field_value = match extra.model {
-                Some(model) => truncate_safe_repr(model, Some(100)),
-                None => "<unknown python object>".to_string(),
-            };
 
-            Err(PydanticSerializationUnexpectedValue::new_err(Some(format!(
-                "Expected {required_fields} fields but got {used_req_fields}{for_type_name} with value `{field_value}` - serialized value may not be as expected.",
-                for_type_name = if let Some(type_name) = type_name { format!(" for type `{type_name}`") } else { String::new() },
-            ))))
+            Err(PydanticSerializationUnexpectedValue::new(
+                Some(format!("Expected {required_fields} fields but got {used_req_fields}").to_string()),
+                extra.model_type_name().map(|bound| bound.to_string()),
+                extra.model.map(|bound| bound.clone().unbind()),
+            )
+            .to_py_err())
         } else {
             Ok(output_dict)
         }

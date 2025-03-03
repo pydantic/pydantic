@@ -236,16 +236,25 @@ def test_model_wrong_warn():
     assert s.to_python(None, mode='json') is None
     assert s.to_json(None) == b'null'
 
-    with pytest.warns(UserWarning, match='Expected `MyModel` but got `int` with value `123` - serialized value may.+'):
+    with pytest.warns(
+        UserWarning,
+        match=r'Expected `MyModel` - serialized value may not be as expected \[input_value=123, input_type=int\]',
+    ):
         assert s.to_python(123) == 123
-    with pytest.warns(UserWarning, match='Expected `MyModel` but got `int` with value `123` - serialized value may.+'):
+    with pytest.warns(
+        UserWarning,
+        match=r'Expected `MyModel` - serialized value may not be as expected \[input_value=123, input_type=int\]',
+    ):
         assert s.to_python(123, mode='json') == 123
-    with pytest.warns(UserWarning, match='Expected `MyModel` but got `int` with value `123` - serialized value may.+'):
+    with pytest.warns(
+        UserWarning,
+        match=r'Expected `MyModel` - serialized value may not be as expected \[input_value=123, input_type=int\]',
+    ):
         assert s.to_json(123) == b'123'
 
     with pytest.warns(
         UserWarning,
-        match="Expected `MyModel` but got `dict` with value `{'foo': 1, 'bar': b'more'}` - serialized value may.+",
+        match=r"Expected `MyModel` - serialized value may not be as expected \[input_value={'foo': 1, 'bar': b'more'}, input_type=dict\]",
     ):
         assert s.to_python({'foo': 1, 'bar': b'more'}) == {'foo': 1, 'bar': b'more'}
 
@@ -1171,7 +1180,9 @@ def test_warn_on_missing_field() -> None:
         )
     )
 
-    with pytest.warns(UserWarning, match='Expected 2 fields but got 1 for type `.*AModel` with value `.*`.+'):
+    with pytest.warns(
+        UserWarning, match='Expected 2 fields but got 1: Expected `AModel` - serialized value may not be as expected .+'
+    ):
         value = BasicModel(root=AModel(type='a'))
         s.to_python(value)
 

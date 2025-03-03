@@ -19,13 +19,13 @@ def test_timedelta():
 
     with pytest.warns(
         UserWarning,
-        match='Expected `timedelta` but got `int` with value `123` - serialized value may not be as expected',
+        match=r'Expected `timedelta` - serialized value may not be as expected \[input_value=123, input_type=int\]',
     ):
         assert v.to_python(123, mode='json') == 123
 
     with pytest.warns(
         UserWarning,
-        match='Expected `timedelta` but got `int` with value `123` - serialized value may not be as expected',
+        match=r'Expected `timedelta` - serialized value may not be as expected \[input_value=123, input_type=int\]',
     ):
         assert v.to_json(123) == b'123'
 

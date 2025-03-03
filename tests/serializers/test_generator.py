@@ -54,12 +54,20 @@ def test_generator_any():
     assert s.to_json(iter(['a', b'b', 3])) == b'["a","b",3]'
     assert s.to_json(gen_ok('a', b'b', 3)) == b'["a","b",3]'
 
-    msg = 'Expected `generator` but got `int` with value `4` - serialized value may not be as expected'
-    with pytest.warns(UserWarning, match=msg):
+    with pytest.warns(
+        UserWarning,
+        match=r'Expected `generator` - serialized value may not be as expected \[input_value=4, input_type=int\]',
+    ):
         assert s.to_python(4) == 4
-    with pytest.warns(UserWarning, match="Expected `generator` but got `tuple` with value `\\('a', b'b', 3\\)`"):
+    with pytest.warns(
+        UserWarning,
+        match=r"Expected `generator` - serialized value may not be as expected \[input_value=\('a', b'b', 3\), input_type=tuple\]",
+    ):
         assert s.to_python(('a', b'b', 3)) == ('a', b'b', 3)
-    with pytest.warns(UserWarning, match="Expected `generator` but got `str` with value `'abc'`"):
+    with pytest.warns(
+        UserWarning,
+        match=r"Expected `generator` - serialized value may not be as expected \[input_value='abc', input_type=str\]",
+    ):
         assert s.to_python('abc') == 'abc'
 
     with pytest.raises(ValueError, match='oops'):
@@ -89,19 +97,21 @@ def test_generator_int():
         s.to_json(gen_error(1, 2))
 
     with pytest.warns(
-        UserWarning, match="Expected `int` but got `str` with value `'a'` - serialized value may not be as expected"
+        UserWarning,
+        match=r"Expected `int` - serialized value may not be as expected \[input_value='a', input_type=str\]",
     ):
         s.to_json(gen_ok(1, 'a'))
 
     gen = s.to_python(gen_ok(1, 'a'))
     assert next(gen) == 1
     with pytest.warns(
-        UserWarning, match="Expected `int` but got `str` with value `'a'` - serialized value may not be as expected"
+        UserWarning,
+        match=r"Expected `int` - serialized value may not be as expected \[input_value='a', input_type=str\]",
     ):
         assert next(gen) == 'a'
     with pytest.warns(
         UserWarning,
-        match='Expected `generator` but got `tuple` with value `\\(1, 2, 3\\)` - serialized value may not.+',
+        match=r'Expected `generator` - serialized value may not be as expected \[input_value=\(1, 2, 3\), input_type=tuple\]',
     ):
         s.to_python((1, 2, 3))
 
