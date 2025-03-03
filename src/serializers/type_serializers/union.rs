@@ -9,7 +9,7 @@ use crate::build_tools::py_schema_err;
 use crate::common::union::{Discriminator, SMALL_UNION_THRESHOLD};
 use crate::definitions::DefinitionsBuilder;
 use crate::serializers::PydanticSerializationUnexpectedValue;
-use crate::tools::{truncate_safe_repr, SchemaDict};
+use crate::tools::SchemaDict;
 
 use super::{
     infer_json_key, infer_serialize, infer_to_python, BuildSerializer, CombinedSerializer, Extra, SerCheck,
@@ -78,6 +78,7 @@ fn union_serialize<S>(
     extra: &Extra,
     choices: &[CombinedSerializer],
     retry_with_lax_check: bool,
+    py: Python<'_>,
 ) -> PyResult<Option<S>> {
     // try the serializers in left to right order with error_on fallback=true
     let mut new_extra = extra.clone();
@@ -104,14 +105,23 @@ fn union_serialize<S>(
     // If extra.check is SerCheck::None, we're in a top-level union. We should thus raise the warnings
     if extra.check == SerCheck::None {
         for err in &errors {
-            extra.warnings.custom_warning(err.to_string());
+            if err.is_instance_of::<PydanticSerializationUnexpectedValue>(py) {
+                let pydantic_err: PydanticSerializationUnexpectedValue = err.value(py).extract()?;
+                extra.warnings.register_warning(pydantic_err);
+            } else {
+                extra
+                    .warnings
+                    .register_warning(PydanticSerializationUnexpectedValue::new_from_msg(Some(
+                        err.to_string(),
+                    )));
+            }
         }
     }
     // Otherwise, if we've encountered errors, return them to the parent union, which should take
     // care of the formatting for us
     else if !errors.is_empty() {
         let message = errors.iter().map(ToString::to_string).collect::<Vec<_>>().join("\n");
-        return Err(PydanticSerializationUnexpectedValue::new_err(Some(message)));
+        return Err(PydanticSerializationUnexpectedValue::new_from_msg(Some(message)).to_py_err());
     }
 
     Ok(None)
@@ -130,6 +140,7 @@ impl TypeSerializer for UnionSerializer {
             extra,
             &self.choices,
             self.retry_with_lax_check(),
+            value.py(),
         )?
         .map_or_else(|| infer_to_python(value, include, exclude, extra), Ok)
     }
@@ -140,6 +151,7 @@ impl TypeSerializer for UnionSerializer {
             extra,
             &self.choices,
             self.retry_with_lax_check(),
+            key.py(),
         )?
         .map_or_else(|| infer_json_key(key, extra), Ok)
     }
@@ -157,6 +169,7 @@ impl TypeSerializer for UnionSerializer {
             extra,
             &self.choices,
             self.retry_with_lax_check(),
+            value.py(),
         ) {
             Ok(Some(v)) => infer_serialize(v.bind(value.py()), serializer, None, None, extra),
             Ok(None) => infer_serialize(value, serializer, include, exclude, extra),
@@ -328,10 +341,11 @@ impl TaggedUnionSerializer {
         } else if extra.check == SerCheck::None {
             // If extra.check is SerCheck::None, we're in a top-level union. We should thus raise
             // this warning
-            let value_str = truncate_safe_repr(value, None);
-            extra.warnings.custom_warning(
-                format!(
-                    "Failed to get discriminator value for tagged union serialization with value `{value_str}` - defaulting to left to right union serialization."
+            extra.warnings.register_warning(
+                PydanticSerializationUnexpectedValue::new(
+                    Some("Defaulting to left to right union serialization - failed to get discriminator value for tagged union serialization".to_string()),
+                    None,
+                    Some(value.clone().unbind()),
                 )
             );
         }
@@ -339,6 +353,6 @@ impl TaggedUnionSerializer {
         // if we haven't returned at this point, we should fallback to the union serializer
         // which preserves the historical expectation that we do our best with serialization
         // even if that means we resort to inference
-        union_serialize(selector, extra, &self.choices, self.retry_with_lax_check())
+        union_serialize(selector, extra, &self.choices, self.retry_with_lax_check(), value.py())
     }
 }

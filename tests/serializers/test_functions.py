@@ -207,7 +207,7 @@ def test_function_known_type():
     assert s.to_python([1, 2, 3], mode='json') == [1, 2, 3, 42]
     assert s.to_json([1, 2, 3]) == b'[1,2,3,42]'
 
-    msg = r"Expected `list\[int\]` but got `str` with value `'abc'` - serialized value may not be as expected"
+    msg = r"Expected `list\[int\]` - serialized value may not be as expected \[input_value='abc', input_type=str\]"
     with pytest.warns(UserWarning, match=msg):
         assert s.to_python('abc') == 'abc'
 
@@ -323,15 +323,18 @@ def test_wrong_return_type():
         )
     )
     with pytest.warns(
-        UserWarning, match="Expected `int` but got `str` with value `'123'` - serialized value may not be as expected"
+        UserWarning,
+        match=r"Expected `int` - serialized value may not be as expected \[input_value='123', input_type=str\]",
     ):
         assert s.to_python(123) == '123'
     with pytest.warns(
-        UserWarning, match="Expected `int` but got `str` with value `'123'` - serialized value may not be as expected"
+        UserWarning,
+        match=r"Expected `int` - serialized value may not be as expected \[input_value='123', input_type=str\]",
     ):
         assert s.to_python(123, mode='json') == '123'
     with pytest.warns(
-        UserWarning, match="Expected `int` but got `str` with value `'123'` - serialized value may not be as expected"
+        UserWarning,
+        match=r"Expected `int` - serialized value may not be as expected \[input_value='123', input_type=str\]",
     ):
         assert s.to_json(123) == b'"123"'
 
@@ -363,15 +366,18 @@ def test_function_wrap_return_scheam():
     assert s.to_python(3, mode='json') == 'result=3'
     assert s.to_json(3) == b'"result=3"'
     with pytest.warns(
-        UserWarning, match='Expected `str` but got `int` with value `42` - serialized value may not be as expected'
+        UserWarning,
+        match=r'Expected `str` - serialized value may not be as expected \[input_value=42, input_type=int\]',
     ):
         assert s.to_python(42) == 42
     with pytest.warns(
-        UserWarning, match='Expected `str` but got `int` with value `42` - serialized value may not be as expected'
+        UserWarning,
+        match=r'Expected `str` - serialized value may not be as expected \[input_value=42, input_type=int\]',
     ):
         assert s.to_python(42, mode='json') == 42
     with pytest.warns(
-        UserWarning, match='Expected `str` but got `int` with value `42` - serialized value may not be as expected'
+        UserWarning,
+        match=r'Expected `str` - serialized value may not be as expected \[input_value=42, input_type=int\]',
     ):
         assert s.to_json(42) == b'42'
 
@@ -624,7 +630,8 @@ def test_function_after_preserves_wrapped_serialization():
 
     s = SchemaSerializer(core_schema.with_info_after_validator_function(f, core_schema.int_schema()))
     with pytest.warns(
-        UserWarning, match="Expected `int` but got `str` with value `'abc'` - serialized value may not be as expected"
+        UserWarning,
+        match=r"Expected `int` - serialized value may not be as expected \[input_value='abc', input_type=str\]",
     ):
         assert s.to_python('abc') == 'abc'
 
@@ -635,7 +642,8 @@ def test_function_wrap_preserves_wrapped_serialization():
 
     s = SchemaSerializer(core_schema.with_info_wrap_validator_function(f, core_schema.int_schema()))
     with pytest.warns(
-        UserWarning, match="Expected `int` but got `str` with value `'abc'` - serialized value may not be as expected"
+        UserWarning,
+        match=r"Expected `int` - serialized value may not be as expected \[input_value='abc', input_type=str\]",
     ):
         assert s.to_python('abc') == 'abc'
 
