@@ -69,6 +69,8 @@ class ConfigWrapper:
     # whether instances of models and dataclasses (including subclass instances) should re-validate, default 'never'
     revalidate_instances: Literal['always', 'never', 'subclass-instances']
     ser_json_timedelta: Literal['iso8601', 'float']
+    ser_json_temporal: Literal['iso8601', 'seconds', 'milliseconds']
+    val_temporal_unit: Literal['seconds', 'milliseconds', 'infer']
     ser_json_bytes: Literal['utf8', 'base64', 'hex']
     val_json_bytes: Literal['utf8', 'base64', 'hex']
     ser_json_inf_nan: Literal['null', 'constants', 'strings']
@@ -90,10 +92,6 @@ class ConfigWrapper:
     validate_by_alias: bool
     validate_by_name: bool
     serialize_by_alias: bool
-    val_datetime_unit: Literal['seconds', 'milliseconds', 'infer']
-    ser_datetime_unit: Literal['seconds', 'milliseconds', 'infer']
-    val_json_datetime: tuple[Literal['iso8601', 'float', 'int'], ...]
-    ser_json_datetime: Literal['iso8601', 'float', 'int']
 
     def __init__(self, config: ConfigDict | dict[str, Any] | type[Any] | None, *, check: bool = True):
         if check:
@@ -197,10 +195,6 @@ class ConfigWrapper:
                 code='validate-by-alias-and-name-false',
             )
 
-        # ser_json_timedelta will be deprecated in V3, so we patch the value to ser_json_datetime if set.
-        if (ser_json_timedelta := config.get('ser_json_timedelta')) is not None:
-            config['ser_json_datetime'] = ser_json_timedelta
-
         return core_schema.CoreConfig(
             **{  # pyright: ignore[reportArgumentType]
                 k: v
@@ -212,13 +206,12 @@ class ConfigWrapper:
                     ('str_to_lower', config.get('str_to_lower')),
                     ('str_to_upper', config.get('str_to_upper')),
                     ('strict', config.get('strict')),
+                    ('ser_json_timedelta', config.get('ser_json_timedelta')),
+                    ('ser_json_temporal', config.get('ser_json_temporal')),
+                    ('val_temporal_unit', config.get('val_temporal_unit')),
                     ('ser_json_bytes', config.get('ser_json_bytes')),
                     ('val_json_bytes', config.get('val_json_bytes')),
                     ('ser_json_inf_nan', config.get('ser_json_inf_nan')),
-                    ('val_datetime_unit', config.get('val_datetime_unit')),
-                    ('ser_datetime_unit', config.get('ser_datetime_unit')),
-                    ('val_json_datetime', config.get('val_json_datetime')),
-                    ('ser_json_datetime', config.get('ser_json_datetime')),
                     ('from_attributes', config.get('from_attributes')),
                     ('loc_by_alias', config.get('loc_by_alias')),
                     ('revalidate_instances', config.get('revalidate_instances')),
@@ -293,12 +286,11 @@ config_defaults = ConfigDict(
     json_schema_extra=None,
     strict=False,
     revalidate_instances='never',
+    ser_json_timedelta='iso8601',
+    ser_json_temporal='iso8601',
+    val_temporal_unit='infer',
     ser_json_bytes='utf8',
     val_json_bytes='utf8',
-    val_datetime_unit='infer',
-    ser_datetime_unit='infer',
-    val_json_datetime=('iso8601', 'float', 'int'),
-    ser_json_datetime='iso8601',
     ser_json_inf_nan='null',
     validate_default=False,
     validate_return=False,

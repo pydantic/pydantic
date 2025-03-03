@@ -596,11 +596,32 @@ class ConfigDict(TypedDict, total=False):
         In v2.11+ it is recommended to use the [`ser_json_datetime`][pydantic.config.ConfigDict.ser_json_datetime]
         setting instead of `ser_json_timedelta`. This setting will be deprecated in v3.
 
-    - `'iso8601'` will serialize timedeltas to [ISO 8601 durations](https://en.wikipedia.org/wiki/ISO_8601#Durations).
+    - `'iso8601'` will serialize timedeltas to [ISO 8601 text format](https://en.wikipedia.org/wiki/ISO_8601#Durations).
     - `'float'` will serialize timedeltas to the total number of seconds.
     """
 
-    val_datetime_unit: Literal['seconds', 'milliseconds', 'infer']
+    ser_json_temporal: Literal['iso8601', 'milliseconds', 'seconds']
+    """
+    The format of JSON serialized temporal types from the `datetime` library. This includes:
+
+    - [`datetime.datetime`][]
+    - [`datetime.date`][]
+    - [`datetime.time`][]
+    - [`datetime.timedelta`][]
+
+    !!! note
+        This setting was introduced in v2.11. It overlaps with the `ser_json_timedelta`
+        setting which will likely be deprecated in v3. It also adds more configurability for
+        the other temporal types.
+
+    Accepts the string values of `'iso8601'`, `'milliseconds'`, and `'seconds'`. Defaults to `'iso8601'`.
+
+    - `'iso8601'` will serialize date-like types to [ISO 8601 text format](https://en.wikipedia.org/wiki/ISO_8601#Durations).
+    - `'milliseconds'` will serialize date-like types to a floating point number of milliseconds since the epoch.
+    - `'seconds'` will serialize date-like types to a floating point number of seconds since the epoch.
+    """
+
+    val_temporal_unit: Literal['seconds', 'milliseconds', 'infer']
     """
     The unit to assume for validating numeric input for datetime-like types. This includes:
 
@@ -610,70 +631,12 @@ class ConfigDict(TypedDict, total=False):
     - [`datetime.timedelta`][]
 
     Defaults to `'infer'`.
-    The "epoch" reference below refers to the Unix epoch, which is 1970-01-01 00:00:00 UTC.
+    The "epoch" references below refer to the Unix epoch, which is 1970-01-01 00:00:00 UTC.
 
     - `'seconds'` will validate date or time numeric inputs as seconds since the epoch.
     - `'milliseconds'` will validate date or time numeric inputs as milliseconds since the epoch.
     - `'infer'` will infer the unit from the string numeric input on unix time:
-        i.e. seconds (if >= -2e10 and <= 2e10) or milliseconds (if < -2e10or > 2e10) since the epoch.
-    """
-
-    ser_datetime_unit: Literal['seconds', 'milliseconds', 'infer']
-    """
-    The unit to use for serializing datetime-like types. This includes:
-
-    - [`datetime.datetime`][]
-    - [`datetime.date`][]
-    - [`datetime.time`][]
-    - [`datetime.timedelta`][]
-
-    This only applies when serializing to `'float'`. ISO8601 durations use a predefined format.
-    Defaults to `'infer'`.
-    The "epoch" reference below refers to the Unix epoch, which is 1970-01-01 00:00:00 UTC.
-
-    - `'seconds'` will validate date or time numeric inputs as seconds since the epoch.
-    - `'milliseconds'` will validate date or time numeric inputs as milliseconds since the epoch.
-    - `'infer'` will infer the unit from the string numeric input on unix time:
-        i.e. seconds (if >= -2e10 and <= 2e10) or milliseconds (if < -2e10or > 2e10) since the epoch.
-    """
-
-    val_json_datetime: tuple[Literal['iso8601', 'float', 'int'], ...]
-    """
-    The formats to accept when validating datetime-like types from JSON. This includes:
-
-    - [`datetime.datetime`][]
-    - [`datetime.date`][]
-    - [`datetime.time`][]
-    - [`datetime.timedelta`][]
-
-    Defaults to ('iso8601', 'float', 'int').
-    If `'float'` or `'int'` is included, `val_datetime_unit` can be used to specify the unit (s vs ms) of the float.
-
-    - `'iso8601'` will accept date-like types in [ISO 8601 duration format](https://en.wikipedia.org/wiki/ISO_8601#Durations).
-    - `'float'` will accept date-like types as a floating point number of seconds or milliseconds since the epoch.
-    - `'int'` will accept date-like types as an integer number of seconds or milliseconds since the epoch.
-    """
-
-    ser_json_datetime: Literal['iso8601', 'float', 'int']
-    """
-    The format of JSON serialized datetime-like types. This includes:
-
-    - [`datetime.datetime`][]
-    - [`datetime.date`][]
-    - [`datetime.time`][]
-    - [`datetime.timedelta`][]
-
-    !!! note
-        This setting was introduced in v2.11. It effectively replaces the `ser_json_timedelta`
-        setting which will be deprecated in v3. It also adds more configurability for
-        the other datetime-like types.
-
-    Accepts the string values of `'iso8601'` and `'float'`. Defaults to `'iso8601'`.
-    When `'float'` or `'int'` is used, `ser_datetime_unit` can be used to determine the unit (s vs ms) of the float.
-
-    - `'iso8601'` will serialize date-like types to [ISO 8601 durations](https://en.wikipedia.org/wiki/ISO_8601#Durations).
-    - `'float'` will serialize date-like types to a floating point number of seconds or milliseconds since the epoch.
-    - `'int'` will serialize date-like types to an integer number of seconds or milliseconds since the epoch.
+        i.e. seconds (if >= -2^10 and <= 2^10) or milliseconds (if < -2^10or > 2^10) since the epoch.
     """
 
     ser_json_bytes: Literal['utf8', 'base64', 'hex']
