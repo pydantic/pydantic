@@ -518,6 +518,7 @@ def test_multiple_inheritance_config():
     assert Child.model_config.get('use_enum_values') is True
 
 
+@pytest.mark.thread_unsafe(reason='Flaky')
 def test_config_wrapper_match():
     localns = {
         '_GenerateSchema': GenerateSchema,
