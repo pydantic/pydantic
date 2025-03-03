@@ -181,7 +181,14 @@ def validate_json_schemas(monkeypatch: pytest.MonkeyPatch, request: pytest.Fixtu
     monkeypatch.setattr(GenerateJsonSchema, 'generate', generate)
 
 
-_thread_unsafe_fixtures = ('generate_schema_calls', 'benchmark', 'tmp_path', 'tmpdir')
+_thread_unsafe_fixtures = (
+    'generate_schema_calls',  # Monkeypatches Pydantic code
+    'benchmark',  # Fixture can't be reused
+    'tmp_path',  # Duplicate paths
+    'tmpdir',  # Duplicate dirs
+    'copy_method',  # Uses `pytest.warns()`
+    'reset_plugins',  # Monkeypatching
+)
 
 
 # Note: it is important to add the marker in the `pytest_itemcollected` hook.

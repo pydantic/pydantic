@@ -440,6 +440,7 @@ def test_caches_get_cleaned_up_with_aliased_parametrized_bases():
     assert len(cache) < types_cache_size + _LIMITED_DICT_SIZE
 
 
+@pytest.mark.thread_unsafe(reason='GC is flaky')
 @pytest.mark.skipif(platform.python_implementation() == 'PyPy', reason='PyPy does not play nice with PyO3 gc')
 @pytest.mark.skipif(sys.version_info[:2] == (3, 9), reason='The test randomly fails on Python 3.9')
 def test_circular_generic_refs_get_cleaned_up():
@@ -1103,6 +1104,7 @@ def test_get_caller_frame_info_called_from_module(create_module):
                 _get_caller_frame_info()
 
 
+@pytest.mark.thread_unsafe(reason='Deleting built-in functions')
 def test_get_caller_frame_info_when_sys_getframe_undefined():
     from pydantic._internal._generics import _get_caller_frame_info
 

@@ -172,6 +172,7 @@ def test_deep_copy(ModelTwo, copy_method):
     assert m._foo_ is not m2._foo_
 
 
+@pytest.mark.thread_unsafe(reason='`pytest.warns()` is thread unsafe')
 def test_copy_exclude(ModelTwo):
     m = ModelTwo(a=24, d=Model(a='12'))
     m2 = deprecated_copy(m, exclude={'b'})
@@ -188,6 +189,7 @@ def test_copy_exclude(ModelTwo):
     assert m != m2
 
 
+@pytest.mark.thread_unsafe(reason='`pytest.warns()` is thread unsafe')
 def test_copy_include(ModelTwo):
     m = ModelTwo(a=24, d=Model(a='12'))
     m2 = deprecated_copy(m, include={'a'})
@@ -199,6 +201,7 @@ def test_copy_include(ModelTwo):
     assert m != m2
 
 
+@pytest.mark.thread_unsafe(reason='`pytest.warns()` is thread unsafe')
 def test_copy_include_exclude(ModelTwo):
     m = ModelTwo(a=24, d=Model(a='12'))
     m2 = deprecated_copy(m, include={'a', 'b', 'c'}, exclude={'c'})
@@ -207,6 +210,7 @@ def test_copy_include_exclude(ModelTwo):
     assert set(m2.model_dump().keys()) == {'a', 'b'}
 
 
+@pytest.mark.thread_unsafe(reason='`pytest.warns()` is thread unsafe')
 def test_copy_advanced_exclude():
     class SubSubModel(BaseModel):
         a: str
@@ -230,6 +234,7 @@ def test_copy_advanced_exclude():
     assert m2.model_dump() == {'f': {'c': 'foo'}}
 
 
+@pytest.mark.thread_unsafe(reason='`pytest.warns()` is thread unsafe')
 def test_copy_advanced_include():
     class SubSubModel(BaseModel):
         a: str
@@ -253,6 +258,7 @@ def test_copy_advanced_include():
     assert m2.model_dump() == {'e': 'e', 'f': {'d': [{'a': 'c', 'b': 'e'}]}}
 
 
+@pytest.mark.thread_unsafe(reason='`pytest.warns()` is thread unsafe')
 def test_copy_advanced_include_exclude():
     class SubSubModel(BaseModel):
         a: str
@@ -475,6 +481,7 @@ def test_construct_default_factory():
     assert m.bar == 'Baz'
 
 
+@pytest.mark.thread_unsafe(reason='`pytest.warns()` is thread unsafe')
 def test_copy_with_excluded_fields():
     class User(BaseModel):
         name: str
