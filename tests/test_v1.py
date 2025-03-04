@@ -1,5 +1,7 @@
 import warnings
 
+import pytest
+
 from pydantic import VERSION
 from pydantic import BaseModel as V2BaseModel
 from pydantic.v1 import VERSION as V1_VERSION
@@ -12,6 +14,7 @@ def test_version():
     assert V1_VERSION != VERSION
 
 
+@pytest.mark.thread_unsafe(reason='Mutates the value')
 def test_root_validator():
     class Model(V1BaseModel):
         v: str

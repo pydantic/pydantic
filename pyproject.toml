@@ -78,7 +78,7 @@ dev = [
     'faker',
     'pytest-benchmark',
     'pytest-codspeed',
-    'pytest-memray; platform_python_implementation == "CPython" and platform_system != "Windows"',
+    'pytest-run-parallel>=0.3.1',
     'packaging',
     'jsonschema',
 ]
@@ -114,6 +114,7 @@ testing-extra = [
     'devtools',
     # used in docs tests
     'sqlalchemy',
+    'pytest-memray; platform_python_implementation == "CPython" and platform_system != "Windows"',
 ]
 typechecking = [
     'mypy',
