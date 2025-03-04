@@ -1,7 +1,7 @@
 `pydantic` is a great tool for validating data coming from various sources.
 In this section, we will look at how to validate data from different types of files.
 
-!!! note ""
+!!! note
     If you're using any of the below file formats to parse configuration / settings, you might want to
     consider using the [`pydantic-settings`][pydantic_settings] library, which offers builtin
     support for parsing this type of data.
