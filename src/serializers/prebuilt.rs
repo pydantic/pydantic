@@ -17,9 +17,11 @@ pub struct PrebuiltSerializer {
 impl PrebuiltSerializer {
     pub fn try_get_from_schema(type_: &str, schema: &Bound<'_, PyDict>) -> PyResult<Option<CombinedSerializer>> {
         get_prebuilt(type_, schema, "__pydantic_serializer__", |py_any| {
-            py_any
-                .extract::<Py<SchemaSerializer>>()
-                .map(|schema_serializer| Self { schema_serializer }.into())
+            let schema_serializer = py_any.extract::<Py<SchemaSerializer>>()?;
+            if matches!(schema_serializer.get().serializer, CombinedSerializer::FunctionWrap(_)) {
+                return Ok(None);
+            }
+            Ok(Some(Self { schema_serializer }.into()))
         })
     }
 }
