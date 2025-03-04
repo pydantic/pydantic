@@ -8,7 +8,7 @@ pub fn get_prebuilt<T>(
     type_: &str,
     schema: &Bound<'_, PyDict>,
     prebuilt_attr_name: &str,
-    extractor: impl FnOnce(Bound<'_, PyAny>) -> PyResult<T>,
+    extractor: impl FnOnce(Bound<'_, PyAny>) -> PyResult<Option<T>>,
 ) -> PyResult<Option<T>> {
     let py = schema.py();
 
@@ -40,5 +40,5 @@ pub fn get_prebuilt<T>(
 
     // Retrieve the prebuilt validator / serializer if available
     let prebuilt: Bound<'_, PyAny> = class_dict.get_item(prebuilt_attr_name)?;
-    extractor(prebuilt).map(Some)
+    extractor(prebuilt)
 }
