@@ -463,7 +463,9 @@ def get_cached_generic_type_late(
 ) -> type[BaseModel] | None:
     """See the docstring of `get_cached_generic_type_early` for more information about the two-stage cache lookup."""
     generic_types_cache = _GENERIC_TYPES_CACHE.get()
-    if generic_types_cache is None:
+    if (
+        generic_types_cache is None
+    ):  # pragma: no cover (early cache is guaranteed to run first and initialize the cache)
         generic_types_cache = GenericTypesCache()
         _GENERIC_TYPES_CACHE.set(generic_types_cache)
     cached = generic_types_cache.get(_late_cache_key(origin, args, typevar_values))
@@ -483,7 +485,9 @@ def set_cached_generic_type(
     two different keys.
     """
     generic_types_cache = _GENERIC_TYPES_CACHE.get()
-    if generic_types_cache is None:
+    if (
+        generic_types_cache is None
+    ):  # pragma: no cover (cache lookup is guaranteed to run first and initialize the cache)
         generic_types_cache = GenericTypesCache()
         _GENERIC_TYPES_CACHE.set(generic_types_cache)
     generic_types_cache[_early_cache_key(parent, typevar_values)] = type_
