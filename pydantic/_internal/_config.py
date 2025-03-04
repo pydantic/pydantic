@@ -320,7 +320,11 @@ def prepare_config(config: ConfigDict | dict[str, Any] | type[Any] | None) -> Co
         return ConfigDict()
 
     if not isinstance(config, dict):
-        warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+        warnings.warn(
+            DEPRECATION_MESSAGE,
+            DeprecationWarning,
+            stacklevel=2,
+        )
         config = {k: getattr(config, k) for k in dir(config) if not k.startswith('__')}
 
     config_dict = cast(ConfigDict, config)
@@ -370,4 +374,8 @@ def check_deprecated(config_dict: ConfigDict) -> None:
         renamed_bullets = [f'* {k!r} has been renamed to {v!r}' for k, v in renamings.items()]
         removed_bullets = [f'* {k!r} has been removed' for k in sorted(deprecated_removed_keys)]
         message = '\n'.join(['Valid config keys have changed in V2:'] + renamed_bullets + removed_bullets)
-        warnings.warn(message, UserWarning)
+        warnings.warn(
+            message,
+            UserWarning,
+            stacklevel=2,
+        )
