@@ -12,7 +12,7 @@ Pydantic
 
 [![license](https://img.shields.io/github/license/pydantic/pydantic.svg)](https://github.com/pydantic/pydantic/blob/main/LICENSE)
 
-Documentation for development version: [f6725ba](https://github.com/pydantic/pydantic/commit/f6725ba21e4409cbd867427203adf85c39e42630).
+Documentation for development version: [023d9ca](https://github.com/pydantic/pydantic/commit/023d9ca4ae75ba546eea18551092d265827e901b).
 
 Pydantic is the most widely used data validation library for Python.
 
@@ -63258,7 +63258,8 @@ More details about validation context can be found [here](../../concepts/validat
 `pydantic` is a great tool for validating data coming from various sources.
 In this section, we will look at how to validate data from different types of files.
 
-!!! Note:
+Note
+
 If you're using any of the below file formats to parse configuration / settings, you might want to
 consider using the `pydantic-settings` library, which offers builtin
 support for parsing this type of data.
