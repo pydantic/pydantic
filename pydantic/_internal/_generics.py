@@ -341,7 +341,7 @@ def replace_types(type_: Any, type_map: Mapping[TypeVar, Any] | None) -> Any:
 
 
 def map_generic_model_arguments(cls: type[BaseModel], args: tuple[Any, ...]) -> dict[TypeVar, Any]:
-    """Return a mapping between the arguments of a generic model and the provided arguments during parametrization.
+    """Return a mapping between the parameters of a generic model and the provided arguments during parameterization.
 
     Raises:
         TypeError: If the number of arguments does not match the parameters (i.e. if providing too few or too many arguments).
@@ -380,7 +380,9 @@ def map_generic_model_arguments(cls: type[BaseModel], args: tuple[Any, ...]) -> 
                 # Happens if using `typing.TypeVar` (and not `typing_extensions`) on Python < 3.13.
                 has_default = False
             if has_default:
-                typevars_map[param] = param.__default__
+                # The default might refer to other type parameters. For an example, see:
+                # https://typing.readthedocs.io/en/latest/spec/generics.html#type-parameters-as-parameters-to-generics
+                typevars_map[param] = replace_types(param.__default__, typevars_map)
             else:
                 expected_len -= sum(hasattr(p, 'has_default') and p.has_default() for p in parameters)
                 raise TypeError(f'Too few arguments for {cls}; actual {len(args)}, expected at least {expected_len}')

@@ -286,6 +286,20 @@ def test_subclass_can_be_genericized():
     Result[T]
 
 
+def test_type_var_default_referencing_other_type_var() -> None:
+    # Example taken from:
+    # https://typing.readthedocs.io/en/latest/spec/generics.html#type-parameters-as-parameters-to-generics
+
+    T = TypeVar('T')
+    ListDefaultT = TypingExtensionsTypeVar('ListDefaultT', default=list[T])
+
+    class Model(BaseModel, Generic[T, ListDefaultT]):
+        t: T
+        ls: ListDefaultT
+
+    assert Model[int].__pydantic_generic_metadata__['args'] == (int, list[int])
+
+
 def test_parameter_count():
     T = TypeVar('T')
     S = TypeVar('S')
