@@ -1,6 +1,7 @@
+use pyo3::exceptions::PyValueError;
 use pyo3::intern;
 use pyo3::prelude::*;
-use pyo3::types::{PyDate, PyDict, PyString};
+use pyo3::types::{PyDict, PyString};
 use speedate::{Date, Time};
 use strum::EnumMessage;
 
@@ -175,9 +176,14 @@ impl DateConstraints {
     }
 }
 
-fn convert_pydate(schema: &Bound<'_, PyDict>, field: &Bound<'_, PyString>) -> PyResult<Option<Date>> {
-    match schema.get_as::<Bound<'_, PyDate>>(field)? {
-        Some(date) => Ok(Some(EitherDate::Py(date).as_raw()?)),
+fn convert_pydate(schema: &Bound<'_, PyDict>, key: &Bound<'_, PyString>) -> PyResult<Option<Date>> {
+    match schema.get_as::<Bound<'_, PyAny>>(key)? {
+        Some(value) => match value.validate_date(false) {
+            Ok(v) => Ok(Some(v.into_inner().as_raw()?)),
+            Err(_) => Err(PyValueError::new_err(format!(
+                "'{key}' must be coercible to a date instance",
+            ))),
+        },
         None => Ok(None),
     }
 }
