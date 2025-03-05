@@ -2971,3 +2971,32 @@ def test_non_self_return_val_warns() -> None:
         c = Child(name='name')
         # confirmation of behavior: non-self return value is ignored
         assert c.name == 'name'
+
+
+def test_wrap_val_called_once() -> None:
+    """See https://github.com/pydantic/pydantic/issues/11505 for context.
+
+    This is effectively confirming that prebuilt validators aren't used for wrap validators.
+    """
+
+    class MyModel(BaseModel):
+        inner_value: str
+
+        @model_validator(mode="wrap")
+        @classmethod
+        def my_wrapper_serializer(cls, data, validator):
+            data['inner_value'] = "my_prefix:" + data['inner_value']
+            return validator(data)
+
+
+    class MyParentModel(BaseModel):
+        nested: MyModel
+
+        @field_validator('nested', mode="wrap")
+        @classmethod
+        def wrapped_field_serializer(cls, field_value, validator):
+            return validator(field_value)
+
+
+    my_model = MyParentModel.model_validate({'nested': {'inner_value': 'foo'}})
+    assert my_model.nested.inner_value == 'my_prefix:foo'
