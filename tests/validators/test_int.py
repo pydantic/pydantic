@@ -6,12 +6,21 @@ from typing import Any
 import pytest
 from dirty_equals import IsStr
 
-from pydantic_core import SchemaValidator, ValidationError, core_schema
+from pydantic_core import SchemaError, SchemaValidator, ValidationError
 from pydantic_core import core_schema as cs
 
 from ..conftest import Err, PyAndJson, plain_repr
 
 i64_max = 9_223_372_036_854_775_807
+
+
+@pytest.mark.parametrize(
+    'constraint',
+    ['multiple_of', 'le', 'lt', 'ge', 'gt'],
+)
+def test_constraints_schema_validation(constraint: str) -> None:
+    with pytest.raises(SchemaError, match=f"'{constraint}' must be coercible to an integer"):
+        SchemaValidator(cs.int_schema(**{constraint: 'bad_value'}))
 
 
 @pytest.mark.parametrize(
@@ -532,7 +541,7 @@ def test_int_subclass_plain_enum() -> None:
 
 
 def test_allow_inf_nan_true_json() -> None:
-    v = SchemaValidator(core_schema.int_schema(), config=core_schema.CoreConfig(allow_inf_nan=True))
+    v = SchemaValidator(cs.int_schema(), config=cs.CoreConfig(allow_inf_nan=True))
 
     assert v.validate_json('123') == 123
     with pytest.raises(ValidationError, match=r'Input should be a finite number \[type=finite_number'):
@@ -544,7 +553,7 @@ def test_allow_inf_nan_true_json() -> None:
 
 
 def test_allow_inf_nan_false_json() -> None:
-    v = SchemaValidator(core_schema.int_schema(), config=core_schema.CoreConfig(allow_inf_nan=False))
+    v = SchemaValidator(cs.int_schema(), config=cs.CoreConfig(allow_inf_nan=False))
 
     assert v.validate_json('123') == 123
     with pytest.raises(ValidationError, match=r'Input should be a finite number \[type=finite_number'):

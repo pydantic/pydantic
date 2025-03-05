@@ -1,8 +1,9 @@
+use pyo3::exceptions::PyValueError;
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::sync::GILOnceCell;
 use pyo3::types::{PyDict, PyString};
-use speedate::{DateTime, Time};
+use speedate::{DateTime, MicrosecondsPrecisionOverflowBehavior, Time};
 use std::cmp::Ordering;
 use strum::EnumMessage;
 
@@ -208,9 +209,14 @@ impl DateTimeConstraints {
     }
 }
 
-fn py_datetime_as_datetime(schema: &Bound<'_, PyDict>, field: &Bound<'_, PyString>) -> PyResult<Option<DateTime>> {
-    match schema.get_as(field)? {
-        Some(dt) => Ok(Some(EitherDateTime::Py(dt).as_raw()?)),
+fn py_datetime_as_datetime(schema: &Bound<'_, PyDict>, key: &Bound<'_, PyString>) -> PyResult<Option<DateTime>> {
+    match schema.get_as::<Bound<'_, PyAny>>(key)? {
+        Some(value) => match value.validate_datetime(false, MicrosecondsPrecisionOverflowBehavior::Truncate) {
+            Ok(v) => Ok(Some(v.into_inner().as_raw()?)),
+            Err(_) => Err(PyValueError::new_err(format!(
+                "'{key}' must be coercible to a datetime instance",
+            ))),
+        },
         None => Ok(None),
     }
 }

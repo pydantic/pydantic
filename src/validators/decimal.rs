@@ -1,7 +1,7 @@
 use pyo3::exceptions::{PyTypeError, PyValueError};
 use pyo3::intern;
 use pyo3::sync::GILOnceCell;
-use pyo3::types::{IntoPyDict, PyDict, PyTuple, PyType};
+use pyo3::types::{IntoPyDict, PyDict, PyString, PyTuple, PyType};
 use pyo3::{prelude::*, PyTypeInfo};
 
 use crate::build_tools::{is_strict, schema_or_config_same};
@@ -28,6 +28,18 @@ pub fn get_decimal_type(py: Python) -> &Bound<'_, PyType> {
         .bind(py)
 }
 
+fn validate_as_decimal(py: Python, schema: &Bound<'_, PyDict>, key: &str) -> PyResult<Option<Py<PyAny>>> {
+    match schema.get_as::<Bound<'_, PyAny>>(&PyString::new(py, key))? {
+        Some(value) => match value.validate_decimal(false, py) {
+            Ok(v) => Ok(Some(v.into_inner().unbind())),
+            Err(_) => Err(PyValueError::new_err(format!(
+                "'{key}' must be coercible to a Decimal instance",
+            ))),
+        },
+        None => Ok(None),
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct DecimalValidator {
     strict: bool,
@@ -50,6 +62,7 @@ impl BuildValidator for DecimalValidator {
         _definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();
+
         let allow_inf_nan = schema_or_config_same(schema, config, intern!(py, "allow_inf_nan"))?.unwrap_or(false);
         let decimal_places = schema.get_as(intern!(py, "decimal_places"))?;
         let max_digits = schema.get_as(intern!(py, "max_digits"))?;
@@ -58,16 +71,17 @@ impl BuildValidator for DecimalValidator {
                 "allow_inf_nan=True cannot be used with max_digits or decimal_places",
             ));
         }
+
         Ok(Self {
             strict: is_strict(schema, config)?,
             allow_inf_nan,
             check_digits: decimal_places.is_some() || max_digits.is_some(),
             decimal_places,
-            multiple_of: schema.get_as(intern!(py, "multiple_of"))?,
-            le: schema.get_as(intern!(py, "le"))?,
-            lt: schema.get_as(intern!(py, "lt"))?,
-            ge: schema.get_as(intern!(py, "ge"))?,
-            gt: schema.get_as(intern!(py, "gt"))?,
+            multiple_of: validate_as_decimal(py, schema, "multiple_of")?,
+            le: validate_as_decimal(py, schema, "le")?,
+            lt: validate_as_decimal(py, schema, "lt")?,
+            ge: validate_as_decimal(py, schema, "ge")?,
+            gt: validate_as_decimal(py, schema, "gt")?,
             max_digits,
         }
         .into())

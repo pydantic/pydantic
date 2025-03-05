@@ -9,7 +9,7 @@ from typing import Any
 import pytest
 from dirty_equals import FunctionCheck, IsStr
 
-from pydantic_core import SchemaValidator, ValidationError, core_schema
+from pydantic_core import SchemaError, SchemaValidator, ValidationError
 from pydantic_core import core_schema as cs
 
 from ..conftest import Err, PyAndJson, plain_repr
@@ -17,6 +17,17 @@ from ..conftest import Err, PyAndJson, plain_repr
 
 class DecimalSubclass(Decimal):
     pass
+
+
+# Note: there's another constraint validation (allow_inf_nan=True cannot be used with max_digits or decimal_places).
+# but it is tested in Pydantic:
+@pytest.mark.parametrize(
+    'constraint',
+    ['multiple_of', 'le', 'lt', 'ge', 'gt'],
+)
+def test_constraints_schema_validation(constraint: str) -> None:
+    with pytest.raises(SchemaError, match=f"'{constraint}' must be coercible to a Decimal instance"):
+        SchemaValidator(cs.decimal_schema(**{constraint: 'bad_value'}))
 
 
 @pytest.mark.parametrize(
@@ -487,20 +498,20 @@ def test_validate_max_digits_and_decimal_places_edge_case() -> None:
 
 
 def test_str_validation_w_strict() -> None:
-    s = SchemaValidator(core_schema.decimal_schema(strict=True))
+    s = SchemaValidator(cs.decimal_schema(strict=True))
 
     with pytest.raises(ValidationError):
         assert s.validate_python('1.23')
 
 
 def test_str_validation_w_lax() -> None:
-    s = SchemaValidator(core_schema.decimal_schema(strict=False))
+    s = SchemaValidator(cs.decimal_schema(strict=False))
 
     assert s.validate_python('1.23') == Decimal('1.23')
 
 
 def test_union_with_str_prefers_str() -> None:
-    s = SchemaValidator(core_schema.union_schema([core_schema.decimal_schema(), core_schema.str_schema()]))
+    s = SchemaValidator(cs.union_schema([cs.decimal_schema(), cs.str_schema()]))
 
     assert s.validate_python('1.23') == '1.23'
     assert s.validate_python(1.23) == Decimal('1.23')
