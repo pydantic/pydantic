@@ -628,7 +628,7 @@ try:
 except ValidationError as e:
     print(e)
     """
-    1 validation error for typed-dict
+    1 validation error for User
     id
       Field required [type=missing, input_value={'name': 'foo'}, input_type=dict]
     """
@@ -685,7 +685,7 @@ try:
 except ValidationError as e:
     print(e)
     """
-    1 validation error for typed-dict
+    1 validation error for User
     identity.name
       Input should be a valid string [type=string_type, input_value=['Smith'], input_type=list]
     """
@@ -701,7 +701,7 @@ try:
 except ValidationError as e:
     print(e)
     """
-    1 validation error for typed-dict
+    1 validation error for User
     email
       Extra inputs are not permitted [type=extra_forbidden, input_value='john.smith@me.com', input_type=str]
     """
