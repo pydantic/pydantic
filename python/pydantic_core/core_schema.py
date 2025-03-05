@@ -2882,6 +2882,7 @@ class TypedDictSchema(TypedDict, total=False):
     type: Required[Literal['typed-dict']]
     fields: Required[dict[str, TypedDictField]]
     cls: type[Any]
+    cls_name: str
     computed_fields: list[ComputedField]
     strict: bool
     extras_schema: CoreSchema
@@ -2898,6 +2899,7 @@ def typed_dict_schema(
     fields: dict[str, TypedDictField],
     *,
     cls: type[Any] | None = None,
+    cls_name: str | None = None,
     computed_fields: list[ComputedField] | None = None,
     strict: bool | None = None,
     extras_schema: CoreSchema | None = None,
@@ -2929,6 +2931,8 @@ def typed_dict_schema(
     Args:
         fields: The fields to use for the typed dict
         cls: The class to use for the typed dict
+        cls_name: The name to use in error locations. Falls back to `cls.__name__`, or the validator name if no class
+            is provided.
         computed_fields: Computed fields to use when serializing the model, only applies when directly inside a model
         strict: Whether the typed dict is strict
         extras_schema: The extra validator to use for the typed dict
@@ -2942,6 +2946,7 @@ def typed_dict_schema(
         type='typed-dict',
         fields=fields,
         cls=cls,
+        cls_name=cls_name,
         computed_fields=computed_fields,
         strict=strict,
         extras_schema=extras_schema,
