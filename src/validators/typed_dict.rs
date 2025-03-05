@@ -1,6 +1,6 @@
 use pyo3::intern;
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyString};
+use pyo3::types::{PyDict, PyString, PyType};
 
 use crate::build_tools::py_schema_err;
 use crate::build_tools::{is_strict, schema_or_config, ExtraBehavior};
@@ -37,6 +37,7 @@ pub struct TypedDictValidator {
     loc_by_alias: bool,
     validate_by_alias: Option<bool>,
     validate_by_name: Option<bool>,
+    cls_name: Option<String>,
 }
 
 impl BuildValidator for TypedDictValidator {
@@ -68,6 +69,14 @@ impl BuildValidator for TypedDictValidator {
 
         let fields_dict: Bound<'_, PyDict> = schema.get_as_req(intern!(py, "fields"))?;
         let mut fields: Vec<TypedDictField> = Vec::with_capacity(fields_dict.len());
+
+        let cls_name: Option<String> = match schema.get_as_req::<String>(intern!(py, "cls_name")) {
+            Ok(name) => Some(name),
+            Err(_) => match schema.get_as_req::<Bound<'_, PyType>>(intern!(py, "cls")) {
+                Ok(class) => Some(class.getattr(intern!(py, "__name__"))?.extract()?),
+                Err(_) => None,
+            },
+        };
 
         for (key, value) in fields_dict {
             let field_info = value.downcast::<PyDict>()?;
@@ -128,6 +137,7 @@ impl BuildValidator for TypedDictValidator {
             loc_by_alias: config.get_as(intern!(py, "loc_by_alias"))?.unwrap_or(true),
             validate_by_alias: config.get_as(intern!(py, "validate_by_alias"))?,
             validate_by_name: config.get_as(intern!(py, "validate_by_name"))?,
+            cls_name,
         }
         .into())
     }
@@ -367,6 +377,6 @@ impl Validator for TypedDictValidator {
     }
 
     fn get_name(&self) -> &str {
-        Self::EXPECTED_TYPE
+        self.cls_name.as_deref().unwrap_or(Self::EXPECTED_TYPE)
     }
 }
