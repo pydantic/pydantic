@@ -483,12 +483,14 @@ def test_model_serializer_plain_json_return_type():
     m = MyModel(a=666)
     assert m.model_dump() == {'a': 666}
     with pytest.warns(
-        UserWarning, match=r'Expected `str` - serialized value may not be as expected \[input_value=666, input_type=int\]'
+        UserWarning,
+        match=r'Expected `str` - serialized value may not be as expected \[input_value=666, input_type=int\]',
     ):
         assert m.model_dump(mode='json') == 666
 
     with pytest.warns(
-        UserWarning, match=r'Expected `str` - serialized value may not be as expected \[input_value=666, input_type=int\]'
+        UserWarning,
+        match=r'Expected `str` - serialized value may not be as expected \[input_value=666, input_type=int\]',
     ):
         assert m.model_dump_json() == '666'
 
@@ -1316,22 +1318,21 @@ def test_wrap_ser_called_once() -> None:
 
     This is effectively confirming that prebuilt serializers aren't used for wrap serializers.
     """
+
     class MyModel(BaseModel):
         inner_value: str
 
-        @model_serializer(mode="wrap")
+        @model_serializer(mode='wrap')
         def my_wrapper_serializer(self, serializer):
-            self.inner_value = f"my_prefix:{self.inner_value}"
+            self.inner_value = f'my_prefix:{self.inner_value}'
             return serializer(self)
-
 
     class MyParentModel(BaseModel):
         nested: MyModel
 
-        @field_serializer('nested', mode="wrap")
+        @field_serializer('nested', mode='wrap')
         def wrapped_field_serializer(self, field_value, serializer):
             return serializer(field_value)
-
 
     my_model = MyParentModel.model_validate({'nested': {'inner_value': 'foo'}})
     assert my_model.model_dump() == {'nested': {'inner_value': 'my_prefix:foo'}}

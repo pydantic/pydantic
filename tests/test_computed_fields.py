@@ -353,11 +353,20 @@ def test_expected_type_wrong():
             return 'not a list'
 
     m = Model(x=1)
-    with pytest.warns(UserWarning, match=r"Expected `list\[int\]` - serialized value may not be as expected \[input_value='not a list', input_type=str\]"):
+    with pytest.warns(
+        UserWarning,
+        match=r"Expected `list\[int\]` - serialized value may not be as expected \[input_value='not a list', input_type=str\]",
+    ):
         m.model_dump()
-    with pytest.warns(UserWarning, match=r"Expected `list\[int\]` - serialized value may not be as expected \[input_value='not a list', input_type=str\]"):
+    with pytest.warns(
+        UserWarning,
+        match=r"Expected `list\[int\]` - serialized value may not be as expected \[input_value='not a list', input_type=str\]",
+    ):
         m.model_dump(mode='json')
-    with pytest.warns(UserWarning, match=r"Expected `list\[int\]` - serialized value may not be as expected \[input_value='not a list', input_type=str\]"):
+    with pytest.warns(
+        UserWarning,
+        match=r"Expected `list\[int\]` - serialized value may not be as expected \[input_value='not a list', input_type=str\]",
+    ):
         m.model_dump_json()
 
 
@@ -765,7 +774,8 @@ def test_generic_computed_field():
             return 'abc'  # this may not match the annotated return type, and will warn if not
 
     with pytest.warns(
-        UserWarning, match=r"Expected `int` - serialized value may not be as expected \[input_value='abc', input_type=str\]"
+        UserWarning,
+        match=r"Expected `int` - serialized value may not be as expected \[input_value='abc', input_type=str\]",
     ):
         B[int]().model_dump()
 

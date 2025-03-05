@@ -2982,21 +2982,19 @@ def test_wrap_val_called_once() -> None:
     class MyModel(BaseModel):
         inner_value: str
 
-        @model_validator(mode="wrap")
+        @model_validator(mode='wrap')
         @classmethod
         def my_wrapper_serializer(cls, data, validator):
-            data['inner_value'] = "my_prefix:" + data['inner_value']
+            data['inner_value'] = 'my_prefix:' + data['inner_value']
             return validator(data)
-
 
     class MyParentModel(BaseModel):
         nested: MyModel
 
-        @field_validator('nested', mode="wrap")
+        @field_validator('nested', mode='wrap')
         @classmethod
         def wrapped_field_serializer(cls, field_value, validator):
             return validator(field_value)
-
 
     my_model = MyParentModel.model_validate({'nested': {'inner_value': 'foo'}})
     assert my_model.nested.inner_value == 'my_prefix:foo'
