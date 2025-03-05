@@ -1,7 +1,8 @@
 use num_bigint::BigInt;
+use pyo3::exceptions::PyValueError;
 use pyo3::intern;
 use pyo3::prelude::*;
-use pyo3::types::PyDict;
+use pyo3::types::{PyDict, PyString};
 use pyo3::IntoPyObjectExt;
 
 use crate::build_tools::is_strict;
@@ -10,6 +11,23 @@ use crate::input::{Input, Int};
 use crate::tools::SchemaDict;
 
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
+
+fn validate_as_int(py: Python, schema: &Bound<'_, PyDict>, key: &str) -> PyResult<Option<Int>> {
+    match schema.get_as::<Bound<'_, PyAny>>(&PyString::new(py, key))? {
+        Some(value) => match value.validate_int(false) {
+            Ok(v) => match v.into_inner().as_int() {
+                Ok(v) => Ok(Some(v)),
+                Err(_) => Err(PyValueError::new_err(format!(
+                    "'{key}' must be coercible to an integer"
+                ))),
+            },
+            Err(_) => Err(PyValueError::new_err(format!(
+                "'{key}' must be coercible to an integer"
+            ))),
+        },
+        None => Ok(None),
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct IntValidator {
@@ -68,6 +86,21 @@ pub struct ConstrainedIntValidator {
     lt: Option<Int>,
     ge: Option<Int>,
     gt: Option<Int>,
+}
+
+impl ConstrainedIntValidator {
+    fn build(schema: &Bound<'_, PyDict>, config: Option<&Bound<'_, PyDict>>) -> PyResult<CombinedValidator> {
+        let py = schema.py();
+        Ok(Self {
+            strict: is_strict(schema, config)?,
+            multiple_of: validate_as_int(py, schema, "multiple_of")?,
+            le: validate_as_int(py, schema, "le")?,
+            lt: validate_as_int(py, schema, "lt")?,
+            ge: validate_as_int(py, schema, "ge")?,
+            gt: validate_as_int(py, schema, "gt")?,
+        }
+        .into())
+    }
 }
 
 impl_py_gc_traverse!(ConstrainedIntValidator {});
@@ -142,20 +175,5 @@ impl Validator for ConstrainedIntValidator {
 
     fn get_name(&self) -> &'static str {
         "constrained-int"
-    }
-}
-
-impl ConstrainedIntValidator {
-    fn build(schema: &Bound<'_, PyDict>, config: Option<&Bound<'_, PyDict>>) -> PyResult<CombinedValidator> {
-        let py = schema.py();
-        Ok(Self {
-            strict: is_strict(schema, config)?,
-            multiple_of: schema.get_as(intern!(py, "multiple_of"))?,
-            le: schema.get_as(intern!(py, "le"))?,
-            lt: schema.get_as(intern!(py, "lt"))?,
-            ge: schema.get_as(intern!(py, "ge"))?,
-            gt: schema.get_as(intern!(py, "gt"))?,
-        }
-        .into())
     }
 }

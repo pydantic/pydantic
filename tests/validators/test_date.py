@@ -14,6 +14,15 @@ from ..conftest import Err, PyAndJson
 
 
 @pytest.mark.parametrize(
+    'constraint',
+    ['le', 'lt', 'ge', 'gt'],
+)
+def test_constraints_schema_validation(constraint: str) -> None:
+    with pytest.raises(SchemaError, match=f"'{constraint}' must be coercible to a date instance"):
+        SchemaValidator(cs.date_schema(**{constraint: 'bad_value'}))
+
+
+@pytest.mark.parametrize(
     'input_value,expected',
     [
         pytest.param(date(2022, 6, 8), date(2022, 6, 8), id='date'),
