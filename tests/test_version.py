@@ -41,6 +41,7 @@ def test_check_pydantic_core_version() -> None:
     assert check_pydantic_core_version()
 
 
+@pytest.mark.thread_unsafe(reason='Monkeypatching')
 @pytest.mark.parametrize('version,expected', (('2.1', '2.1'), ('2.1.0', '2.1')))
 def test_version_short(version, expected):
     with patch('pydantic.version.VERSION', version):

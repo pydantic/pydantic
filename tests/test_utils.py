@@ -381,6 +381,7 @@ def test_smart_deepcopy_empty_collection(empty_collection, mocker):
         assert smart_deepcopy(empty_collection) is not empty_collection
 
 
+@pytest.mark.thread_unsafe(reason='Monkeypatching')
 @pytest.mark.parametrize(
     'collection', (c.fromkeys((1,)) if issubclass(c, dict) else c((1,)) for c in BUILTIN_COLLECTIONS)
 )

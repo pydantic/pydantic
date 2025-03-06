@@ -142,6 +142,7 @@ def run_example(example: CodeExample, eval_example: EvalExample, mocker: Any) ->
         group_globals.set(group_name, d2)
 
 
+@pytest.mark.thread_unsafe
 @pytest.mark.filterwarnings('ignore:(parse_obj_as|schema_json_of|schema_of) is deprecated.*:DeprecationWarning')
 @pytest.mark.skipif(bool(skip_reason), reason=skip_reason or 'not skipping')
 @pytest.mark.parametrize('example', find_examples(str(SOURCES_ROOT), skip=sys.platform == 'win32'), ids=str)
@@ -165,6 +166,7 @@ def set_cwd():
         os.chdir(cwd)
 
 
+@pytest.mark.thread_unsafe
 @pytest.mark.filterwarnings('ignore:(parse_obj_as|schema_json_of|schema_of) is deprecated.*:DeprecationWarning')
 @pytest.mark.filterwarnings('ignore::pydantic.warnings.PydanticExperimentalWarning')
 @pytest.mark.skipif(bool(skip_reason), reason=skip_reason or 'not skipping')
@@ -184,6 +186,7 @@ def test_docs_examples(example: CodeExample, eval_example: EvalExample, tmp_path
     run_example(example, eval_example, mocker)
 
 
+@pytest.mark.thread_unsafe
 @pytest.mark.skipif(bool(skip_reason), reason=skip_reason or 'not skipping')
 @pytest.mark.skipif(sys.version_info >= (3, 13), reason='python-devtools does not yet support python 3.13')
 @pytest.mark.parametrize(

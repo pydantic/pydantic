@@ -5,6 +5,7 @@ from collections.abc import Generator
 from functools import partial
 from typing import Any
 
+import pytest
 from pydantic_core import ValidationError
 
 from pydantic import BaseModel, TypeAdapter, create_model, dataclasses, field_validator, validate_call
@@ -16,6 +17,8 @@ from pydantic.plugin import (
     ValidateStringsHandlerProtocol,
 )
 from pydantic.plugin._loader import _plugins
+
+pytestmark = pytest.mark.thread_unsafe(reason='`install_plugin()` is thread unsafe')
 
 
 @contextlib.contextmanager
