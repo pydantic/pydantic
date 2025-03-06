@@ -277,7 +277,7 @@ try:
 except ValidationError as exc:
     print(exc)
     """
-    1 validation error for typed-dict
+    1 validation error for MyDict
     x
       Input should be a valid integer [type=int_type, input_value='1', input_type=str]
     """
@@ -470,7 +470,7 @@ try:
 except ValidationError as exc:
     print(exc)
     """
-    1 validation error for typed-dict
+    1 validation error for Outer
     inner.y
       Input should be a valid integer [type=int_type, input_value='2', input_type=str]
     """
