@@ -17,7 +17,10 @@ impl PrebuiltValidator {
     pub fn try_get_from_schema(type_: &str, schema: &Bound<'_, PyDict>) -> PyResult<Option<CombinedValidator>> {
         get_prebuilt(type_, schema, "__pydantic_validator__", |py_any| {
             let schema_validator = py_any.extract::<Py<SchemaValidator>>()?;
-            if matches!(schema_validator.get().validator, CombinedValidator::FunctionWrap(_)) {
+            if matches!(
+                schema_validator.get().validator,
+                CombinedValidator::FunctionWrap(_) | CombinedValidator::FunctionAfter(_)
+            ) {
                 return Ok(None);
             }
             Ok(Some(Self { schema_validator }.into()))
