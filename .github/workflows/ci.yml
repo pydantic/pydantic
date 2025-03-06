@@ -14,6 +14,46 @@ env:
   FORCE_COLOR: 1
 
 jobs:
+  show-timings:
+    name: Pydantic ${{ matrix.pydantic-version }}, Python ${{ matrix.python-version }}, ${{ startsWith(matrix.os, 'macos-') && 'macOS' || startsWith(matrix.os, 'windows-') && 'Windows' || 'Linux' }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        pydantic-version: ["2.8.2", "2.9.2", "2.10.6", "2.11.0a2"]
+        python-version: ["3.12", "3.13"]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install pydantic ${{ matrix.pydantic-version }}
+        run: pip install pydantic==${{ matrix.pydantic-version }}
+        shell: bash
+
+      - name: Write test file
+        run: |-
+          mkdir -p test-benchmark
+          cat <<'EOF' > test-benchmark/test.py
+          from pydantic import BaseModel
+          class Foo(BaseModel):
+              field: str = ''
+          EOF
+        shell: bash
+
+      - name: Run benchmark
+        run: |-
+          cd test-benchmark
+          for i in {1..10}; do
+            python -m timeit -n 1 -r 1 "from test import Foo"
+          done
+        shell: bash
   lint:
     runs-on: ubuntu-latest
     name: Lint ${{ matrix.python-version }}
