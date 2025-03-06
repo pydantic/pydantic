@@ -3033,7 +3033,7 @@ which can be used for type validation, serialization, and JSON schema generation
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    1 validation error for list[typed-dict]</span>
+<span class="sd">    1 validation error for list[User]</span>
 <span class="sd">    0.id</span>
 <span class="sd">      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value=&#39;wrong&#39;, input_type=str]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -3065,7 +3065,7 @@ which can be used for type validation, serialization, and JSON schema generation
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    1 validation error for list[typed-dict]</span>
+<span class="sd">    1 validation error for list[User]</span>
 <span class="sd">    0.id</span>
 <span class="sd">      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value=&#39;wrong&#39;, input_type=str]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -3203,7 +3203,7 @@ Pydantic will defer building the core schema until the first time it is needed (
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.11.0a2", "pydantic-core==2.30.0", "pydantic-extra-types==2.10.0"]
+    window.mkdocs_run_deps = ["pydantic==2.11.0a2", "pydantic-core==2.31.1", "pydantic-extra-types==2.10.0"]
     </script>
 
               </article>

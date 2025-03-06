@@ -12,7 +12,7 @@ Pydantic
 
 [![license](https://img.shields.io/github/license/pydantic/pydantic.svg)](https://github.com/pydantic/pydantic/blob/main/LICENSE)
 
-Documentation for development version: [50a7269](https://github.com/pydantic/pydantic/commit/50a726944de13094fc45eb52a8e8c3451e0a1079).
+Documentation for development version: [475aa80](https://github.com/pydantic/pydantic/commit/475aa800f31ebfd7dd8827e6ab86e7abc870e0dc).
 
 Pydantic is the most widely used data validation library for Python.
 
@@ -27685,6 +27685,7 @@ typed_dict_schema(
     fields: dict[str, TypedDictField],
     *,
     cls: type[Any] | None = None,
+    cls_name: str | None = None,
     computed_fields: list[ComputedField] | None = None,
     strict: bool | None = None,
     extras_schema: CoreSchema | None = None,
@@ -27722,6 +27723,7 @@ Parameters:
 | --- | --- | --- | --- |
 | `fields` | `dict[str, TypedDictField]` | The fields to use for the typed dict | *required* |
 | `cls` | `type[Any] | None` | The class to use for the typed dict | `None` |
+| `cls_name` | `str | None` | The name to use in error locations. Falls back to `cls.__name__`, or the validator name if no class is provided. | `None` |
 | `computed_fields` | `list[ComputedField] | None` | Computed fields to use when serializing the model, only applies when directly inside a model | `None` |
 | `strict` | `bool | None` | Whether the typed dict is strict | `None` |
 | `extras_schema` | `CoreSchema | None` | The extra validator to use for the typed dict | `None` |
@@ -27737,6 +27739,7 @@ def typed_dict_schema(
     fields: dict[str, TypedDictField],
     *,
     cls: type[Any] | None = None,
+    cls_name: str | None = None,
     computed_fields: list[ComputedField] | None = None,
     strict: bool | None = None,
     extras_schema: CoreSchema | None = None,
@@ -27768,6 +27771,8 @@ def typed_dict_schema(
     Args:
         fields: The fields to use for the typed dict
         cls: The class to use for the typed dict
+        cls_name: The name to use in error locations. Falls back to `cls.__name__`, or the validator name if no class
+            is provided.
         computed_fields: Computed fields to use when serializing the model, only applies when directly inside a model
         strict: Whether the typed dict is strict
         extras_schema: The extra validator to use for the typed dict
@@ -27781,6 +27786,7 @@ def typed_dict_schema(
         type='typed-dict',
         fields=fields,
         cls=cls,
+        cls_name=cls_name,
         computed_fields=computed_fields,
         strict=strict,
         extras_schema=extras_schema,
@@ -34682,7 +34688,7 @@ try:
 except ValidationError as e:
     print(e)
     """
-    1 validation error for typed-dict
+    1 validation error for User
     id
       Field required [type=missing, input_value={'name': 'foo'}, input_type=dict]
     """
@@ -34711,7 +34717,7 @@ try:
 except ValidationError as e:
     print(e)
     """
-    1 validation error for typed-dict
+    1 validation error for User
     id
       Field required [type=missing, input_value={'name': 'foo'}, input_type=dict]
     """
@@ -34771,7 +34777,7 @@ try:
 except ValidationError as e:
     print(e)
     """
-    1 validation error for typed-dict
+    1 validation error for User
     identity.name
       Input should be a valid string [type=string_type, input_value=['Smith'], input_type=list]
     """
@@ -34787,7 +34793,7 @@ try:
 except ValidationError as e:
     print(e)
     """
-    1 validation error for typed-dict
+    1 validation error for User
     email
       Extra inputs are not permitted [type=extra_forbidden, input_value='john.smith@me.com', input_type=str]
     """
@@ -34841,7 +34847,7 @@ try:
 except ValidationError as e:
     print(e)
     """
-    1 validation error for typed-dict
+    1 validation error for User
     identity.name
       Input should be a valid string [type=string_type, input_value=['Smith'], input_type=list]
     """
@@ -34857,7 +34863,7 @@ try:
 except ValidationError as e:
     print(e)
     """
-    1 validation error for typed-dict
+    1 validation error for User
     email
       Extra inputs are not permitted [type=extra_forbidden, input_value='john.smith@me.com', input_type=str]
     """
@@ -34911,7 +34917,7 @@ try:
 except ValidationError as e:
     print(e)
     """
-    1 validation error for typed-dict
+    1 validation error for User
     identity.name
       Input should be a valid string [type=string_type, input_value=['Smith'], input_type=list]
     """
@@ -34927,7 +34933,7 @@ try:
 except ValidationError as e:
     print(e)
     """
-    1 validation error for typed-dict
+    1 validation error for User
     email
       Extra inputs are not permitted [type=extra_forbidden, input_value='john.smith@me.com', input_type=str]
     """
@@ -53897,7 +53903,7 @@ try:
 except ValidationError as exc:
     print(exc)
     """
-    1 validation error for typed-dict
+    1 validation error for MyDict
     x
       Input should be a valid integer [type=int_type, input_value='1', input_type=str]
     """
@@ -53922,7 +53928,7 @@ try:
 except ValidationError as exc:
     print(exc)
     """
-    1 validation error for typed-dict
+    1 validation error for MyDict
     x
       Input should be a valid integer [type=int_type, input_value='1', input_type=str]
     """
@@ -54127,7 +54133,7 @@ try:
 except ValidationError as exc:
     print(exc)
     """
-    1 validation error for typed-dict
+    1 validation error for Outer
     inner.y
       Input should be a valid integer [type=int_type, input_value='2', input_type=str]
     """
@@ -54163,7 +54169,7 @@ try:
 except ValidationError as exc:
     print(exc)
     """
-    1 validation error for typed-dict
+    1 validation error for Outer
     inner.y
       Input should be a valid integer [type=int_type, input_value='2', input_type=str]
     """
@@ -54258,7 +54264,7 @@ try:
 except ValidationError as e:
     print(e)
     """
-    1 validation error for list[typed-dict]
+    1 validation error for list[User]
     0.id
       Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='wrong', input_type=str]
     """
@@ -54292,7 +54298,7 @@ try:
 except ValidationError as e:
     print(e)
     """
-    1 validation error for list[typed-dict]
+    1 validation error for list[User]
     0.id
       Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='wrong', input_type=str]
     """

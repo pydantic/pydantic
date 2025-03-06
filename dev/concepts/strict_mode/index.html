@@ -3414,7 +3414,7 @@ when working with <code>TypedDict</code>:</p>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    1 validation error for typed-dict</span>
+<span class="sd">    1 validation error for MyDict</span>
 <span class="sd">    x</span>
 <span class="sd">      Input should be a valid integer [type=int_type, input_value=&#39;1&#39;, input_type=str]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -3437,7 +3437,7 @@ when working with <code>TypedDict</code>:</p>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    1 validation error for typed-dict</span>
+<span class="sd">    1 validation error for MyDict</span>
 <span class="sd">    x</span>
 <span class="sd">      Input should be a valid integer [type=int_type, input_value=&#39;1&#39;, input_type=str]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -3613,7 +3613,7 @@ should use for the type by setting the <code>__pydantic_config__</code> attribut
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    1 validation error for typed-dict</span>
+<span class="sd">    1 validation error for Outer</span>
 <span class="sd">    inner.y</span>
 <span class="sd">      Input should be a valid integer [type=int_type, input_value=&#39;2&#39;, input_type=str]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -3647,7 +3647,7 @@ should use for the type by setting the <code>__pydantic_config__</code> attribut
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    1 validation error for typed-dict</span>
+<span class="sd">    1 validation error for Outer</span>
 <span class="sd">    inner.y</span>
 <span class="sd">      Input should be a valid integer [type=int_type, input_value=&#39;2&#39;, input_type=str]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -3752,7 +3752,7 @@ decorator by passing the <code>config</code> keyword argument:</p>
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.11.0a2", "pydantic-core==2.30.0", "pydantic-extra-types==2.10.0"]
+    window.mkdocs_run_deps = ["pydantic==2.11.0a2", "pydantic-core==2.31.1", "pydantic-extra-types==2.10.0"]
     </script>
 
               </article>
