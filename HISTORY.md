@@ -8,9 +8,6 @@
 
 * Add a `check_pydantic_core_version()` function by @Viicos in https://github.com/pydantic/pydantic/pull/11324
 * Remove `greenlet` development dependency by @Viicos in https://github.com/pydantic/pydantic/pull/11351
-* Bump Bump `ruff` to v0.9.5 by @Viicos in https://github.com/pydantic/pydantic/pull/11407
-* Improve release automation process by @austinyu in https://github.com/pydantic/pydantic/pull/11427
-* Use locally-built rust in CI with symbols & pgo by @davidhewitt in https://github.com/pydantic/pydantic/pull/11403
 * Use the `typing-inspection` library by @Viicos in https://github.com/pydantic/pydantic/pull/11479
 * Bump `pydantic-core` to `v2.31.1` by @sydney-runkle in https://github.com/pydantic/pydantic/pull/11526
 
@@ -49,8 +46,6 @@
 
 * Improve `TypeAdapter` instance repr by @sydney-runkle in https://github.com/pydantic/pydantic/pull/10872
 * Use the correct frame when instantiating a parametrized `TypeAdapter` by @Viicos in https://github.com/pydantic/pydantic/pull/10893
-* Revert "ci: use locally built pydantic-core with debug symbols" by @sydney-runkle in https://github.com/pydantic/pydantic/pull/10942
-* Re-enable all FastAPI tests by @tamird in https://github.com/pydantic/pydantic/pull/10948
 * Infer final fields with a default value as class variables in the mypy plugin by @Viicos in https://github.com/pydantic/pydantic/pull/11121
 * Recursively unpack `Literal` values if using PEP 695 type aliases by @Viicos in https://github.com/pydantic/pydantic/pull/11114
 * Override `__subclasscheck__` on `ModelMetaclass` to avoid memory leak and performance issues by @Viicos in https://github.com/pydantic/pydantic/pull/11116
