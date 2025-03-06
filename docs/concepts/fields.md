@@ -52,7 +52,7 @@ Using this pattern has some advantages:
   the [`Field()`][pydantic.fields.Field] function only supports a limited set of constraints/metadata,
   and you may have to use different Pydantic utilities such as [`WithJsonSchema`][pydantic.WithJsonSchema]
   in some cases.
-- Types can be made reusable (see the documentation on [custom types](./types.md#using-the-annotated-pattern)
+- Types can be made reusable (see the documentation on [custom types](./types.md#custom-types)
   using this pattern).
 
 However, note that certain arguments to the [`Field()`][pydantic.fields.Field] function (namely, `default`,
