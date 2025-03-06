@@ -2984,8 +2984,8 @@ def test_wrap_val_called_once() -> None:
 
         @model_validator(mode='wrap')
         @classmethod
-        def my_wrapper_serializer(cls, data, validator):
-            data['inner_value'] = 'my_prefix:' + data['inner_value']
+        def my_wrap_validator(cls, data, validator):
+            data['inner_value'] = 'wrap_prefix:' + data['inner_value']
             return validator(data)
 
     class MyParentModel(BaseModel):
@@ -2997,4 +2997,62 @@ def test_wrap_val_called_once() -> None:
             return validator(field_value)
 
     my_model = MyParentModel.model_validate({'nested': {'inner_value': 'foo'}})
-    assert my_model.nested.inner_value == 'my_prefix:foo'
+    assert my_model.nested.inner_value == 'wrap_prefix:foo'
+
+
+def test_after_val_called_once() -> None:
+    """See https://github.com/pydantic/pydantic/issues/11505 for context.
+
+    This is effectively confirming that prebuilt validators aren't used for after validators.
+    """
+
+    class MyModel(BaseModel):
+        inner_value: str
+
+        @model_validator(mode='after')
+        def my_after_validator(self):
+            self.inner_value = 'after_prefix:' + self.inner_value
+            return self
+
+    class MyParentModel(BaseModel):
+        nested: MyModel
+
+        @field_validator('nested', mode='wrap')
+        @classmethod
+        def wrapped_field_serializer(cls, field_value, validator):
+            return validator(field_value)
+
+    my_model = MyParentModel.model_validate({'nested': {'inner_value': 'foo'}})
+    assert my_model.nested.inner_value == 'after_prefix:foo'
+
+
+def test_after_and_wrap_combo_called_once() -> None:
+    """See https://github.com/pydantic/pydantic/issues/11505 for context.
+
+    This is effectively confirming that prebuilt validators aren't used for combinations of wrap and after validators.
+    """
+
+    class MyModel(BaseModel):
+        inner_value: str
+
+        @model_validator(mode='wrap')
+        @classmethod
+        def my_wrap_validator(cls, data, validator):
+            data['inner_value'] = 'wrap_prefix:' + data['inner_value']
+            return validator(data)
+
+        @model_validator(mode='after')
+        def my_after_validator(self):
+            self.inner_value = 'after_prefix:' + self.inner_value
+            return self
+
+    class MyParentModel(BaseModel):
+        nested: MyModel
+
+        @field_validator('nested', mode='wrap')
+        @classmethod
+        def wrapped_field_serializer(cls, field_value, validator):
+            return validator(field_value)
+
+    my_model = MyParentModel.model_validate({'nested': {'inner_value': 'foo'}})
+    assert my_model.nested.inner_value == 'after_prefix:wrap_prefix:foo'
