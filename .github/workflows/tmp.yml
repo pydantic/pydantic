@@ -1,0 +1,19 @@
+name: tmp
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - '**'
+  pull_request: {}
+
+jobs:
+  tmp:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install pydantic==1.10.21
+      - run: python -c 'from pydantic import BaseModel'
