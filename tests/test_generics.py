@@ -54,6 +54,7 @@ from pydantic import (
 from pydantic._internal._generics import (
     _GENERIC_TYPES_CACHE,
     _LIMITED_DICT_SIZE,
+    GenericTypesCache,
     LimitedDict,
     generic_recursion_self_type,
     iter_contained_typevars,
@@ -63,13 +64,19 @@ from pydantic._internal._generics import (
 from pydantic.warnings import GenericBeforeBaseModelWarning
 
 
-@pytest.fixture()
-def clean_cache():
+# Note: this isn't implemented as a fixture, as pytest fixtures
+# are shared between threads by pytest-run-parallel:
+def get_clean_cache() -> GenericTypesCache:
+    generic_types_cache = _GENERIC_TYPES_CACHE.get()
+    if generic_types_cache is None:
+        generic_types_cache = GenericTypesCache()
+        _GENERIC_TYPES_CACHE.set(generic_types_cache)
     # cleans up _GENERIC_TYPES_CACHE for checking item counts in the cache
-    _GENERIC_TYPES_CACHE.clear()
+    generic_types_cache.clear()
     gc.collect(0)
     gc.collect(1)
     gc.collect(2)
+    return generic_types_cache
 
 
 def test_generic_name():
@@ -341,8 +348,9 @@ def test_arguments_count_validation() -> None:
     assert Model[int, int, str].__pydantic_generic_metadata__['args'] == (int, int, str)
 
 
-def test_cover_cache(clean_cache):
-    cache_size = len(_GENERIC_TYPES_CACHE)
+def test_cover_cache():
+    cache = get_clean_cache()
+    cache_size = len(cache)
     T = TypeVar('T')
 
     class Model(BaseModel, Generic[T]):
@@ -351,14 +359,15 @@ def test_cover_cache(clean_cache):
     models = []  # keep references to models to get cache size
 
     models.append(Model[int])  # adds both with-tuple and without-tuple version to cache
-    assert len(_GENERIC_TYPES_CACHE) == cache_size + 3
+    assert len(cache) == cache_size + 3
     models.append(Model[int])  # uses the cache
-    assert len(_GENERIC_TYPES_CACHE) == cache_size + 3
+    assert len(cache) == cache_size + 3
     del models
 
 
-def test_cache_keys_are_hashable(clean_cache):
-    cache_size = len(_GENERIC_TYPES_CACHE)
+def test_cache_keys_are_hashable():
+    cache = get_clean_cache()
+    cache_size = len(cache)
     T = TypeVar('T')
     C = Callable[[str, dict[str, Any]], Iterable[str]]
 
@@ -371,26 +380,28 @@ def test_cache_keys_are_hashable(clean_cache):
     models = []  # keep references to models to get cache size
     models.append(Simple)
 
-    assert len(_GENERIC_TYPES_CACHE) == cache_size + 3
+    assert len(cache) == cache_size + 3
     # Nested Callables
     models.append(MyGenericModel[Callable[[C], Iterable[str]]])
-    assert len(_GENERIC_TYPES_CACHE) == cache_size + 6
+    assert len(cache) == cache_size + 6
     models.append(MyGenericModel[Callable[[Simple], Iterable[int]]])
-    assert len(_GENERIC_TYPES_CACHE) == cache_size + 9
+    assert len(cache) == cache_size + 9
     models.append(MyGenericModel[Callable[[MyGenericModel[C]], Iterable[int]]])
-    assert len(_GENERIC_TYPES_CACHE) == cache_size + 15
+    assert len(cache) == cache_size + 15
 
     class Model(BaseModel):
         x: MyGenericModel[Callable[[C], Iterable[str]]]
 
     models.append(Model)
-    assert len(_GENERIC_TYPES_CACHE) == cache_size + 15
+    assert len(cache) == cache_size + 15
     del models
 
 
+@pytest.mark.thread_unsafe(reason='GC is flaky')
 @pytest.mark.skipif(platform.python_implementation() == 'PyPy', reason='PyPy does not play nice with PyO3 gc')
-def test_caches_get_cleaned_up(clean_cache):
-    initial_types_cache_size = len(_GENERIC_TYPES_CACHE)
+def test_caches_get_cleaned_up():
+    cache = get_clean_cache()
+    initial_types_cache_size = len(cache)
     T = TypeVar('T')
 
     class MyGenericModel(BaseModel, Generic[T]):
@@ -407,17 +418,18 @@ def test_caches_get_cleaned_up(clean_cache):
 
         types.append(MyGenericModel[MyType])  # retain a reference
 
-    assert len(_GENERIC_TYPES_CACHE) == initial_types_cache_size + 3 * n_types
+    assert len(cache) == initial_types_cache_size + 3 * n_types
     types.clear()
     gc.collect(0)
     gc.collect(1)
     gc.collect(2)
-    assert len(_GENERIC_TYPES_CACHE) < initial_types_cache_size + _LIMITED_DICT_SIZE
+    assert len(cache) < initial_types_cache_size + _LIMITED_DICT_SIZE
 
 
 @pytest.mark.skipif(platform.python_implementation() == 'PyPy', reason='PyPy does not play nice with PyO3 gc')
-def test_caches_get_cleaned_up_with_aliased_parametrized_bases(clean_cache):
-    types_cache_size = len(_GENERIC_TYPES_CACHE)
+def test_caches_get_cleaned_up_with_aliased_parametrized_bases():
+    cache = get_clean_cache()
+    types_cache_size = len(cache)
 
     def run() -> None:  # Run inside nested function to get classes in local vars cleaned also
         T1 = TypeVar('T1')
@@ -429,7 +441,7 @@ def test_caches_get_cleaned_up_with_aliased_parametrized_bases(clean_cache):
 
         B = A[int, T2]
         C = B[str]
-        assert len(_GENERIC_TYPES_CACHE) == types_cache_size + 5
+        assert len(cache) == types_cache_size + 5
         del C
         del B
         gc.collect()
@@ -439,13 +451,15 @@ def test_caches_get_cleaned_up_with_aliased_parametrized_bases(clean_cache):
     gc.collect(0)
     gc.collect(1)
     gc.collect(2)
-    assert len(_GENERIC_TYPES_CACHE) < types_cache_size + _LIMITED_DICT_SIZE
+    assert len(cache) < types_cache_size + _LIMITED_DICT_SIZE
 
 
+@pytest.mark.thread_unsafe(reason='GC is flaky')
 @pytest.mark.skipif(platform.python_implementation() == 'PyPy', reason='PyPy does not play nice with PyO3 gc')
 @pytest.mark.skipif(sys.version_info[:2] == (3, 9), reason='The test randomly fails on Python 3.9')
 def test_circular_generic_refs_get_cleaned_up():
-    initial_cache_size = len(_GENERIC_TYPES_CACHE)
+    cache = get_clean_cache()
+    initial_cache_size = len(cache)
 
     def fn():
         T = TypeVar('T')
@@ -459,8 +473,8 @@ def test_circular_generic_refs_get_cleaned_up():
             c: Inner[int, C]
 
         klass = Outer[str]
-        assert len(_GENERIC_TYPES_CACHE) > initial_cache_size
-        assert klass in _GENERIC_TYPES_CACHE.values()
+        assert len(cache) > initial_cache_size
+        assert klass in cache.values()
 
     fn()
 
@@ -468,11 +482,12 @@ def test_circular_generic_refs_get_cleaned_up():
     gc.collect(1)
     gc.collect(2)
 
-    assert len(_GENERIC_TYPES_CACHE) == initial_cache_size
+    assert len(cache) == initial_cache_size
 
 
-def test_generics_work_with_many_parametrized_base_models(clean_cache):
-    cache_size = len(_GENERIC_TYPES_CACHE)
+def test_generics_work_with_many_parametrized_base_models():
+    cache = get_clean_cache()
+    cache_size = len(cache)
     count_create_models = 1000
     T = TypeVar('T')
     C = TypeVar('C')
@@ -499,7 +514,7 @@ def test_generics_work_with_many_parametrized_base_models(clean_cache):
         generics.append(Working)
 
     target_size = cache_size + count_create_models * 3 + 2
-    assert len(_GENERIC_TYPES_CACHE) < target_size + _LIMITED_DICT_SIZE
+    assert len(cache) < target_size + _LIMITED_DICT_SIZE
     del models
     del generics
 
@@ -1008,7 +1023,7 @@ def test_generic_model_redefined_without_cache_fail(create_module, monkeypatch):
         class Model(BaseModel): ...
 
         concrete = MyGeneric[Model]
-        _GENERIC_TYPES_CACHE.clear()
+        _GENERIC_TYPES_CACHE.get().clear()  # pyright: ignore[reportOptionalMemberAccess], guaranteed to be set
         second_concrete = MyGeneric[Model]
 
         class Model(BaseModel):  # same name, but type different, so it's not in cache
@@ -1103,6 +1118,7 @@ def test_get_caller_frame_info_called_from_module(create_module):
                 _get_caller_frame_info()
 
 
+@pytest.mark.thread_unsafe(reason='Deleting built-in functions')
 def test_get_caller_frame_info_when_sys_getframe_undefined():
     from pydantic._internal._generics import _get_caller_frame_info
 

@@ -305,7 +305,13 @@ class TestsBaseConfig:
             [False, True, 'bar', does_not_raise()],
             [False, True, 'bar_', does_not_raise()],
             [False, False, 'bar', does_not_raise()],
-            [False, False, 'bar_', pytest.raises(ValueError)],
+            pytest.param(
+                False,
+                False,
+                'bar_',
+                pytest.raises(ValueError),
+                marks=pytest.mark.thread_unsafe(reason='`pytest.raises()` is thread unsafe'),
+            ),
             [True, True, 'bar', does_not_raise()],
             [True, True, 'bar_', does_not_raise()],
             [True, False, 'bar', does_not_raise()],
@@ -512,6 +518,7 @@ def test_multiple_inheritance_config():
     assert Child.model_config.get('use_enum_values') is True
 
 
+@pytest.mark.thread_unsafe(reason='Flaky')
 def test_config_wrapper_match():
     localns = {
         '_GenerateSchema': GenerateSchema,

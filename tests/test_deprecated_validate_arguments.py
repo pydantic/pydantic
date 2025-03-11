@@ -11,6 +11,10 @@ from pydantic.deprecated.decorator import ValidatedFunction
 from pydantic.deprecated.decorator import validate_arguments as validate_arguments_deprecated
 from pydantic.errors import PydanticUserError
 
+# `pytest.warns/raises()` is thread unsafe. As these tests are meant to be
+# removed in V3, we just mark all tests as thread unsafe
+pytestmark = pytest.mark.thread_unsafe
+
 
 def validate_arguments(*args, **kwargs):
     with pytest.warns(

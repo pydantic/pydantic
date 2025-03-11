@@ -717,7 +717,11 @@ def test_validate_not_always():
 @pytest.mark.parametrize(
     'decorator, pytest_warns',
     [
-        (validator, pytest.warns(PydanticDeprecatedSince20, match=V1_VALIDATOR_DEPRECATION_MATCH)),
+        pytest.param(
+            validator,
+            pytest.warns(PydanticDeprecatedSince20, match=V1_VALIDATOR_DEPRECATION_MATCH),
+            marks=pytest.mark.thread_unsafe(reason='`pytest.warns()` is thread unsafe'),
+        ),
         (field_validator, contextlib.nullcontext()),
     ],
 )
@@ -758,7 +762,11 @@ def test_wildcard_validators(decorator, pytest_warns):
 @pytest.mark.parametrize(
     'decorator, pytest_warns',
     [
-        (validator, pytest.warns(PydanticDeprecatedSince20, match=V1_VALIDATOR_DEPRECATION_MATCH)),
+        pytest.param(
+            validator,
+            pytest.warns(PydanticDeprecatedSince20, match=V1_VALIDATOR_DEPRECATION_MATCH),
+            marks=pytest.mark.thread_unsafe(reason='`pytest.warns()` is thread unsafe'),
+        ),
         (field_validator, contextlib.nullcontext()),
     ],
 )

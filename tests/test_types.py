@@ -1969,7 +1969,7 @@ def test_dict():
     (
         ([1, 2, '3'], [1, 2, '3']),
         ((1, 2, '3'), [1, 2, '3']),
-        ((i**2 for i in range(5)), [0, 1, 4, 9, 16]),
+        pytest.param((i**2 for i in range(5)), [0, 1, 4, 9, 16], marks=pytest.mark.thread_unsafe),
         (deque([1, 2, 3]), [1, 2, 3]),
         ({1, '2'}, IsOneOf([1, '2'], ['2', 1])),
     ),
@@ -2019,7 +2019,7 @@ def test_ordered_dict():
     (
         ([1, 2, '3'], (1, 2, '3')),
         ((1, 2, '3'), (1, 2, '3')),
-        ((i**2 for i in range(5)), (0, 1, 4, 9, 16)),
+        pytest.param((i**2 for i in range(5)), (0, 1, 4, 9, 16), marks=pytest.mark.thread_unsafe),
         (deque([1, 2, 3]), (1, 2, 3)),
         ({1, '2'}, IsOneOf((1, '2'), ('2', 1))),
     ),
@@ -2049,7 +2049,7 @@ def test_tuple_fails(value):
     (
         ([1, 2, '3'], int, (1, 2, 3)),
         ((1, 2, '3'), int, (1, 2, 3)),
-        ((i**2 for i in range(5)), int, (0, 1, 4, 9, 16)),
+        pytest.param((i**2 for i in range(5)), int, (0, 1, 4, 9, 16), marks=pytest.mark.thread_unsafe),
         (('a', 'b', 'c'), str, ('a', 'b', 'c')),
     ),
 )
