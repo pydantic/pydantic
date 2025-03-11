@@ -1,9 +1,8 @@
 use std::borrow::Cow;
 
-use jiter::{JsonArray, JsonObject, JsonValue, LazyIndexMap};
+use jiter::{JsonArray, JsonObject, JsonValue};
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyString};
-use smallvec::SmallVec;
 use speedate::MicrosecondsPrecisionOverflowBehavior;
 use strum::EnumMessage;
 
@@ -62,7 +61,9 @@ impl<'py, 'data> Input<'py> for JsonValue<'data> {
         match self {
             JsonValue::Object(object) => {
                 let dict = PyDict::new(py);
-                for (k, v) in LazyIndexMap::iter(object) {
+                for (k, v) in object.as_slice() {
+                    // TODO: jiter doesn't deduplicate keys, so we should probably do that here to
+                    // avoid potential wasted work creating Python objects.
                     dict.set_item(k, v).unwrap();
                 }
                 Some(dict)
@@ -253,7 +254,14 @@ impl<'py, 'data> Input<'py> for JsonValue<'data> {
             JsonValue::Str(s) => Ok(string_to_vec(s).into()),
             JsonValue::Object(object) => {
                 // return keys iterator to match python's behavior
-                let keys: JsonArray = JsonArray::new(object.keys().map(|k| JsonValue::Str(k.clone())).collect());
+                // FIXME jiter doesn't deduplicate keys, should probably do that here before iteration.
+                let keys: JsonArray = JsonArray::new(
+                    object
+                        .as_slice()
+                        .iter()
+                        .map(|(k, _)| JsonValue::Str(k.clone()))
+                        .collect(),
+                );
                 Ok(GenericIterator::from(keys).into_static())
             }
             _ => Err(ValError::new(ErrorTypeDefaults::IterableType, self)),
@@ -543,11 +551,11 @@ impl<'data> ValidatedDict<'_> for &'_ JsonObject<'data> {
         &'a self,
         consumer: impl ConsumeIterator<ValResult<(Self::Key<'a>, Self::Item<'a>)>, Output = R>,
     ) -> ValResult<R> {
-        Ok(consumer.consume_iterator(LazyIndexMap::iter(self).map(|(k, v)| Ok((k.as_ref(), v)))))
+        Ok(consumer.consume_iterator(self.as_slice().iter().map(|(k, v)| Ok((k.as_ref(), v)))))
     }
 
     fn last_key(&self) -> Option<Self::Key<'_>> {
-        self.keys().last().map(AsRef::as_ref)
+        self.last().map(|(k, _)| k.as_ref())
     }
 }
 
@@ -555,7 +563,7 @@ impl<'a, 'py, 'data> ValidatedList<'py> for &'a JsonArray<'data> {
     type Item = &'a JsonValue<'data>;
 
     fn len(&self) -> Option<usize> {
-        Some(SmallVec::len(self))
+        Some(Vec::len(self))
     }
     fn iterate<R>(self, consumer: impl ConsumeIterator<PyResult<Self::Item>, Output = R>) -> ValResult<R> {
         Ok(consumer.consume_iterator(self.iter().map(Ok)))
@@ -569,7 +577,7 @@ impl<'a, 'data> ValidatedTuple<'_> for &'a JsonArray<'data> {
     type Item = &'a JsonValue<'data>;
 
     fn len(&self) -> Option<usize> {
-        Some(SmallVec::len(self))
+        Some(Vec::len(self))
     }
     fn iterate<R>(self, consumer: impl ConsumeIterator<PyResult<Self::Item>, Output = R>) -> ValResult<R> {
         Ok(consumer.consume_iterator(self.iter().map(Ok)))
@@ -637,12 +645,12 @@ impl<'data> KeywordArgs<'_> for JsonObject<'data> {
         Self: 'a;
 
     fn len(&self) -> usize {
-        LazyIndexMap::len(self)
+        Vec::len(self)
     }
     fn get_item<'k>(&self, key: &'k LookupKey) -> ValResult<Option<(&'k LookupPath, Self::Item<'_>)>> {
         key.json_get(self)
     }
     fn iter(&self) -> impl Iterator<Item = ValResult<(Self::Key<'_>, Self::Item<'_>)>> {
-        LazyIndexMap::iter(self).map(|(k, v)| Ok((k.as_ref(), v)))
+        self.as_slice().iter().map(|(k, v)| Ok((k.as_ref(), v)))
     }
 }
