@@ -12,7 +12,7 @@ Pydantic
 
 [![license](https://img.shields.io/github/license/pydantic/pydantic.svg)](https://github.com/pydantic/pydantic/blob/main/LICENSE)
 
-Documentation for development version: [bff7477](https://github.com/pydantic/pydantic/commit/bff747748e57c0db384dbd0df886fa623fa3a703).
+Documentation for development version: [10af6a8](https://github.com/pydantic/pydantic/commit/10af6a808c81f15eaac98eb6affe415b726dccb1).
 
 Pydantic is the most widely used data validation library for Python.
 
@@ -50403,9 +50403,9 @@ print(Settings().model_dump())
 {
     'auth_key': 'xxx',
     'api_key': 'xxx',
-    'redis_dsn': Url('redis://user:pass@localhost:6379/1'),
-    'pg_dsn': MultiHostUrl('postgres://user:pass@localhost:5432/foobar'),
-    'amqp_dsn': Url('amqp://user:pass@localhost:5672/'),
+    'redis_dsn': RedisDsn('redis://user:pass@localhost:6379/1'),
+    'pg_dsn': PostgresDsn('postgres://user:pass@localhost:5432/foobar'),
+    'amqp_dsn': AmqpDsn('amqp://user:pass@localhost:5672/'),
     'special_function': math.cos,
     'domains': set(),
     'more_settings': {'foo': 'bar', 'apple': 1},
@@ -52450,7 +52450,7 @@ class Settings(BaseSettings):
 
 
 print(Settings(database_dsn='postgres://postgres@localhost:5432/kwargs_db'))
-#> database_dsn=MultiHostUrl('postgres://postgres@localhost:5432/kwargs_db')
+#> database_dsn=PostgresDsn('postgres://postgres@localhost:5432/kwargs_db')
 
 ```
 

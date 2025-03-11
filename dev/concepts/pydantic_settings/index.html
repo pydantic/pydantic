@@ -3980,9 +3980,9 @@ will still be used if the matching environment variable is not set.)</p>
 <span class="sd">{</span>
 <span class="sd">    &#39;auth_key&#39;: &#39;xxx&#39;,</span>
 <span class="sd">    &#39;api_key&#39;: &#39;xxx&#39;,</span>
-<span class="sd">    &#39;redis_dsn&#39;: Url(&#39;redis://user:pass@localhost:6379/1&#39;),</span>
-<span class="sd">    &#39;pg_dsn&#39;: MultiHostUrl(&#39;postgres://user:pass@localhost:5432/foobar&#39;),</span>
-<span class="sd">    &#39;amqp_dsn&#39;: Url(&#39;amqp://user:pass@localhost:5672/&#39;),</span>
+<span class="sd">    &#39;redis_dsn&#39;: RedisDsn(&#39;redis://user:pass@localhost:6379/1&#39;),</span>
+<span class="sd">    &#39;pg_dsn&#39;: PostgresDsn(&#39;postgres://user:pass@localhost:5432/foobar&#39;),</span>
+<span class="sd">    &#39;amqp_dsn&#39;: AmqpDsn(&#39;amqp://user:pass@localhost:5672/&#39;),</span>
 <span class="sd">    &#39;special_function&#39;: math.cos,</span>
 <span class="sd">    &#39;domains&#39;: set(),</span>
 <span class="sd">    &#39;more_settings&#39;: {&#39;foo&#39;: &#39;bar&#39;, &#39;apple&#39;: 1},</span>
@@ -5738,7 +5738,7 @@ In turn these callables are called to build the inputs to the fields of the sett
 
 
 <span class="nb">print</span><span class="p">(</span><span class="n">Settings</span><span class="p">(</span><span class="n">database_dsn</span><span class="o">=</span><span class="s1">&#39;postgres://postgres@localhost:5432/kwargs_db&#39;</span><span class="p">))</span>
-<span class="c1">#&gt; database_dsn=MultiHostUrl(&#39;postgres://postgres@localhost:5432/kwargs_db&#39;)</span>
+<span class="c1">#&gt; database_dsn=PostgresDsn(&#39;postgres://postgres@localhost:5432/kwargs_db&#39;)</span>
 </code></pre></div>
 <p>By flipping <code>env_settings</code> and <code>init_settings</code>, environment variables now have precedence over <code>__init__</code> kwargs.</p>
 <h3 id="adding-sources">Adding sources<a class="headerlink" href="#adding-sources" title="Permanent link">&para;</a></h3>
