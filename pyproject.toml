@@ -6,7 +6,14 @@ build-backend = 'maturin'
 name = 'pydantic_core'
 description = "Core functionality for Pydantic validation and serialization"
 requires-python = '>=3.9'
-authors = [{ name = 'Samuel Colvin', email = 's@muelcolvin.com' }]
+authors = [
+    { name = 'Samuel Colvin', email = 's@muelcolvin.com' },
+    { name = 'Adrian Garcia Badaracco', email = '1755071+adriangb@users.noreply.github.com' },
+    { name = 'David Montague', email = 'david@pydantic.dev' },
+    { name = 'David Hewitt', email = 'mail@davidhewitt.dev' },
+    { name = 'Sydney Runkle', email = 'sydneymarierunkle@gmail.com' },
+    { name = 'Victorien Plot', email='contact@vctrn.dev' },
+]
 classifiers = [
     'Development Status :: 3 - Alpha',
     'Programming Language :: Python',
