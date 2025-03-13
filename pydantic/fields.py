@@ -1388,7 +1388,7 @@ def computed_field(
         Even with the `@property` or `@cached_property` applied to your function before `@computed_field`,
         mypy may throw a `Decorated property not supported` error.
         See [mypy issue #1362](https://github.com/python/mypy/issues/1362), for more information.
-        To avoid this error message, add `# type: ignore[misc]` to the `@computed_field` line.
+        To avoid this error message, add `# type: ignore[prop-decorator]` to the `@computed_field` line.
 
         [pyright](https://github.com/microsoft/pyright) supports `@computed_field` without error.
 
