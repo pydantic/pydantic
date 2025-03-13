@@ -6602,7 +6602,7 @@ type had unrecognized annotations, or was annotated with a call to <code>pydanti
 <a href="#pydantic.fields.PrivateAttr" class="headerlink" title="Permanent link">&para;</a></h2>
           <div class="doc-overloads">
 <div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">PrivateAttr</span><span class="p">(</span>
-    <span class="n">default</span><span class="p">:</span> <span class="n"><span title="pydantic.fields._T">_T</span></span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">init</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span><span class="kc">False</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">default</span><span class="p">:</span> <span class="n"><span title="pydantic.fields.<autoref identifier=">_T</span>" optional hover><span title="pydantic.fields._T">_T</span></autoref></span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">init</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span><span class="kc">False</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pydantic.fields._T">_T</span></span>
 </code></pre></div><div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">PrivateAttr</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
@@ -7082,7 +7082,7 @@ and confuse static type checkers, thus explicit use of <code>@property</code> is
 <p>Even with the <code>@property</code> or <code>@cached_property</code> applied to your function before <code>@computed_field</code>,
 mypy may throw a <code>Decorated property not supported</code> error.
 See <a href="https://github.com/python/mypy/issues/1362">mypy issue #1362</a>, for more information.
-To avoid this error message, add <code># type: ignore[misc]</code> to the <code>@computed_field</code> line.</p>
+To avoid this error message, add <code># type: ignore[prop-decorator]</code> to the <code>@computed_field</code> line.</p>
 <p><a href="https://github.com/microsoft/pyright">pyright</a> supports <code>@computed_field</code> without error.</p>
 </div>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">random</span>
@@ -7632,7 +7632,7 @@ objects.</p>
 <span class="sd">        Even with the `@property` or `@cached_property` applied to your function before `@computed_field`,</span>
 <span class="sd">        mypy may throw a `Decorated property not supported` error.</span>
 <span class="sd">        See [mypy issue #1362](https://github.com/python/mypy/issues/1362), for more information.</span>
-<span class="sd">        To avoid this error message, add `# type: ignore[misc]` to the `@computed_field` line.</span>
+<span class="sd">        To avoid this error message, add `# type: ignore[prop-decorator]` to the `@computed_field` line.</span>
 
 <span class="sd">        [pyright](https://github.com/microsoft/pyright) supports `@computed_field` without error.</span>
 

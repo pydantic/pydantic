@@ -12,7 +12,7 @@ Pydantic
 
 [![license](https://img.shields.io/github/license/pydantic/pydantic.svg)](https://github.com/pydantic/pydantic/blob/main/LICENSE)
 
-Documentation for development version: [10af6a8](https://github.com/pydantic/pydantic/commit/10af6a808c81f15eaac98eb6affe415b726dccb1).
+Documentation for development version: [b9fb3f1](https://github.com/pydantic/pydantic/commit/b9fb3f110d6653653fb48a44430e7d2fca886ae9).
 
 Pydantic is the most widely used data validation library for Python.
 
@@ -14053,7 +14053,7 @@ PrivateAttr
 
 ```
 PrivateAttr(
-    default: _T, *, init: Literal[False] = False
+    default: _T" optional hover>_T, *, init: Literal[False] = False
 ) -> _T
 
 ```
@@ -14321,7 +14321,7 @@ Mypy Warning
 Even with the `@property` or `@cached_property` applied to your function before `@computed_field`,
 mypy may throw a `Decorated property not supported` error.
 See [mypy issue #1362](https://github.com/python/mypy/issues/1362), for more information.
-To avoid this error message, add `# type: ignore[misc]` to the `@computed_field` line.
+To avoid this error message, add `# type: ignore[prop-decorator]` to the `@computed_field` line.
 
 [pyright](https://github.com/microsoft/pyright) supports `@computed_field` without error.
 
@@ -14487,7 +14487,7 @@ def computed_field(
         Even with the `@property` or `@cached_property` applied to your function before `@computed_field`,
         mypy may throw a `Decorated property not supported` error.
         See [mypy issue #1362](https://github.com/python/mypy/issues/1362), for more information.
-        To avoid this error message, add `# type: ignore[misc]` to the `@computed_field` line.
+        To avoid this error message, add `# type: ignore[prop-decorator]` to the `@computed_field` line.
 
         [pyright](https://github.com/microsoft/pyright) supports `@computed_field` without error.
 
