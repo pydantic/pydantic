@@ -117,6 +117,16 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
         }
     }
 
+    fn validate_args_v3(&self) -> ValResult<PyArgs<'py>> {
+        if let Ok(args_kwargs) = self.extract::<ArgsKwargs>() {
+            let args = args_kwargs.args.into_bound(self.py());
+            let kwargs = args_kwargs.kwargs.map(|d| d.into_bound(self.py()));
+            Ok(PyArgs::new(Some(args), kwargs))
+        } else {
+            Err(ValError::new(ErrorTypeDefaults::ArgumentsType, self))
+        }
+    }
+
     fn validate_dataclass_args<'a>(&'a self, class_name: &str) -> ValResult<PyArgs<'py>> {
         if let Ok(dict) = self.downcast::<PyDict>() {
             Ok(PyArgs::new(None, Some(dict.clone())))
@@ -915,7 +925,15 @@ impl<'py> PySequenceIterable<'_, 'py> {
             PySequenceIterable::Iterator(iter) => iter.len().ok(),
         }
     }
-
+    fn generic_try_for_each(self, f: impl FnMut(PyResult<Bound<'py, PyAny>>) -> ValResult<()>) -> ValResult<()> {
+        match self {
+            PySequenceIterable::List(iter) => iter.iter().map(Ok).try_for_each(f),
+            PySequenceIterable::Tuple(iter) => iter.iter().map(Ok).try_for_each(f),
+            PySequenceIterable::Set(iter) => iter.iter().map(Ok).try_for_each(f),
+            PySequenceIterable::FrozenSet(iter) => iter.iter().map(Ok).try_for_each(f),
+            PySequenceIterable::Iterator(mut iter) => iter.try_for_each(f),
+        }
+    }
     fn generic_iterate<R>(
         self,
         consumer: impl ConsumeIterator<PyResult<Bound<'py, PyAny>>, Output = R>,
@@ -950,6 +968,9 @@ impl<'py> ValidatedTuple<'py> for PySequenceIterable<'_, 'py> {
     type Item = Bound<'py, PyAny>;
     fn len(&self) -> Option<usize> {
         self.generic_len()
+    }
+    fn try_for_each(self, f: impl FnMut(PyResult<Self::Item>) -> ValResult<()>) -> ValResult<()> {
+        self.generic_try_for_each(f)
     }
     fn iterate<R>(self, consumer: impl ConsumeIterator<PyResult<Self::Item>, Output = R>) -> ValResult<R> {
         self.generic_iterate(consumer)

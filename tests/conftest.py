@@ -14,7 +14,7 @@ from typing import Any, Callable, Literal
 import hypothesis
 import pytest
 
-from pydantic_core import ArgsKwargs, SchemaValidator, ValidationError, validate_core_schema
+from pydantic_core import ArgsKwargs, CoreSchema, SchemaValidator, ValidationError, validate_core_schema
 from pydantic_core.core_schema import CoreConfig
 
 __all__ = 'Err', 'PyAndJson', 'plain_repr', 'infinite_generator'
@@ -52,7 +52,11 @@ def json_default(obj):
 
 class PyAndJsonValidator:
     def __init__(
-        self, schema, config: CoreConfig | None = None, *, validator_type: Literal['json', 'python'] | None = None
+        self,
+        schema: CoreSchema,
+        config: CoreConfig | None = None,
+        *,
+        validator_type: Literal['json', 'python'] | None = None,
     ):
         self.validator = SchemaValidator(validate_core_schema(schema), config)
         self.validator_type = validator_type

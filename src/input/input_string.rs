@@ -89,6 +89,11 @@ impl<'py> Input<'py> for StringMapping<'py> {
         Err(ValError::new(ErrorTypeDefaults::ArgumentsType, self))
     }
 
+    fn validate_args_v3(&self) -> ValResult<Self::Arguments<'_>> {
+        // do we want to support this?
+        Err(ValError::new(ErrorTypeDefaults::ArgumentsType, self))
+    }
+
     fn validate_dataclass_args<'a>(&'a self, _dataclass_name: &str) -> ValResult<StringMappingDict<'py>> {
         match self {
             StringMapping::String(_) => Err(ValError::new(ErrorTypeDefaults::ArgumentsType, self)),
