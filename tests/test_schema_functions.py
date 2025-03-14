@@ -226,6 +226,24 @@ all_schema_functions = [
         },
     ),
     (
+        core_schema.arguments_v3_schema,
+        args(
+            [
+                core_schema.arguments_v3_parameter('foo', core_schema.int_schema()),
+                core_schema.arguments_v3_parameter('bar', core_schema.str_schema()),
+            ],
+            serialization=core_schema.format_ser_schema('d'),
+        ),
+        {
+            'type': 'arguments-v3',
+            'arguments_schema': [
+                {'name': 'foo', 'schema': {'type': 'int'}},
+                {'name': 'bar', 'schema': {'type': 'str'}},
+            ],
+            'serialization': {'type': 'format', 'formatting_string': 'd'},
+        },
+    ),
+    (
         core_schema.call_schema,
         args(core_schema.arguments_schema([core_schema.arguments_parameter('foo', {'type': 'int'})]), val_function),
         {
