@@ -993,7 +993,9 @@ def list_all_errors() -> list[ErrorTypeInfo]:
     """
 @final
 class TzInfo(datetime.tzinfo):
-    """An `pydantic-core` implementation of the abstract [`datetime.tzinfo`] class."""
+    """An `pydantic-core` implementation of the abstract [`datetime.tzinfo`][] class."""
+
+    # def __new__(cls, seconds: float) -> Self: ...
 
     # Docstrings for attributes sourced from the abstract base class, [`datetime.tzinfo`](https://docs.python.org/3/library/datetime.html#datetime.tzinfo).
 
