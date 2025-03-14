@@ -1449,20 +1449,14 @@ class GenerateSchema:
         return schema
 
     def _typed_dict_schema(self, typed_dict_cls: Any, origin: Any) -> core_schema.CoreSchema:
-        """Generate schema for a TypedDict.
+        """Generate a core schema for a `TypedDict` class.
 
-        It is not possible to track required/optional keys in TypedDict without __required_keys__
-        since TypedDict.__new__ erases the base classes (it replaces them with just `dict`)
-        and thus we can track usage of total=True/False
-        __required_keys__ was added in Python 3.9
-        (https://github.com/miss-islington/cpython/blob/1e9939657dd1f8eb9f596f77c1084d2d351172fc/Doc/library/typing.rst?plain=1#L1546-L1548)
-        however it is buggy
-        (https://github.com/python/typing_extensions/blob/ac52ac5f2cb0e00e7988bae1e2a1b8257ac88d6d/src/typing_extensions.py#L657-L666).
+        To be able to build a `DecoratorInfos` instance for the `TypedDict` class (which will include
+        validators, serializers, etc.), we need to have access to the original bases of the class
+        (see https://docs.python.org/3/library/types.html#types.get_original_bases).
+        However, the `__orig_bases__` attribute was only added in 3.12 (https://github.com/python/cpython/pull/103698).
 
-        On 3.11 but < 3.12 TypedDict does not preserve inheritance information.
-
-        Hence to avoid creating validators that do not do what users expect we only
-        support typing.TypedDict on Python >= 3.12 or typing_extension.TypedDict on all versions
+        For this reason, we require Python 3.12 (or using the `typing_extensions` backport).
         """
         FieldInfo = import_cached_field_info()
 
@@ -1518,7 +1512,9 @@ class GenerateSchema:
                     field_info = FieldInfo.from_annotation(annotation, _source=AnnotationSource.TYPED_DICT)
                     field_info.annotation = replace_types(field_info.annotation, typevars_map)
 
-                    required = field_name in required_keys or 'required' in field_info._qualifiers
+                    required = (
+                        field_name in required_keys or 'required' in field_info._qualifiers
+                    ) and 'not_required' not in field_info._qualifiers
                     if 'read_only' in field_info._qualifiers:
                         readonly_fields.append(field_name)
 
