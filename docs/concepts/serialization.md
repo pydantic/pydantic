@@ -21,6 +21,10 @@ serialized, and exported in a number of ways.
 
 This is the primary way of converting a model to a dictionary. Sub-models will be recursively converted to dictionaries.
 
+By default, the output may contain non-JSON-serializable Python objects. The `mode` argument can be specified as `"json"` to ensure that the output only contains JSON serializable types. Other arguments exist to include or exclude fields, [including nested fields](#advanced-include-and-exclude), or to further customize the serialization behaviour.
+
+See the available [arguments][pydantic.main.BaseModel.model_dump] for more information.
+
 !!! note
     The one exception to sub-models being converted to dictionaries is that [`RootModel`](models.md#rootmodel-and-custom-root-types)
     and its subclasses will have the `root` field value dumped directly, without a wrapping dictionary. This is also
