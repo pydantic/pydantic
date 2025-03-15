@@ -108,7 +108,7 @@ print(Model(x=['{"a": 1}', '[1, 2]']).model_dump(round_trip=True))
 The `.model_dump_json()` method serializes a model directly to a JSON-encoded string
 that is equivalent to the result produced by [`.model_dump()`](#modelmodel_dump).
 
-See [arguments][pydantic.main.BaseModel.model_dump_json] for more information.
+See the available [arguments][pydantic.main.BaseModel.model_dump_json] for more information.
 
 !!! note
     Pydantic can serialize many commonly used types to JSON that would otherwise be incompatible with a simple
@@ -843,7 +843,7 @@ print(t.model_dump(include={'id': True, 'value': True}))  # (1)!
 1. `value` excluded from the output because it excluded in `Field`.
 
 That being said, setting `exclude` on the field constructor (`Field(exclude=True)`) does not take priority
-over the `exclude_unset`, `exclude_none`, and `exclude_default` parameters on `model_dump` and `model_dump_json`:
+over the `exclude_unset`, `exclude_none`, and `exclude_default` arguments on `model_dump` and `model_dump_json`:
 
 ```python
 from typing import Optional
