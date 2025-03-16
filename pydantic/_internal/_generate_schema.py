@@ -310,6 +310,23 @@ def _get_first_non_null(a: Any, b: Any) -> Any:
     return a if a is not None else b
 
 
+_NOT_IN_PY313 = object()
+_NO_TYPEVAR_DEFAULT = object()
+
+
+def _get_typevar_default(typevar: typing.TypeVar) -> Any:
+    """Get typing.TypeVar's default in Python 3.13+"""
+    try:
+        has_default = typevar.has_default()  # type: ignore
+    except AttributeError:
+        # Happens if using `typing.TypeVar` (and not `typing_extensions`) on Python < 3.13
+        return _NOT_IN_PY313
+    else:
+        if has_default:
+            return typevar.__default__  # type: ignore
+        return _NO_TYPEVAR_DEFAULT
+
+
 class InvalidSchemaError(Exception):
     """The core schema is invalid."""
 
@@ -1985,14 +2002,9 @@ class GenerateSchema:
         )
 
     def _unsubstituted_typevar_schema(self, typevar: typing.TypeVar) -> core_schema.CoreSchema:
-        try:
-            has_default = typevar.has_default()
-        except AttributeError:
-            # Happens if using `typing.TypeVar` (and not `typing_extensions`) on Python < 3.13
-            pass
-        else:
-            if has_default:
-                return self.generate_schema(typevar.__default__)
+        typevar_default = _get_typevar_default(typevar)
+        if typevar_default not in (_NOT_IN_PY313, _NO_TYPEVAR_DEFAULT):
+            return self.generate_schema(typevar_default)
 
         if constraints := typevar.__constraints__:
             return self._union_schema(typing.Union[constraints])

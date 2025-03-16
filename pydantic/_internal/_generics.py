@@ -340,6 +340,14 @@ def replace_types(type_: Any, type_map: Mapping[TypeVar, Any] | None) -> Any:
     return type_map.get(type_, type_)
 
 
+def _typevar_has_default(typevar: typing.TypeVar) -> bool:
+    try:
+        return typevar.has_default()  # type: ignore
+    except AttributeError:
+        # Happens if using `typing.TypeVar` (and not `typing_extensions`) on Python < 3.13.
+        return False
+
+
 def map_generic_model_arguments(cls: type[BaseModel], args: tuple[Any, ...]) -> dict[TypeVar, Any]:
     """Return a mapping between the parameters of a generic model and the provided arguments during parameterization.
 
@@ -374,17 +382,13 @@ def map_generic_model_arguments(cls: type[BaseModel], args: tuple[Any, ...]) -> 
 
         if argument is _missing:
             param = typing.cast(TypeVar, parameter)
-            try:
-                has_default = param.has_default()
-            except AttributeError:
-                # Happens if using `typing.TypeVar` (and not `typing_extensions`) on Python < 3.13.
-                has_default = False
+            has_default = _typevar_has_default(param)
             if has_default:
                 # The default might refer to other type parameters. For an example, see:
                 # https://typing.readthedocs.io/en/latest/spec/generics.html#type-parameters-as-parameters-to-generics
-                typevars_map[param] = replace_types(param.__default__, typevars_map)
+                typevars_map[param] = replace_types(param.__default__, typevars_map)  # type: ignore
             else:
-                expected_len -= sum(hasattr(p, 'has_default') and p.has_default() for p in parameters)
+                expected_len -= sum(_typevar_has_default(p) for p in parameters)
                 raise TypeError(f'Too few arguments for {cls}; actual {len(args)}, expected at least {expected_len}')
         else:
             param = typing.cast(TypeVar, parameter)
