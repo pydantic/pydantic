@@ -177,10 +177,10 @@ Note also that [`RootModel`](models.md#rootmodel-and-custom-root-types) *does* g
 
 Pydantic provides several [functional serializers][pydantic.functional_serializers] to customise how a model is serialized to a dictionary or JSON.
 
-- [`@field_serializer`][pydantic.functional_serializers.field_serializer]
-- [`@model_serializer`][pydantic.functional_serializers.model_serializer]
-- [`PlainSerializer`][pydantic.functional_serializers.PlainSerializer]
-- [`WrapSerializer`][pydantic.functional_serializers.WrapSerializer]
+* [`@field_serializer`][pydantic.functional_serializers.field_serializer]
+* [`@model_serializer`][pydantic.functional_serializers.model_serializer]
+* [`PlainSerializer`][pydantic.functional_serializers.PlainSerializer]
+* [`WrapSerializer`][pydantic.functional_serializers.WrapSerializer]
 
 Serialization can be customised on a field using the
 [`@field_serializer`][pydantic.functional_serializers.field_serializer] decorator, and on a model using the
@@ -231,8 +231,8 @@ In addition, [`PlainSerializer`][pydantic.functional_serializers.PlainSerializer
 
 Both serializers accept optional arguments including:
 
-- `return_type` specifies the return type for the function. If omitted it will be inferred from the type annotation.
-- `when_used` specifies when this serializer should be used. Accepts a string with values 'always',
+* `return_type` specifies the return type for the function. If omitted it will be inferred from the type annotation.
+* `when_used` specifies when this serializer should be used. Accepts a string with values 'always',
     'unless-none', 'json', and 'json-unless-none'. Defaults to 'always'.
 
 `PlainSerializer` uses a simple function to modify the output of serialization.
@@ -443,8 +443,8 @@ print(m.model_dump())  # note: the password field is not included
 
 If you want v1-style duck-typing serialization behavior, you can use a runtime setting, or annotate individual types.
 
-- Field / type level: use the `SerializeAsAny` annotation
-- Runtime level: use the `serialize_as_any` flag when calling `model_dump()` or `model_dump_json()`
+* Field / type level: use the `SerializeAsAny` annotation
+* Runtime level: use the `serialize_as_any` flag when calling `model_dump()` or `model_dump_json()`
 
 We discuss these options below in more detail:
 

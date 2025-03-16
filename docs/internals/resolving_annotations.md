@@ -104,13 +104,13 @@ following logic is applied:
    `{'f1': 'MyType'}`.
 2. Iterate over the `__annotations__` items and try to evaluate the annotation [^1] using a custom wrapper around
    the built-in [`eval()`][eval] function. This function takes two `globals` and `locals` arguments:
-     - The current module's `__dict__` is naturally used as `globals`. For `Base`, this will be
+     * The current module's `__dict__` is naturally used as `globals`. For `Base`, this will be
        `sys.modules['module1'].__dict__`.
-     - For the `locals` argument, Pydantic will try to resolve symbols in the following namespaces, sorted by highest priority:
-         - A namespace created on the fly, containing the current class name (`{cls.__name__: cls}`). This is done
+     * For the `locals` argument, Pydantic will try to resolve symbols in the following namespaces, sorted by highest priority:
+         * A namespace created on the fly, containing the current class name (`{cls.__name__: cls}`). This is done
            in order to support recursive references.
-         - The locals of the current class (i.e. `cls.__dict__`). For `Model`, this will include `LocalType`.
-         - The parent namespace of the class, if different from the globals described above. This is the
+         * The locals of the current class (i.e. `cls.__dict__`). For `Model`, this will include `LocalType`.
+         * The parent namespace of the class, if different from the globals described above. This is the
            [locals][frame.f_locals] of the frame where the class is being defined. For `Base`, because the class is being
            defined in the module directly, this namespace won't be used as it will result in the globals being used again.
            For `Model`, the parent namespace is the locals of the frame of `inner()`.
@@ -133,14 +133,14 @@ While the namespace fetching logic is trying to be as accurate as possible, we s
 
 <div class="annotate" markdown>
 
-- The locals of the current class (`cls.__dict__`) may include irrelevant entries, most of them being dunder attributes.
+* The locals of the current class (`cls.__dict__`) may include irrelevant entries, most of them being dunder attributes.
   This means that the following annotation: `f: '__doc__'` will successfully (and unexpectedly) be resolved.
-- When the `Model` class is being created inside a function, we keep a copy of the [locals][frame.f_locals] of the frame.
+* When the `Model` class is being created inside a function, we keep a copy of the [locals][frame.f_locals] of the frame.
   This copy only includes the symbols defined in the locals when `Model` is being defined, meaning `InnerType2` won't be included
   (and will **not be** if doing a model rebuild at a later point!).
-  - To avoid memory leaks, we use [weak references][weakref] to the locals of the function, meaning some forward references might
+  * To avoid memory leaks, we use [weak references][weakref] to the locals of the function, meaning some forward references might
     not resolve outside the function (1).
-  - Locals of the function are only taken into account for Pydantic models, but this pattern does not apply to dataclasses, typed
+  * Locals of the function are only taken into account for Pydantic models, but this pattern does not apply to dataclasses, typed
     dictionaries or named tuples.
 
 </div>
@@ -250,8 +250,8 @@ Foo.__pydantic_core_schema__
 The [`model_rebuild()`][pydantic.BaseModel.model_rebuild] method uses a *rebuild namespace*, with the following semantics:
 {#model-rebuild-semantics}
 
-- If an explicit `_types_namespace` argument is provided, it is used as the rebuild namespace.
-- If no namespace is provided, the namespace where the method is called will be used as the rebuild namespace.
+* If an explicit `_types_namespace` argument is provided, it is used as the rebuild namespace.
+* If no namespace is provided, the namespace where the method is called will be used as the rebuild namespace.
 
 This *rebuild namespace* will be merged with the model's parent namespace (if it was defined in a function) and used as is
 (see the [backwards compatibility logic](#backwards-compatibility-logic) described above).

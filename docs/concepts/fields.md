@@ -46,13 +46,13 @@ the available metadata to add validation logic, type constraints, etc.
 
 Using this pattern has some advantages:
 
-- Using the `f: <type> = Field(...)` form can be confusing and might trick users into thinking `f`
+* Using the `f: <type> = Field(...)` form can be confusing and might trick users into thinking `f`
   has a default value, while in reality it is still required.
-- You can provide an arbitrary amount of metadata elements for a field. As shown in the example above,
+* You can provide an arbitrary amount of metadata elements for a field. As shown in the example above,
   the [`Field()`][pydantic.fields.Field] function only supports a limited set of constraints/metadata,
   and you may have to use different Pydantic utilities such as [`WithJsonSchema`][pydantic.WithJsonSchema]
   in some cases.
-- Types can be made reusable (see the documentation on [custom types](./types.md#using-the-annotated-pattern)
+* Types can be made reusable (see the documentation on [custom types](./types.md#using-the-annotated-pattern)
   using this pattern).
 
 However, note that certain arguments to the [`Field()`][pydantic.fields.Field] function (namely, `default`,
@@ -190,9 +190,9 @@ For validation and serialization, you can define an alias for a field.
 
 There are three ways to define an alias:
 
-- `Field(alias='foo')`
-- `Field(validation_alias='foo')`
-- `Field(serialization_alias='foo')`
+* `Field(alias='foo')`
+* `Field(validation_alias='foo')`
+* `Field(serialization_alias='foo')`
 
 The `alias` parameter is used for both validation *and* serialization. If you want to use
 *different* aliases for validation and serialization respectively, you can use the `validation_alias`
@@ -369,12 +369,12 @@ print(user.model_dump(by_alias=True))  # (2)!
 
 There are some keyword arguments that can be used to constrain numeric values:
 
-- `gt` - greater than
-- `lt` - less than
-- `ge` - greater than or equal to
-- `le` - less than or equal to
-- `multiple_of` - a multiple of the given number
-- `allow_inf_nan` - allow `'inf'`, `'-inf'`, `'nan'` values
+* `gt` - greater than
+* `lt` - less than
+* `ge` - greater than or equal to
+* `le` - less than or equal to
+* `multiple_of` - a multiple of the given number
+* `allow_inf_nan` - allow `'inf'`, `'-inf'`, `'nan'` values
 
 Here's an example:
 
@@ -408,9 +408,9 @@ positive=1 non_negative=0 negative=-1 non_positive=0 even=2 love_for_pydantic=in
 ??? info "JSON Schema"
     In the generated JSON schema:
 
-    - `gt` and `lt` constraints will be translated to `exclusiveMinimum` and `exclusiveMaximum`.
-    - `ge` and `le` constraints will be translated to `minimum` and `maximum`.
-    - `multiple_of` constraint will be translated to `multipleOf`.
+    * `gt` and `lt` constraints will be translated to `exclusiveMinimum` and `exclusiveMaximum`.
+    * `ge` and `le` constraints will be translated to `minimum` and `maximum`.
+    * `multiple_of` constraint will be translated to `multipleOf`.
 
     The above snippet will generate the following JSON Schema:
 
@@ -485,9 +485,9 @@ positive=1 non_negative=0 negative=-1 non_positive=0 even=2 love_for_pydantic=in
 
 There are fields that can be used to constrain strings:
 
-- `min_length`: Minimum length of the string.
-- `max_length`: Maximum length of the string.
-- `pattern`: A regular expression that the string must match.
+* `min_length`: Minimum length of the string.
+* `max_length`: Maximum length of the string.
+* `pattern`: A regular expression that the string must match.
 
 Here's an example:
 
@@ -511,9 +511,9 @@ print(foo)
 ??? info "JSON Schema"
     In the generated JSON schema:
 
-    - `min_length` constraint will be translated to `minLength`.
-    - `max_length` constraint will be translated to `maxLength`.
-    - `pattern` constraint will be translated to `pattern`.
+    * `min_length` constraint will be translated to `minLength`.
+    * `max_length` constraint will be translated to `maxLength`.
+    * `pattern` constraint will be translated to `pattern`.
 
     The above snippet will generate the following JSON Schema:
 
@@ -550,9 +550,9 @@ print(foo)
 
 There are fields that can be used to constrain decimals:
 
-- `max_digits`: Maximum number of digits within the `Decimal`. It does not include a zero before the decimal point or
+* `max_digits`: Maximum number of digits within the `Decimal`. It does not include a zero before the decimal point or
   trailing decimal zeroes.
-- `decimal_places`: Maximum number of decimal places allowed. It does not include trailing decimal zeroes.
+* `decimal_places`: Maximum number of decimal places allowed. It does not include trailing decimal zeroes.
 
 Here's an example:
 
@@ -575,9 +575,9 @@ print(foo)
 
 There are fields that can be used to constrain dataclasses:
 
-- `init`: Whether the field should be included in the `__init__` of the dataclass.
-- `init_var`: Whether the field should be seen as an [init-only field] in the dataclass.
-- `kw_only`: Whether the field should be a keyword-only argument in the constructor of the dataclass.
+* `init`: Whether the field should be included in the `__init__` of the dataclass.
+* `init_var`: Whether the field should be seen as an [init-only field] in the dataclass.
+* `kw_only`: Whether the field should be a keyword-only argument in the constructor of the dataclass.
 
 Here's an example:
 
@@ -785,14 +785,14 @@ See the [Serialization] section for more details.
 
 The `deprecated` parameter can be used to mark a field as being deprecated. Doing so will result in:
 
-- a runtime deprecation warning emitted when accessing the field.
-- `"deprecated": true` being set in the generated JSON schema.
+* a runtime deprecation warning emitted when accessing the field.
+* `"deprecated": true` being set in the generated JSON schema.
 
 You can set the `deprecated` parameter as one of:
 
-- A string, which will be used as the deprecation message.
-- An instance of the `warnings.deprecated` decorator (or the `typing_extensions` backport).
-- A boolean, which will be used to mark the field as deprecated with a default `'deprecated'` deprecation message.
+* A string, which will be used as the deprecation message.
+* An instance of the `warnings.deprecated` decorator (or the `typing_extensions` backport).
+* A boolean, which will be used to mark the field as deprecated with a default `'deprecated'` deprecation message.
 
 ### `deprecated` as a string
 
@@ -881,10 +881,10 @@ print(Model.model_json_schema()['properties']['deprecated_field'])
 
 Some field parameters are used exclusively to customize the generated JSON schema. The parameters in question are:
 
-- `title`
-- `description`
-- `examples`
-- `json_schema_extra`
+* `title`
+* `description`
+* `examples`
+* `json_schema_extra`
 
 Read more about JSON schema customization / modification with fields in the [Customizing JSON Schema] section of the JSON schema docs.
 

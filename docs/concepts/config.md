@@ -6,7 +6,7 @@ specified for Pydantic's supported types.
 
 On Pydantic models, configuration can be specified in two ways:
 
-- Using the [`model_config`][pydantic.BaseModel.model_config] class attribute:
+* Using the [`model_config`][pydantic.BaseModel.model_config] class attribute:
 
   ```python
   from pydantic import BaseModel, ConfigDict, ValidationError
@@ -34,7 +34,7 @@ On Pydantic models, configuration can be specified in two ways:
     !!! note
         In Pydantic V1, the `Config` class was used. This is still supported, but **deprecated**.
 
-- Using class arguments:
+* Using class arguments:
 
   ```python
   from pydantic import BaseModel
@@ -94,7 +94,7 @@ print(ta.validate_python([1, 2]))
 If you are using [standard library dataclasses][dataclasses] or [`TypedDict`][typing.TypedDict] classes,
 the configuration can be set in two ways:
 
-- Using the `__pydantic_config__` class attribute:
+* Using the `__pydantic_config__` class attribute:
 
   ```python
   from dataclasses import dataclass
@@ -110,7 +110,7 @@ the configuration can be set in two ways:
       name: str = 'John Doe'
   ```
 
-- Using the [`with_config`][pydantic.config.with_config] decorator (this avoids static type checking errors with
+* Using the [`with_config`][pydantic.config.with_config] decorator (this avoids static type checking errors with
   [`TypedDict`][typing.TypedDict]):
 
   ```python

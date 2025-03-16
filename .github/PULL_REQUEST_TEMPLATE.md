@@ -11,8 +11,8 @@
 
 ## Checklist
 
-- [ ] The pull request title is a good summary of the changes - it will be used in the changelog
-- [ ] Unit tests for the changes exist
-- [ ] Tests pass on CI
-- [ ] Documentation reflects the changes where applicable
-- [ ] My PR is ready to review, **please add a comment including the phrase "please review" to assign reviewers**
+* [ ] The pull request title is a good summary of the changes - it will be used in the changelog
+* [ ] Unit tests for the changes exist
+* [ ] Tests pass on CI
+* [ ] Documentation reflects the changes where applicable
+* [ ] My PR is ready to review, **please add a comment including the phrase "please review" to assign reviewers**

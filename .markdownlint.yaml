@@ -2,7 +2,7 @@
 
 line-length: false
 ul-style:
-  style: dash
+  style: asterisk
 emphasis-style:
   style: asterisk
 

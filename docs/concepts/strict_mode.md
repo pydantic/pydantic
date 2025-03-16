@@ -38,12 +38,12 @@ except ValidationError as exc:
 
 There are various ways to get strict-mode validation while using Pydantic, which will be discussed in more detail below:
 
-- [Passing `strict=True` to the validation methods](#strict-mode-in-method-calls), such as `BaseModel.model_validate`,
+* [Passing `strict=True` to the validation methods](#strict-mode-in-method-calls), such as `BaseModel.model_validate`,
   `TypeAdapter.validate_python`, and similar for JSON
-- [Using `Field(strict=True)`](#strict-mode-with-field) with fields of a `BaseModel`, `dataclass`, or `TypedDict`
-- [Using `pydantic.types.Strict` as a type annotation](#strict-mode-with-annotated-strict) on a field
-  - Pydantic provides some type aliases that are already annotated with `Strict`, such as `pydantic.types.StrictInt`
-- [Using `ConfigDict(strict=True)`](#strict-mode-with-configdict)
+* [Using `Field(strict=True)`](#strict-mode-with-field) with fields of a `BaseModel`, `dataclass`, or `TypedDict`
+* [Using `pydantic.types.Strict` as a type annotation](#strict-mode-with-annotated-strict) on a field
+  * Pydantic provides some type aliases that are already annotated with `Strict`, such as `pydantic.types.StrictInt`
+* [Using `ConfigDict(strict=True)`](#strict-mode-with-configdict)
 
 ## Type coercions in strict mode
 

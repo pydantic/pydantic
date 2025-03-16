@@ -389,9 +389,9 @@ Some notable companies and organisations using Pydantic together with comments o
 
 The organisations below are included because they match one or more of the following criteria:
 
-- Using Pydantic as a dependency in a public repository.
-- Referring traffic to the Pydantic documentation site from an organization-internal domain &mdash; specific referrers are not included since they're generally not in the public domain.
-- Direct communication between the Pydantic team and engineers employed by the organization about usage of Pydantic within the organization.
+* Using Pydantic as a dependency in a public repository.
+* Referring traffic to the Pydantic documentation site from an organization-internal domain &mdash; specific referrers are not included since they're generally not in the public domain.
+* Direct communication between the Pydantic team and engineers employed by the organization about usage of Pydantic within the organization.
 
 We've included some extra detail where appropriate and already in the public domain.
 

@@ -95,8 +95,8 @@ handle as fields of a [`BaseModel`][pydantic.main.BaseModel].
 
 In v2.10+, [`TypeAdapter`][pydantic.type_adapter.TypeAdapter]'s support deferred schema building and manual rebuilds. This is helpful for the case of:
 
-- Types with forward references
-- Types for which core schema builds are expensive
+* Types with forward references
+* Types for which core schema builds are expensive
 
 When you initialize a [`TypeAdapter`][pydantic.type_adapter.TypeAdapter] with a type, Pydantic analyzes the type and creates a core schema for it.
 This core schema contains the information needed to validate and serialize data for that type.

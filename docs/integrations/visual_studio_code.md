@@ -30,10 +30,10 @@ With the default configurations, you will get support for autocompletion, but Py
 
 You can enable type error checks from Pylance with these steps:
 
-- Open the "User Settings"
-- Search for `Type Checking Mode`
-- You will find an option under `Python › Analysis: Type Checking Mode`
-- Set it to `basic` or `strict` (by default it's `off`)
+* Open the "User Settings"
+* Search for `Type Checking Mode`
+* You will find an option under `Python › Analysis: Type Checking Mode`
+* Set it to `basic` or `strict` (by default it's `off`)
 
 ![Type Checking Mode set to strict in VS Code](../img/vs_code_02.png)
 
@@ -58,10 +58,10 @@ This would include the errors detected by the [Pydantic mypy plugin](../integrat
 
 To enable mypy in VS Code, do the following:
 
-- Open the "User Settings"
-- Search for `Mypy Enabled`
-- You will find an option under `Python › Linting: Mypy Enabled`
-- Check the box (by default it's unchecked)
+* Open the "User Settings"
+* Search for `Mypy Enabled`
+* You will find an option under `Python › Linting: Mypy Enabled`
+* Check the box (by default it's unchecked)
 
 ![mypy enabled in VS Code](../img/vs_code_05.png)
 

@@ -11,18 +11,18 @@ serialization, JSON Schema).
 
 Usage of the Pydantic library can be divided into two parts:
 
-- Model definition, done in the `pydantic` package.
-- Model validation and serialization, done in the `pydantic-core` package.
+* Model definition, done in the `pydantic` package.
+* Model validation and serialization, done in the `pydantic-core` package.
 
 ## Model definition
 
 Whenever a Pydantic [`BaseModel`][pydantic.main.BaseModel] is defined, the metaclass
 will analyze the body of the model to collect a number of elements:
 
-- Defined annotations to build model fields (collected in the [`model_fields`][pydantic.main.BaseModel.model_fields] attribute).
-- Model configuration, set with [`model_config`][pydantic.main.BaseModel.model_config].
-- Additional validators/serializers.
-- Private attributes, class variables, identification of generic parametrization, etc.
+* Defined annotations to build model fields (collected in the [`model_fields`][pydantic.main.BaseModel.model_fields] attribute).
+* Model configuration, set with [`model_config`][pydantic.main.BaseModel.model_config].
+* Additional validators/serializers.
+* Private attributes, class variables, identification of generic parametrization, etc.
 
 ### Communicating between `pydantic` and `pydantic-core`: the core schema
 

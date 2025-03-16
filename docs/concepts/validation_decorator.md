@@ -78,11 +78,11 @@ can be enabled by using a [custom configuration](#custom-configuration).
 The [`validate_call()`][pydantic.validate_call] decorator is designed to work with functions
 using all possible [parameter configurations][parameter] and all possible combinations of these:
 
-- Positional or keyword parameters with or without defaults.
-- Keyword-only parameters: parameters after `*,`.
-- Positional-only parameters: parameters before `, /`.
-- Variable positional parameters defined via `*` (often `*args`).
-- Variable keyword parameters defined via `**` (often `**kwargs`).
+* Positional or keyword parameters with or without defaults.
+* Keyword-only parameters: parameters after `*,`.
+* Positional-only parameters: parameters before `, /`.
+* Variable positional parameters defined via `*` (often `*args`).
+* Variable keyword parameters defined via `**` (often `**kwargs`).
 
 ??? example
 
