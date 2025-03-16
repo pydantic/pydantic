@@ -21,10 +21,18 @@ from typing import (
 
 import pytest
 from dirty_equals import HasRepr, IsStr
-from pydantic_core import ErrorDetails, InitErrorDetails, PydanticSerializationError, PydanticUndefined, core_schema
-from typing_extensions import TypeAliasType, TypedDict, get_args
+from pydantic_core import (
+    CoreSchema,
+    ErrorDetails,
+    InitErrorDetails,
+    PydanticSerializationError,
+    PydanticUndefined,
+    core_schema,
+)
+from typing_extensions import Self, TypeAliasType, TypedDict, get_args
 
 from pydantic import (
+    AfterValidator,
     BaseModel,
     ConfigDict,
     GetCoreSchemaHandler,
@@ -3010,6 +3018,38 @@ def test_get_pydantic_core_schema_on_referenceable_type() -> None:
     assert counter == 1
 
 
+def test_repeated_custom_type() -> None:
+    class Numeric(BaseModel):
+        value: float
+
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            return core_schema.no_info_before_validator_function(cls._validate, handler(source_type))
+
+        @classmethod
+        def _validate(cls, v: Any) -> Union[dict[str, Any], Self]:
+            if isinstance(v, (str, float, int)):
+                return cls(value=v)
+            if isinstance(v, Numeric):
+                return v
+            if isinstance(v, dict):
+                return v
+            raise ValueError(f'Invalid value for {cls}: {v}')
+
+    def is_positive(value: Numeric):
+        assert value.value > 0.0, 'Must be positive'
+
+    class OuterModel(BaseModel):
+        x: Numeric
+        y: Numeric
+        z: Annotated[Numeric, AfterValidator(is_positive)]
+
+    assert OuterModel(x=2, y=-1, z=1)
+
+    with pytest.raises(ValidationError):
+        OuterModel(x=2, y=-1, z=-1)
+
+
 def test_validator_and_serializer_not_reused_during_rebuild() -> None:
     # Make sure validators and serializers are deleted before model rebuild,
     # so that they don't end up being reused in pydantic-core (since we look
@@ -3023,3 +3063,17 @@ def test_validator_and_serializer_not_reused_during_rebuild() -> None:
 
     m = Model(a=1)
     assert m.model_dump() == {}
+
+
+@pytest.mark.filterwarnings('ignore:.*`__get_validators__`.*:DeprecationWarning')
+def test_get_schema_on_classes_with_both_v1_and_v2_apis() -> None:
+    class Model(BaseModel):
+        a: int
+
+        @model_validator(mode='after')
+        def my_model_validator(self):
+            return self
+
+        @classmethod
+        def __get_validators__(cls):
+            raise AssertionError('This should not be called')

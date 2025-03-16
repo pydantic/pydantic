@@ -221,7 +221,10 @@ print(user.model_dump(by_alias=True))  # (2)!
     Note that the `by_alias` keyword argument defaults to `False`, and must be specified explicitly to dump
     models using the field (serialization) aliases.
 
-    When `by_alias=True`, the alias `'username'` is also used during serialization.
+    You can also use [`ConfigDict.serialize_by_alias`][pydantic.config.ConfigDict.serialize_by_alias] to
+    configure this behavior at the model level.
+
+    When `by_alias=True`, the alias `'username'` used during serialization.
 
 If you want to use an alias *only* for validation, you can use the `validation_alias` parameter:
 
@@ -287,16 +290,14 @@ print(user.model_dump(by_alias=True))  # (2)!
 
     1. Accepted by type checkers.
 
-    This means that when using the [`populate_by_name`][pydantic.config.ConfigDict.populate_by_name] model
-    setting (which allows both the field name and alias to be used during model validation), type checkers
-    will error when the actual field name is used:
+    This means that when using the [`validate_by_name`][pydantic.config.ConfigDict.validate_by_name] model setting (which allows both the field name and alias to be used during model validation), type checkers will error when the actual field name is used:
 
     ```python
     from pydantic import BaseModel, ConfigDict, Field
 
 
     class User(BaseModel):
-        model_config = ConfigDict(populate_by_name=True)
+        model_config = ConfigDict(validate_by_name=True)
 
         name: str = Field(alias='username')
 
@@ -316,7 +317,7 @@ print(user.model_dump(by_alias=True))  # (2)!
 
 
     class User(BaseModel):
-        model_config = ConfigDict(populate_by_name=True)
+        model_config = ConfigDict(validate_by_name=True, validate_by_alias=True)
 
         name: Annotated[str, Field(alias='username')]
 

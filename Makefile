@@ -1,5 +1,6 @@
 # .DEFAULT_GOAL := all
 sources = pydantic tests docs/plugins
+NUM_THREADS?=1
 
 .PHONY: .uv  ## Check that uv is installed
 .uv:
@@ -62,7 +63,7 @@ test-typechecking-mypy: .uv
 
 .PHONY: test  ## Run all tests, skipping the type-checker integration tests
 test: .uv
-	uv run coverage run -m pytest --durations=10
+	uv run coverage run -m pytest --durations=10 --parallel-threads $(NUM_THREADS)
 
 .PHONY: benchmark  ## Run all benchmarks
 benchmark: .uv
@@ -121,6 +122,10 @@ clean:
 .PHONY: docs  ## Generate the docs
 docs:
 	uv run mkdocs build --strict
+
+.PHONY: docs-serve
+docs-serve: ## Build and serve the documentation, for local preview
+	uv run mkdocs serve --strict
 
 .PHONY: help  ## Display this message
 help:

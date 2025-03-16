@@ -347,7 +347,7 @@ def test_discriminated_union_basemodel_instance_value_with_alias():
         literal: Literal['a'] = Field(alias='lit')
 
     class B(BaseModel):
-        model_config = ConfigDict(populate_by_name=True)
+        model_config = ConfigDict(validate_by_name=True)
         literal: Literal['b'] = Field(alias='lit')
 
     class Top(BaseModel):
@@ -1655,6 +1655,7 @@ def test_various_syntax_options_for_callable_union(
         ]
 
 
+@pytest.mark.thread_unsafe(reason='`pytest.raises()` is thread unsafe')
 def test_callable_discriminated_union_recursive():
     # Demonstrate that the errors are very verbose without a callable discriminator:
     class Model(BaseModel):
@@ -2149,6 +2150,7 @@ def test_discriminated_union_model_dump_with_nested_class() -> None:
     assert str(yard_dict['pet']['type']) == 'dog'
 
 
+@pytest.mark.thread_unsafe(reason='Passes on multithreaded. This needs to be investigated further.')
 @pytest.mark.xfail(reason='Waiting for union serialization fixes via https://github.com/pydantic/pydantic/issues/9688.')
 def test_discriminated_union_serializer() -> None:
     """Reported via https://github.com/pydantic/pydantic/issues/9590."""

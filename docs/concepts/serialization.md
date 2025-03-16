@@ -312,6 +312,8 @@ If you want to do this and still get proper type-checking for this method, you c
 `if TYPE_CHECKING:` block:
 
 ```python
+from __future__ import annotations
+
 from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import BaseModel, model_serializer
@@ -332,7 +334,7 @@ class Model(BaseModel):
             mode: Literal['json', 'python'] | str = 'python',
             include: Any = None,
             exclude: Any = None,
-            by_alias: bool = False,
+            by_alias: bool | None = False,
             exclude_unset: bool = False,
             exclude_defaults: bool = False,
             exclude_none: bool = False,

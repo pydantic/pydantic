@@ -23,7 +23,10 @@ def test_simple_construct():
 def test_construct_misuse():
     m = Model.model_construct(b='foobar')
     assert m.b == 'foobar'
-    with pytest.warns(UserWarning, match='Expected `int` but got `str`'):
+    with pytest.warns(
+        UserWarning,
+        match=r"Expected `int` - serialized value may not be as expected \[input_value='foobar', input_type=str\]",
+    ):
         assert m.model_dump() == {'b': 'foobar'}
     with pytest.raises(AttributeError, match="'Model' object has no attribute 'a'"):
         print(m.a)
@@ -172,6 +175,7 @@ def test_deep_copy(ModelTwo, copy_method):
     assert m._foo_ is not m2._foo_
 
 
+@pytest.mark.thread_unsafe(reason='`pytest.warns()` is thread unsafe')
 def test_copy_exclude(ModelTwo):
     m = ModelTwo(a=24, d=Model(a='12'))
     m2 = deprecated_copy(m, exclude={'b'})
@@ -188,6 +192,7 @@ def test_copy_exclude(ModelTwo):
     assert m != m2
 
 
+@pytest.mark.thread_unsafe(reason='`pytest.warns()` is thread unsafe')
 def test_copy_include(ModelTwo):
     m = ModelTwo(a=24, d=Model(a='12'))
     m2 = deprecated_copy(m, include={'a'})
@@ -199,6 +204,7 @@ def test_copy_include(ModelTwo):
     assert m != m2
 
 
+@pytest.mark.thread_unsafe(reason='`pytest.warns()` is thread unsafe')
 def test_copy_include_exclude(ModelTwo):
     m = ModelTwo(a=24, d=Model(a='12'))
     m2 = deprecated_copy(m, include={'a', 'b', 'c'}, exclude={'c'})
@@ -207,6 +213,7 @@ def test_copy_include_exclude(ModelTwo):
     assert set(m2.model_dump().keys()) == {'a', 'b'}
 
 
+@pytest.mark.thread_unsafe(reason='`pytest.warns()` is thread unsafe')
 def test_copy_advanced_exclude():
     class SubSubModel(BaseModel):
         a: str
@@ -230,6 +237,7 @@ def test_copy_advanced_exclude():
     assert m2.model_dump() == {'f': {'c': 'foo'}}
 
 
+@pytest.mark.thread_unsafe(reason='`pytest.warns()` is thread unsafe')
 def test_copy_advanced_include():
     class SubSubModel(BaseModel):
         a: str
@@ -253,6 +261,7 @@ def test_copy_advanced_include():
     assert m2.model_dump() == {'e': 'e', 'f': {'d': [{'a': 'c', 'b': 'e'}]}}
 
 
+@pytest.mark.thread_unsafe(reason='`pytest.warns()` is thread unsafe')
 def test_copy_advanced_include_exclude():
     class SubSubModel(BaseModel):
         a: str
@@ -278,7 +287,10 @@ def test_copy_update(ModelTwo, copy_method):
     assert m.a == 24
     assert m2.a == 'different'
     m_keys = m.model_dump().keys()
-    with pytest.warns(UserWarning, match='Expected `float` but got `str`'):
+    with pytest.warns(
+        UserWarning,
+        match=r"Expected `float` - serialized value may not be as expected \[input_value='different', input_type=str\]",
+    ):
         m2_keys = m2.model_dump().keys()
     assert set(m_keys) == set(m2_keys) == {'a', 'b', 'c', 'd'}
     assert m != m2
@@ -433,7 +445,10 @@ def test_copy_update_exclude():
     m = Model(c='ex', d=dict(a='ax', b='bx'))
     assert m.model_dump() == {'c': 'ex', 'd': {'a': 'ax', 'b': 'bx'}}
     assert deprecated_copy(m, exclude={'c'}).model_dump() == {'d': {'a': 'ax', 'b': 'bx'}}
-    with pytest.warns(UserWarning, match='Expected `str` but got `int`'):
+    with pytest.warns(
+        UserWarning,
+        match=r'Expected `str` - serialized value may not be as expected \[input_value=42, input_type=int\]',
+    ):
         assert deprecated_copy(m, exclude={'c'}, update={'c': 42}).model_dump() == {
             'c': 42,
             'd': {'a': 'ax', 'b': 'bx'},
@@ -475,6 +490,7 @@ def test_construct_default_factory():
     assert m.bar == 'Baz'
 
 
+@pytest.mark.thread_unsafe(reason='`pytest.warns()` is thread unsafe')
 def test_copy_with_excluded_fields():
     class User(BaseModel):
         name: str

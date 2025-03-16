@@ -46,7 +46,8 @@ dependencies = [
     'typing-extensions>=4.12.2',
     'annotated-types>=0.6.0',
     # Keep this in sync with the version in the `check_pydantic_core_version()` function:
-    'pydantic-core==2.29.0',
+    'pydantic-core==2.31.1',
+    'typing-inspection>=0.4.0',
 ]
 dynamic = ['version', 'readme']
 
@@ -77,7 +78,7 @@ dev = [
     'faker',
     'pytest-benchmark',
     'pytest-codspeed',
-    'pytest-memray; platform_python_implementation == "CPython" and platform_system != "Windows"',
+    'pytest-run-parallel>=0.3.1',
     'packaging',
     'jsonschema',
 ]
@@ -98,6 +99,9 @@ docs = [
     'pydantic-extra-types==2.10',
     'requests',
 ]
+docs-upload = [
+    "algoliasearch>=4.12.0",
+]
 linting = [
     'eval-type-backport',
     'ruff',
@@ -110,6 +114,7 @@ testing-extra = [
     'devtools',
     # used in docs tests
     'sqlalchemy',
+    'pytest-memray; platform_python_implementation == "CPython" and platform_system != "Windows"',
 ]
 typechecking = [
     'mypy',

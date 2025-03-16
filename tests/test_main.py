@@ -475,7 +475,7 @@ def test_any():
 
 def test_population_by_field_name():
     class Model(BaseModel):
-        model_config = ConfigDict(populate_by_name=True)
+        model_config = ConfigDict(validate_by_name=True)
         a: str = Field(alias='_a')
 
     assert Model(a='different').a == 'different'
@@ -1101,7 +1101,7 @@ def test_exclude_unset_recursive():
 
 def test_dict_exclude_unset_populated_by_alias():
     class MyModel(BaseModel):
-        model_config = ConfigDict(populate_by_name=True)
+        model_config = ConfigDict(validate_by_name=True)
         a: str = Field('default', alias='alias_a')
         b: str = Field('default', alias='alias_b')
 
@@ -2028,6 +2028,34 @@ def test_deprecated_final_field_decl_with_default_val(ann):
 
         class Model(BaseModel):
             a: ann = 10
+
+    assert 'a' in Model.__class_vars__
+    assert 'a' not in Model.model_fields
+
+
+@pytest.mark.parametrize(
+    'ann',
+    [Final, Final[int]],
+    ids=['no-arg', 'with-arg'],
+)
+def test_deprecated_annotated_final_field_decl_with_default_val(ann):
+    with pytest.warns(PydanticDeprecatedSince211):
+
+        class Model(BaseModel):
+            a: Annotated[ann, ...] = 10
+
+    assert 'a' in Model.__class_vars__
+    assert 'a' not in Model.model_fields
+
+
+@pytest.mark.xfail(reason="When rebuilding fields, we don't consider the field as a class variable")
+def test_deprecated_final_field_with_default_val_rebuild():
+    class Model(BaseModel):
+        a: 'Final[MyInt]' = 1
+
+    MyInt = int
+
+    Model.model_rebuild()
 
     assert 'a' in Model.__class_vars__
     assert 'a' not in Model.model_fields

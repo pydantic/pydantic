@@ -26,6 +26,12 @@ from pydantic.functional_validators import AfterValidator
 NO_VALUE = object()
 
 
+@pytest.mark.thread_unsafe(
+    reason=(
+        'The `FieldInfo.from_annotated_attribute()` implementation directly mutates the assigned value, '
+        'if it is a `Field()`. https://github.com/pydantic/pydantic/issues/11122 tracks this issue'
+    )
+)
 @pytest.mark.parametrize(
     'hint_fn,value,expected_repr',
     [
@@ -113,6 +119,7 @@ def test_annotated_allows_unknown(metadata):
     assert metadata in M.__annotations__['x'].__metadata__, 'Annotated type is recorded'
 
 
+@pytest.mark.thread_unsafe(reason='`pytest.raises()` is thread unsafe')
 @pytest.mark.parametrize(
     ['hint_fn', 'value', 'empty_init_ctx'],
     [

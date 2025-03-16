@@ -61,17 +61,20 @@ class PlainSerializer:
             The Pydantic core schema.
         """
         schema = handler(source_type)
-        try:
-            # Do not pass in globals as the function could be defined in a different module.
-            # Instead, let `get_function_return_type` infer the globals to use, but still pass
-            # in locals that may contain a parent/rebuild namespace:
-            return_type = _decorators.get_function_return_type(
-                self.func,
-                self.return_type,
-                localns=handler._get_types_namespace().locals,
-            )
-        except NameError as e:
-            raise PydanticUndefinedAnnotation.from_name_error(e) from e
+        if self.return_type is not PydanticUndefined:
+            return_type = self.return_type
+        else:
+            try:
+                # Do not pass in globals as the function could be defined in a different module.
+                # Instead, let `get_callable_return_type` infer the globals to use, but still pass
+                # in locals that may contain a parent/rebuild namespace:
+                return_type = _decorators.get_callable_return_type(
+                    self.func,
+                    localns=handler._get_types_namespace().locals,
+                )
+            except NameError as e:
+                raise PydanticUndefinedAnnotation.from_name_error(e) from e
+
         return_schema = None if return_type is PydanticUndefined else handler.generate_schema(return_type)
         schema['serialization'] = core_schema.plain_serializer_function_ser_schema(
             function=self.func,
@@ -161,18 +164,20 @@ class WrapSerializer:
             The generated core schema of the class.
         """
         schema = handler(source_type)
-        globalns, localns = handler._get_types_namespace()
-        try:
-            # Do not pass in globals as the function could be defined in a different module.
-            # Instead, let `get_function_return_type` infer the globals to use, but still pass
-            # in locals that may contain a parent/rebuild namespace:
-            return_type = _decorators.get_function_return_type(
-                self.func,
-                self.return_type,
-                localns=handler._get_types_namespace().locals,
-            )
-        except NameError as e:
-            raise PydanticUndefinedAnnotation.from_name_error(e) from e
+        if self.return_type is not PydanticUndefined:
+            return_type = self.return_type
+        else:
+            try:
+                # Do not pass in globals as the function could be defined in a different module.
+                # Instead, let `get_callable_return_type` infer the globals to use, but still pass
+                # in locals that may contain a parent/rebuild namespace:
+                return_type = _decorators.get_callable_return_type(
+                    self.func,
+                    localns=handler._get_types_namespace().locals,
+                )
+            except NameError as e:
+                raise PydanticUndefinedAnnotation.from_name_error(e) from e
+
         return_schema = None if return_type is PydanticUndefined else handler.generate_schema(return_type)
         schema['serialization'] = core_schema.wrap_serializer_function_ser_schema(
             function=self.func,

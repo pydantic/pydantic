@@ -1969,7 +1969,7 @@ def test_dict():
     (
         ([1, 2, '3'], [1, 2, '3']),
         ((1, 2, '3'), [1, 2, '3']),
-        ((i**2 for i in range(5)), [0, 1, 4, 9, 16]),
+        pytest.param((i**2 for i in range(5)), [0, 1, 4, 9, 16], marks=pytest.mark.thread_unsafe),
         (deque([1, 2, 3]), [1, 2, 3]),
         ({1, '2'}, IsOneOf([1, '2'], ['2', 1])),
     ),
@@ -2019,7 +2019,7 @@ def test_ordered_dict():
     (
         ([1, 2, '3'], (1, 2, '3')),
         ((1, 2, '3'), (1, 2, '3')),
-        ((i**2 for i in range(5)), (0, 1, 4, 9, 16)),
+        pytest.param((i**2 for i in range(5)), (0, 1, 4, 9, 16), marks=pytest.mark.thread_unsafe),
         (deque([1, 2, 3]), (1, 2, 3)),
         ({1, '2'}, IsOneOf((1, '2'), ('2', 1))),
     ),
@@ -2049,7 +2049,7 @@ def test_tuple_fails(value):
     (
         ([1, 2, '3'], int, (1, 2, 3)),
         ((1, 2, '3'), int, (1, 2, 3)),
-        ((i**2 for i in range(5)), int, (0, 1, 4, 9, 16)),
+        pytest.param((i**2 for i in range(5)), int, (0, 1, 4, 9, 16), marks=pytest.mark.thread_unsafe),
         (('a', 'b', 'c'), str, ('a', 'b', 'c')),
     ),
 )
@@ -7104,3 +7104,14 @@ def test_sequence_with_nested_type(sequence_type: type) -> None:
 
     models = sequence_type([Model(a=1), Model(a=2)])
     assert OuterModel(inner=models).model_dump() == {'inner': sequence_type([{'a': 1}, {'a': 2}])}
+
+
+def test_union_respects_local_strict() -> None:
+    class MyBaseModel(BaseModel):
+        model_config = ConfigDict(strict=True)
+
+    class Model(MyBaseModel):
+        a: Union[int, Annotated[tuple[int, int], Strict(False)]] = Field(default=(1, 2))
+
+    m = Model(a=[1, 2])
+    assert m.a == (1, 2)

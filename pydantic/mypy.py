@@ -58,6 +58,7 @@ from mypy.plugins.common import (
 from mypy.semanal import set_callable_name
 from mypy.server.trigger import make_wildcard_trigger
 from mypy.state import state
+from mypy.type_visitor import TypeTranslator
 from mypy.typeops import map_type_from_supertype
 from mypy.types import (
     AnyType,
@@ -423,6 +424,8 @@ class PydanticModelTransformer:
         'frozen',
         'from_attributes',
         'populate_by_name',
+        'validate_by_alias',
+        'validate_by_name',
         'alias_generator',
         'strict',
     }
@@ -564,7 +567,7 @@ class PydanticModelTransformer:
             if (
                 stmt
                 and config.has_alias_generator
-                and not config.populate_by_name
+                and not (config.validate_by_name or config.populate_by_name)
                 and self.plugin_config.warn_required_dynamic_aliases
             ):
                 error_required_dynamic_aliases(self._api, stmt)
@@ -776,7 +779,11 @@ class PydanticModelTransformer:
             return PydanticModelClassVar(lhs.name)
 
         alias, has_dynamic_alias = self.get_alias_info(stmt)
-        if has_dynamic_alias and not model_config.populate_by_name and self.plugin_config.warn_required_dynamic_aliases:
+        if (
+            has_dynamic_alias
+            and not (model_config.validate_by_name or model_config.populate_by_name)
+            and self.plugin_config.warn_required_dynamic_aliases
+        ):
             error_required_dynamic_aliases(self._api, stmt)
         is_frozen = self.is_field_frozen(stmt)
 
@@ -844,8 +851,8 @@ class PydanticModelTransformer:
 
         typed = self.plugin_config.init_typed
         model_strict = bool(config.strict)
-        use_alias = config.populate_by_name is not True
-        requires_dynamic_aliases = bool(config.has_alias_generator and not config.populate_by_name)
+        use_alias = not (config.validate_by_name or config.populate_by_name) and config.validate_by_alias is not False
+        requires_dynamic_aliases = bool(config.has_alias_generator and not config.validate_by_name)
         args = self.get_field_arguments(
             fields,
             typed=typed,
@@ -870,6 +877,13 @@ class PydanticModelTransformer:
                         if arg_name is None or arg_name.startswith('__') or not arg_name.startswith('_'):
                             continue
                         analyzed_variable_type = self._api.anal_type(func_type.arg_types[arg_idx])
+                        if analyzed_variable_type is not None and arg_name == '_cli_settings_source':
+                            # _cli_settings_source is defined as CliSettingsSource[Any], and as such
+                            # the Any causes issues with --disallow-any-explicit. As a workaround, change
+                            # the Any type (as if CliSettingsSource was left unparameterized):
+                            analyzed_variable_type = analyzed_variable_type.accept(
+                                ChangeExplicitTypeOfAny(TypeOfAny.from_omitted_generics)
+                            )
                         variable = Var(arg_name, analyzed_variable_type)
                         args.append(Argument(variable, analyzed_variable_type, None, ARG_OPT))
 
@@ -1116,7 +1130,7 @@ class PydanticModelTransformer:
         We disallow arbitrary kwargs if the extra config setting is "forbid", or if the plugin config says to,
         *unless* a required dynamic alias is present (since then we can't determine a valid signature).
         """
-        if not config.populate_by_name:
+        if not (config.validate_by_name or config.populate_by_name):
             if self.is_dynamic_alias_present(fields, bool(config.has_alias_generator)):
                 return False
         if config.forbid_extra:
@@ -1138,6 +1152,20 @@ class PydanticModelTransformer:
         return False
 
 
+class ChangeExplicitTypeOfAny(TypeTranslator):
+    """A type translator used to change type of Any's, if explicit."""
+
+    def __init__(self, type_of_any: int) -> None:
+        self._type_of_any = type_of_any
+        super().__init__()
+
+    def visit_any(self, t: AnyType) -> Type:  # noqa: D102
+        if t.type_of_any == TypeOfAny.explicit:
+            return t.copy_modified(type_of_any=self._type_of_any)
+        else:
+            return t
+
+
 class ModelConfigData:
     """Pydantic mypy plugin model config class."""
 
@@ -1147,6 +1175,8 @@ class ModelConfigData:
         frozen: bool | None = None,
         from_attributes: bool | None = None,
         populate_by_name: bool | None = None,
+        validate_by_alias: bool | None = None,
+        validate_by_name: bool | None = None,
         has_alias_generator: bool | None = None,
         strict: bool | None = None,
     ):
@@ -1154,6 +1184,8 @@ class ModelConfigData:
         self.frozen = frozen
         self.from_attributes = from_attributes
         self.populate_by_name = populate_by_name
+        self.validate_by_alias = validate_by_alias
+        self.validate_by_name = validate_by_name
         self.has_alias_generator = has_alias_generator
         self.strict = strict
 

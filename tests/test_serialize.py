@@ -483,12 +483,14 @@ def test_model_serializer_plain_json_return_type():
     m = MyModel(a=666)
     assert m.model_dump() == {'a': 666}
     with pytest.warns(
-        UserWarning, match='Expected `str` but got `int` with value `666` - serialized value may not be as expected'
+        UserWarning,
+        match=r'Expected `str` - serialized value may not be as expected \[input_value=666, input_type=int\]',
     ):
         assert m.model_dump(mode='json') == 666
 
     with pytest.warns(
-        UserWarning, match='Expected `str` but got `int` with value `666` - serialized value may not be as expected'
+        UserWarning,
+        match=r'Expected `str` - serialized value may not be as expected \[input_value=666, input_type=int\]',
     ):
         assert m.model_dump_json() == '666'
 
@@ -1227,6 +1229,21 @@ def test_plain_serializer_with_std_type() -> None:
     }
 
 
+def test_plain_serializer_dunder_call() -> None:
+    class Replacer:
+        def __init__(self, from_: str, to_: str) -> None:
+            self._from = from_
+            self._to = to_
+
+        def __call__(self, s: str) -> str:
+            return s.replace(self._from, self._to)
+
+    class MyModel(BaseModel):
+        x: Annotated[str, PlainSerializer(Replacer('__', '.'))]
+
+    assert MyModel(x='a__b').model_dump() == {'x': 'a.b'}
+
+
 @pytest.mark.xfail(reason='Waiting for union serialization fixes via https://github.com/pydantic/pydantic/issues/9688.')
 def smart_union_serialization() -> None:
     """Initially reported via https://github.com/pydantic/pydantic/issues/9417, effectively a round tripping problem with type consistency."""
@@ -1294,3 +1311,28 @@ def test_serialization_fallback() -> None:
     ta = TypeAdapter(Any)
 
     assert ta.dump_python(Arbitrary(), fallback=fallback) == 1
+
+
+def test_wrap_ser_called_once() -> None:
+    """See https://github.com/pydantic/pydantic/issues/11505 for context.
+
+    This is effectively confirming that prebuilt serializers aren't used for wrap serializers.
+    """
+
+    class MyModel(BaseModel):
+        inner_value: str
+
+        @model_serializer(mode='wrap')
+        def my_wrapper_serializer(self, serializer):
+            self.inner_value = f'my_prefix:{self.inner_value}'
+            return serializer(self)
+
+    class MyParentModel(BaseModel):
+        nested: MyModel
+
+        @field_serializer('nested', mode='wrap')
+        def wrapped_field_serializer(self, field_value, serializer):
+            return serializer(field_value)
+
+    my_model = MyParentModel.model_validate({'nested': {'inner_value': 'foo'}})
+    assert my_model.model_dump() == {'nested': {'inner_value': 'my_prefix:foo'}}

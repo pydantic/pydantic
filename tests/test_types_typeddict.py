@@ -10,7 +10,7 @@ import pytest
 import typing_extensions
 from annotated_types import Lt
 from pydantic_core import core_schema
-from typing_extensions import TypedDict
+from typing_extensions import NotRequired, ReadOnly, Required, TypedDict
 
 from pydantic import (
     BaseModel,
@@ -923,3 +923,16 @@ def test_config_pushdown_typed_dict() -> None:
         model_config = ConfigDict(arbitrary_types_allowed=True)
 
         td: TD
+
+
+def test_readonly_qualifier_warning() -> None:
+    class TD(TypedDict):
+        a: Required[ReadOnly[int]]
+        b: ReadOnly[NotRequired[str]]
+
+    with pytest.raises(UserWarning, match="Items 'a', 'b' on TypedDict class 'TD' are using the `ReadOnly` qualifier"):
+        ta = TypeAdapter(TD)
+
+        with pytest.raises(ValidationError):
+            # Ensure required is taken into account:
+            ta.validate_python({})

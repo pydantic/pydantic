@@ -8,9 +8,10 @@ from typing import TYPE_CHECKING, Any, Union
 from pydantic_core import CoreSchema, core_schema
 from pydantic_core import validate_core_schema as _validate_core_schema
 from typing_extensions import TypeGuard, get_args, get_origin
+from typing_inspection import typing_objects
 
 from . import _repr
-from ._typing_extra import is_generic_alias, is_type_alias_type
+from ._typing_extra import is_generic_alias
 
 if TYPE_CHECKING:
     from rich.console import Console
@@ -78,7 +79,7 @@ def get_type_ref(type_: Any, args_override: tuple[type[Any], ...] | None = None)
         args = generic_metadata['args'] or args
 
     module_name = getattr(origin, '__module__', '<No __module__>')
-    if is_type_alias_type(origin):
+    if typing_objects.is_typealiastype(origin):
         type_ref = f'{module_name}.{origin.__name__}:{id(origin)}'
     else:
         try:
@@ -114,7 +115,7 @@ def validate_core_schema(schema: CoreSchema) -> CoreSchema:
     return schema
 
 
-def _clean_schema_for_pretty_print(obj: Any, strip_metadata: bool = True) -> Any:  # pragma: nocover
+def _clean_schema_for_pretty_print(obj: Any, strip_metadata: bool = True) -> Any:  # pragma: no cover
     """A utility function to remove irrelevant information from a core schema."""
     if isinstance(obj, Mapping):
         new_dct = {}
@@ -151,7 +152,7 @@ def pretty_print_core_schema(
     console: Console | None = None,
     max_depth: int | None = None,
     strip_metadata: bool = True,
-) -> None:  # pragma: nocover
+) -> None:  # pragma: no cover
     """Pretty-print a core schema using the `rich` library.
 
     Args:

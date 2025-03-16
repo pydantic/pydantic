@@ -21,6 +21,7 @@ from typing import (
 )
 
 import pytest
+from annotated_types import Gt
 from dirty_equals import HasRepr
 from pydantic_core import ArgsKwargs, SchemaValidator
 
@@ -640,11 +641,15 @@ def test_initvar():
     class TestInitVar:
         x: int
         y: dataclasses.InitVar
+        z: Annotated[dataclasses.InitVar[int], Gt(1)]
 
-    tiv = TestInitVar(1, 2)
+    tiv = TestInitVar(1, 2, 3)
     assert tiv.x == 1
     with pytest.raises(AttributeError):
         tiv.y
+
+    with pytest.raises(ValidationError):
+        TestInitVar(1, 2, 0)
 
 
 def test_derived_field_from_initvar():

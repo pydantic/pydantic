@@ -12,7 +12,9 @@ from re import Pattern
 from typing import TYPE_CHECKING, Any, Callable, TypeVar
 
 from pydantic_core import PydanticUndefined
-from typing_extensions import TypeIs
+from typing_extensions import TypeIs, get_origin
+from typing_inspection import typing_objects
+from typing_inspection.introspection import AnnotationSource
 
 from pydantic import PydanticDeprecatedSince211
 from pydantic.errors import PydanticUserError
@@ -165,17 +167,6 @@ def collect_model_fields(  # noqa: C901
 
         assigned_value = getattr(cls, ann_name, PydanticUndefined)
 
-        if _is_finalvar_with_default_val(ann_type, assigned_value):
-            warnings.warn(
-                f'Annotation {ann_name!r} is marked as final and has a default value. Pydantic treats {ann_name!r} as a '
-                'class variable, but it will be considered as a normal field in V3 to be aligned with dataclasses. If you '
-                f'still want {ann_name!r} to be considered as a class variable, annotate it as: `ClassVar[<type>] = <default>.`',
-                category=PydanticDeprecatedSince211,
-                # Incorrect when `create_model` is used, but the chance that final with a default is used is low in that case:
-                stacklevel=4,
-            )
-            class_vars.add(ann_name)
-            continue
         if not is_valid_field_name(ann_name):
             continue
         if cls.__pydantic_root_model__ and ann_name != 'root':
@@ -213,7 +204,7 @@ def collect_model_fields(  # noqa: C901
         if assigned_value is PydanticUndefined:  # no assignment, just a plain annotation
             if ann_name in annotations:
                 # field is present in the current model's annotations (and *not* from parent classes)
-                field_info = FieldInfo_.from_annotation(ann_type)
+                field_info = FieldInfo_.from_annotation(ann_type, _source=AnnotationSource.CLASS)
             elif ann_name in parent_fields_lookup:
                 # The field was present on one of the (possibly multiple) base classes
                 # copy the field to make sure typevar substitutions don't cause issues with the base classes
@@ -222,7 +213,7 @@ def collect_model_fields(  # noqa: C901
                 # The field was not found on any base classes; this seems to be caused by fields not getting
                 # generated thanks to models not being fully defined while initializing recursive models.
                 # Nothing stops us from just creating a new FieldInfo for this type hint, so we do this.
-                field_info = FieldInfo_.from_annotation(ann_type)
+                field_info = FieldInfo_.from_annotation(ann_type, _source=AnnotationSource.CLASS)
 
             if not evaluated:
                 field_info._complete = False
@@ -244,13 +235,24 @@ def collect_model_fields(  # noqa: C901
                 copy(assigned_value) if not evaluated and isinstance(assigned_value, FieldInfo_) else assigned_value
             )
 
-            field_info = FieldInfo_.from_annotated_attribute(ann_type, assigned_value)
+            field_info = FieldInfo_.from_annotated_attribute(ann_type, assigned_value, _source=AnnotationSource.CLASS)
             if not evaluated:
                 field_info._complete = False
                 # Store the original annotation and assignment value that should be used to rebuild
                 # the field info later:
                 field_info._original_annotation = ann_type
                 field_info._original_assignment = original_assignment
+            elif 'final' in field_info._qualifiers and not field_info.is_required():
+                warnings.warn(
+                    f'Annotation {ann_name!r} is marked as final and has a default value. Pydantic treats {ann_name!r} as a '
+                    'class variable, but it will be considered as a normal field in V3 to be aligned with dataclasses. If you '
+                    f'still want {ann_name!r} to be considered as a class variable, annotate it as: `ClassVar[<type>] = <default>.`',
+                    category=PydanticDeprecatedSince211,
+                    # Incorrect when `create_model` is used, but the chance that final with a default is used is low in that case:
+                    stacklevel=4,
+                )
+                class_vars.add(ann_name)
+                continue
 
             # attributes which are fields are removed from the class namespace:
             # 1. To match the behaviour of annotation-only fields
@@ -264,7 +266,10 @@ def collect_model_fields(  # noqa: C901
         # to make sure the decorators have already been built for this exact class
         decorators: DecoratorInfos = cls.__dict__['__pydantic_decorators__']
         if ann_name in decorators.computed_fields:
-            raise ValueError("you can't override a field with a computed field")
+            raise TypeError(
+                f'Field {ann_name!r} of class {cls.__name__!r} overrides symbol of same name in a parent class. '
+                'This override with a computed_field is incompatible.'
+            )
         fields[ann_name] = field_info
 
     if typevars_map:
@@ -283,7 +288,7 @@ def _warn_on_nested_alias_in_annotation(ann_type: type[Any], ann_name: str) -> N
     args = getattr(ann_type, '__args__', None)
     if args:
         for anno_arg in args:
-            if _typing_extra.is_annotated(anno_arg):
+            if typing_objects.is_annotated(get_origin(anno_arg)):
                 for anno_type_arg in _typing_extra.get_args(anno_arg):
                     if isinstance(anno_type_arg, FieldInfo) and anno_type_arg.alias is not None:
                         warnings.warn(
@@ -291,20 +296,6 @@ def _warn_on_nested_alias_in_annotation(ann_type: type[Any], ann_name: str) -> N
                             UserWarning,
                         )
                         return
-
-
-def _is_finalvar_with_default_val(ann_type: type[Any], assigned_value: Any) -> bool:
-    if assigned_value is PydanticUndefined:
-        return False
-
-    FieldInfo = import_cached_field_info()
-
-    if isinstance(assigned_value, FieldInfo) and assigned_value.is_required():
-        return False
-    elif not _typing_extra.is_finalvar(ann_type):
-        return False
-    else:
-        return True
 
 
 def rebuild_model_fields(
@@ -336,9 +327,11 @@ def rebuild_model_fields(
                 ann = _generics.replace_types(ann, typevars_map)
 
                 if (assign := field_info._original_assignment) is PydanticUndefined:
-                    rebuilt_fields[f_name] = FieldInfo_.from_annotation(ann)
+                    rebuilt_fields[f_name] = FieldInfo_.from_annotation(ann, _source=AnnotationSource.CLASS)
                 else:
-                    rebuilt_fields[f_name] = FieldInfo_.from_annotated_attribute(ann, assign)
+                    rebuilt_fields[f_name] = FieldInfo_.from_annotated_attribute(
+                        ann, assign, _source=AnnotationSource.CLASS
+                    )
 
     return rebuilt_fields
 
@@ -407,9 +400,13 @@ def collect_dataclass_fields(
 
                         # TODO: same note as above re validate_assignment
                         continue
-                    field_info = FieldInfo_.from_annotated_attribute(ann_type, dataclass_field.default)
+                    field_info = FieldInfo_.from_annotated_attribute(
+                        ann_type, dataclass_field.default, _source=AnnotationSource.DATACLASS
+                    )
                 else:
-                    field_info = FieldInfo_.from_annotated_attribute(ann_type, dataclass_field)
+                    field_info = FieldInfo_.from_annotated_attribute(
+                        ann_type, dataclass_field, _source=AnnotationSource.DATACLASS
+                    )
 
                 fields[ann_name] = field_info
 

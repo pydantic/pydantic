@@ -33,11 +33,10 @@ from dirty_equals import HasRepr
 from packaging.version import Version
 from pydantic_core import CoreSchema, SchemaValidator, core_schema, to_jsonable_python
 from pydantic_core.core_schema import ValidatorFunctionWrapHandler
-from typing_extensions import Self, TypeAliasType, TypedDict, deprecated
+from typing_extensions import TypeAliasType, TypedDict, deprecated
 
 import pydantic
 from pydantic import (
-    AfterValidator,
     BaseModel,
     BeforeValidator,
     Field,
@@ -2384,6 +2383,37 @@ def test_literal_schema_type_aliases() -> None:
     assert TypeAdapter(TestType2).json_schema() == {
         'enum': ['a', 'b', 'c'],
         'type': 'string',
+    }
+
+
+def test_annotated_typealiastype() -> None:
+    Alias = TypeAliasType(
+        'Alias',
+        Annotated[str, Field(description='alias desc', examples=['alias example'])],
+    )
+
+    class Model(BaseModel):
+        alias_1: Alias
+        alias_2: Alias = Field(description='field_desc')
+
+    assert Model.model_json_schema() == {
+        '$defs': {
+            'Alias': {
+                'type': 'string',
+                'description': 'alias desc',
+                'examples': ['alias example'],
+            }
+        },
+        'properties': {
+            'alias_1': {'$ref': '#/$defs/Alias'},
+            'alias_2': {
+                '$ref': '#/$defs/Alias',
+                'description': 'field_desc',
+            },
+        },
+        'required': ['alias_1', 'alias_2'],
+        'title': 'Model',
+        'type': 'object',
     }
 
 
@@ -6005,38 +6035,6 @@ class Foo(BaseModel):
             }
         }
     }
-
-
-def test_repeated_custom_type():
-    class Numeric(pydantic.BaseModel):
-        value: float
-
-        @classmethod
-        def __get_pydantic_core_schema__(cls, source_type: Any, handler: pydantic.GetCoreSchemaHandler) -> CoreSchema:
-            return core_schema.no_info_before_validator_function(cls.validate, handler(source_type))
-
-        @classmethod
-        def validate(cls, v: Any) -> Union[dict[str, Any], Self]:
-            if isinstance(v, (str, float, int)):
-                return cls(value=v)
-            if isinstance(v, Numeric):
-                return v
-            if isinstance(v, dict):
-                return v
-            raise ValueError(f'Invalid value for {cls}: {v}')
-
-    def is_positive(value: Numeric):
-        assert value.value > 0.0, 'Must be positive'
-
-    class OuterModel(pydantic.BaseModel):
-        x: Numeric
-        y: Numeric
-        z: Annotated[Numeric, AfterValidator(is_positive)]
-
-    assert OuterModel(x=2, y=-1, z=1)
-
-    with pytest.raises(ValidationError):
-        OuterModel(x=2, y=-1, z=-1)
 
 
 def test_description_not_included_for_basemodel() -> None:

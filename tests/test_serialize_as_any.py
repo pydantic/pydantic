@@ -202,7 +202,7 @@ def test_serialize_as_any_annotation_with_inner_models() -> None:
 def test_serialize_as_any_flag_with_incorrect_list_el_type() -> None:
     # a warning is raised when using the `serialize_as_any` flag
     ta = TypeAdapter(list[int])
-    with pytest.warns(UserWarning, match='Expected `int` but got `str`'):
+    with pytest.warns(UserWarning, match='Expected `int` - serialized value may not be as expected'):
         assert ta.dump_python(['a', 'b', 'c'], serialize_as_any=False) == ['a', 'b', 'c']
 
 

@@ -5,6 +5,7 @@ from collections.abc import Generator
 from functools import partial
 from typing import Any
 
+import pytest
 from pydantic_core import ValidationError
 
 from pydantic import BaseModel, TypeAdapter, create_model, dataclasses, field_validator, validate_call
@@ -16,6 +17,8 @@ from pydantic.plugin import (
     ValidateStringsHandlerProtocol,
 )
 from pydantic.plugin._loader import _plugins
+
+pytestmark = pytest.mark.thread_unsafe(reason='`install_plugin()` is thread unsafe')
 
 
 @contextlib.contextmanager
@@ -36,6 +39,8 @@ def test_on_validate_json_on_success() -> None:
             strict: bool | None = None,
             context: dict[str, Any] | None = None,
             self_instance: Any | None = None,
+            by_alias: bool | None = None,
+            by_name: bool | None = None,
         ) -> None:
             assert input == '{"a": 1}'
             assert strict is None
@@ -77,6 +82,8 @@ def test_on_validate_json_on_error() -> None:
             strict: bool | None = None,
             context: dict[str, Any] | None = None,
             self_instance: Any | None = None,
+            by_alias: bool | None = None,
+            by_name: bool | None = None,
         ) -> None:
             assert input == '{"a": "potato"}'
             assert strict is None
@@ -121,6 +128,8 @@ def test_on_validate_python_on_success() -> None:
             from_attributes: bool | None = None,
             context: dict[str, Any] | None = None,
             self_instance: Any | None = None,
+            by_alias: bool | None = None,
+            by_name: bool | None = None,
         ) -> None:
             assert input == {'a': 1}
             assert strict is None
@@ -158,6 +167,8 @@ def test_on_validate_python_on_error() -> None:
             from_attributes: bool | None = None,
             context: dict[str, Any] | None = None,
             self_instance: Any | None = None,
+            by_alias: bool | None = None,
+            by_name: bool | None = None,
         ) -> None:
             assert input == {'a': 'potato'}
             assert strict is None
@@ -206,6 +217,8 @@ def test_stateful_plugin() -> None:
             from_attributes: bool | None = None,
             context: dict[str, Any] | None = None,
             self_instance: Any | None = None,
+            by_alias: bool | None = None,
+            by_name: bool | None = None,
         ) -> None:
             stack.append(input)
 
@@ -298,14 +311,14 @@ def test_all_handlers():
         assert Model.model_validate_json('{"a": 2}', context={'c': 2}).model_dump() == {'a': 2}
         # insert_assert(log)
         assert log == [
-            "json enter input={\"a\": 2} kwargs={'strict': None, 'context': {'c': 2}}",
+            "json enter input={\"a\": 2} kwargs={'strict': None, 'context': {'c': 2}, 'by_alias': None, 'by_name': None}",
             'json success result=a=2',
         ]
         log.clear()
         assert Model.model_validate_strings({'a': '3'}, strict=True, context={'c': 3}).model_dump() == {'a': 3}
         # insert_assert(log)
         assert log == [
-            "strings enter input={'a': '3'} kwargs={'strict': True, 'context': {'c': 3}}",
+            "strings enter input={'a': '3'} kwargs={'strict': True, 'context': {'c': 3}, 'by_alias': None, 'by_name': None}",
             'strings success result=a=3',
         ]
 
