@@ -12,7 +12,7 @@ Pydantic
 
 [![license](https://img.shields.io/github/license/pydantic/pydantic.svg)](https://github.com/pydantic/pydantic/blob/main/LICENSE)
 
-Documentation for development version: [1255431](https://github.com/pydantic/pydantic/commit/12554318bbc3efe1ff40a2c20e5735e11249fb88).
+Documentation for development version: [d76d942](https://github.com/pydantic/pydantic/commit/d76d942e5fe2ddabf60f58a89b24709277a9feb8).
 
 Pydantic is the most widely used data validation library for Python.
 
@@ -271,6 +271,29 @@ For a more comprehensive list of open-source projects using Pydantic see the
 [list of dependents on github](https://github.com/pydantic/pydantic/network/dependents), or you can find some awesome projects using Pydantic in [awesome-pydantic](https://github.com/Kludex/awesome-pydantic).
 
 
+
+v2.11.0b2 (2025-03-17)
+----------------------
+
+ [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.11.0b2)
+
+### What's Changed
+
+#### Packaging
+
+* Bump `pydantic-core` to v2.32.0 by [@Viicos](https://github.com/Viicos) in [#11567](https://github.com/pydantic/pydantic/pull/11567)
+
+#### New Features
+
+* Add experimental support for free threading by [@Viicos](https://github.com/Viicos) in [#11516](https://github.com/pydantic/pydantic/pull/11516)
+
+#### Fixes
+
+* Fix `NotRequired` qualifier not taken into account in stringified annotation by [@Viicos](https://github.com/Viicos) in [#11559](https://github.com/pydantic/pydantic/pull/11559)
+
+### New Contributors
+
+* [@joren485](https://github.com/joren485) made their first contribution in [#11547](https://github.com/pydantic/pydantic/pull/11547)
 
 v2.11.0b1 (2025-03-06)
 ----------------------
@@ -19324,7 +19347,9 @@ def p_arguments_schema(
 ### get\_argument\_name
 
 ```
-get_argument_name(argument: ArgumentsParameter) -> str
+get_argument_name(
+    argument: ArgumentsParameter | ArgumentsV3Parameter,
+) -> str
 
 ```
 
@@ -19334,7 +19359,7 @@ Parameters:
 
 | Name | Type | Description | Default |
 | --- | --- | --- | --- |
-| `argument` | `ArgumentsParameter` | The core schema. | *required* |
+| `argument` | `ArgumentsParameter | ArgumentsV3Parameter` | The core schema. | *required* |
 
 Returns:
 
@@ -19344,7 +19369,7 @@ Returns:
 
 Source code in `pydantic/json_schema.py`
 ```
-def get_argument_name(self, argument: core_schema.ArgumentsParameter) -> str:
+def get_argument_name(self, argument: core_schema.ArgumentsParameter | core_schema.ArgumentsV3Parameter) -> str:
     """Retrieves the name of an argument.
 
     Args:
@@ -19361,6 +19386,75 @@ def get_argument_name(self, argument: core_schema.ArgumentsParameter) -> str:
         else:
             pass  # might want to do something else?
     return name
+
+```
+
+
+
+
+### arguments\_v3\_schema
+
+```
+arguments_v3_schema(
+    schema: ArgumentsV3Schema,
+) -> JsonSchemaValue
+
+```
+
+Generates a JSON schema that matches a schema that defines a function's arguments.
+
+Parameters:
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| `schema` | `ArgumentsV3Schema` | The core schema. | *required* |
+
+Returns:
+
+| Type | Description |
+| --- | --- |
+| `JsonSchemaValue` | The generated JSON schema. |
+
+Source code in `pydantic/json_schema.py`
+```
+def arguments_v3_schema(self, schema: core_schema.ArgumentsV3Schema) -> JsonSchemaValue:
+    """Generates a JSON schema that matches a schema that defines a function's arguments.
+
+    Args:
+        schema: The core schema.
+
+    Returns:
+        The generated JSON schema.
+    """
+    arguments = schema['arguments_schema']
+    properties: dict[str, JsonSchemaValue] = {}
+    required: list[str] = []
+    for argument in arguments:
+        mode = argument.get('mode', 'positional_or_keyword')
+        name = self.get_argument_name(argument)
+        argument_schema = self.generate_inner(argument['schema']).copy()
+        if mode == 'var_args':
+            argument_schema = {'type': 'array', 'items': argument_schema}
+        elif mode == 'var_kwargs_uniform':
+            argument_schema = {'type': 'object', 'additionalProperties': argument_schema}
+
+        argument_schema.setdefault('title', self.get_title_from_name(name))
+        properties[name] = argument_schema
+
+        if (
+            (mode == 'var_kwargs_unpacked_typed_dict' and 'required' in argument_schema)
+            or mode not in {'var_args', 'var_kwargs_uniform', 'var_kwargs_unpacked_typed_dict'}
+            and argument['schema']['type'] != 'default'
+        ):
+            # This assumes that if the argument has a default value,
+            # the inner schema must be of type WithDefaultSchema.
+            # I believe this is true, but I am not 100% sure
+            required.append(name)
+
+    json_schema: JsonSchemaValue = {'type': 'object', 'properties': properties}
+    if required:
+        json_schema['required'] = required
+    return json_schema
 
 ```
 
@@ -22949,7 +23043,7 @@ TzInfo
 
 Bases: `tzinfo`
 
-An `pydantic-core` implementation of the abstract [`datetime.tzinfo`] class.
+An `pydantic-core` implementation of the abstract `datetime.tzinfo` class.
 
 ### tzname
 
@@ -28788,6 +28882,207 @@ def arguments_schema(
         var_args_schema=var_args_schema,
         var_kwargs_mode=var_kwargs_mode,
         var_kwargs_schema=var_kwargs_schema,
+        ref=ref,
+        metadata=metadata,
+        serialization=serialization,
+    )
+
+```
+
+
+
+
+arguments\_v3\_parameter
+------------------------
+
+```
+arguments_v3_parameter(
+    name: str,
+    schema: CoreSchema,
+    *,
+    mode: (
+        Literal[
+            "positional_only",
+            "positional_or_keyword",
+            "keyword_only",
+            "var_args",
+            "var_kwargs_uniform",
+            "var_kwargs_unpacked_typed_dict",
+        ]
+        | None
+    ) = None,
+    alias: (
+        str | list[str | int] | list[list[str | int]] | None
+    ) = None
+) -> ArgumentsV3Parameter
+
+```
+
+Returns a schema that matches an argument parameter, e.g.:
+
+```
+from pydantic_core import SchemaValidator, core_schema
+
+param = core_schema.arguments_v3_parameter(
+    name='a', schema=core_schema.str_schema(), mode='positional_only'
+)
+schema = core_schema.arguments_v3_schema([param])
+v = SchemaValidator(schema)
+assert v.validate_python({'a': 'hello'}) == (('hello',), {})
+
+```
+
+Parameters:
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| `name` | `str` | The name to use for the argument parameter | *required* |
+| `schema` | `CoreSchema` | The schema to use for the argument parameter | *required* |
+| `mode` | `Literal['positional_only', 'positional_or_keyword', 'keyword_only', 'var_args', 'var_kwargs_uniform', 'var_kwargs_unpacked_typed_dict'] | None` | The mode to use for the argument parameter | `None` |
+| `alias` | `str | list[str | int] | list[list[str | int]] | None` | The alias to use for the argument parameter | `None` |
+
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
+```
+def arguments_v3_parameter(
+    name: str,
+    schema: CoreSchema,
+    *,
+    mode: Literal[
+        'positional_only',
+        'positional_or_keyword',
+        'keyword_only',
+        'var_args',
+        'var_kwargs_uniform',
+        'var_kwargs_unpacked_typed_dict',
+    ]
+    | None = None,
+    alias: str | list[str | int] | list[list[str | int]] | None = None,
+) -> ArgumentsV3Parameter:
+    """
+    Returns a schema that matches an argument parameter, e.g.:
+
+    ```py
+    from pydantic_core import SchemaValidator, core_schema
+
+    param = core_schema.arguments_v3_parameter(
+        name='a', schema=core_schema.str_schema(), mode='positional_only'
+    )
+    schema = core_schema.arguments_v3_schema([param])
+    v = SchemaValidator(schema)
+    assert v.validate_python({'a': 'hello'}) == (('hello',), {})
+    ```
+
+    Args:
+        name: The name to use for the argument parameter
+        schema: The schema to use for the argument parameter
+        mode: The mode to use for the argument parameter
+        alias: The alias to use for the argument parameter
+    """
+    return _dict_not_none(name=name, schema=schema, mode=mode, alias=alias)
+
+```
+
+
+
+
+arguments\_v3\_schema
+---------------------
+
+```
+arguments_v3_schema(
+    arguments: list[ArgumentsV3Parameter],
+    *,
+    validate_by_name: bool | None = None,
+    validate_by_alias: bool | None = None,
+    extra_behavior: (
+        Literal["forbid", "ignore"] | None
+    ) = None,
+    ref: str | None = None,
+    metadata: dict[str, Any] | None = None,
+    serialization: SerSchema | None = None
+) -> ArgumentsV3Schema
+
+```
+
+Returns a schema that matches an arguments schema, e.g.:
+
+```
+from pydantic_core import SchemaValidator, core_schema
+
+param_a = core_schema.arguments_v3_parameter(
+    name='a', schema=core_schema.str_schema(), mode='positional_only'
+)
+param_b = core_schema.arguments_v3_parameter(
+    name='kwargs', schema=core_schema.bool_schema(), mode='var_kwargs_uniform'
+)
+schema = core_schema.arguments_v3_schema([param_a, param_b])
+v = SchemaValidator(schema)
+assert v.validate_python({'a': 'hi', 'kwargs': {'b': True}}) == (('hi',), {'b': True})
+
+```
+
+This schema is currently not used by other Pydantic components. In V3, it will most likely
+become the default arguments schema for the `'call'` schema.
+
+Parameters:
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| `arguments` | `list[ArgumentsV3Parameter]` | The arguments to use for the arguments schema. | *required* |
+| `validate_by_name` | `bool | None` | Whether to populate by the parameter names, defaults to `False`. | `None` |
+| `validate_by_alias` | `bool | None` | Whether to populate by the parameter aliases, defaults to `True`. | `None` |
+| `extra_behavior` | `Literal['forbid', 'ignore'] | None` | The extra behavior to use. | `None` |
+| `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places. | `None` |
+| `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core. | `None` |
+| `serialization` | `SerSchema | None` | Custom serialization schema. | `None` |
+
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
+```
+def arguments_v3_schema(
+    arguments: list[ArgumentsV3Parameter],
+    *,
+    validate_by_name: bool | None = None,
+    validate_by_alias: bool | None = None,
+    extra_behavior: Literal['forbid', 'ignore'] | None = None,
+    ref: str | None = None,
+    metadata: dict[str, Any] | None = None,
+    serialization: SerSchema | None = None,
+) -> ArgumentsV3Schema:
+    """
+    Returns a schema that matches an arguments schema, e.g.:
+
+    ```py
+    from pydantic_core import SchemaValidator, core_schema
+
+    param_a = core_schema.arguments_v3_parameter(
+        name='a', schema=core_schema.str_schema(), mode='positional_only'
+    )
+    param_b = core_schema.arguments_v3_parameter(
+        name='kwargs', schema=core_schema.bool_schema(), mode='var_kwargs_uniform'
+    )
+    schema = core_schema.arguments_v3_schema([param_a, param_b])
+    v = SchemaValidator(schema)
+    assert v.validate_python({'a': 'hi', 'kwargs': {'b': True}}) == (('hi',), {'b': True})
+    ```
+
+    This schema is currently not used by other Pydantic components. In V3, it will most likely
+    become the default arguments schema for the `'call'` schema.
+
+    Args:
+        arguments: The arguments to use for the arguments schema.
+        validate_by_name: Whether to populate by the parameter names, defaults to `False`.
+        validate_by_alias: Whether to populate by the parameter aliases, defaults to `True`.
+        extra_behavior: The extra behavior to use.
+        ref: optional unique identifier of the schema, used to reference the schema in other places.
+        metadata: Any other information you want to include with the schema, not used by pydantic-core.
+        serialization: Custom serialization schema.
+    """
+    return _dict_not_none(
+        type='arguments-v3',
+        arguments_schema=arguments,
+        validate_by_name=validate_by_name,
+        validate_by_alias=validate_by_alias,
+        extra_behavior=extra_behavior,
         ref=ref,
         metadata=metadata,
         serialization=serialization,
