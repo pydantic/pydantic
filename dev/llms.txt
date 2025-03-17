@@ -12,7 +12,7 @@ Pydantic
 
 [![license](https://img.shields.io/github/license/pydantic/pydantic.svg)](https://github.com/pydantic/pydantic/blob/main/LICENSE)
 
-Documentation for development version: [b9fb3f1](https://github.com/pydantic/pydantic/commit/b9fb3f110d6653653fb48a44430e7d2fca886ae9).
+Documentation for development version: [d85f511](https://github.com/pydantic/pydantic/commit/d85f5118e3b3a09544167bd31de471662359210b).
 
 Pydantic is the most widely used data validation library for Python.
 
@@ -14053,7 +14053,7 @@ PrivateAttr
 
 ```
 PrivateAttr(
-    default: _T" optional hover>_T, *, init: Literal[False] = False
+    default: _T, *, init: Literal[False] = False
 ) -> _T
 
 ```
