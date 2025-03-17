@@ -4139,7 +4139,7 @@ See <a href="../../concepts/strict_mode/">Strict Mode</a> for details.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Allow <code>inf</code>, <code>-inf</code>, <code>nan</code>. Only applicable to numbers.</p>
+                <p>Allow <code>inf</code>, <code>-inf</code>, <code>nan</code>. Only applicable to float and <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/decimal.html#decimal.Decimal"><code>Decimal</code></a> numbers.</p>
               </div>
             </td>
             <td>
@@ -4555,7 +4555,7 @@ type-annotated fields without causing a type error.</p>
 <span class="sd">        min_length: Minimum length for iterables.</span>
 <span class="sd">        max_length: Maximum length for iterables.</span>
 <span class="sd">        pattern: Pattern for strings (a regular expression).</span>
-<span class="sd">        allow_inf_nan: Allow `inf`, `-inf`, `nan`. Only applicable to numbers.</span>
+<span class="sd">        allow_inf_nan: Allow `inf`, `-inf`, `nan`. Only applicable to float and [`Decimal`][decimal.Decimal] numbers.</span>
 <span class="sd">        max_digits: Maximum number of allow digits for strings.</span>
 <span class="sd">        decimal_places: Maximum number of decimal places allowed for numbers.</span>
 <span class="sd">        union_mode: The strategy to apply when validating a union. Can be `smart` (the default), or `left_to_right`.</span>

@@ -12,7 +12,7 @@ Pydantic
 
 [![license](https://img.shields.io/github/license/pydantic/pydantic.svg)](https://github.com/pydantic/pydantic/blob/main/LICENSE)
 
-Documentation for development version: [d85f511](https://github.com/pydantic/pydantic/commit/d85f5118e3b3a09544167bd31de471662359210b).
+Documentation for development version: [1255431](https://github.com/pydantic/pydantic/commit/12554318bbc3efe1ff40a2c20e5735e11249fb88).
 
 Pydantic is the most widely used data validation library for Python.
 
@@ -13006,7 +13006,7 @@ Parameters:
 | `min_length` | `int | None` | Minimum length for iterables. | `_Unset` |
 | `max_length` | `int | None` | Maximum length for iterables. | `_Unset` |
 | `pattern` | `str | Pattern[str] | None` | Pattern for strings (a regular expression). | `_Unset` |
-| `allow_inf_nan` | `bool | None` | Allow `inf`, `-inf`, `nan`. Only applicable to numbers. | `_Unset` |
+| `allow_inf_nan` | `bool | None` | Allow `inf`, `-inf`, `nan`. Only applicable to float and `Decimal` numbers. | `_Unset` |
 | `max_digits` | `int | None` | Maximum number of allow digits for strings. | `_Unset` |
 | `decimal_places` | `int | None` | Maximum number of decimal places allowed for numbers. | `_Unset` |
 | `union_mode` | `Literal['smart', 'left_to_right']` | The strategy to apply when validating a union. Can be `smart` (the default), or `left_to_right`. See [Union Mode](../../concepts/unions/#union-modes) for details. | `_Unset` |
@@ -13110,7 +13110,7 @@ def Field(  # noqa: C901
         min_length: Minimum length for iterables.
         max_length: Maximum length for iterables.
         pattern: Pattern for strings (a regular expression).
-        allow_inf_nan: Allow `inf`, `-inf`, `nan`. Only applicable to numbers.
+        allow_inf_nan: Allow `inf`, `-inf`, `nan`. Only applicable to float and [`Decimal`][decimal.Decimal] numbers.
         max_digits: Maximum number of allow digits for strings.
         decimal_places: Maximum number of decimal places allowed for numbers.
         union_mode: The strategy to apply when validating a union. Can be `smart` (the default), or `left_to_right`.
