@@ -1798,7 +1798,7 @@ class GenerateJsonSchema:
 
         return json_schema
 
-    def get_argument_name(self, argument: core_schema.ArgumentsParameter) -> str:
+    def get_argument_name(self, argument: core_schema.ArgumentsParameter | core_schema.ArgumentsV3Parameter) -> str:
         """Retrieves the name of an argument.
 
         Args:
@@ -1815,6 +1815,45 @@ class GenerateJsonSchema:
             else:
                 pass  # might want to do something else?
         return name
+
+    def arguments_v3_schema(self, schema: core_schema.ArgumentsV3Schema) -> JsonSchemaValue:
+        """Generates a JSON schema that matches a schema that defines a function's arguments.
+
+        Args:
+            schema: The core schema.
+
+        Returns:
+            The generated JSON schema.
+        """
+        arguments = schema['arguments_schema']
+        properties: dict[str, JsonSchemaValue] = {}
+        required: list[str] = []
+        for argument in arguments:
+            mode = argument.get('mode', 'positional_or_keyword')
+            name = self.get_argument_name(argument)
+            argument_schema = self.generate_inner(argument['schema']).copy()
+            if mode == 'var_args':
+                argument_schema = {'type': 'array', 'items': argument_schema}
+            elif mode == 'var_kwargs_uniform':
+                argument_schema = {'type': 'object', 'additionalProperties': argument_schema}
+
+            argument_schema.setdefault('title', self.get_title_from_name(name))
+            properties[name] = argument_schema
+
+            if (
+                (mode == 'var_kwargs_unpacked_typed_dict' and 'required' in argument_schema)
+                or mode not in {'var_args', 'var_kwargs_uniform', 'var_kwargs_unpacked_typed_dict'}
+                and argument['schema']['type'] != 'default'
+            ):
+                # This assumes that if the argument has a default value,
+                # the inner schema must be of type WithDefaultSchema.
+                # I believe this is true, but I am not 100% sure
+                required.append(name)
+
+        json_schema: JsonSchemaValue = {'type': 'object', 'properties': properties}
+        if required:
+            json_schema['required'] = required
+        return json_schema
 
     def call_schema(self, schema: core_schema.CallSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a schema that defines a function call.
