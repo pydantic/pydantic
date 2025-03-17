@@ -6674,3 +6674,105 @@ def test_with_json_schema_doesnt_share_schema() -> None:
         field2: Optional[AnnBool] = Field(default=None)
 
     assert Model.model_json_schema()['properties']['field2']['anyOf'][0] == dict()
+
+
+def test_json_schema_arguments_v3() -> None:
+    schema = core_schema.arguments_v3_schema(
+        [
+            core_schema.arguments_v3_parameter(name='a', schema=core_schema.int_schema(), mode='positional_only'),
+            core_schema.arguments_v3_parameter(name='b', schema=core_schema.int_schema(), mode='positional_or_keyword'),
+            core_schema.arguments_v3_parameter(name='c', schema=core_schema.int_schema(), mode='var_args'),
+            core_schema.arguments_v3_parameter(
+                name='d',
+                schema=core_schema.with_default_schema(core_schema.int_schema(), default=1),
+                mode='keyword_only',
+            ),
+            core_schema.arguments_v3_parameter(name='e', schema=core_schema.int_schema(), mode='var_kwargs_uniform'),
+        ],
+    )
+
+    assert GenerateJsonSchema().generate(schema) == {
+        'type': 'object',
+        'properties': {
+            'a': {'type': 'integer', 'title': 'A'},
+            'b': {'type': 'integer', 'title': 'B'},
+            'c': {'type': 'array', 'items': {'type': 'integer'}, 'title': 'C'},
+            'd': {'type': 'integer', 'title': 'D', 'default': 1},
+            'e': {'type': 'object', 'additionalProperties': {'type': 'integer'}, 'title': 'E'},
+        },
+        'required': ['a', 'b'],
+    }
+
+
+def test_json_schema_arguments_v3_var_kwargs_unpacked_typed_dict_required() -> None:
+    schema = core_schema.arguments_v3_schema(
+        [
+            core_schema.arguments_v3_parameter(
+                name='kwargs',
+                schema=core_schema.typed_dict_schema(
+                    {'a': core_schema.typed_dict_field(core_schema.int_schema(), required=True)}
+                ),
+                mode='var_kwargs_unpacked_typed_dict',
+            ),
+        ]
+    )
+
+    assert GenerateJsonSchema().generate(schema) == {
+        'type': 'object',
+        'properties': {
+            'kwargs': {
+                'type': 'object',
+                'properties': {
+                    'a': {'type': 'integer', 'title': 'A'},
+                },
+                'required': ['a'],
+                'title': 'Kwargs',
+            },
+        },
+        'required': ['kwargs'],
+    }
+
+
+def test_json_schema_arguments_v3_var_kwargs_unpacked_typed_dict_not_required() -> None:
+    schema = core_schema.arguments_v3_schema(
+        [
+            core_schema.arguments_v3_parameter(
+                name='kwargs',
+                schema=core_schema.typed_dict_schema(
+                    {'a': core_schema.typed_dict_field(core_schema.int_schema(), required=False)}
+                ),
+                mode='var_kwargs_unpacked_typed_dict',
+            ),
+        ]
+    )
+
+    assert GenerateJsonSchema().generate(schema) == {
+        'type': 'object',
+        'properties': {
+            'kwargs': {
+                'type': 'object',
+                'properties': {
+                    'a': {'type': 'integer', 'title': 'A'},
+                },
+                'title': 'Kwargs',
+            },
+        },
+    }
+
+
+def test_json_schema_arguments_v3_aliases() -> None:
+    schema = core_schema.arguments_v3_schema(
+        [
+            core_schema.arguments_v3_parameter(
+                name='a', schema=core_schema.int_schema(), mode='positional_only', alias='b'
+            ),
+        ]
+    )
+
+    assert GenerateJsonSchema().generate(schema) == {
+        'type': 'object',
+        'properties': {
+            'b': {'type': 'integer', 'title': 'B'},
+        },
+        'required': ['b'],
+    }
