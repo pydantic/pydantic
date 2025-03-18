@@ -3648,7 +3648,10 @@ Pydantic will <em>not</em> understand field-specific metadata inside named alias
 </div>
 </div>
 <p>Only metadata that can be applied to the annotated type itself is allowed
-(e.g. <a href="../fields/#field-constraints">validation constraints</a> and JSON metadata).</p>
+(e.g. <a href="../fields/#field-constraints">validation constraints</a> and JSON metadata).
+Trying to support field-specific metadata would require eagerly inspecting the
+type alias's <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.TypeAliasType.__value__"><code>__value__</code></a>, and as such Pydantic
+wouldn't be able to have the alias stored as a JSON Schema definition.</p>
 </div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>

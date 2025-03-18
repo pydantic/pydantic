@@ -12,7 +12,7 @@ Pydantic
 
 [![license](https://img.shields.io/github/license/pydantic/pydantic.svg)](https://github.com/pydantic/pydantic/blob/main/LICENSE)
 
-Documentation for development version: [9ebcf01](https://github.com/pydantic/pydantic/commit/9ebcf01cf5b6a373d3f2d328d7deb744838eeeaf).
+Documentation for development version: [a2846da](https://github.com/pydantic/pydantic/commit/a2846da63905181ad3c98b2c87a68165e0193233).
 
 Pydantic is the most widely used data validation library for Python.
 
@@ -55130,6 +55130,9 @@ class Model(BaseModel):
 
 Only metadata that can be applied to the annotated type itself is allowed
 (e.g. [validation constraints](../fields/#field-constraints) and JSON metadata).
+Trying to support field-specific metadata would require eagerly inspecting the
+type alias's `__value__`, and as such Pydantic
+wouldn't be able to have the alias stored as a JSON Schema definition.
 
 
 Note
