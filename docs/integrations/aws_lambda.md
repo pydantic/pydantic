@@ -42,7 +42,7 @@ pip install \
 
 ## Troubleshooting
 
-### `no module named 'pydantic_core._pydantic_core'`
+### Missing `pydantic_core` module
 
 The
 
@@ -62,7 +62,7 @@ error is a common issue that indicates you have installed `pydantic` incorrectly
     """
     ```
 
-    You should expect to see two files like those printed above. The compile library file will be a .so or .pyd with a name that varies according to the OS and Python version.
+    You should expect to see two files like those printed above. The compiled library file should have the `.so` or `.pyd` extension with a name that varies according to the OS and Python version.
 
 2. Check that your lambda's Python version is compatible with the compiled library version found above.
 
