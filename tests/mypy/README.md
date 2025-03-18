@@ -42,30 +42,30 @@ model = Model(a=1, b=2)
 
 1. Define a new file in the [`modules/`](./modules/) folder:
 
-   ```python
-   # modules/new_test.py
+    ```python
+    # modules/new_test.py
 
-   class Model(BaseModel):
-       a: int
+    class Model(BaseModel):
+        a: int
 
 
-   model = Model(a=1, b=2)
-   ```
+    model = Model(a=1, b=2)
+    ```
 
 2. Add the new file in the defined `cases` in [`test_mypy.py`](./test_mypy.py), together
    with a configuration file:
 
-   ```python
-   cases: list[ParameterSet | tuple[str, str]] = [
-       ...,
-       # One-off cases
-       *[
-            ('mypy-plugin.ini', 'custom_constructor.py'),
-            ('mypy-plugin.ini', 'config_conditional_extra.py'),
-            ...,
-            ('mypy-plugin.ini', 'new_test.py'),  # <-- new test added.
-        ]
-   ```
+    ```python
+    cases: list[ParameterSet | tuple[str, str]] = [
+        ...,
+        # One-off cases
+        *[
+                ('mypy-plugin.ini', 'custom_constructor.py'),
+                ('mypy-plugin.ini', 'config_conditional_extra.py'),
+                ...,
+                ('mypy-plugin.ini', 'new_test.py'),  # <-- new test added.
+            ]
+    ```
 
 3. Run `make test-mypy-update-all`. It should create a new output with your new file.
 

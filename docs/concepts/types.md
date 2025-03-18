@@ -92,11 +92,11 @@ except ValidationError as exc:
 1. Note that you can also use constraints from the [annotated-types](https://github.com/annotated-types/annotated-types)
   library to make this Pydantic-agnostic:
 
-  ```python {test="skip" lint="skip"}
-  from annotated_types import Gt
+    ```python {test="skip" lint="skip"}
+    from annotated_types import Gt
 
-  PositiveInt = Annotated[int, Gt(0)]
-  ```
+    PositiveInt = Annotated[int, Gt(0)]
+    ```
 
 #### Adding validation and serialization
 
