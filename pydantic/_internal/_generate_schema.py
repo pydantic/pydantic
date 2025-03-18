@@ -1939,24 +1939,25 @@ class GenerateSchema:
 
                 unpack_type = _typing_extra.unpack_type(annotation)
                 if unpack_type is not None:
-                    if not is_typeddict(unpack_type):
+                    origin = get_origin(unpack_type) or unpack_type
+                    if not is_typeddict(origin):
                         raise PydanticUserError(
-                            f'Expected a `TypedDict` class, got {unpack_type.__name__!r}', code='unpack-typed-dict'
+                            f'Expected a `TypedDict` class, got {unpack_type!r}', code='unpack-typed-dict'
                         )
                     non_pos_only_param_names = {
                         name for name, p in sig.parameters.items() if p.kind != Parameter.POSITIONAL_ONLY
                     }
-                    overlapping_params = non_pos_only_param_names.intersection(unpack_type.__annotations__)
+                    overlapping_params = non_pos_only_param_names.intersection(origin.__annotations__)
                     if overlapping_params:
                         raise PydanticUserError(
-                            f'Typed dictionary {unpack_type.__name__!r} overlaps with parameter'
+                            f'Typed dictionary {origin.__name__!r} overlaps with parameter'
                             f'{"s" if len(overlapping_params) >= 2 else ""} '
                             f'{", ".join(repr(p) for p in sorted(overlapping_params))}',
                             code='overlapping-unpack-typed-dict',
                         )
 
                     var_kwargs_mode = 'unpacked-typed-dict'
-                    var_kwargs_schema = self._typed_dict_schema(unpack_type, None)
+                    var_kwargs_schema = self._typed_dict_schema(unpack_type, get_origin(unpack_type))
                 else:
                     var_kwargs_mode = 'uniform'
                     var_kwargs_schema = self.generate_schema(annotation)

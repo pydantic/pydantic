@@ -4,7 +4,7 @@ import re
 import sys
 from datetime import datetime, timezone
 from functools import partial
-from typing import Annotated, Any, Literal, Union
+from typing import Annotated, Any, Generic, Literal, TypeVar, Union
 
 import pytest
 from pydantic_core import ArgsKwargs
@@ -349,6 +349,20 @@ def test_unpacked_typed_dict_kwargs() -> None:
 
         assert exc.value.errors()[0]['type'] == 'missing'
         assert exc.value.errors()[0]['loc'] == ('b',)
+
+
+def test_unpacked_generic_typed_dict_kwargs() -> None:
+    T = TypeVar('T')
+
+    class TD(TypedDict, Generic[T]):
+        t: T
+
+    @validate_call
+    def foo(**kwargs: Unpack[TD[int]]):
+        pass
+
+    with pytest.raises(ValidationError):
+        foo(t='not_an_int')
 
 
 def test_unpacked_typed_dict_kwargs_functional_syntax() -> None:
