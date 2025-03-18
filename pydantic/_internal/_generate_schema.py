@@ -756,6 +756,7 @@ class GenerateSchema:
                 model_validators = decorators.model_validators.values()
 
                 extras_schema = None
+                extras_keys_schema = None
                 if core_config.get('extra_fields_behavior') == 'allow':
                     assert cls.__mro__[0] is cls
                     assert cls.__mro__[-1] is object
@@ -776,12 +777,15 @@ class GenerateSchema:
                                 raise PydanticSchemaGenerationError(
                                     'The type annotation for `__pydantic_extra__` must be `dict[str, ...]`'
                                 )
-                            extra_items_type = self._get_args_resolving_forward_refs(
+                            extra_keys_type, extra_items_type = self._get_args_resolving_forward_refs(
                                 extras_annotation,
                                 required=True,
-                            )[1]
+                            )
+                            if extra_keys_type is not str:
+                                extras_keys_schema = self.generate_schema(extra_keys_type)
                             if not typing_objects.is_any(extra_items_type):
                                 extras_schema = self.generate_schema(extra_items_type)
+                            if extras_keys_schema is not None or extras_schema is not None:
                                 break
 
                 generic_origin: type[BaseModel] | None = getattr(cls, '__pydantic_generic_metadata__', {}).get('origin')
@@ -808,6 +812,7 @@ class GenerateSchema:
                             for d in computed_fields.values()
                         ],
                         extras_schema=extras_schema,
+                        extras_keys_schema=extras_keys_schema,
                         model_name=cls.__name__,
                     )
                     inner_schema = apply_validators(fields_schema, decorators.root_validators.values(), None)
