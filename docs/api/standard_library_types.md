@@ -58,15 +58,14 @@ types:
 ### [`datetime.datetime`][]
 
 * `datetime` fields will accept values of type:
-
-  * `datetime`; an existing `datetime` object
-  * `int` or `float`; assumed as Unix time, i.e. seconds (if >= `-2e10` and <= `2e10`) or milliseconds
+    * `datetime`; an existing `datetime` object
+    * `int` or `float`; assumed as Unix time, i.e. seconds (if >= `-2e10` and <= `2e10`) or milliseconds
       (if < `-2e10`or > `2e10`) since 1 January 1970
-  * `str`; the following formats are accepted:
-    * `YYYY-MM-DD[T]HH:MM[:SS[.ffffff]][Z or [±]HH[:]MM]`
-    * `YYYY-MM-DD` is accepted in lax mode, but not in strict mode
-    * `int` or `float` as a string (assumed as Unix time)
-  * [`datetime.date`][] instances are accepted in lax mode, but not in strict mode
+    * `str`; the following formats are accepted:
+        * `YYYY-MM-DD[T]HH:MM[:SS[.ffffff]][Z or [±]HH[:]MM]`
+        * `YYYY-MM-DD` is accepted in lax mode, but not in strict mode
+        * `int` or `float` as a string (assumed as Unix time)
+    * [`datetime.date`][] instances are accepted in lax mode, but not in strict mode
 
 ```python
 from datetime import datetime
@@ -89,12 +88,11 @@ print(event.model_dump())
 ### [`datetime.date`][]
 
 * `date` fields will accept values of type:
-
-  * `date`; an existing `date` object
-  * `int` or `float`; handled the same as described for `datetime` above
-  * `str`; the following formats are accepted:
-    * `YYYY-MM-DD`
-    * `int` or `float` as a string (assumed as Unix time)
+    * `date`; an existing `date` object
+    * `int` or `float`; handled the same as described for `datetime` above
+    * `str`; the following formats are accepted:
+        * `YYYY-MM-DD`
+        * `int` or `float` as a string (assumed as Unix time)
 
 ```python
 from datetime import date
@@ -116,9 +114,9 @@ print(my_birthday.model_dump())
 
 * `time` fields will accept values of type:
 
-  * `time`; an existing `time` object
-  * `str`; the following formats are accepted:
-    * `HH:MM[:SS[.ffffff]][Z or [±]HH[:]MM]`
+    * `time`; an existing `time` object
+    * `str`; the following formats are accepted:
+        * `HH:MM[:SS[.ffffff]][Z or [±]HH[:]MM]`
 
 ```python
 from datetime import time
@@ -140,12 +138,12 @@ print(m.model_dump())
 
 * `timedelta` fields will accept values of type:
 
-  * `timedelta`; an existing `timedelta` object
-  * `int` or `float`; assumed to be seconds
-  * `str`; the following formats are accepted:
-    * `[-][[DD]D,]HH:MM:SS[.ffffff]`
-            * Ex: `'1d,01:02:03.000004'` or `'1D01:02:03.000004'` or `'01:02:03'`
-    * `[±]P[DD]DT[HH]H[MM]M[SS]S` ([ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) format for timedelta)
+    * `timedelta`; an existing `timedelta` object
+    * `int` or `float`; assumed to be seconds
+    * `str`; the following formats are accepted:
+        * `[-][[DD]D,]HH:MM:SS[.ffffff]`
+                * Ex: `'1d,01:02:03.000004'` or `'1D01:02:03.000004'` or `'01:02:03'`
+        * `[±]P[DD]DT[HH]H[MM]M[SS]S` ([ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) format for timedelta)
 
 ```python
 from datetime import timedelta

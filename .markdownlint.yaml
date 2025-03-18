@@ -1,10 +1,16 @@
 # See rule aliases: https://github.com/DavidAnson/markdownlint#rules--aliases
 
 line-length: false
+
 ul-style:
   style: asterisk
+
 emphasis-style:
   style: asterisk
+
+# need to indent with 4 spaces to render properly
+ul-indent:
+  indent: 4
 
 # H1 headings are automatically inserted by mkdocs
 first-line-h1: false

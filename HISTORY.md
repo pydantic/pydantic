@@ -562,7 +562,7 @@ The code released in v2.9.0 is practically identical to that of v2.9.0b2.
 #### Changes
 
 * Breaking Change: Merge `dict` type `json_schema_extra` by @sydney-runkle in [#9792](https://github.com/pydantic/pydantic/pull/9792)
-  * For more info (how to replicate old behavior) on this change, see [here](https://docs.pydantic.dev/dev/concepts/json_schema/#merging-json_schema_extra)
+    * For more info (how to replicate old behavior) on this change, see [here](https://docs.pydantic.dev/dev/concepts/json_schema/#merging-json_schema_extra)
 * Refactor annotation injection for known (often generic) types by @sydney-runkle in [#9979](https://github.com/pydantic/pydantic/pull/9979)
 * Move annotation compatibility errors to validation phase by @sydney-runkle in [#9999](https://github.com/pydantic/pydantic/pull/9999)
 * Improve runtime errors for string constraints like `pattern` for incompatible types by @sydney-runkle in [#10158](https://github.com/pydantic/pydantic/pull/10158)
@@ -1351,7 +1351,7 @@ The code released in v2.5.0 is functionally identical to that of v2.5.0b1.
 * Added `validation_error_cause` to config by @zakstucke in [#7626](https://github.com/pydantic/pydantic/pull/7626)
 * Make path of the item to validate available in plugin by @hramezani in [#7861](https://github.com/pydantic/pydantic/pull/7861)
 * Add `CallableDiscriminator` and `Tag` by @dmontagu in [#7983](https://github.com/pydantic/pydantic/pull/7983)
-  * `CallableDiscriminator` renamed to `Discriminator` by @dmontagu in [#8047](https://github.com/pydantic/pydantic/pull/8047)
+    * `CallableDiscriminator` renamed to `Discriminator` by @dmontagu in [#8047](https://github.com/pydantic/pydantic/pull/8047)
 * Make union case tags affect union error messages by @dmontagu in [#8001](https://github.com/pydantic/pydantic/pull/8001)
 * Add `examples` and `json_schema_extra` to `@computed_field` by @alexmojaki in [#8013](https://github.com/pydantic/pydantic/pull/8013)
 * Add `JsonValue` type by @dmontagu in [#7998](https://github.com/pydantic/pydantic/pull/7998)
@@ -1996,8 +1996,8 @@ See [this post](https://docs.pydantic.dev/blog/pydantic-v2-alpha/) for more deta
   Finally, config customization directly via a `dict` is now possible, [#2557](https://github.com/pydantic/pydantic/pull/2557) by @PrettyWood
   <br/><br/>
   **BREAKING CHANGES:**
-  * The `compiled` boolean (whether *pydantic* is compiled with cython) has been moved from `main.py` to `version.py`
-  * Now that `Config.extra` is supported, `dataclass` ignores by default extra arguments (like `BaseModel`)
+    * The `compiled` boolean (whether *pydantic* is compiled with cython) has been moved from `main.py` to `version.py`
+    * Now that `Config.extra` is supported, `dataclass` ignores by default extra arguments (like `BaseModel`)
 * Fix PEP487 `__set_name__` protocol in `BaseModel` for PrivateAttrs, [#4407](https://github.com/pydantic/pydantic/pull/4407) by @tlambert03
 * Allow for custom parsing of environment variables via `parse_env_var` in `Config`, [#4406](https://github.com/pydantic/pydantic/pull/4406) by @acmiyaguchi
 * Rename `master` to `main`, [#4405](https://github.com/pydantic/pydantic/pull/4405) by @hramezani
@@ -2292,13 +2292,13 @@ for their kind support.
 ### Changes
 
 * **Breaking Change**, remove old deprecation aliases from v1, [#2415](https://github.com/pydantic/pydantic/pull/2415) by @samuelcolvin:
-  * remove notes on migrating to v1 in docs
-  * remove `Schema` which was replaced by `Field`
-  * remove `Config.case_insensitive` which was replaced by `Config.case_sensitive` (default `False`)
-  * remove `Config.allow_population_by_alias` which was replaced by `Config.allow_population_by_field_name`
-  * remove `model.fields` which was replaced by `model.__fields__`
-  * remove `model.to_string()` which was replaced by `str(model)`
-  * remove `model.__values__` which was replaced by `model.__dict__`
+    * remove notes on migrating to v1 in docs
+    * remove `Schema` which was replaced by `Field`
+    * remove `Config.case_insensitive` which was replaced by `Config.case_sensitive` (default `False`)
+    * remove `Config.allow_population_by_alias` which was replaced by `Config.allow_population_by_field_name`
+    * remove `model.fields` which was replaced by `model.__fields__`
+    * remove `model.to_string()` which was replaced by `str(model)`
+    * remove `model.__values__` which was replaced by `model.__dict__`
 * **Breaking Change:** always validate only first sublevel items with `each_item`.
   There were indeed some edge cases with some compound types where the validated items were the last sublevel ones, [#1933](https://github.com/pydantic/pydantic/pull/1933) by @PrettyWood
 * Update docs extensions to fix local syntax highlighting, [#2400](https://github.com/pydantic/pydantic/pull/2400) by @daviskirk

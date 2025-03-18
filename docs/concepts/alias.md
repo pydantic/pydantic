@@ -3,13 +3,13 @@ An alias is an alternative name for a field, used when serializing and deseriali
 You can specify an alias in the following ways:
 
 * `alias` on the [`Field`][pydantic.fields.Field]
-  * must be a `str`
+    * must be a `str`
 * `validation_alias` on the [`Field`][pydantic.fields.Field]
-  * can be an instance of `str`, [`AliasPath`][pydantic.aliases.AliasPath], or [`AliasChoices`][pydantic.aliases.AliasChoices]
+    * can be an instance of `str`, [`AliasPath`][pydantic.aliases.AliasPath], or [`AliasChoices`][pydantic.aliases.AliasChoices]
 * `serialization_alias` on the [`Field`][pydantic.fields.Field]
-  * must be a `str`
+    * must be a `str`
 * `alias_generator` on the [`Config`][pydantic.config.ConfigDict.alias_generator]
-  * can be a callable or an instance of [`AliasGenerator`][pydantic.aliases.AliasGenerator]
+    * can be a callable or an instance of [`AliasGenerator`][pydantic.aliases.AliasGenerator]
 
 For examples of how to use `alias`, `validation_alias`, and `serialization_alias`, see [Field aliases](../concepts/fields.md#field-aliases).
 
@@ -194,8 +194,8 @@ You may set `alias_priority` on a field to change this behavior:
 * `alias_priority=2` the alias will *not* be overridden by the alias generator.
 * `alias_priority=1` the alias *will* be overridden by the alias generator.
 * `alias_priority` not set:
-  * alias is set: the alias will *not* be overridden by the alias generator.
-  * alias is not set: the alias *will* be overridden by the alias generator.
+    * alias is set: the alias will *not* be overridden by the alias generator.
+    * alias is not set: the alias *will* be overridden by the alias generator.
 
 The same precedence applies to `validation_alias` and `serialization_alias`.
 See more about the different field aliases under [field aliases](../concepts/fields.md#field-aliases).

@@ -138,9 +138,9 @@ While the namespace fetching logic is trying to be as accurate as possible, we s
 * When the `Model` class is being created inside a function, we keep a copy of the [locals][frame.f_locals] of the frame.
   This copy only includes the symbols defined in the locals when `Model` is being defined, meaning `InnerType2` won't be included
   (and will **not be** if doing a model rebuild at a later point!).
-  * To avoid memory leaks, we use [weak references][weakref] to the locals of the function, meaning some forward references might
+    * To avoid memory leaks, we use [weak references][weakref] to the locals of the function, meaning some forward references might
     not resolve outside the function (1).
-  * Locals of the function are only taken into account for Pydantic models, but this pattern does not apply to dataclasses, typed
+    * Locals of the function are only taken into account for Pydantic models, but this pattern does not apply to dataclasses, typed
     dictionaries or named tuples.
 
 </div>

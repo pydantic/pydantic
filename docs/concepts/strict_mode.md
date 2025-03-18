@@ -42,7 +42,7 @@ There are various ways to get strict-mode validation while using Pydantic, which
   `TypeAdapter.validate_python`, and similar for JSON
 * [Using `Field(strict=True)`](#strict-mode-with-field) with fields of a `BaseModel`, `dataclass`, or `TypedDict`
 * [Using `pydantic.types.Strict` as a type annotation](#strict-mode-with-annotated-strict) on a field
-  * Pydantic provides some type aliases that are already annotated with `Strict`, such as `pydantic.types.StrictInt`
+    * Pydantic provides some type aliases that are already annotated with `Strict`, such as `pydantic.types.StrictInt`
 * [Using `ConfigDict(strict=True)`](#strict-mode-with-configdict)
 
 ## Type coercions in strict mode
