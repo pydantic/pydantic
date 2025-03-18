@@ -66,11 +66,11 @@ error is a common issue that indicates you have installed `pydantic` incorrectly
 
 2. Check that your lambda's Python version is compatible with the compiled library version found above.
 
-```python {test="skip" lint="skip"}
-import sysconfig
-print(sysconfig.get_config_var("EXT_SUFFIX"))
-#> '.cpython-312-x86_64-linux-gnu.so'
-```
+    ```python {test="skip" lint="skip"}
+    import sysconfig
+    print(sysconfig.get_config_var("EXT_SUFFIX"))
+    #> '.cpython-312-x86_64-linux-gnu.so'
+    ```
 
 You should expect to see the same suffix here as the compiled library, for example here we see this suffix `.cpython-312-x86_64-linux-gnu.so` indeed matches `_pydantic_core.cpython-312-x86_64-linux-gnu.so`.
 

@@ -142,7 +142,7 @@ print(m.model_dump())
     * `int` or `float`; assumed to be seconds
     * `str`; the following formats are accepted:
         * `[-][[DD]D,]HH:MM:SS[.ffffff]`
-                * Ex: `'1d,01:02:03.000004'` or `'1D01:02:03.000004'` or `'01:02:03'`
+            * Ex: `'1d,01:02:03.000004'` or `'1D01:02:03.000004'` or `'01:02:03'`
         * `[±]P[DD]DT[HH]H[MM]M[SS]S` ([ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) format for timedelta)
 
 ```python
