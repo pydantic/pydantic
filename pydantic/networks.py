@@ -217,6 +217,14 @@ class _BaseUrl:
         """
         return self._url.unicode_string()
 
+    @property
+    def encoded(self) -> str:
+        """The URL's encoded string representation via __str__().
+
+        This returns the punycode-encoded host version of the URL as a string.
+        """
+        return str(self)
+
     def __str__(self) -> str:
         """The URL as a string, this will punycode encode the host if required."""
         return str(self._url)
