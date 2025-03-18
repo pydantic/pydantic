@@ -323,7 +323,7 @@ By leveraging the new [`type` statement](https://typing.readthedocs.io/en/latest
     Only metadata that can be applied to the annotated type itself is allowed
     (e.g. [validation constraints](./fields.md#field-constraints) and JSON metadata).
     Trying to support field-specific metadata would require eagerly inspecting the
-    type alias' [`__value__`][typing.TypeAliasType.__value__], and as such Pydantic
+    type alias's [`__value__`][typing.TypeAliasType.__value__], and as such Pydantic
     wouldn't be able to have the alias stored as a JSON Schema definition.
 
 !!! note
