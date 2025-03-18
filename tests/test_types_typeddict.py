@@ -52,10 +52,7 @@ def fixture_typed_dict(TypedDictAll):
     if sys.version_info < (3, 12) and TypedDictAll.__module__ == 'typing':
         pytest.skip('typing.TypedDict does not support all pydantic features in Python < 3.12')
 
-    if hasattr(TestTypedDict, '__required_keys__'):
-        return TypedDictAll
-    else:
-        pytest.skip('TypedDict does not include __required_keys__')
+    return TypedDictAll
 
 
 @pytest.fixture(
@@ -113,14 +110,20 @@ def test_typeddict_total_false(TypedDict, req_no_req):
     class MyDict(TypedDict, total=False):
         foo: Required[str]
         bar: int
+        baz: 'Required[int]'
 
     class M(BaseModel):
         d: MyDict
 
-    assert M(d=dict(foo='baz', bar='8')).d == {'foo': 'baz', 'bar': 8}
-    assert M(d=dict(foo='baz')).d == {'foo': 'baz'}
-    with pytest.raises(ValidationError, match=r'd\.foo\s+Field required \[type=missing,'):
+    assert M(d={'foo': 'baz', 'bar': '8', 'baz': 1}).d == {'foo': 'baz', 'bar': 8, 'baz': 1}
+    assert M(d={'foo': 'baz', 'baz': 1}).d == {'foo': 'baz', 'baz': 1}
+
+    with pytest.raises(ValidationError) as exc_info:
         M(d={})
+
+    assert exc_info.value.error_count() == 2
+    assert exc_info.value.errors()[0]['type'] == 'missing'
+    assert exc_info.value.errors()[1]['type'] == 'missing'
 
 
 def test_typeddict(TypedDict):
@@ -381,6 +384,7 @@ def test_typeddict_not_required_schema(TypedDict, req_no_req):
     class DataTD(TypedDict, total=True):
         a: NotRequired[int]
         b: str
+        c: 'NotRequired[int]'
 
     class Model(BaseModel):
         t: DataTD
@@ -397,6 +401,7 @@ def test_typeddict_not_required_schema(TypedDict, req_no_req):
                 'properties': {
                     'a': {'title': 'A', 'type': 'integer'},
                     'b': {'title': 'B', 'type': 'string'},
+                    'c': {'title': 'C', 'type': 'integer'},
                 },
                 'required': ['b'],
             }

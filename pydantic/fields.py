@@ -1019,7 +1019,7 @@ def Field(  # noqa: C901
         min_length: Minimum length for iterables.
         max_length: Maximum length for iterables.
         pattern: Pattern for strings (a regular expression).
-        allow_inf_nan: Allow `inf`, `-inf`, `nan`. Only applicable to numbers.
+        allow_inf_nan: Allow `inf`, `-inf`, `nan`. Only applicable to float and [`Decimal`][decimal.Decimal] numbers.
         max_digits: Maximum number of allow digits for strings.
         decimal_places: Maximum number of decimal places allowed for numbers.
         union_mode: The strategy to apply when validating a union. Can be `smart` (the default), or `left_to_right`.

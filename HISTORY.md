@@ -1,5 +1,26 @@
 <!-- markdownlint-disable no-bare-urls -->
 <!-- markdownlint-disable-next-line first-line-heading -->
+## v2.11.0b2 (2025-03-17)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.11.0b2)
+
+### What's Changed
+
+#### Packaging
+
+* Bump `pydantic-core` to v2.32.0 by @Viicos in [#11567](https://github.com/pydantic/pydantic/pull/11567)
+
+#### New Features
+
+* Add experimental support for free threading by @Viicos in [#11516](https://github.com/pydantic/pydantic/pull/11516)
+
+#### Fixes
+
+* Fix `NotRequired` qualifier not taken into account in stringified annotation by @Viicos in [#11559](https://github.com/pydantic/pydantic/pull/11559)
+
+### New Contributors
+
+* @joren485 made their first contribution in [#11547](https://github.com/pydantic/pydantic/pull/11547)
 
 ## v2.11.0b1 (2025-03-06)
 
