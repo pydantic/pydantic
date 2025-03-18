@@ -1195,6 +1195,13 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         return f'{self.__repr_name__()}({self.__repr_str__(", ")})'
 
     def __repr_args__(self) -> _repr.ReprArgs:
+        # Eagerly create the repr of computed fields, as this may trigger access of cached properties and as such
+        # modify the instance's `__dict__`. If we don't do it now, it could happen when iterating over the `__dict__`
+        # below if the instance happens to be referenced in a field, and would modify the `__dict__` size *during* iteration.
+        computed_fields_repr_args = [
+            (k, getattr(self, k)) for k, v in self.__pydantic_computed_fields__.items() if v.repr
+        ]
+
         for k, v in self.__dict__.items():
             field = self.__pydantic_fields__.get(k)
             if field and field.repr:
@@ -1213,7 +1220,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         if pydantic_extra is not None:
             yield from ((k, v) for k, v in pydantic_extra.items())
-        yield from ((k, getattr(self, k)) for k, v in self.__pydantic_computed_fields__.items() if v.repr)
+        yield from computed_fields_repr_args
 
     # take logic from `_repr.Representation` without the side effects of inheritance, see #5740
     __repr_name__ = _repr.Representation.__repr_name__
