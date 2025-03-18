@@ -588,7 +588,7 @@ To raise a validation error, three types of exceptions can be used:
         """
         1 validation error for Model
         x
-            84 is the answer! [type=the_answer_error, input_value=84, input_type=int]
+          84 is the answer! [type=the_answer_error, input_value=84, input_type=int]
         """
     ```
 
@@ -776,7 +776,7 @@ Pydantic provides a few special utilities that can be used to customize validati
         """
         1 validation error for Basket
         fruits.1
-            Input should be an instance of Fruit [type=is_instance_of, input_value='Apple', input_type=str]
+          Input should be an instance of Fruit [type=is_instance_of, input_value='Apple', input_type=str]
         """
     ```
 

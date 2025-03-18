@@ -25,7 +25,7 @@ On Pydantic models, configuration can be specified in two ways:
         """
         1 validation error for Model
         v
-            String should have at most 5 characters [type=string_too_long, input_value='abcdef', input_type=str]
+          String should have at most 5 characters [type=string_too_long, input_value='abcdef', input_type=str]
         """
     ```
 
