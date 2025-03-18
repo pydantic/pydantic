@@ -21,9 +21,9 @@ serialized, and exported in a number of ways.
 
 This is the primary way of converting a model to a dictionary. Sub-models will be recursively converted to dictionaries.
 
-By default, the output may contain non-JSON-serializable Python objects. The `mode` argument can be specified as `"json"` to ensure that the output only contains JSON serializable types. Other arguments exist to include or exclude fields, [including nested fields](#advanced-include-and-exclude), or to further customize the serialization behaviour.
+By default, the output may contain non-JSON-serializable Python objects. The `mode` argument can be specified as `"json"` to ensure that the output only contains JSON serializable types. Other parameters exist to include or exclude fields, [including nested fields](#advanced-include-and-exclude), or to further customize the serialization behaviour.
 
-See the available [arguments][pydantic.main.BaseModel.model_dump] for more information.
+See the available [parameters][pydantic.main.BaseModel.model_dump] for more information.
 
 !!! note
     The one exception to sub-models being converted to dictionaries is that [`RootModel`](models.md#rootmodel-and-custom-root-types)
@@ -108,7 +108,7 @@ print(Model(x=['{"a": 1}', '[1, 2]']).model_dump(round_trip=True))
 The `.model_dump_json()` method serializes a model directly to a JSON-encoded string
 that is equivalent to the result produced by [`.model_dump()`](#modelmodel_dump).
 
-See the available [arguments][pydantic.main.BaseModel.model_dump_json] for more information.
+See the available [parameters][pydantic.main.BaseModel.model_dump_json] for more information.
 
 !!! note
     Pydantic can serialize many commonly used types to JSON that would otherwise be incompatible with a simple
@@ -234,7 +234,7 @@ print(Model(x='test value').model_dump_json())
 In addition, [`PlainSerializer`][pydantic.functional_serializers.PlainSerializer] and
 [`WrapSerializer`][pydantic.functional_serializers.WrapSerializer] enable you to use a function to modify the output of serialization.
 
-Both serializers accept optional arguments including:
+Both serializers accept optional parameters including:
 
 - `return_type` specifies the return type for the function. If omitted it will be inferred from the type annotation.
 - `when_used` specifies when this serializer should be used. Accepts a string with values 'always',
@@ -599,7 +599,7 @@ print(OuterModel(user=user).model_dump(serialize_as_any=False))  # (2)!
 
 #### Overriding the `serialize_as_any` default (False)
 
-You can override the default setting for `serialize_as_any` by configuring a subclass of `BaseModel` that overrides the default for the `serialize_as_any` argument to `model_dump()` and `model_dump_json()`, and then use that as the base class (instead of `pydantic.BaseModel`) for any model you want to have this default behavior.
+You can override the default setting for `serialize_as_any` by configuring a subclass of `BaseModel` that overrides the default for the `serialize_as_any` parameter to `model_dump()` and `model_dump_json()`, and then use that as the base class (instead of `pydantic.BaseModel`) for any model you want to have this default behavior.
 
 For example, you could do the following if you want to use duck-typing serialization by default:
 
@@ -665,7 +665,7 @@ print(m2)
 
 ## Advanced include and exclude
 
-The `model_dump` and `model_dump_json` methods support `include` and `exclude` arguments which can either be
+The `model_dump` and `model_dump_json` methods support `include` and `exclude` parameters which can either be
 sets or dictionaries. This allows nested selection of which fields to export:
 
 ```python
@@ -808,7 +808,7 @@ The same holds for the `model_dump_json` method.
 
 ### Model- and field-level include and exclude
 
-In addition to the explicit arguments `exclude` and `include` passed to `model_dump` and `model_dump_json` methods,
+In addition to the explicit parameters `exclude` and `include` passed to `model_dump` and `model_dump_json` methods,
 we can also pass the `exclude: bool` arguments directly to the `Field` constructor:
 
 Setting `exclude` on the field constructor (`Field(exclude=True)`) takes priority over the
@@ -843,7 +843,7 @@ print(t.model_dump(include={'id': True, 'value': True}))  # (1)!
 1. `value` excluded from the output because it excluded in `Field`.
 
 That being said, setting `exclude` on the field constructor (`Field(exclude=True)`) does not take priority
-over the `exclude_unset`, `exclude_none`, and `exclude_default` arguments on `model_dump` and `model_dump_json`:
+over the `exclude_unset`, `exclude_none`, and `exclude_default` parameters on `model_dump` and `model_dump_json`:
 
 ```python
 from typing import Optional
@@ -875,7 +875,7 @@ print(person.model_dump(exclude_defaults=True))  # (3)!
 ## Serialization Context
 
 You can pass a context object to the serialization methods which can be accessed from the `info`
-argument to decorated serializer functions. This is useful when you need to dynamically update the
+parameter to decorated serializer functions. This is useful when you need to dynamically update the
 serialization behavior during runtime. For example, if you wanted a field to be dumped depending on
 a dynamically controllable set of allowed values, this could be done by passing the allowed values
 by context:
