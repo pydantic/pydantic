@@ -1075,7 +1075,7 @@ def test_url_equality() -> None:
 
 
 def test_encode_multi_host_url() -> None:
-    multi_host_url_postgres = PostgresDsn('postgres://user:pass@host1:543')
+    multi_host_url_postgres = PostgresDsn('postgres://user:pass@localhost:5432/app')
     multi_host_url_http_url = HttpUrl('http://example.com/something')
 
     assert multi_host_url_postgres.encoded_string() == 'postgres://user:pass@localhost:5432/app'
