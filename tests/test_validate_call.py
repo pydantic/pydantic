@@ -1258,3 +1258,19 @@ def test_uses_local_ns():
         assert bar({'z': 1}) == M2(z=1)
 
     foo()
+
+
+# The class needs to be defined at the module level
+# For 'DeferBuildClass' to resolve:
+class DeferBuildClass(BaseModel):
+    @classmethod
+    @validate_call(config={'defer_build': True})
+    def cls_meth(cls, x: int) -> 'DeferBuildClass':
+        return DeferBuildClass()
+
+
+def test_validate_call_defer_build() -> None:
+    DeferBuildClass.cls_meth(x=1)
+
+    with pytest.raises(ValidationError):
+        DeferBuildClass.cls_meth(x='not_an_int')
