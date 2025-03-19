@@ -43,6 +43,7 @@ from pydantic import (
     TypeAdapter,
     ValidationError,
     ValidationInfo,
+    computed_field,
     constr,
     field_validator,
 )
@@ -126,6 +127,28 @@ def test_recursive_repr() -> None:
     b = B(a=a)
 
     assert re.match(r"B\(a=A\(a='<Recursion on A with id=\d+>'\)\)", repr(b)) is not None
+
+
+def test_self_reference_cached_property_repr() -> None:
+    class Model(BaseModel):
+        parent: 'Model | None' = None
+        children: 'list[Model]' = []
+
+        @computed_field
+        @cached_property
+        def prop(self) -> bool:
+            return True
+
+    foo = Model()
+    bar = Model()
+
+    foo.children.append(bar)
+    bar.parent = foo
+
+    assert (
+        str(foo)
+        == 'parent=None children=[Model(parent=Model(parent=None, children=[...], prop=True), children=[], prop=True)] prop=True'
+    )
 
 
 def test_default_factory_field():
