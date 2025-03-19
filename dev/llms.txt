@@ -12,7 +12,7 @@ Pydantic
 
 [![license](https://img.shields.io/github/license/pydantic/pydantic.svg)](https://github.com/pydantic/pydantic/blob/main/LICENSE)
 
-Documentation for development version: [87cb27f](https://github.com/pydantic/pydantic/commit/87cb27f5fb8ce6436483e75a1d9714a59f10a853).
+Documentation for development version: [69b2b63](https://github.com/pydantic/pydantic/commit/69b2b63aacfd2dee4a48a82ea303efbf710f11be).
 
 Pydantic is the most widely used data validation library for Python.
 
@@ -8041,6 +8041,13 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         return f'{self.__repr_name__()}({self.__repr_str__(", ")})'
 
     def __repr_args__(self) -> _repr.ReprArgs:
+        # Eagerly create the repr of computed fields, as this may trigger access of cached properties and as such
+        # modify the instance's `__dict__`. If we don't do it now, it could happen when iterating over the `__dict__`
+        # below if the instance happens to be referenced in a field, and would modify the `__dict__` size *during* iteration.
+        computed_fields_repr_args = [
+            (k, getattr(self, k)) for k, v in self.__pydantic_computed_fields__.items() if v.repr
+        ]
+
         for k, v in self.__dict__.items():
             field = self.__pydantic_fields__.get(k)
             if field and field.repr:
@@ -8059,7 +8066,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         if pydantic_extra is not None:
             yield from ((k, v) for k, v in pydantic_extra.items())
-        yield from ((k, getattr(self, k)) for k, v in self.__pydantic_computed_fields__.items() if v.repr)
+        yield from computed_fields_repr_args
 
     # take logic from `_repr.Representation` without the side effects of inheritance, see #5740
     __repr_name__ = _repr.Representation.__repr_name__

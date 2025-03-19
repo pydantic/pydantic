@@ -5108,7 +5108,14 @@ is set to <code>'allow'</code>.</p>
 <span class="normal">1626</span>
 <span class="normal">1627</span>
 <span class="normal">1628</span>
-<span class="normal">1629</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">BaseModel</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">_model_construction</span><span class="o">.</span><span class="n">ModelMetaclass</span><span class="p">):</span>
+<span class="normal">1629</span>
+<span class="normal">1630</span>
+<span class="normal">1631</span>
+<span class="normal">1632</span>
+<span class="normal">1633</span>
+<span class="normal">1634</span>
+<span class="normal">1635</span>
+<span class="normal">1636</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">BaseModel</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">_model_construction</span><span class="o">.</span><span class="n">ModelMetaclass</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;!!! abstract &quot;Usage Documentation&quot;</span>
 <span class="sd">        [Models](../concepts/models.md)</span>
 
@@ -6195,6 +6202,13 @@ is set to <code>'allow'</code>.</p>
         <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">__repr_name__</span><span class="p">()</span><span class="si">}</span><span class="s1">(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">__repr_str__</span><span class="p">(</span><span class="s2">&quot;, &quot;</span><span class="p">)</span><span class="si">}</span><span class="s1">)&#39;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">__repr_args__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_repr</span><span class="o">.</span><span class="n">ReprArgs</span><span class="p">:</span>
+        <span class="c1"># Eagerly create the repr of computed fields, as this may trigger access of cached properties and as such</span>
+        <span class="c1"># modify the instance&#39;s `__dict__`. If we don&#39;t do it now, it could happen when iterating over the `__dict__`</span>
+        <span class="c1"># below if the instance happens to be referenced in a field, and would modify the `__dict__` size *during* iteration.</span>
+        <span class="n">computed_fields_repr_args</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">))</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__pydantic_computed_fields__</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">v</span><span class="o">.</span><span class="n">repr</span>
+        <span class="p">]</span>
+
         <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="n">field</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__pydantic_fields__</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">field</span> <span class="ow">and</span> <span class="n">field</span><span class="o">.</span><span class="n">repr</span><span class="p">:</span>
@@ -6213,7 +6227,7 @@ is set to <code>'allow'</code>.</p>
 
         <span class="k">if</span> <span class="n">pydantic_extra</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">yield from</span> <span class="p">((</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">pydantic_extra</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
-        <span class="k">yield from</span> <span class="p">((</span><span class="n">k</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">))</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__pydantic_computed_fields__</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">v</span><span class="o">.</span><span class="n">repr</span><span class="p">)</span>
+        <span class="k">yield from</span> <span class="n">computed_fields_repr_args</span>
 
     <span class="c1"># take logic from `_repr.Representation` without the side effects of inheritance, see #5740</span>
     <span class="n">__repr_name__</span> <span class="o">=</span> <span class="n">_repr</span><span class="o">.</span><span class="n">Representation</span><span class="o">.</span><span class="n">__repr_name__</span>
@@ -9931,14 +9945,7 @@ validators <a href="https://docs.pydantic.dev/2.9/concepts/validators/#field-val
 
             <details class="quote">
               <summary>Source code in <code>pydantic/main.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1665</span>
-<span class="normal">1666</span>
-<span class="normal">1667</span>
-<span class="normal">1668</span>
-<span class="normal">1669</span>
-<span class="normal">1670</span>
-<span class="normal">1671</span>
-<span class="normal">1672</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1672</span>
 <span class="normal">1673</span>
 <span class="normal">1674</span>
 <span class="normal">1675</span>
@@ -10028,7 +10035,14 @@ validators <a href="https://docs.pydantic.dev/2.9/concepts/validators/#field-val
 <span class="normal">1759</span>
 <span class="normal">1760</span>
 <span class="normal">1761</span>
-<span class="normal">1762</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">create_model</span><span class="p">(</span>  <span class="c1"># noqa: C901</span>
+<span class="normal">1762</span>
+<span class="normal">1763</span>
+<span class="normal">1764</span>
+<span class="normal">1765</span>
+<span class="normal">1766</span>
+<span class="normal">1767</span>
+<span class="normal">1768</span>
+<span class="normal">1769</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">create_model</span><span class="p">(</span>  <span class="c1"># noqa: C901</span>
     <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="o">/</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
