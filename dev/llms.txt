@@ -12,7 +12,7 @@ Pydantic
 
 [![license](https://img.shields.io/github/license/pydantic/pydantic.svg)](https://github.com/pydantic/pydantic/blob/main/LICENSE)
 
-Documentation for development version: [a2846da](https://github.com/pydantic/pydantic/commit/a2846da63905181ad3c98b2c87a68165e0193233).
+Documentation for development version: [7b8fd9a](https://github.com/pydantic/pydantic/commit/7b8fd9a4f05300bcdd8eb751a9de0dd5094b7510).
 
 Pydantic is the most widely used data validation library for Python.
 
@@ -52455,6 +52455,63 @@ docker service create --name pydantic-with-secrets --secret my_secret_data pydan
 ```
 
 
+AWS Secrets Manager
+-------------------
+
+You must set one parameter:
+
+* `secret_id`: The AWS secret id
+
+You must have the same naming convention in the key value in secret as in the field name. For example, if the key in secret is named `SqlServerPassword`, the field name must be the same. You can use an alias too.
+
+In AWS Secrets Manager, nested models are supported with the `--` separator in the key name. For example, `SqlServer--Password`.
+
+Arrays (e.g. `MySecret--0`, `MySecret--1`) are not supported.
+
+```
+import os
+
+from pydantic import BaseModel
+
+from pydantic_settings import (
+    AWSSecretsManagerSettingsSource,
+    BaseSettings,
+    PydanticBaseSettingsSource,
+)
+
+
+class SubModel(BaseModel):
+    a: str
+
+
+class AWSSecretsManagerSettings(BaseSettings):
+    foo: str
+    bar: int
+    sub: SubModel
+
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        aws_secrets_manager_settings = AWSSecretsManagerSettingsSource(
+            settings_cls,
+            os.environ['AWS_SECRETS_MANAGER_SECRET_ID'],
+        )
+        return (
+            init_settings,
+            env_settings,
+            dotenv_settings,
+            file_secret_settings,
+            aws_secrets_manager_settings,
+        )
+
+```
+
 Azure Key Vault
 ---------------
 
@@ -52970,6 +53027,10 @@ API Documentation
 
 This is the primary way of converting a model to a dictionary. Sub-models will be recursively converted to dictionaries.
 
+By default, the output may contain non-JSON-serializable Python objects. The `mode` argument can be specified as `'json'` to ensure that the output only contains JSON serializable types. Other parameters exist to include or exclude fields, [including nested fields](#advanced-include-and-exclude), or to further customize the serialization behaviour.
+
+See the available parameters for more information.
+
 Note
 
 The one exception to sub-models being converted to dictionaries is that [`RootModel`](../models/#rootmodel-and-custom-root-types)
@@ -53126,7 +53187,7 @@ API Documentation
 The `.model_dump_json()` method serializes a model directly to a JSON-encoded string
 that is equivalent to the result produced by [`.model_dump()`](#modelmodel_dump).
 
-See arguments for more information.
+See the available parameters for more information.
 
 Note
 
@@ -53638,7 +53699,7 @@ See more about the differences in this [active issue](https://github.com/pydanti
 
 #### Overriding the `serialize_as_any` default (False)
 
-You can override the default setting for `serialize_as_any` by configuring a subclass of `BaseModel` that overrides the default for the `serialize_as_any` argument to `model_dump()` and `model_dump_json()`, and then use that as the base class (instead of `pydantic.BaseModel`) for any model you want to have this default behavior.
+You can override the default setting for `serialize_as_any` by configuring a subclass of `BaseModel` that overrides the default for the `serialize_as_any` parameter to `model_dump()` and `model_dump_json()`, and then use that as the base class (instead of `pydantic.BaseModel`) for any model you want to have this default behavior.
 
 For example, you could do the following if you want to use duck-typing serialization by default:
 
@@ -53708,7 +53769,7 @@ print(m2)
 Advanced include and exclude
 ----------------------------
 
-The `model_dump` and `model_dump_json` methods support `include` and `exclude` arguments which can either be
+The `model_dump` and `model_dump_json` methods support `include` and `exclude` parameters which can either be
 sets or dictionaries. This allows nested selection of which fields to export:
 
 ```
@@ -53853,7 +53914,7 @@ The same holds for the `model_dump_json` method.
 
 ### Model- and field-level include and exclude
 
-In addition to the explicit arguments `exclude` and `include` passed to `model_dump` and `model_dump_json` methods,
+In addition to the explicit `exclude` and `include` arguments passed to `model_dump` and `model_dump_json` methods,
 we can also pass the `exclude: bool` arguments directly to the `Field` constructor:
 
 Setting `exclude` on the field constructor (`Field(exclude=True)`) takes priority over the
@@ -53950,7 +54011,7 @@ Serialization Context
 ---------------------
 
 You can pass a context object to the serialization methods which can be accessed from the `info`
-argument to decorated serializer functions. This is useful when you need to dynamically update the
+parameter to decorated serializer functions. This is useful when you need to dynamically update the
 serialization behavior during runtime. For example, if you wanted a field to be dumped depending on
 a dynamically controllable set of allowed values, this could be done by passing the allowed values
 by context:

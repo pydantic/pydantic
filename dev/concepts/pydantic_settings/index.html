@@ -1514,6 +1514,15 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
+  <a href="#aws-secrets-manager" class="md-nav__link">
+    <span class="md-ellipsis">
+      AWS Secrets Manager
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#azure-key-vault" class="md-nav__link">
     <span class="md-ellipsis">
       Azure Key Vault
@@ -3786,6 +3795,15 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
+  <a href="#aws-secrets-manager" class="md-nav__link">
+    <span class="md-ellipsis">
+      AWS Secrets Manager
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#azure-key-vault" class="md-nav__link">
     <span class="md-ellipsis">
       Azure Key Vault
@@ -5491,6 +5509,55 @@ as the target mount point. If you want to use a different location, change <code
 <p>Last, run your application inside a Docker container and supply your newly created secret
 <div class="language-bash highlight"><pre><span></span><code>docker<span class="w"> </span>service<span class="w"> </span>create<span class="w"> </span>--name<span class="w"> </span>pydantic-with-secrets<span class="w"> </span>--secret<span class="w"> </span>my_secret_data<span class="w"> </span>pydantic-app:latest
 </code></pre></div></p>
+<h2 id="aws-secrets-manager">AWS Secrets Manager<a class="headerlink" href="#aws-secrets-manager" title="Permanent link">&para;</a></h2>
+<p>You must set one parameter:</p>
+<ul>
+<li><code>secret_id</code>: The AWS secret id</li>
+</ul>
+<p>You must have the same naming convention in the key value in secret as in the field name. For example, if the key in secret is named <code>SqlServerPassword</code>, the field name must be the same. You can use an alias too.</p>
+<p>In AWS Secrets Manager, nested models are supported with the <code>--</code> separator in the key name. For example, <code>SqlServer--Password</code>.</p>
+<p>Arrays (e.g. <code>MySecret--0</code>, <code>MySecret--1</code>) are not supported.</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_settings</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">AWSSecretsManagerSettingsSource</span><span class="p">,</span>
+    <span class="n">BaseSettings</span><span class="p">,</span>
+    <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">SubModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">a</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">AWSSecretsManagerSettings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+    <span class="n">foo</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">bar</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">sub</span><span class="p">:</span> <span class="n">SubModel</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">settings_customise_sources</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">settings_cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">BaseSettings</span><span class="p">],</span>
+        <span class="n">init_settings</span><span class="p">:</span> <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+        <span class="n">env_settings</span><span class="p">:</span> <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+        <span class="n">dotenv_settings</span><span class="p">:</span> <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+        <span class="n">file_secret_settings</span><span class="p">:</span> <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">PydanticBaseSettingsSource</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+        <span class="n">aws_secrets_manager_settings</span> <span class="o">=</span> <span class="n">AWSSecretsManagerSettingsSource</span><span class="p">(</span>
+            <span class="n">settings_cls</span><span class="p">,</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;AWS_SECRETS_MANAGER_SECRET_ID&#39;</span><span class="p">],</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="n">init_settings</span><span class="p">,</span>
+            <span class="n">env_settings</span><span class="p">,</span>
+            <span class="n">dotenv_settings</span><span class="p">,</span>
+            <span class="n">file_secret_settings</span><span class="p">,</span>
+            <span class="n">aws_secrets_manager_settings</span><span class="p">,</span>
+        <span class="p">)</span>
+</code></pre></div>
 <h2 id="azure-key-vault">Azure Key Vault<a class="headerlink" href="#azure-key-vault" title="Permanent link">&para;</a></h2>
 <p>You must set two parameters:</p>
 <ul>

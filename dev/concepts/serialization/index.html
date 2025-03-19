@@ -3334,6 +3334,8 @@ to refer to both of these situations, even though it does not always imply conve
 <p><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_dump"><code>pydantic.main.BaseModel.model_dump</code></a><br></p>
 </details>
 <p>This is the primary way of converting a model to a dictionary. Sub-models will be recursively converted to dictionaries.</p>
+<p>By default, the output may contain non-JSON-serializable Python objects. The <code>mode</code> argument can be specified as <code>'json'</code> to ensure that the output only contains JSON serializable types. Other parameters exist to include or exclude fields, <a href="#advanced-include-and-exclude">including nested fields</a>, or to further customize the serialization behaviour.</p>
+<p>See the available <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_dump">parameters</a> for more information.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>The one exception to sub-models being converted to dictionaries is that <a href="../models/#rootmodel-and-custom-root-types"><code>RootModel</code></a>
@@ -3483,7 +3485,7 @@ done recursively.</p>
 </details>
 <p>The <code>.model_dump_json()</code> method serializes a model directly to a JSON-encoded string
 that is equivalent to the result produced by <a href="#modelmodel_dump"><code>.model_dump()</code></a>.</p>
-<p>See <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_dump_json">arguments</a> for more information.</p>
+<p>See the available <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_dump_json">parameters</a> for more information.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Pydantic can serialize many commonly used types to JSON that would otherwise be incompatible with a simple
@@ -3927,7 +3929,7 @@ There are a few nuanced differences that we're working to resolve, but for the m
 See more about the differences in this <a href="https://github.com/pydantic/pydantic/issues/9049">active issue</a></p>
 </div>
 <h4 id="overriding-the-serialize_as_any-default-false">Overriding the <code>serialize_as_any</code> default (False)<a class="headerlink" href="#overriding-the-serialize_as_any-default-false" title="Permanent link">&para;</a></h4>
-<p>You can override the default setting for <code>serialize_as_any</code> by configuring a subclass of <code>BaseModel</code> that overrides the default for the <code>serialize_as_any</code> argument to <code>model_dump()</code> and <code>model_dump_json()</code>, and then use that as the base class (instead of <code>pydantic.BaseModel</code>) for any model you want to have this default behavior.</p>
+<p>You can override the default setting for <code>serialize_as_any</code> by configuring a subclass of <code>BaseModel</code> that overrides the default for the <code>serialize_as_any</code> parameter to <code>model_dump()</code> and <code>model_dump_json()</code>, and then use that as the base class (instead of <code>pydantic.BaseModel</code>) for any model you want to have this default behavior.</p>
 <p>For example, you could do the following if you want to use duck-typing serialization by default:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
 
@@ -3985,7 +3987,7 @@ See more about the differences in this <a href="https://github.com/pydantic/pyda
 <span class="c1">#&gt; a=&#39;hello&#39; b=123</span>
 </code></pre></div>
 <h2 id="advanced-include-and-exclude">Advanced include and exclude<a class="headerlink" href="#advanced-include-and-exclude" title="Permanent link">&para;</a></h2>
-<p>The <code>model_dump</code> and <code>model_dump_json</code> methods support <code>include</code> and <code>exclude</code> arguments which can either be
+<p>The <code>model_dump</code> and <code>model_dump_json</code> methods support <code>include</code> and <code>exclude</code> parameters which can either be
 sets or dictionaries. This allows nested selection of which fields to export:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">SecretStr</span>
 
@@ -4119,7 +4121,7 @@ To exclude a field from <strong>every</strong> member of a list or tuple, the di
 </code></pre></div>
 <p>The same holds for the <code>model_dump_json</code> method.</p>
 <h3 id="model-and-field-level-include-and-exclude">Model- and field-level include and exclude<a class="headerlink" href="#model-and-field-level-include-and-exclude" title="Permanent link">&para;</a></h3>
-<p>In addition to the explicit arguments <code>exclude</code> and <code>include</code> passed to <code>model_dump</code> and <code>model_dump_json</code> methods,
+<p>In addition to the explicit <code>exclude</code> and <code>include</code> arguments passed to <code>model_dump</code> and <code>model_dump_json</code> methods,
 we can also pass the <code>exclude: bool</code> arguments directly to the <code>Field</code> constructor:</p>
 <p>Setting <code>exclude</code> on the field constructor (<code>Field(exclude=True)</code>) takes priority over the
 <code>exclude</code>/<code>include</code> on <code>model_dump</code> and <code>model_dump_json</code>:</p>
@@ -4212,7 +4214,7 @@ over the <code>exclude_unset</code>, <code>exclude_none</code>, and <code>exclud
 </div>
 <h2 id="serialization-context">Serialization Context<a class="headerlink" href="#serialization-context" title="Permanent link">&para;</a></h2>
 <p>You can pass a context object to the serialization methods which can be accessed from the <code>info</code>
-argument to decorated serializer functions. This is useful when you need to dynamically update the
+parameter to decorated serializer functions. This is useful when you need to dynamically update the
 serialization behavior during runtime. For example, if you wanted a field to be dumped depending on
 a dynamically controllable set of allowed values, this could be done by passing the allowed values
 by context:</p>
