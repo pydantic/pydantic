@@ -21,7 +21,7 @@ serialized, and exported in a number of ways.
 
 This is the primary way of converting a model to a dictionary. Sub-models will be recursively converted to dictionaries.
 
-By default, the output may contain non-JSON-serializable Python objects. The `mode` argument can be specified as `"json"` to ensure that the output only contains JSON serializable types. Other parameters exist to include or exclude fields, [including nested fields](#advanced-include-and-exclude), or to further customize the serialization behaviour.
+By default, the output may contain non-JSON-serializable Python objects. The `mode` argument can be specified as `'json'` to ensure that the output only contains JSON serializable types. Other parameters exist to include or exclude fields, [including nested fields](#advanced-include-and-exclude), or to further customize the serialization behaviour.
 
 See the available [parameters][pydantic.main.BaseModel.model_dump] for more information.
 
@@ -234,7 +234,7 @@ print(Model(x='test value').model_dump_json())
 In addition, [`PlainSerializer`][pydantic.functional_serializers.PlainSerializer] and
 [`WrapSerializer`][pydantic.functional_serializers.WrapSerializer] enable you to use a function to modify the output of serialization.
 
-Both serializers accept optional parameters including:
+Both serializers accept optional arguments including:
 
 - `return_type` specifies the return type for the function. If omitted it will be inferred from the type annotation.
 - `when_used` specifies when this serializer should be used. Accepts a string with values 'always',
@@ -808,7 +808,7 @@ The same holds for the `model_dump_json` method.
 
 ### Model- and field-level include and exclude
 
-In addition to the explicit parameters `exclude` and `include` passed to `model_dump` and `model_dump_json` methods,
+In addition to the explicit `exclude` and `include` arguments passed to `model_dump` and `model_dump_json` methods,
 we can also pass the `exclude: bool` arguments directly to the `Field` constructor:
 
 Setting `exclude` on the field constructor (`Field(exclude=True)`) takes priority over the
