@@ -1062,6 +1062,8 @@ def test_specialized_urls() -> None:
     assert http_url2.path == '/something'
     assert http_url2.username is None
     assert http_url2.password is None
+    assert http_url.encoded_string() == 'http://example.com/something'
+    assert http_url2.encoded_string() == 'http://example.com/something'
 
 
 def test_url_equality() -> None:
@@ -1070,6 +1072,14 @@ def test_url_equality() -> None:
     assert PostgresDsn('postgres://user:pass@localhost:5432/app') == PostgresDsn(
         'postgres://user:pass@localhost:5432/app'
     )
+
+
+def test_encode_multi_host_url() -> None:
+    multi_host_url_postgres = PostgresDsn('postgres://user:pass@localhost:5432/app')
+    multi_host_url_http_url = HttpUrl('http://example.com/something')
+
+    assert multi_host_url_postgres.encoded_string() == 'postgres://user:pass@localhost:5432/app'
+    assert multi_host_url_http_url.encoded_string() == 'http://example.com/something'
 
 
 def test_equality_independent_of_init() -> None:
