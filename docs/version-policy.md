@@ -77,7 +77,6 @@ warnings.filterwarnings('ignore', category=PydanticExperimentalWarning)
 
     c. As a last step, the experimental version of the feature is entirely removed from the codebase.
 
-
 If the feature is unsuccessful or unpopular, it's removed with little notice. A stub will remain in the location of the deprecated feature with an error message.
 
 Thanks to [streamlit](https://docs.streamlit.io/develop/quick-reference/prerelease) for the inspiration for the lifecycle and naming conventions of our new experimental feature patterns.

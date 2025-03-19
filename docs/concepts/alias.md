@@ -102,7 +102,6 @@ want to specify the alias for each field individually.
     [`to_camel`][pydantic.alias_generators.to_camel]<br>
     [`to_snake`][pydantic.alias_generators.to_snake]<br>
 
-
 ### Using a callable
 
 Here's a basic example using a callable:
@@ -131,7 +130,6 @@ print(t.model_dump(by_alias=True))
 ??? api "API Documentation"
 
     [`pydantic.aliases.AliasGenerator`][pydantic.aliases.AliasGenerator]<br>
-
 
 `AliasGenerator` is a class that allows you to specify multiple alias generators for a model.
 You can use an `AliasGenerator` to specify different alias generators for validation and serialization.

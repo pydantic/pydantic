@@ -10,7 +10,6 @@ Pydantic integrates with *devtools* by implementing the `__pretty__` method on m
 
 In particular `debug()` is useful when inspecting models:
 
-
 ```python {test="no-print-intercept"}
 from datetime import datetime
 
