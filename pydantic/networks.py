@@ -217,8 +217,7 @@ class _BaseUrl:
         """
         return self._url.unicode_string()
 
-    @property
-    def encoded(self) -> str:
+    def encoded_string(self) -> str:
         """The URL's encoded string representation via __str__().
 
         This returns the punycode-encoded host version of the URL as a string.
@@ -405,6 +404,13 @@ class _BaseMultiHostUrl:
             A list of dicts, each representing a host.
         '''
         return self._url.hosts()
+
+    def encoded_string(self) -> str:
+        """The URL's encoded string representation via __str__().
+
+        This returns the punycode-encoded host version of the URL as a string.
+        """
+        return str(self)
 
     def unicode_string(self) -> str:
         """The URL as a unicode string, unlike `__str__()` this will not punycode encode the hosts."""

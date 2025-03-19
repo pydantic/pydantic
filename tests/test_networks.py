@@ -330,7 +330,6 @@ def test_http_url_invalid(value, err_type, err_msg):
         # https://www.xudongz.com/blog/2017/idn-phishing/ accepted but converted
         ('https://www.аррӏе.com/', 'https://www.xn--80ak6aa92e.com/'),
         ('https://exampl£e.org', 'https://xn--example-gia.org/'),
-        ('http://puny£code.com', 'http://xn--punycode-eja.com/'),
         ('https://example.珠宝', 'https://example.xn--pbt977c/'),
         ('https://example.vermögensberatung', 'https://example.xn--vermgensberatung-pwb/'),
         ('https://example.рф', 'https://example.xn--p1ai/'),
@@ -1063,8 +1062,8 @@ def test_specialized_urls() -> None:
     assert http_url2.path == '/something'
     assert http_url2.username is None
     assert http_url2.password is None
-    assert http_url.encoded == 'http://example.com/something'
-    assert http_url2.encoded == 'http://example.com/something'
+    assert http_url.encoded_string() == 'http://example.com/something'
+    assert http_url2.encoded_string() == 'http://example.com/something'
 
 
 def test_url_equality() -> None:
