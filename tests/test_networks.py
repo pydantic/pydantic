@@ -1072,6 +1072,11 @@ def test_url_equality() -> None:
     assert PostgresDsn('postgres://user:pass@localhost:5432/app') == PostgresDsn(
         'postgres://user:pass@localhost:5432/app'
     )
+    assert (
+        PostgresDsn('postgres://user:pass@localhost:5432/app').encoded_string()
+        == 'postgres://user:pass@localhost:5432/app'
+    )
+    assert HttpUrl('http://example.com/something').encoded_string() == 'http://example.com/something'
 
 
 def test_equality_independent_of_init() -> None:
