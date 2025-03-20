@@ -213,6 +213,13 @@ def test_allow_extra_invalid():
             )
         )
 
+    with pytest.raises(SchemaError, match='extras_keys_schema can only be used if extra_behavior=allow'):
+        SchemaValidator(
+            schema=core_schema.model_fields_schema(
+                fields={}, extras_keys_schema=core_schema.int_schema(), extra_behavior='ignore'
+            )
+        )
+
 
 def test_allow_extra_wrong():
     with pytest.raises(SchemaError, match='Invalid extra_behavior: `wrong`'):
@@ -1756,6 +1763,24 @@ def test_extra_behavior_ignore(config: Union[core_schema.CoreConfig, None], sche
         }
     ]
     assert 'not_f' not in m
+
+
+def test_extra_behavior_allow_keys_validation() -> None:
+    v = SchemaValidator(
+        core_schema.model_fields_schema(
+            {}, extra_behavior='allow', extras_keys_schema=core_schema.str_schema(max_length=3)
+        )
+    )
+
+    m, model_extra, fields_set = v.validate_python({'ext': 123})
+    assert m == {}
+    assert model_extra == {'ext': 123}
+    assert fields_set == {'ext'}
+
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python({'extra_too_long': 123})
+
+    assert exc_info.value.errors()[0]['type'] == 'string_too_long'
 
 
 @pytest.mark.parametrize('config_by_alias', [None, True, False])
