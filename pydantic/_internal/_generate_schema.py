@@ -2506,13 +2506,24 @@ def resolve_original_schema(schema: CoreSchema, definitions: _Definitions) -> Co
         return schema
 
 
-def _can_be_inlined(def_ref: core_schema.DefinitionReferenceSchema) -> bool:
-    """Return whether the `'definition-ref'` schema can be replaced by its definition.
+def _inlining_behavior(
+    def_ref: core_schema.DefinitionReferenceSchema,
+) -> Literal['inline', 'keep', 'preserve_metadata']:
+    """Determine the inlining behavior of the `'definition-ref'` schema.
 
-    This is true if no `'serialization'` schema is attached, or if it has at least one metadata entry.
-    Inlining such schemas would remove the `'serialization'` schema or metadata.
+    - If no `'serialization'` schema and no metadata is attached, the schema can safely be inlined.
+    - If it has metadata but only related to the deferred discriminator application, it can be inlined
+      provided that such metadata is kept.
+    - Otherwise, the schema should not be inlined. Doing so would remove the `'serialization'` schema or metadata.
     """
-    return 'serialization' not in def_ref and not def_ref.get('metadata')
+    if 'serialization' in def_ref:
+        return 'keep'
+    metadata = def_ref.get('metadata')
+    if not metadata:
+        return 'inline'
+    if len(metadata) == 1 and 'pydantic_internal_union_discriminator' in metadata:
+        return 'preserve_metadata'
+    return 'keep'
 
 
 class _Definitions:
@@ -2610,21 +2621,35 @@ class _Definitions:
         remaining_defs: dict[str, CoreSchema] = {}
 
         for ref, inlinable_def_ref in gather_result['collected_references'].items():
-            if inlinable_def_ref is not None and _can_be_inlined(inlinable_def_ref):
-                # `ref` was encountered, and only once:
-                #  - `inlinable_def_ref` is a `'definition-ref'` schema and is guaranteed to be
-                #    the only one. Transform it into the definition it points to.
-                #  - Do not store the definition in the `remaining_defs`.
-                inlinable_def_ref.clear()  # pyright: ignore[reportAttributeAccessIssue]
-                inlinable_def_ref.update(self._resolve_definition(ref, definitions))  # pyright: ignore
+            if inlinable_def_ref is not None and (inlining_behavior := _inlining_behavior(inlinable_def_ref)) != 'keep':
+                if inlining_behavior == 'inline':
+                    # `ref` was encountered, and only once:
+                    #  - `inlinable_def_ref` is a `'definition-ref'` schema and is guaranteed to be
+                    #    the only one. Transform it into the definition it points to.
+                    #  - Do not store the definition in the `remaining_defs`.
+                    inlinable_def_ref.clear()  # pyright: ignore[reportAttributeAccessIssue]
+                    inlinable_def_ref.update(self._resolve_definition(ref, definitions))  # pyright: ignore
+                elif inlining_behavior == 'preserve_metadata':
+                    # `ref` was encountered, and only once, but contains discriminator metadata.
+                    # We will do the same thing as if `inlining_behavior` was `'inline'`, but make
+                    # sure to keep the metadata for the deferred discriminator application logic below.
+                    meta = inlinable_def_ref.pop('metadata')
+                    inlinable_def_ref.clear()  # pyright: ignore[reportAttributeAccessIssue]
+                    inlinable_def_ref.update(self._resolve_definition(ref, definitions))  # pyright: ignore
+                    inlinable_def_ref['metadata'] = meta
             else:
-                # `ref` was encountered, at least two times:
+                # `ref` was encountered, at least two times (or only once, but with metadata or a serialization schema):
                 # - Do not inline the `'definition-ref'` schemas (they are not provided in the gather result anyway).
                 # - Store the the definition in the `remaining_defs`
                 remaining_defs[ref] = self._resolve_definition(ref, definitions)
 
         for cs in gather_result['deferred_discriminator_schemas']:
-            discriminator = cs['metadata']['pydantic_internal_union_discriminator']  # pyright: ignore[reportTypedDictNotRequiredAccess]
+            discriminator: str | None = cs['metadata'].pop('pydantic_internal_union_discriminator', None)  # pyright: ignore[reportTypedDictNotRequiredAccess]
+            if discriminator is None:
+                # This can happen in rare scenarios, when a deferred schema is present multiple times in the
+                # gather result (e.g. when using the `Sequence` type -- see `test_sequence_discriminated_union()`).
+                # In this case, a previous loop iteration applied the discriminator and so we can just skip it here.
+                continue
             applied = _discriminated_union.apply_discriminator(cs.copy(), discriminator, remaining_defs)
             # Mutate the schema directly to have the discriminator applied
             cs.clear()  # pyright: ignore[reportAttributeAccessIssue]
