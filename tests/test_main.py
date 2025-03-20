@@ -3104,6 +3104,16 @@ def test_extra_validator_scalar() -> None:
     }
 
 
+def test_extra_validator_keys() -> None:
+    class Model(BaseModel, extra='allow'):
+        __pydantic_extra__: dict[Annotated[str, Field(max_length=3)], int]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(extra_too_long=1)
+
+    assert exc_info.value.errors()[0]['type'] == 'string_too_long'
+
+
 def test_extra_validator_field() -> None:
     class Model(BaseModel, extra='allow'):
         # use Field(init=False) to ensure this is not treated as a field by dataclass_transform
