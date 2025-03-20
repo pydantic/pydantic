@@ -34,6 +34,7 @@ pub struct ModelFieldsValidator {
     model_name: String,
     extra_behavior: ExtraBehavior,
     extras_validator: Option<Box<CombinedValidator>>,
+    extras_keys_validator: Option<Box<CombinedValidator>>,
     strict: bool,
     from_attributes: bool,
     loc_by_alias: bool,
@@ -60,6 +61,11 @@ impl BuildValidator for ModelFieldsValidator {
         let extras_validator = match (schema.get_item(intern!(py, "extras_schema"))?, &extra_behavior) {
             (Some(v), ExtraBehavior::Allow) => Some(Box::new(build_validator(&v, config, definitions)?)),
             (Some(_), _) => return py_schema_err!("extras_schema can only be used if extra_behavior=allow"),
+            (_, _) => None,
+        };
+        let extras_keys_validator = match (schema.get_item(intern!(py, "extras_keys_schema"))?, &extra_behavior) {
+            (Some(v), ExtraBehavior::Allow) => Some(Box::new(build_validator(&v, config, definitions)?)),
+            (Some(_), _) => return py_schema_err!("extras_keys_schema can only be used if extra_behavior=allow"),
             (_, _) => None,
         };
         let model_name: String = schema
@@ -98,6 +104,7 @@ impl BuildValidator for ModelFieldsValidator {
             model_name,
             extra_behavior,
             extras_validator,
+            extras_keys_validator,
             strict,
             from_attributes,
             loc_by_alias: config.get_as(intern!(py, "loc_by_alias"))?.unwrap_or(true),
@@ -244,6 +251,7 @@ impl Validator for ModelFieldsValidator {
                 fields_set_vec: &'a mut Vec<Py<PyString>>,
                 extra_behavior: ExtraBehavior,
                 extras_validator: Option<&'a CombinedValidator>,
+                extras_keys_validator: Option<&'a CombinedValidator>,
                 state: &'a mut ValidationState<'s, 'py>,
             }
 
@@ -294,7 +302,22 @@ impl Validator for ModelFieldsValidator {
                             }
                             ExtraBehavior::Ignore => {}
                             ExtraBehavior::Allow => {
-                                let py_key = either_str.as_py_string(self.py, self.state.cache_str());
+                                let py_key = match self.extras_keys_validator {
+                                    Some(validator) => {
+                                        match validator.validate(self.py, raw_key.borrow_input(), self.state) {
+                                            Ok(value) => value.downcast_bound::<PyString>(self.py)?.clone(),
+                                            Err(ValError::LineErrors(line_errors)) => {
+                                                for err in line_errors {
+                                                    self.errors.push(err.with_outer_location(raw_key.clone()));
+                                                }
+                                                continue;
+                                            }
+                                            Err(err) => return Err(err),
+                                        }
+                                    }
+                                    None => either_str.as_py_string(self.py, self.state.cache_str()),
+                                };
+
                                 if let Some(validator) = self.extras_validator {
                                     match validator.validate(self.py, value, self.state) {
                                         Ok(value) => {
@@ -326,6 +349,7 @@ impl Validator for ModelFieldsValidator {
                 fields_set_vec: &mut fields_set_vec,
                 extra_behavior: self.extra_behavior,
                 extras_validator: self.extras_validator.as_deref(),
+                extras_keys_validator: self.extras_keys_validator.as_deref(),
                 state,
             })??;
 
