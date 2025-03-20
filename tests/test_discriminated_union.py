@@ -1,6 +1,7 @@
 import re
 import sys
 from collections.abc import Sequence
+from copy import deepcopy
 from dataclasses import dataclass
 from enum import Enum, IntEnum
 from types import SimpleNamespace
@@ -2172,3 +2173,29 @@ def test_discriminated_union_serializer() -> None:
     adapter = TypeAdapter(FooOrBarId)
     assert adapter.dump_python(FooId(1)) == {'tag': 'foo', '_id': 1}
     assert adapter.dump_python(BarId(2)) == {'tag': 'bar', '_id': 2}
+
+
+def test_deferred_discriminated_union_meta_key_removed() -> None:
+    """A regression encountered after the schema cleaning refactor.
+
+    Issue: https://github.com/pydantic/pydantic/issues/11587.
+    """
+
+    class Test(BaseModel):
+        disc: Literal['test']
+
+    class Base(BaseModel):
+        root: Test = Field(discriminator='disc')
+
+    base_schema = deepcopy(Base.__pydantic_core_schema__)
+
+    class Reference(BaseModel):
+        base: list[Base]
+
+    # With the new schema cleaning logic, the core schema of `Base` isn't deepcopied anymore
+    # when used in `Reference`. We were aware that theoretically, this could lead to issues
+    # where referenced core schemas could be mutated. This regression was an example of that.
+    # It happened because when processing deferred discriminators, we forgot to remove the
+    # `'pydantic_internal_union_discriminator'` meta key from the schemas. The schema cleaning
+    # logic of `Reference` would then re-apply the deferred discriminator logic for `Base`.
+    assert Base.__pydantic_core_schema__ == base_schema
