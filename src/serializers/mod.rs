@@ -239,7 +239,7 @@ impl SchemaSerializer {
 
 #[allow(clippy::too_many_arguments)]
 #[pyfunction]
-#[pyo3(signature = (value, *, indent = None, include = None, exclude = None, by_alias = None,
+#[pyo3(signature = (value, *, indent = None, include = None, exclude = None, by_alias = true,
     exclude_none = false, round_trip = false, timedelta_mode = "iso8601", bytes_mode = "utf8",
     inf_nan_mode = "constants", serialize_unknown = false, fallback = None, serialize_as_any = false,
     context = None))]
@@ -249,7 +249,7 @@ pub fn to_json(
     indent: Option<usize>,
     include: Option<&Bound<'_, PyAny>>,
     exclude: Option<&Bound<'_, PyAny>>,
-    by_alias: Option<bool>,
+    by_alias: bool,
     exclude_none: bool,
     round_trip: bool,
     timedelta_mode: &str,
@@ -265,7 +265,7 @@ pub fn to_json(
     let extra = state.extra(
         py,
         &SerMode::Json,
-        by_alias,
+        Some(by_alias),
         exclude_none,
         round_trip,
         serialize_unknown,
@@ -282,7 +282,7 @@ pub fn to_json(
 
 #[allow(clippy::too_many_arguments)]
 #[pyfunction]
-#[pyo3(signature = (value, *, include = None, exclude = None, by_alias = None, exclude_none = false, round_trip = false,
+#[pyo3(signature = (value, *, include = None, exclude = None, by_alias = true, exclude_none = false, round_trip = false,
     timedelta_mode = "iso8601", bytes_mode = "utf8", inf_nan_mode = "constants", serialize_unknown = false, fallback = None,
     serialize_as_any = false, context = None))]
 pub fn to_jsonable_python(
@@ -290,7 +290,7 @@ pub fn to_jsonable_python(
     value: &Bound<'_, PyAny>,
     include: Option<&Bound<'_, PyAny>>,
     exclude: Option<&Bound<'_, PyAny>>,
-    by_alias: Option<bool>,
+    by_alias: bool,
     exclude_none: bool,
     round_trip: bool,
     timedelta_mode: &str,
@@ -306,7 +306,7 @@ pub fn to_jsonable_python(
     let extra = state.extra(
         py,
         &SerMode::Json,
-        by_alias,
+        Some(by_alias),
         exclude_none,
         round_trip,
         serialize_unknown,
