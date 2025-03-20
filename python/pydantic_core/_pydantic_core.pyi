@@ -392,7 +392,10 @@ def to_json(
     indent: int | None = None,
     include: _IncEx | None = None,
     exclude: _IncEx | None = None,
-    by_alias: bool | None = None,
+    # Note: In Pydantic 2.11, the default value of `by_alias` on `SchemaSerializer` was changed from `True` to `None`,
+    # to be consistent with the Pydantic "dump" methods. However, the default of `True` was kept here for
+    # backwards compatibility. In Pydantic V3, `by_alias` is expected to default to `True` everywhere:
+    by_alias: bool = True,
     exclude_none: bool = False,
     round_trip: bool = False,
     timedelta_mode: Literal['iso8601', 'float'] = 'iso8601',
@@ -468,7 +471,10 @@ def to_jsonable_python(
     *,
     include: _IncEx | None = None,
     exclude: _IncEx | None = None,
-    by_alias: bool | None = None,
+    # Note: In Pydantic 2.11, the default value of `by_alias` on `SchemaSerializer` was changed from `True` to `None`,
+    # to be consistent with the Pydantic "dump" methods. However, the default of `True` was kept here for
+    # backwards compatibility. In Pydantic V3, `by_alias` is expected to default to `True` everywhere:
+    by_alias: bool = True,
     exclude_none: bool = False,
     round_trip: bool = False,
     timedelta_mode: Literal['iso8601', 'float'] = 'iso8601',
