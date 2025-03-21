@@ -125,6 +125,33 @@ JsonRef = NewType('JsonRef', str)
 CoreModeRef = tuple[CoreRef, JsonSchemaMode]
 JsonSchemaKeyT = TypeVar('JsonSchemaKeyT', bound=Hashable)
 
+# ##### Regex for Decimal JSON Schema Generation #####
+
+_DECIMAL_JSON_VALIDATION_MAX_DIGIT_LOOKAHEAD_PATTERN = (
+    r'(?=(?:\d(\.)?){{1,{max_digits}}}'  # Positive lookahead for max_digits and optional decimal place
+    r'(?(1)0*)$)'  # yes-pattern allowing trailing zeroes if the decimal place exists
+)
+
+_DECIMAL_JSON_SERIALIZATION_MAX_DIGIT_LOOKAHEAD_PATTERN = (
+    r'(?=(?:\d\.?){{1,{max_digits}}}$)'  # Positive lookahead for max_digits and optional decimal place
+)
+
+_DECIMAL_JSON_VALIDATION_PATTERN = (
+    r'^-?'  # Minus sign (optional)
+    r'0*'  # Allow leading zeroes
+    r'{max_digit_lookahead}'  # Substitution for max digit lookahead if required
+    r'\d{{1,{integer_places}}}'  # One or more integer digits
+    r'(?:\.\d{{0,{decimal_places}}}0*)?'  # Optional non-capturing group: decimal digits
+    r'$'
+)
+
+_DECIMAL_JSON_SERIALIZATION_PATTERN = (
+    r'^-?'  # Minus sign (optional)
+    r'{max_digit_lookahead}'  # Substitution for max digit lookahead if required
+    r'(?:0|[1-9]\d{{0,{integer_places}}})'  # Non-capturing group: Single zero OR non-zero digit and integer digits
+    r'(?:\.\d{{0,{decimal_places}}})?$'  # Optional non-capturing group: decimal digits
+)
+
 
 @dataclasses.dataclass(**_internal_dataclass.slots_true)
 class _DefinitionsRemapping:
@@ -668,7 +695,41 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        json_schema = self.str_schema(core_schema.str_schema())
+        max_digits = schema.get('max_digits')
+        decimal_places = schema.get('decimal_places')
+        str_schema = core_schema.str_schema()
+        # Only add a pattern if either max_digits or decimal_places is set
+        if max_digits is not None or decimal_places is not None:
+            max_digit_lookahead = ''
+            if self.mode == 'validation':
+                # Only set a max digit lookahead if max_digits is set
+                if max_digits is not None:
+                    max_digit_lookahead = _DECIMAL_JSON_VALIDATION_MAX_DIGIT_LOOKAHEAD_PATTERN.format(
+                        max_digits=max_digits
+                    )
+                integer_places = '' if max_digits is None or decimal_places is None else max_digits - decimal_places
+                decimal_regex_pattern = _DECIMAL_JSON_VALIDATION_PATTERN.format(
+                    max_digit_lookahead=max_digit_lookahead,
+                    integer_places=integer_places,
+                    decimal_places='' if decimal_places is None else decimal_places,
+                )
+                str_schema['pattern'] = re.compile(decimal_regex_pattern).pattern
+            elif self.mode == 'serialization':
+                if max_digits is not None:
+                    max_digit_lookahead = _DECIMAL_JSON_SERIALIZATION_MAX_DIGIT_LOOKAHEAD_PATTERN.format(
+                        max_digits=max_digits
+                    )
+                # For the serialization pattern we match the first integer digit separate from the rest, to account for
+                # this we want our integer_places argument to be one less than max_digits - decimal_places
+                integer_places = '' if max_digits is None or decimal_places is None else max_digits - decimal_places - 1
+                decimal_regex_pattern = _DECIMAL_JSON_SERIALIZATION_PATTERN.format(
+                    max_digit_lookahead=max_digit_lookahead,
+                    integer_places=integer_places,
+                    decimal_places='' if decimal_places is None else decimal_places,
+                )
+                str_schema['pattern'] = re.compile(decimal_regex_pattern).pattern
+        json_schema = self.str_schema(str_schema)
+
         if self.mode == 'validation':
             multiple_of = schema.get('multiple_of')
             le = schema.get('le')
