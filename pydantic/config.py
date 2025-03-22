@@ -3,7 +3,7 @@
 from __future__ import annotations as _annotations
 
 from re import Pattern
-from typing import TYPE_CHECKING, Any, Callable, Literal, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, Literal, TypeVar, Union, Unpack, overload
 
 from typing_extensions import TypeAlias, TypedDict
 
@@ -1139,7 +1139,15 @@ class ConfigDict(TypedDict, total=False):
 _TypeT = TypeVar('_TypeT', bound=type)
 
 
-def with_config(config: ConfigDict) -> Callable[[_TypeT], _TypeT]:
+@overload
+def with_config(config: ConfigDict) -> Callable[[_TypeT], _TypeT]: ...
+
+
+@overload
+def with_config(**config: Unpack[ConfigDict]) -> Callable[[_TypeT], _TypeT]: ...
+
+
+def with_config(config: ConfigDict | None = None, **kwargs: Any) -> Callable[[_TypeT], _TypeT]:
     """!!! abstract "Usage Documentation"
         [Configuration with other types](../concepts/config.md#configuration-on-other-supported-types)
 
@@ -1159,12 +1167,22 @@ def with_config(config: ConfigDict) -> Callable[[_TypeT], _TypeT]:
         class Model(TypedDict):
             x: str
 
+        # Or use keyword arguments directly:
+        @with_config(str_to_lower=True)
+        class Model2(TypedDict):
+            x: str
+
         ta = TypeAdapter(Model)
 
         print(ta.validate_python({'x': 'ABC'}))
         #> {'x': 'abc'}
         ```
     """
+    # Handle both ways of providing config
+    if config is not None and kwargs:
+        raise ValueError('Cannot specify both config and keyword arguments')
+
+    final_config = config if config is not None else kwargs
 
     def inner(class_: _TypeT, /) -> _TypeT:
         # Ideally, we would check for `class_` to either be a `TypedDict` or a stdlib dataclass.
@@ -1177,7 +1195,7 @@ def with_config(config: ConfigDict) -> Callable[[_TypeT], _TypeT]:
                 f'Cannot use `with_config` on {class_.__name__} as it is a Pydantic model',
                 code='with-config-on-model',
             )
-        class_.__pydantic_config__ = config
+        class_.__pydantic_config__ = final_config
         return class_
 
     return inner
