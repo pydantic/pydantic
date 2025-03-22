@@ -3,9 +3,9 @@
 from __future__ import annotations as _annotations
 
 from re import Pattern
-from typing import TYPE_CHECKING, Any, Callable, Literal, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, Literal, TypeVar, Union, overload
 
-from typing_extensions import TypeAlias, TypedDict
+from typing_extensions import TypeAlias, TypedDict, Unpack
 
 from ._migration import getattr_migration
 from .aliases import AliasGenerator
@@ -16,7 +16,6 @@ if TYPE_CHECKING:
     from .fields import ComputedFieldInfo, FieldInfo
 
 __all__ = ('ConfigDict', 'with_config')
-
 
 JsonValue: TypeAlias = Union[int, float, str, bool, None, list['JsonValue'], 'JsonDict']
 JsonDict: TypeAlias = dict[str, JsonValue]
@@ -1139,7 +1138,15 @@ class ConfigDict(TypedDict, total=False):
 _TypeT = TypeVar('_TypeT', bound=type)
 
 
-def with_config(config: ConfigDict) -> Callable[[_TypeT], _TypeT]:
+@overload
+def with_config(config: ConfigDict) -> Callable[[_TypeT], _TypeT]: ...
+
+
+@overload
+def with_config(**config: Unpack[ConfigDict]) -> Callable[[_TypeT], _TypeT]: ...
+
+
+def with_config(config: ConfigDict | None = None, **kwargs: Any) -> Callable[[_TypeT], _TypeT]:
     """!!! abstract "Usage Documentation"
         [Configuration with other types](../concepts/config.md#configuration-on-other-supported-types)
 
@@ -1148,7 +1155,10 @@ def with_config(config: ConfigDict) -> Callable[[_TypeT], _TypeT]:
     Although the configuration can be set using the `__pydantic_config__` attribute, it does not play well with type checkers,
     especially with `TypedDict`.
 
-    !!! example "Usage"
+    When using with a standard library dataclass, the `@dataclass` decorator must be applied first, then `@with_config`.
+    The order matters because the dataclass decorator needs to process the class before the configuration is applied.
+
+    !!! example "Usage with TypedDict"
 
         ```python
         from typing_extensions import TypedDict
@@ -1159,12 +1169,42 @@ def with_config(config: ConfigDict) -> Callable[[_TypeT], _TypeT]:
         class Model(TypedDict):
             x: str
 
+        # Or use keyword arguments directly:
+        @with_config(str_to_lower=True)
+        class Model2(TypedDict):
+            x: str
+
         ta = TypeAdapter(Model)
 
         print(ta.validate_python({'x': 'ABC'}))
         #> {'x': 'abc'}
         ```
+
+    !!! example "Usage with dataclass - note the decorator order"
+
+        ```python
+        from dataclasses import dataclass
+
+        from pydantic import TypeAdapter, with_config
+
+        # Note: dataclass decorator must be applied FIRST
+        @dataclass
+        @with_config(str_to_lower=True)
+        class User:
+            name: str
+            email: str
+
+        ta = TypeAdapter(User)
+
+        print(ta.validate_python({'name': 'JOHN', 'email': 'JOHN@EXAMPLE.COM'}))
+        #> User(name='john', email='john@example.com')
+        ```
     """
+    # Handle both ways of providing config
+    if config is not None and kwargs:
+        raise ValueError('Cannot specify both config and keyword arguments')
+
+    final_config = config if config is not None else kwargs
 
     def inner(class_: _TypeT, /) -> _TypeT:
         # Ideally, we would check for `class_` to either be a `TypedDict` or a stdlib dataclass.
@@ -1177,7 +1217,7 @@ def with_config(config: ConfigDict) -> Callable[[_TypeT], _TypeT]:
                 f'Cannot use `with_config` on {class_.__name__} as it is a Pydantic model',
                 code='with-config-on-model',
             )
-        class_.__pydantic_config__ = config
+        class_.__pydantic_config__ = final_config
         return class_
 
     return inner
