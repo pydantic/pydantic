@@ -17,7 +17,6 @@ if TYPE_CHECKING:
 
 __all__ = ('ConfigDict', 'with_config')
 
-
 JsonValue: TypeAlias = Union[int, float, str, bool, None, list['JsonValue'], 'JsonDict']
 JsonDict: TypeAlias = dict[str, JsonValue]
 
@@ -1156,7 +1155,10 @@ def with_config(config: ConfigDict | None = None, **kwargs: Any) -> Callable[[_T
     Although the configuration can be set using the `__pydantic_config__` attribute, it does not play well with type checkers,
     especially with `TypedDict`.
 
-    !!! example "Usage"
+    When using with a standard library dataclass, the `@dataclass` decorator must be applied first, then `@with_config`.
+    The order matters because the dataclass decorator needs to process the class before the configuration is applied.
+
+    !!! example "Usage with TypedDict"
 
         ```python
         from typing_extensions import TypedDict
@@ -1176,6 +1178,26 @@ def with_config(config: ConfigDict | None = None, **kwargs: Any) -> Callable[[_T
 
         print(ta.validate_python({'x': 'ABC'}))
         #> {'x': 'abc'}
+        ```
+
+    !!! example "Usage with dataclass - note the decorator order"
+
+        ```python
+        from dataclasses import dataclass
+
+        from pydantic import TypeAdapter, with_config
+
+        # Note: dataclass decorator must be applied FIRST
+        @dataclass
+        @with_config(str_to_lower=True)
+        class User:
+            name: str
+            email: str
+
+        ta = TypeAdapter(User)
+
+        print(ta.validate_python({'name': 'JOHN', 'email': 'JOHN@EXAMPLE.COM'}))
+        #> User(name='john', email='john@example.com')
         ```
     """
     # Handle both ways of providing config
