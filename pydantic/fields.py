@@ -1095,6 +1095,8 @@ def Field(  # noqa: C901
     if validation_alias in (_Unset, None):
         validation_alias = alias
 
+    choices = extra.pop('choices', None)
+
     include = extra.pop('include', None)  # type: ignore
     if include is not None:
         warn('`include` is deprecated and does nothing. It will be removed, use `exclude` instead', DeprecationWarning)
@@ -1104,6 +1106,7 @@ def Field(  # noqa: C901
         default_factory=default_factory,
         alias=alias,
         alias_priority=alias_priority,
+        choices=choices,
         validation_alias=validation_alias,
         serialization_alias=serialization_alias,
         title=title,
