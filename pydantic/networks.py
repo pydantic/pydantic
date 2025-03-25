@@ -374,7 +374,7 @@ class _BaseMultiHostUrl:
     def query_params(self) -> list[tuple[str, str]]:
         """The query part of the URL as a list of key-value pairs.
 
-        e.g. `[('baz', 'qux')]` in `https://foo.com,bar.com/path?baz=qux#fragment`
+        e.g. `[('foo', 'bar')]` in `https://foo.com,bar.com/path?foo=bar#fragment`
         """
         return self._url.query_params()
 
