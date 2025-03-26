@@ -91,7 +91,6 @@ handle as fields of a [`BaseModel`][pydantic.main.BaseModel].
     schema. This comes with some non-trivial overhead, so it is recommended to create a `TypeAdapter` for a given type
     just once and reuse it in loops or other performance-critical code.
 
-
 ## Rebuilding a `TypeAdapter`'s schema
 
 In v2.10+, [`TypeAdapter`][pydantic.type_adapter.TypeAdapter]'s support deferred schema building and manual rebuilds. This is helpful for the case of:

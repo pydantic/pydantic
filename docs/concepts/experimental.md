@@ -113,7 +113,6 @@ Annotated[
 2. Multiply an integer by 2 after parsing it.
 3. Strip whitespace from a string, validate it as an integer, then multiply it by 2.
 
-
 ### Alternative patterns
 
 There are many alternative patterns to use depending on the scenario.
@@ -322,11 +321,11 @@ You can only pass `experiment_allow_partial` to [`TypeAdapter`][pydantic.TypeAda
 
 Right now only a subset of collection validators know how to handle partial validation:
 
-- `list`
-- `set`
-- `frozenset`
-- `dict` (as in `dict[X, Y]`)
-- `TypedDict` — only non-required fields may be missing, e.g. via [`NotRequired`][typing.NotRequired] or [`total=False`][typing.TypedDict.__total__])
+* `list`
+* `set`
+* `frozenset`
+* `dict` (as in `dict[X, Y]`)
+* `TypedDict` — only non-required fields may be missing, e.g. via [`NotRequired`][typing.NotRequired] or [`total=False`][typing.TypedDict.__total__])
 
 While you can use `experimental_allow_partial` while validating against types that include other collection validators, those types will be validated "all or nothing", and partial validation will not work on more nested types.
 

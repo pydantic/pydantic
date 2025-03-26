@@ -116,7 +116,6 @@ except ValidationError as exc:
     #> 'bytes_invalid_encoding'
 ```
 
-
 ## `bytes_too_long`
 
 This error is raised when the length of a `bytes` value is greater than the field's `max_length` constraint:

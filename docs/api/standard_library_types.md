@@ -56,8 +56,8 @@ Pydantic supports the following [datetime](https://docs.python.org/library/datet
 types:
 
 ### [`datetime.datetime`][]
-* `datetime` fields will accept values of type:
 
+* `datetime` fields will accept values of type:
     * `datetime`; an existing `datetime` object
     * `int` or `float`; assumed as Unix time, i.e. seconds (if >= `-2e10` and <= `2e10`) or milliseconds
       (if < `-2e10`or > `2e10`) since 1 January 1970
@@ -86,8 +86,8 @@ print(event.model_dump())
 ```
 
 ### [`datetime.date`][]
-* `date` fields will accept values of type:
 
+* `date` fields will accept values of type:
     * `date`; an existing `date` object
     * `int` or `float`; handled the same as described for `datetime` above
     * `str`; the following formats are accepted:
@@ -111,6 +111,7 @@ print(my_birthday.model_dump())
 ```
 
 ### [`datetime.time`][]
+
 * `time` fields will accept values of type:
 
     * `time`; an existing `time` object
@@ -134,6 +135,7 @@ print(m.model_dump())
 ```
 
 ### [`datetime.timedelta`][]
+
 * `timedelta` fields will accept values of type:
 
     * `timedelta`; an existing `timedelta` object
@@ -439,7 +441,6 @@ print(sorted(m2.frozenset_of_ints))
 #> [1, 2, 3]
 ```
 
-
 ## Other Iterables
 
 ### [`typing.Sequence`][]
@@ -482,7 +483,7 @@ If you have a generator you want to validate, you can still use `Sequence` as de
 In that case, the generator will be consumed and stored on the model as a list and its values will be
 validated against the type parameter of the `Sequence` (e.g. `int` in `Sequence[int]`).
 
-However, if you have a generator that you _don't_ want to be eagerly consumed (e.g. an infinite
+However, if you have a generator that you *don't* want to be eagerly consumed (e.g. an infinite
 generator or a remote data loader), you can use a field of type [`Iterable`][typing.Iterable]:
 
 ```python
@@ -528,7 +529,6 @@ for i in m.infinite:
 !!! warning
     During initial validation, `Iterable` fields only perform a simple check that the provided argument is iterable.
     To prevent it from being consumed, no validation of the yielded values is performed eagerly.
-
 
 Though the yielded values are not validated eagerly, they are still validated when yielded, and will raise a
 `ValidationError` at yield time when appropriate:
@@ -861,9 +861,9 @@ Allows only `None` value.
 
 ## Strings
 
-- [`str`][]: Strings are accepted as-is.
-- [`bytes`][] and [`bytearray`][] are converted using the [`decode()`][bytes.decode] method.
-- Enums inheriting from [`str`][] are converted using the [`value`][enum.Enum.value] attribute.
+* [`str`][]: Strings are accepted as-is.
+* [`bytes`][] and [`bytearray`][] are converted using the [`decode()`][bytes.decode] method.
+* Enums inheriting from [`str`][] are converted using the [`value`][enum.Enum.value] attribute.
 
 All other types cause an error.
 <!-- * TODO: add note about optional number to string conversion from lig's PR -->
@@ -920,7 +920,6 @@ except ValidationError as e:
 ## Bytes
 
 [`bytes`][] are accepted as-is. [`bytearray`][] is converted using `bytes(v)`. `str` are converted using `v.encode()`. `int`, `float`, and `Decimal` are coerced using `str(v).encode()`. See [ByteSize](types.md#pydantic.types.ByteSize) for more details.
-
 
 ## [`typing.Literal`][]
 
@@ -1041,11 +1040,9 @@ Allows any value, including `None`.
 
 Allows wrapping another type with arbitrary metadata, as per [PEP-593](https://www.python.org/dev/peps/pep-0593/). The `Annotated` hint may contain a single call to the [`Field` function](../concepts/types.md#using-the-annotated-pattern), but otherwise the additional metadata is ignored and the root type is used.
 
-
 ## [`typing.Pattern`][]
 
 Will cause the input value to be passed to `re.compile(v)` to create a regular expression pattern.
-
 
 ## [`pathlib.Path`][]
 
