@@ -5,11 +5,9 @@ from __future__ import annotations as _annotations
 import inspect
 from functools import partial
 from types import BuiltinFunctionType
-from typing import TYPE_CHECKING, Any, Callable, Literal, TypeVar, cast, overload
+from typing import TYPE_CHECKING, Any, Callable, TypeVar, cast, overload
 
-from pydantic_core.core_schema import ArgumentsSchema, ArgumentsV3Schema
-
-from ._internal import _config, _generate_schema, _typing_extra, _validate_call
+from ._internal import _generate_schema, _typing_extra, _validate_call
 from .errors import PydanticUserError
 
 __all__ = ('validate_call',)
@@ -116,52 +114,3 @@ def validate_call(
         return validate(func)
     else:
         return validate
-
-
-
-SKIP = object()
-"""A sentinel object to skip a parameter in the schema generation."""
-
-
-@overload
-def generate_arguments_schema(
-    func: Callable[..., Any],
-    schema_type: Literal['arguments-v3'],
-    parameters_callback: Callable[[int, str, Any], Any] | None = None,
-    config: ConfigDict | None = None,
-) -> ArgumentsV3Schema: ...
-
-
-@overload
-def generate_arguments_schema(
-    func: Callable[..., Any],
-    schema_type: Literal['arguments'] = 'arguments',
-    parameters_callback: Callable[[int, str, Any], Any] | None = None,
-    config: ConfigDict | None = None,
-) -> ArgumentsSchema: ...
-
-
-def generate_arguments_schema(
-    func: Callable[..., Any],
-    schema_type: Literal['arguments', 'arguments-v3'] = 'arguments',
-    parameters_callback: Callable[[int, str, Any], Any] | None = None,
-    config: ConfigDict | None = None,
-) -> ArgumentsSchema | ArgumentsV3Schema:
-    """Generate the schema for the arguments of a function.
-
-    Args:
-        func: The function to generate the schema for.
-        schema_type: The type of schema to generate.
-        parameters_callback: A callable that will be invoked for each parameter.
-            If the return value is SKIP, the parameter will be skipped.
-        config: The configuration to use.
-
-    Returns:
-        The generated schema.
-    """
-    generate_schema = _generate_schema.GenerateSchema(_config.ConfigWrapper(config))
-
-    if schema_type == 'arguments':
-        return generate_schema._arguments_schema(func, parameters_callback)  # pyright: ignore[reportArgumentType]
-    else:
-        return generate_schema._arguments_v3_schema(func, parameters_callback)  # pyright: ignore[reportArgumentType]

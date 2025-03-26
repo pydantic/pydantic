@@ -152,6 +152,9 @@ def traverse_schema(schema: AllSchemas, context: GatherContext) -> None:
             traverse_schema(schema['var_args_schema'], context)
         if 'var_kwargs_schema' in schema:
             traverse_schema(schema['var_kwargs_schema'], context)
+    elif schema_type == 'arguments-v3':
+        for s in schema['arguments_schema']:
+            traverse_schema(s['schema'], context)
     elif schema_type == 'call':
         traverse_schema(schema['arguments_schema'], context)
         if 'return_schema' in schema:

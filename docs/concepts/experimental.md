@@ -428,3 +428,73 @@ print(v)
 
 1. As you would expect, this will pass validation since Pydantic correctly ignores the error in the (truncated) last item.
 2. This will also pass validation since the error in the last item is ignored.
+
+## Validation of callable arguments
+
+Pydantic provides the [`@validate_call`][pydantic.validate_call] decorator to perform validation on the provided
+arguments (and additionally return type) of a callable. However, it only allows arguments to be provided
+by directly instantiating the decorated callable. In some situations, you may want to validate the arguments
+from other data sources such as JSON data. For this use case, although not explicitly documented, Pydantic
+supports using [`TypeAdapter`][pydantic.TypeAdapter] over the callable, but doesn't properly support validation
+from other sources such as JSON data.
+
+For this reason, the experimental [`generate_arguments_schema()`][pydantic.experimental.arguments_schema.generate_arguments_schema]
+function can be used to construct a core schema, than can later be used with a [`SchemaValidator`][pydantic_core.SchemaValidator].
+
+```python
+from pydantic_core import SchemaValidator
+
+from pydantic.experimental.arguments_schema import generate_arguments_schema
+
+
+def func(p: bool, *args: str, **kwargs: int) -> None: ...
+
+
+arguments_schema = generate_arguments_schema(func=func)
+
+val = SchemaValidator(arguments_schema, config={'coerce_numbers_to_str': True})
+
+args, kwargs = val.validate_json(
+    '{"p": true, "args": ["arg1", 1], "kwargs": {"extra": 1}}'
+)
+print(args, kwargs)
+#> (True, 'arg1', '1') {'extra': 1}
+```
+
+!!! note
+    This new core schema will become the default one to be used by [`@validate_call`][pydantic.validate_call]
+    and when using [`TypeAdapter`][pydantic.TypeAdapter] over a callable in Pydantic V3.
+
+
+Additionally, you can ignore specific parameters by providing a callback, called for every parameter:
+
+```python
+from typing import Any
+
+from pydantic_core import SchemaValidator
+
+from pydantic.experimental.arguments_schema import (
+    SKIP,
+    generate_arguments_schema,
+)
+
+
+def func(p: bool, *args: str, **kwargs: int) -> None: ...
+
+
+def skip_first_parameter(index: int, name: str, annotation: Any) -> Any:
+    if index == 0:
+        return SKIP
+
+
+arguments_schema = generate_arguments_schema(
+    func=func,
+    parameters_callback=skip_first_parameter,
+)
+
+val = SchemaValidator(arguments_schema)
+
+args, kwargs = val.validate_json('{"args": ["arg1"], "kwargs": {"extra": 1}}')
+print(args, kwargs)
+#> ('arg1',) {'extra': 1}
+```

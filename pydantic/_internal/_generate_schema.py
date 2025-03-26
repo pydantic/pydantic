@@ -1606,7 +1606,11 @@ class GenerateSchema:
         default: Any = Parameter.empty,
         mode: Literal['positional_only', 'positional_or_keyword', 'keyword_only'] | None = None,
     ) -> core_schema.ArgumentsParameter:
-        """Prepare a ArgumentsParameter to represent a field in a namedtuple or function signature."""
+        """Generate the definition of a field in a namedtuple or a parameter in a function signature.
+
+        This definition is meant to be used for the `'arguments'` core schema, which will be replaced
+        in V3 by the `'arguments-v3`'.
+        """
         FieldInfo = import_cached_field_info()
 
         if default is Parameter.empty:
@@ -1648,6 +1652,11 @@ class GenerateSchema:
         ],
         default: Any = Parameter.empty,
     ) -> core_schema.ArgumentsV3Parameter:
+        """Generate the definition of a parameter in a function signature.
+
+        This definition is meant to be used for the `'arguments-v3'` core schema, which will replace
+        the `'arguments`' schema in V3.
+        """
         FieldInfo = import_cached_field_info()
 
         if default is Parameter.empty:
@@ -1995,7 +2004,7 @@ class GenerateSchema:
                 annotation = type_hints[name]
 
             if parameters_callback is not None:
-                from pydantic.validate_call_decorator import SKIP
+                from ..experimental.arguments_schema import SKIP
 
                 result = parameters_callback(i, name, annotation)
                 if result is SKIP:
@@ -2017,7 +2026,8 @@ class GenerateSchema:
                     origin = get_origin(unpack_type) or unpack_type
                     if not is_typeddict(origin):
                         raise PydanticUserError(
-                            f'Expected a `TypedDict` class, got {unpack_type!r}', code='unpack-typed-dict'
+                            f'Expected a `TypedDict` class inside `Unpack[...]`, got {unpack_type!r}',
+                            code='unpack-typed-dict',
                         )
                     non_pos_only_param_names = {
                         name for name, p in sig.parameters.items() if p.kind != Parameter.POSITIONAL_ONLY
@@ -2033,6 +2043,9 @@ class GenerateSchema:
 
                     var_kwargs_mode = 'unpacked-typed-dict'
                     var_kwargs_schema = self._typed_dict_schema(unpack_type, get_origin(unpack_type))
+                else:
+                    var_kwargs_mode = 'uniform'
+                    var_kwargs_schema = self.generate_schema(annotation)
 
         return core_schema.arguments_schema(
             arguments_list,
@@ -2061,17 +2074,17 @@ class GenerateSchema:
         parameters_list: list[core_schema.ArgumentsV3Parameter] = []
 
         for i, (name, p) in enumerate(sig.parameters.items()):
-            if p.annotation is sig.empty:
+            if parameters_callback is not None:
+                from ..experimental.arguments_schema import SKIP
+
+                result = parameters_callback(i, name, p.annotation)
+                if result is SKIP:
+                    continue
+
+            if p.annotation is Parameter.empty:
                 annotation = typing.cast(Any, Any)
             else:
                 annotation = type_hints[name]
-
-            if parameters_callback is not None:
-                from pydantic.validate_call_decorator import SKIP
-
-                result = parameters_callback(i, name, annotation)
-                if result is SKIP:
-                    continue
 
             parameter_mode = mode_lookup.get(p.kind)
             if parameter_mode is None:
@@ -2082,7 +2095,8 @@ class GenerateSchema:
                     origin = get_origin(unpack_type) or unpack_type
                     if not is_typeddict(origin):
                         raise PydanticUserError(
-                            f'Expected a `TypedDict` class, got {unpack_type!r}', code='unpack-typed-dict'
+                            f'Expected a `TypedDict` class inside `Unpack[...]`, got {unpack_type!r}',
+                            code='unpack-typed-dict',
                         )
                     non_pos_only_param_names = {
                         name for name, p in sig.parameters.items() if p.kind != Parameter.POSITIONAL_ONLY
@@ -2101,7 +2115,9 @@ class GenerateSchema:
                     parameter_mode = 'var_kwargs_uniform'
 
             parameters_list.append(
-                self._generate_parameter_v3_schema(name, annotation, AnnotationSource.FUNCTION, parameter_mode)
+                self._generate_parameter_v3_schema(
+                    name, annotation, AnnotationSource.FUNCTION, parameter_mode, default=p.default
+                )
             )
 
         return core_schema.arguments_v3_schema(
