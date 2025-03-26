@@ -578,8 +578,10 @@ jobs:
       - test-bentoml
       - test-semantic-kernel
       - test-langchain
+    # Issue report disabled for now due to flakiness:
     if: |
       always() &&
+      false &&
       github.repository == 'pydantic/pydantic' &&
       github.event_name == 'schedule' &&
       (
