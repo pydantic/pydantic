@@ -6109,8 +6109,19 @@ In v3, the default value is expected to change to <code>True</code> for consiste
 
 
 <a href="#pydantic.config.with_config" class="headerlink" title="Permanent link">&para;</a></h2>
+          <div class="doc-overloads">
 <div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">with_config</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.config.ConfigDict" href="#pydantic.config.ConfigDict">ConfigDict</a></span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">[[</span><span class="n"><span title="pydantic.config._TypeT">_TypeT</span></span><span class="p">],</span> <span class="n"><span title="pydantic.config._TypeT">_TypeT</span></span><span class="p">]</span>
+</code></pre></div><div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">with_config</span><span class="p">(</span>
     <span class="n">config</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.config.ConfigDict" href="#pydantic.config.ConfigDict">ConfigDict</a></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">[[</span><span class="n"><span title="pydantic.config._TypeT">_TypeT</span></span><span class="p">],</span> <span class="n"><span title="pydantic.config._TypeT">_TypeT</span></span><span class="p">]</span>
+</code></pre></div><div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">with_config</span><span class="p">(</span>
+    <span class="o">**</span><span class="n">config</span><span class="p">:</span> <span class="n"><span title="typing_extensions.Unpack">Unpack</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="pydantic.config.ConfigDict" href="#pydantic.config.ConfigDict">ConfigDict</a></span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">[[</span><span class="n"><span title="pydantic.config._TypeT">_TypeT</span></span><span class="p">],</span> <span class="n"><span title="pydantic.config._TypeT">_TypeT</span></span><span class="p">]</span>
+</code></pre></div>          </div>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">with_config</span><span class="p">(</span>
+    <span class="n">config</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.config.ConfigDict" href="#pydantic.config.ConfigDict">ConfigDict</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">/</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">[[</span><span class="n"><span title="pydantic.config._TypeT">_TypeT</span></span><span class="p">],</span> <span class="n"><span title="pydantic.config._TypeT">_TypeT</span></span><span class="p">]</span>
 </code></pre></div>
 
@@ -6130,10 +6141,10 @@ especially with <code>TypedDict</code>.</p>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">TypeAdapter</span><span class="p">,</span> <span class="n">with_config</span>
 
 <span class="nd">@with_config</span><span class="p">(</span><span class="n">ConfigDict</span><span class="p">(</span><span class="n">str_to_lower</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
-<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">TypedDict</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">TD</span><span class="p">(</span><span class="n">TypedDict</span><span class="p">):</span>
     <span class="n">x</span><span class="p">:</span> <span class="nb">str</span>
 
-<span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">Model</span><span class="p">)</span>
+<span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">TD</span><span class="p">)</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">({</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="s1">&#39;ABC&#39;</span><span class="p">}))</span>
 <span class="c1">#&gt; {&#39;x&#39;: &#39;abc&#39;}</span>
@@ -6142,22 +6153,7 @@ especially with <code>TypedDict</code>.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/config.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1142</span>
-<span class="normal">1143</span>
-<span class="normal">1144</span>
-<span class="normal">1145</span>
-<span class="normal">1146</span>
-<span class="normal">1147</span>
-<span class="normal">1148</span>
-<span class="normal">1149</span>
-<span class="normal">1150</span>
-<span class="normal">1151</span>
-<span class="normal">1152</span>
-<span class="normal">1153</span>
-<span class="normal">1154</span>
-<span class="normal">1155</span>
-<span class="normal">1156</span>
-<span class="normal">1157</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1157</span>
 <span class="normal">1158</span>
 <span class="normal">1159</span>
 <span class="normal">1160</span>
@@ -6183,7 +6179,34 @@ especially with <code>TypedDict</code>.</p>
 <span class="normal">1180</span>
 <span class="normal">1181</span>
 <span class="normal">1182</span>
-<span class="normal">1183</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">with_config</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="n">ConfigDict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_TypeT</span><span class="p">],</span> <span class="n">_TypeT</span><span class="p">]:</span>
+<span class="normal">1183</span>
+<span class="normal">1184</span>
+<span class="normal">1185</span>
+<span class="normal">1186</span>
+<span class="normal">1187</span>
+<span class="normal">1188</span>
+<span class="normal">1189</span>
+<span class="normal">1190</span>
+<span class="normal">1191</span>
+<span class="normal">1192</span>
+<span class="normal">1193</span>
+<span class="normal">1194</span>
+<span class="normal">1195</span>
+<span class="normal">1196</span>
+<span class="normal">1197</span>
+<span class="normal">1198</span>
+<span class="normal">1199</span>
+<span class="normal">1200</span>
+<span class="normal">1201</span>
+<span class="normal">1202</span>
+<span class="normal">1203</span>
+<span class="normal">1204</span>
+<span class="normal">1205</span>
+<span class="normal">1206</span>
+<span class="normal">1207</span>
+<span class="normal">1208</span>
+<span class="normal">1209</span>
+<span class="normal">1210</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">with_config</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="n">ConfigDict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">/</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_TypeT</span><span class="p">],</span> <span class="n">_TypeT</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;!!! abstract &quot;Usage Documentation&quot;</span>
 <span class="sd">        [Configuration with other types](../concepts/config.md#configuration-on-other-supported-types)</span>
 
@@ -6200,15 +6223,27 @@ especially with <code>TypedDict</code>.</p>
 <span class="sd">        from pydantic import ConfigDict, TypeAdapter, with_config</span>
 
 <span class="sd">        @with_config(ConfigDict(str_to_lower=True))</span>
-<span class="sd">        class Model(TypedDict):</span>
+<span class="sd">        class TD(TypedDict):</span>
 <span class="sd">            x: str</span>
 
-<span class="sd">        ta = TypeAdapter(Model)</span>
+<span class="sd">        ta = TypeAdapter(TD)</span>
 
 <span class="sd">        print(ta.validate_python({&#39;x&#39;: &#39;ABC&#39;}))</span>
 <span class="sd">        #&gt; {&#39;x&#39;: &#39;abc&#39;}</span>
 <span class="sd">        ```</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">config</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">kwargs</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Cannot specify both `config` and keyword arguments&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="p">(</span><span class="n">kwargs_conf</span> <span class="o">:=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;config&#39;</span><span class="p">))</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+            <span class="s1">&#39;Passing `config` as a keyword argument is deprecated. Pass `config` as a positional argument instead&#39;</span><span class="p">,</span>
+            <span class="n">category</span><span class="o">=</span><span class="n">PydanticDeprecatedSince211</span><span class="p">,</span>
+            <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">final_config</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">ConfigDict</span><span class="p">,</span> <span class="n">kwargs_conf</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">final_config</span> <span class="o">=</span> <span class="n">config</span> <span class="k">if</span> <span class="n">config</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">cast</span><span class="p">(</span><span class="n">ConfigDict</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">inner</span><span class="p">(</span><span class="n">class_</span><span class="p">:</span> <span class="n">_TypeT</span><span class="p">,</span> <span class="o">/</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_TypeT</span><span class="p">:</span>
         <span class="c1"># Ideally, we would check for `class_` to either be a `TypedDict` or a stdlib dataclass.</span>
@@ -6221,7 +6256,7 @@ especially with <code>TypedDict</code>.</p>
                 <span class="sa">f</span><span class="s1">&#39;Cannot use `with_config` on </span><span class="si">{</span><span class="n">class_</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s1"> as it is a Pydantic model&#39;</span><span class="p">,</span>
                 <span class="n">code</span><span class="o">=</span><span class="s1">&#39;with-config-on-model&#39;</span><span class="p">,</span>
             <span class="p">)</span>
-        <span class="n">class_</span><span class="o">.</span><span class="n">__pydantic_config__</span> <span class="o">=</span> <span class="n">config</span>
+        <span class="n">class_</span><span class="o">.</span><span class="n">__pydantic_config__</span> <span class="o">=</span> <span class="n">final_config</span>
         <span class="k">return</span> <span class="n">class_</span>
 
     <span class="k">return</span> <span class="n">inner</span>
@@ -6686,7 +6721,7 @@ especially with <code>TypedDict</code>.</p>
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.11.0b2", "pydantic-core==2.32.0", "pydantic-extra-types==2.10.0"]
+    window.mkdocs_run_deps = ["pydantic==2.11.0b2", "pydantic-core==2.33.0", "pydantic-extra-types==2.10.0"]
     </script>
 
               </article>

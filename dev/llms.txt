@@ -12,7 +12,7 @@ Pydantic
 
 [![license](https://img.shields.io/github/license/pydantic/pydantic.svg)](https://github.com/pydantic/pydantic/blob/main/LICENSE)
 
-Documentation for development version: [ed2764b](https://github.com/pydantic/pydantic/commit/ed2764b08076183f213dbc19807fb9e422a373ca).
+Documentation for development version: [f5226d2](https://github.com/pydantic/pydantic/commit/f5226d294664788d1fbea13bec2dbc1ce6305c8e).
 
 Pydantic is the most widely used data validation library for Python.
 
@@ -11260,7 +11260,26 @@ with\_config
 
 ```
 with_config(
+    *, config: ConfigDict
+) -> Callable[[_TypeT], _TypeT]
+
+```
+```
+with_config(
     config: ConfigDict,
+) -> Callable[[_TypeT], _TypeT]
+
+```
+```
+with_config(
+    **config: Unpack[ConfigDict],
+) -> Callable[[_TypeT], _TypeT]
+
+```
+ 
+```
+with_config(
+    config: ConfigDict | None = None, /, **kwargs: Any
 ) -> Callable[[_TypeT], _TypeT]
 
 ```
@@ -11282,10 +11301,10 @@ from typing_extensions import TypedDict
 from pydantic import ConfigDict, TypeAdapter, with_config
 
 @with_config(ConfigDict(str_to_lower=True))
-class Model(TypedDict):
+class TD(TypedDict):
     x: str
 
-ta = TypeAdapter(Model)
+ta = TypeAdapter(TD)
 
 print(ta.validate_python({'x': 'ABC'}))
 #> {'x': 'abc'}
@@ -11295,7 +11314,7 @@ print(ta.validate_python({'x': 'ABC'}))
 
 Source code in `pydantic/config.py`
 ```
-def with_config(config: ConfigDict) -> Callable[[_TypeT], _TypeT]:
+def with_config(config: ConfigDict | None = None, /, **kwargs: Any) -> Callable[[_TypeT], _TypeT]:
     """!!! abstract "Usage Documentation"
         [Configuration with other types](../concepts/config.md#configuration-on-other-supported-types)
 
@@ -11312,15 +11331,27 @@ def with_config(config: ConfigDict) -> Callable[[_TypeT], _TypeT]:
         from pydantic import ConfigDict, TypeAdapter, with_config
 
         @with_config(ConfigDict(str_to_lower=True))
-        class Model(TypedDict):
+        class TD(TypedDict):
             x: str
 
-        ta = TypeAdapter(Model)
+        ta = TypeAdapter(TD)
 
         print(ta.validate_python({'x': 'ABC'}))
         #> {'x': 'abc'}
         ```
     """
+    if config is not None and kwargs:
+        raise ValueError('Cannot specify both `config` and keyword arguments')
+
+    if len(kwargs) == 1 and (kwargs_conf := kwargs.get('config')) is not None:
+        warnings.warn(
+            'Passing `config` as a keyword argument is deprecated. Pass `config` as a positional argument instead',
+            category=PydanticDeprecatedSince211,
+            stacklevel=2,
+        )
+        final_config = cast(ConfigDict, kwargs_conf)
+    else:
+        final_config = config if config is not None else cast(ConfigDict, kwargs)
 
     def inner(class_: _TypeT, /) -> _TypeT:
         # Ideally, we would check for `class_` to either be a `TypedDict` or a stdlib dataclass.
@@ -11333,7 +11364,7 @@ def with_config(config: ConfigDict) -> Callable[[_TypeT], _TypeT]:
                 f'Cannot use `with_config` on {class_.__name__} as it is a Pydantic model',
                 code='with-config-on-model',
             )
-        class_.__pydantic_config__ = config
+        class_.__pydantic_config__ = final_config
         return class_
 
     return inner
@@ -23193,7 +23224,7 @@ to_json(
     indent: int | None = None,
     include: _IncEx | None = None,
     exclude: _IncEx | None = None,
-    by_alias: bool | None = None,
+    by_alias: bool = True,
     exclude_none: bool = False,
     round_trip: bool = False,
     timedelta_mode: Literal["iso8601", "float"] = "iso8601",
@@ -23221,7 +23252,7 @@ Parameters:
 | `indent` | `int | None` | If `None`, the JSON will be compact, otherwise it will be pretty-printed with the indent provided. | `None` |
 | `include` | `_IncEx | None` | A set of fields to include, if `None` all fields are included. | `None` |
 | `exclude` | `_IncEx | None` | A set of fields to exclude, if `None` no fields are excluded. | `None` |
-| `by_alias` | `bool | None` | Whether to use the alias names of fields. | `None` |
+| `by_alias` | `bool` | Whether to use the alias names of fields. | `True` |
 | `exclude_none` | `bool` | Whether to exclude fields that have a value of `None`. | `False` |
 | `round_trip` | `bool` | Whether to enable serialization and validation round-trip support. | `False` |
 | `timedelta_mode` | `Literal['iso8601', 'float']` | How to serialize `timedelta` objects, either `'iso8601'` or `'float'`. | `'iso8601'` |
@@ -23300,7 +23331,7 @@ to_jsonable_python(
     *,
     include: _IncEx | None = None,
     exclude: _IncEx | None = None,
-    by_alias: bool | None = None,
+    by_alias: bool = True,
     exclude_none: bool = False,
     round_trip: bool = False,
     timedelta_mode: Literal["iso8601", "float"] = "iso8601",
@@ -23328,7 +23359,7 @@ Parameters:
 | `value` | `Any` | The Python object to serialize. | *required* |
 | `include` | `_IncEx | None` | A set of fields to include, if `None` all fields are included. | `None` |
 | `exclude` | `_IncEx | None` | A set of fields to exclude, if `None` no fields are excluded. | `None` |
-| `by_alias` | `bool | None` | Whether to use the alias names of fields. | `None` |
+| `by_alias` | `bool` | Whether to use the alias names of fields. | `True` |
 | `exclude_none` | `bool` | Whether to exclude fields that have a value of `None`. | `False` |
 | `round_trip` | `bool` | Whether to enable serialization and validation round-trip support. | `False` |
 | `timedelta_mode` | `Literal['iso8601', 'float']` | How to serialize `timedelta` objects, either `'iso8601'` or `'float'`. | `'iso8601'` |
@@ -28110,6 +28141,7 @@ model_fields_schema(
     computed_fields: list[ComputedField] | None = None,
     strict: bool | None = None,
     extras_schema: CoreSchema | None = None,
+    extras_keys_schema: CoreSchema | None = None,
     extra_behavior: ExtraBehavior | None = None,
     from_attributes: bool | None = None,
     ref: str | None = None,
@@ -28119,7 +28151,7 @@ model_fields_schema(
 
 ```
 
-Returns a schema that matches a typed dict, e.g.:
+Returns a schema that matches the fields of a Pydantic model, e.g.:
 
 ```
 from pydantic_core import SchemaValidator, core_schema
@@ -28137,15 +28169,16 @@ Parameters:
 
 | Name | Type | Description | Default |
 | --- | --- | --- | --- |
-| `fields` | `dict[str, ModelField]` | The fields to use for the typed dict | *required* |
+| `fields` | `dict[str, ModelField]` | The fields of the model | *required* |
 | `model_name` | `str | None` | The name of the model, used for error messages, defaults to "Model" | `None` |
 | `computed_fields` | `list[ComputedField] | None` | Computed fields to use when serializing the model, only applies when directly inside a model | `None` |
-| `strict` | `bool | None` | Whether the typed dict is strict | `None` |
-| `extras_schema` | `CoreSchema | None` | The extra validator to use for the typed dict | `None` |
+| `strict` | `bool | None` | Whether the model is strict | `None` |
+| `extras_schema` | `CoreSchema | None` | The schema to use when validating extra input data | `None` |
+| `extras_keys_schema` | `CoreSchema | None` | The schema to use when validating the keys of extra input data | `None` |
 | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` |
 | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` |
-| `extra_behavior` | `ExtraBehavior | None` | The extra behavior to use for the typed dict | `None` |
-| `from_attributes` | `bool | None` | Whether the typed dict should be populated from attributes | `None` |
+| `extra_behavior` | `ExtraBehavior | None` | The extra behavior to use for the model fields | `None` |
+| `from_attributes` | `bool | None` | Whether the model fields should be populated from attributes | `None` |
 | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
 Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
@@ -28157,6 +28190,7 @@ def model_fields_schema(
     computed_fields: list[ComputedField] | None = None,
     strict: bool | None = None,
     extras_schema: CoreSchema | None = None,
+    extras_keys_schema: CoreSchema | None = None,
     extra_behavior: ExtraBehavior | None = None,
     from_attributes: bool | None = None,
     ref: str | None = None,
@@ -28164,7 +28198,7 @@ def model_fields_schema(
     serialization: SerSchema | None = None,
 ) -> ModelFieldsSchema:
     """
-    Returns a schema that matches a typed dict, e.g.:
+    Returns a schema that matches the fields of a Pydantic model, e.g.:
 
     ```py
     from pydantic_core import SchemaValidator, core_schema
@@ -28178,15 +28212,16 @@ def model_fields_schema(
     ```
 
     Args:
-        fields: The fields to use for the typed dict
+        fields: The fields of the model
         model_name: The name of the model, used for error messages, defaults to "Model"
         computed_fields: Computed fields to use when serializing the model, only applies when directly inside a model
-        strict: Whether the typed dict is strict
-        extras_schema: The extra validator to use for the typed dict
+        strict: Whether the model is strict
+        extras_schema: The schema to use when validating extra input data
+        extras_keys_schema: The schema to use when validating the keys of extra input data
         ref: optional unique identifier of the schema, used to reference the schema in other places
         metadata: Any other information you want to include with the schema, not used by pydantic-core
-        extra_behavior: The extra behavior to use for the typed dict
-        from_attributes: Whether the typed dict should be populated from attributes
+        extra_behavior: The extra behavior to use for the model fields
+        from_attributes: Whether the model fields should be populated from attributes
         serialization: Custom serialization schema
     """
     return _dict_not_none(
@@ -28196,6 +28231,7 @@ def model_fields_schema(
         computed_fields=computed_fields,
         strict=strict,
         extras_schema=extras_schema,
+        extras_keys_schema=extras_keys_schema,
         extra_behavior=extra_behavior,
         from_attributes=from_attributes,
         ref=ref,
