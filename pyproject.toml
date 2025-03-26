@@ -84,10 +84,9 @@ dev = [
 ]
 docs = [
     'autoflake',
-    "bs4>=0.0.2",
-    "markdownify>=0.14.1",
     'mkdocs',
     'mkdocs-exclude',
+    'mkdocs-llmstxt',
     'mkdocs-material[imaging]',
     'mkdocs-redirects',
     'mkdocstrings-python',
@@ -182,6 +181,9 @@ markers = [
 
 [tool.uv]
 default-groups = ['dev']
+
+[tool.uv.sources]
+mkdocs-llmstxt = { git = "https://github.com/Viicos/mkdocs-llmstxt", rev = "issue-1" }
 
 # configuring https://github.com/pydantic/hooky
 [tool.hooky]

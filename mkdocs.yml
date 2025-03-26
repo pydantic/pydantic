@@ -208,10 +208,27 @@ watch:
 
 hooks:
 - 'docs/plugins/main.py'
-- 'docs/plugins/build_llms_txt.py'
 - 'docs/plugins/algolia.py'
 
 plugins:
+- llmstxt:
+    enabled: !ENV [CI, false]
+    full_output: llms-full.txt
+    markdown_description: |-
+      Pydantic is the most widely used data validation library for Python.
+      Fast and extensible, Pydantic plays nicely with your linters/IDE/brain.
+      Define how data should be in pure, canonical Python 3.9+; validate it with Pydantic.
+    sections:
+      Concepts documentation:
+        - concepts/*.md
+      API documentation:
+        - api/*.md
+      Internals:
+        - internals/*.md
+      Optional:
+        - errors/*.md
+        - examples/*.md
+        - integrations/*.md
 - social
 - mike:
     alias_type: symlink

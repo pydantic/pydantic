@@ -260,18 +260,6 @@ wheels = [
 ]
 
 [[package]]
-name = "bs4"
-version = "0.0.2"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "beautifulsoup4" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/c9/aa/4acaf814ff901145da37332e05bb510452ebed97bc9602695059dd46ef39/bs4-0.0.2.tar.gz", hash = "sha256:a48685c58f50fe127722417bae83fe6badf500d54b55f7e39ffe43b798653925", size = 698 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/51/bb/bf7aab772a159614954d84aa832c129624ba6c32faa559dfb200a534e50b/bs4-0.0.2-py2.py3-none-any.whl", hash = "sha256:abf8742c0805ef7f662dce4b51cca104cffe52b835238afc169142ab9b3fbccc", size = 1189 },
-]
-
-[[package]]
 name = "cairocffi"
 version = "1.7.1"
 source = { registry = "https://pypi.org/simple" }
@@ -958,15 +946,15 @@ plugins = [
 
 [[package]]
 name = "markdownify"
-version = "0.14.1"
+version = "1.1.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "beautifulsoup4" },
     { name = "six" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/1b/75/483a4bcca436fe88d02dc7686c372631d833848951b368700bdc0c770bb7/markdownify-0.14.1.tar.gz", hash = "sha256:a62a7a216947ed0b8dafb95b99b2ef4a0edd1e18d5653c656f68f03db2bfb2f1", size = 14332 }
+sdist = { url = "https://files.pythonhosted.org/packages/2f/78/c48fed23c7aebc2c16049062e72de1da3220c274de59d28c942acdc9ffb2/markdownify-1.1.0.tar.gz", hash = "sha256:449c0bbbf1401c5112379619524f33b63490a8fa479456d41de9dc9e37560ebd", size = 17127 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/65/0b/74cec93a7b05edf4fc3ea1c899fe8a37f041d7b9d303c75abf7a162924e0/markdownify-0.14.1-py3-none-any.whl", hash = "sha256:4c46a6c0c12c6005ddcd49b45a5a890398b002ef51380cd319db62df5e09bc2a", size = 11530 },
+    { url = "https://files.pythonhosted.org/packages/64/11/b751af7ad41b254a802cf52f7bc1fca7cabe2388132f2ce60a1a6b9b9622/markdownify-1.1.0-py3-none-any.whl", hash = "sha256:32a5a08e9af02c8a6528942224c91b933b4bd2c7d078f9012943776fc313eeef", size = 13901 },
 ]
 
 [[package]]
@@ -1035,6 +1023,20 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/17/d8/5811082f85bb88410ad7e452263af048d685669bbbfb7b595e8689152498/MarkupSafe-3.0.2-cp39-cp39-musllinux_1_2_x86_64.whl", hash = "sha256:eb7972a85c54febfb25b5c4b4f3af4dcc731994c7da0d8a0b4a6eb0640e1d178", size = 20946 },
     { url = "https://files.pythonhosted.org/packages/7c/31/bd635fb5989440d9365c5e3c47556cfea121c7803f5034ac843e8f37c2f2/MarkupSafe-3.0.2-cp39-cp39-win32.whl", hash = "sha256:8c4e8c3ce11e1f92f6536ff07154f9d49677ebaaafc32db9db4620bc11ed480f", size = 15063 },
     { url = "https://files.pythonhosted.org/packages/b3/73/085399401383ce949f727afec55ec3abd76648d04b9f22e1c0e99cb4bec3/MarkupSafe-3.0.2-cp39-cp39-win_amd64.whl", hash = "sha256:6e296a513ca3d94054c2c881cc913116e90fd030ad1c656b3869762b754f5f8a", size = 15506 },
+]
+
+[[package]]
+name = "mdformat"
+version = "0.7.22"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "importlib-metadata", marker = "python_full_version < '3.10'" },
+    { name = "markdown-it-py" },
+    { name = "tomli", marker = "python_full_version < '3.11'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/fc/eb/b5cbf2484411af039a3d4aeb53a5160fae25dd8c84af6a4243bc2f3fedb3/mdformat-0.7.22.tar.gz", hash = "sha256:eef84fa8f233d3162734683c2a8a6222227a229b9206872e6139658d99acb1ea", size = 34610 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f2/6f/94a7344f6d634fe3563bea8b33bccedee37f2726f7807e9a58440dc91627/mdformat-0.7.22-py3-none-any.whl", hash = "sha256:61122637c9e1d9be1329054f3fa216559f0d1f722b7919b060a8c2a4ae1850e5", size = 34447 },
 ]
 
 [[package]]
@@ -1192,6 +1194,16 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/98/f5/ed29cd50067784976f25ed0ed6fcd3c2ce9eb90650aa3b2796ddf7b6870b/mkdocs_get_deps-0.2.0.tar.gz", hash = "sha256:162b3d129c7fad9b19abfdcb9c1458a651628e4b1dea628ac68790fb3061c60c", size = 10239 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/9f/d4/029f984e8d3f3b6b726bd33cafc473b75e9e44c0f7e80a5b29abc466bdea/mkdocs_get_deps-0.2.0-py3-none-any.whl", hash = "sha256:2bf11d0b133e77a0dd036abeeb06dec8775e46efa526dc70667d8863eefc6134", size = 9521 },
+]
+
+[[package]]
+name = "mkdocs-llmstxt"
+version = "0.1.1.dev17+gd873d51"
+source = { git = "https://github.com/Viicos/mkdocs-llmstxt?rev=issue-1#d873d51f3c215b02e450847c1a382e3625975aa1" }
+dependencies = [
+    { name = "beautifulsoup4" },
+    { name = "markdownify" },
+    { name = "mdformat" },
 ]
 
 [[package]]
@@ -1678,7 +1690,6 @@ timezone = [
 all = [
     { name = "ansi2html" },
     { name = "autoflake" },
-    { name = "bs4" },
     { name = "cloudpickle" },
     { name = "coverage", extra = ["toml"] },
     { name = "devtools" },
@@ -1686,10 +1697,10 @@ all = [
     { name = "eval-type-backport" },
     { name = "faker" },
     { name = "jsonschema" },
-    { name = "markdownify" },
     { name = "mike" },
     { name = "mkdocs" },
     { name = "mkdocs-exclude" },
+    { name = "mkdocs-llmstxt" },
     { name = "mkdocs-material", extra = ["imaging"] },
     { name = "mkdocs-redirects" },
     { name = "mkdocstrings-python" },
@@ -1731,11 +1742,10 @@ dev = [
 ]
 docs = [
     { name = "autoflake" },
-    { name = "bs4" },
-    { name = "markdownify" },
     { name = "mike" },
     { name = "mkdocs" },
     { name = "mkdocs-exclude" },
+    { name = "mkdocs-llmstxt" },
     { name = "mkdocs-material", extra = ["imaging"] },
     { name = "mkdocs-redirects" },
     { name = "mkdocstrings-python" },
@@ -1781,7 +1791,6 @@ provides-extras = ["email", "timezone"]
 all = [
     { name = "ansi2html" },
     { name = "autoflake" },
-    { name = "bs4", specifier = ">=0.0.2" },
     { name = "cloudpickle" },
     { name = "coverage", extras = ["toml"] },
     { name = "devtools" },
@@ -1789,10 +1798,10 @@ all = [
     { name = "eval-type-backport" },
     { name = "faker" },
     { name = "jsonschema" },
-    { name = "markdownify", specifier = ">=0.14.1" },
     { name = "mike" },
     { name = "mkdocs" },
     { name = "mkdocs-exclude" },
+    { name = "mkdocs-llmstxt", git = "https://github.com/Viicos/mkdocs-llmstxt?rev=issue-1" },
     { name = "mkdocs-material", extras = ["imaging"] },
     { name = "mkdocs-redirects" },
     { name = "mkdocstrings-python" },
@@ -1834,11 +1843,10 @@ dev = [
 ]
 docs = [
     { name = "autoflake" },
-    { name = "bs4", specifier = ">=0.0.2" },
-    { name = "markdownify", specifier = ">=0.14.1" },
     { name = "mike" },
     { name = "mkdocs" },
     { name = "mkdocs-exclude" },
+    { name = "mkdocs-llmstxt", git = "https://github.com/Viicos/mkdocs-llmstxt?rev=issue-1" },
     { name = "mkdocs-material", extras = ["imaging"] },
     { name = "mkdocs-redirects" },
     { name = "mkdocstrings-python" },
