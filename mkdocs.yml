@@ -211,6 +211,11 @@ hooks:
 - 'docs/plugins/algolia.py'
 
 plugins:
+- social
+- mike:
+    alias_type: symlink
+    canonical_version: latest
+  # llmstxt must come after the mike plugin:
 - llmstxt:
     enabled: !ENV [CI, false]
     full_output: llms-full.txt
@@ -229,10 +234,6 @@ plugins:
         - errors/*.md
         - examples/*.md
         - integrations/*.md
-- social
-- mike:
-    alias_type: symlink
-    canonical_version: latest
 - search
 - exclude:
     glob:
