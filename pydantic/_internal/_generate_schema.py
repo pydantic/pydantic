@@ -51,7 +51,7 @@ from pydantic_core import (
     core_schema,
     to_jsonable_python,
 )
-from typing_extensions import TypeAliasType, TypedDict, get_args, get_origin, is_typeddict
+from typing_extensions import TypeAlias, TypeAliasType, TypedDict, get_args, get_origin, is_typeddict
 from typing_inspection import typing_objects
 from typing_inspection.introspection import AnnotationSource, get_literal_values, is_union_origin
 
@@ -114,8 +114,9 @@ AnyFieldDecorator = Union[
     Decorator[FieldSerializerDecoratorInfo],
 ]
 
-ModifyCoreSchemaWrapHandler = GetCoreSchemaHandler
-GetCoreSchemaFunction = Callable[[Any, ModifyCoreSchemaWrapHandler], core_schema.CoreSchema]
+ModifyCoreSchemaWrapHandler: TypeAlias = GetCoreSchemaHandler
+GetCoreSchemaFunction: TypeAlias = Callable[[Any, ModifyCoreSchemaWrapHandler], core_schema.CoreSchema]
+ParametersCallback: TypeAlias = "Callable[[int, str, Any], Literal['skip'] | None]"
 
 TUPLE_TYPES: list[type] = [typing.Tuple, tuple]  # noqa: UP006
 LIST_TYPES: list[type] = [typing.List, list, collections.abc.MutableSequence]  # noqa: UP006
@@ -1611,13 +1612,17 @@ class GenerateSchema:
         default: Any = Parameter.empty,
         mode: Literal['positional_only', 'positional_or_keyword', 'keyword_only'] | None = None,
     ) -> core_schema.ArgumentsParameter:
-        """Prepare a ArgumentsParameter to represent a field in a namedtuple or function signature."""
+        """Generate the definition of a field in a namedtuple or a parameter in a function signature.
+
+        This definition is meant to be used for the `'arguments'` core schema, which will be replaced
+        in V3 by the `'arguments-v3`'.
+        """
         FieldInfo = import_cached_field_info()
 
         if default is Parameter.empty:
             field = FieldInfo.from_annotation(annotation, _source=source)
         else:
-            field = FieldInfo.from_annotated_attribute(annotation, default)
+            field = FieldInfo.from_annotated_attribute(annotation, default, _source=source)
         assert field.annotation is not None, 'field.annotation should not be None when generating a schema'
         with self.field_name_stack.push(name):
             schema = self._apply_annotations(field.annotation, [field])
@@ -1634,8 +1639,57 @@ class GenerateSchema:
             alias_generator = self._config_wrapper.alias_generator
             if isinstance(alias_generator, AliasGenerator) and alias_generator.alias is not None:
                 parameter_schema['alias'] = alias_generator.alias(name)
-            elif isinstance(alias_generator, Callable):
+            elif callable(alias_generator):
                 parameter_schema['alias'] = alias_generator(name)
+        return parameter_schema
+
+    def _generate_parameter_v3_schema(
+        self,
+        name: str,
+        annotation: Any,
+        source: AnnotationSource,
+        mode: Literal[
+            'positional_only',
+            'positional_or_keyword',
+            'keyword_only',
+            'var_args',
+            'var_kwargs_uniform',
+            'var_kwargs_unpacked_typed_dict',
+        ],
+        default: Any = Parameter.empty,
+    ) -> core_schema.ArgumentsV3Parameter:
+        """Generate the definition of a parameter in a function signature.
+
+        This definition is meant to be used for the `'arguments-v3'` core schema, which will replace
+        the `'arguments`' schema in V3.
+        """
+        FieldInfo = import_cached_field_info()
+
+        if default is Parameter.empty:
+            field = FieldInfo.from_annotation(annotation, _source=source)
+        else:
+            field = FieldInfo.from_annotated_attribute(annotation, default, _source=source)
+
+        with self.field_name_stack.push(name):
+            schema = self._apply_annotations(field.annotation, [field])
+
+        if not field.is_required():
+            schema = wrap_default(field, schema)
+
+        parameter_schema = core_schema.arguments_v3_parameter(
+            name=name,
+            schema=schema,
+            mode=mode,
+        )
+        if field.alias is not None:
+            parameter_schema['alias'] = field.alias
+        else:
+            alias_generator = self._config_wrapper.alias_generator
+            if isinstance(alias_generator, AliasGenerator) and alias_generator.alias is not None:
+                parameter_schema['alias'] = alias_generator.alias(name)
+            elif callable(alias_generator):
+                parameter_schema['alias'] = alias_generator(name)
+
         return parameter_schema
 
     def _tuple_schema(self, tuple_type: Any) -> core_schema.CoreSchema:
@@ -1910,26 +1964,55 @@ class GenerateSchema:
 
         TODO support functional validators once we support them in Config
         """
-        sig = signature(function)
-        globalns, localns = self._types_namespace
-        type_hints = _typing_extra.get_function_type_hints(function, globalns=globalns, localns=localns)
+        arguments_schema = self._arguments_schema(function)
 
+        return_schema: core_schema.CoreSchema | None = None
+        config_wrapper = self._config_wrapper
+        if config_wrapper.validate_return:
+            sig = signature(function)
+            return_hint = sig.return_annotation
+            if return_hint is not sig.empty:
+                globalns, localns = self._types_namespace
+                type_hints = _typing_extra.get_function_type_hints(
+                    function, globalns=globalns, localns=localns, include_keys={'return'}
+                )
+                return_schema = self.generate_schema(type_hints['return'])
+
+        return core_schema.call_schema(
+            arguments_schema,
+            function,
+            return_schema=return_schema,
+        )
+
+    def _arguments_schema(
+        self, function: ValidateCallSupportedTypes, parameters_callback: ParametersCallback | None = None
+    ) -> core_schema.ArgumentsSchema:
+        """Generate schema for a Signature."""
         mode_lookup: dict[_ParameterKind, Literal['positional_only', 'positional_or_keyword', 'keyword_only']] = {
             Parameter.POSITIONAL_ONLY: 'positional_only',
             Parameter.POSITIONAL_OR_KEYWORD: 'positional_or_keyword',
             Parameter.KEYWORD_ONLY: 'keyword_only',
         }
 
+        sig = signature(function)
+        globalns, localns = self._types_namespace
+        type_hints = _typing_extra.get_function_type_hints(function, globalns=globalns, localns=localns)
+
         arguments_list: list[core_schema.ArgumentsParameter] = []
         var_args_schema: core_schema.CoreSchema | None = None
         var_kwargs_schema: core_schema.CoreSchema | None = None
         var_kwargs_mode: core_schema.VarKwargsMode | None = None
 
-        for name, p in sig.parameters.items():
+        for i, (name, p) in enumerate(sig.parameters.items()):
             if p.annotation is sig.empty:
                 annotation = typing.cast(Any, Any)
             else:
                 annotation = type_hints[name]
+
+            if parameters_callback is not None:
+                result = parameters_callback(i, name, annotation)
+                if result == 'skip':
+                    continue
 
             parameter_mode = mode_lookup.get(p.kind)
             if parameter_mode is not None:
@@ -1947,7 +2030,8 @@ class GenerateSchema:
                     origin = get_origin(unpack_type) or unpack_type
                     if not is_typeddict(origin):
                         raise PydanticUserError(
-                            f'Expected a `TypedDict` class, got {unpack_type!r}', code='unpack-typed-dict'
+                            f'Expected a `TypedDict` class inside `Unpack[...]`, got {unpack_type!r}',
+                            code='unpack-typed-dict',
                         )
                     non_pos_only_param_names = {
                         name for name, p in sig.parameters.items() if p.kind != Parameter.POSITIONAL_ONLY
@@ -1967,23 +2051,80 @@ class GenerateSchema:
                     var_kwargs_mode = 'uniform'
                     var_kwargs_schema = self.generate_schema(annotation)
 
-        return_schema: core_schema.CoreSchema | None = None
-        config_wrapper = self._config_wrapper
-        if config_wrapper.validate_return:
-            return_hint = sig.return_annotation
-            if return_hint is not sig.empty:
-                return_schema = self.generate_schema(return_hint)
+        return core_schema.arguments_schema(
+            arguments_list,
+            var_args_schema=var_args_schema,
+            var_kwargs_mode=var_kwargs_mode,
+            var_kwargs_schema=var_kwargs_schema,
+            validate_by_name=self._config_wrapper.validate_by_name,
+        )
 
-        return core_schema.call_schema(
-            core_schema.arguments_schema(
-                arguments_list,
-                var_args_schema=var_args_schema,
-                var_kwargs_mode=var_kwargs_mode,
-                var_kwargs_schema=var_kwargs_schema,
-                validate_by_name=config_wrapper.validate_by_name,
-            ),
-            function,
-            return_schema=return_schema,
+    def _arguments_v3_schema(
+        self, function: ValidateCallSupportedTypes, parameters_callback: ParametersCallback | None = None
+    ) -> core_schema.ArgumentsV3Schema:
+        mode_lookup: dict[
+            _ParameterKind, Literal['positional_only', 'positional_or_keyword', 'var_args', 'keyword_only']
+        ] = {
+            Parameter.POSITIONAL_ONLY: 'positional_only',
+            Parameter.POSITIONAL_OR_KEYWORD: 'positional_or_keyword',
+            Parameter.VAR_POSITIONAL: 'var_args',
+            Parameter.KEYWORD_ONLY: 'keyword_only',
+        }
+
+        sig = signature(function)
+        globalns, localns = self._types_namespace
+        type_hints = _typing_extra.get_function_type_hints(function, globalns=globalns, localns=localns)
+
+        parameters_list: list[core_schema.ArgumentsV3Parameter] = []
+
+        for i, (name, p) in enumerate(sig.parameters.items()):
+            if parameters_callback is not None:
+                result = parameters_callback(i, name, p.annotation)
+                if result == 'skip':
+                    continue
+
+            if p.annotation is Parameter.empty:
+                annotation = typing.cast(Any, Any)
+            else:
+                annotation = type_hints[name]
+
+            parameter_mode = mode_lookup.get(p.kind)
+            if parameter_mode is None:
+                assert p.kind == Parameter.VAR_KEYWORD, p.kind
+
+                unpack_type = _typing_extra.unpack_type(annotation)
+                if unpack_type is not None:
+                    origin = get_origin(unpack_type) or unpack_type
+                    if not is_typeddict(origin):
+                        raise PydanticUserError(
+                            f'Expected a `TypedDict` class inside `Unpack[...]`, got {unpack_type!r}',
+                            code='unpack-typed-dict',
+                        )
+                    non_pos_only_param_names = {
+                        name for name, p in sig.parameters.items() if p.kind != Parameter.POSITIONAL_ONLY
+                    }
+                    overlapping_params = non_pos_only_param_names.intersection(origin.__annotations__)
+                    if overlapping_params:
+                        raise PydanticUserError(
+                            f'Typed dictionary {origin.__name__!r} overlaps with parameter'
+                            f'{"s" if len(overlapping_params) >= 2 else ""} '
+                            f'{", ".join(repr(p) for p in sorted(overlapping_params))}',
+                            code='overlapping-unpack-typed-dict',
+                        )
+                    parameter_mode = 'var_kwargs_unpacked_typed_dict'
+                    annotation = unpack_type
+                else:
+                    parameter_mode = 'var_kwargs_uniform'
+
+            parameters_list.append(
+                self._generate_parameter_v3_schema(
+                    name, annotation, AnnotationSource.FUNCTION, parameter_mode, default=p.default
+                )
+            )
+
+        return core_schema.arguments_v3_schema(
+            parameters_list,
+            validate_by_name=self._config_wrapper.validate_by_name,
         )
 
     def _unsubstituted_typevar_schema(self, typevar: typing.TypeVar) -> core_schema.CoreSchema:
