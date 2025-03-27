@@ -429,17 +429,15 @@ print(v)
 1. As you would expect, this will pass validation since Pydantic correctly ignores the error in the (truncated) last item.
 2. This will also pass validation since the error in the last item is ignored.
 
-## Validation of callable arguments
+## Validation of a callable's arguments
 
 Pydantic provides the [`@validate_call`][pydantic.validate_call] decorator to perform validation on the provided
 arguments (and additionally return type) of a callable. However, it only allows arguments to be provided
-by directly instantiating the decorated callable. In some situations, you may want to validate the arguments
-from other data sources such as JSON data. For this use case, although not explicitly documented, Pydantic
-supports using [`TypeAdapter`][pydantic.TypeAdapter] over the callable, but doesn't properly support validation
-from other sources such as JSON data.
+by actually calling the decorated callable. In some situations, you may want to just _validate_ the arguments,
+such as when loading from other data sources such as JSON data.
 
 For this reason, the experimental [`generate_arguments_schema()`][pydantic.experimental.arguments_schema.generate_arguments_schema]
-function can be used to construct a core schema, than can later be used with a [`SchemaValidator`][pydantic_core.SchemaValidator].
+function can be used to construct a core schema, which can later be used with a [`SchemaValidator`][pydantic_core.SchemaValidator].
 
 ```python
 from pydantic_core import SchemaValidator
@@ -457,14 +455,26 @@ val = SchemaValidator(arguments_schema, config={'coerce_numbers_to_str': True})
 args, kwargs = val.validate_json(
     '{"p": true, "args": ["arg1", 1], "kwargs": {"extra": 1}}'
 )
-print(args, kwargs)
+print(args, kwargs)  # (1)!
 #> (True, 'arg1', '1') {'extra': 1}
 ```
 
-!!! note
-    This new core schema will become the default one to be used by [`@validate_call`][pydantic.validate_call]
-    and when using [`TypeAdapter`][pydantic.TypeAdapter] over a callable in Pydantic V3.
+1. If you want the validated arguments as a dictionary, you can use the [`Signature.bind()`][inspect.Signature.bind]
+   method:
 
+     ```python {test="skip" lint="skip"}
+     from inspect import signature
+
+     signature(func).bind(*args, **kwargs).arguments
+     #> {'p': True, 'args': ('arg1', '1'), 'kwargs': {'extra': 1}}
+     ```
+
+!!! note
+    Unlike [`@validate_call`][pydantic.validate_call], this core schema will only validated the provided arguments,
+    the underlying callable will *not* be called.
+
+This new core schema will become the default one to be used by [`@validate_call`][pydantic.validate_call]
+in Pydantic V3.
 
 Additionally, you can ignore specific parameters by providing a callback, called for every parameter:
 

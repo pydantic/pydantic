@@ -10,5 +10,4 @@
 ::: pydantic.experimental.arguments_schema
     options:
         members:
-            - SKIP
             - generate_arguments_schema

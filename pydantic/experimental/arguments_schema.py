@@ -14,7 +14,7 @@ from pydantic._internal import _config, _generate_schema, _namespace_utils
 def generate_arguments_schema(
     func: Callable[..., Any],
     schema_type: Literal['arguments', 'arguments-v3'] = 'arguments-v3',
-    parameters_callback: Callable[[int, str, Any], Any] | None = None,
+    parameters_callback: Callable[[int, str, Any], Literal['skip'] | None] | None = None,
     config: ConfigDict | None = None,
 ) -> CoreSchema:
     """Generate the schema for the arguments of a function.
