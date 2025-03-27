@@ -1,5 +1,5 @@
 import warnings
-from typing import Annotated, Any, Generic, TypeVar
+from typing import Annotated, Any, Generic, Literal, TypeVar
 
 import pytest
 from pydantic_core import ArgsKwargs, SchemaValidator
@@ -9,15 +9,15 @@ from pydantic import AliasGenerator, Field, PydanticExperimentalWarning, Pydanti
 
 with warnings.catch_warnings():
     warnings.filterwarnings('ignore', category=PydanticExperimentalWarning)
-    from pydantic.experimental.arguments_schema import SKIP, generate_arguments_schema
+    from pydantic.experimental.arguments_schema import generate_arguments_schema
 
 
 def func(p: bool, *args: str, **kwargs: int) -> None: ...
 
 
-def skip_first_parameter(index: int, name: str, annotation: Any) -> Any:
+def skip_first_parameter(index: int, name: str, annotation: Any) -> Literal['skip'] | None:
     if index == 0:
-        return SKIP
+        return 'skip'
 
 
 def test_generate_arguments_v3_schema() -> None:

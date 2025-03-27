@@ -51,7 +51,7 @@ from pydantic_core import (
     core_schema,
     to_jsonable_python,
 )
-from typing_extensions import TypeAliasType, TypedDict, get_args, get_origin, is_typeddict
+from typing_extensions import TypeAlias, TypeAliasType, TypedDict, get_args, get_origin, is_typeddict
 from typing_inspection import typing_objects
 from typing_inspection.introspection import AnnotationSource, get_literal_values, is_union_origin
 
@@ -114,8 +114,9 @@ AnyFieldDecorator = Union[
     Decorator[FieldSerializerDecoratorInfo],
 ]
 
-ModifyCoreSchemaWrapHandler = GetCoreSchemaHandler
-GetCoreSchemaFunction = Callable[[Any, ModifyCoreSchemaWrapHandler], core_schema.CoreSchema]
+ModifyCoreSchemaWrapHandler: TypeAlias = GetCoreSchemaHandler
+GetCoreSchemaFunction: TypeAlias = Callable[[Any, ModifyCoreSchemaWrapHandler], core_schema.CoreSchema]
+ParametersCallback: TypeAlias = "Callable[[int, str, Any], Literal['skip'] | None]"
 
 TUPLE_TYPES: list[type] = [typing.Tuple, tuple]  # noqa: UP006
 LIST_TYPES: list[type] = [typing.List, list, collections.abc.MutableSequence]  # noqa: UP006
@@ -1979,7 +1980,7 @@ class GenerateSchema:
         )
 
     def _arguments_schema(
-        self, function: ValidateCallSupportedTypes, parameters_callback: Callable[[int, str, Any], Any] | None = None
+        self, function: ValidateCallSupportedTypes, parameters_callback: ParametersCallback | None = None
     ) -> core_schema.ArgumentsSchema:
         """Generate schema for a Signature."""
         mode_lookup: dict[_ParameterKind, Literal['positional_only', 'positional_or_keyword', 'keyword_only']] = {
@@ -2004,10 +2005,8 @@ class GenerateSchema:
                 annotation = type_hints[name]
 
             if parameters_callback is not None:
-                from ..experimental.arguments_schema import SKIP
-
                 result = parameters_callback(i, name, annotation)
-                if result is SKIP:
+                if result == 'skip':
                     continue
 
             parameter_mode = mode_lookup.get(p.kind)
@@ -2056,7 +2055,7 @@ class GenerateSchema:
         )
 
     def _arguments_v3_schema(
-        self, function: ValidateCallSupportedTypes, parameters_callback: Callable[[int, str, Any], Any] | None = None
+        self, function: ValidateCallSupportedTypes, parameters_callback: ParametersCallback | None = None
     ) -> core_schema.ArgumentsV3Schema:
         mode_lookup: dict[
             _ParameterKind, Literal['positional_only', 'positional_or_keyword', 'var_args', 'keyword_only']
@@ -2075,10 +2074,8 @@ class GenerateSchema:
 
         for i, (name, p) in enumerate(sig.parameters.items()):
             if parameters_callback is not None:
-                from ..experimental.arguments_schema import SKIP
-
                 result = parameters_callback(i, name, p.annotation)
-                if result is SKIP:
+                if result == 'skip':
                     continue
 
             if p.annotation is Parameter.empty:

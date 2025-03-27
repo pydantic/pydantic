@@ -10,9 +10,6 @@ from pydantic_core import CoreSchema
 from pydantic import ConfigDict
 from pydantic._internal import _config, _generate_schema, _namespace_utils
 
-SKIP = object()
-"""A sentinel object to skip a parameter in the schema generation."""
-
 
 def generate_arguments_schema(
     func: Callable[..., Any],
@@ -28,8 +25,8 @@ def generate_arguments_schema(
         parameters_callback: A callable that will be invoked for each parameter. The callback
             should take three required arguments: the index, the name and the type annotation
             (or [`Parameter.empty`][inspect.Parameter.empty] if not annotated) of the parameter.
-            The callback can optionally return the [`SKIP`][pydantic.experimental.arguments_schema.SKIP]
-            sentinel, so that the parameter gets excluded from the resulting schema.
+            The callback can optionally return `'skip'`, so that the parameter gets excluded
+            from the resulting schema.
         config: The configuration to use.
 
     Returns:
