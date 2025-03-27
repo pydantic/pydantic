@@ -1,3 +1,36 @@
+## v2.11.0 (2025-03-27)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.11.0)
+
+### What's Changed
+
+Pydantic v2.11 is a version strongly focused on build time performance of Pydantic models (and core schema generation in general).
+See the [blog post](https://pydantic.dev/articles/pydantic-v2-11-release) for more details.
+
+#### Pacaking
+
+* Bump `pydantic-core` to v2.33.0 by @Viicos in [#11631](https://github.com/pydantic/pydantic/pull/11631)
+
+#### New Features
+
+* Add `encoded_string()` method to the URL types by @YassinNouh21 in [#11580](https://github.com/pydantic/pydantic/pull/11580)
+* Add support for `defer_build` with `@validate_call` decorator by @Viicos in [#11584](https://github.com/pydantic/pydantic/pull/11584)
+* Allow `@with_config` decorator to be used with keyword arguments by @Viicos in [#11608](https://github.com/pydantic/pydantic/pull/11608)
+* Simplify customization of default value inclusion in JSON Schema generation by @Viicos in [#11634](https://github.com/pydantic/pydantic/pull/11634)
+* Add `generate_arguments_schema()` function by @Viicos in [#11572](https://github.com/pydantic/pydantic/pull/11572)
+
+#### Fixes
+
+* Allow generic typed dictionaries to be used for unpacked variadic keyword parameters by @Viicos in [#11571](https://github.com/pydantic/pydantic/pull/11571)
+* Fix runtime error when computing model string representation involving cached properties and self-referenced models by @Viicos in [#11579](https://github.com/pydantic/pydantic/pull/11579)
+* Preserve other steps when using the ellipsis in the pipeline API by @Viicos in [#11626](https://github.com/pydantic/pydantic/pull/11626)
+* Fix deferred discriminator application logic by @Viicos in [#11591](https://github.com/pydantic/pydantic/pull/11591)
+
+### New Contributors
+
+* @cmenon12 made their first contribution in [#11562](https://github.com/pydantic/pydantic/pull/11562)
+* @Jeukoh made their first contribution in [#11611](https://github.com/pydantic/pydantic/pull/11611)
+
 ## v2.11.0b2 (2025-03-17)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.11.0b2)
