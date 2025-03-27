@@ -15,7 +15,7 @@ with warnings.catch_warnings():
 def func(p: bool, *args: str, **kwargs: int) -> None: ...
 
 
-def skip_first_parameter(index: int, name: str, annotation: Any) -> Literal['skip'] | None:
+def skip_first_parameter(index: int, name: str, annotation: Any) -> Literal['skip', None]:
     if index == 0:
         return 'skip'
 
