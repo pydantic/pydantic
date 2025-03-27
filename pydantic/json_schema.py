@@ -106,6 +106,12 @@ class PydanticJsonSchemaWarning(UserWarning):
     """
 
 
+NoDefault = object()
+"""A sentinel value used to indicate that no default value should be used when generating a JSON Schema
+for a core schema with a default value.
+"""
+
+
 # ##### JSON Schema Generation #####
 DEFAULT_REF_TEMPLATE = '#/$defs/{model}'
 """The default format string used to generate reference names."""
@@ -1102,17 +1108,9 @@ class GenerateJsonSchema:
         """
         json_schema = self.generate_inner(schema['schema'])
 
-        if 'default' not in schema:
+        default = self.get_default_value(schema)
+        if default is NoDefault:
             return json_schema
-        default = schema['default']
-        # Note: if you want to include the value returned by the default_factory,
-        # override this method and replace the code above with:
-        # if 'default' in schema:
-        #     default = schema['default']
-        # elif 'default_factory' in schema:
-        #     default = schema['default_factory']()
-        # else:
-        #     return json_schema
 
         # we reflect the application of custom plain, no-info serializers to defaults for
         # JSON Schemas viewed in serialization mode:
@@ -1152,6 +1150,21 @@ class GenerateJsonSchema:
 
         json_schema['default'] = encoded_default
         return json_schema
+
+    def get_default_value(self, schema: core_schema.WithDefaultSchema) -> Any:
+        """Get the default value to be used when generating a JSON Schema for a core schema with a default.
+
+        The default implementation is to use the statically defined default value. This method can be overridden
+        if you want to make use of the default factory.
+
+        Args:
+            schema: The `'with-default'` core schema.
+
+        Returns:
+            The default value to use, or [`NoDefault`][pydantic.json_schema.NoDefault] if no default
+                value is available.
+        """
+        return schema.get('default', NoDefault)
 
     def nullable_schema(self, schema: core_schema.NullableSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a schema that allows null values.

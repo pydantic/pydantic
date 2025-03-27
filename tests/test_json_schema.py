@@ -66,6 +66,7 @@ from pydantic.json_schema import (
     Examples,
     GenerateJsonSchema,
     JsonSchemaValue,
+    NoDefault,
     PydanticJsonSchemaWarning,
     SkipJsonSchema,
     model_json_schema,
@@ -5345,6 +5346,24 @@ def test_inclusion_of_defaults():
 
     assert Model.model_json_schema() == {
         'properties': {'x': {'default': 1, 'title': 'X', 'type': 'integer'}, 'y': {'title': 'Y', 'type': 'integer'}},
+        'title': 'Model',
+        'type': 'object',
+    }
+
+    class AllDefaults(GenerateJsonSchema):
+        def get_default_value(self, schema: core_schema.WithDefaultSchema) -> Any:
+            if 'default' in schema:
+                return schema['default']
+            elif 'default_factory' in schema:
+                # Users should also account for default factories taking validated data
+                return schema['default_factory']()
+            return NoDefault
+
+    assert Model.model_json_schema(schema_generator=AllDefaults) == {
+        'properties': {
+            'x': {'default': 1, 'title': 'X', 'type': 'integer'},
+            'y': {'default': 2, 'title': 'Y', 'type': 'integer'},
+        },
         'title': 'Model',
         'type': 'object',
     }
