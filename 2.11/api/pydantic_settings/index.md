@@ -50,7 +50,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `_case_sensitive` | `bool | None` | Whether environment and CLI variable names should be read with case-sensitivity. Defaults to None. | `None` | | `_nested_model_default_partial_update` | `bool | None` | Whether to allow partial updates on nested model default object fields. Defaults to False. | `None` | | `_env_prefix` | `str | None` | Prefix for all environment variables. Defaults to None. | `None` | | `_env_file` | `DotenvType | None` | The env file(s) to load settings values from. Defaults to Path(''), which means that the value from model_config['env_file'] should be used. You can also pass None to indicate that environment variables should not be loaded from an env file. | `ENV_FILE_SENTINEL` | | `_env_file_encoding` | `str | None` | The env file encoding, e.g. 'latin-1'. Defaults to None. | `None` | | `_env_ignore_empty` | `bool | None` | Ignore environment variables where the value is an empty string. Default to False. | `None` | | `_env_nested_delimiter` | `str | None` | The nested env values delimiter. Defaults to None. | `None` | | `_env_parse_none_str` | `str | None` | The env string value that should be parsed (e.g. "null", "void", "None", etc.) into None type(None). Defaults to None type(None), which means no parsing should occur. | `None` | | `_env_parse_enums` | `bool | None` | Parse enum field names to values. Defaults to None., which means no parsing should occur. | `None` | | `_cli_prog_name` | `str | None` | The CLI program name to display in help text. Defaults to None if \_cli_parse_args is None. Otherwse, defaults to sys.argv[0]. | `None` | | `_cli_parse_args` | `bool | list[str] | tuple[str, ...] | None` | The list of CLI arguments to parse. Defaults to None. If set to True, defaults to sys.argv[1:]. | `None` | | `_cli_settings_source` | `CliSettingsSource[Any] | None` | Override the default CLI settings source with a user defined instance. Defaults to None. | `None` | | `_cli_parse_none_str` | `str | None` | The CLI string value that should be parsed (e.g. "null", "void", "None", etc.) into None type(None). Defaults to \_env_parse_none_str value if set. Otherwise, defaults to "null" if \_cli_avoid_json is False, and "None" if \_cli_avoid_json is True. | `None` | | `_cli_hide_none_type` | `bool | None` | Hide None values in CLI help text. Defaults to False. | `None` | | `_cli_avoid_json` | `bool | None` | Avoid complex JSON objects in CLI help text. Defaults to False. | `None` | | `_cli_enforce_required` | `bool | None` | Enforce required fields at the CLI. Defaults to False. | `None` | | `_cli_use_class_docs_for_groups` | `bool | None` | Use class docstrings in CLI group help text instead of field descriptions. Defaults to False. | `None` | | `_cli_exit_on_error` | `bool | None` | Determines whether or not the internal parser exits with error info when an error occurs. Defaults to True. | `None` | | `_cli_prefix` | `str | None` | The root parser command line arguments prefix. Defaults to "". | `None` | | `_cli_flag_prefix_char` | `str | None` | The flag prefix character to use for CLI optional arguments. Defaults to '-'. | `None` | | `_cli_implicit_flags` | `bool | None` | Whether bool fields should be implicitly converted into CLI boolean flags. (e.g. --flag, --no-flag). Defaults to False. | `None` | | `_cli_ignore_unknown_args` | `bool | None` | Whether to ignore unknown CLI args and parse only known ones. Defaults to False. | `None` | | `_cli_kebab_case` | `bool | None` | CLI args use kebab case. Defaults to False. | `None` | | `_secrets_dir` | `PathType | None` | The secret files directory or a sequence of directories. Defaults to None. | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_settings/main.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_settings/main.py`
 
 ```python
 def __init__(
@@ -137,7 +137,7 @@ Returns:
 
 | Type | Description | | --- | --- | | `tuple[PydanticBaseSettingsSource, ...]` | A tuple containing the sources and their order for loading the settings values. |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_settings/main.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_settings/main.py`
 
 ```python
 @classmethod
@@ -206,7 +206,7 @@ Raises:
 
 | Type | Description | | --- | --- | | `SettingsError` | If model_cls is not subclass of BaseModel or pydantic.dataclasses.dataclass. | | `SettingsError` | If model_cls does not have a cli_cmd entrypoint defined. |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_settings/main.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_settings/main.py`
 
 ```python
 @staticmethod
@@ -307,7 +307,7 @@ Raises:
 
 | Type | Description | | --- | --- | | `SystemExit` | When no subcommand is found and cli_exit_on_error=True (the default). | | `SettingsError` | When no subcommand is found and cli_exit_on_error=False. |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_settings/main.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_settings/main.py`
 
 ```python
 @staticmethod
@@ -417,7 +417,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `cli_prog_name` | `str | None` | The CLI program name to display in help text. Defaults to None if cli_parse_args is None. Otherwse, defaults to sys.argv[0]. | `None` | | `cli_parse_args` | `bool | list[str] | tuple[str, ...] | None` | The list of CLI arguments to parse. Defaults to None. If set to True, defaults to sys.argv[1:]. | `None` | | `cli_parse_none_str` | `str | None` | The CLI string value that should be parsed (e.g. "null", "void", "None", etc.) into None type(None). Defaults to "null" if cli_avoid_json is False, and "None" if cli_avoid_json is True. | `None` | | `cli_hide_none_type` | `bool | None` | Hide None values in CLI help text. Defaults to False. | `None` | | `cli_avoid_json` | `bool | None` | Avoid complex JSON objects in CLI help text. Defaults to False. | `None` | | `cli_enforce_required` | `bool | None` | Enforce required fields at the CLI. Defaults to False. | `None` | | `cli_use_class_docs_for_groups` | `bool | None` | Use class docstrings in CLI group help text instead of field descriptions. Defaults to False. | `None` | | `cli_exit_on_error` | `bool | None` | Determines whether or not the internal parser exits with error info when an error occurs. Defaults to True. | `None` | | `cli_prefix` | `str | None` | Prefix for command line arguments added under the root parser. Defaults to "". | `None` | | `cli_flag_prefix_char` | `str | None` | The flag prefix character to use for CLI optional arguments. Defaults to '-'. | `None` | | `cli_implicit_flags` | `bool | None` | Whether bool fields should be implicitly converted into CLI boolean flags. (e.g. --flag, --no-flag). Defaults to False. | `None` | | `cli_ignore_unknown_args` | `bool | None` | Whether to ignore unknown CLI args and parse only known ones. Defaults to False. | `None` | | `cli_kebab_case` | `bool | None` | CLI args use kebab case. Defaults to False. | `None` | | `case_sensitive` | `bool | None` | Whether CLI "--arg" names should be read with case-sensitivity. Defaults to True. Note: Case-insensitive matching is only supported on the internal root parser and does not apply to CLI subcommands. | `True` | | `root_parser` | `Any` | The root parser object. | `None` | | `parse_args_method` | `Callable[..., Any] | None` | The root parser parse args method. Defaults to argparse.ArgumentParser.parse_args. | `None` | | `add_argument_method` | `Callable[..., Any] | None` | The root parser add argument method. Defaults to argparse.ArgumentParser.add_argument. | `add_argument` | | `add_argument_group_method` | `Callable[..., Any] | None` | The root parser add argument group method. Defaults to argparse.ArgumentParser.add_argument_group. | `add_argument_group` | | `add_parser_method` | `Callable[..., Any] | None` | The root parser add new parser (sub-command) method. Defaults to argparse.\_SubParsersAction.add_parser. | `add_parser` | | `add_subparsers_method` | `Callable[..., Any] | None` | The root parser add subparsers (sub-commands) method. Defaults to argparse.ArgumentParser.add_subparsers. | `add_subparsers` | | `formatter_class` | `Any` | A class for customizing the root parser help text. Defaults to argparse.RawDescriptionHelpFormatter. | `RawDescriptionHelpFormatter` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_settings/sources.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_settings/sources.py`
 
 ```python
 def __init__(
@@ -575,7 +575,7 @@ Bases: `EnvSettingsSource`
 
 Source class for loading settings values from env files.
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_settings/sources.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_settings/sources.py`
 
 ```python
 def __init__(
@@ -625,7 +625,7 @@ Bases: `PydanticBaseEnvSettingsSource`
 
 Source class for loading settings values from environment variables.
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_settings/sources.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_settings/sources.py`
 
 ```python
 def __init__(
@@ -669,7 +669,7 @@ Returns:
 
 | Type | Description | | --- | --- | | `tuple[Any, str, bool]` | A tuple that contains the value (None if not found), key, and a flag to determine whether value is complex. |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_settings/sources.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_settings/sources.py`
 
 ```python
 def get_field_value(self, field: FieldInfo, field_name: str) -> tuple[Any, str, bool]:
@@ -724,7 +724,7 @@ Raises:
 
 | Type | Description | | --- | --- | | `ValuesError` | When There is an error in deserializing value for complex field. |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_settings/sources.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_settings/sources.py`
 
 ```python
 def prepare_field_value(self, field_name: str, field: FieldInfo, value: Any, value_is_complex: bool) -> Any:
@@ -824,7 +824,7 @@ Returns:
 | --- | --- |
 | `FieldInfo | None` | Field if it finds the next field otherwise None. |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_settings/sources.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_settings/sources.py`
 
 ```python
 def next_field(
@@ -906,7 +906,7 @@ Returns:
 
 | Type | Description | | --- | --- | | `dict[str, Any]` | A dictionary contains extracted values from nested env values. |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_settings/sources.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_settings/sources.py`
 
 ```python
 def explode_env_vars(self, field_name: str, field: FieldInfo, env_vars: Mapping[str, str | None]) -> dict[str, Any]:
@@ -985,7 +985,7 @@ Bases: `PydanticBaseSettingsSource`
 
 Source class for loading values provided during settings class initialization.
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_settings/sources.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_settings/sources.py`
 
 ```python
 def __init__(
@@ -1019,7 +1019,7 @@ Bases: `InitSettingsSource`, `ConfigFileSourceMixin`
 
 A source class that loads variables from a JSON file
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_settings/sources.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_settings/sources.py`
 
 ```python
 def __init__(
@@ -1056,7 +1056,7 @@ Bases: `ABC`
 
 Abstract base class for settings sources, every settings source classes should inherit from it.
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_settings/sources.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_settings/sources.py`
 
 ```python
 def __init__(self, settings_cls: type[BaseSettings]):
@@ -1106,7 +1106,7 @@ Returns:
 
 | Type | Description | | --- | --- | | `tuple[Any, str, bool]` | A tuple that contains the value, key and a flag to determine whether value is complex. |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_settings/sources.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_settings/sources.py`
 
 ```python
 @abstractmethod
@@ -1144,7 +1144,7 @@ Returns:
 
 | Type | Description | | --- | --- | | `bool` | Whether the field is complex. |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_settings/sources.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_settings/sources.py`
 
 ```python
 def field_is_complex(self, field: FieldInfo) -> bool:
@@ -1183,7 +1183,7 @@ Returns:
 
 | Type | Description | | --- | --- | | `Any` | The prepared value. |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_settings/sources.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_settings/sources.py`
 
 ```python
 def prepare_field_value(self, field_name: str, field: FieldInfo, value: Any, value_is_complex: bool) -> Any:
@@ -1224,7 +1224,7 @@ Returns:
 
 | Type | Description | | --- | --- | | `Any` | The decoded value for further preparation |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_settings/sources.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_settings/sources.py`
 
 ```python
 def decode_complex_value(self, field_name: str, field: FieldInfo, value: Any) -> Any:
@@ -1263,7 +1263,7 @@ Bases: `TomlConfigSettingsSource`
 
 A source class that loads variables from a `pyproject.toml` file.
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_settings/sources.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_settings/sources.py`
 
 ```python
 def __init__(
@@ -1303,7 +1303,7 @@ Bases: `PydanticBaseEnvSettingsSource`
 
 Source class for loading settings values from secret files.
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_settings/sources.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_settings/sources.py`
 
 ```python
 def __init__(
@@ -1342,7 +1342,7 @@ Returns:
 
 | Type | Description | | --- | --- | | `Path | None` | Whether file path or None if file does not exist in directory. |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_settings/sources.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_settings/sources.py`
 
 ```python
 @classmethod
@@ -1386,7 +1386,7 @@ Returns:
 
 | Type | Description | | --- | --- | | `tuple[Any, str, bool]` | A tuple that contains the value (None if the file does not exist), key, and a flag to determine whether value is complex. |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_settings/sources.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_settings/sources.py`
 
 ```python
 def get_field_value(self, field: FieldInfo, field_name: str) -> tuple[Any, str, bool]:
@@ -1436,7 +1436,7 @@ Bases: `InitSettingsSource`, `ConfigFileSourceMixin`
 
 A source class that loads variables from a TOML file
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_settings/sources.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_settings/sources.py`
 
 ```python
 def __init__(
@@ -1465,7 +1465,7 @@ Bases: `InitSettingsSource`, `ConfigFileSourceMixin`
 
 A source class that loads variables from a yaml file
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_settings/sources.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_settings/sources.py`
 
 ```python
 def __init__(
@@ -1510,7 +1510,7 @@ Raises:
 
 | Type | Description | | --- | --- | | `SystemExit` | When no subcommand is found and is_required=True and cli_exit_on_error=True (the default). | | `SettingsError` | When no subcommand is found and is_required=True and cli_exit_on_error=False. |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_settings/sources.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_settings/sources.py`
 
 ```python
 def get_subcommand(

@@ -17,7 +17,7 @@ Bases: `str`
 
 A [payment card number](https://en.wikipedia.org/wiki/Payment_card_number).
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_extra_types/payment.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_extra_types/payment.py`
 
 ```python
 def __init__(self, card_number: str):
@@ -113,7 +113,7 @@ Returns:
 
 | Type | Description | | --- | --- | | `PaymentCardNumber` | The validated PaymentCardNumber instance. |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_extra_types/payment.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_extra_types/payment.py`
 
 ```python
 @classmethod
@@ -148,7 +148,7 @@ Raises:
 
 | Type | Description | | --- | --- | | `PydanticCustomError` | If the card number is not all digits. |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_extra_types/payment.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_extra_types/payment.py`
 
 ```python
 @classmethod
@@ -187,7 +187,7 @@ Raises:
 
 | Type | Description | | --- | --- | | `PydanticCustomError` | If the card number is not valid. |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_extra_types/payment.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_extra_types/payment.py`
 
 ```python
 @classmethod
@@ -242,7 +242,7 @@ Raises:
 
 | Type | Description | | --- | --- | | `PydanticCustomError` | If the card number is not valid. |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_extra_types/payment.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_extra_types/payment.py`
 
 ```python
 @staticmethod

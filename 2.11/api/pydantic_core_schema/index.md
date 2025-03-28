@@ -105,7 +105,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `type` | `ExpectedSerializationTypes` | The type to use for serialization | *required* |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ```python
 def simple_ser_schema(type: ExpectedSerializationTypes) -> SimpleSerSchema:
@@ -139,7 +139,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `function` | `SerializerFunction` | The function to use for serialization | *required* | | `is_field_serializer` | `bool | None` | Whether the serializer is for a field, e.g. takes model as the first argument, and info includes field_name | `None` | | `info_arg` | `bool | None` | Whether the function takes an info argument | `None` | | `return_schema` | `CoreSchema | None` | Schema to use for serializing return value | `None` | | `when_used` | `WhenUsed` | When the function should be called | `'always'` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ```python
 def plain_serializer_function_ser_schema(
@@ -196,7 +196,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `function` | `WrapSerializerFunction` | The function to use for serialization | *required* | | `is_field_serializer` | `bool | None` | Whether the serializer is for a field, e.g. takes model as the first argument, and info includes field_name | `None` | | `info_arg` | `bool | None` | Whether the function takes an info argument | `None` | | `schema` | `CoreSchema | None` | The schema to use for the inner serialization | `None` | | `return_schema` | `CoreSchema | None` | Schema to use for serializing return value | `None` | | `when_used` | `WhenUsed` | When the function should be called | `'always'` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ```python
 def wrap_serializer_function_ser_schema(
@@ -252,7 +252,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `formatting_string` | `str` | String defining the format to use | *required* | | `when_used` | `WhenUsed` | Same meaning as for [general_function_plain_ser_schema], but with a different default | `'json-unless-none'` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ```python
 def format_ser_schema(formatting_string: str, *, when_used: WhenUsed = 'json-unless-none') -> FormatSerSchema:
@@ -285,7 +285,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `when_used` | `WhenUsed` | Same meaning as for [general_function_plain_ser_schema], but with a different default | `'json-unless-none'` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ```python
 def to_string_ser_schema(*, when_used: WhenUsed = 'json-unless-none') -> ToStringSerSchema:
@@ -318,7 +318,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `cls` | `type[Any]` | The expected class type, used to generate warnings if the wrong type is passed | *required* | | `schema` | `CoreSchema` | Internal schema to use to serialize the model dict | *required* |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ```python
 def model_ser_schema(cls: type[Any], schema: CoreSchema) -> ModelSerSchema:
@@ -354,7 +354,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ```python
 def invalid_schema(ref: str | None = None, metadata: dict[str, Any] | None = None) -> InvalidSchema:
@@ -391,7 +391,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `property_name` | `str` | The name of the property on the model or dataclass | *required* | | `return_schema` | `CoreSchema` | The schema used for the type returned by the computed field | *required* | | `alias` | `str | None` | The name to use in the serialized output | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ```python
 def computed_field(
@@ -439,7 +439,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def any_schema(
@@ -492,7 +492,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def none_schema(
@@ -545,7 +545,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `strict` | `bool | None` | Whether the value should be a bool or a value that can be converted to a bool | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def bool_schema(
@@ -608,7 +608,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `multiple_of` | `int | None` | The value must be a multiple of this number | `None` | | `le` | `int | None` | The value must be less than or equal to this number | `None` | | `ge` | `int | None` | The value must be greater than or equal to this number | `None` | | `lt` | `int | None` | The value must be strictly less than this number | `None` | | `gt` | `int | None` | The value must be strictly greater than this number | `None` | | `strict` | `bool | None` | Whether the value should be a int or a value that can be converted to a int | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def int_schema(
@@ -694,7 +694,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `allow_inf_nan` | `bool | None` | Whether to allow inf and nan values | `None` | | `multiple_of` | `float | None` | The value must be a multiple of this number | `None` | | `le` | `float | None` | The value must be less than or equal to this number | `None` | | `ge` | `float | None` | The value must be greater than or equal to this number | `None` | | `lt` | `float | None` | The value must be strictly less than this number | `None` | | `gt` | `float | None` | The value must be strictly greater than this number | `None` | | `strict` | `bool | None` | Whether the value should be a float or a value that can be converted to a float | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def float_schema(
@@ -786,7 +786,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `allow_inf_nan` | `bool | None` | Whether to allow inf and nan values | `None` | | `multiple_of` | `Decimal | None` | The value must be a multiple of this number | `None` | | `le` | `Decimal | None` | The value must be less than or equal to this number | `None` | | `ge` | `Decimal | None` | The value must be greater than or equal to this number | `None` | | `lt` | `Decimal | None` | The value must be strictly less than this number | `None` | | `gt` | `Decimal | None` | The value must be strictly greater than this number | `None` | | `max_digits` | `int | None` | The maximum number of decimal digits allowed | `None` | | `decimal_places` | `int | None` | The maximum number of decimal places allowed | `None` | | `strict` | `bool | None` | Whether the value should be a float or a value that can be converted to a float | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def decimal_schema(
@@ -877,7 +877,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `strict` | `bool | None` | Whether the value should be a complex object instance or a value that can be converted to a complex object | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def complex_schema(
@@ -953,7 +953,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `pattern` | `str | Pattern[str] | None` | A regex pattern that the value must match | `None` | | `max_length` | `int | None` | The value must be at most this length | `None` | | `min_length` | `int | None` | The value must be at least this length | `None` | | `strip_whitespace` | `bool | None` | Whether to strip whitespace from the value | `None` | | `to_lower` | `bool | None` | Whether to convert the value to lowercase | `None` | | `to_upper` | `bool | None` | Whether to convert the value to uppercase | `None` | | `regex_engine` | `Literal['rust-regex', 'python-re'] | None` | The regex engine to use for pattern validation. Default is 'rust-regex'. - rust-regex uses the regex Rust crate, which is non-backtracking and therefore more DDoS resistant, but does not support all regex features. - python-re use the re module, which supports all regex features, but may be slower. | `None` | | `strict` | `bool | None` | Whether the value should be a string or a value that can be converted to a string | `None` | | `coerce_numbers_to_str` | `bool | None` | Whether to enable coercion of any Number type to str (not applicable in strict mode). | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def str_schema(
@@ -1049,7 +1049,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `max_length` | `int | None` | The value must be at most this length | `None` | | `min_length` | `int | None` | The value must be at least this length | `None` | | `strict` | `bool | None` | Whether the value should be a bytes or a value that can be converted to a bytes | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def bytes_schema(
@@ -1127,7 +1127,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `strict` | `bool | None` | Whether the value should be a date or a value that can be converted to a date | `None` | | `le` | `date | None` | The value must be less than or equal to this date | `None` | | `ge` | `date | None` | The value must be greater than or equal to this date | `None` | | `lt` | `date | None` | The value must be strictly less than this date | `None` | | `gt` | `date | None` | The value must be strictly greater than this date | `None` | | `now_op` | `Literal['past', 'future'] | None` | The value must be in the past or future relative to the current date | `None` | | `now_utc_offset` | `int | None` | The value must be in the past or future relative to the current date with this utc offset | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def date_schema(
@@ -1222,7 +1222,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `strict` | `bool | None` | Whether the value should be a time or a value that can be converted to a time | `None` | | `le` | `time | None` | The value must be less than or equal to this time | `None` | | `ge` | `time | None` | The value must be greater than or equal to this time | `None` | | `lt` | `time | None` | The value must be strictly less than this time | `None` | | `gt` | `time | None` | The value must be strictly greater than this time | `None` | | `tz_constraint` | `Literal['aware', 'naive'] | int | None` | The value must be timezone aware or naive, or an int to indicate required tz offset | `None` | | `microseconds_precision` | `Literal['truncate', 'error']` | The behavior when seconds have more than 6 digits or microseconds is too large | `'truncate'` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def time_schema(
@@ -1320,7 +1320,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `strict` | `bool | None` | Whether the value should be a datetime or a value that can be converted to a datetime | `None` | | `le` | `datetime | None` | The value must be less than or equal to this datetime | `None` | | `ge` | `datetime | None` | The value must be greater than or equal to this datetime | `None` | | `lt` | `datetime | None` | The value must be strictly less than this datetime | `None` | | `gt` | `datetime | None` | The value must be strictly greater than this datetime | `None` | | `now_op` | `Literal['past', 'future'] | None` | The value must be in the past or future relative to the current datetime | `None` | | `tz_constraint` | `Literal['aware', 'naive'] | int | None` | The value must be timezone aware or naive, or an int to indicate required tz offset TODO: use of a tzinfo where offset changes based on the datetime is not yet supported | `None` | | `now_utc_offset` | `int | None` | The value must be in the past or future relative to the current datetime with this utc offset | `None` | | `microseconds_precision` | `Literal['truncate', 'error']` | The behavior when seconds have more than 6 digits or microseconds is too large | `'truncate'` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def datetime_schema(
@@ -1420,7 +1420,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `strict` | `bool | None` | Whether the value should be a timedelta or a value that can be converted to a timedelta | `None` | | `le` | `timedelta | None` | The value must be less than or equal to this timedelta | `None` | | `ge` | `timedelta | None` | The value must be greater than or equal to this timedelta | `None` | | `lt` | `timedelta | None` | The value must be strictly less than this timedelta | `None` | | `gt` | `timedelta | None` | The value must be strictly greater than this timedelta | `None` | | `microseconds_precision` | `Literal['truncate', 'error']` | The behavior when seconds have more than 6 digits or microseconds is too large | `'truncate'` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def timedelta_schema(
@@ -1501,7 +1501,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `expected` | `list[Any]` | The value must be one of these values | *required* | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def literal_schema(
@@ -1570,7 +1570,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `cls` | `Any` | The enum class | *required* | | `members` | `list[Any]` | The members of the enum, generally list(MyEnum.__members__.values()) | *required* | | `sub_type` | `Literal['str', 'int', 'float'] | None` | The type of the enum, either 'str' or 'int' or None for plain enums | `None` | | `missing` | `Callable[[Any], Any] | None` | A function to use when the value is not found in the enum, from _missing_ | `None` | | `strict` | `bool | None` | Whether to use strict mode, defaults to False | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def enum_schema(
@@ -1657,7 +1657,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `cls` | `Any` | The value must be an instance of this class | *required* | | `cls_repr` | `str | None` | If provided this string is used in the validator name instead of repr(cls) | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def is_instance_schema(
@@ -1730,7 +1730,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `cls` | `type[Any]` | The value must be a subclass of this class | *required* | | `cls_repr` | `str | None` | If provided this string is used in the validator name instead of repr(cls) | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def is_subclass_schema(
@@ -1798,7 +1798,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def callable_schema(
@@ -1856,7 +1856,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `items_schema` | `CoreSchema | None` | The value must be a list of items that match this schema | `None` | | `min_length` | `int | None` | The value must be a list with at least this many items | `None` | | `max_length` | `int | None` | The value must be a list with at most this many items | `None` | | `fail_fast` | `bool | None` | Stop validation on the first error | `None` | | `strict` | `bool | None` | The value must be a list with exactly this many items | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `IncExSeqOrElseSerSchema | None` | Custom serialization schema | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def list_schema(
@@ -1937,7 +1937,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `items_schema` | `list[CoreSchema]` | The value must be a tuple with items that match these schemas | *required* | | `extras_schema` | `CoreSchema | None` | The value must be a tuple with items that match this schema This was inspired by JSON schema's prefixItems and items fields. In python's typing.Tuple, you can't specify a type for "extra" items -- they must all be the same type if the length is variable. So this field won't be set from a typing.Tuple annotation on a pydantic model. | `None` | | `strict` | `bool | None` | The value must be a tuple with exactly this many items | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `IncExSeqOrElseSerSchema | None` | Custom serialization schema | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def tuple_positional_schema(
@@ -2022,7 +2022,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `items_schema` | `CoreSchema | None` | The value must be a tuple with items that match this schema | `None` | | `min_length` | `int | None` | The value must be a tuple with at least this many items | `None` | | `max_length` | `int | None` | The value must be a tuple with at most this many items | `None` | | `strict` | `bool | None` | The value must be a tuple with exactly this many items | `None` | | `ref` | `str | None` | Optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `IncExSeqOrElseSerSchema | None` | Custom serialization schema | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def tuple_variable_schema(
@@ -2106,7 +2106,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `items_schema` | `list[CoreSchema]` | The value must be a tuple with items that match these schemas | *required* | | `variadic_item_index` | `int | None` | The index of the schema in items_schema to be treated as variadic (following PEP 646) | `None` | | `min_length` | `int | None` | The value must be a tuple with at least this many items | `None` | | `max_length` | `int | None` | The value must be a tuple with at most this many items | `None` | | `fail_fast` | `bool | None` | Stop validation on the first error | `None` | | `strict` | `bool | None` | The value must be a tuple with exactly this many items | `None` | | `ref` | `str | None` | Optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `IncExSeqOrElseSerSchema | None` | Custom serialization schema | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def tuple_schema(
@@ -2195,7 +2195,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `items_schema` | `CoreSchema | None` | The value must be a set with items that match this schema | `None` | | `min_length` | `int | None` | The value must be a set with at least this many items | `None` | | `max_length` | `int | None` | The value must be a set with at most this many items | `None` | | `fail_fast` | `bool | None` | Stop validation on the first error | `None` | | `strict` | `bool | None` | The value must be a set with exactly this many items | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def set_schema(
@@ -2280,7 +2280,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `items_schema` | `CoreSchema | None` | The value must be a frozenset with items that match this schema | `None` | | `min_length` | `int | None` | The value must be a frozenset with at least this many items | `None` | | `max_length` | `int | None` | The value must be a frozenset with at most this many items | `None` | | `fail_fast` | `bool | None` | Stop validation on the first error | `None` | | `strict` | `bool | None` | The value must be a frozenset with exactly this many items | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def frozenset_schema(
@@ -2367,7 +2367,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `items_schema` | `CoreSchema | None` | The value must be a generator with items that match this schema | `None` | | `min_length` | `int | None` | The value must be a generator that yields at least this many items | `None` | | `max_length` | `int | None` | The value must be a generator that yields at most this many items | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `IncExSeqOrElseSerSchema | None` | Custom serialization schema | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def generator_schema(
@@ -2452,7 +2452,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `keys_schema` | `CoreSchema | None` | The value must be a dict with keys that match this schema | `None` | | `values_schema` | `CoreSchema | None` | The value must be a dict with values that match this schema | `None` | | `min_length` | `int | None` | The value must be a dict with at least this many items | `None` | | `max_length` | `int | None` | The value must be a dict with at most this many items | `None` | | `strict` | `bool | None` | Whether the keys and values should be validated with strict mode | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def dict_schema(
@@ -2540,7 +2540,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `function` | `NoInfoValidatorFunction` | The validator function to call | *required* | | `schema` | `CoreSchema` | The schema to validate the output of the validator function | *required* | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `json_schema_input_schema` | `CoreSchema | None` | The core schema to be used to generate the corresponding JSON Schema input type | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def no_info_before_validator_function(
@@ -2630,7 +2630,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `function` | `WithInfoValidatorFunction` | The validator function to call | *required* | | `field_name` | `str | None` | The name of the field | `None` | | `schema` | `CoreSchema` | The schema to validate the output of the validator function | *required* | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `json_schema_input_schema` | `CoreSchema | None` | The core schema to be used to generate the corresponding JSON Schema input type | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def with_info_before_validator_function(
@@ -2720,7 +2720,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `function` | `NoInfoValidatorFunction` | The validator function to call after the schema is validated | *required* | | `schema` | `CoreSchema` | The schema to validate before the validator function | *required* | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `json_schema_input_schema` | `CoreSchema | None` | The core schema to be used to generate the corresponding JSON Schema input type | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def no_info_after_validator_function(
@@ -2807,7 +2807,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `function` | `WithInfoValidatorFunction` | The validator function to call after the schema is validated | *required* | | `schema` | `CoreSchema` | The schema to validate before the validator function | *required* | | `field_name` | `str | None` | The name of the field this validators is applied to, if any | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def with_info_after_validator_function(
@@ -2897,7 +2897,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `function` | `NoInfoWrapValidatorFunction` | The validator function to call | *required* | | `schema` | `CoreSchema` | The schema to validate the output of the validator function | *required* | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `json_schema_input_schema` | `CoreSchema | None` | The core schema to be used to generate the corresponding JSON Schema input type | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def no_info_wrap_validator_function(
@@ -2990,7 +2990,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `function` | `WithInfoWrapValidatorFunction` | The validator function to call | *required* | | `schema` | `CoreSchema` | The schema to validate the output of the validator function | *required* | | `field_name` | `str | None` | The name of the field this validators is applied to, if any | `None` | | `json_schema_input_schema` | `CoreSchema | None` | The core schema to be used to generate the corresponding JSON Schema input type | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def with_info_wrap_validator_function(
@@ -3079,7 +3079,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `function` | `NoInfoValidatorFunction` | The validator function to call | *required* | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `json_schema_input_schema` | `CoreSchema | None` | The core schema to be used to generate the corresponding JSON Schema input type | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def no_info_plain_validator_function(
@@ -3157,7 +3157,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `function` | `WithInfoValidatorFunction` | The validator function to call | *required* | | `field_name` | `str | None` | The name of the field this validators is applied to, if any | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `json_schema_input_schema` | `CoreSchema | None` | The core schema to be used to generate the corresponding JSON Schema input type | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def with_info_plain_validator_function(
@@ -3246,7 +3246,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `schema` | `CoreSchema` | The schema to add a default value to | *required* | | `default` | `Any` | The default value to use | `PydanticUndefined` | | `default_factory` | `Union[Callable[[], Any], Callable[[dict[str, Any]], Any], None]` | A callable that returns the default value to use | `None` | | `default_factory_takes_data` | `bool | None` | Whether the default factory takes a validated data argument | `None` | | `on_error` | `Literal['raise', 'omit', 'default'] | None` | What to do if the schema validation fails. One of 'raise', 'omit', 'default' | `None` | | `validate_default` | `bool | None` | Whether the default value should be validated | `None` | | `strict` | `bool | None` | Whether the underlying schema should be validated with strict mode | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def with_default_schema(
@@ -3335,7 +3335,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `schema` | `CoreSchema` | The schema to wrap | *required* | | `strict` | `bool | None` | Whether the underlying schema should be validated with strict mode | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def nullable_schema(
@@ -3406,7 +3406,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `choices` | `list[CoreSchema | tuple[CoreSchema, str]]` | The schemas to match. If a tuple, the second item is used as the label for the case. | *required* | | `auto_collapse` | `bool | None` | whether to automatically collapse unions with one element to the inner validator, default true | `None` | | `custom_error_type` | `str | None` | The custom error type to use if the validation fails | `None` | | `custom_error_message` | `str | None` | The custom error message to use if the validation fails | `None` | | `custom_error_context` | `dict[str, str | int] | None` | The custom error context to use if the validation fails | `None` | | `mode` | `Literal['smart', 'left_to_right'] | None` | How to select which choice to return * smart (default) will try to return the choice which is the closest match to the input value * left_to_right will return the first choice in choices which succeeds validation | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def union_schema(
@@ -3526,7 +3526,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `choices` | `dict[Any, CoreSchema]` | The schemas to match When retrieving a schema from choices using the discriminator value, if the value is a str, it should be fed back into the choices map until a schema is obtained (This approach is to prevent multiple ownership of a single schema in Rust) | *required* | | `discriminator` | `str | list[str | int] | list[list[str | int]] | Callable[[Any], Any]` | The discriminator to use to determine the schema to use * If discriminator is a str, it is the name of the attribute to use as the discriminator * If discriminator is a list of int/str, it should be used as a "path" to access the discriminator * If discriminator is a list of lists, each inner list is a path, and the first path that exists is used * If discriminator is a callable, it should return the discriminator when called on the value to validate; the callable can return None to indicate that there is no matching discriminator present on the input | *required* | | `custom_error_type` | `str | None` | The custom error type to use if the validation fails | `None` | | `custom_error_message` | `str | None` | The custom error message to use if the validation fails | `None` | | `custom_error_context` | `dict[str, int | str | float] | None` | The custom error context to use if the validation fails | `None` | | `strict` | `bool | None` | Whether the underlying schemas should be validated with strict mode | `None` | | `from_attributes` | `bool | None` | Whether to use the attributes of the object to retrieve the discriminator value | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def tagged_union_schema(
@@ -3648,7 +3648,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `steps` | `list[CoreSchema]` | The schemas to chain | *required* | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def chain_schema(
@@ -3731,7 +3731,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `lax_schema` | `CoreSchema` | The lax schema to use | *required* | | `strict_schema` | `CoreSchema` | The strict schema to use | *required* | | `strict` | `bool | None` | Whether the strict schema should be used | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def lax_or_strict_schema(
@@ -3830,7 +3830,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `json_schema` | `CoreSchema` | The schema to use for Json inputs | *required* | | `python_schema` | `CoreSchema` | The schema to use for Python inputs | *required* | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def json_or_python_schema(
@@ -3912,7 +3912,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `schema` | `CoreSchema` | The schema to use for the field | *required* | | `required` | `bool | None` | Whether the field is required, otherwise uses the value from total on the typed dict | `None` | | `validation_alias` | `str | list[str | int] | list[list[str | int]] | None` | The alias(es) to use to find the field in the validation data | `None` | | `serialization_alias` | `str | None` | The alias to use as a key when serializing | `None` | | `serialization_exclude` | `bool | None` | Whether to exclude the field when serializing | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def typed_dict_field(
@@ -3996,7 +3996,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `fields` | `dict[str, TypedDictField]` | The fields to use for the typed dict | *required* | | `cls` | `type[Any] | None` | The class to use for the typed dict | `None` | | `cls_name` | `str | None` | The name to use in error locations. Falls back to cls.__name__, or the validator name if no class is provided. | `None` | | `computed_fields` | `list[ComputedField] | None` | Computed fields to use when serializing the model, only applies when directly inside a model | `None` | | `strict` | `bool | None` | Whether the typed dict is strict | `None` | | `extras_schema` | `CoreSchema | None` | The extra validator to use for the typed dict | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `extra_behavior` | `ExtraBehavior | None` | The extra behavior to use for the typed dict | `None` | | `total` | `bool | None` | Whether the typed dict is total, otherwise uses typed_dict_total from config | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def typed_dict_schema(
@@ -4094,7 +4094,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `schema` | `CoreSchema` | The schema to use for the field | *required* | | `validation_alias` | `str | list[str | int] | list[list[str | int]] | None` | The alias(es) to use to find the field in the validation data | `None` | | `serialization_alias` | `str | None` | The alias to use as a key when serializing | `None` | | `serialization_exclude` | `bool | None` | Whether to exclude the field when serializing | `None` | | `frozen` | `bool | None` | Whether the field is frozen | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def model_field(
@@ -4173,7 +4173,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `fields` | `dict[str, ModelField]` | The fields of the model | *required* | | `model_name` | `str | None` | The name of the model, used for error messages, defaults to "Model" | `None` | | `computed_fields` | `list[ComputedField] | None` | Computed fields to use when serializing the model, only applies when directly inside a model | `None` | | `strict` | `bool | None` | Whether the model is strict | `None` | | `extras_schema` | `CoreSchema | None` | The schema to use when validating extra input data | `None` | | `extras_keys_schema` | `CoreSchema | None` | The schema to use when validating the keys of extra input data | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `extra_behavior` | `ExtraBehavior | None` | The extra behavior to use for the model fields | `None` | | `from_attributes` | `bool | None` | Whether the model fields should be populated from attributes | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def model_fields_schema(
@@ -4292,7 +4292,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `cls` | `type[Any]` | The class to use for the model | *required* | | `schema` | `CoreSchema` | The schema to use for the model | *required* | | `generic_origin` | `type[Any] | None` | The origin type used for this model, if it's a parametrized generic. Ex, if this model schema represents SomeModel[int], generic_origin is SomeModel | `None` | | `custom_init` | `bool | None` | Whether the model has a custom init method | `None` | | `root_model` | `bool | None` | Whether the model is a RootModel | `None` | | `post_init` | `str | None` | The call after init to use for the model | `None` | | `revalidate_instances` | `Literal['always', 'never', 'subclass-instances'] | None` | whether instances of models and dataclasses (including subclass instances) should re-validate defaults to config.revalidate_instances, else 'never' | `None` | | `strict` | `bool | None` | Whether the model is strict | `None` | | `frozen` | `bool | None` | Whether the model is frozen | `None` | | `extra_behavior` | `ExtraBehavior | None` | The extra behavior to use for the model, used in serialization | `None` | | `config` | `CoreConfig | None` | The config to use for the model | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def model_schema(
@@ -4420,7 +4420,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `name` | `str` | The name to use for the argument parameter | *required* | | `schema` | `CoreSchema` | The schema to use for the argument parameter | *required* | | `kw_only` | `bool | None` | Whether the field can be set with a positional argument as well as a keyword argument | `None` | | `init` | `bool | None` | Whether the field should be validated during initialization | `None` | | `init_only` | `bool | None` | Whether the field should be omitted from __dict__ and passed to __post_init__ | `None` | | `validation_alias` | `str | list[str | int] | list[list[str | int]] | None` | The alias(es) to use to find the field in the validation data | `None` | | `serialization_alias` | `str | None` | The alias to use as a key when serializing | `None` | | `serialization_exclude` | `bool | None` | Whether to exclude the field when serializing | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `frozen` | `bool | None` | Whether the field is frozen | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def dataclass_field(
@@ -4516,7 +4516,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `dataclass_name` | `str` | The name of the dataclass being validated | *required* | | `fields` | `list[DataclassField]` | The fields to use for the dataclass | *required* | | `computed_fields` | `list[ComputedField] | None` | Computed fields to use when serializing the dataclass | `None` | | `collect_init_only` | `bool | None` | Whether to collect init only fields into a dict to pass to __post_init__ | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` | | `extra_behavior` | `ExtraBehavior | None` | How to handle extra fields | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def dataclass_args_schema(
@@ -4603,7 +4603,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `cls` | `type[Any]` | The dataclass type, used to perform subclass checks | *required* | | `schema` | `CoreSchema` | The schema to use for the dataclass fields | *required* | | `fields` | `list[str]` | Fields of the dataclass, this is used in serialization and in validation during re-validation and while validating assignment | *required* | | `generic_origin` | `type[Any] | None` | The origin type used for this dataclass, if it's a parametrized generic. Ex, if this model schema represents SomeDataclass[int], generic_origin is SomeDataclass | `None` | | `cls_name` | `str | None` | The name to use in error locs, etc; this is useful for generics (default: cls.__name__) | `None` | | `post_init` | `bool | None` | Whether to call __post_init__ after validation | `None` | | `revalidate_instances` | `Literal['always', 'never', 'subclass-instances'] | None` | whether instances of models and dataclasses (including subclass instances) should re-validate defaults to config.revalidate_instances, else 'never' | `None` | | `strict` | `bool | None` | Whether to require an exact instance of cls | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` | | `frozen` | `bool | None` | Whether the dataclass is frozen | `None` | | `slots` | `bool | None` | Whether slots=True on the dataclass, means each field is assigned independently, rather than simply setting __dict__, default false | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ```python
 def dataclass_schema(
@@ -4706,7 +4706,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `name` | `str` | The name to use for the argument parameter | *required* | | `schema` | `CoreSchema` | The schema to use for the argument parameter | *required* | | `mode` | `Literal['positional_only', 'positional_or_keyword', 'keyword_only'] | None` | The mode to use for the argument parameter | `None` | | `alias` | `str | list[str | int] | list[list[str | int]] | None` | The alias to use for the argument parameter | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def arguments_parameter(
@@ -4779,7 +4779,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `arguments` | `list[ArgumentsParameter]` | The arguments to use for the arguments schema | *required* | | `validate_by_name` | `bool | None` | Whether to populate by the parameter names, defaults to False. | `None` | | `validate_by_alias` | `bool | None` | Whether to populate by the parameter aliases, defaults to True. | `None` | | `var_args_schema` | `CoreSchema | None` | The variable args schema to use for the arguments schema | `None` | | `var_kwargs_mode` | `VarKwargsMode | None` | The validation mode to use for variadic keyword arguments. If 'uniform', every value of the keyword arguments will be validated against the var_kwargs_schema schema. If 'unpacked-typed-dict', the var_kwargs_schema argument must be a typed_dict_schema | `None` | | `var_kwargs_schema` | `CoreSchema | None` | The variable kwargs schema to use for the arguments schema | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def arguments_schema(
@@ -4882,7 +4882,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `name` | `str` | The name to use for the argument parameter | *required* | | `schema` | `CoreSchema` | The schema to use for the argument parameter | *required* | | `mode` | `Literal['positional_only', 'positional_or_keyword', 'keyword_only', 'var_args', 'var_kwargs_uniform', 'var_kwargs_unpacked_typed_dict'] | None` | The mode to use for the argument parameter | `None` | | `alias` | `str | list[str | int] | list[list[str | int]] | None` | The alias to use for the argument parameter | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def arguments_v3_parameter(
@@ -4965,7 +4965,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `arguments` | `list[ArgumentsV3Parameter]` | The arguments to use for the arguments schema. | *required* | | `validate_by_name` | `bool | None` | Whether to populate by the parameter names, defaults to False. | `None` | | `validate_by_alias` | `bool | None` | Whether to populate by the parameter aliases, defaults to True. | `None` | | `extra_behavior` | `Literal['forbid', 'ignore'] | None` | The extra behavior to use. | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places. | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core. | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema. | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def arguments_v3_schema(
@@ -5063,7 +5063,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `arguments` | `CoreSchema` | The arguments to use for the arguments schema | *required* | | `function` | `Callable[..., Any]` | The function to use for the call schema | *required* | | `function_name` | `str | None` | The function name to use for the call schema, if not provided function.__name__ is used | `None` | | `return_schema` | `CoreSchema | None` | The return schema to use for the call schema | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def call_schema(
@@ -5156,7 +5156,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `schema` | `CoreSchema` | The schema to use for the custom error schema | *required* | | `custom_error_type` | `str` | The custom error type to use for the custom error schema | *required* | | `custom_error_message` | `str | None` | The custom error message to use for the custom error schema | `None` | | `custom_error_context` | `dict[str, Any] | None` | The custom error context to use for the custom error schema | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def custom_error_schema(
@@ -5253,7 +5253,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `schema` | `CoreSchema | None` | The schema to use for the JSON schema | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def json_schema(
@@ -5338,7 +5338,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `max_length` | `int | None` | The maximum length of the URL | `None` | | `allowed_schemes` | `list[str] | None` | The allowed URL schemes | `None` | | `host_required` | `bool | None` | Whether the URL must have a host | `None` | | `default_host` | `str | None` | The default host to use if the URL does not have a host | `None` | | `default_port` | `int | None` | The default port to use if the URL does not have a port | `None` | | `default_path` | `str | None` | The default path to use if the URL does not have a path | `None` | | `strict` | `bool | None` | Whether to use strict URL parsing | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def url_schema(
@@ -5429,7 +5429,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `max_length` | `int | None` | The maximum length of the URL | `None` | | `allowed_schemes` | `list[str] | None` | The allowed URL schemes | `None` | | `host_required` | `bool | None` | Whether the URL must have a host | `None` | | `default_host` | `str | None` | The default host to use if the URL does not have a host | `None` | | `default_port` | `int | None` | The default port to use if the URL does not have a port | `None` | | `default_path` | `str | None` | The default path to use if the URL does not have a path | `None` | | `strict` | `bool | None` | Whether to use strict URL parsing | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def multi_host_url_schema(
@@ -5512,7 +5512,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `schema` | `CoreSchema` | The inner schema | *required* | | `definitions` | `list[CoreSchema]` | List of definitions which can be referenced within inner schema | *required* |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def definitions_schema(schema: CoreSchema, definitions: list[CoreSchema]) -> DefinitionsSchema:
@@ -5572,7 +5572,7 @@ Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `schema_ref` | `str` | The schema ref to use for the definition reference schema | *required* | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py`
 
 ````python
 def definition_reference_schema(

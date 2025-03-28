@@ -27,7 +27,7 @@ print(account)
 
 ```
 
-Source code in `.venv/lib/python3.13/site-packages/pydantic_extra_types/routing_number.py`
+Source code in `.venv/lib/python3.12/site-packages/pydantic_extra_types/routing_number.py`
 
 ```python
 def __init__(self, routing_number: str):
