@@ -1,3 +1,13 @@
+## v2.11.1 (2025-03-28)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.11.1)
+
+### What's Changed
+
+#### Fixes
+
+* Do not override `'definitions-ref'` schemas containing serialization schemas or metadata by @Viicos in [#11644](https://github.com/pydantic/pydantic/pull/11644)
+
 ## v2.11.0 (2025-03-27)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.11.0)
