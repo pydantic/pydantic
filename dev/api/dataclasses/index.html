@@ -4026,7 +4026,7 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
     <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;__pydantic_core_schema__&#39;</span><span class="p">,</span> <span class="s1">&#39;__pydantic_validator__&#39;</span><span class="p">,</span> <span class="s1">&#39;__pydantic_serializer__&#39;</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">attr</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">:</span>
             <span class="c1"># Deleting the validator/serializer is necessary as otherwise they can get reused in</span>
-            <span class="c1"># pycantic-core. Same applies for the core schema that can be reused in schema generation.</span>
+            <span class="c1"># pydantic-core. Same applies for the core schema that can be reused in schema generation.</span>
             <span class="nb">delattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span>
 
     <span class="bp">cls</span><span class="o">.</span><span class="n">__pydantic_complete__</span> <span class="o">=</span> <span class="kc">False</span>
