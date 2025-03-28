@@ -2813,7 +2813,7 @@ class _Definitions:
         # Some `'definition-ref'` schemas might act as "intermediate" references (e.g. when using
         # a PEP 695 type alias (which is referenceable) that references another PEP 695 type alias):
         visited: set[str] = set()
-        while definition['type'] == 'definition-ref':
+        while definition['type'] == 'definition-ref' and _inlining_behavior(definition) == 'inline':
             schema_ref = definition['schema_ref']
             if schema_ref in visited:
                 raise PydanticUserError(
