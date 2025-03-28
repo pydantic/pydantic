@@ -465,6 +465,7 @@ def test_type_alias_type_with_serialization() -> None:
     assert ta.dump_python(1) == 3
 
 
+@pytest.mark.skip_json_schema_validation(reason='Extra info added.')
 def test_type_alias_type_with_metadata() -> None:
     """Same as `test_type_alias_type_with_serialization()` but with JSON Metadata."""
 
