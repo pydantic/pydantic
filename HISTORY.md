@@ -7,7 +7,7 @@
 Pydantic v2.11 is a version strongly focused on build time performance of Pydantic models (and core schema generation in general).
 See the [blog post](https://pydantic.dev/articles/pydantic-v2-11-release) for more details.
 
-#### Pacaking
+#### Packaging
 
 * Bump `pydantic-core` to v2.33.0 by @Viicos in [#11631](https://github.com/pydantic/pydantic/pull/11631)
 
@@ -2030,7 +2030,7 @@ See [this post](https://docs.pydantic.dev/blog/pydantic-v2-alpha/) for more deta
 
 ## v1.10.1 (2022-08-31)
 
-* Add `__hash__` method to `pydancic.color.Color` class, [#4454](https://github.com/pydantic/pydantic/pull/4454) by @czaki
+* Add `__hash__` method to `pydantic.color.Color` class, [#4454](https://github.com/pydantic/pydantic/pull/4454) by @czaki
 
 ## v1.10.0 (2022-08-30)
 
