@@ -330,7 +330,7 @@ def rebuild_dataclass(
     for attr in ('__pydantic_core_schema__', '__pydantic_validator__', '__pydantic_serializer__'):
         if attr in cls.__dict__:
             # Deleting the validator/serializer is necessary as otherwise they can get reused in
-            # pycantic-core. Same applies for the core schema that can be reused in schema generation.
+            # pydantic-core. Same applies for the core schema that can be reused in schema generation.
             delattr(cls, attr)
 
     cls.__pydantic_complete__ = False

@@ -1361,7 +1361,7 @@ class Model[T](BaseModel):
 
 
 @pytest.mark.skipif(sys.version_info < (3, 12), reason='Test related to PEP 695 syntax.')
-def test_pep695_generics_syntax_arbitry_class(create_module) -> None:
+def test_pep695_generics_syntax_arbitrary_class(create_module) -> None:
     mod_1 = create_module(
         """
 from typing import TypedDict

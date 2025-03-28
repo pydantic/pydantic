@@ -356,7 +356,7 @@ def map_generic_model_arguments(cls: type[BaseModel], args: tuple[Any, ...]) -> 
         map_generic_model_arguments(Model, (str,))
         #> TypeError: Too few arguments for <class '__main__.Model'>; actual 1, expected at least 2
 
-        map_generic_model_argumenst(Model, (str, bytes, int, complex))
+        map_generic_model_arguments(Model, (str, bytes, int, complex))
         #> TypeError: Too many arguments for <class '__main__.Model'>; actual 4, expected 3
         ```
 
