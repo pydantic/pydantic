@@ -25,9 +25,15 @@ class DecimalSubclass(Decimal):
     'constraint',
     ['multiple_of', 'le', 'lt', 'ge', 'gt'],
 )
-def test_constraints_schema_validation(constraint: str) -> None:
+def test_constraints_schema_validation_error(constraint: str) -> None:
     with pytest.raises(SchemaError, match=f"'{constraint}' must be coercible to a Decimal instance"):
         SchemaValidator(cs.decimal_schema(**{constraint: 'bad_value'}))
+
+
+def test_constraints_schema_validation() -> None:
+    val = SchemaValidator(cs.decimal_schema(gt='1'))
+    with pytest.raises(ValidationError):
+        val.validate_python('0')
 
 
 @pytest.mark.parametrize(

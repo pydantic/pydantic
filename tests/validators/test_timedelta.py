@@ -16,6 +16,21 @@ except ImportError:
 
 
 @pytest.mark.parametrize(
+    'constraint',
+    ['le', 'lt', 'ge', 'gt'],
+)
+def test_constraints_schema_validation_error(constraint: str) -> None:
+    with pytest.raises(SchemaError, match=f"'{constraint}' must be coercible to a timedelta instance"):
+        SchemaValidator(core_schema.timedelta_schema(**{constraint: 'bad_value'}))
+
+
+def test_constraints_schema_validation() -> None:
+    val = SchemaValidator(core_schema.timedelta_schema(gt=3))
+    with pytest.raises(ValidationError):
+        val.validate_python(1)
+
+
+@pytest.mark.parametrize(
     'input_value,expected',
     [
         (

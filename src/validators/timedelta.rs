@@ -1,10 +1,12 @@
+use pyo3::exceptions::PyValueError;
+use pyo3::intern;
 use pyo3::prelude::*;
-use pyo3::types::{PyDelta, PyDeltaAccess, PyDict};
-use speedate::Duration;
+use pyo3::types::{PyDelta, PyDeltaAccess, PyDict, PyString};
+use speedate::{Duration, MicrosecondsPrecisionOverflowBehavior};
 
 use crate::build_tools::is_strict;
 use crate::errors::{ErrorType, ValError, ValResult};
-use crate::input::{duration_as_pytimedelta, EitherTimedelta, Input};
+use crate::input::{duration_as_pytimedelta, Input};
 
 use super::datetime::extract_microseconds_precision;
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
@@ -24,12 +26,14 @@ struct TimedeltaConstraints {
     gt: Option<Duration>,
 }
 
-fn get_constraint(schema: &Bound<'_, PyDict>, key: &str) -> PyResult<Option<Duration>> {
+fn get_constraint(schema: &Bound<'_, PyDict>, key: &Bound<'_, PyString>) -> PyResult<Option<Duration>> {
     match schema.get_item(key)? {
-        Some(value) => {
-            let either_timedelta = EitherTimedelta::try_from(&value)?;
-            Ok(Some(either_timedelta.to_duration()?))
-        }
+        Some(value) => match value.validate_timedelta(false, MicrosecondsPrecisionOverflowBehavior::default()) {
+            Ok(v) => Ok(Some(v.into_inner().to_duration()?)),
+            Err(_) => Err(PyValueError::new_err(format!(
+                "'{key}' must be coercible to a timedelta instance"
+            ))),
+        },
         None => Ok(None),
     }
 }
@@ -42,11 +46,12 @@ impl BuildValidator for TimeDeltaValidator {
         config: Option<&Bound<'_, PyDict>>,
         _definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
+        let py = schema.py();
         let constraints = TimedeltaConstraints {
-            le: get_constraint(schema, "le")?,
-            lt: get_constraint(schema, "lt")?,
-            ge: get_constraint(schema, "ge")?,
-            gt: get_constraint(schema, "gt")?,
+            le: get_constraint(schema, intern!(py, "le"))?,
+            lt: get_constraint(schema, intern!(py, "lt"))?,
+            ge: get_constraint(schema, intern!(py, "ge"))?,
+            gt: get_constraint(schema, intern!(py, "gt"))?,
         };
 
         Ok(Self {
