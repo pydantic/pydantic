@@ -18,9 +18,15 @@ from ..conftest import Err, PyAndJson
     'constraint',
     ['le', 'lt', 'ge', 'gt'],
 )
-def test_constraints_schema_validation(constraint: str) -> None:
+def test_constraints_schema_validation_error(constraint: str) -> None:
     with pytest.raises(SchemaError, match=f"'{constraint}' must be coercible to a datetime instance"):
         SchemaValidator(cs.datetime_schema(**{constraint: 'bad_value'}))
+
+
+def test_constraints_schema_validation() -> None:
+    val = SchemaValidator(cs.datetime_schema(gt='2020-01-01T00:00:00'))
+    with pytest.raises(ValidationError):
+        val.validate_python('2019-01-01T00:00:00')
 
 
 @pytest.mark.parametrize(

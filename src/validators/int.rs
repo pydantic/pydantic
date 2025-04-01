@@ -8,12 +8,11 @@ use pyo3::IntoPyObjectExt;
 use crate::build_tools::is_strict;
 use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::{Input, Int};
-use crate::tools::SchemaDict;
 
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
 
-fn validate_as_int(py: Python, schema: &Bound<'_, PyDict>, key: &str) -> PyResult<Option<Int>> {
-    match schema.get_as::<Bound<'_, PyAny>>(&PyString::new(py, key))? {
+fn validate_as_int(schema: &Bound<'_, PyDict>, key: &Bound<'_, PyString>) -> PyResult<Option<Int>> {
+    match schema.get_item(key)? {
         Some(value) => match value.validate_int(false) {
             Ok(v) => match v.into_inner().as_int() {
                 Ok(v) => Ok(Some(v)),
@@ -93,11 +92,11 @@ impl ConstrainedIntValidator {
         let py = schema.py();
         Ok(Self {
             strict: is_strict(schema, config)?,
-            multiple_of: validate_as_int(py, schema, "multiple_of")?,
-            le: validate_as_int(py, schema, "le")?,
-            lt: validate_as_int(py, schema, "lt")?,
-            ge: validate_as_int(py, schema, "ge")?,
-            gt: validate_as_int(py, schema, "gt")?,
+            multiple_of: validate_as_int(schema, intern!(py, "multiple_of"))?,
+            le: validate_as_int(schema, intern!(py, "le"))?,
+            lt: validate_as_int(schema, intern!(py, "lt"))?,
+            ge: validate_as_int(schema, intern!(py, "ge"))?,
+            gt: validate_as_int(schema, intern!(py, "gt"))?,
         }
         .into())
     }

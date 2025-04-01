@@ -362,7 +362,8 @@ jobs:
   # https://github.com/marketplace/actions/alls-green#why used for branch protection checks
   check:
     if: always()
-    needs: [coverage, test-python, test-os, test-debug, lint, bench, build-wasm-emscripten]
+    # TODO: add build-wasm-emscripten back when CI installation failures are solved:
+    needs: [coverage, test-python, test-os, test-debug, lint, bench]
     runs-on: ubuntu-latest
     steps:
       - name: Decide whether the needed jobs succeeded or failed
