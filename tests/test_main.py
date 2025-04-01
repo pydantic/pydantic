@@ -2307,6 +2307,34 @@ def test_model_post_init_correct_mro():
     assert calls == ['C.model_post_init']
 
 
+def test_model_post_init_mocked_setattr() -> None:
+    """https://github.com/pydantic/pydantic/issues/11646
+
+    Fixes a small regression in 2.11. To instantiate private attributes on model instances
+    (and as such the `__pydantic_private__` instance attribute), Pydantic defines its own
+    `model_post_init()` (and wraps the user-defined one if it exists). In tests, some users
+    can mock their `model_post_init()` if they want to avoid unwanted side-effects (meaning
+    `__pydantic_private__` won't be instantiated).
+    In 2.11, the `BaseModel.__setattr__` logic was tweaked and required the `__pydantic_private__`
+    attribute to be present, resulting in attribute errors.
+    """
+
+    class Model(BaseModel):
+        _a: int
+
+        def model_post_init(self, context: Any, /) -> None:
+            """Do some stuff"""
+
+    # This reproduces `patch.object(Model, 'model_post_init')`:
+    Model.model_post_init = lambda *args, **kwargs: None
+
+    m = Model()
+    assert m.__pydantic_private__ is None
+
+    m._a = 2
+    assert m._a == 2
+
+
 def test_del_model_attr():
     class Model(BaseModel):
         some_field: str
