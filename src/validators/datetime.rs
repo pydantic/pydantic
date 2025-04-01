@@ -210,7 +210,7 @@ impl DateTimeConstraints {
 }
 
 fn py_datetime_as_datetime(schema: &Bound<'_, PyDict>, key: &Bound<'_, PyString>) -> PyResult<Option<DateTime>> {
-    match schema.get_as::<Bound<'_, PyAny>>(key)? {
+    match schema.get_item(key)? {
         Some(value) => match value.validate_datetime(false, MicrosecondsPrecisionOverflowBehavior::Truncate) {
             Ok(v) => Ok(Some(v.into_inner().as_raw()?)),
             Err(_) => Err(PyValueError::new_err(format!(

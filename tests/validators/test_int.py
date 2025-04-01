@@ -18,9 +18,15 @@ i64_max = 9_223_372_036_854_775_807
     'constraint',
     ['multiple_of', 'le', 'lt', 'ge', 'gt'],
 )
-def test_constraints_schema_validation(constraint: str) -> None:
+def test_constraints_schema_validation_error(constraint: str) -> None:
     with pytest.raises(SchemaError, match=f"'{constraint}' must be coercible to an integer"):
         SchemaValidator(cs.int_schema(**{constraint: 'bad_value'}))
+
+
+def test_constraints_schema_validation() -> None:
+    val = SchemaValidator(cs.int_schema(gt='1'))
+    with pytest.raises(ValidationError):
+        val.validate_python('0')
 
 
 @pytest.mark.parametrize(
