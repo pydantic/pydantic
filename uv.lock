@@ -1198,8 +1198,8 @@ wheels = [
 
 [[package]]
 name = "mkdocs-llmstxt"
-version = "0.1.1.dev17+gd873d51"
-source = { git = "https://github.com/Viicos/mkdocs-llmstxt?rev=issue-1#d873d51f3c215b02e450847c1a382e3625975aa1" }
+version = "0.1.1.dev18+g4955925"
+source = { git = "https://github.com/Viicos/mkdocs-llmstxt?rev=issue-1#495592556a94c80e7a0f7184f647f6e6207747d9" }
 dependencies = [
     { name = "beautifulsoup4" },
     { name = "markdownify" },
