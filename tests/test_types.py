@@ -6954,8 +6954,7 @@ def test_fail_fast(tp, fail_fast, decl) -> None:
 def test_mutable_mapping_userdict_subclass() -> None:
     """Addresses https://github.com/pydantic/pydantic/issues/9549.
 
-    Note - we still don't do a good job of handling subclasses, as we convert the input to a dict
-    via the MappingValidator annotation's schema.
+    Note - we still don't do a good job of handling subclasses, as we convert the input to a dict.
     """
     adapter = TypeAdapter(MutableMapping, config=ConfigDict(strict=True))
 
