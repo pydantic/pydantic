@@ -644,6 +644,7 @@ class GenerateSchema:
             return _discriminated_union.apply_discriminator(
                 schema,
                 discriminator,
+                self.defs._definitions,
             )
         except _discriminated_union.MissingDefinitionForUnionRef:
             # defer until defs are resolved
@@ -2766,6 +2767,8 @@ class _Definitions:
 
         remaining_defs: dict[str, CoreSchema] = {}
 
+        # Note: this logic doesn't play well when core schemas with deferred discriminator metadata
+        # and references are encountered. See the `test_deferred_discriminated_union_and_references()` test.
         for ref, inlinable_def_ref in gather_result['collected_references'].items():
             if inlinable_def_ref is not None and (inlining_behavior := _inlining_behavior(inlinable_def_ref)) != 'keep':
                 if inlining_behavior == 'inline':
