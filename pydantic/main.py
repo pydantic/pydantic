@@ -99,10 +99,20 @@ def _model_field_setattr_handler(model: BaseModel, name: str, val: Any) -> None:
     model.__pydantic_fields_set__.add(name)
 
 
+def _private_setattr_handler(model: BaseModel, name: str, val: Any) -> None:
+    if getattr(model, '__pydantic_private__', None) is None:
+        # While the attribute should be present at this point, this may not be the case if
+        # users do unusual stuff with `model_post_init()` (which is where the  `__pydantic_private__`
+        # is initialized, by wrapping the user-defined `model_post_init()`), e.g. if they mock
+        # the `model_post_init()` call. Ideally we should find a better way to init private attrs.
+        object.__setattr__(model, '__pydantic_private__', {})
+    model.__pydantic_private__[name] = val  # pyright: ignore[reportOptionalSubscript]
+
+
 _SIMPLE_SETATTR_HANDLERS: Mapping[str, Callable[[BaseModel, str, Any], None]] = {
     'model_field': _model_field_setattr_handler,
     'validate_assignment': lambda model, name, val: model.__pydantic_validator__.validate_assignment(model, name, val),  # pyright: ignore[reportAssignmentType]
-    'private': lambda model, name, val: model.__pydantic_private__.__setitem__(name, val),  # pyright: ignore[reportOptionalMemberAccess]
+    'private': _private_setattr_handler,
     'cached_property': lambda model, name, val: model.__dict__.__setitem__(name, val),
     'extra_known': lambda model, name, val: _object_setattr(model, name, val),
 }
