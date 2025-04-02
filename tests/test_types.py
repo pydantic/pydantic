@@ -9,8 +9,8 @@ import re
 import sys
 import typing
 import uuid
-from collections import Counter, OrderedDict, defaultdict, deque
-from collections.abc import Iterable, Sequence
+from collections import Counter, OrderedDict, UserDict, defaultdict, deque
+from collections.abc import Iterable, Mapping, MutableMapping, Sequence
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta, timezone
 from decimal import Decimal
@@ -6951,17 +6951,22 @@ def test_fail_fast(tp, fail_fast, decl) -> None:
     assert exc_info.value.errors(include_url=False) == errors
 
 
-def test_mutable_mapping() -> None:
+def test_mutable_mapping_userdict_subclass() -> None:
     """Addresses https://github.com/pydantic/pydantic/issues/9549.
 
-    Note - we still don't do a good job of handling subclasses, as we convert the input to a dict
-    via the MappingValidator annotation's schema.
+    Note - we still don't do a good job of handling subclasses, as we convert the input to a dict.
     """
-    import collections.abc
+    adapter = TypeAdapter(MutableMapping, config=ConfigDict(strict=True))
 
-    adapter = TypeAdapter(collections.abc.MutableMapping, config=ConfigDict(strict=True))
+    assert isinstance(adapter.validate_python(UserDict()), MutableMapping)
 
-    assert isinstance(adapter.validate_python(collections.UserDict()), collections.abc.MutableMapping)
+
+def test_mapping_parameterized() -> None:
+    """https://github.com/pydantic/pydantic/issues/11650"""
+    adapter = TypeAdapter(Mapping[str, int])
+
+    with pytest.raises(ValidationError):
+        adapter.validate_python({'valid': 1, 'invalid': {}})
 
 
 def test_ser_ip_with_union() -> None:

@@ -566,32 +566,38 @@ class GenerateSchema:
     def _mapping_schema(self, tp: Any, keys_type: Any, values_type: Any) -> CoreSchema:
         from ._validators import MAPPING_ORIGIN_MAP, defaultdict_validator, get_defaultdict_default_default_factory
 
+        mapped_origin = MAPPING_ORIGIN_MAP[tp]
         keys_schema = self.generate_schema(keys_type)
         values_schema = self.generate_schema(values_type)
+        dict_schema = core_schema.dict_schema(keys_schema, values_schema, strict=False)
 
-        dict_schema = core_schema.dict_schema(keys_schema, values_schema)
-        check_instance = core_schema.json_or_python_schema(
-            json_schema=dict_schema,
-            python_schema=core_schema.is_instance_schema(tp),
-        )
-
-        if tp is collections.defaultdict:
-            default_default_factory = get_defaultdict_default_default_factory(values_type)
-            coerce_instance_wrap = partial(
-                core_schema.no_info_wrap_validator_function,
-                partial(defaultdict_validator, default_default_factory=default_default_factory),
-            )
+        if mapped_origin is dict:
+            schema = dict_schema
         else:
-            coerce_instance_wrap = partial(core_schema.no_info_after_validator_function, MAPPING_ORIGIN_MAP[tp])
+            check_instance = core_schema.json_or_python_schema(
+                json_schema=dict_schema,
+                python_schema=core_schema.is_instance_schema(mapped_origin),
+            )
 
-        lax_schema = coerce_instance_wrap(dict_schema)
-        schema = core_schema.lax_or_strict_schema(
-            lax_schema=lax_schema,
-            strict_schema=core_schema.union_schema([check_instance, lax_schema]),
-            serialization=core_schema.wrap_serializer_function_ser_schema(
-                lambda v, h: h(v), schema=dict_schema, info_arg=False
-            ),
-        )
+            if tp is collections.defaultdict:
+                default_default_factory = get_defaultdict_default_default_factory(values_type)
+                coerce_instance_wrap = partial(
+                    core_schema.no_info_wrap_validator_function,
+                    partial(defaultdict_validator, default_default_factory=default_default_factory),
+                )
+            else:
+                coerce_instance_wrap = partial(core_schema.no_info_after_validator_function, mapped_origin)
+
+            lax_schema = coerce_instance_wrap(dict_schema)
+            strict_schema = core_schema.chain_schema([check_instance, lax_schema])
+
+            schema = core_schema.lax_or_strict_schema(
+                lax_schema=lax_schema,
+                strict_schema=strict_schema,
+                serialization=core_schema.wrap_serializer_function_ser_schema(
+                    lambda v, h: h(v), schema=dict_schema, info_arg=False
+                ),
+            )
 
         return schema
 
