@@ -202,24 +202,23 @@ def collect_model_fields(  # noqa: C901
                 )
 
         if assigned_value is PydanticUndefined:  # no assignment, just a plain annotation
-            if ann_name in annotations:
-                # field is present in the current model's annotations (and *not* from parent classes)
+            if ann_name in annotations or ann_name not in parent_fields_lookup:
+                # field is either:
+                # - present in the current model's annotations (and *not* from parent classes)
+                # - not found on any base classes; this seems to be caused by fields bot getting
+                #   generated due to models not being fully defined while initializing recursive models.
+                #   Nothing stops us from just creating a `FieldInfo` for this type hint, so we do this.
                 field_info = FieldInfo_.from_annotation(ann_type, _source=AnnotationSource.CLASS)
-            elif ann_name in parent_fields_lookup:
+                if not evaluated:
+                    field_info._complete = False
+                    # Store the original annotation that should be used to rebuild
+                    # the field info later:
+                    field_info._original_annotation = ann_type
+            else:
                 # The field was present on one of the (possibly multiple) base classes
                 # copy the field to make sure typevar substitutions don't cause issues with the base classes
                 field_info = copy(parent_fields_lookup[ann_name])
-            else:
-                # The field was not found on any base classes; this seems to be caused by fields not getting
-                # generated thanks to models not being fully defined while initializing recursive models.
-                # Nothing stops us from just creating a new FieldInfo for this type hint, so we do this.
-                field_info = FieldInfo_.from_annotation(ann_type, _source=AnnotationSource.CLASS)
 
-            if not evaluated:
-                field_info._complete = False
-                # Store the original annotation that should be used to rebuild
-                # the field info later:
-                field_info._original_annotation = ann_type
         else:  # An assigned value is present (either the default value, or a `Field()` function)
             _warn_on_nested_alias_in_annotation(ann_type, ann_name)
             if isinstance(assigned_value, FieldInfo_) and ismethoddescriptor(assigned_value.default):

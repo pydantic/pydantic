@@ -1196,6 +1196,36 @@ class Foo(BaseModel):
     module_2.Foo(bar={'f': 1})
 
 
+def test_preserve_evaluated_attribute_of_parent_fields(create_module):
+    """https://github.com/pydantic/pydantic/issues/11663"""
+
+    @create_module
+    def module_1():
+        from pydantic import BaseModel
+
+        class Child(BaseModel):
+            parent: 'Optional[Parent]' = None
+
+        class Parent(BaseModel):
+            child: list[Child] = []
+
+    module_1 = create_module(
+        f"""
+from {module_1.__name__} import Child, Parent
+
+from typing import Optional
+
+Child.model_rebuild()
+
+class SubChild(Child):
+    pass
+
+assert SubChild.__pydantic_fields_complete__
+SubChild()
+        """
+    )
+
+
 def test_uses_the_local_namespace_when_generating_schema():
     def func():
         A = int
