@@ -290,7 +290,7 @@ class PydanticModelField:
 
         strict = model_strict if self.strict is None else self.strict
         if typed or strict:
-            type_annotation = self.expand_type(current_info, api)
+            type_annotation = self.expand_type(current_info, api, include_root_type=True)
         else:
             type_annotation = AnyType(TypeOfAny.explicit)
 
@@ -304,7 +304,11 @@ class PydanticModelField:
         )
 
     def expand_type(
-        self, current_info: TypeInfo, api: SemanticAnalyzerPluginInterface, force_typevars_invariant: bool = False
+        self,
+        current_info: TypeInfo,
+        api: SemanticAnalyzerPluginInterface,
+        force_typevars_invariant: bool = False,
+        include_root_type: bool = False,
     ) -> Type | None:
         """Based on mypy.plugins.dataclasses.DataclassAttribute.expand_type."""
         if force_typevars_invariant:
@@ -332,7 +336,7 @@ class PydanticModelField:
                             arg.variance = INVARIANT
 
                 expanded_type = expand_type(self.type, {self.info.self_type.id: filled_with_typevars})
-                if isinstance(expanded_type, Instance) and is_root_model(expanded_type.type):
+                if include_root_type and isinstance(expanded_type, Instance) and is_root_model(expanded_type.type):
                     # When a root model is used as a field, Pydantic allows both an instance of the root model
                     # as well as instances of the `root` field type:
                     root_type = cast(Type, expanded_type.type['root'].type)
