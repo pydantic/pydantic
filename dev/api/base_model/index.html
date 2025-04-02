@@ -3590,17 +3590,7 @@ is set to <code>'allow'</code>.</p>
 
               <details class="quote">
                 <summary>Source code in <code>pydantic/main.py</code></summary>
-                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 111</span>
-<span class="normal"> 112</span>
-<span class="normal"> 113</span>
-<span class="normal"> 114</span>
-<span class="normal"> 115</span>
-<span class="normal"> 116</span>
-<span class="normal"> 117</span>
-<span class="normal"> 118</span>
-<span class="normal"> 119</span>
-<span class="normal"> 120</span>
-<span class="normal"> 121</span>
+                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 121</span>
 <span class="normal"> 122</span>
 <span class="normal"> 123</span>
 <span class="normal"> 124</span>
@@ -5115,7 +5105,17 @@ is set to <code>'allow'</code>.</p>
 <span class="normal">1633</span>
 <span class="normal">1634</span>
 <span class="normal">1635</span>
-<span class="normal">1636</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">BaseModel</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">_model_construction</span><span class="o">.</span><span class="n">ModelMetaclass</span><span class="p">):</span>
+<span class="normal">1636</span>
+<span class="normal">1637</span>
+<span class="normal">1638</span>
+<span class="normal">1639</span>
+<span class="normal">1640</span>
+<span class="normal">1641</span>
+<span class="normal">1642</span>
+<span class="normal">1643</span>
+<span class="normal">1644</span>
+<span class="normal">1645</span>
+<span class="normal">1646</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">BaseModel</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">_model_construction</span><span class="o">.</span><span class="n">ModelMetaclass</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;!!! abstract &quot;Usage Documentation&quot;</span>
 <span class="sd">        [Models](../concepts/models.md)</span>
 
@@ -6673,24 +6673,24 @@ validated to form a valid model.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/main.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">233</span>
-<span class="normal">234</span>
-<span class="normal">235</span>
-<span class="normal">236</span>
-<span class="normal">237</span>
-<span class="normal">238</span>
-<span class="normal">239</span>
-<span class="normal">240</span>
-<span class="normal">241</span>
-<span class="normal">242</span>
-<span class="normal">243</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">243</span>
 <span class="normal">244</span>
 <span class="normal">245</span>
 <span class="normal">246</span>
 <span class="normal">247</span>
 <span class="normal">248</span>
 <span class="normal">249</span>
-<span class="normal">250</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">/</span><span class="p">,</span> <span class="o">**</span><span class="n">data</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">250</span>
+<span class="normal">251</span>
+<span class="normal">252</span>
+<span class="normal">253</span>
+<span class="normal">254</span>
+<span class="normal">255</span>
+<span class="normal">256</span>
+<span class="normal">257</span>
+<span class="normal">258</span>
+<span class="normal">259</span>
+<span class="normal">260</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">/</span><span class="p">,</span> <span class="o">**</span><span class="n">data</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a new model by parsing and validating input data from keyword arguments.</span>
 
 <span class="sd">    Raises [`ValidationError`][pydantic_core.ValidationError] if the input data cannot be</span>
@@ -6773,16 +6773,16 @@ Instead, you should access this attribute from the model class.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/main.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">255</span>
-<span class="normal">256</span>
-<span class="normal">257</span>
-<span class="normal">258</span>
-<span class="normal">259</span>
-<span class="normal">260</span>
-<span class="normal">261</span>
-<span class="normal">262</span>
-<span class="normal">263</span>
-<span class="normal">264</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_utils</span><span class="o">.</span><span class="n">deprecated_instance_property</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">265</span>
+<span class="normal">266</span>
+<span class="normal">267</span>
+<span class="normal">268</span>
+<span class="normal">269</span>
+<span class="normal">270</span>
+<span class="normal">271</span>
+<span class="normal">272</span>
+<span class="normal">273</span>
+<span class="normal">274</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_utils</span><span class="o">.</span><span class="n">deprecated_instance_property</span>
 <span class="nd">@classmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">model_fields</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">FieldInfo</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A mapping of field names to their respective [`FieldInfo`][pydantic.fields.FieldInfo] instances.</span>
@@ -6829,16 +6829,16 @@ Instead, you should access this attribute from the model class.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/main.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">266</span>
-<span class="normal">267</span>
-<span class="normal">268</span>
-<span class="normal">269</span>
-<span class="normal">270</span>
-<span class="normal">271</span>
-<span class="normal">272</span>
-<span class="normal">273</span>
-<span class="normal">274</span>
-<span class="normal">275</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_utils</span><span class="o">.</span><span class="n">deprecated_instance_property</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">276</span>
+<span class="normal">277</span>
+<span class="normal">278</span>
+<span class="normal">279</span>
+<span class="normal">280</span>
+<span class="normal">281</span>
+<span class="normal">282</span>
+<span class="normal">283</span>
+<span class="normal">284</span>
+<span class="normal">285</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_utils</span><span class="o">.</span><span class="n">deprecated_instance_property</span>
 <span class="nd">@classmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">model_computed_fields</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ComputedFieldInfo</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A mapping of computed field names to their respective [`ComputedFieldInfo`][pydantic.fields.ComputedFieldInfo] instances.</span>
@@ -7095,17 +7095,7 @@ Otherwise, the field names from the <code>values</code> argument will be used.</
 
             <details class="quote">
               <summary>Source code in <code>pydantic/main.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">296</span>
-<span class="normal">297</span>
-<span class="normal">298</span>
-<span class="normal">299</span>
-<span class="normal">300</span>
-<span class="normal">301</span>
-<span class="normal">302</span>
-<span class="normal">303</span>
-<span class="normal">304</span>
-<span class="normal">305</span>
-<span class="normal">306</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">306</span>
 <span class="normal">307</span>
 <span class="normal">308</span>
 <span class="normal">309</span>
@@ -7174,7 +7164,17 @@ Otherwise, the field names from the <code>values</code> argument will be used.</
 <span class="normal">372</span>
 <span class="normal">373</span>
 <span class="normal">374</span>
-<span class="normal">375</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">375</span>
+<span class="normal">376</span>
+<span class="normal">377</span>
+<span class="normal">378</span>
+<span class="normal">379</span>
+<span class="normal">380</span>
+<span class="normal">381</span>
+<span class="normal">382</span>
+<span class="normal">383</span>
+<span class="normal">384</span>
+<span class="normal">385</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">model_construct</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">_fields_set</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">values</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>  <span class="c1"># noqa: C901</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Creates a new instance of the `Model` class with validated data.</span>
 
@@ -7367,17 +7367,7 @@ before creating the new model. You should trust this data.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/main.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">377</span>
-<span class="normal">378</span>
-<span class="normal">379</span>
-<span class="normal">380</span>
-<span class="normal">381</span>
-<span class="normal">382</span>
-<span class="normal">383</span>
-<span class="normal">384</span>
-<span class="normal">385</span>
-<span class="normal">386</span>
-<span class="normal">387</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">387</span>
 <span class="normal">388</span>
 <span class="normal">389</span>
 <span class="normal">390</span>
@@ -7399,7 +7389,17 @@ before creating the new model. You should trust this data.</p>
 <span class="normal">406</span>
 <span class="normal">407</span>
 <span class="normal">408</span>
-<span class="normal">409</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">model_copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">update</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">deep</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+<span class="normal">409</span>
+<span class="normal">410</span>
+<span class="normal">411</span>
+<span class="normal">412</span>
+<span class="normal">413</span>
+<span class="normal">414</span>
+<span class="normal">415</span>
+<span class="normal">416</span>
+<span class="normal">417</span>
+<span class="normal">418</span>
+<span class="normal">419</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">model_copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">update</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">deep</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;!!! abstract &quot;Usage Documentation&quot;</span>
 <span class="sd">        [`model_copy`](../concepts/serialization.md#model_copy)</span>
 
@@ -7714,17 +7714,7 @@ a <a class="autorefs autorefs-internal" href="../pydantic_core/#pydantic_core.Py
 
             <details class="quote">
               <summary>Source code in <code>pydantic/main.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">411</span>
-<span class="normal">412</span>
-<span class="normal">413</span>
-<span class="normal">414</span>
-<span class="normal">415</span>
-<span class="normal">416</span>
-<span class="normal">417</span>
-<span class="normal">418</span>
-<span class="normal">419</span>
-<span class="normal">420</span>
-<span class="normal">421</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">421</span>
 <span class="normal">422</span>
 <span class="normal">423</span>
 <span class="normal">424</span>
@@ -7770,7 +7760,17 @@ a <a class="autorefs autorefs-internal" href="../pydantic_core/#pydantic_core.Py
 <span class="normal">464</span>
 <span class="normal">465</span>
 <span class="normal">466</span>
-<span class="normal">467</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">model_dump</span><span class="p">(</span>
+<span class="normal">467</span>
+<span class="normal">468</span>
+<span class="normal">469</span>
+<span class="normal">470</span>
+<span class="normal">471</span>
+<span class="normal">472</span>
+<span class="normal">473</span>
+<span class="normal">474</span>
+<span class="normal">475</span>
+<span class="normal">476</span>
+<span class="normal">477</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">model_dump</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;json&#39;</span><span class="p">,</span> <span class="s1">&#39;python&#39;</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;python&#39;</span><span class="p">,</span>
@@ -8107,17 +8107,7 @@ a <a class="autorefs autorefs-internal" href="../pydantic_core/#pydantic_core.Py
 
             <details class="quote">
               <summary>Source code in <code>pydantic/main.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">469</span>
-<span class="normal">470</span>
-<span class="normal">471</span>
-<span class="normal">472</span>
-<span class="normal">473</span>
-<span class="normal">474</span>
-<span class="normal">475</span>
-<span class="normal">476</span>
-<span class="normal">477</span>
-<span class="normal">478</span>
-<span class="normal">479</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">479</span>
 <span class="normal">480</span>
 <span class="normal">481</span>
 <span class="normal">482</span>
@@ -8161,7 +8151,17 @@ a <a class="autorefs autorefs-internal" href="../pydantic_core/#pydantic_core.Py
 <span class="normal">520</span>
 <span class="normal">521</span>
 <span class="normal">522</span>
-<span class="normal">523</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">model_dump_json</span><span class="p">(</span>
+<span class="normal">523</span>
+<span class="normal">524</span>
+<span class="normal">525</span>
+<span class="normal">526</span>
+<span class="normal">527</span>
+<span class="normal">528</span>
+<span class="normal">529</span>
+<span class="normal">530</span>
+<span class="normal">531</span>
+<span class="normal">532</span>
+<span class="normal">533</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">model_dump_json</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">indent</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -8358,17 +8358,7 @@ a <a class="autorefs autorefs-internal" href="../pydantic_core/#pydantic_core.Py
 
             <details class="quote">
               <summary>Source code in <code>pydantic/main.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">525</span>
-<span class="normal">526</span>
-<span class="normal">527</span>
-<span class="normal">528</span>
-<span class="normal">529</span>
-<span class="normal">530</span>
-<span class="normal">531</span>
-<span class="normal">532</span>
-<span class="normal">533</span>
-<span class="normal">534</span>
-<span class="normal">535</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">535</span>
 <span class="normal">536</span>
 <span class="normal">537</span>
 <span class="normal">538</span>
@@ -8380,7 +8370,17 @@ a <a class="autorefs autorefs-internal" href="../pydantic_core/#pydantic_core.Py
 <span class="normal">544</span>
 <span class="normal">545</span>
 <span class="normal">546</span>
-<span class="normal">547</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">547</span>
+<span class="normal">548</span>
+<span class="normal">549</span>
+<span class="normal">550</span>
+<span class="normal">551</span>
+<span class="normal">552</span>
+<span class="normal">553</span>
+<span class="normal">554</span>
+<span class="normal">555</span>
+<span class="normal">556</span>
+<span class="normal">557</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">model_json_schema</span><span class="p">(</span>
     <span class="bp">cls</span><span class="p">,</span>
     <span class="n">by_alias</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
@@ -8517,17 +8517,7 @@ the value <code>(str, int)</code> would be passed to <code>params</code>.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/main.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">549</span>
-<span class="normal">550</span>
-<span class="normal">551</span>
-<span class="normal">552</span>
-<span class="normal">553</span>
-<span class="normal">554</span>
-<span class="normal">555</span>
-<span class="normal">556</span>
-<span class="normal">557</span>
-<span class="normal">558</span>
-<span class="normal">559</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">559</span>
 <span class="normal">560</span>
 <span class="normal">561</span>
 <span class="normal">562</span>
@@ -8542,7 +8532,17 @@ the value <code>(str, int)</code> would be passed to <code>params</code>.</p>
 <span class="normal">571</span>
 <span class="normal">572</span>
 <span class="normal">573</span>
-<span class="normal">574</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">574</span>
+<span class="normal">575</span>
+<span class="normal">576</span>
+<span class="normal">577</span>
+<span class="normal">578</span>
+<span class="normal">579</span>
+<span class="normal">580</span>
+<span class="normal">581</span>
+<span class="normal">582</span>
+<span class="normal">583</span>
+<span class="normal">584</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">model_parametrized_name</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">type</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="o">...</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the class name for parametrizations of generic classes.</span>
 
@@ -8597,11 +8597,11 @@ This is useful if you want to do some validation that requires the entire model 
 
             <details class="quote">
               <summary>Source code in <code>pydantic/main.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">576</span>
-<span class="normal">577</span>
-<span class="normal">578</span>
-<span class="normal">579</span>
-<span class="normal">580</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">model_post_init</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">/</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">586</span>
+<span class="normal">587</span>
+<span class="normal">588</span>
+<span class="normal">589</span>
+<span class="normal">590</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">model_post_init</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">/</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Override this method to perform additional initialization after `__init__` and `model_construct`.</span>
 <span class="sd">    This is useful if you want to do some validation that requires the entire model to be initialized.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -8758,17 +8758,7 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/main.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">582</span>
-<span class="normal">583</span>
-<span class="normal">584</span>
-<span class="normal">585</span>
-<span class="normal">586</span>
-<span class="normal">587</span>
-<span class="normal">588</span>
-<span class="normal">589</span>
-<span class="normal">590</span>
-<span class="normal">591</span>
-<span class="normal">592</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">592</span>
 <span class="normal">593</span>
 <span class="normal">594</span>
 <span class="normal">595</span>
@@ -8831,7 +8821,17 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
 <span class="normal">652</span>
 <span class="normal">653</span>
 <span class="normal">654</span>
-<span class="normal">655</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">655</span>
+<span class="normal">656</span>
+<span class="normal">657</span>
+<span class="normal">658</span>
+<span class="normal">659</span>
+<span class="normal">660</span>
+<span class="normal">661</span>
+<span class="normal">662</span>
+<span class="normal">663</span>
+<span class="normal">664</span>
+<span class="normal">665</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">model_rebuild</span><span class="p">(</span>
     <span class="bp">cls</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -9102,17 +9102,7 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/main.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">657</span>
-<span class="normal">658</span>
-<span class="normal">659</span>
-<span class="normal">660</span>
-<span class="normal">661</span>
-<span class="normal">662</span>
-<span class="normal">663</span>
-<span class="normal">664</span>
-<span class="normal">665</span>
-<span class="normal">666</span>
-<span class="normal">667</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">667</span>
 <span class="normal">668</span>
 <span class="normal">669</span>
 <span class="normal">670</span>
@@ -9140,7 +9130,17 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
 <span class="normal">692</span>
 <span class="normal">693</span>
 <span class="normal">694</span>
-<span class="normal">695</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">695</span>
+<span class="normal">696</span>
+<span class="normal">697</span>
+<span class="normal">698</span>
+<span class="normal">699</span>
+<span class="normal">700</span>
+<span class="normal">701</span>
+<span class="normal">702</span>
+<span class="normal">703</span>
+<span class="normal">704</span>
+<span class="normal">705</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">model_validate</span><span class="p">(</span>
     <span class="bp">cls</span><span class="p">,</span>
     <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
@@ -9363,17 +9363,7 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/main.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">697</span>
-<span class="normal">698</span>
-<span class="normal">699</span>
-<span class="normal">700</span>
-<span class="normal">701</span>
-<span class="normal">702</span>
-<span class="normal">703</span>
-<span class="normal">704</span>
-<span class="normal">705</span>
-<span class="normal">706</span>
-<span class="normal">707</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">707</span>
 <span class="normal">708</span>
 <span class="normal">709</span>
 <span class="normal">710</span>
@@ -9402,7 +9392,17 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
 <span class="normal">733</span>
 <span class="normal">734</span>
 <span class="normal">735</span>
-<span class="normal">736</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">736</span>
+<span class="normal">737</span>
+<span class="normal">738</span>
+<span class="normal">739</span>
+<span class="normal">740</span>
+<span class="normal">741</span>
+<span class="normal">742</span>
+<span class="normal">743</span>
+<span class="normal">744</span>
+<span class="normal">745</span>
+<span class="normal">746</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">model_validate_json</span><span class="p">(</span>
     <span class="bp">cls</span><span class="p">,</span>
     <span class="n">json_data</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="nb">bytearray</span><span class="p">,</span>
@@ -9599,17 +9599,7 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/main.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">738</span>
-<span class="normal">739</span>
-<span class="normal">740</span>
-<span class="normal">741</span>
-<span class="normal">742</span>
-<span class="normal">743</span>
-<span class="normal">744</span>
-<span class="normal">745</span>
-<span class="normal">746</span>
-<span class="normal">747</span>
-<span class="normal">748</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">748</span>
 <span class="normal">749</span>
 <span class="normal">750</span>
 <span class="normal">751</span>
@@ -9632,7 +9622,17 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
 <span class="normal">768</span>
 <span class="normal">769</span>
 <span class="normal">770</span>
-<span class="normal">771</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">771</span>
+<span class="normal">772</span>
+<span class="normal">773</span>
+<span class="normal">774</span>
+<span class="normal">775</span>
+<span class="normal">776</span>
+<span class="normal">777</span>
+<span class="normal">778</span>
+<span class="normal">779</span>
+<span class="normal">780</span>
+<span class="normal">781</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">model_validate_strings</span><span class="p">(</span>
     <span class="bp">cls</span><span class="p">,</span>
     <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
@@ -9945,17 +9945,7 @@ validators <a href="https://docs.pydantic.dev/2.9/concepts/validators/#field-val
 
             <details class="quote">
               <summary>Source code in <code>pydantic/main.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1672</span>
-<span class="normal">1673</span>
-<span class="normal">1674</span>
-<span class="normal">1675</span>
-<span class="normal">1676</span>
-<span class="normal">1677</span>
-<span class="normal">1678</span>
-<span class="normal">1679</span>
-<span class="normal">1680</span>
-<span class="normal">1681</span>
-<span class="normal">1682</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1682</span>
 <span class="normal">1683</span>
 <span class="normal">1684</span>
 <span class="normal">1685</span>
@@ -10042,7 +10032,17 @@ validators <a href="https://docs.pydantic.dev/2.9/concepts/validators/#field-val
 <span class="normal">1766</span>
 <span class="normal">1767</span>
 <span class="normal">1768</span>
-<span class="normal">1769</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">create_model</span><span class="p">(</span>  <span class="c1"># noqa: C901</span>
+<span class="normal">1769</span>
+<span class="normal">1770</span>
+<span class="normal">1771</span>
+<span class="normal">1772</span>
+<span class="normal">1773</span>
+<span class="normal">1774</span>
+<span class="normal">1775</span>
+<span class="normal">1776</span>
+<span class="normal">1777</span>
+<span class="normal">1778</span>
+<span class="normal">1779</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">create_model</span><span class="p">(</span>  <span class="c1"># noqa: C901</span>
     <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="o">/</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
