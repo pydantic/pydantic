@@ -6,6 +6,28 @@ Pydantic is the most widely used data validation library for Python.
 Fast and extensible, Pydantic plays nicely with your linters/IDE/brain.
 Define how data should be in pure, canonical Python 3.9+; validate it with Pydantic.
 
+## Concepts documentation
+
+- [Alias](https://docs.pydantic.dev/latest/concepts/alias/index.md)
+- [Configuration](https://docs.pydantic.dev/latest/concepts/config/index.md)
+- [Conversion Table](https://docs.pydantic.dev/latest/concepts/conversion_table/index.md)
+- [Dataclasses](https://docs.pydantic.dev/latest/concepts/dataclasses/index.md)
+- [Experimental](https://docs.pydantic.dev/latest/concepts/experimental/index.md)
+- [Fields](https://docs.pydantic.dev/latest/concepts/fields/index.md)
+- [Forward Annotations](https://docs.pydantic.dev/latest/concepts/forward_annotations/index.md)
+- [JSON](https://docs.pydantic.dev/latest/concepts/json/index.md)
+- [JSON Schema](https://docs.pydantic.dev/latest/concepts/json_schema/index.md)
+- [Models](https://docs.pydantic.dev/latest/concepts/models/index.md)
+- [Performance](https://docs.pydantic.dev/latest/concepts/performance/index.md)
+- [Settings Management](https://docs.pydantic.dev/latest/concepts/pydantic_settings/index.md)
+- [Serialization](https://docs.pydantic.dev/latest/concepts/serialization/index.md)
+- [Strict Mode](https://docs.pydantic.dev/latest/concepts/strict_mode/index.md)
+- [Type Adapter](https://docs.pydantic.dev/latest/concepts/type_adapter/index.md)
+- [Types](https://docs.pydantic.dev/latest/concepts/types/index.md)
+- [Unions](https://docs.pydantic.dev/latest/concepts/unions/index.md)
+- [Validation Decorator](https://docs.pydantic.dev/latest/concepts/validation_decorator/index.md)
+- [Validators](https://docs.pydantic.dev/latest/concepts/validators/index.md)
+
 ## API documentation
 
 - [Aliases](https://docs.pydantic.dev/latest/api/aliases/index.md)
@@ -45,27 +67,10 @@ Define how data should be in pure, canonical Python 3.9+; validate it with Pydan
 - [Validate Call](https://docs.pydantic.dev/latest/api/validate_call/index.md)
 - [Version Information](https://docs.pydantic.dev/latest/api/version/index.md)
 
-## Concepts documentation
+## Internals
 
-- [Alias](https://docs.pydantic.dev/latest/concepts/alias/index.md)
-- [Configuration](https://docs.pydantic.dev/latest/concepts/config/index.md)
-- [Conversion Table](https://docs.pydantic.dev/latest/concepts/conversion_table/index.md)
-- [Dataclasses](https://docs.pydantic.dev/latest/concepts/dataclasses/index.md)
-- [Experimental](https://docs.pydantic.dev/latest/concepts/experimental/index.md)
-- [Fields](https://docs.pydantic.dev/latest/concepts/fields/index.md)
-- [Forward Annotations](https://docs.pydantic.dev/latest/concepts/forward_annotations/index.md)
-- [JSON](https://docs.pydantic.dev/latest/concepts/json/index.md)
-- [JSON Schema](https://docs.pydantic.dev/latest/concepts/json_schema/index.md)
-- [Models](https://docs.pydantic.dev/latest/concepts/models/index.md)
-- [Performance](https://docs.pydantic.dev/latest/concepts/performance/index.md)
-- [Settings Management](https://docs.pydantic.dev/latest/concepts/pydantic_settings/index.md)
-- [Serialization](https://docs.pydantic.dev/latest/concepts/serialization/index.md)
-- [Strict Mode](https://docs.pydantic.dev/latest/concepts/strict_mode/index.md)
-- [Type Adapter](https://docs.pydantic.dev/latest/concepts/type_adapter/index.md)
-- [Types](https://docs.pydantic.dev/latest/concepts/types/index.md)
-- [Unions](https://docs.pydantic.dev/latest/concepts/unions/index.md)
-- [Validation Decorator](https://docs.pydantic.dev/latest/concepts/validation_decorator/index.md)
-- [Validators](https://docs.pydantic.dev/latest/concepts/validators/index.md)
+- [Architecture](https://docs.pydantic.dev/latest/internals/architecture/index.md)
+- [Resolving Annotations](https://docs.pydantic.dev/latest/internals/resolving_annotations/index.md)
 
 ## Optional
 
@@ -83,14 +88,10 @@ Define how data should be in pure, canonical Python 3.9+; validate it with Pydan
 - [Documentation](https://docs.pydantic.dev/latest/integrations/documentation/index.md)
 - [Hypothesis](https://docs.pydantic.dev/latest/integrations/hypothesis/index.md)
 - [Linting](https://docs.pydantic.dev/latest/integrations/linting/index.md)
+- [LLMs](https://docs.pydantic.dev/latest/integrations/llms/index.md)
 - [Pydantic Logfire](https://docs.pydantic.dev/latest/integrations/logfire/index.md)
 - [Mypy](https://docs.pydantic.dev/latest/integrations/mypy/index.md)
 - [PyCharm](https://docs.pydantic.dev/latest/integrations/pycharm/index.md)
 - [Rich](https://docs.pydantic.dev/latest/integrations/rich/index.md)
 - [Visual Studio Code](https://docs.pydantic.dev/latest/integrations/visual_studio_code/index.md)
-
-## Internals
-
-- [Architecture](https://docs.pydantic.dev/latest/internals/architecture/index.md)
-- [Resolving Annotations](https://docs.pydantic.dev/latest/internals/resolving_annotations/index.md)
 
