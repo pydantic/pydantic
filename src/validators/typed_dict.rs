@@ -252,7 +252,7 @@ impl Validator for TypedDictValidator {
                             ));
                         }
                     }
-                    Err(ValError::Omit) => continue,
+                    Err(ValError::Omit) => {}
                     Err(ValError::LineErrors(line_errors)) => {
                         for err in line_errors {
                             // Note: this will always use the field name even if there is an alias
@@ -347,7 +347,7 @@ impl Validator for TypedDictValidator {
                                     }
                                 } else {
                                     self.output_dict.set_item(py_key, value.to_object(self.py)?)?;
-                                };
+                                }
                             }
                         }
                     }

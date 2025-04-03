@@ -280,7 +280,7 @@ impl Validator for ArgumentsValidator {
                             input,
                             index,
                         ));
-                    };
+                    }
                 }
             }
         }
