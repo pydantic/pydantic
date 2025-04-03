@@ -115,10 +115,7 @@ impl TypeSerializer for GeneratorSerializer {
     ) -> Result<S::Ok, S::Error> {
         match value.downcast::<PyIterator>() {
             Ok(py_iter) => {
-                let len = match value.len() {
-                    Ok(len) => Some(len),
-                    Err(_) => None,
-                };
+                let len = value.len().ok();
                 let mut seq = serializer.serialize_seq(len)?;
                 let item_serializer = self.item_serializer.as_ref();
 

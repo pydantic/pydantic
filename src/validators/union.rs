@@ -193,7 +193,7 @@ impl UnionValidator {
             match validator.validate(py, input, state) {
                 Err(ValError::LineErrors(lines)) => errors.push(validator, label.as_deref(), lines),
                 otherwise => return otherwise,
-            };
+            }
         }
 
         Err(errors.into_val_error(input))

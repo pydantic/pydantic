@@ -10,6 +10,7 @@ use speedate::MicrosecondsPrecisionOverflowBehavior;
 use speedate::{Date, DateTime, Duration, ParseError, Time, TimeConfig};
 use std::borrow::Cow;
 use std::collections::hash_map::DefaultHasher;
+use std::fmt::Write;
 use std::hash::Hash;
 use std::hash::Hasher;
 
@@ -59,7 +60,7 @@ impl<'py> EitherDate<'py> {
                         },
                         input,
                     ));
-                };
+                }
                 let py_date = PyDate::new(py, date.year.into(), date.month, date.day)?;
                 Ok(py_date.into())
             }
@@ -296,7 +297,7 @@ impl<'py> EitherDateTime<'py> {
                         },
                         input,
                     ));
-                };
+                }
                 let py_dt = PyDateTime::new(
                     py,
                     dt.date.year.into(),
@@ -590,7 +591,7 @@ impl TzInfo {
         );
 
         if seconds != 0 {
-            result.push_str(&format!(":{:02}", seconds.abs()));
+            write!(result, ":{:02}", seconds.abs()).expect("writing to string should never fail");
         }
 
         result

@@ -181,7 +181,7 @@ fn strip_leading_zeros(s: &str) -> Option<&str> {
         Some((_, c)) if ('1'..='9').contains(&c) || c == '-' => return Some(s),
         // anything else is invalid, we return None
         _ => return None,
-    };
+    }
     for (i, c) in char_iter {
         match c {
             // continue on more leading zeros or if we get an underscore we continue - we're "within the number"

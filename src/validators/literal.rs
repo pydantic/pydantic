@@ -158,7 +158,7 @@ impl<T: Debug> LiteralLookup<T> {
                 let id: usize = v.extract().unwrap();
                 return Ok(Some((input, &self.values[id])));
             }
-        };
+        }
         if let Some(expected_py_values) = &self.expected_py_values {
             let py_input = get_py_input()?;
             for (k, id) in expected_py_values {
@@ -166,7 +166,7 @@ impl<T: Debug> LiteralLookup<T> {
                     return Ok(Some((input, &self.values[*id])));
                 }
             }
-        };
+        }
 
         // this one must be last to avoid conflicts with the other lookups, think of this
         // almost as a lax fallback
@@ -179,7 +179,7 @@ impl<T: Debug> LiteralLookup<T> {
                 let id: usize = v.extract().unwrap();
                 return Ok(Some((input, &self.values[id])));
             }
-        };
+        }
         Ok(None)
     }
 
