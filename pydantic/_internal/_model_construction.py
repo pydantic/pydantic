@@ -11,7 +11,7 @@ import weakref
 from abc import ABCMeta
 from functools import cache, partial, wraps
 from types import FunctionType
-from typing import Any, Callable, Generic, Literal, NoReturn, cast
+from typing import Any, Callable, Generic, Literal, NoReturn, TypeVar, cast
 
 from pydantic_core import PydanticUndefined, SchemaSerializer
 from typing_extensions import TypeAliasType, dataclass_transform, deprecated, get_args, get_origin
@@ -73,6 +73,10 @@ def NoInitField(
     `__pydantic_extra__`, `__pydantic_private__`, so they could be ignored when
     synthesizing the `__init__` signature.
     """
+
+
+# For ModelMetaclass.register():
+_T = TypeVar('_T')
 
 
 @dataclass_transform(kw_only_default=True, field_specifiers=(PydanticModelField, PydanticModelPrivateAttr, NoInitField))
@@ -274,19 +278,18 @@ class ModelMetaclass(ABCMeta):
     def __prepare__(cls, *args: Any, **kwargs: Any) -> dict[str, object]:
         return _ModelNamespaceDict()
 
-    def __instancecheck__(self, instance: Any) -> bool:
-        """Avoid calling ABC _abc_instancecheck unless we're pretty sure.
+    # Due to performance and memory issues, in the ABCMeta.__subclasscheck__ implementation, we don't support
+    # registered virtual subclasses. See https://github.com/python/cpython/issues/92810#issuecomment-2762454345.
+    def register(self, subclass: type[_T]) -> type[_T]:
+        warnings.warn(
+            f'For performance reasons, virtual subclasses registered using {self.__name__}.register() '
+            'are not supported in isinstance() and issubclass() checks.',
+            stacklevel=2,
+        )
+        return super().register(subclass)
 
-        See #3829 and python/cpython#92810
-        """
-        return hasattr(instance, '__pydantic_decorators__') and super().__instancecheck__(instance)
-
-    def __subclasscheck__(self, subclass: type[Any]) -> bool:
-        """Avoid calling ABC _abc_subclasscheck unless we're pretty sure.
-
-        See #3829 and python/cpython#92810
-        """
-        return hasattr(subclass, '__pydantic_decorators__') and super().__subclasscheck__(subclass)
+    __instancecheck__ = type.__instancecheck__  # pyright: ignore[reportAssignmentType]
+    __subclasscheck__ = type.__subclasscheck__  # pyright: ignore[reportAssignmentType]
 
     @staticmethod
     def _collect_bases_data(bases: tuple[type[Any], ...]) -> tuple[set[str], set[str], dict[str, ModelPrivateAttr]]:
