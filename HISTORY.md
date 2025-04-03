@@ -1,4 +1,4 @@
-## v2.11.2 (2025-04-02)
+## v2.11.2 (2025-04-03)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.11.2)
 
