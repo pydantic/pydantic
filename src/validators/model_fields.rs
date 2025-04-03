@@ -228,7 +228,7 @@ impl Validator for ModelFieldsValidator {
                             &field.name,
                         ));
                     }
-                    Err(ValError::Omit) => continue,
+                    Err(ValError::Omit) => {}
                     Err(ValError::LineErrors(line_errors)) => {
                         for err in line_errors {
                             // Note: this will always use the field name even if there is an alias
@@ -334,7 +334,7 @@ impl Validator for ModelFieldsValidator {
                                 } else {
                                     model_extra_dict.set_item(&py_key, value.to_object(self.py)?)?;
                                     self.fields_set_vec.push(py_key.into());
-                                };
+                                }
                             }
                         }
                     }
@@ -368,7 +368,7 @@ impl Validator for ModelFieldsValidator {
             // from attributes, set it now so __pydantic_extra__ is always a dict if extra=allow
             if matches!(self.extra_behavior, ExtraBehavior::Allow) && model_extra_dict_op.is_none() {
                 model_extra_dict_op = Some(PyDict::new(py));
-            };
+            }
 
             Ok((model_dict, model_extra_dict_op, fields_set).into_py_any(py)?)
         }

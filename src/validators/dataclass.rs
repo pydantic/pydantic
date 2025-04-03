@@ -190,9 +190,9 @@ impl Validator for DataclassArgsValidator {
                     // We could try to "fix" this in the future if desired.
                     Err(ValError::LineErrors(line_errors)) => errors.extend(line_errors),
                     Err(err) => return Err(err),
-                };
+                }
                 continue;
-            };
+            }
 
             let mut pos_value = None;
             if let Some(args) = args.args() {
@@ -265,7 +265,7 @@ impl Validator for DataclassArgsValidator {
                                 &field.name,
                             ));
                         }
-                        Err(ValError::Omit) => continue,
+                        Err(ValError::Omit) => {}
                         Err(ValError::LineErrors(line_errors)) => {
                             for err in line_errors {
                                 // Note: this will always use the field name even if there is an alias

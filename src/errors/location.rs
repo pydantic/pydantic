@@ -147,7 +147,7 @@ impl Location {
             Self::Empty => {
                 *self = Self::new_some(loc_item);
             }
-        };
+        }
     }
 }
 

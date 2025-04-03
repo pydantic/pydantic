@@ -194,7 +194,7 @@ impl Validator for DecimalValidator {
                             }
                         }
                     }
-                };
+                }
             }
         }
 

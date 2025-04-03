@@ -1,4 +1,5 @@
 use std::fmt;
+use std::fmt::Write;
 
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
@@ -154,7 +155,7 @@ impl PydanticSerializationUnexpectedValue {
             if !message.is_empty() {
                 message.push_str(": ");
             }
-            message.push_str(&format!("Expected `{field_type}`"));
+            write!(message, "Expected `{field_type}`").expect("writing to string should never fail");
             if self.input_value.is_some() {
                 message.push_str(" - serialized value may not be as expected");
             }
@@ -170,7 +171,8 @@ impl PydanticSerializationUnexpectedValue {
 
             let value_str = truncate_safe_repr(bound_input, None);
 
-            message.push_str(&format!(" [input_value={value_str}, input_type={input_type}]"));
+            write!(message, " [input_value={value_str}, input_type={input_type}]")
+                .expect("writing to string should never fail");
         }
 
         if message.is_empty() {

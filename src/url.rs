@@ -392,7 +392,7 @@ impl PyMultiHostUrl {
                     multi_url.push_str(&single_host.to_string());
                     if index != hosts.len() - 1 {
                         multi_url.push(',');
-                    };
+                    }
                 }
                 multi_url
             } else if host.is_some() {
@@ -456,7 +456,7 @@ impl fmt::Display for UrlHostParts {
             (None, Some(password)) => write!(f, ":{password}@")?,
             (Some(username), Some(password)) => write!(f, "{username}:{password}@")?,
             (None, None) => {}
-        };
+        }
         if let Some(host) = &self.host {
             write!(f, "{host}")?;
         }

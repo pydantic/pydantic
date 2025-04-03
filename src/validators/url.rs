@@ -392,7 +392,7 @@ fn parse_multihost_url<'py>(
                 '\t' | '\n' | '\r' => (),
                 c if c <= &' ' => (),
                 _ => break,
-            };
+            }
             chars.next();
         } else {
             break;

@@ -243,10 +243,10 @@ impl TupleSerializer {
                         serializer: &CombinedSerializer::Any(AnySerializer),
                     }) {
                         return Ok(Err(e));
-                    };
+                    }
                 }
             }
-        };
+        }
         Ok(Ok(()))
     }
 }

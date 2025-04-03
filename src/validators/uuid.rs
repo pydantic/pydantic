@@ -215,7 +215,7 @@ impl UuidValidator {
                     input,
                 ));
             }
-        };
+        }
         Ok(uuid)
     }
 
