@@ -1,3 +1,19 @@
+## v2.11.2 (2025-04-03)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.11.2)
+
+### What's Changed
+
+#### Fixes
+
+* Bump `pydantic-core` to v2.33.1 by @Viicos in [#11678](https://github.com/pydantic/pydantic/pull/11678)
+* Make sure `__pydantic_private__` exists before setting private attributes by @Viicos in [#11666](https://github.com/pydantic/pydantic/pull/11666)
+* Do not override `FieldInfo._complete` when using field from parent class by @Viicos in [#11668](https://github.com/pydantic/pydantic/pull/11668)
+* Provide the available definitions when applying discriminated unions by @Viicos in [#11670](https://github.com/pydantic/pydantic/pull/11670)
+* Do not expand root type in the mypy plugin for variables by @Viicos in [#11676](https://github.com/pydantic/pydantic/pull/11676)
+* Mention the attribute name in model fields deprecation message by @Viicos in [#11674](https://github.com/pydantic/pydantic/pull/11674)
+* Properly validate parameterized mappings by @Viicos in [#11658](https://github.com/pydantic/pydantic/pull/11658)
+
 ## v2.11.1 (2025-03-28)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.11.1)
