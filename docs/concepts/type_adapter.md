@@ -91,6 +91,24 @@ handle as fields of a [`BaseModel`][pydantic.main.BaseModel].
     schema. This comes with some non-trivial overhead, so it is recommended to create a `TypeAdapter` for a given type
     just once and reuse it in loops or other performance-critical code.
 
+    If you don't want to create all the [`TypeAdapter`][pydantic.type_adapter.TypeAdapter] instances up front, you might want to consider using the following code snippet:
+
+    ??? note "Show code"
+        ```python
+        from functools import cache
+        from typing import TypeVar
+
+        from pydantic import TypeAdapter
+
+        T = TypeVar('T')
+
+        @cache
+        def _get_type_adapter(type_: T) -> TypeAdapter[T]:
+            """Create a cached TypeAdapter instance for a type. The caching is the only reason for this function to exist."""
+            print(f"Creating cached TypeAdapter for {type_}")
+            return TypeAdapter(type_)
+        ```
+
 
 ## Rebuilding a `TypeAdapter`'s schema
 
