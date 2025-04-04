@@ -20,6 +20,7 @@ authors = [
     {name = 'Victorien Plot', email='contact@vctrn.dev'},
 ]
 license = 'MIT'
+license-files = ['LICENSE']
 classifiers = [
     'Development Status :: 5 - Production/Stable',
     'Programming Language :: Python',
@@ -34,7 +35,6 @@ classifiers = [
     'Programming Language :: Python :: 3.13',
     'Intended Audience :: Developers',
     'Intended Audience :: Information Technology',
-    'License :: OSI Approved :: MIT License',
     'Operating System :: OS Independent',
     'Framework :: Hypothesis',
     'Framework :: Pydantic',
