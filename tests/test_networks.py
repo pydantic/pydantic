@@ -990,7 +990,7 @@ def test_email_validator_not_installed(mocker):
 
 def test_import_email_validator_not_installed(mocker):
     mocker.patch.dict('sys.modules', {'email_validator': None})
-    with pytest.raises(ImportError, match=r'email-validator is not installed, run `pip install pydantic\[email\]`'):
+    with pytest.raises(ImportError, match=r'email-validator is not installed, run `pip install \'pydantic\[email\]\'`'):
         import_email_validator()
 
 

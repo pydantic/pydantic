@@ -945,7 +945,7 @@ def import_email_validator() -> None:
     try:
         import email_validator
     except ImportError as e:
-        raise ImportError('email-validator is not installed, run `pip install pydantic[email]`') from e
+        raise ImportError("email-validator is not installed, run `pip install 'pydantic[email]'`") from e
     if not version('email-validator').partition('.')[0] == '2':
         raise ImportError('email-validator version >= 2.0 required, run pip install -U email-validator')
 
