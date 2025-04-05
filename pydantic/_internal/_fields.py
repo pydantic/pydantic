@@ -476,7 +476,7 @@ def resolve_default_value(
         if takes_validated_data_argument(default_factory=default_factory):
             fac = cast('Callable[[dict[str, Any]], Any]', default_factory)
             if validated_data is None:
-                raise ValueError("The default_factory requires 'validated_data' but none was provided.")
+                raise ValueError('The default_factory requires "validated_data" but none was provided.')
             return fac(validated_data)
         else:
             fac = cast('Callable[[], Any]', default_factory)
