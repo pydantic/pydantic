@@ -126,7 +126,7 @@ def test_private_attribute_factory_unset_private():
         _foobazfoo = PrivateAttr(default='foobazfoo')
 
     with pytest.raises(KeyError, match='_foobazfoo'):
-        _ = Model(foo='foo', bar='bar')
+        Model(foo='foo', bar='bar')
 
 
 def test_private_attribute_annotation():
