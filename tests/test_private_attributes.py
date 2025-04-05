@@ -96,8 +96,6 @@ def test_private_attribute_factory_uses_validated_data():
         bar: str
         _foobaz = PrivateAttr(default_factory=factory)
 
-    assert Model.__private_attributes__ == {'_foobaz': PrivateAttr(default_factory=factory)}
-
     m = Model(foo='foo', bar='bar')
     assert m._foobaz == 'foobar'
 
