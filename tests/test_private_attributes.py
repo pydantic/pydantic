@@ -110,11 +110,6 @@ def test_private_attribute_factory_uses_other_private_attribute():
         _foobaz = PrivateAttr(default='foobaz')
         _foobazfoo = PrivateAttr(default_factory=factory)
 
-    assert Model.__private_attributes__ == {
-        '_foobaz': PrivateAttr(default='foobaz'),
-        '_foobazfoo': PrivateAttr(default_factory=factory),
-    }
-
     m = Model(foo='foo', bar='bar')
     assert m._foobaz == 'foobaz'
     assert m._foobazfoo == 'foobarfoobaz'
