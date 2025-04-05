@@ -1244,7 +1244,9 @@ def PrivateAttr(
 
     Args:
         default: The attribute's default value. Defaults to Undefined.
-        default_factory: Callable that will be
+        default_factory: A callable to generate the default value. The callable can either take 0 arguments
+            (in which case it is called as is) or a single argument containing the validated data (the model's
+            [`__dict__`][object.__dict__]) and the already initialized private attributes.
             called when a default value is needed for this attribute. The callable can either take 0 arguments
             (in which case it is called as is) or a single argument containing the already validated data, in this
             case for private attributes will correspond to the entire model fields gotten from __dict__.
