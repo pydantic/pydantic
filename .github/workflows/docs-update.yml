@@ -77,10 +77,7 @@ jobs:
 
       - run: uv run python -c 'import docs.plugins.main'
 
-      # Adding local symlinks gets nice source locations like
-      #   pydantic_core/core_schema.py
-      # instead of
-      #   .venv/lib/python3.10/site-packages/pydantic_core/core_schema.py
+      # Taken from docs-build.sh
       - name: Prepare shortcuts for extra modules
         run: |
           ln -s .venv/lib/python*/site-packages/pydantic_core pydantic_core
@@ -92,7 +89,7 @@ jobs:
           git config --global user.name "${{ github.actor }}"
           git config --global user.email "${{ github.actor }}@users.noreply.github.com"
 
-      - run: uv run mike deploy -b docs-site dev --push
+      - run: PYTHONPATH="$PWD${PYTHONPATH:+:${PYTHONPATH}}" uv run mike deploy -b docs-site dev --push
         if: github.ref == 'refs/heads/main'
 
       - if: github.ref == 'refs/heads/docs-update' || startsWith(github.ref, 'refs/tags/')
@@ -102,7 +99,7 @@ jobs:
           version_file_path: 'pydantic/version.py'
           skip_env_check: true
 
-      - run: uv run mike deploy -b docs-site ${{ steps.check-version.outputs.VERSION_MAJOR_MINOR }} latest --update-aliases --push
+      - run: PYTHONPATH="$PWD${PYTHONPATH:+:${PYTHONPATH}}" uv run mike deploy -b docs-site ${{ steps.check-version.outputs.VERSION_MAJOR_MINOR }} latest --update-aliases --push
         if: ${{ (github.ref == 'refs/heads/docs-update' || startsWith(github.ref, 'refs/tags/')) && !fromJSON(steps.check-version.outputs.IS_PRERELEASE) }}
         env:
           PYDANTIC_VERSION: v${{ steps.check-version.outputs.VERSION }}

@@ -244,7 +244,7 @@ plugins:
 - mkdocstrings:
     handlers:
       python:
-        paths: [.]
+        paths: [.]  # see also: build-docs.sh
         options:
           members_order: source
           separate_signature: true
