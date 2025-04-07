@@ -698,7 +698,7 @@ print(Settings().model_dump())
 
 ```
 
-To enable CLI parsing, we simply set the `cli_parse_args` flag to a valid value, which retains similar conotations as defined in `argparse`.
+To enable CLI parsing, we simply set the `cli_parse_args` flag to a valid value, which retains similar connotations as defined in `argparse`.
 
 Note that a CLI settings source is [**the topmost source**](#field-value-priority) by default unless its [priority value is customised](#customise-settings-sources):
 

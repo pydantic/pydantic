@@ -3176,7 +3176,34 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
+  <a href="#v11021-2025-01-10" class="md-nav__link">
+    <span class="md-ellipsis">
+      v1.10.21 (2025-01-10)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v11020-2025-01-07" class="md-nav__link">
+    <span class="md-ellipsis">
+      v1.10.20 (2025-01-07)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v11019-2024-11-06" class="md-nav__link">
+    <span class="md-ellipsis">
+      v1.10.19 (2024-11-06)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v11019-2024-11-06_1" class="md-nav__link">
     <span class="md-ellipsis">
       v1.10.19 (2024-11-06)
     </span>
@@ -8823,7 +8850,34 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
+  <a href="#v11021-2025-01-10" class="md-nav__link">
+    <span class="md-ellipsis">
+      v1.10.21 (2025-01-10)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v11020-2025-01-07" class="md-nav__link">
+    <span class="md-ellipsis">
+      v1.10.20 (2025-01-07)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v11019-2024-11-06" class="md-nav__link">
+    <span class="md-ellipsis">
+      v1.10.19 (2024-11-06)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v11019-2024-11-06_1" class="md-nav__link">
     <span class="md-ellipsis">
       v1.10.19 (2024-11-06)
     </span>
@@ -11588,7 +11642,28 @@ is desired, you can switch to <code>left-to-right</code> mode and change the ord
 <h2 id="v20a1-2023-04-03">v2.0a1 (2023-04-03)<a class="headerlink" href="#v20a1-2023-04-03" title="Permanent link">&para;</a></h2>
 <p>First pre-release of Pydantic V2!</p>
 <p>See <a href="https://docs.pydantic.dev/blog/pydantic-v2-alpha/">this post</a> for more details.</p>
+<h2 id="v11021-2025-01-10">v1.10.21 (2025-01-10)<a class="headerlink" href="#v11021-2025-01-10" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Fix compatibility with ForwardRef._evaluate and Python &lt; 3.12.4 by <a href="https://github.com/griels">@griels</a> in https://github.com/pydantic/pydantic/pull/11232</li>
+</ul>
+<h2 id="v11020-2025-01-07">v1.10.20 (2025-01-07)<a class="headerlink" href="#v11020-2025-01-07" title="Permanent link">&para;</a></h2>
+<p>This release provides proper support for Python 3.13, with (Cythonized) wheels published for this version.
+As a consequence, Cython was updated from <code>0.29.x</code> to <code>3.0.x</code>.</p>
+<ul>
+<li>General maintenance of CI and build ecosystem by <a href="https://github.com/Viicos">@Viicos</a> in https://github.com/pydantic/pydantic/pull/10847</li>
+<li>Update Cython to <code>3.0.x</code>.</li>
+<li>Properly address Python 3.13 deprecation warnings.</li>
+<li>Migrate packaging to <code>pyproject.toml</code>, make use of PEP 517 build options.</li>
+<li>Use <a href="https://pypi.org/project/build/"><code>build</code></a> instead of direct <code>setup.py</code> invocations.</li>
+<li>Update various Github Actions versions.</li>
+<li>Replace outdated stpmex link in documentation by <a href="https://github.com/jaredenorris">@jaredenorris</a> in https://github.com/pydantic/pydantic/pull/10997</li>
+</ul>
 <h2 id="v11019-2024-11-06">v1.10.19 (2024-11-06)<a class="headerlink" href="#v11019-2024-11-06" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Add warning when v2 model is nested in v1 model by <a href="https://github.com/sydney-runkle">@sydney-runkle</a> in https://github.com/pydantic/pydantic/pull/10432</li>
+<li>Fix deprecation warning in V1 <code>isinstance</code> check by <a href="https://github.com/alicederyn">@alicederyn</a> in https://github.com/pydantic/pydantic/pull/10645</li>
+</ul>
+<h2 id="v11019-2024-11-06_1">v1.10.19 (2024-11-06)<a class="headerlink" href="#v11019-2024-11-06_1" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Add warning when v2 model is nested in v1 model by <a href="https://github.com/sydney-runkle">@sydney-runkle</a> in https://github.com/pydantic/pydantic/pull/10432</li>
 <li>Fix deprecation warning in V1 <code>isinstance</code> check by <a href="https://github.com/alicederyn">@alicederyn</a> in https://github.com/pydantic/pydantic/pull/10645</li>
