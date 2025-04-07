@@ -1745,9 +1745,10 @@ def create_model(  # noqa: C901
                     'being the type and the second element the assigned value (either a default or the `Field()` function).',
                     code='create-model-field-definitions',
                 )
-
             annotations[f_name] = f_def[0]
             fields[f_name] = f_def[1]
+        elif isinstance(f_def, _decorators.PydanticDescriptorProxy):
+            fields[f_name] = f_def
         else:
             annotations[f_name] = f_def
 

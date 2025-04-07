@@ -11,6 +11,7 @@ from pydantic import (
     PydanticDeprecatedSince20,
     PydanticUserError,
     ValidationError,
+    computed_field,
     create_model,
     errors,
     field_validator,
@@ -398,3 +399,12 @@ def test_type_field_in_the_same_module():
     B = create_model('B', a_cls=(type, A))
     b = B()
     assert b.a_cls == A
+
+
+def test_computed_field():
+    def bar(self) -> float:
+        return 1
+
+    A = create_model('A', bar=computed_field(bar))
+    a = A()
+    assert a.bar == 1
