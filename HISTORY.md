@@ -1927,6 +1927,28 @@ First pre-release of Pydantic V2!
 
 See [this post](https://docs.pydantic.dev/blog/pydantic-v2-alpha/) for more details.
 
+## v1.10.21 (2025-01-10)
+
+* Fix compatibility with ForwardRef._evaluate and Python < 3.12.4 by @griels in https://github.com/pydantic/pydantic/pull/11232
+
+## v1.10.20 (2025-01-07)
+
+This release provides proper support for Python 3.13, with (Cythonized) wheels published for this version.
+As a consequence, Cython was updated from `0.29.x` to `3.0.x`.
+
+* General maintenance of CI and build ecosystem by @Viicos in https://github.com/pydantic/pydantic/pull/10847
+  - Update Cython to `3.0.x`.
+  - Properly address Python 3.13 deprecation warnings.
+  - Migrate packaging to `pyproject.toml`, make use of PEP 517 build options.
+  - Use [`build`](https://pypi.org/project/build/) instead of direct `setup.py` invocations.
+  - Update various Github Actions versions.
+* Replace outdated stpmex link in documentation by @jaredenorris in https://github.com/pydantic/pydantic/pull/10997
+
+## v1.10.19 (2024-11-06)
+
+* Add warning when v2 model is nested in v1 model by @sydney-runkle in https://github.com/pydantic/pydantic/pull/10432
+* Fix deprecation warning in V1 `isinstance` check by @alicederyn in https://github.com/pydantic/pydantic/pull/10645
+
 ## v1.10.19 (2024-11-06)
 
 * Add warning when v2 model is nested in v1 model by @sydney-runkle in https://github.com/pydantic/pydantic/pull/10432
