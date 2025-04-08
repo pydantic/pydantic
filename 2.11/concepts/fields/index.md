@@ -999,6 +999,8 @@ print(Box.model_json_schema(mode='serialization'))
 
 ```
 
+1. If not specified, computed_field will implicitly convert the method to a property. However, it is preferable to explicitly use the @property decorator for type checking purposes.
+
 Here's an example using the `model_dump` method with a computed field:
 
 ```python
@@ -1011,7 +1013,7 @@ class Box(BaseModel):
     depth: float
 
     @computed_field
-    @property  # (1)!
+    @property
     def volume(self) -> float:
         return self.width * self.height * self.depth
 
@@ -1021,8 +1023,6 @@ print(b.model_dump())
 #> {'width': 1.0, 'height': 2.0, 'depth': 3.0, 'volume': 6.0}
 
 ```
-
-1. If not specified, computed_field will implicitly convert the method to a property. However, it is preferable to explicitly use the @property decorator for type checking purposes.
 
 As with regular fields, computed fields can be marked as being deprecated:
 

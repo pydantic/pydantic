@@ -4267,6 +4267,11 @@ are expensive to be computed (and thus, are cached if using <a class="autorefs a
 <span class="sd">}</span>
 <span class="sd">&quot;&quot;&quot;</span>
 </code></pre></div>
+<ol>
+<li>If not specified, <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.computed_field"><code>computed_field</code></a> will implicitly convert the method
+   to a <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#property"><code>property</code></a>. However, it is preferable to explicitly use the <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#property"><code>@property</code></a> decorator
+   for type checking purposes.</li>
+</ol>
 <p>Here's an example using the <code>model_dump</code> method with a computed field:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">computed_field</span>
 
@@ -4277,7 +4282,7 @@ are expensive to be computed (and thus, are cached if using <a class="autorefs a
     <span class="n">depth</span><span class="p">:</span> <span class="nb">float</span>
 
     <span class="nd">@computed_field</span>
-    <span class="nd">@property</span>  <span class="c1"># (1)!</span>
+    <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">volume</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">width</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">depth</span>
 
@@ -4286,11 +4291,6 @@ are expensive to be computed (and thus, are cached if using <a class="autorefs a
 <span class="nb">print</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
 <span class="c1">#&gt; {&#39;width&#39;: 1.0, &#39;height&#39;: 2.0, &#39;depth&#39;: 3.0, &#39;volume&#39;: 6.0}</span>
 </code></pre></div>
-<ol>
-<li>If not specified, <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.computed_field"><code>computed_field</code></a> will implicitly convert the method
-   to a <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#property"><code>property</code></a>. However, it is preferable to explicitly use the <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#property"><code>@property</code></a> decorator
-   for type checking purposes.</li>
-</ol>
 <p>As with regular fields, computed fields can be marked as being deprecated:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing_extensions</span><span class="w"> </span><span class="kn">import</span> <span class="n">deprecated</span>
 
@@ -4368,7 +4368,7 @@ are expensive to be computed (and thus, are cached if using <a class="autorefs a
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.11.2", "pydantic-core==2.33.1", "pydantic-extra-types==2.10.0"]
+    window.mkdocs_run_deps = ["pydantic==2.11.3", "pydantic-core==2.33.1", "pydantic-extra-types==2.10.0"]
     </script>
 
               </article>

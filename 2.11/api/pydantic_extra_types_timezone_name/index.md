@@ -54,7 +54,7 @@ get_timezones() -> Set[str]
 
 Determine the timezone provider and return available timezones.
 
-Source code in `.venv/lib/python3.12/site-packages/pydantic_extra_types/timezone_name.py`
+Source code in `pydantic_extra_types/timezone_name.py`
 
 ```python
 def get_timezones() -> Set[str]:
