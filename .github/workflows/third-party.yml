@@ -630,6 +630,7 @@ jobs:
       - test-bentoml
       - test-semantic-kernel
       - test-langchain
+      - test-dify
     # Issue report disabled for now due to flakiness:
     if: |
       always() &&
