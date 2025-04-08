@@ -564,6 +564,51 @@ jobs:
         working-directory: ./libs/langchain
         run: make test
 
+  test-dify:
+    name: Test Dify (main branch) on Python ${{ matrix.python-version }}
+    # If 'schedule' was the trigger, don't run it on contributors' forks
+#    if: |
+#      github.event_name == 'workflow_dispatch' ||
+#      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
+#      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [ '3.11', '3.12' ]
+
+    steps:
+      - name: Checkout Dify
+        uses: actions/checkout@v4
+        with:
+          repository: langgenius/dify
+
+      - name: Checkout Pydantic
+        uses: actions/checkout@v4
+        with:
+          path: pydantic-latest
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install uv
+        shell: bash
+        run: pip install uv~=0.6.14
+
+      - name: Install Dify dependencies
+        run: |
+          uv sync --directory api --dev
+          uv pip --directory api uninstall pydantic
+          uv pip --directory api install -e ../pydantic-latest
+
+      - name: List installed dependencies
+        run: uv pip --directory api list
+
+      - name: Run Unit tests
+        run: uv run --project api bash dev/pytest/pytest_unit_tests.sh
+
   create-issue-on-failure:
     name: Create an issue if tests failed
     runs-on: ubuntu-latest
@@ -578,6 +623,7 @@ jobs:
       - test-bentoml
       - test-semantic-kernel
       - test-langchain
+      - test-dify
     # Issue report disabled for now due to flakiness:
     if: |
       always() &&
