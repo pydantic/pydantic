@@ -1,3 +1,17 @@
+## v2.11.3 (2025-04-08)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.11.3)
+
+### What's Changed
+
+#### Packaging
+
+* Update V1 copy to v1.10.21 by @Viicos in [#11706](https://github.com/pydantic/pydantic/pull/11706)
+
+#### Fixes
+
+* Preserve field description when rebuilding model fields by @Viicos in [#11698](https://github.com/pydantic/pydantic/pull/11698)
+
 ## v2.11.2 (2025-04-03)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.11.2)
