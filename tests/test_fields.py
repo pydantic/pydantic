@@ -170,3 +170,21 @@ def test_coerce_numbers_to_str_field_precedence(number):
         field: str = Field(coerce_numbers_to_str=True)
 
     assert Model(field=number).field == str(number)
+
+
+def test_rebuild_model_fields_preserves_description() -> None:
+    """https://github.com/pydantic/pydantic/issues/11696"""
+
+    class Model(BaseModel):
+        model_config = ConfigDict(use_attribute_docstrings=True)
+
+        f: 'Int'
+        """test doc"""
+
+    assert Model.model_fields['f'].description == 'test doc'
+
+    Int = int
+
+    Model.model_rebuild()
+
+    assert Model.model_fields['f'].description == 'test doc'

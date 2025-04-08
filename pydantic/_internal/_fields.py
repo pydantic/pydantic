@@ -319,6 +319,7 @@ def rebuild_model_fields(
             if field_info._complete:
                 rebuilt_fields[f_name] = field_info
             else:
+                existing_desc = field_info.description
                 ann = _typing_extra.eval_type(
                     field_info._original_annotation,
                     *ns_resolver.types_namespace,
@@ -326,11 +327,12 @@ def rebuild_model_fields(
                 ann = _generics.replace_types(ann, typevars_map)
 
                 if (assign := field_info._original_assignment) is PydanticUndefined:
-                    rebuilt_fields[f_name] = FieldInfo_.from_annotation(ann, _source=AnnotationSource.CLASS)
+                    new_field = FieldInfo_.from_annotation(ann, _source=AnnotationSource.CLASS)
                 else:
-                    rebuilt_fields[f_name] = FieldInfo_.from_annotated_attribute(
-                        ann, assign, _source=AnnotationSource.CLASS
-                    )
+                    new_field = FieldInfo_.from_annotated_attribute(ann, assign, _source=AnnotationSource.CLASS)
+                # The description might come from the docstring if `use_attribute_docstrings` was `True`:
+                new_field.description = new_field.description if new_field.description is not None else existing_desc
+                rebuilt_fields[f_name] = new_field
 
     return rebuilt_fields
 
