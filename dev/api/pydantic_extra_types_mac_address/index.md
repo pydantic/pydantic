@@ -31,7 +31,7 @@ validate_mac_address(value: bytes) -> str
 
 Validate a MAC Address from the provided byte value.
 
-Source code in `.venv/lib/python3.12/site-packages/pydantic_extra_types/mac_address.py`
+Source code in `pydantic_extra_types/mac_address.py`
 
 ```python
 @staticmethod

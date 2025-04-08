@@ -40,7 +40,7 @@ Raises:
 
 | Type | Description | | --- | --- | | `PydanticCustomError` | If the ISBN is not valid. |
 
-Source code in `.venv/lib/python3.12/site-packages/pydantic_extra_types/isbn.py`
+Source code in `pydantic_extra_types/isbn.py`
 
 ```python
 @staticmethod
@@ -94,7 +94,7 @@ Returns:
 
 | Type | Description | | --- | --- | | `str` | The converted ISBN or the original value if no conversion is necessary. |
 
-Source code in `.venv/lib/python3.12/site-packages/pydantic_extra_types/isbn.py`
+Source code in `pydantic_extra_types/isbn.py`
 
 ```python
 @staticmethod
@@ -134,7 +134,7 @@ Returns:
 
 | Type | Description | | --- | --- | | `str` | The calculated last digit of the ISBN-10 value. |
 
-Source code in `.venv/lib/python3.12/site-packages/pydantic_extra_types/isbn.py`
+Source code in `pydantic_extra_types/isbn.py`
 
 ```python
 def isbn10_digit_calc(isbn: str) -> str:
@@ -173,7 +173,7 @@ Returns:
 
 | Type | Description | | --- | --- | | `str` | The calculated last digit of the ISBN-13 value. |
 
-Source code in `.venv/lib/python3.12/site-packages/pydantic_extra_types/isbn.py`
+Source code in `pydantic_extra_types/isbn.py`
 
 ```python
 def isbn13_digit_calc(isbn: str) -> str:

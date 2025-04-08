@@ -13,7 +13,7 @@ RGBA(r: float, g: float, b: float, alpha: float | None)
 
 Internal use only as a representation of a color.
 
-Source code in `.venv/lib/python3.12/site-packages/pydantic_extra_types/color.py`
+Source code in `pydantic_extra_types/color.py`
 
 ```python
 def __init__(self, r: float, g: float, b: float, alpha: float | None):
@@ -37,7 +37,7 @@ Bases: `Representation`
 
 Represents a color.
 
-Source code in `.venv/lib/python3.12/site-packages/pydantic_extra_types/color.py`
+Source code in `pydantic_extra_types/color.py`
 
 ```python
 def __init__(self, value: ColorType) -> None:
@@ -70,7 +70,7 @@ original() -> ColorType
 
 Original value passed to `Color`.
 
-Source code in `.venv/lib/python3.12/site-packages/pydantic_extra_types/color.py`
+Source code in `pydantic_extra_types/color.py`
 
 ```python
 def original(self) -> ColorType:
@@ -102,7 +102,7 @@ Raises:
 
 | Type | Description | | --- | --- | | `ValueError` | When no named color is found and fallback is False. |
 
-Source code in `.venv/lib/python3.12/site-packages/pydantic_extra_types/color.py`
+Source code in `pydantic_extra_types/color.py`
 
 ```python
 def as_named(self, *, fallback: bool = False) -> str:
@@ -149,7 +149,7 @@ Returns:
 
 | Type | Description | | --- | --- | | `str` | The hexadecimal representation of the color. |
 
-Source code in `.venv/lib/python3.12/site-packages/pydantic_extra_types/color.py`
+Source code in `pydantic_extra_types/color.py`
 
 ```python
 def as_hex(self, format: Literal['short', 'long'] = 'short') -> str:
@@ -181,7 +181,7 @@ as_rgb() -> str
 
 Color as an `rgb(<r>, <g>, <b>)` or `rgba(<r>, <g>, <b>, <a>)` string.
 
-Source code in `.venv/lib/python3.12/site-packages/pydantic_extra_types/color.py`
+Source code in `pydantic_extra_types/color.py`
 
 ```python
 def as_rgb(self) -> str:
@@ -215,7 +215,7 @@ Returns:
 
 | Type | Description | | --- | --- | | `ColorTuple` | A tuple that contains the values of the red, green, and blue channels in the range 0 to 255. If alpha is included, it is in the range 0 to 1. |
 
-Source code in `.venv/lib/python3.12/site-packages/pydantic_extra_types/color.py`
+Source code in `pydantic_extra_types/color.py`
 
 ```python
 def as_rgb_tuple(self, *, alpha: bool | None = None) -> ColorTuple:
@@ -250,7 +250,7 @@ as_hsl() -> str
 
 Color as an `hsl(<h>, <s>, <l>)` or `hsl(<h>, <s>, <l>, <a>)` string.
 
-Source code in `.venv/lib/python3.12/site-packages/pydantic_extra_types/color.py`
+Source code in `pydantic_extra_types/color.py`
 
 ```python
 def as_hsl(self) -> str:
@@ -287,7 +287,7 @@ Note
 
 This is HSL as used in HTML and most other places, not HLS as used in Python's `colorsys`.
 
-Source code in `.venv/lib/python3.12/site-packages/pydantic_extra_types/color.py`
+Source code in `pydantic_extra_types/color.py`
 
 ```python
 def as_hsl_tuple(self, *, alpha: bool | None = None) -> HslColorTuple:
@@ -339,7 +339,7 @@ Raises:
 
 | Type | Description | | --- | --- | | `PydanticCustomError` | If tuple is not valid. |
 
-Source code in `.venv/lib/python3.12/site-packages/pydantic_extra_types/color.py`
+Source code in `pydantic_extra_types/color.py`
 
 ```python
 def parse_tuple(value: tuple[Any, ...]) -> RGBA:
@@ -395,7 +395,7 @@ Raises:
 
 | Type | Description | | --- | --- | | `ValueError` | If the input string cannot be parsed to an RGBA tuple. |
 
-Source code in `.venv/lib/python3.12/site-packages/pydantic_extra_types/color.py`
+Source code in `pydantic_extra_types/color.py`
 
 ```python
 def parse_str(value: str) -> RGBA:
@@ -480,7 +480,7 @@ Returns:
 
 | Type | Description | | --- | --- | | `RGBA` | An instance of the RGBA class with the corresponding color and alpha values. |
 
-Source code in `.venv/lib/python3.12/site-packages/pydantic_extra_types/color.py`
+Source code in `pydantic_extra_types/color.py`
 
 ```python
 def ints_to_rgba(
@@ -533,7 +533,7 @@ Returns:
 
 | Type | Description | | --- | --- | | `float` | A number between 0 and 1. |
 
-Source code in `.venv/lib/python3.12/site-packages/pydantic_extra_types/color.py`
+Source code in `pydantic_extra_types/color.py`
 
 ```python
 def parse_color_value(value: int | str, max_val: int = 255) -> float:
@@ -591,7 +591,7 @@ Raises:
 
 | Type | Description | | --- | --- | | `PydanticCustomError` | If the input value cannot be successfully parsed as a float in the expected range. |
 
-Source code in `.venv/lib/python3.12/site-packages/pydantic_extra_types/color.py`
+Source code in `pydantic_extra_types/color.py`
 
 ```python
 def parse_float_alpha(value: None | str | float | int) -> float | None:
@@ -655,7 +655,7 @@ Returns:
 
 | Type | Description | | --- | --- | | `RGBA` | An instance of RGBA. |
 
-Source code in `.venv/lib/python3.12/site-packages/pydantic_extra_types/color.py`
+Source code in `pydantic_extra_types/color.py`
 
 ```python
 def parse_hsl(h: str, h_units: str, sat: str, light: str, alpha: float | None = None) -> RGBA:
@@ -705,7 +705,7 @@ Returns:
 
 | Type | Description | | --- | --- | | `int` | The integer equivalent of the given float value rounded to the nearest whole number. |
 
-Source code in `.venv/lib/python3.12/site-packages/pydantic_extra_types/color.py`
+Source code in `pydantic_extra_types/color.py`
 
 ```python
 def float_to_255(c: float) -> int:
