@@ -1112,31 +1112,41 @@ class GenerateJsonSchema:
         if default is NoDefault:
             return json_schema
 
+        def _get_ser_schema(schema: CoreSchema) -> core_schema.PlainSerializerFunctionSerSchema | None:
+            if (
+                (ser_schema := schema.get('serialization'))
+                and ser_schema['type'] == 'function-plain'
+                and not ser_schema.get('info_arg')
+            ):
+                return ser_schema
+            if _core_utils.is_function_with_inner_schema(schema):
+                return _get_ser_schema(schema['schema'])
+
         # we reflect the application of custom plain, no-info serializers to defaults for
         # JSON Schemas viewed in serialization mode:
         # TODO: improvements along with https://github.com/pydantic/pydantic/issues/8208
-        if (
-            self.mode == 'serialization'
-            and (ser_schema := schema['schema'].get('serialization'))
-            and (ser_func := ser_schema.get('function'))
-            and ser_schema.get('type') == 'function-plain'
-            and not ser_schema.get('info_arg')
-            and not (default is None and ser_schema.get('when_used') in ('unless-none', 'json-unless-none'))
-        ):
-            try:
-                default = ser_func(default)  # type: ignore
-            except Exception:
-                # It might be that the provided default needs to be validated (read: parsed) first
-                # (assuming `validate_default` is enabled). However, we can't perform
-                # such validation during JSON Schema generation so we don't support
-                # this pattern for now.
-                # (One example is when using `foo: ByteSize = '1MB'`, which validates and
-                # serializes as an int. In this case, `ser_func` is `int` and `int('1MB')` fails).
-                self.emit_warning(
-                    'non-serializable-default',
-                    f'Unable to serialize value {default!r} with the plain serializer; excluding default from JSON schema',
-                )
-                return json_schema
+        if self.mode == 'serialization':
+            # `_get_ser_schema()` is used to unpack potentially nested validator schemas:
+            ser_schema = _get_ser_schema(schema['schema'])
+            if (
+                ser_schema is not None
+                and (ser_func := ser_schema.get('function'))
+                and not (default is None and ser_schema.get('when_used') in ('unless-none', 'json-unless-none'))
+            ):
+                try:
+                    default = ser_func(default)  # type: ignore
+                except Exception:
+                    # It might be that the provided default needs to be validated (read: parsed) first
+                    # (assuming `validate_default` is enabled). However, we can't perform
+                    # such validation during JSON Schema generation so we don't support
+                    # this pattern for now.
+                    # (One example is when using `foo: ByteSize = '1MB'`, which validates and
+                    # serializes as an int. In this case, `ser_func` is `int` and `int('1MB')` fails).
+                    self.emit_warning(
+                        'non-serializable-default',
+                        f'Unable to serialize value {default!r} with the plain serializer; excluding default from JSON schema',
+                    )
+                    return json_schema
 
         try:
             encoded_default = self.encode_default(default)

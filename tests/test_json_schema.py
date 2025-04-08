@@ -37,6 +37,7 @@ from typing_extensions import TypeAliasType, TypedDict, deprecated
 
 import pydantic
 from pydantic import (
+    AfterValidator,
     BaseModel,
     BeforeValidator,
     Field,
@@ -6368,6 +6369,22 @@ def test_plain_serializer_applies_to_default() -> None:
         'title': 'Model',
         'type': 'object',
     }
+    assert Model.model_json_schema(mode='serialization') == {
+        'properties': {'custom_str': {'default': 'serialized-foo', 'title': 'Custom Str', 'type': 'string'}},
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
+def test_plain_serializer_applies_to_default_when_nested_under_validators() -> None:
+    class Model(BaseModel):
+        custom_str: Annotated[
+            str,
+            PlainSerializer(lambda x: f'serialized-{x}', return_type=str),
+            BeforeValidator(lambda v: v + '_a'),
+            AfterValidator(lambda v: v + '_b'),
+        ] = 'foo'
+
     assert Model.model_json_schema(mode='serialization') == {
         'properties': {'custom_str': {'default': 'serialized-foo', 'title': 'Custom Str', 'type': 'string'}},
         'title': 'Model',
