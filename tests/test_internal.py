@@ -15,6 +15,7 @@ from pydantic_core import core_schema as cs
 
 from pydantic import BaseModel, TypeAdapter
 from pydantic._internal._config import ConfigWrapper
+from pydantic._internal._fields import resolve_default_value
 from pydantic._internal._generate_schema import GenerateSchema
 from pydantic._internal._repr import Representation
 from pydantic._internal._validators import _extract_decimal_digits_info
@@ -188,3 +189,29 @@ def test_decimal_digits_calculation(decimal: Decimal, decimal_places: int, digit
 def test_decimal_digits_calculation_type_error(value) -> None:
     with pytest.raises(TypeError, match=f'Unable to extract decimal digits info from supplied value {value}'):
         _extract_decimal_digits_info(value)
+
+
+@pytest.mark.parametrize(
+    'default, default_factory, validated_data, call_default_factory, expected',
+    [
+        ('foo', None, None, True, 'foo'),
+        ('foo', None, None, False, 'foo'),
+        ('foo-unused', lambda: 'foo', None, False, None),
+        ('foo-unused', lambda: 'foo', None, True, 'foo'),
+        ('foo-unused', lambda data: data['foo'], {'foo': 'bar'}, True, 'bar'),
+    ],
+)
+def test_resolve_default_value(default, default_factory, validated_data, call_default_factory, expected):
+    result = resolve_default_value(
+        default,
+        default_factory,
+        validated_data=validated_data,
+        call_default_factory=call_default_factory,
+    )
+    assert result == expected
+
+
+def test_resolve_default_value_missing_validated_data():
+    # When factory requires validated_data but none is provided, a ValueError should be raised.
+    with pytest.raises(ValueError, match='The default_factory requires "validated_data" but none was provided.'):
+        resolve_default_value('foo', lambda data: data['foo'], validated_data=None, call_default_factory=True)
