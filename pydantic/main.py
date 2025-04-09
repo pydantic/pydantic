@@ -1716,16 +1716,10 @@ def create_model(  # noqa: C901
     Raises:
         PydanticUserError: If `__base__` and `__config__` are both passed.
     """
-    if __base__ is not None:
-        if __config__ is not None:
-            raise PydanticUserError(
-                'to avoid confusion `__config__` and `__base__` cannot be used together',
-                code='create-model-config-base',
-            )
-        if not isinstance(__base__, tuple):
-            __base__ = (__base__,)
-    else:
+    if __base__ is None:
         __base__ = (cast('type[ModelT]', BaseModel),)
+    elif not isinstance(__base__, tuple):
+        __base__ = (__base__,)
 
     __cls_kwargs__ = __cls_kwargs__ or {}
 
@@ -1757,7 +1751,7 @@ def create_model(  # noqa: C901
         namespace.update(__validators__)
     namespace.update(fields)
     if __config__:
-        namespace['model_config'] = _config.ConfigWrapper(__config__).config_dict
+        namespace['model_config'] = __config__
     resolved_bases = types.resolve_bases(__base__)
     meta, ns, kwds = types.prepare_class(model_name, resolved_bases, kwds=__cls_kwargs__)
     if resolved_bases is not __base__:
