@@ -1112,22 +1112,12 @@ class GenerateJsonSchema:
         if default is NoDefault:
             return json_schema
 
-        def _get_ser_schema(schema: CoreSchema) -> core_schema.PlainSerializerFunctionSerSchema | None:
-            if (
-                (ser_schema := schema.get('serialization'))
-                and ser_schema['type'] == 'function-plain'
-                and not ser_schema.get('info_arg')
-            ):
-                return ser_schema
-            if _core_utils.is_function_with_inner_schema(schema):
-                return _get_ser_schema(schema['schema'])
-
         # we reflect the application of custom plain, no-info serializers to defaults for
         # JSON Schemas viewed in serialization mode:
         # TODO: improvements along with https://github.com/pydantic/pydantic/issues/8208
         if self.mode == 'serialization':
-            # `_get_ser_schema()` is used to unpack potentially nested validator schemas:
-            ser_schema = _get_ser_schema(schema['schema'])
+            # `_get_ser_schema_for_default_value()` is used to unpack potentially nested validator schemas:
+            ser_schema = _get_ser_schema_for_default_value(schema['schema'])
             if (
                 ser_schema is not None
                 and (ser_func := ser_schema.get('function'))
@@ -2703,3 +2693,18 @@ def _get_typed_dict_config(cls: type[Any] | None) -> ConfigDict:
         except AttributeError:
             pass
     return {}
+
+
+def _get_ser_schema_for_default_value(schema: CoreSchema) -> core_schema.PlainSerializerFunctionSerSchema | None:
+    """Get a `'function-plain'` serialization schema that can be used to serialize a default value.
+
+    This takes into account having the serialization schema nested under validation schema(s).
+    """
+    if (
+        (ser_schema := schema.get('serialization'))
+        and ser_schema['type'] == 'function-plain'
+        and not ser_schema.get('info_arg')
+    ):
+        return ser_schema
+    if _core_utils.is_function_with_inner_schema(schema):
+        return _get_ser_schema_for_default_value(schema['schema'])
