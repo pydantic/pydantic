@@ -1198,12 +1198,16 @@ wheels = [
 
 [[package]]
 name = "mkdocs-llmstxt"
-version = "0.1.1.dev18+g4955925"
-source = { git = "https://github.com/Viicos/mkdocs-llmstxt?rev=issue-1#495592556a94c80e7a0f7184f647f6e6207747d9" }
+version = "0.2.0"
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "beautifulsoup4" },
     { name = "markdownify" },
     { name = "mdformat" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/ee/25/263ea9c16d1f95f30d9eb1b76e63eb50a88a1ec9fad1829281bab7a371eb/mkdocs_llmstxt-0.2.0.tar.gz", hash = "sha256:104f10b8101167d6baf7761942b4743869be3d8f8a8d909f4e9e0b63307f709e", size = 41376 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/24/29/0a33f7d8499a01dd7fd0d90fb163b2d8eefa9c90ac0ecbc1a7770e50614e/mkdocs_llmstxt-0.2.0-py3-none-any.whl", hash = "sha256:907de892e0c8be74002e8b4d553820c2b5bbcf03cc303b95c8bca48fb49c1a29", size = 23244 },
 ]
 
 [[package]]
@@ -1801,7 +1805,7 @@ all = [
     { name = "mike" },
     { name = "mkdocs" },
     { name = "mkdocs-exclude" },
-    { name = "mkdocs-llmstxt", git = "https://github.com/Viicos/mkdocs-llmstxt?rev=issue-1" },
+    { name = "mkdocs-llmstxt" },
     { name = "mkdocs-material", extras = ["imaging"] },
     { name = "mkdocs-redirects" },
     { name = "mkdocstrings-python" },
@@ -1846,7 +1850,7 @@ docs = [
     { name = "mike" },
     { name = "mkdocs" },
     { name = "mkdocs-exclude" },
-    { name = "mkdocs-llmstxt", git = "https://github.com/Viicos/mkdocs-llmstxt?rev=issue-1" },
+    { name = "mkdocs-llmstxt" },
     { name = "mkdocs-material", extras = ["imaging"] },
     { name = "mkdocs-redirects" },
     { name = "mkdocstrings-python" },
