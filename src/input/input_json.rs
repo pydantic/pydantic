@@ -1,6 +1,7 @@
 use std::borrow::Cow;
 
 use jiter::{JsonArray, JsonObject, JsonValue};
+use num_traits::cast::ToPrimitive;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyString};
 use speedate::MicrosecondsPrecisionOverflowBehavior;
@@ -173,6 +174,9 @@ impl<'py, 'data> Input<'py> for JsonValue<'data> {
         match self {
             JsonValue::Float(f) => Ok(ValidationMatch::exact(EitherFloat::F64(*f))),
             JsonValue::Int(i) => Ok(ValidationMatch::strict(EitherFloat::F64(*i as f64))),
+            JsonValue::BigInt(b) => Ok(ValidationMatch::strict(EitherFloat::F64(
+                b.to_f64().expect("BigInt should always return some value"),
+            ))),
             JsonValue::Bool(b) if !strict => Ok(ValidationMatch::lax(EitherFloat::F64(if *b { 1.0 } else { 0.0 }))),
             JsonValue::Str(str) if !strict => str_as_float(self, str).map(ValidationMatch::lax),
             _ => Err(ValError::new(ErrorTypeDefaults::FloatType, self)),

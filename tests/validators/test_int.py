@@ -11,7 +11,7 @@ from pydantic_core import core_schema as cs
 
 from ..conftest import Err, PyAndJson, plain_repr
 
-i64_max = 9_223_372_036_854_775_807
+i64_max = (2**63) - 1
 
 
 @pytest.mark.parametrize(
