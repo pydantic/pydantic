@@ -1,5 +1,6 @@
 import math
 import re
+import sys
 from decimal import Decimal
 from typing import Any
 
@@ -11,7 +12,8 @@ from pydantic_core import core_schema as cs
 
 from ..conftest import Err, PyAndJson, plain_repr
 
-f64_max = 1.7976931348623157e308
+i64_max = (2**63) - 1
+f64_max = sys.float_info.max
 
 
 @pytest.mark.parametrize(
@@ -20,6 +22,8 @@ f64_max = 1.7976931348623157e308
         (0, 0),
         (1, 1),
         (42, 42),
+        (i64_max + 1, i64_max + 1),
+        (f64_max, f64_max),
         ('42', 42),
         ('  42.1  ', 42.1),
         ('42.123', 42.123),
