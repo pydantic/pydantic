@@ -9475,28 +9475,28 @@ str, bool]</code> or <code>tuple[int, ...]</code>.</p>
     <span class="c1"># we reflect the application of custom plain, no-info serializers to defaults for</span>
     <span class="c1"># JSON Schemas viewed in serialization mode:</span>
     <span class="c1"># TODO: improvements along with https://github.com/pydantic/pydantic/issues/8208</span>
-    <span class="k">if</span> <span class="p">(</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;serialization&#39;</span>
-        <span class="ow">and</span> <span class="p">(</span><span class="n">ser_schema</span> <span class="o">:=</span> <span class="n">schema</span><span class="p">[</span><span class="s1">&#39;schema&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;serialization&#39;</span><span class="p">))</span>
-        <span class="ow">and</span> <span class="p">(</span><span class="n">ser_func</span> <span class="o">:=</span> <span class="n">ser_schema</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;function&#39;</span><span class="p">))</span>
-        <span class="ow">and</span> <span class="n">ser_schema</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;type&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;function-plain&#39;</span>
-        <span class="ow">and</span> <span class="ow">not</span> <span class="n">ser_schema</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;info_arg&#39;</span><span class="p">)</span>
-        <span class="ow">and</span> <span class="ow">not</span> <span class="p">(</span><span class="n">default</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">ser_schema</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;when_used&#39;</span><span class="p">)</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;unless-none&#39;</span><span class="p">,</span> <span class="s1">&#39;json-unless-none&#39;</span><span class="p">))</span>
-    <span class="p">):</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">default</span> <span class="o">=</span> <span class="n">ser_func</span><span class="p">(</span><span class="n">default</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
-        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-            <span class="c1"># It might be that the provided default needs to be validated (read: parsed) first</span>
-            <span class="c1"># (assuming `validate_default` is enabled). However, we can&#39;t perform</span>
-            <span class="c1"># such validation during JSON Schema generation so we don&#39;t support</span>
-            <span class="c1"># this pattern for now.</span>
-            <span class="c1"># (One example is when using `foo: ByteSize = &#39;1MB&#39;`, which validates and</span>
-            <span class="c1"># serializes as an int. In this case, `ser_func` is `int` and `int(&#39;1MB&#39;)` fails).</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">emit_warning</span><span class="p">(</span>
-                <span class="s1">&#39;non-serializable-default&#39;</span><span class="p">,</span>
-                <span class="sa">f</span><span class="s1">&#39;Unable to serialize value </span><span class="si">{</span><span class="n">default</span><span class="si">!r}</span><span class="s1"> with the plain serializer; excluding default from JSON schema&#39;</span><span class="p">,</span>
-            <span class="p">)</span>
-            <span class="k">return</span> <span class="n">json_schema</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;serialization&#39;</span><span class="p">:</span>
+        <span class="c1"># `_get_ser_schema_for_default_value()` is used to unpack potentially nested validator schemas:</span>
+        <span class="n">ser_schema</span> <span class="o">=</span> <span class="n">_get_ser_schema_for_default_value</span><span class="p">(</span><span class="n">schema</span><span class="p">[</span><span class="s1">&#39;schema&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">ser_schema</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="ow">and</span> <span class="p">(</span><span class="n">ser_func</span> <span class="o">:=</span> <span class="n">ser_schema</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;function&#39;</span><span class="p">))</span>
+            <span class="ow">and</span> <span class="ow">not</span> <span class="p">(</span><span class="n">default</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">ser_schema</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;when_used&#39;</span><span class="p">)</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;unless-none&#39;</span><span class="p">,</span> <span class="s1">&#39;json-unless-none&#39;</span><span class="p">))</span>
+        <span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">default</span> <span class="o">=</span> <span class="n">ser_func</span><span class="p">(</span><span class="n">default</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="c1"># It might be that the provided default needs to be validated (read: parsed) first</span>
+                <span class="c1"># (assuming `validate_default` is enabled). However, we can&#39;t perform</span>
+                <span class="c1"># such validation during JSON Schema generation so we don&#39;t support</span>
+                <span class="c1"># this pattern for now.</span>
+                <span class="c1"># (One example is when using `foo: ByteSize = &#39;1MB&#39;`, which validates and</span>
+                <span class="c1"># serializes as an int. In this case, `ser_func` is `int` and `int(&#39;1MB&#39;)` fails).</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">emit_warning</span><span class="p">(</span>
+                    <span class="s1">&#39;non-serializable-default&#39;</span><span class="p">,</span>
+                    <span class="sa">f</span><span class="s1">&#39;Unable to serialize value </span><span class="si">{</span><span class="n">default</span><span class="si">!r}</span><span class="s1"> with the plain serializer; excluding default from JSON schema&#39;</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="k">return</span> <span class="n">json_schema</span>
 
     <span class="k">try</span><span class="p">:</span>
         <span class="n">encoded_default</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">encode_default</span><span class="p">(</span><span class="n">default</span><span class="p">)</span>
