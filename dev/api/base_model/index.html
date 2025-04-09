@@ -10057,13 +10057,7 @@ validators <a href="https://docs.pydantic.dev/2.9/concepts/validators/#field-val
 <span class="normal">1770</span>
 <span class="normal">1771</span>
 <span class="normal">1772</span>
-<span class="normal">1773</span>
-<span class="normal">1774</span>
-<span class="normal">1775</span>
-<span class="normal">1776</span>
-<span class="normal">1777</span>
-<span class="normal">1778</span>
-<span class="normal">1779</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">create_model</span><span class="p">(</span>  <span class="c1"># noqa: C901</span>
+<span class="normal">1773</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">create_model</span><span class="p">(</span>  <span class="c1"># noqa: C901</span>
     <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="o">/</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -10105,16 +10099,10 @@ validators <a href="https://docs.pydantic.dev/2.9/concepts/validators/#field-val
 <span class="sd">    Raises:</span>
 <span class="sd">        PydanticUserError: If `__base__` and `__config__` are both passed.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">__base__</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">__config__</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">PydanticUserError</span><span class="p">(</span>
-                <span class="s1">&#39;to avoid confusion `__config__` and `__base__` cannot be used together&#39;</span><span class="p">,</span>
-                <span class="n">code</span><span class="o">=</span><span class="s1">&#39;create-model-config-base&#39;</span><span class="p">,</span>
-            <span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">__base__</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
-            <span class="n">__base__</span> <span class="o">=</span> <span class="p">(</span><span class="n">__base__</span><span class="p">,)</span>
-    <span class="k">else</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">__base__</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">__base__</span> <span class="o">=</span> <span class="p">(</span><span class="n">cast</span><span class="p">(</span><span class="s1">&#39;type[ModelT]&#39;</span><span class="p">,</span> <span class="n">BaseModel</span><span class="p">),)</span>
+    <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">__base__</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+        <span class="n">__base__</span> <span class="o">=</span> <span class="p">(</span><span class="n">__base__</span><span class="p">,)</span>
 
     <span class="n">__cls_kwargs__</span> <span class="o">=</span> <span class="n">__cls_kwargs__</span> <span class="ow">or</span> <span class="p">{}</span>
 
@@ -10146,7 +10134,7 @@ validators <a href="https://docs.pydantic.dev/2.9/concepts/validators/#field-val
         <span class="n">namespace</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">__validators__</span><span class="p">)</span>
     <span class="n">namespace</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">__config__</span><span class="p">:</span>
-        <span class="n">namespace</span><span class="p">[</span><span class="s1">&#39;model_config&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_config</span><span class="o">.</span><span class="n">ConfigWrapper</span><span class="p">(</span><span class="n">__config__</span><span class="p">)</span><span class="o">.</span><span class="n">config_dict</span>
+        <span class="n">namespace</span><span class="p">[</span><span class="s1">&#39;model_config&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">__config__</span>
     <span class="n">resolved_bases</span> <span class="o">=</span> <span class="n">types</span><span class="o">.</span><span class="n">resolve_bases</span><span class="p">(</span><span class="n">__base__</span><span class="p">)</span>
     <span class="n">meta</span><span class="p">,</span> <span class="n">ns</span><span class="p">,</span> <span class="n">kwds</span> <span class="o">=</span> <span class="n">types</span><span class="o">.</span><span class="n">prepare_class</span><span class="p">(</span><span class="n">model_name</span><span class="p">,</span> <span class="n">resolved_bases</span><span class="p">,</span> <span class="n">kwds</span><span class="o">=</span><span class="n">__cls_kwargs__</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">resolved_bases</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">__base__</span><span class="p">:</span>
