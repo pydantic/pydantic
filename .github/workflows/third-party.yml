@@ -568,9 +568,8 @@ jobs:
     name: Test Dify (main branch) on Python ${{ matrix.python-version }}
     # If 'schedule' was the trigger, don't run it on contributors' forks
     if: |
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
-      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
+      github.event_name != 'schedule' ||
+      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic')
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -610,10 +609,10 @@ jobs:
       - name: List installed dependencies
         run: poetry run -C api pip list
 
-      - name: Check dependencies in pyproject.toml
-        run: poetry run -P api bash dev/pytest/pytest_artifacts.sh
+      - name: Run Dify config tests
+        run: poetry run -P api python dev/pytest/pytest_config_tests.py
 
-      - name: Run Unit tests
+      - name: Run Dify unit tests
         run: poetry run -P api bash dev/pytest/pytest_unit_tests.sh
 
   create-issue-on-failure:
