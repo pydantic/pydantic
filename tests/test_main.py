@@ -2807,7 +2807,7 @@ def test_recursion_loop_error():
 
 def test_protected_namespace_default():
     with pytest.warns(
-        UserWarning, match='Field "model_dump_something" in Model has conflict with protected namespace "model_dump"'
+        UserWarning, match="Field 'model_dump_something' in 'Model' conflicts with protected namespace 'model_dump'"
     ):
 
         class Model(BaseModel):
@@ -2815,7 +2815,7 @@ def test_protected_namespace_default():
 
 
 def test_custom_protected_namespace():
-    with pytest.warns(UserWarning, match='Field "test_field" in Model has conflict with protected namespace "test_"'):
+    with pytest.warns(UserWarning, match="Field 'test_field' in 'Model' conflicts with protected namespace 'test_'"):
 
         class Model(BaseModel):
             # this field won't raise error because we changed the default value for the
@@ -2828,7 +2828,7 @@ def test_custom_protected_namespace():
 
 def test_multiple_protected_namespace():
     with pytest.warns(
-        UserWarning, match='Field "also_protect_field" in Model has conflict with protected namespace "also_protect_"'
+        UserWarning, match="Field 'also_protect_field' in 'Model' conflicts with protected namespace 'also_protect_'"
     ):
 
         class Model(BaseModel):
@@ -2838,7 +2838,7 @@ def test_multiple_protected_namespace():
 
 
 def test_protected_namespace_pattern() -> None:
-    with pytest.warns(UserWarning, match=r'Field "perfect_match" in Model has conflict with protected namespace .*'):
+    with pytest.warns(UserWarning, match=r"Field 'perfect_match' in 'Model' conflicts with protected namespace .*"):
 
         class Model(BaseModel):
             perfect_match: str
