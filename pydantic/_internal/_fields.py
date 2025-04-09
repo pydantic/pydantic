@@ -68,6 +68,49 @@ def _general_metadata_cls() -> type[BaseMetadata]:
     return _PydanticGeneralMetadata  # type: ignore
 
 
+def _check_protected_namespaces(
+    protected_namespaces: tuple[str | Pattern[str], ...],
+    ann_name: str,
+    bases: tuple[type[Any], ...],
+    cls_name: str,
+) -> None:
+    BaseModel = import_cached_base_model()
+
+    for protected_namespace in protected_namespaces:
+        ns_violation = False
+        if isinstance(protected_namespace, Pattern):
+            ns_violation = protected_namespace.match(ann_name) is not None
+        elif isinstance(protected_namespace, str):
+            ns_violation = ann_name.startswith(protected_namespace)
+
+        if ns_violation:
+            for b in bases:
+                if hasattr(b, ann_name):
+                    if not (issubclass(b, BaseModel) and ann_name in getattr(b, '__pydantic_fields__', {})):
+                        raise ValueError(
+                            f'Field {ann_name!r} conflicts with member {getattr(b, ann_name)}'
+                            f' of protected namespace {protected_namespace!r}.'
+                        )
+            else:
+                valid_namespaces: list[str] = []
+                for pn in protected_namespaces:
+                    if isinstance(pn, Pattern):
+                        if not pn.match(ann_name):
+                            valid_namespaces.append(f're.compile({pn.pattern!r})')
+                    else:
+                        if not ann_name.startswith(pn):
+                            valid_namespaces.append(f"'{pn}'")
+
+                valid_namespaces_str = f'({", ".join(valid_namespaces)}{",)" if len(valid_namespaces) == 1 else ")"}'
+
+                warnings.warn(
+                    f'Field {ann_name!r} in {cls_name!r} conflicts with protected namespace {protected_namespace!r}.\n\n'
+                    f"You may be able to solve this by setting the 'protected_namespaces' configuration to {valid_namespaces_str}.",
+                    UserWarning,
+                    stacklevel=5,
+                )
+
+
 def _update_fields_from_docstrings(cls: type[Any], fields: dict[str, FieldInfo], use_inspect: bool = False) -> None:
     fields_docs = extract_docstrings_from_cls(cls, use_inspect=use_inspect)
     for ann_name, field_info in fields.items():
@@ -106,7 +149,6 @@ def collect_model_fields(  # noqa: C901
             - If there is a field other than `root` in `RootModel`.
             - If a field shadows an attribute in the parent model.
     """
-    BaseModel = import_cached_base_model()
     FieldInfo_ = import_cached_field_info()
 
     bases = cls.__bases__
@@ -130,37 +172,13 @@ def collect_model_fields(  # noqa: C901
             # protected namespaces (where `model_config` might be allowed as a field name)
             continue
 
-        for protected_namespace in config_wrapper.protected_namespaces:
-            ns_violation: bool = False
-            if isinstance(protected_namespace, Pattern):
-                ns_violation = protected_namespace.match(ann_name) is not None
-            elif isinstance(protected_namespace, str):
-                ns_violation = ann_name.startswith(protected_namespace)
+        _check_protected_namespaces(
+            protected_namespaces=config_wrapper.protected_namespaces,
+            ann_name=ann_name,
+            bases=bases,
+            cls_name=cls.__name__,
+        )
 
-            if ns_violation:
-                for b in bases:
-                    if hasattr(b, ann_name):
-                        if not (issubclass(b, BaseModel) and ann_name in getattr(b, '__pydantic_fields__', {})):
-                            raise NameError(
-                                f'Field "{ann_name}" conflicts with member {getattr(b, ann_name)}'
-                                f' of protected namespace "{protected_namespace}".'
-                            )
-                else:
-                    valid_namespaces = ()
-                    for pn in config_wrapper.protected_namespaces:
-                        if isinstance(pn, Pattern):
-                            if not pn.match(ann_name):
-                                valid_namespaces += (f're.compile({pn.pattern})',)
-                        else:
-                            if not ann_name.startswith(pn):
-                                valid_namespaces += (pn,)
-
-                    warnings.warn(
-                        f'Field "{ann_name}" in {cls.__name__} has conflict with protected namespace "{protected_namespace}".'
-                        '\n\nYou may be able to resolve this warning by setting'
-                        f" `model_config['protected_namespaces'] = {valid_namespaces}`.",
-                        UserWarning,
-                    )
         if _typing_extra.is_classvar_annotation(ann_type):
             class_vars.add(ann_name)
             continue
