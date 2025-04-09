@@ -12,7 +12,6 @@ from pydantic import (
     PydanticUserError,
     ValidationError,
     create_model,
-    errors,
     field_validator,
     validator,
 )
@@ -138,8 +137,17 @@ def test_create_model_must_not_reset_parent_namespace():
 
 
 def test_config_and_base():
-    with pytest.raises(errors.PydanticUserError):
-        create_model('FooModel', __config__=BaseModel.model_config, __base__=BaseModel)
+    class Base(BaseModel):
+        a: str
+
+        model_config = {'str_to_lower': True}
+
+    Model = create_model('Model', __base__=Base, __config__={'str_max_length': 3})
+
+    assert Model(a='AAA').a == 'aaa'
+
+    with pytest.raises(ValidationError):
+        Model(a='AAAA')
 
 
 def test_inheritance():
