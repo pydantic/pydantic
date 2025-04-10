@@ -1039,10 +1039,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             # This can be changed if it ever gets requested.
             if isinstance(attr, property):
                 return lambda model, _name, val: attr.__set__(model, val)
-            elif cls.model_config.get('validate_assignment'):
+            elif self.model_config.get('validate_assignment'):
                 return _SIMPLE_SETATTR_HANDLERS['validate_assignment']
             elif name not in cls.__pydantic_fields__:
-                if cls.model_config.get('extra') != 'allow':
+                if self.model_config.get('extra') != 'allow':
                     # TODO - matching error
                     raise ValueError(f'"{cls.__name__}" object has no field "{name}"')
                 elif attr is None:
