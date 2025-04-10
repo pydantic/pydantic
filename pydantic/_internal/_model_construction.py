@@ -595,6 +595,7 @@ def complete_model_class(
         try:
             cls.__pydantic_fields__ = rebuild_model_fields(
                 cls,
+                config_wrapper=config_wrapper,
                 ns_resolver=ns_resolver,
                 typevars_map=typevars_map,
             )

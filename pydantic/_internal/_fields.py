@@ -19,18 +19,19 @@ from typing_inspection.introspection import AnnotationSource
 from pydantic import PydanticDeprecatedSince211
 from pydantic.errors import PydanticUserError
 
+from ..aliases import AliasGenerator
 from . import _generics, _typing_extra
 from ._config import ConfigWrapper
 from ._docs_extraction import extract_docstrings_from_cls
 from ._import_utils import import_cached_base_model, import_cached_field_info
 from ._namespace_utils import NsResolver
 from ._repr import Representation
-from ._utils import can_be_positional
+from ._utils import can_be_positional, get_first_not_none
 
 if TYPE_CHECKING:
     from annotated_types import BaseMetadata
 
-    from ..fields import FieldInfo
+    from ..fields import ComputedFieldInfo, FieldInfo
     from ..main import BaseModel
     from ._dataclasses import StandardDataclass
     from ._decorators import DecoratorInfos
@@ -116,6 +117,89 @@ def _update_fields_from_docstrings(cls: type[Any], fields: dict[str, FieldInfo],
     for ann_name, field_info in fields.items():
         if field_info.description is None and ann_name in fields_docs:
             field_info.description = fields_docs[ann_name]
+
+
+_FieldInfo = TypeVar('_FieldInfo', 'FieldInfo', 'ComputedFieldInfo')
+
+
+def _apply_field_title_generator_to_field_info(
+    title_generator: Callable[[str, _FieldInfo], str],
+    field_name: str,
+    field_info: _FieldInfo,
+):
+    if field_info.title is None:
+        title = title_generator(field_name, field_info)
+        if not isinstance(title, str):
+            raise TypeError(f'field_title_generator {title_generator} must return str, not {title.__class__}')
+
+        field_info.title = title
+
+
+def _apply_alias_generator_to_field_info(
+    alias_generator: Callable[[str], str] | AliasGenerator, field_name: str, field_info: FieldInfo
+):
+    """Apply an alias generator to aliases on a `FieldInfo` instance if appropriate.
+
+    Args:
+        alias_generator: A callable that takes a string and returns a string, or an `AliasGenerator` instance.
+        field_name: The name of the field from which to generate the alias.
+        field_info: The `FieldInfo` instance to which the alias generator is (maybe) applied.
+    """
+    # Apply an alias_generator if
+    # 1. An alias is not specified
+    # 2. An alias is specified, but the priority is <= 1
+    if (
+        field_info.alias_priority is None
+        or field_info.alias_priority <= 1
+        or field_info.alias is None
+        or field_info.validation_alias is None
+        or field_info.serialization_alias is None
+    ):
+        alias, validation_alias, serialization_alias = None, None, None
+
+        if isinstance(alias_generator, AliasGenerator):
+            alias, validation_alias, serialization_alias = alias_generator.generate_aliases(field_name)
+        elif callable(alias_generator):
+            alias = alias_generator(field_name)
+            if not isinstance(alias, str):
+                raise TypeError(f'alias_generator {alias_generator} must return str, not {alias.__class__}')
+
+        # if priority is not set, we set to 1
+        # which supports the case where the alias_generator from a child class is used
+        # to generate an alias for a field in a parent class
+        if field_info.alias_priority is None or field_info.alias_priority <= 1:
+            field_info.alias_priority = 1
+
+        # if the priority is 1, then we set the aliases to the generated alias
+        if field_info.alias_priority == 1:
+            field_info.serialization_alias = get_first_not_none(serialization_alias, alias)
+            field_info.validation_alias = get_first_not_none(validation_alias, alias)
+            field_info.alias = alias
+
+        # if any of the aliases are not set, then we set them to the corresponding generated alias
+        if field_info.alias is None:
+            field_info.alias = alias
+        if field_info.serialization_alias is None:
+            field_info.serialization_alias = get_first_not_none(serialization_alias, alias)
+        if field_info.validation_alias is None:
+            field_info.validation_alias = get_first_not_none(validation_alias, alias)
+
+
+def update_field_from_config(config_wrapper: ConfigWrapper, field_name: str, field_info: FieldInfo) -> None:
+    """Update the `FieldInfo` instance from the configuration set on the model it belongs to.
+
+    This will apply the title and alias generators from the configuration.
+
+    Args:
+        config_wrapper: The configuration from the model.
+        field_name: The field name the `FieldInfo` instance is attached to.
+        field_info: The `FieldInfo` instance to update.
+    """
+    field_title_generator = field_info.field_title_generator or config_wrapper.field_title_generator
+    if field_title_generator is not None:
+        _apply_field_title_generator_to_field_info(field_title_generator, field_name, field_info)
+    if config_wrapper.alias_generator is not None:
+        _apply_alias_generator_to_field_info(config_wrapper.alias_generator, field_name, field_info)
 
 
 def collect_model_fields(  # noqa: C901
@@ -289,6 +373,10 @@ def collect_model_fields(  # noqa: C901
             )
         fields[ann_name] = field_info
 
+        if field_info._complete:
+            # If not complete, this will be called in `rebuild_model_fields()`:
+            update_field_from_config(config_wrapper, ann_name, field_info)
+
     if typevars_map:
         for field in fields.values():
             if field._complete:
@@ -318,6 +406,7 @@ def _warn_on_nested_alias_in_annotation(ann_type: type[Any], ann_name: str) -> N
 def rebuild_model_fields(
     cls: type[BaseModel],
     *,
+    config_wrapper: ConfigWrapper,
     ns_resolver: NsResolver,
     typevars_map: Mapping[TypeVar, Any],
 ) -> dict[str, FieldInfo]:
@@ -350,6 +439,7 @@ def rebuild_model_fields(
                     new_field = FieldInfo_.from_annotated_attribute(ann, assign, _source=AnnotationSource.CLASS)
                 # The description might come from the docstring if `use_attribute_docstrings` was `True`:
                 new_field.description = new_field.description if new_field.description is not None else existing_desc
+                update_field_from_config(config_wrapper, f_name, new_field)
                 rebuilt_fields[f_name] = new_field
 
     return rebuilt_fields
@@ -428,6 +518,7 @@ def collect_dataclass_fields(
                     )
 
                 fields[ann_name] = field_info
+                update_field_from_config(config_wrapper, ann_name, field_info)
 
                 if field_info.default is not PydanticUndefined and isinstance(
                     getattr(cls, ann_name, field_info), FieldInfo_

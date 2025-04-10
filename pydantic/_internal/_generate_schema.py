@@ -87,7 +87,12 @@ from ._decorators import (
     inspect_validator,
 )
 from ._docs_extraction import extract_docstrings_from_cls
-from ._fields import collect_dataclass_fields, rebuild_model_fields, takes_validated_data_argument
+from ._fields import (
+    collect_dataclass_fields,
+    rebuild_model_fields,
+    takes_validated_data_argument,
+    update_field_from_config,
+)
 from ._forward_ref import PydanticRecursiveRef
 from ._generics import get_standard_typevars_map, replace_types
 from ._import_utils import import_cached_base_model, import_cached_field_info
@@ -95,7 +100,7 @@ from ._mock_val_ser import MockCoreSchema
 from ._namespace_utils import NamespacesTuple, NsResolver
 from ._schema_gather import MissingDefinitionError, gather_schemas_for_cleaning
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
-from ._utils import lenient_issubclass, smart_deepcopy
+from ._utils import get_first_not_none, lenient_issubclass, smart_deepcopy
 
 if TYPE_CHECKING:
     from ..fields import ComputedFieldInfo, FieldInfo
@@ -300,15 +305,6 @@ def _add_custom_serialization_from_json_encoders(
         return schema
 
     return schema
-
-
-def _get_first_non_null(a: Any, b: Any) -> Any:
-    """Return the first argument if it is not None, otherwise return the second argument.
-
-    Use case: serialization_alias (argument a) and alias (argument b) are both defined, and serialization_alias is ''.
-    This function will return serialization_alias, which is the first argument, even though it is an empty string.
-    """
-    return a if a is not None else b
 
 
 class InvalidSchemaError(Exception):
@@ -744,6 +740,7 @@ class GenerateSchema:
                     try:
                         fields = rebuild_model_fields(
                             cls,
+                            config_wrapper=self._config_wrapper,
                             ns_resolver=self._ns_resolver,
                             typevars_map=self._typevars_map or {},
                         )
@@ -1215,56 +1212,6 @@ class GenerateSchema:
         )
 
     @staticmethod
-    def _apply_alias_generator_to_field_info(
-        alias_generator: Callable[[str], str] | AliasGenerator, field_info: FieldInfo, field_name: str
-    ) -> None:
-        """Apply an alias_generator to aliases on a FieldInfo instance if appropriate.
-
-        Args:
-            alias_generator: A callable that takes a string and returns a string, or an AliasGenerator instance.
-            field_info: The FieldInfo instance to which the alias_generator is (maybe) applied.
-            field_name: The name of the field from which to generate the alias.
-        """
-        # Apply an alias_generator if
-        # 1. An alias is not specified
-        # 2. An alias is specified, but the priority is <= 1
-        if (
-            field_info.alias_priority is None
-            or field_info.alias_priority <= 1
-            or field_info.alias is None
-            or field_info.validation_alias is None
-            or field_info.serialization_alias is None
-        ):
-            alias, validation_alias, serialization_alias = None, None, None
-
-            if isinstance(alias_generator, AliasGenerator):
-                alias, validation_alias, serialization_alias = alias_generator.generate_aliases(field_name)
-            elif isinstance(alias_generator, Callable):
-                alias = alias_generator(field_name)
-                if not isinstance(alias, str):
-                    raise TypeError(f'alias_generator {alias_generator} must return str, not {alias.__class__}')
-
-            # if priority is not set, we set to 1
-            # which supports the case where the alias_generator from a child class is used
-            # to generate an alias for a field in a parent class
-            if field_info.alias_priority is None or field_info.alias_priority <= 1:
-                field_info.alias_priority = 1
-
-            # if the priority is 1, then we set the aliases to the generated alias
-            if field_info.alias_priority == 1:
-                field_info.serialization_alias = _get_first_non_null(serialization_alias, alias)
-                field_info.validation_alias = _get_first_non_null(validation_alias, alias)
-                field_info.alias = alias
-
-            # if any of the aliases are not set, then we set them to the corresponding generated alias
-            if field_info.alias is None:
-                field_info.alias = alias
-            if field_info.serialization_alias is None:
-                field_info.serialization_alias = _get_first_non_null(serialization_alias, alias)
-            if field_info.validation_alias is None:
-                field_info.validation_alias = _get_first_non_null(validation_alias, alias)
-
-    @staticmethod
     def _apply_alias_generator_to_computed_field_info(
         alias_generator: Callable[[str], str] | AliasGenerator,
         computed_field_info: ComputedFieldInfo,
@@ -1305,7 +1252,7 @@ class GenerateSchema:
             # note that we use the serialization_alias with priority over alias, as computed_field
             # aliases are used for serialization only (not validation)
             if computed_field_info.alias_priority == 1:
-                computed_field_info.alias = _get_first_non_null(serialization_alias, alias)
+                computed_field_info.alias = get_first_not_none(serialization_alias, alias)
 
     @staticmethod
     def _apply_field_title_generator_to_field_info(
@@ -1376,17 +1323,12 @@ class GenerateSchema:
         schema = self._apply_field_serializers(
             schema, filter_field_decorator_info_by_field(decorators.field_serializers.values(), name)
         )
-        self._apply_field_title_generator_to_field_info(self._config_wrapper, field_info, name)
 
         pydantic_js_updates, pydantic_js_extra = _extract_json_schema_info_from_field_info(field_info)
         core_metadata: dict[str, Any] = {}
         update_core_metadata(
             core_metadata, pydantic_js_updates=pydantic_js_updates, pydantic_js_extra=pydantic_js_extra
         )
-
-        alias_generator = self._config_wrapper.alias_generator
-        if alias_generator is not None:
-            self._apply_alias_generator_to_field_info(alias_generator, field_info, name)
 
         if isinstance(field_info.validation_alias, (AliasChoices, AliasPath)):
             validation_alias = field_info.validation_alias.convert_to_aliases()
@@ -1537,7 +1479,8 @@ class GenerateSchema:
                         and field_name in field_docstrings
                     ):
                         field_info.description = field_docstrings[field_name]
-                    self._apply_field_title_generator_to_field_info(self._config_wrapper, field_info, field_name)
+                    update_field_from_config(self._config_wrapper, field_name, field_info)
+
                     fields[field_name] = self._generate_td_field_schema(
                         field_name, field_info, decorators, required=required
                     )
@@ -1630,7 +1573,10 @@ class GenerateSchema:
             field = FieldInfo.from_annotation(annotation, _source=source)
         else:
             field = FieldInfo.from_annotated_attribute(annotation, default, _source=source)
+
         assert field.annotation is not None, 'field.annotation should not be None when generating a schema'
+        update_field_from_config(self._config_wrapper, name, field)
+
         with self.field_name_stack.push(name):
             schema = self._apply_annotations(field.annotation, [field])
 
@@ -1642,12 +1588,7 @@ class GenerateSchema:
             parameter_schema['mode'] = mode
         if field.alias is not None:
             parameter_schema['alias'] = field.alias
-        else:
-            alias_generator = self._config_wrapper.alias_generator
-            if isinstance(alias_generator, AliasGenerator) and alias_generator.alias is not None:
-                parameter_schema['alias'] = alias_generator.alias(name)
-            elif callable(alias_generator):
-                parameter_schema['alias'] = alias_generator(name)
+
         return parameter_schema
 
     def _generate_parameter_v3_schema(
@@ -1676,6 +1617,7 @@ class GenerateSchema:
             field = FieldInfo.from_annotation(annotation, _source=source)
         else:
             field = FieldInfo.from_annotated_attribute(annotation, default, _source=source)
+        update_field_from_config(self._config_wrapper, name, field)
 
         with self.field_name_stack.push(name):
             schema = self._apply_annotations(field.annotation, [field])
@@ -1690,12 +1632,6 @@ class GenerateSchema:
         )
         if field.alias is not None:
             parameter_schema['alias'] = field.alias
-        else:
-            alias_generator = self._config_wrapper.alias_generator
-            if isinstance(alias_generator, AliasGenerator) and alias_generator.alias is not None:
-                parameter_schema['alias'] = alias_generator.alias(name)
-            elif callable(alias_generator):
-                parameter_schema['alias'] = alias_generator(name)
 
         return parameter_schema
 
