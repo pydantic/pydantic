@@ -358,18 +358,18 @@ def rebuild_model_fields(
 def collect_dataclass_fields(
     cls: type[StandardDataclass],
     *,
+    config_wrapper: ConfigWrapper,
     ns_resolver: NsResolver | None = None,
     typevars_map: dict[Any, Any] | None = None,
-    config_wrapper: ConfigWrapper | None = None,
 ) -> dict[str, FieldInfo]:
     """Collect the fields of a dataclass.
 
     Args:
         cls: dataclass.
+        config_wrapper: The config wrapper instance.
         ns_resolver: Namespace resolver to use when getting dataclass annotations.
             Defaults to an empty instance.
         typevars_map: A dictionary mapping type variables to their concrete types.
-        config_wrapper: The config wrapper instance.
 
     Returns:
         The dataclass fields.
@@ -442,7 +442,7 @@ def collect_dataclass_fields(
             # Can't we juste use `_generics.replace_types`?
             field.apply_typevars_map(typevars_map)
 
-    if config_wrapper is not None and config_wrapper.use_attribute_docstrings:
+    if config_wrapper.use_attribute_docstrings:
         _update_fields_from_docstrings(
             cls,
             fields,
