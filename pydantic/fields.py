@@ -6,11 +6,11 @@ import dataclasses
 import inspect
 import sys
 import typing
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from copy import copy
 from dataclasses import Field as DataclassField
 from functools import cached_property
-from typing import Annotated, Any, Callable, ClassVar, Literal, TypeVar, cast, overload
+from typing import Annotated, Any, ClassVar, Literal, TypeVar, cast, overload
 from warnings import warn
 
 import annotated_types
@@ -23,13 +23,14 @@ from typing_inspection.introspection import UNKNOWN, AnnotationSource, Forbidden
 from . import types
 from ._internal import _decorators, _fields, _generics, _internal_dataclass, _repr, _typing_extra, _utils
 from ._internal._namespace_utils import GlobalsNamespace, MappingNamespace
-from .aliases import AliasChoices, AliasPath
+from .aliases import AliasChoices, AliasGenerator, AliasPath
 from .config import JsonDict
 from .errors import PydanticForbiddenQualifier, PydanticUserError
 from .json_schema import PydanticJsonSchemaWarning
 from .warnings import PydanticDeprecatedSince20
 
 if typing.TYPE_CHECKING:
+    from ._internal._config import ConfigWrapper
     from ._internal._repr import ReprArgs
 else:
     # See PyCharm issues https://youtrack.jetbrains.com/issue/PY-21915
@@ -1288,11 +1289,11 @@ class ComputedFieldInfo:
     alias: str | None
     alias_priority: int | None
     title: str | None
-    field_title_generator: typing.Callable[[str, ComputedFieldInfo], str] | None
+    field_title_generator: Callable[[str, ComputedFieldInfo], str] | None
     description: str | None
     deprecated: Deprecated | str | bool | None
     examples: list[Any] | None
-    json_schema_extra: JsonDict | typing.Callable[[JsonDict], None] | None
+    json_schema_extra: JsonDict | Callable[[JsonDict], None] | None
     repr: bool
 
     @property
@@ -1303,6 +1304,45 @@ class ComputedFieldInfo:
         if isinstance(self.deprecated, bool):
             return 'deprecated' if self.deprecated else None
         return self.deprecated if isinstance(self.deprecated, str) else self.deprecated.message
+
+    def _update_from_config(self, config_wrapper: ConfigWrapper, name: str) -> None:
+        """Update the instance from the configuration set on the class this computed field belongs to."""
+        title_generator = self.field_title_generator or config_wrapper.field_title_generator
+        if title_generator is not None and self.title is None:
+            self.title = title_generator(name, self)
+        if config_wrapper.alias_generator is not None:
+            self._apply_alias_generator(config_wrapper.alias_generator, name)
+
+    def _apply_alias_generator(self, alias_generator: Callable[[str], str] | AliasGenerator, name: str) -> None:
+        """Apply an alias generator to aliases if appropriate.
+
+        Args:
+            alias_generator: A callable that takes a string and returns a string, or an `AliasGenerator` instance.
+            name: The name of the computed field from which to generate the alias.
+        """
+        # Apply an alias_generator if
+        # 1. An alias is not specified
+        # 2. An alias is specified, but the priority is <= 1
+
+        if self.alias_priority is None or self.alias_priority <= 1 or self.alias is None:
+            alias, _, serialization_alias = None, None, None
+
+            if isinstance(alias_generator, AliasGenerator):
+                alias, _, serialization_alias = alias_generator.generate_aliases(name)
+            elif callable(alias_generator):
+                alias = alias_generator(name)
+
+            # if priority is not set, we set to 1
+            # which supports the case where the alias_generator from a child class is used
+            # to generate an alias for a field in a parent class
+            if self.alias_priority is None or self.alias_priority <= 1:
+                self.alias_priority = 1
+
+            # if the priority is 1, then we set the aliases to the generated alias
+            # note that we use the serialization_alias with priority over alias, as computed_field
+            # aliases are used for serialization only (not validation)
+            if self.alias_priority == 1:
+                self.alias = _utils.get_first_not_none(serialization_alias, alias)
 
 
 def _wrapped_property_is_private(property_: cached_property | property) -> bool:  # type: ignore

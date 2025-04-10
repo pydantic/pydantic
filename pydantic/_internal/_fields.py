@@ -31,7 +31,7 @@ from ._utils import can_be_positional, get_first_not_none
 if TYPE_CHECKING:
     from annotated_types import BaseMetadata
 
-    from ..fields import ComputedFieldInfo, FieldInfo
+    from ..fields import FieldInfo
     from ..main import BaseModel
     from ._dataclasses import StandardDataclass
     from ._decorators import DecoratorInfos
@@ -119,13 +119,10 @@ def _update_fields_from_docstrings(cls: type[Any], fields: dict[str, FieldInfo],
             field_info.description = fields_docs[ann_name]
 
 
-_FieldInfo = TypeVar('_FieldInfo', 'FieldInfo', 'ComputedFieldInfo')
-
-
 def _apply_field_title_generator_to_field_info(
-    title_generator: Callable[[str, _FieldInfo], str],
+    title_generator: Callable[[str, FieldInfo], str],
     field_name: str,
-    field_info: _FieldInfo,
+    field_info: FieldInfo,
 ):
     if field_info.title is None:
         title = title_generator(field_name, field_info)
