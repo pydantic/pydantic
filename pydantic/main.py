@@ -636,12 +636,14 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         ns_resolver = _namespace_utils.NsResolver(
             parent_namespace={**rebuild_ns, **parent_ns},
         )
+        config_wrapper = _config.ConfigWrapper(cls.model_config, check=False)
 
         if not cls.__pydantic_fields_complete__:
             typevars_map = _generics.get_model_typevars_map(cls)
             try:
                 cls.__pydantic_fields__ = _fields.rebuild_model_fields(
                     cls,
+                    config_wrapper=config_wrapper,
                     ns_resolver=ns_resolver,
                     typevars_map=typevars_map,
                 )
@@ -659,7 +661,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         return _model_construction.complete_model_class(
             cls,
-            _config.ConfigWrapper(cls.model_config, check=False),
+            config_wrapper=config_wrapper,
             raise_errors=raise_errors,
             ns_resolver=ns_resolver,
         )
