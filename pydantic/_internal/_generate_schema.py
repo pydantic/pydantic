@@ -55,7 +55,7 @@ from typing_extensions import TypeAlias, TypeAliasType, TypedDict, get_args, get
 from typing_inspection import typing_objects
 from typing_inspection.introspection import AnnotationSource, get_literal_values, is_union_origin
 
-from ..aliases import AliasChoices, AliasGenerator, AliasPath
+from ..aliases import AliasChoices, AliasPath
 from ..annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
 from ..config import ConfigDict, JsonDict, JsonEncoder, JsonSchemaExtraCallable
 from ..errors import PydanticSchemaGenerationError, PydanticUndefinedAnnotation, PydanticUserError
@@ -100,7 +100,7 @@ from ._mock_val_ser import MockCoreSchema
 from ._namespace_utils import NamespacesTuple, NsResolver
 from ._schema_gather import MissingDefinitionError, gather_schemas_for_cleaning
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
-from ._utils import get_first_not_none, lenient_issubclass, smart_deepcopy
+from ._utils import lenient_issubclass, smart_deepcopy
 
 if TYPE_CHECKING:
     from ..fields import ComputedFieldInfo, FieldInfo
@@ -1211,71 +1211,6 @@ class GenerateSchema:
             metadata=common_field['metadata'],
         )
 
-    @staticmethod
-    def _apply_alias_generator_to_computed_field_info(
-        alias_generator: Callable[[str], str] | AliasGenerator,
-        computed_field_info: ComputedFieldInfo,
-        computed_field_name: str,
-    ):
-        """Apply an alias_generator to alias on a ComputedFieldInfo instance if appropriate.
-
-        Args:
-            alias_generator: A callable that takes a string and returns a string, or an AliasGenerator instance.
-            computed_field_info: The ComputedFieldInfo instance to which the alias_generator is (maybe) applied.
-            computed_field_name: The name of the computed field from which to generate the alias.
-        """
-        # Apply an alias_generator if
-        # 1. An alias is not specified
-        # 2. An alias is specified, but the priority is <= 1
-
-        if (
-            computed_field_info.alias_priority is None
-            or computed_field_info.alias_priority <= 1
-            or computed_field_info.alias is None
-        ):
-            alias, validation_alias, serialization_alias = None, None, None
-
-            if isinstance(alias_generator, AliasGenerator):
-                alias, validation_alias, serialization_alias = alias_generator.generate_aliases(computed_field_name)
-            elif isinstance(alias_generator, Callable):
-                alias = alias_generator(computed_field_name)
-                if not isinstance(alias, str):
-                    raise TypeError(f'alias_generator {alias_generator} must return str, not {alias.__class__}')
-
-            # if priority is not set, we set to 1
-            # which supports the case where the alias_generator from a child class is used
-            # to generate an alias for a field in a parent class
-            if computed_field_info.alias_priority is None or computed_field_info.alias_priority <= 1:
-                computed_field_info.alias_priority = 1
-
-            # if the priority is 1, then we set the aliases to the generated alias
-            # note that we use the serialization_alias with priority over alias, as computed_field
-            # aliases are used for serialization only (not validation)
-            if computed_field_info.alias_priority == 1:
-                computed_field_info.alias = get_first_not_none(serialization_alias, alias)
-
-    @staticmethod
-    def _apply_field_title_generator_to_field_info(
-        config_wrapper: ConfigWrapper, field_info: FieldInfo | ComputedFieldInfo, field_name: str
-    ) -> None:
-        """Apply a field_title_generator on a FieldInfo or ComputedFieldInfo instance if appropriate
-        Args:
-            config_wrapper: The config of the model
-            field_info: The FieldInfo or ComputedField instance to which the title_generator is (maybe) applied.
-            field_name: The name of the field from which to generate the title.
-        """
-        field_title_generator = field_info.field_title_generator or config_wrapper.field_title_generator
-
-        if field_title_generator is None:
-            return
-
-        if field_info.title is None:
-            title = field_title_generator(field_name, field_info)  # type: ignore
-            if not isinstance(title, str):
-                raise TypeError(f'field_title_generator {field_title_generator} must return str, not {title.__class__}')
-
-            field_info.title = title
-
     def _common_field_schema(  # C901
         self, name: str, field_info: FieldInfo, decorators: DecoratorInfos
     ) -> _CommonField:
@@ -1450,6 +1385,7 @@ class GenerateSchema:
                 fields: dict[str, core_schema.TypedDictField] = {}
 
                 decorators = DecoratorInfos.build(typed_dict_cls)
+                decorators.update_from_config(self._config_wrapper)
 
                 if self._config_wrapper.use_attribute_docstrings:
                     field_docstrings = extract_docstrings_from_cls(typed_dict_cls, use_inspect=True)
@@ -1858,7 +1794,10 @@ class GenerateSchema:
                                 code='dataclass-init-false-extra-allow',
                             )
 
-                decorators = dataclass.__dict__.get('__pydantic_decorators__') or DecoratorInfos.build(dataclass)
+                decorators = dataclass.__dict__.get('__pydantic_decorators__')
+                if decorators is None:
+                    decorators = DecoratorInfos.build(dataclass)
+                    decorators.update_from_config(self._config_wrapper)
                 # Move kw_only=False args to the start of the list, as this is how vanilla dataclasses work.
                 # Note that when kw_only is missing or None, it is treated as equivalent to kw_only=True
                 args = sorted(
@@ -2125,13 +2064,6 @@ class GenerateSchema:
             return_type_schema,
             filter_field_decorator_info_by_field(field_serializers.values(), d.cls_var_name),
         )
-
-        alias_generator = self._config_wrapper.alias_generator
-        if alias_generator is not None:
-            self._apply_alias_generator_to_computed_field_info(
-                alias_generator=alias_generator, computed_field_info=d.info, computed_field_name=d.cls_var_name
-            )
-        self._apply_field_title_generator_to_field_info(self._config_wrapper, d.info, d.cls_var_name)
 
         pydantic_js_updates, pydantic_js_extra = _extract_json_schema_info_from_field_info(d.info)
         core_metadata: dict[str, Any] = {}
