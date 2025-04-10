@@ -3574,3 +3574,37 @@ def test_replace() -> None:
 
     m = Model(x=1, y=2)
     assert replace(m, x=3) == Model(x=3, y=2)
+
+
+def test_based_on_model_config_validate_assignment_is_respected() -> None:
+    class Model(BaseModel):
+        model_config = ConfigDict(validate_assignment=True)
+        x: list[int]
+
+    m = Model(x=[1, 2, 3])
+    with pytest.raises(ValidationError):
+        m.x = ['a', 'b', 'c']
+
+    m.model_config['validate_assignment'] = False
+    m.x = ['a', 'b', 'c']  # this should not raise a ValidationError
+
+    m.model_config['validate_assignment'] = True
+    with pytest.raises(ValidationError):
+        m.x = ['a', 'b', 'c']
+
+
+def test_based_on_model_config_extra_is_respected() -> None:
+    class Model(BaseModel):
+        model_config = ConfigDict(extra='forbid')
+        x: int
+
+    m = Model(x=1)
+    with pytest.raises(ValueError):
+        m.y = 2
+
+    m.model_config['extra'] = 'allow'
+    m.y = 2  # this should not raise a ValueError
+
+    m.model_config['extra'] = 'forbid'
+    with pytest.raises(ValueError):
+        m.y = 2

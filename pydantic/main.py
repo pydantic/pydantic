@@ -994,8 +994,12 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                         raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
 
         def __setattr__(self, name: str, value: Any) -> None:
-            if (setattr_handler := self.__pydantic_setattr_handlers__.get(name)) is not None:
+            # Use memoized handler if handler exists and validate_assignment is False
+            if not self.model_config.get('validate_assignment') and (
+                setattr_handler := self.__pydantic_setattr_handlers__.get(name)
+            ):
                 setattr_handler(self, name, value)
+
             # if None is returned from _setattr_handler, the attribute was set directly
             elif (setattr_handler := self._setattr_handler(name, value)) is not None:
                 setattr_handler(self, name, value)  # call here to not memo on possibly unknown fields
@@ -1046,6 +1050,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                     # TODO - matching error
                     raise ValueError(f'"{cls.__name__}" object has no field "{name}"')
                 elif attr is None:
+                    if self.__pydantic_extra__ is None:
+                        _object_setattr(self, '__pydantic_extra__', {})
                     # attribute does not exist, so put it in extra
                     self.__pydantic_extra__[name] = value
                     return None  # Can not return memoized handler with possibly freeform attr names
