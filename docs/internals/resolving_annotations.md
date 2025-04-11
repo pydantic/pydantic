@@ -125,7 +125,7 @@ The following table lists the resolved type annotations for every field, once th
 | `f2`       | [`str`][]           |
 | `f3`       | [`bool`][]          |
 | `f4`       | [`bytes`][]         |
-| `f5`       | `'UnkownType'`      |
+| `f5`       | `'UnknownType'`     |
 
 ### Limitations and backwards compatibility concerns
 

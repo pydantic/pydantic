@@ -1602,12 +1602,12 @@ class Model(BaseModel):
     x: set[object]
 
 
-class Unhasbable:
+class Unhashable:
     __hash__ = None
 
 
 try:
-    Model(x=[{'a': 'b'}, Unhasbable()])
+    Model(x=[{'a': 'b'}, Unhashable()])
 except ValidationError as exc:
     print(repr(exc.errors()[0]['type']))
     #> 'set_item_not_hashable'
