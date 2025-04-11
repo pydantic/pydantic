@@ -5,7 +5,7 @@ from __future__ import annotations
 import sys
 from collections.abc import Iterator
 from configparser import ConfigParser
-from typing import Any, Callable, cast
+from typing import Any, Callable
 
 from mypy.errorcodes import ErrorCode
 from mypy.expandtype import expand_type, expand_type_by_instance
@@ -339,7 +339,10 @@ class PydanticModelField:
                 if include_root_type and isinstance(expanded_type, Instance) and is_root_model(expanded_type.type):
                     # When a root model is used as a field, Pydantic allows both an instance of the root model
                     # as well as instances of the `root` field type:
-                    root_type = cast(Type, expanded_type.type['root'].type)
+                    root_type = expanded_type.type['root'].type
+                    if root_type is None:
+                        # Happens if the hint for 'root' has unsolved forward references
+                        return expanded_type
                     expanded_root_type = expand_type_by_instance(root_type, expanded_type)
                     expanded_type = UnionType([expanded_type, expanded_root_type])
                 return expanded_type
