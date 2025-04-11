@@ -36,6 +36,17 @@ def test_alias_generator():
     assert v.model_dump(by_alias=True) == data
 
 
+def test_alias_generator_defer_build() -> None:
+    def to_camel(string: str):
+        return ''.join(x.capitalize() for x in string.split('_'))
+
+    class Model(BaseModel):
+        model_config = ConfigDict(alias_generator=to_camel, defer_build=True)
+        foo_bar: str
+
+    assert Model.model_fields['foo_bar'].alias == 'FooBar'
+
+
 def test_alias_generator_wrong_type_error():
     def return_bytes(string):
         return b'not a string'
