@@ -6142,12 +6142,12 @@ that is not an existing field:</p>
     <span class="n">x</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">object</span><span class="p">]</span>
 
 
-<span class="k">class</span><span class="w"> </span><span class="nc">Unhasbable</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Unhashable</span><span class="p">:</span>
     <span class="fm">__hash__</span> <span class="o">=</span> <span class="kc">None</span>
 
 
 <span class="k">try</span><span class="p">:</span>
-    <span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="p">[{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="s1">&#39;b&#39;</span><span class="p">},</span> <span class="n">Unhasbable</span><span class="p">()])</span>
+    <span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="p">[{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="s1">&#39;b&#39;</span><span class="p">},</span> <span class="n">Unhashable</span><span class="p">()])</span>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">exc</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]))</span>
     <span class="c1">#&gt; &#39;set_item_not_hashable&#39;</span>

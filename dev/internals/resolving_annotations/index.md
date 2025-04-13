@@ -97,7 +97,7 @@ When the `Model` class is being built, different namespaces are at play. For eac
 
 The following table lists the resolved type annotations for every field, once the `Model` class has been created:
 
-| Field name | Resolved annotation | | --- | --- | | `f1` | int | | `f2` | str | | `f3` | bool | | `f4` | bytes | | `f5` | `'UnkownType'` |
+| Field name | Resolved annotation | | --- | --- | | `f1` | int | | `f2` | str | | `f3` | bool | | `f4` | bytes | | `f5` | `'UnknownType'` |
 
 ### Limitations and backwards compatibility concerns
 

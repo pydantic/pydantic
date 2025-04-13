@@ -20266,7 +20266,7 @@ Field(
 Field(
     *,
     default_factory: (
-        Callable[[], _T" optional hover>_T] | Callable[[dict[str, Any]], _T" optional hover>_T]
+        Callable[[], _T] | Callable[[dict[str, Any]], _T]
     ),
     alias: str | None = _Unset,
     alias_priority: int | None = _Unset,
@@ -46599,7 +46599,7 @@ When the `Model` class is being built, different namespaces are at play. For eac
 
 The following table lists the resolved type annotations for every field, once the `Model` class has been created:
 
-| Field name | Resolved annotation | | --- | --- | | `f1` | int | | `f2` | str | | `f3` | bool | | `f4` | bytes | | `f5` | `'UnkownType'` |
+| Field name | Resolved annotation | | --- | --- | | `f1` | int | | `f2` | str | | `f3` | bool | | `f4` | bytes | | `f5` | `'UnknownType'` |
 
 ### Limitations and backwards compatibility concerns
 
@@ -50532,12 +50532,12 @@ class Model(BaseModel):
     x: set[object]
 
 
-class Unhasbable:
+class Unhashable:
     __hash__ = None
 
 
 try:
-    Model(x=[{'a': 'b'}, Unhasbable()])
+    Model(x=[{'a': 'b'}, Unhashable()])
 except ValidationError as exc:
     print(repr(exc.errors()[0]['type']))
     #> 'set_item_not_hashable'
