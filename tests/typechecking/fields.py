@@ -1,4 +1,6 @@
-from pydantic import BaseModel, Field, PrivateAttr
+from typing import Annotated
+
+from pydantic import BaseModel, DefaultFactory, Field, PrivateAttr
 
 
 # private attributes should be excluded from
@@ -38,3 +40,5 @@ class Model(BaseModel):
 
     # Do not error on the ellipsis:
     f13: int = Field(...)
+
+    f14: Annotated[list[int], Field(...)] = DefaultFactory(lambda: [123])

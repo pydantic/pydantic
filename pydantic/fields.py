@@ -1540,3 +1540,7 @@ def computed_field(
         return dec
     else:
         return dec(func)
+
+
+def DefaultFactory(default_factory: Callable[[], _T]) -> _T:
+    return Field(default_factory=default_factory)

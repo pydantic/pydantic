@@ -22,7 +22,7 @@ if typing.TYPE_CHECKING:
     from .annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
     from .config import ConfigDict, with_config
     from .errors import *
-    from .fields import Field, PrivateAttr, computed_field
+    from .fields import Field, PrivateAttr, computed_field, DefaultFactory
     from .functional_serializers import (
         PlainSerializer,
         SerializeAsAny,
@@ -109,6 +109,7 @@ __all__ = (
     'Field',
     'computed_field',
     'PrivateAttr',
+    'DefaultFactory',
     # alias
     'AliasChoices',
     'AliasGenerator',
@@ -276,6 +277,7 @@ _dynamic_imports: 'dict[str, tuple[str, str]]' = {
     'Field': (__spec__.parent, '.fields'),
     'computed_field': (__spec__.parent, '.fields'),
     'PrivateAttr': (__spec__.parent, '.fields'),
+    'DefaultFactory': (__spec__.parent, '.fields'),
     # alias
     'AliasChoices': (__spec__.parent, '.aliases'),
     'AliasGenerator': (__spec__.parent, '.aliases'),
