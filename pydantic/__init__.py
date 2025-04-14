@@ -22,7 +22,7 @@ if typing.TYPE_CHECKING:
     from .annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
     from .config import ConfigDict, with_config
     from .errors import *
-    from .fields import Field, PrivateAttr, computed_field, DefaultFactory
+    from .fields import DefaultFactory, Field, PrivateAttr, computed_field
     from .functional_serializers import (
         PlainSerializer,
         SerializeAsAny,
