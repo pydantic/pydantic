@@ -27,6 +27,7 @@ from typing_extensions import (
     Never,
     NotRequired,
     ParamSpec,
+    TypeAliasType,
     TypedDict,
     TypeVarTuple,
     Unpack,
@@ -517,6 +518,37 @@ def test_generics_work_with_many_parametrized_base_models():
     assert len(cache) < target_size + _LIMITED_DICT_SIZE
     del models
     del generics
+
+
+def test_generics_reused() -> None:
+    """https://github.com/pydantic/pydantic/issues/11747
+
+    To fix an issue with recursive generics, we introduced a change in 2.11 that would
+    skip caching the parameterized model under specific circumstances. The following setup
+    is an example of where this would happen. As a result, we ended up with two different `A[int]`
+    classes, although they were the same in practice.
+    When serializing, we check that the value instances are matching the type, but we ended up
+    with warnings as `isinstance(value, A[int])` fails.
+    The fix was reverted as a refactor (https://github.com/pydantic/pydantic/pull/11388) fixed
+    the underlying issue.
+    """
+
+    T = TypeVar('T')
+
+    class A(BaseModel, Generic[T]):
+        pass
+
+    class B(BaseModel, Generic[T]):
+        pass
+
+    AorB = TypeAliasType('AorB', Union[A[T], B[T]], type_params=(T,))
+
+    class Main(BaseModel, Generic[T]):
+        ls: list[AorB[T]] = []
+
+    m = Main[int]()
+    m.ls.append(A[int]())
+    m.model_dump_json(warnings='error')
 
 
 def test_generic_config():
@@ -1445,7 +1477,9 @@ def test_deep_generic_with_referenced_inner_generic():
 
     with pytest.raises(ValidationError):
         InnerModel[int](a=['s', {'a': 'wrong'}])
+
     assert InnerModel[int](a=['s', {'a': 1}]).a[1].a == 1
+    assert InnerModel[int].model_fields['a'].annotation == Optional[list[Union[ReferencedModel[int], str]]]
 
 
 def test_deep_generic_with_multiple_typevars():
