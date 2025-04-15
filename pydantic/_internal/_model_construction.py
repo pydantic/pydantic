@@ -584,6 +584,27 @@ def complete_model_class(
             and `raise_errors=True`.
     """
     typevars_map = get_model_typevars_map(cls)
+
+    if not cls.__pydantic_fields_complete__:
+        # Rebuild the model fields so we can get the NameError for the specific undefined annotation
+        try:
+            cls.__pydantic_fields__ = rebuild_model_fields(
+                cls,
+                ns_resolver=ns_resolver,
+                typevars_map=typevars_map,
+            )
+        except NameError as e:
+            exc = PydanticUndefinedAnnotation.from_name_error(e)
+            set_model_mocks(cls, f'`{exc.name}`')
+            if raise_errors:
+                raise exc from e
+
+        if not raise_errors and not cls.__pydantic_fields_complete__:
+            # No need to continue with schema gen, it is guaranteed to fail
+            return False
+
+        assert cls.__pydantic_fields_complete__
+
     gen_schema = GenerateSchema(
         config_wrapper,
         ns_resolver,
@@ -605,25 +626,6 @@ def complete_model_class(
     except InvalidSchemaError:
         set_model_mocks(cls)
         return False
-
-    if not cls.__pydantic_fields_complete__:
-        # Rebuild the model fields so we can get the NameError for the specific undefined annotation
-        try:
-            cls.__pydantic_fields__ = rebuild_model_fields(
-                cls,
-                ns_resolver=ns_resolver,
-                typevars_map=typevars_map,
-            )
-        except NameError as e:
-            exc = PydanticUndefinedAnnotation.from_name_error(e)
-            set_model_mocks(cls, f'`{exc.name}`')
-            if raise_errors:
-                raise exc from e
-
-        if not raise_errors and not cls.__pydantic_fields_complete__:
-            return False
-
-        assert cls.__pydantic_fields_complete__
 
     # This needs to happen *after* model schema generation, as the return type
     # of the properties are evaluated and the `ComputedFieldInfo` are recreated:
