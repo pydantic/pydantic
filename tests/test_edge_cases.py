@@ -2640,7 +2640,7 @@ def test_invalid_forward_ref_model():
 
 def test_incomplete_superclass() -> None:
     class MyModel(BaseModel):
-        sub_models: list['SubModel']
+        sub_model: 'SubModel'
 
     assert not MyModel.__pydantic_fields_complete__
     assert not MyModel.__pydantic_complete__
@@ -2661,8 +2661,8 @@ def test_incomplete_superclass() -> None:
 
     MyModel.model_rebuild()
 
-    assert MyModel.__pydantic_complete__
     assert MyModel.__pydantic_fields_complete__
+    assert MyModel.__pydantic_complete__
 
 
 @pytest.mark.parametrize(
