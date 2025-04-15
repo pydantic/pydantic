@@ -39,6 +39,7 @@ from pydantic import (
     PrivateAttr,
     PydanticDeprecatedSince20,
     PydanticSchemaGenerationError,
+    PydanticUndefinedAnnotation,
     PydanticUserError,
     RootModel,
     TypeAdapter,
@@ -2635,6 +2636,33 @@ def test_invalid_forward_ref_model():
             'ctx': {'class_name': 'B'},
         }
     ]
+
+
+def test_incomplete_superclass() -> None:
+    class MyModel(BaseModel):
+        sub_models: list['SubModel']
+
+    assert not MyModel.__pydantic_fields_complete__
+    assert not MyModel.__pydantic_complete__
+
+    with pytest.raises(PydanticUndefinedAnnotation, match="name 'SubModel' is not defined"):
+        MyModel.model_rebuild()
+
+    class SubModel(MyModel):
+        pass
+
+    # SubModel is complete because it reinterprets the superclass's fields and finds 'SubModel' to match itself
+    assert SubModel.__pydantic_fields_complete__
+    assert SubModel.__pydantic_complete__
+
+    # MyModel is still incomplete until it's rebuilt
+    assert not MyModel.__pydantic_fields_complete__
+    assert not MyModel.__pydantic_complete__
+
+    MyModel.model_rebuild()
+
+    assert MyModel.__pydantic_complete__
+    assert MyModel.__pydantic_fields_complete__
 
 
 @pytest.mark.parametrize(
