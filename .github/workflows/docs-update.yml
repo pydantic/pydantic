@@ -7,6 +7,9 @@ on:
       - docs-update
     tags:
       - '**'
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   COLUMNS: 150
