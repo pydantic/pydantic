@@ -2684,7 +2684,7 @@ def foobar_validate(value: Any, info: core_schema.ValidationInfo):
 class Foobar:
     @classmethod
     def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
-        return core_schema.with_info_plain_validator_function(foobar_validate, field_name=handler.field_name)
+        return core_schema.with_info_plain_validator_function(foobar_validate)
 
 
 def test_custom_type_field_name_model():
