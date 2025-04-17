@@ -23111,7 +23111,7 @@ def field_validator(
     if isinstance(field, FunctionType):
         raise PydanticUserError(
             '`@field_validator` should be used with fields and keyword arguments, not bare. '
-            "E.g. usage should be `@validator('', ...)`",
+            "E.g. usage should be `@validator('<field_name>', ...)`",
             code='validator-no-fields',
         )
 
@@ -23128,7 +23128,7 @@ def field_validator(
     if not all(isinstance(field, str) for field in fields):
         raise PydanticUserError(
             '`@field_validator` fields should be passed as separate string args. '
-            "E.g. usage should be `@validator('', '', ...)`",
+            "E.g. usage should be `@validator('<field_name_1>', '<field_name_2>', ...)`",
             code='validator-invalid-fields',
         )
 
@@ -28173,7 +28173,7 @@ def validate_email(value: str) -> tuple[str, str]:
         Note that:
 
         * Raw IP address (literal) domain parts are not allowed.
-        * `"John Doe "` style "pretty" email addresses are processed.
+        * `"John Doe <local_part@domain.com>"` style "pretty" email addresses are processed.
         * Spaces are striped from the beginning and end of addresses, but no error is raised.
     """
     if email_validator is None:
@@ -35186,7 +35186,7 @@ Source code in `pydantic_extra_types/color.py`
 ```python
 def as_rgb(self) -> str:
     """
-    Color as an `rgb(, , )` or `rgba(, , , )` string.
+    Color as an `rgb(<r>, <g>, <b>)` or `rgba(<r>, <g>, <b>, <a>)` string.
     """
     if self._rgba.alpha is None:
         return f'rgb({float_to_255(self._rgba.r)}, {float_to_255(self._rgba.g)}, {float_to_255(self._rgba.b)})'
@@ -35255,7 +35255,7 @@ Source code in `pydantic_extra_types/color.py`
 ```python
 def as_hsl(self) -> str:
     """
-    Color as an `hsl(, , )` or `hsl(, , , )` string.
+    Color as an `hsl(<h>, <s>, <l>)` or `hsl(<h>, <s>, <l>, <a>)` string.
     """
     if self._rgba.alpha is None:
         h, s, li = self.as_hsl_tuple(alpha=False)  # type: ignore
@@ -35405,10 +35405,10 @@ def parse_str(value: str) -> RGBA:
     Possible formats for the input string include:
 
     * named color, see `COLORS_BY_NAME`
-    * hex short eg. `fff` (prefix can be `#`, `0x` or nothing)
-    * hex long eg. `ffffff` (prefix can be `#`, `0x` or nothing)
-    * `rgb(, , )`
-    * `rgba(, , , )`
+    * hex short eg. `<prefix>fff` (prefix can be `#`, `0x` or nothing)
+    * hex long eg. `<prefix>ffffff` (prefix can be `#`, `0x` or nothing)
+    * `rgb(<r>, <g>, <b>)`
+    * `rgba(<r>, <g>, <b>, <a>)`
     * `transparent`
 
     Args:
@@ -42392,7 +42392,7 @@ class ImportString:
     # Create an instance
     m = ImportThings(obj='math.cos')
     print(m)
-    #> obj=
+    #> obj=<built-in function cos>
     print(m.model_dump_json())
     #> {"obj":"math.cos"}
     ```
@@ -42430,11 +42430,11 @@ class ImportString:
         # Handle special cases for sys.XXX streams
         # if we see more of these, we should consider a more general solution
         elif hasattr(v, 'name'):
-            if v.name == '':
+            if v.name == '<stdout>':
                 return 'sys.stdout'
-            elif v.name == '':
+            elif v.name == '<stdin>':
                 return 'sys.stdin'
-            elif v.name == '':
+            elif v.name == '<stderr>':
                 return 'sys.stderr'
         else:
             return v
@@ -42922,7 +42922,7 @@ class Secret(_SecretBase[SecretType]):
             if bases == [] or inner_type is None:
                 raise TypeError(
                     f"Can't get secret type from {cls.__name__}. "
-                    'Please use Secret[], or subclass from Secret[] instead.'
+                    'Please use Secret[<type>], or subclass from Secret[<type>] instead.'
                 )
 
         inner_schema = handler.generate_schema(inner_type)  # type: ignore
@@ -45066,7 +45066,7 @@ class Discriminator:
 
     Provides a way to use a custom callable as the way to extract the value of a union discriminator.
 
-    This allows you to get validation behavior like you'd get from `Field(discriminator=)`,
+    This allows you to get validation behavior like you'd get from `Field(discriminator=<field_name>)`,
     but without needing to have a single shared field across all the union choices. This also makes it
     possible to handle unions of models and primitive types with discriminated-union-style validation errors.
     Finally, this allows you to use a custom callable as the way to identify which member of a union a value
