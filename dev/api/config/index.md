@@ -230,7 +230,7 @@ m = Model(my_alias='foo')  # (2)!
 print(m)
 #> my_field='foo'
 
-m = Model(my_alias='foo')  # (3)!
+m = Model(my_field='foo')  # (3)!
 print(m)
 #> my_field='foo'
 
