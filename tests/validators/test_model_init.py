@@ -6,7 +6,7 @@ from dirty_equals import IsInstance
 
 from pydantic_core import CoreConfig, SchemaValidator, core_schema
 
-from ..conftest import assert_gc
+from ..conftest import assert_gc, is_free_threaded
 
 
 class MyModel:
@@ -411,6 +411,7 @@ def test_model_custom_init_revalidate():
     assert calls == ["{'a': '1'}", "{'a': '1', 'x': 4}"]
 
 
+@pytest.mark.xfail(is_free_threaded, reason='GC leaks on free-threaded')
 @pytest.mark.xfail(
     condition=platform.python_implementation() == 'PyPy', reason='https://foss.heptapod.net/pypy/pypy/-/issues/3899'
 )
