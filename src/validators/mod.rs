@@ -311,6 +311,7 @@ impl SchemaValidator {
             data: None,
             strict,
             from_attributes,
+            field_name: Some(PyString::new(py, field_name)),
             context,
             self_instance: None,
             cache_str: self.cache_str,
@@ -337,6 +338,7 @@ impl SchemaValidator {
             data: None,
             strict,
             from_attributes: None,
+            field_name: None,
             context,
             self_instance: None,
             cache_str: self.cache_str,
@@ -678,6 +680,8 @@ pub struct Extra<'a, 'py> {
     pub from_attributes: Option<bool>,
     /// context used in validator functions
     pub context: Option<&'a Bound<'py, PyAny>>,
+    /// The name of the field being validated, if applicable
+    pub field_name: Option<Bound<'py, PyString>>,
     /// This is an instance of the model or dataclass being validated, when validation is performed from `__init__`
     self_instance: Option<&'a Bound<'py, PyAny>>,
     /// Whether to use a cache of short strings to accelerate python string construction
@@ -705,6 +709,7 @@ impl<'a, 'py> Extra<'a, 'py> {
             data: None,
             strict,
             from_attributes,
+            field_name: None,
             context,
             self_instance,
             cache_str,
@@ -721,6 +726,7 @@ impl Extra<'_, '_> {
             data: self.data.clone(),
             strict: Some(true),
             from_attributes: self.from_attributes,
+            field_name: self.field_name.clone(),
             context: self.context,
             self_instance: self.self_instance,
             cache_str: self.cache_str,

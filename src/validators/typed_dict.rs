@@ -218,6 +218,9 @@ impl Validator for TypedDictValidator {
                         true => allow_partial,
                         false => false.into(),
                     };
+                    let state =
+                        &mut state.rebind_extra(|extra| extra.field_name = Some(field.name_py.bind(py).clone()));
+
                     match field.validator.validate(py, value.borrow_input(), state) {
                         Ok(value) => {
                             output_dict.set_item(&field.name_py, value)?;

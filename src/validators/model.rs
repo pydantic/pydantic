@@ -202,6 +202,7 @@ impl Validator for ModelValidator {
                     field_name.to_string(),
                 ))
             } else {
+                let state = &mut state.rebind_extra(|extra| extra.field_name = Some(PyString::new(py, ROOT_FIELD)));
                 let output = self.validator.validate(py, field_value, state)?;
 
                 force_setattr(py, model, intern!(py, ROOT_FIELD), output)?;
@@ -255,9 +256,11 @@ impl ModelValidator {
         // we need to set `self_instance` to None for nested validators as we don't want to operate on self_instance
         // anymore
         let state = &mut state.rebind_extra(|extra| extra.self_instance = None);
-        let output = self.validator.validate(py, input, state)?;
 
         if self.root_model {
+            let state = &mut state.rebind_extra(|extra| extra.field_name = Some(PyString::new(py, ROOT_FIELD)));
+            let output = self.validator.validate(py, input, state)?;
+
             let fields_set = if input.as_python().is_some_and(|py_input| py_input.is(&self.undefined)) {
                 PySet::empty(py)?
             } else {
@@ -266,6 +269,8 @@ impl ModelValidator {
             force_setattr(py, self_instance, intern!(py, DUNDER_FIELDS_SET_KEY), &fields_set)?;
             force_setattr(py, self_instance, intern!(py, ROOT_FIELD), &output)?;
         } else {
+            let output = self.validator.validate(py, input, state)?;
+
             let (model_dict, model_extra, fields_set): (Bound<PyAny>, Bound<PyAny>, Bound<PyAny>) =
                 output.extract(py)?;
             set_model_attrs(self_instance, &model_dict, &model_extra, &fields_set)?;
@@ -294,11 +299,12 @@ impl ModelValidator {
             }
         }
 
-        let output = self.validator.validate(py, input, state)?;
-
         let instance = create_class(self.class.bind(py))?;
 
         if self.root_model {
+            let state = &mut state.rebind_extra(|extra| extra.field_name = Some(PyString::new(py, ROOT_FIELD)));
+            let output = self.validator.validate(py, input, state)?;
+
             let fields_set = if input.as_python().is_some_and(|py_input| py_input.is(&self.undefined)) {
                 PySet::empty(py)?
             } else {
@@ -307,6 +313,8 @@ impl ModelValidator {
             force_setattr(py, &instance, intern!(py, DUNDER_FIELDS_SET_KEY), &fields_set)?;
             force_setattr(py, &instance, intern!(py, ROOT_FIELD), output)?;
         } else {
+            let output = self.validator.validate(py, input, state)?;
+
             let (model_dict, model_extra, val_fields_set): (Bound<PyAny>, Bound<PyAny>, Bound<PyAny>) =
                 output.extract(py)?;
             let fields_set = existing_fields_set.unwrap_or(&val_fields_set);

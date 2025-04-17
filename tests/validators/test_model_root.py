@@ -138,7 +138,7 @@ def test_field_function():
     v = SchemaValidator(
         core_schema.model_schema(
             RootModel,
-            core_schema.with_info_after_validator_function(f, core_schema.str_schema(), field_name='root'),
+            core_schema.with_info_after_validator_function(f, core_schema.str_schema()),
             root_model=True,
         )
     )
