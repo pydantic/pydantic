@@ -10,7 +10,7 @@ from dirty_equals import IsListOrTuple, IsStr
 
 from pydantic_core import ArgsKwargs, SchemaValidator, ValidationError, core_schema
 
-from ..conftest import Err, PyAndJson, assert_gc
+from ..conftest import Err, PyAndJson, assert_gc, is_free_threaded
 
 
 @pytest.mark.parametrize(
@@ -1516,6 +1516,7 @@ def test_dataclass_wrap_json():
     assert v.validate_json('{"a": "hello", "b": true}', strict=True) == FooDataclass(a='hello', b=True)
 
 
+@pytest.mark.xfail(is_free_threaded, reason='GC leaks on free-threaded')
 @pytest.mark.xfail(
     condition=platform.python_implementation() == 'PyPy', reason='https://foss.heptapod.net/pypy/pypy/-/issues/3899'
 )
