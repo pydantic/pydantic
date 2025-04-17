@@ -1,3 +1,7 @@
+## v1.10.22 (2025-04-17)
+
+* Fix compatibility with `typing-extensions` by @Viicos in https://github.com/pydantic/pydantic/pull/11764
+
 ## v1.10.21 (2025-01-10)
 
 * Fix compatibility with ForwardRef._evaluate and Python < 3.12.4 by @griels in https://github.com/pydantic/pydantic/pull/11232
