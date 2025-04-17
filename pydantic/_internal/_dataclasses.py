@@ -5,7 +5,7 @@ from __future__ import annotations as _annotations
 import dataclasses
 import typing
 import warnings
-from functools import partial, wraps
+from functools import partial
 from typing import Any, ClassVar
 
 from pydantic_core import (
@@ -178,22 +178,12 @@ def complete_dataclass(
     # We are about to set all the remaining required properties expected for this cast;
     # __pydantic_decorators__ and __pydantic_fields__ should already be set
     cls = typing.cast('type[PydanticDataclass]', cls)
-    # debug(schema)
 
     cls.__pydantic_core_schema__ = schema
-    cls.__pydantic_validator__ = validator = create_schema_validator(
+    cls.__pydantic_validator__ = create_schema_validator(
         schema, cls, cls.__module__, cls.__qualname__, 'dataclass', core_config, config_wrapper.plugin_settings
     )
     cls.__pydantic_serializer__ = SchemaSerializer(schema, core_config)
-
-    if config_wrapper.validate_assignment:
-
-        @wraps(cls.__setattr__)
-        def validated_setattr(instance: Any, field: str, value: str, /) -> None:
-            validator.validate_assignment(instance, field, value)
-
-        cls.__setattr__ = validated_setattr.__get__(None, cls)  # type: ignore
-
     cls.__pydantic_complete__ = True
     return True
 
