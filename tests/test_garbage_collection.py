@@ -7,7 +7,7 @@ import pytest
 
 from pydantic_core import SchemaSerializer, SchemaValidator, core_schema
 
-from .conftest import assert_gc
+from .conftest import assert_gc, is_free_threaded
 
 GC_TEST_SCHEMA_INNER = core_schema.definitions_schema(
     core_schema.definition_reference_schema(schema_ref='model'),
@@ -20,6 +20,7 @@ GC_TEST_SCHEMA_INNER = core_schema.definitions_schema(
 )
 
 
+@pytest.mark.xfail(is_free_threaded, reason='GC leaks on free-threaded')
 @pytest.mark.xfail(
     condition=platform.python_implementation() == 'PyPy', reason='https://foss.heptapod.net/pypy/pypy/-/issues/3899'
 )
@@ -47,6 +48,7 @@ def test_gc_schema_serializer() -> None:
     assert_gc(lambda: len(cache) == 0)
 
 
+@pytest.mark.xfail(is_free_threaded, reason='GC leaks on free-threaded')
 @pytest.mark.xfail(
     condition=platform.python_implementation() == 'PyPy', reason='https://foss.heptapod.net/pypy/pypy/-/issues/3899'
 )

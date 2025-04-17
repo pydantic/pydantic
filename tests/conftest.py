@@ -6,6 +6,7 @@ import importlib.util
 import json
 import os
 import re
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from time import sleep, time
@@ -17,11 +18,16 @@ import pytest
 from pydantic_core import ArgsKwargs, CoreSchema, SchemaValidator, ValidationError, validate_core_schema
 from pydantic_core.core_schema import CoreConfig
 
-__all__ = 'Err', 'PyAndJson', 'plain_repr', 'infinite_generator'
+__all__ = 'Err', 'PyAndJson', 'assert_gc', 'is_free_threaded', 'plain_repr', 'infinite_generator'
 
 hypothesis.settings.register_profile('fast', max_examples=2)
 hypothesis.settings.register_profile('slow', max_examples=1_000)
 hypothesis.settings.load_profile(os.getenv('HYPOTHESIS_PROFILE', 'fast'))
+
+try:
+    is_free_threaded = not sys._is_gil_enabled()
+except AttributeError:
+    is_free_threaded = False
 
 
 def plain_repr(obj):
