@@ -2737,7 +2737,7 @@ def test_validate_json_context() -> None:
     assert contexts == []
 
 
-def test_pydantic_init_subclass() -> None:
+def test_pydantic_hooks() -> None:
     calls = []
 
     class MyModel(BaseModel):
@@ -2750,13 +2750,57 @@ def test_pydantic_init_subclass() -> None:
             super().__pydantic_init_subclass__(**kwargs)
             calls.append((cls.__name__, '__pydantic_init_subclass__', kwargs))
 
-    class MySubModel(MyModel, a=1):
-        pass
+        @classmethod
+        def __pydantic_on_complete__(cls):
+            calls.append((cls.__name__, '__pydantic_on_complete__', 'MyModel'))
 
+    assert MyModel.__pydantic_complete__
+    assert MyModel.__pydantic_fields_complete__
+    assert calls == [
+        ('MyModel', '__pydantic_on_complete__', 'MyModel'),
+    ]
+    calls = []
+
+    class MySubModel(MyModel, a=1):
+        sub: 'MySubSubModel'
+
+        @classmethod
+        def __pydantic_on_complete__(cls):
+            calls.append((cls.__name__, '__pydantic_on_complete__', 'MySubModel'))
+
+    assert not MySubModel.__pydantic_complete__
+    assert not MySubModel.__pydantic_fields_complete__
     assert calls == [
         ('MySubModel', '__init_subclass__', {'a': 1}),
         ('MySubModel', '__pydantic_init_subclass__', {'a': 1}),
     ]
+    calls = []
+
+    class MySubSubModel(MySubModel, b=1):
+        @classmethod
+        def __pydantic_on_complete__(cls):
+            calls.append((cls.__name__, '__pydantic_on_complete__', 'MySubSubModel'))
+
+    assert MySubSubModel.__pydantic_complete__
+    assert MySubSubModel.__pydantic_fields_complete__
+    assert calls == [
+        ('MySubSubModel', '__init_subclass__', {'b': 1}),
+        ('MySubSubModel', '__pydantic_on_complete__', 'MySubSubModel'),
+        ('MySubSubModel', '__pydantic_init_subclass__', {'b': 1}),
+    ]
+    calls = []
+
+    MySubModel.model_rebuild()
+
+    assert MySubModel.__pydantic_complete__
+    assert MySubModel.__pydantic_fields_complete__
+    assert calls == [
+        ('MySubModel', '__pydantic_on_complete__', 'MySubModel'),
+    ]
+    calls = []
+
+    MyModel.model_rebuild(force=True)
+    assert calls == []
 
 
 def test_model_validate_with_context():
