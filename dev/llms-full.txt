@@ -15378,31 +15378,11 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             parent_namespace={**rebuild_ns, **parent_ns},
         )
 
-        if not cls.__pydantic_fields_complete__:
-            typevars_map = _generics.get_model_typevars_map(cls)
-            try:
-                cls.__pydantic_fields__ = _fields.rebuild_model_fields(
-                    cls,
-                    ns_resolver=ns_resolver,
-                    typevars_map=typevars_map,
-                )
-            except NameError as e:
-                exc = PydanticUndefinedAnnotation.from_name_error(e)
-                _mock_val_ser.set_model_mocks(cls, f'`{exc.name}`')
-                if raise_errors:
-                    raise exc from e
-
-            if not raise_errors and not cls.__pydantic_fields_complete__:
-                # No need to continue with schema gen, it is guaranteed to fail
-                return False
-
-            assert cls.__pydantic_fields_complete__
-
         return _model_construction.complete_model_class(
             cls,
             _config.ConfigWrapper(cls.model_config, check=False),
+            ns_resolver,
             raise_errors=raise_errors,
-            ns_resolver=ns_resolver,
         )
 
     @classmethod
@@ -17103,31 +17083,11 @@ def model_rebuild(
         parent_namespace={**rebuild_ns, **parent_ns},
     )
 
-    if not cls.__pydantic_fields_complete__:
-        typevars_map = _generics.get_model_typevars_map(cls)
-        try:
-            cls.__pydantic_fields__ = _fields.rebuild_model_fields(
-                cls,
-                ns_resolver=ns_resolver,
-                typevars_map=typevars_map,
-            )
-        except NameError as e:
-            exc = PydanticUndefinedAnnotation.from_name_error(e)
-            _mock_val_ser.set_model_mocks(cls, f'`{exc.name}`')
-            if raise_errors:
-                raise exc from e
-
-        if not raise_errors and not cls.__pydantic_fields_complete__:
-            # No need to continue with schema gen, it is guaranteed to fail
-            return False
-
-        assert cls.__pydantic_fields_complete__
-
     return _model_construction.complete_model_class(
         cls,
         _config.ConfigWrapper(cls.model_config, check=False),
+        ns_resolver,
         raise_errors=raise_errors,
-        ns_resolver=ns_resolver,
     )
 
 ```
