@@ -182,9 +182,6 @@ markers = [
 [tool.uv]
 default-groups = ['dev']
 
-[tool.uv.sources]
-mkdocs-llmstxt = { git = "https://github.com/Viicos/mkdocs-llmstxt", rev = "issue-1" }
-
 # configuring https://github.com/pydantic/hooky
 [tool.hooky]
 reviewers = ['sydney-runkle']
