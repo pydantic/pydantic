@@ -1348,7 +1348,7 @@ def test_field_function_validator(benchmark) -> None:
     limit = pydantic_core._pydantic_core._recursion_limit - 3
 
     for _ in range(limit):
-        schema = core_schema.with_info_after_validator_function(f, schema, field_name='x')
+        schema = core_schema.with_info_after_validator_function(f, schema)
 
     schema = core_schema.typed_dict_schema({'x': core_schema.typed_dict_field(schema)})
 

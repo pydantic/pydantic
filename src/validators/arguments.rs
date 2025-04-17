@@ -229,6 +229,9 @@ impl Validator for ArgumentsValidator {
                 }
             }
 
+            let state =
+                &mut state.rebind_extra(|extra| extra.field_name = Some(PyString::new(py, parameter.name.as_str())));
+
             match (pos_value, kw_value) {
                 (Some(_), Some((_, kw_value))) => {
                     errors.push(ValLineError::new_with_loc(

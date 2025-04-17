@@ -24,7 +24,7 @@ use super::{build_validator, BuildValidator, CombinedValidator, DefinitionsBuild
 struct Field {
     kw_only: bool,
     name: String,
-    py_name: Py<PyString>,
+    name_py: Py<PyString>,
     init: bool,
     init_only: bool,
     lookup_key_collection: LookupKeyCollection,
@@ -72,8 +72,8 @@ impl BuildValidator for DataclassArgsValidator {
         for field in fields_schema {
             let field = field.downcast::<PyDict>()?;
 
-            let py_name: Bound<'_, PyString> = field.get_as_req(intern!(py, "name"))?;
-            let name: String = py_name.extract()?;
+            let name_py: Bound<'_, PyString> = field.get_as_req(intern!(py, "name"))?;
+            let name: String = name_py.extract()?;
 
             let schema = field.get_as_req(intern!(py, "schema"))?;
 
@@ -99,7 +99,7 @@ impl BuildValidator for DataclassArgsValidator {
             fields.push(Field {
                 kw_only,
                 name,
-                py_name: py_name.into(),
+                name_py: name_py.into(),
                 lookup_key_collection,
                 validator,
                 init: field.get_as(intern!(py, "init"))?.unwrap_or(true),
@@ -163,13 +163,13 @@ impl Validator for DataclassArgsValidator {
 
         macro_rules! set_item {
             ($field:ident, $value:expr) => {{
-                let py_name = $field.py_name.bind(py);
+                let name_py = $field.name_py.bind(py);
                 if $field.init_only {
                     if let Some(ref mut init_only_args) = init_only_args {
                         init_only_args.push($value);
                     }
                 } else {
-                    output_dict.set_item(py_name, $value)?;
+                    output_dict.set_item(name_py, $value)?;
                 }
             }};
         }
@@ -213,6 +213,8 @@ impl Validator for DataclassArgsValidator {
                 }
             }
             let kw_value = kw_value.as_ref().map(|(path, value)| (path, value.borrow_input()));
+
+            let state = &mut state.rebind_extra(|extra| extra.field_name = Some(field.name_py.bind(py).clone()));
 
             match (pos_value, kw_value) {
                 // found both positional and keyword arguments, error
@@ -404,11 +406,12 @@ impl Validator for DataclassArgsValidator {
                 }
             }
 
-            match field.validator.validate(
-                py,
-                field_value,
-                &mut state.rebind_extra(|extra| extra.data = Some(data_dict.clone())),
-            ) {
+            let state = &mut state.rebind_extra(|extra| {
+                extra.data = Some(data_dict.clone());
+                extra.field_name = Some(field.name_py.bind(py).clone());
+            });
+
+            match field.validator.validate(py, field_value, state) {
                 Ok(output) => ok(output),
                 Err(ValError::LineErrors(line_errors)) => {
                     let errors = line_errors
