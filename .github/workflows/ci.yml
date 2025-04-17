@@ -660,7 +660,7 @@ jobs:
 
   release:
     needs: [test-builds-arch, test-builds-os, build-sdist, check]
-    if: startsWith(github.ref, 'refs/tags/')
+    if: always() && startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
 
     steps:
