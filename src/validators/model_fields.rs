@@ -197,6 +197,10 @@ impl Validator for ModelFieldsValidator {
                         // extra logic either way
                         used_keys.insert(lookup_path.first_key());
                     }
+
+                    let state =
+                        &mut state.rebind_extra(|extra| extra.field_name = Some(field.name_py.bind(py).clone()));
+
                     match field.validator.validate(py, value.borrow_input(), state) {
                         Ok(value) => {
                             model_dict.set_item(&field.name_py, value)?;
@@ -421,6 +425,8 @@ impl Validator for ModelFieldsValidator {
                         field.name.to_string(),
                     ));
                 }
+
+                let state = &mut state.rebind_extra(|extra| extra.field_name = Some(field.name_py.bind(py).clone()));
 
                 prepare_result(field.validator.validate(py, field_value, state))?
             } else {

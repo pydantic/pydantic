@@ -1954,7 +1954,7 @@ WithInfoValidatorFunction = Callable[[Any, ValidationInfo], Any]
 class WithInfoValidatorFunctionSchema(TypedDict, total=False):
     type: Required[Literal['with-info']]
     function: Required[WithInfoValidatorFunction]
-    field_name: str
+    field_name: str  # deprecated
 
 
 ValidationFunction = Union[NoInfoValidatorFunctionSchema, WithInfoValidatorFunctionSchema]
@@ -2042,7 +2042,7 @@ def with_info_before_validator_function(
         return v.decode() + 'world'
 
     func_schema = core_schema.with_info_before_validator_function(
-        function=fn, schema=core_schema.str_schema(), field_name='a'
+        function=fn, schema=core_schema.str_schema()
     )
     schema = core_schema.typed_dict_schema({'a': core_schema.typed_dict_field(func_schema)})
 
@@ -2052,13 +2052,20 @@ def with_info_before_validator_function(
 
     Args:
         function: The validator function to call
-        field_name: The name of the field
+        field_name: The name of the field this validator is applied to, if any (deprecated)
         schema: The schema to validate the output of the validator function
         ref: optional unique identifier of the schema, used to reference the schema in other places
         json_schema_input_schema: The core schema to be used to generate the corresponding JSON Schema input type
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
+    if field_name is not None:
+        warnings.warn(
+            'The `field_name` argument on `with_info_before_validator_function` is deprecated, it will be passed to the function through `ValidationState` instead.',
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
     return _dict_not_none(
         type='function-before',
         function=_dict_not_none(type='with-info', function=function, field_name=field_name),
@@ -2140,7 +2147,7 @@ def with_info_after_validator_function(
         return v + 'world'
 
     func_schema = core_schema.with_info_after_validator_function(
-        function=fn, schema=core_schema.str_schema(), field_name='a'
+        function=fn, schema=core_schema.str_schema()
     )
     schema = core_schema.typed_dict_schema({'a': core_schema.typed_dict_field(func_schema)})
 
@@ -2151,11 +2158,18 @@ def with_info_after_validator_function(
     Args:
         function: The validator function to call after the schema is validated
         schema: The schema to validate before the validator function
-        field_name: The name of the field this validators is applied to, if any
+        field_name: The name of the field this validator is applied to, if any (deprecated)
         ref: optional unique identifier of the schema, used to reference the schema in other places
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
+    if field_name is not None:
+        warnings.warn(
+            'The `field_name` argument on `with_info_after_validator_function` is deprecated, it will be passed to the function through `ValidationState` instead.',
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
     return _dict_not_none(
         type='function-after',
         function=_dict_not_none(type='with-info', function=function, field_name=field_name),
@@ -2187,7 +2201,7 @@ WithInfoWrapValidatorFunction = Callable[[Any, ValidatorFunctionWrapHandler, Val
 class WithInfoWrapValidatorFunctionSchema(TypedDict, total=False):
     type: Required[Literal['with-info']]
     function: Required[WithInfoWrapValidatorFunction]
-    field_name: str
+    field_name: str  # deprecated
 
 
 WrapValidatorFunction = Union[NoInfoWrapValidatorFunctionSchema, WithInfoWrapValidatorFunctionSchema]
@@ -2287,12 +2301,19 @@ def with_info_wrap_validator_function(
     Args:
         function: The validator function to call
         schema: The schema to validate the output of the validator function
-        field_name: The name of the field this validators is applied to, if any
+        field_name: The name of the field this validator is applied to, if any (deprecated)
         json_schema_input_schema: The core schema to be used to generate the corresponding JSON Schema input type
         ref: optional unique identifier of the schema, used to reference the schema in other places
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
+    if field_name is not None:
+        warnings.warn(
+            'The `field_name` argument on `with_info_wrap_validator_function` is deprecated, it will be passed to the function through `ValidationState` instead.',
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
     return _dict_not_none(
         type='function-wrap',
         function=_dict_not_none(type='with-info', function=function, field_name=field_name),
@@ -2379,12 +2400,19 @@ def with_info_plain_validator_function(
 
     Args:
         function: The validator function to call
-        field_name: The name of the field this validators is applied to, if any
+        field_name: The name of the field this validator is applied to, if any (deprecated)
         ref: optional unique identifier of the schema, used to reference the schema in other places
         json_schema_input_schema: The core schema to be used to generate the corresponding JSON Schema input type
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
+    if field_name is not None:
+        warnings.warn(
+            'The `field_name` argument on `with_info_plain_validator_function` is deprecated, it will be passed to the function through `ValidationState` instead.',
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
     return _dict_not_none(
         type='function-plain',
         function=_dict_not_none(type='with-info', function=function, field_name=field_name),

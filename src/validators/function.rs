@@ -100,7 +100,13 @@ impl FunctionBeforeValidator {
         state: &'s mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         let r = if self.info_arg {
-            let info = ValidationInfo::new(py, state.extra(), &self.config, self.field_name.clone());
+            let field_name = state
+                .extra()
+                .field_name
+                .clone()
+                .map(Bound::unbind)
+                .or_else(|| self.field_name.clone());
+            let info = ValidationInfo::new(py, state.extra(), &self.config, field_name);
             self.func.call1(py, (input.to_object(py)?, info))
         } else {
             self.func.call1(py, (input.to_object(py)?,))
@@ -169,7 +175,13 @@ impl FunctionAfterValidator {
     ) -> ValResult<PyObject> {
         let v = call(input, state)?;
         let r = if self.info_arg {
-            let info = ValidationInfo::new(py, state.extra(), &self.config, self.field_name.clone());
+            let field_name = state
+                .extra()
+                .field_name
+                .clone()
+                .map(Bound::unbind)
+                .or_else(|| self.field_name.clone());
+            let info = ValidationInfo::new(py, state.extra(), &self.config, field_name);
             self.func.call1(py, (v, info))
         } else {
             self.func.call1(py, (v,))
@@ -258,7 +270,13 @@ impl Validator for FunctionPlainValidator {
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         let r = if self.info_arg {
-            let info = ValidationInfo::new(py, state.extra(), &self.config, self.field_name.clone());
+            let field_name = state
+                .extra()
+                .field_name
+                .clone()
+                .map(Bound::unbind)
+                .or_else(|| self.field_name.clone());
+            let info = ValidationInfo::new(py, state.extra(), &self.config, field_name);
             self.func.call1(py, (input.to_object(py)?, info))
         } else {
             self.func.call1(py, (input.to_object(py)?,))
@@ -322,7 +340,13 @@ impl FunctionWrapValidator {
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         let r = if self.info_arg {
-            let info = ValidationInfo::new(py, state.extra(), &self.config, self.field_name.clone());
+            let field_name = state
+                .extra()
+                .field_name
+                .clone()
+                .map(Bound::unbind)
+                .or_else(|| self.field_name.clone());
+            let info = ValidationInfo::new(py, state.extra(), &self.config, field_name);
             self.func.call1(py, (input.to_object(py)?, handler, info))
         } else {
             self.func.call1(py, (input.to_object(py)?, handler))

@@ -506,9 +506,7 @@ def test_dataclass_field_after_validator():
                 core_schema.dataclass_field(name='a', schema=core_schema.int_schema()),
                 core_schema.dataclass_field(
                     name='b',
-                    schema=core_schema.with_info_after_validator_function(
-                        Foo.validate_b, core_schema.str_schema(), field_name='b'
-                    ),
+                    schema=core_schema.with_info_after_validator_function(Foo.validate_b, core_schema.str_schema()),
                 ),
             ],
         ),
@@ -540,7 +538,7 @@ def test_dataclass_field_plain_validator():
             [
                 core_schema.dataclass_field(name='a', schema=core_schema.int_schema()),
                 core_schema.dataclass_field(
-                    name='b', schema=core_schema.with_info_plain_validator_function(Foo.validate_b, field_name='b')
+                    name='b', schema=core_schema.with_info_plain_validator_function(Foo.validate_b)
                 ),
             ],
         ),
@@ -573,9 +571,7 @@ def test_dataclass_field_before_validator():
                 core_schema.dataclass_field(name='a', schema=core_schema.int_schema()),
                 core_schema.dataclass_field(
                     name='b',
-                    schema=core_schema.with_info_before_validator_function(
-                        Foo.validate_b, core_schema.str_schema(), field_name='b'
-                    ),
+                    schema=core_schema.with_info_before_validator_function(Foo.validate_b, core_schema.str_schema()),
                 ),
             ],
         ),
@@ -612,9 +608,7 @@ def test_dataclass_field_wrap_validator1():
                 core_schema.dataclass_field(name='a', schema=core_schema.int_schema()),
                 core_schema.dataclass_field(
                     name='b',
-                    schema=core_schema.with_info_wrap_validator_function(
-                        Foo.validate_b, core_schema.str_schema(), field_name='b'
-                    ),
+                    schema=core_schema.with_info_wrap_validator_function(Foo.validate_b, core_schema.str_schema()),
                 ),
             ],
         ),
@@ -649,9 +643,7 @@ def test_dataclass_field_wrap_validator2():
                 core_schema.dataclass_field(name='a', schema=core_schema.int_schema()),
                 core_schema.dataclass_field(
                     name='b',
-                    schema=core_schema.with_info_wrap_validator_function(
-                        Foo.validate_b, core_schema.str_schema(), field_name='b'
-                    ),
+                    schema=core_schema.with_info_wrap_validator_function(Foo.validate_b, core_schema.str_schema()),
                 ),
             ],
         ),
@@ -878,9 +870,7 @@ def test_validate_assignment_function():
                     core_schema.dataclass_field('field_a', core_schema.str_schema()),
                     core_schema.dataclass_field(
                         'field_b',
-                        core_schema.with_info_after_validator_function(
-                            func, core_schema.int_schema(), field_name='field_b'
-                        ),
+                        core_schema.with_info_after_validator_function(func, core_schema.int_schema()),
                     ),
                     core_schema.dataclass_field('field_c', core_schema.int_schema()),
                 ],
@@ -1295,9 +1285,7 @@ def test_dataclass_slots_field_before_validator():
                 core_schema.dataclass_field(name='a', schema=core_schema.int_schema()),
                 core_schema.dataclass_field(
                     name='b',
-                    schema=core_schema.with_info_before_validator_function(
-                        Foo.validate_b, core_schema.str_schema(), field_name='b'
-                    ),
+                    schema=core_schema.with_info_before_validator_function(Foo.validate_b, core_schema.str_schema()),
                 ),
             ],
         ),
@@ -1332,9 +1320,7 @@ def test_dataclass_slots_field_after_validator():
                 core_schema.dataclass_field(name='a', schema=core_schema.int_schema()),
                 core_schema.dataclass_field(
                     name='b',
-                    schema=core_schema.with_info_after_validator_function(
-                        Foo.validate_b, core_schema.str_schema(), field_name='b'
-                    ),
+                    schema=core_schema.with_info_after_validator_function(Foo.validate_b, core_schema.str_schema()),
                 ),
             ],
         ),
@@ -1550,15 +1536,9 @@ def test_leak_dataclass(validator):
 
         field_schema = core_schema.int_schema()
         if validator == 'field':
-            field_schema = core_schema.with_info_before_validator_function(
-                Dataclass._validator, field_schema, field_name='a'
-            )
-            field_schema = core_schema.with_info_wrap_validator_function(
-                Dataclass._wrap_validator, field_schema, field_name='a'
-            )
-            field_schema = core_schema.with_info_after_validator_function(
-                Dataclass._validator, field_schema, field_name='a'
-            )
+            field_schema = core_schema.with_info_before_validator_function(Dataclass._validator, field_schema)
+            field_schema = core_schema.with_info_wrap_validator_function(Dataclass._wrap_validator, field_schema)
+            field_schema = core_schema.with_info_after_validator_function(Dataclass._validator, field_schema)
 
         dataclass_schema = core_schema.dataclass_schema(
             Dataclass,

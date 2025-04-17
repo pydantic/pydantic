@@ -430,15 +430,9 @@ def test_leak_model(validator):
 
         field_schema = core_schema.int_schema()
         if validator == 'field':
-            field_schema = core_schema.with_info_before_validator_function(
-                Model._validator, field_schema, field_name='a'
-            )
-            field_schema = core_schema.with_info_wrap_validator_function(
-                Model._wrap_validator, field_schema, field_name='a'
-            )
-            field_schema = core_schema.with_info_after_validator_function(
-                Model._validator, field_schema, field_name='a'
-            )
+            field_schema = core_schema.with_info_before_validator_function(Model._validator, field_schema)
+            field_schema = core_schema.with_info_wrap_validator_function(Model._wrap_validator, field_schema)
+            field_schema = core_schema.with_info_after_validator_function(Model._validator, field_schema)
 
         model_schema = core_schema.model_schema(
             Model, core_schema.model_fields_schema({'a': core_schema.model_field(field_schema)})
