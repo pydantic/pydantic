@@ -234,8 +234,8 @@ class ModelMetaclass(ABCMeta):
                 complete_model_class(
                     cls,
                     config_wrapper,
+                    ns_resolver,
                     raise_errors=False,
-                    ns_resolver=ns_resolver,
                     create_model_module=_create_model_module,
                 )
 
@@ -572,8 +572,8 @@ def complete_model_class(
     Args:
         cls: BaseModel or dataclass.
         config_wrapper: The config wrapper instance.
-        raise_errors: Whether to raise errors.
         ns_resolver: The namespace resolver instance to use during schema building.
+        raise_errors: Whether to raise errors.
         create_model_module: The module of the class to be created, if created by `create_model`.
 
     Returns:

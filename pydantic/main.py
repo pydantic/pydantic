@@ -640,8 +640,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         return _model_construction.complete_model_class(
             cls,
             _config.ConfigWrapper(cls.model_config, check=False),
+            ns_resolver,
             raise_errors=raise_errors,
-            ns_resolver=ns_resolver,
         )
 
     @classmethod
