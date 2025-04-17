@@ -22,7 +22,7 @@ from ..plugin._schema_validator import create_schema_validator
 from ..warnings import GenericBeforeBaseModelWarning, PydanticDeprecatedSince20
 from ._config import ConfigWrapper
 from ._decorators import DecoratorInfos, PydanticDescriptorProxy, get_attribute_from_bases, unwrap_wrapped_function
-from ._fields import collect_model_fields, is_valid_field_name, is_valid_privateattr_name
+from ._fields import collect_model_fields, is_valid_field_name, is_valid_privateattr_name, rebuild_model_fields
 from ._generate_schema import GenerateSchema, InvalidSchemaError
 from ._generics import PydanticGenericMetadata, get_model_typevars_map
 from ._import_utils import import_cached_base_model, import_cached_field_info
@@ -227,9 +227,6 @@ class ModelMetaclass(ABCMeta):
             }
 
             if config_wrapper.defer_build:
-                # TODO we can also stop there if `__pydantic_fields_complete__` is False.
-                # However, `set_model_fields()` is currently lenient and we don't have access to the `NameError`.
-                # (which is useful as we can provide the name in the error message: `set_model_mock(cls, e.name)`)
                 set_model_mocks(cls)
             else:
                 # Any operation that requires accessing the field infos instances should be put inside
@@ -237,8 +234,8 @@ class ModelMetaclass(ABCMeta):
                 complete_model_class(
                     cls,
                     config_wrapper,
+                    ns_resolver,
                     raise_errors=False,
-                    ns_resolver=ns_resolver,
                     create_model_module=_create_model_module,
                 )
 
@@ -562,9 +559,9 @@ def set_model_fields(
 def complete_model_class(
     cls: type[BaseModel],
     config_wrapper: ConfigWrapper,
+    ns_resolver: NsResolver,
     *,
     raise_errors: bool = True,
-    ns_resolver: NsResolver | None = None,
     create_model_module: str | None = None,
 ) -> bool:
     """Finish building a model class.
@@ -575,8 +572,8 @@ def complete_model_class(
     Args:
         cls: BaseModel or dataclass.
         config_wrapper: The config wrapper instance.
-        raise_errors: Whether to raise errors.
         ns_resolver: The namespace resolver instance to use during schema building.
+        raise_errors: Whether to raise errors.
         create_model_module: The module of the class to be created, if created by `create_model`.
 
     Returns:
@@ -587,6 +584,32 @@ def complete_model_class(
             and `raise_errors=True`.
     """
     typevars_map = get_model_typevars_map(cls)
+
+    if not cls.__pydantic_fields_complete__:
+        # Note: when coming from `ModelMetaclass.__new__()`, this results in fields being built twice.
+        # We do so a second time here so that we can get the `NameError` for the specific undefined annotation.
+        # Alternatively, we could let `GenerateSchema()` raise the error, but there are cases where incomplete
+        # fields are inherited in `collect_model_fields()` and can actually have their annotation resolved in the
+        # generate schema process. As we want to avoid having `__pydantic_fields_complete__` set to `False`
+        # when `__pydantic_complete__` is `True`, we rebuild here:
+        try:
+            cls.__pydantic_fields__ = rebuild_model_fields(
+                cls,
+                ns_resolver=ns_resolver,
+                typevars_map=typevars_map,
+            )
+        except NameError as e:
+            exc = PydanticUndefinedAnnotation.from_name_error(e)
+            set_model_mocks(cls, f'`{exc.name}`')
+            if raise_errors:
+                raise exc from e
+
+        if not raise_errors and not cls.__pydantic_fields_complete__:
+            # No need to continue with schema gen, it is guaranteed to fail
+            return False
+
+        assert cls.__pydantic_fields_complete__
+
     gen_schema = GenerateSchema(
         config_wrapper,
         ns_resolver,
@@ -627,7 +650,6 @@ def complete_model_class(
         config_wrapper.plugin_settings,
     )
     cls.__pydantic_serializer__ = SchemaSerializer(schema, core_config)
-    cls.__pydantic_complete__ = True
 
     # set __signature__ attr only for model class, but not for its instances
     # (because instances can define `__call__`, and `inspect.signature` shouldn't
@@ -642,6 +664,9 @@ def complete_model_class(
             extra=config_wrapper.extra,
         ),
     )
+
+    cls.__pydantic_complete__ = True
+
     return True
 
 
