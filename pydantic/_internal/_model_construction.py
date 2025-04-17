@@ -586,7 +586,12 @@ def complete_model_class(
     typevars_map = get_model_typevars_map(cls)
 
     if not cls.__pydantic_fields_complete__:
-        # Rebuild the model fields so we can get the NameError for the specific undefined annotation
+        # Note: when coming from `ModelMetaclass.__new__()`, this results in fields being built twice.
+        # We do so a second time here so that we can get the `NameError` for the specific undefined annotation.
+        # Alternatively, we could let `GenerateSchema()` raise the error, but there are cases where incomplete
+        # fields are inherited in `collect_model_fields()` and can actually have their annotation resolved in the
+        # generate schema process. As we want to avoid having `__pydantic_fields_complete__` set to `False`
+        # when `__pydantic_complete__` is `True`, we rebuild here:
         try:
             cls.__pydantic_fields__ = rebuild_model_fields(
                 cls,
