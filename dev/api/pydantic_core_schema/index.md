@@ -2617,7 +2617,7 @@ def fn(v: bytes, info: core_schema.ValidationInfo) -> str:
     return v.decode() + 'world'
 
 func_schema = core_schema.with_info_before_validator_function(
-    function=fn, schema=core_schema.str_schema(), field_name='a'
+    function=fn, schema=core_schema.str_schema()
 )
 schema = core_schema.typed_dict_schema({'a': core_schema.typed_dict_field(func_schema)})
 
@@ -2628,7 +2628,7 @@ assert v.validate_python({'a': b'hello '}) == {'a': 'hello world'}
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `function` | `WithInfoValidatorFunction` | The validator function to call | *required* | | `field_name` | `str | None` | The name of the field | `None` | | `schema` | `CoreSchema` | The schema to validate the output of the validator function | *required* | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `json_schema_input_schema` | `CoreSchema | None` | The core schema to be used to generate the corresponding JSON Schema input type | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `function` | `WithInfoValidatorFunction` | The validator function to call | *required* | | `field_name` | `str | None` | The name of the field this validator is applied to, if any (deprecated) | `None` | | `schema` | `CoreSchema` | The schema to validate the output of the validator function | *required* | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `json_schema_input_schema` | `CoreSchema | None` | The core schema to be used to generate the corresponding JSON Schema input type | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
 Source code in `pydantic_core/core_schema.py`
 
@@ -2656,7 +2656,7 @@ def with_info_before_validator_function(
         return v.decode() + 'world'
 
     func_schema = core_schema.with_info_before_validator_function(
-        function=fn, schema=core_schema.str_schema(), field_name='a'
+        function=fn, schema=core_schema.str_schema()
     )
     schema = core_schema.typed_dict_schema({'a': core_schema.typed_dict_field(func_schema)})
 
@@ -2666,13 +2666,20 @@ def with_info_before_validator_function(
 
     Args:
         function: The validator function to call
-        field_name: The name of the field
+        field_name: The name of the field this validator is applied to, if any (deprecated)
         schema: The schema to validate the output of the validator function
         ref: optional unique identifier of the schema, used to reference the schema in other places
         json_schema_input_schema: The core schema to be used to generate the corresponding JSON Schema input type
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
+    if field_name is not None:
+        warnings.warn(
+            'The `field_name` argument on `with_info_before_validator_function` is deprecated, it will be passed to the function through `ValidationState` instead.',
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
     return _dict_not_none(
         type='function-before',
         function=_dict_not_none(type='with-info', function=function, field_name=field_name),
@@ -2794,7 +2801,7 @@ def fn(v: str, info: core_schema.ValidationInfo) -> str:
     return v + 'world'
 
 func_schema = core_schema.with_info_after_validator_function(
-    function=fn, schema=core_schema.str_schema(), field_name='a'
+    function=fn, schema=core_schema.str_schema()
 )
 schema = core_schema.typed_dict_schema({'a': core_schema.typed_dict_field(func_schema)})
 
@@ -2805,7 +2812,7 @@ assert v.validate_python({'a': b'hello '}) == {'a': 'hello world'}
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `function` | `WithInfoValidatorFunction` | The validator function to call after the schema is validated | *required* | | `schema` | `CoreSchema` | The schema to validate before the validator function | *required* | | `field_name` | `str | None` | The name of the field this validators is applied to, if any | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `function` | `WithInfoValidatorFunction` | The validator function to call after the schema is validated | *required* | | `schema` | `CoreSchema` | The schema to validate before the validator function | *required* | | `field_name` | `str | None` | The name of the field this validator is applied to, if any (deprecated) | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
 Source code in `pydantic_core/core_schema.py`
 
@@ -2832,7 +2839,7 @@ def with_info_after_validator_function(
         return v + 'world'
 
     func_schema = core_schema.with_info_after_validator_function(
-        function=fn, schema=core_schema.str_schema(), field_name='a'
+        function=fn, schema=core_schema.str_schema()
     )
     schema = core_schema.typed_dict_schema({'a': core_schema.typed_dict_field(func_schema)})
 
@@ -2843,11 +2850,18 @@ def with_info_after_validator_function(
     Args:
         function: The validator function to call after the schema is validated
         schema: The schema to validate before the validator function
-        field_name: The name of the field this validators is applied to, if any
+        field_name: The name of the field this validator is applied to, if any (deprecated)
         ref: optional unique identifier of the schema, used to reference the schema in other places
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
+    if field_name is not None:
+        warnings.warn(
+            'The `field_name` argument on `with_info_after_validator_function` is deprecated, it will be passed to the function through `ValidationState` instead.',
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
     return _dict_not_none(
         type='function-after',
         function=_dict_not_none(type='with-info', function=function, field_name=field_name),
@@ -2988,7 +3002,7 @@ assert v.validate_python('hello ') == 'hello world'
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `function` | `WithInfoWrapValidatorFunction` | The validator function to call | *required* | | `schema` | `CoreSchema` | The schema to validate the output of the validator function | *required* | | `field_name` | `str | None` | The name of the field this validators is applied to, if any | `None` | | `json_schema_input_schema` | `CoreSchema | None` | The core schema to be used to generate the corresponding JSON Schema input type | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `function` | `WithInfoWrapValidatorFunction` | The validator function to call | *required* | | `schema` | `CoreSchema` | The schema to validate the output of the validator function | *required* | | `field_name` | `str | None` | The name of the field this validator is applied to, if any (deprecated) | `None` | | `json_schema_input_schema` | `CoreSchema | None` | The core schema to be used to generate the corresponding JSON Schema input type | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
 Source code in `pydantic_core/core_schema.py`
 
@@ -3028,12 +3042,19 @@ def with_info_wrap_validator_function(
     Args:
         function: The validator function to call
         schema: The schema to validate the output of the validator function
-        field_name: The name of the field this validators is applied to, if any
+        field_name: The name of the field this validator is applied to, if any (deprecated)
         json_schema_input_schema: The core schema to be used to generate the corresponding JSON Schema input type
         ref: optional unique identifier of the schema, used to reference the schema in other places
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
+    if field_name is not None:
+        warnings.warn(
+            'The `field_name` argument on `with_info_wrap_validator_function` is deprecated, it will be passed to the function through `ValidationState` instead.',
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
     return _dict_not_none(
         type='function-wrap',
         function=_dict_not_none(type='with-info', function=function, field_name=field_name),
@@ -3155,7 +3176,7 @@ assert v.validate_python('hello ') == 'hello world'
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `function` | `WithInfoValidatorFunction` | The validator function to call | *required* | | `field_name` | `str | None` | The name of the field this validators is applied to, if any | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `json_schema_input_schema` | `CoreSchema | None` | The core schema to be used to generate the corresponding JSON Schema input type | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `function` | `WithInfoValidatorFunction` | The validator function to call | *required* | | `field_name` | `str | None` | The name of the field this validator is applied to, if any (deprecated) | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `json_schema_input_schema` | `CoreSchema | None` | The core schema to be used to generate the corresponding JSON Schema input type | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
 Source code in `pydantic_core/core_schema.py`
 
@@ -3186,12 +3207,19 @@ def with_info_plain_validator_function(
 
     Args:
         function: The validator function to call
-        field_name: The name of the field this validators is applied to, if any
+        field_name: The name of the field this validator is applied to, if any (deprecated)
         ref: optional unique identifier of the schema, used to reference the schema in other places
         json_schema_input_schema: The core schema to be used to generate the corresponding JSON Schema input type
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
+    if field_name is not None:
+        warnings.warn(
+            'The `field_name` argument on `with_info_plain_validator_function` is deprecated, it will be passed to the function through `ValidationState` instead.',
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
     return _dict_not_none(
         type='function-plain',
         function=_dict_not_none(type='with-info', function=function, field_name=field_name),

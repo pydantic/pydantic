@@ -1189,7 +1189,7 @@ class CustomType:
         cls, source_type: Any, handler: GetCoreSchemaHandler
     ) -> core_schema.CoreSchema:
         return core_schema.with_info_after_validator_function(
-            cls.validate, handler(int), field_name=handler.field_name
+            cls.validate, handler(int)
         )
 
 
