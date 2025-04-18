@@ -741,6 +741,21 @@ class GenerateSchema:
                 if cls.__pydantic_fields_complete__ or cls is BaseModel_:
                     fields = getattr(cls, '__pydantic_fields__', {})
                 else:
+                    if not hasattr(cls, '__pydantic_fields__'):
+                        # This happens when we have a loop in the schema generation:
+                        # class Base[T](BaseModel):
+                        #     t: T
+                        #
+                        # class Other(BaseModel):
+                        #     b: 'Base[Other]'
+                        # When we build fields for `Other`, we evaluate the forward annotation.
+                        # At this point, `Other` doesn't have the model fields set. We create
+                        # `Base[Other]`; model fields are successfully built, and we try to generate
+                        # a schema for `t: Other`. As `Other.__pydantic_fields__` aren't set, we abort.
+                        raise PydanticUndefinedAnnotation(
+                            name=cls.__name__,
+                            message=f'Class {cls.__name__!r} is not defined',
+                        )
                     try:
                         fields = rebuild_model_fields(
                             cls,
