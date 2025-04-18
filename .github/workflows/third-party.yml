@@ -576,7 +576,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [ '3.11', '3.12' ]
+        python-version: [ '3.12' ]
 
     steps:
       - name: Checkout Dify
