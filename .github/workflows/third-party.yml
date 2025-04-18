@@ -564,19 +564,17 @@ jobs:
         working-directory: ./libs/langchain
         run: make test
 
-
   test-dify:
     name: Test Dify (main branch) on Python ${{ matrix.python-version }}
     # If 'schedule' was the trigger, don't run it on contributors' forks
-#    if: |
-#      github.event_name == 'workflow_dispatch' ||
-#      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
-#      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
       matrix:
-        python-version: [ '3.12' ]
+        python-version: ['3.12']
 
     steps:
       - name: Checkout Dify
@@ -607,7 +605,7 @@ jobs:
       - name: List installed dependencies
         run: uv pip --directory api list
 
-      - name: Run Unit tests
+      - name: Run Dify unit tests
         run: uv run --project api bash dev/pytest/pytest_unit_tests.sh
 
   create-issue-on-failure:
@@ -641,7 +639,8 @@ jobs:
         needs.test-polar.result == 'failure' ||
         needs.test-semantic-kernel.result == 'failure' ||
         needs.test-bentoml.result == 'failure' ||
-        needs.test-langchain.result == 'failure'
+        needs.test-langchain.result == 'failure' ||
+        needs.test-dify.result == 'failure'
       )
     permissions:
       issues: write
