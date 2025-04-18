@@ -218,7 +218,6 @@ def filter_field_decorator_info_by_field(
 def apply_each_item_validators(
     schema: core_schema.CoreSchema,
     each_item_validators: list[Decorator[ValidatorDecoratorInfo]],
-    field_name: str | None,
 ) -> core_schema.CoreSchema:
     # This V1 compatibility shim should eventually be removed
 
@@ -230,21 +229,20 @@ def apply_each_item_validators(
     # note that this won't work for any Annotated types that get wrapped by a function validator
     # but that's okay because that didn't exist in V1
     if schema['type'] == 'nullable':
-        schema['schema'] = apply_each_item_validators(schema['schema'], each_item_validators, field_name)
+        schema['schema'] = apply_each_item_validators(schema['schema'], each_item_validators)
         return schema
     elif schema['type'] == 'tuple':
         if (variadic_item_index := schema.get('variadic_item_index')) is not None:
             schema['items_schema'][variadic_item_index] = apply_validators(
                 schema['items_schema'][variadic_item_index],
                 each_item_validators,
-                field_name,
             )
     elif is_list_like_schema_with_items_schema(schema):
         inner_schema = schema.get('items_schema', core_schema.any_schema())
-        schema['items_schema'] = apply_validators(inner_schema, each_item_validators, field_name)
+        schema['items_schema'] = apply_validators(inner_schema, each_item_validators)
     elif schema['type'] == 'dict':
         inner_schema = schema.get('values_schema', core_schema.any_schema())
-        schema['values_schema'] = apply_validators(inner_schema, each_item_validators, field_name)
+        schema['values_schema'] = apply_validators(inner_schema, each_item_validators)
     else:
         raise TypeError(
             f'`@validator(..., each_item=True)` cannot be applied to fields with a schema of {schema["type"]}'
@@ -823,7 +821,7 @@ class GenerateSchema:
                         extras_keys_schema=extras_keys_schema,
                         model_name=cls.__name__,
                     )
-                    inner_schema = apply_validators(fields_schema, decorators.root_validators.values(), None)
+                    inner_schema = apply_validators(fields_schema, decorators.root_validators.values())
                     inner_schema = apply_model_validators(inner_schema, model_validators, 'inner')
 
                     model_schema = core_schema.model_schema(
@@ -1363,9 +1361,9 @@ class GenerateSchema:
             field_info.validate_default = True
         each_item_validators = [v for v in this_field_validators if v.info.each_item is True]
         this_field_validators = [v for v in this_field_validators if v not in each_item_validators]
-        schema = apply_each_item_validators(schema, each_item_validators, name)
+        schema = apply_each_item_validators(schema, each_item_validators)
 
-        schema = apply_validators(schema, this_field_validators, name)
+        schema = apply_validators(schema, this_field_validators)
 
         # the default validator needs to go outside of any other validators
         # so that it is the topmost validator for the field validator
@@ -1942,7 +1940,7 @@ class GenerateSchema:
                     collect_init_only=has_post_init,
                 )
 
-                inner_schema = apply_validators(args_schema, decorators.root_validators.values(), None)
+                inner_schema = apply_validators(args_schema, decorators.root_validators.values())
 
                 model_validators = decorators.model_validators.values()
                 inner_schema = apply_model_validators(inner_schema, model_validators, 'inner')
@@ -2454,24 +2452,16 @@ class GenerateSchema:
 
 _VALIDATOR_F_MATCH: Mapping[
     tuple[FieldValidatorModes, Literal['no-info', 'with-info']],
-    Callable[[Callable[..., Any], core_schema.CoreSchema, str | None], core_schema.CoreSchema],
+    Callable[[Callable[..., Any], core_schema.CoreSchema], core_schema.CoreSchema],
 ] = {
-    ('before', 'no-info'): lambda f, schema, _: core_schema.no_info_before_validator_function(f, schema),
-    ('after', 'no-info'): lambda f, schema, _: core_schema.no_info_after_validator_function(f, schema),
-    ('plain', 'no-info'): lambda f, _1, _2: core_schema.no_info_plain_validator_function(f),
-    ('wrap', 'no-info'): lambda f, schema, _: core_schema.no_info_wrap_validator_function(f, schema),
-    ('before', 'with-info'): lambda f, schema, field_name: core_schema.with_info_before_validator_function(
-        f, schema, field_name=field_name
-    ),
-    ('after', 'with-info'): lambda f, schema, field_name: core_schema.with_info_after_validator_function(
-        f, schema, field_name=field_name
-    ),
-    ('plain', 'with-info'): lambda f, _, field_name: core_schema.with_info_plain_validator_function(
-        f, field_name=field_name
-    ),
-    ('wrap', 'with-info'): lambda f, schema, field_name: core_schema.with_info_wrap_validator_function(
-        f, schema, field_name=field_name
-    ),
+    ('before', 'no-info'): lambda f, schema: core_schema.no_info_before_validator_function(f, schema),
+    ('after', 'no-info'): lambda f, schema: core_schema.no_info_after_validator_function(f, schema),
+    ('plain', 'no-info'): lambda f, _: core_schema.no_info_plain_validator_function(f),
+    ('wrap', 'no-info'): lambda f, schema: core_schema.no_info_wrap_validator_function(f, schema),
+    ('before', 'with-info'): lambda f, schema: core_schema.with_info_before_validator_function(f, schema),
+    ('after', 'with-info'): lambda f, schema: core_schema.with_info_after_validator_function(f, schema),
+    ('plain', 'with-info'): lambda f, _: core_schema.with_info_plain_validator_function(f),
+    ('wrap', 'with-info'): lambda f, schema: core_schema.with_info_wrap_validator_function(f, schema),
 }
 
 
@@ -2482,7 +2472,6 @@ def apply_validators(
     validators: Iterable[Decorator[RootValidatorDecoratorInfo]]
     | Iterable[Decorator[ValidatorDecoratorInfo]]
     | Iterable[Decorator[FieldValidatorDecoratorInfo]],
-    field_name: str | None,
 ) -> core_schema.CoreSchema:
     """Apply validators to a schema.
 
@@ -2498,7 +2487,7 @@ def apply_validators(
         info_arg = inspect_validator(validator.func, validator.info.mode)
         val_type = 'with-info' if info_arg else 'no-info'
 
-        schema = _VALIDATOR_F_MATCH[(validator.info.mode, val_type)](validator.func, schema, field_name)
+        schema = _VALIDATOR_F_MATCH[(validator.info.mode, val_type)](validator.func, schema)
     return schema
 
 

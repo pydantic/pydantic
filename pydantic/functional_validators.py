@@ -75,7 +75,7 @@ class AfterValidator:
         info_arg = _inspect_validator(self.func, 'after')
         if info_arg:
             func = cast(core_schema.WithInfoValidatorFunction, self.func)
-            return core_schema.with_info_after_validator_function(func, schema=schema, field_name=handler.field_name)
+            return core_schema.with_info_after_validator_function(func, schema=schema)
         else:
             func = cast(core_schema.NoInfoValidatorFunction, self.func)
             return core_schema.no_info_after_validator_function(func, schema=schema)
@@ -136,7 +136,6 @@ class BeforeValidator:
             return core_schema.with_info_before_validator_function(
                 func,
                 schema=schema,
-                field_name=handler.field_name,
                 json_schema_input_schema=input_schema,
             )
         else:
@@ -230,7 +229,6 @@ class PlainValidator:
             func = cast(core_schema.WithInfoValidatorFunction, self.func)
             return core_schema.with_info_plain_validator_function(
                 func,
-                field_name=handler.field_name,
                 serialization=serialization,  # pyright: ignore[reportArgumentType]
                 json_schema_input_schema=input_schema,
             )
@@ -307,7 +305,6 @@ class WrapValidator:
             return core_schema.with_info_wrap_validator_function(
                 func,
                 schema=schema,
-                field_name=handler.field_name,
                 json_schema_input_schema=input_schema,
             )
         else:
