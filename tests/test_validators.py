@@ -21,7 +21,7 @@ from unittest.mock import MagicMock
 import pytest
 from dirty_equals import HasRepr, IsInstance
 from pydantic_core import core_schema
-from typing_extensions import TypedDict
+from typing_extensions import TypeAliasType, TypedDict
 
 from pydantic import (
     BaseModel,
@@ -2777,6 +2777,29 @@ def test_plain_validator_field_name():
     m = MyModel(x='123', foobar='1')
     # insert_assert(m.foobar)
     assert m.foobar == {'value': '1', 'field_name': 'foobar', 'data': {'x': 123}}
+
+
+def test_validator_field_name_with_reused_type_alias():
+    calls = []
+
+    def validate_my_field(value: str, info: ValidationInfo):
+        calls.append((info.field_name, value))
+        return value
+
+    MyField = TypeAliasType('MyField', Annotated[str, AfterValidator(validate_my_field)])
+
+    class MyModel(BaseModel):
+        field1: MyField
+        field2: MyField
+
+    MyModel.model_validate(
+        {
+            'field1': 'value1',
+            'field2': 'value2',
+        }
+    )
+
+    assert calls == [('field1', 'value1'), ('field2', 'value2')]
 
 
 def validate_wrap(value: Any, handler: core_schema.ValidatorFunctionWrapHandler, info: core_schema.ValidationInfo):
