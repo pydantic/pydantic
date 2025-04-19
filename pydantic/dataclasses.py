@@ -3,6 +3,7 @@
 from __future__ import annotations as _annotations
 
 import dataclasses
+import functools
 import sys
 import types
 from typing import TYPE_CHECKING, Any, Callable, Generic, Literal, NoReturn, TypeVar, overload
@@ -263,6 +264,35 @@ def dataclass(
             frozen=frozen_,
             **kwargs,
         )
+
+        if config_wrapper.validate_assignment:
+
+            @functools.wraps(cls.__setattr__)
+            def validated_setattr(instance: Any, field: str, value: str, /) -> None:
+                type(instance).__pydantic_validator__.validate_assignment(instance, field, value)
+
+            cls.__setattr__ = validated_setattr.__get__(None, cls)  # type: ignore
+
+            if slots and not hasattr(cls, '__setstate__'):
+                # If slots is set, `pickle` (relied on by `copy.copy()`) will use
+                # `__setattr__()` to reconstruct the dataclass. However, the custom
+                # `__setattr__()` set above relies on `validate_assignment()`, which
+                # in turn excepts all the field values to be already present on the
+                # instance, resulting in attribute errors.
+                # As such, we make use of `object.__setattr__()` instead.
+                # Note that we do so only if `__setstate__()` isn't already set (this is the
+                # case if on top of `slots`, `frozen` is used).
+
+                # Taken from `dataclasses._dataclass_get/setstate()`:
+                def _dataclass_getstate(self: Any) -> list[Any]:
+                    return [getattr(self, f.name) for f in dataclasses.fields(self)]
+
+                def _dataclass_setstate(self: Any, state: list[Any]) -> None:
+                    for field, value in zip(dataclasses.fields(self), state):
+                        object.__setattr__(self, field.name, value)
+
+                cls.__getstate__ = _dataclass_getstate  # pyright: ignore[reportAttributeAccessIssue]
+                cls.__setstate__ = _dataclass_setstate  # pyright: ignore[reportAttributeAccessIssue]
 
         # This is an undocumented attribute to distinguish stdlib/Pydantic dataclasses.
         # It should be set as early as possible:
