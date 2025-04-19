@@ -656,6 +656,18 @@ def test_alias_generator():
     }
 
 
+def test_alias_generator_defer_build() -> None:
+    class Model(BaseModel):
+        model_config = {'alias_generator': to_camel, 'defer_build': True}
+
+        @computed_field
+        @property
+        def my_prop(self) -> int:
+            return 1
+
+    assert Model.__pydantic_decorators__.computed_fields['my_prop'].info.alias == 'myProp'
+
+
 def make_base_model() -> Any:
     class CompModel(BaseModel):
         pass
