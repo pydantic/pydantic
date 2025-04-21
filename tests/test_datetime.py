@@ -89,6 +89,7 @@ def date_model_fixture():
         (1e1000, Err('Input should be a valid date or datetime, dates after 9999')),
         (float('-infinity'), Err('Input should be a valid date or datetime, dates before 0000')),
         (float('nan'), Err('Input should be a valid date or datetime, NaN values not permitted')),
+        ({'year': 2020, 'month': 1, 'day': 1}, Err('Input should be a valid date')),
     ],
 )
 def test_date_parsing(DateModel, value, result):
@@ -135,6 +136,7 @@ def time_model_fixture():
         ('11:05-06:00', time(11, 5, 0, tzinfo=create_tz(-360))),
         ('11:05+06:00', time(11, 5, 0, tzinfo=create_tz(360))),
         ('11:05:00-25:00', Err('Input should be in a valid time format, timezone offset must be less than 24 hours')),
+        ({'hour': 9, 'minute': 15, 'second': 0}, Err('Input should be a valid time')),
     ],
 )
 def test_time_parsing(TimeModel, value, result):
@@ -187,6 +189,7 @@ def datetime_model_fixture():
         (float('-inf'), Err('Input should be a valid datetime, dates before 0000')),
         (1e50, Err('Input should be a valid datetime, dates after 9999')),
         (float('nan'), Err('Input should be a valid datetime, NaN values not permitted')),
+        ({'year': 2012, 'month': 4, 'day': 1, 'hours': 9, 'minute': 15, 'second': 0}, Err("1 validation error for DatetimeModel\ndt\n  Input should be a valid datetime")),
     ],
 )
 def test_datetime_parsing(DatetimeModel, value, result):
