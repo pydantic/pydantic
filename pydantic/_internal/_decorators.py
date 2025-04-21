@@ -515,9 +515,11 @@ class DecoratorInfos:
         if hasattr(model_dc, '__pydantic_decorators__'):
             is_overridden, duplicated_methods = is_method_overridden(model_dc)
             if is_overridden:
-                raise RuntimeError(
+                raise PydanticUserError(
                     f'this method {duplicated_methods} is overriding existing method',
+                    code=None,
                 )
+
         return res
 
 
@@ -613,7 +615,7 @@ def inspect_field_serializer(serializer: Callable[..., Any], mode: Literal['plai
     if info_arg is None:
         raise PydanticUserError(
             f'Unrecognized field_serializer function signature for {serializer} with `mode={mode}`:{sig}',
-            code='field-serializer-signature',
+            code='validator-invalid-fields',
         )
 
     return is_field_serializer, info_arg
