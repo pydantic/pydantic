@@ -40,7 +40,7 @@ Each step in the pipeline can be:
 
 <!-- TODO: (@sydney-runkle) add more documentation once we solidify the API during the experimental phase -->
 
-Note that the following example attempts to be exhaustive at the cost of complexity: if you find yourself writing this many transformations in type annotations you may want to consider having a `UserIn` and `UserOut` model (example below) or similar where you make the transformations via idomatic plain Python code.
+Note that the following example attempts to be exhaustive at the cost of complexity: if you find yourself writing this many transformations in type annotations you may want to consider having a `UserIn` and `UserOut` model (example below) or similar where you make the transformations via idiomatic plain Python code.
 These APIs are meant for situations where the code savings are significant and the added complexity is relatively small.
 
 ```python

@@ -2584,7 +2584,7 @@ for their kind support.
 Thank you to pydantic's sponsors: @matin, @tiangolo, @chdsbd, @jorgecarleitao, and 1 anonymous sponsor for their kind support.
 
 * Modify validators for `conlist` and `conset` to not have `always=True`, [#1682](https://github.com/pydantic/pydantic/pull/1682) by @samuelcolvin
-* add port check to `AnyUrl` (can't exceed 65536) ports are 16 insigned bits: `0 <= port <= 2**16-1` src: [rfc793 header format](https://tools.ietf.org/html/rfc793#section-3.1), [#1654](https://github.com/pydantic/pydantic/pull/1654) by @flapili
+* add port check to `AnyUrl` (can't exceed 65536) ports are 16 unsigned bits: `0 <= port <= 2**16-1` src: [rfc793 header format](https://tools.ietf.org/html/rfc793#section-3.1), [#1654](https://github.com/pydantic/pydantic/pull/1654) by @flapili
 * Document default `regex` anchoring semantics, [#1648](https://github.com/pydantic/pydantic/pull/1648) by @yurikhan
 * Use `chain.from_iterable` in class_validators.py. This is a faster and more idiomatic way of using `itertools.chain`.
   Instead of computing all the items in the iterable and storing them in memory, they are computed one-by-one and never
