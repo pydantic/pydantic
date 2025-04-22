@@ -4229,7 +4229,7 @@ for performance reasons, you may want to profile your use case before assuming i
 the <code>__pydantic_extra__</code> dictionary and saved to the model's <code>__dict__</code> attribute.</li>
 <li>For models with <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.extra"><code>extra</code></a> set to <code>'ignore'</code>, data not corresponding to fields will be ignored — that is,
 not stored in <code>__pydantic_extra__</code> or <code>__dict__</code> on the instance.</li>
-<li>Unlike when instiating the model with validation, a call to <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_construct"><code>model_construct()</code></a> with <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.extra"><code>extra</code></a> set to <code>'forbid'</code> doesn't raise an error in the presence of data not corresponding to fields. Rather, said input data is simply ignored.</li>
+<li>Unlike when instantiating the model with validation, a call to <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_construct"><code>model_construct()</code></a> with <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.extra"><code>extra</code></a> set to <code>'forbid'</code> doesn't raise an error in the presence of data not corresponding to fields. Rather, said input data is simply ignored.</li>
 </ul>
 </div>
 <h2 id="generic-models">Generic models<a class="headerlink" href="#generic-models" title="Permanent link">&para;</a></h2>

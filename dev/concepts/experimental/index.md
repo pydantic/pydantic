@@ -40,7 +40,7 @@ Each step in the pipeline can be:
 - A constraint step that checks the data against a condition
 - A predicate step that checks the data against a condition and raises an error if it returns `False`
 
-Note that the following example attempts to be exhaustive at the cost of complexity: if you find yourself writing this many transformations in type annotations you may want to consider having a `UserIn` and `UserOut` model (example below) or similar where you make the transformations via idomatic plain Python code. These APIs are meant for situations where the code savings are significant and the added complexity is relatively small.
+Note that the following example attempts to be exhaustive at the cost of complexity: if you find yourself writing this many transformations in type annotations you may want to consider having a `UserIn` and `UserOut` model (example below) or similar where you make the transformations via idiomatic plain Python code. These APIs are meant for situations where the code savings are significant and the added complexity is relatively small.
 
 ```python
 from __future__ import annotations

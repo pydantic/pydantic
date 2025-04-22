@@ -12373,7 +12373,7 @@ for their kind support.</p>
 <p>Thank you to pydantic's sponsors: <a href="https://github.com/matin">@matin</a>, <a href="https://github.com/tiangolo">@tiangolo</a>, <a href="https://github.com/chdsbd">@chdsbd</a>, <a href="https://github.com/jorgecarleitao">@jorgecarleitao</a>, and 1 anonymous sponsor for their kind support.</p>
 <ul>
 <li>Modify validators for <code>conlist</code> and <code>conset</code> to not have <code>always=True</code>, <a href="https://github.com/pydantic/pydantic/pull/1682">#1682</a> by <a href="https://github.com/samuelcolvin">@samuelcolvin</a></li>
-<li>add port check to <code>AnyUrl</code> (can't exceed 65536) ports are 16 insigned bits: <code>0 &lt;= port &lt;= 2**16-1</code> src: <a href="https://tools.ietf.org/html/rfc793#section-3.1">rfc793 header format</a>, <a href="https://github.com/pydantic/pydantic/pull/1654">#1654</a> by <a href="https://github.com/flapili">@flapili</a></li>
+<li>add port check to <code>AnyUrl</code> (can't exceed 65536) ports are 16 unsigned bits: <code>0 &lt;= port &lt;= 2**16-1</code> src: <a href="https://tools.ietf.org/html/rfc793#section-3.1">rfc793 header format</a>, <a href="https://github.com/pydantic/pydantic/pull/1654">#1654</a> by <a href="https://github.com/flapili">@flapili</a></li>
 <li>Document default <code>regex</code> anchoring semantics, <a href="https://github.com/pydantic/pydantic/pull/1648">#1648</a> by <a href="https://github.com/yurikhan">@yurikhan</a></li>
 <li>Use <code>chain.from_iterable</code> in class_validators.py. This is a faster and more idiomatic way of using <code>itertools.chain</code>.
   Instead of computing all the items in the iterable and storing them in memory, they are computed one-by-one and never

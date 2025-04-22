@@ -739,7 +739,7 @@ On [extra data](#extra-data) behavior with model_construct()
 
 - For models with extra set to `'allow'`, data not corresponding to fields will be correctly stored in the `__pydantic_extra__` dictionary and saved to the model's `__dict__` attribute.
 - For models with extra set to `'ignore'`, data not corresponding to fields will be ignored — that is, not stored in `__pydantic_extra__` or `__dict__` on the instance.
-- Unlike when instiating the model with validation, a call to model_construct() with extra set to `'forbid'` doesn't raise an error in the presence of data not corresponding to fields. Rather, said input data is simply ignored.
+- Unlike when instantiating the model with validation, a call to model_construct() with extra set to `'forbid'` doesn't raise an error in the presence of data not corresponding to fields. Rather, said input data is simply ignored.
 
 ## Generic models
 
