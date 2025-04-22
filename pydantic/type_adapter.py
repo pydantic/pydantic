@@ -299,8 +299,11 @@ class TypeAdapter(Generic[T]):
                 raise AttributeError()
         except AttributeError:
             config_wrapper = _config.ConfigWrapper(self._config)
+            from pydantic._internal._new_api._generate_schema import GenerateSchema
+            from pydantic._internal._new_api._type_registry import pydantic_registry
+            import pydantic._internal._new_api._types
 
-            schema_generator = _generate_schema.GenerateSchema(config_wrapper, ns_resolver=ns_resolver)
+            schema_generator = GenerateSchema(pydantic_registry, config_wrapper, ns_resolver=ns_resolver)
 
             try:
                 core_schema = schema_generator.generate_schema(self._type)

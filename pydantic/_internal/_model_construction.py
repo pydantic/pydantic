@@ -648,11 +648,21 @@ def complete_model_class(
 
         assert cls.__pydantic_fields_complete__
 
-    gen_schema = GenerateSchema(
-        config_wrapper,
-        ns_resolver,
-        typevars_map,
-    )
+    import os
+
+    if os.getenv('NEW_API'):
+        from pydantic._internal._new_api._generate_schema import GenerateSchema as NewGenerateSchema
+        from pydantic._internal._new_api._type_registry import pydantic_registry
+        import pydantic._internal._new_api._types
+
+        gen_schema = NewGenerateSchema(
+            pydantic_registry,
+            config_wrapper,
+            ns_resolver,
+            typevars_map,
+        )
+    else:
+        gen_schema = GenerateSchema(config_wrapper, ns_resolver, typevars_map)
 
     try:
         schema = gen_schema.generate_schema(cls)

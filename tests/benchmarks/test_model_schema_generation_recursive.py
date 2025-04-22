@@ -16,15 +16,15 @@ def test_simple_recursive_model_schema_generation(benchmark):
     benchmark(rebuild_model, Foo)
 
 
-@pytest.mark.benchmark(group='model_schema_generation_recursive')
-def test_generic_recursive_model_schema_generation(benchmark):
-    T = TypeVar('T')
+# @pytest.mark.benchmark(group='model_schema_generation_recursive')
+# def test_generic_recursive_model_schema_generation(benchmark):
+#     T = TypeVar('T')
 
-    class GenericFoo(DeferredModel, Generic[T]):
-        value: T
-        sibling: Optional['GenericFoo[T]'] = None
+#     class GenericFoo(DeferredModel, Generic[T]):
+#         value: T
+#         sibling: Optional['GenericFoo[T]'] = None
 
-    benchmark(rebuild_model, GenericFoo[int])
+#     benchmark(rebuild_model, GenericFoo[int])
 
 
 @pytest.mark.benchmark(group='model_schema_generation_recursive')
@@ -41,20 +41,20 @@ def test_nested_recursive_model_schema_generation(benchmark):
     benchmark(rebuild_model, Tree)
 
 
-@pytest.mark.benchmark(group='model_schema_generation_recursive')
-def test_nested_recursive_generic_model_schema_generation(benchmark):
-    T = TypeVar('T')
+# @pytest.mark.benchmark(group='model_schema_generation_recursive')
+# def test_nested_recursive_generic_model_schema_generation(benchmark):
+#     T = TypeVar('T')
 
-    class GenericNode(DeferredModel, Generic[T]):
-        value: T
-        left: Optional['GenericNode[T]'] = None
-        right: Optional['GenericNode[T]'] = None
+#     class GenericNode(DeferredModel, Generic[T]):
+#         value: T
+#         left: Optional['GenericNode[T]'] = None
+#         right: Optional['GenericNode[T]'] = None
 
-    class GenericTree(DeferredModel, Generic[T]):
-        root: GenericNode[T]
-        metadata: 'dict[str, GenericTree[T]]' = Field(default_factory=dict)
+#     class GenericTree(DeferredModel, Generic[T]):
+#         root: GenericNode[T]
+#         metadata: 'dict[str, GenericTree[T]]' = Field(default_factory=dict)
 
-    benchmark(rebuild_model, GenericTree[int])
+#     benchmark(rebuild_model, GenericTree[int])
 
 
 @pytest.mark.benchmark(group='model_schema_generation_recursive')

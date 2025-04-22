@@ -2725,6 +2725,40 @@ class _Definitions:
             finally:
                 self._recursively_seen.discard(ref)
 
+    if os.getenv('NEW_API'):
+
+        @contextmanager
+        def get_schema_or_ref(self, ref: str, /) -> Generator[core_schema.DefinitionReferenceSchema | None]:
+            """Get a definition for `ref` if one exists.
+
+            If a definition exists, a tuple of `(ref_string, CoreSchema)` is returned.
+            If no definition exists yet, a tuple of `(ref_string, None)` is returned.
+
+            Note that the returned `CoreSchema` will always be a `DefinitionReferenceSchema`,
+            not the actual definition itself.
+
+            This should be called for any type that can be identified by reference.
+            This includes any recursive types.
+
+            At present the following types can be named/recursive:
+
+            - Pydantic model
+            - Pydantic and stdlib dataclasses
+            - Typed dictionaries
+            - Named tuples
+            - `TypeAliasType` instances
+            - Enums
+            """
+            # return the reference if we're either (1) in a cycle or (2) it the reference was already encountered:
+            if ref in self._recursively_seen or ref in self._definitions:
+                yield core_schema.definition_reference_schema(ref)
+            else:
+                self._recursively_seen.add(ref)
+                try:
+                    yield
+                finally:
+                    self._recursively_seen.discard(ref)
+
     def get_schema_from_ref(self, ref: str) -> CoreSchema | None:
         """Resolve the schema from the given reference."""
         return self._definitions.get(ref)

@@ -138,7 +138,13 @@ def complete_dataclass(
         )
 
     typevars_map = get_standard_typevars_map(cls)
+
+    from pydantic._internal._new_api._generate_schema import GenerateSchema
+    from pydantic._internal._new_api._type_registry import pydantic_registry
+    import pydantic._internal._new_api._types
+
     gen_schema = GenerateSchema(
+        pydantic_registry,
         config_wrapper,
         ns_resolver=ns_resolver,
         typevars_map=typevars_map,
