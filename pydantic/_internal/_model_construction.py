@@ -612,7 +612,12 @@ def complete_model_class(
 
         assert cls.__pydantic_fields_complete__
 
+    from pydantic._internal._new_api._generate_schema import GenerateSchema
+    from pydantic._internal._new_api._type_registry import pydantic_registry
+    import pydantic._internal._new_api._types
+
     gen_schema = GenerateSchema(
+        pydantic_registry,
         config_wrapper,
         ns_resolver,
         typevars_map,
