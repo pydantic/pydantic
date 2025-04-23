@@ -48,3 +48,26 @@ def test_schema_serializer_containing_config():
     assert s.to_python(timedelta(seconds=4, microseconds=500_000)) == timedelta(seconds=4, microseconds=500_000)
     assert s.to_python(timedelta(seconds=4, microseconds=500_000), mode='json') == 4.5
     assert s.to_json(timedelta(seconds=4, microseconds=500_000)) == b'4.5'
+
+
+# Should be defined at the module level for pickling to work:
+class Model:
+    __pydantic_serializer__: SchemaSerializer
+    __pydantic_complete__ = True
+
+
+def test_schema_serializer_not_reused_when_unpickling() -> None:
+    s = SchemaSerializer(
+        core_schema.model_schema(
+            cls=Model,
+            schema=core_schema.model_fields_schema(fields={}, model_name='Model'),
+            config={'title': 'Model'},
+            ref='Model:123',
+        )
+    )
+
+    Model.__pydantic_serializer__ = s
+    assert 'Prebuilt' not in str(Model.__pydantic_serializer__)
+
+    reconstructed = pickle.loads(pickle.dumps(Model.__pydantic_serializer__))
+    assert 'Prebuilt' not in str(reconstructed)
