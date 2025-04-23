@@ -51,3 +51,26 @@ def test_schema_validator_tz_pickle() -> None:
     validated = v.validate_python('2022-06-08T12:13:14-12:15')
     assert validated == original
     assert pickle.loads(pickle.dumps(validated)) == validated == original
+
+
+# Should be defined at the module level for pickling to work:
+class Model:
+    __pydantic_validator__: SchemaValidator
+    __pydantic_complete__ = True
+
+
+def test_schema_validator_not_reused_when_unpickling() -> None:
+    s = SchemaValidator(
+        core_schema.model_schema(
+            cls=Model,
+            schema=core_schema.model_fields_schema(fields={}, model_name='Model'),
+            config={'title': 'Model'},
+            ref='Model:123',
+        )
+    )
+
+    Model.__pydantic_validator__ = s
+    assert 'Prebuilt' not in str(Model.__pydantic_validator__)
+
+    reconstructed = pickle.loads(pickle.dumps(Model.__pydantic_validator__))
+    assert 'Prebuilt' not in str(reconstructed)

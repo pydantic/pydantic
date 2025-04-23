@@ -127,7 +127,7 @@ impl SchemaValidator {
     pub fn py_new(py: Python, schema: &Bound<'_, PyAny>, config: Option<&Bound<'_, PyDict>>) -> PyResult<Self> {
         let mut definitions_builder = DefinitionsBuilder::new();
 
-        let validator = build_validator(schema, config, &mut definitions_builder)?;
+        let validator = build_validator_base(schema, config, &mut definitions_builder)?;
         let definitions = definitions_builder.finish()?;
         let py_schema = schema.clone().unbind();
         let py_config = match config {
@@ -157,11 +157,6 @@ impl SchemaValidator {
             validation_error_cause,
             cache_str,
         })
-    }
-
-    pub fn __reduce__<'py>(slf: &Bound<'py, Self>) -> PyResult<(Bound<'py, PyType>, Bound<'py, PyTuple>)> {
-        let init_args = (&slf.get().py_schema, &slf.get().py_config).into_pyobject(slf.py())?;
-        Ok((slf.get_type(), init_args))
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -355,6 +350,11 @@ impl SchemaValidator {
             },
             Err(e) => Err(self.prepare_validation_err(py, e, InputType::Python)),
         }
+    }
+
+    pub fn __reduce__<'py>(slf: &Bound<'py, Self>) -> PyResult<(Bound<'py, PyType>, Bound<'py, PyTuple>)> {
+        let init_args = (&slf.get().py_schema, &slf.get().py_config).into_pyobject(slf.py())?;
+        Ok((slf.get_type(), init_args))
     }
 
     pub fn __repr__(&self, py: Python) -> String {
@@ -555,19 +555,40 @@ macro_rules! validator_match {
     };
 }
 
+// Used when creating the base validator instance, to avoid reusing the instance
+// when unpickling:
+pub fn build_validator_base(
+    schema: &Bound<'_, PyAny>,
+    config: Option<&Bound<'_, PyDict>>,
+    definitions: &mut DefinitionsBuilder<CombinedValidator>,
+) -> PyResult<CombinedValidator> {
+    build_validator_inner(schema, config, definitions, false)
+}
+
 pub fn build_validator(
     schema: &Bound<'_, PyAny>,
     config: Option<&Bound<'_, PyDict>>,
     definitions: &mut DefinitionsBuilder<CombinedValidator>,
+) -> PyResult<CombinedValidator> {
+    build_validator_inner(schema, config, definitions, true)
+}
+
+fn build_validator_inner(
+    schema: &Bound<'_, PyAny>,
+    config: Option<&Bound<'_, PyDict>>,
+    definitions: &mut DefinitionsBuilder<CombinedValidator>,
+    use_prebuilt: bool,
 ) -> PyResult<CombinedValidator> {
     let dict = schema.downcast::<PyDict>()?;
     let py = schema.py();
     let type_: Bound<'_, PyString> = dict.get_as_req(intern!(py, "type"))?;
     let type_ = type_.to_str()?;
 
-    // if we have a SchemaValidator on the type already, use it
-    if let Ok(Some(prebuilt_validator)) = prebuilt::PrebuiltValidator::try_get_from_schema(type_, dict) {
-        return Ok(prebuilt_validator);
+    if use_prebuilt {
+        // if we have a SchemaValidator on the type already, use it
+        if let Ok(Some(prebuilt_validator)) = prebuilt::PrebuiltValidator::try_get_from_schema(type_, dict) {
+            return Ok(prebuilt_validator);
+        }
     }
 
     validator_match!(

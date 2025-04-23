@@ -14,7 +14,7 @@ pub use errors::{PydanticSerializationError, PydanticSerializationUnexpectedValu
 use extra::{CollectWarnings, SerRecursionState, WarningsMode};
 pub(crate) use extra::{DuckTypingSerMode, Extra, SerMode, SerializationState};
 pub use shared::CombinedSerializer;
-use shared::{to_json_bytes, BuildSerializer, TypeSerializer};
+use shared::{to_json_bytes, TypeSerializer};
 
 mod computed_fields;
 mod config;
@@ -91,7 +91,7 @@ impl SchemaSerializer {
     #[pyo3(signature = (schema, config=None))]
     pub fn py_new(schema: Bound<'_, PyDict>, config: Option<&Bound<'_, PyDict>>) -> PyResult<Self> {
         let mut definitions_builder = DefinitionsBuilder::new();
-        let serializer = CombinedSerializer::build(schema.downcast()?, config, &mut definitions_builder)?;
+        let serializer = CombinedSerializer::build_base(schema.downcast()?, config, &mut definitions_builder)?;
         Ok(Self {
             serializer,
             definitions: definitions_builder.finish()?,
