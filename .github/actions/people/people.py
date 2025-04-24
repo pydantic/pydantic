@@ -531,7 +531,6 @@ if __name__ == '__main__':
         'hramezani',
         'Kludex',
         'davidhewitt',
-        'sydney-runkle',
         'alexmojaki',
         'Viicos',
     }
