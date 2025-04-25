@@ -829,8 +829,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 by Pydantic.
 
         Note:
-            You may want to override `__pydantic_on_complete__` instead, which is called once the class
-            and its fields are fully initialized and ready for validation.
+            You may want to override [`__pydantic_on_complete__()`][pydantic.main.BaseModel.__pydantic_on_complete__]
+            instead, which is called once the class and its fields are fully initialized and ready for validation.
         """
         pass
 
@@ -838,9 +838,11 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     def __pydantic_on_complete__(cls) -> None:
         """This is called once the class and its fields are fully initialized and ready to be used.
 
-        This typically happens when the class is created (just before `__pydantic_init_subclass__` is
-        called on the superclass), except when forward annotations are used that could not immediately be resolved.
-        In that case, it will be called later, when the model is rebuilt automatically or explicitly using `model_rebuild`.
+        This typically happens when the class is created (just before
+        [`__pydantic_init_subclass__()`][pydantic.main.BaseModel.__pydantic_init_subclass__] is called on the superclass),
+        except when forward annotations are used that could not immediately be resolved.
+        In that case, it will be called later, when the model is rebuilt automatically or explicitly using
+        [`model_rebuild()`][pydantic.main.BaseModel.model_rebuild].
         """
         pass
 
