@@ -613,19 +613,17 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             Returns `None` if the schema is already "complete" and rebuilding was not required.
             If rebuilding _was_ required, returns `True` if rebuilding was successful, otherwise `False`.
         """
-        if not force and cls.__pydantic_complete__:
+        already_complete = cls.__pydantic_complete__
+        if already_complete and not force:
             return None
+
+        cls.__pydantic_complete__ = False
 
         for attr in ('__pydantic_core_schema__', '__pydantic_validator__', '__pydantic_serializer__'):
             if attr in cls.__dict__:
                 # Deleting the validator/serializer is necessary as otherwise they can get reused in
                 # pydantic-core. Same applies for the core schema that can be reused in schema generation.
                 delattr(cls, attr)
-
-        # If the model is already complete, we don't need to call the on_complete hook again.
-        call_on_complete_hook = not cls.__pydantic_complete__
-
-        cls.__pydantic_complete__ = False
 
         if _types_namespace is not None:
             rebuild_ns = _types_namespace
@@ -645,7 +643,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             _config.ConfigWrapper(cls.model_config, check=False),
             ns_resolver,
             raise_errors=raise_errors,
-            call_on_complete_hook=call_on_complete_hook,
+            # If the model was already complete, we don't need to call the hook again.
+            call_on_complete_hook=not already_complete,
         )
 
     @classmethod
