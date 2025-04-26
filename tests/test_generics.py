@@ -1713,12 +1713,15 @@ def test_generic_recursive_models_parametrized_with_model() -> None:
         t: T
 
     class Other(BaseModel):
-        child: 'Base[Other]'
+        child: 'Optional[Base[Other]]'
 
     with pytest.raises(ValidationError):
-        # In v2.0-2.10, this validated fine (The core schema of Base[Other].t was an empty model).
+        # In v2.0-2.10, this unexpectedly validated fine (The core schema of Base[Other].t was an empty model).
         # Since v2.11, building `Other` raised an unhandled exception.
+        # Now, it works as expected.
         Base[Other].model_validate({'t': {}})
+
+    Base[Other].model_validate({'t': {'child': {'t': {'child': None}}}})
 
 
 @pytest.mark.xfail(reason='Core schema generation is missing the M1 definition')
