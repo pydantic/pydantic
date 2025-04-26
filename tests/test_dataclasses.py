@@ -2430,7 +2430,7 @@ def test_dataclass_slots(dataclass_decorator):
     assert dc.b == 'bar'
 
 
-# Must be defined at the module level to be pickable:
+# Must be defined at the module level to be picklable:
 @pydantic.dataclasses.dataclass(slots=True, config={'validate_assignment': True})
 class DataclassSlotsValidateAssignment:
     a: int

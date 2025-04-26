@@ -277,7 +277,7 @@ def dataclass(
                 # If slots is set, `pickle` (relied on by `copy.copy()`) will use
                 # `__setattr__()` to reconstruct the dataclass. However, the custom
                 # `__setattr__()` set above relies on `validate_assignment()`, which
-                # in turn excepts all the field values to be already present on the
+                # in turn expects all the field values to be already present on the
                 # instance, resulting in attribute errors.
                 # As such, we make use of `object.__setattr__()` instead.
                 # Note that we do so only if `__setstate__()` isn't already set (this is the
