@@ -2085,9 +2085,49 @@ class GenerateJsonSchema:
         Returns:
             The definitions key.
         """
-        # Split the core ref into "components"; generic origins and arguments are each separate components
+        import importlib
+        import typing
+
+        from .main import BaseModel
+
         core_ref, mode = core_mode_ref
+        origin_path = core_ref.split(':', 1)[0]
+        module_path, _, tail = origin_path.rpartition('.')
+        origin_qualname = tail.split('[', 1)[0]
+
+        custom_name: str | None = None
+
+        if module_path:
+            try:
+                mod = importlib.import_module(module_path)
+                origin_cls = getattr(mod, origin_qualname, None)
+            except Exception:
+                origin_cls = None
+        else:
+            origin_cls = None
+
+        if origin_cls and (
+            getattr(origin_cls, 'model_parametrized_name', None) is not BaseModel.model_parametrized_name  # type: ignore[attr-defined]
+        ):
+            literal_match = re.search(r'(Literal\[[^]]+\])', core_ref)
+            if literal_match:
+                literal_expr = literal_match.group(1)  # e.g. Literal['bar', 'baz']
+                try:
+                    literal_type = eval(f'typing.{literal_expr!s}', {'typing': typing})
+                    params_tuple: tuple[type[Any], ...] = (literal_type,)
+                    custom_name = origin_cls.model_parametrized_name(params_tuple)
+                except Exception:
+                    custom_name = None
+
+        if custom_name:
+            defs_key = self.normalize_name(f'{custom_name}-{_MODE_TITLE_MAPPING[mode]}')
+            defs_ref = DefsRef(defs_key)
+            if defs_ref not in self._prioritized_defsref_choices:
+                self._prioritized_defsref_choices[defs_ref] = [defs_ref]
+            return defs_ref
+
         components = re.split(r'([\][,])', core_ref)
+
         # Remove IDs from each component
         components = [x.rsplit(':', 1)[0] for x in components]
         core_ref_no_id = ''.join(components)
@@ -2402,7 +2442,6 @@ def model_json_schema(
     from .main import BaseModel
 
     schema_generator_instance = schema_generator(by_alias=by_alias, ref_template=ref_template)
-
     if isinstance(cls.__pydantic_core_schema__, _mock_val_ser.MockCoreSchema):
         cls.__pydantic_core_schema__.rebuild()
 

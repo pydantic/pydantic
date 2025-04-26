@@ -220,6 +220,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     __pydantic_private__: dict[str, Any] | None = _model_construction.NoInitField(init=False)
     """Values of private attributes set on the model instance."""
 
+    __pydantic_custom_schema_ref__: str | None = None
+    """Holds the custom `$defs` key for a parametrised subclass; None on non-generic models"""
+
     if not TYPE_CHECKING:
         # Prevent `BaseModel` from being instantiated directly
         # (defined in an `if not TYPE_CHECKING` block for clarity and to avoid type checking errors):
@@ -887,6 +890,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                     pass
 
                 submodel = _generics.create_generic_submodel(model_name, origin, args, params)
+                submodel.__pydantic_custom_schema_ref__ = model_name
 
                 _generics.set_cached_generic_type(cls, typevar_values, submodel, origin, args)
 
