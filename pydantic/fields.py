@@ -1133,8 +1133,10 @@ class ModelPrivateAttr(_repr.Representation):
 
     Attributes:
         default: The default value of the attribute if not provided.
-        default_factory: A callable function that generates the default value of the
-            attribute if not provided.
+        default_factory: A callable to generate the default value. The callable can either take 0 arguments
+            (in which case it is called as is) or a single argument containing the validated data (the model's
+            [`__dict__`][object.__dict__]) and the already initialized private attributes.
+            called when a default value is needed for this attribute.
     """
 
     __slots__ = ('default', 'default_factory')
@@ -1230,7 +1232,7 @@ def PrivateAttr(
 def PrivateAttr(
     default: Any = PydanticUndefined,
     *,
-    default_factory: Callable[[], Any] | Callable[[dict[str, Any]], Any] | None = None,
+    default_factory: Callable[[], _T] | Callable[[dict[str, _T]], _T] | None = None,
     init: Literal[False] = False,
 ) -> Any:
     """!!! abstract "Usage Documentation"
@@ -1247,9 +1249,7 @@ def PrivateAttr(
         default_factory: A callable to generate the default value. The callable can either take 0 arguments
             (in which case it is called as is) or a single argument containing the validated data (the model's
             [`__dict__`][object.__dict__]) and the already initialized private attributes.
-            called when a default value is needed for this attribute. The callable can either take 0 arguments
-            (in which case it is called as is) or a single argument containing the already validated data, in this
-            case for private attributes will correspond to the entire model fields gotten from __dict__.
+            called when a default value is needed for this attribute.
             If both `default` and `default_factory` are set, an error will be raised.
         init: Whether the attribute should be included in the constructor of the dataclass. Always `False`.
 
