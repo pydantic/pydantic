@@ -1145,7 +1145,7 @@ class ModelPrivateAttr(_repr.Representation):
         self,
         default: Any = PydanticUndefined,
         *,
-        default_factory: Callable[[], _T] | Callable[[dict[str, Any]], _T] | None = None,
+        default_factory: Callable[[], Any] | Callable[[dict[str, Any]], Any] | None = None,
     ) -> None:
         if default is Ellipsis:
             self.default = PydanticUndefined
