@@ -517,7 +517,7 @@ class DecoratorInfos:
             if is_overridden:
                 raise PydanticUserError(
                     f'this method {duplicated_methods} is overriding existing method',
-                    code=None,
+                    code='validator-invalid-fields',
                 )
 
         return res
@@ -538,7 +538,7 @@ def is_method_overridden(model_dc: type[Any]) -> tuple[bool, set[Any] | None]:
     registered_validators.extend(list(registered_decorators.field_validators.values()))
     registered_validators.extend(list(registered_decorators.root_validators.values()))
     registered_validators.extend(list(registered_decorators.model_validators.values()))
-    functions = [validator.func for validator in registered_validators]
+    functions = [validator.func for validator in registered_validators if hasattr(validator.func, '__self__')]
     if len(functions) != len(set(functions)):
         duplicated_methods = {method for method in functions if functions.count(method) > 1}
         return True, duplicated_methods
@@ -615,7 +615,7 @@ def inspect_field_serializer(serializer: Callable[..., Any], mode: Literal['plai
     if info_arg is None:
         raise PydanticUserError(
             f'Unrecognized field_serializer function signature for {serializer} with `mode={mode}`:{sig}',
-            code='validator-invalid-fields',
+            code='field-serializer-signature',
         )
 
     return is_field_serializer, info_arg
