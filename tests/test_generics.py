@@ -1704,6 +1704,26 @@ def test_generic_recursive_models_parametrized() -> None:
     Model2[str].model_rebuild()
 
 
+def test_generic_recursive_models_parametrized_with_model() -> None:
+    """https://github.com/pydantic/pydantic/issues/11748"""
+
+    T = TypeVar('T')
+
+    class Base(BaseModel, Generic[T]):
+        t: T
+
+    class Other(BaseModel):
+        child: 'Optional[Base[Other]]'
+
+    with pytest.raises(ValidationError):
+        # In v2.0-2.10, this unexpectedly validated fine (The core schema of Base[Other].t was an empty model).
+        # Since v2.11, building `Other` raised an unhandled exception.
+        # Now, it works as expected.
+        Base[Other].model_validate({'t': {}})
+
+    Base[Other].model_validate({'t': {'child': {'t': {'child': None}}}})
+
+
 @pytest.mark.xfail(reason='Core schema generation is missing the M1 definition')
 def test_generic_recursive_models_inheritance() -> None:
     """https://github.com/pydantic/pydantic/issues/9969"""
