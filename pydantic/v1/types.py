@@ -829,7 +829,7 @@ class JsonWrapper:
 class JsonMeta(type):
     def __getitem__(self, t: Type[Any]) -> Type[JsonWrapper]:
         if t is Any:
-            return Json  # allow Json[Any] to replecate plain Json
+            return Json  # allow Json[Any] to replicate plain Json
         return _registered(type('JsonWrapperValue', (JsonWrapper,), {'inner_type': t}))
 
 
