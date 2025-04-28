@@ -1,4 +1,5 @@
 import functools
+from enum import Enum
 from typing import ClassVar, Generic, Optional, TypeVar
 
 import pytest
@@ -577,3 +578,16 @@ def test_private_attr_set_name_do_not_crash_if_not_callable():
     # Checks below are just to ensure that everything is the same as in `test_private_attr_set_name`
     # The main check is that model class definition above doesn't crash
     assert Model()._private_attr == 2
+
+
+def test_private_attribute_not_skipped_during_ns_inspection() -> None:
+    # It is important for the enum name to start with the class name
+    # (it previously caused issues as we were comparing qualnames without
+    # taking this into account):
+    class Fullname(str, Enum):
+        pass
+
+    class Full(BaseModel):
+        _priv: object = Fullname
+
+    assert isinstance(Full._priv, ModelPrivateAttr)
