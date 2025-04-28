@@ -580,7 +580,7 @@ def test_private_attr_set_name_do_not_crash_if_not_callable():
     assert Model()._private_attr == 2
 
 
-def test_private_attribute_not_skipped_during_ns_inspection():
+def test_private_attribute_not_skipped_during_ns_inspection() -> None:
     # It is important for the enum name to start with the class name
     # (it previously caused issues as we were comparing qualnames without
     # taking this into account):
