@@ -3430,6 +3430,25 @@ assignment form instead.</p>
     <span class="c1"># Valid: [1, 3]</span>
     <span class="c1"># Invalid: [-1, 2]</span>
 </code></pre></div>
+<p>Be careful not mixing <em>field</em> and <em>type</em> metadata:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">field_bad</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">deprecated</span><span class="o">=</span><span class="kc">True</span><span class="p">)]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># (1)!</span>
+    <span class="n">field_ok</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">deprecated</span><span class="o">=</span><span class="kc">True</span><span class="p">)]</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># (2)!</span>
+</code></pre></div>
+<ol>
+<li>
+<p>The <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.Field"><code>Field()</code></a> function is applied to <code>int</code> type, hence the
+     <code>deprecated</code> flag won't have any effect. While this may be confusing given that the name of
+     the <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.Field"><code>Field()</code></a> function would imply it should apply to the field,
+     the API was designed when this function was the only way to provide metadata. You can
+     alternatively make use of the <a href="https://github.com/annotated-types/annotated-types"><code>annotated_types</code></a>
+     library which is now supported by Pydantic.</p>
+</li>
+<li>
+<p>The <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.Field"><code>Field()</code></a> function is applied to the "top-level" union type,
+     hence the <code>deprecated</code> flag will be applied to the field.</p>
+</li>
+</ol>
 </div>
 <h2 id="default-values">Default values<a class="headerlink" href="#default-values" title="Permanent link">&para;</a></h2>
 <p>Default values for fields can be provided using the normal assignment syntax or by providing a value

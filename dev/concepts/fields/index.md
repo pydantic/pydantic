@@ -69,6 +69,18 @@ class Model(BaseModel):
 
 ```
 
+Be careful not mixing *field* and *type* metadata:
+
+```python
+class Model(BaseModel):
+    field_bad: Annotated[int, Field(deprecated=True)] | None = None  # (1)!
+    field_ok: Annotated[int | None, Field(deprecated=True)] = None  # (2)!
+
+```
+
+1. The Field() function is applied to `int` type, hence the `deprecated` flag won't have any effect. While this may be confusing given that the name of the Field() function would imply it should apply to the field, the API was designed when this function was the only way to provide metadata. You can alternatively make use of the [`annotated_types`](https://github.com/annotated-types/annotated-types) library which is now supported by Pydantic.
+1. The Field() function is applied to the "top-level" union type, hence the `deprecated` flag will be applied to the field.
+
 ## Default values
 
 Default values for fields can be provided using the normal assignment syntax or by providing a value to the `default` argument:
