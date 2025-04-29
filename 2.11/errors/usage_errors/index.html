@@ -2682,15 +2682,6 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
-  <a href="#create-model-config-base" class="md-nav__link">
-    <span class="md-ellipsis">
-      create_model config base
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#validator-no-fields" class="md-nav__link">
     <span class="md-ellipsis">
       Validator with no fields
@@ -3636,15 +3627,6 @@ to help you monitor and understand your
   <a href="#create-model-field-definitions" class="md-nav__link">
     <span class="md-ellipsis">
       create_model field definitions
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#create-model-config-base" class="md-nav__link">
-    <span class="md-ellipsis">
-      create_model config base
     </span>
   </a>
   
@@ -4722,18 +4704,6 @@ Pydantic V2.</p>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;create-model-field-definitions&#39;</span>
 </code></pre></div>
 <p>The fields definition syntax can be found in the <a href="../../concepts/models/#dynamic-model-creation">dynamic model creation</a> documentation.</p>
-<h2 id="create-model-config-base"><code>create_model</code> config base<a class="headerlink" href="#create-model-config-base" title="Permanent link">&para;</a></h2>
-<p>This error is raised when you use both <code>__config__</code> and <code>__base__</code> together in <code>create_model</code>.</p>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">PydanticUserError</span><span class="p">,</span> <span class="n">create_model</span>
-
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">model</span> <span class="o">=</span> <span class="n">create_model</span><span class="p">(</span>
-        <span class="s1">&#39;FooModel&#39;</span><span class="p">,</span> <span class="n">foo</span><span class="o">=</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">),</span> <span class="n">__config__</span><span class="o">=</span><span class="n">config</span><span class="p">,</span> <span class="n">__base__</span><span class="o">=</span><span class="n">BaseModel</span>
-    <span class="p">)</span>
-<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
-    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;create-model-config-base&#39;</span>
-</code></pre></div>
 <h2 id="validator-no-fields">Validator with no fields<a class="headerlink" href="#validator-no-fields" title="Permanent link">&para;</a></h2>
 <p>This error is raised when you use validator bare (with no fields).</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PydanticUserError</span><span class="p">,</span> <span class="n">field_validator</span>
@@ -5551,7 +5521,7 @@ overlapping with other parameters (unless <a class="autorefs autorefs-external" 
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.11.3", "pydantic-core==2.33.1", "pydantic-extra-types==2.10.0"]
+    window.mkdocs_run_deps = ["pydantic==2.11.4", "pydantic-core==2.33.2", "pydantic-extra-types==2.10.0"]
     </script>
 
               </article>

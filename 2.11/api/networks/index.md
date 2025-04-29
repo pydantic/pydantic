@@ -769,7 +769,7 @@ def validate_email(value: str) -> tuple[str, str]:
         Note that:
 
         * Raw IP address (literal) domain parts are not allowed.
-        * `"John Doe "` style "pretty" email addresses are processed.
+        * `"John Doe <local_part@domain.com>"` style "pretty" email addresses are processed.
         * Spaces are striped from the beginning and end of addresses, but no error is raised.
     """
     if email_validator is None:

@@ -1381,9 +1381,9 @@ to help you monitor and understand your
 </li>
         
           <li class="md-nav__item">
-  <a href="#ignore-unknown-arguments" class="md-nav__link">
+  <a href="#ignore-and-retrieve-unknown-arguments" class="md-nav__link">
     <span class="md-ellipsis">
-      Ignore Unknown Arguments
+      Ignore and Retrieve Unknown Arguments
     </span>
   </a>
   
@@ -1528,6 +1528,66 @@ to help you monitor and understand your
       Azure Key Vault
     </span>
   </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#google-cloud-secret-manager" class="md-nav__link">
+    <span class="md-ellipsis">
+      Google Cloud Secret Manager
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Google Cloud Secret Manager">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#installation_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Installation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#basic-usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      Basic Usage
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gcp-authentication" class="md-nav__link">
+    <span class="md-ellipsis">
+      GCP Authentication
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#nested-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      Nested Models
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#important-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Important Notes
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -3683,9 +3743,9 @@ to help you monitor and understand your
 </li>
         
           <li class="md-nav__item">
-  <a href="#ignore-unknown-arguments" class="md-nav__link">
+  <a href="#ignore-and-retrieve-unknown-arguments" class="md-nav__link">
     <span class="md-ellipsis">
-      Ignore Unknown Arguments
+      Ignore and Retrieve Unknown Arguments
     </span>
   </a>
   
@@ -3830,6 +3890,66 @@ to help you monitor and understand your
       Azure Key Vault
     </span>
   </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#google-cloud-secret-manager" class="md-nav__link">
+    <span class="md-ellipsis">
+      Google Cloud Secret Manager
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Google Cloud Secret Manager">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#installation_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Installation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#basic-usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      Basic Usage
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gcp-authentication" class="md-nav__link">
+    <span class="md-ellipsis">
+      GCP Authentication
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#nested-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      Nested Models
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#important-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Important Notes
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -5130,21 +5250,22 @@ when necessary.</p>
 <span class="sd">    --implicit_opt, --no-implicit_opt (default: False)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
-<h4 id="ignore-unknown-arguments">Ignore Unknown Arguments<a class="headerlink" href="#ignore-unknown-arguments" title="Permanent link">&para;</a></h4>
+<h4 id="ignore-and-retrieve-unknown-arguments">Ignore and Retrieve Unknown Arguments<a class="headerlink" href="#ignore-and-retrieve-unknown-arguments" title="Permanent link">&para;</a></h4>
 <p>Change whether to ignore unknown CLI arguments and only parse known ones using <code>cli_ignore_unknown_args</code>. By default, the CLI
-does not ignore any args.</p>
+does not ignore any args. Ignored arguments can then be retrieved using the <code>CliUnknownArgs</code> annotation.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseSettings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">CliUnknownArgs</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">,</span> <span class="n">cli_parse_args</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cli_ignore_unknown_args</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
     <span class="n">good_arg</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">ignored_args</span><span class="p">:</span> <span class="n">CliUnknownArgs</span>
 
 
 <span class="n">sys</span><span class="o">.</span><span class="n">argv</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;example.py&#39;</span><span class="p">,</span> <span class="s1">&#39;--bad-arg=bad&#39;</span><span class="p">,</span> <span class="s1">&#39;ANOTHER_BAD_ARG&#39;</span><span class="p">,</span> <span class="s1">&#39;--good_arg=hello world&#39;</span><span class="p">]</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">Settings</span><span class="p">()</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
-<span class="c1">#&gt; {&#39;good_arg&#39;: &#39;hello world&#39;}</span>
+<span class="c1">#&gt; {&#39;good_arg&#39;: &#39;hello world&#39;, &#39;ignored_args&#39;: [&#39;--bad-arg=bad&#39;, &#39;ANOTHER_BAD_ARG&#39;]}</span>
 </code></pre></div>
 <h4 id="cli-kebab-case-for-arguments">CLI Kebab Case for Arguments<a class="headerlink" href="#cli-kebab-case-for-arguments" title="Permanent link">&para;</a></h4>
 <p>Change whether CLI arguments should use kebab case by enabling <code>cli_kebab_case</code>.</p>
@@ -5631,6 +5752,92 @@ as the target mount point. If you want to use a different location, change <code
             <span class="n">az_key_vault_settings</span><span class="p">,</span>
         <span class="p">)</span>
 </code></pre></div>
+<h2 id="google-cloud-secret-manager">Google Cloud Secret Manager<a class="headerlink" href="#google-cloud-secret-manager" title="Permanent link">&para;</a></h2>
+<p>Google Cloud Secret Manager allows you to store, manage, and access sensitive information as secrets in Google Cloud Platform. This integration lets you retrieve secrets directly from GCP Secret Manager for use in your Pydantic settings.</p>
+<h3 id="installation_1">Installation<a class="headerlink" href="#installation_1" title="Permanent link">&para;</a></h3>
+<p>The Google Cloud Secret Manager integration requires additional dependencies:</p>
+<div class="language-bash highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;pydantic-settings[gcp-secret-manager]&quot;</span>
+</code></pre></div>
+<h3 id="basic-usage">Basic Usage<a class="headerlink" href="#basic-usage" title="Permanent link">&para;</a></h3>
+<p>To use Google Cloud Secret Manager, you need to:</p>
+<ol>
+<li>Create a <code>GoogleSecretManagerSettingsSource</code>. (See <a href="#gcp-authentication">GCP Authentication</a> for authentication options.)</li>
+<li>Add this source to your settings customization pipeline</li>
+</ol>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_settings</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">BaseSettings</span><span class="p">,</span>
+    <span class="n">GoogleSecretManagerSettingsSource</span><span class="p">,</span>
+    <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+    <span class="n">SettingsConfigDict</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Database</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">password</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">user</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+    <span class="n">database</span><span class="p">:</span> <span class="n">Database</span>
+
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">SettingsConfigDict</span><span class="p">(</span><span class="n">env_nested_delimiter</span><span class="o">=</span><span class="s1">&#39;__&#39;</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">settings_customise_sources</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">settings_cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">BaseSettings</span><span class="p">],</span>
+        <span class="n">init_settings</span><span class="p">:</span> <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+        <span class="n">env_settings</span><span class="p">:</span> <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+        <span class="n">dotenv_settings</span><span class="p">:</span> <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+        <span class="n">file_secret_settings</span><span class="p">:</span> <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">PydanticBaseSettingsSource</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+        <span class="c1"># Create the GCP Secret Manager settings source</span>
+        <span class="n">gcp_settings</span> <span class="o">=</span> <span class="n">GoogleSecretManagerSettingsSource</span><span class="p">(</span>
+            <span class="n">settings_cls</span><span class="p">,</span>
+            <span class="c1"># If not provided, will use google.auth.default()</span>
+            <span class="c1"># to get credentials from the environemnt</span>
+            <span class="c1"># credentials=your_credentials,</span>
+            <span class="c1"># If not provided, will use google.auth.default()</span>
+            <span class="c1"># to get project_id from the environemnt</span>
+            <span class="n">project_id</span><span class="o">=</span><span class="s1">&#39;your-gcp-project-id&#39;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="n">init_settings</span><span class="p">,</span>
+            <span class="n">env_settings</span><span class="p">,</span>
+            <span class="n">dotenv_settings</span><span class="p">,</span>
+            <span class="n">file_secret_settings</span><span class="p">,</span>
+            <span class="n">gcp_settings</span><span class="p">,</span>
+        <span class="p">)</span>
+</code></pre></div>
+<h3 id="gcp-authentication">GCP Authentication<a class="headerlink" href="#gcp-authentication" title="Permanent link">&para;</a></h3>
+<p>The <code>GoogleSecretManagerSettingsSource</code> supports several authentication methods:</p>
+<ol>
+<li>
+<p><strong>Default credentials</strong> - If you don't provide credentials or project ID, it will use <a href="https://google-auth.readthedocs.io/en/master/reference/google.auth.html#google.auth.default"><code>google.auth.default()</code></a> to obtain them. This works with:</p>
+</li>
+<li>
+<p>Service account credentials from <code>GOOGLE_APPLICATION_CREDENTIALS</code> environment variable</p>
+</li>
+<li>User credentials from <code>gcloud auth application-default login</code></li>
+<li>
+<p>Compute Engine, GKE, Cloud Run, or Cloud Functions default service accounts</p>
+</li>
+<li>
+<p><strong>Explicit credentials</strong> - You can also provide <code>credentials</code> directly. e.g. <code>sa_credentials = google.oauth2.service_account.Credentials.from_service_account_file('path/to/service-account.json')</code> and then <code>GoogleSecretManagerSettingsSource(credentials=sa_credentials)</code></p>
+</li>
+</ol>
+<h3 id="nested-models">Nested Models<a class="headerlink" href="#nested-models" title="Permanent link">&para;</a></h3>
+<p>For nested models, Secret Manager supports the <code>env_nested_delimiter</code> setting as long as it complies with the <a href="https://cloud.google.com/secret-manager/docs/creating-and-accessing-secrets#create-a-secret">naming rules</a>. In the example above, you would create secrets named <code>database__password</code> and <code>database__user</code> in Secret Manager.</p>
+<h3 id="important-notes">Important Notes<a class="headerlink" href="#important-notes" title="Permanent link">&para;</a></h3>
+<ol>
+<li><strong>Case Sensitivity</strong>: By default, secret names are case-sensitive.</li>
+<li><strong>Secret Naming</strong>: Create secrets in Google Secret Manager with names that match your field names (including any prefix). According the <a href="https://cloud.google.com/secret-manager/docs/creating-and-accessing-secrets#create-a-secret">Secret Manager documentation</a>, a secret name can contain uppercase and lowercase letters, numerals, hyphens, and underscores. The maximum allowed length for a name is 255 characters.</li>
+<li><strong>Secret Versions</strong>: The GoogleSecretManagerSettingsSource uses the "latest" version of secrets.</li>
+</ol>
+<p>For more details on creating and managing secrets in Google Cloud Secret Manager, see the <a href="https://cloud.google.com/secret-manager/docs">official Google Cloud documentation</a>.</p>
 <h2 id="other-settings-source">Other settings source<a class="headerlink" href="#other-settings-source" title="Permanent link">&para;</a></h2>
 <p>Other settings sources are available for common configuration files:</p>
 <ul>
@@ -6061,7 +6268,7 @@ need to add your own custom sources, <code>settings_customise_sources</code> mak
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.11.3", "pydantic-core==2.33.1", "pydantic-extra-types==2.10.0"]
+    window.mkdocs_run_deps = ["pydantic==2.11.4", "pydantic-core==2.33.2", "pydantic-extra-types==2.10.0"]
     </script>
 
               </article>

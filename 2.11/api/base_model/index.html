@@ -5131,12 +5131,7 @@ is set to <code>'allow'</code>.</p>
 <span class="normal">1638</span>
 <span class="normal">1639</span>
 <span class="normal">1640</span>
-<span class="normal">1641</span>
-<span class="normal">1642</span>
-<span class="normal">1643</span>
-<span class="normal">1644</span>
-<span class="normal">1645</span>
-<span class="normal">1646</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">BaseModel</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">_model_construction</span><span class="o">.</span><span class="n">ModelMetaclass</span><span class="p">):</span>
+<span class="normal">1641</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">BaseModel</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">_model_construction</span><span class="o">.</span><span class="n">ModelMetaclass</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;!!! abstract &quot;Usage Documentation&quot;</span>
 <span class="sd">        [Models](../concepts/models.md)</span>
 
@@ -5926,12 +5921,7 @@ is set to <code>'allow'</code>.</p>
 
                 <span class="n">submodel</span> <span class="o">=</span> <span class="n">_generics</span><span class="o">.</span><span class="n">create_generic_submodel</span><span class="p">(</span><span class="n">model_name</span><span class="p">,</span> <span class="n">origin</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
 
-                <span class="c1"># Cache the generated model *only* if not in the process of parametrizing</span>
-                <span class="c1"># another model. In some valid scenarios, we miss the opportunity to cache</span>
-                <span class="c1"># it but in some cases this results in `PydanticRecursiveRef` instances left</span>
-                <span class="c1"># on `FieldInfo` annotations:</span>
-                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">_generics</span><span class="o">.</span><span class="n">recursively_defined_type_refs</span><span class="p">())</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-                    <span class="n">_generics</span><span class="o">.</span><span class="n">set_cached_generic_type</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">typevar_values</span><span class="p">,</span> <span class="n">submodel</span><span class="p">,</span> <span class="n">origin</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
+                <span class="n">_generics</span><span class="o">.</span><span class="n">set_cached_generic_type</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">typevar_values</span><span class="p">,</span> <span class="n">submodel</span><span class="p">,</span> <span class="n">origin</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">submodel</span>
 
@@ -9966,7 +9956,12 @@ validators <a href="https://docs.pydantic.dev/2.9/concepts/validators/#field-val
 
             <details class="quote">
               <summary>Source code in <code>pydantic/main.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1682</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1677</span>
+<span class="normal">1678</span>
+<span class="normal">1679</span>
+<span class="normal">1680</span>
+<span class="normal">1681</span>
+<span class="normal">1682</span>
 <span class="normal">1683</span>
 <span class="normal">1684</span>
 <span class="normal">1685</span>
@@ -10052,18 +10047,7 @@ validators <a href="https://docs.pydantic.dev/2.9/concepts/validators/#field-val
 <span class="normal">1765</span>
 <span class="normal">1766</span>
 <span class="normal">1767</span>
-<span class="normal">1768</span>
-<span class="normal">1769</span>
-<span class="normal">1770</span>
-<span class="normal">1771</span>
-<span class="normal">1772</span>
-<span class="normal">1773</span>
-<span class="normal">1774</span>
-<span class="normal">1775</span>
-<span class="normal">1776</span>
-<span class="normal">1777</span>
-<span class="normal">1778</span>
-<span class="normal">1779</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">create_model</span><span class="p">(</span>  <span class="c1"># noqa: C901</span>
+<span class="normal">1768</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">create_model</span><span class="p">(</span>  <span class="c1"># noqa: C901</span>
     <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="o">/</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -10105,16 +10089,10 @@ validators <a href="https://docs.pydantic.dev/2.9/concepts/validators/#field-val
 <span class="sd">    Raises:</span>
 <span class="sd">        PydanticUserError: If `__base__` and `__config__` are both passed.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">__base__</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">__config__</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">PydanticUserError</span><span class="p">(</span>
-                <span class="s1">&#39;to avoid confusion `__config__` and `__base__` cannot be used together&#39;</span><span class="p">,</span>
-                <span class="n">code</span><span class="o">=</span><span class="s1">&#39;create-model-config-base&#39;</span><span class="p">,</span>
-            <span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">__base__</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
-            <span class="n">__base__</span> <span class="o">=</span> <span class="p">(</span><span class="n">__base__</span><span class="p">,)</span>
-    <span class="k">else</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">__base__</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">__base__</span> <span class="o">=</span> <span class="p">(</span><span class="n">cast</span><span class="p">(</span><span class="s1">&#39;type[ModelT]&#39;</span><span class="p">,</span> <span class="n">BaseModel</span><span class="p">),)</span>
+    <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">__base__</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+        <span class="n">__base__</span> <span class="o">=</span> <span class="p">(</span><span class="n">__base__</span><span class="p">,)</span>
 
     <span class="n">__cls_kwargs__</span> <span class="o">=</span> <span class="n">__cls_kwargs__</span> <span class="ow">or</span> <span class="p">{}</span>
 
@@ -10146,7 +10124,7 @@ validators <a href="https://docs.pydantic.dev/2.9/concepts/validators/#field-val
         <span class="n">namespace</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">__validators__</span><span class="p">)</span>
     <span class="n">namespace</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">__config__</span><span class="p">:</span>
-        <span class="n">namespace</span><span class="p">[</span><span class="s1">&#39;model_config&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_config</span><span class="o">.</span><span class="n">ConfigWrapper</span><span class="p">(</span><span class="n">__config__</span><span class="p">)</span><span class="o">.</span><span class="n">config_dict</span>
+        <span class="n">namespace</span><span class="p">[</span><span class="s1">&#39;model_config&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">__config__</span>
     <span class="n">resolved_bases</span> <span class="o">=</span> <span class="n">types</span><span class="o">.</span><span class="n">resolve_bases</span><span class="p">(</span><span class="n">__base__</span><span class="p">)</span>
     <span class="n">meta</span><span class="p">,</span> <span class="n">ns</span><span class="p">,</span> <span class="n">kwds</span> <span class="o">=</span> <span class="n">types</span><span class="o">.</span><span class="n">prepare_class</span><span class="p">(</span><span class="n">model_name</span><span class="p">,</span> <span class="n">resolved_bases</span><span class="p">,</span> <span class="n">kwds</span><span class="o">=</span><span class="n">__cls_kwargs__</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">resolved_bases</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">__base__</span><span class="p">:</span>
@@ -10226,7 +10204,7 @@ validators <a href="https://docs.pydantic.dev/2.9/concepts/validators/#field-val
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.11.3", "pydantic-core==2.33.1", "pydantic-extra-types==2.10.0"]
+    window.mkdocs_run_deps = ["pydantic==2.11.4", "pydantic-core==2.33.2", "pydantic-extra-types==2.10.0"]
     </script>
 
               </article>

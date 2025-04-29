@@ -1283,7 +1283,7 @@ class ImportString:
     # Create an instance
     m = ImportThings(obj='math.cos')
     print(m)
-    #> obj=
+    #> obj=<built-in function cos>
     print(m.model_dump_json())
     #> {"obj":"math.cos"}
     ```
@@ -1321,11 +1321,11 @@ class ImportString:
         # Handle special cases for sys.XXX streams
         # if we see more of these, we should consider a more general solution
         elif hasattr(v, 'name'):
-            if v.name == '':
+            if v.name == '<stdout>':
                 return 'sys.stdout'
-            elif v.name == '':
+            elif v.name == '<stdin>':
                 return 'sys.stdin'
-            elif v.name == '':
+            elif v.name == '<stderr>':
                 return 'sys.stderr'
         else:
             return v
@@ -1813,7 +1813,7 @@ class Secret(_SecretBase[SecretType]):
             if bases == [] or inner_type is None:
                 raise TypeError(
                     f"Can't get secret type from {cls.__name__}. "
-                    'Please use Secret[], or subclass from Secret[] instead.'
+                    'Please use Secret[<type>], or subclass from Secret[<type>] instead.'
                 )
 
         inner_schema = handler.generate_schema(inner_type)  # type: ignore
@@ -3957,7 +3957,7 @@ class Discriminator:
 
     Provides a way to use a custom callable as the way to extract the value of a union discriminator.
 
-    This allows you to get validation behavior like you'd get from `Field(discriminator=)`,
+    This allows you to get validation behavior like you'd get from `Field(discriminator=<field_name>)`,
     but without needing to have a single shared field across all the union choices. This also makes it
     possible to handle unions of models and primitive types with discriminated-union-style validation errors.
     Finally, this allows you to use a custom callable as the way to identify which member of a union a value

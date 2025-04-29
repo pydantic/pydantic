@@ -805,12 +805,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
                 submodel = _generics.create_generic_submodel(model_name, origin, args, params)
 
-                # Cache the generated model *only* if not in the process of parametrizing
-                # another model. In some valid scenarios, we miss the opportunity to cache
-                # it but in some cases this results in `PydanticRecursiveRef` instances left
-                # on `FieldInfo` annotations:
-                if len(_generics.recursively_defined_type_refs()) == 1:
-                    _generics.set_cached_generic_type(cls, typevar_values, submodel, origin, args)
+                _generics.set_cached_generic_type(cls, typevar_values, submodel, origin, args)
 
         return submodel
 
@@ -2630,16 +2625,10 @@ def create_model(  # noqa: C901
     Raises:
         PydanticUserError: If `__base__` and `__config__` are both passed.
     """
-    if __base__ is not None:
-        if __config__ is not None:
-            raise PydanticUserError(
-                'to avoid confusion `__config__` and `__base__` cannot be used together',
-                code='create-model-config-base',
-            )
-        if not isinstance(__base__, tuple):
-            __base__ = (__base__,)
-    else:
+    if __base__ is None:
         __base__ = (cast('type[ModelT]', BaseModel),)
+    elif not isinstance(__base__, tuple):
+        __base__ = (__base__,)
 
     __cls_kwargs__ = __cls_kwargs__ or {}
 
@@ -2671,7 +2660,7 @@ def create_model(  # noqa: C901
         namespace.update(__validators__)
     namespace.update(fields)
     if __config__:
-        namespace['model_config'] = _config.ConfigWrapper(__config__).config_dict
+        namespace['model_config'] = __config__
     resolved_bases = types.resolve_bases(__base__)
     meta, ns, kwds = types.prepare_class(model_name, resolved_bases, kwds=__cls_kwargs__)
     if resolved_bases is not __base__:

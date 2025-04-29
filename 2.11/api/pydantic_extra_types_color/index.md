@@ -186,7 +186,7 @@ Source code in `pydantic_extra_types/color.py`
 ```python
 def as_rgb(self) -> str:
     """
-    Color as an `rgb(, , )` or `rgba(, , , )` string.
+    Color as an `rgb(<r>, <g>, <b>)` or `rgba(<r>, <g>, <b>, <a>)` string.
     """
     if self._rgba.alpha is None:
         return f'rgb({float_to_255(self._rgba.r)}, {float_to_255(self._rgba.g)}, {float_to_255(self._rgba.b)})'
@@ -255,7 +255,7 @@ Source code in `pydantic_extra_types/color.py`
 ```python
 def as_hsl(self) -> str:
     """
-    Color as an `hsl(, , )` or `hsl(, , , )` string.
+    Color as an `hsl(<h>, <s>, <l>)` or `hsl(<h>, <s>, <l>, <a>)` string.
     """
     if self._rgba.alpha is None:
         h, s, li = self.as_hsl_tuple(alpha=False)  # type: ignore
@@ -405,10 +405,10 @@ def parse_str(value: str) -> RGBA:
     Possible formats for the input string include:
 
     * named color, see `COLORS_BY_NAME`
-    * hex short eg. `fff` (prefix can be `#`, `0x` or nothing)
-    * hex long eg. `ffffff` (prefix can be `#`, `0x` or nothing)
-    * `rgb(, , )`
-    * `rgba(, , , )`
+    * hex short eg. `<prefix>fff` (prefix can be `#`, `0x` or nothing)
+    * hex long eg. `<prefix>ffffff` (prefix can be `#`, `0x` or nothing)
+    * `rgb(<r>, <g>, <b>)`
+    * `rgba(<r>, <g>, <b>, <a>)`
     * `transparent`
 
     Args:
