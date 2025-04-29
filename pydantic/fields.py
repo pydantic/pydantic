@@ -10,7 +10,7 @@ from collections.abc import Mapping
 from copy import copy
 from dataclasses import Field as DataclassField
 from functools import cached_property
-from typing import Annotated, Any, Callable, ClassVar, Literal, TypeVar, cast, overload
+from typing import Annotated, Any, Callable, ClassVar, Literal, TypeVar, overload
 from warnings import warn
 
 import annotated_types
@@ -21,7 +21,7 @@ from typing_inspection import typing_objects
 from typing_inspection.introspection import UNKNOWN, AnnotationSource, ForbiddenQualifier, Qualifier, inspect_annotation
 
 from . import types
-from ._internal import _decorators, _fields, _generics, _internal_dataclass, _repr, _typing_extra, _utils
+from ._internal import _decorators, _fields, _generics, _internal_dataclass, _repr, _typing_extra
 from ._internal._namespace_utils import GlobalsNamespace, MappingNamespace
 from .aliases import AliasChoices, AliasPath
 from .config import JsonDict
@@ -597,15 +597,6 @@ class FieldInfo(_repr.Representation):
             return 'deprecated' if self.deprecated else None
         return self.deprecated if isinstance(self.deprecated, str) else self.deprecated.message
 
-    @property
-    def default_factory_takes_validated_data(self) -> bool | None:
-        """Whether the provided default factory callable has a validated data parameter.
-
-        Returns `None` if no default factory is set.
-        """
-        if self.default_factory is not None:
-            return _fields.takes_validated_data_argument(self.default_factory)
-
     @overload
     def get_default(
         self, *, call_default_factory: Literal[True], validated_data: dict[str, Any] | None = None
@@ -628,21 +619,12 @@ class FieldInfo(_repr.Representation):
         Returns:
             The default value, calling the default factory if requested or `None` if not set.
         """
-        if self.default_factory is None:
-            return _utils.smart_deepcopy(self.default)
-        elif call_default_factory:
-            if self.default_factory_takes_validated_data:
-                fac = cast('Callable[[dict[str, Any]], Any]', self.default_factory)
-                if validated_data is None:
-                    raise ValueError(
-                        "The default factory requires the 'validated_data' argument, which was not provided when calling 'get_default'."
-                    )
-                return fac(validated_data)
-            else:
-                fac = cast('Callable[[], Any]', self.default_factory)
-                return fac()
-        else:
-            return None
+        return _fields.resolve_default_value(
+            default=self.default,
+            default_factory=self.default_factory,
+            validated_data=validated_data,
+            call_default_factory=call_default_factory,
+        )
 
     def is_required(self) -> bool:
         """Check if the field is required (i.e., does not have a default value or factory).
@@ -1151,14 +1133,19 @@ class ModelPrivateAttr(_repr.Representation):
 
     Attributes:
         default: The default value of the attribute if not provided.
-        default_factory: A callable function that generates the default value of the
-            attribute if not provided.
+        default_factory: A callable to generate the default value. The callable can either take 0 arguments
+            (in which case it is called as is) or a single argument containing the validated data (the model's
+            [`__dict__`][object.__dict__]) and the already initialized private attributes.
+            called when a default value is needed for this attribute.
     """
 
     __slots__ = ('default', 'default_factory')
 
     def __init__(
-        self, default: Any = PydanticUndefined, *, default_factory: typing.Callable[[], Any] | None = None
+        self,
+        default: Any = PydanticUndefined,
+        *,
+        default_factory: Callable[[], Any] | Callable[[dict[str, Any]], Any] | None = None,
     ) -> None:
         if default is Ellipsis:
             self.default = PydanticUndefined
@@ -1187,17 +1174,34 @@ class ModelPrivateAttr(_repr.Representation):
         if callable(set_name):
             set_name(cls, name)
 
-    def get_default(self) -> Any:
-        """Retrieve the default value of the object.
+    @overload
+    def get_default(
+        self, *, call_default_factory: Literal[True], validated_data: dict[str, Any] | None = None
+    ) -> Any: ...
 
-        If `self.default_factory` is `None`, the method will return a deep copy of the `self.default` object.
+    @overload
+    def get_default(self, *, call_default_factory: Literal[False] = ...) -> Any: ...
 
-        If `self.default_factory` is not `None`, it will call `self.default_factory` and return the value returned.
+    def get_default(self, *, call_default_factory: bool = False, validated_data: dict[str, Any] | None = None) -> Any:
+        """Get the default value.
+
+        We expose an option for whether to call the default_factory (if present), as calling it may
+        result in side effects that we want to avoid. However, there are times when it really should
+        be called (namely, when instantiating a model via `model_construct`).
+
+        Args:
+            call_default_factory: Whether to call the default factory or not.
+            validated_data: The already validated data to be passed to the default factory.
 
         Returns:
-            The default value of the object.
+            The default value, calling the default factory if requested or `None` if not set.
         """
-        return _utils.smart_deepcopy(self.default) if self.default_factory is None else self.default_factory()
+        return _fields.resolve_default_value(
+            default=self.default,
+            default_factory=self.default_factory,
+            validated_data=validated_data,
+            call_default_factory=call_default_factory,
+        )
 
     def __eq__(self, other: Any) -> bool:
         return isinstance(other, self.__class__) and (self.default, self.default_factory) == (
@@ -1217,7 +1221,7 @@ def PrivateAttr(
 @overload  # `default_factory` argument set
 def PrivateAttr(
     *,
-    default_factory: Callable[[], _T],
+    default_factory: Callable[[], _T] | Callable[[dict[str, Any]], _T],
     init: Literal[False] = False,
 ) -> _T: ...
 @overload  # No default set
@@ -1228,7 +1232,7 @@ def PrivateAttr(
 def PrivateAttr(
     default: Any = PydanticUndefined,
     *,
-    default_factory: Callable[[], Any] | None = None,
+    default_factory: Callable[[], Any] | Callable[[dict[str, Any]], Any] | None = None,
     init: Literal[False] = False,
 ) -> Any:
     """!!! abstract "Usage Documentation"
@@ -1242,7 +1246,9 @@ def PrivateAttr(
 
     Args:
         default: The attribute's default value. Defaults to Undefined.
-        default_factory: Callable that will be
+        default_factory: A callable to generate the default value. The callable can either take 0 arguments
+            (in which case it is called as is) or a single argument containing the validated data (the model's
+            [`__dict__`][object.__dict__]) and the already initialized private attributes.
             called when a default value is needed for this attribute.
             If both `default` and `default_factory` are set, an error will be raised.
         init: Whether the attribute should be included in the constructor of the dataclass. Always `False`.
