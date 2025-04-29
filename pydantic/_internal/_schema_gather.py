@@ -161,6 +161,11 @@ def traverse_schema(schema: AllSchemas, context: GatherContext) -> None:
             traverse_schema(schema['return_schema'], context)
     elif schema_type == 'computed-field':
         traverse_schema(schema['return_schema'], context)
+    elif schema_type == 'function-before':
+        if 'schema' in schema:
+            traverse_schema(schema['schema'], context)
+        if 'json_schema_input_schema' in schema:
+            traverse_schema(schema['json_schema_input_schema'], context)
     elif schema_type == 'function-plain':
         # TODO duplicate schema types for serializers and validators, needs to be deduplicated.
         if 'return_schema' in schema:
