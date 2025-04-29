@@ -6589,6 +6589,19 @@ def test_json_schema_input_type_with_refs(validator) -> None:
     }
 
 
+def test_json_schema_input_type_inlined() -> None:
+    class Sub(BaseModel):
+        pass
+
+    class Model(BaseModel):
+        sub: Annotated[object, BeforeValidator(lambda v: v, json_schema_input_type=Sub)]
+
+    json_schema = Model.model_json_schema()
+
+    assert 'Sub' in json_schema['$defs']
+    assert json_schema['properties']['sub'] == {'$ref': '#/$defs/Sub'}
+
+
 @pytest.mark.parametrize(
     'validator',
     [
