@@ -1,3 +1,28 @@
+## v2.11.4 (2025-04-29)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.11.4)
+
+### What's Changed
+
+#### Packaging
+
+* Bump `mkdocs-llmstxt` to v0.2.0 by @Viicos in [#11725](https://github.com/pydantic/pydantic/pull/11725)
+
+#### Changes
+
+* Allow config and bases to be specified together in `create_model()` by @Viicos in [#11714](https://github.com/pydantic/pydantic/pull/11714).
+  This change was backported as it was previously possible (although not meant to be supported)
+  to provide `model_config` as a field, which would make it possible to provide both configuration
+  and bases.
+
+#### Fixes
+
+* Remove generics cache workaround by @Viicos in [#11755](https://github.com/pydantic/pydantic/pull/11755)
+* Remove coercion of decimal constraints by @Viicos in [#11772](https://github.com/pydantic/pydantic/pull/11772)
+* Fix crash when expanding root type in the mypy plugin by @Viicos in [#11735](https://github.com/pydantic/pydantic/pull/11735)
+* Fix issue with recursive generic models by @Viicos in [#11775](https://github.com/pydantic/pydantic/pull/11775)
+* Traverse `function-before` schemas during schema gathering by @Viicos in [#11801](https://github.com/pydantic/pydantic/pull/11801)
+
 ## v2.11.3 (2025-04-08)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.11.3)
