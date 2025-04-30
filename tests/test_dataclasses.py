@@ -3103,3 +3103,16 @@ def test_deferred_dataclass_fields_available() -> None:
         a: int
 
     assert 'a' in A.__pydantic_fields__  # pyright: ignore[reportAttributeAccessIssue]
+
+
+def test_override_defaults_when_using_dataclass() -> None:
+    @dataclasses.dataclass
+    class A:
+        a: int = 1
+
+    @pydantic.dataclasses.dataclass
+    class B(A):
+        a: int = 100
+
+    assert B().a == 100
+    assert TypeAdapter(B).validate_python({}).a == 100

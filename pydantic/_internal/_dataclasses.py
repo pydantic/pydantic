@@ -195,6 +195,7 @@ def is_builtin_dataclass(_cls: type[Any]) -> TypeGuard[type[StandardDataclass]]:
     - `_cls` is a dataclass
     - `_cls` does not inherit from a processed pydantic dataclass (and thus have a `__pydantic_validator__`)
     - `_cls` does not have any annotations that are not dataclass fields
+    - `_cls` has at least one field in `__dataclass_fields__` that is not directly present in its own `__dict__`
     e.g.
     ```python
     import dataclasses
@@ -218,8 +219,10 @@ def is_builtin_dataclass(_cls: type[Any]) -> TypeGuard[type[StandardDataclass]]:
     Returns:
         `True` if the class is a stdlib dataclass, `False` otherwise.
     """
+    dataclass_fields = getattr(_cls, '__dataclass_fields__', {})
     return (
         dataclasses.is_dataclass(_cls)
         and not hasattr(_cls, '__pydantic_validator__')
-        and set(_cls.__dataclass_fields__).issuperset(set(getattr(_cls, '__annotations__', {})))
+        and set(dataclass_fields).issuperset(set(getattr(_cls, '__annotations__', {})))
+        and not all(field in _cls.__dict__ for field in dataclass_fields)
     )
