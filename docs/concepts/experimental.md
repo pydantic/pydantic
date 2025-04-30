@@ -470,13 +470,10 @@ print(args, kwargs)  # (1)!
      ```
 
 !!! note
-    Unlike [`@validate_call`][pydantic.validate_call], this core schema will only validated the provided arguments,
+    Unlike [`@validate_call`][pydantic.validate_call], this core schema will only validate the provided arguments;
     the underlying callable will *not* be called.
 
-This new core schema will become the default one to be used by [`@validate_call`][pydantic.validate_call]
-in Pydantic V3.
-
-Additionally, you can ignore specific parameters by providing a callback, called for every parameter:
+Additionally, you can ignore specific parameters by providing a callback, which is called for every parameter:
 
 ```python
 from typing import Any
