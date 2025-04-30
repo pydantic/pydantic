@@ -8945,6 +8945,54 @@ class AzureKeyVaultSettings(BaseSettings):
 
 ```
 
+### Dash to underscore mapping
+
+The Azure Key Vault source accepts a `dash_to_underscore` option, disabled by default, to support Key Vault kebab-case secret names by mapping them to Python's snake_case field names. When enabled, dashes (`-`) in secret names are mapped to underscores (`_`) in field names during validation.
+
+This mapping applies only to *field names*, not to aliases.
+
+```py
+import os
+
+from azure.identity import DefaultAzureCredential
+from pydantic import Field
+
+from pydantic_settings import (
+    AzureKeyVaultSettingsSource,
+    BaseSettings,
+    PydanticBaseSettingsSource,
+)
+
+
+class AzureKeyVaultSettings(BaseSettings):
+    field_with_underscore: str
+    field_with_alias: str = Field(..., alias='Alias-With-Dashes')
+
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        az_key_vault_settings = AzureKeyVaultSettingsSource(
+            settings_cls,
+            os.environ['AZURE_KEY_VAULT_URL'],
+            DefaultAzureCredential(),
+            dash_to_underscore=True,
+        )
+        return (az_key_vault_settings,)
+
+```
+
+This setup will load Azure Key Vault secrets named `field-with-underscore` and `Alias-With-Dashes`, mapping them to the `field_with_underscore` and `field_with_alias` fields, respectively.
+
+Tip
+
+Alternatively, you can configure an [alias_generator](../alias/#using-alias-generators) to map PascalCase secrets.
+
 ## Google Cloud Secret Manager
 
 Google Cloud Secret Manager allows you to store, manage, and access sensitive information as secrets in Google Cloud Platform. This integration lets you retrieve secrets directly from GCP Secret Manager for use in your Pydantic settings.
@@ -18293,9 +18341,9 @@ try:
 except UserWarning as e:
     print(e)
     '''
-    Field "model_dump_something" in Model has conflict with protected namespace "model_dump".
+    Field 'model_dump_something' in 'Model' conflicts with protected namespace 'model_dump'.
 
-    You may be able to resolve this warning by setting `model_config['protected_namespaces'] = ('model_validate',)`.
+    You may be able to solve this by setting the 'protected_namespaces' configuration to ('model_validate',).
     '''
 
 ```
@@ -18327,11 +18375,11 @@ with warnings.catch_warnings(record=True) as caught_warnings:
 for warning in caught_warnings:
     print(f'{warning.message}')
     '''
-    Field "also_protect_field" in Model has conflict with protected namespace "also_protect_".
-    You may be able to resolve this warning by setting `model_config['protected_namespaces'] = ('protect_me_', re.compile('^protect_this$'))`.
+    Field 'also_protect_field' in 'Model' conflicts with protected namespace 'also_protect_'.
+    You may be able to solve this by setting the 'protected_namespaces' configuration to ('protect_me_', re.compile('^protect_this$'))`.
 
-    Field "protect_this" in Model has conflict with protected namespace "re.compile('^protect_this$')".
-    You may be able to resolve this warning by setting `model_config['protected_namespaces'] = ('protect_me_', 'also_protect_')`.
+    Field 'protect_this' in 'Model' conflicts with protected namespace 're.compile('^protect_this$')'.
+    You may be able to solve this by setting the 'protected_namespaces' configuration to ('protect_me_', 'also_protect_')`.
     '''
 
 ```
@@ -18348,10 +18396,10 @@ try:
 
         model_config = ConfigDict(protected_namespaces=('model_',))
 
-except NameError as e:
+except ValueError as e:
     print(e)
     '''
-    Field "model_validate" conflicts with member <bound method BaseModel.model_validate of <class 'pydantic.main.BaseModel'>> of protected namespace "model_".
+    Field 'model_validate' conflicts with member <bound method BaseModel.model_validate of <class 'pydantic.main.BaseModel'>> of protected namespace 'model_'.
     '''
 
 ```
@@ -19294,6 +19342,7 @@ def dataclass(
         config_dict = config if config is not None else getattr(cls, '__pydantic_config__', None)
         config_wrapper = _config.ConfigWrapper(config_dict)
         decorators = _decorators.DecoratorInfos.build(cls)
+        decorators.update_from_config(config_wrapper)
 
         # Keep track of the original __doc__ so that we can restore it after applying the dataclasses decorator
         # Otherwise, classes with no __doc__ will have their signature added into the JSON schema description,

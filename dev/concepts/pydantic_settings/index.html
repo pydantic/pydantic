@@ -1529,6 +1529,21 @@ to help you monitor and understand your
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Azure Key Vault">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dash-to-underscore-mapping" class="md-nav__link">
+    <span class="md-ellipsis">
+      Dash to underscore mapping
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -3891,6 +3906,21 @@ to help you monitor and understand your
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Azure Key Vault">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dash-to-underscore-mapping" class="md-nav__link">
+    <span class="md-ellipsis">
+      Dash to underscore mapping
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -5752,6 +5782,47 @@ as the target mount point. If you want to use a different location, change <code
             <span class="n">az_key_vault_settings</span><span class="p">,</span>
         <span class="p">)</span>
 </code></pre></div>
+<h3 id="dash-to-underscore-mapping">Dash to underscore mapping<a class="headerlink" href="#dash-to-underscore-mapping" title="Permanent link">&para;</a></h3>
+<p>The Azure Key Vault source accepts a <code>dash_to_underscore</code> option, disabled by default, to support Key Vault kebab-case secret names by mapping them to Python's snake_case field names. When enabled, dashes (<code>-</code>) in secret names are mapped to underscores (<code>_</code>) in field names during validation.</p>
+<p>This mapping applies only to <em>field names</em>, not to aliases.</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">azure.identity</span><span class="w"> </span><span class="kn">import</span> <span class="n">DefaultAzureCredential</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">Field</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_settings</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">AzureKeyVaultSettingsSource</span><span class="p">,</span>
+    <span class="n">BaseSettings</span><span class="p">,</span>
+    <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">AzureKeyVaultSettings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+    <span class="n">field_with_underscore</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">field_with_alias</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="s1">&#39;Alias-With-Dashes&#39;</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">settings_customise_sources</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">settings_cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">BaseSettings</span><span class="p">],</span>
+        <span class="n">init_settings</span><span class="p">:</span> <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+        <span class="n">env_settings</span><span class="p">:</span> <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+        <span class="n">dotenv_settings</span><span class="p">:</span> <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+        <span class="n">file_secret_settings</span><span class="p">:</span> <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">PydanticBaseSettingsSource</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+        <span class="n">az_key_vault_settings</span> <span class="o">=</span> <span class="n">AzureKeyVaultSettingsSource</span><span class="p">(</span>
+            <span class="n">settings_cls</span><span class="p">,</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;AZURE_KEY_VAULT_URL&#39;</span><span class="p">],</span>
+            <span class="n">DefaultAzureCredential</span><span class="p">(),</span>
+            <span class="n">dash_to_underscore</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">az_key_vault_settings</span><span class="p">,)</span>
+</code></pre></div>
+<p>This setup will load Azure Key Vault secrets named <code>field-with-underscore</code> and <code>Alias-With-Dashes</code>, mapping them to the <code>field_with_underscore</code> and <code>field_with_alias</code> fields, respectively.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Alternatively, you can configure an <a href="../alias/#using-alias-generators">alias_generator</a> to map PascalCase secrets.</p>
+</div>
 <h2 id="google-cloud-secret-manager">Google Cloud Secret Manager<a class="headerlink" href="#google-cloud-secret-manager" title="Permanent link">&para;</a></h2>
 <p>Google Cloud Secret Manager allows you to store, manage, and access sensitive information as secrets in Google Cloud Platform. This integration lets you retrieve secrets directly from GCP Secret Manager for use in your Pydantic settings.</p>
 <h3 id="installation_1">Installation<a class="headerlink" href="#installation_1" title="Permanent link">&para;</a></h3>

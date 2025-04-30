@@ -774,9 +774,9 @@ try:
 except UserWarning as e:
     print(e)
     '''
-    Field "model_dump_something" in Model has conflict with protected namespace "model_dump".
+    Field 'model_dump_something' in 'Model' conflicts with protected namespace 'model_dump'.
 
-    You may be able to resolve this warning by setting `model_config['protected_namespaces'] = ('model_validate',)`.
+    You may be able to solve this by setting the 'protected_namespaces' configuration to ('model_validate',).
     '''
 
 ```
@@ -808,11 +808,11 @@ with warnings.catch_warnings(record=True) as caught_warnings:
 for warning in caught_warnings:
     print(f'{warning.message}')
     '''
-    Field "also_protect_field" in Model has conflict with protected namespace "also_protect_".
-    You may be able to resolve this warning by setting `model_config['protected_namespaces'] = ('protect_me_', re.compile('^protect_this$'))`.
+    Field 'also_protect_field' in 'Model' conflicts with protected namespace 'also_protect_'.
+    You may be able to solve this by setting the 'protected_namespaces' configuration to ('protect_me_', re.compile('^protect_this$'))`.
 
-    Field "protect_this" in Model has conflict with protected namespace "re.compile('^protect_this$')".
-    You may be able to resolve this warning by setting `model_config['protected_namespaces'] = ('protect_me_', 'also_protect_')`.
+    Field 'protect_this' in 'Model' conflicts with protected namespace 're.compile('^protect_this$')'.
+    You may be able to solve this by setting the 'protected_namespaces' configuration to ('protect_me_', 'also_protect_')`.
     '''
 
 ```
@@ -829,10 +829,10 @@ try:
 
         model_config = ConfigDict(protected_namespaces=('model_',))
 
-except NameError as e:
+except ValueError as e:
     print(e)
     '''
-    Field "model_validate" conflicts with member <bound method BaseModel.model_validate of <class 'pydantic.main.BaseModel'>> of protected namespace "model_".
+    Field 'model_validate' conflicts with member <bound method BaseModel.model_validate of <class 'pydantic.main.BaseModel'>> of protected namespace 'model_'.
     '''
 
 ```

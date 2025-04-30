@@ -5333,9 +5333,9 @@ where it is common to have fields with names like <code>model_id</code>, <code>m
 <span class="k">except</span> <span class="ne">UserWarning</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
 <span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">    Field &quot;model_dump_something&quot; in Model has conflict with protected namespace &quot;model_dump&quot;.</span>
+<span class="sd">    Field &#39;model_dump_something&#39; in &#39;Model&#39; conflicts with protected namespace &#39;model_dump&#39;.</span>
 
-<span class="sd">    You may be able to resolve this warning by setting `model_config[&#39;protected_namespaces&#39;] = (&#39;model_validate&#39;,)`.</span>
+<span class="sd">    You may be able to solve this by setting the &#39;protected_namespaces&#39; configuration to (&#39;model_validate&#39;,).</span>
 <span class="sd">    &#39;&#39;&#39;</span>
 </code></pre></div>
 <p>You can customize this behavior using the <code>protected_namespaces</code> setting:</p>
@@ -5363,11 +5363,11 @@ where it is common to have fields with names like <code>model_id</code>, <code>m
 <span class="k">for</span> <span class="n">warning</span> <span class="ow">in</span> <span class="n">caught_warnings</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">warning</span><span class="o">.</span><span class="n">message</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
 <span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">    Field &quot;also_protect_field&quot; in Model has conflict with protected namespace &quot;also_protect_&quot;.</span>
-<span class="sd">    You may be able to resolve this warning by setting `model_config[&#39;protected_namespaces&#39;] = (&#39;protect_me_&#39;, re.compile(&#39;^protect_this$&#39;))`.</span>
+<span class="sd">    Field &#39;also_protect_field&#39; in &#39;Model&#39; conflicts with protected namespace &#39;also_protect_&#39;.</span>
+<span class="sd">    You may be able to solve this by setting the &#39;protected_namespaces&#39; configuration to (&#39;protect_me_&#39;, re.compile(&#39;^protect_this$&#39;))`.</span>
 
-<span class="sd">    Field &quot;protect_this&quot; in Model has conflict with protected namespace &quot;re.compile(&#39;^protect_this$&#39;)&quot;.</span>
-<span class="sd">    You may be able to resolve this warning by setting `model_config[&#39;protected_namespaces&#39;] = (&#39;protect_me_&#39;, &#39;also_protect_&#39;)`.</span>
+<span class="sd">    Field &#39;protect_this&#39; in &#39;Model&#39; conflicts with protected namespace &#39;re.compile(&#39;^protect_this$&#39;)&#39;.</span>
+<span class="sd">    You may be able to solve this by setting the &#39;protected_namespaces&#39; configuration to (&#39;protect_me_&#39;, &#39;also_protect_&#39;)`.</span>
 <span class="sd">    &#39;&#39;&#39;</span>
 </code></pre></div>
 <p>While Pydantic will only emit a warning when an item is in a protected namespace but does not actually have a collision,
@@ -5381,10 +5381,10 @@ an error <em>is</em> raised if there is an actual collision with an existing att
 
         <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">protected_namespaces</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;model_&#39;</span><span class="p">,))</span>
 
-<span class="k">except</span> <span class="ne">NameError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+<span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
 <span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">    Field &quot;model_validate&quot; conflicts with member &lt;bound method BaseModel.model_validate of &lt;class &#39;pydantic.main.BaseModel&#39;&gt;&gt; of protected namespace &quot;model_&quot;.</span>
+<span class="sd">    Field &#39;model_validate&#39; conflicts with member &lt;bound method BaseModel.model_validate of &lt;class &#39;pydantic.main.BaseModel&#39;&gt;&gt; of protected namespace &#39;model_&#39;.</span>
 <span class="sd">    &#39;&#39;&#39;</span>
 </code></pre></div>
     </div>

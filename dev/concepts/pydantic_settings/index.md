@@ -1862,6 +1862,54 @@ class AzureKeyVaultSettings(BaseSettings):
 
 ```
 
+### Dash to underscore mapping
+
+The Azure Key Vault source accepts a `dash_to_underscore` option, disabled by default, to support Key Vault kebab-case secret names by mapping them to Python's snake_case field names. When enabled, dashes (`-`) in secret names are mapped to underscores (`_`) in field names during validation.
+
+This mapping applies only to *field names*, not to aliases.
+
+```py
+import os
+
+from azure.identity import DefaultAzureCredential
+from pydantic import Field
+
+from pydantic_settings import (
+    AzureKeyVaultSettingsSource,
+    BaseSettings,
+    PydanticBaseSettingsSource,
+)
+
+
+class AzureKeyVaultSettings(BaseSettings):
+    field_with_underscore: str
+    field_with_alias: str = Field(..., alias='Alias-With-Dashes')
+
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        az_key_vault_settings = AzureKeyVaultSettingsSource(
+            settings_cls,
+            os.environ['AZURE_KEY_VAULT_URL'],
+            DefaultAzureCredential(),
+            dash_to_underscore=True,
+        )
+        return (az_key_vault_settings,)
+
+```
+
+This setup will load Azure Key Vault secrets named `field-with-underscore` and `Alias-With-Dashes`, mapping them to the `field_with_underscore` and `field_with_alias` fields, respectively.
+
+Tip
+
+Alternatively, you can configure an [alias_generator](../alias/#using-alias-generators) to map PascalCase secrets.
+
 ## Google Cloud Secret Manager
 
 Google Cloud Secret Manager allows you to store, manage, and access sensitive information as secrets in Google Cloud Platform. This integration lets you retrieve secrets directly from GCP Secret Manager for use in your Pydantic settings.
