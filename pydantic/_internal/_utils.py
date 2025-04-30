@@ -368,6 +368,11 @@ def all_identical(left: typing.Iterable[Any], right: typing.Iterable[Any]) -> bo
     return True
 
 
+def get_first_not_none(a: Any, b: Any) -> Any:
+    """Return the first argument if it is not `None`, otherwise return the second argument."""
+    return a if a is not None else b
+
+
 @dataclasses.dataclass(frozen=True)
 class SafeGetItemProxy:
     """Wrapper redirecting `__getitem__` to `get` with a sentinel value as default
