@@ -1675,7 +1675,7 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        from ._internal._dataclasses import is_builtin_dataclass
+        from ._internal._dataclasses import is_stdlib_dataclass
 
         cls = schema['cls']
         config: ConfigDict = getattr(cls, '__pydantic_config__', cast('ConfigDict', {}))
@@ -1686,7 +1686,7 @@ class GenerateJsonSchema:
         self._update_class_schema(json_schema, cls, config)
 
         # Dataclass-specific handling of description
-        if is_builtin_dataclass(cls):
+        if is_stdlib_dataclass(cls):
             # vanilla dataclass; don't use cls.__doc__ as it will contain the class signature by default
             description = None
         else:
