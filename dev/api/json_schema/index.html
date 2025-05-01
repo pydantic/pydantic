@@ -11728,7 +11728,7 @@ explicitly specify <code>required=False</code> are required.</p>
 <span class="sd">    Returns:</span>
 <span class="sd">        The generated JSON schema.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">._internal._dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">is_builtin_dataclass</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">._internal._dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">is_stdlib_dataclass</span>
 
     <span class="bp">cls</span> <span class="o">=</span> <span class="n">schema</span><span class="p">[</span><span class="s1">&#39;cls&#39;</span><span class="p">]</span>
     <span class="n">config</span><span class="p">:</span> <span class="n">ConfigDict</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="s1">&#39;__pydantic_config__&#39;</span><span class="p">,</span> <span class="n">cast</span><span class="p">(</span><span class="s1">&#39;ConfigDict&#39;</span><span class="p">,</span> <span class="p">{}))</span>
@@ -11739,7 +11739,7 @@ explicitly specify <code>required=False</code> are required.</p>
     <span class="bp">self</span><span class="o">.</span><span class="n">_update_class_schema</span><span class="p">(</span><span class="n">json_schema</span><span class="p">,</span> <span class="bp">cls</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
 
     <span class="c1"># Dataclass-specific handling of description</span>
-    <span class="k">if</span> <span class="n">is_builtin_dataclass</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">is_stdlib_dataclass</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
         <span class="c1"># vanilla dataclass; don&#39;t use cls.__doc__ as it will contain the class signature by default</span>
         <span class="n">description</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="k">else</span><span class="p">:</span>

@@ -631,7 +631,7 @@ The "Strict" column contains checkmarks for type conversions that are allowed wh
 
 API Documentation
 
-pydantic.dataclasses.dataclass
+@pydantic.dataclasses.dataclass
 
 If you don't want to use Pydantic's BaseModel you can instead get the same data validation on standard dataclasses.
 
@@ -707,7 +707,7 @@ You can use both the Pydantic's Field() and the stdlib's field() functions:
 import dataclasses
 from typing import Optional
 
-from pydantic import Field, TypeAdapter
+from pydantic import Field
 from pydantic.dataclasses import dataclass
 
 
@@ -720,48 +720,21 @@ class User:
         default=None,
         metadata={'title': 'The age of the user', 'description': 'do not lie!'},
     )
-    height: Optional[int] = Field(None, title='The height in cm', ge=50, le=300)
+    height: Optional[int] = Field(
+        default=None, title='The height in cm', ge=50, le=300
+    )
 
 
-user = User(id='42')
-print(TypeAdapter(User).json_schema())
-"""
-{
-    'properties': {
-        'id': {'title': 'Id', 'type': 'integer'},
-        'name': {'default': 'John Doe', 'title': 'Name', 'type': 'string'},
-        'friends': {
-            'items': {'type': 'integer'},
-            'title': 'Friends',
-            'type': 'array',
-        },
-        'age': {
-            'anyOf': [{'type': 'integer'}, {'type': 'null'}],
-            'default': None,
-            'description': 'do not lie!',
-            'title': 'The age of the user',
-        },
-        'height': {
-            'anyOf': [
-                {'maximum': 300, 'minimum': 50, 'type': 'integer'},
-                {'type': 'null'},
-            ],
-            'default': None,
-            'title': 'The height in cm',
-        },
-    },
-    'required': ['id'],
-    'title': 'User',
-    'type': 'object',
-}
-"""
+user = User(id='42', height='250')
+print(user)
+#> User(id=42, name='John Doe', friends=[0], age=None, height=250)
 
 ```
 
 ```python
 import dataclasses
 
-from pydantic import Field, TypeAdapter
+from pydantic import Field
 from pydantic.dataclasses import dataclass
 
 
@@ -774,45 +747,18 @@ class User:
         default=None,
         metadata={'title': 'The age of the user', 'description': 'do not lie!'},
     )
-    height: int | None = Field(None, title='The height in cm', ge=50, le=300)
+    height: int | None = Field(
+        default=None, title='The height in cm', ge=50, le=300
+    )
 
 
-user = User(id='42')
-print(TypeAdapter(User).json_schema())
-"""
-{
-    'properties': {
-        'id': {'title': 'Id', 'type': 'integer'},
-        'name': {'default': 'John Doe', 'title': 'Name', 'type': 'string'},
-        'friends': {
-            'items': {'type': 'integer'},
-            'title': 'Friends',
-            'type': 'array',
-        },
-        'age': {
-            'anyOf': [{'type': 'integer'}, {'type': 'null'}],
-            'default': None,
-            'description': 'do not lie!',
-            'title': 'The age of the user',
-        },
-        'height': {
-            'anyOf': [
-                {'maximum': 300, 'minimum': 50, 'type': 'integer'},
-                {'type': 'null'},
-            ],
-            'default': None,
-            'title': 'The height in cm',
-        },
-    },
-    'required': ['id'],
-    'title': 'User',
-    'type': 'object',
-}
-"""
+user = User(id='42', height='250')
+print(user)
+#> User(id=42, name='John Doe', friends=[0], age=None, height=250)
 
 ```
 
-The Pydantic `@dataclass` decorator accepts the same arguments as the standard decorator, with the addition of a `config` parameter.
+The Pydantic @dataclass decorator accepts the same arguments as the standard decorator, with the addition of a `config` parameter.
 
 ## Dataclass config
 
@@ -849,7 +795,7 @@ While Pydantic dataclasses support the extra configuration value, some default b
 
 ## Rebuilding dataclass schema
 
-The rebuild_dataclass() can be used to rebuild the core schema of the dataclass. See the [rebuilding model schema](../models/#rebuilding-model-schema) section for more details.
+The rebuild_dataclass() function can be used to rebuild the core schema of the dataclass. See the [rebuilding model schema](../models/#rebuilding-model-schema) section for more details.
 
 ## Stdlib dataclasses and Pydantic dataclasses
 
@@ -891,6 +837,25 @@ except pydantic.ValidationError as e:
     z
       Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='pika', input_type=str]
     """
+
+```
+
+The decorator can also be applied directly on a stdlib dataclass, in which case a new subclass will be created:
+
+```python
+import dataclasses
+
+import pydantic
+
+
+@dataclasses.dataclass
+class A:
+    a: int
+
+
+PydanticA = pydantic.dataclasses.dataclass(A)
+print(PydanticA(a='1'))
+#> A(a=1)
 
 ```
 
@@ -1047,7 +1012,7 @@ print(repr(m))
 
 ### Checking if a dataclass is a Pydantic dataclass
 
-Pydantic dataclasses are still considered dataclasses, so using dataclasses.is_dataclass will return `True`. To check if a type is specifically a pydantic dataclass you can use the is_pydantic_dataclass function.
+Pydantic dataclasses are still considered dataclasses, so using dataclasses.is_dataclass() will return `True`. To check if a type is specifically a Pydantic dataclass you can use the is_pydantic_dataclass() function.
 
 ```python
 import dataclasses
@@ -19347,9 +19312,9 @@ def dataclass(
         # since dataclasses.dataclass will set this as the __doc__
         original_doc = cls.__doc__
 
-        if _pydantic_dataclasses.is_builtin_dataclass(cls):
-            # Don't preserve the docstring for vanilla dataclasses, as it may include the signature
-            # This matches v1 behavior, and there was an explicit test for it
+        if _pydantic_dataclasses.is_stdlib_dataclass(cls):
+            # Vanilla dataclasses include a default docstring (representing the class signature),
+            # which we don't want to preserve.
             original_doc = None
 
             # We don't want to add validation to the existing std lib dataclass, so we will subclass it
@@ -25972,7 +25937,7 @@ def dataclass_schema(self, schema: core_schema.DataclassSchema) -> JsonSchemaVal
     Returns:
         The generated JSON schema.
     """
-    from ._internal._dataclasses import is_builtin_dataclass
+    from ._internal._dataclasses import is_stdlib_dataclass
 
     cls = schema['cls']
     config: ConfigDict = getattr(cls, '__pydantic_config__', cast('ConfigDict', {}))
@@ -25983,7 +25948,7 @@ def dataclass_schema(self, schema: core_schema.DataclassSchema) -> JsonSchemaVal
     self._update_class_schema(json_schema, cls, config)
 
     # Dataclass-specific handling of description
-    if is_builtin_dataclass(cls):
+    if is_stdlib_dataclass(cls):
         # vanilla dataclass; don't use cls.__doc__ as it will contain the class signature by default
         description = None
     else:

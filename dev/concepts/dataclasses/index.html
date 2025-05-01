@@ -3139,7 +3139,7 @@ to help you monitor and understand your
 
 <details class="api">
 <summary>API Documentation</summary>
-<p><a class="autorefs autorefs-internal" href="../../api/dataclasses/#pydantic.dataclasses.dataclass"><code>pydantic.dataclasses.dataclass</code></a><br></p>
+<p><a class="autorefs autorefs-internal" href="../../api/dataclasses/#pydantic.dataclasses.dataclass"><code>@pydantic.dataclasses.dataclass</code></a><br></p>
 </details>
 <p>If you don't want to use Pydantic's <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel"><code>BaseModel</code></a> you can instead get the same data validation
 on standard <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/dataclasses.html#module-dataclasses">dataclasses</a>.</p>
@@ -3217,7 +3217,7 @@ you can wrap the dataclass with a <a class="autorefs autorefs-internal" href="..
 <div class="language-python highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">dataclasses</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">Field</span><span class="p">,</span> <span class="n">TypeAdapter</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">Field</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic.dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
 
 
@@ -3230,47 +3230,20 @@ you can wrap the dataclass with a <a class="autorefs autorefs-internal" href="..
         <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="s1">&#39;The age of the user&#39;</span><span class="p">,</span> <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="s1">&#39;do not lie!&#39;</span><span class="p">},</span>
     <span class="p">)</span>
-    <span class="n">height</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s1">&#39;The height in cm&#39;</span><span class="p">,</span> <span class="n">ge</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">le</span><span class="o">=</span><span class="mi">300</span><span class="p">)</span>
+    <span class="n">height</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s1">&#39;The height in cm&#39;</span><span class="p">,</span> <span class="n">ge</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">le</span><span class="o">=</span><span class="mi">300</span>
+    <span class="p">)</span>
 
 
-<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="s1">&#39;42&#39;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">TypeAdapter</span><span class="p">(</span><span class="n">User</span><span class="p">)</span><span class="o">.</span><span class="n">json_schema</span><span class="p">())</span>
-<span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">{</span>
-<span class="sd">    &#39;properties&#39;: {</span>
-<span class="sd">        &#39;id&#39;: {&#39;title&#39;: &#39;Id&#39;, &#39;type&#39;: &#39;integer&#39;},</span>
-<span class="sd">        &#39;name&#39;: {&#39;default&#39;: &#39;John Doe&#39;, &#39;title&#39;: &#39;Name&#39;, &#39;type&#39;: &#39;string&#39;},</span>
-<span class="sd">        &#39;friends&#39;: {</span>
-<span class="sd">            &#39;items&#39;: {&#39;type&#39;: &#39;integer&#39;},</span>
-<span class="sd">            &#39;title&#39;: &#39;Friends&#39;,</span>
-<span class="sd">            &#39;type&#39;: &#39;array&#39;,</span>
-<span class="sd">        },</span>
-<span class="sd">        &#39;age&#39;: {</span>
-<span class="sd">            &#39;anyOf&#39;: [{&#39;type&#39;: &#39;integer&#39;}, {&#39;type&#39;: &#39;null&#39;}],</span>
-<span class="sd">            &#39;default&#39;: None,</span>
-<span class="sd">            &#39;description&#39;: &#39;do not lie!&#39;,</span>
-<span class="sd">            &#39;title&#39;: &#39;The age of the user&#39;,</span>
-<span class="sd">        },</span>
-<span class="sd">        &#39;height&#39;: {</span>
-<span class="sd">            &#39;anyOf&#39;: [</span>
-<span class="sd">                {&#39;maximum&#39;: 300, &#39;minimum&#39;: 50, &#39;type&#39;: &#39;integer&#39;},</span>
-<span class="sd">                {&#39;type&#39;: &#39;null&#39;},</span>
-<span class="sd">            ],</span>
-<span class="sd">            &#39;default&#39;: None,</span>
-<span class="sd">            &#39;title&#39;: &#39;The height in cm&#39;,</span>
-<span class="sd">        },</span>
-<span class="sd">    },</span>
-<span class="sd">    &#39;required&#39;: [&#39;id&#39;],</span>
-<span class="sd">    &#39;title&#39;: &#39;User&#39;,</span>
-<span class="sd">    &#39;type&#39;: &#39;object&#39;,</span>
-<span class="sd">}</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="s1">&#39;42&#39;</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="s1">&#39;250&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
+<span class="c1">#&gt; User(id=42, name=&#39;John Doe&#39;, friends=[0], age=None, height=250)</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">dataclasses</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">Field</span><span class="p">,</span> <span class="n">TypeAdapter</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">Field</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic.dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
 
 
@@ -3283,47 +3256,20 @@ you can wrap the dataclass with a <a class="autorefs autorefs-internal" href="..
         <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="s1">&#39;The age of the user&#39;</span><span class="p">,</span> <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="s1">&#39;do not lie!&#39;</span><span class="p">},</span>
     <span class="p">)</span>
-    <span class="n">height</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s1">&#39;The height in cm&#39;</span><span class="p">,</span> <span class="n">ge</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">le</span><span class="o">=</span><span class="mi">300</span><span class="p">)</span>
+    <span class="n">height</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s1">&#39;The height in cm&#39;</span><span class="p">,</span> <span class="n">ge</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">le</span><span class="o">=</span><span class="mi">300</span>
+    <span class="p">)</span>
 
 
-<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="s1">&#39;42&#39;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">TypeAdapter</span><span class="p">(</span><span class="n">User</span><span class="p">)</span><span class="o">.</span><span class="n">json_schema</span><span class="p">())</span>
-<span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">{</span>
-<span class="sd">    &#39;properties&#39;: {</span>
-<span class="sd">        &#39;id&#39;: {&#39;title&#39;: &#39;Id&#39;, &#39;type&#39;: &#39;integer&#39;},</span>
-<span class="sd">        &#39;name&#39;: {&#39;default&#39;: &#39;John Doe&#39;, &#39;title&#39;: &#39;Name&#39;, &#39;type&#39;: &#39;string&#39;},</span>
-<span class="sd">        &#39;friends&#39;: {</span>
-<span class="sd">            &#39;items&#39;: {&#39;type&#39;: &#39;integer&#39;},</span>
-<span class="sd">            &#39;title&#39;: &#39;Friends&#39;,</span>
-<span class="sd">            &#39;type&#39;: &#39;array&#39;,</span>
-<span class="sd">        },</span>
-<span class="sd">        &#39;age&#39;: {</span>
-<span class="sd">            &#39;anyOf&#39;: [{&#39;type&#39;: &#39;integer&#39;}, {&#39;type&#39;: &#39;null&#39;}],</span>
-<span class="sd">            &#39;default&#39;: None,</span>
-<span class="sd">            &#39;description&#39;: &#39;do not lie!&#39;,</span>
-<span class="sd">            &#39;title&#39;: &#39;The age of the user&#39;,</span>
-<span class="sd">        },</span>
-<span class="sd">        &#39;height&#39;: {</span>
-<span class="sd">            &#39;anyOf&#39;: [</span>
-<span class="sd">                {&#39;maximum&#39;: 300, &#39;minimum&#39;: 50, &#39;type&#39;: &#39;integer&#39;},</span>
-<span class="sd">                {&#39;type&#39;: &#39;null&#39;},</span>
-<span class="sd">            ],</span>
-<span class="sd">            &#39;default&#39;: None,</span>
-<span class="sd">            &#39;title&#39;: &#39;The height in cm&#39;,</span>
-<span class="sd">        },</span>
-<span class="sd">    },</span>
-<span class="sd">    &#39;required&#39;: [&#39;id&#39;],</span>
-<span class="sd">    &#39;title&#39;: &#39;User&#39;,</span>
-<span class="sd">    &#39;type&#39;: &#39;object&#39;,</span>
-<span class="sd">}</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="s1">&#39;42&#39;</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="s1">&#39;250&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
+<span class="c1">#&gt; User(id=42, name=&#39;John Doe&#39;, friends=[0], age=None, height=250)</span>
 </code></pre></div>
 </div>
 </div>
 </div>
-<p>The Pydantic <code>@dataclass</code> decorator accepts the same arguments as the standard decorator, with the addition
-of a <code>config</code> parameter.</p>
+<p>The Pydantic <a class="autorefs autorefs-internal" href="../../api/dataclasses/#pydantic.dataclasses.dataclass"><code>@dataclass</code></a> decorator accepts the same arguments as the standard decorator,
+with the addition of a <code>config</code> parameter.</p>
 <h2 id="dataclass-config">Dataclass config<a class="headerlink" href="#dataclass-config" title="Permanent link">&para;</a></h2>
 <p>If you want to modify the configuration like you would with a <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel"><code>BaseModel</code></a>, you have two options:</p>
 <ul>
@@ -3358,7 +3304,7 @@ behavior of stdlib dataclasses may prevail. For example, any extra fields presen
 There is also no way to provide validation <a href="../models/#extra-data">using the <code>__pydantic_extra__</code> attribute</a>.</p>
 </div>
 <h2 id="rebuilding-dataclass-schema">Rebuilding dataclass schema<a class="headerlink" href="#rebuilding-dataclass-schema" title="Permanent link">&para;</a></h2>
-<p>The <a class="autorefs autorefs-internal" href="../../api/dataclasses/#pydantic.dataclasses.rebuild_dataclass"><code>rebuild_dataclass()</code></a> can be used to rebuild the core schema of the dataclass.
+<p>The <a class="autorefs autorefs-internal" href="../../api/dataclasses/#pydantic.dataclasses.rebuild_dataclass"><code>rebuild_dataclass()</code></a> function can be used to rebuild the core schema of the dataclass.
 See the <a href="../models/#rebuilding-model-schema">rebuilding model schema</a> section for more details.</p>
 <h2 id="stdlib-dataclasses-and-pydantic-dataclasses">Stdlib dataclasses and Pydantic dataclasses<a class="headerlink" href="#stdlib-dataclasses-and-pydantic-dataclasses" title="Permanent link">&para;</a></h2>
 <h3 id="inherit-from-stdlib-dataclasses">Inherit from stdlib dataclasses<a class="headerlink" href="#inherit-from-stdlib-dataclasses" title="Permanent link">&para;</a></h3>
@@ -3397,6 +3343,21 @@ all the inherited fields.</p>
 <span class="sd">    z</span>
 <span class="sd">      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value=&#39;pika&#39;, input_type=str]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+<p>The decorator can also be applied directly on a stdlib dataclass, in which case a new subclass will be created:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">dataclasses</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">pydantic</span>
+
+
+<span class="nd">@dataclasses</span><span class="o">.</span><span class="n">dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">A</span><span class="p">:</span>
+    <span class="n">a</span><span class="p">:</span> <span class="nb">int</span>
+
+
+<span class="n">PydanticA</span> <span class="o">=</span> <span class="n">pydantic</span><span class="o">.</span><span class="n">dataclasses</span><span class="o">.</span><span class="n">dataclass</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">PydanticA</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="s1">&#39;1&#39;</span><span class="p">))</span>
+<span class="c1">#&gt; A(a=1)</span>
 </code></pre></div>
 <h3 id="usage-of-stdlib-dataclasses-with-basemodel">Usage of stdlib dataclasses with <code>BaseModel</code><a class="headerlink" href="#usage-of-stdlib-dataclasses-with-basemodel" title="Permanent link">&para;</a></h3>
 <p>When a standard library dataclass is used within a Pydantic model, a Pydantic dataclass or a <a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic.type_adapter.TypeAdapter"><code>TypeAdapter</code></a>,
@@ -3550,9 +3511,9 @@ configuration value on the dataclass:</p>
 <span class="c1">#&gt; Model(dc=DC(a=ArbitraryType(value=3), b=&#39;qwe&#39;), other=&#39;other&#39;)</span>
 </code></pre></div>
 <h3 id="checking-if-a-dataclass-is-a-pydantic-dataclass">Checking if a dataclass is a Pydantic dataclass<a class="headerlink" href="#checking-if-a-dataclass-is-a-pydantic-dataclass" title="Permanent link">&para;</a></h3>
-<p>Pydantic dataclasses are still considered dataclasses, so using <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/dataclasses.html#dataclasses.is_dataclass"><code>dataclasses.is_dataclass</code></a> will return <code>True</code>. To check
-if a type is specifically a pydantic dataclass you can use the <a class="autorefs autorefs-internal" href="../../api/dataclasses/#pydantic.dataclasses.is_pydantic_dataclass"><code>is_pydantic_dataclass</code></a>
-function.</p>
+<p>Pydantic dataclasses are still considered dataclasses, so using <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/dataclasses.html#dataclasses.is_dataclass"><code>dataclasses.is_dataclass()</code></a>
+will return <code>True</code>. To check if a type is specifically a Pydantic dataclass you can use the
+<a class="autorefs autorefs-internal" href="../../api/dataclasses/#pydantic.dataclasses.is_pydantic_dataclass"><code>is_pydantic_dataclass()</code></a> function.</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">dataclasses</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">pydantic</span>

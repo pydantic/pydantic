@@ -3769,9 +3769,9 @@ new attributes after instantiation.</p>
         <span class="c1"># since dataclasses.dataclass will set this as the __doc__</span>
         <span class="n">original_doc</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="vm">__doc__</span>
 
-        <span class="k">if</span> <span class="n">_pydantic_dataclasses</span><span class="o">.</span><span class="n">is_builtin_dataclass</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
-            <span class="c1"># Don&#39;t preserve the docstring for vanilla dataclasses, as it may include the signature</span>
-            <span class="c1"># This matches v1 behavior, and there was an explicit test for it</span>
+        <span class="k">if</span> <span class="n">_pydantic_dataclasses</span><span class="o">.</span><span class="n">is_stdlib_dataclass</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+            <span class="c1"># Vanilla dataclasses include a default docstring (representing the class signature),</span>
+            <span class="c1"># which we don&#39;t want to preserve.</span>
             <span class="n">original_doc</span> <span class="o">=</span> <span class="kc">None</span>
 
             <span class="c1"># We don&#39;t want to add validation to the existing std lib dataclass, so we will subclass it</span>

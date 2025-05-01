@@ -241,9 +241,9 @@ def dataclass(
         # since dataclasses.dataclass will set this as the __doc__
         original_doc = cls.__doc__
 
-        if _pydantic_dataclasses.is_builtin_dataclass(cls):
-            # Don't preserve the docstring for vanilla dataclasses, as it may include the signature
-            # This matches v1 behavior, and there was an explicit test for it
+        if _pydantic_dataclasses.is_stdlib_dataclass(cls):
+            # Vanilla dataclasses include a default docstring (representing the class signature),
+            # which we don't want to preserve.
             original_doc = None
 
             # We don't want to add validation to the existing std lib dataclass, so we will subclass it
