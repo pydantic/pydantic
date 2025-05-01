@@ -613,16 +613,17 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             Returns `None` if the schema is already "complete" and rebuilding was not required.
             If rebuilding _was_ required, returns `True` if rebuilding was successful, otherwise `False`.
         """
-        if not force and cls.__pydantic_complete__:
+        already_complete = cls.__pydantic_complete__
+        if already_complete and not force:
             return None
+
+        cls.__pydantic_complete__ = False
 
         for attr in ('__pydantic_core_schema__', '__pydantic_validator__', '__pydantic_serializer__'):
             if attr in cls.__dict__:
                 # Deleting the validator/serializer is necessary as otherwise they can get reused in
                 # pydantic-core. Same applies for the core schema that can be reused in schema generation.
                 delattr(cls, attr)
-
-        cls.__pydantic_complete__ = False
 
         if _types_namespace is not None:
             rebuild_ns = _types_namespace
@@ -642,6 +643,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             _config.ConfigWrapper(cls.model_config, check=False),
             ns_resolver,
             raise_errors=raise_errors,
+            # If the model was already complete, we don't need to call the hook again.
+            call_on_complete_hook=not already_complete,
         )
 
     @classmethod
@@ -809,19 +812,36 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     @classmethod
     def __pydantic_init_subclass__(cls, **kwargs: Any) -> None:
         """This is intended to behave just like `__init_subclass__`, but is called by `ModelMetaclass`
-        only after the class is actually fully initialized. In particular, attributes like `model_fields` will
-        be present when this is called.
+        only after basic class initialization is complete. In particular, attributes like `model_fields` will
+        be present when this is called, but forward annotations are not guaranteed to be resolved yet,
+        meaning that creating an instance of the class may fail.
 
         This is necessary because `__init_subclass__` will always be called by `type.__new__`,
         and it would require a prohibitively large refactor to the `ModelMetaclass` to ensure that
         `type.__new__` was called in such a manner that the class would already be sufficiently initialized.
 
         This will receive the same `kwargs` that would be passed to the standard `__init_subclass__`, namely,
-        any kwargs passed to the class definition that aren't used internally by pydantic.
+        any kwargs passed to the class definition that aren't used internally by Pydantic.
 
         Args:
             **kwargs: Any keyword arguments passed to the class definition that aren't used internally
-                by pydantic.
+                by Pydantic.
+
+        Note:
+            You may want to override [`__pydantic_on_complete__()`][pydantic.main.BaseModel.__pydantic_on_complete__]
+            instead, which is called once the class and its fields are fully initialized and ready for validation.
+        """
+        pass
+
+    @classmethod
+    def __pydantic_on_complete__(cls) -> None:
+        """This is called once the class and its fields are fully initialized and ready to be used.
+
+        This typically happens when the class is created (just before
+        [`__pydantic_init_subclass__()`][pydantic.main.BaseModel.__pydantic_init_subclass__] is called on the superclass),
+        except when forward annotations are used that could not immediately be resolved.
+        In that case, it will be called later, when the model is rebuilt automatically or explicitly using
+        [`model_rebuild()`][pydantic.main.BaseModel.model_rebuild].
         """
         pass
 

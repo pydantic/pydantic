@@ -2430,6 +2430,23 @@ def test_dataclass_slots(dataclass_decorator):
     assert dc.b == 'bar'
 
 
+# Must be defined at the module level to be picklable:
+@pydantic.dataclasses.dataclass(slots=True, config={'validate_assignment': True})
+class DataclassSlotsValidateAssignment:
+    a: int
+
+
+@pytest.mark.skipif(sys.version_info < (3, 10), reason='slots are only supported for dataclasses in Python >= 3.10')
+def test_dataclass_slots_validate_assignment():
+    """https://github.com/pydantic/pydantic/issues/11768"""
+
+    m = DataclassSlotsValidateAssignment(1)
+    m_pickle = pickle.loads(pickle.dumps(m))
+    assert m_pickle.a == 1
+    with pytest.raises(ValidationError):
+        m.a = 'not_an_int'
+
+
 @pytest.mark.parametrize(
     'dataclass_decorator',
     [

@@ -5,7 +5,7 @@ from __future__ import annotations as _annotations
 import dataclasses
 import typing
 import warnings
-from functools import partial, wraps
+from functools import partial
 from typing import Any, ClassVar
 
 from pydantic_core import (
@@ -63,15 +63,15 @@ else:
 
 def set_dataclass_fields(
     cls: type[StandardDataclass],
+    config_wrapper: _config.ConfigWrapper,
     ns_resolver: NsResolver | None = None,
-    config_wrapper: _config.ConfigWrapper | None = None,
 ) -> None:
     """Collect and set `cls.__pydantic_fields__`.
 
     Args:
         cls: The class.
+        config_wrapper: The config wrapper instance.
         ns_resolver: Namespace resolver to use when getting dataclass annotations.
-        config_wrapper: The config wrapper instance, defaults to `None`.
     """
     typevars_map = get_standard_typevars_map(cls)
     fields = collect_dataclass_fields(
@@ -124,7 +124,7 @@ def complete_dataclass(
     cls.__init__ = __init__  # type: ignore
     cls.__pydantic_config__ = config_wrapper.config_dict  # type: ignore
 
-    set_dataclass_fields(cls, ns_resolver, config_wrapper=config_wrapper)
+    set_dataclass_fields(cls, config_wrapper=config_wrapper, ns_resolver=ns_resolver)
 
     if not _force_build and config_wrapper.defer_build:
         set_dataclass_mocks(cls)
@@ -178,22 +178,12 @@ def complete_dataclass(
     # We are about to set all the remaining required properties expected for this cast;
     # __pydantic_decorators__ and __pydantic_fields__ should already be set
     cls = typing.cast('type[PydanticDataclass]', cls)
-    # debug(schema)
 
     cls.__pydantic_core_schema__ = schema
-    cls.__pydantic_validator__ = validator = create_schema_validator(
+    cls.__pydantic_validator__ = create_schema_validator(
         schema, cls, cls.__module__, cls.__qualname__, 'dataclass', core_config, config_wrapper.plugin_settings
     )
     cls.__pydantic_serializer__ = SchemaSerializer(schema, core_config)
-
-    if config_wrapper.validate_assignment:
-
-        @wraps(cls.__setattr__)
-        def validated_setattr(instance: Any, field: str, value: str, /) -> None:
-            validator.validate_assignment(instance, field, value)
-
-        cls.__setattr__ = validated_setattr.__get__(None, cls)  # type: ignore
-
     cls.__pydantic_complete__ = True
     return True
 
