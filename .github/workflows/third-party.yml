@@ -59,7 +59,7 @@ jobs:
       with:
         path: pydantic-latest
 
-    - uses: astral-sh/setup-uv@v5
+    - uses: astral-sh/setup-uv@v6
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -100,7 +100,7 @@ jobs:
       with:
         path: pydantic-latest
 
-    - uses: astral-sh/setup-uv@v5
+    - uses: astral-sh/setup-uv@v6
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -390,7 +390,7 @@ jobs:
         path: pydantic-latest
 
     - name: Install uv
-      uses: astral-sh/setup-uv@v5
+      uses: astral-sh/setup-uv@v6
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
@@ -496,7 +496,7 @@ jobs:
       # and there's currently no way to have the venv created in a subdir
       # (see https://github.com/astral-sh/setup-uv/issues/251).
       - name: Install UV
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v6
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
@@ -543,7 +543,7 @@ jobs:
           path: pydantic-latest
 
       - name: Install UV
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v6
         with:
             python-version: ${{ matrix.python-version }}
 
