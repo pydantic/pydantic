@@ -68,7 +68,7 @@ model = Model(a=1, b=2)
         ]
    ```
 
-3. Run `make test-mypy-update-all`. It should create a new output with your new file.
+3. Run `make test-mypy-update`. It should create a new output with your new file.
 
 4. Make sure the output contains the expected Mypy error message/code.
 
