@@ -211,13 +211,17 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     __pydantic_computed_fields__: ClassVar[Dict[str, ComputedFieldInfo]]  # noqa: UP006
     """A dictionary of computed field names and their corresponding [`ComputedFieldInfo`][pydantic.fields.ComputedFieldInfo] objects."""
 
-    __pydantic_extra__: dict[str, Any] | None = _model_construction.NoInitField(init=False)
+    __pydantic_extra__: Dict[str, Any] | None = _model_construction.NoInitField(
+        init=False
+    )
     """A dictionary containing extra values, if [`extra`][pydantic.config.ConfigDict.extra] is set to `'allow'`."""
 
     __pydantic_fields_set__: set[str] = _model_construction.NoInitField(init=False)
     """The names of fields explicitly set during instantiation."""
 
-    __pydantic_private__: dict[str, Any] | None = _model_construction.NoInitField(init=False)
+    __pydantic_private__: Dict[str, Any] | None = _model_construction.NoInitField(
+        init=False
+    )
     """Values of private attributes set on the model instance."""
 
     if not TYPE_CHECKING:
