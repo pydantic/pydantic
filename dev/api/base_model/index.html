@@ -3570,7 +3570,7 @@ This replaces <code>Model.__validators__</code> and <code>Model.__root_validator
           <tr class="doc-section-item">
             <td><code><span title="pydantic.BaseModel.__pydantic_extra__">__pydantic_extra__</span></code></td>
             <td>
-                  <code><span title="pydantic.main.BaseModel.dict">dict</span>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>] | None</code>
+                  <code><a class="autorefs autorefs-external" title="typing.Dict" href="https://docs.python.org/3/library/typing.html#typing.Dict">Dict</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>] | None</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3593,7 +3593,7 @@ is set to <code>'allow'</code>.</p>
           <tr class="doc-section-item">
             <td><code><span title="pydantic.BaseModel.__pydantic_private__">__pydantic_private__</span></code></td>
             <td>
-                  <code><span title="pydantic.main.BaseModel.dict">dict</span>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>] | None</code>
+                  <code><a class="autorefs autorefs-external" title="typing.Dict" href="https://docs.python.org/3/library/typing.html#typing.Dict">Dict</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>] | None</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -5224,13 +5224,13 @@ is set to <code>'allow'</code>.</p>
     <span class="n">__pydantic_computed_fields__</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ComputedFieldInfo</span><span class="p">]]</span>  <span class="c1"># noqa: UP006</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A dictionary of computed field names and their corresponding [`ComputedFieldInfo`][pydantic.fields.ComputedFieldInfo] objects.&quot;&quot;&quot;</span>
 
-    <span class="n">__pydantic_extra__</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">_model_construction</span><span class="o">.</span><span class="n">NoInitField</span><span class="p">(</span><span class="n">init</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">__pydantic_extra__</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">_model_construction</span><span class="o">.</span><span class="n">NoInitField</span><span class="p">(</span><span class="n">init</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>  <span class="c1"># noqa: UP006</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A dictionary containing extra values, if [`extra`][pydantic.config.ConfigDict.extra] is set to `&#39;allow&#39;`.&quot;&quot;&quot;</span>
 
     <span class="n">__pydantic_fields_set__</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">_model_construction</span><span class="o">.</span><span class="n">NoInitField</span><span class="p">(</span><span class="n">init</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The names of fields explicitly set during instantiation.&quot;&quot;&quot;</span>
 
-    <span class="n">__pydantic_private__</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">_model_construction</span><span class="o">.</span><span class="n">NoInitField</span><span class="p">(</span><span class="n">init</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">__pydantic_private__</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">_model_construction</span><span class="o">.</span><span class="n">NoInitField</span><span class="p">(</span><span class="n">init</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>  <span class="c1"># noqa: UP006</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Values of private attributes set on the model instance.&quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
