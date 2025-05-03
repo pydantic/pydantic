@@ -2006,11 +2006,12 @@ def test_info_field_name_data_before():
 def test_info_field_name_clash():
     """
     Test that we raise an error if a field is validated by both a model and a field validator
+    with the same name.
     This is invalid because the field validator will not be called
     and the model validator will run twice
     """
 
-    with pytest.raises(PydanticUserError):
+    with pytest.raises(PydanticUserError) as exc_info:
 
         class EvilModel(BaseModel):
             foo: Optional[str] = Field(default=None)
@@ -2029,6 +2030,8 @@ def test_info_field_name_clash():
                 return data
 
         BrokenModel(foo='foo')
+    assert exc_info.match(r'^Validator method {.*} overrides existing validator method, this is not allowed')
+    assert exc_info.value.code == 'validator-method-override'
 
 
 def test_decorator_proxy():

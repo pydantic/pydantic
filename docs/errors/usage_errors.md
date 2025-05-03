@@ -1386,3 +1386,37 @@ try:
 except PydanticUserError as exc_info:
     assert exc_info.code == 'validate-by-alias-and-name-false'
 ```
+
+## Validator method overrides {#validator-method-override}
+
+This error is raised when you define a validator method on a model that already has a validator method with the same name.
+
+```python
+from typing import Optional
+
+from pydantic import (
+    BaseModel,
+    Field,
+    PydanticUserError,
+    field_validator,
+    model_validator,
+)
+
+try:
+
+    class EvilModel(BaseModel):
+        a: Optional[str] = Field(default=None)
+
+        @field_validator('a')
+        def check_a(cls, v):
+            return v
+
+    class BrokenModel(EvilModel):
+
+        @model_validator(mode='before')
+        def check_a(cls, data):
+            return data
+
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'validator-method-override'
+```

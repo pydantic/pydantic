@@ -514,11 +514,11 @@ class DecoratorInfos:
             for name, value in to_replace:
                 setattr(model_dc, name, value)
         if hasattr(model_dc, '__pydantic_decorators__'):
-            is_overridden, duplicated_methods = is_method_overridden(model_dc)
-            if is_overridden:
+            duplicated_methods = res.find_duplicates()
+            if duplicated_methods:
                 raise PydanticUserError(
-                    f'this method {duplicated_methods} is overriding existing method',
-                    code='validator-invalid-fields',
+                    f'Validator method {duplicated_methods} overrides existing validator method, this is not allowed',
+                    code='validator-method-override',
                 )
 
         return res
@@ -528,27 +528,29 @@ class DecoratorInfos:
         for name, computed_field_dec in self.computed_fields.items():
             computed_field_dec.info._update_from_config(config_wrapper, name)
 
-
-def is_method_overridden(model_dc: type[Any]) -> tuple[bool, set[Any] | None]:
-    """Check if there are overridden methods in the decorator infos
-    Args:
-        model_dc: the class that called the decorator
-        res: the decorator infos
-    Returns:
-        a tuple of (bool, set[Any]|None)
-        bool: whether there are overridden methods
-        set[Any]|None: the overridden methods
-    """
-    registered_decorators = model_dc.__pydantic_decorators__
-    registered_validators = list(registered_decorators.validators.values())
-    registered_validators.extend(list(registered_decorators.field_validators.values()))
-    registered_validators.extend(list(registered_decorators.root_validators.values()))
-    registered_validators.extend(list(registered_decorators.model_validators.values()))
-    functions = [validator.func for validator in registered_validators if hasattr(validator.func, '__self__')]
-    if len(functions) != len(set(functions)):
+    def find_duplicates(self) -> set[Callable[..., Any]]:
+        """Check if there are overridden methods in the decorator infos
+        Args:
+            model_dc: the class that called the decorator
+            res: the decorator infos
+        Returns:
+            a tuple of (bool, set[Any]|None)
+            bool: whether there are overridden methods
+            set[Any]|None: the overridden methods
+        """
+        all_validators = [
+            *self.validators.values(),
+            *self.field_validators.values(),
+            *self.root_validators.values(),
+            *self.model_validators.values(),
+        ]
+        # get all the functions that are bound to a class
+        # i.e. methods
+        # we are not interested in unbound functions
+        # i.e. functions that are not methods
+        functions = [validator.func for validator in all_validators if hasattr(validator.func, '__self__')]
         duplicated_methods = {method for method in functions if functions.count(method) > 1}
-        return True, duplicated_methods
-    return False, None
+        return duplicated_methods
 
 
 def inspect_validator(validator: Callable[..., Any], mode: FieldValidatorModes) -> bool:
