@@ -1387,7 +1387,7 @@ except PydanticUserError as exc_info:
     assert exc_info.code == 'validate-by-alias-and-name-false'
 ```
 
-## Validator method overrides {#validator-method-override}
+## validator method overrides {#validator-method-override}
 
 This error is raised when you define a validator method on a model that already has a validator method with the same name.
 
