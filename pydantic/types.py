@@ -1863,6 +1863,9 @@ class SecretStr(_SecretField[str]):
     _inner_schema: ClassVar[CoreSchema] = core_schema.str_schema()
     _error_kind: ClassVar[str] = 'string_type'
 
+    def __bool__(self) -> bool:
+        return bool(self._secret_value)
+
     def __len__(self) -> int:
         return len(self._secret_value)
 
