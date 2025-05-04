@@ -34,20 +34,15 @@ jobs:
     name: Test FastAPI (main branch) on Python ${{ matrix.python-version }}
     # If 'schedule' was the trigger, don't run it on contributors' forks
     if: |
-      github.event_name != 'schedule' ||
-      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic')
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
 
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        # FastAPI doesn't yet support Python 3.13
-        python-version: ['3.9', '3.10', '3.11', '3.12']
-        # Only test on 3.12 if the PR wasn't labeled as 'third-party-tests':
-        exclude:
-          - python-version: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'third-party-tests') && '3.9' }}
-          - python-version: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'third-party-tests') && '3.10' }}
-          - python-version: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'third-party-tests') && '3.11' }}
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
     steps:
     - name: Checkout FastAPI
       uses: actions/checkout@v4
@@ -87,8 +82,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # SQLModel doesn't yet support Python 3.13
-        python-version: ['3.9', '3.10', '3.11', '3.12']
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
     steps:
     - name: Checkout SQLModel
       uses: actions/checkout@v4
