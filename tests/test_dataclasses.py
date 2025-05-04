@@ -1093,7 +1093,9 @@ def test_dataclass_equality_for_field_values(foo_bar_getter):
     assert foo == bar.c
 
 
-def test_issue_2383():
+def test_hash_method_preserved() -> None:
+    """https://github.com/pydantic/pydantic/issues/2383"""
+
     @dataclasses.dataclass
     class A:
         s: str
@@ -1111,7 +1113,9 @@ def test_issue_2383():
     assert hash(b.a) == 123
 
 
-def test_issue_2398():
+def test_order_preserved() -> None:
+    """https://github.com/pydantic/pydantic/issues/2398"""
+
     @dataclasses.dataclass(order=True)
     class DC:
         num: int = 42
@@ -1128,7 +1132,9 @@ def test_issue_2398():
     assert real_dc <= model.dc
 
 
-def test_issue_2424():
+def test_default_factory_works_on_subclasses() -> None:
+    """https://github.com/pydantic/pydantic/issues/2424"""
+
     @dataclasses.dataclass
     class Base:
         x: str
@@ -1147,7 +1153,23 @@ def test_issue_2424():
     assert ValidatedThing(x='hi').y == ''
 
 
-def test_issue_2541():
+def test_override_default_stdlib_dataclass() -> None:
+    """https://github.com/pydantic/pydantic/issues/11816"""
+
+    @dataclasses.dataclass
+    class Test:
+        value: int = 1
+
+    @pydantic.dataclasses.dataclass
+    class Sub(Test):
+        value: int = 2
+
+    assert Sub().value == 2
+
+
+def test_frozen_preserved_on_model_field() -> None:
+    """https://github.com/pydantic/pydantic/issues/2541"""
+
     @dataclasses.dataclass(frozen=True)
     class Infos:
         id: int
@@ -1272,7 +1294,9 @@ def test_json_schema_with_computed_field():
     }
 
 
-def test_issue_2594():
+def test_supports_stdlib_dataclass_without_annotations() -> None:
+    """https://github.com/pydantic/pydantic/issues/2594"""
+
     @dataclasses.dataclass
     class Empty:
         pass
@@ -1318,8 +1342,8 @@ def test_schema_description_set():
     assert model_json_schema(A)['description'] == 'my description'
 
 
-def test_issue_3011():
-    """Validation of a subclass of a dataclass"""
+def test_subclass_of_a_dataclass_supported() -> None:
+    """https://github.com/pydantic/pydantic/issues/3011"""
 
     @dataclasses.dataclass
     class A:
@@ -1337,7 +1361,9 @@ def test_issue_3011():
     assert c.thing.thing_a == 'Thing A'
 
 
-def test_issue_3162():
+def test_dataclass_referenced_twice() -> None:
+    """https://github.com/pydantic/pydantic/issues/3162"""
+
     @dataclasses.dataclass
     class User:
         id: int

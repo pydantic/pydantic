@@ -2,7 +2,6 @@
 
 from __future__ import annotations as _annotations
 
-import dataclasses
 import typing
 import warnings
 from functools import partial
@@ -14,7 +13,7 @@ from pydantic_core import (
     SchemaValidator,
     core_schema,
 )
-from typing_extensions import TypeGuard
+from typing_extensions import TypeIs
 
 from ..errors import PydanticUndefinedAnnotation
 from ..plugin._schema_validator import PluggableSchemaValidator, create_schema_validator
@@ -188,29 +187,11 @@ def complete_dataclass(
     return True
 
 
-def is_builtin_dataclass(_cls: type[Any]) -> TypeGuard[type[StandardDataclass]]:
-    """Returns True if a class is a stdlib dataclass and *not* a pydantic dataclass.
+def is_stdlib_dataclass(cls: type[Any], /) -> TypeIs[type[StandardDataclass]]:
+    """Returns `True` if the class is a stdlib dataclass and *not* a Pydantic dataclass.
 
-    We check that
-    - `_cls` is a dataclass
-    - `_cls` does not inherit from a processed pydantic dataclass (and thus have a `__pydantic_validator__`)
-    - `_cls` does not have any annotations that are not dataclass fields
-    e.g.
-    ```python
-    import dataclasses
-
-    import pydantic.dataclasses
-
-    @dataclasses.dataclass
-    class A:
-        x: int
-
-    @pydantic.dataclasses.dataclass
-    class B(A):
-        y: int
-    ```
-    In this case, when we first check `B`, we make an extra check and look at the annotations ('y'),
-    which won't be a superset of all the dataclass fields (only the stdlib fields i.e. 'x')
+    Unlike the stdlib `dataclasses.is_dataclass()` function, this does *not* include subclasses
+    of a dataclass that are themselves not dataclasses.
 
     Args:
         cls: The class.
@@ -218,8 +199,4 @@ def is_builtin_dataclass(_cls: type[Any]) -> TypeGuard[type[StandardDataclass]]:
     Returns:
         `True` if the class is a stdlib dataclass, `False` otherwise.
     """
-    return (
-        dataclasses.is_dataclass(_cls)
-        and not hasattr(_cls, '__pydantic_validator__')
-        and set(_cls.__dataclass_fields__).issuperset(set(getattr(_cls, '__annotations__', {})))
-    )
+    return '__dataclass_fields__' in cls.__dict__ and not hasattr(cls, '__pydantic_validator__')
