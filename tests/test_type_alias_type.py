@@ -384,7 +384,7 @@ def test_intermediate_type_aliases() -> None:
     class MyModel(BaseModel):
         my_int_seq: MyIntSeq
 
-    assert MyModel(my_int_seq=range(1, 4)).my_int_seq == [1, 2, 3]
+    assert MyModel(my_int_seq=range(1, 4)).my_int_seq == range(1, 4)
 
     assert MyModel.model_json_schema() == {
         '$defs': {'MyIntSeq': {'items': {'type': 'integer'}, 'type': 'array'}},

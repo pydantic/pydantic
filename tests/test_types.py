@@ -2158,21 +2158,21 @@ def test_set_type_fails():
 
 
 @pytest.mark.parametrize(
-    'cls, value,result',
+    'cls, value',
     (
-        (int, [1, 2, 3], [1, 2, 3]),
-        (int, (1, 2, 3), (1, 2, 3)),
-        (int, range(5), [0, 1, 2, 3, 4]),
-        (int, deque((1, 2, 3)), deque((1, 2, 3))),
-        (set[int], [{1, 2}, {3, 4}, {5, 6}], [{1, 2}, {3, 4}, {5, 6}]),
-        (tuple[int, str], ((1, 'a'), (2, 'b'), (3, 'c')), ((1, 'a'), (2, 'b'), (3, 'c'))),
+        (int, [1, 2, 3]),
+        (int, (1, 2, 3)),
+        (int, range(5)),
+        (int, deque((1, 2, 3))),
+        (set[int], [{1, 2}, {3, 4}, {5, 6}]),
+        (tuple[int, str], ((1, 'a'), (2, 'b'), (3, 'c'))),
     ),
 )
-def test_sequence_success(cls, value, result):
+def test_sequence_success(cls, value: Sequence[Any]):
     class Model(BaseModel):
         v: Sequence[cls]
 
-    assert Model(v=value).v == result
+    assert Model(v=value).v == value
 
 
 def int_iterable():

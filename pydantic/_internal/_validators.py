@@ -21,6 +21,7 @@ from pydantic_core._pydantic_core import PydanticKnownError
 from typing_inspection import typing_objects
 
 from pydantic._internal._import_utils import import_cached_field_info
+from pydantic._internal._utils import smart_deepcopy
 from pydantic.errors import PydanticSchemaGenerationError
 
 
@@ -41,27 +42,23 @@ def sequence_validator(
             {'type_name': value_type.__name__},
         )
 
-    # TODO: refactor sequence validation to validate with either a list or a tuple
-    # schema, depending on the type of the value.
-    # Additionally, we should be able to remove one of either this validator or the
-    # SequenceValidator in _std_types_schema.py (preferably this one, while porting over some logic).
-    # Effectively, a refactor for sequence validation is needed.
-    if value_type is tuple:
-        input_value = list(input_value)
+    def validate_list(input_value: list[Any]) -> list[Any]:
+        return validator(input_value)
 
-    v_list = validator(input_value)
+    def validate_tuple(input_value: tuple[Any, ...]) -> tuple[Any, ...]:
+        validator(list(input_value))
+        return input_value
 
-    # the rest of the logic is just re-creating the original type from `v_list`
-    if value_type is list:
-        return v_list
-    elif issubclass(value_type, range):
-        # return the list as we probably can't re-create the range
-        return v_list
-    elif value_type is tuple:
-        return tuple(v_list)
-    else:
-        # best guess at how to re-create the original type, more custom construction logic might be required
-        return value_type(v_list)  # type: ignore[call-arg]
+    def validate_sequence(input_value: typing.Sequence[Any]) -> typing.Sequence[Any]:
+        copy = smart_deepcopy(input_value)
+        validator(input_value)
+        return copy
+
+    validator_lookup = {
+        list: validate_list,
+        tuple: validate_tuple,
+    }
+    return validator_lookup.get(value_type, validate_sequence)(input_value)
 
 
 def import_string(value: Any) -> Any:
