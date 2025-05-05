@@ -1,8 +1,6 @@
-import importlib.metadata
 from typing import Annotated
 
 import pytest
-from packaging.version import Version
 from typing_extensions import Self, deprecated
 
 from pydantic import BaseModel, Field, computed_field, field_validator, model_validator
@@ -35,10 +33,6 @@ def test_deprecated_fields():
     assert b == 1
 
 
-@pytest.mark.skipif(
-    Version(importlib.metadata.version('typing_extensions')) < Version('4.9'),
-    reason='`deprecated` type annotation requires typing_extensions>=4.9',
-)
 def test_deprecated_fields_deprecated_class():
     class Model(BaseModel):
         a: Annotated[int, deprecated('')]
@@ -164,10 +158,6 @@ def test_computed_field_deprecated():
     assert p3 == 1
 
 
-@pytest.mark.skipif(
-    Version(importlib.metadata.version('typing_extensions')) < Version('4.9'),
-    reason='`deprecated` type annotation requires typing_extensions>=4.9',
-)
 def test_computed_field_deprecated_deprecated_class():
     class Model(BaseModel):
         @computed_field(deprecated=deprecated('This is deprecated'))
