@@ -123,7 +123,7 @@ person_list_adapter = TypeAdapter(list[Person])  # (1)!
 
 json_string = pathlib.Path('people.json').read_text()
 people = person_list_adapter.validate_json(json_string)
-print(people)
+print(repr(people))
 #> [Person(name='John Doe', age=30, email='john@example.com'), Person(name='Jane Doe', age=25, email='jane@example.com')]
 ```
 
@@ -158,7 +158,7 @@ class Person(BaseModel):
 
 json_lines = pathlib.Path('people.jsonl').read_text().splitlines()
 people = [Person.model_validate_json(line) for line in json_lines]
-print(people)
+print(repr(people))
 #> [Person(name='John Doe', age=30, email='john@example.com'), Person(name='Jane Doe', age=25, email='jane@example.com')]
 ```
 
@@ -194,7 +194,7 @@ with open('people.csv') as f:
     reader = csv.DictReader(f)
     people = [Person.model_validate(row) for row in reader]
 
-print(people)
+print(repr(people))
 #> [Person(name='John Doe', age=30, email='john@example.com'), Person(name='Jane Doe', age=25, email='jane@example.com')]
 ```
 
@@ -232,4 +232,106 @@ print(repr(person))
 #> Person(name='John Doe', age=30, email='john@example.com')
 ```
 
-<!-- TODO: YAML and other file formats (great for new contributors!) -->
+## YAML files
+
+YAML (YAML Ain't Markup Language) is a human-readable data serialization format that is often used for configuration files.
+
+Consider the following YAML file:
+
+```yaml
+name: John Doe
+age: 30
+email: john@example.com
+```
+
+Here's how we validate that data:
+
+```python {test="skip"}
+import yaml
+
+from pydantic import BaseModel, EmailStr, PositiveInt
+
+
+class Person(BaseModel):
+    name: str
+    age: PositiveInt
+    email: EmailStr
+
+
+with open('person.yaml') as f:
+    data = yaml.safe_load(f)
+
+person = Person.model_validate(data)
+print(repr(person))
+#> Person(name='John Doe', age=30, email='john@example.com')
+```
+
+## XML files
+
+XML (eXtensible Markup Language) is a markup language that defines a set of rules for encoding documents in a format that is both human-readable and machine-readable.
+
+Consider the following XML file:
+
+```xml
+<?xml version="1.0"?>
+<person>
+    <name>John Doe</name>
+    <age>30</age>
+    <email>john@example.com</email>
+</person>
+```
+
+Here's how we validate that data:
+
+```python {test="skip"}
+import xml.etree.ElementTree as ET
+
+from pydantic import BaseModel, EmailStr, PositiveInt
+
+
+class Person(BaseModel):
+    name: str
+    age: PositiveInt
+    email: EmailStr
+
+
+tree = ET.parse('person.xml').getroot()
+data = {child.tag: child.text for child in tree}
+person = Person.model_validate(data)
+print(repr(person))
+#> Person(name='John Doe', age=30, email='john@example.com')
+```
+
+## INI files
+
+INI files are a simple configuration file format that uses sections and key-value pairs. They are commonly used in Windows applications and older software.
+
+Consider the following INI file:
+
+```ini
+[PERSON]
+name = John Doe
+age = 30
+email = john@example.com
+```
+
+Here's how we validate that data:
+
+```python {test="skip"}
+import configparser
+
+from pydantic import BaseModel, EmailStr, PositiveInt
+
+
+class Person(BaseModel):
+    name: str
+    age: PositiveInt
+    email: EmailStr
+
+
+config = configparser.ConfigParser()
+config.read('person.ini')
+person = Person.model_validate(config['PERSON'])
+print(repr(person))
+#> Person(name='John Doe', age=30, email='john@example.com')
+```
