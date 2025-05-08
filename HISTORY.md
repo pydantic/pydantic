@@ -1986,11 +1986,11 @@ This release provides proper support for Python 3.13, with (Cythonized) wheels p
 As a consequence, Cython was updated from `0.29.x` to `3.0.x`.
 
 * General maintenance of CI and build ecosystem by @Viicos in https://github.com/pydantic/pydantic/pull/10847
-  - Update Cython to `3.0.x`.
-  - Properly address Python 3.13 deprecation warnings.
-  - Migrate packaging to `pyproject.toml`, make use of PEP 517 build options.
-  - Use [`build`](https://pypi.org/project/build/) instead of direct `setup.py` invocations.
-  - Update various Github Actions versions.
+  * Update Cython to `3.0.x`.
+  * Properly address Python 3.13 deprecation warnings.
+  * Migrate packaging to `pyproject.toml`, make use of PEP 517 build options.
+  * Use [`build`](https://pypi.org/project/build/) instead of direct `setup.py` invocations.
+  * Update various Github Actions versions.
 * Replace outdated stpmex link in documentation by @jaredenorris in https://github.com/pydantic/pydantic/pull/10997
 
 ## v1.10.19 (2024-11-06)
