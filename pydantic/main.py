@@ -14,6 +14,7 @@ import warnings
 from collections.abc import Generator, Mapping
 from copy import copy, deepcopy
 from functools import cached_property
+from threading import Lock
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -79,6 +80,15 @@ TupleGenerator: TypeAlias = Generator[tuple[str, Any], None, None]
 IncEx: TypeAlias = Union[set[int], set[str], Mapping[int, Union['IncEx', bool]], Mapping[str, Union['IncEx', bool]]]
 
 _object_setattr = _model_construction.object_setattr
+
+_rebuild_lock = Lock()
+"""A lock used to make model rebuilds thread-safe when first instantiating an incomplete model.
+
+This is necessary as instantiating an incomplete model will implicitly rebuild it (in particular,
+the `SchemaValidator` will be recreated). To do so, the `__schema_validator__` attribute is first removed
+from the class (to avoid having it used as a reusable validator in `pydantic-core`) before setting a new one,
+meaning a concurrent instantiation may make use of the parent `__pydantic_validator__`.
+"""
 
 
 def _check_frozen(model_cls: type[BaseModel], name: str, value: Any) -> None:
@@ -250,7 +260,11 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         """
         # `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks
         __tracebackhide__ = True
-        validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+        if not type(self).__pydantic_complete__:
+            with _rebuild_lock:
+                validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+        else:
+            validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
         if self is not validated_self:
             warnings.warn(
                 'A custom validator is returning a value other than `self`.\n'
@@ -683,9 +697,20 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 code='validate-by-alias-and-name-false',
             )
 
-        return cls.__pydantic_validator__.validate_python(
-            obj, strict=strict, from_attributes=from_attributes, context=context, by_alias=by_alias, by_name=by_name
-        )
+        if not cls.__pydantic_complete__:
+            with _rebuild_lock:
+                return cls.__pydantic_validator__.validate_python(
+                    obj,
+                    strict=strict,
+                    from_attributes=from_attributes,
+                    context=context,
+                    by_alias=by_alias,
+                    by_name=by_name,
+                )
+        else:
+            return cls.__pydantic_validator__.validate_python(
+                obj, strict=strict, from_attributes=from_attributes, context=context, by_alias=by_alias, by_name=by_name
+            )
 
     @classmethod
     def model_validate_json(
@@ -724,9 +749,15 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 code='validate-by-alias-and-name-false',
             )
 
-        return cls.__pydantic_validator__.validate_json(
-            json_data, strict=strict, context=context, by_alias=by_alias, by_name=by_name
-        )
+        if not cls.__pydantic_complete__:
+            with _rebuild_lock:
+                return cls.__pydantic_validator__.validate_json(
+                    json_data, strict=strict, context=context, by_alias=by_alias, by_name=by_name
+                )
+        else:
+            return cls.__pydantic_validator__.validate_json(
+                json_data, strict=strict, context=context, by_alias=by_alias, by_name=by_name
+            )
 
     @classmethod
     def model_validate_strings(
@@ -759,9 +790,15 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 code='validate-by-alias-and-name-false',
             )
 
-        return cls.__pydantic_validator__.validate_strings(
-            obj, strict=strict, context=context, by_alias=by_alias, by_name=by_name
-        )
+        if not cls.__pydantic_complete__:
+            with _rebuild_lock:
+                return cls.__pydantic_validator__.validate_strings(
+                    obj, strict=strict, context=context, by_alias=by_alias, by_name=by_name
+                )
+        else:
+            return cls.__pydantic_validator__.validate_strings(
+                obj, strict=strict, context=context, by_alias=by_alias, by_name=by_name
+            )
 
     @classmethod
     def __get_pydantic_core_schema__(cls, source: type[BaseModel], handler: GetCoreSchemaHandler, /) -> CoreSchema:

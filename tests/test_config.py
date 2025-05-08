@@ -706,6 +706,21 @@ def test_json_encoders_type_adapter() -> None:
     assert json.loads(ta.dump_json(1)) == '2'
 
 
+@pytest.mark.parametrize('method', ('init', 'model_validate', 'model_validate_json', 'model_validate_strings'))
+def test_config_model_defer_build_validation(method: str) -> None:
+    class Model(BaseModel, defer_build=True):
+        pass
+
+    assert not Model.__pydantic_complete__
+
+    if method == 'init':
+        Model()
+    else:
+        getattr(Model, method)('{}' if method == 'model_validate_json' else {})
+
+    assert Model.__pydantic_complete__
+
+
 @pytest.mark.parametrize('defer_build', [True, False])
 def test_config_model_defer_build(defer_build: bool, generate_schema_calls: CallCounter):
     config = ConfigDict(defer_build=defer_build)
