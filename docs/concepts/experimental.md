@@ -432,7 +432,7 @@ print(v)
 
 Pydantic provides the [`@validate_call`][pydantic.validate_call] decorator to perform validation on the provided
 arguments (and additionally return type) of a callable. However, it only allows arguments to be provided
-by actually calling the decorated callable. In some situations, you may want to just _validate_ the arguments,
+by actually calling the decorated callable. In some situations, you may want to just *validate* the arguments,
 such as when loading from other data sources such as JSON data.
 
 For this reason, the experimental [`generate_arguments_schema()`][pydantic.experimental.arguments_schema.generate_arguments_schema]
