@@ -42,8 +42,8 @@ Similarities between Pydantic dataclasses and models include support for:
 
 Some differences between Pydantic dataclasses and models include:
 
-*  [validators](#validators-and-initialization-hooks)
-*  The behavior with the [`extra`][pydantic.ConfigDict.extra] configuration value
+* [validators](#validators-and-initialization-hooks)
+* The behavior with the [`extra`][pydantic.ConfigDict.extra] configuration value
 
 Similarly to Pydantic models, arguments used to instantiate the dataclass are [copied](./models.md#attribute-copies).
 
@@ -350,6 +350,7 @@ print(DemoDataclass(product_id=2468))
 #> DemoDataclass(product_id='02468')
 ```
 
+<!-- markdownlint-disable-next-line strong-style -->
 The dataclass [`__post_init__()`][dataclasses.__post_init__] method is also supported, and will
 be called between the calls to *before* and *after* model validators.
 

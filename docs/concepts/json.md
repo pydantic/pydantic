@@ -204,7 +204,6 @@ Using the string caching feature results in performance improvements, but increa
     3. There is some overhead to looking up the cache, which is normally worth it to avoid constructing strings.
     However, if you know there will be very few repeated strings in your data, you might get a performance boost by disabling this setting with `cache_strings=False`.
 
-
 ## JSON Serialization
 
 ??? api "API Documentation"

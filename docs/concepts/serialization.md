@@ -30,7 +30,6 @@ See the available [parameters][pydantic.main.BaseModel.model_dump] for more info
     and its subclasses will have the `root` field value dumped directly, without a wrapping dictionary. This is also
     done recursively.
 
-
 !!! note
     You can use [computed fields](../api/fields.md#pydantic.fields.computed_field) to include `property` and
     `cached_property` data in the `model.model_dump(...)` output.
@@ -176,16 +175,16 @@ for name, value in m:
     #> bar: whatever=123
 ```
 
-Note also that [`RootModel`](models.md#rootmodel-and-custom-root-types) _does_ get converted to a dictionary with the key `'root'`.
+Note also that [`RootModel`](models.md#rootmodel-and-custom-root-types) *does* get converted to a dictionary with the key `'root'`.
 
 ## Custom serializers
 
 Pydantic provides several [functional serializers][pydantic.functional_serializers] to customise how a model is serialized to a dictionary or JSON.
 
-- [`@field_serializer`][pydantic.functional_serializers.field_serializer]
-- [`@model_serializer`][pydantic.functional_serializers.model_serializer]
-- [`PlainSerializer`][pydantic.functional_serializers.PlainSerializer]
-- [`WrapSerializer`][pydantic.functional_serializers.WrapSerializer]
+* [`@field_serializer`][pydantic.functional_serializers.field_serializer]
+* [`@model_serializer`][pydantic.functional_serializers.model_serializer]
+* [`PlainSerializer`][pydantic.functional_serializers.PlainSerializer]
+* [`WrapSerializer`][pydantic.functional_serializers.WrapSerializer]
 
 Serialization can be customised on a field using the
 [`@field_serializer`][pydantic.functional_serializers.field_serializer] decorator, and on a model using the
@@ -236,8 +235,8 @@ In addition, [`PlainSerializer`][pydantic.functional_serializers.PlainSerializer
 
 Both serializers accept optional arguments including:
 
-- `return_type` specifies the return type for the function. If omitted it will be inferred from the type annotation.
-- `when_used` specifies when this serializer should be used. Accepts a string with values 'always',
+* `return_type` specifies the return type for the function. If omitted it will be inferred from the type annotation.
+* `when_used` specifies when this serializer should be used. Accepts a string with values 'always',
     'unless-none', 'json', and 'json-unless-none'. Defaults to 'always'.
 
 `PlainSerializer` uses a simple function to modify the output of serialization.
@@ -296,6 +295,7 @@ print(MyModel(x=1234).model_dump(mode='json'))
 
 While the return value of `.model_dump()` can usually be described as `dict[str, Any]`, through the use of
 `@model_serializer` you can actually cause it to return a value that doesn't match this signature:
+
 ```python
 from pydantic import BaseModel, model_serializer
 
@@ -398,7 +398,7 @@ print(m.model_dump_json())
 
 When using fields whose annotations are themselves struct-like types (e.g., `BaseModel` subclasses, dataclasses, etc.),
 the default behavior is to serialize the attribute value as though it was an instance of the annotated type,
-even if it is a subclass. More specifically, only the fields from the _annotated_ type will be included in the
+even if it is a subclass. More specifically, only the fields from the *annotated* type will be included in the
 dumped object:
 
 ```python
@@ -425,6 +425,7 @@ print(m)
 print(m.model_dump())  # note: the password field is not included
 #> {'user': {'name': 'pydantic'}}
 ```
+
 !!! warning "Migration Warning"
     This behavior is different from how things worked in Pydantic V1, where we would always include
     all (subclass) fields when recursively dumping models to dicts. The motivation behind this change in
@@ -451,7 +452,7 @@ If you want v1-style duck-typing serialization behavior, you can use a runtime s
 
 We discuss these options below in more detail:
 
-#### `SerializeAsAny` annotation:
+#### `SerializeAsAny` annotation
 
 If you want duck-typing serialization behavior, this can be done using the `SerializeAsAny` annotation on a type:
 

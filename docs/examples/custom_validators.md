@@ -98,7 +98,6 @@ except ValidationError as ve:
 
 We can also enforce UTC offset constraints in a similar way.  Assuming we have a `lower_bound` and an `upper_bound`, we can create a custom validator to ensure our `datetime` has a UTC offset that is inclusive within the boundary we define:
 
-
 ```python
 import datetime as dt
 from dataclasses import dataclass
