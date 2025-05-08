@@ -1,5 +1,104 @@
 <!-- markdownlint-disable no-bare-urls -->
 <!-- markdownlint-disable-next-line first-line-heading -->
+
+## v2.11.4 (2025-04-29)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.11.4)
+
+### What's Changed
+
+#### Packaging
+
+* Bump `mkdocs-llmstxt` to v0.2.0 by @Viicos in [#11725](https://github.com/pydantic/pydantic/pull/11725)
+
+#### Changes
+
+* Allow config and bases to be specified together in `create_model()` by @Viicos in [#11714](https://github.com/pydantic/pydantic/pull/11714).
+  This change was backported as it was previously possible (although not meant to be supported)
+  to provide `model_config` as a field, which would make it possible to provide both configuration
+  and bases.
+
+#### Fixes
+
+* Remove generics cache workaround by @Viicos in [#11755](https://github.com/pydantic/pydantic/pull/11755)
+* Remove coercion of decimal constraints by @Viicos in [#11772](https://github.com/pydantic/pydantic/pull/11772)
+* Fix crash when expanding root type in the mypy plugin by @Viicos in [#11735](https://github.com/pydantic/pydantic/pull/11735)
+* Fix issue with recursive generic models by @Viicos in [#11775](https://github.com/pydantic/pydantic/pull/11775)
+* Traverse `function-before` schemas during schema gathering by @Viicos in [#11801](https://github.com/pydantic/pydantic/pull/11801)
+
+## v2.11.3 (2025-04-08)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.11.3)
+
+### What's Changed
+
+#### Packaging
+
+* Update V1 copy to v1.10.21 by @Viicos in [#11706](https://github.com/pydantic/pydantic/pull/11706)
+
+#### Fixes
+
+* Preserve field description when rebuilding model fields by @Viicos in [#11698](https://github.com/pydantic/pydantic/pull/11698)
+
+## v2.11.2 (2025-04-03)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.11.2)
+
+### What's Changed
+
+#### Fixes
+
+* Bump `pydantic-core` to v2.33.1 by @Viicos in [#11678](https://github.com/pydantic/pydantic/pull/11678)
+* Make sure `__pydantic_private__` exists before setting private attributes by @Viicos in [#11666](https://github.com/pydantic/pydantic/pull/11666)
+* Do not override `FieldInfo._complete` when using field from parent class by @Viicos in [#11668](https://github.com/pydantic/pydantic/pull/11668)
+* Provide the available definitions when applying discriminated unions by @Viicos in [#11670](https://github.com/pydantic/pydantic/pull/11670)
+* Do not expand root type in the mypy plugin for variables by @Viicos in [#11676](https://github.com/pydantic/pydantic/pull/11676)
+* Mention the attribute name in model fields deprecation message by @Viicos in [#11674](https://github.com/pydantic/pydantic/pull/11674)
+* Properly validate parameterized mappings by @Viicos in [#11658](https://github.com/pydantic/pydantic/pull/11658)
+
+## v2.11.1 (2025-03-28)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.11.1)
+
+### What's Changed
+
+#### Fixes
+
+* Do not override `'definitions-ref'` schemas containing serialization schemas or metadata by @Viicos in [#11644](https://github.com/pydantic/pydantic/pull/11644)
+
+## v2.11.0 (2025-03-27)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.11.0)
+
+### What's Changed
+
+Pydantic v2.11 is a version strongly focused on build time performance of Pydantic models (and core schema generation in general).
+See the [blog post](https://pydantic.dev/articles/pydantic-v2-11-release) for more details.
+
+#### Packaging
+
+* Bump `pydantic-core` to v2.33.0 by @Viicos in [#11631](https://github.com/pydantic/pydantic/pull/11631)
+
+#### New Features
+
+* Add `encoded_string()` method to the URL types by @YassinNouh21 in [#11580](https://github.com/pydantic/pydantic/pull/11580)
+* Add support for `defer_build` with `@validate_call` decorator by @Viicos in [#11584](https://github.com/pydantic/pydantic/pull/11584)
+* Allow `@with_config` decorator to be used with keyword arguments by @Viicos in [#11608](https://github.com/pydantic/pydantic/pull/11608)
+* Simplify customization of default value inclusion in JSON Schema generation by @Viicos in [#11634](https://github.com/pydantic/pydantic/pull/11634)
+* Add `generate_arguments_schema()` function by @Viicos in [#11572](https://github.com/pydantic/pydantic/pull/11572)
+
+#### Fixes
+
+* Allow generic typed dictionaries to be used for unpacked variadic keyword parameters by @Viicos in [#11571](https://github.com/pydantic/pydantic/pull/11571)
+* Fix runtime error when computing model string representation involving cached properties and self-referenced models by @Viicos in [#11579](https://github.com/pydantic/pydantic/pull/11579)
+* Preserve other steps when using the ellipsis in the pipeline API by @Viicos in [#11626](https://github.com/pydantic/pydantic/pull/11626)
+* Fix deferred discriminator application logic by @Viicos in [#11591](https://github.com/pydantic/pydantic/pull/11591)
+
+### New Contributors
+
+* @cmenon12 made their first contribution in [#11562](https://github.com/pydantic/pydantic/pull/11562)
+* @Jeukoh made their first contribution in [#11611](https://github.com/pydantic/pydantic/pull/11611)
+
 ## v2.11.0b2 (2025-03-17)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.11.0b2)
@@ -1877,6 +1976,28 @@ First pre-release of Pydantic V2!
 
 See [this post](https://docs.pydantic.dev/blog/pydantic-v2-alpha/) for more details.
 
+## v1.10.21 (2025-01-10)
+
+* Fix compatibility with ForwardRef._evaluate and Python < 3.12.4 by @griels in https://github.com/pydantic/pydantic/pull/11232
+
+## v1.10.20 (2025-01-07)
+
+This release provides proper support for Python 3.13, with (Cythonized) wheels published for this version.
+As a consequence, Cython was updated from `0.29.x` to `3.0.x`.
+
+* General maintenance of CI and build ecosystem by @Viicos in https://github.com/pydantic/pydantic/pull/10847
+  - Update Cython to `3.0.x`.
+  - Properly address Python 3.13 deprecation warnings.
+  - Migrate packaging to `pyproject.toml`, make use of PEP 517 build options.
+  - Use [`build`](https://pypi.org/project/build/) instead of direct `setup.py` invocations.
+  - Update various Github Actions versions.
+* Replace outdated stpmex link in documentation by @jaredenorris in https://github.com/pydantic/pydantic/pull/10997
+
+## v1.10.19 (2024-11-06)
+
+* Add warning when v2 model is nested in v1 model by @sydney-runkle in https://github.com/pydantic/pydantic/pull/10432
+* Fix deprecation warning in V1 `isinstance` check by @alicederyn in https://github.com/pydantic/pydantic/pull/10645
+
 ## v1.10.19 (2024-11-06)
 
 * Add warning when v2 model is nested in v1 model by @sydney-runkle in https://github.com/pydantic/pydantic/pull/10432
@@ -2006,7 +2127,7 @@ See [this post](https://docs.pydantic.dev/blog/pydantic-v2-alpha/) for more deta
 
 ## v1.10.1 (2022-08-31)
 
-* Add `__hash__` method to `pydancic.color.Color` class, [#4454](https://github.com/pydantic/pydantic/pull/4454) by @czaki
+* Add `__hash__` method to `pydantic.color.Color` class, [#4454](https://github.com/pydantic/pydantic/pull/4454) by @czaki
 
 ## v1.10.0 (2022-08-30)
 
@@ -2498,7 +2619,7 @@ for their kind support.
 Thank you to pydantic's sponsors: @matin, @tiangolo, @chdsbd, @jorgecarleitao, and 1 anonymous sponsor for their kind support.
 
 * Modify validators for `conlist` and `conset` to not have `always=True`, [#1682](https://github.com/pydantic/pydantic/pull/1682) by @samuelcolvin
-* add port check to `AnyUrl` (can't exceed 65536) ports are 16 insigned bits: `0 <= port <= 2**16-1` src: [rfc793 header format](https://tools.ietf.org/html/rfc793#section-3.1), [#1654](https://github.com/pydantic/pydantic/pull/1654) by @flapili
+* add port check to `AnyUrl` (can't exceed 65536) ports are 16 unsigned bits: `0 <= port <= 2**16-1` src: [rfc793 header format](https://tools.ietf.org/html/rfc793#section-3.1), [#1654](https://github.com/pydantic/pydantic/pull/1654) by @flapili
 * Document default `regex` anchoring semantics, [#1648](https://github.com/pydantic/pydantic/pull/1648) by @yurikhan
 * Use `chain.from_iterable` in class_validators.py. This is a faster and more idiomatic way of using `itertools.chain`.
   Instead of computing all the items in the iterable and storing them in memory, they are computed one-by-one and never

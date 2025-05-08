@@ -5,7 +5,7 @@ from __future__ import annotations
 import sys
 from collections.abc import Iterator
 from configparser import ConfigParser
-from typing import Any, Callable, cast
+from typing import Any, Callable
 
 from mypy.errorcodes import ErrorCode
 from mypy.expandtype import expand_type, expand_type_by_instance
@@ -290,7 +290,7 @@ class PydanticModelField:
 
         strict = model_strict if self.strict is None else self.strict
         if typed or strict:
-            type_annotation = self.expand_type(current_info, api)
+            type_annotation = self.expand_type(current_info, api, include_root_type=True)
         else:
             type_annotation = AnyType(TypeOfAny.explicit)
 
@@ -304,7 +304,11 @@ class PydanticModelField:
         )
 
     def expand_type(
-        self, current_info: TypeInfo, api: SemanticAnalyzerPluginInterface, force_typevars_invariant: bool = False
+        self,
+        current_info: TypeInfo,
+        api: SemanticAnalyzerPluginInterface,
+        force_typevars_invariant: bool = False,
+        include_root_type: bool = False,
     ) -> Type | None:
         """Based on mypy.plugins.dataclasses.DataclassAttribute.expand_type."""
         if force_typevars_invariant:
@@ -332,10 +336,13 @@ class PydanticModelField:
                             arg.variance = INVARIANT
 
                 expanded_type = expand_type(self.type, {self.info.self_type.id: filled_with_typevars})
-                if isinstance(expanded_type, Instance) and is_root_model(expanded_type.type):
+                if include_root_type and isinstance(expanded_type, Instance) and is_root_model(expanded_type.type):
                     # When a root model is used as a field, Pydantic allows both an instance of the root model
                     # as well as instances of the `root` field type:
-                    root_type = cast(Type, expanded_type.type['root'].type)
+                    root_type = expanded_type.type['root'].type
+                    if root_type is None:
+                        # Happens if the hint for 'root' has unsolved forward references
+                        return expanded_type
                     expanded_root_type = expand_type_by_instance(root_type, expanded_type)
                     expanded_type = UnionType([expanded_type, expanded_root_type])
                 return expanded_type

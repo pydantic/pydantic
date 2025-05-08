@@ -7,7 +7,7 @@ import pytest
 from annotated_types import MaxLen
 from typing_extensions import TypeAliasType
 
-from pydantic import BaseModel, PydanticUserError, TypeAdapter, ValidationError
+from pydantic import BaseModel, PlainSerializer, PydanticUserError, TypeAdapter, ValidationError, WithJsonSchema
 
 T = TypeVar('T')
 
@@ -430,3 +430,47 @@ def test_circular_type_aliases() -> None:
 
     assert exc_info.value.code == 'circular-reference-schema'
     assert exc_info.value.message.startswith('tests.test_type_alias_type.C')
+
+
+def test_type_alias_type_with_serialization() -> None:
+    """Regression test for https://github.com/pydantic/pydantic/issues/11642.
+
+    The issue lied in the definition resolving logic, which wasn't taking
+    possible metadata or serialization attached to a `'definition-ref'` schema.
+
+    In this example, the core schema for `B` — before schema cleaning — will look like:
+
+    ```python
+    {
+        'type': 'definition-ref',
+        'schema_ref': '__main__.A',
+        'serialization': {...},
+        'ref': '__main__.B',
+    }
+    ```
+
+    and the "main"/"top-level" core schema is a `'definition-ref'` schema pointing to
+    this `__main__.B` core schema.
+
+    In schema cleaning, when resolving this top-level core schema, we are recursively
+    unpack `'definition-ref'` schemas (and will end up with the actual schema for `__main__.A`),
+    without taking into account the fact that the schema of `B` had a `serialization` key!
+    """
+
+    A = TypeAliasType('A', int)
+    B = TypeAliasType('B', Annotated[A, PlainSerializer(lambda v: 3)])
+
+    ta = TypeAdapter(B)
+
+    assert ta.dump_python(1) == 3
+
+
+@pytest.mark.skip_json_schema_validation(reason='Extra info added.')
+def test_type_alias_type_with_metadata() -> None:
+    """Same as `test_type_alias_type_with_serialization()` but with JSON Metadata."""
+
+    A = TypeAliasType('A', int)
+    B = TypeAliasType('B', Annotated[A, WithJsonSchema({'type': 'int', 'extra': 1})])
+
+    ta = TypeAdapter(B)
+    assert ta.json_schema() == {'type': 'int', 'extra': 1}

@@ -718,15 +718,9 @@ def test_recursive_models_union(create_module):
     # This test should pass because PydanticRecursiveRef.__or__ is implemented,
     # not because `eval_type_backport` magically makes `|` work,
     # since it's installed for tests but otherwise optional.
-    # When generic models are involved in recursive models, parametrizing a model
-    # can result in a `PydanticRecursiveRef` instance. This isn't ideal, as in the
-    # example below, this results in the `FieldInfo.annotation` attribute being changed,
-    # e.g. for `bar` to something like `PydanticRecursiveRef(...) | None`.
-    # We currently have a workaround (avoid caching parametrized models where this bad
-    # annotation mutation can happen).
     sys.modules['eval_type_backport'] = None  # type: ignore
     try:
-        create_module(
+        module = create_module(
             # language=Python
             """
 from __future__ import annotations
@@ -742,14 +736,20 @@ class Foo(BaseModel):
 
 class Bar(BaseModel, Generic[T]):
     foo: Foo
+
+Foo.model_rebuild()
     """
         )
     finally:
         del sys.modules['eval_type_backport']
 
+    assert module.Foo.model_fields['bar'].annotation == typing.Optional[module.Bar[str]]
+    assert module.Foo.model_fields['bar2'].annotation == typing.Union[int, module.Bar[float]]
+    assert module.Bar.model_fields['foo'].annotation == module.Foo
+
 
 def test_recursive_models_union_backport(create_module):
-    create_module(
+    module = create_module(
         # language=Python
         """
 from __future__ import annotations
@@ -768,8 +768,14 @@ class Foo(BaseModel):
 
 class Bar(BaseModel, Generic[T]):
     foo: Foo
+
+Foo.model_rebuild()
 """
     )
+
+    assert module.Foo.model_fields['bar'].annotation == typing.Optional[module.Bar[str]]
+    assert module.Foo.model_fields['bar2'].annotation == typing.Union[int, str, module.Bar[float]]
+    assert module.Bar.model_fields['foo'].annotation == module.Foo
 
 
 def test_force_rebuild():
@@ -1196,6 +1202,36 @@ class Foo(BaseModel):
     module_2.Foo(bar={'f': 1})
 
 
+def test_preserve_evaluated_attribute_of_parent_fields(create_module):
+    """https://github.com/pydantic/pydantic/issues/11663"""
+
+    @create_module
+    def module_1():
+        from pydantic import BaseModel
+
+        class Child(BaseModel):
+            parent: 'Optional[Parent]' = None
+
+        class Parent(BaseModel):
+            child: list[Child] = []
+
+    module_1 = create_module(
+        f"""
+from {module_1.__name__} import Child, Parent
+
+from typing import Optional
+
+Child.model_rebuild()
+
+class SubChild(Child):
+    pass
+
+assert SubChild.__pydantic_fields_complete__
+SubChild()
+        """
+    )
+
+
 def test_uses_the_local_namespace_when_generating_schema():
     def func():
         A = int
@@ -1361,7 +1397,7 @@ class Model[T](BaseModel):
 
 
 @pytest.mark.skipif(sys.version_info < (3, 12), reason='Test related to PEP 695 syntax.')
-def test_pep695_generics_syntax_arbitry_class(create_module) -> None:
+def test_pep695_generics_syntax_arbitrary_class(create_module) -> None:
     mod_1 = create_module(
         """
 from typing import TypedDict

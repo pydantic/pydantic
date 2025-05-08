@@ -429,9 +429,6 @@ This error is also raised for strict fields when the input value is not an insta
 
 ## `datetime_from_date_parsing`
 
-!!! note
-    Support for this error, along with support for parsing datetimes from `yyyy-MM-DD` dates will be added in `v2.6.0`
-
 This error is raised when the input value is a string that cannot be parsed for a `datetime` field:
 
 ```python
@@ -1601,12 +1598,12 @@ class Model(BaseModel):
     x: set[object]
 
 
-class Unhasbable:
+class Unhashable:
     __hash__ = None
 
 
 try:
-    Model(x=[{'a': 'b'}, Unhasbable()])
+    Model(x=[{'a': 'b'}, Unhashable()])
 except ValidationError as exc:
     print(repr(exc.errors()[0]['type']))
     #> 'set_item_not_hashable'

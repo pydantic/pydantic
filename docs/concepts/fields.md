@@ -76,6 +76,24 @@ assignment form instead.
         # Invalid: [-1, 2]
     ```
 
+    Be careful not mixing *field* and *type* metadata:
+
+    ```python {test="skip" lint="skip"}
+    class Model(BaseModel):
+        field_bad: Annotated[int, Field(deprecated=True)] | None = None  # (1)!
+        field_ok: Annotated[int | None, Field(deprecated=True)] = None  # (2)!
+    ```
+
+      1. The [`Field()`][pydantic.fields.Field] function is applied to `int` type, hence the
+         `deprecated` flag won't have any effect. While this may be confusing given that the name of
+         the [`Field()`][pydantic.fields.Field] function would imply it should apply to the field,
+         the API was designed when this function was the only way to provide metadata. You can
+         alternatively make use of the [`annotated_types`](https://github.com/annotated-types/annotated-types)
+         library which is now supported by Pydantic.
+
+      2. The [`Field()`][pydantic.fields.Field] function is applied to the "top-level" union type,
+         hence the `deprecated` flag will be applied to the field.
+
 ## Default values
 
 Default values for fields can be provided using the normal assignment syntax or by providing a value
@@ -937,6 +955,10 @@ print(Box.model_json_schema(mode='serialization'))
 """
 ```
 
+1. If not specified, [`computed_field`][pydantic.fields.computed_field] will implicitly convert the method
+   to a [`property`][]. However, it is preferable to explicitly use the [`@property`][property] decorator
+   for type checking purposes.
+
 Here's an example using the `model_dump` method with a computed field:
 
 ```python
@@ -949,7 +971,7 @@ class Box(BaseModel):
     depth: float
 
     @computed_field
-    @property  # (1)!
+    @property
     def volume(self) -> float:
         return self.width * self.height * self.depth
 
@@ -958,10 +980,6 @@ b = Box(width=1, height=2, depth=3)
 print(b.model_dump())
 #> {'width': 1.0, 'height': 2.0, 'depth': 3.0, 'volume': 6.0}
 ```
-
-1. If not specified, [`computed_field`][pydantic.fields.computed_field] will implicitly convert the method
-   to a [`property`][]. However, it is preferable to explicitly use the [`@property`][property] decorator
-   for type checking purposes.
 
 As with regular fields, computed fields can be marked as being deprecated:
 

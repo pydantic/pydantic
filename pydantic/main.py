@@ -99,10 +99,20 @@ def _model_field_setattr_handler(model: BaseModel, name: str, val: Any) -> None:
     model.__pydantic_fields_set__.add(name)
 
 
+def _private_setattr_handler(model: BaseModel, name: str, val: Any) -> None:
+    if getattr(model, '__pydantic_private__', None) is None:
+        # While the attribute should be present at this point, this may not be the case if
+        # users do unusual stuff with `model_post_init()` (which is where the  `__pydantic_private__`
+        # is initialized, by wrapping the user-defined `model_post_init()`), e.g. if they mock
+        # the `model_post_init()` call. Ideally we should find a better way to init private attrs.
+        object.__setattr__(model, '__pydantic_private__', {})
+    model.__pydantic_private__[name] = val  # pyright: ignore[reportOptionalSubscript]
+
+
 _SIMPLE_SETATTR_HANDLERS: Mapping[str, Callable[[BaseModel, str, Any], None]] = {
     'model_field': _model_field_setattr_handler,
     'validate_assignment': lambda model, name, val: model.__pydantic_validator__.validate_assignment(model, name, val),  # pyright: ignore[reportAssignmentType]
-    'private': lambda model, name, val: model.__pydantic_private__.__setitem__(name, val),  # pyright: ignore[reportOptionalMemberAccess]
+    'private': _private_setattr_handler,
     'cached_property': lambda model, name, val: model.__dict__.__setitem__(name, val),
     'extra_known': lambda model, name, val: _object_setattr(model, name, val),
 }
@@ -201,13 +211,13 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     __pydantic_computed_fields__: ClassVar[Dict[str, ComputedFieldInfo]]  # noqa: UP006
     """A dictionary of computed field names and their corresponding [`ComputedFieldInfo`][pydantic.fields.ComputedFieldInfo] objects."""
 
-    __pydantic_extra__: dict[str, Any] | None = _model_construction.NoInitField(init=False)
+    __pydantic_extra__: Dict[str, Any] | None = _model_construction.NoInitField(init=False)  # noqa: UP006
     """A dictionary containing extra values, if [`extra`][pydantic.config.ConfigDict.extra] is set to `'allow'`."""
 
     __pydantic_fields_set__: set[str] = _model_construction.NoInitField(init=False)
     """The names of fields explicitly set during instantiation."""
 
-    __pydantic_private__: dict[str, Any] | None = _model_construction.NoInitField(init=False)
+    __pydantic_private__: Dict[str, Any] | None = _model_construction.NoInitField(init=False)  # noqa: UP006
     """Values of private attributes set on the model instance."""
 
     if not TYPE_CHECKING:
@@ -603,16 +613,17 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             Returns `None` if the schema is already "complete" and rebuilding was not required.
             If rebuilding _was_ required, returns `True` if rebuilding was successful, otherwise `False`.
         """
-        if not force and cls.__pydantic_complete__:
+        already_complete = cls.__pydantic_complete__
+        if already_complete and not force:
             return None
+
+        cls.__pydantic_complete__ = False
 
         for attr in ('__pydantic_core_schema__', '__pydantic_validator__', '__pydantic_serializer__'):
             if attr in cls.__dict__:
                 # Deleting the validator/serializer is necessary as otherwise they can get reused in
                 # pydantic-core. Same applies for the core schema that can be reused in schema generation.
                 delattr(cls, attr)
-
-        cls.__pydantic_complete__ = False
 
         if _types_namespace is not None:
             rebuild_ns = _types_namespace
@@ -627,31 +638,13 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             parent_namespace={**rebuild_ns, **parent_ns},
         )
 
-        if not cls.__pydantic_fields_complete__:
-            typevars_map = _generics.get_model_typevars_map(cls)
-            try:
-                cls.__pydantic_fields__ = _fields.rebuild_model_fields(
-                    cls,
-                    ns_resolver=ns_resolver,
-                    typevars_map=typevars_map,
-                )
-            except NameError as e:
-                exc = PydanticUndefinedAnnotation.from_name_error(e)
-                _mock_val_ser.set_model_mocks(cls, f'`{exc.name}`')
-                if raise_errors:
-                    raise exc from e
-
-            if not raise_errors and not cls.__pydantic_fields_complete__:
-                # No need to continue with schema gen, it is guaranteed to fail
-                return False
-
-            assert cls.__pydantic_fields_complete__
-
         return _model_construction.complete_model_class(
             cls,
             _config.ConfigWrapper(cls.model_config, check=False),
+            ns_resolver,
             raise_errors=raise_errors,
-            ns_resolver=ns_resolver,
+            # If the model was already complete, we don't need to call the hook again.
+            call_on_complete_hook=not already_complete,
         )
 
     @classmethod
@@ -819,19 +812,36 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     @classmethod
     def __pydantic_init_subclass__(cls, **kwargs: Any) -> None:
         """This is intended to behave just like `__init_subclass__`, but is called by `ModelMetaclass`
-        only after the class is actually fully initialized. In particular, attributes like `model_fields` will
-        be present when this is called.
+        only after basic class initialization is complete. In particular, attributes like `model_fields` will
+        be present when this is called, but forward annotations are not guaranteed to be resolved yet,
+        meaning that creating an instance of the class may fail.
 
         This is necessary because `__init_subclass__` will always be called by `type.__new__`,
         and it would require a prohibitively large refactor to the `ModelMetaclass` to ensure that
         `type.__new__` was called in such a manner that the class would already be sufficiently initialized.
 
         This will receive the same `kwargs` that would be passed to the standard `__init_subclass__`, namely,
-        any kwargs passed to the class definition that aren't used internally by pydantic.
+        any kwargs passed to the class definition that aren't used internally by Pydantic.
 
         Args:
             **kwargs: Any keyword arguments passed to the class definition that aren't used internally
-                by pydantic.
+                by Pydantic.
+
+        Note:
+            You may want to override [`__pydantic_on_complete__()`][pydantic.main.BaseModel.__pydantic_on_complete__]
+            instead, which is called once the class and its fields are fully initialized and ready for validation.
+        """
+        pass
+
+    @classmethod
+    def __pydantic_on_complete__(cls) -> None:
+        """This is called once the class and its fields are fully initialized and ready to be used.
+
+        This typically happens when the class is created (just before
+        [`__pydantic_init_subclass__()`][pydantic.main.BaseModel.__pydantic_init_subclass__] is called on the superclass),
+        except when forward annotations are used that could not immediately be resolved.
+        In that case, it will be called later, when the model is rebuilt automatically or explicitly using
+        [`model_rebuild()`][pydantic.main.BaseModel.model_rebuild].
         """
         pass
 
@@ -898,12 +908,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
                 submodel = _generics.create_generic_submodel(model_name, origin, args, params)
 
-                # Cache the generated model *only* if not in the process of parametrizing
-                # another model. In some valid scenarios, we miss the opportunity to cache
-                # it but in some cases this results in `PydanticRecursiveRef` instances left
-                # on `FieldInfo` annotations:
-                if len(_generics.recursively_defined_type_refs()) == 1:
-                    _generics.set_cached_generic_type(cls, typevar_values, submodel, origin, args)
+                _generics.set_cached_generic_type(cls, typevar_values, submodel, origin, args)
 
         return submodel
 
@@ -1195,6 +1200,13 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         return f'{self.__repr_name__()}({self.__repr_str__(", ")})'
 
     def __repr_args__(self) -> _repr.ReprArgs:
+        # Eagerly create the repr of computed fields, as this may trigger access of cached properties and as such
+        # modify the instance's `__dict__`. If we don't do it now, it could happen when iterating over the `__dict__`
+        # below if the instance happens to be referenced in a field, and would modify the `__dict__` size *during* iteration.
+        computed_fields_repr_args = [
+            (k, getattr(self, k)) for k, v in self.__pydantic_computed_fields__.items() if v.repr
+        ]
+
         for k, v in self.__dict__.items():
             field = self.__pydantic_fields__.get(k)
             if field and field.repr:
@@ -1213,7 +1225,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         if pydantic_extra is not None:
             yield from ((k, v) for k, v in pydantic_extra.items())
-        yield from ((k, getattr(self, k)) for k, v in self.__pydantic_computed_fields__.items() if v.repr)
+        yield from computed_fields_repr_args
 
     # take logic from `_repr.Representation` without the side effects of inheritance, see #5740
     __repr_name__ = _repr.Representation.__repr_name__
@@ -1704,16 +1716,10 @@ def create_model(  # noqa: C901
     Raises:
         PydanticUserError: If `__base__` and `__config__` are both passed.
     """
-    if __base__ is not None:
-        if __config__ is not None:
-            raise PydanticUserError(
-                'to avoid confusion `__config__` and `__base__` cannot be used together',
-                code='create-model-config-base',
-            )
-        if not isinstance(__base__, tuple):
-            __base__ = (__base__,)
-    else:
+    if __base__ is None:
         __base__ = (cast('type[ModelT]', BaseModel),)
+    elif not isinstance(__base__, tuple):
+        __base__ = (__base__,)
 
     __cls_kwargs__ = __cls_kwargs__ or {}
 
@@ -1745,7 +1751,7 @@ def create_model(  # noqa: C901
         namespace.update(__validators__)
     namespace.update(fields)
     if __config__:
-        namespace['model_config'] = _config.ConfigWrapper(__config__).config_dict
+        namespace['model_config'] = __config__
     resolved_bases = types.resolve_bases(__base__)
     meta, ns, kwds = types.prepare_class(model_name, resolved_bases, kwds=__cls_kwargs__)
     if resolved_bases is not __base__:

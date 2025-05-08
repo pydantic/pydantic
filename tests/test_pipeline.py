@@ -416,3 +416,11 @@ def test_composition() -> None:
         ta.validate_python(21)
     assert calls == [('1', 21), ('2', 21), ('3', 21)]
     calls.clear()
+
+
+def test_validate_as_ellipsis_preserves_other_steps() -> None:
+    """https://github.com/pydantic/pydantic/issues/11624"""
+
+    ta = TypeAdapter[float](Annotated[float, validate_as(str).transform(lambda v: v.split()[0]).validate_as(...)])
+
+    assert ta.validate_python('12 ab') == 12.0

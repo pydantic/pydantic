@@ -2,14 +2,16 @@
 
 from __future__ import annotations as _annotations
 
+import warnings
 from re import Pattern
-from typing import TYPE_CHECKING, Any, Callable, Literal, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, Literal, TypeVar, Union, cast, overload
 
-from typing_extensions import TypeAlias, TypedDict
+from typing_extensions import TypeAlias, TypedDict, Unpack, deprecated
 
 from ._migration import getattr_migration
 from .aliases import AliasGenerator
 from .errors import PydanticUserError
+from .warnings import PydanticDeprecatedSince211
 
 if TYPE_CHECKING:
     from ._internal._generate_schema import GenerateSchema as _GenerateSchema
@@ -192,7 +194,7 @@ class ConfigDict(TypedDict, total=False):
         print(m)
         #> my_field='foo'
 
-        m = Model(my_alias='foo')  # (3)!
+        m = Model(my_field='foo')  # (3)!
         print(m)
         #> my_field='foo'
         ```
@@ -664,9 +666,9 @@ class ConfigDict(TypedDict, total=False):
     except UserWarning as e:
         print(e)
         '''
-        Field "model_dump_something" in Model has conflict with protected namespace "model_dump".
+        Field 'model_dump_something' in 'Model' conflicts with protected namespace 'model_dump'.
 
-        You may be able to resolve this warning by setting `model_config['protected_namespaces'] = ('model_validate',)`.
+        You may be able to solve this by setting the 'protected_namespaces' configuration to ('model_validate',).
         '''
     ```
 
@@ -697,11 +699,11 @@ class ConfigDict(TypedDict, total=False):
     for warning in caught_warnings:
         print(f'{warning.message}')
         '''
-        Field "also_protect_field" in Model has conflict with protected namespace "also_protect_".
-        You may be able to resolve this warning by setting `model_config['protected_namespaces'] = ('protect_me_', re.compile('^protect_this$'))`.
+        Field 'also_protect_field' in 'Model' conflicts with protected namespace 'also_protect_'.
+        You may be able to solve this by setting the 'protected_namespaces' configuration to ('protect_me_', re.compile('^protect_this$'))`.
 
-        Field "protect_this" in Model has conflict with protected namespace "re.compile('^protect_this$')".
-        You may be able to resolve this warning by setting `model_config['protected_namespaces'] = ('protect_me_', 'also_protect_')`.
+        Field 'protect_this' in 'Model' conflicts with protected namespace 're.compile('^protect_this$')'.
+        You may be able to solve this by setting the 'protected_namespaces' configuration to ('protect_me_', 'also_protect_')`.
         '''
     ```
 
@@ -718,10 +720,10 @@ class ConfigDict(TypedDict, total=False):
 
             model_config = ConfigDict(protected_namespaces=('model_',))
 
-    except NameError as e:
+    except ValueError as e:
         print(e)
         '''
-        Field "model_validate" conflicts with member <bound method BaseModel.model_validate of <class 'pydantic.main.BaseModel'>> of protected namespace "model_".
+        Field 'model_validate' conflicts with member <bound method BaseModel.model_validate of <class 'pydantic.main.BaseModel'>> of protected namespace 'model_'.
         '''
     ```
     """
@@ -1139,7 +1141,20 @@ class ConfigDict(TypedDict, total=False):
 _TypeT = TypeVar('_TypeT', bound=type)
 
 
-def with_config(config: ConfigDict) -> Callable[[_TypeT], _TypeT]:
+@overload
+@deprecated('Passing `config` as a keyword argument is deprecated. Pass `config` as a positional argument instead.')
+def with_config(*, config: ConfigDict) -> Callable[[_TypeT], _TypeT]: ...
+
+
+@overload
+def with_config(config: ConfigDict, /) -> Callable[[_TypeT], _TypeT]: ...
+
+
+@overload
+def with_config(**config: Unpack[ConfigDict]) -> Callable[[_TypeT], _TypeT]: ...
+
+
+def with_config(config: ConfigDict | None = None, /, **kwargs: Any) -> Callable[[_TypeT], _TypeT]:
     """!!! abstract "Usage Documentation"
         [Configuration with other types](../concepts/config.md#configuration-on-other-supported-types)
 
@@ -1156,15 +1171,27 @@ def with_config(config: ConfigDict) -> Callable[[_TypeT], _TypeT]:
         from pydantic import ConfigDict, TypeAdapter, with_config
 
         @with_config(ConfigDict(str_to_lower=True))
-        class Model(TypedDict):
+        class TD(TypedDict):
             x: str
 
-        ta = TypeAdapter(Model)
+        ta = TypeAdapter(TD)
 
         print(ta.validate_python({'x': 'ABC'}))
         #> {'x': 'abc'}
         ```
     """
+    if config is not None and kwargs:
+        raise ValueError('Cannot specify both `config` and keyword arguments')
+
+    if len(kwargs) == 1 and (kwargs_conf := kwargs.get('config')) is not None:
+        warnings.warn(
+            'Passing `config` as a keyword argument is deprecated. Pass `config` as a positional argument instead',
+            category=PydanticDeprecatedSince211,
+            stacklevel=2,
+        )
+        final_config = cast(ConfigDict, kwargs_conf)
+    else:
+        final_config = config if config is not None else cast(ConfigDict, kwargs)
 
     def inner(class_: _TypeT, /) -> _TypeT:
         # Ideally, we would check for `class_` to either be a `TypedDict` or a stdlib dataclass.
@@ -1177,7 +1204,7 @@ def with_config(config: ConfigDict) -> Callable[[_TypeT], _TypeT]:
                 f'Cannot use `with_config` on {class_.__name__} as it is a Pydantic model',
                 code='with-config-on-model',
             )
-        class_.__pydantic_config__ = config
+        class_.__pydantic_config__ = final_config
         return class_
 
     return inner

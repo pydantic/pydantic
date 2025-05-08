@@ -2,10 +2,9 @@
 
 from __future__ import annotations as _annotations
 
-import dataclasses
 import typing
 import warnings
-from functools import partial, wraps
+from functools import partial
 from typing import Any, ClassVar
 
 from pydantic_core import (
@@ -14,7 +13,7 @@ from pydantic_core import (
     SchemaValidator,
     core_schema,
 )
-from typing_extensions import TypeGuard
+from typing_extensions import TypeIs
 
 from ..errors import PydanticUndefinedAnnotation
 from ..plugin._schema_validator import PluggableSchemaValidator, create_schema_validator
@@ -63,15 +62,15 @@ else:
 
 def set_dataclass_fields(
     cls: type[StandardDataclass],
+    config_wrapper: _config.ConfigWrapper,
     ns_resolver: NsResolver | None = None,
-    config_wrapper: _config.ConfigWrapper | None = None,
 ) -> None:
     """Collect and set `cls.__pydantic_fields__`.
 
     Args:
         cls: The class.
+        config_wrapper: The config wrapper instance.
         ns_resolver: Namespace resolver to use when getting dataclass annotations.
-        config_wrapper: The config wrapper instance, defaults to `None`.
     """
     typevars_map = get_standard_typevars_map(cls)
     fields = collect_dataclass_fields(
@@ -124,7 +123,7 @@ def complete_dataclass(
     cls.__init__ = __init__  # type: ignore
     cls.__pydantic_config__ = config_wrapper.config_dict  # type: ignore
 
-    set_dataclass_fields(cls, ns_resolver, config_wrapper=config_wrapper)
+    set_dataclass_fields(cls, config_wrapper=config_wrapper, ns_resolver=ns_resolver)
 
     if not _force_build and config_wrapper.defer_build:
         set_dataclass_mocks(cls)
@@ -178,49 +177,21 @@ def complete_dataclass(
     # We are about to set all the remaining required properties expected for this cast;
     # __pydantic_decorators__ and __pydantic_fields__ should already be set
     cls = typing.cast('type[PydanticDataclass]', cls)
-    # debug(schema)
 
     cls.__pydantic_core_schema__ = schema
-    cls.__pydantic_validator__ = validator = create_schema_validator(
+    cls.__pydantic_validator__ = create_schema_validator(
         schema, cls, cls.__module__, cls.__qualname__, 'dataclass', core_config, config_wrapper.plugin_settings
     )
     cls.__pydantic_serializer__ = SchemaSerializer(schema, core_config)
-
-    if config_wrapper.validate_assignment:
-
-        @wraps(cls.__setattr__)
-        def validated_setattr(instance: Any, field: str, value: str, /) -> None:
-            validator.validate_assignment(instance, field, value)
-
-        cls.__setattr__ = validated_setattr.__get__(None, cls)  # type: ignore
-
     cls.__pydantic_complete__ = True
     return True
 
 
-def is_builtin_dataclass(_cls: type[Any]) -> TypeGuard[type[StandardDataclass]]:
-    """Returns True if a class is a stdlib dataclass and *not* a pydantic dataclass.
+def is_stdlib_dataclass(cls: type[Any], /) -> TypeIs[type[StandardDataclass]]:
+    """Returns `True` if the class is a stdlib dataclass and *not* a Pydantic dataclass.
 
-    We check that
-    - `_cls` is a dataclass
-    - `_cls` does not inherit from a processed pydantic dataclass (and thus have a `__pydantic_validator__`)
-    - `_cls` does not have any annotations that are not dataclass fields
-    e.g.
-    ```python
-    import dataclasses
-
-    import pydantic.dataclasses
-
-    @dataclasses.dataclass
-    class A:
-        x: int
-
-    @pydantic.dataclasses.dataclass
-    class B(A):
-        y: int
-    ```
-    In this case, when we first check `B`, we make an extra check and look at the annotations ('y'),
-    which won't be a superset of all the dataclass fields (only the stdlib fields i.e. 'x')
+    Unlike the stdlib `dataclasses.is_dataclass()` function, this does *not* include subclasses
+    of a dataclass that are themselves not dataclasses.
 
     Args:
         cls: The class.
@@ -228,8 +199,4 @@ def is_builtin_dataclass(_cls: type[Any]) -> TypeGuard[type[StandardDataclass]]:
     Returns:
         `True` if the class is a stdlib dataclass, `False` otherwise.
     """
-    return (
-        dataclasses.is_dataclass(_cls)
-        and not hasattr(_cls, '__pydantic_validator__')
-        and set(_cls.__dataclass_fields__).issuperset(set(getattr(_cls, '__annotations__', {})))
-    )
+    return '__dataclass_fields__' in cls.__dict__ and not hasattr(cls, '__pydantic_validator__')

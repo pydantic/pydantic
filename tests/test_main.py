@@ -43,6 +43,7 @@ from pydantic import (
     TypeAdapter,
     ValidationError,
     ValidationInfo,
+    computed_field,
     constr,
     field_validator,
 )
@@ -126,6 +127,28 @@ def test_recursive_repr() -> None:
     b = B(a=a)
 
     assert re.match(r"B\(a=A\(a='<Recursion on A with id=\d+>'\)\)", repr(b)) is not None
+
+
+def test_self_reference_cached_property_repr() -> None:
+    class Model(BaseModel):
+        parent: 'Model | None' = None
+        children: 'list[Model]' = []
+
+        @computed_field
+        @cached_property
+        def prop(self) -> bool:
+            return True
+
+    foo = Model()
+    bar = Model()
+
+    foo.children.append(bar)
+    bar.parent = foo
+
+    assert (
+        str(foo)
+        == 'parent=None children=[Model(parent=Model(parent=None, children=[...], prop=True), children=[], prop=True)] prop=True'
+    )
 
 
 def test_default_factory_field():
@@ -2284,6 +2307,34 @@ def test_model_post_init_correct_mro():
     assert calls == ['C.model_post_init']
 
 
+def test_model_post_init_mocked_setattr() -> None:
+    """https://github.com/pydantic/pydantic/issues/11646
+
+    Fixes a small regression in 2.11. To instantiate private attributes on model instances
+    (and as such the `__pydantic_private__` instance attribute), Pydantic defines its own
+    `model_post_init()` (and wraps the user-defined one if it exists). In tests, some users
+    can mock their `model_post_init()` if they want to avoid unwanted side-effects (meaning
+    `__pydantic_private__` won't be instantiated).
+    In 2.11, the `BaseModel.__setattr__` logic was tweaked and required the `__pydantic_private__`
+    attribute to be present, resulting in attribute errors.
+    """
+
+    class Model(BaseModel):
+        _a: int
+
+        def model_post_init(self, context: Any, /) -> None:
+            """Do some stuff"""
+
+    # This reproduces `patch.object(Model, 'model_post_init')`:
+    Model.model_post_init = lambda *args, **kwargs: None
+
+    m = Model()
+    assert m.__pydantic_private__ is None
+
+    m._a = 2
+    assert m._a == 2
+
+
 def test_del_model_attr():
     class Model(BaseModel):
         some_field: str
@@ -2686,7 +2737,7 @@ def test_validate_json_context() -> None:
     assert contexts == []
 
 
-def test_pydantic_init_subclass() -> None:
+def test_pydantic_hooks() -> None:
     calls = []
 
     class MyModel(BaseModel):
@@ -2699,13 +2750,57 @@ def test_pydantic_init_subclass() -> None:
             super().__pydantic_init_subclass__(**kwargs)
             calls.append((cls.__name__, '__pydantic_init_subclass__', kwargs))
 
-    class MySubModel(MyModel, a=1):
-        pass
+        @classmethod
+        def __pydantic_on_complete__(cls):
+            calls.append((cls.__name__, '__pydantic_on_complete__', 'MyModel'))
 
+    assert MyModel.__pydantic_complete__
+    assert MyModel.__pydantic_fields_complete__
+    assert calls == [
+        ('MyModel', '__pydantic_on_complete__', 'MyModel'),
+    ]
+    calls = []
+
+    class MySubModel(MyModel, a=1):
+        sub: 'MySubSubModel'
+
+        @classmethod
+        def __pydantic_on_complete__(cls):
+            calls.append((cls.__name__, '__pydantic_on_complete__', 'MySubModel'))
+
+    assert not MySubModel.__pydantic_complete__
+    assert not MySubModel.__pydantic_fields_complete__
     assert calls == [
         ('MySubModel', '__init_subclass__', {'a': 1}),
         ('MySubModel', '__pydantic_init_subclass__', {'a': 1}),
     ]
+    calls = []
+
+    class MySubSubModel(MySubModel, b=1):
+        @classmethod
+        def __pydantic_on_complete__(cls):
+            calls.append((cls.__name__, '__pydantic_on_complete__', 'MySubSubModel'))
+
+    assert MySubSubModel.__pydantic_complete__
+    assert MySubSubModel.__pydantic_fields_complete__
+    assert calls == [
+        ('MySubSubModel', '__init_subclass__', {'b': 1}),
+        ('MySubSubModel', '__pydantic_on_complete__', 'MySubSubModel'),
+        ('MySubSubModel', '__pydantic_init_subclass__', {'b': 1}),
+    ]
+    calls = []
+
+    MySubModel.model_rebuild()
+
+    assert MySubModel.__pydantic_complete__
+    assert MySubModel.__pydantic_fields_complete__
+    assert calls == [
+        ('MySubModel', '__pydantic_on_complete__', 'MySubModel'),
+    ]
+    calls = []
+
+    MyModel.model_rebuild(force=True)
+    assert calls == []
 
 
 def test_model_validate_with_context():
@@ -2756,7 +2851,7 @@ def test_recursion_loop_error():
 
 def test_protected_namespace_default():
     with pytest.warns(
-        UserWarning, match='Field "model_dump_something" in Model has conflict with protected namespace "model_dump"'
+        UserWarning, match="Field 'model_dump_something' in 'Model' conflicts with protected namespace 'model_dump'"
     ):
 
         class Model(BaseModel):
@@ -2764,7 +2859,7 @@ def test_protected_namespace_default():
 
 
 def test_custom_protected_namespace():
-    with pytest.warns(UserWarning, match='Field "test_field" in Model has conflict with protected namespace "test_"'):
+    with pytest.warns(UserWarning, match="Field 'test_field' in 'Model' conflicts with protected namespace 'test_'"):
 
         class Model(BaseModel):
             # this field won't raise error because we changed the default value for the
@@ -2777,17 +2872,22 @@ def test_custom_protected_namespace():
 
 def test_multiple_protected_namespace():
     with pytest.warns(
-        UserWarning, match='Field "also_protect_field" in Model has conflict with protected namespace "also_protect_"'
+        UserWarning,
+        match=(
+            r"Field 'also_protect_field' in 'Model' conflicts with protected namespace 'also_protect_'\.\n\n"
+            "You may be able to solve this by setting the 'protected_namespaces' configuration to "
+            r"\('protect_me_', re.compile\('re_protect'\)\)\."
+        ),
     ):
 
         class Model(BaseModel):
             also_protect_field: str
 
-            model_config = ConfigDict(protected_namespaces=('protect_me_', 'also_protect_'))
+            model_config = ConfigDict(protected_namespaces=('protect_me_', 'also_protect_', re.compile('re_protect')))
 
 
 def test_protected_namespace_pattern() -> None:
-    with pytest.warns(UserWarning, match=r'Field "perfect_match" in Model has conflict with protected namespace .*'):
+    with pytest.warns(UserWarning, match=r"Field 'perfect_match' in 'Model' conflicts with protected namespace .*"):
 
         class Model(BaseModel):
             perfect_match: str
@@ -3079,6 +3179,16 @@ def test_extra_validator_scalar() -> None:
         'title': 'Child',
         'type': 'object',
     }
+
+
+def test_extra_validator_keys() -> None:
+    class Model(BaseModel, extra='allow'):
+        __pydantic_extra__: dict[Annotated[str, Field(max_length=3)], int]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(extra_too_long=1)
+
+    assert exc_info.value.errors()[0]['type'] == 'string_too_long'
 
 
 def test_extra_validator_field() -> None:

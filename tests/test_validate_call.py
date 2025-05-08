@@ -4,7 +4,7 @@ import re
 import sys
 from datetime import datetime, timezone
 from functools import partial
-from typing import Annotated, Any, Literal, Union
+from typing import Annotated, Any, Generic, Literal, TypeVar, Union
 
 import pytest
 from pydantic_core import ArgsKwargs
@@ -349,6 +349,20 @@ def test_unpacked_typed_dict_kwargs() -> None:
 
         assert exc.value.errors()[0]['type'] == 'missing'
         assert exc.value.errors()[0]['loc'] == ('b',)
+
+
+def test_unpacked_generic_typed_dict_kwargs() -> None:
+    T = TypeVar('T')
+
+    class TD(TypedDict, Generic[T]):
+        t: T
+
+    @validate_call
+    def foo(**kwargs: Unpack[TD[int]]):
+        pass
+
+    with pytest.raises(ValidationError):
+        foo(t='not_an_int')
 
 
 def test_unpacked_typed_dict_kwargs_functional_syntax() -> None:
@@ -1244,3 +1258,19 @@ def test_uses_local_ns():
         assert bar({'z': 1}) == M2(z=1)
 
     foo()
+
+
+# The class needs to be defined at the module level
+# For 'DeferBuildClass' to resolve:
+class DeferBuildClass(BaseModel):
+    @classmethod
+    @validate_call(config={'defer_build': True})
+    def cls_meth(cls, x: int) -> 'DeferBuildClass':
+        return DeferBuildClass()
+
+
+def test_validate_call_defer_build() -> None:
+    DeferBuildClass.cls_meth(x=1)
+
+    with pytest.raises(ValidationError):
+        DeferBuildClass.cls_meth(x='not_an_int')

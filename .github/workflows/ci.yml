@@ -24,7 +24,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@v6
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -44,7 +44,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - uses: astral-sh/setup-uv@v5
+    - uses: astral-sh/setup-uv@v6
       with:
         python-version: '3.12'
 
@@ -56,17 +56,14 @@ jobs:
 
     - run: uv run python -c 'import docs.plugins.main'
 
-    # Adding local symlinks gets nice source locations like
-    #   pydantic_core/core_schema.py
-    # instead of
-    #   .venv/lib/python3.10/site-packages/pydantic_core/core_schema.py
+    # Taken from docs-build.sh
     - name: prepare shortcuts for extra modules
       run: |
         ln -s .venv/lib/python*/site-packages/pydantic_core pydantic_core
         ln -s .venv/lib/python*/site-packages/pydantic_settings pydantic_settings
         ln -s .venv/lib/python*/site-packages/pydantic_extra_types pydantic_extra_types
 
-    - run: uv run mkdocs build
+    - run: PYTHONPATH="$PWD${PYTHONPATH:+:${PYTHONPATH}}" uv run mkdocs build
 
   test-memray:
     name: Test memray
@@ -74,7 +71,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@v6
         with:
           python-version: '3.12'
 
@@ -122,7 +119,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - uses: astral-sh/setup-uv@v5
+    - uses: astral-sh/setup-uv@v6
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -168,7 +165,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@v6
         with:
           python-version: '3.12'
 
@@ -206,7 +203,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - uses: astral-sh/setup-uv@v5
+    - uses: astral-sh/setup-uv@v6
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -238,7 +235,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - uses: astral-sh/setup-uv@v5
+    - uses: astral-sh/setup-uv@v6
       with:
         python-version: '3.12'
 
@@ -328,7 +325,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - uses: astral-sh/setup-uv@v5
+    - uses: astral-sh/setup-uv@v6
       with:
         python-version: ${{ matrix.python-version }}
 

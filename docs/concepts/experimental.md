@@ -38,9 +38,9 @@ Each step in the pipeline can be:
 * A constraint step that checks the data against a condition
 * A predicate step that checks the data against a condition and raises an error if it returns `False`
 
-<!-- TODO: (@sydney-runkle) add more documentation once we solidify the API during the experimental phase -->
+<!-- TODO: add more documentation once we solidify the API during the experimental phase -->
 
-Note that the following example attempts to be exhaustive at the cost of complexity: if you find yourself writing this many transformations in type annotations you may want to consider having a `UserIn` and `UserOut` model (example below) or similar where you make the transformations via idomatic plain Python code.
+Note that the following example attempts to be exhaustive at the cost of complexity: if you find yourself writing this many transformations in type annotations you may want to consider having a `UserIn` and `UserOut` model (example below) or similar where you make the transformations via idiomatic plain Python code.
 These APIs are meant for situations where the code savings are significant and the added complexity is relatively small.
 
 ```python
@@ -427,3 +427,77 @@ print(v)
 
 1. As you would expect, this will pass validation since Pydantic correctly ignores the error in the (truncated) last item.
 2. This will also pass validation since the error in the last item is ignored.
+
+## Validation of a callable's arguments
+
+Pydantic provides the [`@validate_call`][pydantic.validate_call] decorator to perform validation on the provided
+arguments (and additionally return type) of a callable. However, it only allows arguments to be provided
+by actually calling the decorated callable. In some situations, you may want to just _validate_ the arguments,
+such as when loading from other data sources such as JSON data.
+
+For this reason, the experimental [`generate_arguments_schema()`][pydantic.experimental.arguments_schema.generate_arguments_schema]
+function can be used to construct a core schema, which can later be used with a [`SchemaValidator`][pydantic_core.SchemaValidator].
+
+```python
+from pydantic_core import SchemaValidator
+
+from pydantic.experimental.arguments_schema import generate_arguments_schema
+
+
+def func(p: bool, *args: str, **kwargs: int) -> None: ...
+
+
+arguments_schema = generate_arguments_schema(func=func)
+
+val = SchemaValidator(arguments_schema, config={'coerce_numbers_to_str': True})
+
+args, kwargs = val.validate_json(
+    '{"p": true, "args": ["arg1", 1], "kwargs": {"extra": 1}}'
+)
+print(args, kwargs)  # (1)!
+#> (True, 'arg1', '1') {'extra': 1}
+```
+
+1. If you want the validated arguments as a dictionary, you can use the [`Signature.bind()`][inspect.Signature.bind]
+   method:
+
+     ```python {test="skip" lint="skip"}
+     from inspect import signature
+
+     signature(func).bind(*args, **kwargs).arguments
+     #> {'p': True, 'args': ('arg1', '1'), 'kwargs': {'extra': 1}}
+     ```
+
+!!! note
+    Unlike [`@validate_call`][pydantic.validate_call], this core schema will only validate the provided arguments;
+    the underlying callable will *not* be called.
+
+Additionally, you can ignore specific parameters by providing a callback, which is called for every parameter:
+
+```python
+from typing import Any
+
+from pydantic_core import SchemaValidator
+
+from pydantic.experimental.arguments_schema import generate_arguments_schema
+
+
+def func(p: bool, *args: str, **kwargs: int) -> None: ...
+
+
+def skip_first_parameter(index: int, name: str, annotation: Any) -> Any:
+    if index == 0:
+        return 'skip'
+
+
+arguments_schema = generate_arguments_schema(
+    func=func,
+    parameters_callback=skip_first_parameter,
+)
+
+val = SchemaValidator(arguments_schema)
+
+args, kwargs = val.validate_json('{"args": ["arg1"], "kwargs": {"extra": 1}}')
+print(args, kwargs)
+#> ('arg1',) {'extra': 1}
+```

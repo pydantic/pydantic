@@ -171,6 +171,7 @@ nav:
   - Usage Errors: errors/usage_errors.md
 - Integrations:
   - Pydantic Logfire: integrations/logfire.md
+  - LLMs: integrations/llms.md
   - Dev Tools:
     - Mypy: integrations/mypy.md/.
     - PyCharm: integrations/pycharm.md
@@ -208,7 +209,6 @@ watch:
 
 hooks:
 - 'docs/plugins/main.py'
-- 'docs/plugins/build_llms_txt.py'
 - 'docs/plugins/algolia.py'
 
 plugins:
@@ -216,6 +216,25 @@ plugins:
 - mike:
     alias_type: symlink
     canonical_version: latest
+  # llmstxt must come after the mike plugin:
+- llmstxt:
+    enabled: !ENV [CI, false]
+    full_output: llms-full.txt
+    markdown_description: |-
+      Pydantic is the most widely used data validation library for Python.
+      Fast and extensible, Pydantic plays nicely with your linters/IDE/brain.
+      Define how data should be in pure, canonical Python 3.9+; validate it with Pydantic.
+    sections:
+      Concepts documentation:
+        - concepts/*.md
+      API documentation:
+        - api/*.md
+      Internals:
+        - internals/*.md
+      Optional:
+        - errors/*.md
+        - examples/*.md
+        - integrations/*.md
 - search
 - exclude:
     glob:
@@ -225,7 +244,7 @@ plugins:
 - mkdocstrings:
     handlers:
       python:
-        paths: [.]
+        paths: [.]  # see also: build-docs.sh
         options:
           members_order: source
           separate_signature: true

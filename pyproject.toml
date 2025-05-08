@@ -16,10 +16,12 @@ authors = [
     {name = 'Marcelo Trylesinski', email = 'marcelotryle@gmail.com'},
     {name = 'Sydney Runkle', email = 'sydneymarierunkle@gmail.com'},
     {name = 'David Hewitt', email = 'mail@davidhewitt.io'},
-    {name = 'Alex Hall', email='alex.mojaki@gmail.com'},
-    {name = 'Victorien Plot', email='contact@vctrn.dev'},
+    {name = 'Alex Hall', email = 'alex.mojaki@gmail.com'},
+    {name = 'Victorien Plot', email = 'contact@vctrn.dev'},
+    {name = 'Douwe Maan', email = 'hi@douwe.me'},
 ]
 license = 'MIT'
+license-files = ['LICENSE']
 classifiers = [
     'Development Status :: 5 - Production/Stable',
     'Programming Language :: Python',
@@ -34,7 +36,6 @@ classifiers = [
     'Programming Language :: Python :: 3.13',
     'Intended Audience :: Developers',
     'Intended Audience :: Information Technology',
-    'License :: OSI Approved :: MIT License',
     'Operating System :: OS Independent',
     'Framework :: Hypothesis',
     'Framework :: Pydantic',
@@ -46,7 +47,7 @@ dependencies = [
     'typing-extensions>=4.12.2',
     'annotated-types>=0.6.0',
     # Keep this in sync with the version in the `check_pydantic_core_version()` function:
-    'pydantic-core==2.32.0',
+    'pydantic-core==2.34.1',
     'typing-inspection>=0.4.0',
 ]
 dynamic = ['version', 'readme']
@@ -84,10 +85,9 @@ dev = [
 ]
 docs = [
     'autoflake',
-    "bs4>=0.0.2",
-    "markdownify>=0.14.1",
     'mkdocs',
     'mkdocs-exclude',
+    'mkdocs-llmstxt',
     'mkdocs-material[imaging]',
     'mkdocs-redirects',
     'mkdocstrings-python',
@@ -185,7 +185,7 @@ default-groups = ['dev']
 
 # configuring https://github.com/pydantic/hooky
 [tool.hooky]
-reviewers = ['sydney-runkle']
+reviewers = ['Viicos', 'DouweM']
 require_change_file = false
 unconfirmed_label = 'pending'
 

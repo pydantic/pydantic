@@ -106,6 +106,12 @@ class PydanticJsonSchemaWarning(UserWarning):
     """
 
 
+NoDefault = object()
+"""A sentinel value used to indicate that no default value should be used when generating a JSON Schema
+for a core schema with a default value.
+"""
+
+
 # ##### JSON Schema Generation #####
 DEFAULT_REF_TEMPLATE = '#/$defs/{model}'
 """The default format string used to generate reference names."""
@@ -1102,43 +1108,35 @@ class GenerateJsonSchema:
         """
         json_schema = self.generate_inner(schema['schema'])
 
-        if 'default' not in schema:
+        default = self.get_default_value(schema)
+        if default is NoDefault:
             return json_schema
-        default = schema['default']
-        # Note: if you want to include the value returned by the default_factory,
-        # override this method and replace the code above with:
-        # if 'default' in schema:
-        #     default = schema['default']
-        # elif 'default_factory' in schema:
-        #     default = schema['default_factory']()
-        # else:
-        #     return json_schema
 
         # we reflect the application of custom plain, no-info serializers to defaults for
         # JSON Schemas viewed in serialization mode:
         # TODO: improvements along with https://github.com/pydantic/pydantic/issues/8208
-        if (
-            self.mode == 'serialization'
-            and (ser_schema := schema['schema'].get('serialization'))
-            and (ser_func := ser_schema.get('function'))
-            and ser_schema.get('type') == 'function-plain'
-            and not ser_schema.get('info_arg')
-            and not (default is None and ser_schema.get('when_used') in ('unless-none', 'json-unless-none'))
-        ):
-            try:
-                default = ser_func(default)  # type: ignore
-            except Exception:
-                # It might be that the provided default needs to be validated (read: parsed) first
-                # (assuming `validate_default` is enabled). However, we can't perform
-                # such validation during JSON Schema generation so we don't support
-                # this pattern for now.
-                # (One example is when using `foo: ByteSize = '1MB'`, which validates and
-                # serializes as an int. In this case, `ser_func` is `int` and `int('1MB')` fails).
-                self.emit_warning(
-                    'non-serializable-default',
-                    f'Unable to serialize value {default!r} with the plain serializer; excluding default from JSON schema',
-                )
-                return json_schema
+        if self.mode == 'serialization':
+            # `_get_ser_schema_for_default_value()` is used to unpack potentially nested validator schemas:
+            ser_schema = _get_ser_schema_for_default_value(schema['schema'])
+            if (
+                ser_schema is not None
+                and (ser_func := ser_schema.get('function'))
+                and not (default is None and ser_schema.get('when_used') in ('unless-none', 'json-unless-none'))
+            ):
+                try:
+                    default = ser_func(default)  # type: ignore
+                except Exception:
+                    # It might be that the provided default needs to be validated (read: parsed) first
+                    # (assuming `validate_default` is enabled). However, we can't perform
+                    # such validation during JSON Schema generation so we don't support
+                    # this pattern for now.
+                    # (One example is when using `foo: ByteSize = '1MB'`, which validates and
+                    # serializes as an int. In this case, `ser_func` is `int` and `int('1MB')` fails).
+                    self.emit_warning(
+                        'non-serializable-default',
+                        f'Unable to serialize value {default!r} with the plain serializer; excluding default from JSON schema',
+                    )
+                    return json_schema
 
         try:
             encoded_default = self.encode_default(default)
@@ -1152,6 +1150,21 @@ class GenerateJsonSchema:
 
         json_schema['default'] = encoded_default
         return json_schema
+
+    def get_default_value(self, schema: core_schema.WithDefaultSchema) -> Any:
+        """Get the default value to be used when generating a JSON Schema for a core schema with a default.
+
+        The default implementation is to use the statically defined default value. This method can be overridden
+        if you want to make use of the default factory.
+
+        Args:
+            schema: The `'with-default'` core schema.
+
+        Returns:
+            The default value to use, or [`NoDefault`][pydantic.json_schema.NoDefault] if no default
+                value is available.
+        """
+        return schema.get('default', NoDefault)
 
     def nullable_schema(self, schema: core_schema.NullableSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a schema that allows null values.
@@ -1662,7 +1675,7 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        from ._internal._dataclasses import is_builtin_dataclass
+        from ._internal._dataclasses import is_stdlib_dataclass
 
         cls = schema['cls']
         config: ConfigDict = getattr(cls, '__pydantic_config__', cast('ConfigDict', {}))
@@ -1673,7 +1686,7 @@ class GenerateJsonSchema:
         self._update_class_schema(json_schema, cls, config)
 
         # Dataclass-specific handling of description
-        if is_builtin_dataclass(cls):
+        if is_stdlib_dataclass(cls):
             # vanilla dataclass; don't use cls.__doc__ as it will contain the class signature by default
             description = None
         else:
@@ -2680,3 +2693,18 @@ def _get_typed_dict_config(cls: type[Any] | None) -> ConfigDict:
         except AttributeError:
             pass
     return {}
+
+
+def _get_ser_schema_for_default_value(schema: CoreSchema) -> core_schema.PlainSerializerFunctionSerSchema | None:
+    """Get a `'function-plain'` serialization schema that can be used to serialize a default value.
+
+    This takes into account having the serialization schema nested under validation schema(s).
+    """
+    if (
+        (ser_schema := schema.get('serialization'))
+        and ser_schema['type'] == 'function-plain'
+        and not ser_schema.get('info_arg')
+    ):
+        return ser_schema
+    if _core_utils.is_function_with_inner_schema(schema):
+        return _get_ser_schema_for_default_value(schema['schema'])

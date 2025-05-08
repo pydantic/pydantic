@@ -34,20 +34,15 @@ jobs:
     name: Test FastAPI (main branch) on Python ${{ matrix.python-version }}
     # If 'schedule' was the trigger, don't run it on contributors' forks
     if: |
-      github.event_name != 'schedule' ||
-      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic')
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
 
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        # FastAPI doesn't yet support Python 3.13
-        python-version: ['3.9', '3.10', '3.11', '3.12']
-        # Only test on 3.12 if the PR wasn't labeled as 'third-party-tests':
-        exclude:
-          - python-version: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'third-party-tests') && '3.9' }}
-          - python-version: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'third-party-tests') && '3.10' }}
-          - python-version: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'third-party-tests') && '3.11' }}
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
     steps:
     - name: Checkout FastAPI
       uses: actions/checkout@v4
@@ -59,7 +54,7 @@ jobs:
       with:
         path: pydantic-latest
 
-    - uses: astral-sh/setup-uv@v5
+    - uses: astral-sh/setup-uv@v6
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -87,8 +82,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # SQLModel doesn't yet support Python 3.13
-        python-version: ['3.9', '3.10', '3.11', '3.12']
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
     steps:
     - name: Checkout SQLModel
       uses: actions/checkout@v4
@@ -100,7 +94,7 @@ jobs:
       with:
         path: pydantic-latest
 
-    - uses: astral-sh/setup-uv@v5
+    - uses: astral-sh/setup-uv@v6
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -207,7 +201,7 @@ jobs:
         TASKIPY: true
 
   test-pandera:
-    name: Test pandera (main branch) on Python ${{ matrix.python-version }}
+    name: Test Pandera (main branch) on Python ${{ matrix.python-version }}
     # If 'schedule' was the trigger, don't run it on contributors' forks
     if: |
       github.event_name == 'workflow_dispatch' ||
@@ -218,9 +212,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.9', '3.10', '3.11']
+        python-version: ['3.9', '3.10', '3.11', '3.12']
     steps:
-    - name: Checkout pandera
+    - name: Checkout Pandera
       uses: actions/checkout@v4
       with:
         repository: unionai-oss/pandera
@@ -235,20 +229,20 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Install pandera dependencies
+    - name: Install Pandera dependencies
       run: |
         pip install uv
-        uv pip install --system -r requirements.in
+        uv sync --extra pandas --extra fastapi --extra pandas --group dev --group testing --group docs
         uv pip uninstall --system pydantic pydantic-core
         uv pip install --system -e ./pydantic-latest
 
     - name: List installed dependencies
       run: uv pip list
 
-    - name: Run pandera tests
+    - name: Run Pandera tests
       # Pandera's CI uses nox sessions which encapsulate the logic to install a specific Pydantic version.
-      # Instead, manually run pytest (we run core and FastAPI tests):
-      run: pytest tests/core tests/fastapi
+      # Instead, manually run pytest (we run core, pandas and FastAPI tests):
+      run: uv run pytest tests/base tests/pandas tests/fastapi
 
   test-odmantic:
     name: Test ODMantic (main branch) on Python ${{ matrix.python-version }}
@@ -390,7 +384,7 @@ jobs:
         path: pydantic-latest
 
     - name: Install uv
-      uses: astral-sh/setup-uv@v5
+      uses: astral-sh/setup-uv@v6
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
@@ -492,16 +486,11 @@ jobs:
         with:
           path: pydantic-latest
 
-      # TODO: specifying a python-version to the action creates a venv,
-      # and there's currently no way to have the venv created in a subdir
-      # (see https://github.com/astral-sh/setup-uv/issues/251).
       - name: Install UV
-        uses: astral-sh/setup-uv@v5
-
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+        uses: astral-sh/setup-uv@v6
         with:
           python-version: ${{ matrix.python-version }}
+          working-directory: python
 
       - name: Install Semantic Kernel dependencies
         working-directory: ./python
@@ -543,7 +532,7 @@ jobs:
           path: pydantic-latest
 
       - name: Install UV
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v6
         with:
             python-version: ${{ matrix.python-version }}
 
@@ -564,6 +553,50 @@ jobs:
         working-directory: ./libs/langchain
         run: make test
 
+  test-dify:
+    name: Test Dify (main branch) on Python ${{ matrix.python-version }}
+    # If 'schedule' was the trigger, don't run it on contributors' forks
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.12']
+
+    steps:
+      - name: Checkout Dify
+        uses: actions/checkout@v4
+        with:
+          repository: langgenius/dify
+
+      - name: Checkout Pydantic
+        uses: actions/checkout@v4
+        with:
+          path: pydantic-latest
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install uv
+        shell: bash
+        run: pip install uv~=0.6.14
+
+      - name: Install Dify dependencies
+        run: |
+          uv sync --directory api --dev
+          uv pip --directory api uninstall pydantic
+          uv pip --directory api install -e ../pydantic-latest
+
+      - name: List installed dependencies
+        run: uv pip --directory api list
+
+      - name: Run Dify unit tests
+        run: uv run --project api bash dev/pytest/pytest_unit_tests.sh
+
   create-issue-on-failure:
     name: Create an issue if tests failed
     runs-on: ubuntu-latest
@@ -578,8 +611,11 @@ jobs:
       - test-bentoml
       - test-semantic-kernel
       - test-langchain
+      - test-dify
+    # Issue report disabled for now due to flakiness:
     if: |
       always() &&
+      false &&
       github.repository == 'pydantic/pydantic' &&
       github.event_name == 'schedule' &&
       (
@@ -592,7 +628,8 @@ jobs:
         needs.test-polar.result == 'failure' ||
         needs.test-semantic-kernel.result == 'failure' ||
         needs.test-bentoml.result == 'failure' ||
-        needs.test-langchain.result == 'failure'
+        needs.test-langchain.result == 'failure' ||
+        needs.test-dify.result == 'failure'
       )
     permissions:
       issues: write

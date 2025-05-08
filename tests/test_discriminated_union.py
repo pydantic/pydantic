@@ -1,6 +1,7 @@
 import re
 import sys
 from collections.abc import Sequence
+from copy import deepcopy
 from dataclasses import dataclass
 from enum import Enum, IntEnum
 from types import SimpleNamespace
@@ -9,7 +10,7 @@ from typing import Annotated, Any, Callable, Generic, Literal, Optional, TypeVar
 import pytest
 from dirty_equals import HasRepr, IsStr
 from pydantic_core import SchemaValidator, core_schema
-from typing_extensions import TypedDict
+from typing_extensions import TypeAliasType, TypedDict
 
 from pydantic import (
     BaseModel,
@@ -22,7 +23,9 @@ from pydantic import (
     ValidationError,
     field_validator,
 )
+from pydantic._internal._config import ConfigWrapper
 from pydantic._internal._discriminated_union import apply_discriminator
+from pydantic._internal._generate_schema import GenerateSchema
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.errors import PydanticUserError
 from pydantic.fields import FieldInfo
@@ -2172,3 +2175,82 @@ def test_discriminated_union_serializer() -> None:
     adapter = TypeAdapter(FooOrBarId)
     assert adapter.dump_python(FooId(1)) == {'tag': 'foo', '_id': 1}
     assert adapter.dump_python(BarId(2)) == {'tag': 'bar', '_id': 2}
+
+
+def test_deferred_discriminated_union_meta_key_removed() -> None:
+    """A regression encountered after the schema cleaning refactor.
+
+    Issue: https://github.com/pydantic/pydantic/issues/11587.
+    """
+
+    class Test(BaseModel):
+        disc: Literal['test']
+
+    class Base(BaseModel):
+        root: Test = Field(discriminator='disc')
+
+    base_schema = deepcopy(Base.__pydantic_core_schema__)
+
+    class Reference(BaseModel):
+        base: list[Base]
+
+    # With the new schema cleaning logic, the core schema of `Base` isn't deepcopied anymore
+    # when used in `Reference`. We were aware that theoretically, this could lead to issues
+    # where referenced core schemas could be mutated. This regression was an example of that.
+    # It happened because when processing deferred discriminators, we forgot to remove the
+    # `'pydantic_internal_union_discriminator'` meta key from the schemas. The schema cleaning
+    # logic of `Reference` would then re-apply the deferred discriminator logic for `Base`.
+    assert Base.__pydantic_core_schema__ == base_schema
+
+
+def test_discriminated_union_type_alias_type() -> None:
+    """https://github.com/pydantic/pydantic/issues/11661
+
+    This was fixed by making sure we provide the available definitions
+    when first trying to apply discriminated unions during core schema
+    generation (which we forgot to do). Our schema cleaning logic is still
+    not working correctly when deferred discriminated unions are involved
+    together with referenceable core schemas that should be inlined. In practice,
+    I don't know if such a scenario can happen (see the test below --
+    `test_deferred_discriminated_union_and_references()` for a theoretical example).
+    """
+
+    class Foo(BaseModel):
+        type: Literal['foo'] = 'foo'
+
+    Disc = TypeAliasType('Disc', Annotated[Foo, Field(discriminator='type')])
+
+    class Main(BaseModel):
+        f: Disc
+
+    # Use the JSON Schema to avoid making assertions on the core schema, that
+    # may be less stable:
+    assert Main.model_json_schema()['$defs']['Disc']['discriminator'] == {
+        'mapping': {'foo': '#/$defs/Foo'},
+        'propertyName': 'type',
+    }
+
+
+@pytest.mark.xfail(reason='deferred discriminated union info is lost on core schemas that are inlined.')
+def test_deferred_discriminated_union_and_references() -> None:
+    class Foo(BaseModel):
+        type: Literal['foo'] = 'foo'
+
+    class Bar(BaseModel):
+        type: Literal['bar'] = 'bar'
+
+    gen_schema = GenerateSchema(ConfigWrapper(None))
+
+    foo_ref = gen_schema.defs.create_definition_reference_schema(Foo.__pydantic_core_schema__)
+    bar_ref = gen_schema.defs.create_definition_reference_schema(Bar.__pydantic_core_schema__)
+
+    disc_union = core_schema.union_schema(
+        choices=[foo_ref, bar_ref],
+        metadata={'pydantic_internal_union_discriminator': 'type'},
+        ref='disc_union',
+    )
+    disc_union_ref = gen_schema.defs.create_definition_reference_schema(disc_union)
+
+    final_schema = gen_schema.clean_schema(disc_union_ref)
+
+    assert final_schema['type'] == 'tagged-union'

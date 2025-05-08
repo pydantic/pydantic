@@ -37,6 +37,7 @@ from typing_extensions import TypeAliasType, TypedDict, deprecated
 
 import pydantic
 from pydantic import (
+    AfterValidator,
     BaseModel,
     BeforeValidator,
     Field,
@@ -66,6 +67,7 @@ from pydantic.json_schema import (
     Examples,
     GenerateJsonSchema,
     JsonSchemaValue,
+    NoDefault,
     PydanticJsonSchemaWarning,
     SkipJsonSchema,
     model_json_schema,
@@ -5349,6 +5351,24 @@ def test_inclusion_of_defaults():
         'type': 'object',
     }
 
+    class AllDefaults(GenerateJsonSchema):
+        def get_default_value(self, schema: core_schema.WithDefaultSchema) -> Any:
+            if 'default' in schema:
+                return schema['default']
+            elif 'default_factory' in schema:
+                # Users should also account for default factories taking validated data
+                return schema['default_factory']()
+            return NoDefault
+
+    assert Model.model_json_schema(schema_generator=AllDefaults) == {
+        'properties': {
+            'x': {'default': 1, 'title': 'X', 'type': 'integer'},
+            'y': {'default': 2, 'title': 'Y', 'type': 'integer'},
+        },
+        'title': 'Model',
+        'type': 'object',
+    }
+
 
 def test_resolve_def_schema_from_core_schema() -> None:
     class Inner(BaseModel):
@@ -6356,6 +6376,22 @@ def test_plain_serializer_applies_to_default() -> None:
     }
 
 
+def test_plain_serializer_applies_to_default_when_nested_under_validators() -> None:
+    class Model(BaseModel):
+        custom_str: Annotated[
+            str,
+            PlainSerializer(lambda x: f'serialized-{x}', return_type=str),
+            BeforeValidator(lambda v: v + '_a'),
+            AfterValidator(lambda v: v + '_b'),
+        ] = 'foo'
+
+    assert Model.model_json_schema(mode='serialization') == {
+        'properties': {'custom_str': {'default': 'serialized-foo', 'title': 'Custom Str', 'type': 'string'}},
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
 def test_plain_serializer_does_not_apply_with_unless_none() -> None:
     """Test plain serializers aren't used to compute the JSON Schema default if mode is 'json-unless-none'
     and default value is `None`."""
@@ -6568,6 +6604,19 @@ def test_json_schema_input_type_with_refs(validator) -> None:
         'anyOf': [{'$ref': '#/$defs/Sub1'}, {'$ref': '#/$defs/Sub2'}],
         'title': 'Sub',
     }
+
+
+def test_json_schema_input_type_inlined() -> None:
+    class Sub(BaseModel):
+        pass
+
+    class Model(BaseModel):
+        sub: Annotated[object, BeforeValidator(lambda v: v, json_schema_input_type=Sub)]
+
+    json_schema = Model.model_json_schema()
+
+    assert 'Sub' in json_schema['$defs']
+    assert json_schema['properties']['sub'] == {'$ref': '#/$defs/Sub'}
 
 
 @pytest.mark.parametrize(

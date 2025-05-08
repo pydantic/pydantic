@@ -7,6 +7,7 @@ from __future__ import annotations as _annotations
 
 import dataclasses
 import keyword
+import sys
 import typing
 import warnings
 import weakref
@@ -367,6 +368,11 @@ def all_identical(left: typing.Iterable[Any], right: typing.Iterable[Any]) -> bo
     return True
 
 
+def get_first_not_none(a: Any, b: Any) -> Any:
+    """Return the first argument if it is not `None`, otherwise return the second argument."""
+    return a if a is not None else b
+
+
 @dataclasses.dataclass(frozen=True)
 class SafeGetItemProxy:
     """Wrapper redirecting `__getitem__` to `get` with a sentinel value as default
@@ -420,8 +426,9 @@ class deprecated_instance_property(Generic[_ModelT, _RT]):
     def __get__(self, instance: _ModelT, objtype: type[_ModelT]) -> _RT: ...
     def __get__(self, instance: _ModelT | None, objtype: type[_ModelT]) -> _RT:
         if instance is not None:
+            attr_name = self.fget.__name__ if sys.version_info >= (3, 10) else self.fget.__func__.__name__
             warnings.warn(
-                'Accessing this attribute on the instance is deprecated, and will be removed in Pydantic V3. '
+                f'Accessing the {attr_name!r} attribute on the instance is deprecated. '
                 'Instead, you should access this attribute from the model class.',
                 category=PydanticDeprecatedSince211,
                 stacklevel=2,
