@@ -2907,9 +2907,9 @@ to help you monitor and understand your
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#no-module-named-pydantic_core_pydantic_core" class="md-nav__link">
+  <a href="#missing-pydantic_core-module" class="md-nav__link">
     <span class="md-ellipsis">
-      no module named 'pydantic_core._pydantic_core'
+      Missing pydantic_core module
     </span>
   </a>
   
@@ -3081,9 +3081,9 @@ to help you monitor and understand your
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#no-module-named-pydantic_core_pydantic_core" class="md-nav__link">
+  <a href="#missing-pydantic_core-module" class="md-nav__link">
     <span class="md-ellipsis">
-      no module named 'pydantic_core._pydantic_core'
+      Missing pydantic_core module
     </span>
   </a>
   
@@ -3193,28 +3193,30 @@ dependency management process.</p>
 <li>The latest version of <code>pydantic</code> will be installed.</li>
 </ol>
 <h2 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h2>
-<h3 id="no-module-named-pydantic_core_pydantic_core"><code>no module named 'pydantic_core._pydantic_core'</code><a class="headerlink" href="#no-module-named-pydantic_core_pydantic_core" title="Permanent link">&para;</a></h3>
-<p>The
-<div class="language-text highlight"><pre><span></span><code>no module named `pydantic_core._pydantic_core`
-</code></pre></div></p>
+<h3 id="missing-pydantic_core-module">Missing <code>pydantic_core</code> module<a class="headerlink" href="#missing-pydantic_core-module" title="Permanent link">&para;</a></h3>
+<p>The</p>
+<div class="language-output highlight"><pre><span></span><code><span class="go">no module named `pydantic_core._pydantic_core`</span>
+</code></pre></div>
 <p>error is a common issue that indicates you have installed <code>pydantic</code> incorrectly. To debug this issue, you can try the following steps (before the failing import):</p>
 <ol>
-<li>Check the contents of the installed <code>pydantic-core</code> package. Are the compiled library and its type stubs both present?</li>
-</ol>
+<li>
+<p>Check the contents of the installed <code>pydantic-core</code> package. Are the compiled library and its type stubs both present?</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">importlib.metadata</span><span class="w"> </span><span class="kn">import</span> <span class="n">files</span>
 <span class="nb">print</span><span class="p">([</span><span class="n">file</span> <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">files</span><span class="p">(</span><span class="s1">&#39;pydantic-core&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="n">file</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;_pydantic_core&#39;</span><span class="p">)])</span>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">[PackagePath(&#39;pydantic_core/_pydantic_core.pyi&#39;), PackagePath(&#39;pydantic_core/_pydantic_core.cpython-312-x86_64-linux-gnu.so&#39;)]</span>
 <span class="sd">&quot;&quot;&quot;</span>
 </code></pre></div>
-<p>You should expect to see two files like those printed above. The compile library file will be a .so or .pyd with a name that varies according to the OS and Python version.</p>
-<ol>
-<li>Check that your lambda's Python version is compatible with the compiled library version found above.</li>
-</ol>
+<p>You should expect to see two files like those printed above. The compiled library file should have the <code>.so</code> or <code>.pyd</code> extension with a name that varies according to the OS and Python version.</p>
+</li>
+<li>
+<p>Check that your lambda's Python version is compatible with the compiled library version found above.</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">sysconfig</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">sysconfig</span><span class="o">.</span><span class="n">get_config_var</span><span class="p">(</span><span class="s2">&quot;EXT_SUFFIX&quot;</span><span class="p">))</span>
 <span class="c1">#&gt; &#39;.cpython-312-x86_64-linux-gnu.so&#39;</span>
 </code></pre></div>
+</li>
+</ol>
 <p>You should expect to see the same suffix here as the compiled library, for example here we see this suffix <code>.cpython-312-x86_64-linux-gnu.so</code> indeed matches <code>_pydantic_core.cpython-312-x86_64-linux-gnu.so</code>.</p>
 <p>If these two checks do not match, your build steps have not installed the correct native code for your lambda's target platform. You should adjust your build steps to change the version of the installed library which gets installed.</p>
 <p>Most likely errors:</p>
@@ -3232,10 +3234,10 @@ This package versioning mechanism is somewhat incompatible with AWS Lambda, even
 are a few ways to fix this issue:</p>
 <p>If you're deploying your lambda with the serverless framework, it's likely that the appropriate metadata for the <code>email-validator</code> package is not being included in your deployment package. Tools like <a href="https://github.com/serverless/serverless-python-requirements/tree/master"><code>serverless-python-requirements</code></a>
 remove metadata to reduce package size. You can fix this issue by setting the <code>slim</code> setting to false in your <code>serverless.yml</code> file:</p>
-<div class="language-text highlight"><pre><span></span><code>pythonRequirements:
-    dockerizePip: non-linux
-    slim: false
-    fileName: requirements.txt
+<div class="language-yaml highlight"><pre><span></span><code><span class="nt">pythonRequirements</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">dockerizePip</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">non-linux</span>
+<span class="w">    </span><span class="nt">slim</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">    </span><span class="nt">fileName</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">requirements.txt</span>
 </code></pre></div>
 <p>You can read more about this fix, and other <code>slim</code> settings that might be relevant <a href="https://biercoff.com/how-to-fix-package-not-found-error-importlib-metadata/">here</a>.</p>
 <p>If you're using a <code>.zip</code> archive for your code and/or dependencies, make sure that your package contains the required version metadata. To do this, make sure you include the <code>dist-info</code> directory in your <code>.zip</code> archive for the <code>email-validator</code> package.</p>

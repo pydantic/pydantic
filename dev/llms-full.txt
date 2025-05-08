@@ -2124,7 +2124,7 @@ The above snippet will generate the following JSON Schema:
 
 ```
 
-See the [JSON Schema Draft 2020-12](https://json-schema.org/understanding-json-schema/reference/numeric.html#numeric-types) for more details.
+See the [JSON Schema Draft 2020-12] for more details.
 
 Constraints on compound types
 
@@ -2511,7 +2511,7 @@ print(user.model_dump())  # (1)!
 
 1. The `age` field is not included in the `model_dump()` output, since it is excluded.
 
-See the [Serialization](../serialization/#model-and-field-level-include-and-exclude) section for more details.
+See the [Serialization] section for more details.
 
 ## Deprecated fields
 
@@ -9970,7 +9970,7 @@ If you want v1-style duck-typing serialization behavior, you can use a runtime s
 
 We discuss these options below in more detail:
 
-#### `SerializeAsAny` annotation:
+#### `SerializeAsAny` annotation
 
 If you want duck-typing serialization behavior, this can be done using the `SerializeAsAny` annotation on a type:
 
@@ -10515,7 +10515,7 @@ There are various ways to get strict-mode validation while using Pydantic, which
 - [Passing `strict=True` to the validation methods](#strict-mode-in-method-calls), such as `BaseModel.model_validate`, `TypeAdapter.validate_python`, and similar for JSON
 - [Using `Field(strict=True)`](#strict-mode-with-field) with fields of a `BaseModel`, `dataclass`, or `TypedDict`
 - [Using `pydantic.types.Strict` as a type annotation](#strict-mode-with-annotated-strict) on a field
-- Pydantic provides some type aliases that are already annotated with `Strict`, such as `pydantic.types.StrictInt`
+  - Pydantic provides some type aliases that are already annotated with `Strict`, such as `pydantic.types.StrictInt`
 - [Using `ConfigDict(strict=True)`](#strict-mode-with-configdict)
 
 ## Type coercions in strict mode
@@ -11380,7 +11380,7 @@ The above examples make use of *implicit* type aliases, assigned to a variable. 
 - The [JSON Schema](../json_schema/) of the alias won't be converted into a [definition](https://json-schema.org/understanding-json-schema/structuring#defs). This is mostly useful when you are using the alias more than once in a model definition.
 - In most cases, [recursive type aliases](#named-recursive-types) won't work.
 
-By leveraging the new [`type` statement](https://typing.readthedocs.io/en/latest/spec/aliases.html#type-statement) (introduced in [PEP 695](https://peps.python.org/pep-0695/)), you can define aliases as follows:
+By leveraging the new [`type` statement](https://typing.readthedocs.io/en/latest/spec/aliases.html#type-statement) (introduced in [PEP 695]), you can define aliases as follows:
 
 ```python
 from typing import Annotated
@@ -19739,7 +19739,9 @@ def __init__(self, qualifier: Qualifier, annotation: Any) -> None:
 
 ```
 
-# Pipeline API
+# Experimental API
+
+## Pipeline API
 
 Experimental pipeline API functionality. Be careful with this API, it's subject to change.
 
@@ -20219,7 +20221,7 @@ def then(self, other: _Pipeline[_OutT, _OtherOut]) -> _Pipeline[_InT, _OtherOut]
 
 ```
 
-# Arguments schema API
+## Arguments schema API
 
 Experimental module exposing a function to generate a core schema that validates callable arguments.
 
@@ -38878,7 +38880,6 @@ Pydantic supports the following [datetime](https://docs.python.org/library/datet
 ### datetime.datetime
 
 - `datetime` fields will accept values of type:
-
   - `datetime`; an existing `datetime` object
   - `int` or `float`; assumed as Unix time, i.e. seconds (if >= `-2e10` and \<= `2e10`) or milliseconds (if < `-2e10`or > `2e10`) since 1 January 1970
   - `str`; the following formats are accepted:
@@ -38909,7 +38910,6 @@ print(event.model_dump())
 ### datetime.date
 
 - `date` fields will accept values of type:
-
   - `date`; an existing `date` object
   - `int` or `float`; handled the same as described for `datetime` above
   - `str`; the following formats are accepted:
@@ -48599,7 +48599,7 @@ class A:
 
 The above snippet results in the following error during schema building for the `A` dataclass:
 
-```text
+```output
 pydantic.errors.PydanticUserError: Field a has `init=False` and dataclass has config setting `extra="allow"`.
 This combination is not allowed.
 
@@ -52373,11 +52373,11 @@ pip install \
 
 ## Troubleshooting
 
-### `no module named 'pydantic_core._pydantic_core'`
+### Missing `pydantic_core` module
 
 The
 
-```text
+```output
 no module named `pydantic_core._pydantic_core`
 
 ```
@@ -52386,25 +52386,25 @@ error is a common issue that indicates you have installed `pydantic` incorrectly
 
 1. Check the contents of the installed `pydantic-core` package. Are the compiled library and its type stubs both present?
 
-```python
-from importlib.metadata import files
-print([file for file in files('pydantic-core') if file.name.startswith('_pydantic_core')])
-"""
-[PackagePath('pydantic_core/_pydantic_core.pyi'), PackagePath('pydantic_core/_pydantic_core.cpython-312-x86_64-linux-gnu.so')]
-"""
+   ```python
+   from importlib.metadata import files
+   print([file for file in files('pydantic-core') if file.name.startswith('_pydantic_core')])
+   """
+   [PackagePath('pydantic_core/_pydantic_core.pyi'), PackagePath('pydantic_core/_pydantic_core.cpython-312-x86_64-linux-gnu.so')]
+   """
 
-```
+   ```
 
-You should expect to see two files like those printed above. The compile library file will be a .so or .pyd with a name that varies according to the OS and Python version.
+   You should expect to see two files like those printed above. The compiled library file should have the `.so` or `.pyd` extension with a name that varies according to the OS and Python version.
 
 1. Check that your lambda's Python version is compatible with the compiled library version found above.
 
-```python
-import sysconfig
-print(sysconfig.get_config_var("EXT_SUFFIX"))
-#> '.cpython-312-x86_64-linux-gnu.so'
+   ```python
+   import sysconfig
+   print(sysconfig.get_config_var("EXT_SUFFIX"))
+   #> '.cpython-312-x86_64-linux-gnu.so'
 
-```
+   ```
 
 You should expect to see the same suffix here as the compiled library, for example here we see this suffix `.cpython-312-x86_64-linux-gnu.so` indeed matches `_pydantic_core.cpython-312-x86_64-linux-gnu.so`.
 
@@ -52421,7 +52421,7 @@ Pydantic uses `version` from `importlib.metadata` to [check what version](https:
 
 If you're deploying your lambda with the serverless framework, it's likely that the appropriate metadata for the `email-validator` package is not being included in your deployment package. Tools like [`serverless-python-requirements`](https://github.com/serverless/serverless-python-requirements/tree/master) remove metadata to reduce package size. You can fix this issue by setting the `slim` setting to false in your `serverless.yml` file:
 
-```text
+```yaml
 pythonRequirements:
     dockerizePip: non-linux
     slim: false
@@ -52817,7 +52817,7 @@ Model()  # will raise a validation error for age and list_of_ints
 
 Without any special configuration, mypy does not catch the [missing model field annotation](../../errors/usage_errors/#model-field-missing-annotation) and errors about the `list_of_ints` argument which Pydantic parses correctly:
 
-```text
+```output
 15: error: List item 1 has incompatible type "str"; expected "int"  [list-item]
 15: error: List item 2 has incompatible type "bytes"; expected "int"  [list-item]
 16: error: "Model" has no attribute "middle_name"  [attr-defined]
@@ -52828,7 +52828,7 @@ Without any special configuration, mypy does not catch the [missing model field 
 
 But [with the plugin enabled](#enabling-the-plugin), it gives the correct errors:
 
-```text
+```output
 9: error: Untyped fields disallowed  [pydantic-field]
 16: error: "Model" has no attribute "middle_name"  [attr-defined]
 17: error: Missing named argument "age" for "Model"  [call-arg]
@@ -52980,12 +52980,15 @@ While pydantic will work well with any IDE out of the box, a [PyCharm plugin](ht
 The plugin currently supports the following features:
 
 - For `pydantic.BaseModel.__init__`:
-- Inspection
-- Autocompletion
-- Type-checking
+
+  - Inspection
+  - Autocompletion
+  - Type-checking
+
 - For fields of `pydantic.BaseModel`:
-- Refactor-renaming fields updates `__init__` calls, and affects sub- and super-classes
-- Refactor-renaming `__init__` keyword arguments updates field names, and affects sub- and super-classes
+
+  - Refactor-renaming fields updates `__init__` calls, and affects sub- and super-classes
+  - Refactor-renaming `__init__` keyword arguments updates field names, and affects sub- and super-classes
 
 More information can be found on the [official plugin page](https://plugins.jetbrains.com/plugin/12861-pydantic) and [Github repository](https://github.com/koxudaxi/pydantic-pycharm-plugin).
 

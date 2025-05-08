@@ -1388,7 +1388,7 @@ class A:
 
 The above snippet results in the following error during schema building for the `A` dataclass:
 
-```text
+```output
 pydantic.errors.PydanticUserError: Field a has `init=False` and dataclass has config setting `extra="allow"`.
 This combination is not allowed.
 

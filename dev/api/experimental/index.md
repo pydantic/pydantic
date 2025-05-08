@@ -1,4 +1,6 @@
-# Pipeline API
+# Experimental API
+
+## Pipeline API
 
 Experimental pipeline API functionality. Be careful with this API, it's subject to change.
 
@@ -478,7 +480,7 @@ def then(self, other: _Pipeline[_OutT, _OtherOut]) -> _Pipeline[_InT, _OtherOut]
 
 ```
 
-# Arguments schema API
+## Arguments schema API
 
 Experimental module exposing a function to generate a core schema that validates callable arguments.
 

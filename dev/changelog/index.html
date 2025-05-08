@@ -3308,15 +3308,6 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
-  <a href="#v11019-2024-11-06_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      v1.10.19 (2024-11-06)
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#v11018-2024-08-22" class="md-nav__link">
     <span class="md-ellipsis">
       v1.10.18 (2024-08-22)
@@ -9087,15 +9078,6 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
-  <a href="#v11019-2024-11-06_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      v1.10.19 (2024-11-06)
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#v11018-2024-08-22" class="md-nav__link">
     <span class="md-ellipsis">
       v1.10.18 (2024-08-22)
@@ -10097,6 +10079,9 @@ to help you monitor and understand your
 
   <h1>Changelog</h1>
 
+<!-- markdownlint-disable no-bare-urls -->
+<!-- markdownlint-disable-next-line first-line-heading -->
+
 <h2 id="v2114-2025-04-29">v2.11.4 (2025-04-29)<a class="headerlink" href="#v2114-2025-04-29" title="Permanent link">&para;</a></h2>
 <p><a href="https://github.com/pydantic/pydantic/releases/tag/v2.11.4"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></span> GitHub release</a></p>
 <h3 id="whats-changed">What's Changed<a class="headerlink" href="#whats-changed" title="Permanent link">&para;</a></h3>
@@ -10709,8 +10694,10 @@ This is an early alpha release, meant to collect early feedback from users havin
 </ul>
 <h4 id="changes_4">Changes<a class="headerlink" href="#changes_4" title="Permanent link">&para;</a></h4>
 <ul>
-<li>Breaking Change: Merge <code>dict</code> type <code>json_schema_extra</code> by <a href="https://github.com/sydney-runkle">@sydney-runkle</a> in <a href="https://github.com/pydantic/pydantic/pull/9792">#9792</a></li>
+<li>Breaking Change: Merge <code>dict</code> type <code>json_schema_extra</code> by <a href="https://github.com/sydney-runkle">@sydney-runkle</a> in <a href="https://github.com/pydantic/pydantic/pull/9792">#9792</a><ul>
 <li>For more info (how to replicate old behavior) on this change, see <a href="https://docs.pydantic.dev/dev/concepts/json_schema/#merging-json_schema_extra">here</a></li>
+</ul>
+</li>
 <li>Refactor annotation injection for known (often generic) types by <a href="https://github.com/sydney-runkle">@sydney-runkle</a> in <a href="https://github.com/pydantic/pydantic/pull/9979">#9979</a></li>
 <li>Move annotation compatibility errors to validation phase by <a href="https://github.com/sydney-runkle">@sydney-runkle</a> in <a href="https://github.com/pydantic/pydantic/pull/9999">#9999</a></li>
 <li>Improve runtime errors for string constraints like <code>pattern</code> for incompatible types by <a href="https://github.com/sydney-runkle">@sydney-runkle</a> in <a href="https://github.com/pydantic/pydantic/pull/10158">#10158</a></li>
@@ -11086,9 +11073,11 @@ is desired, you can switch to <code>left-to-right</code> mode and change the ord
 <li>Add feedback widget to docs with flarelytics integration by <a href="https://github.com/sydney-runkle">@sydney-runkle</a> in <a href="https://github.com/pydantic/pydantic/pull/9129">#9129</a></li>
 <li>Support for parsing partial JSON strings in Python by <a href="https://github.com/samuelcolvin">@samuelcolvin</a> in <a href="https://github.com/pydantic/jiter/pull/66">pydantic/jiter#66</a></li>
 </ul>
-<p><strong>Finalized in v2.7.0, rather than v2.7.0b1:</strong>
-* Add support for field level number to str coercion option by <a href="https://github.com/NeevCohen">@NeevCohen</a> in <a href="https://github.com/pydantic/pydantic/pull/9137">#9137</a>
-* Update <code>warnings</code> parameter for serialization utilities to allow raising a warning by <a href="https://github.com/Lance-Drane">@Lance-Drane</a> in <a href="https://github.com/pydantic/pydantic/pull/9166">#9166</a></p>
+<p><strong>Finalized in v2.7.0, rather than v2.7.0b1:</strong></p>
+<ul>
+<li>Add support for field level number to str coercion option by <a href="https://github.com/NeevCohen">@NeevCohen</a> in <a href="https://github.com/pydantic/pydantic/pull/9137">#9137</a></li>
+<li>Update <code>warnings</code> parameter for serialization utilities to allow raising a warning by <a href="https://github.com/Lance-Drane">@Lance-Drane</a> in <a href="https://github.com/pydantic/pydantic/pull/9166">#9166</a></li>
+</ul>
 <h4 id="changes_7">Changes<a class="headerlink" href="#changes_7" title="Permanent link">&para;</a></h4>
 <ul>
 <li>Correct docs, logic for <code>model_construct</code> behavior with <code>extra</code> by <a href="https://github.com/sydney-runkle">@sydney-runkle</a> in <a href="https://github.com/pydantic/pydantic/pull/8807">#8807</a></li>
@@ -11428,8 +11417,10 @@ is desired, you can switch to <code>left-to-right</code> mode and change the ord
 <li>Adopting <code>ruff</code> formatter by <a href="https://github.com/Luca-Blight">@Luca-Blight</a> in <a href="https://github.com/pydantic/pydantic/pull/7930">#7930</a></li>
 <li>Added <code>validation_error_cause</code> to config by <a href="https://github.com/zakstucke">@zakstucke</a> in <a href="https://github.com/pydantic/pydantic/pull/7626">#7626</a></li>
 <li>Make path of the item to validate available in plugin by <a href="https://github.com/hramezani">@hramezani</a> in <a href="https://github.com/pydantic/pydantic/pull/7861">#7861</a></li>
-<li>Add <code>CallableDiscriminator</code> and <code>Tag</code> by <a href="https://github.com/dmontagu">@dmontagu</a> in <a href="https://github.com/pydantic/pydantic/pull/7983">#7983</a></li>
+<li>Add <code>CallableDiscriminator</code> and <code>Tag</code> by <a href="https://github.com/dmontagu">@dmontagu</a> in <a href="https://github.com/pydantic/pydantic/pull/7983">#7983</a><ul>
 <li><code>CallableDiscriminator</code> renamed to <code>Discriminator</code> by <a href="https://github.com/dmontagu">@dmontagu</a> in <a href="https://github.com/pydantic/pydantic/pull/8047">#8047</a></li>
+</ul>
+</li>
 <li>Make union case tags affect union error messages by <a href="https://github.com/dmontagu">@dmontagu</a> in <a href="https://github.com/pydantic/pydantic/pull/8001">#8001</a></li>
 <li>Add <code>examples</code> and <code>json_schema_extra</code> to <code>@computed_field</code> by <a href="https://github.com/alexmojaki">@alexmojaki</a> in <a href="https://github.com/pydantic/pydantic/pull/8013">#8013</a></li>
 <li>Add <code>JsonValue</code> type by <a href="https://github.com/dmontagu">@dmontagu</a> in <a href="https://github.com/pydantic/pydantic/pull/7998">#7998</a></li>
@@ -11697,6 +11688,9 @@ is desired, you can switch to <code>left-to-right</code> mode and change the ord
 <li>Add <code>short_version</code> and use it in links by <a href="https://github.com/hramezani">@hramezani</a> in <a href="https://github.com/pydantic/pydantic/pull/7115">#7115</a></li>
 <li>📝 Add usage link to <code>RootModel</code> by <a href="https://github.com/Kludex">@Kludex</a> in <a href="https://github.com/pydantic/pydantic/pull/7113">#7113</a></li>
 <li>Revert "Fix default port for mongosrv DSNs (#6827)" by <a href="https://github.com/Kludex">@Kludex</a> in <a href="https://github.com/pydantic/pydantic/pull/7116">#7116</a></li>
+</ul>
+<!-- markdownlint-disable-next-line no-space-in-emphasis -->
+<ul>
 <li>Clarify validate_default and _Unset handling in usage docs and migration guide by <a href="https://github.com/benbenbang">@benbenbang</a> in <a href="https://github.com/pydantic/pydantic/pull/6950">#6950</a></li>
 <li>Tweak documentation of <code>Field.exclude</code> by <a href="https://github.com/Viicos">@Viicos</a> in <a href="https://github.com/pydantic/pydantic/pull/7086">#7086</a></li>
 <li>Do not require <code>validate_assignment</code> to use <code>Field.frozen</code> by <a href="https://github.com/Viicos">@Viicos</a> in <a href="https://github.com/pydantic/pydantic/pull/7103">#7103</a></li>
@@ -11893,20 +11887,17 @@ is desired, you can switch to <code>left-to-right</code> mode and change the ord
 <p>This release provides proper support for Python 3.13, with (Cythonized) wheels published for this version.
 As a consequence, Cython was updated from <code>0.29.x</code> to <code>3.0.x</code>.</p>
 <ul>
-<li>General maintenance of CI and build ecosystem by <a href="https://github.com/Viicos">@Viicos</a> in https://github.com/pydantic/pydantic/pull/10847</li>
+<li>General maintenance of CI and build ecosystem by <a href="https://github.com/Viicos">@Viicos</a> in https://github.com/pydantic/pydantic/pull/10847<ul>
 <li>Update Cython to <code>3.0.x</code>.</li>
 <li>Properly address Python 3.13 deprecation warnings.</li>
 <li>Migrate packaging to <code>pyproject.toml</code>, make use of PEP 517 build options.</li>
 <li>Use <a href="https://pypi.org/project/build/"><code>build</code></a> instead of direct <code>setup.py</code> invocations.</li>
 <li>Update various Github Actions versions.</li>
+</ul>
+</li>
 <li>Replace outdated stpmex link in documentation by <a href="https://github.com/jaredenorris">@jaredenorris</a> in https://github.com/pydantic/pydantic/pull/10997</li>
 </ul>
 <h2 id="v11019-2024-11-06">v1.10.19 (2024-11-06)<a class="headerlink" href="#v11019-2024-11-06" title="Permanent link">&para;</a></h2>
-<ul>
-<li>Add warning when v2 model is nested in v1 model by <a href="https://github.com/sydney-runkle">@sydney-runkle</a> in https://github.com/pydantic/pydantic/pull/10432</li>
-<li>Fix deprecation warning in V1 <code>isinstance</code> check by <a href="https://github.com/alicederyn">@alicederyn</a> in https://github.com/pydantic/pydantic/pull/10645</li>
-</ul>
-<h2 id="v11019-2024-11-06_1">v1.10.19 (2024-11-06)<a class="headerlink" href="#v11019-2024-11-06_1" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Add warning when v2 model is nested in v1 model by <a href="https://github.com/sydney-runkle">@sydney-runkle</a> in https://github.com/pydantic/pydantic/pull/10432</li>
 <li>Fix deprecation warning in V1 <code>isinstance</code> check by <a href="https://github.com/alicederyn">@alicederyn</a> in https://github.com/pydantic/pydantic/pull/10645</li>
@@ -12044,9 +12035,11 @@ As a consequence, Cython was updated from <code>0.29.x</code> to <code>3.0.x</co
   The support of <code>Config.extra</code> has been added.
   Finally, config customization directly via a <code>dict</code> is now possible, <a href="https://github.com/pydantic/pydantic/pull/2557">#2557</a> by <a href="https://github.com/PrettyWood">@PrettyWood</a>
   <br/><br/>
-  <strong>BREAKING CHANGES:</strong></li>
+  <strong>BREAKING CHANGES:</strong><ul>
 <li>The <code>compiled</code> boolean (whether <em>pydantic</em> is compiled with cython) has been moved from <code>main.py</code> to <code>version.py</code></li>
 <li>Now that <code>Config.extra</code> is supported, <code>dataclass</code> ignores by default extra arguments (like <code>BaseModel</code>)</li>
+</ul>
+</li>
 <li>Fix PEP487 <code>__set_name__</code> protocol in <code>BaseModel</code> for PrivateAttrs, <a href="https://github.com/pydantic/pydantic/pull/4407">#4407</a> by <a href="https://github.com/tlambert03">@tlambert03</a></li>
 <li>Allow for custom parsing of environment variables via <code>parse_env_var</code> in <code>Config</code>, <a href="https://github.com/pydantic/pydantic/pull/4406">#4406</a> by <a href="https://github.com/acmiyaguchi">@acmiyaguchi</a></li>
 <li>Rename <code>master</code> to <code>main</code>, <a href="https://github.com/pydantic/pydantic/pull/4405">#4405</a> by <a href="https://github.com/hramezani">@hramezani</a></li>
@@ -12328,7 +12321,7 @@ for their kind support.</p>
 </ul>
 <h3 id="changes_11">Changes<a class="headerlink" href="#changes_11" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Breaking Change</strong>, remove old deprecation aliases from v1, <a href="https://github.com/pydantic/pydantic/pull/2415">#2415</a> by <a href="https://github.com/samuelcolvin">@samuelcolvin</a>:</li>
+<li><strong>Breaking Change</strong>, remove old deprecation aliases from v1, <a href="https://github.com/pydantic/pydantic/pull/2415">#2415</a> by <a href="https://github.com/samuelcolvin">@samuelcolvin</a>:<ul>
 <li>remove notes on migrating to v1 in docs</li>
 <li>remove <code>Schema</code> which was replaced by <code>Field</code></li>
 <li>remove <code>Config.case_insensitive</code> which was replaced by <code>Config.case_sensitive</code> (default <code>False</code>)</li>
@@ -12336,6 +12329,8 @@ for their kind support.</p>
 <li>remove <code>model.fields</code> which was replaced by <code>model.__fields__</code></li>
 <li>remove <code>model.to_string()</code> which was replaced by <code>str(model)</code></li>
 <li>remove <code>model.__values__</code> which was replaced by <code>model.__dict__</code></li>
+</ul>
+</li>
 <li><strong>Breaking Change:</strong> always validate only first sublevel items with <code>each_item</code>.
   There were indeed some edge cases with some compound types where the validated items were the last sublevel ones, <a href="https://github.com/pydantic/pydantic/pull/1933">#1933</a> by <a href="https://github.com/PrettyWood">@PrettyWood</a></li>
 <li>Update docs extensions to fix local syntax highlighting, <a href="https://github.com/pydantic/pydantic/pull/2400">#2400</a> by <a href="https://github.com/daviskirk">@daviskirk</a></li>

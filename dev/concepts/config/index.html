@@ -3096,8 +3096,8 @@ specified for Pydantic's supported types.</p>
 <p>On Pydantic models, configuration can be specified in two ways:</p>
 <ul>
 <li>
-<p>Using the <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_config"><code>model_config</code></a> class attribute:
-  <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
+<p>Using the <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_config"><code>model_config</code></a> class attribute:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -3115,7 +3115,7 @@ specified for Pydantic's supported types.</p>
 <span class="sd">    v</span>
 <span class="sd">      String should have at most 5 characters [type=string_too_long, input_value=&#39;abcdef&#39;, input_type=str]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-</code></pre></div></p>
+</code></pre></div>
 <ol>
 <li>A plain dictionary (i.e. <code>{'str_max_length': 5}</code>) can also be used.</li>
 </ol>
@@ -3125,13 +3125,13 @@ specified for Pydantic's supported types.</p>
 </div>
 </li>
 <li>
-<p>Using class arguments:
-  <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
+<p>Using class arguments:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
     <span class="n">a</span><span class="p">:</span> <span class="nb">str</span>  <span class="c1"># (1)!</span>
-</code></pre></div></p>
+</code></pre></div>
 <ol>
 <li>Unlike the <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_config"><code>model_config</code></a> class attribute,
    static type checkers will recognize the <code>frozen</code> argument, and so any instance
@@ -3177,8 +3177,8 @@ by providing a <code>config</code> argument.</p>
 the configuration can be set in two ways:</p>
 <ul>
 <li>
-<p>Using the <code>__pydantic_config__</code> class attribute:
-  <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
+<p>Using the <code>__pydantic_config__</code> class attribute:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConfigDict</span>
 
@@ -3189,12 +3189,12 @@ the configuration can be set in two ways:</p>
 
     <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;John Doe&#39;</span>
-</code></pre></div></p>
+</code></pre></div>
 </li>
 <li>
 <p>Using the <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.with_config"><code>with_config</code></a> decorator (this avoids static type checking errors with
-  <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.TypedDict"><code>TypedDict</code></a>):
-  <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing_extensions</span><span class="w"> </span><span class="kn">import</span> <span class="n">TypedDict</span>
+  <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.TypedDict"><code>TypedDict</code></a>):</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing_extensions</span><span class="w"> </span><span class="kn">import</span> <span class="n">TypedDict</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">with_config</span>
 
@@ -3202,7 +3202,7 @@ the configuration can be set in two ways:</p>
 <span class="nd">@with_config</span><span class="p">(</span><span class="n">ConfigDict</span><span class="p">(</span><span class="n">str_to_lower</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">TypedDict</span><span class="p">):</span>
     <span class="n">x</span><span class="p">:</span> <span class="nb">str</span>
-</code></pre></div></p>
+</code></pre></div>
 </li>
 </ul>
 <h2 id="change-behaviour-globally">Change behaviour globally<a class="headerlink" href="#change-behaviour-globally" title="Permanent link">&para;</a></h2>

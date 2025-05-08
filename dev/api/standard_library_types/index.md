@@ -52,7 +52,6 @@ Pydantic supports the following [datetime](https://docs.python.org/library/datet
 ### datetime.datetime
 
 - `datetime` fields will accept values of type:
-
   - `datetime`; an existing `datetime` object
   - `int` or `float`; assumed as Unix time, i.e. seconds (if >= `-2e10` and \<= `2e10`) or milliseconds (if < `-2e10`or > `2e10`) since 1 January 1970
   - `str`; the following formats are accepted:
@@ -83,7 +82,6 @@ print(event.model_dump())
 ### datetime.date
 
 - `date` fields will accept values of type:
-
   - `date`; an existing `date` object
   - `int` or `float`; handled the same as described for `datetime` above
   - `str`; the following formats are accepted:

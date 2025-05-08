@@ -463,7 +463,7 @@ The above snippet will generate the following JSON Schema:
 
 ```
 
-See the [JSON Schema Draft 2020-12](https://json-schema.org/understanding-json-schema/reference/numeric.html#numeric-types) for more details.
+See the [JSON Schema Draft 2020-12] for more details.
 
 Constraints on compound types
 
@@ -850,7 +850,7 @@ print(user.model_dump())  # (1)!
 
 1. The `age` field is not included in the `model_dump()` output, since it is excluded.
 
-See the [Serialization](../serialization/#model-and-field-level-include-and-exclude) section for more details.
+See the [Serialization] section for more details.
 
 ## Deprecated fields
 

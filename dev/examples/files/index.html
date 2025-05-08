@@ -3094,10 +3094,12 @@ Let's say we have the following <code>.json</code> file:</p>
 <span class="w">    </span><span class="nt">&quot;email&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;not-an-email-address&quot;</span>
 <span class="p">}</span>
 </code></pre></div>
-<p>This data is flawed for three reasons:
-1. It's missing the <code>name</code> field.
-2. The <code>age</code> field is negative.
-3. The <code>email</code> field is not a valid email address.</p>
+<p>This data is flawed for three reasons:</p>
+<ol>
+<li>It's missing the <code>name</code> field.</li>
+<li>The <code>age</code> field is negative.</li>
+<li>The <code>email</code> field is not a valid email address.</li>
+</ol>
 <p>When we try to validate this data, <code>pydantic</code> raises a <a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.ValidationError"><code>ValidationError</code></a> with all of the
 above issues:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">pathlib</span>

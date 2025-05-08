@@ -3223,8 +3223,10 @@ and will instead error if the data is not of the correct type.</p>
 <li><a href="#strict-mode-in-method-calls">Passing <code>strict=True</code> to the validation methods</a>, such as <code>BaseModel.model_validate</code>,
   <code>TypeAdapter.validate_python</code>, and similar for JSON</li>
 <li><a href="#strict-mode-with-field">Using <code>Field(strict=True)</code></a> with fields of a <code>BaseModel</code>, <code>dataclass</code>, or <code>TypedDict</code></li>
-<li><a href="#strict-mode-with-annotated-strict">Using <code>pydantic.types.Strict</code> as a type annotation</a> on a field</li>
+<li><a href="#strict-mode-with-annotated-strict">Using <code>pydantic.types.Strict</code> as a type annotation</a> on a field<ul>
 <li>Pydantic provides some type aliases that are already annotated with <code>Strict</code>, such as <code>pydantic.types.StrictInt</code></li>
+</ul>
+</li>
 <li><a href="#strict-mode-with-configdict">Using <code>ConfigDict(strict=True)</code></a></li>
 </ul>
 <h2 id="type-coercions-in-strict-mode">Type coercions in strict mode<a class="headerlink" href="#type-coercions-in-strict-mode" title="Permanent link">&para;</a></h2>
@@ -3289,7 +3291,7 @@ through the use of <code>TypeAdapter</code>:</p>
 <span class="sd">      Input should be a valid boolean [type=bool_type, input_value=&#39;yes&#39;, input_type=str]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
-<p>Note this also works even when using more "complex" types in <code>TypeAdapter</code>:
+<p>Note this also works even when using more "complex" types in <code>TypeAdapter</code>:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">TypeAdapter</span><span class="p">,</span> <span class="n">ValidationError</span>
@@ -3308,7 +3310,7 @@ through the use of <code>TypeAdapter</code>:</p>
 <span class="sd">    1 validation error for MyDataclass</span>
 <span class="sd">      Input should be an instance of MyDataclass [type=dataclass_exact_type, input_value={&#39;x&#39;: &#39;123&#39;}, input_type=dict]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-</code></pre></div></p>
+</code></pre></div>
 <p>This also works with the <code>TypeAdapter.validate_json</code> and <code>BaseModel.model_validate_json</code> methods:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">uuid</span><span class="w"> </span><span class="kn">import</span> <span class="n">UUID</span>

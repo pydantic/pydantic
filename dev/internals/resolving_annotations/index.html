@@ -3239,10 +3239,9 @@ dictionaries or named tuples.</li>
 </code></pre></div>
 </li>
 </ol>
-<p><a href="" id="backwards-compatibility-logic"></a></p>
-<p>For backwards compatibility reasons, and to be able to support valid use cases without having to rebuild models,
-the namespace logic described above is a bit different when it comes to core schema generation. Taking the
-following example:</p>
+<p id="backwards-compatibility-logic">For backwards compatibility reasons, and to be able to support valid use cases without having to rebuild models,
+the namespace logic described above is a bit different when it comes to core schema generation.
+Taking the following example:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
@@ -3311,8 +3310,7 @@ generation process. This can be seen by inspecting the <code>__pydantic_core_sch
 <span class="n">Foo</span><span class="o">.</span><span class="n">__pydantic_core_schema__</span>
 <span class="c1">#&gt; {&#39;type&#39;: &#39;model&#39;, &#39;schema&#39;: {...}, ...}</span>
 </code></pre></div>
-<p><a href="" id="model-rebuild-semantics"></a></p>
-<p>The <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_rebuild"><code>model_rebuild()</code></a> method uses a <em>rebuild namespace</em>, with the following semantics:</p>
+<p id="model-rebuild-semantics">The <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_rebuild"><code>model_rebuild()</code></a> method uses a <em>rebuild namespace</em>, with the following semantics:</p>
 <ul>
 <li>If an explicit <code>_types_namespace</code> argument is provided, it is used as the rebuild namespace.</li>
 <li>If no namespace is provided, the namespace where the method is called will be used as the rebuild namespace.</li>

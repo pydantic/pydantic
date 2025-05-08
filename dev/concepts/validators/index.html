@@ -3278,10 +3278,9 @@ and ensure the integrity of your data.</p>
 <p><strong>Four</strong> different types of validators can be used. They can all be defined using the
 <a href="../fields/#the-annotated-pattern">annotated pattern</a> or using the
 <a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.field_validator"><code>field_validator()</code></a> decorator, applied on a <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#classmethod">class method</a>:</p>
-<p><a href="" id="field-after-validator"></a></p>
 <ul>
 <li>
-<p><strong><em>After</em> validators</strong>: run after Pydantic's internal validation. They are generally more type safe and thus easier to implement.</p>
+<p id="field-after-validator"><strong><em>After</em> validators</strong>: run after Pydantic's internal validation. They are generally more type safe and thus easier to implement.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Annotated pattern</label><label for="__tabbed_1_2">Decorator</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
@@ -3396,11 +3395,8 @@ this time using the <a class="autorefs autorefs-internal" href="../../api/functi
 </div>
 </details>
 </li>
-</ul>
-<p><a href="" id="field-before-validator"></a></p>
-<ul>
 <li>
-<p><strong><em>Before</em> validators</strong>: run before Pydantic's internal parsing and validation (e.g. coercion of a <code>str</code> to an <code>int</code>).
+<p id="field-before-validator"><strong><em>Before</em> validators</strong>: run before Pydantic's internal parsing and validation (e.g. coercion of a <code>str</code> to an <code>int</code>).
   These are more flexible than <a href="#field-after-validator"><em>after</em> validators</a>, but they also have to deal with the raw input, which
   in theory could be any arbitrary object. You should also avoid mutating the value directly if you are raising a
   <a href="#raising-validation-errors">validation error</a> later in your validator function, as the mutated value may be passed to other
@@ -3502,11 +3498,8 @@ this time using the <a class="autorefs autorefs-internal" href="../../api/functi
 </div>
 </div>
 </li>
-</ul>
-<p><a href="" id="field-plain-validator"></a></p>
-<ul>
 <li>
-<p><strong><em>Plain</em> validators</strong>: act similarly to <em>before</em> validators but they <strong>terminate validation immediately</strong> after returning,
+<p id="field-plain-validator"><strong><em>Plain</em> validators</strong>: act similarly to <em>before</em> validators but they <strong>terminate validation immediately</strong> after returning,
   so no further validators are called and Pydantic does not do any of its internal validation against the field type.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">Annotated pattern</label><label for="__tabbed_4_2">Decorator</label></div>
 <div class="tabbed-content">
@@ -3566,11 +3559,8 @@ this time using the <a class="autorefs autorefs-internal" href="../../api/functi
 </div>
 </div>
 </li>
-</ul>
-<p><a href="" id="field-wrap-validator"></a></p>
-<ul>
 <li>
-<p><strong><em>Wrap</em> validators</strong>: are the most flexible of all. You can run code before or after Pydantic and other validators
+<p id="field-wrap-validator"><strong><em>Wrap</em> validators</strong>: are the most flexible of all. You can run code before or after Pydantic and other validators
   process the input, or you can terminate validation immediately, either by returning the value early or by raising an
   error.</p>
 <p>Such validators must be defined with a <strong>mandatory</strong> extra <code>handler</code> parameter: a callable taking the value to be validated
@@ -3712,12 +3702,12 @@ the function to multiple fields:</p>
 <p>Validation can also be performed on the entire model's data using the <a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.model_validator"><code>model_validator()</code></a>
 decorator.</p>
 <p><strong>Three</strong> different types of model validators can be used:</p>
-<p><a href="" id="model-after-validator"></a></p>
 <ul>
-<li><strong><em>After</em> validators</strong>: run after the whole model has been validated. As such, they are defined as
+<li>
+<p id="model-after-validator"><strong><em>After</em> validators</strong>: run after the whole model has been validated. As such, they are defined as
   <em>instance</em> methods and can be seen as post-initialization hooks. Important note: the validated instance
-  should be returned.
-  <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing_extensions</span><span class="w"> </span><span class="kn">import</span> <span class="n">Self</span>
+  should be returned.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing_extensions</span><span class="w"> </span><span class="kn">import</span> <span class="n">Self</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">model_validator</span>
 
@@ -3732,16 +3722,14 @@ decorator.</p>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">password</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">password_repeat</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Passwords do not match&#39;</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span>
-</code></pre></div></li>
-</ul>
-<p><a href="" id="model-before-validator"></a></p>
-<ul>
+</code></pre></div>
+</li>
 <li>
-<p><strong><em>Before</em> validators</strong>: are run before the model is instantiated. These are more flexible than <em>after</em> validators,
+<p id="model-before-validator"><strong><em>Before</em> validators</strong>: are run before the model is instantiated. These are more flexible than <em>after</em> validators,
   but they also have to deal with the raw input, which in theory could be any arbitrary object. You should also avoid
   mutating the value directly if you are raising a <a href="#raising-validation-errors">validation error</a> later in your validator
-  function, as the mutated value may be passed to other validators if using <a href="../unions/">unions</a>.
-  <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
+  function, as the mutated value may be passed to other validators if using <a href="../unions/">unions</a>.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">model_validator</span>
 
@@ -3756,7 +3744,7 @@ decorator.</p>
             <span class="k">if</span> <span class="s1">&#39;card_number&#39;</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;&#39;card_number&#39; should not be included&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">data</span>
-</code></pre></div></p>
+</code></pre></div>
 <ol>
 <li>Notice the use of <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Any"><code>Any</code></a> as a type hint for <code>data</code>. <em>Before</em> validators take the raw input, which
    can be anything.</li>
@@ -3765,13 +3753,11 @@ decorator.</p>
    configuration value is set, you might receive an arbitrary class instance for the <code>data</code> argument.</li>
 </ol>
 </li>
-</ul>
-<p><a href="" id="model-wrap-validator"></a></p>
-<ul>
-<li><strong><em>Wrap</em> validators</strong>: are the most flexible of all. You can run code before or after Pydantic and
+<li>
+<p id="model-wrap-validator"><strong><em>Wrap</em> validators</strong>: are the most flexible of all. You can run code before or after Pydantic and
   other validators process the input data, or you can terminate validation immediately, either by returning
-  the data early or by raising an error.
-  <div class="language-python highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+  the data early or by raising an error.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing_extensions</span><span class="w"> </span><span class="kn">import</span> <span class="n">Self</span>
@@ -3790,7 +3776,8 @@ decorator.</p>
         <span class="k">except</span> <span class="n">ValidationError</span><span class="p">:</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;Model </span><span class="si">%s</span><span class="s1"> failed to validate with data </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
             <span class="k">raise</span>
-</code></pre></div></li>
+</code></pre></div>
+</li>
 </ul>
 <div class="admonition note">
 <p class="admonition-title">On inheritance</p>
@@ -3803,8 +3790,9 @@ decorator.</p>
 <li><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#ValueError"><code>ValueError</code></a>: this is the most common exception raised inside validators.</li>
 <li><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#AssertionError"><code>AssertionError</code></a>: using the <a class="autorefs autorefs-external" href="https://docs.python.org/3/reference/simple_stmts.html#assert">assert</a> statement also works, but be aware that these statements
   are skipped when Python is run with the <a class="autorefs autorefs-external" href="https://docs.python.org/3/using/cmdline.html#cmdoption-O">-O</a> optimization flag.</li>
-<li><a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.PydanticCustomError"><code>PydanticCustomError</code></a>: a bit more verbose, but provides extra flexibility:
-  <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_core</span><span class="w"> </span><span class="kn">import</span> <span class="n">PydanticCustomError</span>
+<li>
+<p><a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.PydanticCustomError"><code>PydanticCustomError</code></a>: a bit more verbose, but provides extra flexibility:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_core</span><span class="w"> </span><span class="kn">import</span> <span class="n">PydanticCustomError</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">field_validator</span>
 
@@ -3833,7 +3821,8 @@ decorator.</p>
 <span class="sd">    x</span>
 <span class="sd">      84 is the answer! [type=the_answer_error, input_value=84, input_type=int]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-</code></pre></div></li>
+</code></pre></div>
+</li>
 </ul>
 <h2 id="validation-info">Validation info<a class="headerlink" href="#validation-info" title="Permanent link">&para;</a></h2>
 <p>Both the field and model validators callables (in all modes) can optionally take an extra
@@ -3973,8 +3962,8 @@ logic applies.</p>
 <p>Pydantic provides a few special utilities that can be used to customize validation.</p>
 <ul>
 <li>
-<p><a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.InstanceOf"><code>InstanceOf</code></a> can be used to validate that a value is an instance of a given class.
-  <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">InstanceOf</span><span class="p">,</span> <span class="n">ValidationError</span>
+<p><a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.InstanceOf"><code>InstanceOf</code></a> can be used to validate that a value is an instance of a given class.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">InstanceOf</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Fruit</span><span class="p">:</span>
@@ -4003,11 +3992,11 @@ logic applies.</p>
 <span class="sd">    fruits.1</span>
 <span class="sd">      Input should be an instance of Fruit [type=is_instance_of, input_value=&#39;Apple&#39;, input_type=str]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-</code></pre></div></p>
+</code></pre></div>
 </li>
 <li>
-<p><a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.SkipValidation"><code>SkipValidation</code></a> can be used to skip validation on a field.
-  <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">SkipValidation</span>
+<p><a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.SkipValidation"><code>SkipValidation</code></a> can be used to skip validation on a field.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">SkipValidation</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -4021,7 +4010,7 @@ logic applies.</p>
 <span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;foo&#39;</span><span class="p">,</span> <span class="mi">123</span><span class="p">])</span>  <span class="c1"># (1)!</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
 <span class="c1">#&gt; names=[&#39;foo&#39;, 123]</span>
-</code></pre></div></p>
+</code></pre></div>
 <ol>
 <li>Note that the validation of the second item is skipped. If it has the wrong type it will emit a
    warning during serialization.</li>
@@ -4029,8 +4018,8 @@ logic applies.</p>
 </li>
 <li>
 <p><a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.PydanticUseDefault"><code>PydanticUseDefault</code></a> can be used to notify Pydantic that the default value
-  should be used.
-  <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span><span class="p">,</span> <span class="n">Any</span>
+  should be used.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span><span class="p">,</span> <span class="n">Any</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_core</span><span class="w"> </span><span class="kn">import</span> <span class="n">PydanticUseDefault</span>
 
@@ -4049,7 +4038,7 @@ logic applies.</p>
 
 <span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">))</span>
 <span class="c1">#&gt; name=&#39;default_name&#39;</span>
-</code></pre></div></p>
+</code></pre></div>
 </li>
 </ul>
 <h2 id="json-schema-and-field-validators">JSON Schema and field validators<a class="headerlink" href="#json-schema-and-field-validators" title="Permanent link">&para;</a></h2>

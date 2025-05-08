@@ -42,11 +42,11 @@ pip install \
 
 ## Troubleshooting
 
-### `no module named 'pydantic_core._pydantic_core'`
+### Missing `pydantic_core` module
 
 The
 
-```text
+```output
 no module named `pydantic_core._pydantic_core`
 
 ```
@@ -55,25 +55,25 @@ error is a common issue that indicates you have installed `pydantic` incorrectly
 
 1. Check the contents of the installed `pydantic-core` package. Are the compiled library and its type stubs both present?
 
-```python
-from importlib.metadata import files
-print([file for file in files('pydantic-core') if file.name.startswith('_pydantic_core')])
-"""
-[PackagePath('pydantic_core/_pydantic_core.pyi'), PackagePath('pydantic_core/_pydantic_core.cpython-312-x86_64-linux-gnu.so')]
-"""
+   ```python
+   from importlib.metadata import files
+   print([file for file in files('pydantic-core') if file.name.startswith('_pydantic_core')])
+   """
+   [PackagePath('pydantic_core/_pydantic_core.pyi'), PackagePath('pydantic_core/_pydantic_core.cpython-312-x86_64-linux-gnu.so')]
+   """
 
-```
+   ```
 
-You should expect to see two files like those printed above. The compile library file will be a .so or .pyd with a name that varies according to the OS and Python version.
+   You should expect to see two files like those printed above. The compiled library file should have the `.so` or `.pyd` extension with a name that varies according to the OS and Python version.
 
 1. Check that your lambda's Python version is compatible with the compiled library version found above.
 
-```python
-import sysconfig
-print(sysconfig.get_config_var("EXT_SUFFIX"))
-#> '.cpython-312-x86_64-linux-gnu.so'
+   ```python
+   import sysconfig
+   print(sysconfig.get_config_var("EXT_SUFFIX"))
+   #> '.cpython-312-x86_64-linux-gnu.so'
 
-```
+   ```
 
 You should expect to see the same suffix here as the compiled library, for example here we see this suffix `.cpython-312-x86_64-linux-gnu.so` indeed matches `_pydantic_core.cpython-312-x86_64-linux-gnu.so`.
 
@@ -90,7 +90,7 @@ Pydantic uses `version` from `importlib.metadata` to [check what version](https:
 
 If you're deploying your lambda with the serverless framework, it's likely that the appropriate metadata for the `email-validator` package is not being included in your deployment package. Tools like [`serverless-python-requirements`](https://github.com/serverless/serverless-python-requirements/tree/master) remove metadata to reduce package size. You can fix this issue by setting the `slim` setting to false in your `serverless.yml` file:
 
-```text
+```yaml
 pythonRequirements:
     dockerizePip: non-linux
     slim: false

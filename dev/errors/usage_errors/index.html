@@ -5124,8 +5124,8 @@ while any of the fields have <code>init=False</code> set.</p>
     <span class="n">a</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">init</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 </code></pre></div>
 <p>The above snippet results in the following error during schema building for the <code>A</code> dataclass:</p>
-<div class="language-text highlight"><pre><span></span><code>pydantic.errors.PydanticUserError: Field a has `init=False` and dataclass has config setting `extra=&quot;allow&quot;`.
-This combination is not allowed.
+<div class="language-output highlight"><pre><span></span><code><span class="go">pydantic.errors.PydanticUserError: Field a has `init=False` and dataclass has config setting `extra=&quot;allow&quot;`.</span>
+<span class="go">This combination is not allowed.</span>
 </code></pre></div>
 <h2 id="clashing-init-and-init-var">Incompatible <code>init</code> and <code>init_var</code> settings on <code>dataclass</code> field<a class="headerlink" href="#clashing-init-and-init-var" title="Permanent link">&para;</a></h2>
 <p>The <code>init=False</code> and <code>init_var=True</code> settings are mutually exclusive. Doing so results in the <code>PydanticUserError</code> shown in the example below.</p>

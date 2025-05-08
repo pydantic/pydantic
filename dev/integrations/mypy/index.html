@@ -3327,18 +3327,18 @@ features that improve its ability to type-check your code.</p>
 </div>
 <p>Without any special configuration, mypy does not catch the <a href="../../errors/usage_errors/#model-field-missing-annotation">missing model field annotation</a>
 and errors about the <code>list_of_ints</code> argument which Pydantic parses correctly:</p>
-<div class="language-text highlight"><pre><span></span><code>15: error: List item 1 has incompatible type &quot;str&quot;; expected &quot;int&quot;  [list-item]
-15: error: List item 2 has incompatible type &quot;bytes&quot;; expected &quot;int&quot;  [list-item]
-16: error: &quot;Model&quot; has no attribute &quot;middle_name&quot;  [attr-defined]
-17: error: Missing named argument &quot;age&quot; for &quot;Model&quot;  [call-arg]
-17: error: Missing named argument &quot;list_of_ints&quot; for &quot;Model&quot;  [call-arg]
+<div class="language-output highlight"><pre><span></span><code><span class="go">15: error: List item 1 has incompatible type &quot;str&quot;; expected &quot;int&quot;  [list-item]</span>
+<span class="go">15: error: List item 2 has incompatible type &quot;bytes&quot;; expected &quot;int&quot;  [list-item]</span>
+<span class="go">16: error: &quot;Model&quot; has no attribute &quot;middle_name&quot;  [attr-defined]</span>
+<span class="go">17: error: Missing named argument &quot;age&quot; for &quot;Model&quot;  [call-arg]</span>
+<span class="go">17: error: Missing named argument &quot;list_of_ints&quot; for &quot;Model&quot;  [call-arg]</span>
 </code></pre></div>
-<p>But <a href="#enabling-the-plugin">with the plugin enabled</a>, it gives the correct errors:
-<div class="language-text highlight"><pre><span></span><code>9: error: Untyped fields disallowed  [pydantic-field]
-16: error: &quot;Model&quot; has no attribute &quot;middle_name&quot;  [attr-defined]
-17: error: Missing named argument &quot;age&quot; for &quot;Model&quot;  [call-arg]
-17: error: Missing named argument &quot;list_of_ints&quot; for &quot;Model&quot;  [call-arg]
-</code></pre></div></p>
+<p>But <a href="#enabling-the-plugin">with the plugin enabled</a>, it gives the correct errors:</p>
+<div class="language-output highlight"><pre><span></span><code><span class="go">9: error: Untyped fields disallowed  [pydantic-field]</span>
+<span class="go">16: error: &quot;Model&quot; has no attribute &quot;middle_name&quot;  [attr-defined]</span>
+<span class="go">17: error: Missing named argument &quot;age&quot; for &quot;Model&quot;  [call-arg]</span>
+<span class="go">17: error: Missing named argument &quot;list_of_ints&quot; for &quot;Model&quot;  [call-arg]</span>
+</code></pre></div>
 <p>With the pydantic mypy plugin, you can fearlessly refactor your models knowing mypy will catch any mistakes
 if your field names or types change.</p>
 <p>Note that mypy already supports some features without using the Pydantic plugin, such as synthesizing a <code>__init__</code>

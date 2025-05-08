@@ -3452,12 +3452,14 @@ For example, to create a type representing a positive integer:</p>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
 <ol>
-<li>Note that you can also use constraints from the <a href="https://github.com/annotated-types/annotated-types">annotated-types</a>
-  library to make this Pydantic-agnostic:
-  <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">annotated_types</span><span class="w"> </span><span class="kn">import</span> <span class="n">Gt</span>
+<li>
+<p>Note that you can also use constraints from the <a href="https://github.com/annotated-types/annotated-types">annotated-types</a>
+  library to make this Pydantic-agnostic:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">annotated_types</span><span class="w"> </span><span class="kn">import</span> <span class="n">Gt</span>
 
 <span class="n">PositiveInt</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Gt</span><span class="p">(</span><span class="mi">0</span><span class="p">)]</span>
-</code></pre></div></li>
+</code></pre></div>
+</li>
 </ol>
 <h4 id="adding-validation-and-serialization">Adding validation and serialization<a class="headerlink" href="#adding-validation-and-serialization" title="Permanent link">&para;</a></h4>
 <p>You can add or override validation, serialization, and JSON schemas to an arbitrary type using the markers that
@@ -3549,7 +3551,7 @@ two reasons:</p>
 <li>In most cases, <a href="#named-recursive-types">recursive type aliases</a> won't work.</li>
 </ul>
 <p>By leveraging the new <a href="https://typing.readthedocs.io/en/latest/spec/aliases.html#type-statement"><code>type</code> statement</a>
-(introduced in <a href="https://peps.python.org/pep-0695/">PEP 695</a>), you can define aliases as follows:</p>
+(introduced in [PEP 695]), you can define aliases as follows:</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.9 and above</label><label for="__tabbed_1_2">Python 3.12 and above (new syntax)</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">

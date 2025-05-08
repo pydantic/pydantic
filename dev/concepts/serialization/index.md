@@ -502,7 +502,7 @@ If you want v1-style duck-typing serialization behavior, you can use a runtime s
 
 We discuss these options below in more detail:
 
-#### `SerializeAsAny` annotation:
+#### `SerializeAsAny` annotation
 
 If you want duck-typing serialization behavior, this can be done using the `SerializeAsAny` annotation on a type:
 

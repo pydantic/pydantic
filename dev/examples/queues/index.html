@@ -3005,9 +3005,11 @@ we'll explore how to validate / serialize data with various queue systems.</p>
 <p>Redis is a popular in-memory data structure store.</p>
 <p>In order to run this example locally, you'll first need to <a href="https://redis.io/docs/latest/operate/oss_and_stack/install/install-redis/">install Redis</a>
 and start your server up locally.</p>
-<p>Here's a simple example of how you can use Pydantic to:
-1. Serialize data to push to the queue
-2. Deserialize and validate data when it's popped from the queue</p>
+<p>Here's a simple example of how you can use Pydantic to:</p>
+<ol>
+<li>Serialize data to push to the queue</li>
+<li>Deserialize and validate data when it's popped from the queue</li>
+</ol>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">redis</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">EmailStr</span>

@@ -1067,7 +1067,7 @@ to help you monitor and understand your
           <li class="md-nav__item">
   <a href="#serializeasany-annotation" class="md-nav__link">
     <span class="md-ellipsis">
-      SerializeAsAny annotation:
+      SerializeAsAny annotation
     </span>
   </a>
   
@@ -3229,7 +3229,7 @@ to help you monitor and understand your
           <li class="md-nav__item">
   <a href="#serializeasany-annotation" class="md-nav__link">
     <span class="md-ellipsis">
-      SerializeAsAny annotation:
+      SerializeAsAny annotation
     </span>
   </a>
   
@@ -3674,7 +3674,7 @@ logic, and can modify the resulting value before returning it as the final outpu
 </code></pre></div>
 <h3 id="overriding-the-return-type-when-dumping-a-model">Overriding the return type when dumping a model<a class="headerlink" href="#overriding-the-return-type-when-dumping-a-model" title="Permanent link">&para;</a></h3>
 <p>While the return value of <code>.model_dump()</code> can usually be described as <code>dict[str, Any]</code>, through the use of
-<code>@model_serializer</code> you can actually cause it to return a value that doesn't match this signature:
+<code>@model_serializer</code> you can actually cause it to return a value that doesn't match this signature:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">model_serializer</span>
 
 
@@ -3688,7 +3688,7 @@ logic, and can modify the resulting value before returning it as the final outpu
 
 <span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;not a dict&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
 <span class="c1">#&gt; not a dict</span>
-</code></pre></div></p>
+</code></pre></div>
 <p>If you want to do this and still get proper type-checking for this method, you can override <code>.model_dump()</code> in an
 <code>if TYPE_CHECKING:</code> block:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
@@ -3814,7 +3814,7 @@ prevent security risks when serializing subclasses with sensitive information, f
 <li>Runtime level: use the <code>serialize_as_any</code> flag when calling <code>model_dump()</code> or <code>model_dump_json()</code></li>
 </ul>
 <p>We discuss these options below in more detail:</p>
-<h4 id="serializeasany-annotation"><code>SerializeAsAny</code> annotation:<a class="headerlink" href="#serializeasany-annotation" title="Permanent link">&para;</a></h4>
+<h4 id="serializeasany-annotation"><code>SerializeAsAny</code> annotation<a class="headerlink" href="#serializeasany-annotation" title="Permanent link">&para;</a></h4>
 <p>If you want duck-typing serialization behavior, this can be done using the <code>SerializeAsAny</code> annotation on a type:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">SerializeAsAny</span>
 

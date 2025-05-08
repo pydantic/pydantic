@@ -47,7 +47,7 @@ Model()  # will raise a validation error for age and list_of_ints
 
 Without any special configuration, mypy does not catch the [missing model field annotation](../../errors/usage_errors/#model-field-missing-annotation) and errors about the `list_of_ints` argument which Pydantic parses correctly:
 
-```text
+```output
 15: error: List item 1 has incompatible type "str"; expected "int"  [list-item]
 15: error: List item 2 has incompatible type "bytes"; expected "int"  [list-item]
 16: error: "Model" has no attribute "middle_name"  [attr-defined]
@@ -58,7 +58,7 @@ Without any special configuration, mypy does not catch the [missing model field 
 
 But [with the plugin enabled](#enabling-the-plugin), it gives the correct errors:
 
-```text
+```output
 9: error: Untyped fields disallowed  [pydantic-field]
 16: error: "Model" has no attribute "middle_name"  [attr-defined]
 17: error: Missing named argument "age" for "Model"  [call-arg]
