@@ -513,12 +513,44 @@ class DecoratorInfos:
             model_dc.__pydantic_decorators__ = res
             for name, value in to_replace:
                 setattr(model_dc, name, value)
+        if hasattr(model_dc, '__pydantic_decorators__'):
+            duplicated_methods = res.find_duplicates()
+            if duplicated_methods:
+                raise PydanticUserError(
+                    f'Validator method {duplicated_methods} overrides existing validator method, this is not allowed',
+                    code='validator-method-override',
+                )
+
         return res
 
     def update_from_config(self, config_wrapper: ConfigWrapper) -> None:
         """Update the decorator infos from the configuration of the class they are attached to."""
         for name, computed_field_dec in self.computed_fields.items():
             computed_field_dec.info._update_from_config(config_wrapper, name)
+
+    def find_duplicates(self) -> set[Callable[..., Any]]:
+        """Check if there are overridden methods in the decorator infos
+        Args:
+            model_dc: the class that called the decorator
+            res: the decorator infos
+        Returns:
+            a tuple of (bool, set[Any]|None)
+            bool: whether there are overridden methods
+            set[Any]|None: the overridden methods
+        """
+        all_validators = [
+            *self.validators.values(),
+            *self.field_validators.values(),
+            *self.root_validators.values(),
+            *self.model_validators.values(),
+        ]
+        # get all the functions that are bound to a class
+        # i.e. methods
+        # we are not interested in unbound functions
+        # i.e. functions that are not methods
+        functions = [validator.func for validator in all_validators if hasattr(validator.func, '__self__')]
+        duplicated_methods = {method for method in functions if functions.count(method) > 1}
+        return duplicated_methods
 
 
 def inspect_validator(validator: Callable[..., Any], mode: FieldValidatorModes) -> bool:

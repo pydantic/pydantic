@@ -2003,6 +2003,37 @@ def test_info_field_name_data_before():
     assert Model(a=b'your foobar is good', b=b'but my barbaz is better').b == 'just kidding!'
 
 
+def test_info_field_name_clash():
+    """
+    Test that we raise an error if a field is validated by both a model and a field validator
+    with the same name.
+    This is invalid because the field validator will not be called
+    and the model validator will run twice
+    """
+
+    with pytest.raises(PydanticUserError) as exc_info:
+
+        class EvilModel(BaseModel):
+            foo: Optional[str] = Field(default=None)
+
+            @field_validator('foo', mode='before')
+            @classmethod
+            def map_foo(cls, value: Any) -> Any:
+                # this will NOT run
+                return value
+
+        class BrokenModel(EvilModel):
+            @model_validator(mode='before')
+            @classmethod
+            def map_foo(cls, data: Any) -> Any:
+                # this will run twice
+                return data
+
+        BrokenModel(foo='foo')
+    assert exc_info.match(r'^Validator method {.*} overrides existing validator method, this is not allowed')
+    assert exc_info.value.code == 'validator-method-override'
+
+
 def test_decorator_proxy():
     """
     Test that our validator decorator allows
