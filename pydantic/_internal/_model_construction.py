@@ -10,6 +10,7 @@ import warnings
 import weakref
 from abc import ABCMeta
 from functools import cache, partial, wraps
+from threading import Lock
 from types import FunctionType
 from typing import Any, Callable, Generic, Literal, NoReturn, cast
 
@@ -154,6 +155,7 @@ class ModelMetaclass(ABCMeta):
 
             cls.__pydantic_decorators__ = DecoratorInfos.build(cls)
             cls.__pydantic_decorators__.update_from_config(config_wrapper)
+            cls.__pydantic_rebuild_lock__ = Lock()
 
             # Use the getattr below to grab the __parameters__ from the `typing.Generic` parent class
             if __pydantic_generic_metadata__:
