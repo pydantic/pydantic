@@ -315,10 +315,16 @@ def dataclass(
         # This is an undocumented attribute to distinguish stdlib/Pydantic dataclasses.
         # It should be set as early as possible:
         cls.__is_pydantic_dataclass__ = True
-
         cls.__pydantic_decorators__ = decorators  # type: ignore
         cls.__doc__ = original_doc
+        # Can be non-existent for dynamically created classes:
+        firstlineno = getattr(original_cls, '__firstlineno__', None)
         cls.__module__ = original_cls.__module__
+        if sys.version_info >= (3, 13) and firstlineno is not None:
+            # As per https://docs.python.org/3/reference/datamodel.html#type.__firstlineno__:
+            # Setting the `__module__` attribute removes the `__firstlineno__` item from the type’s dictionary.
+            original_cls.__firstlineno__ = firstlineno
+            cls.__firstlineno__ = firstlineno
         cls.__qualname__ = original_cls.__qualname__
         cls.__pydantic_complete__ = False  # `complete_dataclass` will set it to `True` if successful.
         # TODO `parent_namespace` is currently None, but we could do the same thing as Pydantic models:
