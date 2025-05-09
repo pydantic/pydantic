@@ -1,3 +1,4 @@
+import sys
 import textwrap
 from dataclasses import dataclass
 from typing import Annotated, Generic, TypeVar
@@ -173,7 +174,6 @@ def test_model_different_name():
         )
 
     MyModel.__name__ = 'OtherModel'
-    print(MyModel.__name__)
 
     assert MyModel.model_fields['a'].description == 'A docs'
 
@@ -270,12 +270,50 @@ def test_stdlib_docs_extraction():
 
     ta = TypeAdapter(MyModel)
 
-    assert ta.json_schema() == {
-        'properties': {'a': {'title': 'A', 'type': 'integer', 'description': 'A docs'}},
-        'required': ['a'],
-        'title': 'MyModel',
-        'type': 'object',
-    }
+    assert ta.json_schema()['properties']['a']['description'] == 'A docs'
+
+
+@pytest.mark.xfail(
+    condition=sys.version_info < (3, 13),
+    reason=(
+        'Since Python 3.13, we can leverage the new `__firstlineno__` class attribute, '
+        'used by `inspect.getsourcelines().'
+    ),
+)
+def test_stdlib_docs_extraction_duplicate_class():
+    @dataclass
+    @with_config({'use_attribute_docstrings': True})
+    class MyModel:
+        a: int
+        """A docs"""
+
+    @dataclass
+    @with_config({'use_attribute_docstrings': True})
+    class MyModel:
+        b: int
+        """B docs"""
+
+    ta = TypeAdapter(MyModel)
+    assert ta.json_schema()['properties']['b']['description'] == 'B docs'
+
+    if True:
+
+        @dataclass
+        @with_config({'use_attribute_docstrings': True})
+        class MyModel:
+            a: int
+            """A docs"""
+
+    else:
+
+        @dataclass
+        @with_config({'use_attribute_docstrings': True})
+        class MyModel:
+            b: int
+            """B docs"""
+
+    ta = TypeAdapter(MyModel)
+    assert ta.json_schema()['properties']['a']['description'] == 'A docs'
 
 
 @pytest.mark.xfail(reason='Current implementation does not take inheritance into account.')
