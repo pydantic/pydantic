@@ -3,7 +3,7 @@ import platform
 import re
 import sys
 import typing
-from typing import Any, Optional
+from typing import Any, Generic, Optional, TypeVar
 
 import pytest
 
@@ -1230,6 +1230,29 @@ assert SubChild.__pydantic_fields_complete__
 SubChild()
         """
     )
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 11),
+    reason=(
+        'Forward refs inside PEP 585 generics are not evaluated (see https://github.com/python/cpython/pull/30900).'
+    ),
+)
+def test_forward_ref_in_class_parameter() -> None:
+    """https://github.com/pydantic/pydantic/issues/11854"""
+    T = TypeVar('T')
+
+    class Model(BaseModel, Generic[T]):
+        f: T
+
+    M = Model[list['Undefined']]
+
+    assert not M.__pydantic_fields_complete__
+
+    M.model_rebuild(_types_namespace={'Undefined': int})
+
+    assert M.__pydantic_fields_complete__
+    assert M.model_fields['f'].annotation == list[int]
 
 
 def test_uses_the_local_namespace_when_generating_schema():
