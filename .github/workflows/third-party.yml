@@ -639,7 +639,7 @@ jobs:
       run: uv pip list
 
     - name: Run Cadwyn tests
-      run: uv run --no-project pytest .
+      run: uv run --no-project pytest tests docs_src
 
 
   create-issue-on-failure:
