@@ -52,6 +52,8 @@ Note that mypy already supports some features without using the Pydantic plugin,
 method for Pydantic models and dataclasses. See the [mypy plugin capabilities](#mypy-plugin-capabilities) for a list
 of additional features.
 
+The Pydantic mypy plugin is tested against the latest mypy version. Older versions might work but won't be tested.
+
 ## Enabling the Plugin
 
 To enable the plugin, just add `pydantic.mypy` to the list of plugins in your
@@ -76,12 +78,6 @@ To enable the plugin, just add `pydantic.mypy` to the list of plugins in your
     If you're using `pydantic.v1` models, you'll need to add `pydantic.v1.mypy` to your list of plugins.
 
 See the [plugin configuration](#configuring-the-plugin) for more details.
-
-## Supported mypy versions
-
-Pydantic supports the mypy versions released less than 6 months ago. Older versions may still work with the plugin
-but won't be tested. The list of released mypy versions can be found [here](https://mypy-lang.org/news.html). Note
-that the version support policy is subject to change at discretion of contributors.
 
 ## Mypy plugin capabilities
 

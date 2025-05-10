@@ -180,52 +180,30 @@ jobs:
           TEST_PLUGIN: 1
 
   test-mypy:
-    name: mypy ${{ matrix.mypy-version }} / ${{ matrix.python-version }}
+    name: Mypy typechecking tests
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        # test the latest version on all supported Python versions and the rest on 3.12
-        mypy-version: ['1.10.1', '1.11.2']
-        python-version: ['3.12']
-        include:
-          - mypy-version: '1.12.0'
-            python-version: '3.9'
-          - mypy-version: '1.12.0'
-            python-version: '3.10'
-          - mypy-version: '1.12.0'
-            python-version: '3.11'
-          - mypy-version: '1.12.0'
-            python-version: '3.12'
-          - mypy-version: '1.12.0'
-            python-version: '3.13'
-
     steps:
     - uses: actions/checkout@v4
 
     - uses: astral-sh/setup-uv@v6
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: '3.13'
 
     - name: Install dependencies
       run: uv sync --group typechecking --all-extras
-
-    - name: Install mypy
-      if: steps.cache.outputs.cache-hit != 'true'
-      run: uv pip install 'mypy==${{ matrix.mypy-version }}'
 
     - run: mkdir coverage
 
     - name: Run mypy tests
       run: uv run coverage run -m pytest tests/mypy --test-mypy
       env:
-        COVERAGE_FILE: coverage/.coverage.linux-py${{ matrix.python-version }}-mypy${{ matrix.mypy-version }}
-        CONTEXT: linux-py${{ matrix.python-version }}-mypy${{ matrix.mypy-version }}
+        COVERAGE_FILE: coverage/.coverage.linux-mypy
+        CONTEXT: linux-mypy
 
     - name: Store coverage files
       uses: actions/upload-artifact@v4
       with:
-        name: coverage-${{ matrix.python-version }}-mypy${{ matrix.mypy-version }}
+        name: coverage-mypy
         path: coverage
         include-hidden-files: true
 
