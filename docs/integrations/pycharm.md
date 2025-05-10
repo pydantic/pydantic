@@ -7,13 +7,13 @@ You can install the plugin for free from the plugin marketplace
 The plugin currently supports the following features:
 
 * For `pydantic.BaseModel.__init__`:
-  * Inspection
-  * Autocompletion
-  * Type-checking
+    * Inspection
+    * Autocompletion
+    * Type-checking
 
 * For fields of `pydantic.BaseModel`:
-  * Refactor-renaming fields updates `__init__` calls, and affects sub- and super-classes
-  * Refactor-renaming `__init__` keyword arguments updates field names, and affects sub- and super-classes
+    * Refactor-renaming fields updates `__init__` calls, and affects sub- and super-classes
+    * Refactor-renaming `__init__` keyword arguments updates field names, and affects sub- and super-classes
 
 More information can be found on the
 [official plugin page](https://plugins.jetbrains.com/plugin/12861-pydantic)

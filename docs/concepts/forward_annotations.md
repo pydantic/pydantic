@@ -144,7 +144,7 @@ print(Node.model_validate(node_data))
 #> id=1 children=[Node(id=2, children=[Node(id=3, children=[])])]
 ```
 
-Similarly, if Pydantic encounters a recursive reference during _serialization_, rather than waiting
+Similarly, if Pydantic encounters a recursive reference during *serialization*, rather than waiting
 for the maximum recursion depth to be exceeded, a [`ValueError`][] is raised immediately:
 
 ```python

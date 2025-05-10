@@ -46,13 +46,13 @@ the available metadata to add validation logic, type constraints, etc.
 
 Using this pattern has some advantages:
 
-- Using the `f: <type> = Field(...)` form can be confusing and might trick users into thinking `f`
+* Using the `f: <type> = Field(...)` form can be confusing and might trick users into thinking `f`
   has a default value, while in reality it is still required.
-- You can provide an arbitrary amount of metadata elements for a field. As shown in the example above,
+* You can provide an arbitrary amount of metadata elements for a field. As shown in the example above,
   the [`Field()`][pydantic.fields.Field] function only supports a limited set of constraints/metadata,
   and you may have to use different Pydantic utilities such as [`WithJsonSchema`][pydantic.WithJsonSchema]
   in some cases.
-- Types can be made reusable (see the documentation on [custom types](./types.md#using-the-annotated-pattern)
+* Types can be made reusable (see the documentation on [custom types](./types.md#using-the-annotated-pattern)
   using this pattern).
 
 However, note that certain arguments to the [`Field()`][pydantic.fields.Field] function (namely, `default`,
@@ -212,8 +212,8 @@ There are three ways to define an alias:
 * `Field(validation_alias='foo')`
 * `Field(serialization_alias='foo')`
 
-The `alias` parameter is used for both validation _and_ serialization. If you want to use
-_different_ aliases for validation and serialization respectively, you can use the `validation_alias`
+The `alias` parameter is used for both validation *and* serialization. If you want to use
+*different* aliases for validation and serialization respectively, you can use the `validation_alias`
 and `serialization_alias` parameters, which will apply only in their respective use cases.
 
 Here is an example of using the `alias` parameter:
@@ -244,7 +244,7 @@ print(user.model_dump(by_alias=True))  # (2)!
 
     When `by_alias=True`, the alias `'username'` used during serialization.
 
-If you want to use an alias _only_ for validation, you can use the `validation_alias` parameter:
+If you want to use an alias *only* for validation, you can use the `validation_alias` parameter:
 
 ```python
 from pydantic import BaseModel, Field
@@ -264,7 +264,7 @@ print(user.model_dump(by_alias=True))  # (2)!
 1. The validation alias `'username'` is used during validation.
 2. The field name `'name'` is used during serialization.
 
-If you only want to define an alias for _serialization_, you can use the `serialization_alias` parameter:
+If you only want to define an alias for *serialization*, you can use the `serialization_alias` parameter:
 
 ```python
 from pydantic import BaseModel, Field
@@ -380,6 +380,7 @@ print(user.model_dump(by_alias=True))  # (2)!
     #> {'my_field': 1}
     ```
 
+<!-- markdownlint-disable-next-line no-empty-links -->
 [](){#field-constraints}
 
 ## Numeric Constraints
@@ -425,9 +426,9 @@ positive=1 non_negative=0 negative=-1 non_positive=0 even=2 love_for_pydantic=in
 ??? info "JSON Schema"
     In the generated JSON schema:
 
-    - `gt` and `lt` constraints will be translated to `exclusiveMinimum` and `exclusiveMaximum`.
-    - `ge` and `le` constraints will be translated to `minimum` and `maximum`.
-    - `multiple_of` constraint will be translated to `multipleOf`.
+    * `gt` and `lt` constraints will be translated to `exclusiveMinimum` and `exclusiveMaximum`.
+    * `ge` and `le` constraints will be translated to `minimum` and `maximum`.
+    * `multiple_of` constraint will be translated to `multipleOf`.
 
     The above snippet will generate the following JSON Schema:
 
@@ -528,9 +529,9 @@ print(foo)
 ??? info "JSON Schema"
     In the generated JSON schema:
 
-    - `min_length` constraint will be translated to `minLength`.
-    - `max_length` constraint will be translated to `maxLength`.
-    - `pattern` constraint will be translated to `pattern`.
+    * `min_length` constraint will be translated to `minLength`.
+    * `max_length` constraint will be translated to `maxLength`.
+    * `pattern` constraint will be translated to `pattern`.
 
     The above snippet will generate the following JSON Schema:
 
@@ -868,7 +869,6 @@ print(Model.model_json_schema()['properties']['deprecated_field'])
 #> {'deprecated': True, 'title': 'Deprecated Field', 'type': 'integer'}
 ```
 
-
 !!! note "Support for `category` and `stacklevel`"
     The current implementation of this feature does not take into account the `category` and `stacklevel`
     arguments to the `deprecated` decorator. This might land in a future version of Pydantic.
@@ -1001,14 +1001,9 @@ class Box(BaseModel):
         return self.width * self.height * self.depth
 ```
 
-
-[JSON Schema Draft 2020-12]: https://json-schema.org/understanding-json-schema/reference/numeric.html#numeric-types
 [Discriminated Unions]: ../concepts/unions.md#discriminated-unions
 [Validating data]: models.md#validating-data
 [Models]: models.md
 [init-only field]: https://docs.python.org/3/library/dataclasses.html#init-only-variables
 [frozen dataclass documentation]: https://docs.python.org/3/library/dataclasses.html#frozen-instances
-[Validate Assignment]: models.md#validate-assignment
-[Serialization]: serialization.md#model-and-field-level-include-and-exclude
 [Customizing JSON Schema]: json_schema.md#field-level-customization
-[annotated]: https://docs.python.org/3/library/typing.html#typing.Annotated
