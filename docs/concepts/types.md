@@ -197,7 +197,7 @@ two reasons:
 * In most cases, [recursive type aliases](#named-recursive-types) won't work.
 
 By leveraging the new [`type` statement](https://typing.readthedocs.io/en/latest/spec/aliases.html#type-statement)
-(introduced in [PEP 695]), you can define aliases as follows:
+(introduced in [PEP 695](https://peps.python.org/pep-0695/)), you can define aliases as follows:
 
 === "Python 3.9 and above"
 
