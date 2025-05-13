@@ -250,7 +250,11 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         """
         # `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks
         __tracebackhide__ = True
-        validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+        if not type(self).__pydantic_complete__:
+            with type(self).__pydantic_rebuild_lock__:
+                validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+        else:
+            validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
         if self is not validated_self:
             warnings.warn(
                 'A custom validator is returning a value other than `self`.\n'
@@ -683,9 +687,15 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 code='validate-by-alias-and-name-false',
             )
 
-        return cls.__pydantic_validator__.validate_python(
-            obj, strict=strict, from_attributes=from_attributes, context=context, by_alias=by_alias, by_name=by_name
-        )
+        if not cls.__pydantic_complete__:
+            with cls.__pydantic_rebuild_lock__:
+                return cls.__pydantic_validator__.validate_python(
+                    obj, strict=strict, from_attributes=from_attributes, context=context, by_alias=by_alias, by_name=by_name
+                )
+        else:
+            return cls.__pydantic_validator__.validate_python(
+                obj, strict=strict, from_attributes=from_attributes, context=context, by_alias=by_alias, by_name=by_name
+            )
 
     @classmethod
     def model_validate_json(
@@ -724,9 +734,15 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 code='validate-by-alias-and-name-false',
             )
 
-        return cls.__pydantic_validator__.validate_json(
-            json_data, strict=strict, context=context, by_alias=by_alias, by_name=by_name
-        )
+        if not cls.__pydantic_complete__:
+            with cls.__pydantic_rebuild_lock__:
+                return cls.__pydantic_validator__.validate_json(
+                    json_data, strict=strict, context=context, by_alias=by_alias, by_name=by_name
+                )
+        else:
+            return cls.__pydantic_validator__.validate_json(
+                json_data, strict=strict, context=context, by_alias=by_alias, by_name=by_name
+            )
 
     @classmethod
     def model_validate_strings(
@@ -759,9 +775,15 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 code='validate-by-alias-and-name-false',
             )
 
-        return cls.__pydantic_validator__.validate_strings(
-            obj, strict=strict, context=context, by_alias=by_alias, by_name=by_name
-        )
+        if not cls.__pydantic_complete__:
+            with cls.__pydantic_rebuild_lock__:
+                return cls.__pydantic_validator__.validate_strings(
+                    obj, strict=strict, context=context, by_alias=by_alias, by_name=by_name
+                )
+        else:
+            return cls.__pydantic_validator__.validate_strings(
+                obj, strict=strict, context=context, by_alias=by_alias, by_name=by_name
+            )
 
     @classmethod
     def __get_pydantic_core_schema__(cls, source: type[BaseModel], handler: GetCoreSchemaHandler, /) -> CoreSchema:
