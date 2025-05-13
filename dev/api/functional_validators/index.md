@@ -98,7 +98,7 @@ A metadata class that indicates that a validation should be applied **before** t
 
 Attributes:
 
-| Name | Type | Description | | --- | --- | --- | | `func` | `NoInfoValidatorFunction | WithInfoValidatorFunction` | The validator function. | | `json_schema_input_type` | `Any` | The input type of the function. This is only used to generate the appropriate JSON Schema (in validation mode). |
+| Name | Type | Description | | --- | --- | --- | | `func` | `NoInfoValidatorFunction | WithInfoValidatorFunction` | The validator function. | | `json_schema_input_type` | `Any` | The input type used to generate the appropriate JSON Schema (in validation mode). The actual input type is Any. |
 
 Example
 
@@ -147,7 +147,7 @@ Before v2.9, `PlainValidator` wasn't always compatible with JSON Schema generati
 
 Attributes:
 
-| Name | Type | Description | | --- | --- | --- | | `func` | `NoInfoValidatorFunction | WithInfoValidatorFunction` | The validator function. | | `json_schema_input_type` | `Any` | The input type of the function. This is only used to generate the appropriate JSON Schema (in validation mode). If not provided, will default to Any. |
+| Name | Type | Description | | --- | --- | --- | | `func` | `NoInfoValidatorFunction | WithInfoValidatorFunction` | The validator function. | | `json_schema_input_type` | `Any` | The input type used to generate the appropriate JSON Schema (in validation mode). The actual input type is Any. |
 
 Example
 
@@ -197,7 +197,7 @@ A metadata class that indicates that a validation should be applied **around** t
 
 Attributes:
 
-| Name | Type | Description | | --- | --- | --- | | `func` | `NoInfoWrapValidatorFunction | WithInfoWrapValidatorFunction` | The validator function. | | `json_schema_input_type` | `Any` | The input type of the function. This is only used to generate the appropriate JSON Schema (in validation mode). |
+| Name | Type | Description | | --- | --- | --- | | `func` | `NoInfoWrapValidatorFunction | WithInfoWrapValidatorFunction` | The validator function. | | `json_schema_input_type` | `Any` | The input type used to generate the appropriate JSON Schema (in validation mode). The actual input type is Any. |
 
 ```python
 from datetime import datetime
