@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-import dataclasses
 import importlib
 import os
 import re
 import sys
-from bisect import insort
 from collections.abc import Collection
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -37,6 +35,7 @@ else:
 
 MYPY_VERSION_TUPLE = parse_mypy_version(mypy_version)
 PYDANTIC_ROOT = Path(__file__).parent.parent.parent
+OUTPUTS_DIR = PYDANTIC_ROOT / 'tests/mypy/outputs'
 
 pytestmark = pytest.mark.skipif(
     '--test-mypy' not in sys.argv
@@ -71,9 +70,6 @@ cases: list[ParameterSet | tuple[str, str]] = [
     *build_cases(
         ['mypy-default.ini', 'pyproject-default.toml'],
         ['root_models.py'],
-        pytest.mark.skipif(
-            MYPY_VERSION_TUPLE < (1, 1, 1), reason='`dataclass_transform` only supported on mypy >= 1.1.1'
-        ),
     ),
     *build_cases(
         ['mypy-default.ini'],
@@ -122,45 +118,6 @@ cases: list[ParameterSet | tuple[str, str]] = [
 ]
 
 
-@dataclasses.dataclass
-class MypyTestConfig:
-    existing_output_path: Path | None
-    """The path pointing to the existing test result, or `None` if this is the first time the test is run."""
-
-    current_output_path: Path
-    """The path pointing to the current test result to be created or compared to the existing one."""
-
-
-def get_test_config(module_path: Path, config_path: Path) -> MypyTestConfig:
-    """Given a file to test with a specific config, get a test config."""
-
-    outputs_dir = PYDANTIC_ROOT / 'tests/mypy/outputs'
-    outputs_dir.mkdir(exist_ok=True)
-    existing_versions = [
-        x.name for x in outputs_dir.iterdir() if x.is_dir() and re.match(r'[0-9]+(?:\.[0-9]+)*', x.name)
-    ]
-
-    def _convert_to_output_path(v: str) -> Path:
-        return outputs_dir / v / config_path.name.replace('.', '_') / module_path.name
-
-    existing: Path | None = None
-
-    # Build sorted list of (parsed_version, version) pairs, including the current mypy version being used
-    parsed_version_pairs = sorted((parse_mypy_version(v), v) for v in existing_versions)
-    if MYPY_VERSION_TUPLE not in [x[0] for x in parsed_version_pairs]:
-        insort(parsed_version_pairs, (MYPY_VERSION_TUPLE, mypy_version))
-
-    for parsed_version, version in parsed_version_pairs[::-1]:
-        if parsed_version > MYPY_VERSION_TUPLE:
-            continue
-        output_path = _convert_to_output_path(version)
-        if output_path.exists():
-            existing = output_path
-            break
-
-    return MypyTestConfig(existing, _convert_to_output_path(mypy_version))
-
-
 def get_expected_return_code(source_code: str) -> int:
     """Return 1 if at least one `# MYPY:` comment was found, else 0."""
     if re.findall(r'^\s*# MYPY:', source_code, flags=re.MULTILINE):
@@ -175,7 +132,7 @@ def get_expected_return_code(source_code: str) -> int:
 def test_mypy_results(config_filename: str, python_filename: str, request: pytest.FixtureRequest) -> None:
     input_path = PYDANTIC_ROOT / 'tests/mypy/modules' / python_filename
     config_path = PYDANTIC_ROOT / 'tests/mypy/configs' / config_filename
-    test_config = get_test_config(input_path, config_path)
+    output_path = OUTPUTS_DIR / config_path.name.replace('.', '_') / input_path.name
 
     # Specifying a different cache dir for each configuration dramatically speeds up subsequent execution
     # It also prevents cache-invalidation-related bugs in the tests
@@ -202,9 +159,9 @@ def test_mypy_results(config_filename: str, python_filename: str, request: pytes
     input_code = input_path.read_text()
 
     existing_output_code: str | None = None
-    if test_config.existing_output_path is not None:
-        existing_output_code = test_config.existing_output_path.read_text()
-        print(f'Comparing output with {test_config.existing_output_path}')
+    if output_path.is_file():
+        existing_output_code = output_path.read_text()
+        print(f'Comparing output with {output_path}')
     else:
         print(f'Comparing output with {input_path} (expecting no mypy errors)')
 
@@ -214,8 +171,8 @@ def test_mypy_results(config_filename: str, python_filename: str, request: pytes
         # Test passed, no changes needed
         pass
     elif request.config.getoption('update_mypy'):
-        test_config.current_output_path.parent.mkdir(parents=True, exist_ok=True)
-        test_config.current_output_path.write_text(merged_output)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(merged_output)
     else:
         print('**** Merged Output ****')
         print(merged_output)
