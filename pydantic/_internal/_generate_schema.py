@@ -42,6 +42,7 @@ from zoneinfo import ZoneInfo
 
 import typing_extensions
 from pydantic_core import (
+    UNSET,
     CoreSchema,
     MultiHostUrl,
     PydanticCustomError,
@@ -1009,6 +1010,8 @@ class GenerateSchema:
         The idea is that we'll evolve this into adding more and more user facing methods over time
         as they get requested and we figure out what the right API for them is.
         """
+        if obj is UNSET:
+            return core_schema.literal_schema([UNSET])
         if obj is str:
             return core_schema.str_schema()
         elif obj is bytes:

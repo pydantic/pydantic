@@ -36,7 +36,7 @@ from typing import (
 )
 
 import pydantic_core
-from pydantic_core import CoreSchema, PydanticOmit, core_schema, to_jsonable_python
+from pydantic_core import UNSET, CoreSchema, PydanticOmit, core_schema, to_jsonable_python
 from pydantic_core.core_schema import ComputedField
 from typing_extensions import TypeAlias, assert_never, deprecated, final
 from typing_inspection.introspection import get_literal_values
@@ -782,6 +782,9 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
+        if len(schema['expected']) == 1 and schema['expected'][0] is UNSET:
+            raise PydanticOmit
+
         expected = [to_jsonable_python(v.value if isinstance(v, Enum) else v) for v in schema['expected']]
 
         result: dict[str, Any] = {}
@@ -1109,7 +1112,7 @@ class GenerateJsonSchema:
         json_schema = self.generate_inner(schema['schema'])
 
         default = self.get_default_value(schema)
-        if default is NoDefault:
+        if default is NoDefault or default is UNSET:
             return json_schema
 
         # we reflect the application of custom plain, no-info serializers to defaults for
