@@ -2648,15 +2648,6 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
-  <a href="#supported-mypy-versions" class="md-nav__link">
-    <span class="md-ellipsis">
-      Supported mypy versions
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#mypy-plugin-capabilities" class="md-nav__link">
     <span class="md-ellipsis">
       Mypy plugin capabilities
@@ -3107,15 +3098,6 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
-  <a href="#supported-mypy-versions" class="md-nav__link">
-    <span class="md-ellipsis">
-      Supported mypy versions
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#mypy-plugin-capabilities" class="md-nav__link">
     <span class="md-ellipsis">
       Mypy plugin capabilities
@@ -3344,6 +3326,7 @@ if your field names or types change.</p>
 <p>Note that mypy already supports some features without using the Pydantic plugin, such as synthesizing a <code>__init__</code>
 method for Pydantic models and dataclasses. See the <a href="#mypy-plugin-capabilities">mypy plugin capabilities</a> for a list
 of additional features.</p>
+<p>The Pydantic mypy plugin is tested against the latest mypy version. Older versions might work but won't be tested.</p>
 <h2 id="enabling-the-plugin">Enabling the Plugin<a class="headerlink" href="#enabling-the-plugin" title="Permanent link">&para;</a></h2>
 <p>To enable the plugin, just add <code>pydantic.mypy</code> to the list of plugins in your
 <a href="https://mypy.readthedocs.io/en/latest/config_file.html">mypy config file</a>:</p>
@@ -3366,10 +3349,6 @@ of additional features.</p>
 <p>If you're using <code>pydantic.v1</code> models, you'll need to add <code>pydantic.v1.mypy</code> to your list of plugins.</p>
 </div>
 <p>See the <a href="#configuring-the-plugin">plugin configuration</a> for more details.</p>
-<h2 id="supported-mypy-versions">Supported mypy versions<a class="headerlink" href="#supported-mypy-versions" title="Permanent link">&para;</a></h2>
-<p>Pydantic supports the mypy versions released less than 6 months ago. Older versions may still work with the plugin
-but won't be tested. The list of released mypy versions can be found <a href="https://mypy-lang.org/news.html">here</a>. Note
-that the version support policy is subject to change at discretion of contributors.</p>
 <h2 id="mypy-plugin-capabilities">Mypy plugin capabilities<a class="headerlink" href="#mypy-plugin-capabilities" title="Permanent link">&para;</a></h2>
 <h3 id="generate-a-__init__-signature-for-pydantic-models">Generate a <code>__init__</code> signature for Pydantic models<a class="headerlink" href="#generate-a-__init__-signature-for-pydantic-models" title="Permanent link">&para;</a></h3>
 <ul>
