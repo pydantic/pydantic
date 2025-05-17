@@ -622,10 +622,10 @@ jobs:
     - uses: astral-sh/setup-uv@v6
       with:
         python-version: ${{ matrix.python-version }}
+        activate-environment: true
 
     - name: Install Cadwyn dependencies
       run: |
-        uv venv --python ${{ matrix.python-version }}
         uv sync --dev --all-extras
         uv pip install -e ./pydantic-latest
 
