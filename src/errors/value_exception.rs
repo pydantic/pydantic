@@ -65,7 +65,7 @@ pub struct PydanticCustomError {
 #[pymethods]
 impl PydanticCustomError {
     #[new]
-    #[pyo3(signature = (error_type, message_template, context = None))]
+    #[pyo3(signature = (error_type, message_template, context = None, /))]
     pub fn py_new(error_type: String, message_template: String, context: Option<Bound<'_, PyDict>>) -> Self {
         Self {
             error_type,
@@ -144,7 +144,7 @@ pub struct PydanticKnownError {
 #[pymethods]
 impl PydanticKnownError {
     #[new]
-    #[pyo3(signature = (error_type, context=None))]
+    #[pyo3(signature = (error_type, context=None, /))]
     pub fn py_new(py: Python, error_type: &str, context: Option<Bound<'_, PyDict>>) -> PyResult<Self> {
         let error_type = ErrorType::new(py, error_type, context)?;
         Ok(Self { error_type })
