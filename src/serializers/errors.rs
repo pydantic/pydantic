@@ -81,6 +81,7 @@ impl PydanticSerializationError {
 #[pymethods]
 impl PydanticSerializationError {
     #[new]
+    #[pyo3(signature = (message, /))]
     fn py_new(message: String) -> Self {
         Self { message }
     }
@@ -139,7 +140,7 @@ impl PydanticSerializationUnexpectedValue {
 #[pymethods]
 impl PydanticSerializationUnexpectedValue {
     #[new]
-    #[pyo3(signature = (message=None, field_type=None, input_value=None))]
+    #[pyo3(signature = (message=None, field_type=None, input_value=None, /))]
     fn py_new(message: Option<String>, field_type: Option<String>, input_value: Option<PyObject>) -> Self {
         Self {
             message,
