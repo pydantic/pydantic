@@ -1358,3 +1358,83 @@ def test_smart_union_extra_behavior(extra_behavior) -> None:
 
     assert isinstance(validator.validate_python({'x': {'foo': 'foo'}}).x, Foo)
     assert isinstance(validator.validate_python({'x': {'bar': 'bar'}}).x, Bar)
+
+
+def test_smart_union_wrap_validator_should_not_change_nested_model_field_counts() -> None:
+    """Adding a wrap validator on a union member should not affect smart union behavior"""
+
+    class SubModel:
+        x: str = 'x'
+
+    class ModelA:
+        type: str = 'A'
+        sub: SubModel
+
+    class ModelB:
+        type: str = 'B'
+        sub: SubModel
+
+    submodel_schema = core_schema.model_schema(
+        SubModel,
+        core_schema.model_fields_schema(fields={'x': core_schema.model_field(core_schema.str_schema())}),
+    )
+
+    wrapped_submodel_schema = core_schema.no_info_wrap_validator_function(
+        lambda v, handler: handler(v), submodel_schema
+    )
+
+    model_a_schema = core_schema.model_schema(
+        ModelA,
+        core_schema.model_fields_schema(
+            fields={
+                'type': core_schema.model_field(
+                    core_schema.with_default_schema(core_schema.literal_schema(['A']), default='A'),
+                ),
+                'sub': core_schema.model_field(wrapped_submodel_schema),
+            },
+        ),
+    )
+
+    model_b_schema = core_schema.model_schema(
+        ModelB,
+        core_schema.model_fields_schema(
+            fields={
+                'type': core_schema.model_field(
+                    core_schema.with_default_schema(core_schema.literal_schema(['B']), default='B'),
+                ),
+                'sub': core_schema.model_field(submodel_schema),
+            },
+        ),
+    )
+
+    for choices in permute_choices([model_a_schema, model_b_schema]):
+        schema = core_schema.union_schema(choices)
+        validator = SchemaValidator(schema)
+
+        assert isinstance(validator.validate_python({'type': 'A', 'sub': {'x': 'x'}}), ModelA)
+        assert isinstance(validator.validate_python({'type': 'B', 'sub': {'x': 'x'}}), ModelB)
+
+        # defaults to leftmost choice if there's a tie
+        assert isinstance(validator.validate_python({'sub': {'x': 'x'}}), choices[0]['cls'])
+
+    # test validate_assignment
+    class RootModel:
+        ab: Union[ModelA, ModelB]
+
+    root_model = core_schema.model_schema(
+        RootModel,
+        core_schema.model_fields_schema(
+            fields={'ab': core_schema.model_field(core_schema.union_schema([model_a_schema, model_b_schema]))}
+        ),
+    )
+
+    validator = SchemaValidator(root_model)
+    m = validator.validate_python({'ab': {'type': 'B', 'sub': {'x': 'x'}}})
+    assert isinstance(m, RootModel)
+    assert isinstance(m.ab, ModelB)
+    assert m.ab.sub.x == 'x'
+
+    m = validator.validate_assignment(m, 'ab', {'sub': {'x': 'y'}})
+    assert isinstance(m, RootModel)
+    assert isinstance(m.ab, ModelA)
+    assert m.ab.sub.x == 'y'

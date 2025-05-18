@@ -225,6 +225,7 @@ pub struct InternalValidator {
     self_instance: Option<PyObject>,
     recursion_guard: RecursionState,
     pub(crate) exactness: Option<Exactness>,
+    pub(crate) fields_set_count: Option<usize>,
     validation_mode: InputType,
     hide_input_in_errors: bool,
     validation_error_cause: bool,
@@ -256,6 +257,7 @@ impl InternalValidator {
             self_instance: extra.self_instance.map(|d| d.clone().unbind()),
             recursion_guard: state.recursion_guard.clone(),
             exactness: state.exactness,
+            fields_set_count: state.fields_set_count,
             validation_mode: extra.input_type,
             hide_input_in_errors,
             validation_error_cause,
@@ -323,6 +325,7 @@ impl InternalValidator {
         };
         let mut state = ValidationState::new(extra, &mut self.recursion_guard, false.into());
         state.exactness = self.exactness;
+        state.fields_set_count = self.fields_set_count;
         let result = self.validator.validate(py, input, &mut state).map_err(|e| {
             ValidationError::from_val_error(
                 py,
@@ -335,6 +338,7 @@ impl InternalValidator {
             )
         });
         self.exactness = state.exactness;
+        self.fields_set_count = state.fields_set_count;
         result
     }
 }
