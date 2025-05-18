@@ -714,22 +714,16 @@ class PydanticCustomError(ValueError):
                 raise PydanticCustomError('custom_value_error', 'Value must be greater than {value}', {'value': 10, 'extra_context': 'extra_data'})
             return v
         ```
+
+    Arguments:
+        error_type: The error type.
+        message_template: The message template.
+        context: The data to inject into the message template.
     """
 
     def __init__(
-        self, error_type: LiteralString, message_template: LiteralString, context: dict[str, Any] | None = None
-    ) -> None:
-        """Initializes the `PydanticCustomError`.
-
-        Arguments:
-            error_type: The error type.
-            message_template: The message template.
-            context: The data to inject into the message template.
-        """
-
-    def __new__(
-        cls, error_type: LiteralString, message_template: LiteralString, context: dict[str, Any] | None = None
-    ) -> Self: ...
+        self, error_type: LiteralString, message_template: LiteralString, context: dict[str, Any] | None = None, /
+    ) -> None: ...
     @property
     def context(self) -> dict[str, Any] | None:
         """Values which are required to render the error message, and could hence be useful in passing error data forward."""
@@ -757,20 +751,16 @@ class PydanticKnownError(ValueError):
 
         def custom_validator(v) -> None:
             if v <= 10:
-                raise PydanticKnownError(error_type='greater_than', context={'gt': 10})
+                raise PydanticKnownError('greater_than', {'gt': 10})
             return v
         ```
+
+    Arguments:
+        error_type: The error type.
+        context: The data to inject into the message template.
     """
 
-    def __init__(self, error_type: ErrorType, context: dict[str, Any] | None = None) -> None:
-        """Initializes the `PydanticKnownError`.
-
-        Arguments:
-            error_type: The error type.
-            context: The data to inject into the message template.
-        """
-
-    def __new__(cls, error_type: ErrorType, context: dict[str, Any] | None = None) -> Self: ...
+    def __init__(self, error_type: ErrorType, context: dict[str, Any] | None = None, /) -> None: ...
     @property
     def context(self) -> dict[str, Any] | None:
         """Values which are required to render the error message, and could hence be useful in passing error data forward."""
@@ -870,16 +860,12 @@ class PydanticSerializationError(ValueError):
     """An error raised when an issue occurs during serialization.
 
     In custom serializers, this error can be used to indicate that serialization has failed.
+
+    Arguments:
+        message: The message associated with the error.
     """
 
-    def __init__(self, message: str) -> None:
-        """Initializes the `PydanticSerializationError`.
-
-        Arguments:
-            message: The message associated with the error.
-        """
-
-    def __new__(cls, message: str) -> Self: ...
+    def __init__(self, message: str, /) -> None: ...
 
 @final
 class PydanticSerializationUnexpectedValue(ValueError):
@@ -918,16 +904,12 @@ class PydanticSerializationUnexpectedValue(ValueError):
 
     This is often used internally in `pydantic-core` when unexpected types are encountered during serialization,
     but it can also be used by users in custom serializers, as seen above.
+
+    Arguments:
+        message: The message associated with the unexpected value.
     """
 
-    def __init__(self, message: str) -> None:
-        """Initializes the `PydanticSerializationUnexpectedValue`.
-
-        Arguments:
-            message: The message associated with the unexpected value.
-        """
-
-    def __new__(cls, message: str | None = None) -> Self: ...
+    def __init__(self, message: str, /) -> None: ...
 
 @final
 class ArgsKwargs:
