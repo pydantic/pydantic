@@ -380,7 +380,9 @@ impl Validator for FunctionWrapValidator {
         let handler = Bound::new(py, handler)?;
         #[allow(clippy::used_underscore_items)]
         let result = self._validate(handler.as_any(), py, input, state);
-        state.exactness = handler.borrow_mut().validator.exactness;
+        let handler = handler.borrow();
+        state.exactness = handler.validator.exactness;
+        state.fields_set_count = handler.validator.fields_set_count;
         result
     }
 
