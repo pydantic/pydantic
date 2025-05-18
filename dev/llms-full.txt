@@ -11380,7 +11380,7 @@ The above examples make use of *implicit* type aliases, assigned to a variable. 
 - The [JSON Schema](../json_schema/) of the alias won't be converted into a [definition](https://json-schema.org/understanding-json-schema/structuring#defs). This is mostly useful when you are using the alias more than once in a model definition.
 - In most cases, [recursive type aliases](#named-recursive-types) won't work.
 
-By leveraging the new [`type` statement](https://typing.readthedocs.io/en/latest/spec/aliases.html#type-statement) (introduced in [PEP 695]), you can define aliases as follows:
+By leveraging the new [`type` statement](https://typing.readthedocs.io/en/latest/spec/aliases.html#type-statement) (introduced in [PEP 695](https://peps.python.org/pep-0695/)), you can define aliases as follows:
 
 ```python
 from typing import Annotated
