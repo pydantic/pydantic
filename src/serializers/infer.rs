@@ -140,10 +140,14 @@ pub(crate) fn infer_to_python_known(
                 .into_py_any(py)?,
             ObType::Bytearray => {
                 let py_byte_array = value.downcast::<PyByteArray>()?;
-                // Safety: the GIL is held while bytes_to_string is running; it doesn't run
-                // arbitrary Python code, so py_byte_array cannot be mutated.
-                let bytes = unsafe { py_byte_array.as_bytes() };
-                extra.config.bytes_mode.bytes_to_string(py, bytes)?.into_py_any(py)?
+                pyo3::sync::with_critical_section(py_byte_array, || {
+                    // SAFETY: `py_byte_array` is protected by a critical section,
+                    // which guarantees no mutation, and `bytes_to_string` does not
+                    // run any code which could cause the critical section to be
+                    // released.
+                    let bytes = unsafe { py_byte_array.as_bytes() };
+                    extra.config.bytes_mode.bytes_to_string(py, bytes)?.into_py_any(py)
+                })?
             }
             ObType::Tuple => {
                 let elements = serialize_seq_filter!(PyTuple);
@@ -432,12 +436,14 @@ pub(crate) fn infer_serialize_known<S: Serializer>(
         }
         ObType::Bytearray => {
             let py_byte_array = value.downcast::<PyByteArray>().map_err(py_err_se_err)?;
-            // Safety: the GIL is held while serialize_bytes is running; it doesn't run
-            // arbitrary Python code, so py_byte_array cannot be mutated.
-            extra
-                .config
-                .bytes_mode
-                .serialize_bytes(unsafe { py_byte_array.as_bytes() }, serializer)
+            pyo3::sync::with_critical_section(py_byte_array, || {
+                // SAFETY: `py_byte_array` is protected by a critical section,
+                // which guarantees no mutation, and `serialize_bytes` does not
+                // run any code which could cause the critical section to be
+                // released.
+                let bytes = unsafe { py_byte_array.as_bytes() };
+                extra.config.bytes_mode.serialize_bytes(bytes, serializer)
+            })
         }
         ObType::Dict => {
             let dict = value.downcast::<PyDict>().map_err(py_err_se_err)?;
@@ -612,15 +618,15 @@ pub(crate) fn infer_json_key_known<'a>(
             .bytes_to_string(key.py(), key.downcast::<PyBytes>()?.as_bytes()),
         ObType::Bytearray => {
             let py_byte_array = key.downcast::<PyByteArray>()?;
-            // Safety: the GIL is held while serialize_bytes is running; it doesn't run
-            // arbitrary Python code, so py_byte_array cannot be mutated during the call.
-            //
-            // We copy the bytes into a new buffer immediately afterwards
-            extra
-                .config
-                .bytes_mode
-                .bytes_to_string(key.py(), unsafe { py_byte_array.as_bytes() })
-                .map(|cow| Cow::Owned(cow.into_owned()))
+            pyo3::sync::with_critical_section(py_byte_array, || {
+                // SAFETY: `py_byte_array` is protected by a critical section,
+                // which guarantees no mutation, and `bytes_to_string` does not
+                // run any code which could cause the critical section to be
+                // released.
+                let bytes = unsafe { py_byte_array.as_bytes() };
+                extra.config.bytes_mode.bytes_to_string(key.py(), bytes)
+            })
+            .map(|cow| Cow::Owned(cow.into_owned()))
         }
         ObType::Datetime => {
             let iso_dt = super::type_serializers::datetime_etc::datetime_to_string(key.downcast()?)?;
