@@ -286,4 +286,4 @@ This is a limitation of dataclass transforms and cannot be fixed in pydantic.
 This additional editor support works by making use of the [`@dataclass_transform` decorator](https://typing.python.org/en/latest/spec/dataclasses.html#the-dataclass-transform-decorator)
 (introduced by [PEP 681](https://peps.python.org/pep-0681/)).
 
-The standard provides a way for libraries like Pydantic and others to tell editors and tools that they (the editors) should treat these libraries (e.g. Pydantic) as if they were [dataclasses][dataclass], providing autocompletion, type checks, etc.
+The standard provides a way for libraries like Pydantic and others to tell editors and tools that they (the editors) should treat these libraries (e.g. Pydantic) as if they were [dataclasses][dataclasses], providing autocompletion, type checks, etc.
