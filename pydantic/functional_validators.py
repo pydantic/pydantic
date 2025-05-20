@@ -94,8 +94,8 @@ class BeforeValidator:
 
     Attributes:
         func: The validator function.
-        json_schema_input_type: The input type of the function. This is only used to generate the appropriate
-            JSON Schema (in validation mode).
+        json_schema_input_type: The input type used to generate the appropriate
+            JSON Schema (in validation mode). The actual input type is `Any`.
 
     Example:
         ```python
@@ -166,8 +166,8 @@ class PlainValidator:
 
     Attributes:
         func: The validator function.
-        json_schema_input_type: The input type of the function. This is only used to generate the appropriate
-            JSON Schema (in validation mode). If not provided, will default to `Any`.
+        json_schema_input_type: The input type used to generate the appropriate
+            JSON Schema (in validation mode). The actual input type is `Any`.
 
     Example:
         ```python
@@ -257,8 +257,8 @@ class WrapValidator:
 
     Attributes:
         func: The validator function.
-        json_schema_input_type: The input type of the function. This is only used to generate the appropriate
-            JSON Schema (in validation mode).
+        json_schema_input_type: The input type used to generate the appropriate
+            JSON Schema (in validation mode). The actual input type is `Any`.
 
     ```python
     from datetime import datetime

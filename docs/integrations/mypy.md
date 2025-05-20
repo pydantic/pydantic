@@ -28,7 +28,7 @@ Model()  # will raise a validation error for age and list_of_ints
 Without any special configuration, mypy does not catch the [missing model field annotation](../errors/usage_errors.md#model-field-missing-annotation)
 and errors about the `list_of_ints` argument which Pydantic parses correctly:
 
-```
+```output
 15: error: List item 1 has incompatible type "str"; expected "int"  [list-item]
 15: error: List item 2 has incompatible type "bytes"; expected "int"  [list-item]
 16: error: "Model" has no attribute "middle_name"  [attr-defined]
@@ -37,7 +37,8 @@ and errors about the `list_of_ints` argument which Pydantic parses correctly:
 ```
 
 But [with the plugin enabled](#enabling-the-plugin), it gives the correct errors:
-```
+
+```output
 9: error: Untyped fields disallowed  [pydantic-field]
 16: error: "Model" has no attribute "middle_name"  [attr-defined]
 17: error: Missing named argument "age" for "Model"  [call-arg]
@@ -50,6 +51,8 @@ if your field names or types change.
 Note that mypy already supports some features without using the Pydantic plugin, such as synthesizing a `__init__`
 method for Pydantic models and dataclasses. See the [mypy plugin capabilities](#mypy-plugin-capabilities) for a list
 of additional features.
+
+The Pydantic mypy plugin is tested against the latest mypy version. Older versions might work but won't be tested.
 
 ## Enabling the Plugin
 
@@ -75,12 +78,6 @@ To enable the plugin, just add `pydantic.mypy` to the list of plugins in your
     If you're using `pydantic.v1` models, you'll need to add `pydantic.v1.mypy` to your list of plugins.
 
 See the [plugin configuration](#configuring-the-plugin) for more details.
-
-## Supported mypy versions
-
-Pydantic supports the mypy versions released less than 6 months ago. Older versions may still work with the plugin
-but won't be tested. The list of released mypy versions can be found [here](https://mypy-lang.org/news.html). Note
-that the version support policy is subject to change at discretion of contributors.
 
 ## Mypy plugin capabilities
 

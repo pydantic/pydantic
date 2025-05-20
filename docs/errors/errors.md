@@ -141,8 +141,8 @@ except ValidationError as e:
 
 Pydantic attempts to provide useful default error messages for validation and usage errors, which can be found here:
 
-- [Validation Errors](validation_errors.md): Errors that happen during data validation.
-- [Usage Errors](usage_errors.md): Errors that happen when using Pydantic.
+* [Validation Errors](validation_errors.md): Errors that happen during data validation.
+* [Usage Errors](usage_errors.md): Errors that happen when using Pydantic.
 
 ### Customize error messages
 

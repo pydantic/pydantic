@@ -14,7 +14,7 @@ You can find more discussion of this in the [Dataclasses](dataclasses.md) sectio
 Untrusted data can be passed to a model and, after parsing and validation, Pydantic guarantees that the fields
 of the resultant model instance will conform to the field types defined on the model.
 
-!!! note "Validation — a _deliberate_ misnomer"
+!!! note "Validation — a *deliberate* misnomer"
     <h3>TL;DR</h3>
 
     We use the term "validation" to refer to the process of instantiating a model (or other type) that adheres to specified types and
@@ -57,8 +57,8 @@ of the resultant model instance will conform to the field types defined on the m
     Pydantic relies heavily on the existing Python typing constructs to define models. If you are not familiar with those, the following resources
     can be useful:
 
-    - The [Type System Guides](https://typing.readthedocs.io/en/latest/guides/index.html)
-    - The [mypy documentation](https://mypy.readthedocs.io/en/latest/)
+    * The [Type System Guides](https://typing.readthedocs.io/en/latest/guides/index.html)
+    * The [mypy documentation](https://mypy.readthedocs.io/en/latest/)
 
 ```python {group="basic-model"}
 from pydantic import BaseModel, ConfigDict
@@ -225,6 +225,7 @@ Besides, using these abstract types can also lead to [poor validation performanc
 will avoid unnecessary checks.
 
 <!-- old anchor added for backwards compatibility -->
+<!-- markdownlint-disable-next-line no-empty-links -->
 [](){#extra-fields}
 
 ## Extra data
@@ -264,9 +265,9 @@ assert m.__pydantic_extra__ == {'y': 'a'}
 
 The configuration can take three values:
 
-- `'ignore'`: Providing extra data is ignored (the default).
-- `'forbid'`: Providing extra data is not permitted.
-- `'allow'`: Providing extra data is allowed and stored in the `__pydantic_extra__` dictionary attribute.
+* `'ignore'`: Providing extra data is ignored (the default).
+* `'forbid'`: Providing extra data is not permitted.
+* `'allow'`: Providing extra data is allowed and stored in the `__pydantic_extra__` dictionary attribute.
   The `__pydantic_extra__` can explicitly be annotated to provide validation for extra fields.
 
 For more details, refer to the [`extra`][pydantic.ConfigDict.extra] API documentation.
@@ -687,6 +688,7 @@ Here are some additional notes on the behavior of [`model_construct()`][pydantic
 * No `__init__` method from the model or any of its parent classes will be called, even when a custom `__init__` method is defined.
 
 !!! note "On [extra data](#extra-data) behavior with [`model_construct()`][pydantic.main.BaseModel.model_construct]"
+
     * For models with [`extra`][pydantic.ConfigDict.extra] set to `'allow'`, data not corresponding to fields will be correctly stored in
     the `__pydantic_extra__` dictionary and saved to the model's `__dict__` attribute.
     * For models with [`extra`][pydantic.ConfigDict.extra] set to `'ignore'`, data not corresponding to fields will be ignored — that is,
@@ -1200,7 +1202,6 @@ or a default value (as per [PEP 696](https://peps.python.org/pep-0696/)) is bein
 will be used for both validation and serialization if the type variable is not parametrized. You can override this behavior
 using [`SerializeAsAny`](./serialization.md#serializeasany-annotation):
 
-
 ```python
 from typing import Generic
 
@@ -1281,8 +1282,8 @@ class StaticFoobarModel(BaseModel):
 
 Field definitions are specified as keyword arguments, and should either be:
 
-- A single element, representing the type annotation of the field.
-- A two-tuple, the first element being the type and the second element the assigned value
+* A single element, representing the type annotation of the field.
+* A two-tuple, the first element being the type and the second element the assigned value
   (either a default or the [`Field()`][pydantic.Field] function).
 
 Here is a more advanced example:
@@ -1368,12 +1369,11 @@ except ValidationError as e:
    internally, Pydantic gathers all members into a namespace and mimics the normal
    creation of a class using the [`types` module utilities](https://docs.python.org/3/library/types.html#dynamic-type-creation).
 
-
 !!! note
     To pickle a dynamically created model:
 
-    - the model must be defined globally
-    - the `__module__` argument must be provided
+    * the model must be defined globally
+    * the `__module__` argument must be provided
 
 ## `RootModel` and custom root types
 
@@ -1454,7 +1454,6 @@ my_pets = Pets.model_validate(['dog', 'cat'])
 print(my_pets.describe())
 #> Pets: dog, cat
 ```
-
 
 ## Faux immutability
 
@@ -1670,7 +1669,7 @@ To be included in the signature, a field's alias or name must be a valid Python 
 Pydantic will prioritize a field's alias over its name when generating the signature, but may use the field name if the
 alias is not a valid Python identifier.
 
-If a field's alias and name are _both_ not valid identifiers (which may be possible through exotic use of `create_model`),
+If a field's alias and name are *both* not valid identifiers (which may be possible through exotic use of `create_model`),
 a `**data` argument will be added. In addition, the `**data` argument will always be present in the signature if
 `model_config['extra'] == 'allow'`.
 

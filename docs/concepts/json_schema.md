@@ -28,7 +28,6 @@ Use the following functions to generate JSON schema:
     [`TypeAdapter.json_schema`][pydantic.type_adapter.TypeAdapter.json_schema], calling
     `json.dumps(TypeAdapter(<some_type>).json_schema())` returns a valid JSON string.
 
-
 !!! tip
     Pydantic offers support for both of:
 
@@ -296,7 +295,6 @@ print(Model.model_json_schema(mode='serialization'))
 }
 """
 ```
-
 
 ## Customizing JSON Schema
 
@@ -1048,7 +1046,6 @@ print(json.dumps(TypeAdapter(Person).json_schema(), indent=2))
 """
 ```
 
-
 ### Using `field_title_generator`
 
 The `field_title_generator` parameter can be used to programmatically generate the title for a field based on its name and info.
@@ -1152,7 +1149,6 @@ following priority order (when there is an equivalent available):
 The field schema mapping from Python or Pydantic to JSON schema is done as follows:
 
 {{ schema_mappings_table }}
-
 
 ## Top-level schema generation
 

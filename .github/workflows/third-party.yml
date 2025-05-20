@@ -34,20 +34,15 @@ jobs:
     name: Test FastAPI (main branch) on Python ${{ matrix.python-version }}
     # If 'schedule' was the trigger, don't run it on contributors' forks
     if: |
-      github.event_name != 'schedule' ||
-      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic')
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
 
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        # FastAPI doesn't yet support Python 3.13
-        python-version: ['3.9', '3.10', '3.11', '3.12']
-        # Only test on 3.12 if the PR wasn't labeled as 'third-party-tests':
-        exclude:
-          - python-version: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'third-party-tests') && '3.9' }}
-          - python-version: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'third-party-tests') && '3.10' }}
-          - python-version: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'third-party-tests') && '3.11' }}
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
     steps:
     - name: Checkout FastAPI
       uses: actions/checkout@v4
@@ -87,8 +82,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # SQLModel doesn't yet support Python 3.13
-        python-version: ['3.9', '3.10', '3.11', '3.12']
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
     steps:
     - name: Checkout SQLModel
       uses: actions/checkout@v4
@@ -603,6 +597,47 @@ jobs:
       - name: Run Dify unit tests
         run: uv run --project api bash dev/pytest/pytest_unit_tests.sh
 
+  test-cadwyn:
+    name: Test Cadwyn (main branch) on Python ${{ matrix.python-version }}
+    # If 'schedule' was the trigger, don't run it on contributors' forks
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
+
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
+    steps:
+    - name: Checkout Cadwyn
+      uses: actions/checkout@v4
+      with:
+        repository: zmievsa/cadwyn
+
+    - name: Checkout Pydantic
+      uses: actions/checkout@v4
+      with:
+        path: pydantic-latest
+
+    - uses: astral-sh/setup-uv@v6
+      with:
+        python-version: ${{ matrix.python-version }}
+        activate-environment: true
+
+    - name: Install Cadwyn dependencies
+      run: |
+        uv sync --dev --all-extras
+        uv pip install -e ./pydantic-latest
+
+    - name: List installed dependencies
+      run: uv pip list
+
+    - name: Run Cadwyn tests
+      run: uv run --no-project pytest tests docs_src
+
+
   create-issue-on-failure:
     name: Create an issue if tests failed
     runs-on: ubuntu-latest
@@ -618,6 +653,7 @@ jobs:
       - test-semantic-kernel
       - test-langchain
       - test-dify
+      - test-cadwyn
     # Issue report disabled for now due to flakiness:
     if: |
       always() &&
@@ -635,7 +671,8 @@ jobs:
         needs.test-semantic-kernel.result == 'failure' ||
         needs.test-bentoml.result == 'failure' ||
         needs.test-langchain.result == 'failure' ||
-        needs.test-dify.result == 'failure'
+        needs.test-dify.result == 'failure' ||
+        needs.test-cadwyn.result == 'failure'
       )
     permissions:
       issues: write
