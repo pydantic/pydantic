@@ -982,7 +982,7 @@ to help you monitor and understand your
           <li class="md-nav__item">
   <a href="#deprecated-via-the-warningsdeprecated-decorator" class="md-nav__link">
     <span class="md-ellipsis">
-      deprecated via the warnings.deprecated decorator
+      deprecated via the @warnings.deprecated decorator
     </span>
   </a>
   
@@ -3306,7 +3306,7 @@ to help you monitor and understand your
           <li class="md-nav__item">
   <a href="#deprecated-via-the-warningsdeprecated-decorator" class="md-nav__link">
     <span class="md-ellipsis">
-      deprecated via the warnings.deprecated decorator
+      deprecated via the @warnings.deprecated decorator
     </span>
   </a>
   
@@ -4150,15 +4150,12 @@ model when exporting the model.</p>
 <p>The <code>deprecated</code> parameter can be used to mark a field as being deprecated. Doing so will result in:</p>
 <ul>
 <li>a runtime deprecation warning emitted when accessing the field.</li>
-<li><code>"deprecated": true</code> being set in the generated JSON schema.</li>
+<li>The <a href="https://json-schema.org/draft/2020-12/json-schema-validation#section-9.3">deprecated</a> keyword
+  being set in the generated JSON schema.</li>
 </ul>
-<p>You can set the <code>deprecated</code> parameter as one of:</p>
-<ul>
-<li>A string, which will be used as the deprecation message.</li>
-<li>An instance of the <code>warnings.deprecated</code> decorator (or the <code>typing_extensions</code> backport).</li>
-<li>A boolean, which will be used to mark the field as deprecated with a default <code>'deprecated'</code> deprecation message.</li>
-</ul>
+<p>This parameter accepts different types, described below.</p>
 <h3 id="deprecated-as-a-string"><code>deprecated</code> as a string<a class="headerlink" href="#deprecated-as-a-string" title="Permanent link">&para;</a></h3>
+<p>The value will be used as the deprecation message.</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
@@ -4171,29 +4168,50 @@ model when exporting the model.</p>
 <span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="o">.</span><span class="n">model_json_schema</span><span class="p">()[</span><span class="s1">&#39;properties&#39;</span><span class="p">][</span><span class="s1">&#39;deprecated_field&#39;</span><span class="p">])</span>
 <span class="c1">#&gt; {&#39;deprecated&#39;: True, &#39;title&#39;: &#39;Deprecated Field&#39;, &#39;type&#39;: &#39;integer&#39;}</span>
 </code></pre></div>
-<h3 id="deprecated-via-the-warningsdeprecated-decorator"><code>deprecated</code> via the <code>warnings.deprecated</code> decorator<a class="headerlink" href="#deprecated-via-the-warningsdeprecated-decorator" title="Permanent link">&para;</a></h3>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>You can only use the <code>deprecated</code> decorator in this way if you have
-<code>typing_extensions</code> &gt;= 4.9.0 installed.</p>
-</div>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">importlib.metadata</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span><span class="p">,</span> <span class="n">deprecated</span>
+<h3 id="deprecated-via-the-warningsdeprecated-decorator"><code>deprecated</code> via the <code>@warnings.deprecated</code> decorator<a class="headerlink" href="#deprecated-via-the-warningsdeprecated-decorator" title="Permanent link">&para;</a></h3>
+<p>The <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/warnings.html#warnings.deprecated"><code>@warnings.deprecated</code></a> decorator (or the
+<a class="autorefs autorefs-external" href="https://typing-extensions.readthedocs.io/en/latest/index.html#typing_extensions.deprecated"><code>typing_extensions</code> backport</a> on Python
+3.12 and lower) can be used as an instance.</p>
+<!-- TODO: tabs should be auto-generated if using Ruff (https://github.com/pydantic/pydantic/issues/10083) -->
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">packaging.version</span><span class="w"> </span><span class="kn">import</span> <span class="n">Version</span>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.9 and above</label><label for="__tabbed_3_2">Python 3.13 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing_extensions</span><span class="w"> </span><span class="kn">import</span> <span class="n">deprecated</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
 
-<span class="k">if</span> <span class="n">Version</span><span class="p">(</span><span class="n">importlib</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">version</span><span class="p">(</span><span class="s1">&#39;typing_extensions&#39;</span><span class="p">))</span> <span class="o">&gt;=</span> <span class="n">Version</span><span class="p">(</span><span class="s1">&#39;4.9&#39;</span><span class="p">):</span>
 
-    <span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-        <span class="n">deprecated_field</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">deprecated</span><span class="p">(</span><span class="s1">&#39;This is deprecated&#39;</span><span class="p">)]</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">deprecated_field</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">deprecated</span><span class="p">(</span><span class="s1">&#39;This is deprecated&#39;</span><span class="p">)]</span>
 
-        <span class="c1"># Or explicitly using `Field`:</span>
-        <span class="n">alt_form</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span>
-            <span class="nb">int</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">deprecated</span><span class="o">=</span><span class="n">deprecated</span><span class="p">(</span><span class="s1">&#39;This is deprecated&#39;</span><span class="p">))</span>
-        <span class="p">]</span>
+    <span class="c1"># Or explicitly using `Field`:</span>
+    <span class="n">alt_form</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">deprecated</span><span class="o">=</span><span class="n">deprecated</span><span class="p">(</span><span class="s1">&#39;This is deprecated&#39;</span><span class="p">))]</span>
 </code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">warnings</span><span class="w"> </span><span class="kn">import</span> <span class="n">deprecated</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">deprecated_field</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">deprecated</span><span class="p">(</span><span class="s1">&#39;This is deprecated&#39;</span><span class="p">)]</span>
+
+    <span class="c1"># Or explicitly using `Field`:</span>
+    <span class="n">alt_form</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">deprecated</span><span class="o">=</span><span class="n">deprecated</span><span class="p">(</span><span class="s1">&#39;This is deprecated&#39;</span><span class="p">))]</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Support for <code>category</code> and <code>stacklevel</code></p>
+<p>The current implementation of this feature does not take into account the <code>category</code> and <code>stacklevel</code>
+arguments to the <code>deprecated</code> decorator. This might land in a future version of Pydantic.</p>
+</div>
 <h3 id="deprecated-as-a-boolean"><code>deprecated</code> as a boolean<a class="headerlink" href="#deprecated-as-a-boolean" title="Permanent link">&para;</a></h3>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
 
@@ -4207,11 +4225,6 @@ model when exporting the model.</p>
 <span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="o">.</span><span class="n">model_json_schema</span><span class="p">()[</span><span class="s1">&#39;properties&#39;</span><span class="p">][</span><span class="s1">&#39;deprecated_field&#39;</span><span class="p">])</span>
 <span class="c1">#&gt; {&#39;deprecated&#39;: True, &#39;title&#39;: &#39;Deprecated Field&#39;, &#39;type&#39;: &#39;integer&#39;}</span>
 </code></pre></div>
-<div class="admonition note">
-<p class="admonition-title">Support for <code>category</code> and <code>stacklevel</code></p>
-<p>The current implementation of this feature does not take into account the <code>category</code> and <code>stacklevel</code>
-arguments to the <code>deprecated</code> decorator. This might land in a future version of Pydantic.</p>
-</div>
 <div class="admonition warning">
 <p class="admonition-title">Accessing a deprecated field in validators</p>
 <p>When accessing a deprecated field inside a validator, the deprecation warning will be emitted. You can use

@@ -2518,15 +2518,13 @@ See the [Serialization] section for more details.
 The `deprecated` parameter can be used to mark a field as being deprecated. Doing so will result in:
 
 - a runtime deprecation warning emitted when accessing the field.
-- `"deprecated": true` being set in the generated JSON schema.
+- The [deprecated](https://json-schema.org/draft/2020-12/json-schema-validation#section-9.3) keyword being set in the generated JSON schema.
 
-You can set the `deprecated` parameter as one of:
-
-- A string, which will be used as the deprecation message.
-- An instance of the `warnings.deprecated` decorator (or the `typing_extensions` backport).
-- A boolean, which will be used to mark the field as deprecated with a default `'deprecated'` deprecation message.
+This parameter accepts different types, described below.
 
 ### `deprecated` as a string
+
+The value will be used as the deprecation message.
 
 ```python
 from typing import Annotated
@@ -2543,31 +2541,44 @@ print(Model.model_json_schema()['properties']['deprecated_field'])
 
 ```
 
-### `deprecated` via the `warnings.deprecated` decorator
+### `deprecated` via the `@warnings.deprecated` decorator
 
-Note
-
-You can only use the `deprecated` decorator in this way if you have `typing_extensions` >= 4.9.0 installed.
+The @warnings.deprecated decorator (or the typing_extensions backport on Python 3.12 and lower) can be used as an instance.
 
 ```python
-import importlib.metadata
-from typing import Annotated, deprecated
+from typing import Annotated
 
-from packaging.version import Version
+from typing_extensions import deprecated
 
 from pydantic import BaseModel, Field
 
-if Version(importlib.metadata.version('typing_extensions')) >= Version('4.9'):
 
-    class Model(BaseModel):
-        deprecated_field: Annotated[int, deprecated('This is deprecated')]
+class Model(BaseModel):
+    deprecated_field: Annotated[int, deprecated('This is deprecated')]
 
-        # Or explicitly using `Field`:
-        alt_form: Annotated[
-            int, Field(deprecated=deprecated('This is deprecated'))
-        ]
+    # Or explicitly using `Field`:
+    alt_form: Annotated[int, Field(deprecated=deprecated('This is deprecated'))]
 
 ```
+
+```python
+from typing import Annotated
+from warnings import deprecated
+
+from pydantic import BaseModel, Field
+
+
+class Model(BaseModel):
+    deprecated_field: Annotated[int, deprecated('This is deprecated')]
+
+    # Or explicitly using `Field`:
+    alt_form: Annotated[int, Field(deprecated=deprecated('This is deprecated'))]
+
+```
+
+Support for `category` and `stacklevel`
+
+The current implementation of this feature does not take into account the `category` and `stacklevel` arguments to the `deprecated` decorator. This might land in a future version of Pydantic.
 
 ### `deprecated` as a boolean
 
@@ -2585,10 +2596,6 @@ print(Model.model_json_schema()['properties']['deprecated_field'])
 #> {'deprecated': True, 'title': 'Deprecated Field', 'type': 'integer'}
 
 ```
-
-Support for `category` and `stacklevel`
-
-The current implementation of this feature does not take into account the `category` and `stacklevel` arguments to the `deprecated` decorator. This might land in a future version of Pydantic.
 
 Accessing a deprecated field in validators
 
