@@ -252,7 +252,8 @@ def test_deprecated_field_forward_annotation() -> None:
     Test = int
 
     Model.model_rebuild()
-    assert Model.model_fields['a'].deprecated == 'test'
+    assert isinstance(Model.model_fields['a'].deprecated, deprecated)
+    assert Model.model_fields['a'].deprecated.message == 'test'
 
     m = Model()
 
