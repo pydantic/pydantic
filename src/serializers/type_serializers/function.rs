@@ -497,6 +497,10 @@ impl SerializationCallable {
         value: &Bound<'_, PyAny>,
         index_key: Option<&Bound<'_, PyAny>>,
     ) -> PyResult<Option<PyObject>> {
+        // NB wrap serializers have strong coupling to their inner type,
+        // so use to_python_no_infer so that type inference can't apply
+        // at this layer
+
         let include = self.include.as_ref().map(|o| o.bind(py));
         let exclude = self.exclude.as_ref().map(|o| o.bind(py));
         let extra = self.extra_owned.to_extra(py);
@@ -508,16 +512,16 @@ impl SerializationCallable {
                 self.filter.key_filter(index_key, include, exclude)?
             };
             if let Some((next_include, next_exclude)) = filter {
-                let v = self
-                    .serializer
-                    .to_python(value, next_include.as_ref(), next_exclude.as_ref(), &extra)?;
+                let v =
+                    self.serializer
+                        .to_python_no_infer(value, next_include.as_ref(), next_exclude.as_ref(), &extra)?;
                 extra.warnings.final_check(py)?;
                 Ok(Some(v))
             } else {
                 Err(PydanticOmit::new_err())
             }
         } else {
-            let v = self.serializer.to_python(value, include, exclude, &extra)?;
+            let v = self.serializer.to_python_no_infer(value, include, exclude, &extra)?;
             extra.warnings.final_check(py)?;
             Ok(Some(v))
         }
@@ -581,7 +585,7 @@ impl SerializationInfo {
                     exclude_none: extra.exclude_none,
                     round_trip: extra.round_trip,
                     field_name: Some(field_name.to_string()),
-                    serialize_as_any: extra.duck_typing_ser_mode.to_bool(),
+                    serialize_as_any: extra.serialize_as_any,
                 }),
                 _ => Err(PyRuntimeError::new_err(
                     "Model field context expected for field serialization info but no model field was found",
@@ -599,7 +603,7 @@ impl SerializationInfo {
                 exclude_none: extra.exclude_none,
                 round_trip: extra.round_trip,
                 field_name: None,
-                serialize_as_any: extra.duck_typing_ser_mode.to_bool(),
+                serialize_as_any: extra.serialize_as_any,
             })
         }
     }

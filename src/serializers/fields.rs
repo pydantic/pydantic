@@ -8,7 +8,6 @@ use serde::ser::SerializeMap;
 use smallvec::SmallVec;
 
 use crate::serializers::extra::SerCheck;
-use crate::serializers::DuckTypingSerMode;
 use crate::PydanticSerializationUnexpectedValue;
 
 use super::computed_fields::ComputedFields;
@@ -191,7 +190,7 @@ impl GeneralFieldsSerializer {
                         Some(serializer) => {
                             serializer.to_python(&value, next_include.as_ref(), next_exclude.as_ref(), &field_extra)?
                         }
-                        None => infer_to_python(&value, next_include.as_ref(), next_exclude.as_ref(), &field_extra)?,
+                        _ => infer_to_python(&value, next_include.as_ref(), next_exclude.as_ref(), &field_extra)?,
                     };
                     output_dict.set_item(key, value)?;
                 } else if field_extra.check == SerCheck::Strict {
@@ -332,20 +331,6 @@ impl TypeSerializer for GeneralFieldsSerializer {
         // If there is no model, we (a TypedDict) are the model
         let model = extra.model.map_or_else(|| Some(value), Some);
 
-        // If there is no model, use duck typing ser logic for TypedDict
-        // If there is a model, skip this step, as BaseModel and dataclass duck typing
-        // is handled in their respective serializers
-        if extra.model.is_none() {
-            let duck_typing_ser_mode = extra.duck_typing_ser_mode.next_mode();
-            let td_extra = Extra {
-                model,
-                duck_typing_ser_mode,
-                ..*extra
-            };
-            if td_extra.duck_typing_ser_mode == DuckTypingSerMode::Inferred {
-                return infer_to_python(value, include, exclude, &td_extra);
-            }
-        }
         let (main_dict, extra_dict) = if let Some(main_extra_dict) = self.extract_dicts(value) {
             main_extra_dict
         } else {
@@ -367,7 +352,7 @@ impl TypeSerializer for GeneralFieldsSerializer {
                         Some(serializer) => {
                             serializer.to_python(&value, next_include.as_ref(), next_exclude.as_ref(), extra)?
                         }
-                        None => infer_to_python(&value, next_include.as_ref(), next_exclude.as_ref(), extra)?,
+                        _ => infer_to_python(&value, next_include.as_ref(), next_exclude.as_ref(), extra)?,
                     };
                     output_dict.set_item(key, value)?;
                 }
@@ -401,20 +386,6 @@ impl TypeSerializer for GeneralFieldsSerializer {
         // If there is no model, we (a TypedDict) are the model
         let model = extra.model.map_or_else(|| Some(value), Some);
 
-        // If there is no model, use duck typing ser logic for TypedDict
-        // If there is a model, skip this step, as BaseModel and dataclass duck typing
-        // is handled in their respective serializers
-        if extra.model.is_none() {
-            let duck_typing_ser_mode = extra.duck_typing_ser_mode.next_mode();
-            let td_extra = Extra {
-                model,
-                duck_typing_ser_mode,
-                ..*extra
-            };
-            if td_extra.duck_typing_ser_mode == DuckTypingSerMode::Inferred {
-                return infer_serialize(value, serializer, include, exclude, &td_extra);
-            }
-        }
         let expected_len = match self.mode {
             FieldsMode::TypedDictAllow => main_dict.len() + self.computed_field_count(),
             _ => self.fields.len() + option_length!(extra_dict) + self.computed_field_count(),
