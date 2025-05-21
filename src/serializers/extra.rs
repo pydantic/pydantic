@@ -27,45 +27,6 @@ pub(crate) struct SerializationState {
     config: SerializationConfig,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum DuckTypingSerMode {
-    // Don't check the type of the value, use the type of the schema
-    SchemaBased,
-    // Check the type of the value, use the type of the value
-    NeedsInference,
-    // We already checked the type of the value
-    // we don't want to infer again, but if we recurse down
-    // we do want to flip this back to NeedsInference for the
-    // fields / keys / items of any inner serializers
-    Inferred,
-}
-
-impl DuckTypingSerMode {
-    pub fn from_bool(serialize_as_any: bool) -> Self {
-        if serialize_as_any {
-            DuckTypingSerMode::NeedsInference
-        } else {
-            DuckTypingSerMode::SchemaBased
-        }
-    }
-
-    pub fn to_bool(self) -> bool {
-        match self {
-            DuckTypingSerMode::SchemaBased => false,
-            DuckTypingSerMode::NeedsInference => true,
-            DuckTypingSerMode::Inferred => true,
-        }
-    }
-
-    pub fn next_mode(self) -> Self {
-        match self {
-            DuckTypingSerMode::SchemaBased => DuckTypingSerMode::SchemaBased,
-            DuckTypingSerMode::NeedsInference => DuckTypingSerMode::Inferred,
-            DuckTypingSerMode::Inferred => DuckTypingSerMode::NeedsInference,
-        }
-    }
-}
-
 impl SerializationState {
     pub fn new(timedelta_mode: &str, bytes_mode: &str, inf_nan_mode: &str) -> PyResult<Self> {
         let warnings = CollectWarnings::new(WarningsMode::None);
@@ -88,7 +49,7 @@ impl SerializationState {
         round_trip: bool,
         serialize_unknown: bool,
         fallback: Option<&'py Bound<'_, PyAny>>,
-        duck_typing_ser_mode: DuckTypingSerMode,
+        serialize_as_any: bool,
         context: Option<&'py Bound<'_, PyAny>>,
     ) -> Extra<'py> {
         Extra::new(
@@ -104,7 +65,7 @@ impl SerializationState {
             &self.rec_guard,
             serialize_unknown,
             fallback,
-            duck_typing_ser_mode,
+            serialize_as_any,
             context,
         )
     }
@@ -137,7 +98,7 @@ pub(crate) struct Extra<'a> {
     pub field_name: Option<&'a str>,
     pub serialize_unknown: bool,
     pub fallback: Option<&'a Bound<'a, PyAny>>,
-    pub duck_typing_ser_mode: DuckTypingSerMode,
+    pub serialize_as_any: bool,
     pub context: Option<&'a Bound<'a, PyAny>>,
 }
 
@@ -156,7 +117,7 @@ impl<'a> Extra<'a> {
         rec_guard: &'a SerRecursionState,
         serialize_unknown: bool,
         fallback: Option<&'a Bound<'a, PyAny>>,
-        duck_typing_ser_mode: DuckTypingSerMode,
+        serialize_as_any: bool,
         context: Option<&'a Bound<'a, PyAny>>,
     ) -> Self {
         Self {
@@ -175,7 +136,7 @@ impl<'a> Extra<'a> {
             field_name: None,
             serialize_unknown,
             fallback,
-            duck_typing_ser_mode,
+            serialize_as_any,
             context,
         }
     }
@@ -243,7 +204,7 @@ pub(crate) struct ExtraOwned {
     field_name: Option<String>,
     serialize_unknown: bool,
     pub fallback: Option<PyObject>,
-    duck_typing_ser_mode: DuckTypingSerMode,
+    serialize_as_any: bool,
     pub context: Option<PyObject>,
 }
 
@@ -264,7 +225,7 @@ impl ExtraOwned {
             field_name: extra.field_name.map(ToString::to_string),
             serialize_unknown: extra.serialize_unknown,
             fallback: extra.fallback.map(|model| model.clone().into()),
-            duck_typing_ser_mode: extra.duck_typing_ser_mode,
+            serialize_as_any: extra.serialize_as_any,
             context: extra.context.map(|model| model.clone().into()),
         }
     }
@@ -286,7 +247,7 @@ impl ExtraOwned {
             field_name: self.field_name.as_deref(),
             serialize_unknown: self.serialize_unknown,
             fallback: self.fallback.as_ref().map(|m| m.bind(py)),
-            duck_typing_ser_mode: self.duck_typing_ser_mode,
+            serialize_as_any: self.serialize_as_any,
             context: self.context.as_ref().map(|m| m.bind(py)),
         }
     }

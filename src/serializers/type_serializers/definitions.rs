@@ -94,12 +94,12 @@ impl TypeSerializer for DefinitionRefSerializer {
         self.definition.read(|comb_serializer| {
             let comb_serializer = comb_serializer.unwrap();
             let mut guard = extra.recursion_guard(value, self.definition.id())?;
-            comb_serializer.to_python(value, include, exclude, guard.state())
+            comb_serializer.to_python_no_infer(value, include, exclude, guard.state())
         })
     }
 
     fn json_key<'a>(&self, key: &'a Bound<'_, PyAny>, extra: &Extra) -> PyResult<Cow<'a, str>> {
-        self.definition.read(|s| s.unwrap().json_key(key, extra))
+        self.definition.read(|s| s.unwrap().json_key_no_infer(key, extra))
     }
 
     fn serde_serialize<S: serde::ser::Serializer>(
@@ -115,7 +115,7 @@ impl TypeSerializer for DefinitionRefSerializer {
             let mut guard = extra
                 .recursion_guard(value, self.definition.id())
                 .map_err(py_err_se_err)?;
-            comb_serializer.serde_serialize(value, serializer, include, exclude, guard.state())
+            comb_serializer.serde_serialize_no_infer(value, serializer, include, exclude, guard.state())
         })
     }
 

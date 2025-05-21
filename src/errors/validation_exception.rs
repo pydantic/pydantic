@@ -18,7 +18,7 @@ use crate::build_tools::py_schema_error_type;
 use crate::errors::LocItem;
 use crate::get_pydantic_version;
 use crate::input::InputType;
-use crate::serializers::{DuckTypingSerMode, Extra, SerMode, SerializationState};
+use crate::serializers::{Extra, SerMode, SerializationState};
 use crate::tools::{safe_repr, write_truncated_to_limited_bytes, SchemaDict};
 
 use super::line_error::ValLineError;
@@ -341,17 +341,7 @@ impl ValidationError {
         include_input: bool,
     ) -> PyResult<Bound<'py, PyString>> {
         let state = SerializationState::new("iso8601", "utf8", "constants")?;
-        let extra = state.extra(
-            py,
-            &SerMode::Json,
-            None,
-            false,
-            false,
-            true,
-            None,
-            DuckTypingSerMode::SchemaBased,
-            None,
-        );
+        let extra = state.extra(py, &SerMode::Json, None, false, false, true, None, false, None);
         let serializer = ValidationErrorSerializer {
             py,
             line_errors: &self.line_errors,

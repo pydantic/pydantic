@@ -16,7 +16,6 @@ use crate::build_tools::py_schema_err;
 use crate::build_tools::{py_schema_error_type, ExtraBehavior};
 use crate::definitions::DefinitionsBuilder;
 use crate::serializers::errors::PydanticSerializationUnexpectedValue;
-use crate::serializers::extra::DuckTypingSerMode;
 use crate::tools::SchemaDict;
 
 const ROOT_FIELD: &str = "root";
@@ -171,16 +170,8 @@ impl TypeSerializer for ModelSerializer {
         extra: &Extra,
     ) -> PyResult<PyObject> {
         let model = Some(value);
-        let duck_typing_ser_mode = extra.duck_typing_ser_mode.next_mode();
 
-        let model_extra = Extra {
-            model,
-            duck_typing_ser_mode,
-            ..*extra
-        };
-        if model_extra.duck_typing_ser_mode == DuckTypingSerMode::Inferred {
-            return infer_to_python(value, include, exclude, &model_extra);
-        }
+        let model_extra = Extra { model, ..*extra };
         if self.root_model {
             let field_name = Some(ROOT_FIELD);
             let root_extra = Extra {
@@ -198,7 +189,10 @@ impl TypeSerializer for ModelSerializer {
             self.serializer.to_python(&root, include, exclude, &root_extra)
         } else if self.allow_value(value, &model_extra)? {
             let inner_value = self.get_inner_value(value, &model_extra)?;
-            self.serializer.to_python(&inner_value, include, exclude, &model_extra)
+            // There is strong coupling between a model serializer and its child, we should
+            // not fall back to type inference in the midddle.
+            self.serializer
+                .to_python_no_infer(&inner_value, include, exclude, &model_extra)
         } else {
             extra.warnings.on_fallback_py(self.get_name(), value, &model_extra)?;
             infer_to_python(value, include, exclude, &model_extra)
@@ -223,15 +217,7 @@ impl TypeSerializer for ModelSerializer {
         extra: &Extra,
     ) -> Result<S::Ok, S::Error> {
         let model = Some(value);
-        let duck_typing_ser_mode = extra.duck_typing_ser_mode.next_mode();
-        let model_extra = Extra {
-            model,
-            duck_typing_ser_mode,
-            ..*extra
-        };
-        if model_extra.duck_typing_ser_mode == DuckTypingSerMode::Inferred {
-            return infer_serialize(value, serializer, include, exclude, &model_extra);
-        }
+        let model_extra = Extra { model, ..*extra };
         if self.root_model {
             let field_name = Some(ROOT_FIELD);
             let root_extra = Extra {
@@ -244,8 +230,10 @@ impl TypeSerializer for ModelSerializer {
                 .serde_serialize(&root, serializer, include, exclude, &root_extra)
         } else if self.allow_value(value, &model_extra).map_err(py_err_se_err)? {
             let inner_value = self.get_inner_value(value, &model_extra).map_err(py_err_se_err)?;
+            // There is strong coupling between a model serializer and its child, we should
+            // not fall back to type inference in the midddle.
             self.serializer
-                .serde_serialize(&inner_value, serializer, include, exclude, &model_extra)
+                .serde_serialize_no_infer(&inner_value, serializer, include, exclude, &model_extra)
         } else {
             extra
                 .warnings

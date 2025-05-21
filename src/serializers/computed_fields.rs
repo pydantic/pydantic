@@ -2,13 +2,12 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyString};
 use pyo3::{intern, PyTraverseError, PyVisit};
 use serde::ser::SerializeMap;
-use serde::Serialize;
 
 use crate::build_tools::py_schema_error_type;
 use crate::definitions::DefinitionsBuilder;
 use crate::py_gc::PyGcTraverse;
 use crate::serializers::filter::SchemaFilter;
-use crate::serializers::shared::{BuildSerializer, CombinedSerializer, PydanticSerializer, TypeSerializer};
+use crate::serializers::shared::{BuildSerializer, CombinedSerializer, PydanticSerializer};
 use crate::tools::SchemaDict;
 
 use super::errors::py_err_se_err;
@@ -48,18 +47,31 @@ impl ComputedFields {
         exclude: Option<&Bound<'_, PyAny>>,
         extra: &Extra,
     ) -> PyResult<()> {
-        if extra.round_trip {
-            // Do not serialize computed fields
-            return Ok(());
-        }
-        for computed_field in &self.0 {
-            let field_extra = Extra {
-                field_name: Some(computed_field.property_name.as_str()),
-                ..*extra
-            };
-            computed_field.to_python(model, output_dict, filter, include, exclude, &field_extra)?;
-        }
-        Ok(())
+        self.serialize_fields(
+            model,
+            filter,
+            include,
+            exclude,
+            extra,
+            |e| e,
+            |ComputedFieldToSerialize {
+                 computed_field,
+                 value,
+                 include,
+                 exclude,
+                 field_extra,
+             }| {
+                let key = match field_extra.serialize_by_alias_or(computed_field.serialize_by_alias) {
+                    true => computed_field.alias_py.bind(model.py()),
+                    false => computed_field.property_name_py.bind(model.py()),
+                };
+                let value =
+                    computed_field
+                        .serializer
+                        .to_python(&value, include.as_ref(), exclude.as_ref(), &field_extra)?;
+                output_dict.set_item(key, value)
+            },
+        )
     }
 
     pub fn serde_serialize<S: serde::ser::Serializer>(
@@ -71,6 +83,49 @@ impl ComputedFields {
         exclude: Option<&Bound<'_, PyAny>>,
         extra: &Extra,
     ) -> Result<(), S::Error> {
+        self.serialize_fields(
+            model,
+            filter,
+            include,
+            exclude,
+            extra,
+            py_err_se_err,
+            |ComputedFieldToSerialize {
+                 computed_field,
+                 value,
+                 include,
+                 exclude,
+                 field_extra,
+             }| {
+                let key = match field_extra.serialize_by_alias_or(computed_field.serialize_by_alias) {
+                    true => &computed_field.alias,
+                    false => &computed_field.property_name,
+                };
+                let s = PydanticSerializer::new(
+                    &value,
+                    &computed_field.serializer,
+                    include.as_ref(),
+                    exclude.as_ref(),
+                    &field_extra,
+                );
+                map.serialize_entry(key, &s)
+            },
+        )
+    }
+
+    /// Iterate each field for serialization, filtering on
+    /// `include` and `exclude` if provided.
+    #[allow(clippy::too_many_arguments)]
+    fn serialize_fields<'a, 'py, E>(
+        &'a self,
+        model: &'a Bound<'py, PyAny>,
+        filter: &'a SchemaFilter<isize>,
+        include: Option<&'a Bound<'py, PyAny>>,
+        exclude: Option<&'a Bound<'py, PyAny>>,
+        extra: &'a Extra,
+        convert_error: impl FnOnce(PyErr) -> E,
+        mut serialize: impl FnMut(ComputedFieldToSerialize<'a, 'py>) -> Result<(), E>,
+    ) -> Result<(), E> {
         if extra.round_trip {
             // Do not serialize computed fields
             return Ok(());
@@ -78,35 +133,44 @@ impl ComputedFields {
 
         for computed_field in &self.0 {
             let property_name_py = computed_field.property_name_py.bind(model.py());
+            let (next_include, next_exclude) = match filter.key_filter(property_name_py, include, exclude) {
+                Ok(Some((next_include, next_exclude))) => (next_include, next_exclude),
+                Ok(None) => continue,
+                Err(e) => return Err(convert_error(e)),
+            };
 
-            if let Some((next_include, next_exclude)) = filter
-                .key_filter(property_name_py, include, exclude)
-                .map_err(py_err_se_err)?
-            {
-                let value = model.getattr(property_name_py).map_err(py_err_se_err)?;
-                if extra.exclude_none && value.is_none() {
-                    continue;
+            let value = match model.getattr(property_name_py) {
+                Ok(field_value) => field_value,
+                Err(e) => {
+                    return Err(convert_error(e));
                 }
-                let field_extra = Extra {
-                    field_name: Some(computed_field.property_name.as_str()),
-                    ..*extra
-                };
-                let cfs = ComputedFieldSerializer {
-                    model,
-                    computed_field,
-                    include: next_include.as_ref(),
-                    exclude: next_exclude.as_ref(),
-                    extra: &field_extra,
-                };
-                let key = match extra.serialize_by_alias_or(computed_field.serialize_by_alias) {
-                    true => computed_field.alias.as_str(),
-                    false => computed_field.property_name.as_str(),
-                };
-                map.serialize_entry(key, &cfs)?;
+            };
+            if extra.exclude_none && value.is_none() {
+                continue;
             }
+
+            let field_extra = Extra {
+                field_name: Some(&computed_field.property_name),
+                ..*extra
+            };
+            serialize(ComputedFieldToSerialize {
+                computed_field,
+                value,
+                include: next_include,
+                exclude: next_exclude,
+                field_extra,
+            })?;
         }
         Ok(())
     }
+}
+
+struct ComputedFieldToSerialize<'a, 'py> {
+    computed_field: &'a ComputedField,
+    value: Bound<'py, PyAny>,
+    include: Option<Bound<'py, PyAny>>,
+    exclude: Option<Bound<'py, PyAny>>,
+    field_extra: Extra<'a>,
 }
 
 #[derive(Debug)]
@@ -143,44 +207,6 @@ impl ComputedField {
             serialize_by_alias: config.get_as(intern!(py, "serialize_by_alias"))?,
         })
     }
-
-    fn to_python(
-        &self,
-        model: &Bound<'_, PyAny>,
-        output_dict: &Bound<'_, PyDict>,
-        filter: &SchemaFilter<isize>,
-        include: Option<&Bound<'_, PyAny>>,
-        exclude: Option<&Bound<'_, PyAny>>,
-        extra: &Extra,
-    ) -> PyResult<()> {
-        let py = model.py();
-        let property_name_py = self.property_name_py.bind(py);
-
-        if let Some((next_include, next_exclude)) = filter.key_filter(property_name_py, include, exclude)? {
-            let next_value = model.getattr(property_name_py)?;
-
-            let value = self
-                .serializer
-                .to_python(&next_value, next_include.as_ref(), next_exclude.as_ref(), extra)?;
-            if extra.exclude_none && value.is_none(py) {
-                return Ok(());
-            }
-            let key = match extra.serialize_by_alias_or(self.serialize_by_alias) {
-                true => self.alias_py.bind(py),
-                false => property_name_py,
-            };
-            output_dict.set_item(key, value)?;
-        }
-        Ok(())
-    }
-}
-
-pub(crate) struct ComputedFieldSerializer<'py> {
-    model: &'py Bound<'py, PyAny>,
-    computed_field: &'py ComputedField,
-    include: Option<&'py Bound<'py, PyAny>>,
-    exclude: Option<&'py Bound<'py, PyAny>>,
-    extra: &'py Extra<'py>,
 }
 
 impl_py_gc_traverse!(ComputedField { serializer });
@@ -188,23 +214,5 @@ impl_py_gc_traverse!(ComputedField { serializer });
 impl PyGcTraverse for ComputedFields {
     fn py_gc_traverse(&self, visit: &PyVisit<'_>) -> Result<(), PyTraverseError> {
         self.0.py_gc_traverse(visit)
-    }
-}
-
-impl_py_gc_traverse!(ComputedFieldSerializer<'_> { computed_field });
-
-impl Serialize for ComputedFieldSerializer<'_> {
-    fn serialize<S: serde::ser::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        let py = self.model.py();
-        let property_name_py = self.computed_field.property_name_py.bind(py);
-        let next_value = self.model.getattr(property_name_py).map_err(py_err_se_err)?;
-        let s = PydanticSerializer::new(
-            &next_value,
-            &self.computed_field.serializer,
-            self.include,
-            self.exclude,
-            self.extra,
-        );
-        s.serialize(serializer)
     }
 }

@@ -8,7 +8,6 @@ use serde::ser::SerializeMap;
 
 use crate::build_tools::{py_schema_error_type, ExtraBehavior};
 use crate::definitions::DefinitionsBuilder;
-use crate::serializers::DuckTypingSerMode;
 use crate::tools::SchemaDict;
 
 use super::{
@@ -141,19 +140,11 @@ impl TypeSerializer for DataclassSerializer {
         extra: &Extra,
     ) -> PyResult<PyObject> {
         let model = Some(value);
-        let duck_typing_ser_mode = extra.duck_typing_ser_mode.next_mode();
-        let dc_extra = Extra {
-            model,
-            duck_typing_ser_mode,
-            ..*extra
-        };
-        if dc_extra.duck_typing_ser_mode == DuckTypingSerMode::Inferred {
-            return infer_to_python(value, include, exclude, &dc_extra);
-        }
+        let dc_extra = Extra { model, ..*extra };
         if self.allow_value(value, &dc_extra)? {
             let py = value.py();
             if let CombinedSerializer::Fields(ref fields_serializer) = *self.serializer {
-                let output_dict = fields_serializer.main_to_python(
+                let output_dict: Bound<PyDict> = fields_serializer.main_to_python(
                     py,
                     known_dataclass_iter(&self.fields, value),
                     include,
@@ -190,16 +181,8 @@ impl TypeSerializer for DataclassSerializer {
         exclude: Option<&Bound<'_, PyAny>>,
         extra: &Extra,
     ) -> Result<S::Ok, S::Error> {
-        let duck_typing_ser_mode = extra.duck_typing_ser_mode.next_mode();
         let model = Some(value);
-        let dc_extra = Extra {
-            model,
-            duck_typing_ser_mode,
-            ..*extra
-        };
-        if dc_extra.duck_typing_ser_mode == DuckTypingSerMode::Inferred {
-            return infer_serialize(value, serializer, include, exclude, &dc_extra);
-        }
+        let dc_extra = Extra { model, ..*extra };
         if self.allow_value(value, &dc_extra).map_err(py_err_se_err)? {
             if let CombinedSerializer::Fields(ref fields_serializer) = *self.serializer {
                 let expected_len = self.fields.len() + fields_serializer.computed_field_count();

@@ -20,7 +20,7 @@ use crate::tools::{py_err, SchemaDict};
 
 use super::errors::se_err_py_err;
 use super::extra::Extra;
-use super::infer::infer_json_key;
+use super::infer::{infer_json_key, infer_serialize, infer_to_python};
 use super::ob_type::{IsType, ObType};
 
 pub(crate) trait BuildSerializer: Sized {
@@ -220,6 +220,74 @@ impl CombinedSerializer {
         }
 
         Self::find_serializer(type_, schema, config, definitions)
+    }
+
+    /// Main recursive way to call serializers, supports possible recursive type inference by
+    /// switching to type inference mode eagerly.
+    pub fn to_python(
+        &self,
+        value: &Bound<'_, PyAny>,
+        include: Option<&Bound<'_, PyAny>>,
+        exclude: Option<&Bound<'_, PyAny>>,
+        extra: &Extra,
+    ) -> PyResult<PyObject> {
+        if extra.serialize_as_any {
+            infer_to_python(value, include, exclude, extra)
+        } else {
+            self.to_python_no_infer(value, include, exclude, extra)
+        }
+    }
+
+    /// Variant of the above which does not fall back to inference mode immediately
+    #[inline]
+    pub fn to_python_no_infer(
+        &self,
+        value: &Bound<'_, PyAny>,
+        include: Option<&Bound<'_, PyAny>>,
+        exclude: Option<&Bound<'_, PyAny>>,
+        extra: &Extra,
+    ) -> PyResult<PyObject> {
+        TypeSerializer::to_python(self, value, include, exclude, extra)
+    }
+
+    pub fn json_key<'a>(&self, key: &'a Bound<'_, PyAny>, extra: &Extra) -> PyResult<Cow<'a, str>> {
+        if extra.serialize_as_any {
+            infer_json_key(key, extra)
+        } else {
+            self.json_key_no_infer(key, extra)
+        }
+    }
+
+    #[inline]
+    pub fn json_key_no_infer<'a>(&self, key: &'a Bound<'_, PyAny>, extra: &Extra) -> PyResult<Cow<'a, str>> {
+        TypeSerializer::json_key(self, key, extra)
+    }
+
+    pub fn serde_serialize<S: serde::ser::Serializer>(
+        &self,
+        value: &Bound<'_, PyAny>,
+        serializer: S,
+        include: Option<&Bound<'_, PyAny>>,
+        exclude: Option<&Bound<'_, PyAny>>,
+        extra: &Extra,
+    ) -> Result<S::Ok, S::Error> {
+        if extra.serialize_as_any {
+            infer_serialize(value, serializer, include, exclude, extra)
+        } else {
+            self.serde_serialize_no_infer(value, serializer, include, exclude, extra)
+        }
+    }
+
+    #[inline]
+    pub fn serde_serialize_no_infer<S: serde::ser::Serializer>(
+        &self,
+        value: &Bound<'_, PyAny>,
+        serializer: S,
+        include: Option<&Bound<'_, PyAny>>,
+        exclude: Option<&Bound<'_, PyAny>>,
+        extra: &Extra,
+    ) -> Result<S::Ok, S::Error> {
+        TypeSerializer::serde_serialize(self, value, serializer, include, exclude, extra)
     }
 }
 
