@@ -326,7 +326,9 @@ def collect_model_fields(  # noqa: C901
                 # Note that we only do this for method descriptors for now, we might want to
                 # extend this to any descriptor in the future (by simply checking for
                 # `hasattr(assigned_value.default, '__get__')`).
-                assigned_value.default = assigned_value.default.__get__(None, cls)
+                default = assigned_value.default.__get__(None, cls)
+                assigned_value.default = default
+                assigned_value._attributes_set['default'] = default
 
             # The `from_annotated_attribute()` call below mutates the assigned `Field()`, so make a copy:
             original_assignment = (
