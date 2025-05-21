@@ -330,16 +330,11 @@ def collect_model_fields(  # noqa: C901
                 assigned_value.default = default
                 assigned_value._attributes_set['default'] = default
 
-            # The `from_annotated_attribute()` call below mutates the assigned `Field()`, so make a copy:
-            original_assignment = (
-                copy(assigned_value) if not evaluated and isinstance(assigned_value, FieldInfo_) else assigned_value
-            )
-
             field_info = FieldInfo_.from_annotated_attribute(ann_type, assigned_value, _source=AnnotationSource.CLASS)
             # Store the original annotation and assignment value that should be used to rebuild the field info later.
             # Note that the assignment is always stored as the annotation might contain a type var that is later
             #  parameterized with an unknown forward reference (and we'll need it to rebuild the field info):
-            field_info._original_assignment = original_assignment
+            field_info._original_assignment = assigned_value
             if not evaluated:
                 field_info._complete = False
                 field_info._original_annotation = ann_type
