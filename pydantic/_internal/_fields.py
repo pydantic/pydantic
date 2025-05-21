@@ -330,18 +330,13 @@ def collect_model_fields(  # noqa: C901
                 assigned_value.default = default
                 assigned_value._attributes_set['default'] = default
 
-            # The `from_annotated_attribute()` call below mutates the assigned `Field()`, so make a copy:
-            original_assignment = (
-                copy(assigned_value) if not evaluated and isinstance(assigned_value, FieldInfo_) else assigned_value
-            )
-
             field_info = FieldInfo_.from_annotated_attribute(ann_type, assigned_value, _source=AnnotationSource.CLASS)
             if not evaluated:
                 field_info._complete = False
                 # Store the original annotation and assignment value that should be used to rebuild
                 # the field info later:
                 field_info._original_annotation = ann_type
-                field_info._original_assignment = original_assignment
+                field_info._original_assignment = assigned_value
             elif 'final' in field_info._qualifiers and not field_info.is_required():
                 warnings.warn(
                     f'Annotation {ann_name!r} is marked as final and has a default value. Pydantic treats {ann_name!r} as a '
