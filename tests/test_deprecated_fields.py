@@ -258,3 +258,13 @@ def test_deprecated_field_forward_annotation() -> None:
     m = Model()
 
     pytest.warns(DeprecationWarning, lambda: m.a, match='test')
+
+
+def test_deprecated_field_with_assignment() -> None:
+    class Model(BaseModel):
+        # A buggy implementation made it so that deprecated wouldn't
+        # appear on the `FieldInfo`:
+        a: Annotated[int, deprecated('test')] = Field(default=1)
+
+    assert isinstance(Model.model_fields['a'].deprecated, deprecated)
+    assert Model.model_fields['a'].deprecated.message == 'test'
