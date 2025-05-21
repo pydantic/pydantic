@@ -39,11 +39,11 @@ impl TypeSerializer for PrebuiltSerializer {
         self.schema_serializer
             .get()
             .serializer
-            .to_python(value, include, exclude, extra)
+            .to_python_no_infer(value, include, exclude, extra)
     }
 
     fn json_key<'a>(&self, key: &'a Bound<'_, PyAny>, extra: &Extra) -> PyResult<Cow<'a, str>> {
-        self.schema_serializer.get().serializer.json_key(key, extra)
+        self.schema_serializer.get().serializer.json_key_no_infer(key, extra)
     }
 
     fn serde_serialize<S: serde::ser::Serializer>(
@@ -57,7 +57,7 @@ impl TypeSerializer for PrebuiltSerializer {
         self.schema_serializer
             .get()
             .serializer
-            .serde_serialize(value, serializer, include, exclude, extra)
+            .serde_serialize_no_infer(value, serializer, include, exclude, extra)
     }
 
     fn get_name(&self) -> &str {
