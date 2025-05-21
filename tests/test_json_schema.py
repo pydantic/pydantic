@@ -6679,17 +6679,13 @@ def test_examples_as_property_key() -> None:
 
 
 def test_warn_on_mixed_compose() -> None:
-    with pytest.warns(
-        UserWarning, match='Composing `dict` and `callable` type `json_schema_extra` is not supported.'
-    ):
+    with pytest.warns(UserWarning, match='Composing `dict` and `callable` type `json_schema_extra` is not supported.'):
 
         class Model1(BaseModel):
             field: Annotated[int, Field(json_schema_extra={'a': 'dict'}), Field(json_schema_extra=lambda x: x.pop('a'))]  # type: ignore
 
+    with pytest.warns(UserWarning, match='Composing `dict` and `callable` type `json_schema_extra` is not supported.'):
 
-    with pytest.warns(
-        UserWarning, match='Composing `dict` and `callable` type `json_schema_extra` is not supported.'
-    ):
         class Model2(BaseModel):
             field: Annotated[int, Field(json_schema_extra=lambda x: x.pop('a')), Field(json_schema_extra={'a': 'dict'})]  # type: ignore
 
