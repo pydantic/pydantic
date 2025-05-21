@@ -16,7 +16,7 @@ from warnings import warn
 import annotated_types
 import typing_extensions
 from pydantic_core import PydanticUndefined
-from typing_extensions import TypeAlias, Unpack, deprecated
+from typing_extensions import Self, TypeAlias, Unpack, deprecated
 from typing_inspection import typing_objects
 from typing_inspection.introspection import UNKNOWN, AnnotationSource, ForbiddenQualifier, Qualifier, inspect_annotation
 
@@ -213,7 +213,7 @@ class FieldInfo(_repr.Representation):
 
         See the signature of `pydantic.fields.Field` for more details about the expected arguments.
         """
-        self._attributes_set = {k: v for k, v in kwargs.items() if v is not _Unset}
+        self._attributes_set = {k: v for k, v in kwargs.items() if v is not _Unset and k not in self.metadata_lookup}
         kwargs = {k: _DefaultValues.get(k) if v is _Unset else v for k, v in kwargs.items()}  # type: ignore
         self.annotation = kwargs.get('annotation')
 
@@ -340,30 +340,12 @@ class FieldInfo(_repr.Representation):
         final = 'final' in inspected_ann.qualifiers
         metadata = inspected_ann.metadata
 
-        if not metadata:
-            # No metadata, e.g. `field: int`, or `field: Final[str]`:
-            field_info = FieldInfo(annotation=type_expr, frozen=final or None)
-            field_info._qualifiers = inspected_ann.qualifiers
-            return field_info
-
-        # With metadata, e.g. `field: Annotated[int, Field(...), Gt(1)]`:
-        field_info_annotations = [a for a in metadata if isinstance(a, FieldInfo)]
-        field_info = FieldInfo.merge_field_infos(*field_info_annotations, annotation=type_expr)
-
-        new_field_info = copy(field_info)
-        new_field_info.annotation = type_expr
-        new_field_info.frozen = final or field_info.frozen
-        field_metadata: list[Any] = []
-        for a in metadata:
-            if typing_objects.is_deprecated(a):
-                new_field_info.deprecated = a.message
-            elif not isinstance(a, FieldInfo):
-                field_metadata.append(a)
-            else:
-                field_metadata.extend(a.metadata)
-            new_field_info.metadata = field_metadata
-        new_field_info._qualifiers = inspected_ann.qualifiers
-        return new_field_info
+        attr_overrides = {'annotation': type_expr}
+        if final:
+            attr_overrides['frozen'] = True
+        field_info = FieldInfo._construct(metadata, **attr_overrides)
+        field_info._qualifiers = inspected_ann.qualifiers
+        return field_info
 
     @staticmethod
     def from_annotated_attribute(
@@ -417,56 +399,100 @@ class FieldInfo(_repr.Representation):
         final = 'final' in inspected_ann.qualifiers
         metadata = inspected_ann.metadata
 
+        attr_overrides = {'annotation': type_expr}
+        if final:
+            attr_overrides['frozen'] = True
         if isinstance(default, FieldInfo):
-            # e.g. `field: int = Field(...)`
-            default.annotation = type_expr
-            default.metadata += metadata
-            merged_default = FieldInfo.merge_field_infos(
-                *[x for x in metadata if isinstance(x, FieldInfo)],
-                default,
-                annotation=default.annotation,
-            )
-            merged_default.frozen = final or merged_default.frozen
-            merged_default._qualifiers = inspected_ann.qualifiers
-            return merged_default
+            metadata = metadata + [default]
+        elif isinstance(default, dataclasses.Field):
+            metadata = metadata + [FieldInfo._from_dataclass_field(default)]
+            if 'init_var' in inspected_ann.qualifiers:
+                attr_overrides['init_var'] = True
+            if (init := getattr(default, 'init', None)) is not None:
+                attr_overrides['init'] = init
+            if (kw_only := getattr(default, 'kw_only', None)) is not None:
+                attr_overrides['kw_only'] = kw_only
+        else:
+            # `default` is the actual default value
+            attr_overrides['default'] = default
 
-        if isinstance(default, dataclasses.Field):
-            # `collect_dataclass_fields()` passes the dataclass Field as a default.
-            pydantic_field = FieldInfo._from_dataclass_field(default)
-            pydantic_field.annotation = type_expr
-            pydantic_field.metadata += metadata
-            pydantic_field = FieldInfo.merge_field_infos(
-                *[x for x in metadata if isinstance(x, FieldInfo)],
-                pydantic_field,
-                annotation=pydantic_field.annotation,
-            )
-            pydantic_field.frozen = final or pydantic_field.frozen
-            pydantic_field.init_var = 'init_var' in inspected_ann.qualifiers
-            pydantic_field.init = getattr(default, 'init', None)
-            pydantic_field.kw_only = getattr(default, 'kw_only', None)
-            pydantic_field._qualifiers = inspected_ann.qualifiers
-            return pydantic_field
-
-        if not metadata:
-            # No metadata, e.g. `field: int = ...`, or `field: Final[str] = ...`:
-            field_info = FieldInfo(annotation=type_expr, default=default, frozen=final or None)
-            field_info._qualifiers = inspected_ann.qualifiers
-            return field_info
-
-        # With metadata, e.g. `field: Annotated[int, Field(...), Gt(1)] = ...`:
-        field_infos = [a for a in metadata if isinstance(a, FieldInfo)]
-        field_info = FieldInfo.merge_field_infos(*field_infos, annotation=type_expr, default=default)
-        field_metadata: list[Any] = []
-        for a in metadata:
-            if typing_objects.is_deprecated(a):
-                field_info.deprecated = a.message
-            elif not isinstance(a, FieldInfo):
-                field_metadata.append(a)
-            else:
-                field_metadata.extend(a.metadata)
-        field_info.metadata = field_metadata
+        field_info = FieldInfo._construct(metadata, **attr_overrides)
         field_info._qualifiers = inspected_ann.qualifiers
         return field_info
+
+    @classmethod
+    def _construct(cls, metadata: list[Any], **attr_overrides: Any) -> Self:
+        """Construct the final `FieldInfo` instance, by merging the possibly existing `FieldInfo` instances from the metadata.
+
+        With the following example:
+
+        ```python {test="skip" lint="skip"}
+        class Model(BaseModel):
+            f: Annotated[int, Gt(1), Field(description='desc', lt=2)]
+        ```
+
+        `metadata` refers to the metadata elements of the `Annotated` form. This metadata is iterated over from left to right:
+
+        - If the element is a `Field()` function (which is itself a `FieldInfo` instance), the field attributes (such as
+          `description`) are saved to be set on the final `FieldInfo` instance.
+          On the other hand, some kwargs (such as `lt`) are stored as `metadata` (see `FieldInfo.__init__()`, calling
+          `FieldInfo._collect_metadata()`). In this case, the final metadata list is extended with the one from this instance.
+        - Else, the element is considered as a single metadata object, and is appended to the final metadata list.
+
+        Args:
+            metadata: The list of metadata elements to merge together. If the `FieldInfo` instance to be constructed is for
+                a field with an assigned `Field()`, this `Field()` assignment should be added as the last element of the
+                provided metadata.
+            **attr_overrides: Extra attributes that should be set on the final merged `FieldInfo` instance.
+
+        Returns:
+            The final merged `FieldInfo` instance.
+        """
+        merged_metadata: list[Any] = []
+        merged_kwargs: dict[str, Any] = {}
+
+        for meta in metadata:
+            if isinstance(meta, FieldInfo):
+                merged_metadata.extend(meta.metadata)
+
+                new_js_extra: JsonDict | None = None
+                current_js_extra = meta.json_schema_extra
+                if current_js_extra is not None and 'json_schema_extra' in merged_kwargs:
+                    # We need to merge `json_schema_extra`'s:
+                    existing_js_extra = merged_kwargs['json_schema_extra']
+                    if isinstance(existing_js_extra, dict):
+                        if isinstance(current_js_extra, dict):
+                            new_js_extra = {
+                                **existing_js_extra,
+                                **current_js_extra,
+                            }
+                        elif callable(current_js_extra):
+                            warn(
+                                'Composing `dict` and `callable` type `json_schema_extra` is not supported. '
+                                'The `callable` type is being ignored. '
+                                "If you'd like support for this behavior, please open an issue on pydantic.",
+                                UserWarning,
+                            )
+                    elif callable(existing_js_extra) and isinstance(current_js_extra, dict):
+                        warn(
+                            'Composing `dict` and `callable` type `json_schema_extra` is not supported. '
+                            'The `callable` type is being ignored. '
+                            "If you'd like support for this behavior, please open an issue on pydantic.",
+                            UserWarning,
+                        )
+
+                merged_kwargs.update(meta._attributes_set)
+                if new_js_extra is not None:
+                    merged_kwargs['json_schema_extra'] = new_js_extra
+            elif typing_objects.is_deprecated(meta):
+                merged_kwargs['deprecated'] = meta
+            else:
+                merged_metadata.append(meta)
+
+        merged_kwargs.update(attr_overrides)
+        merged_field_info = cls(**merged_kwargs)
+        merged_field_info.metadata = merged_metadata
+        return merged_field_info
 
     @staticmethod
     def merge_field_infos(*field_infos: FieldInfo, **overrides: Any) -> FieldInfo:
