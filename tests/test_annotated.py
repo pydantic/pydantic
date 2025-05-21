@@ -58,7 +58,7 @@ NO_VALUE = object()
         (
             lambda: Annotated[int, Lt(2)],
             Field(5, gt=0),
-            'FieldInfo(annotation=int, required=False, default=5, metadata=[Gt(gt=0), Lt(lt=2)])',
+            'FieldInfo(annotation=int, required=False, default=5, metadata=[Lt(lt=2), Gt(gt=0)])',
         ),
         (
             lambda: Annotated[int, Gt(0)],
