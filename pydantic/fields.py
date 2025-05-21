@@ -692,8 +692,12 @@ class FieldInfo(_repr.Representation):
             pydantic._internal._generics.replace_types is used for replacing the typevars with
                 their concrete types.
         """
-        annotation, _ = _typing_extra.try_eval_type(self.annotation, globalns, localns)
-        self.annotation = _generics.replace_types(annotation, typevars_map)
+        annotation = _generics.replace_types(self.annotation, typevars_map)
+        annotation, evaluated = _typing_extra.try_eval_type(annotation, globalns, localns)
+        self.annotation = annotation
+        if not evaluated:
+            self._complete = False
+            self._original_annotation = self.annotation
 
     def __repr_args__(self) -> ReprArgs:
         yield 'annotation', _repr.PlainRepr(_repr.display_as_type(self.annotation))
