@@ -1661,11 +1661,9 @@ print(args, kwargs)  # (1)!
 
 Note
 
-Unlike @validate_call, this core schema will only validated the provided arguments, the underlying callable will *not* be called.
+Unlike @validate_call, this core schema will only validate the provided arguments; the underlying callable will *not* be called.
 
-This new core schema will become the default one to be used by @validate_call in Pydantic V3.
-
-Additionally, you can ignore specific parameters by providing a callback, called for every parameter:
+Additionally, you can ignore specific parameters by providing a callback, which is called for every parameter:
 
 ```python
 from typing import Any
@@ -8945,6 +8943,54 @@ class AzureKeyVaultSettings(BaseSettings):
 
 ```
 
+### Dash to underscore mapping
+
+The Azure Key Vault source accepts a `dash_to_underscore` option, disabled by default, to support Key Vault kebab-case secret names by mapping them to Python's snake_case field names. When enabled, dashes (`-`) in secret names are mapped to underscores (`_`) in field names during validation.
+
+This mapping applies only to *field names*, not to aliases.
+
+```py
+import os
+
+from azure.identity import DefaultAzureCredential
+from pydantic import Field
+
+from pydantic_settings import (
+    AzureKeyVaultSettingsSource,
+    BaseSettings,
+    PydanticBaseSettingsSource,
+)
+
+
+class AzureKeyVaultSettings(BaseSettings):
+    field_with_underscore: str
+    field_with_alias: str = Field(..., alias='Alias-With-Dashes')
+
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        az_key_vault_settings = AzureKeyVaultSettingsSource(
+            settings_cls,
+            os.environ['AZURE_KEY_VAULT_URL'],
+            DefaultAzureCredential(),
+            dash_to_underscore=True,
+        )
+        return (az_key_vault_settings,)
+
+```
+
+This setup will load Azure Key Vault secrets named `field-with-underscore` and `Alias-With-Dashes`, mapping them to the `field_with_underscore` and `field_with_alias` fields, respectively.
+
+Tip
+
+Alternatively, you can configure an [alias_generator](../alias/#using-alias-generators) to map PascalCase secrets.
+
 ## Google Cloud Secret Manager
 
 Google Cloud Secret Manager allows you to store, manage, and access sensitive information as secrets in Google Cloud Platform. This integration lets you retrieve secrets directly from GCP Secret Manager for use in your Pydantic settings.
@@ -15370,9 +15416,11 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             return None
 
         for attr in ('__pydantic_core_schema__', '__pydantic_validator__', '__pydantic_serializer__'):
-            if attr in cls.__dict__:
+            if attr in cls.__dict__ and not isinstance(getattr(cls, attr), _mock_val_ser.MockValSer):
                 # Deleting the validator/serializer is necessary as otherwise they can get reused in
-                # pydantic-core. Same applies for the core schema that can be reused in schema generation.
+                # pydantic-core. We do so only if they aren't mock instances, otherwise — as `model_rebuild()`
+                # isn't thread-safe — concurrent model instantiations can lead to the parent validator being used.
+                # Same applies for the core schema that can be reused in schema generation.
                 delattr(cls, attr)
 
         cls.__pydantic_complete__ = False
@@ -17095,9 +17143,11 @@ def model_rebuild(
         return None
 
     for attr in ('__pydantic_core_schema__', '__pydantic_validator__', '__pydantic_serializer__'):
-        if attr in cls.__dict__:
+        if attr in cls.__dict__ and not isinstance(getattr(cls, attr), _mock_val_ser.MockValSer):
             # Deleting the validator/serializer is necessary as otherwise they can get reused in
-            # pydantic-core. Same applies for the core schema that can be reused in schema generation.
+            # pydantic-core. We do so only if they aren't mock instances, otherwise — as `model_rebuild()`
+            # isn't thread-safe — concurrent model instantiations can lead to the parent validator being used.
+            # Same applies for the core schema that can be reused in schema generation.
             delattr(cls, attr)
 
     cls.__pydantic_complete__ = False
@@ -20317,7 +20367,7 @@ Field(
 
 ```python
 Field(
-    default: _T" optional hover>_T,
+    default: _T,
     *,
     alias: str | None = _Unset,
     alias_priority: int | None = _Unset,
@@ -20367,7 +20417,7 @@ Field(
 Field(
     *,
     default_factory: (
-        Callable[[], _T] | Callable[[dict[str, Any]], _T]
+        Callable[[], _T" optional hover>_T] | Callable[[dict[str, Any]], _T" optional hover>_T]
     ),
     alias: str | None = _Unset,
     alias_priority: int | None = _Unset,
@@ -21006,7 +21056,7 @@ def from_annotation(annotation: type[Any], *, _source: AnnotationSource = Annota
     field_info_annotations = [a for a in metadata if isinstance(a, FieldInfo)]
     field_info = FieldInfo.merge_field_infos(*field_info_annotations, annotation=type_expr)
 
-    new_field_info = copy(field_info)
+    new_field_info = field_info._copy()
     new_field_info.annotation = type_expr
     new_field_info.frozen = final or field_info.frozen
     field_metadata: list[Any] = []
@@ -21200,7 +21250,7 @@ def merge_field_infos(*field_infos: FieldInfo, **overrides: Any) -> FieldInfo:
     """
     if len(field_infos) == 1:
         # No merging necessary, but we still need to make a copy and apply the overrides
-        field_info = copy(field_infos[0])
+        field_info = field_infos[0]._copy()
         field_info._attributes_set.update(overrides)
 
         default_override = overrides.pop('default', PydanticUndefined)
@@ -21467,8 +21517,12 @@ def apply_typevars_map(
         pydantic._internal._generics.replace_types is used for replacing the typevars with
             their concrete types.
     """
-    annotation, _ = _typing_extra.try_eval_type(self.annotation, globalns, localns)
-    self.annotation = _generics.replace_types(annotation, typevars_map)
+    annotation = _generics.replace_types(self.annotation, typevars_map)
+    annotation, evaluated = _typing_extra.try_eval_type(annotation, globalns, localns)
+    self.annotation = annotation
+    if not evaluated:
+        self._complete = False
+        self._original_annotation = self.annotation
 
 ```
 
@@ -53223,16 +53277,6 @@ As a Pydantic user, you don't need the details below. Feel free to skip the rest
 
 These details are only useful for other library authors, etc.
 
-This additional editor support works by implementing the proposed draft standard for [Dataclass Transform (PEP 681)](https://peps.python.org/pep-0681/).
+This additional editor support works by making use of the [`@dataclass_transform` decorator](https://typing.python.org/en/latest/spec/dataclasses.html#the-dataclass-transform-decorator) (introduced by [PEP 681](https://peps.python.org/pep-0681/)).
 
-The proposed draft standard is written by Eric Traut, from the Microsoft team, the same author of the open source package Pyright (used by Pylance to provide Python support in VS Code).
-
-The intention of the standard is to provide a way for libraries like Pydantic and others to tell editors and tools that they (the editors) should treat these libraries (e.g. Pydantic) as if they were `dataclasses`, providing autocompletion, type checks, etc.
-
-The draft standard also includes an [Alternate Form](https://github.com/microsoft/pyright/blob/master/specs/dataclass_transforms.md#alternate-form) for early adopters, like Pydantic, to add support for it right away, even before the new draft standard is finished and approved.
-
-This new draft standard, with the Alternate Form, is already supported by Pyright, so it can be used via Pylance in VS Code.
-
-As it is being proposed as an official standard for Python, other editors can also easily add support for it.
-
-And authors of other libraries similar to Pydantic can also easily adopt the standard right away (using the "Alternate Form") and get the benefits of these additional editor features.
+The standard provides a way for libraries like Pydantic and others to tell editors and tools that they (the editors) should treat these libraries (e.g. Pydantic) as if they were dataclasses, providing autocompletion, type checks, etc.

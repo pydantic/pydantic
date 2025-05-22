@@ -52,7 +52,7 @@ Field(
 
 ```python
 Field(
-    default: _T" optional hover>_T,
+    default: _T,
     *,
     alias: str | None = _Unset,
     alias_priority: int | None = _Unset,
@@ -102,7 +102,7 @@ Field(
 Field(
     *,
     default_factory: (
-        Callable[[], _T] | Callable[[dict[str, Any]], _T]
+        Callable[[], _T" optional hover>_T] | Callable[[dict[str, Any]], _T" optional hover>_T]
     ),
     alias: str | None = _Unset,
     alias_priority: int | None = _Unset,
@@ -741,7 +741,7 @@ def from_annotation(annotation: type[Any], *, _source: AnnotationSource = Annota
     field_info_annotations = [a for a in metadata if isinstance(a, FieldInfo)]
     field_info = FieldInfo.merge_field_infos(*field_info_annotations, annotation=type_expr)
 
-    new_field_info = copy(field_info)
+    new_field_info = field_info._copy()
     new_field_info.annotation = type_expr
     new_field_info.frozen = final or field_info.frozen
     field_metadata: list[Any] = []
@@ -935,7 +935,7 @@ def merge_field_infos(*field_infos: FieldInfo, **overrides: Any) -> FieldInfo:
     """
     if len(field_infos) == 1:
         # No merging necessary, but we still need to make a copy and apply the overrides
-        field_info = copy(field_infos[0])
+        field_info = field_infos[0]._copy()
         field_info._attributes_set.update(overrides)
 
         default_override = overrides.pop('default', PydanticUndefined)
@@ -1202,8 +1202,12 @@ def apply_typevars_map(
         pydantic._internal._generics.replace_types is used for replacing the typevars with
             their concrete types.
     """
-    annotation, _ = _typing_extra.try_eval_type(self.annotation, globalns, localns)
-    self.annotation = _generics.replace_types(annotation, typevars_map)
+    annotation = _generics.replace_types(self.annotation, typevars_map)
+    annotation, evaluated = _typing_extra.try_eval_type(annotation, globalns, localns)
+    self.annotation = annotation
+    if not evaluated:
+        self._complete = False
+        self._original_annotation = self.annotation
 
 ```
 
