@@ -2340,6 +2340,24 @@ to help you monitor and understand your
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#rabbitmq" class="md-nav__link">
+    <span class="md-ellipsis">
+      RabbitMQ
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#arq" class="md-nav__link">
+    <span class="md-ellipsis">
+      ARQ
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -2978,6 +2996,24 @@ to help you monitor and understand your
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#rabbitmq" class="md-nav__link">
+    <span class="md-ellipsis">
+      RabbitMQ
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#arq" class="md-nav__link">
+    <span class="md-ellipsis">
+      ARQ
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -3060,7 +3096,156 @@ and start your server up locally.</p>
 <span class="n">pop_from_queue</span><span class="p">()</span>
 <span class="c1">#&gt; Queue is empty</span>
 </code></pre></div>
-<!-- TODO: kafka, rabbitMQ, celery, arq, etc - better for SEO, great for new contributors! -->
+<h2 id="rabbitmq">RabbitMQ<a class="headerlink" href="#rabbitmq" title="Permanent link">&para;</a></h2>
+<p>RabbitMQ is a popular message broker that implements the AMQP protocol.</p>
+<p>In order to run this example locally, you'll first need to <a href="https://www.rabbitmq.com/download.html">install RabbitMQ</a> and start your server.</p>
+<p>Here's a simple example of how you can use Pydantic to:</p>
+<ol>
+<li>Serialize data to push to the queue</li>
+<li>Deserialize and validate data when it's popped from the queue</li>
+</ol>
+<p>First, let's create a sender script.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">pika</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">EmailStr</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">email</span><span class="p">:</span> <span class="n">EmailStr</span>
+
+
+<span class="n">connection</span> <span class="o">=</span> <span class="n">pika</span><span class="o">.</span><span class="n">BlockingConnection</span><span class="p">(</span><span class="n">pika</span><span class="o">.</span><span class="n">ConnectionParameters</span><span class="p">(</span><span class="s1">&#39;localhost&#39;</span><span class="p">))</span>
+<span class="n">channel</span> <span class="o">=</span> <span class="n">connection</span><span class="o">.</span><span class="n">channel</span><span class="p">()</span>
+<span class="n">QUEUE_NAME</span> <span class="o">=</span> <span class="s1">&#39;user_queue&#39;</span>
+<span class="n">channel</span><span class="o">.</span><span class="n">queue_declare</span><span class="p">(</span><span class="n">queue</span><span class="o">=</span><span class="n">QUEUE_NAME</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">push_to_queue</span><span class="p">(</span><span class="n">user_data</span><span class="p">:</span> <span class="n">User</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">serialized_data</span> <span class="o">=</span> <span class="n">user_data</span><span class="o">.</span><span class="n">model_dump_json</span><span class="p">()</span>
+    <span class="n">channel</span><span class="o">.</span><span class="n">basic_publish</span><span class="p">(</span>
+        <span class="n">exchange</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span>
+        <span class="n">routing_key</span><span class="o">=</span><span class="n">QUEUE_NAME</span><span class="p">,</span>
+        <span class="n">body</span><span class="o">=</span><span class="n">serialized_data</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Added to queue: </span><span class="si">{</span><span class="n">serialized_data</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+
+<span class="n">user1</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;John Doe&#39;</span><span class="p">,</span> <span class="n">email</span><span class="o">=</span><span class="s1">&#39;john@example.com&#39;</span><span class="p">)</span>
+<span class="n">user2</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Jane Doe&#39;</span><span class="p">,</span> <span class="n">email</span><span class="o">=</span><span class="s1">&#39;jane@example.com&#39;</span><span class="p">)</span>
+
+<span class="n">push_to_queue</span><span class="p">(</span><span class="n">user1</span><span class="p">)</span>
+<span class="c1">#&gt; Added to queue: {&quot;id&quot;:1,&quot;name&quot;:&quot;John Doe&quot;,&quot;email&quot;:&quot;john@example.com&quot;}</span>
+
+<span class="n">push_to_queue</span><span class="p">(</span><span class="n">user2</span><span class="p">)</span>
+<span class="c1">#&gt; Added to queue: {&quot;id&quot;:2,&quot;name&quot;:&quot;Jane Doe&quot;,&quot;email&quot;:&quot;jane@example.com&quot;}</span>
+
+<span class="n">connection</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</code></pre></div>
+<p>And here's the receiver script.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">pika</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">EmailStr</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">email</span><span class="p">:</span> <span class="n">EmailStr</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+    <span class="n">connection</span> <span class="o">=</span> <span class="n">pika</span><span class="o">.</span><span class="n">BlockingConnection</span><span class="p">(</span><span class="n">pika</span><span class="o">.</span><span class="n">ConnectionParameters</span><span class="p">(</span><span class="s1">&#39;localhost&#39;</span><span class="p">))</span>
+    <span class="n">channel</span> <span class="o">=</span> <span class="n">connection</span><span class="o">.</span><span class="n">channel</span><span class="p">()</span>
+    <span class="n">QUEUE_NAME</span> <span class="o">=</span> <span class="s1">&#39;user_queue&#39;</span>
+    <span class="n">channel</span><span class="o">.</span><span class="n">queue_declare</span><span class="p">(</span><span class="n">queue</span><span class="o">=</span><span class="n">QUEUE_NAME</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">process_message</span><span class="p">(</span>
+        <span class="n">ch</span><span class="p">:</span> <span class="n">pika</span><span class="o">.</span><span class="n">channel</span><span class="o">.</span><span class="n">Channel</span><span class="p">,</span>
+        <span class="n">method</span><span class="p">:</span> <span class="n">pika</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">Basic</span><span class="o">.</span><span class="n">Deliver</span><span class="p">,</span>
+        <span class="n">properties</span><span class="p">:</span> <span class="n">pika</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">BasicProperties</span><span class="p">,</span>
+        <span class="n">body</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">model_validate_json</span><span class="p">(</span><span class="n">body</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Validated user: </span><span class="si">{</span><span class="nb">repr</span><span class="p">(</span><span class="n">user</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">ch</span><span class="o">.</span><span class="n">basic_ack</span><span class="p">(</span><span class="n">delivery_tag</span><span class="o">=</span><span class="n">method</span><span class="o">.</span><span class="n">delivery_tag</span><span class="p">)</span>
+
+    <span class="n">channel</span><span class="o">.</span><span class="n">basic_consume</span><span class="p">(</span><span class="n">queue</span><span class="o">=</span><span class="n">QUEUE_NAME</span><span class="p">,</span> <span class="n">on_message_callback</span><span class="o">=</span><span class="n">process_message</span><span class="p">)</span>
+    <span class="n">channel</span><span class="o">.</span><span class="n">start_consuming</span><span class="p">()</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">main</span><span class="p">()</span>
+    <span class="k">except</span> <span class="ne">KeyboardInterrupt</span><span class="p">:</span>
+        <span class="k">pass</span>
+</code></pre></div>
+<p>To test this example:</p>
+<ol>
+<li>Run the receiver script in one terminal to start the consumer.</li>
+<li>Run the sender script in another terminal to send messages.</li>
+</ol>
+<h2 id="arq">ARQ<a class="headerlink" href="#arq" title="Permanent link">&para;</a></h2>
+<p>ARQ is a fast Redis-based job queue for Python.
+It's built on top of Redis and provides a simple way to handle background tasks.</p>
+<p>In order to run this example locally, you’ll need to <a href="https://redis.io/docs/latest/operate/oss_and_stack/install/install-redis/">Install Redis</a> and start your server.</p>
+<p>Here's a simple example of how you can use Pydantic with ARQ to:</p>
+<ol>
+<li>Define a model for your job data</li>
+<li>Serialize data when enqueueing jobs</li>
+<li>Validate and deserialize data when processing jobs</li>
+</ol>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">arq</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_pool</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">arq.connections</span><span class="w"> </span><span class="kn">import</span> <span class="n">RedisSettings</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">EmailStr</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">email</span><span class="p">:</span> <span class="n">EmailStr</span>
+
+
+<span class="n">REDIS_SETTINGS</span> <span class="o">=</span> <span class="n">RedisSettings</span><span class="p">()</span>
+
+
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">process_user</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">user_data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">user_data</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Processing user: </span><span class="si">{</span><span class="nb">repr</span><span class="p">(</span><span class="n">user</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">enqueue_jobs</span><span class="p">(</span><span class="n">redis</span><span class="p">):</span>
+    <span class="n">user1</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;John Doe&#39;</span><span class="p">,</span> <span class="n">email</span><span class="o">=</span><span class="s1">&#39;john@example.com&#39;</span><span class="p">)</span>
+    <span class="n">user2</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Jane Doe&#39;</span><span class="p">,</span> <span class="n">email</span><span class="o">=</span><span class="s1">&#39;jane@example.com&#39;</span><span class="p">)</span>
+
+    <span class="k">await</span> <span class="n">redis</span><span class="o">.</span><span class="n">enqueue_job</span><span class="p">(</span><span class="s1">&#39;process_user&#39;</span><span class="p">,</span> <span class="n">user1</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Enqueued user: </span><span class="si">{</span><span class="nb">repr</span><span class="p">(</span><span class="n">user1</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="k">await</span> <span class="n">redis</span><span class="o">.</span><span class="n">enqueue_job</span><span class="p">(</span><span class="s1">&#39;process_user&#39;</span><span class="p">,</span> <span class="n">user2</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Enqueued user: </span><span class="si">{</span><span class="nb">repr</span><span class="p">(</span><span class="n">user2</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">WorkerSettings</span><span class="p">:</span>
+    <span class="n">functions</span> <span class="o">=</span> <span class="p">[</span><span class="n">process_user</span><span class="p">]</span>
+    <span class="n">redis_settings</span> <span class="o">=</span> <span class="n">REDIS_SETTINGS</span>
+
+
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+    <span class="n">redis</span> <span class="o">=</span> <span class="k">await</span> <span class="n">create_pool</span><span class="p">(</span><span class="n">REDIS_SETTINGS</span><span class="p">)</span>
+    <span class="k">await</span> <span class="n">enqueue_jobs</span><span class="p">(</span><span class="n">redis</span><span class="p">)</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
+</code></pre></div>
+<p>This script is complete.
+It should run "as is" both to enqueue jobs and to process them.</p>
+<!-- TODO: kafka, celery, etc - better for SEO, great for new contributors! -->
 
 
 

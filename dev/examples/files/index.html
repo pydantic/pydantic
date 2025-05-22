@@ -2325,6 +2325,33 @@ to help you monitor and understand your
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#yaml-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      YAML files
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#xml-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      XML files
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ini-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      INI files
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -3032,6 +3059,33 @@ to help you monitor and understand your
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#yaml-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      YAML files
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#xml-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      XML files
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ini-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      INI files
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -3084,8 +3138,8 @@ Here is an example of a <code>.json</code> file:</p>
 
 <span class="n">json_string</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;person.json&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">read_text</span><span class="p">()</span>
 <span class="n">person</span> <span class="o">=</span> <span class="n">Person</span><span class="o">.</span><span class="n">model_validate_json</span><span class="p">(</span><span class="n">json_string</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">person</span><span class="p">))</span>
-<span class="c1">#&gt; Person(name=&#39;John Doe&#39;, age=30, email=&#39;john@example.com&#39;)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">person</span><span class="p">)</span>
+<span class="c1">#&gt; name=&#39;John Doe&#39; age=30 email=&#39;john@example.com&#39;</span>
 </code></pre></div>
 <p>If the data in the file is not valid, <code>pydantic</code> will raise a <a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.ValidationError"><code>ValidationError</code></a>.
 Let's say we have the following <code>.json</code> file:</p>
@@ -3243,10 +3297,89 @@ Jane Doe,25,jane@example.com
     <span class="n">data</span> <span class="o">=</span> <span class="n">tomllib</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
 
 <span class="n">person</span> <span class="o">=</span> <span class="n">Person</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">person</span><span class="p">))</span>
-<span class="c1">#&gt; Person(name=&#39;John Doe&#39;, age=30, email=&#39;john@example.com&#39;)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">person</span><span class="p">)</span>
+<span class="c1">#&gt; name=&#39;John Doe&#39; age=30 email=&#39;john@example.com&#39;</span>
 </code></pre></div>
-<!-- TODO: YAML and other file formats (great for new contributors!) -->
+<h2 id="yaml-files">YAML files<a class="headerlink" href="#yaml-files" title="Permanent link">&para;</a></h2>
+<p>YAML (YAML Ain't Markup Language) is a human-readable data serialization format that is often used for configuration files.</p>
+<p>Consider the following YAML file:</p>
+<div class="language-yaml highlight"><pre><span></span><code><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">John Doe</span>
+<span class="nt">age</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">30</span>
+<span class="nt">email</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">john@example.com</span>
+</code></pre></div>
+<p>Here's how we validate that data:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">yaml</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">EmailStr</span><span class="p">,</span> <span class="n">PositiveInt</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Person</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">age</span><span class="p">:</span> <span class="n">PositiveInt</span>
+    <span class="n">email</span><span class="p">:</span> <span class="n">EmailStr</span>
+
+
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;person.yaml&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
+<span class="n">person</span> <span class="o">=</span> <span class="n">Person</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">person</span><span class="p">)</span>
+<span class="c1">#&gt; name=&#39;John Doe&#39; age=30 email=&#39;john@example.com&#39;</span>
+</code></pre></div>
+<h2 id="xml-files">XML files<a class="headerlink" href="#xml-files" title="Permanent link">&para;</a></h2>
+<p>XML (eXtensible Markup Language) is a markup language that defines a set of rules for encoding documents in a format that is both human-readable and machine-readable.</p>
+<p>Consider the following XML file:</p>
+<div class="language-xml highlight"><pre><span></span><code><span class="cp">&lt;?xml version=&quot;1.0&quot;?&gt;</span>
+<span class="nt">&lt;person&gt;</span>
+<span class="w">    </span><span class="nt">&lt;name&gt;</span>John<span class="w"> </span>Doe<span class="nt">&lt;/name&gt;</span>
+<span class="w">    </span><span class="nt">&lt;age&gt;</span>30<span class="nt">&lt;/age&gt;</span>
+<span class="w">    </span><span class="nt">&lt;email&gt;</span>john@example.com<span class="nt">&lt;/email&gt;</span>
+<span class="nt">&lt;/person&gt;</span>
+</code></pre></div>
+<p>Here's how we validate that data:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">xml.etree.ElementTree</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">ET</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">EmailStr</span><span class="p">,</span> <span class="n">PositiveInt</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Person</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">age</span><span class="p">:</span> <span class="n">PositiveInt</span>
+    <span class="n">email</span><span class="p">:</span> <span class="n">EmailStr</span>
+
+
+<span class="n">tree</span> <span class="o">=</span> <span class="n">ET</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="s1">&#39;person.xml&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">getroot</span><span class="p">()</span>
+<span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="n">child</span><span class="o">.</span><span class="n">tag</span><span class="p">:</span> <span class="n">child</span><span class="o">.</span><span class="n">text</span> <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">tree</span><span class="p">}</span>
+<span class="n">person</span> <span class="o">=</span> <span class="n">Person</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">person</span><span class="p">)</span>
+<span class="c1">#&gt; name=&#39;John Doe&#39; age=30 email=&#39;john@example.com&#39;</span>
+</code></pre></div>
+<h2 id="ini-files">INI files<a class="headerlink" href="#ini-files" title="Permanent link">&para;</a></h2>
+<p>INI files are a simple configuration file format that uses sections and key-value pairs. They are commonly used in Windows applications and older software.</p>
+<p>Consider the following INI file:</p>
+<div class="language-ini highlight"><pre><span></span><code><span class="k">[PERSON]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">John Doe</span>
+<span class="na">age</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">30</span>
+<span class="na">email</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">john@example.com</span>
+</code></pre></div>
+<p>Here's how we validate that data:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">configparser</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">EmailStr</span><span class="p">,</span> <span class="n">PositiveInt</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Person</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">age</span><span class="p">:</span> <span class="n">PositiveInt</span>
+    <span class="n">email</span><span class="p">:</span> <span class="n">EmailStr</span>
+
+
+<span class="n">config</span> <span class="o">=</span> <span class="n">configparser</span><span class="o">.</span><span class="n">ConfigParser</span><span class="p">()</span>
+<span class="n">config</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s1">&#39;person.ini&#39;</span><span class="p">)</span>
+<span class="n">person</span> <span class="o">=</span> <span class="n">Person</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;PERSON&#39;</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">person</span><span class="p">)</span>
+<span class="c1">#&gt; name=&#39;John Doe&#39; age=30 email=&#39;john@example.com&#39;</span>
+</code></pre></div>
 
 
 

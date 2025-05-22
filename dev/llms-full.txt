@@ -51962,8 +51962,8 @@ class Person(BaseModel):
 
 json_string = pathlib.Path('person.json').read_text()
 person = Person.model_validate_json(json_string)
-print(repr(person))
-#> Person(name='John Doe', age=30, email='john@example.com')
+print(person)
+#> name='John Doe' age=30 email='john@example.com'
 
 ```
 
@@ -52159,8 +52159,118 @@ with open('person.toml', 'rb') as f:
     data = tomllib.load(f)
 
 person = Person.model_validate(data)
-print(repr(person))
-#> Person(name='John Doe', age=30, email='john@example.com')
+print(person)
+#> name='John Doe' age=30 email='john@example.com'
+
+```
+
+## YAML files
+
+YAML (YAML Ain't Markup Language) is a human-readable data serialization format that is often used for configuration files.
+
+Consider the following YAML file:
+
+```yaml
+name: John Doe
+age: 30
+email: john@example.com
+
+```
+
+Here's how we validate that data:
+
+```python
+import yaml
+
+from pydantic import BaseModel, EmailStr, PositiveInt
+
+
+class Person(BaseModel):
+    name: str
+    age: PositiveInt
+    email: EmailStr
+
+
+with open('person.yaml') as f:
+    data = yaml.safe_load(f)
+
+person = Person.model_validate(data)
+print(person)
+#> name='John Doe' age=30 email='john@example.com'
+
+```
+
+## XML files
+
+XML (eXtensible Markup Language) is a markup language that defines a set of rules for encoding documents in a format that is both human-readable and machine-readable.
+
+Consider the following XML file:
+
+```xml
+<?xml version="1.0"?>
+<person>
+    <name>John Doe</name>
+    <age>30</age>
+    <email>john@example.com</email>
+</person>
+
+```
+
+Here's how we validate that data:
+
+```python
+import xml.etree.ElementTree as ET
+
+from pydantic import BaseModel, EmailStr, PositiveInt
+
+
+class Person(BaseModel):
+    name: str
+    age: PositiveInt
+    email: EmailStr
+
+
+tree = ET.parse('person.xml').getroot()
+data = {child.tag: child.text for child in tree}
+person = Person.model_validate(data)
+print(person)
+#> name='John Doe' age=30 email='john@example.com'
+
+```
+
+## INI files
+
+INI files are a simple configuration file format that uses sections and key-value pairs. They are commonly used in Windows applications and older software.
+
+Consider the following INI file:
+
+```ini
+[PERSON]
+name = John Doe
+age = 30
+email = john@example.com
+
+```
+
+Here's how we validate that data:
+
+```python
+import configparser
+
+from pydantic import BaseModel, EmailStr, PositiveInt
+
+
+class Person(BaseModel):
+    name: str
+    age: PositiveInt
+    email: EmailStr
+
+
+config = configparser.ConfigParser()
+config.read('person.ini')
+person = Person.model_validate(config['PERSON'])
+print(person)
+#> name='John Doe' age=30 email='john@example.com'
 
 ```
 
@@ -52278,6 +52388,171 @@ pop_from_queue()
 #> Queue is empty
 
 ```
+
+## RabbitMQ
+
+RabbitMQ is a popular message broker that implements the AMQP protocol.
+
+In order to run this example locally, you'll first need to [install RabbitMQ](https://www.rabbitmq.com/download.html) and start your server.
+
+Here's a simple example of how you can use Pydantic to:
+
+1. Serialize data to push to the queue
+1. Deserialize and validate data when it's popped from the queue
+
+First, let's create a sender script.
+
+```python
+import pika
+
+from pydantic import BaseModel, EmailStr
+
+
+class User(BaseModel):
+    id: int
+    name: str
+    email: EmailStr
+
+
+connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
+channel = connection.channel()
+QUEUE_NAME = 'user_queue'
+channel.queue_declare(queue=QUEUE_NAME)
+
+
+def push_to_queue(user_data: User) -> None:
+    serialized_data = user_data.model_dump_json()
+    channel.basic_publish(
+        exchange='',
+        routing_key=QUEUE_NAME,
+        body=serialized_data,
+    )
+    print(f'Added to queue: {serialized_data}')
+
+
+user1 = User(id=1, name='John Doe', email='john@example.com')
+user2 = User(id=2, name='Jane Doe', email='jane@example.com')
+
+push_to_queue(user1)
+#> Added to queue: {"id":1,"name":"John Doe","email":"john@example.com"}
+
+push_to_queue(user2)
+#> Added to queue: {"id":2,"name":"Jane Doe","email":"jane@example.com"}
+
+connection.close()
+
+```
+
+And here's the receiver script.
+
+```python
+import pika
+
+from pydantic import BaseModel, EmailStr
+
+
+class User(BaseModel):
+    id: int
+    name: str
+    email: EmailStr
+
+
+def main():
+    connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
+    channel = connection.channel()
+    QUEUE_NAME = 'user_queue'
+    channel.queue_declare(queue=QUEUE_NAME)
+
+    def process_message(
+        ch: pika.channel.Channel,
+        method: pika.spec.Basic.Deliver,
+        properties: pika.spec.BasicProperties,
+        body: bytes,
+    ):
+        user = User.model_validate_json(body)
+        print(f'Validated user: {repr(user)}')
+        ch.basic_ack(delivery_tag=method.delivery_tag)
+
+    channel.basic_consume(queue=QUEUE_NAME, on_message_callback=process_message)
+    channel.start_consuming()
+
+
+if __name__ == '__main__':
+    try:
+        main()
+    except KeyboardInterrupt:
+        pass
+
+```
+
+To test this example:
+
+1. Run the receiver script in one terminal to start the consumer.
+1. Run the sender script in another terminal to send messages.
+
+## ARQ
+
+ARQ is a fast Redis-based job queue for Python. It's built on top of Redis and provides a simple way to handle background tasks.
+
+In order to run this example locally, you’ll need to [Install Redis](https://redis.io/docs/latest/operate/oss_and_stack/install/install-redis/) and start your server.
+
+Here's a simple example of how you can use Pydantic with ARQ to:
+
+1. Define a model for your job data
+1. Serialize data when enqueueing jobs
+1. Validate and deserialize data when processing jobs
+
+```python
+import asyncio
+from typing import Any
+
+from arq import create_pool
+from arq.connections import RedisSettings
+
+from pydantic import BaseModel, EmailStr
+
+
+class User(BaseModel):
+    id: int
+    name: str
+    email: EmailStr
+
+
+REDIS_SETTINGS = RedisSettings()
+
+
+async def process_user(ctx: dict[str, Any], user_data: dict[str, Any]) -> None:
+    user = User.model_validate(user_data)
+    print(f'Processing user: {repr(user)}')
+
+
+async def enqueue_jobs(redis):
+    user1 = User(id=1, name='John Doe', email='john@example.com')
+    user2 = User(id=2, name='Jane Doe', email='jane@example.com')
+
+    await redis.enqueue_job('process_user', user1.model_dump())
+    print(f'Enqueued user: {repr(user1)}')
+
+    await redis.enqueue_job('process_user', user2.model_dump())
+    print(f'Enqueued user: {repr(user2)}')
+
+
+class WorkerSettings:
+    functions = [process_user]
+    redis_settings = REDIS_SETTINGS
+
+
+async def main():
+    redis = await create_pool(REDIS_SETTINGS)
+    await enqueue_jobs(redis)
+
+
+if __name__ == '__main__':
+    asyncio.run(main())
+
+```
+
+This script is complete. It should run "as is" both to enqueue jobs and to process them.
 
 Pydantic models are a great way to validating and serializing data for requests and responses. Pydantic is instrumental in many web frameworks and libraries, such as FastAPI, Django, Flask, and HTTPX.
 
