@@ -231,7 +231,7 @@ def collect_model_fields(  # noqa: C901
 
             # The `from_annotated_attribute()` call below mutates the assigned `Field()`, so make a copy:
             original_assignment = (
-                copy(assigned_value) if not evaluated and isinstance(assigned_value, FieldInfo_) else assigned_value
+                assigned_value._copy() if not evaluated and isinstance(assigned_value, FieldInfo_) else assigned_value
             )
 
             field_info = FieldInfo_.from_annotated_attribute(ann_type, assigned_value, _source=AnnotationSource.CLASS)
