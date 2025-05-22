@@ -1,3 +1,15 @@
+## v2.11.5 (2025-05-22)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.11.5)
+
+### What's Changed
+
+#### Fixes
+
+* Check if `FieldInfo` is complete after applying type variable map by @Viicos in [#11855](https://github.com/pydantic/pydantic/pull/11855)
+* Do not delete mock validator/serializer in `model_rebuild()` by @Viicos in [#11890](https://github.com/pydantic/pydantic/pull/11890)
+* Do not duplicate metadata on model rebuild by @Viicos in [#11902](https://github.com/pydantic/pydantic/pull/11902)
+
 ## v2.11.4 (2025-04-29)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.11.4)
