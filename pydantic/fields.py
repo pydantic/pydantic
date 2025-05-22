@@ -399,13 +399,23 @@ class FieldInfo(_repr.Representation):
         final = 'final' in inspected_ann.qualifiers
         metadata = inspected_ann.metadata
 
+        # Hack: the order in which the metadata is merged is inconsistent; we need to prepend
+        # metadata from the assignment at the beginning of the metadata. Changing this is only
+        # possible in v3 (at least).
+        prepend_metadata: list[Any] | None = None
         attr_overrides = {'annotation': type_expr}
         if final:
             attr_overrides['frozen'] = True
         if isinstance(default, FieldInfo):
-            metadata = metadata + [default]
+            default_copy = copy(default)  # Copy unnecessary when we remove the inconsistency hack
+            prepend_metadata = default_copy.metadata
+            default_copy.metadata = []
+            metadata = metadata + [default_copy]
         elif isinstance(default, dataclasses.Field):
-            metadata = metadata + [FieldInfo._from_dataclass_field(default)]
+            from_field = FieldInfo._from_dataclass_field(default)
+            prepend_metadata = from_field.metadata
+            from_field.metadata = []
+            metadata = metadata + [from_field]
             if 'init_var' in inspected_ann.qualifiers:
                 attr_overrides['init_var'] = True
             if (init := getattr(default, 'init', None)) is not None:
@@ -418,6 +428,8 @@ class FieldInfo(_repr.Representation):
 
         field_info = FieldInfo._construct(metadata, **attr_overrides)
         field_info._qualifiers = inspected_ann.qualifiers
+        if prepend_metadata is not None:
+            field_info.metadata = prepend_metadata + field_info.metadata
         return field_info
 
     @classmethod
@@ -725,6 +737,18 @@ class FieldInfo(_repr.Representation):
         if not evaluated:
             self._complete = False
             self._original_annotation = self.annotation
+
+    def __copy__(self) -> Self:
+        cls = type(self)
+        copied = cls()
+        for attr_name in cls.__slots__:
+            value = getattr(self, attr_name)
+            if attr_name in ('metadata', '_attributes_set', '_qualifiers'):
+                # Apply "deep-copy" behavior on collections attributes:
+                value = value.copy()
+            setattr(copied, attr_name, value)
+
+        return copied
 
     def __repr_args__(self) -> ReprArgs:
         yield 'annotation', _repr.PlainRepr(_repr.display_as_type(self.annotation))

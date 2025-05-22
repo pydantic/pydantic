@@ -58,7 +58,7 @@ NO_VALUE = object()
         (
             lambda: Annotated[int, Lt(2)],
             Field(5, gt=0),
-            'FieldInfo(annotation=int, required=False, default=5, metadata=[Lt(lt=2), Gt(gt=0)])',
+            'FieldInfo(annotation=int, required=False, default=5, metadata=[Gt(gt=0), Lt(lt=2)])',
         ),
         (
             lambda: Annotated[int, Gt(0)],
@@ -501,28 +501,6 @@ def test_min_length_field_info_not_lost():
             'input': '00',
             'ctx': {'min_length': 3},
             'msg': 'String should have at least 3 characters',
-            'type': 'string_too_short',
-        }
-    ]
-
-    # Ensure that the inner annotation does not override the outer, even for metadata:
-    class AnnotatedFieldModel2(BaseModel):
-        foo: 'Annotated[String, Field(min_length=3)]' = Field(description='hello', min_length=2)
-
-    AnnotatedFieldModel2(foo='00')
-
-    class AnnotatedFieldModel4(BaseModel):
-        foo: 'Annotated[String, Field(min_length=3)]' = Field(description='hello', min_length=4)
-
-    with pytest.raises(ValidationError) as exc_info:
-        AnnotatedFieldModel4(foo='00')
-
-    assert exc_info.value.errors(include_url=False) == [
-        {
-            'loc': ('foo',),
-            'input': '00',
-            'ctx': {'min_length': 4},
-            'msg': 'String should have at least 4 characters',
             'type': 'string_too_short',
         }
     ]
