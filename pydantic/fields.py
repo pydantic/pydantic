@@ -16,7 +16,7 @@ from warnings import warn
 import annotated_types
 import typing_extensions
 from pydantic_core import PydanticUndefined
-from typing_extensions import TypeAlias, Unpack, deprecated
+from typing_extensions import Self, TypeAlias, Unpack, deprecated
 from typing_inspection import typing_objects
 from typing_inspection.introspection import UNKNOWN, AnnotationSource, ForbiddenQualifier, Qualifier, inspect_annotation
 
@@ -699,6 +699,18 @@ class FieldInfo(_repr.Representation):
         if not evaluated:
             self._complete = False
             self._original_annotation = self.annotation
+
+    def __copy__(self) -> Self:
+        cls = type(self)
+        copied = cls()
+        for attr_name in cls.__slots__:
+            value = getattr(self, attr_name)
+            if attr_name in ('metadata', '_attributes_set', '_qualifiers'):
+                # Apply "deep-copy" behavior on collections attributes:
+                value = value.copy()
+            setattr(copied, attr_name, value)
+
+        return copied
 
     def __repr_args__(self) -> ReprArgs:
         yield 'annotation', _repr.PlainRepr(_repr.display_as_type(self.annotation))

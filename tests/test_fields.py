@@ -1,6 +1,7 @@
-from typing import Union
+from typing import Annotated, Union
 
 import pytest
+from annotated_types import Gt
 
 import pydantic.dataclasses
 from pydantic import BaseModel, ConfigDict, Field, PydanticUserError, RootModel, ValidationError, computed_field, fields
@@ -188,3 +189,16 @@ def test_rebuild_model_fields_preserves_description() -> None:
     Model.model_rebuild()
 
     assert Model.model_fields['f'].description == 'test doc'
+
+
+def test_no_duplicate_metadata_with_assignment_and_rebuild() -> None:
+    """https://github.com/pydantic/pydantic/issues/11870"""
+
+    class Model(BaseModel):
+        f: Annotated['Int', Gt(1)] = Field()
+
+    Int = int
+
+    Model.model_rebuild()
+
+    assert len(Model.model_fields['f'].metadata) == 1
