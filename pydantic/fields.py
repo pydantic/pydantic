@@ -407,7 +407,7 @@ class FieldInfo(_repr.Representation):
         if final:
             attr_overrides['frozen'] = True
         if isinstance(default, FieldInfo):
-            default_copy = copy(default)  # Copy unnecessary when we remove the inconsistency hack
+            default_copy = default._copy()  # Copy unnecessary when we remove the inconsistency hack
             prepend_metadata = default_copy.metadata
             default_copy.metadata = []
             metadata = metadata + [default_copy]
@@ -517,7 +517,7 @@ class FieldInfo(_repr.Representation):
         """
         if len(field_infos) == 1:
             # No merging necessary, but we still need to make a copy and apply the overrides
-            field_info = copy(field_infos[0])
+            field_info = field_infos[0]._copy()
             field_info._attributes_set.update(overrides)
 
             default_override = overrides.pop('default', PydanticUndefined)
@@ -738,14 +738,15 @@ class FieldInfo(_repr.Representation):
             self._complete = False
             self._original_annotation = self.annotation
 
-    def __copy__(self) -> Self:
-        cls = type(self)
-        copied = cls()
-        for attr_name in cls.__slots__:
-            value = getattr(self, attr_name)
-            if attr_name in ('metadata', '_attributes_set', '_qualifiers'):
-                # Apply "deep-copy" behavior on collections attributes:
-                value = value.copy()
+    def _copy(self) -> Self:
+        """Return a copy of the `FieldInfo` instance."""
+        # Note: we can't define a custom `__copy__()`, as `FieldInfo` is being subclassed
+        # by some third-party libraries with extra attributes defined (and as `FieldInfo`
+        # is slotted, we can't make a copy of the `__dict__`).
+        copied = copy(self)
+        for attr_name in ('metadata', '_attributes_set', '_qualifiers'):
+            # Apply "deep-copy" behavior on collections attributes:
+            value = getattr(copied, attr_name).copy()
             setattr(copied, attr_name, value)
 
         return copied
