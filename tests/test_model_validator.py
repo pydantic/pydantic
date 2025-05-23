@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import re
 from typing import Any, cast
 
 import pytest
 
 from pydantic import BaseModel, ValidationInfo, ValidatorFunctionWrapHandler, model_validator
+from pydantic.errors import PydanticUserError
+from pydantic.warnings import PydanticDeprecatedSince211
 
 
 def test_model_validator_wrap() -> None:
@@ -32,14 +35,13 @@ def test_model_validator_wrap() -> None:
     assert Model.model_validate(Model.model_construct(x=1, y=2)).model_dump() == {'x': 20, 'y': 30}
 
 
-@pytest.mark.parametrize('classmethod_decorator', [classmethod, lambda x: x])
-def test_model_validator_before(classmethod_decorator: Any) -> None:
+def test_model_validator_before() -> None:
     class Model(BaseModel):
         x: int
         y: int
 
         @model_validator(mode='before')
-        @classmethod_decorator
+        @classmethod
         def val_model(cls, values: Any, info: ValidationInfo) -> dict[str, Any] | Model:
             assert not info.context
             if isinstance(values, dict):
@@ -58,14 +60,13 @@ def test_model_validator_before(classmethod_decorator: Any) -> None:
     assert Model.model_validate(m).model_dump() == {'x': 2, 'y': 3}
 
 
-@pytest.mark.parametrize('classmethod_decorator', [classmethod, lambda x: x])
-def test_model_validator_before_revalidate_always(classmethod_decorator: Any) -> None:
+def test_model_validator_before_revalidate_always() -> None:
     class Model(BaseModel, revalidate_instances='always'):
         x: int
         y: int
 
         @model_validator(mode='before')
-        @classmethod_decorator
+        @classmethod
         def val_model(cls, values: Any, info: ValidationInfo) -> dict[str, Any] | Model:
             assert not info.context
             if isinstance(values, dict):
@@ -136,3 +137,39 @@ def test_nested_models() -> None:
     Model.model_validate({'inner': {'inner': {'inner': None}}})
     assert calls == ['before'] * 3 + ['after'] * 3
     calls.clear()
+
+
+def test_model_validator_before_on_not_decorated_classmethod() -> None:
+    warning_message = "`@model_validator(mode='before')` should be applied to a classmethod, not an instance method"
+    with pytest.warns(PydanticDeprecatedSince211, match=re.escape(warning_message)):
+
+        class M(BaseModel):
+            x: int
+
+            @model_validator(mode='before')
+            def validator(cls, data: Any) -> Any:
+                return data
+
+
+def test_model_validator_wrap_on_not_decorated_classmethod() -> None:
+    warning_message = "`@model_validator(mode='wrap')` should be applied to a classmethod, not an instance method"
+    with pytest.warns(PydanticDeprecatedSince211, match=re.escape(warning_message)):
+
+        class M(BaseModel):
+            x: int
+
+            @model_validator(mode='wrap')
+            def validator(cls, data: Any, handler: ValidatorFunctionWrapHandler) -> Any:
+                return handler(data)
+
+
+def test_model_validator_after_on_invalid_signature() -> None:
+    warning_message = 'Unrecognized model_validator function signature'
+    with pytest.raises(PydanticUserError, match=re.escape(warning_message)):
+
+        class M(BaseModel):
+            x: int
+
+            @model_validator(mode='after')
+            def validator(cls, model, info) -> Any:
+                return model
