@@ -54,8 +54,7 @@ class WrapModelValidator(BaseModel):
     @classmethod
     def no_handler(cls, value: Any) -> Self: ...
 
-    # Mypy somehow reports "Cannot infer function type argument" here:
-    @model_validator(mode='wrap')  # type:ignore[misc]  # pyright: ignore[reportArgumentType]
+    @model_validator(mode='wrap')
     @classmethod
     def incompatible_type_var(cls, value: Any, handler: ModelWrapValidatorHandler[int]) -> int:
         """
@@ -83,8 +82,7 @@ class WrapModelValidator(BaseModel):
 
 
 class AfterModelValidator(BaseModel):
-    # Mypy somehow reports "Cannot infer function type argument" here:
-    @model_validator(mode='after')  # type:ignore[misc]  # pyright: ignore[reportArgumentType]
+    @model_validator(mode='after')
     def missing_return_value(self) -> None: ...
 
     @model_validator(mode='after')

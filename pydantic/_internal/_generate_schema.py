@@ -2415,7 +2415,11 @@ def apply_model_validators(
             continue
         if mode == 'outer' and validator.info.mode == 'before':
             continue
-        info_arg = inspect_validator(validator.func, validator.info.mode)
+        info_arg = inspect_validator(
+            validator.func,
+            validator.info.mode,
+            model=isinstance(validator.info, ModelValidatorDecoratorInfo),
+        )
         if validator.info.mode == 'wrap':
             if info_arg:
                 schema = core_schema.with_info_wrap_validator_function(function=validator.func, schema=schema)
