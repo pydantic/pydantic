@@ -399,21 +399,32 @@ class FieldInfo(_repr.Representation):
         final = 'final' in inspected_ann.qualifiers
         metadata = inspected_ann.metadata
 
-        # Hack: the order in which the metadata is merged is inconsistent; we need to prepend
+        # HACK 1: the order in which the metadata is merged is inconsistent; we need to prepend
         # metadata from the assignment at the beginning of the metadata. Changing this is only
-        # possible in v3 (at least).
+        # possible in v3 (at least). See https://github.com/pydantic/pydantic/issues/10507
         prepend_metadata: list[Any] | None = None
         attr_overrides = {'annotation': type_expr}
         if final:
             attr_overrides['frozen'] = True
+
+        # HACK 2: FastAPI is subclassing `FieldInfo` and historically expected the actual
+        # instance's type to be preserved when constructing new models with its subclasses as assignments.
+        # This code is never reached by Pydantic itself, and in an ideal world this shouldn't be necessary.
+        if not metadata and isinstance(default, FieldInfo) and type(default) is not FieldInfo:
+            field_info = default._copy()
+            field_info._attributes_set.update(attr_overrides)
+            for k, v in attr_overrides.items():
+                setattr(field_info, k, v)
+            return field_info
+
         if isinstance(default, FieldInfo):
-            default_copy = default._copy()  # Copy unnecessary when we remove the inconsistency hack
+            default_copy = default._copy()  # Copy unnecessary when we remove HACK 1.
             prepend_metadata = default_copy.metadata
             default_copy.metadata = []
             metadata = metadata + [default_copy]
         elif isinstance(default, dataclasses.Field):
             from_field = FieldInfo._from_dataclass_field(default)
-            prepend_metadata = from_field.metadata
+            prepend_metadata = from_field.metadata  # Unnecessary when we remove HACK 1.
             from_field.metadata = []
             metadata = metadata + [from_field]
             if 'init_var' in inspected_ann.qualifiers:
