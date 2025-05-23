@@ -14,8 +14,10 @@ from pydantic import (
     RootModel,
     ValidationError,
     computed_field,
+    create_model,
     fields,
 )
+from pydantic.fields import FieldInfo
 
 
 def test_field_info_annotation_keyword_argument():
@@ -255,3 +257,23 @@ def test_no_duplicate_metadata_with_assignment_and_rebuild() -> None:
     Model.model_rebuild()
 
     assert len(Model.model_fields['f'].metadata) == 1
+
+
+def test_fastapi_compatibility_hack() -> None:
+    class Body(FieldInfo):
+        """A reproduction of the FastAPI's `Body` param."""
+
+        pass
+
+    field = Body()
+    # Assigning after doesn't update `_attributes_set`, which is currently
+    # relied on to merge `FieldInfo` instances during field creation.
+    # This is also what the FastAPI code is doing in some places.
+    # The FastAPI compatibility hack makes it so that it still works.
+    field.default = 1
+
+    Model = create_model('Model', f=(int, field))
+    model_field = Model.model_fields['f']
+
+    assert isinstance(model_field, Body)
+    assert not model_field.is_required()
