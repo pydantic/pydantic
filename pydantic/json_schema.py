@@ -1748,7 +1748,8 @@ class GenerateJsonSchema:
         for argument in arguments:
             name = self.get_argument_name(argument)
             argument_schema = self.generate_inner(argument['schema']).copy()
-            argument_schema['title'] = self.get_title_from_name(name)
+            if 'title' not in argument_schema:
+                argument_schema['title'] = self.get_title_from_name(name)
             properties[name] = argument_schema
 
             if argument['schema']['type'] != 'default':
@@ -1787,7 +1788,8 @@ class GenerateJsonSchema:
             name = self.get_argument_name(argument)
 
             argument_schema = self.generate_inner(argument['schema']).copy()
-            argument_schema['title'] = self.get_title_from_name(name)
+            if 'title' not in argument_schema:
+                argument_schema['title'] = self.get_title_from_name(name)
             prefix_items.append(argument_schema)
 
             if argument['schema']['type'] != 'default':
