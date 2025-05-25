@@ -8,25 +8,24 @@ theme:
   custom_dir: 'docs/theme'
   palette:
   - media: "(prefers-color-scheme)"
-    scheme: default
     primary: pink
     accent: pink
     toggle:
-      icon: material/lightbulb
+      icon: material/brightness-auto
       name: "Switch to light mode"
   - media: "(prefers-color-scheme: light)"
     scheme: default
     primary: pink
     accent: pink
     toggle:
-      icon: material/lightbulb-outline
+      icon: material/brightness-7
       name: "Switch to dark mode"
   - media: "(prefers-color-scheme: dark)"
     scheme: slate
     primary: pink
     accent: pink
     toggle:
-      icon: material/lightbulb-auto-outline
+      icon: material/brightness-4
       name: "Switch to system preference"
   features:
     - content.tabs.link
@@ -257,6 +256,7 @@ plugins:
         import:
           - url: https://docs.python.org/3/objects.inv
             domains: [py, std]
+          - url: https://typing-extensions.readthedocs.io/en/latest/objects.inv
 - redirects:
     redirect_maps:
       'usage/mypy.md': 'integrations/mypy.md'

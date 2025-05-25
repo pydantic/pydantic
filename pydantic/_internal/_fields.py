@@ -411,6 +411,9 @@ def rebuild_model_fields(
 
     This function should be called whenever a model with incomplete fields is encountered.
 
+    Raises:
+        NameError: If one of the annotations failed to evaluate.
+
     Note:
         This function *doesn't* mutate the model fields in place, as it can be called during
         schema generation, where you don't want to mutate other model's fields.

@@ -1,5 +1,4 @@
 import dataclasses
-import importlib.metadata
 import json
 import math
 import re
@@ -30,7 +29,6 @@ from uuid import UUID
 
 import pytest
 from dirty_equals import HasRepr
-from packaging.version import Version
 from pydantic_core import CoreSchema, SchemaValidator, core_schema, to_jsonable_python
 from pydantic_core.core_schema import ValidatorFunctionWrapHandler
 from typing_extensions import TypeAliasType, TypedDict, deprecated
@@ -6213,20 +6211,12 @@ def _generate_deprecated_classes():
     ]
 
 
-@pytest.mark.skipif(
-    Version(importlib.metadata.version('typing_extensions')) < Version('4.9'),
-    reason='`deprecated` type annotation requires typing_extensions>=4.9',
-)
 @pytest.mark.parametrize('cls', _generate_deprecated_classes())
 def test_deprecated_classes_json_schema(cls):
     assert hasattr(cls, '__deprecated__')
     assert TypeAdapter(cls).json_schema()['deprecated']
 
 
-@pytest.mark.skipif(
-    Version(importlib.metadata.version('typing_extensions')) < Version('4.9'),
-    reason='`deprecated` type annotation requires typing_extensions>=4.9',
-)
 @pytest.mark.parametrize('cls', _generate_deprecated_classes())
 def test_deprecated_subclasses_json_schema(cls):
     class Model(BaseModel):
@@ -6241,10 +6231,6 @@ def test_deprecated_subclasses_json_schema(cls):
     }
 
 
-@pytest.mark.skipif(
-    Version(importlib.metadata.version('typing_extensions')) < Version('4.9'),
-    reason='`deprecated` type annotation requires typing_extensions>=4.9',
-)
 @pytest.mark.parametrize('cls', _generate_deprecated_classes())
 def test_deprecated_class_usage_warns(cls):
     if issubclass(cls, dict):
