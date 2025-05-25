@@ -10,7 +10,7 @@ from collections.abc import Callable, Mapping
 from copy import copy
 from dataclasses import Field as DataclassField
 from functools import cached_property
-from typing import Annotated, Any, ClassVar, Literal, TypeVar, cast, overload
+from typing import Annotated, Any, ClassVar, Literal, TypeVar, cast, final, overload
 from warnings import warn
 
 import annotated_types
@@ -97,6 +97,7 @@ class _FieldInfoInputs(_FromFieldInfoInputs, total=False):
     default: Any
 
 
+@final
 class FieldInfo(_repr.Representation):
     """This class holds information about a field.
 
@@ -518,6 +519,11 @@ class FieldInfo(_repr.Representation):
         return merged_field_info
 
     @staticmethod
+    @typing_extensions.deprecated(
+        "The 'merge_field_infos()' method is deprecated and will be removed in a future version. "
+        'If you relied on this method, please open an issue in the Pydantic issue tracker.',
+        category=None,
+    )
     def merge_field_infos(*field_infos: FieldInfo, **overrides: Any) -> FieldInfo:
         """Merge `FieldInfo` instances keeping only explicitly set attributes.
 
