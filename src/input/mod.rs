@@ -13,7 +13,7 @@ mod shared;
 pub use datetime::TzInfo;
 pub(crate) use datetime::{
     duration_as_pytimedelta, pydate_as_date, pydatetime_as_datetime, pytime_as_time, EitherDate, EitherDateTime,
-    EitherTime, EitherTimedelta,
+    EitherTimedelta,
 };
 pub(crate) use input_abstract::{
     Arguments, BorrowInput, ConsumeIterator, Input, InputType, KeywordArgs, PositionalArgs, ValidatedDict,
