@@ -11,6 +11,15 @@ from ..conftest import Err, PyAndJson
 
 
 @pytest.mark.parametrize(
+    'constraint',
+    ['le', 'lt', 'ge', 'gt'],
+)
+def test_constraints_schema_validation_error(constraint: str) -> None:
+    with pytest.raises(SchemaError, match=f"'{constraint}' must be coercible to a time instance"):
+        SchemaValidator(core_schema.time_schema(**{constraint: 'bad_value'}))
+
+
+@pytest.mark.parametrize(
     'input_value,expected',
     [
         pytest.param(time(12, 13, 14), time(12, 13, 14), id='time'),
