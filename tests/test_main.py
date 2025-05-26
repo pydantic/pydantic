@@ -3498,6 +3498,21 @@ def test_shadow_attribute_warn_for_redefined_fields() -> None:
             foo: bool = True
 
 
+def test_field_name_deprecated_method_name() -> None:
+    """https://github.com/pydantic/pydantic/issues/11912"""
+
+    with pytest.warns(UserWarning):
+
+        class Model(BaseModel):
+            # `collect_model_fields()` will special case these to not use
+            # the deprecated methods as default values:
+            dict: int
+            schema: str
+
+        assert Model.model_fields['dict'].is_required()
+        assert Model.model_fields['schema'].is_required()
+
+
 def test_eval_type_backport():
     class Model(BaseModel):
         foo: 'list[int | str]'
