@@ -9,7 +9,6 @@ from types import FunctionType
 from typing import TYPE_CHECKING, Annotated, Any, Callable, Literal, TypeVar, Union, cast, overload
 
 from pydantic_core import PydanticUndefined, core_schema
-from pydantic_core import core_schema as _core_schema
 from typing_extensions import Self, TypeAlias
 
 from ._internal import _decorators, _generics, _internal_dataclass
@@ -329,33 +328,33 @@ if TYPE_CHECKING:
         def __call__(self, cls: Any, value: Any, /) -> Any: ...
 
     class _V2ValidatorClsMethod(Protocol):
-        def __call__(self, cls: Any, value: Any, info: _core_schema.ValidationInfo, /) -> Any: ...
+        def __call__(self, cls: Any, value: Any, info: core_schema.ValidationInfo, /) -> Any: ...
 
     class _OnlyValueWrapValidatorClsMethod(Protocol):
-        def __call__(self, cls: Any, value: Any, handler: _core_schema.ValidatorFunctionWrapHandler, /) -> Any: ...
+        def __call__(self, cls: Any, value: Any, handler: core_schema.ValidatorFunctionWrapHandler, /) -> Any: ...
 
     class _V2WrapValidatorClsMethod(Protocol):
         def __call__(
             self,
             cls: Any,
             value: Any,
-            handler: _core_schema.ValidatorFunctionWrapHandler,
-            info: _core_schema.ValidationInfo,
+            handler: core_schema.ValidatorFunctionWrapHandler,
+            info: core_schema.ValidationInfo,
             /,
         ) -> Any: ...
 
     _V2Validator = Union[
         _V2ValidatorClsMethod,
-        _core_schema.WithInfoValidatorFunction,
+        core_schema.WithInfoValidatorFunction,
         _OnlyValueValidatorClsMethod,
-        _core_schema.NoInfoValidatorFunction,
+        core_schema.NoInfoValidatorFunction,
     ]
 
     _V2WrapValidator = Union[
         _V2WrapValidatorClsMethod,
-        _core_schema.WithInfoWrapValidatorFunction,
+        core_schema.WithInfoWrapValidatorFunction,
         _OnlyValueWrapValidatorClsMethod,
-        _core_schema.NoInfoWrapValidatorFunction,
+        core_schema.NoInfoWrapValidatorFunction,
     ]
 
     _PartialClsOrStaticMethod: TypeAlias = Union[classmethod[Any, Any, Any], staticmethod[Any, Any], partialmethod[Any]]
@@ -516,7 +515,7 @@ _ModelType = TypeVar('_ModelType')
 _ModelTypeCo = TypeVar('_ModelTypeCo', covariant=True)
 
 
-class ModelWrapValidatorHandler(_core_schema.ValidatorFunctionWrapHandler, Protocol[_ModelTypeCo]):
+class ModelWrapValidatorHandler(core_schema.ValidatorFunctionWrapHandler, Protocol[_ModelTypeCo]):
     """`@model_validator` decorated function handler argument type. This is used when `mode='wrap'`."""
 
     def __call__(  # noqa: D102
@@ -556,7 +555,7 @@ class ModelWrapValidator(Protocol[_ModelType]):
         # thus validators _must_ handle all cases
         value: Any,
         handler: ModelWrapValidatorHandler[_ModelType],
-        info: _core_schema.ValidationInfo,
+        info: core_schema.ValidationInfo,
         /,
     ) -> _ModelType: ...
 
@@ -601,7 +600,7 @@ class FreeModelBeforeValidator(Protocol):
         # or anything else that gets passed to validate_python
         # thus validators _must_ handle all cases
         value: Any,
-        info: _core_schema.ValidationInfo,
+        info: core_schema.ValidationInfo,
         /,
     ) -> Any: ...
 
@@ -616,7 +615,7 @@ class ModelBeforeValidator(Protocol):
         # or anything else that gets passed to validate_python
         # thus validators _must_ handle all cases
         value: Any,
-        info: _core_schema.ValidationInfo,
+        info: core_schema.ValidationInfo,
         /,
     ) -> Any: ...
 
@@ -626,7 +625,7 @@ ModelAfterValidatorWithoutInfo = Callable[[_ModelType], _ModelType]
 have info argument.
 """
 
-ModelAfterValidator = Callable[[_ModelType, _core_schema.ValidationInfo], _ModelType]
+ModelAfterValidator = Callable[[_ModelType, core_schema.ValidationInfo], _ModelType]
 """A `@model_validator` decorated function signature. This is used when `mode='after'`."""
 
 _AnyModelWrapValidator = Union[ModelWrapValidator[_ModelType], ModelWrapValidatorWithoutInfo[_ModelType]]
