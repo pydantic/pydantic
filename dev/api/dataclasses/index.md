@@ -70,7 +70,7 @@ dataclass(
 
 ```python
 dataclass(
-    _cls: type[_T" optional hover>_T] | None = None,
+    _cls: type[_T] | None = None,
     *,
     init: Literal[False] = False,
     repr: bool = True,
