@@ -2203,6 +2203,34 @@ def test_deferred_discriminated_union_meta_key_removed() -> None:
     assert Base.__pydantic_core_schema__ == base_schema
 
 
+def test_tagged_discriminator_type_alias() -> None:
+    """https://github.com/pydantic/pydantic/issues/11930"""
+
+    class Pie(BaseModel):
+        pass
+
+    class ApplePie(Pie):
+        fruit: Literal['apple'] = 'apple'
+
+    class PumpkinPie(Pie):
+        filling: Literal['pumpkin'] = 'pumpkin'
+
+    def get_discriminator_value(v):
+        return v.get('fruit', v.get('filling'))
+
+    TaggedApplePie = TypeAliasType('TaggedApplePie', Annotated[ApplePie, Tag('apple')])
+
+    class ThanksgivingDinner(BaseModel):
+        dessert: Annotated[
+            Union[TaggedApplePie, Annotated[PumpkinPie, Tag('pumpkin')]],
+            Discriminator(get_discriminator_value),
+        ]
+
+    inst = ThanksgivingDinner(dessert={'fruit': 'apple'})
+
+    assert isinstance(inst.dessert, ApplePie)
+
+
 def test_discriminated_union_type_alias_type() -> None:
     """https://github.com/pydantic/pydantic/issues/11661
 

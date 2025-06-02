@@ -3074,9 +3074,11 @@ class Discriminator:
             return handler(Annotated[source_type, Field(discriminator=self.discriminator)])
         else:
             original_schema = handler(source_type)
-            return self._convert_schema(original_schema)
+            return self._convert_schema(original_schema, handler)
 
-    def _convert_schema(self, original_schema: core_schema.CoreSchema) -> core_schema.TaggedUnionSchema:
+    def _convert_schema(
+        self, original_schema: core_schema.CoreSchema, handler: GetCoreSchemaHandler | None = None
+    ) -> core_schema.TaggedUnionSchema:
         if original_schema['type'] != 'union':
             # This likely indicates that the schema was a single-item union that was simplified.
             # In this case, we do the same thing we do in
@@ -3093,10 +3095,23 @@ class Discriminator:
             if metadata is not None:
                 tag = metadata.get('pydantic_internal_union_tag_key') or tag
             if tag is None:
-                raise PydanticUserError(
-                    f'`Tag` not provided for choice {choice} used with `Discriminator`',
-                    code='callable-discriminator-no-tag',
-                )
+                # `handler` is None when this method is called from `apply_discriminator()` (deferred discriminators)
+                if handler is not None and choice['type'] == 'definition-ref':
+                    # If choice was built from a PEP 695 type alias, try to resolve the def:
+                    try:
+                        choice = handler.resolve_ref_schema(choice)
+                    except LookupError:
+                        pass
+                    else:
+                        metadata = cast('CoreMetadata | None', choice.get('metadata'))
+                        if metadata is not None:
+                            tag = metadata.get('pydantic_internal_union_tag_key') or tag
+
+                if tag is None:
+                    raise PydanticUserError(
+                        f'`Tag` not provided for choice {choice} used with `Discriminator`',
+                        code='callable-discriminator-no-tag',
+                    )
             tagged_union_choices[tag] = choice
 
         # Have to do these verbose checks to ensure falsy values ('' and {}) don't get ignored
