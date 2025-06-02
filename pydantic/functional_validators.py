@@ -4,12 +4,15 @@ from __future__ import annotations as _annotations
 
 import dataclasses
 import sys
+import warnings
 from functools import partialmethod
 from types import FunctionType
 from typing import TYPE_CHECKING, Annotated, Any, Callable, Literal, TypeVar, Union, cast, overload
 
 from pydantic_core import PydanticUndefined, core_schema
 from typing_extensions import Self, TypeAlias
+
+from pydantic.warnings import PydanticDeprecatedSince211
 
 from ._internal import _decorators, _generics, _internal_dataclass
 from .annotated_handlers import GetCoreSchemaHandler
@@ -634,32 +637,31 @@ _AnyModelBeforeValidator = Union[
 ]
 _AnyModelAfterValidator = Union[ModelAfterValidator[_ModelType], ModelAfterValidatorWithoutInfo[_ModelType]]
 
+_DescriptorProxy = _decorators.PydanticDescriptorProxy[_decorators.ModelValidatorDecoratorInfo]
+AnyFunctionModelWrapValidator = Callable[[_AnyModelWrapValidator[_ModelType]], _DescriptorProxy]
+AnyFunctionModelBeforeValidator = Callable[[_AnyModelBeforeValidator], _DescriptorProxy]
+AnyFunctionModelAfterValidator = Callable[[_AnyModelAfterValidator[_ModelType]], _DescriptorProxy]
+
 
 @overload
 def model_validator(
     *,
     mode: Literal['wrap'],
-) -> Callable[
-    [_AnyModelWrapValidator[_ModelType]], _decorators.PydanticDescriptorProxy[_decorators.ModelValidatorDecoratorInfo]
-]: ...
+) -> AnyFunctionModelWrapValidator: ...
 
 
 @overload
 def model_validator(
     *,
     mode: Literal['before'],
-) -> Callable[
-    [_AnyModelBeforeValidator], _decorators.PydanticDescriptorProxy[_decorators.ModelValidatorDecoratorInfo]
-]: ...
+) -> AnyFunctionModelBeforeValidator: ...
 
 
 @overload
 def model_validator(
     *,
     mode: Literal['after'],
-) -> Callable[
-    [_AnyModelAfterValidator[_ModelType]], _decorators.PydanticDescriptorProxy[_decorators.ModelValidatorDecoratorInfo]
-]: ...
+) -> AnyFunctionModelAfterValidator: ...
 
 
 def model_validator(
@@ -710,14 +712,30 @@ def model_validator(
     Returns:
         A decorator that can be used to decorate a function to be used as a model validator.
     """
+    if mode in ('wrap', 'before'):
 
-    def dec(f: Any) -> _decorators.PydanticDescriptorProxy[Any]:
-        # auto apply the @classmethod decorator
-        f = _decorators.ensure_classmethod_based_on_signature(f)
+        def wrap_or_before_dec(
+            f: AnyFunctionModelBeforeValidator | AnyFunctionModelAfterValidator,
+        ) -> _decorators.PydanticDescriptorProxy[Any]:
+            if not isinstance(f, classmethod):
+                warnings.warn(
+                    f'`@model_validator(mode={mode!r})` should be applied to a classmethod, not an instance method',
+                    PydanticDeprecatedSince211,
+                    stacklevel=2,
+                )
+                # auto apply the @classmethod decorator
+                f = _decorators.ensure_classmethod_based_on_signature(f)
+
+            dec_info = _decorators.ModelValidatorDecoratorInfo(mode=mode)
+            return _decorators.PydanticDescriptorProxy(f, dec_info)
+
+        return wrap_or_before_dec
+
+    def after_dec(f: AnyFunctionModelAfterValidator) -> _decorators.PydanticDescriptorProxy[Any]:
         dec_info = _decorators.ModelValidatorDecoratorInfo(mode=mode)
         return _decorators.PydanticDescriptorProxy(f, dec_info)
 
-    return dec
+    return after_dec
 
 
 AnyType = TypeVar('AnyType')
