@@ -1142,7 +1142,7 @@ class UuidVersion:
     Use this class as an annotation via [`Annotated`](https://docs.python.org/3/library/typing.html#typing.Annotated), as seen below.
 
     Attributes:
-        uuid_version: The version of the UUID. Must be one of 1, 3, 4, 5, or 7.
+        uuid_version: The version of the UUID. Must be one of 1, 3, 4, 5, 6, 7 or 8.
 
     Example:
         ```python
@@ -1166,15 +1166,10 @@ class UuidVersion:
         return field_schema
 
     def __get_pydantic_core_schema__(self, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
-        if isinstance(self, source):
-            # used directly as a type
-            return core_schema.uuid_schema(version=self.uuid_version)
-        else:
-            # update existing schema with self.uuid_version
-            schema = handler(source)
-            _check_annotated_type(schema['type'], 'uuid', self.__class__.__name__)
-            schema['version'] = self.uuid_version  # type: ignore
-            return schema
+        schema = handler(source)
+        _check_annotated_type(schema['type'], 'uuid', self.__class__.__name__)
+        schema['version'] = self.uuid_version  # type: ignore
+        return schema
 
     def __hash__(self) -> int:
         return hash(type(self.uuid_version))
