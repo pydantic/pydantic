@@ -309,6 +309,7 @@ def dataclass(
             original_cls.__firstlineno__ = firstlineno
             cls.__firstlineno__ = firstlineno
         cls.__qualname__ = original_cls.__qualname__
+        cls.__pydantic_fields_complete__ = classmethod(_pydantic_fields_complete)
         cls.__pydantic_complete__ = False  # `complete_dataclass` will set it to `True` if successful.
         # TODO `parent_namespace` is currently None, but we could do the same thing as Pydantic models:
         # fetch the parent ns using `parent_frame_namespace` (if the dataclass was defined in a function),
@@ -317,6 +318,14 @@ def dataclass(
         return cls
 
     return create_dataclass if _cls is None else create_dataclass(_cls)
+
+
+def _pydantic_fields_complete(cls: type[PydanticDataclass]) -> bool:
+    """Return whether the fields where successfully collected (i.e. type hints were successfully resolves).
+
+    This is a private property, not meant to be used outside Pydantic.
+    """
+    return all(field_info._complete for field_info in cls.__pydantic_fields__.values())
 
 
 __getattr__ = getattr_migration(__name__)
