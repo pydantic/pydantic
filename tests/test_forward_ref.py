@@ -7,7 +7,7 @@ from typing import Any, Generic, Optional, TypeVar
 
 import pytest
 
-from pydantic import BaseModel, PydanticUserError, TypeAdapter, ValidationError
+from pydantic import BaseModel, Field, PydanticUserError, TypeAdapter, ValidationError
 
 
 def test_postponed_annotations(create_module):
@@ -1239,11 +1239,11 @@ SubChild()
     ),
 )
 def test_forward_ref_in_class_parameter() -> None:
-    """https://github.com/pydantic/pydantic/issues/11854"""
+    """https://github.com/pydantic/pydantic/issues/11854, https://github.com/pydantic/pydantic/issues/11920"""
     T = TypeVar('T')
 
     class Model(BaseModel, Generic[T]):
-        f: T
+        f: T = Field(json_schema_extra={'extra': 'value'})
 
     M = Model[list['Undefined']]
 
@@ -1253,6 +1253,7 @@ def test_forward_ref_in_class_parameter() -> None:
 
     assert M.__pydantic_fields_complete__
     assert M.model_fields['f'].annotation == list[int]
+    assert M.model_fields['f'].json_schema_extra == {'extra': 'value'}
 
 
 def test_uses_the_local_namespace_when_generating_schema():
