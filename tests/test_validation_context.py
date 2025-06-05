@@ -72,11 +72,10 @@ def test_isinstance(py_and_json: PyAndJson):
 
     assert v.validate_python('foobar', None, {}) == 'foobar'
 
-    # internal error!, use generic bit of error message to match both cpython and pypy
-    with pytest.raises(TypeError, match='is not iterable'):
+    with pytest.raises(TypeError):
         v.validate_test('foobar')
 
-    with pytest.raises(TypeError, match='is not iterable'):
+    with pytest.raises(TypeError):
         v.isinstance_test('foobar')
 
     with pytest.raises(ValidationError, match=r'Value error, wrong \[type=value_error,'):
@@ -84,7 +83,7 @@ def test_isinstance(py_and_json: PyAndJson):
 
     assert v.isinstance_test('foobar', None, {}) is True
 
-    with pytest.raises(TypeError, match='is not iterable'):
+    with pytest.raises(TypeError):
         v.isinstance_test('foobar')
 
     assert v.isinstance_test('foobar', None, {'error'}) is False

@@ -138,7 +138,7 @@ impl<T: EnumValidateValue> Validator for EnumValidator<T> {
             // https://github.com/python/cpython/blob/v3.12.2/Lib/enum.py#L1148
             if enum_value.is_instance(class)? {
                 return Ok(enum_value.into());
-            } else if !enum_value.is(&py.None()) {
+            } else if !enum_value.is(py.None()) {
                 let type_error = PyTypeError::new_err(format!(
                     "error in {}._missing_: returned {} instead of None or a valid member",
                     class

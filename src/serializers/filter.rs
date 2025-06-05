@@ -320,7 +320,7 @@ where
 
 /// detect both ellipsis and `True` to be compatible with pydantic V1
 fn is_ellipsis_like(v: &Bound<'_, PyAny>) -> bool {
-    v.is(&v.py().Ellipsis())
+    v.is(v.py().Ellipsis())
         || match v.downcast::<PyBool>() {
             Ok(b) => b.is_true(),
             Err(_) => false,

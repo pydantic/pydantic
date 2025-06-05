@@ -24,6 +24,7 @@ classifiers = [
     'Programming Language :: Python :: 3.11',
     'Programming Language :: Python :: 3.12',
     'Programming Language :: Python :: 3.13',
+    'Programming Language :: Python :: 3.14',
     'Programming Language :: Rust',
     'Framework :: Pydantic',
     'Intended Audience :: Developers',
@@ -34,7 +35,9 @@ classifiers = [
     'Operating System :: MacOS',
     'Typing :: Typed',
 ]
-dependencies = ['typing-extensions>=4.6.0,!=4.7.0']
+dependencies = [
+    'typing-extensions>=4.13.0',
+]
 dynamic = ['description', 'license', 'readme', 'version']
 
 [project.urls]
@@ -65,10 +68,10 @@ testing = [
     'numpy; python_version < "3.13" and implementation_name == "cpython" and platform_machine == "x86_64"',
     'exceptiongroup; python_version < "3.11"',
     'tzdata',
-    'typing_extensions',
+    'typing-inspection>=0.4.1',
 ]
 linting = [{ include-group = "dev" }, 'griffe', 'pyright', 'ruff', 'mypy']
-wasm = [{ include-group = "dev" }, 'typing_extensions', 'ruff']
+wasm = [{ include-group = "dev" }, 'ruff']
 codspeed = [
     # codspeed is only run on CI, with latest version of CPython
     'pytest-codspeed; python_version == "3.13" and implementation_name == "cpython"',
