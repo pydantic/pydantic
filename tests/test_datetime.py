@@ -634,3 +634,51 @@ def test_datetime_from_date_str():
 
     m = Model(value='2015-10-21')
     assert m.value == datetime(2015, 10, 21, 0, 0)
+
+
+from pydantic.v1.datetime_parse import parse_duration
+
+# Test numerical input + time unit parsing to timedelta
+@pytest.mark.parametrize(
+    'value, unit, expected',
+    [
+        (1000, 'milliseconds', timedelta(seconds=1)),
+        (30, 'minutes', timedelta(minutes=30)),
+        (86400, 'seconds', timedelta(days=1)),
+        (1_000_000, 'microseconds', timedelta(seconds=1)),
+        (-500, 'milliseconds', timedelta(seconds=-0.5)),
+        (1.5, 'hours', timedelta(hours=1.5)),
+        (7, 'days', timedelta(weeks=1)),
+        (0, 'seconds', timedelta(0)),
+        (0.5, 'days', timedelta(hours=12)),
+        (1, 'milliseconds', timedelta(milliseconds=1)),
+        (1, 'microseconds', timedelta(microseconds=1)),
+    ]
+)
+def test_parse_duration_valid(value, unit, expected):
+    result = parse_duration(value, time_unit=unit)
+    assert result == expected
+
+# Test invalid time unit or input value
+@pytest.mark.parametrize(
+    'value, unit, error_msg',
+    [
+        (1000, 'invalid_unit', "Invalid time_unit 'invalid_unit'"),
+        (None, 'seconds', "invalid type; expected timedelta, string, bytes, int or float"),
+        (float('inf'), 'seconds', "cannot convert float infinity to integer"),
+        (float('nan'), 'seconds', "cannot convert float NaN to integer"),
+        ('abc', 'seconds', "invalid duration format"),
+        ('2025-01-01', 'invalid_format', "invalid duration format"),
+    ]
+)
+def test_parse_duration_error(value, unit, error_msg):
+    with pytest.raises((ValueError, TypeError, OverflowError)) as exc_info:
+        parse_duration(value, time_unit=unit)
+    assert error_msg in str(exc_info.value)
+
+# Test valid input without raising an error
+def test_parse_duration_valid_input():
+    try:
+        parse_duration(1000, 'seconds')
+    except Exception as e:
+        pytest.fail(f"Valid input raised an exception: {e}")

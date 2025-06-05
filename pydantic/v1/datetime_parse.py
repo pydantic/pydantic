@@ -13,6 +13,7 @@ Changed to:
 * use standard python datetime types not django.utils.timezone
 * raise ValueError when regex doesn't match rather than returning None
 * support parsing unix timestamps for dates and datetimes
+* support configurable time units for timedelta fields (added feature)
 """
 import re
 from datetime import date, datetime, time, timedelta, timezone
@@ -62,6 +63,16 @@ MS_WATERSHED = int(2e10)
 MAX_NUMBER = int(3e20)
 StrBytesIntFloat = Union[str, bytes, int, float]
 
+# Time unit mapping table (with seconds as the base)
+TIME_UNITS = {
+    'seconds': 1,
+    'milliseconds': 1e-3,
+    'microseconds': 1e-6,
+    'minutes': 60,
+    'hours': 3600,
+    'days': 86400,
+    'weeks': 604800,
+}
 
 def get_numeric(value: StrBytesIntFloat, native_expected_type: str) -> Union[None, int, float]:
     if isinstance(value, (int, float)):
@@ -210,21 +221,33 @@ def parse_datetime(value: Union[datetime, StrBytesIntFloat]) -> datetime:
         raise errors.DateTimeError()
 
 
-def parse_duration(value: StrBytesIntFloat) -> timedelta:
+def parse_duration(value: StrBytesIntFloat, time_unit: str = 'seconds') -> timedelta:
     """
     Parse a duration int/float/string and return a datetime.timedelta.
 
     The preferred format for durations in Django is '%d %H:%M:%S.%f'.
 
     Also supports ISO 8601 representation.
+    
+    Args:
+        value: The input value to parse (int, float, string, or bytes).
+        time_unit: The time unit to use when parsing numeric values.
+                   Valid units: 'seconds' (default), 'milliseconds', 'microseconds',
+                                'minutes', 'hours', 'days', 'weeks'.
     """
     if isinstance(value, timedelta):
         return value
 
+    # Handle numeric types
     if isinstance(value, (int, float)):
-        # below code requires a string
-        value = f'{value:f}'
-    elif isinstance(value, bytes):
+        if time_unit not in TIME_UNITS:
+            valid_units = ', '.join(TIME_UNITS.keys())
+            raise ValueError(f"Invalid time_unit '{time_unit}'. Valid units: {valid_units}")
+        seconds = value * TIME_UNITS[time_unit]
+        return timedelta(seconds=seconds)
+
+    # Handle string/byte types
+    if isinstance(value, bytes):
         value = value.decode()
 
     try:
