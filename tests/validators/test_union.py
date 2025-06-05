@@ -1,3 +1,5 @@
+import platform
+import sys
 from dataclasses import dataclass
 from datetime import date, time
 from enum import Enum, IntEnum
@@ -231,6 +233,9 @@ def test_union_list_bool_int():
     ]
 
 
+@pytest.mark.xfail(
+    platform.python_implementation() == 'PyPy' and sys.version_info[:2] == (3, 11), reason='pypy 3.11 type formatting'
+)
 def test_empty_choices():
     msg = r'Error building "union" validator:\s+SchemaError: One or more union choices required'
     with pytest.raises(SchemaError, match=msg):

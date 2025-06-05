@@ -129,14 +129,6 @@ pub fn truncate_safe_repr(v: &Bound<'_, PyAny>, max_len: Option<usize>) -> Strin
 }
 
 pub fn extract_i64(v: &Bound<'_, PyAny>) -> Option<i64> {
-    #[cfg(PyPy)]
-    if !v.is_instance_of::<pyo3::types::PyInt>() {
-        // PyPy used __int__ to cast floats to ints after CPython removed it,
-        // see https://github.com/pypy/pypy/issues/4949
-        //
-        // Can remove this after PyPy 7.3.17 is released
-        return None;
-    }
     v.extract().ok()
 }
 
