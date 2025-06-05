@@ -14,11 +14,6 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - name: prepare self schema
-      shell: bash
-      # generate up front so that we don't have to do this inside the docker container
-      run: uv run python generate_self_schema.py
-
     - name: prepare profiling directory
       shell: bash
       # making this ahead of the compile ensures that the local user can write to this

@@ -25,7 +25,6 @@ from ._pydantic_core import (
     from_json,
     to_json,
     to_jsonable_python,
-    validate_core_schema,
 )
 from .core_schema import CoreConfig, CoreSchema, CoreSchemaType, ErrorType
 
@@ -66,7 +65,6 @@ __all__ = [
     'to_json',
     'from_json',
     'to_jsonable_python',
-    'validate_core_schema',
 ]
 
 

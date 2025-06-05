@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := all
-sources = python/pydantic_core tests generate_self_schema.py wasm-preview/run_tests.py
+sources = python/pydantic_core tests wasm-preview/run_tests.py
 
 mypy-stubtest = uv run python -m mypy.stubtest pydantic_core._pydantic_core --allowlist .mypy-stubtest-allowlist
 
@@ -124,7 +124,6 @@ clean:
 	rm -f `find . -type f -name '*.py[co]' `
 	rm -f `find . -type f -name '*~' `
 	rm -f `find . -type f -name '.*~' `
-	rm -rf src/self_schema.py
 	rm -rf .cache
 	rm -rf htmlcov
 	rm -rf .pytest_cache

@@ -8,7 +8,7 @@ from typing import Any, Union
 import pytest
 from dirty_equals import FunctionCheck
 
-from pydantic_core import CoreConfig, SchemaError, SchemaValidator, ValidationError, core_schema, validate_core_schema
+from pydantic_core import CoreConfig, SchemaError, SchemaValidator, ValidationError, core_schema
 
 from ..conftest import Err, PyAndJson, assert_gc
 
@@ -190,11 +190,6 @@ def test_allow_extra_invalid():
         )
 
 
-def test_allow_extra_wrong():
-    with pytest.raises(SchemaError, match="Input should be 'allow', 'forbid' or 'ignore'"):
-        validate_core_schema({'type': 'typed-dict', 'fields': {}, 'config': {'extra_fields_behavior': 'wrong'}})
-
-
 def test_str_config():
     v = SchemaValidator(
         core_schema.typed_dict_schema(
@@ -229,11 +224,6 @@ def test_json_error():
             'input': 'wrong',
         }
     ]
-
-
-def test_missing_schema_key():
-    with pytest.raises(SchemaError, match='typed-dict.fields.x.schema\n  Field required'):
-        validate_core_schema({'type': 'typed-dict', 'fields': {'x': {'type': 'str'}}})
 
 
 def test_fields_required_by_default():
@@ -629,11 +619,9 @@ def test_paths_allow_by_name(py_and_json: PyAndJson, input_value):
 @pytest.mark.parametrize(
     'alias_schema,error',
     [
-        ({'validation_alias': ['foo', ['bar']]}, 'Input should be a valid string'),
         ({'validation_alias': []}, 'Lookup paths should have at least one element'),
         ({'validation_alias': [[]]}, 'Each alias path should have at least one element'),
         ({'validation_alias': [123]}, "TypeError: 'int' object cannot be converted to 'PyList'"),
-        ({'validation_alias': [[[]]]}, 'Input should be a valid string'),
         ({'validation_alias': [[1, 'foo']]}, 'TypeError: The first item in an alias path should be a string'),
     ],
     ids=repr,
@@ -641,12 +629,10 @@ def test_paths_allow_by_name(py_and_json: PyAndJson, input_value):
 def test_alias_build_error(alias_schema, error):
     with pytest.raises(SchemaError, match=error):
         SchemaValidator(
-            schema=validate_core_schema(
-                {
-                    'type': 'typed-dict',
-                    'fields': {'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'int'}, **alias_schema}},
-                }
-            )
+            schema={
+                'type': 'typed-dict',
+                'fields': {'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'int'}, **alias_schema}},
+            }
         )
 
 
@@ -906,20 +892,6 @@ def test_bad_default_factory(default_factory, error_message):
 
 
 class TestOnError:
-    def test_on_error_bad_name(self):
-        with pytest.raises(SchemaError, match="Input should be 'raise', 'omit' or 'default'"):
-            validate_core_schema(
-                {
-                    'type': 'typed-dict',
-                    'fields': {
-                        'x': {
-                            'type': 'typed-dict-field',
-                            'schema': {'type': 'default', 'schema': {'type': 'str'}, 'on_error': 'rais'},
-                        }
-                    },
-                }
-            )
-
     def test_on_error_bad_omit(self):
         with pytest.raises(SchemaError, match="Field 'x': 'on_error = omit' cannot be set for required fields"):
             SchemaValidator(

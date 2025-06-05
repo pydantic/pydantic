@@ -1,6 +1,6 @@
 import pytest
 
-from pydantic_core import SchemaError, SchemaSerializer, core_schema, validate_core_schema
+from pydantic_core import SchemaError, SchemaSerializer, core_schema
 
 
 def test_custom_ser():
@@ -21,20 +21,6 @@ def test_ignored_def():
         )
     )
     assert s.to_python([1, 2, 3]) == [1, 2, 3]
-
-
-def test_def_error():
-    with pytest.raises(SchemaError) as exc_info:
-        validate_core_schema(
-            core_schema.definitions_schema(
-                core_schema.list_schema(core_schema.definition_reference_schema('foobar')),
-                [core_schema.int_schema(ref='foobar'), {'type': 'wrong'}],
-            )
-        )
-
-    assert str(exc_info.value).startswith(
-        "Invalid Schema:\ndefinitions.definitions.1\n  Input tag 'wrong' found using 'type'"
-    )
 
 
 def test_repeated_ref():

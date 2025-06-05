@@ -39,7 +39,7 @@ pub use serializers::{
     to_json, to_jsonable_python, PydanticSerializationError, PydanticSerializationUnexpectedValue, SchemaSerializer,
     WarningsArg,
 };
-pub use validators::{validate_core_schema, PySome, SchemaValidator};
+pub use validators::{PySome, SchemaValidator};
 
 use crate::input::Input;
 
@@ -113,8 +113,8 @@ mod _pydantic_core {
 
     #[pymodule_export]
     use crate::{
-        from_json, list_all_errors, to_json, to_jsonable_python, validate_core_schema, ArgsKwargs, PyMultiHostUrl,
-        PySome, PyUrl, PydanticCustomError, PydanticKnownError, PydanticOmit, PydanticSerializationError,
+        from_json, list_all_errors, to_json, to_jsonable_python, ArgsKwargs, PyMultiHostUrl, PySome, PyUrl,
+        PydanticCustomError, PydanticKnownError, PydanticOmit, PydanticSerializationError,
         PydanticSerializationUnexpectedValue, PydanticUndefinedType, PydanticUseDefault, SchemaError, SchemaSerializer,
         SchemaValidator, TzInfo, ValidationError,
     };

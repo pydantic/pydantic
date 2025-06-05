@@ -5,10 +5,8 @@ import pytest
 
 from pydantic_core import (
     PydanticSerializationError,
-    SchemaError,
     SchemaSerializer,
     core_schema,
-    validate_core_schema,
 )
 
 
@@ -162,13 +160,10 @@ def test_exclude(schema_func, seq_f):
     assert v.to_json(seq_f('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'), exclude={-1, -2}) == b'["a","c","e"]'
 
 
-@pytest.mark.parametrize('include,exclude', [({1, 3, 5}, {5, 6}), ([1, 3, 5], [5, 6])])
-def test_filter(include, exclude):
+def test_filter():
     v = SchemaSerializer(
-        validate_core_schema(
-            core_schema.list_schema(
-                core_schema.any_schema(), serialization=core_schema.filter_seq_schema(include=include, exclude=exclude)
-            )
+        core_schema.list_schema(
+            core_schema.any_schema(), serialization=core_schema.filter_seq_schema(include={1, 3, 5}, exclude={5, 6})
         )
     )
     assert v.to_python([0, 1, 2, 3, 4, 5, 6, 7]) == [1, 3]
@@ -195,23 +190,6 @@ class ExplicitContains(ImplicitContains):
 
 class RemovedContains(ImplicitContains):
     __contains__ = None  # This might be done to explicitly force the `x in RemovedContains()` check to not be allowed
-
-
-@pytest.mark.parametrize(
-    'include_value,error_msg',
-    [
-        ('foobar', 'Input should be a valid set'),
-        ({'a': 'dict'}, 'Input should be a valid set'),
-        ({4.2}, 'Input should be a valid integer, got a number with a fractional part'),
-        ({'a'}, 'Input should be a valid integer, unable to parse string as an integer'),
-    ],
-)
-@pytest.mark.parametrize('schema_func', [core_schema.list_schema, core_schema.tuple_variable_schema])
-def test_include_error(schema_func, include_value, error_msg):
-    with pytest.raises(SchemaError, match=error_msg):
-        validate_core_schema(
-            schema_func(core_schema.any_schema(), serialization=core_schema.filter_seq_schema(include=include_value))
-        )
 
 
 @pytest.mark.parametrize(

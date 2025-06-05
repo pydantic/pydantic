@@ -1,6 +1,6 @@
 import pytest
 
-from pydantic_core import SchemaError, SchemaValidator, core_schema, validate_core_schema
+from pydantic_core import SchemaError, SchemaValidator, core_schema
 
 from ..conftest import plain_repr
 
@@ -43,20 +43,6 @@ def test_check_ref_used_ignores_metadata():
     )
     assert v.validate_python([1, 2, 3]) == [1, 2, 3]
     # assert plain_repr(v).endswith('definitions=[])')
-
-
-def test_def_error():
-    with pytest.raises(SchemaError) as exc_info:
-        validate_core_schema(
-            core_schema.definitions_schema(
-                core_schema.list_schema(core_schema.definition_reference_schema('foobar')),
-                [core_schema.int_schema(ref='foobar'), {'type': 'wrong'}],
-            )
-        )
-    assert str(exc_info.value).startswith(
-        "Invalid Schema:\ndefinitions.definitions.1\n  Input tag 'wrong' found using 'type'"
-    )
-    assert exc_info.value.error_count() == 1
 
 
 def test_dict_repeat():

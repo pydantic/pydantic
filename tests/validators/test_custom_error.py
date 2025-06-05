@@ -1,6 +1,6 @@
 import pytest
 
-from pydantic_core import SchemaError, SchemaValidator, ValidationError, core_schema, validate_core_schema
+from pydantic_core import SchemaError, SchemaValidator, ValidationError, core_schema
 
 from ..conftest import PyAndJson
 
@@ -29,11 +29,6 @@ def test_custom_error_type(py_and_json: PyAndJson):
     assert exc_info.value.errors(include_url=False) == [
         {'type': 'recursion_loop', 'loc': (), 'msg': 'Recursion error - cyclic reference detected', 'input': 'X'}
     ]
-
-
-def test_custom_error_error():
-    with pytest.raises(SchemaError, match=r'custom_error_type\s+Field required \[type=missing'):
-        validate_core_schema({'type': 'custom-error', 'schema': {'type': 'int'}})
 
 
 def test_custom_error_invalid():
