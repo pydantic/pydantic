@@ -8,7 +8,7 @@ use pyo3::types::{PyDict, PyString};
 use pyo3::{intern, FromPyObject};
 
 use crate::input::Int;
-use jiter::{cached_py_string, pystring_fast_new, StringCacheMode};
+use jiter::{cached_py_string, StringCacheMode};
 
 pub trait SchemaDict<'py> {
     fn get_as<T>(&self, key: &Bound<'py, PyString>) -> PyResult<Option<T>>
@@ -148,11 +148,10 @@ pub fn extract_int(v: &Bound<'_, PyAny>) -> Option<Int> {
 
 pub(crate) fn new_py_string<'py>(py: Python<'py>, s: &str, cache_str: StringCacheMode) -> Bound<'py, PyString> {
     // we could use `bytecount::num_chars(s.as_bytes()) == s.len()` as orjson does, but it doesn't appear to be faster
-    let ascii_only = false;
     if matches!(cache_str, StringCacheMode::All) {
-        cached_py_string(py, s, ascii_only)
+        cached_py_string(py, s)
     } else {
-        pystring_fast_new(py, s, ascii_only)
+        PyString::new(py, s)
     }
 }
 

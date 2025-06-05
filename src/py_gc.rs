@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use ahash::AHashMap;
 use enum_dispatch::enum_dispatch;
-use pyo3::{AsPyPointer, Py, PyTraverseError, PyVisit};
+use pyo3::{Py, PyTraverseError, PyVisit};
 
 /// Trait implemented by types which can be traversed by the Python GC.
 #[enum_dispatch]
@@ -10,10 +10,7 @@ pub trait PyGcTraverse {
     fn py_gc_traverse(&self, visit: &PyVisit<'_>) -> Result<(), PyTraverseError>;
 }
 
-impl<T> PyGcTraverse for Py<T>
-where
-    Py<T>: AsPyPointer,
-{
+impl<T> PyGcTraverse for Py<T> {
     fn py_gc_traverse(&self, visit: &PyVisit<'_>) -> Result<(), PyTraverseError> {
         visit.call(self)
     }
