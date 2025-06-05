@@ -3,7 +3,7 @@ import json
 import pytest
 from dirty_equals import IsStrictDict
 
-from pydantic_core import SchemaError, SchemaSerializer, core_schema, validate_core_schema
+from pydantic_core import SchemaSerializer, core_schema
 
 
 def test_dict_str_int():
@@ -143,18 +143,3 @@ def test_filter_runtime_int():
         core_schema.dict_schema(core_schema.any_schema(), serialization=core_schema.filter_dict_schema(exclude={0, 1}))
     )
     assert s.to_python({0: 0, 1: 1, 2: 2, 3: 3}, include={1, 2}) == {1: 1, 2: 2}
-
-
-@pytest.mark.parametrize(
-    'include_value,error_msg',
-    [
-        ('foobar', 'Input should be a valid set'),
-        ({'a': 'dict'}, 'Input should be a valid set'),
-        ({4.2}, 'Input should be a valid integer, got a number with a fractional part'),
-    ],
-)
-def test_include_error(include_value, error_msg):
-    with pytest.raises(SchemaError, match=error_msg):
-        validate_core_schema(
-            core_schema.dict_schema(serialization=core_schema.filter_dict_schema(include=include_value))
-        )

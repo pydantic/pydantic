@@ -8,15 +8,14 @@ use test::{black_box, Bencher};
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyString};
 
-use _pydantic_core::{validate_core_schema, SchemaValidator};
+use _pydantic_core::SchemaValidator;
 
 fn build_schema_validator_with_globals(
     py: Python,
     code: &CStr,
     globals: Option<&Bound<'_, PyDict>>,
 ) -> SchemaValidator {
-    let mut schema = py.eval(code, globals, None).unwrap().extract().unwrap();
-    schema = validate_core_schema(&schema, None).unwrap().extract().unwrap();
+    let schema = py.eval(code, globals, None).unwrap().extract().unwrap();
     SchemaValidator::py_new(py, &schema, None).unwrap()
 }
 
@@ -510,8 +509,7 @@ fn complete_model(bench: &mut Bencher) {
         sys_path.call_method1("append", ("./tests/benchmarks/",)).unwrap();
 
         let complete_schema = py.import("complete_schema").unwrap();
-        let mut schema = complete_schema.call_method0("schema").unwrap();
-        schema = validate_core_schema(&schema, None).unwrap().extract().unwrap();
+        let schema = complete_schema.call_method0("schema").unwrap();
         let validator = SchemaValidator::py_new(py, &schema, None).unwrap();
 
         let input = complete_schema.call_method0("input_data_lax").unwrap();
@@ -534,8 +532,7 @@ fn nested_model_using_definitions(bench: &mut Bencher) {
         sys_path.call_method1("append", ("./tests/benchmarks/",)).unwrap();
 
         let complete_schema = py.import("nested_schema").unwrap();
-        let mut schema = complete_schema.call_method0("schema_using_defs").unwrap();
-        schema = validate_core_schema(&schema, None).unwrap().extract().unwrap();
+        let schema = complete_schema.call_method0("schema_using_defs").unwrap();
         let validator = SchemaValidator::py_new(py, &schema, None).unwrap();
 
         let input = complete_schema.call_method0("input_data_valid").unwrap();
@@ -562,8 +559,7 @@ fn nested_model_inlined(bench: &mut Bencher) {
         sys_path.call_method1("append", ("./tests/benchmarks/",)).unwrap();
 
         let complete_schema = py.import("nested_schema").unwrap();
-        let mut schema = complete_schema.call_method0("inlined_schema").unwrap();
-        schema = validate_core_schema(&schema, None).unwrap().extract().unwrap();
+        let schema = complete_schema.call_method0("inlined_schema").unwrap();
         let validator = SchemaValidator::py_new(py, &schema, None).unwrap();
 
         let input = complete_schema.call_method0("input_data_valid").unwrap();
