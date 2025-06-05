@@ -4,15 +4,13 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from pydantic_core import core_schema, validate_core_schema
+from pydantic_core import core_schema
 from pydantic_core._pydantic_core import SchemaValidator, ValidationError
 
 
 def test_basic_schema_validator():
     v = SchemaValidator(
-        validate_core_schema(
-            {'type': 'dict', 'strict': True, 'keys_schema': {'type': 'int'}, 'values_schema': {'type': 'int'}}
-        )
+        {'type': 'dict', 'strict': True, 'keys_schema': {'type': 'int'}, 'values_schema': {'type': 'int'}}
     )
     v = pickle.loads(pickle.dumps(v))
     assert v.validate_python({'1': 2, '3': 4}) == {1: 2, 3: 4}

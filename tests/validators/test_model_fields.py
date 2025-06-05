@@ -9,7 +9,7 @@ from typing import Any, Union
 import pytest
 from dirty_equals import FunctionCheck, HasRepr, IsStr
 
-from pydantic_core import CoreConfig, SchemaError, SchemaValidator, ValidationError, core_schema, validate_core_schema
+from pydantic_core import CoreConfig, SchemaError, SchemaValidator, ValidationError, core_schema
 
 from ..conftest import Err, PyAndJson
 
@@ -430,11 +430,6 @@ def test_json_error():
     ]
 
 
-def test_missing_schema_key():
-    with pytest.raises(SchemaError, match='model-fields.fields.x.schema\n  Field required'):
-        validate_core_schema({'type': 'model-fields', 'fields': {'x': {'type': 'str'}}})
-
-
 def test_fields_required_by_default():
     """By default all fields should be required"""
     v = SchemaValidator(
@@ -739,11 +734,9 @@ def test_paths_allow_by_name(py_and_json: PyAndJson, input_value):
 @pytest.mark.parametrize(
     'alias_schema,error',
     [
-        ({'validation_alias': ['foo', ['bar']]}, 'Input should be a valid string'),
         ({'validation_alias': []}, 'Lookup paths should have at least one element'),
         ({'validation_alias': [[]]}, 'Each alias path should have at least one element'),
         ({'validation_alias': [123]}, "TypeError: 'int' object cannot be converted to 'PyList'"),
-        ({'validation_alias': [[[]]]}, 'Input should be a valid string'),
         ({'validation_alias': [[1, 'foo']]}, 'TypeError: The first item in an alias path should be a string'),
     ],
     ids=repr,
@@ -751,12 +744,10 @@ def test_paths_allow_by_name(py_and_json: PyAndJson, input_value):
 def test_alias_build_error(alias_schema, error):
     with pytest.raises(SchemaError, match=error):
         SchemaValidator(
-            schema=validate_core_schema(
-                {
-                    'type': 'model-fields',
-                    'fields': {'field_a': {'type': 'model-field', 'schema': {'type': 'int'}, **alias_schema}},
-                }
-            )
+            schema={
+                'type': 'model-fields',
+                'fields': {'field_a': {'type': 'model-field', 'schema': {'type': 'int'}, **alias_schema}},
+            }
         )
 
 
@@ -1478,20 +1469,6 @@ def test_bad_default_factory(default_factory, error_message):
 
 
 class TestOnError:
-    def test_on_error_bad_name(self):
-        with pytest.raises(SchemaError, match="Input should be 'raise', 'omit' or 'default'"):
-            validate_core_schema(
-                {
-                    'type': 'model-fields',
-                    'fields': {
-                        'x': {
-                            'type': 'model-field',
-                            'schema': {'type': 'default', 'schema': {'type': 'str'}, 'on_error': 'rais'},
-                        }
-                    },
-                }
-            )
-
     def test_on_error_bad_default(self):
         with pytest.raises(SchemaError, match="'on_error = default' requires a `default` or `default_factory`"):
             SchemaValidator(

@@ -478,9 +478,6 @@ jobs:
 
       - run: pip install -U twine 'ruff==0.5.0' typing_extensions
 
-      # generate self-schema now, so we don't have to do so inside docker in maturin build
-      - run: python generate_self_schema.py
-
       - name: build wheels
         uses: PyO3/maturin-action@v1
         with:

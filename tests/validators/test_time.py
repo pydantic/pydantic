@@ -5,7 +5,7 @@ from typing import Any
 
 import pytest
 
-from pydantic_core import SchemaError, SchemaValidator, ValidationError, core_schema, validate_core_schema
+from pydantic_core import SchemaError, SchemaValidator, ValidationError, core_schema
 
 from ..conftest import Err, PyAndJson
 
@@ -198,11 +198,6 @@ def test_time_bound_ctx():
     ]
 
 
-def test_invalid_constraint():
-    with pytest.raises(SchemaError, match='Input should be in a valid time format'):
-        validate_core_schema({'type': 'time', 'gt': 'foobar'})
-
-
 def test_dict_py():
     v = SchemaValidator(
         core_schema.dict_schema(keys_schema=core_schema.time_schema(), values_schema=core_schema.int_schema())
@@ -300,8 +295,3 @@ def test_neg_7200():
 def test_tz_constraint_too_high():
     with pytest.raises(SchemaError, match='OverflowError: Python int too large to convert to C long'):
         SchemaValidator(core_schema.time_schema(tz_constraint=2**64))
-
-
-def test_tz_constraint_wrong():
-    with pytest.raises(SchemaError, match="Input should be 'aware' or 'naive"):
-        validate_core_schema(core_schema.time_schema(tz_constraint='wrong'))

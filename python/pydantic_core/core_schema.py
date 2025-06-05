@@ -953,7 +953,7 @@ class DateSchema(TypedDict, total=False):
     gt: date
     now_op: Literal['past', 'future']
     # defaults to current local utc offset from `time.localtime().tm_gmtoff`
-    # value is restricted to -86_400 < offset < 86_400 by bounds in generate_self_schema.py
+    # value is restricted to -86_400 < offset < 86_400:
     now_utc_offset: int
     ref: str
     metadata: dict[str, Any]

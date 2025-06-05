@@ -7,7 +7,7 @@ from typing import Any
 
 import pytest
 
-from pydantic_core import SchemaError, SchemaValidator, ValidationError, core_schema, validate_core_schema
+from pydantic_core import SchemaError, SchemaValidator, ValidationError, core_schema
 from pydantic_core import core_schema as cs
 
 from ..conftest import Err, PyAndJson
@@ -229,11 +229,6 @@ def test_date_kwargs(kwargs: dict[str, Any], input_value: date, expected: Err | 
         assert output == expected
 
 
-def test_invalid_constraint():
-    with pytest.raises(SchemaError, match=r'date\.gt\n  Input should be a valid date or datetime'):
-        validate_core_schema({'type': 'date', 'gt': 'foobar'})
-
-
 def test_dict_py():
     v = SchemaValidator(cs.dict_schema(keys_schema=cs.date_schema(), values_schema=cs.int_schema()))
     assert v.validate_python({date(2000, 1, 1): 2, date(2000, 1, 2): 4}) == {date(2000, 1, 1): 2, date(2000, 1, 2): 4}
@@ -308,8 +303,3 @@ def test_date_past_future_today():
     assert v.isinstance_python(today) is False
     assert v.isinstance_python(today - timedelta(days=1)) is False
     assert v.isinstance_python(today + timedelta(days=1)) is True
-
-
-def test_offset_too_large():
-    with pytest.raises(SchemaError, match=r'Input should be less than 86400 \[type=less_than,'):
-        validate_core_schema(core_schema.date_schema(now_op='past', now_utc_offset=24 * 3600))

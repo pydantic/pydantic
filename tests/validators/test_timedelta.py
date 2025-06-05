@@ -5,7 +5,7 @@ from typing import Any
 
 import pytest
 
-from pydantic_core import SchemaError, SchemaValidator, ValidationError, core_schema, validate_core_schema
+from pydantic_core import SchemaError, SchemaValidator, ValidationError, core_schema
 
 from ..conftest import Err, PyAndJson
 
@@ -207,20 +207,6 @@ def test_timedelta_kwargs_strict():
     v = SchemaValidator(core_schema.timedelta_schema(strict=True, le=timedelta(days=3)))
     output = v.validate_python(timedelta(days=2, hours=1))
     assert output == timedelta(days=2, hours=1)
-
-
-def test_invalid_constraint():
-    with pytest.raises(
-        SchemaError,
-        match='Invalid Schema:\ntimedelta.gt\n  Input should be a valid timedelta, invalid character in hour',
-    ):
-        validate_core_schema({'type': 'timedelta', 'gt': 'foobar'})
-
-    with pytest.raises(
-        SchemaError,
-        match='Invalid Schema:\ntimedelta.le\n  Input should be a valid timedelta, invalid character in hour',
-    ):
-        validate_core_schema({'type': 'timedelta', 'le': 'foobar'})
 
 
 def test_dict_py():

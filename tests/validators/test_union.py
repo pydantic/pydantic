@@ -8,7 +8,7 @@ from uuid import UUID
 import pytest
 from dirty_equals import IsFloat, IsInt
 
-from pydantic_core import CoreConfig, SchemaError, SchemaValidator, ValidationError, core_schema, validate_core_schema
+from pydantic_core import CoreConfig, SchemaError, SchemaValidator, ValidationError, core_schema
 
 from ..conftest import plain_repr
 
@@ -228,22 +228,6 @@ def test_union_list_bool_int():
             'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'input': 'true',
         },
-    ]
-
-
-def test_no_choices(pydantic_version):
-    with pytest.raises(SchemaError) as exc_info:
-        validate_core_schema({'type': 'union'})
-
-    assert str(exc_info.value) == (
-        'Invalid Schema:\n'
-        'union.choices\n'
-        "  Field required [type=missing, input_value={'type': 'union'}, input_type=dict]\n"
-        f'    For further information visit https://errors.pydantic.dev/{pydantic_version}/v/missing'
-    )
-    assert exc_info.value.error_count() == 1
-    assert exc_info.value.errors() == [
-        {'input': {'type': 'union'}, 'loc': ('union', 'choices'), 'msg': 'Field required', 'type': 'missing'}
     ]
 
 
