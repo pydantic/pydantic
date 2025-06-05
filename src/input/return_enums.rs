@@ -11,7 +11,6 @@ use pyo3::exceptions::PyTypeError;
 use pyo3::ffi;
 use pyo3::intern;
 use pyo3::prelude::*;
-#[cfg(not(PyPy))]
 use pyo3::types::PyFunction;
 use pyo3::types::{PyBytes, PyComplex, PyFloat, PyFrozenSet, PyIterator, PyMapping, PySet, PyString};
 
@@ -348,15 +347,7 @@ pub(crate) fn iterate_attributes<'a, 'py>(
                 // the PyFunction::is_type_of(attr) catches `staticmethod`, but also any other function,
                 // I think that's better than including static methods in the yielded attributes,
                 // if someone really wants fields, they can use an explicit field, or a function to modify input
-                #[cfg(not(PyPy))]
                 if !is_bound && !attr.is_instance_of::<PyFunction>() {
-                    return Some(Ok((name, attr)));
-                }
-                // MASSIVE HACK! PyFunction doesn't exist for PyPy,
-                // is_instance_of::<PyFunction> crashes with a null pointer, hence this hack, see
-                // https://github.com/pydantic/pydantic-core/pull/161#discussion_r917257635
-                #[cfg(PyPy)]
-                if !is_bound && attr.get_type().to_string() != "<class 'function'>" {
                     return Some(Ok((name, attr)));
                 }
             }

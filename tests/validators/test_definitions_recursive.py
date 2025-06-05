@@ -1,5 +1,6 @@
 import datetime
 import platform
+import sys
 from dataclasses import dataclass
 from typing import Optional
 
@@ -752,6 +753,9 @@ def test_many_uses_of_ref():
     assert v.validate_python(long_input) == long_input
 
 
+@pytest.mark.xfail(
+    platform.python_implementation() == 'PyPy' and sys.version_info[:2] == (3, 11), reason='pypy 3.11 type formatting'
+)
 def test_error_inside_definition_wrapper():
     with pytest.raises(SchemaError) as exc_info:
         SchemaValidator(
