@@ -1516,7 +1516,7 @@ def test_dataclass_wrap_json():
     assert v.validate_json('{"a": "hello", "b": true}', strict=True) == FooDataclass(a='hello', b=True)
 
 
-@pytest.mark.xfail(is_free_threaded, reason='GC leaks on free-threaded')
+@pytest.mark.xfail(is_free_threaded and sys.version_info < (3, 14), reason='GC leaks on free-threaded (<3.14)')
 @pytest.mark.xfail(
     condition=platform.python_implementation() == 'PyPy', reason='https://foss.heptapod.net/pypy/pypy/-/issues/3899'
 )

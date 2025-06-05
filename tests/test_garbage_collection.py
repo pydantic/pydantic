@@ -1,4 +1,5 @@
 import platform
+import sys
 from collections.abc import Iterable
 from typing import Any
 from weakref import WeakValueDictionary
@@ -20,7 +21,7 @@ GC_TEST_SCHEMA_INNER = core_schema.definitions_schema(
 )
 
 
-@pytest.mark.xfail(is_free_threaded, reason='GC leaks on free-threaded')
+@pytest.mark.xfail(is_free_threaded and sys.version_info < (3, 14), reason='GC leaks on free-threaded (<3.14)')
 @pytest.mark.xfail(
     condition=platform.python_implementation() == 'PyPy', reason='https://foss.heptapod.net/pypy/pypy/-/issues/3899'
 )
@@ -48,7 +49,7 @@ def test_gc_schema_serializer() -> None:
     assert_gc(lambda: len(cache) == 0)
 
 
-@pytest.mark.xfail(is_free_threaded, reason='GC leaks on free-threaded')
+@pytest.mark.xfail(is_free_threaded and sys.version_info < (3, 14), reason='GC leaks on free-threaded (<3.14)')
 @pytest.mark.xfail(
     condition=platform.python_implementation() == 'PyPy', reason='https://foss.heptapod.net/pypy/pypy/-/issues/3899'
 )

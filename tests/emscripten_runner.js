@@ -106,6 +106,7 @@ await micropip.install([
     'tzdata',
     'file:${wheel_path}',
     'typing-extensions',
+    'typing-inspection',
 ])
 importlib.invalidate_caches()
 

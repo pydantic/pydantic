@@ -57,8 +57,6 @@ jobs:
 
       - uses: codecov/test-results-action@v1
 
-  # See https://github.com/PyO3/pyo3/discussions/2781
-  # tests intermittently segfault with pypy and cpython 3.7 when using `coverage run ...`, hence separate job
   test-python:
     name: test ${{ matrix.python-version }}
     strategy:
@@ -71,6 +69,8 @@ jobs:
           - '3.12'
           - '3.13'
           - '3.13t'
+          - '3.14'
+          - '3.14t'
           - 'pypy3.9'
           - 'pypy3.10'
 
@@ -412,15 +412,15 @@ jobs:
           - os: linux
             manylinux: auto
             target: armv7
-            interpreter: 3.9 3.10 3.11 3.12 3.13
+            interpreter: 3.9 3.10 3.11 3.12 3.13 3.14
           - os: linux
             manylinux: auto
             target: ppc64le
-            interpreter: 3.9 3.10 3.11 3.12 3.13
+            interpreter: 3.9 3.10 3.11 3.12 3.13 3.14
           - os: linux
             manylinux: auto
             target: s390x
-            interpreter: 3.9 3.10 3.11 3.12 3.13
+            interpreter: 3.9 3.10 3.11 3.12 3.13 3.14
           - os: linux
             manylinux: auto
             target: x86_64
@@ -456,10 +456,10 @@ jobs:
           - os: windows
             target: i686
             python-architecture: x86
-            interpreter: 3.9 3.10 3.11 3.12 3.13
+            interpreter: 3.9 3.10 3.11 3.12 3.13 3.14
           - os: windows
             target: aarch64
-            interpreter: 3.11 3.12 3.13
+            interpreter: 3.11 3.12 3.13 3.14
 
         exclude:
           # See above; disabled for now.
@@ -483,7 +483,7 @@ jobs:
         with:
           target: ${{ matrix.target }}
           manylinux: ${{ matrix.manylinux }}
-          args: --release --out dist --interpreter ${{ matrix.interpreter || '3.9 3.10 3.11 3.12 3.13 pypy3.9 pypy3.10 pypy3.11' }}
+          args: --release --out dist --interpreter ${{ matrix.interpreter || '3.9 3.10 3.11 3.12 3.13 3.14 pypy3.9 pypy3.10 pypy3.11' }}
           rust-toolchain: stable
           docker-options: -e CI
 
@@ -504,7 +504,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [linux, windows, macos]
-        interpreter: ['3.9', '3.10', '3.11', '3.12', '3.13', '3.13t']
+        interpreter: ['3.9', '3.10', '3.11', '3.12', '3.13', '3.13t', '3.14', '3.14t']
         include:
           # standard runners with override for macos arm
           - os: linux

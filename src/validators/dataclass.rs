@@ -401,7 +401,7 @@ impl Validator for DataclassArgsValidator {
             let data_dict = dict.copy()?;
             if let Err(err) = data_dict.del_item(field_name) {
                 // KeyError is fine here as the field might not be in the dict
-                if !err.get_type(py).is(&PyType::new::<PyKeyError>(py)) {
+                if !err.get_type(py).is(PyType::new::<PyKeyError>(py)) {
                     return Err(err.into());
                 }
             }

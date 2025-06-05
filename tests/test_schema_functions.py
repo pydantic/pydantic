@@ -1,10 +1,11 @@
 import dataclasses
-import re
 from datetime import date
 from enum import Enum
 from typing import Any
 
 import pytest
+from typing_extensions import get_args, get_type_hints  # noqa: UP035 (https://github.com/astral-sh/ruff/pull/18476)
+from typing_inspection.introspection import UNKNOWN, AnnotationSource, inspect_annotation
 
 from pydantic_core import SchemaError, SchemaSerializer, SchemaValidator, ValidationError, core_schema
 
@@ -332,10 +333,14 @@ def test_schema_functions(function, args_kwargs, expected_schema):
 
 
 def test_all_schema_functions_used():
-    all_types = {
-        re.sub(r".+'(.+?)'.+", r'\1', s.__annotations__['type'].__forward_arg__)
-        for s in core_schema.CoreSchema.__args__
-    }
+    all_types: set[str] = set()
+    for schema_typeddict in core_schema.CoreSchema.__args__:
+        annotation = get_type_hints(schema_typeddict, include_extras=True)['type']
+        inspected_ann = inspect_annotation(annotation, annotation_source=AnnotationSource.TYPED_DICT)
+        annotation = inspected_ann.type
+        assert annotation is not UNKNOWN
+        all_types.add(get_args(annotation)[0])
+
     types_used = {args['type'] for _, _, args in all_schema_functions if 'type' in args}
 
     # isn't a CoreSchema type

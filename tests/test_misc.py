@@ -1,9 +1,14 @@
 import copy
 import pickle
-import re
 
 import pytest
-from typing_extensions import get_args
+from typing_extensions import (  # noqa: UP035 (https://github.com/astral-sh/ruff/pull/18476)
+    get_args,
+    get_origin,
+    get_type_hints,
+)
+from typing_inspection import typing_objects
+from typing_inspection.introspection import UNKNOWN, AnnotationSource, inspect_annotation
 
 from pydantic_core import CoreConfig, CoreSchema, CoreSchemaType, PydanticUndefined, core_schema
 from pydantic_core._pydantic_core import (
@@ -159,13 +164,26 @@ def test_validation_error_multiple(pydantic_version):
 
 
 def test_core_schema_type_literal():
-    def get_type_value(schema):
-        type_ = schema.__annotations__['type']
-        m = re.search(r"Literal\['(.+?)']", type_.__forward_arg__)
-        assert m, f'Unknown schema type: {type_}'
-        return m.group(1)
+    def get_type_value(schema_typeddict) -> str:
+        annotation = get_type_hints(schema_typeddict, include_extras=True)['type']
+        inspected_ann = inspect_annotation(annotation, annotation_source=AnnotationSource.TYPED_DICT)
+        annotation = inspected_ann.type
+        assert annotation is not UNKNOWN
+        assert typing_objects.is_literal(get_origin(annotation)), (
+            f"The 'type' key of core schemas must be a Literal form, got {get_origin(annotation)}"
+        )
+        args = get_args(annotation)
+        assert len(args) == 1, (
+            f"The 'type' key of core schemas must be a Literal form with a single element, got {len(args)} elements"
+        )
+        type_ = args[0]
+        assert isinstance(type_, str), (
+            f"The 'type' key of core schemas must be a Literal form with a single string element, got element of type {type(type_)}"
+        )
 
-    schema_types = tuple(get_type_value(x) for x in CoreSchema.__args__)
+        return type_
+
+    schema_types = (get_type_value(x) for x in CoreSchema.__args__)
     schema_types = tuple(dict.fromkeys(schema_types))  # remove duplicates while preserving order
     if get_args(CoreSchemaType) != schema_types:
         literal = ''.join(f'\n    {e!r},' for e in schema_types)
