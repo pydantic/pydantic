@@ -110,7 +110,7 @@ impl ValidationError {
     }
 
     pub fn use_default_error() -> PyErr {
-        py_schema_error_type!("Uncaught UseDefault error, please check your usage of `default` validators.")
+        py_schema_error_type!("Uncaught `PydanticUseDefault` exception: the error was raised in a field validator and no default value is available for that field.")
     }
 
     fn maybe_add_cause(self_: PyRef<'_, Self>, py: Python) -> Option<PyErr> {
