@@ -447,7 +447,7 @@ However, in Pydantic V2, when a `TypeError` is raised in a validator, it is no l
 ```python
 import pytest
 
-from pydantic import BaseModel, field_validator  # or validator
+from pydantic import BaseModel, field_validator
 
 
 class Model(BaseModel):
