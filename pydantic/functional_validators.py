@@ -172,17 +172,33 @@ class PlainValidator:
         ```python
         from typing import Annotated, Union
 
-        from pydantic import BaseModel, PlainValidator
+        from pydantic import BaseModel, PlainValidator, ValidationError
+
+        def validate_and_increment(v):
+            try:
+                return int(v) + 1
+            except TypeError:
+                raise ValueError(f'Expected string, got {type(v).__name__}')
 
         MyInt = Annotated[
             int,
             PlainValidator(
-                lambda v: int(v) + 1, json_schema_input_type=Union[str, int]  # (1)!
-            ),
+                validate_and_increment, json_schema_input_type=Union[str, int]
+            ),  # (1)!
         ]
 
         class Model(BaseModel):
             a: MyInt
+
+        try:
+            Model(a={})
+        except ValidationError as e:
+            print(e)
+            '''
+            1 validation error for Model
+            a
+              Value error, Expected string, got dict [type=value_error, input_value={}, input_type=dict]
+            '''
 
         print(Model(a='1').a)
         #> 2
@@ -193,6 +209,8 @@ class PlainValidator:
 
         1. In this example, we've specified the `json_schema_input_type` as `Union[str, int]` which indicates to the JSON schema
         generator that in validation mode, the input type for the `a` field can be either a `str` or an `int`.
+
+        2. The validator function catches `TypeError` and re-raises as `ValueError` since Pydantic V2 no longer converts `TypeError` to `ValidationError`.
     """
 
     func: core_schema.NoInfoValidatorFunction | core_schema.WithInfoValidatorFunction

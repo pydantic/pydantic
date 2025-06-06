@@ -447,7 +447,7 @@ However, in Pydantic V2, when a `TypeError` is raised in a validator, it is no l
 ```python
 import pytest
 
-from pydantic import BaseModel, field_validator  # or validator
+from pydantic import BaseModel, field_validator
 
 
 class Model(BaseModel):
@@ -460,6 +460,23 @@ class Model(BaseModel):
 
 with pytest.raises(TypeError):
     Model(x=1)
+```
+
+To have invalid types as `ValidationError` instead of `TypeError`, catch `TypeError` and re-raise as `ValueError`:
+
+```python
+from pydantic import BaseModel, field_validator
+
+
+class Model(BaseModel):
+    x: int
+
+    @field_validator('x')
+    def val_x(cls, v: int) -> int:
+        try:
+            return str.lower(v)
+        except TypeError:
+            raise ValueError(f'Expected string, got {type(v).__name__}')
 ```
 
 This applies to all validation decorators.
