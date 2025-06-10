@@ -1,5 +1,5 @@
 [build-system]
-requires = ['maturin>=1,<2', 'typing-extensions >=4.6.0,!=4.7.0']
+requires = ['maturin>=1,<2']
 build-backend = 'maturin'
 
 [project]
@@ -38,7 +38,7 @@ classifiers = [
 dependencies = [
     'typing-extensions>=4.13.0',
 ]
-dynamic = ['description', 'license', 'readme', 'version']
+dynamic = ['license', 'readme', 'version']
 
 [project.urls]
 Homepage = 'https://github.com/pydantic/pydantic-core'
