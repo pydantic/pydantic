@@ -13,7 +13,7 @@ from decimal import Decimal
 from re import Pattern
 from typing import TYPE_CHECKING, Any, Callable, Literal, Union
 
-from typing_extensions import deprecated
+from typing_extensions import TypeVar, deprecated
 
 if sys.version_info < (3, 12):
     from typing_extensions import TypedDict
@@ -118,8 +118,10 @@ class CoreConfig(TypedDict, total=False):
 
 IncExCall: TypeAlias = 'set[int | str] | dict[int | str, IncExCall] | None'
 
+ContextT = TypeVar('ContextT', covariant=True, default='Any | None')
 
-class SerializationInfo(Protocol):
+
+class SerializationInfo(Protocol[ContextT]):
     @property
     def include(self) -> IncExCall: ...
 
@@ -127,8 +129,9 @@ class SerializationInfo(Protocol):
     def exclude(self) -> IncExCall: ...
 
     @property
-    def context(self) -> Any | None:
+    def context(self) -> ContextT:
         """Current serialization context."""
+        ...
 
     @property
     def mode(self) -> str: ...
@@ -163,13 +166,13 @@ class FieldSerializationInfo(SerializationInfo, Protocol):
     def field_name(self) -> str: ...
 
 
-class ValidationInfo(Protocol):
+class ValidationInfo(Protocol[ContextT]):
     """
     Argument passed to validation functions.
     """
 
     @property
-    def context(self) -> Any | None:
+    def context(self) -> ContextT:
         """Current validation context."""
         ...
 
@@ -180,7 +183,7 @@ class ValidationInfo(Protocol):
 
     @property
     def mode(self) -> Literal['python', 'json']:
-        """The type of input data we are currently validating"""
+        """The type of input data we are currently validating."""
         ...
 
     @property
