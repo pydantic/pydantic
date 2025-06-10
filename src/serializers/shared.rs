@@ -1,5 +1,6 @@
 use std::borrow::Cow;
 use std::fmt::Debug;
+use std::io::{self, Write};
 
 use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
@@ -9,7 +10,7 @@ use pyo3::{intern, PyTraverseError, PyVisit};
 
 use enum_dispatch::enum_dispatch;
 use serde::Serialize;
-use serde_json::ser::PrettyFormatter;
+use serde_json::ser::{Formatter, PrettyFormatter};
 
 use crate::build_tools::py_schema_err;
 use crate::build_tools::py_schema_error_type;
@@ -432,6 +433,87 @@ impl Serialize for PydanticSerializer<'_> {
     }
 }
 
+struct EscapeNonAsciiFormatter;
+
+impl Formatter for EscapeNonAsciiFormatter {
+    fn write_string_fragment<W: ?Sized + Write>(&mut self, writer: &mut W, fragment: &str) -> io::Result<()> {
+        let mut input = fragment;
+
+        while let Some((idx, non_ascii_char)) = input.chars().enumerate().find(|(_, c)| !c.is_ascii()) {
+            if idx > 0 {
+                // write all ascii characters before the non-ascii one
+                let ascii_run = &input[..idx];
+                writer.write_all(ascii_run.as_bytes()).unwrap();
+            }
+
+            let codepoint = non_ascii_char as u32;
+            if codepoint < 0xFFFF {
+                // write basic codepoint as single escape
+                write!(writer, "\\u{codepoint:04x}").unwrap();
+            } else {
+                // encode extended plane character as utf16 pair
+                for escape in non_ascii_char.encode_utf16(&mut [0; 2]) {
+                    write!(writer, "\\u{escape:04x}").unwrap();
+                }
+            }
+
+            input = &input[(idx + non_ascii_char.len_utf8())..];
+        }
+
+        // write any ascii trailer
+        writer.write_all(input.as_bytes())?;
+        Ok(())
+    }
+}
+
+struct EscapeNonAsciiPrettyFormatter<'a> {
+    pretty: PrettyFormatter<'a>,
+    escape_non_ascii: EscapeNonAsciiFormatter,
+}
+
+impl<'a> EscapeNonAsciiPrettyFormatter<'a> {
+    pub fn with_indent(indent: &'a [u8]) -> Self {
+        Self {
+            pretty: PrettyFormatter::with_indent(indent),
+            escape_non_ascii: EscapeNonAsciiFormatter,
+        }
+    }
+}
+
+macro_rules! defer {
+    ($formatter:ident, $fun:ident) => {
+        fn $fun<W>(&mut self, writer: &mut W) -> io::Result<()>
+        where
+            W: ?Sized + io::Write,
+        {
+            self.$formatter.$fun(writer)
+        }
+    };
+    ($formatter:ident, $fun:ident, $val:ty) => {
+        fn $fun<W>(&mut self, writer: &mut W, val: $val) -> io::Result<()>
+        where
+            W: ?Sized + io::Write,
+        {
+            self.$formatter.$fun(writer, val)
+        }
+    };
+}
+
+#[allow(clippy::needless_lifetimes)]
+impl Formatter for EscapeNonAsciiPrettyFormatter<'_> {
+    defer!(escape_non_ascii, write_string_fragment, &str);
+    defer!(pretty, begin_array);
+    defer!(pretty, end_array);
+    defer!(pretty, begin_array_value, bool);
+    defer!(pretty, end_array_value);
+    defer!(pretty, begin_object);
+    defer!(pretty, end_object);
+    defer!(pretty, begin_object_key, bool);
+    defer!(pretty, end_object_key);
+    defer!(pretty, begin_object_value);
+    defer!(pretty, end_object_value);
+}
+
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn to_json_bytes(
     value: &Bound<'_, PyAny>,
@@ -440,25 +522,40 @@ pub(crate) fn to_json_bytes(
     exclude: Option<&Bound<'_, PyAny>>,
     extra: &Extra,
     indent: Option<usize>,
+    ensure_ascii: bool,
     expected_json_size: usize,
 ) -> PyResult<Vec<u8>> {
     let serializer = PydanticSerializer::new(value, serializer, include, exclude, extra);
 
     let writer: Vec<u8> = Vec::with_capacity(expected_json_size);
-    let bytes = match indent {
-        Some(indent) => {
+
+    let bytes = match (indent, ensure_ascii) {
+        (Some(indent), true) => {
+            let indent = vec![b' '; indent];
+            let formatter = EscapeNonAsciiPrettyFormatter::with_indent(&indent);
+            let mut ser = PythonSerializer::with_formatter(writer, formatter);
+            serializer.serialize(&mut ser).map_err(se_err_py_err)?;
+            ser.into_inner()
+        }
+        (Some(indent), false) => {
             let indent = vec![b' '; indent];
             let formatter = PrettyFormatter::with_indent(&indent);
             let mut ser = PythonSerializer::with_formatter(writer, formatter);
             serializer.serialize(&mut ser).map_err(se_err_py_err)?;
             ser.into_inner()
         }
-        None => {
+        (None, true) => {
+            let mut ser = PythonSerializer::with_formatter(writer, EscapeNonAsciiFormatter);
+            serializer.serialize(&mut ser).map_err(se_err_py_err)?;
+            ser.into_inner()
+        }
+        (None, false) => {
             let mut ser = PythonSerializer::new(writer);
             serializer.serialize(&mut ser).map_err(se_err_py_err)?;
             ser.into_inner()
         }
     };
+
     Ok(bytes)
 }
 
