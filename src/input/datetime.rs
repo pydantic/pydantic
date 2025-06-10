@@ -574,7 +574,7 @@ impl TzInfo {
     }
 
     fn __repr__(&self) -> String {
-        format!("TzInfo({})", self.__str__())
+        format!("TzInfo({})", self.seconds)
     }
 
     fn __str__(&self) -> String {
