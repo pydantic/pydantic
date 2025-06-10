@@ -218,6 +218,9 @@ def test_to_json():
     assert to_json([1, 2]) == b'[1,2]'
     assert to_json([1, 2], indent=2) == b'[\n  1,\n  2\n]'
     assert to_json([1, b'x']) == b'[1,"x"]'
+    assert to_json(['à', 'é']).decode('utf-8') == '["à","é"]'
+    assert to_json(['à', 'é'], indent=2).decode('utf-8') == '[\n  "à",\n  "é"\n]'
+    assert to_json(['à', 'é'], indent=2, ensure_ascii=True).decode('utf-8') == '[\n  "\\u00e0",\n  "\\u00e9"\n]'
 
     # kwargs required
     with pytest.raises(TypeError, match=r'to_json\(\) takes 1 positional arguments but 2 were given'):
