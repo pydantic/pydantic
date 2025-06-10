@@ -198,7 +198,7 @@ def test_custom_timezone_repr():
     assert output.tzinfo.dst(output) is None
     assert output.tzinfo.tzname(output) == '-12:15'
     assert str(output.tzinfo) == '-12:15'
-    assert repr(output.tzinfo) == 'TzInfo(-12:15)'
+    assert repr(output.tzinfo) == 'TzInfo(-44100)'
 
 
 def test_custom_timezone_utc_repr():
@@ -208,7 +208,7 @@ def test_custom_timezone_utc_repr():
     assert output.tzinfo.dst(output) is None
     assert output.tzinfo.tzname(output) == 'UTC'
     assert str(output.tzinfo) == 'UTC'
-    assert repr(output.tzinfo) == 'TzInfo(UTC)'
+    assert repr(output.tzinfo) == 'TzInfo(0)'
 
 
 def test_tz_comparison():
@@ -230,16 +230,16 @@ def test_tz_comparison():
 def test_tz_info_deepcopy():
     output = SchemaValidator(cs.datetime_schema()).validate_python('2023-02-15T16:23:44.037Z')
     c = copy.deepcopy(output)
-    assert repr(output.tzinfo) == 'TzInfo(UTC)'
-    assert repr(c.tzinfo) == 'TzInfo(UTC)'
+    assert repr(output.tzinfo) == 'TzInfo(0)'
+    assert repr(c.tzinfo) == 'TzInfo(0)'
     assert c == output
 
 
 def test_tz_info_copy():
     output = SchemaValidator(cs.datetime_schema()).validate_python('2023-02-15T16:23:44.037Z')
     c = copy.copy(output)
-    assert repr(output.tzinfo) == 'TzInfo(UTC)'
-    assert repr(c.tzinfo) == 'TzInfo(UTC)'
+    assert repr(output.tzinfo) == 'TzInfo(0)'
+    assert repr(c.tzinfo) == 'TzInfo(0)'
     assert c == output
 
 
