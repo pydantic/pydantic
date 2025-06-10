@@ -344,6 +344,7 @@ class SchemaSerializer:
         value: Any,
         *,
         indent: int | None = None,
+        ensure_ascii: bool = False,
         include: _IncEx | None = None,
         exclude: _IncEx | None = None,
         by_alias: bool | None = None,
@@ -362,6 +363,8 @@ class SchemaSerializer:
         Arguments:
             value: The Python object to serialize.
             indent: If `None`, the JSON will be compact, otherwise it will be pretty-printed with the indent provided.
+            ensure_ascii: If `True`, the output is guaranteed to have all incoming non-ASCII characters escaped.
+                If `False` (the default), these characters will be output as-is.
             include: A set of fields to include, if `None` all fields are included.
             exclude: A set of fields to exclude, if `None` no fields are excluded.
             by_alias: Whether to use the alias names of fields.
@@ -389,6 +392,7 @@ def to_json(
     value: Any,
     *,
     indent: int | None = None,
+    ensure_ascii: bool = False,
     include: _IncEx | None = None,
     exclude: _IncEx | None = None,
     # Note: In Pydantic 2.11, the default value of `by_alias` on `SchemaSerializer` was changed from `True` to `None`,
@@ -413,6 +417,8 @@ def to_json(
     Arguments:
         value: The Python object to serialize.
         indent: If `None`, the JSON will be compact, otherwise it will be pretty-printed with the indent provided.
+        ensure_ascii: If `True`, the output is guaranteed to have all incoming non-ASCII characters escaped.
+            If `False` (the default), these characters will be output as-is.
         include: A set of fields to include, if `None` all fields are included.
         exclude: A set of fields to exclude, if `None` no fields are excluded.
         by_alias: Whether to use the alias names of fields.
