@@ -15,7 +15,7 @@ A `@model_validator` decorated function signature. This is used when `mode='afte
 
 ```python
 ModelAfterValidator = Callable[
-    [_ModelType, ValidationInfo], _ModelType
+    [_ModelType, ValidationInfo[Any]], _ModelType
 ]
 
 ```

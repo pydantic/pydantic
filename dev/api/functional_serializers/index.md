@@ -37,7 +37,7 @@ A field serializer method or function.
 
 ```python
 ModelPlainSerializerWithInfo: TypeAlias = Callable[
-    [Any, SerializationInfo], Any
+    [Any, SerializationInfo[Any]], Any
 ]
 
 ```
@@ -70,7 +70,11 @@ A model serializer method in `plain` mode.
 
 ```python
 ModelWrapSerializerWithInfo: TypeAlias = Callable[
-    [Any, SerializerFunctionWrapHandler, SerializationInfo],
+    [
+        Any,
+        SerializerFunctionWrapHandler,
+        SerializationInfo[Any],
+    ],
     Any,
 ]
 

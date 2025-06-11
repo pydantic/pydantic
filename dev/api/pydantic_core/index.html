@@ -6141,6 +6141,7 @@ if <code>None</code> a <a class="autorefs autorefs-internal" href="#pydantic_cor
     <span class="n">value</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">indent</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">ensure_ascii</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">include</span><span class="p">:</span> <span class="n"><span title="pydantic_core._pydantic_core._IncEx">_IncEx</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">exclude</span><span class="p">:</span> <span class="n"><span title="pydantic_core._pydantic_core._IncEx">_IncEx</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">by_alias</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -6203,6 +6204,23 @@ if <code>None</code> a <a class="autorefs autorefs-internal" href="#pydantic_cor
             </td>
             <td>
                   <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>ensure_ascii</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If <code>True</code>, the output is guaranteed to have all incoming non-ASCII characters escaped.
+If <code>False</code> (the default), these characters will be output as-is.</p>
+              </div>
+            </td>
+            <td>
+                  <code>False</code>
             </td>
           </tr>
           <tr class="doc-section-item">
@@ -7384,7 +7402,6 @@ or <a class="autorefs autorefs-internal" href="#pydantic_core.SchemaSerializer">
 </code></pre></div>
 </details>
 
-
 <p><span class="doc-section-title">Parameters:</span></p>
     <table>
       <thead>
@@ -7591,11 +7608,10 @@ or <a class="autorefs autorefs-internal" href="#pydantic_core.SchemaSerializer">
 
 <span class="k">def</span><span class="w"> </span><span class="nf">custom_validator</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="k">if</span> <span class="n">v</span> <span class="o">&lt;=</span> <span class="mi">10</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="n">PydanticKnownError</span><span class="p">(</span><span class="n">error_type</span><span class="o">=</span><span class="s1">&#39;greater_than&#39;</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;gt&#39;</span><span class="p">:</span> <span class="mi">10</span><span class="p">})</span>
+        <span class="k">raise</span> <span class="n">PydanticKnownError</span><span class="p">(</span><span class="s1">&#39;greater_than&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;gt&#39;</span><span class="p">:</span> <span class="mi">10</span><span class="p">})</span>
     <span class="k">return</span> <span class="n">v</span>
 </code></pre></div>
 </details>
-
 
 <p><span class="doc-section-title">Parameters:</span></p>
     <table>
@@ -7929,7 +7945,6 @@ Right now, this is primarily used in the JSON Schema generation process.</p>
 <p>In custom serializers, this error can be used to indicate that serialization has failed.</p>
 
 
-
 <p><span class="doc-section-title">Parameters:</span></p>
     <table>
       <thead>
@@ -8037,7 +8052,6 @@ at serializing values, in contrast with validation where errors are eagerly rais
 </code></pre></div>
 </details>        <p>This is often used internally in <code>pydantic-core</code> when unexpected types are encountered during serialization,
 but it can also be used by users in custom serializers, as seen above.</p>
-
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -8883,6 +8897,7 @@ identifies a value as being present, and provides a way to access it.</p>
     <span class="n">value</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">indent</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">ensure_ascii</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">include</span><span class="p">:</span> <span class="n"><span title="pydantic_core._pydantic_core._IncEx">_IncEx</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">exclude</span><span class="p">:</span> <span class="n"><span title="pydantic_core._pydantic_core._IncEx">_IncEx</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">by_alias</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
@@ -8947,6 +8962,23 @@ identifies a value as being present, and provides a way to access it.</p>
             </td>
             <td>
                   <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>ensure_ascii</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If <code>True</code>, the output is guaranteed to have all incoming non-ASCII characters escaped.
+If <code>False</code> (the default), these characters will be output as-is.</p>
+              </div>
+            </td>
+            <td>
+                  <code>False</code>
             </td>
           </tr>
           <tr class="doc-section-item">
@@ -9733,7 +9765,7 @@ if <code>None</code> a <a class="autorefs autorefs-internal" href="#pydantic_cor
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.11.5", "pydantic-core==2.34.1", "pydantic-extra-types==2.10.0"]
+    window.mkdocs_run_deps = ["pydantic==2.11.5", "pydantic-core==2.35.1", "pydantic-extra-types==2.10.0"]
     </script>
 
               </article>

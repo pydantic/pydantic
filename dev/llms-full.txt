@@ -15251,6 +15251,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         self,
         *,
         indent: int | None = None,
+        ensure_ascii: bool = False,
         include: IncEx | None = None,
         exclude: IncEx | None = None,
         context: Any | None = None,
@@ -15270,6 +15271,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         Args:
             indent: Indentation to use in the JSON output. If None is passed, the output will be compact.
+            ensure_ascii: If `True`, the output is guaranteed to have all incoming non-ASCII characters escaped.
+                If `False` (the default), these characters will be output as-is.
             include: Field(s) to include in the JSON output.
             exclude: Field(s) to exclude from the JSON output.
             context: Additional context to pass to the serializer.
@@ -15290,6 +15293,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         return self.__pydantic_serializer__.to_json(
             self,
             indent=indent,
+            ensure_ascii=ensure_ascii,
             include=include,
             exclude=exclude,
             context=context,
@@ -16837,6 +16841,7 @@ def model_dump(
 model_dump_json(
     *,
     indent: int | None = None,
+    ensure_ascii: bool = False,
     include: IncEx | None = None,
     exclude: IncEx | None = None,
     context: Any | None = None,
@@ -16862,7 +16867,7 @@ Generates a JSON representation of the model using Pydantic's `to_json` method.
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `indent` | `int | None` | Indentation to use in the JSON output. If None is passed, the output will be compact. | `None` | | `include` | `IncEx | None` | Field(s) to include in the JSON output. | `None` | | `exclude` | `IncEx | None` | Field(s) to exclude from the JSON output. | `None` | | `context` | `Any | None` | Additional context to pass to the serializer. | `None` | | `by_alias` | `bool | None` | Whether to serialize using field aliases. | `None` | | `exclude_unset` | `bool` | Whether to exclude fields that have not been explicitly set. | `False` | | `exclude_defaults` | `bool` | Whether to exclude fields that are set to their default value. | `False` | | `exclude_none` | `bool` | Whether to exclude fields that have a value of None. | `False` | | `round_trip` | `bool` | If True, dumped values should be valid as input for non-idempotent types such as Json[T]. | `False` | | `warnings` | `bool | Literal['none', 'warn', 'error']` | How to handle serialization errors. False/"none" ignores them, True/"warn" logs errors, "error" raises a PydanticSerializationError. | `True` | | `fallback` | `Callable[[Any], Any] | None` | A function to call when an unknown value is encountered. If not provided, a PydanticSerializationError error is raised. | `None` | | `serialize_as_any` | `bool` | Whether to serialize fields with duck-typing serialization behavior. | `False` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `indent` | `int | None` | Indentation to use in the JSON output. If None is passed, the output will be compact. | `None` | | `ensure_ascii` | `bool` | If True, the output is guaranteed to have all incoming non-ASCII characters escaped. If False (the default), these characters will be output as-is. | `False` | | `include` | `IncEx | None` | Field(s) to include in the JSON output. | `None` | | `exclude` | `IncEx | None` | Field(s) to exclude from the JSON output. | `None` | | `context` | `Any | None` | Additional context to pass to the serializer. | `None` | | `by_alias` | `bool | None` | Whether to serialize using field aliases. | `None` | | `exclude_unset` | `bool` | Whether to exclude fields that have not been explicitly set. | `False` | | `exclude_defaults` | `bool` | Whether to exclude fields that are set to their default value. | `False` | | `exclude_none` | `bool` | Whether to exclude fields that have a value of None. | `False` | | `round_trip` | `bool` | If True, dumped values should be valid as input for non-idempotent types such as Json[T]. | `False` | | `warnings` | `bool | Literal['none', 'warn', 'error']` | How to handle serialization errors. False/"none" ignores them, True/"warn" logs errors, "error" raises a PydanticSerializationError. | `True` | | `fallback` | `Callable[[Any], Any] | None` | A function to call when an unknown value is encountered. If not provided, a PydanticSerializationError error is raised. | `None` | | `serialize_as_any` | `bool` | Whether to serialize fields with duck-typing serialization behavior. | `False` |
 
 Returns:
 
@@ -16875,6 +16880,7 @@ def model_dump_json(
     self,
     *,
     indent: int | None = None,
+    ensure_ascii: bool = False,
     include: IncEx | None = None,
     exclude: IncEx | None = None,
     context: Any | None = None,
@@ -16894,6 +16900,8 @@ def model_dump_json(
 
     Args:
         indent: Indentation to use in the JSON output. If None is passed, the output will be compact.
+        ensure_ascii: If `True`, the output is guaranteed to have all incoming non-ASCII characters escaped.
+            If `False` (the default), these characters will be output as-is.
         include: Field(s) to include in the JSON output.
         exclude: Field(s) to exclude from the JSON output.
         context: Additional context to pass to the serializer.
@@ -16914,6 +16922,7 @@ def model_dump_json(
     return self.__pydantic_serializer__.to_json(
         self,
         indent=indent,
+        ensure_ascii=ensure_ascii,
         include=include,
         exclude=exclude,
         context=context,
@@ -22147,7 +22156,7 @@ A field serializer method or function.
 
 ```python
 ModelPlainSerializerWithInfo: TypeAlias = Callable[
-    [Any, SerializationInfo], Any
+    [Any, SerializationInfo[Any]], Any
 ]
 
 ```
@@ -22180,7 +22189,11 @@ A model serializer method in `plain` mode.
 
 ```python
 ModelWrapSerializerWithInfo: TypeAlias = Callable[
-    [Any, SerializerFunctionWrapHandler, SerializationInfo],
+    [
+        Any,
+        SerializerFunctionWrapHandler,
+        SerializationInfo[Any],
+    ],
     Any,
 ]
 
@@ -22678,7 +22691,7 @@ A `@model_validator` decorated function signature. This is used when `mode='afte
 
 ```python
 ModelAfterValidator = Callable[
-    [_ModelType, ValidationInfo], _ModelType
+    [_ModelType, ValidationInfo[Any]], _ModelType
 ]
 
 ```
@@ -28541,6 +28554,7 @@ to_json(
     value: Any,
     *,
     indent: int | None = None,
+    ensure_ascii: bool = False,
     include: _IncEx | None = None,
     exclude: _IncEx | None = None,
     by_alias: bool | None = None,
@@ -28562,7 +28576,7 @@ Serialize a Python object to JSON including transforming and filtering data.
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `value` | `Any` | The Python object to serialize. | *required* | | `indent` | `int | None` | If None, the JSON will be compact, otherwise it will be pretty-printed with the indent provided. | `None` | | `include` | `_IncEx | None` | A set of fields to include, if None all fields are included. | `None` | | `exclude` | `_IncEx | None` | A set of fields to exclude, if None no fields are excluded. | `None` | | `by_alias` | `bool | None` | Whether to use the alias names of fields. | `None` | | `exclude_unset` | `bool` | Whether to exclude fields that are not set, e.g. are not included in __pydantic_fields_set__. | `False` | | `exclude_defaults` | `bool` | Whether to exclude fields that are equal to their default value. | `False` | | `exclude_none` | `bool` | Whether to exclude fields that have a value of None. | `False` | | `round_trip` | `bool` | Whether to enable serialization and validation round-trip support. | `False` | | `warnings` | `bool | Literal['none', 'warn', 'error']` | How to handle invalid fields. False/"none" ignores them, True/"warn" logs errors, "error" raises a PydanticSerializationError. | `True` | | `fallback` | `Callable[[Any], Any] | None` | A function to call when an unknown value is encountered, if None a PydanticSerializationError error is raised. | `None` | | `serialize_as_any` | `bool` | Whether to serialize fields with duck-typing serialization behavior. | `False` | | `context` | `Any | None` | The context to use for serialization, this is passed to functional serializers as info.context. | `None` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `value` | `Any` | The Python object to serialize. | *required* | | `indent` | `int | None` | If None, the JSON will be compact, otherwise it will be pretty-printed with the indent provided. | `None` | | `ensure_ascii` | `bool` | If True, the output is guaranteed to have all incoming non-ASCII characters escaped. If False (the default), these characters will be output as-is. | `False` | | `include` | `_IncEx | None` | A set of fields to include, if None all fields are included. | `None` | | `exclude` | `_IncEx | None` | A set of fields to exclude, if None no fields are excluded. | `None` | | `by_alias` | `bool | None` | Whether to use the alias names of fields. | `None` | | `exclude_unset` | `bool` | Whether to exclude fields that are not set, e.g. are not included in __pydantic_fields_set__. | `False` | | `exclude_defaults` | `bool` | Whether to exclude fields that are equal to their default value. | `False` | | `exclude_none` | `bool` | Whether to exclude fields that have a value of None. | `False` | | `round_trip` | `bool` | Whether to enable serialization and validation round-trip support. | `False` | | `warnings` | `bool | Literal['none', 'warn', 'error']` | How to handle invalid fields. False/"none" ignores them, True/"warn" logs errors, "error" raises a PydanticSerializationError. | `True` | | `fallback` | `Callable[[Any], Any] | None` | A function to call when an unknown value is encountered, if None a PydanticSerializationError error is raised. | `None` | | `serialize_as_any` | `bool` | Whether to serialize fields with duck-typing serialization behavior. | `False` | | `context` | `Any | None` | The context to use for serialization, this is passed to functional serializers as info.context. | `None` |
 
 Raises:
 
@@ -28883,7 +28897,7 @@ from pydantic_core import PydanticKnownError
 
 def custom_validator(v) -> None:
     if v <= 10:
-        raise PydanticKnownError(error_type='greater_than', context={'gt': 10})
+        raise PydanticKnownError('greater_than', {'gt': 10})
     return v
 
 ```
@@ -29338,6 +29352,7 @@ to_json(
     value: Any,
     *,
     indent: int | None = None,
+    ensure_ascii: bool = False,
     include: _IncEx | None = None,
     exclude: _IncEx | None = None,
     by_alias: bool = True,
@@ -29362,7 +29377,7 @@ This is effectively a standalone version of SchemaSerializer.to_json.
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `value` | `Any` | The Python object to serialize. | *required* | | `indent` | `int | None` | If None, the JSON will be compact, otherwise it will be pretty-printed with the indent provided. | `None` | | `include` | `_IncEx | None` | A set of fields to include, if None all fields are included. | `None` | | `exclude` | `_IncEx | None` | A set of fields to exclude, if None no fields are excluded. | `None` | | `by_alias` | `bool` | Whether to use the alias names of fields. | `True` | | `exclude_none` | `bool` | Whether to exclude fields that have a value of None. | `False` | | `round_trip` | `bool` | Whether to enable serialization and validation round-trip support. | `False` | | `timedelta_mode` | `Literal['iso8601', 'float']` | How to serialize timedelta objects, either 'iso8601' or 'float'. | `'iso8601'` | | `bytes_mode` | `Literal['utf8', 'base64', 'hex']` | How to serialize bytes objects, either 'utf8', 'base64', or 'hex'. | `'utf8'` | | `inf_nan_mode` | `Literal['null', 'constants', 'strings']` | How to serialize Infinity, -Infinity and NaN values, either 'null', 'constants', or 'strings'. | `'constants'` | | `serialize_unknown` | `bool` | Attempt to serialize unknown types, str(value) will be used, if that fails "\<Unserializable {value_type} object>" will be used. | `False` | | `fallback` | `Callable[[Any], Any] | None` | A function to call when an unknown value is encountered, if None a PydanticSerializationError error is raised. | `None` | | `serialize_as_any` | `bool` | Whether to serialize fields with duck-typing serialization behavior. | `False` | | `context` | `Any | None` | The context to use for serialization, this is passed to functional serializers as info.context. | `None` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `value` | `Any` | The Python object to serialize. | *required* | | `indent` | `int | None` | If None, the JSON will be compact, otherwise it will be pretty-printed with the indent provided. | `None` | | `ensure_ascii` | `bool` | If True, the output is guaranteed to have all incoming non-ASCII characters escaped. If False (the default), these characters will be output as-is. | `False` | | `include` | `_IncEx | None` | A set of fields to include, if None all fields are included. | `None` | | `exclude` | `_IncEx | None` | A set of fields to exclude, if None no fields are excluded. | `None` | | `by_alias` | `bool` | Whether to use the alias names of fields. | `True` | | `exclude_none` | `bool` | Whether to exclude fields that have a value of None. | `False` | | `round_trip` | `bool` | Whether to enable serialization and validation round-trip support. | `False` | | `timedelta_mode` | `Literal['iso8601', 'float']` | How to serialize timedelta objects, either 'iso8601' or 'float'. | `'iso8601'` | | `bytes_mode` | `Literal['utf8', 'base64', 'hex']` | How to serialize bytes objects, either 'utf8', 'base64', or 'hex'. | `'utf8'` | | `inf_nan_mode` | `Literal['null', 'constants', 'strings']` | How to serialize Infinity, -Infinity and NaN values, either 'null', 'constants', or 'strings'. | `'constants'` | | `serialize_unknown` | `bool` | Attempt to serialize unknown types, str(value) will be used, if that fails "\<Unserializable {value_type} object>" will be used. | `False` | | `fallback` | `Callable[[Any], Any] | None` | A function to call when an unknown value is encountered, if None a PydanticSerializationError error is raised. | `None` | | `serialize_as_any` | `bool` | Whether to serialize fields with duck-typing serialization behavior. | `False` | | `context` | `Any | None` | The context to use for serialization, this is passed to functional serializers as info.context. | `None` |
 
 Raises:
 
@@ -29475,12 +29490,12 @@ Attributes:
 
 ## SerializationInfo
 
-Bases: `Protocol`
+Bases: `Protocol[ContextT]`
 
 ### context
 
 ```python
-context: Any | None
+context: ContextT
 
 ```
 
@@ -29488,14 +29503,14 @@ Current serialization context.
 
 ## ValidationInfo
 
-Bases: `Protocol`
+Bases: `Protocol[ContextT]`
 
 Argument passed to validation functions.
 
 ### context
 
 ```python
-context: Any | None
+context: ContextT
 
 ```
 
@@ -29517,7 +29532,7 @@ mode: Literal['python', 'json']
 
 ```
 
-The type of input data we are currently validating
+The type of input data we are currently validating.
 
 ### data
 
@@ -38923,7 +38938,7 @@ event = Event(dt='2032-04-23T10:20:30.400+02:30')
 
 print(event.model_dump())
 """
-{'dt': datetime.datetime(2032, 4, 23, 10, 20, 30, 400000, tzinfo=TzInfo(+02:30))}
+{'dt': datetime.datetime(2032, 4, 23, 10, 20, 30, 400000, tzinfo=TzInfo(9000))}
 """
 
 ```
@@ -40942,6 +40957,7 @@ dump_json(
     /,
     *,
     indent: int | None = None,
+    ensure_ascii: bool = False,
     include: IncEx | None = None,
     exclude: IncEx | None = None,
     by_alias: bool | None = None,
@@ -40967,7 +40983,7 @@ Serialize an instance of the adapted type to JSON.
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `instance` | `T` | The instance to be serialized. | *required* | | `indent` | `int | None` | Number of spaces for JSON indentation. | `None` | | `include` | `IncEx | None` | Fields to include. | `None` | | `exclude` | `IncEx | None` | Fields to exclude. | `None` | | `by_alias` | `bool | None` | Whether to use alias names for field names. | `None` | | `exclude_unset` | `bool` | Whether to exclude unset fields. | `False` | | `exclude_defaults` | `bool` | Whether to exclude fields with default values. | `False` | | `exclude_none` | `bool` | Whether to exclude fields with a value of None. | `False` | | `round_trip` | `bool` | Whether to serialize and deserialize the instance to ensure round-tripping. | `False` | | `warnings` | `bool | Literal['none', 'warn', 'error']` | How to handle serialization errors. False/"none" ignores them, True/"warn" logs errors, "error" raises a PydanticSerializationError. | `True` | | `fallback` | `Callable[[Any], Any] | None` | A function to call when an unknown value is encountered. If not provided, a PydanticSerializationError error is raised. | `None` | | `serialize_as_any` | `bool` | Whether to serialize fields with duck-typing serialization behavior. | `False` | | `context` | `dict[str, Any] | None` | Additional context to pass to the serializer. | `None` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `instance` | `T` | The instance to be serialized. | *required* | | `indent` | `int | None` | Number of spaces for JSON indentation. | `None` | | `ensure_ascii` | `bool` | If True, the output is guaranteed to have all incoming non-ASCII characters escaped. If False (the default), these characters will be output as-is. | `False` | | `include` | `IncEx | None` | Fields to include. | `None` | | `exclude` | `IncEx | None` | Fields to exclude. | `None` | | `by_alias` | `bool | None` | Whether to use alias names for field names. | `None` | | `exclude_unset` | `bool` | Whether to exclude unset fields. | `False` | | `exclude_defaults` | `bool` | Whether to exclude fields with default values. | `False` | | `exclude_none` | `bool` | Whether to exclude fields with a value of None. | `False` | | `round_trip` | `bool` | Whether to serialize and deserialize the instance to ensure round-tripping. | `False` | | `warnings` | `bool | Literal['none', 'warn', 'error']` | How to handle serialization errors. False/"none" ignores them, True/"warn" logs errors, "error" raises a PydanticSerializationError. | `True` | | `fallback` | `Callable[[Any], Any] | None` | A function to call when an unknown value is encountered. If not provided, a PydanticSerializationError error is raised. | `None` | | `serialize_as_any` | `bool` | Whether to serialize fields with duck-typing serialization behavior. | `False` | | `context` | `dict[str, Any] | None` | Additional context to pass to the serializer. | `None` |
 
 Returns:
 
@@ -40982,6 +40998,7 @@ def dump_json(
     /,
     *,
     indent: int | None = None,
+    ensure_ascii: bool = False,
     include: IncEx | None = None,
     exclude: IncEx | None = None,
     by_alias: bool | None = None,
@@ -41002,6 +41019,8 @@ def dump_json(
     Args:
         instance: The instance to be serialized.
         indent: Number of spaces for JSON indentation.
+        ensure_ascii: If `True`, the output is guaranteed to have all incoming non-ASCII characters escaped.
+            If `False` (the default), these characters will be output as-is.
         include: Fields to include.
         exclude: Fields to exclude.
         by_alias: Whether to use alias names for field names.

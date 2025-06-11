@@ -28,12 +28,12 @@ Attributes:
 
 ## SerializationInfo
 
-Bases: `Protocol`
+Bases: `Protocol[ContextT]`
 
 ### context
 
 ```python
-context: Any | None
+context: ContextT
 
 ```
 
@@ -41,14 +41,14 @@ Current serialization context.
 
 ## ValidationInfo
 
-Bases: `Protocol`
+Bases: `Protocol[ContextT]`
 
 Argument passed to validation functions.
 
 ### context
 
 ```python
-context: Any | None
+context: ContextT
 
 ```
 
@@ -70,7 +70,7 @@ mode: Literal['python', 'json']
 
 ```
 
-The type of input data we are currently validating
+The type of input data we are currently validating.
 
 ### data
 
