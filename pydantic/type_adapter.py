@@ -591,6 +591,7 @@ class TypeAdapter(Generic[T]):
         /,
         *,
         indent: int | None = None,
+        ensure_ascii: bool = False,
         include: IncEx | None = None,
         exclude: IncEx | None = None,
         by_alias: bool | None = None,
@@ -611,6 +612,8 @@ class TypeAdapter(Generic[T]):
         Args:
             instance: The instance to be serialized.
             indent: Number of spaces for JSON indentation.
+            ensure_ascii: If `True`, the output is guaranteed to have all incoming non-ASCII characters escaped.
+                If `False` (the default), these characters will be output as-is.
             include: Fields to include.
             exclude: Fields to exclude.
             by_alias: Whether to use alias names for field names.

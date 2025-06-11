@@ -70,7 +70,6 @@ from ._core_utils import (
     get_ref,
     get_type_ref,
     is_list_like_schema_with_items_schema,
-    validate_core_schema,
 )
 from ._decorators import (
     Decorator,
@@ -655,9 +654,7 @@ class GenerateSchema:
             return schema
 
     def clean_schema(self, schema: CoreSchema) -> CoreSchema:
-        schema = self.defs.finalize_schema(schema)
-        schema = validate_core_schema(schema)
-        return schema
+        return self.defs.finalize_schema(schema)
 
     def _add_js_function(self, metadata_schema: CoreSchema, js_function: Callable[..., Any]) -> None:
         metadata = metadata_schema.get('metadata', {})
