@@ -328,7 +328,7 @@ if TYPE_CHECKING:
         def __call__(self, cls: Any, value: Any, /) -> Any: ...
 
     class _V2ValidatorClsMethod(Protocol):
-        def __call__(self, cls: Any, value: Any, info: core_schema.ValidationInfo, /) -> Any: ...
+        def __call__(self, cls: Any, value: Any, info: core_schema.ValidationInfo[Any], /) -> Any: ...
 
     class _OnlyValueWrapValidatorClsMethod(Protocol):
         def __call__(self, cls: Any, value: Any, handler: core_schema.ValidatorFunctionWrapHandler, /) -> Any: ...
@@ -339,7 +339,7 @@ if TYPE_CHECKING:
             cls: Any,
             value: Any,
             handler: core_schema.ValidatorFunctionWrapHandler,
-            info: core_schema.ValidationInfo,
+            info: core_schema.ValidationInfo[Any],
             /,
         ) -> Any: ...
 
@@ -600,7 +600,7 @@ class FreeModelBeforeValidator(Protocol):
         # or anything else that gets passed to validate_python
         # thus validators _must_ handle all cases
         value: Any,
-        info: core_schema.ValidationInfo,
+        info: core_schema.ValidationInfo[Any],
         /,
     ) -> Any: ...
 
@@ -615,7 +615,7 @@ class ModelBeforeValidator(Protocol):
         # or anything else that gets passed to validate_python
         # thus validators _must_ handle all cases
         value: Any,
-        info: core_schema.ValidationInfo,
+        info: core_schema.ValidationInfo[Any],
         /,
     ) -> Any: ...
 
@@ -625,7 +625,7 @@ ModelAfterValidatorWithoutInfo = Callable[[_ModelType], _ModelType]
 have info argument.
 """
 
-ModelAfterValidator = Callable[[_ModelType, core_schema.ValidationInfo], _ModelType]
+ModelAfterValidator = Callable[[_ModelType, core_schema.ValidationInfo[Any]], _ModelType]
 """A `@model_validator` decorated function signature. This is used when `mode='after'`."""
 
 _AnyModelWrapValidator = Union[ModelWrapValidator[_ModelType], ModelWrapValidatorWithoutInfo[_ModelType]]

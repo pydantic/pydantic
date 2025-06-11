@@ -300,7 +300,7 @@ def field_serializer(
 if TYPE_CHECKING:
     # The first argument in the following callables represent the `self` type:
 
-    ModelPlainSerializerWithInfo: TypeAlias = Callable[[Any, SerializationInfo], Any]
+    ModelPlainSerializerWithInfo: TypeAlias = Callable[[Any, SerializationInfo[Any]], Any]
     """A model serializer method with the `info` argument, in `plain` mode."""
 
     ModelPlainSerializerWithoutInfo: TypeAlias = Callable[[Any], Any]
@@ -309,7 +309,7 @@ if TYPE_CHECKING:
     ModelPlainSerializer: TypeAlias = 'ModelPlainSerializerWithInfo | ModelPlainSerializerWithoutInfo'
     """A model serializer method in `plain` mode."""
 
-    ModelWrapSerializerWithInfo: TypeAlias = Callable[[Any, SerializerFunctionWrapHandler, SerializationInfo], Any]
+    ModelWrapSerializerWithInfo: TypeAlias = Callable[[Any, SerializerFunctionWrapHandler, SerializationInfo[Any]], Any]
     """A model serializer method with the `info` argument, in `wrap` mode."""
 
     ModelWrapSerializerWithoutInfo: TypeAlias = Callable[[Any, SerializerFunctionWrapHandler], Any]

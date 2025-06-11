@@ -363,7 +363,7 @@ Functional validators and serializers, as well as a powerful protocol for custom
 
 
     print(Meeting(when='2020-01-01T12:00+01:00'))
-    #> when=datetime.datetime(2020, 1, 1, 12, 0, tzinfo=TzInfo(+01:00))
+    #> when=datetime.datetime(2020, 1, 1, 12, 0, tzinfo=TzInfo(3600))
     print(Meeting(when='now'))
     #> when=datetime.datetime(2032, 1, 2, 3, 4, 5, 6)
     print(Meeting(when='2020-01-01T12:00'))

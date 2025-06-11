@@ -480,6 +480,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         self,
         *,
         indent: int | None = None,
+        ensure_ascii: bool = False,
         include: IncEx | None = None,
         exclude: IncEx | None = None,
         context: Any | None = None,
@@ -499,6 +500,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         Args:
             indent: Indentation to use in the JSON output. If None is passed, the output will be compact.
+            ensure_ascii: If `True`, the output is guaranteed to have all incoming non-ASCII characters escaped.
+                If `False` (the default), these characters will be output as-is.
             include: Field(s) to include in the JSON output.
             exclude: Field(s) to exclude from the JSON output.
             context: Additional context to pass to the serializer.
@@ -519,6 +522,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         return self.__pydantic_serializer__.to_json(
             self,
             indent=indent,
+            ensure_ascii=ensure_ascii,
             include=include,
             exclude=exclude,
             context=context,
