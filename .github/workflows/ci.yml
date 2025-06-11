@@ -673,8 +673,6 @@ jobs:
 
       - uses: astral-sh/setup-uv@v6
 
-      - run: pip install -U twine
-
       - name: check package version
         run: uv run .github/check_version.py
 
