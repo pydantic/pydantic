@@ -661,7 +661,9 @@ jobs:
     needs: [test-builds-arch, test-builds-os, build-sdist, check]
     if: always() && startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
-    environment: release
+
+    environment:
+      name: release
 
     permissions:
       id-token: write
@@ -669,15 +671,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: set up python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.13'
+      - uses: astral-sh/setup-uv@v6
 
       - run: pip install -U twine
 
       - name: check package version
-        run: python .github/check_version.py
+        run: uv run .github/check_version.py
 
       - name: get dist artifacts
         uses: actions/download-artifact@v4
@@ -686,12 +685,7 @@ jobs:
           merge-multiple: true
           path: dist
 
-      - run: twine check --strict dist/*
-
-      - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          skip-existing: true
+      - run: uv publish --trusted-publishing always
 
       - name: get wasm dist artifacts
         uses: actions/download-artifact@v4
