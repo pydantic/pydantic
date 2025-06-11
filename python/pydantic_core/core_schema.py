@@ -161,7 +161,7 @@ class SerializationInfo(Protocol[ContextT]):
     def __repr__(self) -> str: ...
 
 
-class FieldSerializationInfo(SerializationInfo, Protocol):
+class FieldSerializationInfo(SerializationInfo[ContextT], Protocol):
     @property
     def field_name(self) -> str: ...
 
@@ -243,11 +243,11 @@ def simple_ser_schema(type: ExpectedSerializationTypes) -> SimpleSerSchema:
 # (input_value: Any, /) -> Any
 GeneralPlainNoInfoSerializerFunction = Callable[[Any], Any]
 # (input_value: Any, info: FieldSerializationInfo, /) -> Any
-GeneralPlainInfoSerializerFunction = Callable[[Any, SerializationInfo], Any]
+GeneralPlainInfoSerializerFunction = Callable[[Any, SerializationInfo[Any]], Any]
 # (model: Any, input_value: Any, /) -> Any
 FieldPlainNoInfoSerializerFunction = Callable[[Any, Any], Any]
 # (model: Any, input_value: Any, info: FieldSerializationInfo, /) -> Any
-FieldPlainInfoSerializerFunction = Callable[[Any, Any, FieldSerializationInfo], Any]
+FieldPlainInfoSerializerFunction = Callable[[Any, Any, FieldSerializationInfo[Any]], Any]
 SerializerFunction = Union[
     GeneralPlainNoInfoSerializerFunction,
     GeneralPlainInfoSerializerFunction,
@@ -314,11 +314,11 @@ class SerializerFunctionWrapHandler(Protocol):  # pragma: no cover
 # (input_value: Any, serializer: SerializerFunctionWrapHandler, /) -> Any
 GeneralWrapNoInfoSerializerFunction = Callable[[Any, SerializerFunctionWrapHandler], Any]
 # (input_value: Any, serializer: SerializerFunctionWrapHandler, info: SerializationInfo, /) -> Any
-GeneralWrapInfoSerializerFunction = Callable[[Any, SerializerFunctionWrapHandler, SerializationInfo], Any]
+GeneralWrapInfoSerializerFunction = Callable[[Any, SerializerFunctionWrapHandler, SerializationInfo[Any]], Any]
 # (model: Any, input_value: Any, serializer: SerializerFunctionWrapHandler, /) -> Any
 FieldWrapNoInfoSerializerFunction = Callable[[Any, Any, SerializerFunctionWrapHandler], Any]
 # (model: Any, input_value: Any, serializer: SerializerFunctionWrapHandler, info: FieldSerializationInfo, /) -> Any
-FieldWrapInfoSerializerFunction = Callable[[Any, Any, SerializerFunctionWrapHandler, FieldSerializationInfo], Any]
+FieldWrapInfoSerializerFunction = Callable[[Any, Any, SerializerFunctionWrapHandler, FieldSerializationInfo[Any]], Any]
 WrapSerializerFunction = Union[
     GeneralWrapNoInfoSerializerFunction,
     GeneralWrapInfoSerializerFunction,
@@ -1951,7 +1951,7 @@ class NoInfoValidatorFunctionSchema(TypedDict):
 
 
 # (input_value: Any, info: ValidationInfo, /) -> Any
-WithInfoValidatorFunction = Callable[[Any, ValidationInfo], Any]
+WithInfoValidatorFunction = Callable[[Any, ValidationInfo[Any]], Any]
 
 
 class WithInfoValidatorFunctionSchema(TypedDict, total=False):
@@ -2198,7 +2198,7 @@ class NoInfoWrapValidatorFunctionSchema(TypedDict):
 
 
 # (input_value: Any, validator: ValidatorFunctionWrapHandler, info: ValidationInfo, /) -> Any
-WithInfoWrapValidatorFunction = Callable[[Any, ValidatorFunctionWrapHandler, ValidationInfo], Any]
+WithInfoWrapValidatorFunction = Callable[[Any, ValidatorFunctionWrapHandler, ValidationInfo[Any]], Any]
 
 
 class WithInfoWrapValidatorFunctionSchema(TypedDict, total=False):
