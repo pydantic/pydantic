@@ -3105,7 +3105,7 @@ class Discriminator:
                     else:
                         metadata = cast('CoreMetadata | None', choice.get('metadata'))
                         if metadata is not None:
-                            tag = metadata.get('pydantic_internal_union_tag_key') or tag
+                            tag = metadata.get('pydantic_internal_union_tag_key')
 
                 if tag is None:
                     raise PydanticUserError(
