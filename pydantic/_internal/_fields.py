@@ -235,12 +235,13 @@ def collect_model_fields(  # noqa: C901
             )
 
             field_info = FieldInfo_.from_annotated_attribute(ann_type, assigned_value, _source=AnnotationSource.CLASS)
+            # Store the original annotation and assignment value that should be used to rebuild the field info later.
+            # Note that the assignment is always stored as the annotation might contain a type var that is later
+            #  parameterized with an unknown forward reference (and we'll need it to rebuild the field info):
+            field_info._original_assignment = original_assignment
             if not evaluated:
                 field_info._complete = False
-                # Store the original annotation and assignment value that should be used to rebuild
-                # the field info later:
                 field_info._original_annotation = ann_type
-                field_info._original_assignment = original_assignment
             elif 'final' in field_info._qualifiers and not field_info.is_required():
                 warnings.warn(
                     f'Annotation {ann_name!r} is marked as final and has a default value. Pydantic treats {ann_name!r} as a '
