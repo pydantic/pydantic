@@ -712,7 +712,7 @@ def model_validator(
     """
 
     def dec(f: Any) -> _decorators.PydanticDescriptorProxy[Any]:
-        # auto apply the @classmethod decorator
+        # auto apply the @classmethod decorator (except for *after* validators, which should be instance methods):
         if mode != 'after':
             f = _decorators.ensure_classmethod_based_on_signature(f)
         dec_info = _decorators.ModelValidatorDecoratorInfo(mode=mode)
