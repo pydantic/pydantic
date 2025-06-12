@@ -4954,7 +4954,8 @@ It can be one of the following: 'wrap', 'before', or 'after'.</p>
 <span class="normal">721</span>
 <span class="normal">722</span>
 <span class="normal">723</span>
-<span class="normal">724</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">model_validator</span><span class="p">(</span>
+<span class="normal">724</span>
+<span class="normal">725</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">model_validator</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;wrap&#39;</span><span class="p">,</span> <span class="s1">&#39;before&#39;</span><span class="p">,</span> <span class="s1">&#39;after&#39;</span><span class="p">],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
@@ -5004,8 +5005,9 @@ It can be one of the following: 'wrap', 'before', or 'after'.</p>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">dec</span><span class="p">(</span><span class="n">f</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">PydanticDescriptorProxy</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
-        <span class="c1"># auto apply the @classmethod decorator</span>
-        <span class="n">f</span> <span class="o">=</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">ensure_classmethod_based_on_signature</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="c1"># auto apply the @classmethod decorator (except for *after* validators, which should be instance methods):</span>
+        <span class="k">if</span> <span class="n">mode</span> <span class="o">!=</span> <span class="s1">&#39;after&#39;</span><span class="p">:</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">ensure_classmethod_based_on_signature</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
         <span class="n">dec_info</span> <span class="o">=</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">ModelValidatorDecoratorInfo</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">PydanticDescriptorProxy</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">dec_info</span><span class="p">)</span>
 
