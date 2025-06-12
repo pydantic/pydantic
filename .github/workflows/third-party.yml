@@ -8,6 +8,8 @@
 # - Make sure Pydantic is installed in editable mode (e.g. `uv pip install -e ./pydantic-latest`)
 #   so that the path appears in the `pip list` output (and so we can be assured Pydantic was properly
 #   installed from the provided path).
+# - If using `uv run`, make use to use the `--no-sync`, because uv has the nasty habit of syncing the venv
+#   on each `uv run` invocation, which will reinstall the locked `pydantic`/`pydantic-core` version.
 name: Third party tests
 
 on:
@@ -61,14 +63,14 @@ jobs:
     - name: Install FastAPI dependencies
       run: |
         uv venv --python ${{ matrix.python-version }}
-        uv pip install -r requirements-tests.txt
+        uv pip install --no-progress -r requirements-tests.txt
         uv pip install -e ./pydantic-latest
 
     - name: List installed dependencies
       run: uv pip list
 
     - name: Run FastAPI tests
-      run: PYTHONPATH=./docs_src uv run --no-project pytest tests
+      run: PYTHONPATH=./docs_src uv run --no-project --no-sync pytest tests
 
   test-sqlmodel:
     name: Test SQLModel (main branch) on Python ${{ matrix.python-version }}
@@ -101,14 +103,14 @@ jobs:
     - name: Install SQLModel dependencies
       run: |
         uv venv --python ${{ matrix.python-version }}
-        uv pip install -r requirements-tests.txt
+        uv pip install --no-progress -r requirements-tests.txt
         uv pip install -e ./pydantic-latest
 
     - name: List installed dependencies
       run: uv pip list
 
     - name: Run SQLModel tests
-      run: uv run --no-project pytest tests
+      run: uv run --no-project --no-sync pytest tests
 
   test-beanie:
     name: Test Beanie (main branch) on Python ${{ matrix.python-version }}
@@ -232,7 +234,7 @@ jobs:
     - name: Install Pandera dependencies
       run: |
         pip install uv
-        uv sync --extra pandas --extra fastapi --extra pandas --group dev --group testing --group docs
+        uv sync --no-progress --extra pandas --extra fastapi --extra pandas --group dev --group testing --group docs
         uv pip uninstall --system pydantic pydantic-core
         uv pip install --system -e ./pydantic-latest
 
@@ -242,7 +244,7 @@ jobs:
     - name: Run Pandera tests
       # Pandera's CI uses nox sessions which encapsulate the logic to install a specific Pydantic version.
       # Instead, manually run pytest (we run core, pandas and FastAPI tests):
-      run: uv run pytest tests/base tests/pandas tests/fastapi
+      run: uv run --no-sync pytest tests/base tests/pandas tests/fastapi
 
   test-odmantic:
     name: Test ODMantic (main branch) on Python ${{ matrix.python-version }}
@@ -394,10 +396,10 @@ jobs:
     - name: 🔧 uv install
       working-directory: ./server
       run: |
-        uv sync --dev
+        uv sync --no-progress --dev
         uv pip uninstall pydantic
         uv pip install -e ./../pydantic-latest
-        uv run task generate_dev_jwks
+        uv run --no-sync task generate_dev_jwks
 
     - name: List installed dependencies
       working-directory: ./server
@@ -405,15 +407,15 @@ jobs:
 
     - name: ⚗️ alembic migrate
       working-directory: ./server
-      run: uv run task db_migrate
+      run: uv run --no-sync task db_migrate
 
     - name: ⚗️ alembic check
       working-directory: ./server
-      run: uv run alembic check
+      run: uv run --no-sync alembic check
 
     - name: 🐍 Run polar tests (pytest)
       working-directory: ./server
-      run: uv run pytest -n auto --no-cov
+      run: uv run --no-sync pytest -n auto --no-cov
 
   test-bentoml:
     name: Test BentoML (main branch) on Python ${{ matrix.python-version }}
@@ -486,7 +488,7 @@ jobs:
         with:
           path: pydantic-latest
 
-      - name: Install UV
+      - name: Install uv
         uses: astral-sh/setup-uv@v6
         with:
           python-version: ${{ matrix.python-version }}
@@ -495,7 +497,7 @@ jobs:
       - name: Install Semantic Kernel dependencies
         working-directory: ./python
         run: |
-          uv sync --all-extras --dev --prerelease=if-necessary-or-explicit
+          uv sync --no-progress --all-extras --dev --prerelease=if-necessary-or-explicit
           uv pip uninstall pydantic
           uv pip install -e ../pydantic-latest
 
@@ -505,7 +507,7 @@ jobs:
 
       - name: Run Semantic Kernel tests
         working-directory: ./python
-        run: uv run --frozen pytest ./tests/unit
+        run: uv run --frozen --no-sync pytest ./tests/unit
 
   test-langchain:
     name: Test LangChain (main branch) on Python ${{ matrix.python-version }}
@@ -531,14 +533,16 @@ jobs:
         with:
           path: pydantic-latest
 
-      - name: Install UV
+      - name: Install uv
         uses: astral-sh/setup-uv@v6
         with:
             python-version: ${{ matrix.python-version }}
 
       - name: Install LangChain dependencies
         run: |
-          uv sync --group test
+          uv sync --no-progress --group test
+          uv sync --no-progress --directory ./libs/core --group test
+          uv sync --no-progress --directory ./libs/langchain --group test
           uv pip uninstall pydantic
           uv pip install -e ./pydantic-latest
 
@@ -547,11 +551,11 @@ jobs:
 
       - name: Run LangChain core tests
         working-directory: ./libs/core
-        run: make test
+        run: UV_NO_SYNC=1 make test
 
       - name: Run LangChain main tests
         working-directory: ./libs/langchain
-        run: make test
+        run: UV_NO_SYNC=1 make test
 
   test-dify:
     name: Test Dify (main branch) on Python ${{ matrix.python-version }}
@@ -583,11 +587,11 @@ jobs:
 
       - name: Install uv
         shell: bash
-        run: pip install uv~=0.6.14
+        run: pip install uv~=0.7.0
 
       - name: Install Dify dependencies
         run: |
-          uv sync --directory api --dev
+          uv sync --no-progress --directory api --dev
           uv pip --directory api uninstall pydantic
           uv pip --directory api install -e ../pydantic-latest
 
@@ -595,7 +599,7 @@ jobs:
         run: uv pip --directory api list
 
       - name: Run Dify unit tests
-        run: uv run --project api bash dev/pytest/pytest_unit_tests.sh
+        run: uv run --no-sync --project api bash dev/pytest/pytest_unit_tests.sh
 
   test-cadwyn:
     name: Test Cadwyn (main branch) on Python ${{ matrix.python-version }}
@@ -628,14 +632,14 @@ jobs:
 
     - name: Install Cadwyn dependencies
       run: |
-        uv sync --dev --all-extras
+        uv sync --no-progress --dev --all-extras
         uv pip install -e ./pydantic-latest
 
     - name: List installed dependencies
       run: uv pip list
 
     - name: Run Cadwyn tests
-      run: uv run --no-project pytest tests docs_src
+      run: uv run --no-project --no-sync pytest tests docs_src
 
 
   create-issue-on-failure:
