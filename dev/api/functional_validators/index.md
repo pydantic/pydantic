@@ -156,11 +156,15 @@ from typing import Annotated, Union
 
 from pydantic import BaseModel, PlainValidator
 
+def validate(v: object) -> int:
+    if not isinstance(v, (int, str)):
+        raise ValueError(f'Expected int or str, go {type(v)}')
+
+    return int(v) + 1
+
 MyInt = Annotated[
     int,
-    PlainValidator(
-        lambda v: int(v) + 1, json_schema_input_type=Union[str, int]  # (1)!
-    ),
+    PlainValidator(validate, json_schema_input_type=Union[str, int]),  # (1)!
 ]
 
 class Model(BaseModel):
@@ -174,7 +178,7 @@ print(Model(a=1).a)
 
 ```
 
-1. In this example, we've specified the `json_schema_input_type` as `Union[str, int]` which indicates to the JSON schema generator that in validation mode, the input type for the `a` field can be either a `str` or an `int`.
+1. In this example, we've specified the `json_schema_input_type` as `Union[str, int]` which indicates to the JSON schema generator that in validation mode, the input type for the `a` field can be either a str or an int.
 
 ## WrapValidator
 
