@@ -282,7 +282,7 @@ def collect_model_fields(  # noqa: C901
             continue
 
         assigned_value = getattr(cls, ann_name, PydanticUndefined)
-        if (
+        if assigned_value is not PydanticUndefined and (
             # One of the deprecated instance methods was used as a field name (e.g. `dict()`):
             any(getattr(BaseModel_, depr_name, None) is assigned_value for depr_name in _deprecated_method_names)
             # One of the deprecated class methods was used as a field name (e.g. `schema()`):
