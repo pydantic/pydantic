@@ -199,6 +199,22 @@ def update_field_from_config(config_wrapper: ConfigWrapper, field_name: str, fie
         _apply_alias_generator_to_field_info(config_wrapper.alias_generator, field_name, field_info)
 
 
+_deprecated_method_names = {'dict', 'json', 'copy', '_iter', '_copy_and_set_values', '_calculate_keys'}
+
+_deprecated_classmethod_names = {
+    'parse_obj',
+    'parse_raw',
+    'parse_file',
+    'from_orm',
+    'construct',
+    'schema',
+    'schema_json',
+    'validate',
+    'update_forward_refs',
+    '_get_value',
+}
+
+
 def collect_model_fields(  # noqa: C901
     cls: type[BaseModel],
     config_wrapper: ConfigWrapper,
@@ -231,6 +247,7 @@ def collect_model_fields(  # noqa: C901
             - If a field shadows an attribute in the parent model.
     """
     FieldInfo_ = import_cached_field_info()
+    BaseModel_ = import_cached_base_model()
 
     bases = cls.__bases__
     parent_fields_lookup: dict[str, FieldInfo] = {}
@@ -265,6 +282,20 @@ def collect_model_fields(  # noqa: C901
             continue
 
         assigned_value = getattr(cls, ann_name, PydanticUndefined)
+        if assigned_value is not PydanticUndefined and (
+            # One of the deprecated instance methods was used as a field name (e.g. `dict()`):
+            any(getattr(BaseModel_, depr_name, None) is assigned_value for depr_name in _deprecated_method_names)
+            # One of the deprecated class methods was used as a field name (e.g. `schema()`):
+            or (
+                hasattr(assigned_value, '__func__')
+                and any(
+                    getattr(getattr(BaseModel_, depr_name, None), '__func__', None) is assigned_value.__func__  # pyright: ignore[reportAttributeAccessIssue]
+                    for depr_name in _deprecated_classmethod_names
+                )
+            )
+        ):
+            # Then `assigned_value` would be the method, even though no default was specified:
+            assigned_value = PydanticUndefined
 
         if not is_valid_field_name(ann_name):
             continue
