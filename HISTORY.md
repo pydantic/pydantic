@@ -1,7 +1,7 @@
 <!-- markdownlint-disable no-bare-urls -->
 <!-- markdownlint-disable-next-line first-line-heading -->
 
-## v2.11.6 (2025-06-12)
+## v2.11.6 (2025-06-13)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.11.6)
 
