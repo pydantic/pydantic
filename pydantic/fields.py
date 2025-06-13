@@ -438,10 +438,10 @@ class FieldInfo(_repr.Representation):
             # `default` is the actual default value
             attr_overrides['default'] = default
 
-        field_info = FieldInfo._construct(metadata, **attr_overrides)
+        field_info = FieldInfo._construct(
+            prepend_metadata + metadata if prepend_metadata is not None else metadata, **attr_overrides
+        )
         field_info._qualifiers = inspected_ann.qualifiers
-        if prepend_metadata is not None:
-            field_info.metadata = prepend_metadata + field_info.metadata
         return field_info
 
     @classmethod
