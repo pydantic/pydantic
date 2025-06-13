@@ -2254,3 +2254,56 @@ def test_deferred_discriminated_union_and_references() -> None:
     final_schema = gen_schema.clean_schema(disc_union_ref)
 
     assert final_schema['type'] == 'tagged-union'
+
+
+def test_field_info_reused() -> None:
+    """2.11 regression test for https://github.com/pydantic/pydantic/issues/11978."""
+
+    from typing import Annotated, Any, Generic, Literal, Optional, TypeVar, Union
+
+    from pydantic import AliasChoices, BaseModel, Discriminator, Field, Tag
+
+    F = TypeVar('F', bound=BaseModel)
+
+    class Not(BaseModel, Generic[F], extra='forbid'):
+        operand: F = Field(serialization_alias='not', validation_alias=AliasChoices('operand', 'not'))
+
+    class Label(BaseModel, extra='forbid'):
+        prop: Literal['label'] = 'label'
+        label: str
+
+    class Keyword(BaseModel, extra='forbid'):
+        prop: Literal['keyword'] = 'keyword'
+        word: str
+
+    def filter_discriminator(v: Any) -> Optional[str]:
+        if isinstance(v, dict):
+            if 'not' in v:
+                return 'not'
+            else:
+                return v.get('prop')
+
+        if isinstance(v, Not):
+            return 'not'
+        else:
+            return getattr(v, 'prop', None)
+
+    ParagraphFilterExpression = Annotated[
+        Union[
+            Annotated[Not['ParagraphFilterExpression'], Tag('not')],
+            Annotated[Label, Tag('label')],
+        ],
+        Discriminator(filter_discriminator),
+    ]
+
+    FieldFilterExpression = Annotated[
+        Union[
+            Annotated[Not['FieldFilterExpression'], Tag('not')],
+            Annotated[Keyword, Tag('keyword')],
+        ],
+        Discriminator(filter_discriminator),
+    ]
+
+    class FilterExpression(BaseModel, extra='forbid'):
+        field: Optional[FieldFilterExpression]
+        paragraph: Optional[ParagraphFilterExpression]
