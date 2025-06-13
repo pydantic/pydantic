@@ -87,7 +87,12 @@ from ._decorators import (
     inspect_validator,
 )
 from ._docs_extraction import extract_docstrings_from_cls
-from ._fields import collect_dataclass_fields, rebuild_model_fields, takes_validated_data_argument
+from ._fields import (
+    collect_dataclass_fields,
+    rebuild_dataclass_fields,
+    rebuild_model_fields,
+    takes_validated_data_argument,
+)
 from ._forward_ref import PydanticRecursiveRef
 from ._generics import get_standard_typevars_map, replace_types
 from ._import_utils import import_cached_base_model, import_cached_field_info
@@ -1912,14 +1917,27 @@ class GenerateSchema:
 
             with self._ns_resolver.push(dataclass), self._config_wrapper_stack.push(config):
                 if is_pydantic_dataclass(dataclass):
-                    # Copy the field info instances to avoid mutating the `FieldInfo` instances
-                    # of the generic dataclass generic origin (e.g. `apply_typevars_map` below).
-                    # Note that we don't apply `deepcopy` on `__pydantic_fields__` because we
-                    # don't want to copy the `FieldInfo` attributes:
-                    fields = {f_name: copy(field_info) for f_name, field_info in dataclass.__pydantic_fields__.items()}
-                    if typevars_map:
-                        for field in fields.values():
-                            field.apply_typevars_map(typevars_map, *self._types_namespace)
+                    if dataclass.__pydantic_fields_complete__():
+                        # Copy the field info instances to avoid mutating the `FieldInfo` instances
+                        # of the generic dataclass generic origin (e.g. `apply_typevars_map` below).
+                        # Note that we don't apply `deepcopy` on `__pydantic_fields__` because we
+                        # don't want to copy the `FieldInfo` attributes:
+                        fields = {
+                            f_name: copy(field_info) for f_name, field_info in dataclass.__pydantic_fields__.items()
+                        }
+                        if typevars_map:
+                            for field in fields.values():
+                                field.apply_typevars_map(typevars_map, *self._types_namespace)
+                    else:
+                        try:
+                            fields = rebuild_dataclass_fields(
+                                dataclass,
+                                config_wrapper=self._config_wrapper,
+                                ns_resolver=self._ns_resolver,
+                                typevars_map=typevars_map or {},
+                            )
+                        except NameError as e:
+                            raise PydanticUndefinedAnnotation.from_name_error(e) from e
                 else:
                     fields = collect_dataclass_fields(
                         dataclass,

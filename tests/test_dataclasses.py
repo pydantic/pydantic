@@ -3086,3 +3086,23 @@ def test_deferred_dataclass_fields_available() -> None:
         a: int
 
     assert 'a' in A.__pydantic_fields__  # pyright: ignore[reportAttributeAccessIssue]
+
+
+def test_dataclass_fields_rebuilt_before_schema_generation() -> None:
+    """https://github.com/pydantic/pydantic/issues/11947"""
+
+    def update_schema(schema: dict[str, Any]) -> None:
+        schema['test'] = schema['title']
+
+    @pydantic.dataclasses.dataclass
+    class A:
+        a: """Annotated[
+            Forward,
+            Field(field_title_generator=lambda name, _: name, json_schema_extra=update_schema)
+        ]""" = True
+
+    Forward = bool
+
+    ta = TypeAdapter(A)
+
+    assert ta.json_schema()['properties']['a']['test'] == 'a'

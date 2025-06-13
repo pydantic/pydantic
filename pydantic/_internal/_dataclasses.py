@@ -55,6 +55,9 @@ if typing.TYPE_CHECKING:
         __pydantic_serializer__: ClassVar[SchemaSerializer]
         __pydantic_validator__: ClassVar[SchemaValidator | PluggableSchemaValidator]
 
+        @classmethod
+        def __pydantic_fields_complete__(cls) -> bool: ...
+
 else:
     # See PyCharm issues https://youtrack.jetbrains.com/issue/PY-21915
     # and https://youtrack.jetbrains.com/issue/PY-51428
