@@ -1,3 +1,14 @@
+## v2.11.6 (2025-06-13)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.11.6)
+
+### What's Changed
+
+#### Fixes
+
+* Rebuild dataclass fields before schema generation by @Viicos in [#11949](https://github.com/pydantic/pydantic/pull/11949)
+* Always store the original field assignment on `FieldInfo` by @Viicos in [#11946](https://github.com/pydantic/pydantic/pull/11946)
+
 ## v2.11.5 (2025-05-22)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.11.5)
