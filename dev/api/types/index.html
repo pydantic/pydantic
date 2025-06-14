@@ -12735,7 +12735,22 @@ than it would be as a normal <code>Union</code>.</p>
 <span class="normal">3118</span>
 <span class="normal">3119</span>
 <span class="normal">3120</span>
-<span class="normal">3121</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_dataclasses</span><span class="o">.</span><span class="n">dataclass</span><span class="p">(</span><span class="o">**</span><span class="n">_internal_dataclass</span><span class="o">.</span><span class="n">slots_true</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="normal">3121</span>
+<span class="normal">3122</span>
+<span class="normal">3123</span>
+<span class="normal">3124</span>
+<span class="normal">3125</span>
+<span class="normal">3126</span>
+<span class="normal">3127</span>
+<span class="normal">3128</span>
+<span class="normal">3129</span>
+<span class="normal">3130</span>
+<span class="normal">3131</span>
+<span class="normal">3132</span>
+<span class="normal">3133</span>
+<span class="normal">3134</span>
+<span class="normal">3135</span>
+<span class="normal">3136</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_dataclasses</span><span class="o">.</span><span class="n">dataclass</span><span class="p">(</span><span class="o">**</span><span class="n">_internal_dataclass</span><span class="o">.</span><span class="n">slots_true</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">Discriminator</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;!!! abstract &quot;Usage Documentation&quot;</span>
 <span class="sd">        [Discriminated Unions with `Callable` `Discriminator`](../concepts/unions.md#discriminated-unions-with-callable-discriminator)</span>
@@ -12833,9 +12848,11 @@ than it would be as a normal <code>Union</code>.</p>
             <span class="k">return</span> <span class="n">handler</span><span class="p">(</span><span class="n">Annotated</span><span class="p">[</span><span class="n">source_type</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">discriminator</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">discriminator</span><span class="p">)])</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">original_schema</span> <span class="o">=</span> <span class="n">handler</span><span class="p">(</span><span class="n">source_type</span><span class="p">)</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_convert_schema</span><span class="p">(</span><span class="n">original_schema</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_convert_schema</span><span class="p">(</span><span class="n">original_schema</span><span class="p">,</span> <span class="n">handler</span><span class="p">)</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_convert_schema</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">original_schema</span><span class="p">:</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">CoreSchema</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">TaggedUnionSchema</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_convert_schema</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">original_schema</span><span class="p">:</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">CoreSchema</span><span class="p">,</span> <span class="n">handler</span><span class="p">:</span> <span class="n">GetCoreSchemaHandler</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">TaggedUnionSchema</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">original_schema</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;union&#39;</span><span class="p">:</span>
             <span class="c1"># This likely indicates that the schema was a single-item union that was simplified.</span>
             <span class="c1"># In this case, we do the same thing we do in</span>
@@ -12852,10 +12869,23 @@ than it would be as a normal <code>Union</code>.</p>
             <span class="k">if</span> <span class="n">metadata</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">tag</span> <span class="o">=</span> <span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;pydantic_internal_union_tag_key&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">tag</span>
             <span class="k">if</span> <span class="n">tag</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="n">PydanticUserError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s1">&#39;`Tag` not provided for choice </span><span class="si">{</span><span class="n">choice</span><span class="si">}</span><span class="s1"> used with `Discriminator`&#39;</span><span class="p">,</span>
-                    <span class="n">code</span><span class="o">=</span><span class="s1">&#39;callable-discriminator-no-tag&#39;</span><span class="p">,</span>
-                <span class="p">)</span>
+                <span class="c1"># `handler` is None when this method is called from `apply_discriminator()` (deferred discriminators)</span>
+                <span class="k">if</span> <span class="n">handler</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">choice</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;definition-ref&#39;</span><span class="p">:</span>
+                    <span class="c1"># If choice was built from a PEP 695 type alias, try to resolve the def:</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">choice</span> <span class="o">=</span> <span class="n">handler</span><span class="o">.</span><span class="n">resolve_ref_schema</span><span class="p">(</span><span class="n">choice</span><span class="p">)</span>
+                    <span class="k">except</span> <span class="ne">LookupError</span><span class="p">:</span>
+                        <span class="k">pass</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">metadata</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="s1">&#39;CoreMetadata | None&#39;</span><span class="p">,</span> <span class="n">choice</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;metadata&#39;</span><span class="p">))</span>
+                        <span class="k">if</span> <span class="n">metadata</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                            <span class="n">tag</span> <span class="o">=</span> <span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;pydantic_internal_union_tag_key&#39;</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">tag</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">PydanticUserError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s1">&#39;`Tag` not provided for choice </span><span class="si">{</span><span class="n">choice</span><span class="si">}</span><span class="s1"> used with `Discriminator`&#39;</span><span class="p">,</span>
+                        <span class="n">code</span><span class="o">=</span><span class="s1">&#39;callable-discriminator-no-tag&#39;</span><span class="p">,</span>
+                    <span class="p">)</span>
             <span class="n">tagged_union_choices</span><span class="p">[</span><span class="n">tag</span><span class="p">]</span> <span class="o">=</span> <span class="n">choice</span>
 
         <span class="c1"># Have to do these verbose checks to ensure falsy values (&#39;&#39; and {}) don&#39;t get ignored</span>
@@ -13056,22 +13086,7 @@ validation will be more performant with the caveat that you get less information
 
               <details class="quote">
                 <summary>Source code in <code>pydantic/types.py</code></summary>
-                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3250</span>
-<span class="normal">3251</span>
-<span class="normal">3252</span>
-<span class="normal">3253</span>
-<span class="normal">3254</span>
-<span class="normal">3255</span>
-<span class="normal">3256</span>
-<span class="normal">3257</span>
-<span class="normal">3258</span>
-<span class="normal">3259</span>
-<span class="normal">3260</span>
-<span class="normal">3261</span>
-<span class="normal">3262</span>
-<span class="normal">3263</span>
-<span class="normal">3264</span>
-<span class="normal">3265</span>
+                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3265</span>
 <span class="normal">3266</span>
 <span class="normal">3267</span>
 <span class="normal">3268</span>
@@ -13086,7 +13101,22 @@ validation will be more performant with the caveat that you get less information
 <span class="normal">3277</span>
 <span class="normal">3278</span>
 <span class="normal">3279</span>
-<span class="normal">3280</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_dataclasses</span><span class="o">.</span><span class="n">dataclass</span>
+<span class="normal">3280</span>
+<span class="normal">3281</span>
+<span class="normal">3282</span>
+<span class="normal">3283</span>
+<span class="normal">3284</span>
+<span class="normal">3285</span>
+<span class="normal">3286</span>
+<span class="normal">3287</span>
+<span class="normal">3288</span>
+<span class="normal">3289</span>
+<span class="normal">3290</span>
+<span class="normal">3291</span>
+<span class="normal">3292</span>
+<span class="normal">3293</span>
+<span class="normal">3294</span>
+<span class="normal">3295</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_dataclasses</span><span class="o">.</span><span class="n">dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">FailFast</span><span class="p">(</span><span class="n">_fields</span><span class="o">.</span><span class="n">PydanticMetadata</span><span class="p">,</span> <span class="n">BaseMetadata</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A `FailFast` annotation can be used to specify that validation should stop at the first error.</span>
 

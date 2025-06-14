@@ -20830,7 +20830,7 @@ def __init__(self, **kwargs: Unpack[_FieldInfoInputs]) -> None:
 
     See the signature of `pydantic.fields.Field` for more details about the expected arguments.
     """
-    self._attributes_set = {k: v for k, v in kwargs.items() if v is not _Unset}
+    self._attributes_set = {k: v for k, v in kwargs.items() if v is not _Unset and k not in self.metadata_lookup}
     kwargs = {k: _DefaultValues.get(k) if v is _Unset else v for k, v in kwargs.items()}  # type: ignore
     self.annotation = kwargs.get('annotation')
 
@@ -21049,30 +21049,12 @@ def from_annotation(annotation: type[Any], *, _source: AnnotationSource = Annota
     final = 'final' in inspected_ann.qualifiers
     metadata = inspected_ann.metadata
 
-    if not metadata:
-        # No metadata, e.g. `field: int`, or `field: Final[str]`:
-        field_info = FieldInfo(annotation=type_expr, frozen=final or None)
-        field_info._qualifiers = inspected_ann.qualifiers
-        return field_info
-
-    # With metadata, e.g. `field: Annotated[int, Field(...), Gt(1)]`:
-    field_info_annotations = [a for a in metadata if isinstance(a, FieldInfo)]
-    field_info = FieldInfo.merge_field_infos(*field_info_annotations, annotation=type_expr)
-
-    new_field_info = copy(field_info)
-    new_field_info.annotation = type_expr
-    new_field_info.frozen = final or field_info.frozen
-    field_metadata: list[Any] = []
-    for a in metadata:
-        if typing_objects.is_deprecated(a):
-            new_field_info.deprecated = a.message
-        elif not isinstance(a, FieldInfo):
-            field_metadata.append(a)
-        else:
-            field_metadata.extend(a.metadata)
-        new_field_info.metadata = field_metadata
-    new_field_info._qualifiers = inspected_ann.qualifiers
-    return new_field_info
+    attr_overrides = {'annotation': type_expr}
+    if final:
+        attr_overrides['frozen'] = True
+    field_info = FieldInfo._construct(metadata, **attr_overrides)
+    field_info._qualifiers = inspected_ann.qualifiers
+    return field_info
 
 ````
 
@@ -21169,54 +21151,47 @@ def from_annotated_attribute(
     final = 'final' in inspected_ann.qualifiers
     metadata = inspected_ann.metadata
 
-    if isinstance(default, FieldInfo):
-        # e.g. `field: int = Field(...)`
-        default.annotation = type_expr
-        default.metadata += metadata
-        merged_default = FieldInfo.merge_field_infos(
-            *[x for x in metadata if isinstance(x, FieldInfo)],
-            default,
-            annotation=default.annotation,
-        )
-        merged_default.frozen = final or merged_default.frozen
-        merged_default._qualifiers = inspected_ann.qualifiers
-        return merged_default
+    # HACK 1: the order in which the metadata is merged is inconsistent; we need to prepend
+    # metadata from the assignment at the beginning of the metadata. Changing this is only
+    # possible in v3 (at least). See https://github.com/pydantic/pydantic/issues/10507
+    prepend_metadata: list[Any] | None = None
+    attr_overrides = {'annotation': type_expr}
+    if final:
+        attr_overrides['frozen'] = True
 
-    if isinstance(default, dataclasses.Field):
-        # `collect_dataclass_fields()` passes the dataclass Field as a default.
-        pydantic_field = FieldInfo._from_dataclass_field(default)
-        pydantic_field.annotation = type_expr
-        pydantic_field.metadata += metadata
-        pydantic_field = FieldInfo.merge_field_infos(
-            *[x for x in metadata if isinstance(x, FieldInfo)],
-            pydantic_field,
-            annotation=pydantic_field.annotation,
-        )
-        pydantic_field.frozen = final or pydantic_field.frozen
-        pydantic_field.init_var = 'init_var' in inspected_ann.qualifiers
-        pydantic_field.init = getattr(default, 'init', None)
-        pydantic_field.kw_only = getattr(default, 'kw_only', None)
-        pydantic_field._qualifiers = inspected_ann.qualifiers
-        return pydantic_field
-
-    if not metadata:
-        # No metadata, e.g. `field: int = ...`, or `field: Final[str] = ...`:
-        field_info = FieldInfo(annotation=type_expr, default=default, frozen=final or None)
-        field_info._qualifiers = inspected_ann.qualifiers
+    # HACK 2: FastAPI is subclassing `FieldInfo` and historically expected the actual
+    # instance's type to be preserved when constructing new models with its subclasses as assignments.
+    # This code is never reached by Pydantic itself, and in an ideal world this shouldn't be necessary.
+    if not metadata and isinstance(default, FieldInfo) and type(default) is not FieldInfo:
+        field_info = default._copy()
+        field_info._attributes_set.update(attr_overrides)
+        for k, v in attr_overrides.items():
+            setattr(field_info, k, v)
         return field_info
 
-    # With metadata, e.g. `field: Annotated[int, Field(...), Gt(1)] = ...`:
-    field_infos = [a for a in metadata if isinstance(a, FieldInfo)]
-    field_info = FieldInfo.merge_field_infos(*field_infos, annotation=type_expr, default=default)
-    field_metadata: list[Any] = []
-    for a in metadata:
-        if typing_objects.is_deprecated(a):
-            field_info.deprecated = a.message
-        elif not isinstance(a, FieldInfo):
-            field_metadata.append(a)
-        else:
-            field_metadata.extend(a.metadata)
-    field_info.metadata = field_metadata
+    if isinstance(default, FieldInfo):
+        default_copy = default._copy()  # Copy unnecessary when we remove HACK 1.
+        prepend_metadata = default_copy.metadata
+        default_copy.metadata = []
+        metadata = metadata + [default_copy]
+    elif isinstance(default, dataclasses.Field):
+        from_field = FieldInfo._from_dataclass_field(default)
+        prepend_metadata = from_field.metadata  # Unnecessary when we remove HACK 1.
+        from_field.metadata = []
+        metadata = metadata + [from_field]
+        if 'init_var' in inspected_ann.qualifiers:
+            attr_overrides['init_var'] = True
+        if (init := getattr(default, 'init', None)) is not None:
+            attr_overrides['init'] = init
+        if (kw_only := getattr(default, 'kw_only', None)) is not None:
+            attr_overrides['kw_only'] = kw_only
+    else:
+        # `default` is the actual default value
+        attr_overrides['default'] = default
+
+    field_info = FieldInfo._construct(
+        prepend_metadata + metadata if prepend_metadata is not None else metadata, **attr_overrides
+    )
     field_info._qualifiers = inspected_ann.qualifiers
     return field_info
 
@@ -21243,6 +21218,11 @@ Source code in `pydantic/fields.py`
 
 ```python
 @staticmethod
+@typing_extensions.deprecated(
+    "The 'merge_field_infos()' method is deprecated and will be removed in a future version. "
+    'If you relied on this method, please open an issue in the Pydantic issue tracker.',
+    category=None,
+)
 def merge_field_infos(*field_infos: FieldInfo, **overrides: Any) -> FieldInfo:
     """Merge `FieldInfo` instances keeping only explicitly set attributes.
 
@@ -21253,7 +21233,7 @@ def merge_field_infos(*field_infos: FieldInfo, **overrides: Any) -> FieldInfo:
     """
     if len(field_infos) == 1:
         # No merging necessary, but we still need to make a copy and apply the overrides
-        field_info = copy(field_infos[0])
+        field_info = field_infos[0]._copy()
         field_info._attributes_set.update(overrides)
 
         default_override = overrides.pop('default', PydanticUndefined)
@@ -45262,9 +45242,11 @@ class Discriminator:
             return handler(Annotated[source_type, Field(discriminator=self.discriminator)])
         else:
             original_schema = handler(source_type)
-            return self._convert_schema(original_schema)
+            return self._convert_schema(original_schema, handler)
 
-    def _convert_schema(self, original_schema: core_schema.CoreSchema) -> core_schema.TaggedUnionSchema:
+    def _convert_schema(
+        self, original_schema: core_schema.CoreSchema, handler: GetCoreSchemaHandler | None = None
+    ) -> core_schema.TaggedUnionSchema:
         if original_schema['type'] != 'union':
             # This likely indicates that the schema was a single-item union that was simplified.
             # In this case, we do the same thing we do in
@@ -45281,10 +45263,23 @@ class Discriminator:
             if metadata is not None:
                 tag = metadata.get('pydantic_internal_union_tag_key') or tag
             if tag is None:
-                raise PydanticUserError(
-                    f'`Tag` not provided for choice {choice} used with `Discriminator`',
-                    code='callable-discriminator-no-tag',
-                )
+                # `handler` is None when this method is called from `apply_discriminator()` (deferred discriminators)
+                if handler is not None and choice['type'] == 'definition-ref':
+                    # If choice was built from a PEP 695 type alias, try to resolve the def:
+                    try:
+                        choice = handler.resolve_ref_schema(choice)
+                    except LookupError:
+                        pass
+                    else:
+                        metadata = cast('CoreMetadata | None', choice.get('metadata'))
+                        if metadata is not None:
+                            tag = metadata.get('pydantic_internal_union_tag_key')
+
+                if tag is None:
+                    raise PydanticUserError(
+                        f'`Tag` not provided for choice {choice} used with `Discriminator`',
+                        code='callable-discriminator-no-tag',
+                    )
             tagged_union_choices[tag] = choice
 
         # Have to do these verbose checks to ensure falsy values ('' and {}) don't get ignored
