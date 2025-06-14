@@ -1,3 +1,13 @@
+## v2.11.7 (2025-06-14)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.11.7)
+
+### What's Changed
+
+#### Fixes
+
+* Copy `FieldInfo` instance if necessary during `FieldInfo` build by @Viicos in [#11898](https://github.com/pydantic/pydantic/pull/11898)
+
 ## v2.11.6 (2025-06-13)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.11.6)
