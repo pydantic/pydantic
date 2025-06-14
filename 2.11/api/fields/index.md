@@ -853,6 +853,10 @@ def from_annotated_attribute(
 
     if isinstance(default, FieldInfo):
         # e.g. `field: int = Field(...)`
+        default_metadata = default.metadata.copy()
+        default = copy(default)
+        default.metadata = default_metadata
+
         default.annotation = type_expr
         default.metadata += metadata
         merged_default = FieldInfo.merge_field_infos(
