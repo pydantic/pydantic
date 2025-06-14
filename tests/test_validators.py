@@ -2545,7 +2545,7 @@ def test_validator_allow_reuse_different_field_3():
             y: int
 
             val_x = field_validator('x')(val1)
-            val_x = field_validator('y')(val2)
+            val_x = field_validator('y')(val2)  # noqa: PIE794
 
     assert Model(x=1, y=2).model_dump() == {'x': 1, 'y': 4}
 

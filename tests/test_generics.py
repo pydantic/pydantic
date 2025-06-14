@@ -321,7 +321,7 @@ def test_parameter_count():
 
     # This error message, which comes from `typing`, changed 'parameters' to 'arguments' in 3.11
     error_message = str(exc_info.value)
-    assert error_message.startswith('Too many parameters') or error_message.startswith('Too many arguments')
+    assert error_message.startswith(('Too many parameters', 'Too many arguments'))
     assert error_message.endswith(
         " for <class 'tests.test_generics.test_parameter_count.<locals>.Model'>; actual 3, expected 2"
     )

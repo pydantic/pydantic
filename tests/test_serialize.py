@@ -778,7 +778,7 @@ def test_serializer_allow_reuse_different_field_3():
             y: int
 
             ser_x = field_serializer('x')(ser1)
-            ser_x = field_serializer('y')(ser2)
+            ser_x = field_serializer('y')(ser2)  # noqa: PIE794
 
     assert Model(x=1, y=2).model_dump() == {'x': 1, 'y': 'ser2'}
 
