@@ -1,9 +1,23 @@
-from typing import Union
+from typing import Annotated, Final, Union
 
 import pytest
+from annotated_types import Gt
+from pydantic_core import PydanticUndefined
 
 import pydantic.dataclasses
-from pydantic import BaseModel, ConfigDict, Field, PydanticUserError, RootModel, ValidationError, computed_field, fields
+from pydantic import (
+    AfterValidator,
+    BaseModel,
+    ConfigDict,
+    Field,
+    PydanticUserError,
+    RootModel,
+    ValidationError,
+    computed_field,
+    create_model,
+    fields,
+)
+from pydantic.fields import FieldInfo
 
 
 def test_field_info_annotation_keyword_argument():
@@ -188,3 +202,78 @@ def test_rebuild_model_fields_preserves_description() -> None:
     Model.model_rebuild()
 
     assert Model.model_fields['f'].description == 'test doc'
+
+
+def test_final_to_frozen_with_assignment() -> None:
+    class Model(BaseModel):
+        # A buggy implementation made it so that `frozen` wouldn't
+        # be set on the `FieldInfo`:
+        b: Annotated[Final[int], ...] = Field(alias='test')
+
+    assert Model.model_fields['b'].frozen
+
+
+def test_metadata_preserved_with_assignment() -> None:
+    def func1(v):
+        pass
+
+    def func2(v):
+        pass
+
+    class Model(BaseModel):
+        # A buggy implementation made it so that the first validator
+        # would be dropped:
+        a: Annotated[int, AfterValidator(func1), Field(gt=1), AfterValidator(func2)] = Field(...)
+
+    metadata = Model.model_fields['a'].metadata
+
+    assert isinstance(metadata[0], AfterValidator)
+    assert isinstance(metadata[1], Gt)
+    assert isinstance(metadata[2], AfterValidator)
+
+
+def test_reused_field_not_mutated() -> None:
+    """https://github.com/pydantic/pydantic/issues/11876"""
+
+    Ann = Annotated[int, Field()]
+
+    class Foo(BaseModel):
+        f: Ann = 50
+
+    class Bar(BaseModel):
+        f: Annotated[Ann, Field()]
+
+    assert Bar.model_fields['f'].default is PydanticUndefined
+
+
+def test_no_duplicate_metadata_with_assignment_and_rebuild() -> None:
+    """https://github.com/pydantic/pydantic/issues/11870"""
+
+    class Model(BaseModel):
+        f: Annotated['Int', Gt(1)] = Field()
+
+    Int = int
+
+    Model.model_rebuild()
+
+    assert len(Model.model_fields['f'].metadata) == 1
+
+
+def test_fastapi_compatibility_hack() -> None:
+    class Body(FieldInfo):
+        """A reproduction of the FastAPI's `Body` param."""
+
+        pass
+
+    field = Body()
+    # Assigning after doesn't update `_attributes_set`, which is currently
+    # relied on to merge `FieldInfo` instances during field creation.
+    # This is also what the FastAPI code is doing in some places.
+    # The FastAPI compatibility hack makes it so that it still works.
+    field.default = 1
+
+    Model = create_model('Model', f=(int, field))
+    model_field = Model.model_fields['f']
+
+    assert isinstance(model_field, Body)
+    assert not model_field.is_required()
