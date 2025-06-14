@@ -2254,3 +2254,47 @@ def test_deferred_discriminated_union_and_references() -> None:
     final_schema = gen_schema.clean_schema(disc_union_ref)
 
     assert final_schema['type'] == 'tagged-union'
+
+
+def test_recursive_discriminated_union() -> None:
+    """https://github.com/pydantic/pydantic/issues/11978"""
+
+    F = TypeVar('F', bound=BaseModel)
+
+    class Not(BaseModel, Generic[F]):
+        operand: F = Field()
+
+    class Label(BaseModel):
+        prop: Literal['label'] = 'label'
+
+    def filter_discriminator(v):
+        if isinstance(v, dict):
+            if 'not' in v:
+                return 'not'
+            else:
+                return v.get('prop')
+
+        if isinstance(v, Not):
+            return 'not'
+        else:
+            return getattr(v, 'prop', None)
+
+    ParagraphFilterExpression = Annotated[
+        Union[
+            Annotated[Not['ParagraphFilterExpression'], Tag('not')],
+            Annotated[Label, Tag('label')],
+        ],
+        Discriminator(filter_discriminator),
+    ]
+
+    FieldFilterExpression = Annotated[
+        Union[
+            Annotated[Not['FieldFilterExpression'], Tag('not')],
+            Annotated[Label, Tag('label')],
+        ],
+        Discriminator(filter_discriminator),
+    ]
+
+    class FilterExpression(BaseModel):
+        field: FieldFilterExpression
+        paragraph: ParagraphFilterExpression
