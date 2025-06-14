@@ -207,7 +207,6 @@ def test_dataclass_config_field_title_generator(field_title_generator):
 def test_typeddict_model_title_generator(model_title_generator, TypedDict):
     class MyTypedDict(TypedDict):
         __pydantic_config__ = ConfigDict(model_title_generator=model_title_generator)
-        pass
 
     assert TypeAdapter(MyTypedDict).json_schema() == {
         'properties': {},
@@ -429,7 +428,6 @@ def test_model_title_generator_returns_invalid_type(invalid_return_value, TypedD
 
         class MyTypedDict(TypedDict):
             __pydantic_config__ = ConfigDict(model_title_generator=lambda m: invalid_return_value)
-            pass
 
         TypeAdapter(MyTypedDict).json_schema()
 

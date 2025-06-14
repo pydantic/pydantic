@@ -207,12 +207,13 @@ select = [
     'T10',    # flake8-debugger
     'T20',    # flake8-print
     'C4',     # flake8-comprehensions
+    'PIE',    # flake8-pie
     'PYI006', # flake8-pyi
     'PYI062', # flake8-pyi
     'PYI063', # flake8-pyi
     'PYI066', # flake8-pyi
 ]
-ignore = ['D105', 'D107', 'D205', 'D415', 'E501', 'B011', 'B028', 'B904']
+ignore = ['D105', 'D107', 'D205', 'D415', 'E501', 'B011', 'B028', 'B904', 'PIE804']
 flake8-quotes = {inline-quotes = 'single', multiline-quotes = 'double'}
 isort = { known-first-party = ['pydantic', 'tests'] }
 mccabe = { max-complexity = 14 }
@@ -222,7 +223,9 @@ pydocstyle = { convention = 'google' }
 'docs/*' = ['D']
 'pydantic/__init__.py' = ['F405', 'F403', 'D']
 'tests/test_forward_ref.py' = ['F821']
+'tests/test_main.py' = ['PIE807']
 'tests/*' = ['D', 'B', 'C4']
+'pydantic/_internal/_known_annotated_metadata.py' = ['PIE800']
 'pydantic/deprecated/*' = ['D', 'PYI']
 'pydantic/color.py' = ['PYI']
 'pydantic/_internal/_decorators_v1.py' = ['PYI']

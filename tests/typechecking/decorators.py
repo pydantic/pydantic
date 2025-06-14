@@ -77,7 +77,7 @@ class WrapModelValidator(BaseModel):
         the `_ModelType` type var will thus bind to `Self`. It is then expected to have
         `handler: ModelWrapValidatorHandler[_ModelType]` and the return type as `-> _ModelType`.
         """
-        ...
+        ...  # noqa: PIE790
 
     @model_validator(mode='wrap')
     @classmethod
