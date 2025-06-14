@@ -105,6 +105,7 @@ from pydantic import (
     StringConstraints,
     Tag,
     TypeAdapter,
+    ValidateFrom,
     ValidationError,
     conbytes,
     condate,
@@ -6014,6 +6015,22 @@ def test_skip_validation_json_schema():
         'title': 'A',
         'type': 'object',
     }
+
+
+def test_validate_from() -> None:
+    class Arbitrary:
+        def __init__(self, a: int) -> None:
+            self.a = a
+
+        def __eq__(self, other) -> bool:
+            return self.a == other.a
+
+    class ArbitraryModel(BaseModel):
+        a: int
+
+    ta = TypeAdapter(Annotated[Arbitrary, ValidateFrom(ArbitraryModel, instantiation_hook=lambda v: Arbitrary(a=v.a))])
+
+    assert ta.validate_python({'a': 1}) == Arbitrary(1)
 
 
 def test_transform_schema():
