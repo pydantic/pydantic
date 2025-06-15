@@ -761,7 +761,7 @@ may need to explicitly specify the generic parameter:
 from pydantic import TypeAdapter
 
 adapter = TypeAdapter[str | int](str | int)
-...  # noqa: PIE790
+...
 ```
 
 See [Type Adapter](concepts/type_adapter.md) for more information.
