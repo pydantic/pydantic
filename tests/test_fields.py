@@ -263,8 +263,6 @@ def test_fastapi_compatibility_hack() -> None:
     class Body(FieldInfo):
         """A reproduction of the FastAPI's `Body` param."""
 
-        pass
-
     field = Body()
     # Assigning after doesn't update `_attributes_set`, which is currently
     # relied on to merge `FieldInfo` instances during field creation.
