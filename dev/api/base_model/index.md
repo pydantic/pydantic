@@ -488,7 +488,6 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         """Override this method to perform additional initialization after `__init__` and `model_construct`.
         This is useful if you want to do some validation that requires the entire model to be initialized.
         """
-        pass
 
     @classmethod
     def model_rebuild(
@@ -734,7 +733,6 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             You may want to override [`__pydantic_on_complete__()`][pydantic.main.BaseModel.__pydantic_on_complete__]
             instead, which is called once the class and its fields are fully initialized and ready for validation.
         """
-        pass
 
     @classmethod
     def __pydantic_on_complete__(cls) -> None:
@@ -746,7 +744,6 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         In that case, it will be called later, when the model is rebuilt automatically or explicitly using
         [`model_rebuild()`][pydantic.main.BaseModel.model_rebuild].
         """
-        pass
 
     def __class_getitem__(
         cls, typevar_values: type[Any] | tuple[type[Any], ...]
@@ -2190,7 +2187,6 @@ def model_post_init(self, context: Any, /) -> None:
     """Override this method to perform additional initialization after `__init__` and `model_construct`.
     This is useful if you want to do some validation that requires the entire model to be initialized.
     """
-    pass
 
 ```
 
