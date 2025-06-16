@@ -674,7 +674,31 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        json_schema = self.str_schema(core_schema.str_schema())
+
+        def get_decimal_pattern(schema: core_schema.DecimalSchema) -> str:
+            max_digits = schema.get('max_digits', '')
+            decimal_places = schema.get('decimal_places', '')
+            integer_places = max_digits
+
+            if isinstance(max_digits, int) and isinstance(decimal_places, int):
+                if (diff := max_digits - decimal_places) > 0:
+                    integer_places = diff
+                else:
+                    integer_places = 0
+
+            pattern = (
+                r'^(?!^[+-\.]*$)'  # check string is not empty and not single or sequence of ".+-" characters.
+                r'[+-]?0*'  # check "+-" optional characters in the very start and optional zeros.
+                r'(?:'  # open non-capturing group
+                rf'\d{{0,{integer_places}}}$'  # integer case
+                r'|'  # or decimal case
+                rf'(?=[\d\.]{{1,{max_digits + 1 if isinstance(max_digits, int) else ""}}}0*$)'  # decimal case, check max digits in decimal with lookahead
+                rf'\d{{0,{integer_places}}}\.\d{{0,{decimal_places}}}0*$'  # if pass previous lookahead match decimal pattern
+                r')'  # close non-capturing group
+            )
+            return pattern
+
+        json_schema = self.str_schema(core_schema.str_schema(pattern=get_decimal_pattern(schema)))
         if self.mode == 'validation':
             multiple_of = schema.get('multiple_of')
             le = schema.get('le')
