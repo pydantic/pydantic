@@ -1053,6 +1053,7 @@ def test_special_float_types(field_type, expected_schema):
     assert Model.model_json_schema() == base_schema
 
 
+# ADDTESTS: add test cases to check max_digits and decimal_places
 @pytest.mark.parametrize(
     'field_type,expected_schema',
     [
@@ -2010,6 +2011,7 @@ def test_docstring(docstring, description):
     assert A.model_json_schema()['description'] == description
 
 
+# ADDTESTS: add test cases to check max_digits and decimal_places constrains
 @pytest.mark.parametrize(
     'kwargs,type_,expected_extra',
     [
@@ -2113,6 +2115,7 @@ def test_constraints_schema_validation(kwargs, type_, expected_extra):
     assert Foo.model_json_schema(mode='validation') == expected_schema
 
 
+# ADDTESTS: add test cases to check max_digits and decimal_places constrains
 @pytest.mark.parametrize(
     'kwargs,type_,expected_extra',
     [
