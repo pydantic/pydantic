@@ -6951,10 +6951,8 @@ def test_json_schema_arguments_v3_aliases() -> None:
 class TestDecimalPattern:
     @pytest.fixture
     def get_pattern(self):
-        def pattern(max_digits: int | None = None, decimal_places: int | None = None) -> str:
-            filed = TypeAdapter[Decimal](
-                Annotated[Decimal, Field(max_digits=max_digits, decimal_places=decimal_places)]
-            )
+        def pattern(max_digits=None, decimal_places=None) -> str:
+            filed = TypeAdapter(Annotated[Decimal, Field(max_digits=max_digits, decimal_places=decimal_places)])
             return filed.json_schema()['anyOf'][1]['pattern']
 
         return pattern
