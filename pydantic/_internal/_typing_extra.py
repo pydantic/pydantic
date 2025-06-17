@@ -309,9 +309,23 @@ def get_model_type_hints(
     ns_resolver = ns_resolver or NsResolver()
 
     for base in reversed(obj.__mro__):
-        ann: dict[str, Any] | None = base.__dict__.get('__annotations__')
-        if not ann or isinstance(ann, types.GetSetDescriptorType):
+        ann: dict[str, Any] | None
+
+        if sys.version_info >= (3, 14):
+            from annotationlib import Format, get_annotations
+
+            # We could also use `Format.VALUE` and pass the globals/locals from the
+            # ns_resolver, but we want to be able to know which specific field failed
+            # to evaluate:
+            ann = get_annotations(base, format=Format.FORWARDREF)
+        else:
+            ann = base.__dict__.get('__annotations__')
+            if isinstance(ann, types.GetSetDescriptorType):
+                continue
+
+        if not ann:
             continue
+
         with ns_resolver.push(base):
             globalns, localns = ns_resolver.types_namespace
             for name, value in ann.items():
@@ -345,9 +359,23 @@ def get_cls_type_hints(
     ns_resolver = ns_resolver or NsResolver()
 
     for base in reversed(obj.__mro__):
-        ann: dict[str, Any] | None = base.__dict__.get('__annotations__')
-        if not ann or isinstance(ann, types.GetSetDescriptorType):
+        ann: dict[str, Any] | None
+
+        if sys.version_info >= (3, 14):
+            from annotationlib import Format, get_annotations
+
+            # We could also use `Format.VALUE` and pass the globals/locals from the
+            # ns_resolver, but we want to be able to know which specific field failed
+            # to evaluate:
+            ann = get_annotations(base, format=Format.FORWARDREF)
+        else:
+            ann = base.__dict__.get('__annotations__')
+            if isinstance(ann, types.GetSetDescriptorType):
+                continue
+
+        if not ann:
             continue
+
         with ns_resolver.push(base):
             globalns, localns = ns_resolver.types_namespace
             for name, value in ann.items():
