@@ -13,6 +13,7 @@ def test_enum_key_schema():
     prop_names = schema["properties"]["data"].get("propertyNames", {})
     assert "$ref" in prop_names
     assert prop_names["$ref"] == "#/$defs/MyEnum"
+    
     defs = schema.get("$defs", {})
     my_enum = defs.get("MyEnum", {})
     assert my_enum.get("type") == "integer"
