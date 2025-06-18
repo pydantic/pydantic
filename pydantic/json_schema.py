@@ -1006,7 +1006,6 @@ class GenerateJsonSchema:
         json_schema: JsonSchemaValue = {'type': 'object'}
 
         keys_schema = self.generate_inner(schema['keys_schema']).copy() if 'keys_schema' in schema else {}
-        # We are custom handling for enum keys
         key_schema = schema.get('keys_schema')
         if key_schema and isinstance(key_schema, dict):
             key_type = key_schema.get('type')
