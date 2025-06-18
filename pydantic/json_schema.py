@@ -1006,6 +1006,24 @@ class GenerateJsonSchema:
         json_schema: JsonSchemaValue = {'type': 'object'}
 
         keys_schema = self.generate_inner(schema['keys_schema']).copy() if 'keys_schema' in schema else {}
+        # We are custom handling for enum keys
+        key_schema = schema.get('keys_schema')
+        if key_schema and isinstance(key_schema, dict):
+            key_type = key_schema.get('type')
+            if (
+                isinstance(key_schema, dict)
+                and 'type' in key_schema
+                and key_schema['type'] == 'integer'
+                and 'enum' in key_schema
+            ):
+                # Here we are trying to convert to string-based enum representation
+                enum_values = key_schema['enum']
+                enum_names = [str(v) for v in enum_values]
+                json_schema['propertyNames'] = {
+                    'type': 'string',
+                    'enum': enum_names
+                }
+
         if '$ref' not in keys_schema:
             keys_pattern = keys_schema.pop('pattern', None)
             # Don't give a title to patternProperties/propertyNames:
