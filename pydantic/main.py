@@ -1752,8 +1752,7 @@ def create_model(  # noqa: C901
     namespace: dict[str, Any] = {'__annotations__': annotations, '__module__': __module__}
     if __doc__:
         namespace.update({'__doc__': __doc__})
-    if __qualname__:
-        namespace.update({'__qualname__': __qualname__})
+    namespace.update({'__qualname__': __qualname__ or model_name})
     if __validators__:
         namespace.update(__validators__)
     namespace.update(fields)
