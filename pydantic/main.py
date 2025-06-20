@@ -1658,6 +1658,7 @@ def create_model(
     __module__: str = __name__,
     __validators__: dict[str, Callable[..., Any]] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
+    __qualname__: str | None = None,
     **field_definitions: Any | tuple[str, Any],
 ) -> type[BaseModel]: ...
 
@@ -1673,6 +1674,7 @@ def create_model(
     __module__: str = __name__,
     __validators__: dict[str, Callable[..., Any]] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
+    __qualname__: str | None = None,
     **field_definitions: Any | tuple[str, Any],
 ) -> type[ModelT]: ...
 
