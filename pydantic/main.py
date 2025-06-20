@@ -1687,6 +1687,7 @@ def create_model(  # noqa: C901
     __module__: str | None = None,
     __validators__: dict[str, Callable[..., Any]] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
+    __qualname__: str | None = None
     # TODO PEP 747: replace `Any` by the TypeForm:
     **field_definitions: Any | tuple[str, Any],
 ) -> type[ModelT]:
@@ -1750,6 +1751,8 @@ def create_model(  # noqa: C901
     namespace: dict[str, Any] = {'__annotations__': annotations, '__module__': __module__}
     if __doc__:
         namespace.update({'__doc__': __doc__})
+    if __qualname__:
+        namespace.update({'__qualname__': __qualname__})
     if __validators__:
         namespace.update(__validators__)
     namespace.update(fields)
