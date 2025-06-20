@@ -4,6 +4,7 @@ from __future__ import annotations as _annotations
 
 import dataclasses
 import sys
+import warnings
 from functools import partialmethod
 from types import FunctionType
 from typing import TYPE_CHECKING, Annotated, Any, Callable, Literal, TypeVar, Union, cast, overload
@@ -14,6 +15,7 @@ from typing_extensions import Self, TypeAlias
 from ._internal import _decorators, _generics, _internal_dataclass
 from .annotated_handlers import GetCoreSchemaHandler
 from .errors import PydanticUserError
+from .warnings import PydanticSkipValidationWarning
 
 if sys.version_info < (3, 11):
     from typing_extensions import Protocol
@@ -817,13 +819,15 @@ else:
 
         @classmethod
         def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
-            original_schema = handler(source)
-            metadata = {'pydantic_js_annotation_functions': [lambda _c, h: h(original_schema)]}
-            return core_schema.any_schema(
-                metadata=metadata,
-                serialization=core_schema.wrap_serializer_function_ser_schema(
-                    function=lambda v, h: h(v), schema=original_schema
-                ),
-            )
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore', PydanticSkipValidationWarning)
+                original_schema = handler(source)
+                metadata = {'pydantic_js_annotation_functions': [lambda _c, h: h(original_schema)]}
+                return core_schema.any_schema(
+                    metadata=metadata,
+                    serialization=core_schema.wrap_serializer_function_ser_schema(
+                        function=lambda v, h: h(v), schema=original_schema
+                    ),
+                )
 
         __hash__ = object.__hash__
