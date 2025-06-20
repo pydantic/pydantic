@@ -1708,6 +1708,7 @@ def create_model(  # noqa: C901
             be added to the model, and the values are the validation methods themselves. You can read more about functional
             validators [here](https://docs.pydantic.dev/2.9/concepts/validators/#field-validators).
         __cls_kwargs__: A dictionary of keyword arguments for class creation, such as `metaclass`.
+        __qualname__: The qualified name of the newly created model.
         **field_definitions: Field definitions of the new model. Either:
 
             - a single element, representing the type annotation of the field.
