@@ -62,7 +62,7 @@ from ..errors import PydanticSchemaGenerationError, PydanticUndefinedAnnotation,
 from ..functional_validators import AfterValidator, BeforeValidator, FieldValidatorModes, PlainValidator, WrapValidator
 from ..json_schema import JsonSchemaValue
 from ..version import version_short
-from ..warnings import PydanticDeprecatedSince20
+from ..warnings import PydanticArbitraryTypeWarning, PydanticDeprecatedSince20
 from . import _decorators, _discriminated_union, _known_annotated_metadata, _repr, _typing_extra
 from ._config import ConfigWrapper, ConfigWrapperStack
 from ._core_metadata import CoreMetadata, update_core_metadata
@@ -619,7 +619,7 @@ class GenerateSchema:
                 ' Pydantic will allow any object with no validation since we cannot even'
                 ' enforce that the input is an instance of the given type.'
                 ' To get rid of this error wrap the type with `pydantic.SkipValidation`.',
-                UserWarning,
+                PydanticArbitraryTypeWarning,
             )
             return core_schema.any_schema()
         return core_schema.is_instance_schema(tp)

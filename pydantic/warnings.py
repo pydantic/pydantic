@@ -94,3 +94,7 @@ class PydanticExperimentalWarning(Warning):
     This warning is raised when using experimental functionality in Pydantic.
     It is raised to warn users that the functionality may change or be removed in future versions of Pydantic.
     """
+
+
+class PydanticArbitraryTypeWarning(UserWarning):
+    """Warning raised when Pydantic fails to generate a core schema for an arbitrary type."""

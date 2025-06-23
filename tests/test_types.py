@@ -9,6 +9,7 @@ import re
 import sys
 import typing
 import uuid
+import warnings
 from collections import Counter, OrderedDict, UserDict, defaultdict, deque
 from collections.abc import Iterable, Mapping, MutableMapping, Sequence
 from dataclasses import dataclass
@@ -6014,6 +6015,21 @@ def test_skip_validation_json_schema():
         'title': 'A',
         'type': 'object',
     }
+
+
+@pytest.mark.skipif(sys.version_info < (3, 12), reason="`Annotated` doesn't allow instances in <3.12")
+def test_skip_validation_arbitrary_type_object() -> None:
+    """https://github.com/pydantic/pydantic/issues/11997.
+
+    Using an arbitrary object (and not a type) normally raises a warning,
+    which should be suppressed when using `SkipValidation`.
+    """
+
+    with warnings.catch_warnings():
+        warnings.simplefilter('error')
+
+        class Model(BaseModel, arbitrary_types_allowed=True):
+            field: Annotated[object(), SkipValidation]
 
 
 def test_transform_schema():
