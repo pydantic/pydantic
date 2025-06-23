@@ -1530,7 +1530,7 @@ else:
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ SECRET TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-SecretType = TypeVar('SecretType')
+SecretType = TypeVar('SecretType', covariant=True)
 
 
 class _SecretBase(Generic[SecretType]):
