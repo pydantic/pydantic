@@ -96,5 +96,5 @@ class PydanticExperimentalWarning(Warning):
     """
 
 
-class PydanticSkipValidationWarning(UserWarning):
-    """Warning raised when SkipValidation is used for unsupported types."""
+class PydanticArbitraryTypeWarning(UserWarning):
+    """Warning raised when Pydantic fails to generate a core schema for an arbitrary type."""
