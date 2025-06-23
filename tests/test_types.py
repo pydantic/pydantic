@@ -6026,7 +6026,7 @@ def test_skip_validation_arbitrary_type_object() -> None:
     """
 
     with warnings.catch_warnings():
-        warnings.simplefilter("error")
+        warnings.simplefilter('error')
 
         class Model(BaseModel, arbitrary_types_allowed=True):
             field: Annotated[object(), SkipValidation]
