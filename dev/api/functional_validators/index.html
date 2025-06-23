@@ -4555,9 +4555,7 @@ when <code>mode</code> is either <code>'before'</code>, <code>'plain'</code> or 
 
             <details class="quote">
               <summary>Source code in <code>pydantic/functional_validators.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">407</span>
-<span class="normal">408</span>
-<span class="normal">409</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">409</span>
 <span class="normal">410</span>
 <span class="normal">411</span>
 <span class="normal">412</span>
@@ -4663,7 +4661,9 @@ when <code>mode</code> is either <code>'before'</code>, <code>'plain'</code> or 
 <span class="normal">512</span>
 <span class="normal">513</span>
 <span class="normal">514</span>
-<span class="normal">515</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">field_validator</span><span class="p">(</span>
+<span class="normal">515</span>
+<span class="normal">516</span>
+<span class="normal">517</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">field_validator</span><span class="p">(</span>
     <span class="n">field</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="o">/</span><span class="p">,</span>
     <span class="o">*</span><span class="n">fields</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -4899,9 +4899,7 @@ It can be one of the following: 'wrap', 'before', or 'after'.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/functional_validators.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">669</span>
-<span class="normal">670</span>
-<span class="normal">671</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">671</span>
 <span class="normal">672</span>
 <span class="normal">673</span>
 <span class="normal">674</span>
@@ -4955,7 +4953,9 @@ It can be one of the following: 'wrap', 'before', or 'after'.</p>
 <span class="normal">722</span>
 <span class="normal">723</span>
 <span class="normal">724</span>
-<span class="normal">725</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">model_validator</span><span class="p">(</span>
+<span class="normal">725</span>
+<span class="normal">726</span>
+<span class="normal">727</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">model_validator</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;wrap&#39;</span><span class="p">,</span> <span class="s1">&#39;before&#39;</span><span class="p">,</span> <span class="s1">&#39;after&#39;</span><span class="p">],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
