@@ -6017,11 +6017,12 @@ def test_skip_validation_json_schema():
     }
 
 
+@pytest.mark.skipif(sys.version_info < (3, 12), reason="`Annotated` doesn't allow instances in <3.12")
 def test_skip_validation_arbitrary_type_object() -> None:
     """https://github.com/pydantic/pydantic/issues/11997.
 
     Using an arbitrary object (and not a type) normally raises a warning,
-    which should be suppressed when using `SkipValidation`. 
+    which should be suppressed when using `SkipValidation`.
     """
 
     with warnings.catch_warnings():
