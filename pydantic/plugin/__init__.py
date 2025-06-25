@@ -131,7 +131,6 @@ class ValidatePythonHandlerProtocol(BaseValidateHandlerProtocol, Protocol):
             by_alias: Whether to use the field's alias to match the input data to an attribute.
             by_name: Whether to use the field's name to match the input data to an attribute.
         """
-        pass
 
 
 class ValidateJsonHandlerProtocol(BaseValidateHandlerProtocol, Protocol):
@@ -158,7 +157,6 @@ class ValidateJsonHandlerProtocol(BaseValidateHandlerProtocol, Protocol):
             by_alias: Whether to use the field's alias to match the input data to an attribute.
             by_name: Whether to use the field's name to match the input data to an attribute.
         """
-        pass
 
 
 StringInput: TypeAlias = 'dict[str, StringInput]'
@@ -185,4 +183,3 @@ class ValidateStringsHandlerProtocol(BaseValidateHandlerProtocol, Protocol):
             by_alias: Whether to use the field's alias to match the input data to an attribute.
             by_name: Whether to use the field's name to match the input data to an attribute.
         """
-        pass
