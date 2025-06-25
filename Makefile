@@ -1,4 +1,4 @@
-# .DEFAULT_GOAL := all
+.DEFAULT_GOAL := all
 sources = pydantic tests docs/plugins
 NUM_THREADS?=1
 
