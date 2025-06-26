@@ -315,7 +315,7 @@ In its simplest form, a field validator is a callable taking the value to be val
   error.
   {#field-wrap-validator}
 
-    Such validators must be defined with a **mandatory** extra `handler` parameter: a callable taking the value to be validated
+    Such validators must be defined with a **mandatory** extra *handler* parameter: a callable taking the value to be validated
     as an argument. Internally, this handler will delegate validation of the value to Pydantic. You are free to wrap the call
     to the handler in a [`try..except`][handling exceptions] block, or not call it at all.
 
@@ -600,7 +600,7 @@ Both the field and model validators callables (in all modes) can optionally take
 * [already validated data](#validation-data)
 * [user defined context](#validation-context)
 * the current validation mode: either `'python'` or `'json'` (see the [`mode`][pydantic.ValidationInfo.mode] property)
-* the current field name (see the [`field_name`][pydantic.ValidationInfo.field_name] property).
+* the current field name, if using a [field validator](#field-validators) (see the [`field_name`][pydantic.ValidationInfo.field_name] property).
 
 ### Validation data
 

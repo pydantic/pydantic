@@ -371,7 +371,8 @@ Functional validators and serializers, as well as a powerful protocol for custom
     ```
 
 !!! tip "Learn more"
-    See the documentation on [validators](concepts/validators.md), [custom serializers](concepts/serialization.md#custom-serializers), and [custom types](concepts/types.md#custom-types).
+    See the documentation on [validators](concepts/validators.md), [custom serializers](concepts/serialization.md#serializers),
+    and [custom types](concepts/types.md#custom-types).
 
 ## Ecosystem
 

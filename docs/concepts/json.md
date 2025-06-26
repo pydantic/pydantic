@@ -211,4 +211,4 @@ Using the string caching feature results in performance improvements, but increa
     [`pydantic.type_adapter.TypeAdapter.dump_json`][pydantic.type_adapter.TypeAdapter.dump_json]<br>
     [`pydantic_core.to_json`][pydantic_core.to_json]<br>
 
-For more information on JSON serialization, see the [Serialization Concepts](./serialization.md#modelmodel_dump_json) page.
+For more information on JSON serialization, see the [serialization concepts](./serialization.md) page.
