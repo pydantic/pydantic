@@ -122,37 +122,57 @@ ContextT = TypeVar('ContextT', covariant=True, default='Any | None')
 
 
 class SerializationInfo(Protocol[ContextT]):
-    @property
-    def include(self) -> IncExCall: ...
+    """Extra data used during serialization."""
 
     @property
-    def exclude(self) -> IncExCall: ...
-
-    @property
-    def context(self) -> ContextT:
-        """Current serialization context."""
+    def include(self) -> IncExCall:
+        """The `include` argument set during serialization."""
         ...
 
     @property
-    def mode(self) -> str: ...
+    def exclude(self) -> IncExCall:
+        """The `exclude` argument set during serialization."""
+        ...
 
     @property
-    def by_alias(self) -> bool: ...
+    def context(self) -> ContextT:
+        """The current serialization context."""
+        ...
 
     @property
-    def exclude_unset(self) -> bool: ...
+    def mode(self) -> Literal['python', 'json']:
+        """The serialization mode set during serialization."""
+        ...
 
     @property
-    def exclude_defaults(self) -> bool: ...
+    def by_alias(self) -> bool:
+        """The `by_alias` argument set during serialization."""
+        ...
 
     @property
-    def exclude_none(self) -> bool: ...
+    def exclude_unset(self) -> bool:
+        """The `exclude_unset` argument set during serialization."""
+        ...
 
     @property
-    def serialize_as_any(self) -> bool: ...
+    def exclude_defaults(self) -> bool:
+        """The `exclude_defaults` argument set during serialization."""
+        ...
 
     @property
-    def round_trip(self) -> bool: ...
+    def exclude_none(self) -> bool:
+        """The `exclude_none` argument set during serialization."""
+        ...
+
+    @property
+    def serialize_as_any(self) -> bool:
+        """The `serialize_as_any` argument set during serialization."""
+        ...
+
+    @property
+    def round_trip(self) -> bool:
+        """The `round_trip` argument set during serialization."""
+        ...
 
     def mode_is_json(self) -> bool: ...
 
@@ -162,18 +182,20 @@ class SerializationInfo(Protocol[ContextT]):
 
 
 class FieldSerializationInfo(SerializationInfo[ContextT], Protocol):
+    """Extra data used during field serialization."""
+
     @property
-    def field_name(self) -> str: ...
+    def field_name(self) -> str:
+        """The name of the current field being serialized."""
+        ...
 
 
 class ValidationInfo(Protocol[ContextT]):
-    """
-    Argument passed to validation functions.
-    """
+    """Extra data used during validation."""
 
     @property
     def context(self) -> ContextT:
-        """Current validation context."""
+        """The current validation context."""
         ...
 
     @property
