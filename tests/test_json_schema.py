@@ -525,7 +525,17 @@ def test_decimal_json_schema():
     assert model_json_schema_validation == {
         'properties': {
             'a': {'default': 'foobar', 'format': 'binary', 'title': 'A', 'type': 'string'},
-            'b': {'anyOf': [{'type': 'number'}, {'type': 'string'}], 'default': '12.34', 'title': 'B'},
+            'b': {
+                'anyOf': [
+                    {'type': 'number'},
+                    {
+                        'type': 'string',
+                        'pattern': '^(?!^[+-\\.]*$)[+-]?0*(?:\\d{0,}$|(?=[\\d\\.]{1,}0*$)\\d{0,}\\.\\d{0,}0*$)',
+                    },
+                ],
+                'default': '12.34',
+                'title': 'B',
+            },
         },
         'title': 'Model',
         'type': 'object',
@@ -533,7 +543,12 @@ def test_decimal_json_schema():
     assert model_json_schema_serialization == {
         'properties': {
             'a': {'default': 'foobar', 'format': 'binary', 'title': 'A', 'type': 'string'},
-            'b': {'default': '12.34', 'title': 'B', 'type': 'string'},
+            'b': {
+                'default': '12.34',
+                'title': 'B',
+                'type': 'string',
+                'pattern': '^(?!^[+-\\.]*$)[+-]?0*(?:\\d{0,}$|(?=[\\d\\.]{1,}0*$)\\d{0,}\\.\\d{0,}0*$)',
+            },
         },
         'title': 'Model',
         'type': 'object',
@@ -1038,6 +1053,7 @@ def test_special_float_types(field_type, expected_schema):
     assert Model.model_json_schema() == base_schema
 
 
+# ADDTESTS: add test cases to check max_digits and decimal_places
 @pytest.mark.parametrize(
     'field_type,expected_schema',
     [
@@ -1053,7 +1069,18 @@ def test_special_decimal_types(field_type, expected_schema):
     base_schema = {
         'title': 'Model',
         'type': 'object',
-        'properties': {'a': {'anyOf': [{'type': 'number'}, {'type': 'string'}], 'title': 'A'}},
+        'properties': {
+            'a': {
+                'anyOf': [
+                    {'type': 'number'},
+                    {
+                        'type': 'string',
+                        'pattern': '^(?!^[+-\\.]*$)[+-]?0*(?:\\d{0,}$|(?=[\\d\\.]{1,}0*$)\\d{0,}\\.\\d{0,}0*$)',
+                    },
+                ],
+                'title': 'A',
+            }
+        },
         'required': ['a'],
     }
     base_schema['properties']['a']['anyOf'][0].update(expected_schema)
@@ -1984,6 +2011,7 @@ def test_docstring(docstring, description):
     assert A.model_json_schema()['description'] == description
 
 
+# ADDTESTS: add test cases to check max_digits and decimal_places constrains
 @pytest.mark.parametrize(
     'kwargs,type_,expected_extra',
     [
@@ -2006,11 +2034,71 @@ def test_docstring(docstring, description):
         ({'ge': -math.inf}, float, {'type': 'number'}),
         ({'le': math.inf}, float, {'type': 'number'}),
         ({'multiple_of': 5}, float, {'type': 'number', 'multipleOf': 5}),
-        ({'gt': 2}, Decimal, {'anyOf': [{'exclusiveMinimum': 2.0, 'type': 'number'}, {'type': 'string'}]}),
-        ({'lt': 5}, Decimal, {'anyOf': [{'type': 'number', 'exclusiveMaximum': 5}, {'type': 'string'}]}),
-        ({'ge': 2}, Decimal, {'anyOf': [{'type': 'number', 'minimum': 2}, {'type': 'string'}]}),
-        ({'le': 5}, Decimal, {'anyOf': [{'type': 'number', 'maximum': 5}, {'type': 'string'}]}),
-        ({'multiple_of': 5}, Decimal, {'anyOf': [{'type': 'number', 'multipleOf': 5}, {'type': 'string'}]}),
+        (
+            {'gt': 2},
+            Decimal,
+            {
+                'anyOf': [
+                    {'exclusiveMinimum': 2.0, 'type': 'number'},
+                    {
+                        'type': 'string',
+                        'pattern': '^(?!^[+-\\.]*$)[+-]?0*(?:\\d{0,}$|(?=[\\d\\.]{1,}0*$)\\d{0,}\\.\\d{0,}0*$)',
+                    },
+                ]
+            },
+        ),
+        (
+            {'lt': 5},
+            Decimal,
+            {
+                'anyOf': [
+                    {'type': 'number', 'exclusiveMaximum': 5},
+                    {
+                        'type': 'string',
+                        'pattern': '^(?!^[+-\\.]*$)[+-]?0*(?:\\d{0,}$|(?=[\\d\\.]{1,}0*$)\\d{0,}\\.\\d{0,}0*$)',
+                    },
+                ]
+            },
+        ),
+        (
+            {'ge': 2},
+            Decimal,
+            {
+                'anyOf': [
+                    {'type': 'number', 'minimum': 2},
+                    {
+                        'type': 'string',
+                        'pattern': '^(?!^[+-\\.]*$)[+-]?0*(?:\\d{0,}$|(?=[\\d\\.]{1,}0*$)\\d{0,}\\.\\d{0,}0*$)',
+                    },
+                ]
+            },
+        ),
+        (
+            {'le': 5},
+            Decimal,
+            {
+                'anyOf': [
+                    {'type': 'number', 'maximum': 5},
+                    {
+                        'type': 'string',
+                        'pattern': '^(?!^[+-\\.]*$)[+-]?0*(?:\\d{0,}$|(?=[\\d\\.]{1,}0*$)\\d{0,}\\.\\d{0,}0*$)',
+                    },
+                ]
+            },
+        ),
+        (
+            {'multiple_of': 5},
+            Decimal,
+            {
+                'anyOf': [
+                    {'type': 'number', 'multipleOf': 5},
+                    {
+                        'type': 'string',
+                        'pattern': '^(?!^[+-\\.]*$)[+-]?0*(?:\\d{0,}$|(?=[\\d\\.]{1,}0*$)\\d{0,}\\.\\d{0,}0*$)',
+                    },
+                ]
+            },
+        ),
     ],
 )
 def test_constraints_schema_validation(kwargs, type_, expected_extra):
@@ -2027,6 +2115,7 @@ def test_constraints_schema_validation(kwargs, type_, expected_extra):
     assert Foo.model_json_schema(mode='validation') == expected_schema
 
 
+# ADDTESTS: add test cases to check max_digits and decimal_places constrains
 @pytest.mark.parametrize(
     'kwargs,type_,expected_extra',
     [
@@ -2049,11 +2138,46 @@ def test_constraints_schema_validation(kwargs, type_, expected_extra):
         ({'ge': -math.inf}, float, {'type': 'number'}),
         ({'le': math.inf}, float, {'type': 'number'}),
         ({'multiple_of': 5}, float, {'type': 'number', 'multipleOf': 5}),
-        ({'gt': 2}, Decimal, {'type': 'string'}),
-        ({'lt': 5}, Decimal, {'type': 'string'}),
-        ({'ge': 2}, Decimal, {'type': 'string'}),
-        ({'le': 5}, Decimal, {'type': 'string'}),
-        ({'multiple_of': 5}, Decimal, {'type': 'string'}),
+        (
+            {'gt': 2},
+            Decimal,
+            {
+                'type': 'string',
+                'pattern': '^(?!^[+-\\.]*$)[+-]?0*(?:\\d{0,}$|(?=[\\d\\.]{1,}0*$)\\d{0,}\\.\\d{0,}0*$)',
+            },
+        ),
+        (
+            {'lt': 5},
+            Decimal,
+            {
+                'type': 'string',
+                'pattern': '^(?!^[+-\\.]*$)[+-]?0*(?:\\d{0,}$|(?=[\\d\\.]{1,}0*$)\\d{0,}\\.\\d{0,}0*$)',
+            },
+        ),
+        (
+            {'ge': 2},
+            Decimal,
+            {
+                'type': 'string',
+                'pattern': '^(?!^[+-\\.]*$)[+-]?0*(?:\\d{0,}$|(?=[\\d\\.]{1,}0*$)\\d{0,}\\.\\d{0,}0*$)',
+            },
+        ),
+        (
+            {'le': 5},
+            Decimal,
+            {
+                'type': 'string',
+                'pattern': '^(?!^[+-\\.]*$)[+-]?0*(?:\\d{0,}$|(?=[\\d\\.]{1,}0*$)\\d{0,}\\.\\d{0,}0*$)',
+            },
+        ),
+        (
+            {'multiple_of': 5},
+            Decimal,
+            {
+                'type': 'string',
+                'pattern': '^(?!^[+-\\.]*$)[+-]?0*(?:\\d{0,}$|(?=[\\d\\.]{1,}0*$)\\d{0,}\\.\\d{0,}0*$)',
+            },
+        ),
     ],
 )
 def test_constraints_schema_serialization(kwargs, type_, expected_extra):
@@ -5734,8 +5858,19 @@ def test_generate_definitions_for_no_ref_schemas():
     )
     assert result == (
         {
-            ('Decimal', 'serialization'): {'type': 'string'},
-            ('Decimal', 'validation'): {'anyOf': [{'type': 'number'}, {'type': 'string'}]},
+            ('Decimal', 'serialization'): {
+                'type': 'string',
+                'pattern': '^(?!^[+-\\.]*$)[+-]?0*(?:\\d{0,}$|(?=[\\d\\.]{1,}0*$)\\d{0,}\\.\\d{0,}0*$)',
+            },
+            ('Decimal', 'validation'): {
+                'anyOf': [
+                    {'type': 'number'},
+                    {
+                        'type': 'string',
+                        'pattern': '^(?!^[+-\\.]*$)[+-]?0*(?:\\d{0,}$|(?=[\\d\\.]{1,}0*$)\\d{0,}\\.\\d{0,}0*$)',
+                    },
+                ]
+            },
             ('Model', 'validation'): {'$ref': '#/$defs/Model'},
         },
         {'Model': {'properties': {}, 'title': 'Model', 'type': 'object'}},
@@ -6814,3 +6949,147 @@ def test_json_schema_arguments_v3_aliases() -> None:
         },
         'required': ['b'],
     }
+
+
+class TestDecimalPattern:
+    @pytest.fixture
+    def get_pattern(self):
+        def pattern(max_digits=None, decimal_places=None) -> str:
+            filed = TypeAdapter(Annotated[Decimal, Field(max_digits=max_digits, decimal_places=decimal_places)])
+            return filed.json_schema()['anyOf'][1]['pattern']
+
+        return pattern
+
+    def test_invalid_base_cases(self, get_pattern):
+        invalid_cases = ['', ' ', '   ', '.', '..', '...', '+', '-', '++', '--']
+        pattern = get_pattern()
+
+        for case in invalid_cases:
+            assert re.fullmatch(pattern, case) is None
+
+    def test_zeros_before_decimal_point(self, get_pattern):
+        invalid_cases = ['0+', '0-', '0++', '0--', '++0', '--0']
+        valid_cases = ['+0', '-0', '+00', '-00', '+0000', '-0000', '0', '0000']
+        pattern = get_pattern()
+
+        for case in valid_cases:
+            assert re.fullmatch(pattern, case) is not None
+
+        for case in invalid_cases:
+            assert re.fullmatch(pattern, case) is None
+
+    def test_integer_value_without_max_digits(self, get_pattern):
+        valid_cases = ['1', '0001', '12', '123456', '1000000']
+        pattern = get_pattern()
+
+        for case in valid_cases:
+            assert re.fullmatch(pattern, case) is not None
+
+    def test_integer_value_with_max_digits(self, get_pattern):
+        max_digits = 3
+        valid_cases = ['1', '12', '123', '0001', '00001', '0000100']
+        invalid_cases = ['1111', '1000', '1010', '00001000']
+        pattern = get_pattern(max_digits=max_digits)
+
+        for case in valid_cases:
+            assert re.fullmatch(pattern, case) is not None
+
+        for case in invalid_cases:
+            assert re.fullmatch(pattern, case) is None
+
+    def test_integer_value_with_zero_max_digits(self, get_pattern):
+        max_digits = 0
+        valid_cases = ['0', '00', '000', '000000', '+000000', '-000000']
+        invalid_cases = ['1', '+1', '01', '-01', '+01', '001', '12', '0010', '1000']
+        pattern = get_pattern(max_digits=max_digits)
+
+        for case in valid_cases:
+            assert re.fullmatch(pattern, case) is not None
+
+        for case in invalid_cases:
+            assert re.fullmatch(pattern, case) is None
+
+    def test_decimal_value_without_max_digits_and_decimal_places(self, get_pattern):
+        valid_cases = [
+            '0.1',
+            '+0.1',
+            '.1',
+            '1.',
+            '111.000',
+            '+.1',
+            '-.1',
+            '+1.',
+            '-1.',
+            '1234.1234',
+            '0000.1000',
+            '1000.0001',
+        ]
+        invalid_cases = ['..1', '0..1', '1.1.', '1.1.1']
+        pattern = get_pattern()
+
+        for case in valid_cases:
+            assert re.fullmatch(pattern, case) is not None
+
+        for case in invalid_cases:
+            assert re.fullmatch(pattern, case) is None
+
+    def test_decimal_value_only_with_max_digits(self, get_pattern):
+        max_digits = 4
+        valid_cases = ['0.123', '1.234', '12.34', '00012.34', '00012.34000', '00010.0100', '+00010.0100', '-00010.0100']
+        invalid_cases = ['1.2345', '12.345', '123.45', '1234.5', '12345.0', '0012345.0', '0012345.000']
+        pattern = get_pattern(max_digits=max_digits)
+        for case in valid_cases:
+            assert re.fullmatch(pattern, case) is not None
+
+        for case in invalid_cases:
+            assert re.fullmatch(pattern, case) is None
+
+    def test_decimal_value_only_with_decimal_places(self, get_pattern):
+        decimal_places = 2
+        pattern = get_pattern(decimal_places=decimal_places)
+        valid_cases = ['0.12', '123456.12', '123456.1200', '123456.10', '123456.100', '1234.01', '001234.0100']
+        invalid_cases = ['0.123', '123456.123', '123456.001', '123456.012', '123456.00200', '1234.011', '001234.001']
+
+        for case in valid_cases:
+            assert re.fullmatch(pattern, case) is not None
+
+        for case in invalid_cases:
+            assert re.fullmatch(pattern, case) is None
+
+    def test_decimal_value_with_max_digits_and_decimal_places(self, get_pattern):
+        max_digits = 4
+        decimal_places = 2
+        pattern = get_pattern(max_digits=max_digits, decimal_places=decimal_places)
+        valid_cases = ['12.34', '1.2', '12.3', '0012.3200', '0010.0100', '0.1']
+        invalid_cases = ['120.34', '1.222', '120.333', '0012.3230', '0010.00100', '00123.', '00123.01', '.001']
+
+        for case in valid_cases:
+            assert re.fullmatch(pattern, case) is not None
+
+        for case in invalid_cases:
+            assert re.fullmatch(pattern, case) is None
+
+    def test_decimal_value_with_max_digits_and_decimal_places_eaqual(self, get_pattern):
+        max_digits = 4
+        decimal_places = max_digits
+        pattern = get_pattern(max_digits=max_digits, decimal_places=decimal_places)
+        valid_cases = ['0.34', '0000.2', '0.3333', '000.3333000', '+000.000100', '0.1']
+        invalid_cases = ['120.34', '1.222', '0.33333', '0001.1', '0010.00100', '1.']
+
+        for case in valid_cases:
+            assert re.fullmatch(pattern, case) is not None
+
+        for case in invalid_cases:
+            assert re.fullmatch(pattern, case) is None
+
+    def test_decimal_value_with_zero_decimal_places(self, get_pattern):
+        decimal_places = 0
+        pattern = get_pattern(decimal_places=decimal_places)
+        valid_cases = ['1.0', '1.', '123.0', '123.', '.000']
+        invalid_cases = ['0.1', '123.1', '1.100', '1.01']
+
+        for case in valid_cases:
+            assert re.fullmatch(pattern, case) is not None
+
+        for case in invalid_cases:
+            assert re.fullmatch(pattern, case) is None
