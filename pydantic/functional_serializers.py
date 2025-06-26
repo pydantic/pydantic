@@ -434,6 +434,7 @@ else:
 
         See [usage documentation](../concepts/serialization.md#serializing-with-duck-typing) for more details.
         """
+
         def __class_getitem__(cls, item: Any) -> Any:
             return Annotated[item, SerializeAsAny()]
 
