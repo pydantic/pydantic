@@ -169,7 +169,7 @@ for name, value in m:
     #> bar: whatever=123
 ```
 
-This means that calling [`dict()`][dict] on a model can be used to construct a dictonary of the model:
+This means that calling [`dict()`][dict] on a model can be used to construct a dictionary of the model:
 
 ```python {group="iterating-model"}
 print(dict(m))
@@ -179,10 +179,10 @@ print(dict(m))
 !!! note
     [Root models](models.md#rootmodel-and-custom-root-types) *does* get converted to a dictionary with the key `'root'`.
 
-
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
 [](){#pickledumpsmodel}
+
 ## Pickling support
 
 Pydantic models support efficient pickling and unpickling.
@@ -213,6 +213,7 @@ print(m2)
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
 [](){#custom-serializers}
+
 ## Serializers
 
 Similar to [custom validators](./validators.md), you can leverage custom serializers at the field and model levels to further
@@ -235,7 +236,6 @@ In its simplest form, a field serializer is a callable taking the value to be se
 **Two** different types of serializers can be used. They can all be defined using the
 [annotated pattern](./fields.md#the-annotated-pattern) or using the
 [`@field_serializer`][pydantic.field_serializer] decorator, applied on a [class method][classmethod].
-
 
 * ***Plain* serializers**: are called unconditionally to serialize a field. The serialization logic for types supported
   by Pydantic will *not* be called. Using such serializers is also useful to specify the logic for arbitrary types.
@@ -484,11 +484,11 @@ As with [field serializers](#field-serializers), **two** different types of mode
 Both the field and model serializers callables (in all modes) can optionally take an extra
 `info`, argument, providing useful extra information, such as:
 
-- [user defined context](#serialization-context)
-- the current serialization mode: either `'python'` or `'json'` (see the [`mode`][pydantic.SerializationInfo.mode] property)
-- the various parameters set during serialization using the [serialization methods](#serializing-data)
+* [user defined context](#serialization-context)
+* the current serialization mode: either `'python'` or `'json'` (see the [`mode`][pydantic.SerializationInfo.mode] property)
+* the various parameters set during serialization using the [serialization methods](#serializing-data)
   (e.g. [`exclude_unset`][pydantic.SerializationInfo.exclude_unset], [`serialize_as_any`][pydantic.SerializationInfo.serialize_as_any])
-- the current field name, if using a [field serializer](#field-serializers) (see the
+* the current field name, if using a [field serializer](#field-serializers) (see the
   [`field_name`][pydantic.FieldSerializationInfo.field_name] property).
 
 ### Serialization context
@@ -526,6 +526,7 @@ Similarly, you can [use a context for validation](../concepts/validators.md#vali
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
 [](){#subclasses-of-standard-types}
+
 ### Subclasses of supported types
 
 Subclasses of supported types are serialized according to their super class:
@@ -554,6 +555,7 @@ print(m.model_dump_json())
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
 [](){#subclass-instances-for-fields-of-basemodel-dataclasses-typeddict}
+
 ### Subclasses of model-like types
 
 When using model-like classes (Pydantic models, dataclasses, etc.) as field annotations, the default behavior is to
@@ -585,7 +587,7 @@ print(m.model_dump())  # (1)!
 #> {'user': {'name': 'pydantic'}}
 ```
 
-1.  Note: the password field is not included
+1. Note: the password field is not included
 
 !!! warning "Migration Warning"
     This behavior is different from how things worked in Pydantic V1, where we would always include
@@ -653,7 +655,6 @@ The `serialize_as_any` runtime setting can be used to serialize model data with 
 `serialize_as_any` can be passed as a keyword argument to the various [serialization methods](#serializing-data) (such as
 [`model_dump()`][pydantic.BaseModel.model_dump] and [`model_dump_json()`][pydantic.BaseModel.model_dump_json] on Pydantic models).
 
-
 ```python
 from pydantic import BaseModel
 
@@ -693,13 +694,15 @@ print(outer_model.model_dump(serialize_as_any=False))  # (2)!
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
 [](){#advanced-include-and-exclude}
+<!-- markdownlint-disable-next-line no-empty-links -->
 [](){#model-and-field-level-include-and-exclude}
+
 ## Field inclusion and exclusion
 
 Model fields can be excluded for the serialization output in two ways:
 
-- using the `exclude` parameter on [the `Field()` function](fields.md).
-- using the various serialization parameters on the [serialization methods](#serializing-data).
+* using the `exclude` parameter on [the `Field()` function](fields.md).
+* using the various serialization parameters on the [serialization methods](#serializing-data).
 
 Setting `exclude` to `True` on the [`Field()`][pydantic.fields.Field] function will unconditionally exclude it from
 the output (and this setting takes priority over the runtime parameters described below).
@@ -809,9 +812,9 @@ print(user.model_dump(exclude={'hobbies': {'__all__': {'info'}}}))
 When using the [serialization methods](#serializing-data), it is possible to exclude fields based on their value,
 using the following parameters:
 
-- `exclude_defaults`: Exclude all fields whose value compares equal to the equality (`==`) comparison operator.
-- `exclude_none`: Exclude all fields whose value is `None`.
-- `exclude_unset`: Pydantic keeps track of fields that were *explicitly* set during instantiation (using the
+* `exclude_defaults`: Exclude all fields whose value compares equal to the equality (`==`) comparison operator.
+* `exclude_none`: Exclude all fields whose value is `None`.
+* `exclude_unset`: Pydantic keeps track of fields that were *explicitly* set during instantiation (using the
   [`model_fields_set`][pydantic.BaseModel.model_fields_set] property). Using `exclude_unset`, any field that
   was populated using the default value will be excluded:
 
