@@ -235,7 +235,7 @@ In its simplest form, a field serializer is a callable taking the value to be se
 
 **Two** different types of serializers can be used. They can all be defined using the
 [annotated pattern](./fields.md#the-annotated-pattern) or using the
-[`@field_serializer`][pydantic.field_serializer] decorator, applied on a [class method][classmethod].
+[`@field_serializer`][pydantic.field_serializer] decorator, applied on instance or [static method][staticmethod].
 
 * ***Plain* serializers**: are called unconditionally to serialize a field. The serialization logic for types supported
   by Pydantic will *not* be called. Using such serializers is also useful to specify the logic for arbitrary types.
@@ -282,8 +282,7 @@ In its simplest form, a field serializer is a callable taking the value to be se
             number: int
 
             @field_serializer('number', mode='plain')  # (1)!
-            @classmethod
-            def ser_number(cls, value: Any) -> Any:
+            def ser_number(self, value: Any) -> Any:
                 if isinstance(value, int):
                     return value * 2
                 else:
@@ -341,9 +340,8 @@ In its simplest form, a field serializer is a callable taking the value to be se
             number: int
 
             @field_serializer('number', mode='wrap')
-            @classmethod
             def ser_number(
-                cls, value: Any, handler: SerializerFunctionWrapHandler
+                self, value: Any, handler: SerializerFunctionWrapHandler
             ) -> int:
                 return handler(value) + 1
 
@@ -403,8 +401,7 @@ class Model(BaseModel):
     f2: str
 
     @field_serializer('f1', 'f2', mode='plain')
-    @classmethod
-    def capitalize(cls, value: str) -> str:
+    def capitalize(self, value: str) -> str:
         return value.capitalize()
 ```
 
@@ -414,8 +411,8 @@ Here are a couple additional notes about the decorator usage:
   `'*'` as the field name argument.
 * By default, the decorator will ensure the provided field name(s) are defined on the model. If you want to
   disable this check during class creation, you can do so by passing `False` to the `check_fields` argument.
-  This is useful when the field serializer is defined on a base class, and the field is expected to be set
-  on subclasses.
+  This is useful when the field serializer is defined on a base class, and the field is expected to exist on
+  subclasses.
 
 ### Model serializers
 

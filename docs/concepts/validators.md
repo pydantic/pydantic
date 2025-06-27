@@ -453,8 +453,8 @@ Here are a couple additional notes about the decorator usage:
   `'*'` as the field name argument.
 * By default, the decorator will ensure the provided field name(s) are defined on the model. If you want to
   disable this check during class creation, you can do so by passing `False` to the `check_fields` argument.
-  This is useful when the field validator is defined on a base class, and the field is expected to be set
-  on subclasses.
+  This is useful when the field validator is defined on a base class, and the field is expected to exist on
+  subclasses.
 
 ## Model validators
 
