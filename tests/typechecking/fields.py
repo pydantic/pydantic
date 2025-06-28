@@ -38,3 +38,9 @@ class Model(BaseModel):
 
     # Do not error on the ellipsis:
     f13: int = Field(...)
+
+    # Do not error for invalid assignments when validate_default=True
+    f14: int = Field(default='1', validate_default=True)
+    f15: int = Field(default_factory=str, validate_default=True)
+    f16: int = Field(default='1', validate_default=False)  # type: ignore[assignment]  # pyright: ignore[reportAssignmentType]
+    f17: int = Field(default_factory=str, validate_default=False)  # type: ignore[assignment]  # pyright: ignore[reportAssignmentType]
