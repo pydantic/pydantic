@@ -412,7 +412,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
 
     def __getstate__(self) -> 'DictAny':
         private_attrs = ((k, getattr(self, k, Undefined)) for k in self.__private_attributes__)
-        state = {
+        return {
             '__dict__': self.__dict__,
             '__fields_set__': self.__fields_set__,
             '__private_attribute_values__': {k: v for k, v in private_attrs if v is not Undefined},
@@ -420,8 +420,6 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             '__pydantic_extra__': None,  # v1 doesn't have this concept, for compatibility with v2
             '__pydantic_private__': None,  # v1 doesn't have this concept, for compatibility with v2
         }
-
-        return state
 
     def __setstate__(self, state: 'DictAny') -> None:
         object_setattr(self, '__dict__', state['__dict__'])
