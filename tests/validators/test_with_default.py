@@ -16,7 +16,7 @@ from pydantic_core import (
     core_schema,
 )
 
-from ..conftest import PyAndJson, assert_gc, is_free_threaded
+from ..conftest import PyAndJson, assert_gc
 
 
 def test_typed_dict_default():
@@ -642,7 +642,6 @@ def test_use_default_error() -> None:
         validator.validate_python('')
 
 
-@pytest.mark.xfail(is_free_threaded and sys.version_info < (3, 14), reason='GC leaks on free-threaded (<3.14)')
 @pytest.mark.xfail(
     condition=platform.python_implementation() == 'PyPy', reason='https://foss.heptapod.net/pypy/pypy/-/issues/3899'
 )
