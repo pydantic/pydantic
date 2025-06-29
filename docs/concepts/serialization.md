@@ -2,7 +2,7 @@ Beyond accessing model attributes directly via their field names (e.g. `model.fo
 serialized, and exported in a number of ways. Serialization can be customized for the whole model, or on a per-field
 or per-type basis.
 
-!!! tip "Serialize versus dump"
+??? abstract "Serialize versus dump"
     Pydantic uses the terms "serialize" and "dump" interchangeably. Both refer to the process of converting a model to a
     dictionary or JSON-encoded string.
 
@@ -38,8 +38,9 @@ or per-type basis.
 
 ## Serializing data
 
-Pydantic allows models (and any other type using [type adapters](./type_adapter.md)) to be serialized in *two* modes: Python and JSON.
-The Python output may contain non-JSON serializable data (although this can be emulated).
+Pydantic allows models (and any other type using [type adapters](./type_adapter.md)) to be serialized in *two* modes:
+[Python](#python-mode) and [JSON](#json-mode). The Python output may contain non-JSON serializable data (although this
+can be emulated).
 
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
@@ -478,8 +479,8 @@ As with [field serializers](#field-serializers), **two** different types of mode
 
 ## Serialization info
 
-Both the field and model serializers callables (in all modes) can optionally take an extra
-`info`, argument, providing useful extra information, such as:
+Both the field and model serializers callables (in all modes) can optionally take an extra `info` argument,
+providing useful extra information, such as:
 
 * [user defined context](#serialization-context)
 * the current serialization mode: either `'python'` or `'json'` (see the [`mode`][pydantic.SerializationInfo.mode] property)
