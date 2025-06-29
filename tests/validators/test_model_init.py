@@ -1,5 +1,4 @@
 import platform
-import sys
 import weakref
 
 import pytest
@@ -7,7 +6,7 @@ from dirty_equals import IsInstance
 
 from pydantic_core import CoreConfig, SchemaValidator, core_schema
 
-from ..conftest import assert_gc, is_free_threaded
+from ..conftest import assert_gc
 
 
 class MyModel:
@@ -412,7 +411,6 @@ def test_model_custom_init_revalidate():
     assert calls == ["{'a': '1'}", "{'a': '1', 'x': 4}"]
 
 
-@pytest.mark.xfail(is_free_threaded and sys.version_info < (3, 14), reason='GC leaks on free-threaded (<3.14)')
 @pytest.mark.xfail(
     condition=platform.python_implementation() == 'PyPy', reason='https://foss.heptapod.net/pypy/pypy/-/issues/3899'
 )
