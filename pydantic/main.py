@@ -416,9 +416,6 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             '__dict__': self.__dict__,
             '__fields_set__': self.__fields_set__,
             '__private_attribute_values__': {k: v for k, v in private_attrs if v is not Undefined},
-            '__pydantic_fields_set__': self.__fields_set__,  # v2 compatibility
-            '__pydantic_extra__': None,  # v1 doesn't have this concept, for compatibility with v2
-            '__pydantic_private__': None,  # v1 doesn't have this concept, for compatibility with v2
         }
 
     def __setstate__(self, state: 'DictAny') -> None:
