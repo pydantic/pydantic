@@ -386,7 +386,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     def model_copy(self, *, update: Mapping[str, Any] | None = None, deep: bool = False) -> Self:
         """!!! abstract "Usage Documentation"
-            [`model_copy`](../concepts/serialization.md#model_copy)
+            [`model_copy`](../concepts/models.md#model-copy)
 
         Returns a copy of the model.
 
@@ -435,7 +435,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         serialize_as_any: bool = False,
     ) -> dict[str, Any]:
         """!!! abstract "Usage Documentation"
-            [`model_dump`](../concepts/serialization.md#modelmodel_dump)
+            [`model_dump`](../concepts/serialization.md#python-mode)
 
         Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.
 
@@ -494,7 +494,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         serialize_as_any: bool = False,
     ) -> str:
         """!!! abstract "Usage Documentation"
-            [`model_dump_json`](../concepts/serialization.md#modelmodel_dump_json)
+            [`model_dump_json`](../concepts/serialization.md#json-mode)
 
         Generates a JSON representation of the model using Pydantic's `to_json` method.
 
