@@ -412,16 +412,29 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
 
     def __getstate__(self) -> 'DictAny':
         private_attrs = ((k, getattr(self, k, Undefined)) for k in self.__private_attributes__)
-        return {
+        state = {
             '__dict__': self.__dict__,
             '__fields_set__': self.__fields_set__,
             '__private_attribute_values__': {k: v for k, v in private_attrs if v is not Undefined},
+            '__pydantic_fields_set__': self.__fields_set__,  # v2 compatibility
+            '__pydantic_extra__': None,  # v1 doesn't have this concept, for compatibility with v2
+            '__pydantic_private__': None,  # v1 doesn't have this concept, for compatibility with v2
         }
+
+        return state
 
     def __setstate__(self, state: 'DictAny') -> None:
         object_setattr(self, '__dict__', state['__dict__'])
-        object_setattr(self, '__fields_set__', state['__fields_set__'])
-        for name, value in state.get('__private_attribute_values__', {}).items():
+
+        # Handle fields_set with v2 compatibility
+        fields_set = state.get('__fields_set__')
+        if fields_set is None:  # Might be from v2
+            fields_set = state.get('__pydantic_fields_set__', set())
+        object_setattr(self, '__fields_set__', fields_set)
+
+        # Handle private attributes
+        private_values = state.get('__private_attribute_values__', {})
+        for name, value in private_values.items():
             object_setattr(self, name, value)
 
     def _init_private_attributes(self) -> None:
