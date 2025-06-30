@@ -37,7 +37,6 @@ from typing import (
     overload,
 )
 from uuid import UUID
-from warnings import warn
 from zoneinfo import ZoneInfo
 
 import typing_extensions
@@ -614,12 +613,12 @@ class GenerateSchema:
 
     def _arbitrary_type_schema(self, tp: Any) -> CoreSchema:
         if not isinstance(tp, type):
-            warn(
+            warnings.warn(
                 f'{tp!r} is not a Python type (it may be an instance of an object),'
                 ' Pydantic will allow any object with no validation since we cannot even'
                 ' enforce that the input is an instance of the given type.'
                 ' To get rid of this error wrap the type with `pydantic.SkipValidation`.',
-                PydanticArbitraryTypeWarning,
+                ArbitraryTypeWarning,
             )
             return core_schema.any_schema()
         return core_schema.is_instance_schema(tp)
@@ -903,12 +902,12 @@ class GenerateSchema:
             from pydantic.v1 import BaseModel as BaseModelV1
 
             if issubclass(obj, BaseModelV1):
-                warn(
+                warnings.warn(
                     f'Mixing V1 models and V2 models (or constructs, like `TypeAdapter`) is not supported. Please upgrade `{obj.__name__}` to V2.',
                     UserWarning,
                 )
             else:
-                warn(
+                warnings.warn(
                     '`__get_validators__` is deprecated and will be removed, use `__get_pydantic_core_schema__` instead.',
                     PydanticDeprecatedSince20,
                 )

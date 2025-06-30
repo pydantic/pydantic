@@ -12,6 +12,7 @@ __all__ = (
     'PydanticDeprecatedSince211',
     'PydanticDeprecationWarning',
     'PydanticExperimentalWarning',
+    'ArbitraryTypeWarning',
 )
 
 
@@ -96,5 +97,9 @@ class PydanticExperimentalWarning(Warning):
     """
 
 
-class PydanticArbitraryTypeWarning(UserWarning):
-    """Warning raised when Pydantic fails to generate a core schema for an arbitrary type."""
+class CoreSchemaGenerationWarning(UserWarning):
+    """A warning raised during core schema generation."""
+
+
+class ArbitraryTypeWarning(CoreSchemaGenerationWarning):
+    """A warning raised when Pydantic fails to generate a core schema for an arbitrary type."""
