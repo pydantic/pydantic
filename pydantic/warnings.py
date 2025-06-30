@@ -13,6 +13,7 @@ __all__ = (
     'PydanticDeprecationWarning',
     'PydanticExperimentalWarning',
     'ArbitraryTypeWarning',
+    'UnsupportedFieldAttributeWarning',
 )
 
 
@@ -103,3 +104,7 @@ class CoreSchemaGenerationWarning(UserWarning):
 
 class ArbitraryTypeWarning(CoreSchemaGenerationWarning):
     """A warning raised when Pydantic fails to generate a core schema for an arbitrary type."""
+
+
+class UnsupportedFieldAttributeWarning(CoreSchemaGenerationWarning):
+    """A warning raised when a `Field()` attribute isn't supported in the context it is used."""
