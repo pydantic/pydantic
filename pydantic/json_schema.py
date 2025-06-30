@@ -1646,7 +1646,30 @@ class GenerateJsonSchema:
             if field['type'] == 'typed-dict-field':
                 return field.get('required', total)
             else:
-                return field['schema']['type'] != 'default'
+                return self._field_schema_is_required(field['schema'])
+
+    def _field_schema_is_required(self, schema: core_schema.CoreSchema) -> bool:
+        """Check if a core schema represents a required field.
+
+        This method resolves definition references to check the actual schema type.
+
+        Args:
+            schema: The core schema to check.
+
+        Returns:
+            `True` if the schema represents a required field, `False` otherwise.
+        """
+        if schema['type'] == 'definition-ref':
+            # Resolve the reference to check the actual definition
+            core_ref = CoreRef(schema['schema_ref'])
+            core_mode_ref = (core_ref, self.mode)
+            defs_ref = self.core_to_defs_refs.get(core_mode_ref)
+            if defs_ref and defs_ref in self.definitions:
+                # Check if the definition has a default value
+                return 'default' not in self.definitions[defs_ref]
+            # If we can't resolve the reference, assume it's required
+            return True
+        return schema['type'] != 'default'
 
     def dataclass_args_schema(self, schema: core_schema.DataclassArgsSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a schema that defines a dataclass's constructor arguments.

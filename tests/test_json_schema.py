@@ -2417,6 +2417,51 @@ def test_annotated_typealiastype() -> None:
     }
 
 
+def test_annotated_type_alias_with_defaults_regression() -> None:
+    """Regression test for issue #12024.
+
+    Type aliases with Annotated defaults should not be marked as required
+    in JSON schemas, regardless of whether there's one field or multiple fields
+    using the same alias.
+    """
+    from typing import Annotated
+
+    from typing_extensions import TypeAliasType
+
+    AliasWithDefault = Annotated[int, Field(default=5)]
+    AliasRequired = Annotated[int, Field()]
+
+    class M1(BaseModel):
+        a1: AliasWithDefault
+
+    assert M1.model_json_schema().get('required') is None
+
+    class M2(BaseModel):
+        a1: AliasWithDefault
+        a2: AliasWithDefault
+
+    assert M2.model_json_schema().get('required') is None
+
+    class M3(BaseModel):
+        a1: AliasWithDefault
+        a2: AliasRequired
+
+    assert M3.model_json_schema().get('required') == ['a2']
+
+    AliasTypeDefault = TypeAliasType('AliasTypeDefault', Annotated[str, Field(default='test')])
+
+    class M4(BaseModel):
+        field1: AliasTypeDefault
+        field2: AliasTypeDefault
+
+    assert M4.model_json_schema().get('required') is None
+
+    assert M1().a1 == 5
+    assert M2().a1 == M2().a2 == 5
+    assert M3(a2=42).a1 == 5 and M3(a2=42).a2 == 42
+    assert M4().field1 == M4().field2 == 'test'
+
+
 def test_literal_enum():
     class MyEnum(str, Enum):
         FOO = 'foo'
