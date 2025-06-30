@@ -287,7 +287,7 @@ _unsupported_standalone_fieldinfo_attributes = (
     ('default_factory', lambda: 1),
     ('exclude', True),
     ('deprecated', True),
-    ('repr', True),
+    ('repr', False),
     ('validate_default', True),
     ('frozen', True),
     ('init', True),

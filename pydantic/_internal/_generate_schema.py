@@ -163,24 +163,24 @@ ValidateCallSupportedTypes = Union[
 ]
 
 VALIDATE_CALL_SUPPORTED_TYPES = get_args(ValidateCallSupportedTypes)
-UNSUPPORTED_STANDALONE_FIELDINFO_ATTRIBUTES = (
-    'alias',
-    'validation_alias',
-    'serialization_alias',
+UNSUPPORTED_STANDALONE_FIELDINFO_ATTRIBUTES = [
+    ('alias', None),
+    ('validation_alias', None),
+    ('serialization_alias', None),
     # will be set if any alias is set, so disable it to avoid double warnings:
     # 'alias_priority',
-    'default',
-    'default_factory',
-    'exclude',
-    'deprecated',
-    'repr',
-    'validate_default',
-    'frozen',
-    'init',
-    'init_var',
-    'kw_only',
-)
-"""`FieldInfo` attributes that can't be used outside of a model (e.g. in a type adapter or a PEP 695 type alias)."""
+    ('default', PydanticUndefined),
+    ('default_factory', None),
+    ('exclude', None),
+    ('deprecated', None),
+    ('repr', True),
+    ('validate_default', None),
+    ('frozen', None),
+    ('init', None),
+    ('init_var', None),
+    ('kw_only', None),
+]
+"""`FieldInfo` attributes (and their default value) that can't be used outside of a model (e.g. in a type adapter or a PEP 695 type alias)."""
 
 _mode_to_validator: dict[
     FieldValidatorModes, type[BeforeValidator | AfterValidator | PlainValidator | WrapValidator]
@@ -2284,9 +2284,9 @@ class GenerateSchema:
     def _get_unsupported_field_info_attributes(self, field_info: FieldInfo) -> list[tuple[str, Any]]:
         """Get the list of unsupported `FieldInfo` attributes when not directly used in `Annotated` for field annotations."""
         unused_metadata: list[tuple[str, Any]] = []
-        for unused_metadata_name in UNSUPPORTED_STANDALONE_FIELDINFO_ATTRIBUTES:
+        for unused_metadata_name, unset_value in UNSUPPORTED_STANDALONE_FIELDINFO_ATTRIBUTES:
             if (
-                unused_metadata_name in field_info._attributes_set
+                (unused_metadata_value := getattr(field_info, unused_metadata_name)) is not unset_value
                 # `default` and `default_factory` can still be used with a type adapter, so only include them
                 # if used with a model-like class:
                 and (
@@ -2299,7 +2299,7 @@ class GenerateSchema:
                     unused_metadata_name not in ('validation_alias', 'serialization_alias')
                     or 'alias' not in field_info._attributes_set
                 ):
-                    unused_metadata.append((unused_metadata_name, getattr(field_info, unused_metadata_name)))
+                    unused_metadata.append((unused_metadata_name, unused_metadata_value))
 
         return unused_metadata
 
