@@ -2211,8 +2211,12 @@ class GenerateSchema:
         FieldInfo = import_cached_field_info()
 
         if isinstance(metadata, FieldInfo):
-            if check_unsupported_field_info_attributes and (
-                unsupported_attributes := self._get_unsupported_field_info_attributes(metadata)
+            if (
+                check_unsupported_field_info_attributes
+                # HACK: we don't want to emit the warning for `FieldInfo` subclasses, because FastAPI does weird manipulations
+                # with its subclasses and their annotations:
+                and type(metadata) is FieldInfo
+                and (unsupported_attributes := self._get_unsupported_field_info_attributes(metadata))
             ):
                 for unsupported_attr in unsupported_attributes:
                     warnings.warn(
