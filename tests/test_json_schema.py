@@ -2011,6 +2011,37 @@ def test_docstring(docstring, description):
         ({'ge': 2}, Decimal, {'anyOf': [{'type': 'number', 'minimum': 2}, {'type': 'string'}]}),
         ({'le': 5}, Decimal, {'anyOf': [{'type': 'number', 'maximum': 5}, {'type': 'string'}]}),
         ({'multiple_of': 5}, Decimal, {'anyOf': [{'type': 'number', 'multipleOf': 5}, {'type': 'string'}]}),
+        (
+            {'max_digits': 4},
+            Decimal,
+            {
+                'anyOf': [
+                    {'type': 'number'},
+                    {
+                        'pattern': '^-?0*(?=(?:\\d(\\.)?){1,4}(?(1)0*)$)\\d{1,}(?:\\.\\d{0,}0*)?$',
+                        'type': 'string',
+                    },
+                ]
+            },
+        ),
+        (
+            {'decimal_places': 2},
+            Decimal,
+            {'anyOf': [{'type': 'number'}, {'pattern': '^-?0*\\d{1,}(?:\\.\\d{0,2}0*)?$', 'type': 'string'}]},
+        ),
+        (
+            {'max_digits': 4, 'decimal_places': 2},
+            Decimal,
+            {
+                'anyOf': [
+                    {'type': 'number'},
+                    {
+                        'pattern': '^-?0*(?=(?:\\d(\\.)?){1,4}(?(1)0*)$)\\d{1,2}(?:\\.\\d{0,2}0*)?$',
+                        'type': 'string',
+                    },
+                ]
+            },
+        ),
     ],
 )
 def test_constraints_schema_validation(kwargs, type_, expected_extra):
@@ -2054,6 +2085,23 @@ def test_constraints_schema_validation(kwargs, type_, expected_extra):
         ({'ge': 2}, Decimal, {'type': 'string'}),
         ({'le': 5}, Decimal, {'type': 'string'}),
         ({'multiple_of': 5}, Decimal, {'type': 'string'}),
+        (
+            {'max_digits': 4},
+            Decimal,
+            {
+                'pattern': '^-?(?=(?:\\d\\.?){1,4}$)(?:0|[1-9]\\d{0,})(?:\\.\\d{0,})?$',
+                'type': 'string',
+            },
+        ),
+        ({'decimal_places': 2}, Decimal, {'pattern': '^-?(?:0|[1-9]\\d{0,})(?:\\.\\d{0,2})?$', 'type': 'string'}),
+        (
+            {'max_digits': 4, 'decimal_places': 2},
+            Decimal,
+            {
+                'pattern': '^-?(?=(?:\\d\\.?){1,4}$)(?:0|[1-9]\\d{0,1})(?:\\.\\d{0,2})?$',
+                'type': 'string',
+            },
+        ),
     ],
 )
 def test_constraints_schema_serialization(kwargs, type_, expected_extra):
