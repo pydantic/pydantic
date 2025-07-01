@@ -1344,6 +1344,15 @@ to help you monitor and understand your
 </li>
         
           <li class="md-nav__item">
+  <a href="#serializing-cli-arguments" class="md-nav__link">
+    <span class="md-ellipsis">
+      Serializing CLI Arguments
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#mutually-exclusive-groups" class="md-nav__link">
     <span class="md-ellipsis">
       Mutually Exclusive Groups
@@ -3730,6 +3739,15 @@ to help you monitor and understand your
 </li>
         
           <li class="md-nav__item">
+  <a href="#serializing-cli-arguments" class="md-nav__link">
+    <span class="md-ellipsis">
+      Serializing CLI Arguments
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#mutually-exclusive-groups" class="md-nav__link">
     <span class="md-ellipsis">
       Mutually Exclusive Groups
@@ -5177,6 +5195,25 @@ defined) after instantiation:</p>
 <span class="p">}</span>
 </code></pre></div>
 <p>When executing a subcommand with an asynchronous cli_cmd, Pydantic settings automatically detects whether the current thread already has an active event loop. If so, the async command is run in a fresh thread to avoid conflicts. Otherwise, it uses asyncio.run() in the current thread. This handling ensures your asynchronous subcommands "just work" without additional manual setup.</p>
+<h3 id="serializing-cli-arguments">Serializing CLI Arguments<a class="headerlink" href="#serializing-cli-arguments" title="Permanent link">&para;</a></h3>
+<p>An instantiated Pydantic model can be serialized into its CLI arguments using the <code>CliApp.serialize</code> method.</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">CliApp</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Nested</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">that</span><span class="p">:</span> <span class="nb">int</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Settings</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">this</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">nested</span><span class="p">:</span> <span class="n">Nested</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">CliApp</span><span class="o">.</span><span class="n">serialize</span><span class="p">(</span><span class="n">Settings</span><span class="p">(</span><span class="n">this</span><span class="o">=</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="n">nested</span><span class="o">=</span><span class="n">Nested</span><span class="p">(</span><span class="n">that</span><span class="o">=</span><span class="mi">123</span><span class="p">))))</span>
+<span class="c1">#&gt; [&#39;--this&#39;, &#39;hello&#39;, &#39;--nested.that&#39;, &#39;123&#39;]</span>
+</code></pre></div>
 <h3 id="mutually-exclusive-groups">Mutually Exclusive Groups<a class="headerlink" href="#mutually-exclusive-groups" title="Permanent link">&para;</a></h3>
 <p>CLI mutually exclusive groups can be created by inheriting from the <code>CliMutuallyExclusiveGroup</code> class.</p>
 <div class="admonition note">
