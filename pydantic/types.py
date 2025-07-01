@@ -1530,7 +1530,8 @@ else:
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ SECRET TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-SecretType = TypeVar('SecretType')
+# The `Secret` class being conceptually immutable, make the type variable covariant:
+SecretType = TypeVar('SecretType', covariant=True)
 
 
 class _SecretBase(Generic[SecretType]):
