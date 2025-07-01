@@ -2218,13 +2218,12 @@ class GenerateSchema:
                 and type(metadata) is FieldInfo
                 and (unsupported_attributes := self._get_unsupported_field_info_attributes(metadata))
             ):
-                for unsupported_attr in unsupported_attributes:
+                for attr, value in unsupported_attributes:
                     warnings.warn(
-                        f'The {unsupported_attr[0]!r} attribute with value {unsupported_attr[1]!r} was provided '
-                        'to the `Field()` function, which is unsupported in the context it was used. '
-                        f'{unsupported_attr[0]!r} is field-specific metadata, and can only be attached to a model field '
-                        'using `Annotated` metadata or by assignment (note that using `Annotated` type aliases using '
-                        "the `type` statement isn't supported).",
+                        f'The {attr!r} attribute with value {value!r} was provided to the `Field()` function, '
+                        f'which has no effect in the context it was used. {attr!r} is field-specific metadata, '
+                        'and can only be attached to a model field using `Annotated` metadata or by assignment '
+                        "(note that using `Annotated` type aliases using the `type` statement isn't supported).",
                         category=UnsupportedFieldAttributeWarning,
                     )
             for field_metadata in metadata.metadata:
