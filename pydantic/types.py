@@ -1530,6 +1530,7 @@ else:
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ SECRET TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+# The `Secret` class being conceptually immutable, make the type variable covariant:
 SecretType = TypeVar('SecretType', covariant=True)
 
 
