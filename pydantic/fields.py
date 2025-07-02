@@ -15,7 +15,7 @@ from warnings import warn
 
 import annotated_types
 import typing_extensions
-from pydantic_core import PydanticUndefined
+from pydantic_core import UNSET, PydanticUndefined
 from typing_extensions import Self, TypeAlias, Unpack, deprecated
 from typing_inspection import typing_objects
 from typing_inspection.introspection import UNKNOWN, AnnotationSource, ForbiddenQualifier, Qualifier, inspect_annotation
@@ -376,7 +376,7 @@ class FieldInfo(_repr.Representation):
         Returns:
             A field object with the passed values.
         """
-        if annotation is default:
+        if annotation is not UNSET and annotation is default:
             raise PydanticUserError(
                 'Error when building FieldInfo from annotated attribute. '
                 "Make sure you don't have any field name clashing with a type annotation.",
