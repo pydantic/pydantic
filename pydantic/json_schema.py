@@ -782,9 +782,6 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        if len(schema['expected']) == 1 and schema['expected'][0] is UNSET:
-            raise PydanticOmit
-
         expected = [to_jsonable_python(v.value if isinstance(v, Enum) else v) for v in schema['expected']]
 
         result: dict[str, Any] = {}
@@ -807,6 +804,17 @@ class GenerateJsonSchema:
         elif types == {type(None)}:
             result['type'] = 'null'
         return result
+
+    def unset_sentinel_schema(self, schema: core_schema.UnsetSentinelSchema) -> JsonSchemaValue:
+        """Generates a JSON schema that matches the [`UNSET`][pydantic_core.UNSET] sentinel value.
+
+        Args:
+            schema: The core schema.
+
+        Returns:
+            The generated JSON schema.
+        """
+        raise PydanticOmit
 
     def enum_schema(self, schema: core_schema.EnumSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches an Enum value.

@@ -1011,7 +1011,7 @@ class GenerateSchema:
         as they get requested and we figure out what the right API for them is.
         """
         if obj is UNSET:
-            return core_schema.literal_schema([UNSET])
+            return core_schema.unset_sentinel_schema()
         if obj is str:
             return core_schema.str_schema()
         elif obj is bytes:
