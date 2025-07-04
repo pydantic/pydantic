@@ -6948,145 +6948,155 @@ def test_json_schema_arguments_v3_aliases() -> None:
     }
 
 
-class TestDecimalPattern:
-    @pytest.fixture
-    def get_pattern(self):
-        def pattern(max_digits=None, decimal_places=None) -> str:
-            filed = TypeAdapter(Annotated[Decimal, Field(max_digits=max_digits, decimal_places=decimal_places)])
-            return filed.json_schema()['anyOf'][1]['pattern']
+@pytest.fixture
+def get_decimal_pattern():
+    def pattern(max_digits=None, decimal_places=None) -> str:
+        filed = TypeAdapter(Annotated[Decimal, Field(max_digits=max_digits, decimal_places=decimal_places)])
+        return filed.json_schema()['anyOf'][1]['pattern']
 
-        return pattern
+    return pattern
 
-    def test_invalid_base_cases(self, get_pattern):
-        invalid_cases = ['', ' ', '   ', '.', '..', '...', '+', '-', '++', '--']
-        pattern = get_pattern()
 
-        for case in invalid_cases:
-            assert re.fullmatch(pattern, case) is None
+def test_invalid_base_cases(get_decimal_pattern):
+    invalid_cases = ['', ' ', '   ', '.', '..', '...', '+', '-', '++', '--']
+    pattern = get_decimal_pattern()
 
-    def test_zeros_before_decimal_point(self, get_pattern):
-        invalid_cases = ['0+', '0-', '0++', '0--', '++0', '--0']
-        valid_cases = ['+0', '-0', '+00', '-00', '+0000', '-0000', '0', '0000']
-        pattern = get_pattern()
+    for case in invalid_cases:
+        assert re.fullmatch(pattern, case) is None
 
-        for case in valid_cases:
-            assert re.fullmatch(pattern, case) is not None
 
-        for case in invalid_cases:
-            assert re.fullmatch(pattern, case) is None
+def test_zeros_before_decimal_point(get_decimal_pattern):
+    invalid_cases = ['0+', '0-', '0++', '0--', '++0', '--0']
+    valid_cases = ['+0', '-0', '+00', '-00', '+0000', '-0000', '0', '0000']
+    pattern = get_decimal_pattern()
 
-    def test_integer_value_without_max_digits(self, get_pattern):
-        valid_cases = ['1', '0001', '12', '123456', '1000000']
-        pattern = get_pattern()
+    for case in valid_cases:
+        assert re.fullmatch(pattern, case) is not None
 
-        for case in valid_cases:
-            assert re.fullmatch(pattern, case) is not None
+    for case in invalid_cases:
+        assert re.fullmatch(pattern, case) is None
 
-    def test_integer_value_with_max_digits(self, get_pattern):
-        max_digits = 3
-        valid_cases = ['1', '12', '123', '0001', '00001', '0000100']
-        invalid_cases = ['1111', '1000', '1010', '00001000']
-        pattern = get_pattern(max_digits=max_digits)
 
-        for case in valid_cases:
-            assert re.fullmatch(pattern, case) is not None
+def test_integer_value_without_max_digits(get_decimal_pattern):
+    valid_cases = ['1', '0001', '12', '123456', '1000000']
+    pattern = get_decimal_pattern()
 
-        for case in invalid_cases:
-            assert re.fullmatch(pattern, case) is None
+    for case in valid_cases:
+        assert re.fullmatch(pattern, case) is not None
 
-    def test_integer_value_with_zero_max_digits(self, get_pattern):
-        max_digits = 0
-        valid_cases = ['0', '00', '000', '000000', '+000000', '-000000']
-        invalid_cases = ['1', '+1', '01', '-01', '+01', '001', '12', '0010', '1000']
-        pattern = get_pattern(max_digits=max_digits)
 
-        for case in valid_cases:
-            assert re.fullmatch(pattern, case) is not None
+def test_integer_value_with_max_digits(get_decimal_pattern):
+    max_digits = 3
+    valid_cases = ['1', '12', '123', '0001', '00001', '0000100']
+    invalid_cases = ['1111', '1000', '1010', '00001000']
+    pattern = get_decimal_pattern(max_digits=max_digits)
 
-        for case in invalid_cases:
-            assert re.fullmatch(pattern, case) is None
+    for case in valid_cases:
+        assert re.fullmatch(pattern, case) is not None
 
-    def test_decimal_value_without_max_digits_and_decimal_places(self, get_pattern):
-        valid_cases = [
-            '0.1',
-            '+0.1',
-            '.1',
-            '1.',
-            '111.000',
-            '+.1',
-            '-.1',
-            '+1.',
-            '-1.',
-            '1234.1234',
-            '0000.1000',
-            '1000.0001',
-        ]
-        invalid_cases = ['..1', '0..1', '1.1.', '1.1.1']
-        pattern = get_pattern()
+    for case in invalid_cases:
+        assert re.fullmatch(pattern, case) is None
 
-        for case in valid_cases:
-            assert re.fullmatch(pattern, case) is not None
 
-        for case in invalid_cases:
-            assert re.fullmatch(pattern, case) is None
+def test_integer_value_with_zero_max_digits(get_decimal_pattern):
+    max_digits = 0
+    valid_cases = ['0', '00', '000', '000000', '+000000', '-000000']
+    invalid_cases = ['1', '+1', '01', '-01', '+01', '001', '12', '0010', '1000']
+    pattern = get_decimal_pattern(max_digits=max_digits)
 
-    def test_decimal_value_only_with_max_digits(self, get_pattern):
-        max_digits = 4
-        valid_cases = ['0.123', '1.234', '12.34', '00012.34', '00012.34000', '00010.0100', '+00010.0100', '-00010.0100']
-        invalid_cases = ['1.2345', '12.345', '123.45', '1234.5', '12345.0', '0012345.0', '0012345.000']
-        pattern = get_pattern(max_digits=max_digits)
-        for case in valid_cases:
-            assert re.fullmatch(pattern, case) is not None
+    for case in valid_cases:
+        assert re.fullmatch(pattern, case) is not None
 
-        for case in invalid_cases:
-            assert re.fullmatch(pattern, case) is None
+    for case in invalid_cases:
+        assert re.fullmatch(pattern, case) is None
 
-    def test_decimal_value_only_with_decimal_places(self, get_pattern):
-        decimal_places = 2
-        pattern = get_pattern(decimal_places=decimal_places)
-        valid_cases = ['0.12', '123456.12', '123456.1200', '123456.10', '123456.100', '1234.01', '001234.0100']
-        invalid_cases = ['0.123', '123456.123', '123456.001', '123456.012', '123456.00200', '1234.011', '001234.001']
 
-        for case in valid_cases:
-            assert re.fullmatch(pattern, case) is not None
+def test_decimal_value_without_max_digits_and_decimal_places(get_decimal_pattern):
+    valid_cases = [
+        '0.1',
+        '+0.1',
+        '.1',
+        '1.',
+        '111.000',
+        '+.1',
+        '-.1',
+        '+1.',
+        '-1.',
+        '1234.1234',
+        '0000.1000',
+        '1000.0001',
+    ]
+    invalid_cases = ['..1', '0..1', '1.1.', '1.1.1']
+    pattern = get_decimal_pattern()
 
-        for case in invalid_cases:
-            assert re.fullmatch(pattern, case) is None
+    for case in valid_cases:
+        assert re.fullmatch(pattern, case) is not None
 
-    def test_decimal_value_with_max_digits_and_decimal_places(self, get_pattern):
-        max_digits = 4
-        decimal_places = 2
-        pattern = get_pattern(max_digits=max_digits, decimal_places=decimal_places)
-        valid_cases = ['12.34', '1.2', '12.3', '0012.3200', '0010.0100', '0.1']
-        invalid_cases = ['120.34', '1.222', '120.333', '0012.3230', '0010.00100', '00123.', '00123.01', '.001']
+    for case in invalid_cases:
+        assert re.fullmatch(pattern, case) is None
 
-        for case in valid_cases:
-            assert re.fullmatch(pattern, case) is not None
 
-        for case in invalid_cases:
-            assert re.fullmatch(pattern, case) is None
+def test_decimal_value_only_with_max_digits(get_decimal_pattern):
+    max_digits = 4
+    valid_cases = ['0.123', '1.234', '12.34', '00012.34', '00012.34000', '00010.0100', '+00010.0100', '-00010.0100']
+    invalid_cases = ['1.2345', '12.345', '123.45', '1234.5', '12345.0', '0012345.0', '0012345.000']
+    pattern = get_decimal_pattern(max_digits=max_digits)
+    for case in valid_cases:
+        assert re.fullmatch(pattern, case) is not None
 
-    def test_decimal_value_with_max_digits_and_decimal_places_eaqual(self, get_pattern):
-        max_digits = 4
-        decimal_places = max_digits
-        pattern = get_pattern(max_digits=max_digits, decimal_places=decimal_places)
-        valid_cases = ['0.34', '0000.2', '0.3333', '000.3333000', '+000.000100', '0.1']
-        invalid_cases = ['120.34', '1.222', '0.33333', '0001.1', '0010.00100', '1.']
+    for case in invalid_cases:
+        assert re.fullmatch(pattern, case) is None
 
-        for case in valid_cases:
-            assert re.fullmatch(pattern, case) is not None
 
-        for case in invalid_cases:
-            assert re.fullmatch(pattern, case) is None
+def test_decimal_value_only_with_decimal_places(get_decimal_pattern):
+    decimal_places = 2
+    pattern = get_decimal_pattern(decimal_places=decimal_places)
+    valid_cases = ['0.12', '123456.12', '123456.1200', '123456.10', '123456.100', '1234.01', '001234.0100']
+    invalid_cases = ['0.123', '123456.123', '123456.001', '123456.012', '123456.00200', '1234.011', '001234.001']
 
-    def test_decimal_value_with_zero_decimal_places(self, get_pattern):
-        decimal_places = 0
-        pattern = get_pattern(decimal_places=decimal_places)
-        valid_cases = ['1.0', '1.', '123.0', '123.', '.000']
-        invalid_cases = ['0.1', '123.1', '1.100', '1.01']
+    for case in valid_cases:
+        assert re.fullmatch(pattern, case) is not None
 
-        for case in valid_cases:
-            assert re.fullmatch(pattern, case) is not None
+    for case in invalid_cases:
+        assert re.fullmatch(pattern, case) is None
 
-        for case in invalid_cases:
-            assert re.fullmatch(pattern, case) is None
+
+def test_decimal_value_with_max_digits_and_decimal_places(get_decimal_pattern):
+    max_digits = 4
+    decimal_places = 2
+    pattern = get_decimal_pattern(max_digits=max_digits, decimal_places=decimal_places)
+    valid_cases = ['12.34', '1.2', '12.3', '0012.3200', '0010.0100', '0.1']
+    invalid_cases = ['120.34', '1.222', '120.333', '0012.3230', '0010.00100', '00123.', '00123.01', '.001']
+
+    for case in valid_cases:
+        assert re.fullmatch(pattern, case) is not None
+
+    for case in invalid_cases:
+        assert re.fullmatch(pattern, case) is None
+
+
+def test_decimal_value_with_max_digits_and_decimal_places_eaqual(get_decimal_pattern):
+    max_digits = 4
+    decimal_places = max_digits
+    pattern = get_decimal_pattern(max_digits=max_digits, decimal_places=decimal_places)
+    valid_cases = ['0.34', '0000.2', '0.3333', '000.3333000', '+000.000100', '0.1']
+    invalid_cases = ['120.34', '1.222', '0.33333', '0001.1', '0010.00100', '1.']
+
+    for case in valid_cases:
+        assert re.fullmatch(pattern, case) is not None
+
+    for case in invalid_cases:
+        assert re.fullmatch(pattern, case) is None
+
+
+def test_decimal_value_with_zero_decimal_places(get_decimal_pattern):
+    decimal_places = 0
+    pattern = get_decimal_pattern(decimal_places=decimal_places)
+    valid_cases = ['1.0', '1.', '123.0', '123.', '.000']
+    invalid_cases = ['0.1', '123.1', '1.100', '1.01']
+
+    for case in valid_cases:
+        assert re.fullmatch(pattern, case) is not None
+
+    for case in invalid_cases:
+        assert re.fullmatch(pattern, case) is None
