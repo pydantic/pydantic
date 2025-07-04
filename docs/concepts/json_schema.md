@@ -279,7 +279,7 @@ print(Model.model_json_schema(mode='validation'))
             'anyOf': [
                 {'type': 'number'},
                 {
-                    'pattern': '^(?!^[+-\\.]*$)[+-]?0*(?:\\d{0,}$|(?=[\\d\\.]{1,}0*$)\\d{0,}\\.\\d{0,}0*$)',
+                    'pattern': '^(?!^[-+.]*$)[+-]?0*(?:\\d{0,}$|(?=[\\d\\.]{1,}0*$)\\d{0,}\\.\\d{0,}0*$)',
                     'type': 'string',
                 },
             ],
@@ -298,7 +298,7 @@ print(Model.model_json_schema(mode='serialization'))
     'properties': {
         'a': {
             'default': '12.34',
-            'pattern': '^(?!^[+-\\.]*$)[+-]?0*(?:\\d{0,}$|(?=[\\d\\.]{1,}0*$)\\d{0,}\\.\\d{0,}0*$)',
+            'pattern': '^(?!^[-+.]*$)[+-]?0*(?:\\d{0,}$|(?=[\\d\\.]{1,}0*$)\\d{0,}\\.\\d{0,}0*$)',
             'title': 'A',
             'type': 'string',
         }

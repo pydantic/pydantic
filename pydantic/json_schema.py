@@ -687,7 +687,7 @@ class GenerateJsonSchema:
                     integer_places = 0
 
             pattern = (
-                r'^(?!^[+-\.]*$)'  # check string is not empty and not single or sequence of ".+-" characters.
+                r'^(?!^[-+.]*$)'  # check string is not empty and not single or sequence of ".+-" characters.
                 r'[+-]?0*'  # check "+-" optional characters in the very start and optional zeros.
                 r'(?:'  # open non-capturing group
                 rf'\d{{0,{integer_places}}}$'  # integer case
