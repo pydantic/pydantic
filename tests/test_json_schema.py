@@ -530,7 +530,7 @@ def test_decimal_json_schema():
                     {'type': 'number'},
                     {
                         'type': 'string',
-                        'pattern': '^(?!^[-+.]*$)[+-]?0*(?:\\d{0,}$|(?=[\\d\\.]{1,}0*$)\\d{0,}\\.\\d{0,}0*$)',
+                        'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
                     },
                 ],
                 'default': '12.34',
@@ -547,7 +547,7 @@ def test_decimal_json_schema():
                 'default': '12.34',
                 'title': 'B',
                 'type': 'string',
-                'pattern': '^(?!^[-+.]*$)[+-]?0*(?:\\d{0,}$|(?=[\\d\\.]{1,}0*$)\\d{0,}\\.\\d{0,}0*$)',
+                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
             },
         },
         'title': 'Model',
@@ -1075,7 +1075,7 @@ def test_special_decimal_types(field_type, expected_schema):
                     {'type': 'number'},
                     {
                         'type': 'string',
-                        'pattern': '^(?!^[-+.]*$)[+-]?0*(?:\\d{0,}$|(?=[\\d\\.]{1,}0*$)\\d{0,}\\.\\d{0,}0*$)',
+                        'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
                     },
                 ],
                 'title': 'A',
@@ -2042,7 +2042,7 @@ def test_docstring(docstring, description):
                     {'exclusiveMinimum': 2.0, 'type': 'number'},
                     {
                         'type': 'string',
-                        'pattern': '^(?!^[-+.]*$)[+-]?0*(?:\\d{0,}$|(?=[\\d\\.]{1,}0*$)\\d{0,}\\.\\d{0,}0*$)',
+                        'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
                     },
                 ]
             },
@@ -2055,7 +2055,7 @@ def test_docstring(docstring, description):
                     {'type': 'number', 'exclusiveMaximum': 5},
                     {
                         'type': 'string',
-                        'pattern': '^(?!^[-+.]*$)[+-]?0*(?:\\d{0,}$|(?=[\\d\\.]{1,}0*$)\\d{0,}\\.\\d{0,}0*$)',
+                        'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
                     },
                 ]
             },
@@ -2068,7 +2068,7 @@ def test_docstring(docstring, description):
                     {'type': 'number', 'minimum': 2},
                     {
                         'type': 'string',
-                        'pattern': '^(?!^[-+.]*$)[+-]?0*(?:\\d{0,}$|(?=[\\d\\.]{1,}0*$)\\d{0,}\\.\\d{0,}0*$)',
+                        'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
                     },
                 ]
             },
@@ -2081,7 +2081,7 @@ def test_docstring(docstring, description):
                     {'type': 'number', 'maximum': 5},
                     {
                         'type': 'string',
-                        'pattern': '^(?!^[-+.]*$)[+-]?0*(?:\\d{0,}$|(?=[\\d\\.]{1,}0*$)\\d{0,}\\.\\d{0,}0*$)',
+                        'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
                     },
                 ]
             },
@@ -2094,7 +2094,7 @@ def test_docstring(docstring, description):
                     {'type': 'number', 'multipleOf': 5},
                     {
                         'type': 'string',
-                        'pattern': '^(?!^[-+.]*$)[+-]?0*(?:\\d{0,}$|(?=[\\d\\.]{1,}0*$)\\d{0,}\\.\\d{0,}0*$)',
+                        'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
                     },
                 ]
             },
@@ -2143,7 +2143,7 @@ def test_constraints_schema_validation(kwargs, type_, expected_extra):
             Decimal,
             {
                 'type': 'string',
-                'pattern': '^(?!^[-+.]*$)[+-]?0*(?:\\d{0,}$|(?=[\\d\\.]{1,}0*$)\\d{0,}\\.\\d{0,}0*$)',
+                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
             },
         ),
         (
@@ -2151,7 +2151,7 @@ def test_constraints_schema_validation(kwargs, type_, expected_extra):
             Decimal,
             {
                 'type': 'string',
-                'pattern': '^(?!^[-+.]*$)[+-]?0*(?:\\d{0,}$|(?=[\\d\\.]{1,}0*$)\\d{0,}\\.\\d{0,}0*$)',
+                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
             },
         ),
         (
@@ -2159,7 +2159,7 @@ def test_constraints_schema_validation(kwargs, type_, expected_extra):
             Decimal,
             {
                 'type': 'string',
-                'pattern': '^(?!^[-+.]*$)[+-]?0*(?:\\d{0,}$|(?=[\\d\\.]{1,}0*$)\\d{0,}\\.\\d{0,}0*$)',
+                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
             },
         ),
         (
@@ -2167,7 +2167,7 @@ def test_constraints_schema_validation(kwargs, type_, expected_extra):
             Decimal,
             {
                 'type': 'string',
-                'pattern': '^(?!^[-+.]*$)[+-]?0*(?:\\d{0,}$|(?=[\\d\\.]{1,}0*$)\\d{0,}\\.\\d{0,}0*$)',
+                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
             },
         ),
         (
@@ -2175,7 +2175,7 @@ def test_constraints_schema_validation(kwargs, type_, expected_extra):
             Decimal,
             {
                 'type': 'string',
-                'pattern': '^(?!^[-+.]*$)[+-]?0*(?:\\d{0,}$|(?=[\\d\\.]{1,}0*$)\\d{0,}\\.\\d{0,}0*$)',
+                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
             },
         ),
     ],
@@ -5860,14 +5860,14 @@ def test_generate_definitions_for_no_ref_schemas():
         {
             ('Decimal', 'serialization'): {
                 'type': 'string',
-                'pattern': '^(?!^[-+.]*$)[+-]?0*(?:\\d{0,}$|(?=[\\d\\.]{1,}0*$)\\d{0,}\\.\\d{0,}0*$)',
+                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
             },
             ('Decimal', 'validation'): {
                 'anyOf': [
                     {'type': 'number'},
                     {
                         'type': 'string',
-                        'pattern': '^(?!^[-+.]*$)[+-]?0*(?:\\d{0,}$|(?=[\\d\\.]{1,}0*$)\\d{0,}\\.\\d{0,}0*$)',
+                        'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
                     },
                 ]
             },
@@ -6957,146 +6957,94 @@ def get_decimal_pattern():
     return pattern
 
 
-def test_invalid_base_cases(get_decimal_pattern):
-    invalid_cases = ['', ' ', '   ', '.', '..', '...', '+', '-', '++', '--']
-    pattern = get_decimal_pattern()
+@pytest.mark.parametrize('valid_decimal', ['0.1', '0000.1', '11.1', '001.1', '11111111.1', '0.100000', '0.01', '0.11'])
+def test_decimal_pattern_with_only_decimal_places_set(valid_decimal, get_decimal_pattern):
+    decimal_places = 2
+    pattern = get_decimal_pattern(decimal_places=decimal_places)
 
-    for case in invalid_cases:
-        assert re.fullmatch(pattern, case) is None
-
-
-def test_zeros_before_decimal_point(get_decimal_pattern):
-    invalid_cases = ['0+', '0-', '0++', '0--', '++0', '--0']
-    valid_cases = ['+0', '-0', '+00', '-00', '+0000', '-0000', '0', '0000']
-    pattern = get_decimal_pattern()
-
-    for case in valid_cases:
-        assert re.fullmatch(pattern, case) is not None
-
-    for case in invalid_cases:
-        assert re.fullmatch(pattern, case) is None
+    assert re.fullmatch(pattern, valid_decimal) is not None
 
 
-def test_integer_value_without_max_digits(get_decimal_pattern):
-    valid_cases = ['1', '0001', '12', '123456', '1000000']
-    pattern = get_decimal_pattern()
+@pytest.mark.parametrize(
+    'invalid_decimal', ['0.001', '0000.001', '11.001', '001.001', '11111111.001', '0.00100000', '0.011', '0.111']
+)
+def test_decimal_pattern_reject_invalid_values_with_only_decimal_places_set(invalid_decimal, get_decimal_pattern):
+    decimal_places = 2
+    pattern = get_decimal_pattern(decimal_places=decimal_places)
 
-    for case in valid_cases:
-        assert re.fullmatch(pattern, case) is not None
+    assert re.fullmatch(pattern, invalid_decimal) is None
 
 
-def test_integer_value_with_max_digits(get_decimal_pattern):
+@pytest.mark.parametrize('valid_decimal', ['0.1', '000.1', '0.001000', '0000.001000', '111', '100', '00100', '011.10'])
+def test_decimal_pattern_with_only_max_digit_set(valid_decimal, get_decimal_pattern):
     max_digits = 3
-    valid_cases = ['1', '12', '123', '0001', '00001', '0000100']
-    invalid_cases = ['1111', '1000', '1010', '00001000']
     pattern = get_decimal_pattern(max_digits=max_digits)
 
-    for case in valid_cases:
-        assert re.fullmatch(pattern, case) is not None
-
-    for case in invalid_cases:
-        assert re.fullmatch(pattern, case) is None
+    assert re.fullmatch(pattern, valid_decimal) is not None
 
 
-def test_integer_value_with_zero_max_digits(get_decimal_pattern):
-    max_digits = 0
-    valid_cases = ['0', '00', '000', '000000', '+000000', '-000000']
-    invalid_cases = ['1', '+1', '01', '-01', '+01', '001', '12', '0010', '1000']
+@pytest.mark.parametrize(
+    'valid_decimal', ['0.0001', '111.1', '0.0001000', '0001.001000', '1111', '1000', '001000', '011.110']
+)
+def test_decimal_pattern_reject_invalid_values_with_only_max_digit_set(valid_decimal, get_decimal_pattern):
+    max_digits = 3
     pattern = get_decimal_pattern(max_digits=max_digits)
 
-    for case in valid_cases:
-        assert re.fullmatch(pattern, case) is not None
-
-    for case in invalid_cases:
-        assert re.fullmatch(pattern, case) is None
+    assert re.fullmatch(pattern, valid_decimal) is None
 
 
-def test_decimal_value_without_max_digits_and_decimal_places(get_decimal_pattern):
-    valid_cases = [
-        '0.1',
-        '+0.1',
-        '.1',
-        '1.',
-        '111.000',
-        '+.1',
-        '-.1',
-        '+1.',
-        '-1.',
-        '1234.1234',
-        '0000.1000',
-        '1000.0001',
-    ]
-    invalid_cases = ['..1', '0..1', '1.1.', '1.1.1']
+@pytest.mark.parametrize(
+    'valid_decimal', ['11111111', '1111.11111', '0.00000001', '11.', '.11', '000', '0', '-.0', '-.1', '-1.', '-0.']
+)
+def test_decimal_pattern_with_decimal_places_max_digits_unset(valid_decimal, get_decimal_pattern):
     pattern = get_decimal_pattern()
 
-    for case in valid_cases:
-        assert re.fullmatch(pattern, case) is not None
-
-    for case in invalid_cases:
-        assert re.fullmatch(pattern, case) is None
+    assert re.fullmatch(pattern, valid_decimal) is not None
 
 
-def test_decimal_value_only_with_max_digits(get_decimal_pattern):
-    max_digits = 4
-    valid_cases = ['0.123', '1.234', '12.34', '00012.34', '00012.34000', '00010.0100', '+00010.0100', '-00010.0100']
-    invalid_cases = ['1.2345', '12.345', '123.45', '1234.5', '12345.0', '0012345.0', '0012345.000']
-    pattern = get_decimal_pattern(max_digits=max_digits)
-    for case in valid_cases:
-        assert re.fullmatch(pattern, case) is not None
+@pytest.mark.parametrize('invalid_decimal', ['.', '-.', '..', '1.1.1', '0.0.0', '1..1', '-', '--'])
+def test_decimal_pattern_reject_invalid_with_decimal_places_max_digits_unset(invalid_decimal, get_decimal_pattern):
+    pattern = get_decimal_pattern()
 
-    for case in invalid_cases:
-        assert re.fullmatch(pattern, case) is None
+    assert re.fullmatch(pattern, invalid_decimal) is None
 
 
-def test_decimal_value_only_with_decimal_places(get_decimal_pattern):
-    decimal_places = 2
-    pattern = get_decimal_pattern(decimal_places=decimal_places)
-    valid_cases = ['0.12', '123456.12', '123456.1200', '123456.10', '123456.100', '1234.01', '001234.0100']
-    invalid_cases = ['0.123', '123456.123', '123456.001', '123456.012', '123456.00200', '1234.011', '001234.001']
+@pytest.mark.parametrize(
+    'valid_decimal', ['10.01', '11.11', '010.010', '011.110', '11', '0011', '001.100', '.1', '.11000', '00011.']
+)
+def test_decimal_pattern_with_decimal_places_max_digits_set(valid_decimal, get_decimal_pattern):
+    pattern = get_decimal_pattern(max_digits=4, decimal_places=2)
 
-    for case in valid_cases:
-        assert re.fullmatch(pattern, case) is not None
-
-    for case in invalid_cases:
-        assert re.fullmatch(pattern, case) is None
+    assert re.fullmatch(pattern, valid_decimal) is not None
 
 
-def test_decimal_value_with_max_digits_and_decimal_places(get_decimal_pattern):
-    max_digits = 4
-    decimal_places = 2
-    pattern = get_decimal_pattern(max_digits=max_digits, decimal_places=decimal_places)
-    valid_cases = ['12.34', '1.2', '12.3', '0012.3200', '0010.0100', '0.1']
-    invalid_cases = ['120.34', '1.222', '120.333', '0012.3230', '0010.00100', '00123.', '00123.01', '.001']
+@pytest.mark.parametrize(
+    'invalid_decimal',
+    ['10.001', '111', '0100.0010', '011.0110', '111.1', '1111', '001.11100', '.111', '.111000', '000111.'],
+)
+def test_decimal_pattern_reject_invalid_with_decimal_places_max_digits_set(invalid_decimal, get_decimal_pattern):
+    pattern = get_decimal_pattern(max_digits=4, decimal_places=2)
 
-    for case in valid_cases:
-        assert re.fullmatch(pattern, case) is not None
-
-    for case in invalid_cases:
-        assert re.fullmatch(pattern, case) is None
+    assert re.fullmatch(pattern, invalid_decimal) is None
 
 
-def test_decimal_value_with_max_digits_and_decimal_places_eaqual(get_decimal_pattern):
-    max_digits = 4
-    decimal_places = max_digits
-    pattern = get_decimal_pattern(max_digits=max_digits, decimal_places=decimal_places)
-    valid_cases = ['0.34', '0000.2', '0.3333', '000.3333000', '+000.000100', '0.1']
-    invalid_cases = ['120.34', '1.222', '0.33333', '0001.1', '0010.00100', '1.']
+@pytest.mark.parametrize('valid_value', ['0.34', '0000.2', '0.3333', '000.3333000', '+000.000100', '0.1'])
+def test_decimal_pattern_with_max_digits_and_decimal_places_equal(valid_value, get_decimal_pattern):
+    pattern = get_decimal_pattern(max_digits=4, decimal_places=4)
 
-    for case in valid_cases:
-        assert re.fullmatch(pattern, case) is not None
-
-    for case in invalid_cases:
-        assert re.fullmatch(pattern, case) is None
+    assert re.fullmatch(pattern, valid_value) is not None
 
 
-def test_decimal_value_with_zero_decimal_places(get_decimal_pattern):
-    decimal_places = 0
-    pattern = get_decimal_pattern(decimal_places=decimal_places)
-    valid_cases = ['1.0', '1.', '123.0', '123.', '.000']
-    invalid_cases = ['0.1', '123.1', '1.100', '1.01']
+@pytest.mark.parametrize('invalid_value', ['120.34', '1.222', '0.33333', '0001.1', '0010.00100', '1.'])
+def test_decimal_pattern_reject_invalid_with_max_digits_and_decimal_places_equal(invalid_value, get_decimal_pattern):
+    pattern = get_decimal_pattern(max_digits=4, decimal_places=4)
 
-    for case in valid_cases:
-        assert re.fullmatch(pattern, case) is not None
+    assert re.fullmatch(pattern, invalid_value) is None
 
-    for case in invalid_cases:
-        assert re.fullmatch(pattern, case) is None
+
+@pytest.mark.parametrize('invalid_decimal', ['', ' ', '   ', '.', '..', '...', '+', '-', '++', '--', 'a', 'a.1', '1.a'])
+def test_decimal_pattern_reject_invalid_not_numerical_values_with_decimal_places_max_digits_set(
+    invalid_decimal, get_decimal_pattern
+):
+    pattern = get_decimal_pattern()
+    assert re.fullmatch(pattern, invalid_decimal) is None
