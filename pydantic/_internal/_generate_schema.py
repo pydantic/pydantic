@@ -584,7 +584,7 @@ class GenerateSchema:
             # the `defaultdict`'s `default_factory`. As a consequence, we get warnings
             # as normally `FieldInfo.default_factory` is unsupported in the context where
             # `Field()` is used and our only solution is to ignore them (note that this might
-            # wrongfully ignore valid warnings, e.g. if the `value_type` to a PEP 695 type alias
+            # wrongfully ignore valid warnings, e.g. if the `value_type` is a PEP 695 type alias
             # with unsupported metadata).
             warnings.simplefilter('ignore', category=UnsupportedFieldAttributeWarning)
             values_schema = self.generate_schema(values_type)
@@ -2222,8 +2222,9 @@ class GenerateSchema:
                     warnings.warn(
                         f'The {attr!r} attribute with value {value!r} was provided to the `Field()` function, '
                         f'which has no effect in the context it was used. {attr!r} is field-specific metadata, '
-                        'and can only be attached to a model field using `Annotated` metadata or by assignment '
-                        "(note that using `Annotated` type aliases using the `type` statement isn't supported).",
+                        'and can only be attached to a model field using `Annotated` metadata or by assignment. '
+                        'This may have happened because an `Annotated` type alias using the `type` statement was '
+                        'used, or if the `Field()` function was attached to a single member of a union type.',
                         category=UnsupportedFieldAttributeWarning,
                     )
             for field_metadata in metadata.metadata:
