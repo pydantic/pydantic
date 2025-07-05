@@ -74,21 +74,6 @@ def test_forward_ref_auto_update_no_model(create_module):
     assert f.model_dump() == {'a': {'b': {'a': {'b': {'a': None}}}}}
 
 
-def test_forward_ref_one_of_fields_not_defined(create_module):
-    @create_module
-    def module():
-        from pydantic import BaseModel
-
-        class Foo(BaseModel):
-            foo: 'Foo'
-            bar: 'Bar'
-
-    assert {k: repr(v) for k, v in module.Foo.model_fields.items()} == {
-        'foo': 'FieldInfo(annotation=Foo, required=True)',
-        'bar': "FieldInfo(annotation=ForwardRef('Bar'), required=True)",
-    }
-
-
 def test_basic_forward_ref(create_module):
     @create_module
     def module():

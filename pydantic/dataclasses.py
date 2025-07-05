@@ -182,10 +182,7 @@ def dataclass(
                     field_args['repr'] = field_value.repr
 
                 setattr(cls, field_name, dataclasses.field(**field_args))
-                if (
-                    sys.version_info < (3, 10)
-                    and cls.__dict__.get('__annotations__') is None
-                ):
+                if sys.version_info < (3, 10) and cls.__dict__.get('__annotations__') is None:
                     # In Python 3.9, when a class doesn't have any annotations, accessing `__annotations__`
                     # raises an `AttributeError`.
                     cls.__annotations__ = {}
