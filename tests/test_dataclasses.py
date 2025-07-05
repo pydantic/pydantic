@@ -30,6 +30,7 @@ from pydantic import (
     BaseModel,
     BeforeValidator,
     ConfigDict,
+    Field,
     PydanticDeprecatedSince20,
     PydanticUndefinedAnnotation,
     PydanticUserError,
@@ -45,7 +46,6 @@ from pydantic import (
 )
 from pydantic._internal._mock_val_ser import MockValSer
 from pydantic.dataclasses import is_pydantic_dataclass, rebuild_dataclass
-from pydantic.fields import Field, FieldInfo
 from pydantic.json_schema import model_json_schema
 
 
@@ -2098,15 +2098,14 @@ def test_inheritance_replace(decorator1: Callable[[Any], Any], expected_parent: 
 def test_dataclasses_inheritance_default_value_is_not_deleted(
     decorator1: Callable[[Any], Any], default: Literal[1]
 ) -> None:
-    if decorator1 is dataclasses.dataclass and isinstance(default, FieldInfo):
-        pytest.skip(reason="stdlib dataclasses don't support Pydantic fields")
-
     @decorator1
     class Parent:
         a: int = default
 
-    assert Parent.a == 1
-    assert Parent().a == 1
+    # stdlib dataclasses don't support Pydantic's `Field()`:
+    if decorator1 is pydantic.dataclasses.dataclass:
+        assert Parent.a == 1
+        assert Parent().a == 1
 
     @pydantic.dataclasses.dataclass
     class Child(Parent):

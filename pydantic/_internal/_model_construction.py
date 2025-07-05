@@ -105,12 +105,29 @@ class ModelMetaclass(ABCMeta):
         # that `BaseModel` itself won't have any bases, but any subclass of it will, to determine whether the `__new__`
         # call we're in the middle of is for the `BaseModel` class.
         if bases:
+            raw_annotations: dict[str, Any]
+            if sys.version_info >= (3, 14):
+                if (
+                    '__annotations__' in namespace
+                ):  # `from __future__ import annotations` was used in the model's module
+                    raw_annotations = namespace['__annotations__']
+                else:
+                    # See https://docs.python.org/3.14/library/annotationlib.html#using-annotations-in-a-metaclass:
+                    from annotationlib import Format, call_annotate_function, get_annotate_from_class_namespace
+
+                    if annotate := get_annotate_from_class_namespace(namespace):
+                        raw_annotations = call_annotate_function(annotate, format=Format.FORWARDREF)
+                    else:
+                        raw_annotations = {}
+            else:
+                raw_annotations = namespace.get('__annotations__', {})
+
             base_field_names, class_vars, base_private_attributes = mcs._collect_bases_data(bases)
 
-            config_wrapper = ConfigWrapper.for_model(bases, namespace, kwargs)
+            config_wrapper = ConfigWrapper.for_model(bases, namespace, raw_annotations, kwargs)
             namespace['model_config'] = config_wrapper.config_dict
             private_attributes = inspect_namespace(
-                namespace, config_wrapper.ignored_types, class_vars, base_field_names
+                namespace, raw_annotations, config_wrapper.ignored_types, class_vars, base_field_names
             )
             if private_attributes or base_private_attributes:
                 original_model_post_init = get_model_post_init(namespace, bases)
@@ -363,6 +380,7 @@ def get_model_post_init(namespace: dict[str, Any], bases: tuple[type[Any], ...])
 
 def inspect_namespace(  # noqa C901
     namespace: dict[str, Any],
+    raw_annotations: dict[str, Any],
     ignored_types: tuple[type[Any], ...],
     base_class_vars: set[str],
     base_class_fields: set[str],
@@ -373,6 +391,7 @@ def inspect_namespace(  # noqa C901
 
     Args:
         namespace: The attribute dictionary of the class to be created.
+        raw_annotations: The (non-evaluated) annotations of the model.
         ignored_types: A tuple of ignore types.
         base_class_vars: A set of base class class variables.
         base_class_fields: A set of base class fields.
@@ -394,7 +413,6 @@ def inspect_namespace(  # noqa C901
     all_ignored_types = ignored_types + default_ignored_types()
 
     private_attributes: dict[str, ModelPrivateAttr] = {}
-    raw_annotations = namespace.get('__annotations__', {})
 
     if '__root__' in raw_annotations or '__root__' in namespace:
         raise TypeError("To define root models, use `pydantic.RootModel` rather than a field called '__root__'")

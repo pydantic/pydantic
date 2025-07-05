@@ -3,6 +3,7 @@
 from __future__ import annotations as _annotations
 
 import dataclasses
+import sys
 import warnings
 from collections.abc import Mapping
 from copy import copy
@@ -259,7 +260,13 @@ def collect_model_fields(  # noqa: C901
 
     # https://docs.python.org/3/howto/annotations.html#accessing-the-annotations-dict-of-an-object-in-python-3-9-and-older
     # annotations is only used for finding fields in parent classes
-    annotations = cls.__dict__.get('__annotations__', {})
+    if sys.version_info >= (3, 14):
+        from annotationlib import Format, get_annotations
+
+        annotations = get_annotations(cls, format=Format.FORWARDREF)
+    else:
+        annotations = cls.__dict__.get('__annotations__', {})
+
     fields: dict[str, FieldInfo] = {}
 
     class_vars: set[str] = set()
@@ -508,7 +515,14 @@ def collect_dataclass_fields(
 
         with ns_resolver.push(base):
             for ann_name, dataclass_field in dataclass_fields.items():
-                if ann_name not in base.__dict__.get('__annotations__', {}):
+                if sys.version_info >= (3, 14):
+                    from annotationlib import Format, get_annotations
+
+                    base_anns = get_annotations(base, format=Format.FORWARDREF)
+                else:
+                    base_anns = base.__dict__.get('__annotations__', {})
+
+                if ann_name not in base_anns:
                     # `__dataclass_fields__`contains every field, even the ones from base classes.
                     # Only collect the ones defined on `base`.
                     continue
