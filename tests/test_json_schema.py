@@ -7020,7 +7020,7 @@ def test_decimal_pattern_with_decimal_places_max_digits_set(valid_decimal, get_d
 
 @pytest.mark.parametrize(
     'invalid_decimal',
-    ['10.001', '111', '0100.0010', '011.0110', '111.1', '1111', '001.11100', '.111', '.111000', '000111.'],
+    ['10.001', '111', '0100.0010', '011.0110', '111.1', '1111', '001.11100', '.111', '.111000', '000111.', '1100'],
 )
 def test_decimal_pattern_reject_invalid_with_decimal_places_max_digits_set(invalid_decimal, get_decimal_pattern):
     pattern = get_decimal_pattern(max_digits=4, decimal_places=2)

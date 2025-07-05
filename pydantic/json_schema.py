@@ -691,8 +691,8 @@ class GenerateJsonSchema:
                     rf'\d{{0,{integer_places}}}'
                     rf'|'
                     rf'(?=[\d.]{{1,{max_digits + 1}}}0*$)'
-                    rf'\d{{0,{integer_places}}}\.\d{{0,{decimal_places}}}'
-                    rf')0*$'
+                    rf'\d{{0,{integer_places}}}\.\d{{0,{decimal_places}}}0*$'
+                    rf')'
                 )
 
             # Case 2: Only max_digits is set
