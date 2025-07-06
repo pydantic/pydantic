@@ -224,6 +224,8 @@ pydocstyle = { convention = 'google' }
 'docs/*' = ['D']
 'pydantic/__init__.py' = ['F405', 'F403', 'D']
 'tests/test_forward_ref.py' = ['F821']
+# We can't configure a specific Python version per file (this one only supports 3.14+):
+'tests/test_deferred_annotations.py' = ['F821', 'F841']
 'tests/test_main.py' = ['PIE807']
 'tests/*' = ['D', 'B', 'C4']
 'pydantic/_internal/_known_annotated_metadata.py' = ['PIE800']
