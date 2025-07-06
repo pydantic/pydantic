@@ -1,5 +1,4 @@
 import json
-import sys
 from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Annotated, Any, ForwardRef, Generic, NamedTuple, Optional, TypeVar, Union
@@ -160,10 +159,6 @@ def test_model_local_namespace_variables(defer_build: bool, method: str, generat
         assert 'MyModel' in json_schema['$defs']
 
 
-@pytest.mark.skipif(
-    sys.version_info >= (3, 14),
-    reason='Bug/change in forward ref evaluation: https://github.com/python/cpython/issues/136316',
-)
 @pytest.mark.parametrize('defer_build', [False, True])
 @pytest.mark.parametrize('method', ['validate', 'serialize', 'json_schema', 'json_schemas'])
 def test_top_level_fwd_ref(defer_build: bool, method: str, generate_schema_calls):

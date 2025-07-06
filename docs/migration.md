@@ -188,7 +188,7 @@ to help ease migration, but calling them will emit `DeprecationWarning`s.
 If you'd still like to use said arguments, you can use [this workaround](https://github.com/pydantic/pydantic/issues/8825#issuecomment-1946206415).
 * JSON serialization of non-string key values is generally done with `str(key)`, leading to some changes in behavior such as the following:
 
-```python
+```python {test="skip"}
 from typing import Optional
 
 from pydantic import BaseModel as V2BaseModel
@@ -218,7 +218,7 @@ print(v2_model.model_dump_json())
 * `model_dump_json()` results are compacted in order to save space, and don't always exactly match that of `json.dumps()` output.
 That being said, you can easily modify the separators used in `json.dumps()` results in order to align the two outputs:
 
-```python
+```python {test="skip"}
 import json
 
 from pydantic import BaseModel as V2BaseModel

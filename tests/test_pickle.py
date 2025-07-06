@@ -1,6 +1,7 @@
 import dataclasses
 import gc
 import pickle
+import sys
 from typing import Optional
 
 import pytest
@@ -16,6 +17,11 @@ except ImportError:
     cloudpickle = None
 
 pytestmark = pytest.mark.skipif(cloudpickle is None, reason='cloudpickle is not installed')
+
+cloudpickle_xfail = pytest.mark.xfail(
+    condition=sys.version_info >= (3, 14),
+    reason='Cloudpickle issue: https://github.com/cloudpipe/cloudpickle/issues/572',
+)
 
 
 class IntWrapper:
@@ -88,7 +94,7 @@ def model_factory() -> type:
         (ImportableModel, False),
         (ImportableModel, True),
         # Locally-defined model can only be pickled with cloudpickle.
-        (model_factory(), True),
+        pytest.param(model_factory(), True, marks=cloudpickle_xfail),
     ],
 )
 def test_pickle_model(model_type: type, use_cloudpickle: bool):
@@ -133,7 +139,7 @@ def nested_model_factory() -> type:
         (ImportableNestedModel, False),
         (ImportableNestedModel, True),
         # Locally-defined model can only be pickled with cloudpickle.
-        (nested_model_factory(), True),
+        pytest.param(nested_model_factory(), True, marks=cloudpickle_xfail),
     ],
 )
 def test_pickle_nested_model(model_type: type, use_cloudpickle: bool):
@@ -264,7 +270,7 @@ def nested_dataclass_model_factory() -> type:
         (ImportableNestedDataclassModel, False),
         (ImportableNestedDataclassModel, True),
         # Locally-defined model can only be pickled with cloudpickle.
-        (nested_dataclass_model_factory(), True),
+        pytest.param(nested_dataclass_model_factory(), True, marks=cloudpickle_xfail),
     ],
 )
 def test_pickle_dataclass_nested_in_model(model_type: type, use_cloudpickle: bool):
