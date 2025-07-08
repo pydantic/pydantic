@@ -515,12 +515,7 @@ def collect_dataclass_fields(
 
         with ns_resolver.push(base):
             for ann_name, dataclass_field in dataclass_fields.items():
-                if sys.version_info >= (3, 14):
-                    from annotationlib import Format, get_annotations
-
-                    base_anns = get_annotations(base, format=Format.FORWARDREF)
-                else:
-                    base_anns = base.__dict__.get('__annotations__', {})
+                base_anns = _typing_extra.safe_get_annotations(base)
 
                 if ann_name not in base_anns:
                     # `__dataclass_fields__`contains every field, even the ones from base classes.
