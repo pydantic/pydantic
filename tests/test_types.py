@@ -5644,13 +5644,13 @@ def test_base64_out_of_range(field_type, input_data):
     errors = e.value.errors(include_url=False)
     assert len(errors) == 1
     error = errors[0]
-    assert error["ctx"]["error"] in (
-        "Only base64 data is allowed",
-        "Non-base64 digit found",
+    assert error['ctx']['error'] in (
+        'Only base64 data is allowed',
+        'Non-base64 digit found',
     )
-    assert error["loc"] == ("base64_value",)
-    assert error["type"] == "base64_decode"
-    assert error["msg"] in (
+    assert error['loc'] == ('base64_value',)
+    assert error['type'] == 'base64_decode'
+    assert error['msg'] in (
         "Base64 decoding error: 'Only base64 data is allowed'",
         "Base64 decoding error: 'Non-base64 digit found'",
     )
