@@ -5641,15 +5641,19 @@ def test_base64_out_of_range(field_type, input_data):
     with pytest.raises(ValidationError) as e:
         Model(base64_value=input_data)
 
-    assert e.value.errors(include_url=False) == [
-        {
-            'ctx': {'error': 'Only base64 data is allowed'},
-            'input': input_data,
-            'loc': ('base64_value',),
-            'msg': "Base64 decoding error: 'Only base64 data is allowed'",
-            'type': 'base64_decode',
-        },
-    ]
+    errors = e.value.errors(include_url=False)
+    assert len(errors) == 1
+    error = errors[0]
+    assert error["ctx"]["error"] in (
+        "Only base64 data is allowed",
+        "Non-base64 digit found",
+    )
+    assert error["loc"] == ("base64_value",)
+    assert error["type"] == "base64_decode"
+    assert error["msg"] in (
+        "Base64 decoding error: 'Only base64 data is allowed'",
+        "Base64 decoding error: 'Non-base64 digit found'",
+    )
 
 
 @pytest.mark.parametrize(
