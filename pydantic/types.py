@@ -2403,7 +2403,7 @@ class Base64Encoder(EncoderProtocol):
             The decoded data.
         """
         try:
-            return base64.b64decode(data)
+            return base64.b64decode(data, validate=True)
         except ValueError as e:
             raise PydanticCustomError('base64_decode', "Base64 decoding error: '{error}'", {'error': str(e)})
 
