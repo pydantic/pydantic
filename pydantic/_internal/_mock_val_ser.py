@@ -35,7 +35,6 @@ class MockCoreSchema(Mapping[str, Any]):
         self._error_message = error_message
         self._code: PydanticErrorCodes = code
         self._attempt_rebuild = attempt_rebuild
-        self._built_memo: CoreSchema | None = None
 
     def __getitem__(self, key: str) -> Any:
         return self._get_built().__getitem__(key)
@@ -47,25 +46,12 @@ class MockCoreSchema(Mapping[str, Any]):
         return self._get_built().__iter__()
 
     def _get_built(self) -> CoreSchema:
-        if self._built_memo is not None:
-            return self._built_memo
-
         if self._attempt_rebuild:
             schema = self._attempt_rebuild()
             if schema is not None:
-                self._built_memo = schema
                 return schema
+
         raise PydanticUserError(self._error_message, code=self._code)
-
-    def rebuild(self) -> CoreSchema | None:
-        self._built_memo = None
-        if self._attempt_rebuild:
-            schema = self._attempt_rebuild()
-            if schema is not None:
-                return schema
-            else:
-                raise PydanticUserError(self._error_message, code=self._code)
-        return None
 
 
 class MockValSer(Generic[ValSer]):
@@ -98,15 +84,6 @@ class MockValSer(Generic[ValSer]):
         # raise an AttributeError if `item` doesn't exist
         getattr(self._val_or_ser, item)
         raise PydanticUserError(self._error_message, code=self._code)
-
-    def rebuild(self) -> ValSer | None:
-        if self._attempt_rebuild:
-            val_ser = self._attempt_rebuild()
-            if val_ser is not None:
-                return val_ser
-            else:
-                raise PydanticUserError(self._error_message, code=self._code)
-        return None
 
 
 def set_type_adapter_mocks(adapter: TypeAdapter) -> None:
