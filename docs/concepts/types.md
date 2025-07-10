@@ -288,7 +288,7 @@ By leveraging the new [`type` statement](https://typing.readthedocs.io/en/latest
 
     === "Python 3.9 and above"
 
-        ```python
+        ```python {test="skip"}
         from typing import Annotated
 
         from typing_extensions import TypeAliasType
@@ -304,7 +304,7 @@ By leveraging the new [`type` statement](https://typing.readthedocs.io/en/latest
 
     === "Python 3.12 and above (new syntax)"
 
-        ```python {requires="3.12" upgrade="skip" lint="skip"}
+        ```python {requires="3.12" upgrade="skip" lint="skip" test="skip"}
         from typing import Annotated
 
         from pydantic import BaseModel, Field
