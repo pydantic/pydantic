@@ -3,7 +3,6 @@
 from __future__ import annotations as _annotations
 
 import dataclasses
-import sys
 import warnings
 from collections.abc import Mapping
 from copy import copy
@@ -260,12 +259,7 @@ def collect_model_fields(  # noqa: C901
 
     # https://docs.python.org/3/howto/annotations.html#accessing-the-annotations-dict-of-an-object-in-python-3-9-and-older
     # annotations is only used for finding fields in parent classes
-    if sys.version_info >= (3, 14):
-        from annotationlib import Format, get_annotations
-
-        annotations = get_annotations(cls, format=Format.FORWARDREF)
-    else:
-        annotations = cls.__dict__.get('__annotations__', {})
+    annotations = _typing_extra.safe_get_annotations(cls)
 
     fields: dict[str, FieldInfo] = {}
 
