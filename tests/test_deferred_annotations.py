@@ -68,10 +68,11 @@ def test_deferred_annotations_pydantic_dataclass() -> None:
     assert A(a='1').a == 1
 
 
-@pytest.mark.xfail(
-    reason="To support Pydantic's `Field()` function in dataclasses, we directly write to `__annotations__`"
-)
 def test_deferred_annotations_pydantic_dataclass_pydantic_field() -> None:
+    """When initial support for Python 3.14 was added, this failed as support for the Pydantic
+    `Field()` function was implemented by writing directly to `__annotations__`.
+    """
+
     @dataclass
     class A:
         a: Int = Field(default=1)

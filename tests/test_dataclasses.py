@@ -2115,6 +2115,37 @@ def test_dataclasses_inheritance_default_value_is_not_deleted(
     assert Child().a == 1
 
 
+def test_dataclasses_inheritance_bare_class_not_used() -> None:
+    """https://github.com/pydantic/pydantic/issues/12045"""
+
+    class BareClass:
+        a: int = Field(kw_only=True)
+
+    @pydantic.dataclasses.dataclass
+    class DC(BareClass):
+        pass
+
+    assert len(DC.__dataclass_fields__) == 0
+    assert len(DC.__pydantic_fields__) == 0
+
+
+def test_dataclasses_type_override_pydantic_field() -> None:
+    """https://github.com/pydantic/pydantic/issues/12045.
+
+    `B.a` used to be typed as `str`, only if `pydantic.Field()` was being used on `A.a`.
+    """
+
+    @dataclasses.dataclass
+    class A:
+        a: int = Field()
+
+    @pydantic.dataclasses.dataclass
+    class B(A):
+        a: str = dataclasses.field()
+
+    assert B(a='test').a == 'test'
+
+
 def test_dataclass_config_validate_default():
     @pydantic.dataclasses.dataclass
     class Model:
