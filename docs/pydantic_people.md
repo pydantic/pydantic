@@ -1,4 +1,4 @@
-# Pydantic People
+# Pydantic Validation People
 
 Pydantic has an amazing community of contributors, reviewers, and experts that help propel the project forward.
 Here, we celebrate those people and their contributions.
