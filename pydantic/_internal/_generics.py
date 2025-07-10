@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import operator
 import sys
 import types
 import typing
@@ -7,6 +8,7 @@ from collections import ChainMap
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from contextvars import ContextVar
+from functools import reduce
 from itertools import zip_longest
 from types import prepare_class
 from typing import TYPE_CHECKING, Annotated, Any, TypeVar
@@ -20,9 +22,6 @@ from . import _typing_extra
 from ._core_utils import get_type_ref
 from ._forward_ref import PydanticRecursiveRef
 from ._utils import all_identical, is_model_class
-
-if sys.version_info >= (3, 10):
-    from typing import _UnionGenericAlias  # type: ignore[attr-defined]
 
 if TYPE_CHECKING:
     from ..main import BaseModel
@@ -311,7 +310,7 @@ def replace_types(type_: Any, type_map: Mapping[TypeVar, Any] | None) -> Any:
         # PEP-604 syntax (Ex.: list | str) is represented with a types.UnionType object that does not have __getitem__.
         # We also cannot use isinstance() since we have to compare types.
         if sys.version_info >= (3, 10) and origin_type is types.UnionType:
-            return _UnionGenericAlias(origin_type, resolved_type_args)
+            return reduce(operator.or_, resolved_type_args)
         # NotRequired[T] and Required[T] don't support tuple type resolved_type_args, hence the condition below
         return origin_type[resolved_type_args[0] if len(resolved_type_args) == 1 else resolved_type_args]
 

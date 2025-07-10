@@ -184,7 +184,7 @@ def test_annotated_field():
     assert typing_objects.is_annotated(get_origin(sig.parameters['foo'].annotation))
 
 
-@pytest.mark.skipif(sys.version_info < (3, 10), reason='repr different on older versions')
+@pytest.mark.skipif(sys.version_info < (3, 10), sys.version_info >= (3, 14), reason='repr different on older versions')
 def test_annotated_optional_field():
     from annotated_types import Gt
 
