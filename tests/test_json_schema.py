@@ -6958,7 +6958,7 @@ def get_decimal_pattern():
 
 
 @pytest.mark.parametrize('valid_decimal', ['0.1', '0000.1', '11.1', '001.1', '11111111.1', '0.100000', '0.01', '0.11'])
-def test_decimal_pattern_with_only_decimal_places_set(valid_decimal, get_decimal_pattern):
+def test_decimal_pattern_with_only_decimal_places_set(valid_decimal, get_decimal_pattern) -> None:
     decimal_places = 2
     pattern = get_decimal_pattern(decimal_places=decimal_places)
 
@@ -6968,7 +6968,9 @@ def test_decimal_pattern_with_only_decimal_places_set(valid_decimal, get_decimal
 @pytest.mark.parametrize(
     'invalid_decimal', ['0.001', '0000.001', '11.001', '001.001', '11111111.001', '0.00100000', '0.011', '0.111']
 )
-def test_decimal_pattern_reject_invalid_values_with_only_decimal_places_set(invalid_decimal, get_decimal_pattern):
+def test_decimal_pattern_reject_invalid_values_with_only_decimal_places_set(
+    invalid_decimal, get_decimal_pattern
+) -> None:
     decimal_places = 2
     pattern = get_decimal_pattern(decimal_places=decimal_places)
 
@@ -6976,7 +6978,7 @@ def test_decimal_pattern_reject_invalid_values_with_only_decimal_places_set(inva
 
 
 @pytest.mark.parametrize('valid_decimal', ['0.1', '000.1', '0.001000', '0000.001000', '111', '100', '00100', '011.10'])
-def test_decimal_pattern_with_only_max_digit_set(valid_decimal, get_decimal_pattern):
+def test_decimal_pattern_with_only_max_digit_set(valid_decimal, get_decimal_pattern) -> None:
     max_digits = 3
     pattern = get_decimal_pattern(max_digits=max_digits)
 
@@ -6986,7 +6988,7 @@ def test_decimal_pattern_with_only_max_digit_set(valid_decimal, get_decimal_patt
 @pytest.mark.parametrize(
     'valid_decimal', ['0.0001', '111.1', '0.0001000', '0001.001000', '1111', '1000', '001000', '011.110']
 )
-def test_decimal_pattern_reject_invalid_values_with_only_max_digit_set(valid_decimal, get_decimal_pattern):
+def test_decimal_pattern_reject_invalid_values_with_only_max_digit_set(valid_decimal, get_decimal_pattern) -> None:
     max_digits = 3
     pattern = get_decimal_pattern(max_digits=max_digits)
 
@@ -6996,14 +6998,16 @@ def test_decimal_pattern_reject_invalid_values_with_only_max_digit_set(valid_dec
 @pytest.mark.parametrize(
     'valid_decimal', ['11111111', '1111.11111', '0.00000001', '11.', '.11', '000', '0', '-.0', '-.1', '-1.', '-0.']
 )
-def test_decimal_pattern_with_decimal_places_max_digits_unset(valid_decimal, get_decimal_pattern):
+def test_decimal_pattern_with_decimal_places_max_digits_unset(valid_decimal, get_decimal_pattern) -> None:
     pattern = get_decimal_pattern()
 
     assert re.fullmatch(pattern, valid_decimal) is not None
 
 
 @pytest.mark.parametrize('invalid_decimal', ['.', '-.', '..', '1.1.1', '0.0.0', '1..1', '-', '--'])
-def test_decimal_pattern_reject_invalid_with_decimal_places_max_digits_unset(invalid_decimal, get_decimal_pattern):
+def test_decimal_pattern_reject_invalid_with_decimal_places_max_digits_unset(
+    invalid_decimal, get_decimal_pattern
+) -> None:
     pattern = get_decimal_pattern()
 
     assert re.fullmatch(pattern, invalid_decimal) is None
@@ -7012,7 +7016,7 @@ def test_decimal_pattern_reject_invalid_with_decimal_places_max_digits_unset(inv
 @pytest.mark.parametrize(
     'valid_decimal', ['10.01', '11.11', '010.010', '011.110', '11', '0011', '001.100', '.1', '.11000', '00011.']
 )
-def test_decimal_pattern_with_decimal_places_max_digits_set(valid_decimal, get_decimal_pattern):
+def test_decimal_pattern_with_decimal_places_max_digits_set(valid_decimal, get_decimal_pattern) -> None:
     pattern = get_decimal_pattern(max_digits=4, decimal_places=2)
 
     assert re.fullmatch(pattern, valid_decimal) is not None
@@ -7022,21 +7026,25 @@ def test_decimal_pattern_with_decimal_places_max_digits_set(valid_decimal, get_d
     'invalid_decimal',
     ['10.001', '111', '0100.0010', '011.0110', '111.1', '1111', '001.11100', '.111', '.111000', '000111.', '1100'],
 )
-def test_decimal_pattern_reject_invalid_with_decimal_places_max_digits_set(invalid_decimal, get_decimal_pattern):
+def test_decimal_pattern_reject_invalid_with_decimal_places_max_digits_set(
+    invalid_decimal, get_decimal_pattern
+) -> None:
     pattern = get_decimal_pattern(max_digits=4, decimal_places=2)
 
     assert re.fullmatch(pattern, invalid_decimal) is None
 
 
 @pytest.mark.parametrize('valid_value', ['0.34', '0000.2', '0.3333', '000.3333000', '+000.000100', '0.1'])
-def test_decimal_pattern_with_max_digits_and_decimal_places_equal(valid_value, get_decimal_pattern):
+def test_decimal_pattern_with_max_digits_and_decimal_places_equal(valid_value, get_decimal_pattern) -> None:
     pattern = get_decimal_pattern(max_digits=4, decimal_places=4)
 
     assert re.fullmatch(pattern, valid_value) is not None
 
 
 @pytest.mark.parametrize('invalid_value', ['120.34', '1.222', '0.33333', '0001.1', '0010.00100', '1.'])
-def test_decimal_pattern_reject_invalid_with_max_digits_and_decimal_places_equal(invalid_value, get_decimal_pattern):
+def test_decimal_pattern_reject_invalid_with_max_digits_and_decimal_places_equal(
+    invalid_value, get_decimal_pattern
+) -> None:
     pattern = get_decimal_pattern(max_digits=4, decimal_places=4)
 
     assert re.fullmatch(pattern, invalid_value) is None
@@ -7045,6 +7053,6 @@ def test_decimal_pattern_reject_invalid_with_max_digits_and_decimal_places_equal
 @pytest.mark.parametrize('invalid_decimal', ['', ' ', '   ', '.', '..', '...', '+', '-', '++', '--', 'a', 'a.1', '1.a'])
 def test_decimal_pattern_reject_invalid_not_numerical_values_with_decimal_places_max_digits_set(
     invalid_decimal, get_decimal_pattern
-):
+) -> None:
     pattern = get_decimal_pattern()
     assert re.fullmatch(pattern, invalid_decimal) is None
