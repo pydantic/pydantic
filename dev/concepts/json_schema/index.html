@@ -3847,7 +3847,13 @@ and <a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic
 <span class="sd">{</span>
 <span class="sd">    &#39;properties&#39;: {</span>
 <span class="sd">        &#39;a&#39;: {</span>
-<span class="sd">            &#39;anyOf&#39;: [{&#39;type&#39;: &#39;number&#39;}, {&#39;type&#39;: &#39;string&#39;}],</span>
+<span class="sd">            &#39;anyOf&#39;: [</span>
+<span class="sd">                {&#39;type&#39;: &#39;number&#39;},</span>
+<span class="sd">                {</span>
+<span class="sd">                    &#39;pattern&#39;: &#39;^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$&#39;,</span>
+<span class="sd">                    &#39;type&#39;: &#39;string&#39;,</span>
+<span class="sd">                },</span>
+<span class="sd">            ],</span>
 <span class="sd">            &#39;default&#39;: &#39;12.34&#39;,</span>
 <span class="sd">            &#39;title&#39;: &#39;A&#39;,</span>
 <span class="sd">        }</span>
@@ -3860,7 +3866,14 @@ and <a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic
 <span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="o">.</span><span class="n">model_json_schema</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;serialization&#39;</span><span class="p">))</span>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">{</span>
-<span class="sd">    &#39;properties&#39;: {&#39;a&#39;: {&#39;default&#39;: &#39;12.34&#39;, &#39;title&#39;: &#39;A&#39;, &#39;type&#39;: &#39;string&#39;}},</span>
+<span class="sd">    &#39;properties&#39;: {</span>
+<span class="sd">        &#39;a&#39;: {</span>
+<span class="sd">            &#39;default&#39;: &#39;12.34&#39;,</span>
+<span class="sd">            &#39;pattern&#39;: &#39;^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$&#39;,</span>
+<span class="sd">            &#39;title&#39;: &#39;A&#39;,</span>
+<span class="sd">            &#39;type&#39;: &#39;string&#39;,</span>
+<span class="sd">        }</span>
+<span class="sd">    },</span>
 <span class="sd">    &#39;title&#39;: &#39;Model&#39;,</span>
 <span class="sd">    &#39;type&#39;: &#39;object&#39;,</span>
 <span class="sd">}</span>
