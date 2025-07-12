@@ -55,6 +55,7 @@ except ImportError:
         'postgresql+psycopg2cffi://user:pass@localhost:5432/app',
         'postgresql+py-postgresql://user:pass@localhost:5432/app',
         'postgresql+pygresql://user:pass@localhost:5432/app',
+        'postgresql+psycopg_async://user:pass@localhost:5432/app',
         'mysql://user:pass@localhost:3306/app',
         'mysql+mysqlconnector://user:pass@localhost:3306/app',
         'mysql+aiomysql://user:pass@localhost:3306/app',
@@ -607,7 +608,7 @@ def test_snowflake_dsns(dsn):
                 'msg': (
                     "URL scheme should be 'postgres', 'postgresql', 'postgresql+asyncpg', 'postgresql+pg8000', "
                     "'postgresql+psycopg', 'postgresql+psycopg2', 'postgresql+psycopg2cffi', "
-                    "'postgresql+py-postgresql' or 'postgresql+pygresql'"
+                    "'postgresql+py-postgresql', 'postgresql+pygresql' or 'postgresql+psycopg_async'"
                 ),
                 'input': 'http://example.org',
             },
