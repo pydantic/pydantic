@@ -495,6 +495,7 @@ class PostgresDsn(MultiHostDsn):
         'postgresql+psycopg2cffi',
         'postgresql+py-postgresql',
         'postgresql+pygresql',
+        'postgresql+psycopg_async',
     }
     user_required = True
 
