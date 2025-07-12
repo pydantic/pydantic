@@ -759,6 +759,7 @@ class PostgresDsn(_BaseMultiHostUrl):
             'postgresql+psycopg2cffi',
             'postgresql+py-postgresql',
             'postgresql+pygresql',
+            'postgresql+psycopg_async',
         ],
     )
 
