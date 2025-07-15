@@ -1,4 +1,4 @@
-# Why use Pydantic?
+# Why use Pydantic Validation?
 
 Today, Pydantic is downloaded <span id="download-count">many</span> times a month and used by some of the largest and most recognisable organisations in the world.
 
