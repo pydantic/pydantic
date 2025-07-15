@@ -1,4 +1,4 @@
-# Pydantic
+# Pydantic Validation
 
 > Data validation using Python type hints
 
