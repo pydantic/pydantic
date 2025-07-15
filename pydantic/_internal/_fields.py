@@ -259,7 +259,8 @@ def collect_model_fields(  # noqa: C901
 
     # https://docs.python.org/3/howto/annotations.html#accessing-the-annotations-dict-of-an-object-in-python-3-9-and-older
     # annotations is only used for finding fields in parent classes
-    annotations = cls.__dict__.get('__annotations__', {})
+    annotations = _typing_extra.safe_get_annotations(cls)
+
     fields: dict[str, FieldInfo] = {}
 
     class_vars: set[str] = set()
@@ -508,7 +509,9 @@ def collect_dataclass_fields(
 
         with ns_resolver.push(base):
             for ann_name, dataclass_field in dataclass_fields.items():
-                if ann_name not in base.__dict__.get('__annotations__', {}):
+                base_anns = _typing_extra.safe_get_annotations(base)
+
+                if ann_name not in base_anns:
                     # `__dataclass_fields__`contains every field, even the ones from base classes.
                     # Only collect the ones defined on `base`.
                     continue

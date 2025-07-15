@@ -1,4 +1,4 @@
-# Getting help with Pydantic Validation
+# Getting help with Pydantic
 
 If you need help getting started with Pydantic or with advanced usage, the following sources may be useful.
 
