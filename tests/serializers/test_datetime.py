@@ -113,3 +113,187 @@ def test_date_datetime_union():
     assert v.to_python(datetime(2022, 12, 2, 1)) == datetime(2022, 12, 2, 1)
     assert v.to_python(datetime(2022, 12, 2, 1), mode='json') == '2022-12-02T01:00:00'
     assert v.to_json(datetime(2022, 12, 2, 1)) == b'"2022-12-02T01:00:00"'
+
+
+@pytest.mark.parametrize(
+    'dt,expected_to_python,expected_to_json,expected_to_python_dict,expected_to_json_dict,mode',
+    [
+        (
+            datetime(2024, 1, 1, 0, 0, 0),
+            '2024-01-01T00:00:00',
+            b'"2024-01-01T00:00:00"',
+            {'2024-01-01T00:00:00': 'foo'},
+            b'{"2024-01-01T00:00:00":"foo"}',
+            'iso8601',
+        ),
+        (
+            datetime(2024, 1, 1, 0, 0, 0),
+            1704067200.0,
+            b'1704067200.0',
+            {'1704067200': 'foo'},
+            b'{"1704067200":"foo"}',
+            'seconds',
+        ),
+        (
+            datetime(2024, 1, 1, 0, 0, 0),
+            1704067200000.0,
+            b'1704067200000.0',
+            {'1704067200000': 'foo'},
+            b'{"1704067200000":"foo"}',
+            'milliseconds',
+        ),
+        (
+            datetime(2024, 1, 1, 1, 1, 1, 23),
+            1704070861.000023,
+            b'1704070861.000023',
+            {'1704070861.000023': 'foo'},
+            b'{"1704070861.000023":"foo"}',
+            'seconds',
+        ),
+        (
+            datetime(2024, 1, 1, 1, 1, 1, 23),
+            1704070861000.023,
+            b'1704070861000.023',
+            {'1704070861000.023': 'foo'},
+            b'{"1704070861000.023":"foo"}',
+            'milliseconds',
+        ),
+    ],
+)
+def test_config_datetime(
+    dt: datetime, expected_to_python, expected_to_json, expected_to_python_dict, expected_to_json_dict, mode
+):
+    s = SchemaSerializer(core_schema.datetime_schema(), config={'ser_json_temporal': mode})
+    assert s.to_python(dt) == dt
+    assert s.to_python(dt, mode='json') == expected_to_python
+    assert s.to_json(dt) == expected_to_json
+
+    assert s.to_python({dt: 'foo'}) == {dt: 'foo'}
+    with pytest.warns(
+        UserWarning,
+        match=(
+            r'Expected `datetime` - serialized value may not be as expected '
+            r"\[input_value=\{datetime\.datetime\([^)]*\): 'foo'\}, input_type=dict\]"
+        ),
+    ):
+        assert s.to_python({dt: 'foo'}, mode='json') == expected_to_python_dict
+    with pytest.warns(
+        UserWarning,
+        match=(
+            r'Expected `datetime` - serialized value may not be as expected '
+            r"\[input_value=\{datetime\.datetime\([^)]*\): 'foo'\}, input_type=dict\]"
+        ),
+    ):
+        assert s.to_json({dt: 'foo'}) == expected_to_json_dict
+
+
+@pytest.mark.parametrize(
+    'dt,expected_to_python,expected_to_json,expected_to_python_dict,expected_to_json_dict,mode',
+    [
+        (
+            date(2024, 1, 1),
+            '2024-01-01',
+            b'"2024-01-01"',
+            {'2024-01-01': 'foo'},
+            b'{"2024-01-01":"foo"}',
+            'iso8601',
+        ),
+        (
+            date(2024, 1, 1),
+            1704067200.0,
+            b'1704067200.0',
+            {'1704067200': 'foo'},
+            b'{"1704067200":"foo"}',
+            'seconds',
+        ),
+        (
+            date(2024, 1, 1),
+            1704067200000.0,
+            b'1704067200000.0',
+            {'1704067200000': 'foo'},
+            b'{"1704067200000":"foo"}',
+            'milliseconds',
+        ),
+    ],
+)
+def test_config_date(
+    dt: date, expected_to_python, expected_to_json, expected_to_python_dict, expected_to_json_dict, mode
+):
+    s = SchemaSerializer(core_schema.date_schema(), config={'ser_json_temporal': mode})
+    assert s.to_python(dt) == dt
+    assert s.to_python(dt, mode='json') == expected_to_python
+    assert s.to_json(dt) == expected_to_json
+
+    assert s.to_python({dt: 'foo'}) == {dt: 'foo'}
+    with pytest.warns(
+        UserWarning,
+        match=(
+            r'Expected `date` - serialized value may not be as expected '
+            r"\[input_value=\{datetime\.date\([^)]*\): 'foo'\}, input_type=dict\]"
+        ),
+    ):
+        assert s.to_python({dt: 'foo'}, mode='json') == expected_to_python_dict
+    with pytest.warns(
+        UserWarning,
+        match=(
+            r'Expected `date` - serialized value may not be as expected '
+            r"\[input_value=\{datetime\.date\([^)]*\): 'foo'\}, input_type=dict\]"
+        ),
+    ):
+        assert s.to_json({dt: 'foo'}) == expected_to_json_dict
+
+
+@pytest.mark.parametrize(
+    't,expected_to_python,expected_to_json,expected_to_python_dict,expected_to_json_dict,mode',
+    [
+        (
+            time(3, 14, 1, 59263),
+            '03:14:01.059263',
+            b'"03:14:01.059263"',
+            {'03:14:01.059263': 'foo'},
+            b'{"03:14:01.059263":"foo"}',
+            'iso8601',
+        ),
+        (
+            time(3, 14, 1, 59263),
+            11641.059263,
+            b'11641.059263',
+            {'11641.059263': 'foo'},
+            b'{"11641.059263":"foo"}',
+            'seconds',
+        ),
+        (
+            time(3, 14, 1, 59263),
+            11641059.263,
+            b'11641059.263',
+            {'11641059.263': 'foo'},
+            b'{"11641059.263":"foo"}',
+            'milliseconds',
+        ),
+    ],
+)
+def test_config_time(
+    t: date, expected_to_python, expected_to_json, expected_to_python_dict, expected_to_json_dict, mode
+):
+    s = SchemaSerializer(core_schema.time_schema(), config={'ser_json_temporal': mode})
+    assert s.to_python(t) == t
+    assert s.to_python(t, mode='json') == expected_to_python
+    assert s.to_json(t) == expected_to_json
+
+    assert s.to_python({t: 'foo'}) == {t: 'foo'}
+    with pytest.warns(
+        UserWarning,
+        match=(
+            r'Expected `time` - serialized value may not be as expected '
+            r"\[input_value=\{datetime\.time\([^)]*\): 'foo'\}, input_type=dict\]"
+        ),
+    ):
+        assert s.to_python({t: 'foo'}, mode='json') == expected_to_python_dict
+    with pytest.warns(
+        UserWarning,
+        match=(
+            r'Expected `time` - serialized value may not be as expected '
+            r"\[input_value=\{datetime\.time\([^)]*\): 'foo'\}, input_type=dict\]"
+        ),
+    ):
+        assert s.to_json({t: 'foo'}) == expected_to_json_dict
