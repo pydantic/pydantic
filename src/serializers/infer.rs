@@ -176,23 +176,23 @@ pub(crate) fn infer_to_python_known(
                 })?
             }
             ObType::Datetime => {
-                let iso_dt = super::type_serializers::datetime_etc::datetime_to_string(value.downcast()?)?;
-                iso_dt.into_py_any(py)?
+                let datetime = extra
+                    .config
+                    .temporal_mode
+                    .datetime_to_json(value.py(), value.downcast()?)?;
+                datetime.into_py_any(py)?
             }
             ObType::Date => {
-                let iso_date = super::type_serializers::datetime_etc::date_to_string(value.downcast()?)?;
-                iso_date.into_py_any(py)?
+                let date = extra.config.temporal_mode.date_to_json(value.py(), value.downcast()?)?;
+                date.into_py_any(py)?
             }
             ObType::Time => {
-                let iso_time = super::type_serializers::datetime_etc::time_to_string(value.downcast()?)?;
-                iso_time.into_py_any(py)?
+                let time = extra.config.temporal_mode.time_to_json(value.py(), value.downcast()?)?;
+                time.into_py_any(py)?
             }
             ObType::Timedelta => {
                 let either_delta = EitherTimedelta::try_from(value)?;
-                extra
-                    .config
-                    .timedelta_mode
-                    .either_delta_to_json(value.py(), either_delta)?
+                extra.config.temporal_mode.timedelta_to_json(value.py(), either_delta)?
             }
             ObType::Url => {
                 let py_url: PyUrl = value.extract()?;
@@ -458,26 +458,20 @@ pub(crate) fn infer_serialize_known<S: Serializer>(
         ObType::Set => serialize_seq!(PySet),
         ObType::Frozenset => serialize_seq!(PyFrozenSet),
         ObType::Datetime => {
-            let py_dt = value.downcast().map_err(py_err_se_err)?;
-            let iso_dt = super::type_serializers::datetime_etc::datetime_to_string(py_dt).map_err(py_err_se_err)?;
-            serializer.serialize_str(&iso_dt)
+            let py_datetime = value.downcast().map_err(py_err_se_err)?;
+            extra.config.temporal_mode.datetime_serialize(py_datetime, serializer)
         }
         ObType::Date => {
             let py_date = value.downcast().map_err(py_err_se_err)?;
-            let iso_date = super::type_serializers::datetime_etc::date_to_string(py_date).map_err(py_err_se_err)?;
-            serializer.serialize_str(&iso_date)
+            extra.config.temporal_mode.date_serialize(py_date, serializer)
         }
         ObType::Time => {
             let py_time = value.downcast().map_err(py_err_se_err)?;
-            let iso_time = super::type_serializers::datetime_etc::time_to_string(py_time).map_err(py_err_se_err)?;
-            serializer.serialize_str(&iso_time)
+            extra.config.temporal_mode.time_serialize(py_time, serializer)
         }
         ObType::Timedelta => {
             let either_delta = EitherTimedelta::try_from(value).map_err(py_err_se_err)?;
-            extra
-                .config
-                .timedelta_mode
-                .timedelta_serialize(value.py(), either_delta, serializer)
+            extra.config.temporal_mode.timedelta_serialize(either_delta, serializer)
         }
         ObType::Url => {
             let py_url: PyUrl = value.extract().map_err(py_err_se_err)?;
@@ -635,25 +629,16 @@ pub(crate) fn infer_json_key_known<'a>(
             })
             .map(|cow| Cow::Owned(cow.into_owned()))
         }
-        ObType::Datetime => {
-            let iso_dt = super::type_serializers::datetime_etc::datetime_to_string(key.downcast()?)?;
-            Ok(Cow::Owned(iso_dt))
-        }
-        ObType::Date => {
-            let iso_date = super::type_serializers::datetime_etc::date_to_string(key.downcast()?)?;
-            Ok(Cow::Owned(iso_date))
-        }
-        ObType::Time => {
-            let iso_time = super::type_serializers::datetime_etc::time_to_string(key.downcast()?)?;
-            Ok(Cow::Owned(iso_time))
-        }
+        ObType::Datetime => extra.config.temporal_mode.datetime_json_key(key.downcast()?),
+        ObType::Date => extra.config.temporal_mode.date_json_key(key.downcast()?),
+        ObType::Time => extra.config.temporal_mode.time_json_key(key.downcast()?),
         ObType::Uuid => {
             let uuid = super::type_serializers::uuid::uuid_to_string(key)?;
             Ok(Cow::Owned(uuid))
         }
         ObType::Timedelta => {
             let either_delta = EitherTimedelta::try_from(key)?;
-            extra.config.timedelta_mode.json_key(key.py(), either_delta)
+            extra.config.temporal_mode.timedelta_json_key(&either_delta)
         }
         ObType::Url => {
             let py_url: PyUrl = key.extract()?;
