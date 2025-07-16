@@ -52,3 +52,299 @@ def test_pandas():
     assert v.to_python(d) == d
     assert v.to_python(d, mode='json') == 'PT2H'
     assert v.to_json(d) == b'"PT2H"'
+
+
+@pytest.mark.parametrize(
+    'td,expected_to_python,expected_to_json,expected_to_python_dict,expected_to_json_dict,mode',
+    [
+        (timedelta(hours=2), 7200000.0, b'7200000.0', {'7200000': 'foo'}, b'{"7200000":"foo"}', 'milliseconds'),
+        (
+            timedelta(hours=-2),
+            -7200000.0,
+            b'-7200000.0',
+            {'-7200000': 'foo'},
+            b'{"-7200000":"foo"}',
+            'milliseconds',
+        ),
+        (timedelta(seconds=1.5), 1500.0, b'1500.0', {'1500': 'foo'}, b'{"1500":"foo"}', 'milliseconds'),
+        (timedelta(seconds=-1.5), -1500.0, b'-1500.0', {'-1500': 'foo'}, b'{"-1500":"foo"}', 'milliseconds'),
+        (timedelta(microseconds=1), 0.001, b'0.001', {'0.001': 'foo'}, b'{"0.001":"foo"}', 'milliseconds'),
+        (
+            timedelta(microseconds=-1),
+            -0.001,
+            b'-0.001',
+            {'-0.001': 'foo'},
+            b'{"-0.001":"foo"}',
+            'milliseconds',
+        ),
+        (
+            timedelta(days=1),
+            86400000.0,
+            b'86400000.0',
+            {'86400000': 'foo'},
+            b'{"86400000":"foo"}',
+            'milliseconds',
+        ),
+        (
+            timedelta(days=-1),
+            -86400000.0,
+            b'-86400000.0',
+            {'-86400000': 'foo'},
+            b'{"-86400000":"foo"}',
+            'milliseconds',
+        ),
+        (
+            timedelta(days=1, seconds=1),
+            86401000.0,
+            b'86401000.0',
+            {'86401000': 'foo'},
+            b'{"86401000":"foo"}',
+            'milliseconds',
+        ),
+        (
+            timedelta(days=-1, seconds=-1),
+            -86401000.0,
+            b'-86401000.0',
+            {'-86401000': 'foo'},
+            b'{"-86401000":"foo"}',
+            'milliseconds',
+        ),
+        (
+            timedelta(days=1, seconds=-1),
+            86399000.0,
+            b'86399000.0',
+            {'86399000': 'foo'},
+            b'{"86399000":"foo"}',
+            'milliseconds',
+        ),
+        (
+            timedelta(days=1, seconds=1, microseconds=1),
+            86401000.001,
+            b'86401000.001',
+            {'86401000.001': 'foo'},
+            b'{"86401000.001":"foo"}',
+            'milliseconds',
+        ),
+        (
+            timedelta(days=-1, seconds=-1, microseconds=-1),
+            -86401000.001,
+            b'-86401000.001',
+            {'-86401000.001': 'foo'},
+            b'{"-86401000.001":"foo"}',
+            'milliseconds',
+        ),
+        (timedelta(hours=2), 7200.0, b'7200.0', {'7200': 'foo'}, b'{"7200":"foo"}', 'seconds'),
+        (timedelta(hours=-2), -7200.0, b'-7200.0', {'-7200': 'foo'}, b'{"-7200":"foo"}', 'seconds'),
+        (timedelta(seconds=1.5), 1.5, b'1.5', {'1.5': 'foo'}, b'{"1.5":"foo"}', 'seconds'),
+        (timedelta(seconds=-1.5), -1.5, b'-1.5', {'-1.5': 'foo'}, b'{"-1.5":"foo"}', 'seconds'),
+        (timedelta(microseconds=1), 1e-6, b'1e-6', {'0.000001': 'foo'}, b'{"0.000001":"foo"}', 'seconds'),
+        (
+            timedelta(microseconds=-1),
+            -1e-6,
+            b'-1e-6',
+            {'-0.000001': 'foo'},
+            b'{"-0.000001":"foo"}',
+            'seconds',
+        ),
+        (timedelta(days=1), 86400.0, b'86400.0', {'86400': 'foo'}, b'{"86400":"foo"}', 'seconds'),
+        (timedelta(days=-1), -86400.0, b'-86400.0', {'-86400': 'foo'}, b'{"-86400":"foo"}', 'seconds'),
+        (timedelta(days=1, seconds=1), 86401.0, b'86401.0', {'86401': 'foo'}, b'{"86401":"foo"}', 'seconds'),
+        (
+            timedelta(days=-1, seconds=-1),
+            -86401.0,
+            b'-86401.0',
+            {'-86401': 'foo'},
+            b'{"-86401":"foo"}',
+            'seconds',
+        ),
+        (timedelta(days=1, seconds=-1), 86399.0, b'86399.0', {'86399': 'foo'}, b'{"86399":"foo"}', 'seconds'),
+        (
+            timedelta(days=1, seconds=1, microseconds=1),
+            86401.000001,
+            b'86401.000001',
+            {'86401.000001': 'foo'},
+            b'{"86401.000001":"foo"}',
+            'seconds',
+        ),
+        (
+            timedelta(days=-1, seconds=-1, microseconds=-1),
+            -86401.000001,
+            b'-86401.000001',
+            {'-86401.000001': 'foo'},
+            b'{"-86401.000001":"foo"}',
+            'seconds',
+        ),
+    ],
+)
+def test_config_timedelta(
+    td: timedelta, expected_to_python, expected_to_json, expected_to_python_dict, expected_to_json_dict, mode
+):
+    s = SchemaSerializer(core_schema.timedelta_schema(), config={'ser_json_temporal': mode})
+    assert s.to_python(td) == td
+    assert s.to_python(td, mode='json') == expected_to_python
+    assert s.to_json(td) == expected_to_json
+    assert s.to_python({td: 'foo'}) == {td: 'foo'}
+    with pytest.warns(UserWarning):
+        assert s.to_python({td: 'foo'}, mode='json') == expected_to_python_dict
+    with pytest.warns(
+        UserWarning,
+    ):
+        assert s.to_json({td: 'foo'}) == expected_to_json_dict
+
+
+@pytest.mark.parametrize(
+    'td,expected_to_python,expected_to_json,expected_to_python_dict,expected_to_json_dict,temporal_mode',
+    [
+        (timedelta(hours=2), 7200000.0, b'7200000.0', {'7200000': 'foo'}, b'{"7200000":"foo"}', 'milliseconds'),
+        (
+            timedelta(hours=-2),
+            -7200000.0,
+            b'-7200000.0',
+            {'-7200000': 'foo'},
+            b'{"-7200000":"foo"}',
+            'milliseconds',
+        ),
+        (timedelta(seconds=1.5), 1500.0, b'1500.0', {'1500': 'foo'}, b'{"1500":"foo"}', 'milliseconds'),
+        (timedelta(seconds=-1.5), -1500.0, b'-1500.0', {'-1500': 'foo'}, b'{"-1500":"foo"}', 'milliseconds'),
+        (timedelta(microseconds=1), 0.001, b'0.001', {'0.001': 'foo'}, b'{"0.001":"foo"}', 'milliseconds'),
+        (
+            timedelta(microseconds=-1),
+            -0.001,
+            b'-0.001',
+            {'-0.001': 'foo'},
+            b'{"-0.001":"foo"}',
+            'milliseconds',
+        ),
+        (
+            timedelta(days=1),
+            86400000.0,
+            b'86400000.0',
+            {'86400000': 'foo'},
+            b'{"86400000":"foo"}',
+            'milliseconds',
+        ),
+        (
+            timedelta(days=-1),
+            -86400000.0,
+            b'-86400000.0',
+            {'-86400000': 'foo'},
+            b'{"-86400000":"foo"}',
+            'milliseconds',
+        ),
+        (
+            timedelta(days=1, seconds=1),
+            86401000.0,
+            b'86401000.0',
+            {'86401000': 'foo'},
+            b'{"86401000":"foo"}',
+            'milliseconds',
+        ),
+        (
+            timedelta(days=-1, seconds=-1),
+            -86401000.0,
+            b'-86401000.0',
+            {'-86401000': 'foo'},
+            b'{"-86401000":"foo"}',
+            'milliseconds',
+        ),
+        (
+            timedelta(days=1, seconds=-1),
+            86399000.0,
+            b'86399000.0',
+            {'86399000': 'foo'},
+            b'{"86399000":"foo"}',
+            'milliseconds',
+        ),
+        (
+            timedelta(days=1, seconds=1, microseconds=1),
+            86401000.001,
+            b'86401000.001',
+            {'86401000.001': 'foo'},
+            b'{"86401000.001":"foo"}',
+            'milliseconds',
+        ),
+        (
+            timedelta(days=-1, seconds=-1, microseconds=-1),
+            -86401000.001,
+            b'-86401000.001',
+            {'-86401000.001': 'foo'},
+            b'{"-86401000.001":"foo"}',
+            'milliseconds',
+        ),
+        (timedelta(hours=2), 7200.0, b'7200.0', {'7200': 'foo'}, b'{"7200":"foo"}', 'seconds'),
+        (timedelta(hours=-2), -7200.0, b'-7200.0', {'-7200': 'foo'}, b'{"-7200":"foo"}', 'seconds'),
+        (timedelta(seconds=1.5), 1.5, b'1.5', {'1.5': 'foo'}, b'{"1.5":"foo"}', 'seconds'),
+        (timedelta(seconds=-1.5), -1.5, b'-1.5', {'-1.5': 'foo'}, b'{"-1.5":"foo"}', 'seconds'),
+        (timedelta(microseconds=1), 1e-6, b'1e-6', {'0.000001': 'foo'}, b'{"0.000001":"foo"}', 'seconds'),
+        (
+            timedelta(microseconds=-1),
+            -1e-6,
+            b'-1e-6',
+            {'-0.000001': 'foo'},
+            b'{"-0.000001":"foo"}',
+            'seconds',
+        ),
+        (timedelta(days=1), 86400.0, b'86400.0', {'86400': 'foo'}, b'{"86400":"foo"}', 'seconds'),
+        (timedelta(days=-1), -86400.0, b'-86400.0', {'-86400': 'foo'}, b'{"-86400":"foo"}', 'seconds'),
+        (timedelta(days=1, seconds=1), 86401.0, b'86401.0', {'86401': 'foo'}, b'{"86401":"foo"}', 'seconds'),
+        (
+            timedelta(days=-1, seconds=-1),
+            -86401.0,
+            b'-86401.0',
+            {'-86401': 'foo'},
+            b'{"-86401":"foo"}',
+            'seconds',
+        ),
+        (timedelta(days=1, seconds=-1), 86399.0, b'86399.0', {'86399': 'foo'}, b'{"86399":"foo"}', 'seconds'),
+        (
+            timedelta(days=1, seconds=1, microseconds=1),
+            86401.000001,
+            b'86401.000001',
+            {'86401.000001': 'foo'},
+            b'{"86401.000001":"foo"}',
+            'seconds',
+        ),
+        (
+            timedelta(days=-1, seconds=-1, microseconds=-1),
+            -86401.000001,
+            b'-86401.000001',
+            {'-86401.000001': 'foo'},
+            b'{"-86401.000001":"foo"}',
+            'seconds',
+        ),
+    ],
+)
+@pytest.mark.parametrize('timedelta_mode', ['iso8601', 'float'])
+def test_config_timedelta_timedelta_ser_flag_prioritised(
+    td: timedelta,
+    expected_to_python,
+    expected_to_json,
+    expected_to_python_dict,
+    expected_to_json_dict,
+    temporal_mode,
+    timedelta_mode,
+):
+    s = SchemaSerializer(
+        core_schema.timedelta_schema(),
+        config={'ser_json_temporal': temporal_mode, 'ser_json_timedelta': timedelta_mode},
+    )
+    assert s.to_python(td) == td
+    assert s.to_python(td, mode='json') == expected_to_python
+    assert s.to_python({td: 'foo'}) == {td: 'foo'}
+
+    with pytest.warns(
+        UserWarning,
+        match=(
+            r'Expected `timedelta` - serialized value may not be as expected '
+            r"\[input_value=\{datetime\.timedelta\([^)]*\): 'foo'\}, input_type=dict\]"
+        ),
+    ):
+        assert s.to_python({td: 'foo'}, mode='json') == expected_to_python_dict
+    with pytest.warns(
+        UserWarning,
+        match=(
+            r'Expected `timedelta` - serialized value may not be as expected '
+            r"\[input_value=\{datetime\.timedelta\([^)]*\): 'foo'\}, input_type=dict\]"
+        ),
+    ):
+        assert s.to_json({td: 'foo'}) == expected_to_json_dict

@@ -402,6 +402,7 @@ def to_json(
     exclude_none: bool = False,
     round_trip: bool = False,
     timedelta_mode: Literal['iso8601', 'float'] = 'iso8601',
+    temporal_mode: Literal['iso8601', 'seconds', 'milliseconds'] = 'iso8601',
     bytes_mode: Literal['utf8', 'base64', 'hex'] = 'utf8',
     inf_nan_mode: Literal['null', 'constants', 'strings'] = 'constants',
     serialize_unknown: bool = False,
@@ -425,6 +426,9 @@ def to_json(
         exclude_none: Whether to exclude fields that have a value of `None`.
         round_trip: Whether to enable serialization and validation round-trip support.
         timedelta_mode: How to serialize `timedelta` objects, either `'iso8601'` or `'float'`.
+        temporal_mode: How to serialize datetime-like objects (`datetime`, `date`, `time`), either `'iso8601'`, `'seconds'`, or `'milliseconds'`.
+            `iso8601` returns an ISO 8601 string; `seconds` returns the Unix timestamp in seconds as a float; `milliseconds` returns the Unix timestamp in milliseconds as a float.
+
         bytes_mode: How to serialize `bytes` objects, either `'utf8'`, `'base64'`, or `'hex'`.
         inf_nan_mode: How to serialize `Infinity`, `-Infinity` and `NaN` values, either `'null'`, `'constants'`, or `'strings'`.
         serialize_unknown: Attempt to serialize unknown types, `str(value)` will be used, if that fails
@@ -483,6 +487,7 @@ def to_jsonable_python(
     exclude_none: bool = False,
     round_trip: bool = False,
     timedelta_mode: Literal['iso8601', 'float'] = 'iso8601',
+    temporal_mode: Literal['iso8601', 'seconds', 'milliseconds'] = 'iso8601',
     bytes_mode: Literal['utf8', 'base64', 'hex'] = 'utf8',
     inf_nan_mode: Literal['null', 'constants', 'strings'] = 'constants',
     serialize_unknown: bool = False,
@@ -504,6 +509,9 @@ def to_jsonable_python(
         exclude_none: Whether to exclude fields that have a value of `None`.
         round_trip: Whether to enable serialization and validation round-trip support.
         timedelta_mode: How to serialize `timedelta` objects, either `'iso8601'` or `'float'`.
+        temporal_mode: How to serialize datetime-like objects (`datetime`, `date`, `time`), either `'iso8601'`, `'seconds'`, or `'milliseconds'`.
+            `iso8601` returns an ISO 8601 string; `seconds` returns the Unix timestamp in seconds as a float; `milliseconds` returns the Unix timestamp in milliseconds as a float.
+
         bytes_mode: How to serialize `bytes` objects, either `'utf8'`, `'base64'`, or `'hex'`.
         inf_nan_mode: How to serialize `Infinity`, `-Infinity` and `NaN` values, either `'null'`, `'constants'`, or `'strings'`.
         serialize_unknown: Attempt to serialize unknown types, `str(value)` will be used, if that fails
