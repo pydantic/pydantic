@@ -258,7 +258,7 @@ def patch_base_fields(cls: type[Any]) -> Generator[None]:
     ```
 
     When passing `B` to the stdlib `@dataclass` decorator, it will look for fields in the parent classes
-    and reuse them directly. When this contextmanager is active, `A` will be temporarily patched to be
+    and reuse them directly. When this context manager is active, `A` will be temporarily patched to be
     equivalent to:
 
     ```python {test="skip" lint="skip"}

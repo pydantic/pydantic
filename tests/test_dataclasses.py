@@ -1841,6 +1841,18 @@ def test_kw_only_inheritance(decorator1, decorator2):
     assert child.y == 1
 
 
+def test_repr_inheritance() -> None:
+    @dataclasses.dataclass
+    class A:
+        a: int = Field(repr=False)
+
+    @pydantic.dataclasses.dataclass
+    class B(A):
+        pass
+
+    assert repr(B(a=1)).endswith('B()')
+
+
 def test_extra_forbid_list_no_error():
     @pydantic.dataclasses.dataclass(config=dict(extra='forbid'))
     class Bar: ...
