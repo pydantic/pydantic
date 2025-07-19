@@ -5629,6 +5629,34 @@ def test_base64_invalid(field_type, input_data):
 
 
 @pytest.mark.parametrize(
+    ('field_type', 'input_data'),
+    [
+        pytest.param(Base64Bytes, b'abcd\xc8', id='Base64Bytes-invalid-base64-bytes'),
+    ],
+)
+def test_base64_out_of_range(field_type, input_data):
+    class Model(BaseModel):
+        base64_value: field_type
+
+    with pytest.raises(ValidationError) as e:
+        Model(base64_value=input_data)
+
+    errors = e.value.errors(include_url=False)
+    assert len(errors) == 1
+    error = errors[0]
+    assert error['ctx']['error'] in (
+        'Only base64 data is allowed',
+        'Non-base64 digit found',
+    )
+    assert error['loc'] == ('base64_value',)
+    assert error['type'] == 'base64_decode'
+    assert error['msg'] in (
+        "Base64 decoding error: 'Only base64 data is allowed'",
+        "Base64 decoding error: 'Non-base64 digit found'",
+    )
+
+
+@pytest.mark.parametrize(
     ('field_type', 'input_data', 'expected_value', 'serialized_data'),
     [
         pytest.param(Base64UrlBytes, b'Zm9vIGJhcg==\n', b'foo bar', b'Zm9vIGJhcg==', id='Base64UrlBytes-reversible'),
