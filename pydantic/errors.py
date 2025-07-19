@@ -3,7 +3,7 @@
 from __future__ import annotations as _annotations
 
 import re
-from typing import Any, ClassVar, Literal
+from typing import TYPE_CHECKING, Any, ClassVar, Literal
 
 from typing_extensions import Self
 from typing_inspection.introspection import Qualifier
@@ -12,6 +12,9 @@ from pydantic._internal import _repr
 
 from ._migration import getattr_migration
 from .version import version_short
+
+if TYPE_CHECKING:
+    from pydantic._internal._generate_schema import EvaluationContext
 
 __all__ = (
     'PydanticUserError',
@@ -110,12 +113,13 @@ class PydanticUndefinedAnnotation(PydanticErrorMixin, NameError):
         message: Description of the error.
     """
 
-    def __init__(self, name: str, message: str) -> None:
+    def __init__(self, name: str, message: str, _evaluation_context: EvaluationContext | None = None) -> None:
         self.name = name
+        self._evaluation_context = _evaluation_context
         super().__init__(message=message, code='undefined-annotation')
 
     @classmethod
-    def from_name_error(cls, name_error: NameError) -> Self:
+    def from_name_error(cls, name_error: NameError, _evaluation_context: EvaluationContext | None = None) -> Self:
         """Convert a `NameError` to a `PydanticUndefinedAnnotation` error.
 
         Args:
@@ -128,7 +132,7 @@ class PydanticUndefinedAnnotation(PydanticErrorMixin, NameError):
             name = name_error.name  # type: ignore  # python > 3.10
         except AttributeError:
             name = re.search(r".*'(.+?)'", str(name_error)).group(1)  # type: ignore[union-attr]
-        return cls(name=name, message=str(name_error))
+        return cls(name=name, message=str(name_error), _evaluation_context=_evaluation_context)
 
 
 class PydanticImportError(PydanticErrorMixin, ImportError):
