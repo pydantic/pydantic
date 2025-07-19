@@ -169,7 +169,7 @@ to help ease migration, but calling them will emit `DeprecationWarning`s.
     [`@model_serializer`](api/functional_serializers.md#pydantic.functional_serializers.model_serializer), and
     [`@computed_field`](api/fields.md#pydantic.fields.computed_field) decorators, which each address various
     shortcomings from Pydantic V1.
-    * See [Custom serializers](concepts/serialization.md#custom-serializers) for the usage docs of these new decorators.
+    * See [Custom serializers](concepts/serialization.md#serializers) for the usage docs of these new decorators.
     * Due to performance overhead and implementation complexity, we have now deprecated support for specifying
         `json_encoders` in the model config. This functionality was originally added for the purpose of achieving custom
         serialization logic, and we think the new serialization decorators are a better choice in most common scenarios.
@@ -177,8 +177,7 @@ to help ease migration, but calling them will emit `DeprecationWarning`s.
   model. In V1, we would always include all fields from the subclass instance. In V2, when we dump a model, we only
   include the fields that are defined on the annotated type of the field. This helps prevent some accidental security
   bugs. You can read more about this (including how to opt out of this behavior) in the
-  [Subclass instances for fields of BaseModel, dataclasses, TypedDict](concepts/serialization.md#subclass-instances-for-fields-of-basemodel-dataclasses-typeddict)
-  section of the model exporting docs.
+  [relevant section](concepts/serialization.md#subclasses-of-model-like-types) of the model exporting docs.
 * `GetterDict` has been removed as it was just an implementation detail of `orm_mode`, which has been removed.
 * In many cases, arguments passed to the constructor will be **copied** in order to perform validation and, where necessary, coercion.
   This is notable in the case of passing mutable objects as arguments to a constructor.
