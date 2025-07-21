@@ -1841,6 +1841,20 @@ def test_kw_only_inheritance(decorator1, decorator2):
     assert child.y == 1
 
 
+def test_kw_only_inheritance_on_field() -> None:
+    @dataclasses.dataclass
+    class A:
+        x: int = Field(kw_only=True)
+
+    @pydantic.dataclasses.dataclass
+    class B(A):
+        pass
+
+    if sys.version_info >= (3, 10):  # On 3.9, we ignore kw_only.
+        with pytest.raises(ValidationError):
+            B(1)
+
+
 def test_repr_inheritance() -> None:
     @dataclasses.dataclass
     class A:
@@ -1851,6 +1865,15 @@ def test_repr_inheritance() -> None:
         pass
 
     assert repr(B(a=1)).endswith('B()')
+
+
+@pytest.mark.skipif(sys.version_info < (3, 14), reason='`doc` added in 3.14')
+def test_description_as_doc_in_slots() -> None:
+    @pydantic.dataclasses.dataclass(slots=True)
+    class A:
+        a: int = Field(description='a doc')
+
+    assert A.__slots__ == {'a': 'a doc'}
 
 
 def test_extra_forbid_list_no_error():

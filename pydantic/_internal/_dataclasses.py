@@ -213,9 +213,15 @@ def is_stdlib_dataclass(cls: type[Any], /) -> TypeIs[type[StandardDataclass]]:
 def as_dataclass_field(pydantic_field: FieldInfo) -> dataclasses.Field[Any]:
     field_args: dict[str, Any] = {'default': pydantic_field}
 
+    # Needed because if `doc` is set, the dataclass slots will be a dict (field name -> doc) instead of a tuple:
+    if sys.version_info >= (3, 14) and pydantic_field.description is not None:
+        field_args['doc'] = pydantic_field.description
+
+    # Needed as the stdlib dataclass module processes kw_only in a specific way during class construction:
     if sys.version_info >= (3, 10) and pydantic_field.kw_only:
         field_args['kw_only'] = True
 
+    # Needed as the stdlib dataclass modules generates `__repr__()` during class construction:
     if pydantic_field.repr is not True:
         field_args['repr'] = pydantic_field.repr
 
@@ -289,7 +295,7 @@ def patch_base_fields(cls: type[Any]) -> Generator[None]:
             for field_name, field in dc_fields.items()
             if isinstance(field.default, FieldInfo)
             # Only do the patching if one of the affected attributes is set:
-            and (field.default.kw_only or field.default.repr is not True)
+            and (field.default.description is not None or field.default.kw_only or field.default.repr is not True)
         }
         if dc_fields_with_pydantic_field_defaults:
             original_fields_list.append((dc_fields, dc_fields_with_pydantic_field_defaults))
@@ -298,7 +304,9 @@ def patch_base_fields(cls: type[Any]) -> Generator[None]:
                 # `dataclasses.Field` isn't documented as working with `copy.copy()`.
                 # It is a class with `__slots__`, so should work (and we hope for the best):
                 new_dc_field = copy.copy(field)
-                if default.kw_only:
+                # For base fields, no need to set `doc` from `FieldInfo.description`, this is only relevant
+                # for the class under construction and handled in `as_dataclass_field()`.
+                if sys.version_info >= (3, 10) and default.kw_only:
                     new_dc_field.kw_only = True
                 if default.repr is not True:
                     new_dc_field.repr = default.repr
