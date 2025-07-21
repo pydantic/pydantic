@@ -3629,30 +3629,7 @@ new attributes after instantiation.</p>
 <span class="normal">299</span>
 <span class="normal">300</span>
 <span class="normal">301</span>
-<span class="normal">302</span>
-<span class="normal">303</span>
-<span class="normal">304</span>
-<span class="normal">305</span>
-<span class="normal">306</span>
-<span class="normal">307</span>
-<span class="normal">308</span>
-<span class="normal">309</span>
-<span class="normal">310</span>
-<span class="normal">311</span>
-<span class="normal">312</span>
-<span class="normal">313</span>
-<span class="normal">314</span>
-<span class="normal">315</span>
-<span class="normal">316</span>
-<span class="normal">317</span>
-<span class="normal">318</span>
-<span class="normal">319</span>
-<span class="normal">320</span>
-<span class="normal">321</span>
-<span class="normal">322</span>
-<span class="normal">323</span>
-<span class="normal">324</span>
-<span class="normal">325</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@dataclass_transform</span><span class="p">(</span><span class="n">field_specifiers</span><span class="o">=</span><span class="p">(</span><span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">PrivateAttr</span><span class="p">))</span>
+<span class="normal">302</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@dataclass_transform</span><span class="p">(</span><span class="n">field_specifiers</span><span class="o">=</span><span class="p">(</span><span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">PrivateAttr</span><span class="p">))</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">dataclass</span><span class="p">(</span>
     <span class="n">_cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">_T</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -3706,44 +3683,6 @@ new attributes after instantiation.</p>
         <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;kw_only&#39;</span><span class="p">:</span> <span class="n">kw_only</span><span class="p">,</span> <span class="s1">&#39;slots&#39;</span><span class="p">:</span> <span class="n">slots</span><span class="p">}</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{}</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">make_pydantic_fields_compatible</span><span class="p">(</span><span class="bp">cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Make sure that stdlib `dataclasses` understands `Field` kwargs like `kw_only`</span>
-<span class="sd">        To do that, we simply change</span>
-<span class="sd">          `x: int = pydantic.Field(..., kw_only=True)`</span>
-<span class="sd">        into</span>
-<span class="sd">          `x: int = dataclasses.field(default=pydantic.Field(..., kw_only=True), kw_only=True)`</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">for</span> <span class="n">annotation_cls</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="vm">__mro__</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">14</span><span class="p">):</span>
-                <span class="kn">from</span><span class="w"> </span><span class="nn">annotationlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Format</span><span class="p">,</span> <span class="n">get_annotations</span>
-
-                <span class="n">annotations</span> <span class="o">=</span> <span class="n">get_annotations</span><span class="p">(</span><span class="n">annotation_cls</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="n">Format</span><span class="o">.</span><span class="n">FORWARDREF</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">annotations</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">annotation_cls</span><span class="p">,</span> <span class="s1">&#39;__annotations__&#39;</span><span class="p">,</span> <span class="p">{})</span>
-            <span class="k">for</span> <span class="n">field_name</span> <span class="ow">in</span> <span class="n">annotations</span><span class="p">:</span>
-                <span class="n">field_value</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">field_name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-                <span class="c1"># Process only if this is an instance of `FieldInfo`.</span>
-                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">field_value</span><span class="p">,</span> <span class="n">FieldInfo</span><span class="p">):</span>
-                    <span class="k">continue</span>
-
-                <span class="c1"># Initialize arguments for the standard `dataclasses.field`.</span>
-                <span class="n">field_args</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;default&#39;</span><span class="p">:</span> <span class="n">field_value</span><span class="p">}</span>
-
-                <span class="c1"># Handle `kw_only` for Python 3.10+</span>
-                <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span> <span class="ow">and</span> <span class="n">field_value</span><span class="o">.</span><span class="n">kw_only</span><span class="p">:</span>
-                    <span class="n">field_args</span><span class="p">[</span><span class="s1">&#39;kw_only&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
-
-                <span class="c1"># Set `repr` attribute if it&#39;s explicitly specified to be not `True`.</span>
-                <span class="k">if</span> <span class="n">field_value</span><span class="o">.</span><span class="n">repr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">True</span><span class="p">:</span>
-                    <span class="n">field_args</span><span class="p">[</span><span class="s1">&#39;repr&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">field_value</span><span class="o">.</span><span class="n">repr</span>
-
-                <span class="nb">setattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">field_name</span><span class="p">,</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="o">**</span><span class="n">field_args</span><span class="p">))</span>
-                <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span> <span class="o">&lt;</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">cls</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;__annotations__&#39;</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="c1"># In Python 3.9, when a class doesn&#39;t have any annotations, accessing `__annotations__`</span>
-                    <span class="c1"># raises an `AttributeError`.</span>
-                    <span class="bp">cls</span><span class="o">.</span><span class="vm">__annotations__</span> <span class="o">=</span> <span class="p">{}</span>
-                <span class="bp">cls</span><span class="o">.</span><span class="vm">__annotations__</span><span class="p">[</span><span class="n">field_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">annotations</span><span class="p">[</span><span class="n">field_name</span><span class="p">]</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">create_dataclass</span><span class="p">(</span><span class="bp">cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">type</span><span class="p">[</span><span class="n">PydanticDataclass</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a Pydantic dataclass from a regular dataclass.</span>
@@ -3800,8 +3739,6 @@ new attributes after instantiation.</p>
                 <span class="n">bases</span> <span class="o">=</span> <span class="n">bases</span> <span class="o">+</span> <span class="p">(</span><span class="n">generic_base</span><span class="p">,)</span>
             <span class="bp">cls</span> <span class="o">=</span> <span class="n">types</span><span class="o">.</span><span class="n">new_class</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">bases</span><span class="p">)</span>
 
-        <span class="n">make_pydantic_fields_compatible</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
-
         <span class="c1"># Respect frozen setting from dataclass constructor and fallback to config setting if not provided</span>
         <span class="k">if</span> <span class="n">frozen</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">frozen_</span> <span class="o">=</span> <span class="n">frozen</span>
@@ -3816,17 +3753,34 @@ new attributes after instantiation.</p>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">frozen_</span> <span class="o">=</span> <span class="n">config_wrapper</span><span class="o">.</span><span class="n">frozen</span> <span class="ow">or</span> <span class="kc">False</span>
 
-        <span class="bp">cls</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">dataclass</span><span class="p">(</span>  <span class="c1"># type: ignore[call-overload]</span>
-            <span class="bp">cls</span><span class="p">,</span>
-            <span class="c1"># the value of init here doesn&#39;t affect anything except that it makes it easier to generate a signature</span>
-            <span class="n">init</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-            <span class="nb">repr</span><span class="o">=</span><span class="nb">repr</span><span class="p">,</span>
-            <span class="n">eq</span><span class="o">=</span><span class="n">eq</span><span class="p">,</span>
-            <span class="n">order</span><span class="o">=</span><span class="n">order</span><span class="p">,</span>
-            <span class="n">unsafe_hash</span><span class="o">=</span><span class="n">unsafe_hash</span><span class="p">,</span>
-            <span class="n">frozen</span><span class="o">=</span><span class="n">frozen_</span><span class="p">,</span>
-            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
-        <span class="p">)</span>
+        <span class="c1"># Make Pydantic&#39;s `Field()` function compatible with stdlib dataclasses. As we&#39;ll decorate</span>
+        <span class="c1"># `cls` with the stdlib `@dataclass` decorator first, there are two attributes, `kw_only` and</span>
+        <span class="c1"># `repr` that need to be understood *during* the stdlib creation. We do so in two steps:</span>
+
+        <span class="c1"># 1. On the decorated class, wrap `Field()` assignment with `dataclass.field()`, with the</span>
+        <span class="c1"># two attributes set (done in `as_dataclass_field()`)</span>
+        <span class="n">cls_anns</span> <span class="o">=</span> <span class="n">_typing_extra</span><span class="o">.</span><span class="n">safe_get_annotations</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">field_name</span> <span class="ow">in</span> <span class="n">cls_anns</span><span class="p">:</span>
+            <span class="c1"># We should look for assignments in `__dict__` instead, but for now we follow</span>
+            <span class="c1"># the same behavior as stdlib dataclasses (see https://github.com/python/cpython/issues/88609)</span>
+            <span class="n">field_value</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">field_name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">field_value</span><span class="p">,</span> <span class="n">FieldInfo</span><span class="p">):</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">field_name</span><span class="p">,</span> <span class="n">_pydantic_dataclasses</span><span class="o">.</span><span class="n">as_dataclass_field</span><span class="p">(</span><span class="n">field_value</span><span class="p">))</span>
+
+        <span class="c1"># 2. For bases of `cls` that are stdlib dataclasses, we temporarily patch their fields</span>
+        <span class="c1"># (see the docstring of the context manager):</span>
+        <span class="k">with</span> <span class="n">_pydantic_dataclasses</span><span class="o">.</span><span class="n">patch_base_fields</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+            <span class="bp">cls</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">dataclass</span><span class="p">(</span>  <span class="c1"># pyright: ignore[reportCallIssue]</span>
+                <span class="bp">cls</span><span class="p">,</span>
+                <span class="c1"># the value of init here doesn&#39;t affect anything except that it makes it easier to generate a signature</span>
+                <span class="n">init</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="nb">repr</span><span class="o">=</span><span class="nb">repr</span><span class="p">,</span>
+                <span class="n">eq</span><span class="o">=</span><span class="n">eq</span><span class="p">,</span>
+                <span class="n">order</span><span class="o">=</span><span class="n">order</span><span class="p">,</span>
+                <span class="n">unsafe_hash</span><span class="o">=</span><span class="n">unsafe_hash</span><span class="p">,</span>
+                <span class="n">frozen</span><span class="o">=</span><span class="n">frozen_</span><span class="p">,</span>
+                <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+            <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">config_wrapper</span><span class="o">.</span><span class="n">validate_assignment</span><span class="p">:</span>
 
@@ -4041,7 +3995,30 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/dataclasses.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">352</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">329</span>
+<span class="normal">330</span>
+<span class="normal">331</span>
+<span class="normal">332</span>
+<span class="normal">333</span>
+<span class="normal">334</span>
+<span class="normal">335</span>
+<span class="normal">336</span>
+<span class="normal">337</span>
+<span class="normal">338</span>
+<span class="normal">339</span>
+<span class="normal">340</span>
+<span class="normal">341</span>
+<span class="normal">342</span>
+<span class="normal">343</span>
+<span class="normal">344</span>
+<span class="normal">345</span>
+<span class="normal">346</span>
+<span class="normal">347</span>
+<span class="normal">348</span>
+<span class="normal">349</span>
+<span class="normal">350</span>
+<span class="normal">351</span>
+<span class="normal">352</span>
 <span class="normal">353</span>
 <span class="normal">354</span>
 <span class="normal">355</span>
@@ -4076,30 +4053,7 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
 <span class="normal">384</span>
 <span class="normal">385</span>
 <span class="normal">386</span>
-<span class="normal">387</span>
-<span class="normal">388</span>
-<span class="normal">389</span>
-<span class="normal">390</span>
-<span class="normal">391</span>
-<span class="normal">392</span>
-<span class="normal">393</span>
-<span class="normal">394</span>
-<span class="normal">395</span>
-<span class="normal">396</span>
-<span class="normal">397</span>
-<span class="normal">398</span>
-<span class="normal">399</span>
-<span class="normal">400</span>
-<span class="normal">401</span>
-<span class="normal">402</span>
-<span class="normal">403</span>
-<span class="normal">404</span>
-<span class="normal">405</span>
-<span class="normal">406</span>
-<span class="normal">407</span>
-<span class="normal">408</span>
-<span class="normal">409</span>
-<span class="normal">410</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">rebuild_dataclass</span><span class="p">(</span>
+<span class="normal">387</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">rebuild_dataclass</span><span class="p">(</span>
     <span class="bp">cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">PydanticDataclass</span><span class="p">],</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">force</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -4237,19 +4191,19 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/dataclasses.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">413</span>
-<span class="normal">414</span>
-<span class="normal">415</span>
-<span class="normal">416</span>
-<span class="normal">417</span>
-<span class="normal">418</span>
-<span class="normal">419</span>
-<span class="normal">420</span>
-<span class="normal">421</span>
-<span class="normal">422</span>
-<span class="normal">423</span>
-<span class="normal">424</span>
-<span class="normal">425</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">is_pydantic_dataclass</span><span class="p">(</span><span class="n">class_</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="o">/</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TypeGuard</span><span class="p">[</span><span class="nb">type</span><span class="p">[</span><span class="n">PydanticDataclass</span><span class="p">]]:</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">390</span>
+<span class="normal">391</span>
+<span class="normal">392</span>
+<span class="normal">393</span>
+<span class="normal">394</span>
+<span class="normal">395</span>
+<span class="normal">396</span>
+<span class="normal">397</span>
+<span class="normal">398</span>
+<span class="normal">399</span>
+<span class="normal">400</span>
+<span class="normal">401</span>
+<span class="normal">402</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">is_pydantic_dataclass</span><span class="p">(</span><span class="n">class_</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="o">/</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TypeGuard</span><span class="p">[</span><span class="nb">type</span><span class="p">[</span><span class="n">PydanticDataclass</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Whether a class is a pydantic dataclass.</span>
 
 <span class="sd">    Args:</span>
