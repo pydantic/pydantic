@@ -150,44 +150,6 @@ def dataclass(
     else:
         kwargs = {}
 
-    def make_pydantic_fields_compatible(cls: type[Any]) -> None:
-        """Make sure that stdlib `dataclasses` understands `Field` kwargs like `kw_only`
-        To do that, we simply change
-          `x: int = pydantic.Field(..., kw_only=True)`
-        into
-          `x: int = dataclasses.field(default=pydantic.Field(..., kw_only=True), kw_only=True)`
-        """
-        for annotation_cls in cls.__mro__:
-            if sys.version_info >= (3, 14):
-                from annotationlib import Format, get_annotations
-
-                annotations = get_annotations(annotation_cls, format=Format.FORWARDREF)
-            else:
-                annotations: dict[str, Any] = getattr(annotation_cls, '__annotations__', {})
-            for field_name in annotations:
-                field_value = getattr(cls, field_name, None)
-                # Process only if this is an instance of `FieldInfo`.
-                if not isinstance(field_value, FieldInfo):
-                    continue
-
-                # Initialize arguments for the standard `dataclasses.field`.
-                field_args: dict = {'default': field_value}
-
-                # Handle `kw_only` for Python 3.10+
-                if sys.version_info >= (3, 10) and field_value.kw_only:
-                    field_args['kw_only'] = True
-
-                # Set `repr` attribute if it's explicitly specified to be not `True`.
-                if field_value.repr is not True:
-                    field_args['repr'] = field_value.repr
-
-                setattr(cls, field_name, dataclasses.field(**field_args))
-                if sys.version_info < (3, 10) and cls.__dict__.get('__annotations__') is None:
-                    # In Python 3.9, when a class doesn't have any annotations, accessing `__annotations__`
-                    # raises an `AttributeError`.
-                    cls.__annotations__ = {}
-                cls.__annotations__[field_name] = annotations[field_name]
-
     def create_dataclass(cls: type[Any]) -> type[PydanticDataclass]:
         """Create a Pydantic dataclass from a regular dataclass.
 
@@ -243,8 +205,6 @@ def dataclass(
                 bases = bases + (generic_base,)
             cls = types.new_class(cls.__name__, bases)
 
-        make_pydantic_fields_compatible(cls)
-
         # Respect frozen setting from dataclass constructor and fallback to config setting if not provided
         if frozen is not None:
             frozen_ = frozen
@@ -259,17 +219,34 @@ def dataclass(
         else:
             frozen_ = config_wrapper.frozen or False
 
-        cls = dataclasses.dataclass(  # type: ignore[call-overload]
-            cls,
-            # the value of init here doesn't affect anything except that it makes it easier to generate a signature
-            init=True,
-            repr=repr,
-            eq=eq,
-            order=order,
-            unsafe_hash=unsafe_hash,
-            frozen=frozen_,
-            **kwargs,
-        )
+        # Make Pydantic's `Field()` function compatible with stdlib dataclasses. As we'll decorate
+        # `cls` with the stdlib `@dataclass` decorator first, there are two attributes, `kw_only` and
+        # `repr` that need to be understood *during* the stdlib creation. We do so in two steps:
+
+        # 1. On the decorated class, wrap `Field()` assignment with `dataclass.field()`, with the
+        # two attributes set (done in `as_dataclass_field()`)
+        cls_anns = _typing_extra.safe_get_annotations(cls)
+        for field_name in cls_anns:
+            # We should look for assignments in `__dict__` instead, but for now we follow
+            # the same behavior as stdlib dataclasses (see https://github.com/python/cpython/issues/88609)
+            field_value = getattr(cls, field_name, None)
+            if isinstance(field_value, FieldInfo):
+                setattr(cls, field_name, _pydantic_dataclasses.as_dataclass_field(field_value))
+
+        # 2. For bases of `cls` that are stdlib dataclasses, we temporarily patch their fields
+        # (see the docstring of the context manager):
+        with _pydantic_dataclasses.patch_base_fields(cls):
+            cls = dataclasses.dataclass(  # pyright: ignore[reportCallIssue]
+                cls,
+                # the value of init here doesn't affect anything except that it makes it easier to generate a signature
+                init=True,
+                repr=repr,
+                eq=eq,
+                order=order,
+                unsafe_hash=unsafe_hash,
+                frozen=frozen_,
+                **kwargs,
+            )
 
         if config_wrapper.validate_assignment:
 
