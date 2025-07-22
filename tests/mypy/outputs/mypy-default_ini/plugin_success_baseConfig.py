@@ -89,7 +89,7 @@ class KwargsNoMutationModel(BaseModel, frozen=True):
 
 
 class KwargsMutationModel(KwargsNoMutationModel, frozen=False, from_attributes=True):
-# MYPY: error: Cannot inherit non-frozen dataclass from a frozen one  [misc]
+# MYPY: error: Non-frozen dataclass cannot inherit from a frozen dataclass  [misc]
     a: int = 1
 
 
