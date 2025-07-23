@@ -56,17 +56,29 @@ impl BuildSerializer for ModelFieldsBuilder {
             let key_py: Py<PyString> = key_py.into();
 
             if field_info.get_as(intern!(py, "serialization_exclude"))? == Some(true) {
-                fields.insert(key, SerField::new(py, key_py, None, None, true, serialize_by_alias));
+                fields.insert(
+                    key,
+                    SerField::new(py, key_py, None, None, true, serialize_by_alias, None),
+                );
             } else {
                 let alias: Option<String> = field_info.get_as(intern!(py, "serialization_alias"))?;
-
+                let serialization_exclude_if: Option<Py<PyAny>> =
+                    field_info.get_as(intern!(py, "serialization_exclude_if"))?;
                 let schema = field_info.get_as_req(intern!(py, "schema"))?;
                 let serializer = CombinedSerializer::build(&schema, config, definitions)
                     .map_err(|e| py_schema_error_type!("Field `{}`:\n  {}", key, e))?;
 
                 fields.insert(
                     key,
-                    SerField::new(py, key_py, alias, Some(serializer), true, serialize_by_alias),
+                    SerField::new(
+                        py,
+                        key_py,
+                        alias,
+                        Some(serializer),
+                        true,
+                        serialize_by_alias,
+                        serialization_exclude_if,
+                    ),
                 );
             }
         }

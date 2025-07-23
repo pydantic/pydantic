@@ -92,8 +92,12 @@ def test_include_exclude_schema():
             {
                 '0': core_schema.typed_dict_field(core_schema.int_schema(), serialization_exclude=True),
                 '1': core_schema.typed_dict_field(core_schema.int_schema()),
-                '2': core_schema.typed_dict_field(core_schema.int_schema(), serialization_exclude=True),
-                '3': core_schema.typed_dict_field(core_schema.int_schema(), serialization_exclude=False),
+                '2': core_schema.typed_dict_field(
+                    core_schema.int_schema(), serialization_exclude=True, serialization_exclude_if=lambda x: x < 0
+                ),
+                '3': core_schema.typed_dict_field(
+                    core_schema.int_schema(), serialization_exclude=False, serialization_exclude_if=lambda x: x < 0
+                ),
             }
         )
     )
@@ -101,6 +105,11 @@ def test_include_exclude_schema():
     assert s.to_python(value) == {'1': 1, '3': 3}
     assert s.to_python(value, mode='json') == {'1': 1, '3': 3}
     assert json.loads(s.to_json(value)) == {'1': 1, '3': 3}
+
+    value = {'0': 0, '1': 1, '2': 2, '3': -3}
+    assert s.to_python(value) == {'1': 1}
+    assert s.to_python(value, mode='json') == {'1': 1}
+    assert json.loads(s.to_json(value)) == {'1': 1}
 
 
 def test_alias():
