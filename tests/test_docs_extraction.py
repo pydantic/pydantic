@@ -246,7 +246,7 @@ def test_dataclass_docs_extraction():
         """H docs"""
 
         i = 1
-        """I docs"""
+        """I docs, not a field"""
 
         j: Annotated[int, Field(description='Real description j')] = 1
         """Won't be used"""
@@ -259,6 +259,7 @@ def test_dataclass_docs_extraction():
     if sys.version_info >= (3, 14):
         assert MyModel.__pydantic_fields__['f'].description == 'Real description f'
     assert MyModel.__pydantic_fields__['g'].description == 'G docs'
+    assert MyModel.__pydantic_fields__['h'].description == 'H docs'
     assert MyModel.__pydantic_fields__['j'].description == 'Real description j'
 
     # https://github.com/pydantic/pydantic/issues/11243:
