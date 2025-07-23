@@ -231,6 +231,7 @@ def field_serializer(
 def field_serializer(
     *fields: str,
     mode: Literal['plain', 'wrap'] = 'plain',
+    # TODO PEP 747 (grep for 'return_type' on the whole code base):
     return_type: Any = PydanticUndefined,
     when_used: WhenUsed = 'always',
     check_fields: bool | None = None,
@@ -260,7 +261,7 @@ def field_serializer(
     #> {"name":"Jane","courses":["Chemistry","English","Math"]}
     ```
 
-    See [Custom serializers](../concepts/serialization.md#custom-serializers) for more information.
+    See [the usage documentation](../concepts/serialization.md#serializers) for more information.
 
     Four signatures are supported:
 
@@ -391,7 +392,7 @@ def model_serializer(
     - `(self, nxt: SerializerFunctionWrapHandler)`
     - `(self, nxt: SerializerFunctionWrapHandler, info: SerializationInfo)`
 
-        See [Custom serializers](../concepts/serialization.md#custom-serializers) for more information.
+        See [the usage documentation](../concepts/serialization.md#serializers) for more information.
 
     Args:
         f: The function to be decorated.
@@ -422,15 +423,19 @@ AnyType = TypeVar('AnyType')
 
 if TYPE_CHECKING:
     SerializeAsAny = Annotated[AnyType, ...]  # SerializeAsAny[list[str]] will be treated by type checkers as list[str]
-    """Force serialization to ignore whatever is defined in the schema and instead ask the object
-    itself how it should be serialized.
-    In particular, this means that when model subclasses are serialized, fields present in the subclass
-    but not in the original schema will be included.
+    """Annotation used to mark a type as having duck-typing serialization behavior.
+
+    See [usage documentation](../concepts/serialization.md#serializing-with-duck-typing) for more details.
     """
 else:
 
     @dataclasses.dataclass(**_internal_dataclass.slots_true)
-    class SerializeAsAny:  # noqa: D101
+    class SerializeAsAny:
+        """Annotation used to mark a type as having duck-typing serialization behavior.
+
+        See [usage documentation](../concepts/serialization.md#serializing-with-duck-typing) for more details.
+        """
+
         def __class_getitem__(cls, item: Any) -> Any:
             return Annotated[item, SerializeAsAny()]
 
