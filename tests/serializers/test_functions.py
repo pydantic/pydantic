@@ -517,7 +517,9 @@ def test_function_wrap_model():
             MyModel,
             core_schema.typed_dict_schema(
                 {
-                    'a': core_schema.typed_dict_field(core_schema.any_schema()),
+                    'a': core_schema.typed_dict_field(
+                        core_schema.any_schema(), serialization_exclude_if=lambda x: isinstance(x, int) and x >= 2
+                    ),
                     'b': core_schema.typed_dict_field(core_schema.any_schema()),
                     'c': core_schema.typed_dict_field(core_schema.any_schema(), serialization_exclude=True),
                 }
@@ -541,6 +543,14 @@ def test_function_wrap_model():
     assert s.to_json(m, exclude={'b'}) == b'{"a":1}'
     assert calls == 6
 
+    m = MyModel(a=2, b=b'foobar', c='excluded')
+    assert s.to_python(m) == {'b': b'foobar'}
+    assert calls == 7
+    assert s.to_python(m, mode='json') == {'b': 'foobar'}
+    assert calls == 8
+    assert s.to_json(m) == b'{"b":"foobar"}'
+    assert calls == 9
+
 
 def test_function_plain_model():
     calls = 0
@@ -559,7 +569,9 @@ def test_function_plain_model():
             MyModel,
             core_schema.typed_dict_schema(
                 {
-                    'a': core_schema.typed_dict_field(core_schema.any_schema()),
+                    'a': core_schema.typed_dict_field(
+                        core_schema.any_schema(), serialization_exclude_if=lambda x: x == 100
+                    ),
                     'b': core_schema.typed_dict_field(core_schema.any_schema()),
                     'c': core_schema.typed_dict_field(core_schema.any_schema(), serialization_exclude=True),
                 }
