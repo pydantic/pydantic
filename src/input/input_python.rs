@@ -3,6 +3,7 @@ use std::str::from_utf8;
 use pyo3::intern;
 use pyo3::prelude::*;
 
+use pyo3::sync::GILOnceCell;
 use pyo3::types::PyType;
 use pyo3::types::{
     PyBool, PyByteArray, PyBytes, PyComplex, PyDate, PyDateTime, PyDict, PyFloat, PyFrozenSet, PyInt, PyIterator,
@@ -30,7 +31,8 @@ use super::input_abstract::ValMatch;
 use super::return_enums::EitherComplex;
 use super::return_enums::{iterate_attributes, iterate_mapping_items, ValidationMatch};
 use super::shared::{
-    decimal_as_int, float_as_int, get_enum_meta_object, int_as_bool, str_as_bool, str_as_float, str_as_int,
+    decimal_as_int, float_as_int, fraction_as_int, get_enum_meta_object, int_as_bool, str_as_bool, str_as_float,
+    str_as_int,
 };
 use super::Arguments;
 use super::ConsumeIterator;
@@ -44,6 +46,20 @@ use super::{
     py_string_str, BorrowInput, EitherBytes, EitherFloat, EitherInt, EitherString, EitherTimedelta, GenericIterator,
     Input,
 };
+
+static FRACTION_TYPE: GILOnceCell<Py<PyType>> = GILOnceCell::new();
+
+pub fn get_fraction_type(py: Python) -> &Bound<'_, PyType> {
+    FRACTION_TYPE
+        .get_or_init(py, || {
+            py.import("fractions")
+                .and_then(|fractions_module| fractions_module.getattr("Fraction"))
+                .unwrap()
+                .extract()
+                .unwrap()
+        })
+        .bind(py)
+}
 
 pub(crate) fn downcast_python_input<'py, T: PyTypeCheck>(input: &(impl Input<'py> + ?Sized)) -> Option<&Bound<'py, T>> {
     input.as_python().and_then(|any| any.downcast::<T>().ok())
@@ -269,6 +285,8 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
                     float_as_int(self, self.extract::<f64>()?)
                 } else if let Ok(decimal) = self.validate_decimal(true, self.py()) {
                     decimal_as_int(self, &decimal.into_inner())
+                } else if self.is_instance(get_fraction_type(self.py()))? {
+                    fraction_as_int(self)
                 } else if let Ok(float) = self.extract::<f64>() {
                     float_as_int(self, float)
                 } else if let Some(enum_val) = maybe_as_enum(self) {
