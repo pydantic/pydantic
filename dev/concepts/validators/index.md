@@ -276,7 +276,7 @@ In its simplest form, a field validator is a callable taking the value to be val
 
 - ***Wrap* validators**: are the most flexible of all. You can run code before or after Pydantic and other validators process the input, or you can terminate validation immediately, either by returning the value early or by raising an error.
 
-  Such validators must be defined with a **mandatory** extra `handler` parameter: a callable taking the value to be validated as an argument. Internally, this handler will delegate validation of the value to Pydantic. You are free to wrap the call to the handler in a [`try..except`](https://docs.python.org/3/tutorial/errors.html#handling-exceptions) block, or not call it at all.
+  Such validators must be defined with a **mandatory** extra *handler* parameter: a callable taking the value to be validated as an argument. Internally, this handler will delegate validation of the value to Pydantic. You are free to wrap the call to the handler in a [`try..except`](https://docs.python.org/3/tutorial/errors.html#handling-exceptions) block, or not call it at all.
 
   ```python
   from typing import Any
@@ -403,7 +403,7 @@ class Model(BaseModel):
 Here are a couple additional notes about the decorator usage:
 
 - If you want the validator to apply to all fields (including the ones defined in subclasses), you can pass `'*'` as the field name argument.
-- By default, the decorator will ensure the provided field name(s) are defined on the model. If you want to disable this check during class creation, you can do so by passing `False` to the `check_fields` argument. This is useful when the field validator is defined on a base class, and the field is expected to be set on subclasses.
+- By default, the decorator will ensure the provided field name(s) are defined on the model. If you want to disable this check during class creation, you can do so by passing `False` to the `check_fields` argument. This is useful when the field validator is defined on a base class, and the field is expected to exist on subclasses.
 
 ## Model validators
 
@@ -541,7 +541,7 @@ Both the field and model validators callables (in all modes) can optionally take
 - [already validated data](#validation-data)
 - [user defined context](#validation-context)
 - the current validation mode: either `'python'` or `'json'` (see the mode property)
-- the current field name (see the field_name property).
+- the current field name, if using a [field validator](#field-validators) (see the field_name property).
 
 ### Validation data
 

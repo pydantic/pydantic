@@ -925,6 +925,15 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
+  <a href="#model-copy" class="md-nav__link">
+    <span class="md-ellipsis">
+      Model copy
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#generic-models" class="md-nav__link">
     <span class="md-ellipsis">
       Generic models
@@ -3333,6 +3342,15 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
+  <a href="#model-copy" class="md-nav__link">
+    <span class="md-ellipsis">
+      Model copy
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#generic-models" class="md-nav__link">
     <span class="md-ellipsis">
       Generic models
@@ -3620,10 +3638,10 @@ Models possess the following methods and attributes:</p>
 <li><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_construct"><code>model_construct()</code></a>: Creates models without running validation. See
     <a href="#creating-models-without-validation">Creating models without validation</a>.</li>
 <li><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_dump"><code>model_dump()</code></a>: Returns a dictionary of the model's fields and values. See
-    <a href="../serialization/#model_dump">Serialization</a>.</li>
-<li><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_dump_json"><code>model_dump_json()</code></a>: Returns a JSON string representation of <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_dump"><code>model_dump()</code></a>. See <a href="../serialization/#model_dump_json">Serialization</a>.</li>
+    <a href="../serialization/#python-mode">Serialization</a>.</li>
+<li><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_dump_json"><code>model_dump_json()</code></a>: Returns a JSON string representation of <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_dump"><code>model_dump()</code></a>. See <a href="../serialization/#json-mode">Serialization</a>.</li>
 <li><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_copy"><code>model_copy()</code></a>: Returns a copy (by default, shallow copy) of the model. See
-    <a href="../serialization/#model_copy">Serialization</a>.</li>
+    <a href="#model-copy">Model copy</a>.</li>
 <li><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_json_schema"><code>model_json_schema()</code></a>: Returns a jsonable dictionary representing the model's JSON Schema. See <a href="../json_schema/">JSON Schema</a>.</li>
 <li><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_fields"><code>model_fields</code></a>: A mapping between field names and their definitions (<a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.FieldInfo"><code>FieldInfo</code></a> instances).</li>
 <li><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_computed_fields"><code>model_computed_fields</code></a>: A mapping between computed field names and their definitions (<a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.ComputedFieldInfo"><code>ComputedFieldInfo</code></a> instances).</li>
@@ -4233,6 +4251,38 @@ not stored in <code>__pydantic_extra__</code> or <code>__dict__</code> on the in
 <li>Unlike when instantiating the model with validation, a call to <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_construct"><code>model_construct()</code></a> with <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.extra"><code>extra</code></a> set to <code>'forbid'</code> doesn't raise an error in the presence of data not corresponding to fields. Rather, said input data is simply ignored.</li>
 </ul>
 </div>
+<h2 id="model-copy">Model copy<a class="headerlink" href="#model-copy" title="Permanent link">&para;</a></h2>
+<details class="api">
+<summary>API Documentation</summary>
+<p><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_copy"><code>pydantic.main.BaseModel.model_copy</code></a><br></p>
+</details>
+<p>The <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_copy"><code>model_copy()</code></a> method allows models to be duplicated (with optional updates),
+which is particularly useful when working with frozen models.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">BarModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">whatever</span><span class="p">:</span> <span class="nb">int</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">FooBarModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">banana</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">foo</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">bar</span><span class="p">:</span> <span class="n">BarModel</span>
+
+
+<span class="n">m</span> <span class="o">=</span> <span class="n">FooBarModel</span><span class="p">(</span><span class="n">banana</span><span class="o">=</span><span class="mf">3.14</span><span class="p">,</span> <span class="n">foo</span><span class="o">=</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="n">bar</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;whatever&#39;</span><span class="p">:</span> <span class="mi">123</span><span class="p">})</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_copy</span><span class="p">(</span><span class="n">update</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;banana&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}))</span>
+<span class="c1">#&gt; banana=0 foo=&#39;hello&#39; bar=BarModel(whatever=123)</span>
+
+<span class="c1"># normal copy gives the same object reference for bar:</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">bar</span><span class="p">)</span> <span class="o">==</span> <span class="nb">id</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_copy</span><span class="p">()</span><span class="o">.</span><span class="n">bar</span><span class="p">))</span>
+<span class="c1">#&gt; True</span>
+<span class="c1"># deep copy gives a new object reference for `bar`:</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">bar</span><span class="p">)</span> <span class="o">==</span> <span class="nb">id</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_copy</span><span class="p">(</span><span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">bar</span><span class="p">))</span>
+<span class="c1">#&gt; False</span>
+</code></pre></div>
 <h2 id="generic-models">Generic models<a class="headerlink" href="#generic-models" title="Permanent link">&para;</a></h2>
 <p>Pydantic supports the creation of generic models to make it easier to reuse a common model structure. Both the new
 <a class="autorefs autorefs-external" href="https://docs.python.org/3/reference/compound_stmts.html#type-params">type parameter syntax</a> (introduced by <a href="https://peps.python.org/pep-0695/">PEP 695</a> in Python 3.12)
@@ -5061,7 +5111,7 @@ immutability of <code>foobar</code> doesn't stop <code>b</code> from being chang
 <ul>
 <li>field order is preserved in the model <a href="../json_schema/">JSON Schema</a></li>
 <li>field order is preserved in <a href="#error-handling">validation errors</a></li>
-<li>field order is preserved by <a href="../serialization/#model_dump"><code>.model_dump()</code> and <code>.model_dump_json()</code> etc.</a></li>
+<li>field order is preserved when <a href="../serialization/#serializing-data">serializing data</a></li>
 </ul>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -5302,7 +5352,7 @@ model as is. You can override this behaviour by setting
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.11.7", "pydantic-core==2.35.1", "pydantic-extra-types==2.10.0"]
+    window.mkdocs_run_deps = ["pydantic==2.11.7", "pydantic-core==2.35.2", "pydantic-extra-types==2.10.0"]
     </script>
 
               </article>

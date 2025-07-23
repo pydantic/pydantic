@@ -208,4 +208,4 @@ pydantic.main.BaseModel.model_dump_json\
 pydantic.type_adapter.TypeAdapter.dump_json\
 pydantic_core.to_json
 
-For more information on JSON serialization, see the [Serialization Concepts](../serialization/#modelmodel_dump_json) page.
+For more information on JSON serialization, see the [serialization concepts](../serialization/) page.

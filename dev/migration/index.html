@@ -3847,7 +3847,7 @@ to help ease migration, but calling them will emit <code>DeprecationWarning</cod
     <a href="../api/functional_serializers/#pydantic.functional_serializers.model_serializer"><code>@model_serializer</code></a>, and
     <a href="../api/fields/#pydantic.fields.computed_field"><code>@computed_field</code></a> decorators, which each address various
     shortcomings from Pydantic V1.<ul>
-<li>See <a href="../concepts/serialization/#custom-serializers">Custom serializers</a> for the usage docs of these new decorators.</li>
+<li>See <a href="../concepts/serialization/#serializers">Custom serializers</a> for the usage docs of these new decorators.</li>
 <li>Due to performance overhead and implementation complexity, we have now deprecated support for specifying
     <code>json_encoders</code> in the model config. This functionality was originally added for the purpose of achieving custom
     serialization logic, and we think the new serialization decorators are a better choice in most common scenarios.</li>
@@ -3857,8 +3857,7 @@ to help ease migration, but calling them will emit <code>DeprecationWarning</cod
   model. In V1, we would always include all fields from the subclass instance. In V2, when we dump a model, we only
   include the fields that are defined on the annotated type of the field. This helps prevent some accidental security
   bugs. You can read more about this (including how to opt out of this behavior) in the
-  <a href="../concepts/serialization/#subclass-instances-for-fields-of-basemodel-dataclasses-typeddict">Subclass instances for fields of BaseModel, dataclasses, TypedDict</a>
-  section of the model exporting docs.</li>
+  <a href="../concepts/serialization/#subclasses-of-model-like-types">relevant section</a> of the model exporting docs.</li>
 <li><code>GetterDict</code> has been removed as it was just an implementation detail of <code>orm_mode</code>, which has been removed.</li>
 <li>In many cases, arguments passed to the constructor will be <strong>copied</strong> in order to perform validation and, where necessary, coercion.
   This is notable in the case of passing mutable objects as arguments to a constructor.
@@ -5062,7 +5061,7 @@ docs.</p>
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.11.7", "pydantic-core==2.35.1", "pydantic-extra-types==2.10.0"]
+    window.mkdocs_run_deps = ["pydantic==2.11.7", "pydantic-core==2.35.2", "pydantic-extra-types==2.10.0"]
     </script>
 
               </article>

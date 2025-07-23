@@ -131,9 +131,9 @@ The example above only shows the tip of the iceberg of what models can do. Model
 - model_validate(): Validates the given object against the Pydantic model. See [Validating data](#validating-data).
 - model_validate_json(): Validates the given JSON data against the Pydantic model. See [Validating data](#validating-data).
 - model_construct(): Creates models without running validation. See [Creating models without validation](#creating-models-without-validation).
-- model_dump(): Returns a dictionary of the model's fields and values. See [Serialization](../serialization/#model_dump).
-- model_dump_json(): Returns a JSON string representation of model_dump(). See [Serialization](../serialization/#model_dump_json).
-- model_copy(): Returns a copy (by default, shallow copy) of the model. See [Serialization](../serialization/#model_copy).
+- model_dump(): Returns a dictionary of the model's fields and values. See [Serialization](../serialization/#python-mode).
+- model_dump_json(): Returns a JSON string representation of model_dump(). See [Serialization](../serialization/#json-mode).
+- model_copy(): Returns a copy (by default, shallow copy) of the model. See [Model copy](#model-copy).
 - model_json_schema(): Returns a jsonable dictionary representing the model's JSON Schema. See [JSON Schema](../json_schema/).
 - model_fields: A mapping between field names and their definitions (FieldInfo instances).
 - model_computed_fields: A mapping between computed field names and their definitions (ComputedFieldInfo instances).
@@ -740,6 +740,42 @@ On [extra data](#extra-data) behavior with model_construct()
 - For models with extra set to `'allow'`, data not corresponding to fields will be correctly stored in the `__pydantic_extra__` dictionary and saved to the model's `__dict__` attribute.
 - For models with extra set to `'ignore'`, data not corresponding to fields will be ignored — that is, not stored in `__pydantic_extra__` or `__dict__` on the instance.
 - Unlike when instantiating the model with validation, a call to model_construct() with extra set to `'forbid'` doesn't raise an error in the presence of data not corresponding to fields. Rather, said input data is simply ignored.
+
+## Model copy
+
+API Documentation
+
+pydantic.main.BaseModel.model_copy
+
+The model_copy() method allows models to be duplicated (with optional updates), which is particularly useful when working with frozen models.
+
+```python
+from pydantic import BaseModel
+
+
+class BarModel(BaseModel):
+    whatever: int
+
+
+class FooBarModel(BaseModel):
+    banana: float
+    foo: str
+    bar: BarModel
+
+
+m = FooBarModel(banana=3.14, foo='hello', bar={'whatever': 123})
+
+print(m.model_copy(update={'banana': 0}))
+#> banana=0 foo='hello' bar=BarModel(whatever=123)
+
+# normal copy gives the same object reference for bar:
+print(id(m.bar) == id(m.model_copy().bar))
+#> True
+# deep copy gives a new object reference for `bar`:
+print(id(m.bar) == id(m.model_copy(deep=True).bar))
+#> False
+
+```
 
 ## Generic models
 
@@ -1619,7 +1655,7 @@ Field order affects models in the following ways:
 
 - field order is preserved in the model [JSON Schema](../json_schema/)
 - field order is preserved in [validation errors](#error-handling)
-- field order is preserved by [`.model_dump()` and `.model_dump_json()` etc.](../serialization/#model_dump)
+- field order is preserved when [serializing data](../serialization/#serializing-data)
 
 ```python
 from pydantic import BaseModel, ValidationError

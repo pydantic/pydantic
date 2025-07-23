@@ -5402,7 +5402,7 @@ is set to <code>'allow'</code>.</p>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">model_copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">update</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">deep</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;!!! abstract &quot;Usage Documentation&quot;</span>
-<span class="sd">            [`model_copy`](../concepts/serialization.md#model_copy)</span>
+<span class="sd">            [`model_copy`](../concepts/models.md#model-copy)</span>
 
 <span class="sd">        Returns a copy of the model.</span>
 
@@ -5451,7 +5451,7 @@ is set to <code>'allow'</code>.</p>
         <span class="n">serialize_as_any</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;!!! abstract &quot;Usage Documentation&quot;</span>
-<span class="sd">            [`model_dump`](../concepts/serialization.md#modelmodel_dump)</span>
+<span class="sd">            [`model_dump`](../concepts/serialization.md#python-mode)</span>
 
 <span class="sd">        Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.</span>
 
@@ -5510,7 +5510,7 @@ is set to <code>'allow'</code>.</p>
         <span class="n">serialize_as_any</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;!!! abstract &quot;Usage Documentation&quot;</span>
-<span class="sd">            [`model_dump_json`](../concepts/serialization.md#modelmodel_dump_json)</span>
+<span class="sd">            [`model_dump_json`](../concepts/serialization.md#json-mode)</span>
 
 <span class="sd">        Generates a JSON representation of the model using Pydantic&#39;s `to_json` method.</span>
 
@@ -7301,7 +7301,7 @@ Otherwise, the field names from the <code>values</code> argument will be used.</
 
         <div class="admonition abstract">
 <p class="admonition-title">Usage Documentation</p>
-<p><a href="../../concepts/serialization/#model_copy"><code>model_copy</code></a></p>
+<p><a href="../../concepts/models/#model-copy"><code>model_copy</code></a></p>
 </div>
 <p>Returns a copy of the model.</p>
 <div class="admonition note">
@@ -7418,7 +7418,7 @@ before creating the new model. You should trust this data.</p>
 <span class="normal">418</span>
 <span class="normal">419</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">model_copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">update</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">deep</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;!!! abstract &quot;Usage Documentation&quot;</span>
-<span class="sd">        [`model_copy`](../concepts/serialization.md#model_copy)</span>
+<span class="sd">        [`model_copy`](../concepts/models.md#model-copy)</span>
 
 <span class="sd">    Returns a copy of the model.</span>
 
@@ -7491,7 +7491,7 @@ before creating the new model. You should trust this data.</p>
 
         <div class="admonition abstract">
 <p class="admonition-title">Usage Documentation</p>
-<p><a href="../../concepts/serialization/#modelmodel_dump"><code>model_dump</code></a></p>
+<p><a href="../../concepts/serialization/#python-mode"><code>model_dump</code></a></p>
 </div>
 <p>Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.</p>
 
@@ -7804,7 +7804,7 @@ a <a class="autorefs autorefs-internal" href="../pydantic_core/#pydantic_core.Py
     <span class="n">serialize_as_any</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;!!! abstract &quot;Usage Documentation&quot;</span>
-<span class="sd">        [`model_dump`](../concepts/serialization.md#modelmodel_dump)</span>
+<span class="sd">        [`model_dump`](../concepts/serialization.md#python-mode)</span>
 
 <span class="sd">    Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.</span>
 
@@ -7887,7 +7887,7 @@ a <a class="autorefs autorefs-internal" href="../pydantic_core/#pydantic_core.Py
 
         <div class="admonition abstract">
 <p class="admonition-title">Usage Documentation</p>
-<p><a href="../../concepts/serialization/#modelmodel_dump_json"><code>model_dump_json</code></a></p>
+<p><a href="../../concepts/serialization/#json-mode"><code>model_dump_json</code></a></p>
 </div>
 <p>Generates a JSON representation of the model using Pydantic's <code>to_json</code> method.</p>
 
@@ -8218,7 +8218,7 @@ a <a class="autorefs autorefs-internal" href="../pydantic_core/#pydantic_core.Py
     <span class="n">serialize_as_any</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;!!! abstract &quot;Usage Documentation&quot;</span>
-<span class="sd">        [`model_dump_json`](../concepts/serialization.md#modelmodel_dump_json)</span>
+<span class="sd">        [`model_dump_json`](../concepts/serialization.md#json-mode)</span>
 
 <span class="sd">    Generates a JSON representation of the model using Pydantic&#39;s `to_json` method.</span>
 
@@ -10204,7 +10204,7 @@ validators <a href="https://docs.pydantic.dev/2.9/concepts/validators/#field-val
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.11.7", "pydantic-core==2.35.1", "pydantic-extra-types==2.10.0"]
+    window.mkdocs_run_deps = ["pydantic==2.11.7", "pydantic-core==2.35.2", "pydantic-extra-types==2.10.0"]
     </script>
 
               </article>

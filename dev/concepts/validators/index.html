@@ -3563,7 +3563,7 @@ this time using the <a class="autorefs autorefs-internal" href="../../api/functi
 <p id="field-wrap-validator"><strong><em>Wrap</em> validators</strong>: are the most flexible of all. You can run code before or after Pydantic and other validators
   process the input, or you can terminate validation immediately, either by returning the value early or by raising an
   error.</p>
-<p>Such validators must be defined with a <strong>mandatory</strong> extra <code>handler</code> parameter: a callable taking the value to be validated
+<p>Such validators must be defined with a <strong>mandatory</strong> extra <em>handler</em> parameter: a callable taking the value to be validated
 as an argument. Internally, this handler will delegate validation of the value to Pydantic. You are free to wrap the call
 to the handler in a <a href="https://docs.python.org/3/tutorial/errors.html#handling-exceptions"><code>try..except</code></a> block, or not call it at all.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">Annotated pattern</label><label for="__tabbed_5_2">Decorator</label></div>
@@ -3691,8 +3691,8 @@ the function to multiple fields:</p>
   <code>'*'</code> as the field name argument.</li>
 <li>By default, the decorator will ensure the provided field name(s) are defined on the model. If you want to
   disable this check during class creation, you can do so by passing <code>False</code> to the <code>check_fields</code> argument.
-  This is useful when the field validator is defined on a base class, and the field is expected to be set
-  on subclasses.</li>
+  This is useful when the field validator is defined on a base class, and the field is expected to exist on
+  subclasses.</li>
 </ul>
 <h2 id="model-validators">Model validators<a class="headerlink" href="#model-validators" title="Permanent link">&para;</a></h2>
 <details class="api">
@@ -3831,7 +3831,7 @@ decorator.</p>
 <li><a href="#validation-data">already validated data</a></li>
 <li><a href="#validation-context">user defined context</a></li>
 <li>the current validation mode: either <code>'python'</code> or <code>'json'</code> (see the <a class="autorefs autorefs-internal" href="../../api/pydantic_core_schema/#pydantic_core.core_schema.ValidationInfo.mode"><code>mode</code></a> property)</li>
-<li>the current field name (see the <a class="autorefs autorefs-internal" href="../../api/pydantic_core_schema/#pydantic_core.core_schema.ValidationInfo.field_name"><code>field_name</code></a> property).</li>
+<li>the current field name, if using a <a href="#field-validators">field validator</a> (see the <a class="autorefs autorefs-internal" href="../../api/pydantic_core_schema/#pydantic_core.core_schema.ValidationInfo.field_name"><code>field_name</code></a> property).</li>
 </ul>
 <h3 id="validation-data">Validation data<a class="headerlink" href="#validation-data" title="Permanent link">&para;</a></h3>
 <p>For field validators, the already validated data can be accessed using the <a class="autorefs autorefs-internal" href="../../api/pydantic_core_schema/#pydantic_core.core_schema.ValidationInfo.data"><code>data</code></a>
@@ -4154,7 +4154,7 @@ a <a href="#field-plain-validator"><em>plain</em></a> validator, in which case <
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.11.7", "pydantic-core==2.35.1", "pydantic-extra-types==2.10.0"]
+    window.mkdocs_run_deps = ["pydantic==2.11.7", "pydantic-core==2.35.2", "pydantic-extra-types==2.10.0"]
     </script>
 
               </article>

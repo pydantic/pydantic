@@ -211,6 +211,17 @@ Attributes:
 
 | Name | Type | Description | | --- | --- | --- | | `func` | `WrapSerializerFunction` | The serializer function to be wrapped. | | `return_type` | `Any` | The return type for the function. If omitted it will be inferred from the type annotation. | | `when_used` | `WhenUsed` | Determines when this serializer should be used. Accepts a string with values 'always', 'unless-none', 'json', and 'json-unless-none'. Defaults to 'always'. |
 
+## SerializeAsAny
+
+```python
+SerializeAsAny()
+
+```
+
+Annotation used to mark a type as having duck-typing serialization behavior.
+
+See [usage documentation](../../concepts/serialization/#serializing-with-duck-typing) for more details.
+
 ## field_serializer
 
 ```python
@@ -282,7 +293,7 @@ print(student.model_dump_json())
 
 ```
 
-See [Custom serializers](../../concepts/serialization/#custom-serializers) for more information.
+See [the usage documentation](../../concepts/serialization/#serializers) for more information.
 
 Four signatures are supported:
 
@@ -305,6 +316,7 @@ Source code in `pydantic/functional_serializers.py`
 def field_serializer(
     *fields: str,
     mode: Literal['plain', 'wrap'] = 'plain',
+    # TODO PEP 747 (grep for 'return_type' on the whole code base):
     return_type: Any = PydanticUndefined,
     when_used: WhenUsed = 'always',
     check_fields: bool | None = None,
@@ -334,7 +346,7 @@ def field_serializer(
     #> {"name":"Jane","courses":["Chemistry","English","Math"]}
     ```
 
-    See [Custom serializers](../concepts/serialization.md#custom-serializers) for more information.
+    See [the usage documentation](../concepts/serialization.md#serializers) for more information.
 
     Four signatures are supported:
 
@@ -467,7 +479,7 @@ And two other signatures for `mode='wrap'`:
 
 - `(self, nxt: SerializerFunctionWrapHandler, info: SerializationInfo)`
 
-  See [Custom serializers](../../concepts/serialization/#custom-serializers) for more information.
+  See [the usage documentation](../../concepts/serialization/#serializers) for more information.
 
 Parameters:
 
@@ -528,7 +540,7 @@ def model_serializer(
     - `(self, nxt: SerializerFunctionWrapHandler)`
     - `(self, nxt: SerializerFunctionWrapHandler, info: SerializationInfo)`
 
-        See [Custom serializers](../concepts/serialization.md#custom-serializers) for more information.
+        See [the usage documentation](../concepts/serialization.md#serializers) for more information.
 
     Args:
         f: The function to be decorated.

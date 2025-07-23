@@ -30,6 +30,26 @@ Attributes:
 
 Bases: `Protocol[ContextT]`
 
+Extra data used during serialization.
+
+### include
+
+```python
+include: IncExCall
+
+```
+
+The `include` argument set during serialization.
+
+### exclude
+
+```python
+exclude: IncExCall
+
+```
+
+The `exclude` argument set during serialization.
+
 ### context
 
 ```python
@@ -37,13 +57,91 @@ context: ContextT
 
 ```
 
-Current serialization context.
+The current serialization context.
+
+### mode
+
+```python
+mode: Literal['python', 'json']
+
+```
+
+The serialization mode set during serialization.
+
+### by_alias
+
+```python
+by_alias: bool
+
+```
+
+The `by_alias` argument set during serialization.
+
+### exclude_unset
+
+```python
+exclude_unset: bool
+
+```
+
+The `exclude_unset` argument set during serialization.
+
+### exclude_defaults
+
+```python
+exclude_defaults: bool
+
+```
+
+The `exclude_defaults` argument set during serialization.
+
+### exclude_none
+
+```python
+exclude_none: bool
+
+```
+
+The `exclude_none` argument set during serialization.
+
+### serialize_as_any
+
+```python
+serialize_as_any: bool
+
+```
+
+The `serialize_as_any` argument set during serialization.
+
+### round_trip
+
+```python
+round_trip: bool
+
+```
+
+The `round_trip` argument set during serialization.
+
+## FieldSerializationInfo
+
+Bases: `SerializationInfo[ContextT]`, `Protocol`
+
+Extra data used during field serialization.
+
+### field_name
+
+```python
+field_name: str
+
+```
+
+The name of the current field being serialized.
 
 ## ValidationInfo
 
 Bases: `Protocol[ContextT]`
 
-Argument passed to validation functions.
+Extra data used during validation.
 
 ### context
 
@@ -52,7 +150,7 @@ context: ContextT
 
 ```
 
-Current validation context.
+The current validation context.
 
 ### config
 
