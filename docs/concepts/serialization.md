@@ -234,9 +234,12 @@ control the serialization behavior.
 In its simplest form, a field serializer is a callable taking the value to be serialized as an argument and
 **returning the serialized value**.
 
+If the `return_type` argument is provided to the serializer (or if a return type annotation is available on the serializer function),
+it will be used to build an extra serializer, to ensure that the serialized field value complies with this return type.
+
 **Two** different types of serializers can be used. They can all be defined using the
 [annotated pattern](./fields.md#the-annotated-pattern) or using the
-[`@field_serializer`][pydantic.field_serializer] decorator, applied on instance or [static method][staticmethod].
+[`@field_serializer`][pydantic.field_serializer] decorator, applied on instance or [static methods][staticmethod].
 
 * ***Plain* serializers**: are called unconditionally to serialize a field. The serialization logic for types supported
   by Pydantic will *not* be called. Using such serializers is also useful to specify the logic for arbitrary types.
@@ -422,6 +425,10 @@ Here are a couple additional notes about the decorator usage:
 
 Serialization can also be customized on the entire model using the [`@model_serializer`][pydantic.model_serializer]
 decorator.
+
+If the `return_type` argument is provided to the [`@model_serializer`][pydantic.model_serializer] decorator
+(or if a return type annotation is available on the serializer function), it will be used to build an extra serializer,
+to ensure that the serialized model value complies with this return type.
 
 As with [field serializers](#field-serializers), **two** different types of model serializers can be used:
 
