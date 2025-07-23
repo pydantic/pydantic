@@ -54,7 +54,9 @@ def test_serialization_exclude():
         core_schema.dataclass_args_schema(
             'Foo',
             [
-                core_schema.dataclass_field(name='a', schema=core_schema.str_schema()),
+                core_schema.dataclass_field(
+                    name='a', schema=core_schema.str_schema(), serialization_exclude_if=lambda x: x == 'bye'
+                ),
                 core_schema.dataclass_field(name='b', schema=core_schema.bytes_schema(), serialization_exclude=True),
             ],
         ),
@@ -63,12 +65,18 @@ def test_serialization_exclude():
     s = SchemaSerializer(schema)
     assert s.to_python(Foo(a='hello', b=b'more')) == {'a': 'hello'}
     assert s.to_python(Foo(a='hello', b=b'more'), mode='json') == {'a': 'hello'}
+    # a = 'bye' excludes it
+    assert s.to_python(Foo(a='bye', b=b'more'), mode='json') == {}
     j = s.to_json(Foo(a='hello', b=b'more'))
-
     if on_pypy:
         assert json.loads(j) == {'a': 'hello'}
     else:
         assert j == b'{"a":"hello"}'
+    j = s.to_json(Foo(a='bye', b=b'more'))
+    if on_pypy:
+        assert json.loads(j) == {}
+    else:
+        assert j == b'{}'
 
 
 def test_serialization_alias():
