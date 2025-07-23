@@ -4372,9 +4372,7 @@ type-annotated fields without causing a type error.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/fields.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1084</span>
-<span class="normal">1085</span>
-<span class="normal">1086</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1086</span>
 <span class="normal">1087</span>
 <span class="normal">1088</span>
 <span class="normal">1089</span>
@@ -4577,7 +4575,9 @@ type-annotated fields without causing a type error.</p>
 <span class="normal">1286</span>
 <span class="normal">1287</span>
 <span class="normal">1288</span>
-<span class="normal">1289</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">Field</span><span class="p">(</span>  <span class="c1"># noqa: C901</span>
+<span class="normal">1289</span>
+<span class="normal">1290</span>
+<span class="normal">1291</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">Field</span><span class="p">(</span>  <span class="c1"># noqa: C901</span>
     <span class="n">default</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">PydanticUndefined</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">default_factory</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">_Unset</span><span class="p">,</span>
@@ -6283,9 +6283,7 @@ be called (namely, when instantiating a model via <code>model_construct</code>).
 
             <details class="quote">
               <summary>Source code in <code>pydantic/fields.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">673</span>
-<span class="normal">674</span>
-<span class="normal">675</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">675</span>
 <span class="normal">676</span>
 <span class="normal">677</span>
 <span class="normal">678</span>
@@ -6311,7 +6309,9 @@ be called (namely, when instantiating a model via <code>model_construct</code>).
 <span class="normal">698</span>
 <span class="normal">699</span>
 <span class="normal">700</span>
-<span class="normal">701</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_default</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">call_default_factory</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">validated_data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="normal">701</span>
+<span class="normal">702</span>
+<span class="normal">703</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_default</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">call_default_factory</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">validated_data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the default value.</span>
 
 <span class="sd">    We expose an option for whether to call the default_factory (if present), as calling it may</span>
@@ -6391,13 +6391,13 @@ be called (namely, when instantiating a model via <code>model_construct</code>).
 
             <details class="quote">
               <summary>Source code in <code>pydantic/fields.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">703</span>
-<span class="normal">704</span>
-<span class="normal">705</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">705</span>
 <span class="normal">706</span>
 <span class="normal">707</span>
 <span class="normal">708</span>
-<span class="normal">709</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">is_required</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="normal">709</span>
+<span class="normal">710</span>
+<span class="normal">711</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">is_required</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if the field is required (i.e., does not have a default value or factory).</span>
 
 <span class="sd">    Returns:</span>
@@ -6460,9 +6460,7 @@ type had unrecognized annotations, or was annotated with a call to <code>pydanti
 
             <details class="quote">
               <summary>Source code in <code>pydantic/fields.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">711</span>
-<span class="normal">712</span>
-<span class="normal">713</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">713</span>
 <span class="normal">714</span>
 <span class="normal">715</span>
 <span class="normal">716</span>
@@ -6477,7 +6475,9 @@ type had unrecognized annotations, or was annotated with a call to <code>pydanti
 <span class="normal">725</span>
 <span class="normal">726</span>
 <span class="normal">727</span>
-<span class="normal">728</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">rebuild_annotation</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="normal">728</span>
+<span class="normal">729</span>
+<span class="normal">730</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">rebuild_annotation</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Attempts to rebuild the original annotation for use in function signatures.</span>
 
 <span class="sd">    If metadata is present, it adds it to the original annotation using</span>
@@ -6598,9 +6598,7 @@ type had unrecognized annotations, or was annotated with a call to <code>pydanti
 </details>
             <details class="quote">
               <summary>Source code in <code>pydantic/fields.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">730</span>
-<span class="normal">731</span>
-<span class="normal">732</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">732</span>
 <span class="normal">733</span>
 <span class="normal">734</span>
 <span class="normal">735</span>
@@ -6624,7 +6622,9 @@ type had unrecognized annotations, or was annotated with a call to <code>pydanti
 <span class="normal">753</span>
 <span class="normal">754</span>
 <span class="normal">755</span>
-<span class="normal">756</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">apply_typevars_map</span><span class="p">(</span>
+<span class="normal">756</span>
+<span class="normal">757</span>
+<span class="normal">758</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">apply_typevars_map</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">typevars_map</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="n">TypeVar</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">globalns</span><span class="p">:</span> <span class="n">GlobalsNamespace</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -6821,9 +6821,7 @@ If both <code>default</code> and <code>default_factory</code> are set, an error 
 
             <details class="quote">
               <summary>Source code in <code>pydantic/fields.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1379</span>
-<span class="normal">1380</span>
-<span class="normal">1381</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1381</span>
 <span class="normal">1382</span>
 <span class="normal">1383</span>
 <span class="normal">1384</span>
@@ -6855,7 +6853,9 @@ If both <code>default</code> and <code>default_factory</code> are set, an error 
 <span class="normal">1410</span>
 <span class="normal">1411</span>
 <span class="normal">1412</span>
-<span class="normal">1413</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">PrivateAttr</span><span class="p">(</span>
+<span class="normal">1413</span>
+<span class="normal">1414</span>
+<span class="normal">1415</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">PrivateAttr</span><span class="p">(</span>
     <span class="n">default</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">PydanticUndefined</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">default_factory</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -6971,14 +6971,14 @@ attribute if not provided.</p>
 
                   <details class="quote">
                     <summary>Source code in <code>pydantic/fields.py</code></summary>
-                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1311</span>
-<span class="normal">1312</span>
-<span class="normal">1313</span>
+                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1313</span>
 <span class="normal">1314</span>
 <span class="normal">1315</span>
 <span class="normal">1316</span>
 <span class="normal">1317</span>
-<span class="normal">1318</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+<span class="normal">1318</span>
+<span class="normal">1319</span>
+<span class="normal">1320</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> <span class="n">default</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">PydanticUndefined</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">default_factory</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span><span class="p">[[],</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="k">if</span> <span class="n">default</span> <span class="ow">is</span> <span class="bp">Ellipsis</span><span class="p">:</span>
@@ -7041,9 +7041,7 @@ attribute if not provided.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/fields.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1341</span>
-<span class="normal">1342</span>
-<span class="normal">1343</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1343</span>
 <span class="normal">1344</span>
 <span class="normal">1345</span>
 <span class="normal">1346</span>
@@ -7051,7 +7049,9 @@ attribute if not provided.</p>
 <span class="normal">1348</span>
 <span class="normal">1349</span>
 <span class="normal">1350</span>
-<span class="normal">1351</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_default</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="normal">1351</span>
+<span class="normal">1352</span>
+<span class="normal">1353</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_default</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Retrieve the default value of the object.</span>
 
 <span class="sd">    If `self.default_factory` is `None`, the method will return a deep copy of the `self.default` object.</span>
@@ -7468,9 +7468,7 @@ objects.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/fields.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1535</span>
-<span class="normal">1536</span>
-<span class="normal">1537</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1537</span>
 <span class="normal">1538</span>
 <span class="normal">1539</span>
 <span class="normal">1540</span>
@@ -7665,7 +7663,9 @@ objects.</p>
 <span class="normal">1729</span>
 <span class="normal">1730</span>
 <span class="normal">1731</span>
-<span class="normal">1732</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">computed_field</span><span class="p">(</span>
+<span class="normal">1732</span>
+<span class="normal">1733</span>
+<span class="normal">1734</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">computed_field</span><span class="p">(</span>
     <span class="n">func</span><span class="p">:</span> <span class="n">PropertyT</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">/</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
