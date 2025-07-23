@@ -620,11 +620,13 @@ jobs:
               apk update
               apk add python3 py3-pip git curl
             fi
+          env: |
+            UV_NO_PROGRESS: '1'
           run: |
             set -x
             curl -LsSf https://astral.sh/uv/install.sh | sh
             source $HOME/.local/bin/env
-            uv sync --frozen --group testing --no-install-project --no-progress
+            uv sync --frozen --group testing --no-install-project
             uv pip install pydantic-core --no-index --no-deps --find-links dist --force-reinstall
             uv run --no-sync pytest --ignore=tests/test_docstrings.py
             uv run --no-sync python -c 'import pydantic_core._pydantic_core; print(pydantic_core._pydantic_core.__version__)'
