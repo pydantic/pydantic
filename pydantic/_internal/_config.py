@@ -98,7 +98,13 @@ class ConfigWrapper:
             self.config_dict = cast(ConfigDict, config)
 
     @classmethod
-    def for_model(cls, bases: tuple[type[Any], ...], namespace: dict[str, Any], kwargs: dict[str, Any]) -> Self:
+    def for_model(
+        cls,
+        bases: tuple[type[Any], ...],
+        namespace: dict[str, Any],
+        raw_annotations: dict[str, Any],
+        kwargs: dict[str, Any],
+    ) -> Self:
         """Build a new `ConfigWrapper` instance for a `BaseModel`.
 
         The config wrapper built based on (in descending order of priority):
@@ -109,6 +115,7 @@ class ConfigWrapper:
         Args:
             bases: A tuple of base classes.
             namespace: The namespace of the class being created.
+            raw_annotations: The (non-evaluated) annotations of the model.
             kwargs: The kwargs passed to the class being created.
 
         Returns:
@@ -123,7 +130,6 @@ class ConfigWrapper:
         config_class_from_namespace = namespace.get('Config')
         config_dict_from_namespace = namespace.get('model_config')
 
-        raw_annotations = namespace.get('__annotations__', {})
         if raw_annotations.get('model_config') and config_dict_from_namespace is None:
             raise PydanticUserError(
                 '`model_config` cannot be used as a model field name. Use `model_config` for model configuration.',
@@ -320,7 +326,7 @@ def prepare_config(config: ConfigDict | dict[str, Any] | type[Any] | None) -> Co
         return ConfigDict()
 
     if not isinstance(config, dict):
-        warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+        warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning, stacklevel=4)
         config = {k: getattr(config, k) for k in dir(config) if not k.startswith('__')}
 
     config_dict = cast(ConfigDict, config)

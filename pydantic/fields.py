@@ -613,6 +613,8 @@ class FieldInfo(_repr.Representation):
 
         # use the `Field` function so in correct kwargs raise the correct `TypeError`
         dc_field_metadata = {k: v for k, v in dc_field.metadata.items() if k in _FIELD_ARG_NAMES}
+        if sys.version_info >= (3, 14) and dc_field.doc is not None:
+            dc_field_metadata['description'] = dc_field.doc
         return Field(default=default, default_factory=default_factory, repr=dc_field.repr, **dc_field_metadata)  # pyright: ignore[reportCallIssue]
 
     @staticmethod
@@ -887,7 +889,46 @@ def Field(
     fail_fast: bool | None = _Unset,
     **extra: Unpack[_EmptyKwargs],
 ) -> Any: ...
-@overload  # `default` argument set
+@overload  # `default` argument set, validate_default=True (no type checking on the default value)
+def Field(
+    default: Any,
+    *,
+    alias: str | None = _Unset,
+    alias_priority: int | None = _Unset,
+    validation_alias: str | AliasPath | AliasChoices | None = _Unset,
+    serialization_alias: str | None = _Unset,
+    title: str | None = _Unset,
+    field_title_generator: Callable[[str, FieldInfo], str] | None = _Unset,
+    description: str | None = _Unset,
+    examples: list[Any] | None = _Unset,
+    exclude: bool | None = _Unset,
+    discriminator: str | types.Discriminator | None = _Unset,
+    deprecated: Deprecated | str | bool | None = _Unset,
+    json_schema_extra: JsonDict | Callable[[JsonDict], None] | None = _Unset,
+    frozen: bool | None = _Unset,
+    validate_default: Literal[True],
+    repr: bool = _Unset,
+    init: bool | None = _Unset,
+    init_var: bool | None = _Unset,
+    kw_only: bool | None = _Unset,
+    pattern: str | typing.Pattern[str] | None = _Unset,
+    strict: bool | None = _Unset,
+    coerce_numbers_to_str: bool | None = _Unset,
+    gt: annotated_types.SupportsGt | None = _Unset,
+    ge: annotated_types.SupportsGe | None = _Unset,
+    lt: annotated_types.SupportsLt | None = _Unset,
+    le: annotated_types.SupportsLe | None = _Unset,
+    multiple_of: float | None = _Unset,
+    allow_inf_nan: bool | None = _Unset,
+    max_digits: int | None = _Unset,
+    decimal_places: int | None = _Unset,
+    min_length: int | None = _Unset,
+    max_length: int | None = _Unset,
+    union_mode: Literal['smart', 'left_to_right'] = _Unset,
+    fail_fast: bool | None = _Unset,
+    **extra: Unpack[_EmptyKwargs],
+) -> Any: ...
+@overload  # `default` argument set, validate_default=False or unset
 def Field(
     default: _T,
     *,
@@ -904,7 +945,7 @@ def Field(
     deprecated: Deprecated | str | bool | None = _Unset,
     json_schema_extra: JsonDict | Callable[[JsonDict], None] | None = _Unset,
     frozen: bool | None = _Unset,
-    validate_default: bool | None = _Unset,
+    validate_default: Literal[False] = ...,
     repr: bool = _Unset,
     init: bool | None = _Unset,
     init_var: bool | None = _Unset,
@@ -926,7 +967,46 @@ def Field(
     fail_fast: bool | None = _Unset,
     **extra: Unpack[_EmptyKwargs],
 ) -> _T: ...
-@overload  # `default_factory` argument set
+@overload  # `default_factory` argument set, validate_default=True  (no type checking on the default value)
+def Field(  # pyright: ignore[reportOverlappingOverload]
+    *,
+    default_factory: Callable[[], Any] | Callable[[dict[str, Any]], Any],
+    alias: str | None = _Unset,
+    alias_priority: int | None = _Unset,
+    validation_alias: str | AliasPath | AliasChoices | None = _Unset,
+    serialization_alias: str | None = _Unset,
+    title: str | None = _Unset,
+    field_title_generator: Callable[[str, FieldInfo], str] | None = _Unset,
+    description: str | None = _Unset,
+    examples: list[Any] | None = _Unset,
+    exclude: bool | None = _Unset,
+    discriminator: str | types.Discriminator | None = _Unset,
+    deprecated: Deprecated | str | bool | None = _Unset,
+    json_schema_extra: JsonDict | Callable[[JsonDict], None] | None = _Unset,
+    frozen: bool | None = _Unset,
+    validate_default: Literal[True],
+    repr: bool = _Unset,
+    init: bool | None = _Unset,
+    init_var: bool | None = _Unset,
+    kw_only: bool | None = _Unset,
+    pattern: str | typing.Pattern[str] | None = _Unset,
+    strict: bool | None = _Unset,
+    coerce_numbers_to_str: bool | None = _Unset,
+    gt: annotated_types.SupportsGt | None = _Unset,
+    ge: annotated_types.SupportsGe | None = _Unset,
+    lt: annotated_types.SupportsLt | None = _Unset,
+    le: annotated_types.SupportsLe | None = _Unset,
+    multiple_of: float | None = _Unset,
+    allow_inf_nan: bool | None = _Unset,
+    max_digits: int | None = _Unset,
+    decimal_places: int | None = _Unset,
+    min_length: int | None = _Unset,
+    max_length: int | None = _Unset,
+    union_mode: Literal['smart', 'left_to_right'] = _Unset,
+    fail_fast: bool | None = _Unset,
+    **extra: Unpack[_EmptyKwargs],
+) -> Any: ...
+@overload  # `default_factory` argument set, validate_default=False or unset
 def Field(
     *,
     default_factory: Callable[[], _T] | Callable[[dict[str, Any]], _T],
@@ -943,7 +1023,7 @@ def Field(
     deprecated: Deprecated | str | bool | None = _Unset,
     json_schema_extra: JsonDict | Callable[[JsonDict], None] | None = _Unset,
     frozen: bool | None = _Unset,
-    validate_default: bool | None = _Unset,
+    validate_default: Literal[False] | None = _Unset,
     repr: bool = _Unset,
     init: bool | None = _Unset,
     init_var: bool | None = _Unset,

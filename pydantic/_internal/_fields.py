@@ -12,8 +12,7 @@ from re import Pattern
 from typing import TYPE_CHECKING, Any, Callable, TypeVar
 
 from pydantic_core import PydanticUndefined
-from typing_extensions import TypeIs, get_origin
-from typing_inspection import typing_objects
+from typing_extensions import TypeIs
 from typing_inspection.introspection import AnnotationSource
 
 from pydantic import PydanticDeprecatedSince211
@@ -259,7 +258,8 @@ def collect_model_fields(  # noqa: C901
 
     # https://docs.python.org/3/howto/annotations.html#accessing-the-annotations-dict-of-an-object-in-python-3-9-and-older
     # annotations is only used for finding fields in parent classes
-    annotations = cls.__dict__.get('__annotations__', {})
+    annotations = _typing_extra.safe_get_annotations(cls)
+
     fields: dict[str, FieldInfo] = {}
 
     class_vars: set[str] = set()
@@ -350,7 +350,6 @@ def collect_model_fields(  # noqa: C901
                 field_info = copy(parent_fields_lookup[ann_name])
 
         else:  # An assigned value is present (either the default value, or a `Field()` function)
-            _warn_on_nested_alias_in_annotation(ann_type, ann_name)
             if isinstance(assigned_value, FieldInfo_) and ismethoddescriptor(assigned_value.default):
                 # `assigned_value` was fetched using `getattr`, which triggers a call to `__get__`
                 # for descriptors, so we do the same if the `= field(default=...)` form is used.
@@ -411,22 +410,6 @@ def collect_model_fields(  # noqa: C901
     if config_wrapper.use_attribute_docstrings:
         _update_fields_from_docstrings(cls, fields)
     return fields, class_vars
-
-
-def _warn_on_nested_alias_in_annotation(ann_type: type[Any], ann_name: str) -> None:
-    FieldInfo = import_cached_field_info()
-
-    args = getattr(ann_type, '__args__', None)
-    if args:
-        for anno_arg in args:
-            if typing_objects.is_annotated(get_origin(anno_arg)):
-                for anno_type_arg in _typing_extra.get_args(anno_arg):
-                    if isinstance(anno_type_arg, FieldInfo) and anno_type_arg.alias is not None:
-                        warnings.warn(
-                            f'`alias` specification on field "{ann_name}" must be set on outermost annotation to take effect.',
-                            UserWarning,
-                        )
-                        return
 
 
 def rebuild_model_fields(
@@ -508,7 +491,9 @@ def collect_dataclass_fields(
 
         with ns_resolver.push(base):
             for ann_name, dataclass_field in dataclass_fields.items():
-                if ann_name not in base.__dict__.get('__annotations__', {}):
+                base_anns = _typing_extra.safe_get_annotations(base)
+
+                if ann_name not in base_anns:
                     # `__dataclass_fields__`contains every field, even the ones from base classes.
                     # Only collect the ones defined on `base`.
                     continue
