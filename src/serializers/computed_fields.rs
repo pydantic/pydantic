@@ -4,6 +4,7 @@ use pyo3::{intern, PyTraverseError, PyVisit};
 use serde::ser::SerializeMap;
 
 use crate::build_tools::py_schema_error_type;
+use crate::common::missing_sentinel::get_missing_sentinel_object;
 use crate::definitions::DefinitionsBuilder;
 use crate::py_gc::PyGcTraverse;
 use crate::serializers::filter::SchemaFilter;
@@ -146,6 +147,10 @@ impl ComputedFields {
                 }
             };
             if extra.exclude_none && value.is_none() {
+                continue;
+            }
+            let missing_sentinel = get_missing_sentinel_object(model.py());
+            if value.is(missing_sentinel) {
                 continue;
             }
 

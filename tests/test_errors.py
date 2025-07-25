@@ -340,6 +340,7 @@ all_errors = [
     ('assertion_error', 'Assertion failed, foobar', {'error': AssertionError('foobar')}),
     ('literal_error', 'Input should be foo', {'expected': 'foo'}),
     ('literal_error', 'Input should be foo or bar', {'expected': 'foo or bar'}),
+    ('missing_sentinel_error', "Input should be the 'MISSING' sentinel", None),
     ('date_type', 'Input should be a valid date', None),
     ('date_parsing', 'Input should be a valid date in the format YYYY-MM-DD, foobar', {'error': 'foobar'}),
     ('date_from_datetime_parsing', 'Input should be a valid date or datetime, foobar', {'error': 'foobar'}),

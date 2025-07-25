@@ -45,6 +45,8 @@ async def main(tests_zip: str, tag_name: str):
             'pytest-mock',
             'tzdata',
             'inline-snapshot<0.21',
+            'typing-extensions>=4.14.1',
+            'typing-inspection',
             pydantic_core_wheel,
         ]
     )
