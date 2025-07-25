@@ -51,6 +51,7 @@ class ModelPickle(BaseModel):
     f: int | MISSING = MISSING
 
 
+@pytest.mark.xfail(reason="PEP 661 sentinels aren't picklable yet in the experimental typing-extensions implementation")
 def test_missing_sentinel_pickle() -> None:
     m = ModelPickle()
     m_reconstructed = pickle.loads(pickle.dumps(m))

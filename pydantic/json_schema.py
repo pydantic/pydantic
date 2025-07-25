@@ -806,7 +806,7 @@ class GenerateJsonSchema:
         return result
 
     def missing_sentinel_schema(self, schema: core_schema.MissingSentinelSchema) -> JsonSchemaValue:
-        """Generates a JSON schema that matches the [`MISSING`][pydantic_core.MISSING] sentinel value.
+        """Generates a JSON schema that matches the `MISSING` sentinel value.
 
         Args:
             schema: The core schema.
