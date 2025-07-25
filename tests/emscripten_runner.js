@@ -105,7 +105,7 @@ await micropip.install([
     'pytest-mock',
     'tzdata',
     'file:${wheel_path}',
-    'typing-extensions',
+    'typing-extensions>=4.14.1',
     'typing-inspection',
 ])
 importlib.invalidate_caches()

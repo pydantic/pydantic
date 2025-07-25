@@ -15,6 +15,7 @@ pub mod json;
 pub mod json_or_python;
 pub mod list;
 pub mod literal;
+pub mod missing_sentinel;
 pub mod model;
 pub mod nullable;
 pub mod other;

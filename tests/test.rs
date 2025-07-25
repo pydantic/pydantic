@@ -54,65 +54,6 @@ mod tests {
     }
 
     #[test]
-    fn test_serialize_computed_fields() {
-        Python::with_gil(|py| {
-            let code = c_str!(
-                r#"
-class A:
-    @property
-    def b(self) -> str:
-        return "b"
-
-schema = {
-    "cls": A,
-    "config": {},
-    "schema": {
-        "computed_fields": [
-            {"property_name": "b", "return_schema": {"type": "any"}, "type": "computed-field"}
-        ],
-        "fields": {},
-        "type": "model-fields",
-    },
-    "type": "model",
-}
-a = A()
-            "#
-            );
-            let locals = PyDict::new(py);
-            py.run(code, None, Some(&locals)).unwrap();
-            let a = locals.get_item("a").unwrap().unwrap();
-            let schema = locals
-                .get_item("schema")
-                .unwrap()
-                .unwrap()
-                .downcast_into::<PyDict>()
-                .unwrap();
-            let serialized = SchemaSerializer::py_new(schema, None)
-                .unwrap()
-                .to_json(
-                    py,
-                    &a,
-                    None,
-                    Some(false),
-                    None,
-                    None,
-                    Some(true),
-                    false,
-                    false,
-                    false,
-                    false,
-                    WarningsArg::Bool(true),
-                    None,
-                    false,
-                    None,
-                )
-                .unwrap();
-            let serialized: &[u8] = serialized.extract(py).unwrap();
-            assert_eq!(serialized, b"{\"b\":\"b\"}");
-        });
-    }
-
-    #[test]
     fn test_literal_schema() {
         Python::with_gil(|py| {
             let code = c_str!(

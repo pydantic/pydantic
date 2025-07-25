@@ -82,6 +82,7 @@ all_schema_functions = [
         {'type': 'timedelta', 'microseconds_precision': 'error'},
     ),
     (core_schema.literal_schema, args(['a', 'b']), {'type': 'literal', 'expected': ['a', 'b']}),
+    (core_schema.missing_sentinel_schema, args(), {'type': 'missing-sentinel'}),
     (
         core_schema.enum_schema,
         args(MyEnum, list(MyEnum.__members__.values())),
