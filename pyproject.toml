@@ -36,7 +36,7 @@ classifiers = [
     'Typing :: Typed',
 ]
 dependencies = [
-    'typing-extensions>=4.13.0',
+    'typing-extensions>=4.14.1',
 ]
 dynamic = ['license', 'readme', 'version']
 
@@ -160,3 +160,4 @@ fix = ["create", "fix"]
 # this ensures that `uv run` doesn't actually build the package; a `make`
 # command is needed to build
 package = false
+required-version = '>=0.7.2'

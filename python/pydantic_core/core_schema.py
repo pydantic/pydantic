@@ -1346,6 +1346,16 @@ def enum_schema(
     )
 
 
+class MissingSentinelSchema(TypedDict, total=False):
+    type: Required[Literal['missing-sentinel']]
+
+
+def missing_sentinel_schema() -> MissingSentinelSchema:
+    """Returns a schema for the `MISSING` sentinel."""
+
+    return {'type': 'missing-sentinel'}
+
+
 # must match input/parse_json.rs::JsonType::try_from
 JsonType = Literal['null', 'bool', 'int', 'float', 'str', 'list', 'dict']
 
@@ -4082,6 +4092,7 @@ if not MYPY:
         DatetimeSchema,
         TimedeltaSchema,
         LiteralSchema,
+        MissingSentinelSchema,
         EnumSchema,
         IsInstanceSchema,
         IsSubclassSchema,
@@ -4140,6 +4151,7 @@ CoreSchemaType = Literal[
     'datetime',
     'timedelta',
     'literal',
+    'missing-sentinel',
     'enum',
     'is-instance',
     'is-subclass',
@@ -4239,6 +4251,7 @@ ErrorType = Literal[
     'value_error',
     'assertion_error',
     'literal_error',
+    'missing_sentinel_error',
     'date_type',
     'date_parsing',
     'date_from_datetime_parsing',

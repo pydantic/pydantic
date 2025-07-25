@@ -744,6 +744,34 @@ def test_property_alias():
     assert s.to_json(Model(3, 4), by_alias=True) == b'{"width":3,"height":4,"Area":12,"volume":48}'
 
 
+def test_computed_field_without_fields() -> None:
+    """https://github.com/pydantic/pydantic/issues/5551"""
+
+    # Original test introduced in https://github.com/pydantic/pydantic-core/pull/550
+
+    class A:
+        @property
+        def b(self) -> str:
+            return 'b'
+
+    schema = core_schema.model_schema(
+        cls=A,
+        config={},
+        schema=core_schema.model_fields_schema(
+            fields={},
+            computed_fields=[
+                core_schema.computed_field('b', return_schema=core_schema.any_schema()),
+            ],
+        ),
+    )
+
+    a = A()
+
+    serializer = SchemaSerializer(schema)
+
+    assert serializer.to_json(a) == b'{"b":"b"}'
+
+
 def test_computed_field_exclude_none():
     @dataclasses.dataclass
     class Model:
