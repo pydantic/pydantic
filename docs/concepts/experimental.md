@@ -510,12 +510,14 @@ This singleton can be used as a default value, as an alternative to `None` when 
 meaning. During serialization, any field with `MISSING` as a value is excluded from the output.
 
 ```python
+from typing import Union
+
 from pydantic import BaseModel
 from pydantic.experimental.missing_sentinel import MISSING
 
 
 class Configuration(BaseModel):
-    timeout: int | None | MISSING = MISSING
+    timeout: Union[int, None, MISSING] = MISSING
 
 
 # configuration defaults, stored somewhere else:
@@ -533,7 +535,7 @@ Configuration.model_json_schema()['properties']['timeout']
 
 
 # `is` can be used to discrimate between the sentinel and other values:
-timeout = conf.timeout if timeout.timeout is not MISSING else defaults['timeout']
+timeout = conf.timeout if conf.timeout is not MISSING else defaults['timeout']
 ```
 
 This feature is marked as experimental because it relies on the draft [PEP 661](https://peps.python.org/pep-0661/), introducing sentinels in the standard library.
