@@ -36,7 +36,7 @@ from typing import (
 )
 
 import pydantic_core
-from pydantic_core import UNSET, CoreSchema, PydanticOmit, core_schema, to_jsonable_python
+from pydantic_core import MISSING, CoreSchema, PydanticOmit, core_schema, to_jsonable_python
 from pydantic_core.core_schema import ComputedField
 from typing_extensions import TypeAlias, assert_never, deprecated, final
 from typing_inspection.introspection import get_literal_values
@@ -805,8 +805,8 @@ class GenerateJsonSchema:
             result['type'] = 'null'
         return result
 
-    def unset_sentinel_schema(self, schema: core_schema.UnsetSentinelSchema) -> JsonSchemaValue:
-        """Generates a JSON schema that matches the [`UNSET`][pydantic_core.UNSET] sentinel value.
+    def missing_sentinel_schema(self, schema: core_schema.MissingSentinelSchema) -> JsonSchemaValue:
+        """Generates a JSON schema that matches the [`MISSING`][pydantic_core.MISSING] sentinel value.
 
         Args:
             schema: The core schema.
@@ -1120,7 +1120,7 @@ class GenerateJsonSchema:
         json_schema = self.generate_inner(schema['schema'])
 
         default = self.get_default_value(schema)
-        if default is NoDefault or default is UNSET:
+        if default is NoDefault or default is MISSING:
             return json_schema
 
         # we reflect the application of custom plain, no-info serializers to defaults for
