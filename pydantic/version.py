@@ -6,8 +6,15 @@ from pydantic_core import __version__ as __pydantic_core_version__
 
 __all__ = 'VERSION', 'version_info'
 
-VERSION = '2.11.7'
-"""The version of Pydantic."""
+VERSION = '2.12.0a1'
+"""The version of Pydantic.
+
+This version specifier is guaranteed to be compliant with the [specification],
+introduced by [PEP 440].
+
+[specification]: https://packaging.python.org/en/latest/specifications/version-specifiers/
+[PEP 440]: https://peps.python.org/pep-0440/
+"""
 
 
 def version_short() -> str:
