@@ -36,7 +36,7 @@ from typing import (
 )
 
 import pydantic_core
-from pydantic_core import CoreSchema, PydanticOmit, core_schema, to_jsonable_python
+from pydantic_core import MISSING, CoreSchema, PydanticOmit, core_schema, to_jsonable_python
 from pydantic_core.core_schema import ComputedField
 from typing_extensions import TypeAlias, assert_never, deprecated, final
 from typing_inspection.introspection import get_literal_values
@@ -847,6 +847,17 @@ class GenerateJsonSchema:
             result['type'] = 'null'
         return result
 
+    def missing_sentinel_schema(self, schema: core_schema.MissingSentinelSchema) -> JsonSchemaValue:
+        """Generates a JSON schema that matches the `MISSING` sentinel value.
+
+        Args:
+            schema: The core schema.
+
+        Returns:
+            The generated JSON schema.
+        """
+        raise PydanticOmit
+
     def enum_schema(self, schema: core_schema.EnumSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches an Enum value.
 
@@ -1151,7 +1162,7 @@ class GenerateJsonSchema:
         json_schema = self.generate_inner(schema['schema'])
 
         default = self.get_default_value(schema)
-        if default is NoDefault:
+        if default is NoDefault or default is MISSING:
             return json_schema
 
         # we reflect the application of custom plain, no-info serializers to defaults for

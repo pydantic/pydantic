@@ -1380,6 +1380,27 @@ except ValidationError as exc:
     #> 'missing_positional_only_argument'
 ```
 
+## `missing_sentinel_error`
+
+This error is raised when the experimental `MISSING` sentinel is the only value allowed, and wasn't
+provided during validation:
+
+```python
+from pydantic import BaseModel, ValidationError
+from pydantic.experimental.missing_sentinel import MISSING
+
+
+class Model(BaseModel):
+    f: MISSING
+
+
+try:
+    Model(f=1)
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'missing_sentinel_error'
+```
+
 ## `model_attributes_type`
 
 This error is raised when the input value is not a valid dictionary, model instance, or instance that fields can be extracted from:

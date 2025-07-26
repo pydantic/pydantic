@@ -41,6 +41,7 @@ from zoneinfo import ZoneInfo
 
 import typing_extensions
 from pydantic_core import (
+    MISSING,
     CoreSchema,
     MultiHostUrl,
     PydanticCustomError,
@@ -1068,6 +1069,8 @@ class GenerateSchema:
             return core_schema.multi_host_url_schema()
         elif obj is None or obj is _typing_extra.NoneType:
             return core_schema.none_schema()
+        if obj is MISSING:
+            return core_schema.missing_sentinel_schema()
         elif obj in IP_TYPES:
             return self._ip_schema(obj)
         elif obj in TUPLE_TYPES:
