@@ -1348,12 +1348,21 @@ def enum_schema(
 
 class MissingSentinelSchema(TypedDict, total=False):
     type: Required[Literal['missing-sentinel']]
+    metadata: dict[str, Any]
+    serialization: SerSchema
 
 
-def missing_sentinel_schema() -> MissingSentinelSchema:
+def missing_sentinel_schema(
+    metadata: dict[str, Any] | None = None,
+    serialization: SerSchema | None = None,
+) -> MissingSentinelSchema:
     """Returns a schema for the `MISSING` sentinel."""
 
-    return {'type': 'missing-sentinel'}
+    return _dict_not_none(
+        type='missing-sentinel',
+        metadata=metadata,
+        serialization=serialization,
+    )
 
 
 # must match input/parse_json.rs::JsonType::try_from
