@@ -542,8 +542,8 @@ This feature is marked as experimental because it relies on the draft [PEP 661](
 
 As such, the following limitations currently apply:
 
-- Static type checking of sentinels is only supported with Pyright
+* Static type checking of sentinels is only supported with Pyright
   [1.1.402](https://github.com/microsoft/pyright/releases/tag/1.1.402)
   or greater, and the `enableExperimentalFeatures` type evaluation setting
   should be enabled.
-- Pickling of models containing `MISSING` as a value is not supported.
+* Pickling of models containing `MISSING` as a value is not supported.
