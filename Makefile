@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := all
-sources = pydantic tests docs/plugins
+sources = pydantic tests docs/plugins release/
 NUM_THREADS?=1
 
 .PHONY: .uv  ## Check that uv is installed

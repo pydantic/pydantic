@@ -1791,7 +1791,7 @@ requires-dist = [
     { name = "annotated-types", specifier = ">=0.6.0" },
     { name = "email-validator", marker = "extra == 'email'", specifier = ">=2.0.0" },
     { name = "pydantic-core", specifier = "==2.37.2" },
-    { name = "typing-extensions", specifier = ">=4.13.0" },
+    { name = "typing-extensions", specifier = ">=4.14.1" },
     { name = "typing-inspection", specifier = ">=0.4.0" },
     { name = "tzdata", marker = "python_full_version >= '3.9' and sys_platform == 'win32' and extra == 'timezone'" },
 ]
