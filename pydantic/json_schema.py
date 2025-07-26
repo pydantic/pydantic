@@ -1223,9 +1223,9 @@ class GenerateJsonSchema:
         if inner_json_schema == null_schema:
             return null_schema
         else:
-            # Thanks to the equality check against `null_schema` above, I think 'oneOf' would also be valid here;
-            # I'll use 'anyOf' for now, but it could be changed it if it would work better with some external tooling
-            return self.get_flattened_anyof([inner_json_schema, null_schema])
+            # Thanks to the equality check against `null_schema` above, 'oneOf' is also valid here;
+            # this works better with external tooling, see issue #7161 for more details
+            return self.get_flattened_oneof([inner_json_schema, null_schema])
 
     def union_schema(self, schema: core_schema.UnionSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a schema that allows values matching any of the given schemas.
@@ -2307,6 +2307,18 @@ class GenerateJsonSchema:
             'min_length': 'minProperties',
             'max_length': 'maxProperties',
         }
+
+    def get_flattened_oneof(self, schemas: list[JsonSchemaValue]) -> JsonSchemaValue:
+        members = []
+        for schema in schemas:
+            if len(schema) == 1 and 'oneOf' in schema:
+                members.extend(schema['oneOf'])
+            else:
+                members.append(schema)
+        members = _deduplicate_schemas(members)
+        if len(members) == 1:
+            return members[0]
+        return {'oneOf': members}
 
     def get_flattened_anyof(self, schemas: list[JsonSchemaValue]) -> JsonSchemaValue:
         members = []
