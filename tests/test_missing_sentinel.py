@@ -1,4 +1,5 @@
 import pickle
+from typing import Union
 
 import pytest
 from pydantic_core import MISSING, PydanticSerializationUnexpectedValue
@@ -8,7 +9,7 @@ from pydantic import BaseModel, TypeAdapter, ValidationError
 
 def test_missing_sentinel_model() -> None:
     class Model(BaseModel):
-        f: int | MISSING = MISSING
+        f: Union[int, MISSING] = MISSING
         g: MISSING = MISSING
 
     m1 = Model()
@@ -48,7 +49,7 @@ def test_missing_sentinel_type_adapter() -> None:
 
 # Defined in module to be picklable:
 class ModelPickle(BaseModel):
-    f: int | MISSING = MISSING
+    f: Union[int, MISSING] = MISSING
 
 
 @pytest.mark.xfail(reason="PEP 661 sentinels aren't picklable yet in the experimental typing-extensions implementation")
@@ -61,7 +62,7 @@ def test_missing_sentinel_pickle() -> None:
 
 def test_missing_sentinel_json_schema() -> None:
     class Model(BaseModel):
-        f: int | MISSING = MISSING
+        f: Union[int, MISSING] = MISSING
         g: MISSING = MISSING
         h: MISSING
 
