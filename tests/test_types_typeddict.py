@@ -463,9 +463,9 @@ def test_typeddict_annotated_nonoptional_schema(TypedDict):
                 'type': 'object',
                 'title': 'DataTD',
                 'properties': {
-                    'a': {'anyOf': [{'type': 'integer'}, {'type': 'null'}], 'title': 'A'},
-                    'b': {'anyOf': [{'type': 'integer'}, {'type': 'null'}], 'default': 42, 'title': 'B'},
-                    'c': {'anyOf': [{'type': 'integer'}, {'type': 'null'}], 'description': 'Test', 'title': 'C'},
+                    'a': {'oneOf': [{'type': 'integer'}, {'type': 'null'}], 'title': 'A'},
+                    'b': {'oneOf': [{'type': 'integer'}, {'type': 'null'}], 'default': 42, 'title': 'B'},
+                    'c': {'oneOf': [{'type': 'integer'}, {'type': 'null'}], 'description': 'Test', 'title': 'C'},
                 },
                 'required': ['a', 'c'],
             },

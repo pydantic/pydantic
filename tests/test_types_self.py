@@ -117,7 +117,7 @@ def test_self_type_json_schema(Self):
                 'properties': {
                     'x': {'title': 'X', 'type': 'integer'},
                     'refs': {
-                        'anyOf': [{'items': {'$ref': '#/$defs/SelfRef'}, 'type': 'array'}, {'type': 'null'}],
+                        'oneOf': [{'items': {'$ref': '#/$defs/SelfRef'}, 'type': 'array'}, {'type': 'null'}],
                         'default': [],
                         'title': 'Refs',
                     },
