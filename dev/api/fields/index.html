@@ -5847,7 +5847,7 @@ one of the (not first) arguments in <code>Annotated</code> is an instance of <co
 <span class="sd">    Returns:</span>
 <span class="sd">        A field object with the passed values.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">annotation</span> <span class="ow">is</span> <span class="n">default</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">annotation</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">MISSING</span> <span class="ow">and</span> <span class="n">annotation</span> <span class="ow">is</span> <span class="n">default</span><span class="p">:</span>
         <span class="k">raise</span> <span class="n">PydanticUserError</span><span class="p">(</span>
             <span class="s1">&#39;Error when building FieldInfo from annotated attribute. &#39;</span>
             <span class="s2">&quot;Make sure you don&#39;t have any field name clashing with a type annotation.&quot;</span><span class="p">,</span>
@@ -8174,7 +8174,7 @@ or a boolean. If <code>True</code>, a default deprecation message will be emitte
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.11.7", "pydantic-core==2.35.2", "pydantic-extra-types==2.10.0"]
+    window.mkdocs_run_deps = ["pydantic==2.11.7", "pydantic-core==2.37.2", "pydantic-extra-types==2.10.0"]
     </script>
 
               </article>

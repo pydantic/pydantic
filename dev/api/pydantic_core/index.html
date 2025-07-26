@@ -8904,6 +8904,9 @@ identifies a value as being present, and provides a way to access it.</p>
     <span class="n">exclude_none</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">round_trip</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">timedelta_mode</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span><span class="s2">&quot;iso8601&quot;</span><span class="p">,</span> <span class="s2">&quot;float&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;iso8601&quot;</span><span class="p">,</span>
+    <span class="n">temporal_mode</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span>
+        <span class="s2">&quot;iso8601&quot;</span><span class="p">,</span> <span class="s2">&quot;seconds&quot;</span><span class="p">,</span> <span class="s2">&quot;milliseconds&quot;</span>
+    <span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;iso8601&quot;</span><span class="p">,</span>
     <span class="n">bytes_mode</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span><span class="s2">&quot;utf8&quot;</span><span class="p">,</span> <span class="s2">&quot;base64&quot;</span><span class="p">,</span> <span class="s2">&quot;hex&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;utf8&quot;</span><span class="p">,</span>
     <span class="n">inf_nan_mode</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span>
         <span class="s2">&quot;null&quot;</span><span class="p">,</span> <span class="s2">&quot;constants&quot;</span><span class="p">,</span> <span class="s2">&quot;strings&quot;</span>
@@ -9071,6 +9074,23 @@ If <code>False</code> (the default), these characters will be output as-is.</p>
             <td>
               <div class="doc-md-description">
                 <p>How to serialize <code>timedelta</code> objects, either <code>'iso8601'</code> or <code>'float'</code>.</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;iso8601&#39;</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>temporal_mode</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a>[&#39;iso8601&#39;, &#39;seconds&#39;, &#39;milliseconds&#39;]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>How to serialize datetime-like objects (<code>datetime</code>, <code>date</code>, <code>time</code>), either <code>'iso8601'</code>, <code>'seconds'</code>, or <code>'milliseconds'</code>.
+<code>iso8601</code> returns an ISO 8601 string; <code>seconds</code> returns the Unix timestamp in seconds as a float; <code>milliseconds</code> returns the Unix timestamp in milliseconds as a float.</p>
               </div>
             </td>
             <td>
@@ -9405,6 +9425,9 @@ input is reached before the full object is deserialized, e.g. <code>["aa", "bb",
     <span class="n">exclude_none</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">round_trip</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">timedelta_mode</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span><span class="s2">&quot;iso8601&quot;</span><span class="p">,</span> <span class="s2">&quot;float&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;iso8601&quot;</span><span class="p">,</span>
+    <span class="n">temporal_mode</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span>
+        <span class="s2">&quot;iso8601&quot;</span><span class="p">,</span> <span class="s2">&quot;seconds&quot;</span><span class="p">,</span> <span class="s2">&quot;milliseconds&quot;</span>
+    <span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;iso8601&quot;</span><span class="p">,</span>
     <span class="n">bytes_mode</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span><span class="s2">&quot;utf8&quot;</span><span class="p">,</span> <span class="s2">&quot;base64&quot;</span><span class="p">,</span> <span class="s2">&quot;hex&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;utf8&quot;</span><span class="p">,</span>
     <span class="n">inf_nan_mode</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span>
         <span class="s2">&quot;null&quot;</span><span class="p">,</span> <span class="s2">&quot;constants&quot;</span><span class="p">,</span> <span class="s2">&quot;strings&quot;</span>
@@ -9540,6 +9563,23 @@ input is reached before the full object is deserialized, e.g. <code>["aa", "bb",
             <td>
               <div class="doc-md-description">
                 <p>How to serialize <code>timedelta</code> objects, either <code>'iso8601'</code> or <code>'float'</code>.</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;iso8601&#39;</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>temporal_mode</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a>[&#39;iso8601&#39;, &#39;seconds&#39;, &#39;milliseconds&#39;]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>How to serialize datetime-like objects (<code>datetime</code>, <code>date</code>, <code>time</code>), either <code>'iso8601'</code>, <code>'seconds'</code>, or <code>'milliseconds'</code>.
+<code>iso8601</code> returns an ISO 8601 string; <code>seconds</code> returns the Unix timestamp in seconds as a float; <code>milliseconds</code> returns the Unix timestamp in milliseconds as a float.</p>
               </div>
             </td>
             <td>
@@ -9765,7 +9805,7 @@ if <code>None</code> a <a class="autorefs autorefs-internal" href="#pydantic_cor
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.11.7", "pydantic-core==2.35.2", "pydantic-extra-types==2.10.0"]
+    window.mkdocs_run_deps = ["pydantic==2.11.7", "pydantic-core==2.37.2", "pydantic-extra-types==2.10.0"]
     </script>
 
               </article>

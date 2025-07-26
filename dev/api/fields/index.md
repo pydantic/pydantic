@@ -907,7 +907,7 @@ def from_annotated_attribute(
     Returns:
         A field object with the passed values.
     """
-    if annotation is default:
+    if annotation is not MISSING and annotation is default:
         raise PydanticUserError(
             'Error when building FieldInfo from annotated attribute. '
             "Make sure you don't have any field name clashing with a type annotation.",

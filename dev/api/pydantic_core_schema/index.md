@@ -24,7 +24,7 @@ Base class for schema configuration options.
 
 Attributes:
 
-| Name | Type | Description | | --- | --- | --- | | `title` | `str` | The name of the configuration. | | `strict` | `bool` | Whether the configuration should strictly adhere to specified rules. | | `extra_fields_behavior` | `ExtraBehavior` | The behavior for handling extra fields. | | `typed_dict_total` | `bool` | Whether the TypedDict should be considered total. Default is True. | | `from_attributes` | `bool` | Whether to use attributes for models, dataclasses, and tagged union keys. | | `loc_by_alias` | `bool` | Whether to use the used alias (or first alias for "field required" errors) instead of field_names to construct error locs. Default is True. | | `revalidate_instances` | `Literal['always', 'never', 'subclass-instances']` | Whether instances of models and dataclasses should re-validate. Default is 'never'. | | `validate_default` | `bool` | Whether to validate default values during validation. Default is False. | | `str_max_length` | `int` | The maximum length for string fields. | | `str_min_length` | `int` | The minimum length for string fields. | | `str_strip_whitespace` | `bool` | Whether to strip whitespace from string fields. | | `str_to_lower` | `bool` | Whether to convert string fields to lowercase. | | `str_to_upper` | `bool` | Whether to convert string fields to uppercase. | | `allow_inf_nan` | `bool` | Whether to allow infinity and NaN values for float fields. Default is True. | | `ser_json_timedelta` | `Literal['iso8601', 'float']` | The serialization option for timedelta values. Default is 'iso8601'. | | `ser_json_bytes` | `Literal['utf8', 'base64', 'hex']` | The serialization option for bytes values. Default is 'utf8'. | | `ser_json_inf_nan` | `Literal['null', 'constants', 'strings']` | The serialization option for infinity and NaN values in float fields. Default is 'null'. | | `val_json_bytes` | `Literal['utf8', 'base64', 'hex']` | The validation option for bytes values, complementing ser_json_bytes. Default is 'utf8'. | | `hide_input_in_errors` | `bool` | Whether to hide input data from ValidationError representation. | | `validation_error_cause` | `bool` | Whether to add user-python excs to the cause of a ValidationError. Requires exceptiongroup backport pre Python 3.11. | | `coerce_numbers_to_str` | `bool` | Whether to enable coercion of any Number type to str (not applicable in strict mode). | | `regex_engine` | `Literal['rust-regex', 'python-re']` | The regex engine to use for regex pattern validation. Default is 'rust-regex'. See StringSchema. | | `cache_strings` | `Union[bool, Literal['all', 'keys', 'none']]` | Whether to cache strings. Default is True, True or 'all' is required to cache strings during general validation since validators don't know if they're in a key or a value. | | `validate_by_alias` | `bool` | Whether to use the field's alias when validating against the provided input data. Default is True. | | `validate_by_name` | `bool` | Whether to use the field's name when validating against the provided input data. Default is False. Replacement for populate_by_name. | | `serialize_by_alias` | `bool` | Whether to serialize by alias. Default is False, expected to change to True in V3. |
+| Name | Type | Description | | --- | --- | --- | | `title` | `str` | The name of the configuration. | | `strict` | `bool` | Whether the configuration should strictly adhere to specified rules. | | `extra_fields_behavior` | `ExtraBehavior` | The behavior for handling extra fields. | | `typed_dict_total` | `bool` | Whether the TypedDict should be considered total. Default is True. | | `from_attributes` | `bool` | Whether to use attributes for models, dataclasses, and tagged union keys. | | `loc_by_alias` | `bool` | Whether to use the used alias (or first alias for "field required" errors) instead of field_names to construct error locs. Default is True. | | `revalidate_instances` | `Literal['always', 'never', 'subclass-instances']` | Whether instances of models and dataclasses should re-validate. Default is 'never'. | | `validate_default` | `bool` | Whether to validate default values during validation. Default is False. | | `str_max_length` | `int` | The maximum length for string fields. | | `str_min_length` | `int` | The minimum length for string fields. | | `str_strip_whitespace` | `bool` | Whether to strip whitespace from string fields. | | `str_to_lower` | `bool` | Whether to convert string fields to lowercase. | | `str_to_upper` | `bool` | Whether to convert string fields to uppercase. | | `allow_inf_nan` | `bool` | Whether to allow infinity and NaN values for float fields. Default is True. | | `ser_json_timedelta` | `Literal['iso8601', 'float']` | The serialization option for timedelta values. Default is 'iso8601'. Note that if ser_json_temporal is set, then this param will be ignored. | | `ser_json_temporal` | `Literal['iso8601', 'seconds', 'milliseconds']` | The serialization option for datetime like values. Default is 'iso8601'. The types this covers are datetime, date, time and timedelta. If this is set, it will take precedence over ser_json_timedelta | | `ser_json_bytes` | `Literal['utf8', 'base64', 'hex']` | The serialization option for bytes values. Default is 'utf8'. | | `ser_json_inf_nan` | `Literal['null', 'constants', 'strings']` | The serialization option for infinity and NaN values in float fields. Default is 'null'. | | `val_json_bytes` | `Literal['utf8', 'base64', 'hex']` | The validation option for bytes values, complementing ser_json_bytes. Default is 'utf8'. | | `hide_input_in_errors` | `bool` | Whether to hide input data from ValidationError representation. | | `validation_error_cause` | `bool` | Whether to add user-python excs to the cause of a ValidationError. Requires exceptiongroup backport pre Python 3.11. | | `coerce_numbers_to_str` | `bool` | Whether to enable coercion of any Number type to str (not applicable in strict mode). | | `regex_engine` | `Literal['rust-regex', 'python-re']` | The regex engine to use for regex pattern validation. Default is 'rust-regex'. See StringSchema. | | `cache_strings` | `Union[bool, Literal['all', 'keys', 'none']]` | Whether to cache strings. Default is True, True or 'all' is required to cache strings during general validation since validators don't know if they're in a key or a value. | | `validate_by_alias` | `bool` | Whether to use the field's alias when validating against the provided input data. Default is True. | | `validate_by_name` | `bool` | Whether to use the field's name when validating against the provided input data. Default is False. Replacement for populate_by_name. | | `serialize_by_alias` | `bool` | Whether to serialize by alias. Default is False, expected to change to True in V3. |
 
 ## SerializationInfo
 
@@ -1722,6 +1722,35 @@ def enum_schema(
     )
 
 ````
+
+## missing_sentinel_schema
+
+```python
+missing_sentinel_schema(
+    metadata: dict[str, Any] | None = None,
+    serialization: SerSchema | None = None,
+) -> MissingSentinelSchema
+
+```
+
+Returns a schema for the `MISSING` sentinel.
+
+Source code in `pydantic_core/core_schema.py`
+
+```python
+def missing_sentinel_schema(
+    metadata: dict[str, Any] | None = None,
+    serialization: SerSchema | None = None,
+) -> MissingSentinelSchema:
+    """Returns a schema for the `MISSING` sentinel."""
+
+    return _dict_not_none(
+        type='missing-sentinel',
+        metadata=metadata,
+        serialization=serialization,
+    )
+
+```
 
 ## is_instance_schema
 
@@ -4020,7 +4049,10 @@ typed_dict_field(
     ) = None,
     serialization_alias: str | None = None,
     serialization_exclude: bool | None = None,
-    metadata: dict[str, Any] | None = None
+    metadata: dict[str, Any] | None = None,
+    serialization_exclude_if: (
+        Callable[[Any], bool] | None
+    ) = None
 ) -> TypedDictField
 
 ```
@@ -4036,7 +4068,7 @@ field = core_schema.typed_dict_field(schema=core_schema.int_schema(), required=T
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `schema` | `CoreSchema` | The schema to use for the field | *required* | | `required` | `bool | None` | Whether the field is required, otherwise uses the value from total on the typed dict | `None` | | `validation_alias` | `str | list[str | int] | list[list[str | int]] | None` | The alias(es) to use to find the field in the validation data | `None` | | `serialization_alias` | `str | None` | The alias to use as a key when serializing | `None` | | `serialization_exclude` | `bool | None` | Whether to exclude the field when serializing | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `schema` | `CoreSchema` | The schema to use for the field | *required* | | `required` | `bool | None` | Whether the field is required, otherwise uses the value from total on the typed dict | `None` | | `validation_alias` | `str | list[str | int] | list[list[str | int]] | None` | The alias(es) to use to find the field in the validation data | `None` | | `serialization_alias` | `str | None` | The alias to use as a key when serializing | `None` | | `serialization_exclude` | `bool | None` | Whether to exclude the field when serializing | `None` | | `serialization_exclude_if` | `Callable[[Any], bool] | None` | A callable that determines whether to exclude the field when serializing based on its value. | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` |
 
 Source code in `pydantic_core/core_schema.py`
 
@@ -4049,6 +4081,7 @@ def typed_dict_field(
     serialization_alias: str | None = None,
     serialization_exclude: bool | None = None,
     metadata: dict[str, Any] | None = None,
+    serialization_exclude_if: Callable[[Any], bool] | None = None,
 ) -> TypedDictField:
     """
     Returns a schema that matches a typed dict field, e.g.:
@@ -4065,6 +4098,7 @@ def typed_dict_field(
         validation_alias: The alias(es) to use to find the field in the validation data
         serialization_alias: The alias to use as a key when serializing
         serialization_exclude: Whether to exclude the field when serializing
+        serialization_exclude_if: A callable that determines whether to exclude the field when serializing based on its value.
         metadata: Any other information you want to include with the schema, not used by pydantic-core
     """
     return _dict_not_none(
@@ -4074,6 +4108,7 @@ def typed_dict_field(
         validation_alias=validation_alias,
         serialization_alias=serialization_alias,
         serialization_exclude=serialization_exclude,
+        serialization_exclude_if=serialization_exclude_if,
         metadata=metadata,
     )
 
@@ -4201,6 +4236,9 @@ model_field(
     ) = None,
     serialization_alias: str | None = None,
     serialization_exclude: bool | None = None,
+    serialization_exclude_if: (
+        Callable[[Any], bool] | None
+    ) = None,
     frozen: bool | None = None,
     metadata: dict[str, Any] | None = None
 ) -> ModelField
@@ -4218,7 +4256,7 @@ field = core_schema.model_field(schema=core_schema.int_schema())
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `schema` | `CoreSchema` | The schema to use for the field | *required* | | `validation_alias` | `str | list[str | int] | list[list[str | int]] | None` | The alias(es) to use to find the field in the validation data | `None` | | `serialization_alias` | `str | None` | The alias to use as a key when serializing | `None` | | `serialization_exclude` | `bool | None` | Whether to exclude the field when serializing | `None` | | `frozen` | `bool | None` | Whether the field is frozen | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `schema` | `CoreSchema` | The schema to use for the field | *required* | | `validation_alias` | `str | list[str | int] | list[list[str | int]] | None` | The alias(es) to use to find the field in the validation data | `None` | | `serialization_alias` | `str | None` | The alias to use as a key when serializing | `None` | | `serialization_exclude` | `bool | None` | Whether to exclude the field when serializing | `None` | | `serialization_exclude_if` | `Callable[[Any], bool] | None` | A Callable that determines whether to exclude a field during serialization based on its value. | `None` | | `frozen` | `bool | None` | Whether the field is frozen | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` |
 
 Source code in `pydantic_core/core_schema.py`
 
@@ -4229,6 +4267,7 @@ def model_field(
     validation_alias: str | list[str | int] | list[list[str | int]] | None = None,
     serialization_alias: str | None = None,
     serialization_exclude: bool | None = None,
+    serialization_exclude_if: Callable[[Any], bool] | None = None,
     frozen: bool | None = None,
     metadata: dict[str, Any] | None = None,
 ) -> ModelField:
@@ -4246,6 +4285,7 @@ def model_field(
         validation_alias: The alias(es) to use to find the field in the validation data
         serialization_alias: The alias to use as a key when serializing
         serialization_exclude: Whether to exclude the field when serializing
+        serialization_exclude_if: A Callable that determines whether to exclude a field during serialization based on its value.
         frozen: Whether the field is frozen
         metadata: Any other information you want to include with the schema, not used by pydantic-core
     """
@@ -4255,6 +4295,7 @@ def model_field(
         validation_alias=validation_alias,
         serialization_alias=serialization_alias,
         serialization_exclude=serialization_exclude,
+        serialization_exclude_if=serialization_exclude_if,
         frozen=frozen,
         metadata=metadata,
     )
@@ -4523,6 +4564,9 @@ dataclass_field(
     serialization_alias: str | None = None,
     serialization_exclude: bool | None = None,
     metadata: dict[str, Any] | None = None,
+    serialization_exclude_if: (
+        Callable[[Any], bool] | None
+    ) = None,
     frozen: bool | None = None
 ) -> DataclassField
 
@@ -4544,7 +4588,7 @@ assert v.validate_python({'a': 'hello'}) == ({'a': 'hello'}, None)
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `name` | `str` | The name to use for the argument parameter | *required* | | `schema` | `CoreSchema` | The schema to use for the argument parameter | *required* | | `kw_only` | `bool | None` | Whether the field can be set with a positional argument as well as a keyword argument | `None` | | `init` | `bool | None` | Whether the field should be validated during initialization | `None` | | `init_only` | `bool | None` | Whether the field should be omitted from __dict__ and passed to __post_init__ | `None` | | `validation_alias` | `str | list[str | int] | list[list[str | int]] | None` | The alias(es) to use to find the field in the validation data | `None` | | `serialization_alias` | `str | None` | The alias to use as a key when serializing | `None` | | `serialization_exclude` | `bool | None` | Whether to exclude the field when serializing | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `frozen` | `bool | None` | Whether the field is frozen | `None` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `name` | `str` | The name to use for the argument parameter | *required* | | `schema` | `CoreSchema` | The schema to use for the argument parameter | *required* | | `kw_only` | `bool | None` | Whether the field can be set with a positional argument as well as a keyword argument | `None` | | `init` | `bool | None` | Whether the field should be validated during initialization | `None` | | `init_only` | `bool | None` | Whether the field should be omitted from __dict__ and passed to __post_init__ | `None` | | `validation_alias` | `str | list[str | int] | list[list[str | int]] | None` | The alias(es) to use to find the field in the validation data | `None` | | `serialization_alias` | `str | None` | The alias to use as a key when serializing | `None` | | `serialization_exclude` | `bool | None` | Whether to exclude the field when serializing | `None` | | `serialization_exclude_if` | `Callable[[Any], bool] | None` | A callable that determines whether to exclude the field when serializing based on its value. | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `frozen` | `bool | None` | Whether the field is frozen | `None` |
 
 Source code in `pydantic_core/core_schema.py`
 
@@ -4560,6 +4604,7 @@ def dataclass_field(
     serialization_alias: str | None = None,
     serialization_exclude: bool | None = None,
     metadata: dict[str, Any] | None = None,
+    serialization_exclude_if: Callable[[Any], bool] | None = None,
     frozen: bool | None = None,
 ) -> DataclassField:
     """
@@ -4585,6 +4630,7 @@ def dataclass_field(
         validation_alias: The alias(es) to use to find the field in the validation data
         serialization_alias: The alias to use as a key when serializing
         serialization_exclude: Whether to exclude the field when serializing
+        serialization_exclude_if: A callable that determines whether to exclude the field when serializing based on its value.
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         frozen: Whether the field is frozen
     """
@@ -4598,6 +4644,7 @@ def dataclass_field(
         validation_alias=validation_alias,
         serialization_alias=serialization_alias,
         serialization_exclude=serialization_exclude,
+        serialization_exclude_if=serialization_exclude_if,
         metadata=metadata,
         frozen=frozen,
     )

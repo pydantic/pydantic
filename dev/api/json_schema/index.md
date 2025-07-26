@@ -1113,6 +1113,41 @@ def literal_schema(self, schema: core_schema.LiteralSchema) -> JsonSchemaValue:
 
 ```
 
+### missing_sentinel_schema
+
+```python
+missing_sentinel_schema(
+    schema: MissingSentinelSchema,
+) -> JsonSchemaValue
+
+```
+
+Generates a JSON schema that matches the `MISSING` sentinel value.
+
+Parameters:
+
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `schema` | `MissingSentinelSchema` | The core schema. | *required* |
+
+Returns:
+
+| Type | Description | | --- | --- | | `JsonSchemaValue` | The generated JSON schema. |
+
+Source code in `pydantic/json_schema.py`
+
+```python
+def missing_sentinel_schema(self, schema: core_schema.MissingSentinelSchema) -> JsonSchemaValue:
+    """Generates a JSON schema that matches the `MISSING` sentinel value.
+
+    Args:
+        schema: The core schema.
+
+    Returns:
+        The generated JSON schema.
+    """
+    raise PydanticOmit
+
+```
+
 ### enum_schema
 
 ```python
@@ -1795,7 +1830,7 @@ def default_schema(self, schema: core_schema.WithDefaultSchema) -> JsonSchemaVal
     json_schema = self.generate_inner(schema['schema'])
 
     default = self.get_default_value(schema)
-    if default is NoDefault:
+    if default is NoDefault or default is MISSING:
         return json_schema
 
     # we reflect the application of custom plain, no-info serializers to defaults for

@@ -1348,6 +1348,15 @@ to help you monitor and understand your
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#missing-sentinel" class="md-nav__link">
+    <span class="md-ellipsis">
+      MISSING sentinel
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -3284,6 +3293,15 @@ to help you monitor and understand your
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#missing-sentinel" class="md-nav__link">
+    <span class="md-ellipsis">
+      MISSING sentinel
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -3779,6 +3797,79 @@ the underlying callable will <em>not</em> be called.</p>
 <span class="nb">print</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">)</span>
 <span class="c1">#&gt; (&#39;arg1&#39;,) {&#39;extra&#39;: 1}</span>
 </code></pre></div>
+<h2 id="missing-sentinel"><code>MISSING</code> sentinel<a class="headerlink" href="#missing-sentinel" title="Permanent link">&para;</a></h2>
+<p>The <code>MISSING</code> sentinel is a singleton indicating a field value was not provided during validation.</p>
+<p>This singleton can be used as a default value, as an alternative to <code>None</code> when it has an explicit
+meaning. During serialization, any field with <code>MISSING</code> as a value is excluded from the output.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.9 and above</label><label for="__tabbed_2_2">Python 3.10 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Union</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic.experimental.missing_sentinel</span><span class="w"> </span><span class="kn">import</span> <span class="n">MISSING</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Configuration</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">timeout</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">MISSING</span><span class="p">]</span> <span class="o">=</span> <span class="n">MISSING</span>
+
+
+<span class="c1"># configuration defaults, stored somewhere else:</span>
+<span class="n">defaults</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;timeout&#39;</span><span class="p">:</span> <span class="mi">200</span><span class="p">}</span>
+
+<span class="n">conf</span> <span class="o">=</span> <span class="n">Configuration</span><span class="p">()</span>
+
+<span class="c1"># `timeout` is excluded from the serialization output:</span>
+<span class="n">conf</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()</span>
+<span class="c1"># {}</span>
+
+<span class="c1"># The `MISSING` value doesn&#39;t appear in the JSON Schema:</span>
+<span class="n">Configuration</span><span class="o">.</span><span class="n">model_json_schema</span><span class="p">()[</span><span class="s1">&#39;properties&#39;</span><span class="p">][</span><span class="s1">&#39;timeout&#39;</span><span class="p">]</span>
+<span class="c1">#&gt; {&#39;anyOf&#39;: [{&#39;type&#39;: &#39;integer&#39;}, {&#39;type&#39;: &#39;null&#39;}], &#39;title&#39;: &#39;Timeout&#39;}}</span>
+
+
+<span class="c1"># `is` can be used to discrimate between the sentinel and other values:</span>
+<span class="n">timeout</span> <span class="o">=</span> <span class="n">conf</span><span class="o">.</span><span class="n">timeout</span> <span class="k">if</span> <span class="n">conf</span><span class="o">.</span><span class="n">timeout</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">MISSING</span> <span class="k">else</span> <span class="n">defaults</span><span class="p">[</span><span class="s1">&#39;timeout&#39;</span><span class="p">]</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic.experimental.missing_sentinel</span><span class="w"> </span><span class="kn">import</span> <span class="n">MISSING</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Configuration</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">timeout</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">|</span> <span class="n">MISSING</span> <span class="o">=</span> <span class="n">MISSING</span>
+
+
+<span class="c1"># configuration defaults, stored somewhere else:</span>
+<span class="n">defaults</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;timeout&#39;</span><span class="p">:</span> <span class="mi">200</span><span class="p">}</span>
+
+<span class="n">conf</span> <span class="o">=</span> <span class="n">Configuration</span><span class="p">()</span>
+
+<span class="c1"># `timeout` is excluded from the serialization output:</span>
+<span class="n">conf</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()</span>
+<span class="c1"># {}</span>
+
+<span class="c1"># The `MISSING` value doesn&#39;t appear in the JSON Schema:</span>
+<span class="n">Configuration</span><span class="o">.</span><span class="n">model_json_schema</span><span class="p">()[</span><span class="s1">&#39;properties&#39;</span><span class="p">][</span><span class="s1">&#39;timeout&#39;</span><span class="p">]</span>
+<span class="c1">#&gt; {&#39;anyOf&#39;: [{&#39;type&#39;: &#39;integer&#39;}, {&#39;type&#39;: &#39;null&#39;}], &#39;title&#39;: &#39;Timeout&#39;}}</span>
+
+
+<span class="c1"># `is` can be used to discrimate between the sentinel and other values:</span>
+<span class="n">timeout</span> <span class="o">=</span> <span class="n">conf</span><span class="o">.</span><span class="n">timeout</span> <span class="k">if</span> <span class="n">conf</span><span class="o">.</span><span class="n">timeout</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">MISSING</span> <span class="k">else</span> <span class="n">defaults</span><span class="p">[</span><span class="s1">&#39;timeout&#39;</span><span class="p">]</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p>This feature is marked as experimental because it relies on the draft <a href="https://peps.python.org/pep-0661/">PEP 661</a>, introducing sentinels in the standard library.</p>
+<p>As such, the following limitations currently apply:</p>
+<ul>
+<li>Static type checking of sentinels is only supported with Pyright
+  <a href="https://github.com/microsoft/pyright/releases/tag/1.1.402">1.1.402</a>
+  or greater, and the <code>enableExperimentalFeatures</code> type evaluation setting
+  should be enabled.</li>
+<li>Pickling of models containing <code>MISSING</code> as a value is not supported.</li>
+</ul>
 
 
 
@@ -3839,7 +3930,7 @@ the underlying callable will <em>not</em> be called.</p>
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.11.7", "pydantic-core==2.35.2", "pydantic-extra-types==2.10.0"]
+    window.mkdocs_run_deps = ["pydantic==2.11.7", "pydantic-core==2.37.2", "pydantic-extra-types==2.10.0"]
     </script>
 
               </article>
