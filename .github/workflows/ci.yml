@@ -668,6 +668,7 @@ jobs:
 
     permissions:
       id-token: write
+      contents: write
 
     steps:
       - uses: actions/checkout@v4
