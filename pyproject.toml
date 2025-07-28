@@ -1,11 +1,13 @@
 [build-system]
-requires = ['maturin>=1,<2']
+requires = ['maturin>=1.9,<2']
 build-backend = 'maturin'
 
 [project]
 name = 'pydantic_core'
 description = "Core functionality for Pydantic validation and serialization"
 requires-python = '>=3.9'
+license = 'MIT'
+license-files = ['LICENSE']
 authors = [
     { name = 'Samuel Colvin', email = 's@muelcolvin.com' },
     { name = 'Adrian Garcia Badaracco', email = '1755071+adriangb@users.noreply.github.com' },
@@ -29,7 +31,6 @@ classifiers = [
     'Framework :: Pydantic',
     'Intended Audience :: Developers',
     'Intended Audience :: Information Technology',
-    'License :: OSI Approved :: MIT License',
     'Operating System :: POSIX :: Linux',
     'Operating System :: Microsoft :: Windows',
     'Operating System :: MacOS',
@@ -38,7 +39,7 @@ classifiers = [
 dependencies = [
     'typing-extensions>=4.14.1',
 ]
-dynamic = ['license', 'readme', 'version']
+dynamic = ['readme', 'version']
 
 [project.urls]
 Homepage = 'https://github.com/pydantic/pydantic-core'
