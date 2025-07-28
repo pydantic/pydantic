@@ -31,7 +31,7 @@ QUEUE_NAME = 'user_queue'
 
 def push_to_queue(user_data: User) -> None:
     serialized_data = user_data.model_dump_json()
-    r.rpush(QUEUE_NAME, user_data.model_dump_json())
+    r.rpush(QUEUE_NAME, serialized_data)
     print(f'Added to queue: {serialized_data}')
 
 
