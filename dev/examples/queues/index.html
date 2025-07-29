@@ -3063,7 +3063,7 @@ and start your server up locally.</p>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">push_to_queue</span><span class="p">(</span><span class="n">user_data</span><span class="p">:</span> <span class="n">User</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="n">serialized_data</span> <span class="o">=</span> <span class="n">user_data</span><span class="o">.</span><span class="n">model_dump_json</span><span class="p">()</span>
-    <span class="n">r</span><span class="o">.</span><span class="n">rpush</span><span class="p">(</span><span class="n">QUEUE_NAME</span><span class="p">,</span> <span class="n">user_data</span><span class="o">.</span><span class="n">model_dump_json</span><span class="p">())</span>
+    <span class="n">r</span><span class="o">.</span><span class="n">rpush</span><span class="p">(</span><span class="n">QUEUE_NAME</span><span class="p">,</span> <span class="n">serialized_data</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Added to queue: </span><span class="si">{</span><span class="n">serialized_data</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
 
 
