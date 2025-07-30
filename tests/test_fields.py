@@ -158,6 +158,9 @@ def test_computed_field_raises_correct_attribute_error():
     with pytest.raises(AttributeError, match='Property attribute error'):
         Model().prop_field
 
+    with pytest.raises(AttributeError, match='Property attribute error'):
+        Model(some_extra_field='some value').prop_field
+
     with pytest.raises(AttributeError, match=f"'{Model.__name__}' object has no attribute 'invalid_field'"):
         Model().invalid_field
 

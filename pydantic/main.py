@@ -979,11 +979,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 except AttributeError:
                     pydantic_extra = None
 
-                if pydantic_extra:
-                    try:
-                        return pydantic_extra[item]
-                    except KeyError as exc:
-                        raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
+                if pydantic_extra and item in pydantic_extra:
+                    return pydantic_extra[item]
                 else:
                     if hasattr(self.__class__, item):
                         return super().__getattribute__(item)  # Raises AttributeError if appropriate
