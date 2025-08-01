@@ -18,6 +18,7 @@ Of course, some apparently safe changes and bug fixes will inevitably break some
 
 The following changes will **NOT** be considered breaking changes, and may occur in minor releases:
 
+* Bug fixes that may result in existing code breaking, provided that such code was relying on undocumented features/constructs.
 * Changing the format of JSON Schema [references](https://json-schema.org/understanding-json-schema/structuring#dollarref).
 * Changing the `msg`, `ctx`, and `loc` fields of [`ValidationError`][pydantic_core.ValidationError] exceptions. `type` will not change &mdash; if you're programmatically parsing error messages, you should use `type`.
 * Adding new keys to [`ValidationError`][pydantic_core.ValidationError] exceptions &mdash; e.g. we intend to add `line_number` and `column_number` to errors when validating JSON once we migrate to a new JSON parser.
