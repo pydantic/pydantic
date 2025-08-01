@@ -3149,6 +3149,7 @@ the release of Pydantic V3.</p>
 <p>Of course, some apparently safe changes and bug fixes will inevitably break some users' code &mdash; obligatory link to <a href="https://xkcd.com/1172/">xkcd</a>.</p>
 <p>The following changes will <strong>NOT</strong> be considered breaking changes, and may occur in minor releases:</p>
 <ul>
+<li>Bug fixes that may result in existing code breaking, provided that such code was relying on undocumented features/constructs.</li>
 <li>Changing the format of JSON Schema <a href="https://json-schema.org/understanding-json-schema/structuring#dollarref">references</a>.</li>
 <li>Changing the <code>msg</code>, <code>ctx</code>, and <code>loc</code> fields of <a class="autorefs autorefs-internal" href="../api/pydantic_core/#pydantic_core.ValidationError"><code>ValidationError</code></a> exceptions. <code>type</code> will not change &mdash; if you're programmatically parsing error messages, you should use <code>type</code>.</li>
 <li>Adding new keys to <a class="autorefs autorefs-internal" href="../api/pydantic_core/#pydantic_core.ValidationError"><code>ValidationError</code></a> exceptions &mdash; e.g. we intend to add <code>line_number</code> and <code>column_number</code> to errors when validating JSON once we migrate to a new JSON parser.</li>
