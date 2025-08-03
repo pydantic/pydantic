@@ -297,7 +297,6 @@ def test_copy_update(ModelTwo, copy_method):
 
 
 def test_copy_update_private_attr(copy_method):
-
     class Model(BaseModel):
         model_config = ConfigDict(extra='allow')
 
