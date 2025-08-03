@@ -54,6 +54,10 @@ test-typechecking-pyright: .uv
 test-typechecking-mypy: .uv
 	uv run bash -c 'cd tests/typechecking && mypy --version && mypy --cache-dir=/dev/null --config-file pyproject.toml .'
 
+.PHONY: test-typechecking-pyrefly  ## Typechecking integration tests (Pyrefly).
+test-typechecking-pyrefly: .uv
+    uv run bash -c 'cd tests/typechecking && pyrefly --version && pyrefly check'
+
 .PHONY: test  ## Run all tests, skipping the type-checker integration tests
 test: .uv
 	uv run coverage run -m pytest --durations=10 --parallel-threads $(NUM_THREADS)

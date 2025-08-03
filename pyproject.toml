@@ -120,6 +120,7 @@ testing-extra = [
 typechecking = [
     'mypy',
     'pyright',
+    'pyrefly',
     'pydantic-settings',
 ]
 
