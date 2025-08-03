@@ -296,12 +296,18 @@ def test_copy_update(ModelTwo, copy_method):
     assert m != m2
 
 
-def test_copy_update_private_attr(ModelTwo, copy_method):
-    m = ModelTwo(a=24, d=Model(a='12'))
-    m2 = copy_method(m, update={'_foo_': 'different'})
+def test_copy_update_private_attr(copy_method):
 
-    assert m2._foo_ == 'different'
-    assert m2.__pydantic_extra__ is None
+    class Model(BaseModel):
+        model_config = ConfigDict(extra='allow')
+
+        _foo: str = PrivateAttr()
+
+    m: Model = Model()
+    m2: Model = copy_method(m, update={'_foo': 'different'})
+
+    assert m2._foo == 'different'
+    assert m2.__pydantic_extra__ == {}
 
 
 def test_copy_update_unset(copy_method):
