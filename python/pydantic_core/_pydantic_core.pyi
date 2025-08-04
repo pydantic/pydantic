@@ -993,7 +993,14 @@ def list_all_errors() -> list[ErrorTypeInfo]:
 class TzInfo(datetime.tzinfo):
     """An `pydantic-core` implementation of the abstract [`datetime.tzinfo`][] class."""
 
-    # def __new__(cls, seconds: float) -> Self: ...
+    def __init__(self, seconds: float = 0.0) -> None:
+        """Initializes the `TzInfo`.
+
+        Arguments:
+            seconds: The offset from UTC in seconds. Defaults to 0.0 (UTC).
+        """
+
+    def __new__(cls, seconds: float = 0.0) -> Self: ...
 
     # Docstrings for attributes sourced from the abstract base class, [`datetime.tzinfo`](https://docs.python.org/3/library/datetime.html#datetime.tzinfo).
 
