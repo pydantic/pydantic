@@ -8,7 +8,7 @@ use pyo3::{intern, prelude::*, IntoPyObjectExt};
 use crate::errors::{ErrorTypeDefaults, InputValue, LocItem, ValError, ValResult};
 use crate::lookup_key::{LookupKey, LookupPath};
 use crate::tools::py_err;
-use crate::validators::ValBytesMode;
+use crate::validators::{TemporalUnitMode, ValBytesMode};
 
 use super::datetime::{EitherDate, EitherDateTime, EitherTime, EitherTimedelta};
 use super::return_enums::{EitherBytes, EitherComplex, EitherInt, EitherString};
@@ -158,7 +158,7 @@ pub trait Input<'py>: fmt::Debug {
 
     fn validate_iter(&self) -> ValResult<GenericIterator<'static>>;
 
-    fn validate_date(&self, strict: bool) -> ValMatch<EitherDate<'py>>;
+    fn validate_date(&self, strict: bool, mode: TemporalUnitMode) -> ValMatch<EitherDate<'py>>;
 
     fn validate_time(
         &self,
@@ -170,6 +170,7 @@ pub trait Input<'py>: fmt::Debug {
         &self,
         strict: bool,
         microseconds_overflow_behavior: speedate::MicrosecondsPrecisionOverflowBehavior,
+        mode: TemporalUnitMode,
     ) -> ValMatch<EitherDateTime<'py>>;
 
     fn validate_timedelta(
