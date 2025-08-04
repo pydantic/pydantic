@@ -18,7 +18,7 @@ use crate::tools::{extract_i64, py_err, py_error_type};
 use super::PydanticCustomError;
 
 #[pyfunction]
-pub fn list_all_errors(py: Python) -> PyResult<Bound<'_, PyList>> {
+pub fn list_all_errors(py: Python<'_>) -> PyResult<Bound<'_, PyList>> {
     let mut errors: Vec<Bound<'_, PyDict>> = Vec::with_capacity(100);
     for error_type in ErrorType::iter() {
         if !matches!(error_type, ErrorType::CustomError { .. }) {

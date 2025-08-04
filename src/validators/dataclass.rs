@@ -542,8 +542,8 @@ impl Validator for DataclassValidator {
                     // if the model has a generic origin, we allow input data to be instances of the generic origin rather than the class,
                     // as cases like isinstance(SomeModel[Int], SomeModel[Any]) fail the isinstance check, but are valid, we just have to enforce
                     // that the data is revalidated, hence we set force_revalidate to true
-                    if generic_origin_class.is_some() {
-                        match input_as_python_instance(input, generic_origin_class.unwrap()) {
+                    if let Some(generic_origin) = generic_origin_class {
+                        match input_as_python_instance(input, generic_origin) {
                             Some(x) => (Some(x), true),
                             None => (None, false),
                         }

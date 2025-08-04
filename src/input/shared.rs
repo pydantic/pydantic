@@ -11,7 +11,7 @@ use crate::errors::{ErrorTypeDefaults, ValError, ValResult};
 use super::{EitherFloat, EitherInt, Input};
 static ENUM_META_OBJECT: GILOnceCell<Py<PyAny>> = GILOnceCell::new();
 
-pub fn get_enum_meta_object(py: Python) -> &Bound<'_, PyAny> {
+pub fn get_enum_meta_object(py: Python<'_>) -> &Bound<'_, PyAny> {
     ENUM_META_OBJECT
         .get_or_init(py, || {
             py.import(intern!(py, "enum"))
@@ -108,7 +108,7 @@ pub fn str_as_float<'py>(input: &(impl Input<'py> + ?Sized), str: &str) -> ValRe
     }
 }
 
-fn clean_int_str(mut s: &str) -> Option<Cow<str>> {
+fn clean_int_str(mut s: &str) -> Option<Cow<'_, str>> {
     let len_before = s.len();
 
     // strip leading and trailing whitespace
