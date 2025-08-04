@@ -7072,3 +7072,56 @@ def test_decimal_pattern_reject_invalid_not_numerical_values_with_decimal_places
 ) -> None:
     pattern = get_decimal_pattern()
     assert re.fullmatch(pattern, invalid_decimal) is None
+
+
+def test_defs_populated_in_all_handlers() -> None:
+    """A regression introduced in 2.11.
+
+    Some JSON Schema generation code was simplified, but it turned out that it broke
+    cases where references are introduced manually through `__get_pydantic_json_schema__()`.
+    Note that this is just a regression test, we still don't support this use case explicitly
+    (we don't have proper semantics for core schema references).
+    """
+
+    # Taken from https://github.com/pydantic/FastUI/blob/dc9bab10/src/python-fastui/fastui/types.py
+
+    class JsonDataSchema:
+        @staticmethod
+        def __get_pydantic_json_schema__(
+            _core_schema: core_schema.CoreSchema, handler: pydantic.GetJsonSchemaHandler
+        ) -> Any:
+            json_data_schema = core_schema.union_schema(
+                [
+                    core_schema.str_schema(),
+                    core_schema.float_schema(),
+                    core_schema.bool_schema(),
+                    core_schema.none_schema(),
+                    core_schema.list_schema(core_schema.definition_reference_schema('JsonData')),
+                    core_schema.dict_schema(
+                        core_schema.str_schema(), core_schema.definition_reference_schema('JsonData')
+                    ),
+                ],
+                ref='JsonData',
+            )
+            return handler(json_data_schema)
+
+    JsonData = Annotated[Any, JsonDataSchema()]
+
+    assert TypeAdapter(JsonData).json_schema() == {
+        '$defs': {
+            'JsonData': {
+                'anyOf': [
+                    {'type': 'string'},
+                    {'type': 'number'},
+                    {'type': 'boolean'},
+                    {'type': 'null'},
+                    {'items': {'$ref': '#/$defs/JsonData'}, 'type': 'array'},
+                    {
+                        'additionalProperties': {'$ref': '#/$defs/JsonData'},
+                        'type': 'object',
+                    },
+                ]
+            }
+        },
+        '$ref': '#/$defs/JsonData',
+    }
