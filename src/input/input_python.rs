@@ -19,6 +19,7 @@ use crate::tools::{extract_i64, safe_repr};
 use crate::validators::complex::string_to_complex;
 use crate::validators::decimal::{create_decimal, get_decimal_type};
 use crate::validators::Exactness;
+use crate::validators::TemporalUnitMode;
 use crate::validators::ValBytesMode;
 use crate::ArgsKwargs;
 
@@ -512,7 +513,7 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
         }
     }
 
-    fn validate_date(&self, strict: bool) -> ValResult<ValidationMatch<EitherDate<'py>>> {
+    fn validate_date(&self, strict: bool, mode: TemporalUnitMode) -> ValResult<ValidationMatch<EitherDate<'py>>> {
         if let Ok(date) = self.downcast_exact::<PyDate>() {
             Ok(ValidationMatch::exact(date.clone().into()))
         } else if self.is_instance_of::<PyDateTime>() {
@@ -533,7 +534,7 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
                 None
             }
         } {
-            bytes_as_date(self, bytes).map(ValidationMatch::lax)
+            bytes_as_date(self, bytes, mode).map(ValidationMatch::lax)
         } else {
             Err(ValError::new(ErrorTypeDefaults::DateType, self))
         }
@@ -577,6 +578,7 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
         &self,
         strict: bool,
         microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
+        mode: TemporalUnitMode,
     ) -> ValResult<ValidationMatch<EitherDateTime<'py>>> {
         if let Ok(dt) = self.downcast_exact::<PyDateTime>() {
             return Ok(ValidationMatch::exact(dt.clone().into()));
@@ -588,15 +590,15 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
             if !strict {
                 return if let Ok(py_str) = self.downcast::<PyString>() {
                     let str = py_string_str(py_str)?;
-                    bytes_as_datetime(self, str.as_bytes(), microseconds_overflow_behavior)
+                    bytes_as_datetime(self, str.as_bytes(), microseconds_overflow_behavior, mode)
                 } else if let Ok(py_bytes) = self.downcast::<PyBytes>() {
-                    bytes_as_datetime(self, py_bytes.as_bytes(), microseconds_overflow_behavior)
+                    bytes_as_datetime(self, py_bytes.as_bytes(), microseconds_overflow_behavior, mode)
                 } else if self.is_exact_instance_of::<PyBool>() {
                     Err(ValError::new(ErrorTypeDefaults::DatetimeType, self))
                 } else if let Some(int) = extract_i64(self) {
-                    int_as_datetime(self, int, 0)
+                    int_as_datetime(self, int, 0, mode)
                 } else if let Ok(float) = self.extract::<f64>() {
-                    float_as_datetime(self, float)
+                    float_as_datetime(self, float, mode)
                 } else if let Ok(date) = self.downcast::<PyDate>() {
                     Ok(date_as_datetime(date)?)
                 } else {

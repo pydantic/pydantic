@@ -303,3 +303,34 @@ def test_date_past_future_today():
     assert v.isinstance_python(today) is False
     assert v.isinstance_python(today - timedelta(days=1)) is False
     assert v.isinstance_python(today + timedelta(days=1)) is True
+
+
+@pytest.mark.parametrize(
+    'val_temporal_unit, input_value, expected',
+    [
+        # 'seconds' mode: treat as seconds since epoch
+        ('seconds', 1654646400, date(2022, 6, 8)),
+        ('seconds', '1654646400', date(2022, 6, 8)),
+        ('seconds', 1654646400.0, date(2022, 6, 8)),
+        ('seconds', 8640000000.0, date(2243, 10, 17)),
+        ('seconds', 92534400000.0, date(4902, 4, 20)),
+        # 'milliseconds' mode: treat as milliseconds since epoch
+        ('milliseconds', 1654646400000, date(2022, 6, 8)),
+        ('milliseconds', '1654646400000', date(2022, 6, 8)),
+        ('milliseconds', 1654646400000.0, date(2022, 6, 8)),
+        ('milliseconds', 8640000000.0, date(1970, 4, 11)),
+        ('milliseconds', 92534400000.0, date(1972, 12, 7)),
+        # 'infer' mode: large numbers are ms, small are s
+        ('infer', 1654646400, date(2022, 6, 8)),
+        ('infer', 1654646400000, date(2022, 6, 8)),
+        ('infer', 8640000000.0, date(2243, 10, 17)),
+        ('infer', 92534400000.0, date(1972, 12, 7)),
+    ],
+)
+def test_val_temporal_unit_date(val_temporal_unit, input_value, expected):
+    v = SchemaValidator(
+        cs.date_schema(),
+        config={'val_temporal_unit': val_temporal_unit},
+    )
+    output = v.validate_python(input_value)
+    assert output == expected
