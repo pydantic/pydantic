@@ -1155,9 +1155,8 @@ def test_errors_include_url_envvar(env_var, env_var_value, expected_to_have_url)
     env.pop('PYDANTIC_ERRORS_OMIT_URL', None)  # in case the ambient environment has it set
     if env_var_value is not None:
         env[env_var] = env_var_value
-    env['PYTHONDEVMODE'] = '1'  # required to surface the deprecation warning
     result = subprocess.run(
-        [sys.executable, '-c', code],
+        [sys.executable, '-W', 'default', '-c', code],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         encoding='utf-8',
