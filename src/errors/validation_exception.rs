@@ -238,7 +238,7 @@ fn get_formated_url(py: Python) -> &'static str {
     URL_PREFIX.get_or_init(py, || format!("https://errors.pydantic.dev/{pydantic_version}/v/"))
 }
 
-fn get_url_prefix(py: Python, include_url: bool) -> Option<&str> {
+fn get_url_prefix(py: Python<'_>, include_url: bool) -> Option<&str> {
     if include_url {
         Some(get_formated_url(py))
     } else {
