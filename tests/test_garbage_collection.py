@@ -25,6 +25,7 @@ GC_TEST_SCHEMA_INNER = core_schema.definitions_schema(
 @pytest.mark.xfail(
     condition=platform.python_implementation() == 'PyPy', reason='https://foss.heptapod.net/pypy/pypy/-/issues/3899'
 )
+@pytest.mark.skipif(platform.python_implementation() == 'GraalVM', reason='Cannot reliably trigger GC on GraalPy')
 def test_gc_schema_serializer() -> None:
     # test for https://github.com/pydantic/pydantic/issues/5136
     class BaseModel:
@@ -53,6 +54,7 @@ def test_gc_schema_serializer() -> None:
 @pytest.mark.xfail(
     condition=platform.python_implementation() == 'PyPy', reason='https://foss.heptapod.net/pypy/pypy/-/issues/3899'
 )
+@pytest.mark.skipif(platform.python_implementation() == 'GraalVM', reason='Cannot reliably trigger GC on GraalPy')
 def test_gc_schema_validator() -> None:
     # test for https://github.com/pydantic/pydantic/issues/5136
     class BaseModel:
@@ -81,6 +83,7 @@ def test_gc_schema_validator() -> None:
 @pytest.mark.xfail(
     condition=platform.python_implementation() == 'PyPy', reason='https://foss.heptapod.net/pypy/pypy/-/issues/3899'
 )
+@pytest.mark.skipif(platform.python_implementation() == 'GraalVM', reason='Cannot reliably trigger GC on GraalPy')
 def test_gc_validator_iterator() -> None:
     # test for https://github.com/pydantic/pydantic/issues/9243
     class MyModel:
