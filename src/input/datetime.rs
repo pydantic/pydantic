@@ -71,7 +71,7 @@ impl<'py> EitherDate<'py> {
 
     pub fn as_raw(&self) -> PyResult<Date> {
         match self {
-            Self::Raw(date) => Ok(date.clone()),
+            Self::Raw(date) => Ok(*date),
             Self::Py(py_date) => pydate_as_date(py_date),
         }
     }
@@ -332,7 +332,7 @@ impl<'py> IntoPyObject<'py> for EitherTime<'py> {
 impl EitherTime<'_> {
     pub fn as_raw(&self) -> PyResult<Time> {
         match self {
-            Self::Raw(time) => Ok(time.clone()),
+            Self::Raw(time) => Ok(*time),
             Self::Py(py_time) => pytime_as_time(py_time, None),
         }
     }
@@ -405,7 +405,7 @@ impl<'py> EitherDateTime<'py> {
 
     pub fn as_raw(&self) -> PyResult<DateTime> {
         match self {
-            Self::Raw(dt) => Ok(dt.clone()),
+            Self::Raw(dt) => Ok(*dt),
             Self::Py(py_dt) => pydatetime_as_datetime(py_dt),
         }
     }
