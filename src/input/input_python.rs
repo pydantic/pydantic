@@ -49,7 +49,7 @@ use super::{
 
 static FRACTION_TYPE: GILOnceCell<Py<PyType>> = GILOnceCell::new();
 
-pub fn get_fraction_type(py: Python) -> &Bound<'_, PyType> {
+pub fn get_fraction_type(py: Python<'_>) -> &Bound<'_, PyType> {
     FRACTION_TYPE
         .get_or_init(py, || {
             py.import("fractions")

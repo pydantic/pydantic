@@ -30,7 +30,7 @@ fn import_type(py: Python, module: &str, attr: &str) -> PyResult<Py<PyType>> {
     py.import(module)?.getattr(attr)?.extract()
 }
 
-fn get_uuid_type(py: Python) -> PyResult<&Bound<'_, PyType>> {
+fn get_uuid_type(py: Python<'_>) -> PyResult<&Bound<'_, PyType>> {
     Ok(UUID_TYPE
         .get_or_init(py, || import_type(py, "uuid", "UUID").unwrap())
         .bind(py))

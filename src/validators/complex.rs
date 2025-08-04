@@ -11,7 +11,7 @@ use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationSta
 
 static COMPLEX_TYPE: GILOnceCell<Py<PyType>> = GILOnceCell::new();
 
-pub fn get_complex_type(py: Python) -> &Bound<'_, PyType> {
+pub fn get_complex_type(py: Python<'_>) -> &Bound<'_, PyType> {
     COMPLEX_TYPE
         .get_or_init(py, || py.get_type::<PyComplex>().into())
         .bind(py)

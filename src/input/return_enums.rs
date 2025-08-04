@@ -474,7 +474,7 @@ pub enum EitherString<'a> {
 }
 
 impl<'a> EitherString<'a> {
-    pub fn as_cow(&self) -> ValResult<Cow<str>> {
+    pub fn as_cow(&self) -> ValResult<Cow<'_, str>> {
         match self {
             Self::Cow(data) => Ok(data.clone()),
             Self::Py(py_str) => Ok(Cow::Borrowed(py_string_str(py_str)?)),

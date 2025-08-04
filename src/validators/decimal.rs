@@ -16,7 +16,7 @@ use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationSta
 
 static DECIMAL_TYPE: GILOnceCell<Py<PyType>> = GILOnceCell::new();
 
-pub fn get_decimal_type(py: Python) -> &Bound<'_, PyType> {
+pub fn get_decimal_type(py: Python<'_>) -> &Bound<'_, PyType> {
     DECIMAL_TYPE
         .get_or_init(py, || {
             py.import("decimal")
