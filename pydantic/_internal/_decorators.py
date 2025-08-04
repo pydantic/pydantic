@@ -21,6 +21,18 @@ from ._namespace_utils import GlobalsNamespace, MappingNamespace
 from ._typing_extra import get_function_type_hints
 from ._utils import can_be_positional
 
+try:
+    from async_property.base import AsyncPropertyDescriptor
+    from async_property.cached import AsyncCachedPropertyDescriptor
+except ImportError:
+    class AsyncPropertyDescriptor:
+        def __init__(self, _fget, field_name=None):
+            self._fget = _fget
+    class AsyncCachedPropertyDescriptor:
+        def __init__(self, _fget, _fset=None, _fdel=None, field_name=None):
+            self._fget = _fget
+
+
 if TYPE_CHECKING:
     from ..fields import ComputedFieldInfo
     from ..functional_validators import FieldValidatorModes
@@ -741,7 +753,7 @@ def unwrap_wrapped_function(
     """
     # Define the types we want to check against as a single tuple.
     unwrap_types = (
-        (property, cached_property)
+        (property, cached_property, AsyncPropertyDescriptor, AsyncCachedPropertyDescriptor)
         + ((partial, partialmethod) if unwrap_partial else ())
         + ((staticmethod, classmethod) if unwrap_class_static_method else ())
     )
@@ -753,6 +765,8 @@ def unwrap_wrapped_function(
             func = func.func
         elif isinstance(func, property):
             func = func.fget  # arbitrary choice, convenient for computed fields
+        elif isinstance(func, (AsyncPropertyDescriptor, AsyncCachedPropertyDescriptor)):
+            func = func._fget
         else:
             # Make coverage happy as it can only get here in the last possible case
             assert isinstance(func, cached_property)
