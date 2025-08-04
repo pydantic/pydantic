@@ -47,6 +47,10 @@ def test_constraints_schema_validation() -> None:
         (Decimal('1654646400.1234564'), datetime(2022, 6, 8, 0, 0, 0, 123456, tzinfo=timezone.utc)),
         (Decimal('1654646400.1234568'), datetime(2022, 6, 8, 0, 0, 0, 123457, tzinfo=timezone.utc)),
         ('1654646400.1234568', datetime(2022, 6, 8, 0, 0, 0, 123457, tzinfo=timezone.utc)),
+        (
+            Decimal('1654646400123.456'),
+            datetime(2022, 6, 8, 0, 0, 0, 123456, tzinfo=timezone.utc),
+        ),
         (253_402_300_800_000, Err('should be a valid datetime, dates after 9999 are not supported as unix timestamps')),
         (
             -80_000_000_000_000,
@@ -515,3 +519,44 @@ def test_tz_cmp() -> None:
 
     assert validated1 > validated2
     assert validated2 < validated1
+
+
+@pytest.mark.parametrize(
+    'val_temporal_unit, input_value, expected',
+    [
+        # 'seconds' mode: treat as seconds since epoch
+        ('seconds', 1654646400, datetime(2022, 6, 8, tzinfo=timezone.utc)),
+        ('seconds', '1654646400', datetime(2022, 6, 8, tzinfo=timezone.utc)),
+        ('seconds', 1654646400.123456, datetime(2022, 6, 8, 0, 0, 0, 123456, tzinfo=timezone.utc)),
+        ('seconds', 8640000000.0, datetime(2243, 10, 17, tzinfo=timezone.utc)),
+        ('seconds', 92534400000.0, datetime(4902, 4, 20, tzinfo=timezone.utc)),
+        # 'milliseconds' mode: treat as milliseconds since epoch
+        ('milliseconds', 1654646400, datetime(1970, 1, 20, 3, 37, 26, 400000, tzinfo=timezone.utc)),
+        ('milliseconds', 1654646400123, datetime(2022, 6, 8, 0, 0, 0, 123000, tzinfo=timezone.utc)),
+        ('milliseconds', '1654646400123', datetime(2022, 6, 8, 0, 0, 0, 123000, tzinfo=timezone.utc)),
+        ('milliseconds', 8640000000.0, datetime(1970, 4, 11, tzinfo=timezone.utc)),
+        ('milliseconds', 92534400000.0, datetime(1972, 12, 7, tzinfo=timezone.utc)),
+        (
+            'milliseconds',
+            1654646400123.456,
+            datetime(2022, 6, 8, 0, 0, 0, 123456, tzinfo=timezone.utc),
+        ),
+        # 'infer' mode: large numbers are ms, small are s
+        ('infer', 1654646400, datetime(2022, 6, 8, tzinfo=timezone.utc)),
+        ('infer', 1654646400123, datetime(2022, 6, 8, 0, 0, 0, 123000, tzinfo=timezone.utc)),
+        (
+            'infer',
+            1654646400123.456,
+            datetime(2022, 6, 8, 0, 0, 0, 123456, tzinfo=timezone.utc),
+        ),
+        ('infer', 8640000000.0, datetime(2243, 10, 17, tzinfo=timezone.utc)),
+        ('infer', 92534400000.0, datetime(1972, 12, 7, tzinfo=timezone.utc)),
+    ],
+)
+def test_val_temporal_unit_datetime(val_temporal_unit, input_value, expected):
+    v = SchemaValidator(
+        cs.datetime_schema(),
+        config={'val_temporal_unit': val_temporal_unit},
+    )
+    output = v.validate_python(input_value)
+    assert output == expected

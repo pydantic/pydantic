@@ -13,16 +13,17 @@ use crate::errors::ToErrorValue;
 use crate::errors::{py_err_string, ErrorType, ErrorTypeDefaults, ValError, ValResult};
 use crate::input::{EitherDateTime, Input};
 
-use crate::tools::SchemaDict;
-
 use super::Exactness;
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
+use crate::tools::SchemaDict;
+use crate::validators::config::TemporalUnitMode;
 
 #[derive(Debug, Clone)]
 pub struct DateTimeValidator {
     strict: bool,
     constraints: Option<DateTimeConstraints>,
     microseconds_precision: speedate::MicrosecondsPrecisionOverflowBehavior,
+    val_temporal_unit: TemporalUnitMode,
 }
 
 pub(crate) fn extract_microseconds_precision(
@@ -51,6 +52,7 @@ impl BuildValidator for DateTimeValidator {
             strict: is_strict(schema, config)?,
             constraints: DateTimeConstraints::from_py(schema)?,
             microseconds_precision: extract_microseconds_precision(schema, config)?,
+            val_temporal_unit: TemporalUnitMode::from_config(config)?,
         }
         .into())
     }
@@ -66,7 +68,7 @@ impl Validator for DateTimeValidator {
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         let strict = state.strict_or(self.strict);
-        let datetime = match input.validate_datetime(strict, self.microseconds_precision) {
+        let datetime = match input.validate_datetime(strict, self.microseconds_precision, self.val_temporal_unit) {
             Ok(val_match) => val_match.unpack(state),
             // if the error was a parsing error, in lax mode we allow dates and add the time 00:00:00
             Err(line_errors @ ValError::LineErrors(..)) if !strict => {
@@ -142,7 +144,7 @@ impl Validator for DateTimeValidator {
 /// In lax mode, if the input is not a datetime, we try parsing the input as a date and add the "00:00:00" time.
 /// Ok(None) means that this is not relevant to datetimes (the input was not a date nor a string)
 fn datetime_from_date<'py>(input: &(impl Input<'py> + ?Sized)) -> Result<Option<EitherDateTime<'py>>, ValError> {
-    let either_date = match input.validate_date(false) {
+    let either_date = match input.validate_date(false, TemporalUnitMode::default()) {
         Ok(val_match) => val_match.into_inner(),
         // if the error was a parsing error, update the error type from DateParsing to DatetimeFromDateParsing
         Err(ValError::LineErrors(mut line_errors)) => {
@@ -211,7 +213,11 @@ impl DateTimeConstraints {
 
 fn py_datetime_as_datetime(schema: &Bound<'_, PyDict>, key: &Bound<'_, PyString>) -> PyResult<Option<DateTime>> {
     match schema.get_item(key)? {
-        Some(value) => match value.validate_datetime(false, MicrosecondsPrecisionOverflowBehavior::Truncate) {
+        Some(value) => match value.validate_datetime(
+            false,
+            MicrosecondsPrecisionOverflowBehavior::Truncate,
+            TemporalUnitMode::default(),
+        ) {
             Ok(v) => Ok(Some(v.into_inner().as_raw()?)),
             Err(_) => Err(PyValueError::new_err(format!(
                 "'{key}' must be coercible to a datetime instance",
