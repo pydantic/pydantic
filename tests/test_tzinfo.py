@@ -213,6 +213,22 @@ class TestTzInfo(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     TzInfo(delta.total_seconds())
 
+    def test_no_args_constructor(self):
+        # Test that TzInfo can be constructed without arguments
+        tz = TzInfo()
+        self.assertEqual(tz.utcoffset(None), timedelta(0))
+        self.assertEqual(str(tz), 'UTC')
+
+    def test_pickle(self):
+        # Test that TzInfo can be pickled and unpickled
+        for tz in self.ACDT, self.EST, self.UTC:
+            for pickler, unpickler, proto in pickle_choices:
+                with self.subTest(tz=tz, proto=proto):
+                    pickled = pickler.dumps(tz, proto)
+                    unpickled = unpickler.loads(pickled)
+                    self.assertEqual(tz, unpickled)
+                    self.assertEqual(tz.utcoffset(None), unpickled.utcoffset(None))
+
 
 def test_tzinfo_could_be_reused():
     class Model:
