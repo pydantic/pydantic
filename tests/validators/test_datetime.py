@@ -276,7 +276,7 @@ def test_custom_invalid_tz():
         schema.validate_python(dt)
 
     # exception messages differ between python and pypy
-    if platform.python_implementation() == 'PyPy':
+    if platform.python_implementation() in ('PyPy', 'GraalVM'):
         error_message = 'NotImplementedError: tzinfo subclass must override utcoffset()'
     else:
         error_message = 'NotImplementedError: a tzinfo subclass must implement utcoffset()'
@@ -489,7 +489,7 @@ def test_neg_7200():
 
 
 def test_tz_constraint_too_high():
-    with pytest.raises(SchemaError, match='OverflowError: Python int too large to convert to C long'):
+    with pytest.raises(SchemaError, match='OverflowError: Python int too large.*'):
         SchemaValidator(core_schema.datetime_schema(tz_constraint=2**64))
 
 
