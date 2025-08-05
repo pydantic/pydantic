@@ -14,50 +14,45 @@ USE_MATURIN = $(shell [ "$$VIRTUAL_ENV" != "" ] && (which maturin))
 .uv:
 	@uv -V || echo 'Please install uv: https://docs.astral.sh/uv/getting-started/installation/'
 
-.PHONY: .pre-commit  ## Check that pre-commit is installed
-.pre-commit:
-	@pre-commit -V || echo 'Please install pre-commit: https://pre-commit.com/'
-
-.PHONY: install
-install: .uv .pre-commit
-	uv pip install -U wheel
+.PHONY: install  ## Install the package, dependencies, and pre-commit for local development
+install: .uv
 	uv sync --frozen --group all
-	uv pip install -v -e .
-	pre-commit install
+	uv run pre-commit install --install-hooks
 
 .PHONY: rebuild-lockfiles  ## Rebuild lockfiles from scratch, updating all dependencies
 rebuild-lockfiles: .uv
 	uv lock --upgrade
 
-.PHONY: install-rust-coverage
+.PHONY: install-rust-coverage  ## Install Rust coverage tools
 install-rust-coverage:
 	cargo install rustfilt coverage-prepare
 	rustup component add llvm-tools-preview
 
-.PHONY: install-pgo
+.PHONY: install-pgo  ## Install Rust PGO tools
+install-pgo:
 	rustup component add llvm-tools-preview
 
-.PHONY: build-dev
+.PHONY: build-dev  ## Build the development version of the package
 build-dev:
 	@rm -f python/pydantic_core/*.so
 	uv run maturin develop --uv
 
-.PHONY: build-prod
+.PHONY: build-prod  ## Build the production version of the package
 build-prod:
 	@rm -f python/pydantic_core/*.so
 	uv run maturin develop --uv --release
 
-.PHONY: build-profiling
+.PHONY: build-profiling  ## Build the profiling version of the package
 build-profiling:
 	@rm -f python/pydantic_core/*.so
 	uv run maturin develop --uv --profile profiling
 
-.PHONY: build-coverage
+.PHONY: build-coverage  ## Build the coverage version of the package
 build-coverage:
 	@rm -f python/pydantic_core/*.so
 	RUSTFLAGS='-C instrument-coverage' uv run maturin develop --uv --release
 
-.PHONY: build-pgo
+.PHONY: build-pgo  ## Build the PGO version of the package
 build-pgo:
 	@rm -f python/pydantic_core/*.so
 	$(eval PROFDATA := $(shell mktemp -d))
@@ -69,44 +64,44 @@ build-pgo:
 	@rm -rf $(PROFDATA)
 
 
-.PHONY: build-wasm
+.PHONY: build-wasm  ## Build the WebAssembly version of the package
 build-wasm:
 	@echo 'This requires python 3.12, maturin and emsdk to be installed'
 	uv run maturin build --release --target wasm32-unknown-emscripten --out dist -i 3.12
 	ls -lh dist
 
-.PHONY: format
+.PHONY: format  ## Auto-format rust and python source files
 format:
 	uv run ruff check --fix $(sources)
 	uv run ruff format $(sources)
 	cargo fmt
 
-.PHONY: lint-python
+.PHONY: lint-python  ## Lint python source files
 lint-python:
 	uv run ruff check $(sources)
 	uv run ruff format --check $(sources)
 	uv run griffe dump -f -d google -LWARNING -o/dev/null python/pydantic_core
 	$(mypy-stubtest)
 
-.PHONY: lint-rust
+.PHONY: lint-rust  ## Lint rust source files
 lint-rust:
 	cargo fmt --version
 	cargo fmt --all -- --check
 	cargo clippy --version
 	cargo clippy --tests -- -D warnings
 
-.PHONY: lint
+.PHONY: lint  ## Lint rust and python source files
 lint: lint-python lint-rust
 
-.PHONY: pyright
+.PHONY: pyright  ## Perform type-checking with pyright
 pyright:
 	uv run pyright
 
-.PHONY: test
+.PHONY: test  ## Run all tests
 test:
 	uv run pytest
 
-.PHONY: testcov
+.PHONY: testcov  ## Run tests and generate a coverage report
 testcov: build-coverage
 	@rm -rf htmlcov
 	@mkdir -p htmlcov
@@ -115,10 +110,10 @@ testcov: build-coverage
 	coverage html -d htmlcov/python
 	coverage-prepare html python/pydantic_core/*.so
 
-.PHONY: all
+.PHONY: all  ## Run the standard set of checks performed in CI
 all: format build-dev lint test
 
-.PHONY: clean
+.PHONY: clean  ## Clear local caches and build artifacts
 clean:
 	rm -rf `find . -name __pycache__`
 	rm -f `find . -type f -name '*.py[co]' `
@@ -133,3 +128,10 @@ clean:
 	rm -rf build
 	rm -rf perf.data*
 	rm -rf python/pydantic_core/*.so
+
+.PHONY: help  ## Display this message
+help:
+	@grep -E \
+		'^.PHONY: .*?## .*$$' $(MAKEFILE_LIST) | \
+		sort | \
+		awk 'BEGIN {FS = ".PHONY: |## "}; {printf "\033[36m%-19s\033[0m %s\n", $$2, $$3}'
