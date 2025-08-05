@@ -1293,7 +1293,7 @@ def apply_typevars_map(
 
 ```python
 PrivateAttr(
-    default: _T, *, init: Literal[False] = False
+    default: _T" optional hover>_T, *, init: Literal[False] = False
 ) -> _T
 
 ```
