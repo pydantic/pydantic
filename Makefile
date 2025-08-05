@@ -56,7 +56,7 @@ test-typechecking-mypy: .uv
 
 .PHONY: test-typechecking-pyrefly  ## Typechecking integration tests (Pyrefly).
 test-typechecking-pyrefly: .uv
-    uv run bash -c 'cd tests/typechecking && pyrefly --version && pyrefly check'
+	uv run bash -c 'cd tests/typechecking && pyrefly --version && pyrefly check'
 
 .PHONY: test  ## Run all tests, skipping the type-checker integration tests
 test: .uv
