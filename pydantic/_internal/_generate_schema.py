@@ -2315,8 +2315,12 @@ class GenerateSchema:
     ) -> CallbackGetCoreSchemaHandler:
         annotation_get_schema: GetCoreSchemaFunction | None = getattr(annotation, '__get_pydantic_core_schema__', None)
 
+        # Check if annotation is a BaseModel instance (not class) - these should be treated as metadata, not schema generators
+        BaseModel = import_cached_base_model()
+        is_basemodel_instance = isinstance(annotation, BaseModel)
+
         def new_handler(source: Any) -> core_schema.CoreSchema:
-            if annotation_get_schema is not None:
+            if annotation_get_schema is not None and not is_basemodel_instance:
                 schema = annotation_get_schema(source, get_inner_schema)
             else:
                 schema = get_inner_schema(source)

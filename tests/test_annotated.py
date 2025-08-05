@@ -635,3 +635,26 @@ def test_decimal_constraints_after_annotation() -> None:
         ta.validate_python(Decimal('12345678.901'))
 
     assert e.value.errors()[0]['type'] == 'decimal_max_digits'
+
+
+def test_basemodel_instance_in_annotated_metadata():
+    """Test that BaseModel instances in Annotated are treated as metadata, not validation constraints."""
+
+    class Metadata(BaseModel):
+        """A metadata class that should be ignored in Annotated."""
+
+    class Model(BaseModel):
+        state: Annotated[int, Metadata()]
+
+    # This should work - the Metadata() instance should be ignored
+    data = {'state': 2}
+    result = Model.model_validate(data)
+    assert result.state == 2
+
+    # Test with different values
+    assert Model.model_validate({'state': 42}).state == 42
+    assert Model.model_validate({'state': -1}).state == -1
+
+    # Test that it still validates as int (should fail for non-int)
+    with pytest.raises(ValidationError):
+        Model.model_validate({'state': 'not_an_int'})
