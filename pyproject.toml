@@ -120,6 +120,7 @@ testing-extra = [
 typechecking = [
     'mypy',
     'pyright',
+    'pyrefly',
     'pydantic-settings',
 ]
 
@@ -183,7 +184,7 @@ markers = [
 
 [tool.uv]
 default-groups = ['dev']
-required-version = '>=0.7.2'
+required-version = '>=0.8.4'
 
 # configuring https://github.com/pydantic/hooky
 [tool.hooky]
