@@ -69,35 +69,52 @@ except ValidationError as e:
 
 ## Getting Started
 
-You'll need rust stable [installed](https://rustup.rs/), or rust nightly if you want to generate accurate coverage.
+### Prerequisites
 
-With rust and python 3.9+ installed, compiling pydantic-core should be possible with roughly the following:
+You'll need:
+1. **[Rust](https://rustup.rs/)** - Rust stable (or nightly for coverage)
+2. **[uv](https://docs.astral.sh/uv/getting-started/installation/)** - Fast Python package manager (will install Python 3.9+ automatically)
+3. **[git](https://git-scm.com/)** - For version control
+4. **[make](https://www.gnu.org/software/make/)** - For running development commands (or use `nmake` on Windows)
+
+### Quick Start
 
 ```bash
-# clone this repo or your fork
+# Clone the repository (or from your fork)
 git clone git@github.com:pydantic/pydantic-core.git
 cd pydantic-core
-# create a new virtual env
-python3 -m venv env
-source env/bin/activate
-# install dependencies and install pydantic-core
+
+# Install all dependencies using uv, setup pre-commit hooks, and build the development version
 make install
 ```
 
-That should be it, the example shown above should now run.
+Verify your installation by running:
 
-You might find it useful to look at [`python/pydantic_core/_pydantic_core.pyi`](./python/pydantic_core/_pydantic_core.pyi) and
-[`python/pydantic_core/core_schema.py`](./python/pydantic_core/core_schema.py) for more information on the python API,
-beyond that, [`tests/`](./tests) provide a large number of examples of usage.
+```bash
+make
+```
 
-If you want to contribute to pydantic-core, you'll want to use some other make commands:
-* `make build-dev` to build the package during development
-* `make build-prod` to perform an optimised build for benchmarking
-* `make test` to run the tests
-* `make testcov` to run the tests and generate a coverage report
-* `make lint` to run the linter
-* `make format` to format python and rust code
-* `make` to run `format build-dev lint test`
+This runs a full development cycle: formatting, building, linting, and testing
+
+### Development Commands
+
+Run `make help` to see all available commands, or use these common ones:
+
+```bash
+make build-dev    # to build the package during development
+make build-prod   # to perform an optimised build for benchmarking
+make test         # to run the tests
+make testcov      # to run the tests and generate a coverage report
+make lint         # to run the linter
+make format       # to format python and rust code
+make all          # to run to run build-dev + format + lint + test
+```
+
+### Useful Resources
+
+* [`python/pydantic_core/_pydantic_core.pyi`](./python/pydantic_core/_pydantic_core.pyi) - Python API types
+* [`python/pydantic_core/core_schema.py`](./python/pydantic_core/core_schema.py) - Core schema definitions
+* [`tests/`](./tests) - Comprehensive usage examples
 
 ## Profiling
 
