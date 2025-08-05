@@ -1419,11 +1419,19 @@ class GenerateJsonSchema:
         if cls is not None:
             self._update_class_schema(json_schema, cls, config)
         else:
-            extra = config.get('extra')
+            extra = (
+                schema.get('extra_behavior')
+                or config.get('extra')
+                or schema.get('config', {}).get('extra_fields_behavior')
+            )
             if extra == 'forbid':
                 json_schema['additionalProperties'] = False
             elif extra == 'allow':
-                json_schema['additionalProperties'] = True
+                extras_schema = schema.get('extras_schema')
+                if extras_schema is not None:
+                    json_schema['additionalProperties'] = self.generate_inner(extras_schema) or True
+                else:
+                    json_schema['additionalProperties'] = True
 
         return json_schema
 

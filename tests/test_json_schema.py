@@ -7072,3 +7072,18 @@ def test_decimal_pattern_reject_invalid_not_numerical_values_with_decimal_places
 ) -> None:
     pattern = get_decimal_pattern()
     assert re.fullmatch(pattern, invalid_decimal) is None
+
+
+def test_additional_properties_for_extra_behavior():
+    schema1 = core_schema.typed_dict_schema(fields={}, extra_behavior='forbid')
+    json_schema1 = GenerateJsonSchema().generate(schema1)
+    assert json_schema1['additionalProperties'] is False
+
+    extras_schema = core_schema.int_schema()
+    schema2 = core_schema.typed_dict_schema(fields={}, extra_behavior='allow', extras_schema=extras_schema)
+    json_schema2 = GenerateJsonSchema().generate(schema2)
+    assert json_schema2['additionalProperties'] == {'type': 'integer'}
+
+    schema3 = core_schema.typed_dict_schema(fields={})
+    json_schema3 = GenerateJsonSchema().generate(schema3)
+    assert 'additionalProperties' not in json_schema3
