@@ -671,6 +671,15 @@ def test_json_schema():
     }
 
 
+def test_json_schema_custom_title() -> None:
+    def func(a: int):
+        pass
+
+    ta = TypeAdapter(func, config={'field_title_generator': lambda f_name, _: f_name + 'test'})
+
+    assert ta.json_schema()['properties']['a']['title'] == 'atest'
+
+
 def test_alias_generator():
     @validate_call(config=dict(alias_generator=lambda x: x * 2))
     def foo(a: int, b: int):
