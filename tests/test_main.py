@@ -1386,6 +1386,24 @@ def test_field_exclude():
     assert my_user.model_dump() == {'id': 42, 'username': 'JohnDoe', 'hobbies': ['scuba diving']}
 
 
+def test_field_exclude_if() -> None:
+    class Model(BaseModel):
+        a: int = Field(exclude_if=lambda x: x > 1)
+        b: str = Field(exclude_if=lambda x: 'foo' in x)
+
+    assert Model(a=0, b='bar').model_dump() == {'a': 0, 'b': 'bar'}
+    assert Model(a=2, b='bar').model_dump() == {'b': 'bar'}
+    assert Model(a=0, b='foo').model_dump() == {'a': 0}
+    assert Model(a=0, b='foo').model_dump(exclude={'a'}) == {}
+    assert Model(a=2, b='foo').model_dump() == {}
+
+    assert Model(a=0, b='bar').model_dump_json() == '{"a":0,"b":"bar"}'
+    assert Model(a=2, b='bar').model_dump_json() == '{"b":"bar"}'
+    assert Model(a=0, b='foo').model_dump_json() == '{"a":0}'
+    assert Model(a=0, b='foo').model_dump_json(exclude={'a'}) == '{}'
+    assert Model(a=2, b='foo').model_dump_json() == '{}'
+
+
 def test_revalidate_instances_never():
     class User(BaseModel):
         hobbies: list[str]
