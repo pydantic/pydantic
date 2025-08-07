@@ -941,3 +941,19 @@ def test_readonly_qualifier_warning() -> None:
         with pytest.raises(ValidationError):
             # Ensure required is taken into account:
             ta.validate_python({})
+
+
+def test_typeddict_field_exclude() -> None:
+    class Foo(TypedDict):
+        foo: Annotated[str, Field(exclude=True)]
+        bar: Annotated[int, Field(exclude_if=lambda x: x > 1)]
+
+    ta = TypeAdapter(Foo)
+
+    assert ta.dump_python(Foo(foo='bar', bar=1)) == {'bar': 1}
+    assert ta.dump_python(Foo(foo='bar', bar=1), exclude={'bar'}) == {}
+    assert ta.dump_python(Foo(foo='bar', bar=2)) == {}
+
+    assert ta.dump_json(Foo(foo='bar', bar=1)).decode('utf-8') == '{"bar":1}'
+    assert ta.dump_json(Foo(foo='bar', bar=1), exclude={'bar'}).decode('utf-8') == '{}'
+    assert ta.dump_json(Foo(foo='bar', bar=2)).decode('utf-8') == '{}'
