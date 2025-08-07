@@ -409,6 +409,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 for k, v in update.items():
                     if k in self.__pydantic_fields__:
                         copied.__dict__[k] = v
+                    elif k in self.__private_attributes__:
+                        if copied.__pydantic_private__ is None:
+                            copied.__pydantic_private__ = {}
+                        copied.__pydantic_private__[k] = v
                     else:
                         if copied.__pydantic_extra__ is None:
                             copied.__pydantic_extra__ = {}
