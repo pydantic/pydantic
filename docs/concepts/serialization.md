@@ -720,10 +720,10 @@ from pydantic import BaseModel, Field
 class Transaction(BaseModel):
     id: int
     private_id: int = Field(exclude=True)
-    value: int = Field(exclude_if=lambda v: v > 0)
+    value: int = Field(ge=0, exclude_if=lambda v: v == 0)
 
 
-print(Order(id=1, private_id=2, value=0).model_dump())
+print(Transaction(id=1, private_id=2, value=0).model_dump())
 #> {'id': 1}
 ```
 
