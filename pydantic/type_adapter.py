@@ -682,6 +682,7 @@ class TypeAdapter(Generic[T]):
         *,
         by_alias: bool = True,
         ref_template: str = DEFAULT_REF_TEMPLATE,
+        union_format: Literal['any_of', 'primitive_type_array'] = 'any_of',
         schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
         mode: JsonSchemaMode = 'validation',
     ) -> dict[str, Any]:
@@ -690,13 +691,26 @@ class TypeAdapter(Generic[T]):
         Args:
             by_alias: Whether to use alias names for field names.
             ref_template: The format string used for generating $ref strings.
+            union_format: The format to use when combining schemas from unions together. Can be one of:
+
+                - `'any_of'`: Use the [`anyOf`](https://json-schema.org/understanding-json-schema/reference/combining#anyOf)
+                keyword to combine schemas (the default).
+                - `'primitive_type_array'`: Use the [`type`](https://json-schema.org/understanding-json-schema/reference/type)
+                keyword as an array of strings, containing each type of the combination. If any of the schemas is not a primitive
+                type (`string`, `boolean`, `null`, `integer` or `number`) or contains constraints/metadata, falls back to
+                `any_of`.
+            schema_generator: To override the logic used to generate the JSON schema, as a subclass of
+                `GenerateJsonSchema` with your desired modifications
+            mode: The mode in which to generate the schema.
             schema_generator: The generator class used for creating the schema.
             mode: The mode to use for schema generation.
 
         Returns:
             The JSON schema for the model as a dictionary.
         """
-        schema_generator_instance = schema_generator(by_alias=by_alias, ref_template=ref_template)
+        schema_generator_instance = schema_generator(
+            by_alias=by_alias, ref_template=ref_template, union_format=union_format
+        )
         if isinstance(self.core_schema, _mock_val_ser.MockCoreSchema):
             self.core_schema.rebuild()
             assert not isinstance(self.core_schema, _mock_val_ser.MockCoreSchema), 'this is a bug! please report it'
@@ -711,6 +725,7 @@ class TypeAdapter(Generic[T]):
         title: str | None = None,
         description: str | None = None,
         ref_template: str = DEFAULT_REF_TEMPLATE,
+        union_format: Literal['any_of', 'primitive_type_array'] = 'any_of',
         schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
     ) -> tuple[dict[tuple[JsonSchemaKeyT, JsonSchemaMode], JsonSchemaValue], JsonSchemaValue]:
         """Generate a JSON schema including definitions from multiple type adapters.
@@ -723,6 +738,14 @@ class TypeAdapter(Generic[T]):
             title: The title for the schema.
             description: The description for the schema.
             ref_template: The format string used for generating $ref strings.
+            union_format: The format to use when combining schemas from unions together. Can be one of:
+
+                - `'any_of'`: Use the [`anyOf`](https://json-schema.org/understanding-json-schema/reference/combining#anyOf)
+                keyword to combine schemas (the default).
+                - `'primitive_type_array'`: Use the [`type`](https://json-schema.org/understanding-json-schema/reference/type)
+                keyword as an array of strings, containing each type of the combination. If any of the schemas is not a primitive
+                type (`string`, `boolean`, `null`, `integer` or `number`) or contains constraints/metadata, falls back to
+                `any_of`.
             schema_generator: The generator class used for creating the schema.
 
         Returns:
@@ -735,7 +758,9 @@ class TypeAdapter(Generic[T]):
                     element, along with the optional title and description keys.
 
         """
-        schema_generator_instance = schema_generator(by_alias=by_alias, ref_template=ref_template)
+        schema_generator_instance = schema_generator(
+            by_alias=by_alias, ref_template=ref_template, union_format=union_format
+        )
 
         inputs_ = []
         for key, mode, adapter in inputs:

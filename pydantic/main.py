@@ -538,6 +538,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         cls,
         by_alias: bool = True,
         ref_template: str = DEFAULT_REF_TEMPLATE,
+        union_format: Literal['any_of', 'primitive_type_array'] = 'any_of',
         schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
         mode: JsonSchemaMode = 'validation',
     ) -> dict[str, Any]:
@@ -546,6 +547,14 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         Args:
             by_alias: Whether to use attribute aliases or not.
             ref_template: The reference template.
+            union_format: The format to use when combining schemas from unions together. Can be one of:
+
+                - `'any_of'`: Use the [`anyOf`](https://json-schema.org/understanding-json-schema/reference/combining#anyOf)
+                keyword to combine schemas (the default).
+                - `'primitive_type_array'`: Use the [`type`](https://json-schema.org/understanding-json-schema/reference/type)
+                keyword as an array of strings, containing each type of the combination. If any of the schemas is not a primitive
+                type (`string`, `boolean`, `null`, `integer` or `number`) or contains constraints/metadata, falls back to
+                `any_of`.
             schema_generator: To override the logic used to generate the JSON schema, as a subclass of
                 `GenerateJsonSchema` with your desired modifications
             mode: The mode in which to generate the schema.
@@ -554,7 +563,12 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             The JSON schema for the given model class.
         """
         return model_json_schema(
-            cls, by_alias=by_alias, ref_template=ref_template, schema_generator=schema_generator, mode=mode
+            cls,
+            by_alias=by_alias,
+            ref_template=ref_template,
+            union_format=union_format,
+            schema_generator=schema_generator,
+            mode=mode,
         )
 
     @classmethod
