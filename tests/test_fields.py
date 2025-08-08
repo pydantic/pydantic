@@ -1,8 +1,9 @@
-from typing import Annotated, Final, Union
+from typing import Annotated, Any, Final, Union
 
 import pytest
 from annotated_types import Gt
 from pydantic_core import PydanticUndefined
+from typing_extensions import TypeAliasType
 
 import pydantic.dataclasses
 from pydantic import (
@@ -15,9 +16,10 @@ from pydantic import (
     ValidationError,
     computed_field,
     create_model,
-    fields,
+    validate_call,
 )
 from pydantic.fields import FieldInfo
+from pydantic.warnings import UnsupportedFieldAttributeWarning
 
 
 def test_field_info_annotation_keyword_argument():
@@ -28,7 +30,7 @@ def test_field_info_annotation_keyword_argument():
     third-party tools.
     """
     with pytest.raises(TypeError) as e:
-        fields.FieldInfo.from_field(annotation=())
+        FieldInfo.from_field(annotation=())
 
     assert e.value.args == ('"annotation" is not permitted as a Field keyword argument',)
 
@@ -156,6 +158,9 @@ def test_computed_field_raises_correct_attribute_error():
     with pytest.raises(AttributeError, match='Property attribute error'):
         Model().prop_field
 
+    with pytest.raises(AttributeError, match='Property attribute error'):
+        Model(some_extra_field='some value').prop_field
+
     with pytest.raises(AttributeError, match=f"'{Model.__name__}' object has no attribute 'invalid_field'"):
         Model().invalid_field
 
@@ -275,3 +280,64 @@ def test_fastapi_compatibility_hack() -> None:
 
     assert isinstance(model_field, Body)
     assert not model_field.is_required()
+
+
+_unsupported_standalone_fieldinfo_attributes = (
+    ('alias', 'alias'),
+    ('validation_alias', 'alias'),
+    ('serialization_alias', 'alias'),
+    ('default', 1),
+    ('default_factory', lambda: 1),
+    ('exclude', True),
+    ('deprecated', True),
+    ('repr', False),
+    ('validate_default', True),
+    ('frozen', True),
+    ('init', True),
+    ('init_var', True),
+    ('kw_only', True),
+)
+
+
+@pytest.mark.parametrize(
+    ['attribute', 'value'],
+    _unsupported_standalone_fieldinfo_attributes,
+)
+def test_unsupported_field_attribute_type_alias(attribute: str, value: Any) -> None:
+    TestType = TypeAliasType('TestType', Annotated[int, Field(**{attribute: value})])
+
+    with pytest.warns(UnsupportedFieldAttributeWarning):
+
+        class Model(BaseModel):
+            f: TestType
+
+
+@pytest.mark.parametrize(
+    ['attribute', 'value'],
+    _unsupported_standalone_fieldinfo_attributes,
+)
+def test_unsupported_field_attribute_nested(attribute: str, value: Any) -> None:
+    TestType = TypeAliasType('TestType', Annotated[int, Field(**{attribute: value})])
+
+    with pytest.warns(UnsupportedFieldAttributeWarning):
+
+        class Model(BaseModel):
+            f: list[TestType]
+
+
+@pytest.mark.parametrize(
+    ['attribute', 'value'],
+    [
+        (attr, value)
+        for attr, value in _unsupported_standalone_fieldinfo_attributes
+        if attr not in ('default', 'default_factory')
+    ],
+)
+def test_unsupported_field_attribute_nested_with_function(attribute: str, value: Any) -> None:
+    TestType = TypeAliasType('TestType', Annotated[int, Field(**{attribute: value})])
+
+    with pytest.warns(UnsupportedFieldAttributeWarning):
+
+        @validate_call
+        def func(a: list[TestType]) -> None:
+            return None

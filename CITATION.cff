@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-title: Pydantic
+title: Pydantic Validation
 message: 'If you use this software, please cite it as below.'
 type: software
 authors:
@@ -30,12 +30,12 @@ authors:
 repository-code: 'https://github.com/pydantic/pydantic'
 url: 'https://docs.pydantic.dev/latest/'
 abstract: >-
-  Pydantic is the most widely used data validation library
+  Pydantic Validation is the most widely used data validation library
   for Python.
 
-  Fast and extensible, Pydantic plays nicely with your
+  Fast and extensible, Pydantic Validation plays nicely with your
   linters/IDE/brain. Define how data should be in pure,
-  canonical Python 3.9+; validate it with Pydantic.
+  canonical Python 3.9+; validate it with Pydantic Validation.
 keywords:
   - python
   - validation
@@ -44,5 +44,5 @@ keywords:
   - hints
   - typing
 license: MIT
-version: v2.11.7
-date-released: 2025-06-14
+version: v2.12.0a1+dev
+date-released: 2025-07-26

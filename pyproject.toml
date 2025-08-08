@@ -45,10 +45,10 @@ classifiers = [
 ]
 requires-python = '>=3.9'
 dependencies = [
-    'typing-extensions>=4.13.0',
+    'typing-extensions>=4.14.1',
     'annotated-types>=0.6.0',
     # Keep this in sync with the version in the `check_pydantic_core_version()` function:
-    "pydantic-core",
+    'pydantic-core==2.37.2',
     'typing-inspection>=0.4.0',
 ]
 dynamic = ['version', 'readme']
@@ -120,6 +120,7 @@ testing-extra = [
 typechecking = [
     'mypy',
     'pyright',
+    'pyrefly',
     'pydantic-settings',
 ]
 
@@ -183,7 +184,7 @@ markers = [
 
 [tool.uv]
 default-groups = ['dev']
-required-version = '>=0.7.2'
+required-version = '>=0.8.4'
 
 [tool.uv.sources]
 pydantic-core = { git = "https://github.com/ollz272/pydantic-core", branch = "ser_json_datetime" }

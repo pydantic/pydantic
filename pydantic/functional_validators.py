@@ -15,7 +15,7 @@ from typing_extensions import Self, TypeAlias
 from ._internal import _decorators, _generics, _internal_dataclass
 from .annotated_handlers import GetCoreSchemaHandler
 from .errors import PydanticUserError
-from .warnings import PydanticArbitraryTypeWarning
+from .warnings import ArbitraryTypeWarning
 
 if sys.version_info < (3, 11):
     from typing_extensions import Protocol
@@ -820,7 +820,7 @@ else:
         @classmethod
         def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
             with warnings.catch_warnings():
-                warnings.simplefilter('ignore', PydanticArbitraryTypeWarning)
+                warnings.simplefilter('ignore', ArbitraryTypeWarning)
                 original_schema = handler(source)
             metadata = {'pydantic_js_annotation_functions': [lambda _c, h: h(original_schema)]}
             return core_schema.any_schema(

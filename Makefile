@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := all
-sources = pydantic tests docs/plugins
+sources = pydantic tests docs/plugins release/
 NUM_THREADS?=1
 
 .PHONY: .uv  ## Check that uv is installed
@@ -53,6 +53,10 @@ test-typechecking-pyright: .uv
 .PHONY: test-typechecking-mypy   ## Typechecking integration tests (Mypy). Not to be confused with `test-mypy`.
 test-typechecking-mypy: .uv
 	uv run bash -c 'cd tests/typechecking && mypy --version && mypy --cache-dir=/dev/null --config-file pyproject.toml .'
+
+.PHONY: test-typechecking-pyrefly  ## Typechecking integration tests (Pyrefly).
+test-typechecking-pyrefly: .uv
+	uv run bash -c 'cd tests/typechecking && pyrefly --version && pyrefly check'
 
 .PHONY: test  ## Run all tests, skipping the type-checker integration tests
 test: .uv

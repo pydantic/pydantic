@@ -37,11 +37,11 @@ from typing import (
     overload,
 )
 from uuid import UUID
-from warnings import warn
 from zoneinfo import ZoneInfo
 
 import typing_extensions
 from pydantic_core import (
+    MISSING,
     CoreSchema,
     MultiHostUrl,
     PydanticCustomError,
@@ -62,7 +62,7 @@ from ..errors import PydanticSchemaGenerationError, PydanticUndefinedAnnotation,
 from ..functional_validators import AfterValidator, BeforeValidator, FieldValidatorModes, PlainValidator, WrapValidator
 from ..json_schema import JsonSchemaValue
 from ..version import version_short
-from ..warnings import PydanticArbitraryTypeWarning, PydanticDeprecatedSince20
+from ..warnings import ArbitraryTypeWarning, PydanticDeprecatedSince20, UnsupportedFieldAttributeWarning
 from . import _decorators, _discriminated_union, _known_annotated_metadata, _repr, _typing_extra
 from ._config import ConfigWrapper, ConfigWrapperStack
 from ._core_metadata import CoreMetadata, update_core_metadata
@@ -164,6 +164,24 @@ ValidateCallSupportedTypes = Union[
 ]
 
 VALIDATE_CALL_SUPPORTED_TYPES = get_args(ValidateCallSupportedTypes)
+UNSUPPORTED_STANDALONE_FIELDINFO_ATTRIBUTES = [
+    ('alias', None),
+    ('validation_alias', None),
+    ('serialization_alias', None),
+    # will be set if any alias is set, so disable it to avoid double warnings:
+    # 'alias_priority',
+    ('default', PydanticUndefined),
+    ('default_factory', None),
+    ('exclude', None),
+    ('deprecated', None),
+    ('repr', True),
+    ('validate_default', None),
+    ('frozen', None),
+    ('init', None),
+    ('init_var', None),
+    ('kw_only', None),
+]
+"""`FieldInfo` attributes (and their default value) that can't be used outside of a model (e.g. in a type adapter or a PEP 695 type alias)."""
 
 _mode_to_validator: dict[
     FieldValidatorModes, type[BeforeValidator | AfterValidator | PlainValidator | WrapValidator]
@@ -562,7 +580,15 @@ class GenerateSchema:
 
         mapped_origin = MAPPING_ORIGIN_MAP[tp]
         keys_schema = self.generate_schema(keys_type)
-        values_schema = self.generate_schema(values_type)
+        with warnings.catch_warnings():
+            # We kind of abused `Field()` default factories to be able to specify
+            # the `defaultdict`'s `default_factory`. As a consequence, we get warnings
+            # as normally `FieldInfo.default_factory` is unsupported in the context where
+            # `Field()` is used and our only solution is to ignore them (note that this might
+            # wrongfully ignore valid warnings, e.g. if the `value_type` is a PEP 695 type alias
+            # with unsupported metadata).
+            warnings.simplefilter('ignore', category=UnsupportedFieldAttributeWarning)
+            values_schema = self.generate_schema(values_type)
         dict_schema = core_schema.dict_schema(keys_schema, values_schema, strict=False)
 
         if mapped_origin is dict:
@@ -614,12 +640,12 @@ class GenerateSchema:
 
     def _arbitrary_type_schema(self, tp: Any) -> CoreSchema:
         if not isinstance(tp, type):
-            warn(
+            warnings.warn(
                 f'{tp!r} is not a Python type (it may be an instance of an object),'
                 ' Pydantic will allow any object with no validation since we cannot even'
                 ' enforce that the input is an instance of the given type.'
                 ' To get rid of this error wrap the type with `pydantic.SkipValidation`.',
-                PydanticArbitraryTypeWarning,
+                ArbitraryTypeWarning,
             )
             return core_schema.any_schema()
         return core_schema.is_instance_schema(tp)
@@ -903,12 +929,12 @@ class GenerateSchema:
             from pydantic.v1 import BaseModel as BaseModelV1
 
             if issubclass(obj, BaseModelV1):
-                warn(
+                warnings.warn(
                     f'Mixing V1 models and V2 models (or constructs, like `TypeAdapter`) is not supported. Please upgrade `{obj.__name__}` to V2.',
                     UserWarning,
                 )
             else:
-                warn(
+                warnings.warn(
                     '`__get_validators__` is deprecated and will be removed, use `__get_pydantic_core_schema__` instead.',
                     PydanticDeprecatedSince20,
                 )
@@ -1043,6 +1069,8 @@ class GenerateSchema:
             return core_schema.multi_host_url_schema()
         elif obj is None or obj is _typing_extra.NoneType:
             return core_schema.none_schema()
+        if obj is MISSING:
+            return core_schema.missing_sentinel_schema()
         elif obj in IP_TYPES:
             return self._ip_schema(obj)
         elif obj in TUPLE_TYPES:
@@ -1525,7 +1553,14 @@ class GenerateSchema:
         update_field_from_config(self._config_wrapper, name, field)
 
         with self.field_name_stack.push(name):
-            schema = self._apply_annotations(field.annotation, [field])
+            schema = self._apply_annotations(
+                field.annotation,
+                [field],
+                # Because we pass `field` as metadata above (required for attributes relevant for
+                # JSON Scheme generation), we need to ignore the potential warnings about `FieldInfo`
+                # attributes that will not be used:
+                check_unsupported_field_info_attributes=False,
+            )
 
         if not field.is_required():
             schema = wrap_default(field, schema)
@@ -1567,7 +1602,14 @@ class GenerateSchema:
         update_field_from_config(self._config_wrapper, name, field)
 
         with self.field_name_stack.push(name):
-            schema = self._apply_annotations(field.annotation, [field])
+            schema = self._apply_annotations(
+                field.annotation,
+                [field],
+                # Because we pass `field` as metadata above (required for attributes relevant for
+                # JSON Scheme generation), we need to ignore the potential warnings about `FieldInfo`
+                # attributes that will not be used:
+                check_unsupported_field_info_attributes=False,
+            )
 
         if not field.is_required():
             schema = wrap_default(field, schema)
@@ -2120,6 +2162,7 @@ class GenerateSchema:
         source_type: Any,
         annotations: list[Any],
         transform_inner_schema: Callable[[CoreSchema], CoreSchema] = lambda x: x,
+        check_unsupported_field_info_attributes: bool = True,
     ) -> CoreSchema:
         """Apply arguments from `Annotated` or from `FieldInfo` to a schema.
 
@@ -2150,7 +2193,10 @@ class GenerateSchema:
             if annotation is None:
                 continue
             get_inner_schema = self._get_wrapped_inner_schema(
-                get_inner_schema, annotation, pydantic_js_annotation_functions
+                get_inner_schema,
+                annotation,
+                pydantic_js_annotation_functions,
+                check_unsupported_field_info_attributes=check_unsupported_field_info_attributes,
             )
 
         schema = get_inner_schema(source_type)
@@ -2159,10 +2205,31 @@ class GenerateSchema:
             update_core_metadata(core_metadata, pydantic_js_annotation_functions=pydantic_js_annotation_functions)
         return _add_custom_serialization_from_json_encoders(self._config_wrapper.json_encoders, source_type, schema)
 
-    def _apply_single_annotation(self, schema: core_schema.CoreSchema, metadata: Any) -> core_schema.CoreSchema:
+    def _apply_single_annotation(
+        self,
+        schema: core_schema.CoreSchema,
+        metadata: Any,
+        check_unsupported_field_info_attributes: bool = True,
+    ) -> core_schema.CoreSchema:
         FieldInfo = import_cached_field_info()
 
         if isinstance(metadata, FieldInfo):
+            if (
+                check_unsupported_field_info_attributes
+                # HACK: we don't want to emit the warning for `FieldInfo` subclasses, because FastAPI does weird manipulations
+                # with its subclasses and their annotations:
+                and type(metadata) is FieldInfo
+                and (unsupported_attributes := self._get_unsupported_field_info_attributes(metadata))
+            ):
+                for attr, value in unsupported_attributes:
+                    warnings.warn(
+                        f'The {attr!r} attribute with value {value!r} was provided to the `Field()` function, '
+                        f'which has no effect in the context it was used. {attr!r} is field-specific metadata, '
+                        'and can only be attached to a model field using `Annotated` metadata or by assignment. '
+                        'This may have happened because an `Annotated` type alias using the `type` statement was '
+                        'used, or if the `Field()` function was attached to a single member of a union type.',
+                        category=UnsupportedFieldAttributeWarning,
+                    )
             for field_metadata in metadata.metadata:
                 schema = self._apply_single_annotation(schema, field_metadata)
 
@@ -2217,11 +2284,34 @@ class GenerateSchema:
             )
         return schema
 
+    def _get_unsupported_field_info_attributes(self, field_info: FieldInfo) -> list[tuple[str, Any]]:
+        """Get the list of unsupported `FieldInfo` attributes when not directly used in `Annotated` for field annotations."""
+        unused_metadata: list[tuple[str, Any]] = []
+        for unused_metadata_name, unset_value in UNSUPPORTED_STANDALONE_FIELDINFO_ATTRIBUTES:
+            if (
+                (unused_metadata_value := getattr(field_info, unused_metadata_name)) is not unset_value
+                # `default` and `default_factory` can still be used with a type adapter, so only include them
+                # if used with a model-like class:
+                and (
+                    unused_metadata_name not in ('default', 'default_factory')
+                    or self.model_type_stack.get() is not None
+                )
+            ):
+                # Setting `alias` will set `validation/serialization_alias` as well, so we want to avoid duplicate warnings:
+                if (
+                    unused_metadata_name not in ('validation_alias', 'serialization_alias')
+                    or 'alias' not in field_info._attributes_set
+                ):
+                    unused_metadata.append((unused_metadata_name, unused_metadata_value))
+
+        return unused_metadata
+
     def _get_wrapped_inner_schema(
         self,
         get_inner_schema: GetCoreSchemaHandler,
         annotation: Any,
         pydantic_js_annotation_functions: list[GetJsonSchemaFunction],
+        check_unsupported_field_info_attributes: bool = False,
     ) -> CallbackGetCoreSchemaHandler:
         annotation_get_schema: GetCoreSchemaFunction | None = getattr(annotation, '__get_pydantic_core_schema__', None)
 
@@ -2230,7 +2320,11 @@ class GenerateSchema:
                 schema = annotation_get_schema(source, get_inner_schema)
             else:
                 schema = get_inner_schema(source)
-                schema = self._apply_single_annotation(schema, annotation)
+                schema = self._apply_single_annotation(
+                    schema,
+                    annotation,
+                    check_unsupported_field_info_attributes=check_unsupported_field_info_attributes,
+                )
                 schema = self._apply_single_annotation_json_schema(schema, annotation)
 
             metadata_js_function = _extract_get_pydantic_json_schema(annotation)

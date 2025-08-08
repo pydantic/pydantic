@@ -2922,6 +2922,19 @@ def test_dataclass():
     }
 
 
+@pytest.mark.skipif(sys.version_info < (3, 14), reason='`doc` added in 3.14')
+@pytest.mark.parametrize(
+    'dataclass_decorator',
+    [dataclass, pydantic.dataclasses.dataclass],
+)
+def test_dataclass_doc_json_schema(dataclass_decorator) -> None:
+    @dataclass_decorator
+    class A:
+        a: bool = dataclasses.field(doc='a doc')
+
+    assert TypeAdapter(A).json_schema()['properties']['a'] == {'title': 'A', 'type': 'boolean', 'description': 'a doc'}
+
+
 def test_schema_attributes():
     class ExampleEnum(Enum):
         """This is a test description."""

@@ -1841,6 +1841,41 @@ def test_kw_only_inheritance(decorator1, decorator2):
     assert child.y == 1
 
 
+def test_kw_only_inheritance_on_field() -> None:
+    @dataclasses.dataclass
+    class A:
+        x: int = Field(kw_only=True)
+
+    @pydantic.dataclasses.dataclass
+    class B(A):
+        pass
+
+    if sys.version_info >= (3, 10):  # On 3.9, we ignore kw_only.
+        with pytest.raises(ValidationError):
+            B(1)
+
+
+def test_repr_inheritance() -> None:
+    @dataclasses.dataclass
+    class A:
+        a: int = Field(repr=False)
+
+    @pydantic.dataclasses.dataclass
+    class B(A):
+        pass
+
+    assert repr(B(a=1)).endswith('B()')
+
+
+@pytest.mark.skipif(sys.version_info < (3, 14), reason='`doc` added in 3.14')
+def test_description_as_doc_in_slots() -> None:
+    @pydantic.dataclasses.dataclass(slots=True)
+    class A:
+        a: int = Field(description='a doc')
+
+    assert A.__slots__ == {'a': 'a doc'}
+
+
 def test_extra_forbid_list_no_error():
     @pydantic.dataclasses.dataclass(config=dict(extra='forbid'))
     class Bar: ...
@@ -2113,6 +2148,37 @@ def test_dataclasses_inheritance_default_value_is_not_deleted(
 
     assert Child.a == 1
     assert Child().a == 1
+
+
+def test_dataclasses_inheritance_bare_class_not_used() -> None:
+    """https://github.com/pydantic/pydantic/issues/12045"""
+
+    class BareClass:
+        a: int = Field(kw_only=True)
+
+    @pydantic.dataclasses.dataclass
+    class DC(BareClass):
+        pass
+
+    assert len(DC.__dataclass_fields__) == 0
+    assert len(DC.__pydantic_fields__) == 0
+
+
+def test_dataclasses_type_override_pydantic_field() -> None:
+    """https://github.com/pydantic/pydantic/issues/12045.
+
+    `B.a` used to be typed as `str`, only if `pydantic.Field()` was being used on `A.a`.
+    """
+
+    @dataclasses.dataclass
+    class A:
+        a: int = Field()
+
+    @pydantic.dataclasses.dataclass
+    class B(A):
+        a: str = dataclasses.field()
+
+    assert B(a='test').a == 'test'
 
 
 def test_dataclass_config_validate_default():

@@ -6,8 +6,15 @@ from pydantic_core import __version__ as __pydantic_core_version__
 
 __all__ = 'VERSION', 'version_info'
 
-VERSION = '2.11.7'
-"""The version of Pydantic."""
+VERSION = '2.12.0a1+dev'
+"""The version of Pydantic.
+
+This version specifier is guaranteed to be compliant with the [specification],
+introduced by [PEP 440].
+
+[specification]: https://packaging.python.org/en/latest/specifications/version-specifiers/
+[PEP 440]: https://peps.python.org/pep-0440/
+"""
 
 
 def version_short() -> str:
@@ -66,7 +73,7 @@ def version_info() -> str:
 def check_pydantic_core_version() -> bool:
     """Check that the installed `pydantic-core` dependency is compatible."""
     # Keep this in sync with the version constraint in the `pyproject.toml` dependencies:
-    return __pydantic_core_version__ == '2.35.1'
+    return __pydantic_core_version__ == '2.37.2'
 
 
 def parse_mypy_version(version: str) -> tuple[int, int, int]:

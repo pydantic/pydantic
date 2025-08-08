@@ -251,18 +251,6 @@ def test_modify_get_schema_annotated() -> None:
     calls.clear()
 
 
-def test_annotated_alias_at_low_level() -> None:
-    with pytest.warns(
-        UserWarning,
-        match=r'`alias` specification on field "low_level_alias_field" must be set on outermost annotation to take effect.',
-    ):
-
-        class Model(BaseModel):
-            low_level_alias_field: Optional[Annotated[int, Field(alias='field_alias')]] = None
-
-    assert Model(field_alias=1).low_level_alias_field is None
-
-
 def test_get_pydantic_core_schema_source_type() -> None:
     types: set[Any] = set()
 

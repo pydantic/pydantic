@@ -15,7 +15,7 @@ from warnings import warn
 
 import annotated_types
 import typing_extensions
-from pydantic_core import PydanticUndefined
+from pydantic_core import MISSING, PydanticUndefined
 from typing_extensions import Self, TypeAlias, Unpack, deprecated
 from typing_inspection import typing_objects
 from typing_inspection.introspection import UNKNOWN, AnnotationSource, ForbiddenQualifier, Qualifier, inspect_annotation
@@ -376,7 +376,7 @@ class FieldInfo(_repr.Representation):
         Returns:
             A field object with the passed values.
         """
-        if annotation is default:
+        if annotation is not MISSING and annotation is default:
             raise PydanticUserError(
                 'Error when building FieldInfo from annotated attribute. '
                 "Make sure you don't have any field name clashing with a type annotation.",
@@ -613,6 +613,8 @@ class FieldInfo(_repr.Representation):
 
         # use the `Field` function so in correct kwargs raise the correct `TypeError`
         dc_field_metadata = {k: v for k, v in dc_field.metadata.items() if k in _FIELD_ARG_NAMES}
+        if sys.version_info >= (3, 14) and dc_field.doc is not None:
+            dc_field_metadata['description'] = dc_field.doc
         return Field(default=default, default_factory=default_factory, repr=dc_field.repr, **dc_field_metadata)  # pyright: ignore[reportCallIssue]
 
     @staticmethod
