@@ -618,6 +618,19 @@ class ConfigDict(TypedDict, total=False):
     - `'seconds'` will serialize date-like types to a floating point number of seconds since the epoch.
     """
 
+    val_temporal_unit: Literal['seconds', 'milliseconds', 'infer']
+    """
+    The unit to assume for validating numeric input for datetime-like types. This includes:
+    - [`datetime.datetime`][]
+    - [`datetime.date`][]
+    Defaults to `'infer'`.
+    The "epoch" references below refer to the Unix epoch, which is 1970-01-01 00:00:00 UTC.
+    - `'seconds'` will validate date or time numeric inputs as seconds since the epoch.
+    - `'milliseconds'` will validate date or time numeric inputs as milliseconds since the epoch.
+    - `'infer'` will infer the unit from the string numeric input on unix time:
+        i.e. seconds (if >= -2^10 and <= 2^10) or milliseconds (if < -2^10or > 2^10) since the epoch.
+    """
+
     ser_json_bytes: Literal['utf8', 'base64', 'hex']
     """
     The encoding of JSON serialized bytes. Defaults to `'utf8'`.
