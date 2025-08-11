@@ -2,13 +2,9 @@ import dataclasses
 import json
 import platform
 import warnings
+from functools import cached_property
 from random import randint
 from typing import Any, ClassVar
-
-try:
-    from functools import cached_property
-except ImportError:
-    cached_property = None
 
 import pytest
 from dirty_equals import IsJson
@@ -504,7 +500,6 @@ def test_function_plain_field_serializer_to_python():
     assert s.to_python(Model(x=1000)) == {'x': '1_000'}
 
 
-@pytest.mark.skipif(cached_property is None, reason='cached_property is not available')
 def test_field_serializer_cached_property():
     @dataclasses.dataclass
     class Model:
@@ -709,6 +704,9 @@ def test_property():
     assert s.to_python(Model(width=3, height=4), round_trip=True) == {'width': 3, 'height': 4}
     assert s.to_json(Model(width=3, height=4), round_trip=True) == b'{"width":3,"height":4}'
 
+    assert s.to_python(Model(width=3, height=4), exclude_computed_fields=True) == {'width': 3, 'height': 4}
+    assert s.to_json(Model(width=3, height=4), exclude_computed_fields=True) == b'{"width":3,"height":4}'
+
 
 def test_property_alias():
     @dataclasses.dataclass
@@ -881,7 +879,6 @@ def test_computed_field_exclude_none_different_order():
     assert s.to_json(Model(3, 4), exclude_none=True, by_alias=True) == b'{"width":3,"height":4,"Area":12}'
 
 
-@pytest.mark.skipif(cached_property is None, reason='cached_property is not available')
 def test_cached_property_alias():
     @dataclasses.dataclass
     class Model:
@@ -996,7 +993,6 @@ def test_property_include_exclude():
     assert s.to_json(Model(1), exclude={'b': [0]}) == b'{"a":1,"b":[2,"3"]}'
 
 
-@pytest.mark.skipif(cached_property is None, reason='cached_property is not available')
 def test_property_setter():
     class Square:
         side: float

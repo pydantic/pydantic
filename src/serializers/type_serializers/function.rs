@@ -559,6 +559,8 @@ struct SerializationInfo {
     #[pyo3(get)]
     exclude_none: bool,
     #[pyo3(get)]
+    exclude_computed_fields: bool,
+    #[pyo3(get)]
     round_trip: bool,
     field_name: Option<String>,
     #[pyo3(get)]
@@ -583,6 +585,7 @@ impl SerializationInfo {
                     exclude_unset: extra.exclude_unset,
                     exclude_defaults: extra.exclude_defaults,
                     exclude_none: extra.exclude_none,
+                    exclude_computed_fields: extra.exclude_none,
                     round_trip: extra.round_trip,
                     field_name: Some(field_name.to_string()),
                     serialize_as_any: extra.serialize_as_any,
@@ -601,6 +604,7 @@ impl SerializationInfo {
                 exclude_unset: extra.exclude_unset,
                 exclude_defaults: extra.exclude_defaults,
                 exclude_none: extra.exclude_none,
+                exclude_computed_fields: extra.exclude_computed_fields,
                 round_trip: extra.round_trip,
                 field_name: None,
                 serialize_as_any: extra.serialize_as_any,
@@ -651,6 +655,7 @@ impl SerializationInfo {
         d.set_item("exclude_unset", self.exclude_unset)?;
         d.set_item("exclude_defaults", self.exclude_defaults)?;
         d.set_item("exclude_none", self.exclude_none)?;
+        d.set_item("exclude_computed_fields", self.exclude_computed_fields)?;
         d.set_item("round_trip", self.round_trip)?;
         d.set_item("serialize_as_any", self.serialize_as_any)?;
         Ok(d)
@@ -658,7 +663,7 @@ impl SerializationInfo {
 
     fn __repr__(&self, py: Python) -> PyResult<String> {
         Ok(format!(
-            "SerializationInfo(include={}, exclude={}, context={}, mode='{}', by_alias={}, exclude_unset={}, exclude_defaults={}, exclude_none={}, round_trip={}, serialize_as_any={})",
+            "SerializationInfo(include={}, exclude={}, context={}, mode='{}', by_alias={}, exclude_unset={}, exclude_defaults={}, exclude_none={}, exclude_computed_fields={}, round_trip={}, serialize_as_any={})",
             match self.include {
                 Some(ref include) => include.bind(py).repr()?.to_str()?.to_owned(),
                 None => "None".to_owned(),
@@ -676,6 +681,7 @@ impl SerializationInfo {
             py_bool(self.exclude_unset),
             py_bool(self.exclude_defaults),
             py_bool(self.exclude_none),
+            py_bool(self.exclude_computed_fields),
             py_bool(self.round_trip),
             py_bool(self.serialize_as_any),
         ))
