@@ -6205,8 +6205,10 @@ class Foo(BaseModel):
 
 def test_description_not_included_for_basemodel() -> None:
     with pytest.raises(TypeError, match='BaseModel cannot be used directly as a field type'):
+
         class Model(BaseModel):
             x: BaseModel
+
     class SubModel(BaseModel):
         pass
 

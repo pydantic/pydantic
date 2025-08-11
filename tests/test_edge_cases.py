@@ -2568,6 +2568,7 @@ def test_generic_wrapped_forwardref():
 
 def test_plain_basemodel_field():
     with pytest.raises(TypeError, match='BaseModel cannot be used directly as a field type'):
+
         class Model(BaseModel):
             x: BaseModel
 
