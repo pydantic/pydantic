@@ -60,6 +60,7 @@ impl SchemaSerializer {
         exclude_unset: bool,
         exclude_defaults: bool,
         exclude_none: bool,
+        exclude_computed_fields: bool,
         round_trip: bool,
         rec_guard: &'a SerRecursionState,
         serialize_unknown: bool,
@@ -75,6 +76,7 @@ impl SchemaSerializer {
             exclude_unset,
             exclude_defaults,
             exclude_none,
+            exclude_computed_fields,
             round_trip,
             &self.config,
             rec_guard,
@@ -108,8 +110,8 @@ impl SchemaSerializer {
 
     #[allow(clippy::too_many_arguments)]
     #[pyo3(signature = (value, *, mode = None, include = None, exclude = None, by_alias = None,
-        exclude_unset = false, exclude_defaults = false, exclude_none = false, round_trip = false, warnings = WarningsArg::Bool(true),
-        fallback = None, serialize_as_any = false, context = None))]
+        exclude_unset = false, exclude_defaults = false, exclude_none = false, exclude_computed_fields = false,
+        round_trip = false, warnings = WarningsArg::Bool(true), fallback = None, serialize_as_any = false, context = None))]
     pub fn to_python(
         &self,
         py: Python,
@@ -121,6 +123,7 @@ impl SchemaSerializer {
         exclude_unset: bool,
         exclude_defaults: bool,
         exclude_none: bool,
+        exclude_computed_fields: bool,
         round_trip: bool,
         warnings: WarningsArg,
         fallback: Option<&Bound<'_, PyAny>>,
@@ -142,6 +145,7 @@ impl SchemaSerializer {
             exclude_unset,
             exclude_defaults,
             exclude_none,
+            exclude_computed_fields,
             round_trip,
             &rec_guard,
             false,
@@ -156,8 +160,8 @@ impl SchemaSerializer {
 
     #[allow(clippy::too_many_arguments)]
     #[pyo3(signature = (value, *, indent = None, ensure_ascii = false, include = None, exclude = None, by_alias = None,
-        exclude_unset = false, exclude_defaults = false, exclude_none = false, round_trip = false, warnings = WarningsArg::Bool(true),
-        fallback = None, serialize_as_any = false, context = None))]
+        exclude_unset = false, exclude_defaults = false, exclude_none = false, exclude_computed_fields = false,
+        round_trip = false, warnings = WarningsArg::Bool(true), fallback = None, serialize_as_any = false, context = None))]
     pub fn to_json(
         &self,
         py: Python,
@@ -170,6 +174,7 @@ impl SchemaSerializer {
         exclude_unset: bool,
         exclude_defaults: bool,
         exclude_none: bool,
+        exclude_computed_fields: bool,
         round_trip: bool,
         warnings: WarningsArg,
         fallback: Option<&Bound<'_, PyAny>>,
@@ -190,6 +195,7 @@ impl SchemaSerializer {
             exclude_unset,
             exclude_defaults,
             exclude_none,
+            exclude_computed_fields,
             round_trip,
             &rec_guard,
             false,

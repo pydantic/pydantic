@@ -170,6 +170,11 @@ class SerializationInfo(Protocol[ContextT]):
         ...
 
     @property
+    def exclude_computed_fields(self) -> bool:
+        """The `exclude_computed_fields` argument set during serialization."""
+        ...
+
+    @property
     def serialize_as_any(self) -> bool:
         """The `serialize_as_any` argument set during serialization."""
         ...

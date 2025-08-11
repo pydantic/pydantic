@@ -127,8 +127,8 @@ impl ComputedFields {
         convert_error: impl FnOnce(PyErr) -> E,
         mut serialize: impl FnMut(ComputedFieldToSerialize<'a, 'py>) -> Result<(), E>,
     ) -> Result<(), E> {
-        if extra.round_trip {
-            // Do not serialize computed fields
+        // In round trip mode, exclude computed fields:
+        if extra.round_trip || extra.exclude_computed_fields {
             return Ok(());
         }
 
