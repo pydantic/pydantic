@@ -2567,23 +2567,26 @@ def test_generic_wrapped_forwardref():
 
 
 def test_plain_basemodel_field():
-    class Model(BaseModel):
-        x: BaseModel
+    with pytest.raises(TypeError, match='BaseModel cannot be used directly as a field type'):
+        class Model(BaseModel):
+            x: BaseModel
 
     class Model2(BaseModel):
         pass
 
-    assert Model(x=Model2()).x == Model2()
+    class ValidModel(BaseModel):
+        x: Model2
+
+    assert ValidModel(x=Model2()).x == Model2()
     with pytest.raises(ValidationError) as exc_info:
-        Model(x=1)
-    # insert_assert(exc_info.value.errors(include_url=False))
+        ValidModel(x=1)
     assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'model_type',
             'loc': ('x',),
-            'msg': 'Input should be a valid dictionary or instance of BaseModel',
+            'msg': 'Input should be a valid dictionary or instance of Model2',
             'input': 1,
-            'ctx': {'class_name': 'BaseModel'},
+            'ctx': {'class_name': 'Model2'},
         }
     ]
 

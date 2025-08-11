@@ -884,13 +884,6 @@ class GenerateSchema:
     def _generate_schema_from_get_schema_method(self, obj: Any, source: Any) -> core_schema.CoreSchema | None:
         BaseModel_ = import_cached_base_model()
 
-        if obj is BaseModel_ or (
-            isinstance(obj, type)
-            and getattr(obj, '__name__', None) == 'BaseModel'
-            and getattr(obj, '__module__', None) == getattr(BaseModel_, '__module__', None)
-        ):
-            raise TypeError('BaseModel cannot be used directly as a field type. Use a subclass instead.')
-
         get_schema = getattr(obj, '__get_pydantic_core_schema__', None)
         is_base_model_get_schema = (
             getattr(get_schema, '__func__', None) is BaseModel_.__get_pydantic_core_schema__.__func__  # pyright: ignore[reportFunctionMemberAccess]
@@ -1002,14 +995,6 @@ class GenerateSchema:
         return args[0], args[1]
 
     def _generate_schema_inner(self, obj: Any) -> core_schema.CoreSchema:
-        BaseModel = import_cached_base_model()
-        if obj is BaseModel or (
-            isinstance(obj, type)
-            and getattr(obj, '__name__', None) == 'BaseModel'
-            and getattr(obj, '__module__', None) == getattr(BaseModel, '__module__', None)
-        ):
-            raise TypeError('BaseModel cannot be used directly as a field type. Use a subclass instead.')
-
         if typing_objects.is_self(obj):
             obj = self._resolve_self_type(obj)
 
@@ -1025,6 +1010,8 @@ class GenerateSchema:
 
         if isinstance(obj, ForwardRef):
             return self.generate_schema(self._resolve_forward_ref(obj))
+
+        BaseModel = import_cached_base_model()
 
         if lenient_issubclass(obj, BaseModel):
             with self.model_type_stack.push(obj):
@@ -1267,6 +1254,9 @@ class GenerateSchema:
         self, name: str, field_info: FieldInfo, decorators: DecoratorInfos
     ) -> _CommonField:
         source_type, annotations = field_info.annotation, field_info.metadata
+        BaseModel_ = import_cached_base_model()
+        if source_type is BaseModel_:
+            raise TypeError('BaseModel cannot be used directly as a field type. Use a subclass instead.')
 
         def set_discriminator(schema: CoreSchema) -> CoreSchema:
             schema = self._apply_discriminator_to_union(schema, field_info.discriminator)
@@ -1519,7 +1509,7 @@ class GenerateSchema:
                 raise PydanticUndefinedAnnotation.from_name_error(e) from e
             if not annotations:
                 # annotations is empty, happens if namedtuple_cls defined via collections.namedtuple(...)
-                annotations: dict[str, Any] = {k: Any for k in namedtuple_cls._fields}
+                annotations: dict[str, Any] = dict.fromkeys(namedtuple_cls._fields, Any)
 
             if typevars_map:
                 annotations = {

@@ -6204,10 +6204,16 @@ class Foo(BaseModel):
 
 
 def test_description_not_included_for_basemodel() -> None:
-    class Model(BaseModel):
-        x: BaseModel
+    with pytest.raises(TypeError, match='BaseModel cannot be used directly as a field type'):
+        class Model(BaseModel):
+            x: BaseModel
+    class SubModel(BaseModel):
+        pass
 
-    assert 'description' not in Model.model_json_schema()['$defs']['BaseModel']
+    class ValidModel(BaseModel):
+        x: SubModel
+
+    assert 'description' not in ValidModel.model_json_schema()['$defs']['SubModel']
 
 
 def test_recursive_json_schema_build() -> None:
