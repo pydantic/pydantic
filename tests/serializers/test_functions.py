@@ -72,6 +72,7 @@ def test_function_args():
         'exclude_unset': False,
         'exclude_defaults': False,
         'exclude_none': False,
+        'exclude_computed_fields': False,
         'round_trip': False,
         'serialize_as_any': False,
     }
@@ -85,6 +86,7 @@ def test_function_args():
         'exclude_unset': False,
         'exclude_defaults': False,
         'exclude_none': False,
+        'exclude_computed_fields': False,
         'round_trip': False,
         'serialize_as_any': False,
     }
@@ -97,6 +99,7 @@ def test_function_args():
         'exclude_unset': False,
         'exclude_defaults': False,
         'exclude_none': False,
+        'exclude_computed_fields': False,
         'round_trip': False,
         'serialize_as_any': False,
     }
@@ -109,6 +112,7 @@ def test_function_args():
         'exclude_unset': True,
         'exclude_defaults': False,
         'exclude_none': False,
+        'exclude_computed_fields': False,
         'round_trip': False,
         'serialize_as_any': False,
     }
@@ -123,6 +127,7 @@ def test_function_args():
         'exclude_unset': False,
         'exclude_defaults': False,
         'exclude_none': False,
+        'exclude_computed_fields': False,
         'round_trip': False,
         'serialize_as_any': False,
     }
@@ -136,6 +141,7 @@ def test_function_args():
         'exclude_unset': False,
         'exclude_defaults': False,
         'exclude_none': False,
+        'exclude_computed_fields': False,
         'round_trip': False,
         'serialize_as_any': False,
     }
@@ -231,27 +237,27 @@ def test_function_args_str():
     )
     assert s.to_python(123) == (
         "123 info=SerializationInfo(include=None, exclude=None, context=None, mode='python', by_alias=False, exclude_unset=False, "
-        'exclude_defaults=False, exclude_none=False, round_trip=False, serialize_as_any=False)'
+        'exclude_defaults=False, exclude_none=False, exclude_computed_fields=False, round_trip=False, serialize_as_any=False)'
     )
     assert s.to_python(123, mode='other') == (
         "123 info=SerializationInfo(include=None, exclude=None, context=None, mode='other', by_alias=False, exclude_unset=False, "
-        'exclude_defaults=False, exclude_none=False, round_trip=False, serialize_as_any=False)'
+        'exclude_defaults=False, exclude_none=False, exclude_computed_fields=False, round_trip=False, serialize_as_any=False)'
     )
     assert s.to_python(123, include={'x'}) == (
         "123 info=SerializationInfo(include={'x'}, exclude=None, context=None, mode='python', by_alias=False, exclude_unset=False, "
-        'exclude_defaults=False, exclude_none=False, round_trip=False, serialize_as_any=False)'
+        'exclude_defaults=False, exclude_none=False, exclude_computed_fields=False, round_trip=False, serialize_as_any=False)'
     )
     assert s.to_python(123, context='context') == (
         "123 info=SerializationInfo(include=None, exclude=None, context='context', mode='python', by_alias=False, exclude_unset=False, "
-        'exclude_defaults=False, exclude_none=False, round_trip=False, serialize_as_any=False)'
+        'exclude_defaults=False, exclude_none=False, exclude_computed_fields=False, round_trip=False, serialize_as_any=False)'
     )
     assert s.to_python(123, mode='json', exclude={1: {2}}) == (
         "123 info=SerializationInfo(include=None, exclude={1: {2}}, context=None, mode='json', by_alias=False, exclude_unset=False, "
-        'exclude_defaults=False, exclude_none=False, round_trip=False, serialize_as_any=False)'
+        'exclude_defaults=False, exclude_none=False, exclude_computed_fields=False, round_trip=False, serialize_as_any=False)'
     )
     assert s.to_json(123) == (
         b"\"123 info=SerializationInfo(include=None, exclude=None, context=None, mode='json', by_alias=False, exclude_unset=False, "
-        b'exclude_defaults=False, exclude_none=False, round_trip=False, serialize_as_any=False)"'
+        b'exclude_defaults=False, exclude_none=False, exclude_computed_fields=False, round_trip=False, serialize_as_any=False)"'
     )
 
 
