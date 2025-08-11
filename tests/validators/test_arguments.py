@@ -47,7 +47,7 @@ def test_args_kwargs():
         [
             ArgsKwargs((1, 'a', True), {'x': 1}),
             Err(
-                '',
+                '1 validation error for arguments',
                 [
                     {
                         'type': 'unexpected_keyword_argument',
@@ -61,7 +61,7 @@ def test_args_kwargs():
         [
             [1],
             Err(
-                '',
+                '2 validation errors for arguments',
                 [
                     {
                         'type': 'missing_positional_only_argument',
@@ -81,7 +81,7 @@ def test_args_kwargs():
         [
             [1, 'a', True, 4],
             Err(
-                '',
+                '1 validation error for arguments',
                 [
                     {
                         'type': 'unexpected_positional_argument',
@@ -95,7 +95,7 @@ def test_args_kwargs():
         [
             [1, 'a', True, 4, 5],
             Err(
-                '',
+                '2 validation errors for arguments',
                 [
                     {
                         'type': 'unexpected_positional_argument',
@@ -115,7 +115,7 @@ def test_args_kwargs():
         [
             ('x', 'a', 'wrong'),
             Err(
-                '',
+                '2 validation errors for arguments',
                 [
                     {
                         'type': 'int_parsing',
@@ -221,7 +221,7 @@ def test_positional_args(py_and_json: PyAndJson, input_value, expected):
         [
             ArgsKwargs((), {'a': 'x', 'b': 'a', 'c': 'wrong'}),
             Err(
-                '',
+                '2 validation errors for arguments',
                 [
                     {
                         'type': 'int_parsing',
@@ -241,7 +241,7 @@ def test_positional_args(py_and_json: PyAndJson, input_value, expected):
         [
             ArgsKwargs(()),
             Err(
-                '',
+                '3 validation errors for arguments',
                 [
                     {
                         'type': 'missing_keyword_only_argument',
