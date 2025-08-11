@@ -3020,6 +3020,11 @@ def test_setattr_handler_does_not_memoize_on_validate_assignment_field_failure()
     assert 'a' in Model.__pydantic_setattr_handlers__
 
 
+# The following 3 tests define a `__get_pydantic_core_schema__()` method on Pydantic models.
+# This isn't explicitly supported and can lead to unexpected side effects, but are here
+# to prevent potential regressions:
+
+
 def test_get_pydantic_core_schema_on_referenceable_type() -> None:
     # This ensures that even if you define the method, it won't actually
     # be called twice and the cached definition will be used instead.
@@ -3076,6 +3081,31 @@ def test_repeated_custom_type() -> None:
 
     with pytest.raises(ValidationError):
         OuterModel(x=2, y=-1, z=-1)
+
+
+def test_get_pydantic_core_schema_noop() -> None:
+    """https://github.com/pydantic/pydantic/issues/12096"""
+
+    class Metadata(BaseModel):
+        foo: int = 100
+
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type, handler: GetCoreSchemaHandler) -> CoreSchema:
+            return handler(source_type)
+
+    class Model1(BaseModel):
+        f: Annotated[str, Metadata()]
+
+    assert isinstance(Model1.model_fields['f'].metadata[0], Metadata)
+    assert Model1(f='test').f == 'test'
+
+    class Model2(BaseModel):
+        f1: Annotated[str, Metadata()]
+        f2: Annotated[str, Metadata()] = 'f2'
+
+    m2 = Model2(f1='f1')
+    assert m2.f1 == 'f1'
+    assert m2.f2 == 'f2'
 
 
 def test_validator_and_serializer_not_reused_during_rebuild() -> None:

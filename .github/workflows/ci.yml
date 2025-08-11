@@ -231,6 +231,9 @@ jobs:
     - name: Run typechecking integration tests (Mypy)
       run: make test-typechecking-mypy
 
+    - name: Run typechecking integration tests (Pyrefly)
+      run: make test-typechecking-pyrefly
+
   coverage-combine:
     needs: [test, test-mypy]
     runs-on: ubuntu-latest
