@@ -27,9 +27,9 @@ from pydantic import (
     model_serializer,
     model_validator,
 )
-from pydantic.dataclasses import dataclass, rebuild_dataclass
 from pydantic._internal import _generate_schema
 from pydantic._internal._config import ConfigWrapper
+from pydantic.dataclasses import dataclass, rebuild_dataclass
 
 from .shared import DeferredModel, PydanticTypes, StdLibTypes, rebuild_model
 
