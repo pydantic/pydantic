@@ -28,6 +28,8 @@ from pydantic import (
     model_validator,
 )
 from pydantic.dataclasses import dataclass, rebuild_dataclass
+from pydantic._internal import _generate_schema
+from pydantic._internal._config import ConfigWrapper
 
 from .shared import DeferredModel, PydanticTypes, StdLibTypes, rebuild_model
 
@@ -320,3 +322,33 @@ def test_pydantic_custom_types_schema_generation(benchmark, field_type):
         field: field_type
 
     benchmark(rebuild_model, PydanticTypeModel)
+
+
+def test_generate_schema_inner_direct():
+    config_wrapper = ConfigWrapper(BaseModel.model_config)
+    gs = _generate_schema.GenerateSchema(config_wrapper)
+
+    with pytest.raises(TypeError) as exc_info:
+        gs._generate_schema_inner(BaseModel)
+
+    assert 'BaseModel cannot be used directly as a field type' in str(exc_info.value)
+
+
+def test_base_model_as_field_disallowed():
+    with pytest.raises(TypeError) as exc_info:
+
+        class ModelWithBase(BaseModel):
+            sub: BaseModel
+
+    assert 'BaseModel cannot be used directly as a field type' in str(exc_info.value)
+
+
+def test_base_model_subclass_allowed():
+    class MySubModel(BaseModel):
+        name: str
+
+    class ModelWithSubModel(BaseModel):
+        sub: MySubModel
+
+    m = ModelWithSubModel(sub=MySubModel(name='hello'))
+    assert m.sub.name == 'hello'
