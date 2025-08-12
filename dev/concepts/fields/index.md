@@ -335,7 +335,7 @@ user = User(username='johndoe')  # (2)!
 
 ### Validation Alias
 
-Even though Pydantic treats `alias` and `validation_alias` the same when creating model instances, type checkers only understand the `alias` field parameter. As a workaround, you can instead specify both an `alias` and serialization_alias`(identical to the field name), as the`serialization_alias`will override the`alias\` during serialization:
+Even though Pydantic treats `alias` and `validation_alias` the same when creating model instances, type checkers only understand the `alias` field parameter. As a workaround, you can instead specify both an `alias` and `serialization_alias` (identical to the field name), as the `serialization_alias` will override the `alias` during serialization:
 
 ```python
 from pydantic import BaseModel, Field

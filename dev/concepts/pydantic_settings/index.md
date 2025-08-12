@@ -2399,7 +2399,7 @@ print(Settings())
 
 ```
 
-#### Accesing the result of previous sources
+#### Accessing the result of previous sources
 
 Each source of settings can access the output of the previous ones.
 

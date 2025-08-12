@@ -3672,7 +3672,7 @@ can be used (which is only understood by Pydantic):</p>
 <p><h3>Validation Alias</h3></p>
 <p>Even though Pydantic treats <code>alias</code> and <code>validation_alias</code> the same when creating model instances, type checkers
 only understand the <code>alias</code> field parameter. As a workaround, you can instead specify both an <code>alias</code> and
-serialization_alias<code>(identical to the field name), as the</code>serialization_alias<code>will override the</code>alias` during
+<code>serialization_alias</code> (identical to the field name), as the <code>serialization_alias</code> will override the <code>alias</code> during
 serialization:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
 
