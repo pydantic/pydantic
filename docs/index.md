@@ -72,6 +72,7 @@ Fast and extensible, Pydantic plays nicely with your linters/IDE/brain. Define h
           data-protonpass-ignore="true"
           data-bwignore="true"
           />
+          <input type="hidden" id="source_input" name="source" value="pydantic" />
           <button type="submit" class="md-button" style="width: fit-content;">Subscribe</button>
       </form>
 
