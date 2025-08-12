@@ -1,11 +1,10 @@
 import pickle
 from datetime import date, datetime
-from typing import Any, Dict, Generic, List, Optional, Union
+from typing import Annotated, Any, Generic, Literal, Optional, TypeVar, Union
 
 import pytest
 from pydantic_core import CoreSchema
 from pydantic_core.core_schema import SerializerFunctionWrapHandler
-from typing_extensions import Annotated, Literal, TypeVar
 
 from pydantic import (
     Base64Str,
@@ -32,8 +31,8 @@ def parametrize_root_model():
         [
             pytest.param(int, 42, 42, id='int'),
             pytest.param(str, 'forty two', 'forty two', id='str'),
-            pytest.param(Dict[int, bool], {1: True, 2: False}, {1: True, 2: False}, id='dict[int, bool]'),
-            pytest.param(List[int], [4, 2, -1], [4, 2, -1], id='list[int]'),
+            pytest.param(dict[int, bool], {1: True, 2: False}, {1: True, 2: False}, id='dict[int, bool]'),
+            pytest.param(list[int], [4, 2, -1], [4, 2, -1], id='list[int]'),
             pytest.param(
                 InnerModel,
                 InnerModel(int_field=42, str_field='forty two'),
@@ -90,7 +89,7 @@ def test_root_model_validation_error():
         {
             'input': 'forty two',
             'loc': (),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'type': 'int_parsing',
         },
     ]
@@ -111,11 +110,11 @@ def test_root_model_repr():
 
 
 def test_root_model_recursive():
-    class A(RootModel[List['B']]):
+    class A(RootModel[list['B']]):
         def my_a_method(self):
             pass
 
-    class B(RootModel[Dict[str, Optional[A]]]):
+    class B(RootModel[dict[str, Optional[A]]]):
         def my_b_method(self):
             pass
 
@@ -182,7 +181,7 @@ def test_construct():
         pass
 
     v = Base64Root.model_construct('test')
-    assert v.model_dump() == 'dGVzdA==\n'
+    assert v.model_dump() == 'dGVzdA=='
 
 
 def test_construct_nested():
@@ -190,7 +189,7 @@ def test_construct_nested():
         data: RootModel[Base64Str]
 
     v = Base64RootProperty.model_construct(data=RootModel[Base64Str].model_construct('test'))
-    assert v.model_dump() == {'data': 'dGVzdA==\n'}
+    assert v.model_dump() == {'data': 'dGVzdA=='}
 
     # Note: model_construct requires the inputs to be valid; the root model value does not get "validated" into
     # an actual root model instance:
@@ -475,12 +474,12 @@ def test_root_model_dump_with_base_model(order):
     if order == 'BR':
 
         class Model(RootModel):
-            root: List[Union[BModel, RModel]]
+            root: list[Union[BModel, RModel]]
 
     elif order == 'RB':
 
         class Model(RootModel):
-            root: List[Union[RModel, BModel]]
+            root: list[Union[RModel, BModel]]
 
     m = Model([1, 2, {'value': 'abc'}])
 
@@ -512,7 +511,10 @@ def test_mixed_discriminated_union(data):
         root: Union[SModel, RModel] = Field(discriminator='kind')
 
     if data['kind'] == 'IModel':
-        with pytest.warns(UserWarning, match='Failed to get discriminator value for tagged union serialization'):
+        with pytest.warns(
+            UserWarning,
+            match='Defaulting to left to right union serialization - failed to get discriminator value for tagged union serialization',
+        ):
             assert Model(data).model_dump() == data
             assert Model(**data).model_dump() == data
     else:
@@ -532,7 +534,7 @@ def test_list_rootmodel():
     class D(RootModel[Annotated[Union[A, B], Field(discriminator='type')]]):
         pass
 
-    LD = RootModel[List[D]]
+    LD = RootModel[list[D]]
 
     obj = LD.model_validate([{'type': 'a', 'a': 'a'}, {'type': 'b', 'b': 'b'}])
     assert obj.model_dump() == [{'type': 'a', 'a': 'a'}, {'type': 'b', 'b': 'b'}]

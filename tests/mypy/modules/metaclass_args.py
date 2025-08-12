@@ -5,20 +5,20 @@ class ConfigClassUsed(BaseModel):
     i: int = Field(2, alias='j')
 
     class Config:
-        populate_by_name = True
+        validate_by_name = True
 
 
 ConfigClassUsed(i=None)
 
 
-class MetaclassArgumentsNoDefault(BaseModel, populate_by_name=True):
+class MetaclassArgumentsNoDefault(BaseModel, validate_by_name=True):
     i: int = Field(alias='j')
 
 
 MetaclassArgumentsNoDefault(i=None)
 
 
-class MetaclassArgumentsWithDefault(BaseModel, populate_by_name=True):
+class MetaclassArgumentsWithDefault(BaseModel, validate_by_name=True):
     i: int = Field(2, alias='j')
 
 

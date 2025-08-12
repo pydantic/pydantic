@@ -1,12 +1,12 @@
-!!! warning "🚧 Work in Progress"
-    This page is a work in progress. More examples will be added soon.
+Pydantic models are a great way to validating and serializing data for requests and responses.
+Pydantic is instrumental in many web frameworks and libraries, such as FastAPI, Django, Flask, and HTTPX.
 
 ## `httpx` requests
 
 [`httpx`](https://www.python-httpx.org/) is a HTTP client for Python 3 with synchronous and asynchronous APIs.
 In the below example, we query the [JSONPlaceholder API](https://jsonplaceholder.typicode.com/) to get a user's data and validate it with a Pydantic model.
 
-```python test="skip"
+```python {test="skip"}
 import httpx
 
 from pydantic import BaseModel, EmailStr
@@ -31,9 +31,8 @@ print(repr(user))
 The [`TypeAdapter`][pydantic.type_adapter.TypeAdapter] tool from Pydantic often comes in quite
 handy when working with HTTP requests. Consider a similar example where we are validating a list of users:
 
-```py test="skip"
+```python {test="skip"}
 from pprint import pprint
-from typing import List
 
 import httpx
 
@@ -51,7 +50,7 @@ url = 'https://jsonplaceholder.typicode.com/users/'  # (1)!
 response = httpx.get(url)
 response.raise_for_status()
 
-users_list_adapter = TypeAdapter(List[User])
+users_list_adapter = TypeAdapter(list[User])
 
 users = users_list_adapter.validate_python(response.json())
 pprint([u.name for u in users])

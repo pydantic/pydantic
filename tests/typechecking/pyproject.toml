@@ -1,0 +1,13 @@
+[tool.pyright]
+extraPaths = ['../..']
+pythonVersion = '3.10'
+enableExperimentalFeatures = true
+enableTypeIgnoreComments = false
+reportUnnecessaryTypeIgnoreComment = true
+reportDeprecated = true
+reportUnusedExpression = false
+
+[tool.mypy]
+python_version = '3.10'
+disable_error_code = ['empty-body']
+warn_unused_ignores = true

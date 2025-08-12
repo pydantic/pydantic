@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import dataclasses
 from functools import partial, partialmethod
-from typing import TYPE_CHECKING, Any, Callable, TypeVar, overload
+from typing import TYPE_CHECKING, Annotated, Any, Callable, Literal, TypeVar, overload
 
 from pydantic_core import PydanticUndefined, core_schema
 from pydantic_core.core_schema import SerializationInfo, SerializerFunctionWrapHandler, WhenUsed
-from typing_extensions import Annotated, Literal, TypeAlias
+from typing_extensions import TypeAlias
 
 from . import PydanticUndefinedAnnotation
 from ._internal import _decorators, _internal_dataclass
@@ -23,14 +23,12 @@ class PlainSerializer:
     Consider an input of `list`, which will be serialized into a space-delimited string.
 
     ```python
-    from typing import List
-
-    from typing_extensions import Annotated
+    from typing import Annotated
 
     from pydantic import BaseModel, PlainSerializer
 
     CustomStr = Annotated[
-        List, PlainSerializer(lambda x: ' '.join(x), return_type=str)
+        list, PlainSerializer(lambda x: ' '.join(x), return_type=str)
     ]
 
     class StudentModel(BaseModel):
@@ -63,12 +61,20 @@ class PlainSerializer:
             The Pydantic core schema.
         """
         schema = handler(source_type)
-        try:
-            return_type = _decorators.get_function_return_type(
-                self.func, self.return_type, handler._get_types_namespace()
-            )
-        except NameError as e:
-            raise PydanticUndefinedAnnotation.from_name_error(e) from e
+        if self.return_type is not PydanticUndefined:
+            return_type = self.return_type
+        else:
+            try:
+                # Do not pass in globals as the function could be defined in a different module.
+                # Instead, let `get_callable_return_type` infer the globals to use, but still pass
+                # in locals that may contain a parent/rebuild namespace:
+                return_type = _decorators.get_callable_return_type(
+                    self.func,
+                    localns=handler._get_types_namespace().locals,
+                )
+            except NameError as e:
+                raise PydanticUndefinedAnnotation.from_name_error(e) from e
+
         return_schema = None if return_type is PydanticUndefined else handler.generate_schema(return_type)
         schema['serialization'] = core_schema.plain_serializer_function_ser_schema(
             function=self.func,
@@ -88,9 +94,7 @@ class WrapSerializer:
 
     ```python
     from datetime import datetime, timezone
-    from typing import Any, Dict
-
-    from typing_extensions import Annotated
+    from typing import Annotated, Any
 
     from pydantic import BaseModel, WrapSerializer
 
@@ -98,7 +102,7 @@ class WrapSerializer:
         start: datetime
         end: datetime
 
-    def convert_to_utc(value: Any, handler, info) -> Dict[str, datetime]:
+    def convert_to_utc(value: Any, handler, info) -> dict[str, datetime]:
         # Note that `handler` can actually help serialize the `value` for
         # further custom serialization in case it's a subclass.
         partial_result = handler(value, info)
@@ -160,12 +164,20 @@ class WrapSerializer:
             The generated core schema of the class.
         """
         schema = handler(source_type)
-        try:
-            return_type = _decorators.get_function_return_type(
-                self.func, self.return_type, handler._get_types_namespace()
-            )
-        except NameError as e:
-            raise PydanticUndefinedAnnotation.from_name_error(e) from e
+        if self.return_type is not PydanticUndefined:
+            return_type = self.return_type
+        else:
+            try:
+                # Do not pass in globals as the function could be defined in a different module.
+                # Instead, let `get_callable_return_type` infer the globals to use, but still pass
+                # in locals that may contain a parent/rebuild namespace:
+                return_type = _decorators.get_callable_return_type(
+                    self.func,
+                    localns=handler._get_types_namespace().locals,
+                )
+            except NameError as e:
+                raise PydanticUndefinedAnnotation.from_name_error(e) from e
+
         return_schema = None if return_type is PydanticUndefined else handler.generate_schema(return_type)
         schema['serialization'] = core_schema.wrap_serializer_function_ser_schema(
             function=self.func,

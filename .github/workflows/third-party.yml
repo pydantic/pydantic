@@ -1,0 +1,610 @@
+# This workflow is a daily cron job, inspired by:
+# https://github.com/python/typing_extensions/blob/main/.github/workflows/third_party.yml.
+# Running the tests of various third-party libraries that use Pydantic. This helps us spot regressions early, and helps
+# flag when third-party libraries are making incorrect assumptions that might cause them to break when we cut a new release.
+# Instructions:
+# - The CI should be as close as possible to the original project's workflows.
+# - Use the checkout action to clone Pydantic with a custom path (e.g. `path: pydantic-latest`).
+# - Make sure Pydantic is installed in editable mode (e.g. `uv pip install -e ./pydantic-latest`)
+#   so that the path appears in the `pip list` output (and so we can be assured Pydantic was properly
+#   installed from the provided path).
+name: Third party tests
+
+on:
+  schedule:
+    - cron: '0 12 * * *' # Daily at midnight UTC
+  pull_request:
+    branches: [main]
+  # Can be manually triggered from the Actions tab, if needed:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  # https://github.com/pytest-dev/pytest/issues/7443#issuecomment-656642591:
+  FORCE_COLOR: 1
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  test-fastapi:
+    name: Test FastAPI (main branch) on Python ${{ matrix.python-version }}
+    # If 'schedule' was the trigger, don't run it on contributors' forks
+    if: |
+      github.event_name != 'schedule' ||
+      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic')
+
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # FastAPI doesn't yet support Python 3.13
+        python-version: ['3.9', '3.10', '3.11', '3.12']
+        # Only test on 3.12 if the PR wasn't labeled as 'third-party-tests':
+        exclude:
+          - python-version: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'third-party-tests') && '3.9' }}
+          - python-version: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'third-party-tests') && '3.10' }}
+          - python-version: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'third-party-tests') && '3.11' }}
+    steps:
+    - name: Checkout FastAPI
+      uses: actions/checkout@v4
+      with:
+        repository: fastapi/fastapi
+
+    - name: Checkout Pydantic
+      uses: actions/checkout@v4
+      with:
+        path: pydantic-latest
+
+    - uses: astral-sh/setup-uv@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install FastAPI dependencies
+      run: |
+        uv venv --python ${{ matrix.python-version }}
+        uv pip install -r requirements-tests.txt
+        uv pip install -e ./pydantic-latest
+
+    - name: List installed dependencies
+      run: uv pip list
+
+    - name: Run FastAPI tests
+      run: PYTHONPATH=./docs_src uv run --no-project pytest tests
+
+  test-sqlmodel:
+    name: Test SQLModel (main branch) on Python ${{ matrix.python-version }}
+    # If 'schedule' was the trigger, don't run it on contributors' forks
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
+
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # SQLModel doesn't yet support Python 3.13
+        python-version: ['3.9', '3.10', '3.11', '3.12']
+    steps:
+    - name: Checkout SQLModel
+      uses: actions/checkout@v4
+      with:
+        repository: fastapi/sqlmodel
+
+    - name: Checkout Pydantic
+      uses: actions/checkout@v4
+      with:
+        path: pydantic-latest
+
+    - uses: astral-sh/setup-uv@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install SQLModel dependencies
+      run: |
+        uv venv --python ${{ matrix.python-version }}
+        uv pip install -r requirements-tests.txt
+        uv pip install -e ./pydantic-latest
+
+    - name: List installed dependencies
+      run: uv pip list
+
+    - name: Run SQLModel tests
+      run: uv run --no-project pytest tests
+
+  test-beanie:
+    name: Test Beanie (main branch) on Python ${{ matrix.python-version }}
+    # If 'schedule' was the trigger, don't run it on contributors' forks
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
+
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Testing on a single version to avoid reaching Docker API limits:
+        python-version: ['3.13']
+    steps:
+    - name: Checkout Beanie
+      uses: actions/checkout@v4
+      with:
+        repository: BeanieODM/beanie
+
+    - name: Checkout Pydantic
+      uses: actions/checkout@v4
+      with:
+        path: pydantic-latest
+    - uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Start MongoDB
+      uses: supercharge/mongodb-github-action@1.12.0
+      with:
+        mongodb-version: "8.0"
+        mongodb-replica-set: test-rs
+
+    - name: Install Beanie dependencies
+      run: |
+        pip install .[test,ci]
+        pip uninstall --yes pydantic
+        pip install -e ./pydantic-latest
+
+    - name: List installed dependencies
+      run: pip list
+
+    - name: Run Beanie tests
+      run: pytest -v
+
+  test-openapi-python-client:
+    name: Test openapi-python-client (main branch) on Python ${{ matrix.python-version }}
+    # If 'schedule' was the trigger, don't run it on contributors' forks
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
+
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
+    steps:
+    - name: Checkout openapi-python-client
+      uses: actions/checkout@v4
+      with:
+        repository: openapi-generators/openapi-python-client
+
+    - name: Checkout Pydantic
+      uses: actions/checkout@v4
+      with:
+        path: pydantic-latest
+
+    - name: Set up PDM
+      uses: pdm-project/setup-pdm@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install openapi-python-client dependencies
+      run: |
+        pdm install --quiet
+        pdm run python -m ensurepip
+        pdm run python -m pip uninstall --yes pydantic
+        pdm run python -m pip install -e ./pydantic-latest
+
+    - name: List installed dependencies
+      run: pdm list
+
+    - name: Run openapi-python-client tests
+      run: pdm test
+      env:
+        TASKIPY: true
+
+  test-pandera:
+    name: Test pandera (main branch) on Python ${{ matrix.python-version }}
+    # If 'schedule' was the trigger, don't run it on contributors' forks
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
+
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.9', '3.10', '3.11']
+    steps:
+    - name: Checkout pandera
+      uses: actions/checkout@v4
+      with:
+        repository: unionai-oss/pandera
+
+    - name: Checkout Pydantic
+      uses: actions/checkout@v4
+      with:
+        path: pydantic-latest
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install pandera dependencies
+      run: |
+        pip install uv
+        uv pip install --system -r requirements.in
+        uv pip uninstall --system pydantic pydantic-core
+        uv pip install --system -e ./pydantic-latest
+
+    - name: List installed dependencies
+      run: uv pip list
+
+    - name: Run pandera tests
+      # Pandera's CI uses nox sessions which encapsulate the logic to install a specific Pydantic version.
+      # Instead, manually run pytest (we run core and FastAPI tests):
+      run: pytest tests/core tests/fastapi
+
+  test-odmantic:
+    name: Test ODMantic (main branch) on Python ${{ matrix.python-version }}
+    # If 'schedule' was the trigger, don't run it on contributors' forks
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
+
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.9', '3.10', '3.11']
+
+    steps:
+      - name: Checkout ODMantic
+        uses: actions/checkout@v4
+        with:
+          repository: sydney-runkle/odmantic
+          ref: fix-model-fields-access
+
+      - name: Checkout Pydantic
+        uses: actions/checkout@v4
+        with:
+          path: pydantic-latest
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Mongo service
+        id: mongo-service
+        uses: art049/mongodb-cluster-action@v0
+        with:
+          version: 6
+          mode: standalone
+
+      - name: Install ODMantic dependencies
+        run: |
+          pip install ".[test]"
+          pip uninstall --yes pydantic
+          pip install -e ./pydantic-latest
+
+      - name: List installed dependencies
+        run: pip list
+
+      - name: Run ODMantic tests
+        # Disabled tests, as per https://github.com/art049/odmantic/issues/512:
+        run: pytest tests -k 'not test_custom_bson_serializable and not test_sync_custom_bson_serializable and not test_with_bson_serializer_override_builtin_bson'
+        env:
+          TEST_MONGO_URI: ${{ steps.mongo-service.outputs.connection-string }}
+          TEST_MONGO_MODE: standalone
+
+  test-polar:
+    name: Test Polar (main branch) on Python ${{ matrix.python-version }}
+    # If 'schedule' was the trigger, don't run it on contributors' forks
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
+    env:
+      POLAR_ENV: testing
+      POLAR_EMAIL_RENDERER_BINARY_PATH: ${{ github.workspace }}/server/emails/bin/react-email-pkg
+
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
+    services:
+      postgres:
+        image: postgres:15.1-bullseye
+        env:
+          POSTGRES_USER: polar
+          POSTGRES_PASSWORD: polar
+          POSTGRES_DB: polar_test
+          POSTGRES_PORT: 5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      minio:
+        image: bitnami/minio:2024.5.28
+        ports:
+          - 9000:9000
+          - 9001:9001
+        env:
+          MINIO_ROOT_USER: polar
+          MINIO_ROOT_PASSWORD: polarpolar
+        options: >-
+          --health-cmd "curl -I http://127.0.0.1:9000/minio/health/live"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - name: Checkout polar
+      uses: actions/checkout@v4
+      with:
+        repository: polarsource/polar
+
+    - name: 💿 MinIO Setup
+      working-directory: ./server/.minio
+      env:
+        MINIO_HOST: 127.0.0.1
+        MINIO_ROOT_USER: polar
+        MINIO_ROOT_PASSWORD: polarpolar
+        ACCESS_KEY: polar-development
+        SECRET_ACCESS_KEY: polar123456789
+        BUCKET_NAME: polar-s3
+        BUCKET_TESTING_NAME: testing-polar-s3
+        POLICY_FILE: policy.json
+      run:  bash github.sh
+
+    - uses: pnpm/action-setup@v4
+      with:
+        version: 9.15.0
+
+    - name: 📬 Setup Node.js environment for server/emails
+      uses: actions/setup-node@v4
+      with:
+        node-version-file: server/emails/.node-version
+        cache: "pnpm"
+        cache-dependency-path: "clients/pnpm-lock.yaml"
+
+    - name: 📬 Build server/emails
+      working-directory: server/emails
+      run: pnpm install --frozen-lockfile && pnpm build
+
+    - name: Checkout Pydantic
+      uses: actions/checkout@v4
+      with:
+        path: pydantic-latest
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v5
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: 🔧 uv install
+      working-directory: ./server
+      run: |
+        uv sync --dev
+        uv pip uninstall pydantic
+        uv pip install -e ./../pydantic-latest
+        uv run task generate_dev_jwks
+
+    - name: List installed dependencies
+      working-directory: ./server
+      run: uv pip list
+
+    - name: ⚗️ alembic migrate
+      working-directory: ./server
+      run: uv run task db_migrate
+
+    - name: ⚗️ alembic check
+      working-directory: ./server
+      run: uv run alembic check
+
+    - name: 🐍 Run polar tests (pytest)
+      working-directory: ./server
+      run: uv run pytest -n auto --no-cov
+
+  test-bentoml:
+    name: Test BentoML (main branch) on Python ${{ matrix.python-version }}
+    # If 'schedule' was the trigger, don't run it on contributors' forks
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.9', '3.11', '3.12']
+
+    steps:
+      - name: Checkout BentoML
+        uses: actions/checkout@v4
+        with:
+          repository: bentoml/BentoML
+
+      - name: Checkout Pydantic
+        uses: actions/checkout@v4
+        with:
+          path: pydantic-latest
+
+      # Note: BentoML workflow uses nox sessions which don't allow installing
+      # the custom Pydantic version. Instead, we manually set up the env.
+      - name: Set up PDM
+        uses: pdm-project/setup-pdm@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install BentoML dependencies
+        run: |
+          pdm sync -G grpc,io,testing --quiet
+          pdm run python -m ensurepip
+          pdm run python -m pip uninstall --yes pydantic
+          pdm run python -m pip install -e ./pydantic-latest
+
+      - name: List installed dependencies
+        run: pdm list
+
+      - name: Run BentoML tests
+        run: pdm run pytest -n auto tests/unit
+        env:
+          BENTOML_DO_NOT_TRACK: True
+          PYTEST_PLUGINS: bentoml.testing.pytest.plugin
+
+  test-semantic-kernel:
+    name: Test Semantic Kernel (main branch) on Python ${{ matrix.python-version }}
+    # If 'schedule' was the trigger, don't run it on contributors' forks
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.10', '3.11', '3.12']
+
+    steps:
+      - name: Checkout Semantic Kernel
+        uses: actions/checkout@v4
+        with:
+          repository: microsoft/semantic-kernel
+
+      - name: Checkout Pydantic
+        uses: actions/checkout@v4
+        with:
+          path: pydantic-latest
+
+      # TODO: specifying a python-version to the action creates a venv,
+      # and there's currently no way to have the venv created in a subdir
+      # (see https://github.com/astral-sh/setup-uv/issues/251).
+      - name: Install UV
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Semantic Kernel dependencies
+        working-directory: ./python
+        run: |
+          uv sync --all-extras --dev --prerelease=if-necessary-or-explicit
+          uv pip uninstall pydantic
+          uv pip install -e ../pydantic-latest
+
+      - name: List installed dependencies
+        working-directory: ./python
+        run: uv pip list
+
+      - name: Run Semantic Kernel tests
+        working-directory: ./python
+        run: uv run --frozen pytest ./tests/unit
+
+  test-langchain:
+    name: Test LangChain (main branch) on Python ${{ matrix.python-version }}
+    # If 'schedule' was the trigger, don't run it on contributors' forks
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.9', '3.10', '3.11', '3.12']
+
+    steps:
+      - name: Checkout Langchain
+        uses: actions/checkout@v4
+        with:
+          repository: langchain-ai/langchain
+
+      - name: Checkout Pydantic
+        uses: actions/checkout@v4
+        with:
+          path: pydantic-latest
+
+      - name: Install UV
+        uses: astral-sh/setup-uv@v5
+        with:
+            python-version: ${{ matrix.python-version }}
+
+      - name: Install LangChain dependencies
+        run: |
+          uv sync --group test
+          uv pip uninstall pydantic
+          uv pip install -e ./pydantic-latest
+
+      - name: List installed dependencies
+        run: uv pip list
+
+      - name: Run LangChain core tests
+        working-directory: ./libs/core
+        run: make test
+
+      - name: Run LangChain main tests
+        working-directory: ./libs/langchain
+        run: make test
+
+  create-issue-on-failure:
+    name: Create an issue if tests failed
+    runs-on: ubuntu-latest
+    needs:
+      - test-fastapi
+      - test-sqlmodel
+      - test-beanie
+      - test-openapi-python-client
+      - test-pandera
+      - test-odmantic
+      - test-polar
+      - test-bentoml
+      - test-semantic-kernel
+      - test-langchain
+    # Issue report disabled for now due to flakiness:
+    if: |
+      always() &&
+      false &&
+      github.repository == 'pydantic/pydantic' &&
+      github.event_name == 'schedule' &&
+      (
+        needs.test-fastapi.result == 'failure' ||
+        needs.test-sqlmodel.result == 'failure' ||
+        needs.test-beanie.result == 'failure' ||
+        needs.test-openapi-python-client.result == 'failure' ||
+        needs.test-pandera.result == 'failure' ||
+        needs.test-odmantic.result == 'failure' ||
+        needs.test-polar.result == 'failure' ||
+        needs.test-semantic-kernel.result == 'failure' ||
+        needs.test-bentoml.result == 'failure' ||
+        needs.test-langchain.result == 'failure'
+      )
+    permissions:
+      issues: write
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.create({
+              owner: 'pydantic',
+              repo: 'pydantic',
+              title: `Third-party tests failed on ${new Date().toDateString()}`,
+              body: 'Run listed here: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}',
+            })

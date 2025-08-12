@@ -49,10 +49,9 @@ Because of this, setting up and running the tests should be very simple.
 You'll need the following prerequisites:
 
 - Any Python version between **Python 3.9 and 3.12**
-- **virtualenv** or other virtual environment tool
+- [**uv**](https://docs.astral.sh/uv/getting-started/installation/) or other virtual environment tool
 - **git**
 - **make**
-- [**PDM**](https://pdm.fming.dev/latest/#installation)
 
 ### Installation and setup
 
@@ -63,13 +62,13 @@ Fork the repository on GitHub and clone your fork locally.
 git clone git@github.com:<your username>/pydantic.git
 cd pydantic
 
-# Install PDM and pre-commit
+# Install UV and pre-commit
 # We use pipx here, for other options see:
-# https://pdm.fming.dev/latest/#installation
+# https://docs.astral.sh/uv/getting-started/installation/
 # https://pre-commit.com/#install
 # To get pipx itself:
 # https://pypa.github.io/pipx/
-pipx install pdm
+pipx install uv
 pipx install pre-commit
 
 # Install pydantic, dependencies, test dependencies and doc dependencies
@@ -114,8 +113,27 @@ You can find directions on how to install the required dependencies [here](https
 # Build documentation
 make docs
 # If you have changed the documentation, make sure it builds successfully.
-# You can also use `pdm run mkdocs serve` to serve the documentation at localhost:8000
+# You can also use `uv run mkdocs serve` to serve the documentation at localhost:8000
 ```
+
+If this isn't working due to issues with the imaging plugin, try commenting out the `social` plugin line in `mkdocs.yml` and running `make docs` again.
+
+#### Updating the documentation
+
+We push a new version of the documentation with each minor release, and we push to a `dev` path with each commit to `main`.
+
+If you're updating the documentation out of cycle with a minor release and want your changes to be reflected on `latest`,
+do the following:
+
+1. Open a PR against `main` with your docs changes
+2. Once the PR is merged, checkout the `docs-update` branch. This branch should be up to date with the latest patch release.
+For example, if the latest release is `v2.9.2`, you should make sure `docs-update` is up to date with the `v2.9.2` tag.
+3. Checkout a new branch from `docs-update` and cherry-pick your changes onto this branch.
+4. Push your changes and open a PR against `docs-update`.
+5. Once the PR is merged, the new docs will be built and deployed.
+
+!!! note
+    Maintainer shortcut - as a maintainer, you can skip the second PR and just cherry pick directly onto the `docs-update` branch.
 
 ### Commit and push your changes
 
@@ -210,6 +228,7 @@ Here's a quick guide on how to do that. This tutorial is done in VSCode, but you
 Pydantic has a badge that you can use to show that your project uses Pydantic. You can use this badge in your `README.md`:
 
 ### With Markdown
+
 ```md
 [![Pydantic v1](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/main/docs/badge/v1.json)](https://pydantic.dev)
 
@@ -235,3 +254,18 @@ Pydantic has a badge that you can use to show that your project uses Pydantic. Y
 
 <a href="https://pydantic.dev"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/main/docs/badge/v2.json" alt="Pydantic Version 2" style="max-width:100%;"></a>
 ```
+
+## Adding your library as part of Pydantic's third party test suite
+
+To be able to identify regressions early during development, Pydantic runs tests on various third-party projects
+using Pydantic. We consider adding support for testing new open source projects (that rely heavily on Pydantic) if your said project matches some of the following criteria:
+
+- The project is actively maintained.
+- The project makes use of Pydantic internals (e.g. relying on the [`BaseModel`][pydantic.BaseModel] metaclass, typing utilities).
+- The project is popular enough (although small projects can still be included depending on how Pydantic is being used).
+- The project CI is simple enough to be ported into Pydantic's testing workflow.
+
+If your project meets some of these criteria, you can [open feature request][open feature request]
+to discuss the inclusion of your project.
+
+[open feature request]: https://github.com/pydantic/pydantic/issues/new?assignees=&labels=feature+request&projects=&template=feature_request.yml

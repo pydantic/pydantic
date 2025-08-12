@@ -24,7 +24,7 @@ Pydantic provides two special types for convenience when using `validation_alias
 
 The `AliasPath` is used to specify a path to a field using aliases. For example:
 
-```py lint="skip"
+```python {lint="skip"}
 from pydantic import BaseModel, Field, AliasPath
 
 
@@ -46,7 +46,7 @@ In the `'last_name'` field, we are using the alias `'names'` and the index `1` t
 
 `AliasChoices` is used to specify a choice of aliases. For example:
 
-```py lint="skip"
+```python {lint="skip"}
 from pydantic import BaseModel, Field, AliasChoices
 
 
@@ -68,7 +68,7 @@ print(user)
 
 You can also use `AliasChoices` with `AliasPath`:
 
-```py lint="skip"
+```python {lint="skip"}
 from pydantic import BaseModel, Field, AliasPath, AliasChoices
 
 
@@ -107,7 +107,7 @@ want to specify the alias for each field individually.
 
 Here's a basic example using a callable:
 
-```py
+```python
 from pydantic import BaseModel, ConfigDict
 
 
@@ -141,7 +141,7 @@ but you don't want to specify the validation and serialization aliases for each 
 
 For example:
 
-```py
+```python
 from pydantic import AliasGenerator, BaseModel, ConfigDict
 
 
@@ -167,7 +167,7 @@ print(t.model_dump(by_alias=True))
 
 If you specify an `alias` on the [`Field`][pydantic.fields.Field], it will take precedence over the generated alias by default:
 
-```py
+```python
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -201,3 +201,227 @@ You may set `alias_priority` on a field to change this behavior:
 
 The same precedence applies to `validation_alias` and `serialization_alias`.
 See more about the different field aliases under [field aliases](../concepts/fields.md#field-aliases).
+
+## Alias Configuration
+
+You can use [`ConfigDict`](./config.md) settings or runtime validation/serialization
+settings to control whether or not aliases are used.
+
+### `ConfigDict` Settings
+
+You can use [configuration settings](./config.md) to control, at the model level,
+whether or not aliases are used for validation and serialization. If you would like to control
+this behavior for nested models/surpassing the config-model boundary, use [runtime settings](#runtime-settings).
+
+#### Validation
+
+When validating data, you can enable population of attributes by attribute name, alias, or both.
+**By default**, Pydantic uses aliases for validation. Further configuration is available via:
+
+* [`ConfigDict.validate_by_alias`][pydantic.config.ConfigDict.validate_by_alias]: `True` by default
+* [`ConfigDict.validate_by_name`][pydantic.config.ConfigDict.validate_by_name]: `False` by default
+
+=== "`validate_by_alias`"
+
+    ```python
+    from pydantic import BaseModel, ConfigDict, Field
+
+
+    class Model(BaseModel):
+        my_field: str = Field(validation_alias='my_alias')
+
+        model_config = ConfigDict(validate_by_alias=True, validate_by_name=False)
+
+
+    print(repr(Model(my_alias='foo')))  # (1)!
+    #> Model(my_field='foo')
+    ```
+
+    1. The alias `my_alias` is used for validation.
+
+=== "`validate_by_name`"
+
+    ```python
+    from pydantic import BaseModel, ConfigDict, Field
+
+
+    class Model(BaseModel):
+        my_field: str = Field(validation_alias='my_alias')
+
+        model_config = ConfigDict(validate_by_alias=False, validate_by_name=True)
+
+
+    print(repr(Model(my_field='foo')))  # (1)!
+    #> Model(my_field='foo')
+    ```
+
+    1. the attribute identifier `my_field` is used for validation.
+
+=== "`validate_by_alias` and `validate_by_name`"
+
+    ```python
+    from pydantic import BaseModel, ConfigDict, Field
+
+
+    class Model(BaseModel):
+        my_field: str = Field(validation_alias='my_alias')
+
+        model_config = ConfigDict(validate_by_alias=True, validate_by_name=True)
+
+
+    print(repr(Model(my_alias='foo')))  # (1)!
+    #> Model(my_field='foo')
+
+    print(repr(Model(my_field='foo')))  # (2)!
+    #> Model(my_field='foo')
+    ```
+
+    1. The alias `my_alias` is used for validation.
+    2. the attribute identifier `my_field` is used for validation.
+
+!!! warning
+    You cannot set both `validate_by_alias` and `validate_by_name` to `False`.
+    A [user error](../errors/usage_errors.md#validate-by-alias-and-name-false) is raised in this case.
+
+#### Serialization
+
+When serializing data, you can enable serialization by alias, which is disabled by default.
+See the [`ConfigDict.serialize_by_alias`][pydantic.config.ConfigDict.serialize_by_alias] API documentation
+for more details.
+
+```python
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class Model(BaseModel):
+    my_field: str = Field(serialization_alias='my_alias')
+
+    model_config = ConfigDict(serialize_by_alias=True)
+
+
+m = Model(my_field='foo')
+print(m.model_dump())  # (1)!
+#> {'my_alias': 'foo'}
+```
+
+1. The alias `my_alias` is used for serialization.
+
+!!! note
+    The fact that serialization by alias is disabled by default is notably inconsistent with the default for
+    validation (where aliases are used by default). We anticipate changing this default in V3.
+
+### Runtime Settings
+
+You can use runtime alias flags to control alias use for validation and serialization
+on a per-call basis. If you would like to control this behavior on a model level, use
+[`ConfigDict` settings](#configdict-settings).
+
+#### Validation
+
+When validating data, you can enable population of attributes by attribute name, alias, or both.
+
+The `by_alias` and `by_name` flags are available on the [`model_validate()`][pydantic.main.BaseModel.model_validate],
+[`model_validate_json()`][pydantic.main.BaseModel.model_validate_json], and [`model_validate_strings()`][pydantic.main.BaseModel.model_validate_strings] methods, as well as the [`TypeAdapter`][pydantic.type_adapter.TypeAdapter] validation methods.
+
+By default:
+
+* `by_alias` is `True`
+* `by_name` is `False`
+
+=== "`by_alias`"
+
+    ```python
+    from pydantic import BaseModel, Field
+
+
+    class Model(BaseModel):
+        my_field: str = Field(validation_alias='my_alias')
+
+
+    m = Model.model_validate(
+        {'my_alias': 'foo'},  # (1)!
+        by_alias=True,
+        by_name=False,
+    )
+    print(repr(m))
+    #> Model(my_field='foo')
+    ```
+
+    1. The alias `my_alias` is used for validation.
+
+=== "`by_name`"
+
+    ```python
+    from pydantic import BaseModel, Field
+
+
+    class Model(BaseModel):
+        my_field: str = Field(validation_alias='my_alias')
+
+
+    m = Model.model_validate(
+        {'my_field': 'foo'}, by_alias=False, by_name=True  # (1)!
+    )
+    print(repr(m))
+    #> Model(my_field='foo')
+    ```
+
+    1. The attribute name `my_field` is used for validation.
+
+=== "`validate_by_alias` and `validate_by_name`"
+
+    ```python
+    from pydantic import BaseModel, Field
+
+
+    class Model(BaseModel):
+        my_field: str = Field(validation_alias='my_alias')
+
+
+    m = Model.model_validate(
+        {'my_alias': 'foo'}, by_alias=True, by_name=True  # (1)!
+    )
+    print(repr(m))
+    #> Model(my_field='foo')
+
+    m = Model.model_validate(
+        {'my_field': 'foo'}, by_alias=True, by_name=True  # (2)!
+    )
+    print(repr(m))
+    #> Model(my_field='foo')
+    ```
+
+    1. The alias `my_alias` is used for validation.
+    2. The attribute name `my_field` is used for validation.
+
+!!! warning
+    You cannot set both `by_alias` and `by_name` to `False`.
+    A [user error](../errors/usage_errors.md#validate-by-alias-and-name-false) is raised in this case.
+
+#### Serialization
+
+When serializing data, you can enable serialization by alias via the `by_alias` flag
+which is available on the [`model_dump()`][pydantic.main.BaseModel.model_dump] and
+[`model_dump_json()`][pydantic.main.BaseModel.model_dump_json] methods, as well as
+the [`TypeAdapter`][pydantic.type_adapter.TypeAdapter] ones.
+
+By default, `by_alias` is `False`.
+
+```py
+from pydantic import BaseModel, Field
+
+
+class Model(BaseModel):
+    my_field: str = Field(serialization_alias='my_alias')
+
+
+m = Model(my_field='foo')
+print(m.model_dump(by_alias=True))  # (1)!
+#> {'my_alias': 'foo'}
+```
+
+1. The alias `my_alias` is used for serialization.
+
+!!! note
+    The fact that serialization by alias is disabled by default is notably inconsistent with the default for
+    validation (where aliases are used by default). We anticipate changing this default in V3.

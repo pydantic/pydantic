@@ -1,9 +1,9 @@
 import re
 from datetime import date, datetime, time, timedelta, timezone
+from typing import Annotated
 
 import pytest
 from dirty_equals import HasRepr
-from typing_extensions import Annotated
 
 from pydantic import (
     AwareDatetime,
@@ -87,7 +87,7 @@ def date_model_fixture():
         (float('inf'), Err('Input should be a valid date or datetime, dates after 9999')),
         (int('1' + '0' * 100), Err('Input should be a valid date or datetime, dates after 9999')),
         (1e1000, Err('Input should be a valid date or datetime, dates after 9999')),
-        (float('-infinity'), Err('Input should be a valid date or datetime, dates before 1600')),
+        (float('-infinity'), Err('Input should be a valid date or datetime, dates before 0000')),
         (float('nan'), Err('Input should be a valid date or datetime, NaN values not permitted')),
     ],
 )
@@ -184,7 +184,7 @@ def datetime_model_fixture():
         (1_549_316_052_104_324, Err('Input should be a valid datetime, dates after 9999')),  # nowish in μs
         (1_549_316_052_104_324_096, Err('Input should be a valid datetime, dates after 9999')),  # nowish in ns
         (float('inf'), Err('Input should be a valid datetime, dates after 9999')),
-        (float('-inf'), Err('Input should be a valid datetime, dates before 1600')),
+        (float('-inf'), Err('Input should be a valid datetime, dates before 0000')),
         (1e50, Err('Input should be a valid datetime, dates after 9999')),
         (float('nan'), Err('Input should be a valid datetime, NaN values not permitted')),
     ],

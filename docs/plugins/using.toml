@@ -1,156 +1,156 @@
 [[libs]]
 repo = "huggingface/transformers"
-stars = 107475
-[[libs]]
-repo = "tiangolo/fastapi"
-stars = 60355
+stars = 138570
 [[libs]]
 repo = "hwchase17/langchain"
-stars = 54514
+stars = 99542
+[[libs]]
+repo = "tiangolo/fastapi"
+stars = 80497
 [[libs]]
 repo = "apache/airflow"
-stars = 30955
-[[libs]]
-repo = "microsoft/DeepSpeed"
-stars = 26908
-[[libs]]
-repo = "ray-project/ray"
-stars = 26600
+stars = 38577
 [[libs]]
 repo = "lm-sys/FastChat"
-stars = 24924
+stars = 37650
 [[libs]]
-repo = "Lightning-AI/lightning"
-stars = 24034
+repo = "microsoft/DeepSpeed"
+stars = 36521
 [[libs]]
 repo = "OpenBB-finance/OpenBBTerminal"
-stars = 22785
+stars = 35971
 [[libs]]
 repo = "gradio-app/gradio"
-stars = 19726
+stars = 35740
+[[libs]]
+repo = "ray-project/ray"
+stars = 35176
 [[libs]]
 repo = "pola-rs/polars"
-stars = 18587
+stars = 31698
+[[libs]]
+repo = "Lightning-AI/lightning"
+stars = 28902
 [[libs]]
 repo = "mindsdb/mindsdb"
-stars = 17242
-[[libs]]
-repo = "RasaHQ/rasa"
-stars = 16695
-[[libs]]
-repo = "mlflow/mlflow"
-stars = 14780
-[[libs]]
-repo = "heartexlabs/label-studio"
-stars = 13634
-[[libs]]
-repo = "spotDL/spotify-downloader"
-stars = 12124
-[[libs]]
-repo = "Sanster/lama-cleaner"
-stars = 12075
-[[libs]]
-repo = "airbytehq/airbyte"
-stars = 11174
-[[libs]]
-repo = "openai/evals"
-stars = 11110
-[[libs]]
-repo = "matrix-org/synapse"
-stars = 11071
-[[libs]]
-repo = "ydataai/ydata-profiling"
-stars = 10884
-[[libs]]
-repo = "pyodide/pyodide"
-stars = 10245
-[[libs]]
-repo = "tiangolo/sqlmodel"
-stars = 10160
-[[libs]]
-repo = "lucidrains/DALLE2-pytorch"
-stars = 9916
-[[libs]]
-repo = "pynecone-io/reflex"
-stars = 9679
-[[libs]]
-repo = "PaddlePaddle/PaddleNLP"
-stars = 9663
-[[libs]]
-repo = "aws/serverless-application-model"
-stars = 9061
-[[libs]]
-repo = "modin-project/modin"
-stars = 8808
-[[libs]]
-repo = "great-expectations/great_expectations"
-stars = 8613
-[[libs]]
-repo = "dagster-io/dagster"
-stars = 7908
-[[libs]]
-repo = "NVlabs/SPADE"
-stars = 7407
-[[libs]]
-repo = "brycedrennan/imaginAIry"
-stars = 7217
-[[libs]]
-repo = "chroma-core/chroma"
-stars = 7127
-[[libs]]
-repo = "lucidrains/imagen-pytorch"
-stars = 7089
-[[libs]]
-repo = "sqlfluff/sqlfluff"
-stars = 6278
-[[libs]]
-repo = "deeppavlov/DeepPavlov"
-stars = 6278
-[[libs]]
-repo = "autogluon/autogluon"
-stars = 5966
-[[libs]]
-repo = "bridgecrewio/checkov"
-stars = 5747
-[[libs]]
-repo = "bentoml/BentoML"
-stars = 5275
-[[libs]]
-repo = "replicate/cog"
-stars = 5089
-[[libs]]
-repo = "vitalik/django-ninja"
-stars = 4623
-[[libs]]
-repo = "apache/iceberg"
-stars = 4479
-[[libs]]
-repo = "jina-ai/discoart"
-stars = 3820
+stars = 27141
 [[libs]]
 repo = "embedchain/embedchain"
-stars = 3493
+stars = 24379
+[[libs]]
+repo = "pynecone-io/reflex"
+stars = 21558
+[[libs]]
+repo = "heartexlabs/label-studio"
+stars = 20571
+[[libs]]
+repo = "Sanster/lama-cleaner"
+stars = 20313
+[[libs]]
+repo = "mlflow/mlflow"
+stars = 19393
+[[libs]]
+repo = "RasaHQ/rasa"
+stars = 19337
+[[libs]]
+repo = "spotDL/spotify-downloader"
+stars = 18604
+[[libs]]
+repo = "chroma-core/chroma"
+stars = 17393
+[[libs]]
+repo = "airbytehq/airbyte"
+stars = 17120
+[[libs]]
+repo = "openai/evals"
+stars = 15437
+[[libs]]
+repo = "tiangolo/sqlmodel"
+stars = 15127
+[[libs]]
+repo = "ydataai/ydata-profiling"
+stars = 12687
+[[libs]]
+repo = "pyodide/pyodide"
+stars = 12653
+[[libs]]
+repo = "dagster-io/dagster"
+stars = 12440
+[[libs]]
+repo = "PaddlePaddle/PaddleNLP"
+stars = 12312
+[[libs]]
+repo = "matrix-org/synapse"
+stars = 11857
+[[libs]]
+repo = "lucidrains/DALLE2-pytorch"
+stars = 11207
+[[libs]]
+repo = "great-expectations/great_expectations"
+stars = 10164
+[[libs]]
+repo = "modin-project/modin"
+stars = 10002
+[[libs]]
+repo = "aws/serverless-application-model"
+stars = 9402
+[[libs]]
+repo = "sqlfluff/sqlfluff"
+stars = 8535
+[[libs]]
+repo = "replicate/cog"
+stars = 8344
+[[libs]]
+repo = "autogluon/autogluon"
+stars = 8326
+[[libs]]
+repo = "lucidrains/imagen-pytorch"
+stars = 8164
+[[libs]]
+repo = "brycedrennan/imaginAIry"
+stars = 8050
+[[libs]]
+repo = "vitalik/django-ninja"
+stars = 7685
+[[libs]]
+repo = "NVlabs/SPADE"
+stars = 7632
+[[libs]]
+repo = "bridgecrewio/checkov"
+stars = 7340
+[[libs]]
+repo = "bentoml/BentoML"
+stars = 7322
 [[libs]]
 repo = "skypilot-org/skypilot"
-stars = 3052
+stars = 7113
+[[libs]]
+repo = "apache/iceberg"
+stars = 6853
+[[libs]]
+repo = "deeppavlov/DeepPavlov"
+stars = 6777
 [[libs]]
 repo = "PrefectHQ/marvin"
-stars = 2985
-[[libs]]
-repo = "microsoft/FLAML"
-stars = 2569
-[[libs]]
-repo = "docarray/docarray"
-stars = 2353
-[[libs]]
-repo = "aws-powertools/powertools-lambda-python"
-stars = 2198
+stars = 5454
 [[libs]]
 repo = "NVIDIA/NeMo-Guardrails"
-stars = 1830
+stars = 4383
+[[libs]]
+repo = "microsoft/FLAML"
+stars = 4035
+[[libs]]
+repo = "jina-ai/discoart"
+stars = 3846
+[[libs]]
+repo = "docarray/docarray"
+stars = 3007
+[[libs]]
+repo = "aws-powertools/powertools-lambda-python"
+stars = 2980
 [[libs]]
 repo = "roman-right/beanie"
-stars = 1299
+stars = 2172
 [[libs]]
 repo = "art049/odmantic"
-stars = 807
+stars = 1096

@@ -9,29 +9,23 @@ import re
 import sys
 import typing
 import uuid
-from collections import OrderedDict, defaultdict, deque
+from collections import Counter, OrderedDict, UserDict, defaultdict, deque
+from collections.abc import Iterable, Mapping, MutableMapping, Sequence
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta, timezone
 from decimal import Decimal
 from enum import Enum, IntEnum
+from fractions import Fraction
 from numbers import Number
 from pathlib import Path
+from re import Pattern
 from typing import (
+    Annotated,
     Any,
     Callable,
-    Counter,
-    DefaultDict,
-    Deque,
-    Dict,
-    FrozenSet,
-    Iterable,
-    List,
+    Literal,
     NewType,
     Optional,
-    Pattern,
-    Sequence,
-    Set,
-    Tuple,
     TypeVar,
     Union,
 )
@@ -47,7 +41,7 @@ from pydantic_core import (
     SchemaError,
     core_schema,
 )
-from typing_extensions import Annotated, Literal, NotRequired, TypedDict, get_args
+from typing_extensions import NotRequired, TypedDict, get_args
 
 from pydantic import (
     UUID1,
@@ -62,6 +56,7 @@ from pydantic import (
     Base64UrlBytes,
     Base64UrlStr,
     BaseModel,
+    BeforeValidator,
     ByteSize,
     ConfigDict,
     DirectoryPath,
@@ -100,6 +95,7 @@ from pydantic import (
     SecretStr,
     SerializeAsAny,
     SkipValidation,
+    SocketPath,
     Strict,
     StrictBool,
     StrictBytes,
@@ -389,7 +385,7 @@ def test_constrained_list_item_type_fails():
 
 def test_conlist():
     class Model(BaseModel):
-        foo: List[int] = Field(..., min_length=2, max_length=4)
+        foo: list[int] = Field(min_length=2, max_length=4)
         bar: conlist(str, min_length=1, max_length=4) = None
 
     assert Model(foo=[1, 2], bar=['spoon']).model_dump() == {'foo': [1, 2], 'bar': ['spoon']}
@@ -604,7 +600,7 @@ def test_constrained_set_item_type_fails():
 
 def test_conset():
     class Model(BaseModel):
-        foo: Set[int] = Field(..., min_length=2, max_length=4)
+        foo: set[int] = Field(min_length=2, max_length=4)
         bar: conset(str, min_length=1, max_length=4) = None
 
     assert Model(foo=[1, 2], bar=['spoon']).model_dump() == {'foo': {1, 2}, 'bar': {'spoon'}}
@@ -645,7 +641,7 @@ def test_conset():
 
 def test_conset_not_required():
     class Model(BaseModel):
-        foo: Optional[Set[int]] = None
+        foo: Optional[set[int]] = None
 
     assert Model(foo=None).foo is None
     assert Model().foo is None
@@ -653,7 +649,7 @@ def test_conset_not_required():
 
 def test_confrozenset():
     class Model(BaseModel):
-        foo: FrozenSet[int] = Field(..., min_length=2, max_length=4)
+        foo: frozenset[int] = Field(min_length=2, max_length=4)
         bar: confrozenset(str, min_length=1, max_length=4) = None
 
     m = Model(foo=[1, 2], bar=['spoon'])
@@ -697,7 +693,7 @@ def test_confrozenset():
 
 def test_confrozenset_not_required():
     class Model(BaseModel):
-        foo: Optional[FrozenSet[int]] = None
+        foo: Optional[frozenset[int]] = None
 
     assert Model(foo=None).foo is None
     assert Model().foo is None
@@ -1062,6 +1058,13 @@ def test_decimal():
     assert m.model_dump() == {'v': Decimal('1.234')}
 
 
+def test_decimal_constraint_coerced() -> None:
+    ta = TypeAdapter(Annotated[Decimal, Field(gt=2)])
+
+    with pytest.raises(ValidationError):
+        ta.validate_python(Decimal(0))
+
+
 def test_decimal_allow_inf():
     class MyModel(BaseModel):
         value: Annotated[Decimal, AllowInfNan(True)]
@@ -1228,10 +1231,10 @@ def check_model_fixture():
         datetime_check: datetime = datetime(2017, 5, 5, 10, 10, 10)
         time_check: time = time(10, 10, 10)
         timedelta_check: timedelta = timedelta(days=1)
-        list_check: List[str] = ['1', '2']
-        tuple_check: Tuple[str, ...] = ('1', '2')
-        set_check: Set[str] = {'1', '2'}
-        frozenset_check: FrozenSet[str] = frozenset(['1', '2'])
+        list_check: list[str] = ['1', '2']
+        tuple_check: tuple[str, ...] = ('1', '2')
+        set_check: set[str] = {'1', '2'}
+        frozenset_check: frozenset[str] = frozenset(['1', '2'])
 
     return CheckModel
 
@@ -1742,8 +1745,6 @@ def test_enum_from_json(enum_base, strict):
     with pytest.raises(ValidationError) as exc_info:
         Model.model_validate_json('{"my_enum":2}', strict=strict)
 
-    MyEnum.__name__ if sys.version_info[:2] <= (3, 8) else MyEnum.__qualname__
-
     if strict:
         assert exc_info.value.errors(include_url=False) == [
             {
@@ -1803,9 +1804,20 @@ def test_enum_with_no_cases() -> None:
     'kwargs,type_,a',
     [
         ({'pattern': '^foo$'}, int, 1),
-        ({'gt': 0}, conlist(int, min_length=4), [1, 2, 3, 4, 5]),
-        ({'gt': 0}, conset(int, min_length=4), {1, 2, 3, 4, 5}),
-        ({'gt': 0}, confrozenset(int, min_length=4), frozenset({1, 2, 3, 4, 5})),
+        *[
+            ({constraint_name: 0}, list[int], [1, 2, 3, 4, 5])
+            for constraint_name in ['gt', 'lt', 'ge', 'le', 'multiple_of']
+        ]
+        + [
+            ({constraint_name: 0}, set[int], {1, 2, 3, 4, 5})
+            for constraint_name in ['gt', 'lt', 'ge', 'le', 'multiple_of']
+        ]
+        + [
+            ({constraint_name: 0}, frozenset[int], frozenset({1, 2, 3, 4, 5}))
+            for constraint_name in ['gt', 'lt', 'ge', 'le', 'multiple_of']
+        ]
+        + [({constraint_name: 0}, Decimal, Decimal('1.0')) for constraint_name in ['max_length', 'min_length']]
+        + [({constraint_name: 0}, float, 1.0) for constraint_name in ['max_digits', 'decimal_places']],
     ],
 )
 def test_invalid_schema_constraints(kwargs, type_, a):
@@ -1819,12 +1831,15 @@ def test_invalid_schema_constraints(kwargs, type_, a):
         Foo(a=a)
 
 
-def test_invalid_decimal_constraint():
-    class Foo(BaseModel):
-        a: Decimal = Field('foo', title='A title', description='A description', max_length=5)
+def test_fraction_validation():
+    class Model(BaseModel):
+        a: Fraction
 
-    with pytest.raises(TypeError, match="Unable to apply constraint 'max_length' to supplied value 1.0"):
-        Foo(a=1.0)
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a='wrong_format')
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'fraction_parsing', 'loc': ('a',), 'msg': 'Input is not a valid fraction', 'input': 'wrong_format'}
+    ]
 
 
 @pytest.mark.skipif(not email_validator, reason='email_validator not installed')
@@ -1954,7 +1969,7 @@ def test_dict():
     (
         ([1, 2, '3'], [1, 2, '3']),
         ((1, 2, '3'), [1, 2, '3']),
-        ((i**2 for i in range(5)), [0, 1, 4, 9, 16]),
+        pytest.param((i**2 for i in range(5)), [0, 1, 4, 9, 16], marks=pytest.mark.thread_unsafe),
         (deque([1, 2, 3]), [1, 2, 3]),
         ({1, '2'}, IsOneOf([1, '2'], ['2', 1])),
     ),
@@ -2004,7 +2019,7 @@ def test_ordered_dict():
     (
         ([1, 2, '3'], (1, 2, '3')),
         ((1, 2, '3'), (1, 2, '3')),
-        ((i**2 for i in range(5)), (0, 1, 4, 9, 16)),
+        pytest.param((i**2 for i in range(5)), (0, 1, 4, 9, 16), marks=pytest.mark.thread_unsafe),
         (deque([1, 2, 3]), (1, 2, 3)),
         ({1, '2'}, IsOneOf((1, '2'), ('2', 1))),
     ),
@@ -2034,13 +2049,13 @@ def test_tuple_fails(value):
     (
         ([1, 2, '3'], int, (1, 2, 3)),
         ((1, 2, '3'), int, (1, 2, 3)),
-        ((i**2 for i in range(5)), int, (0, 1, 4, 9, 16)),
+        pytest.param((i**2 for i in range(5)), int, (0, 1, 4, 9, 16), marks=pytest.mark.thread_unsafe),
         (('a', 'b', 'c'), str, ('a', 'b', 'c')),
     ),
 )
 def test_tuple_variable_len_success(value, cls, result):
     class Model(BaseModel):
-        v: Tuple[cls, ...]
+        v: tuple[cls, ...]
 
     assert Model(v=value).v == result
 
@@ -2082,7 +2097,7 @@ def test_tuple_variable_len_success(value, cls, result):
 )
 def test_tuple_variable_len_fails(value, cls, exc):
     class Model(BaseModel):
-        v: Tuple[cls, ...]
+        v: tuple[cls, ...]
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=value)
@@ -2120,7 +2135,7 @@ def test_set_fails(value):
 
 def test_list_type_fails():
     class Model(BaseModel):
-        v: List[int]
+        v: list[int]
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v='123')
@@ -2132,7 +2147,7 @@ def test_list_type_fails():
 
 def test_set_type_fails():
     class Model(BaseModel):
-        v: Set[int]
+        v: set[int]
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v='123')
@@ -2149,8 +2164,8 @@ def test_set_type_fails():
         (int, (1, 2, 3), (1, 2, 3)),
         (int, range(5), [0, 1, 2, 3, 4]),
         (int, deque((1, 2, 3)), deque((1, 2, 3))),
-        (Set[int], [{1, 2}, {3, 4}, {5, 6}], [{1, 2}, {3, 4}, {5, 6}]),
-        (Tuple[int, str], ((1, 'a'), (2, 'b'), (3, 'c')), ((1, 'a'), (2, 'b'), (3, 'c'))),
+        (set[int], [{1, 2}, {3, 4}, {5, 6}], [{1, 2}, {3, 4}, {5, 6}]),
+        (tuple[int, str], ((1, 'a'), (2, 'b'), (3, 'c')), ((1, 'a'), (2, 'b'), (3, 'c'))),
     ),
 )
 def test_sequence_success(cls, value, result):
@@ -2384,7 +2399,7 @@ def test_sequence_generator_fails():
             ],
         ),
         (
-            Set[int],
+            set[int],
             [{1, 2}, {2, 3}, {'d'}],
             [
                 {
@@ -2396,7 +2411,7 @@ def test_sequence_generator_fails():
             ],
         ),
         (
-            Tuple[int, str],
+            tuple[int, str],
             ((1, 'a'), ('a', 'a'), (3, 'c')),
             [
                 {
@@ -2408,7 +2423,7 @@ def test_sequence_generator_fails():
             ],
         ),
         (
-            List[int],
+            list[int],
             [{'a': 1, 'b': 2}, [1, 2], [2, 3]],
             [
                 {
@@ -2437,12 +2452,12 @@ def test_sequence_strict():
 
 def test_list_strict() -> None:
     class LaxModel(BaseModel):
-        v: List[int]
+        v: list[int]
 
         model_config = ConfigDict(strict=False)
 
     class StrictModel(BaseModel):
-        v: List[int]
+        v: list[int]
 
         model_config = ConfigDict(strict=True)
 
@@ -2464,12 +2479,12 @@ def test_list_strict() -> None:
 
 def test_set_strict() -> None:
     class LaxModel(BaseModel):
-        v: Set[int]
+        v: set[int]
 
         model_config = ConfigDict(strict=False)
 
     class StrictModel(BaseModel):
-        v: Set[int]
+        v: set[int]
 
         model_config = ConfigDict(strict=True)
 
@@ -2497,12 +2512,12 @@ def test_set_strict() -> None:
 
 def test_frozenset_strict() -> None:
     class LaxModel(BaseModel):
-        v: FrozenSet[int]
+        v: frozenset[int]
 
         model_config = ConfigDict(strict=False)
 
     class StrictModel(BaseModel):
-        v: FrozenSet[int]
+        v: frozenset[int]
 
         model_config = ConfigDict(strict=True)
 
@@ -2530,12 +2545,12 @@ def test_frozenset_strict() -> None:
 
 def test_tuple_strict() -> None:
     class LaxModel(BaseModel):
-        v: Tuple[int, int]
+        v: tuple[int, int]
 
         model_config = ConfigDict(strict=False)
 
     class StrictModel(BaseModel):
-        v: Tuple[int, int]
+        v: tuple[int, int]
 
         model_config = ConfigDict(strict=True)
 
@@ -2806,7 +2821,7 @@ def test_strict_bytes():
 
 def test_strict_bytes_max_length():
     class Model(BaseModel):
-        u: StrictBytes = Field(..., max_length=5)
+        u: StrictBytes = Field(max_length=5)
 
     assert Model(u=b'foo').u == b'foo'
 
@@ -2839,7 +2854,7 @@ def test_strict_str():
 
 def test_strict_str_max_length():
     class Model(BaseModel):
-        u: StrictStr = Field(..., max_length=5)
+        u: StrictStr = Field(max_length=5)
 
     assert Model(u='foo').u == 'foo'
 
@@ -3082,11 +3097,11 @@ def test_uuid_strict() -> None:
         model_config = ConfigDict(strict=True)
 
     class StrictByField(BaseModel):
-        a: UUID1 = Field(..., strict=True)
-        b: UUID3 = Field(..., strict=True)
-        c: UUID4 = Field(..., strict=True)
-        d: UUID5 = Field(..., strict=True)
-        e: uuid.UUID = Field(..., strict=True)
+        a: UUID1 = Field(strict=True)
+        b: UUID3 = Field(strict=True)
+        c: UUID4 = Field(strict=True)
+        d: UUID5 = Field(strict=True)
+        e: uuid.UUID = Field(strict=True)
 
     a = uuid.UUID('7fb48116-ca6b-11ed-a439-3274d3adddac')  # uuid1
     b = uuid.UUID('6fa459ea-ee8a-3ca4-894e-db77e160355e')  # uuid3
@@ -3481,15 +3496,6 @@ def test_path_validation_success(value, result):
     assert Model.model_validate_json(json.dumps({'foo': str(value)})).foo == result
 
 
-def test_path_validation_constrained():
-    ta = TypeAdapter(Annotated[Path, Field(min_length=9, max_length=20)])
-    with pytest.raises(ValidationError):
-        ta.validate_python('/short')
-    with pytest.raises(ValidationError):
-        ta.validate_python('/' + 'long' * 100)
-    assert ta.validate_python('/just/right/enough') == Path('/just/right/enough')
-
-
 def test_path_like():
     class Model(BaseModel):
         foo: os.PathLike
@@ -3506,7 +3512,6 @@ def test_path_like():
     }
 
 
-@pytest.mark.skipif(sys.version_info < (3, 9), reason='requires python 3.9 or higher to parametrize os.PathLike')
 def test_path_like_extra_subtype():
     class Model(BaseModel):
         str_type: os.PathLike[str]
@@ -3698,6 +3703,43 @@ def test_new_path_validation_path_already_exists(value):
     ]
 
 
+@pytest.mark.skipif(
+    not sys.platform.startswith('linux'),
+    reason='Test only works for linux systems. Windows excluded (unsupported). Mac excluded due to CI issues.',
+)
+def test_socket_exists(tmp_path):
+    import socket
+
+    # Working around path length limits by reducing character count where possible.
+    target = tmp_path / 's'
+    with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as sock:
+        sock.bind(str(target))
+
+        class Model(BaseModel):
+            path: SocketPath
+
+        assert Model(path=target).path == target
+
+
+def test_socket_not_exists(tmp_path):
+    target = tmp_path / 's'
+
+    class Model(BaseModel):
+        path: SocketPath
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(path=target)
+
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'path_not_socket',
+            'loc': ('path',),
+            'msg': 'Path does not point to a socket',
+            'input': target,
+        }
+    ]
+
+
 @pytest.mark.parametrize('value', ('/nonexistentdir/foo.py', Path('/nonexistentdir/foo.py')))
 def test_new_path_validation_parent_does_not_exist(value):
     class Model(BaseModel):
@@ -3723,6 +3765,26 @@ def test_new_path_validation_success(value, result):
         foo: NewPath
 
     assert Model(foo=value).foo == result
+
+
+def test_path_union_ser() -> None:
+    class Model(BaseModel):
+        a: Union[Path, list[Path]]
+        b: Union[list[Path], Path]
+
+    model = Model(a=Path('potato'), b=Path('potato'))
+    assert model.model_dump() == {'a': Path('potato'), 'b': Path('potato')}
+    assert model.model_dump_json() == '{"a":"potato","b":"potato"}'
+
+    model = Model(a=[Path('potato')], b=[Path('potato')])
+    assert model.model_dump() == {'a': [Path('potato')], 'b': [Path('potato')]}
+    assert model.model_dump_json() == '{"a":["potato"],"b":["potato"]}'
+
+
+def test_ser_path_incorrect() -> None:
+    ta = TypeAdapter(Path)
+    with pytest.warns(UserWarning, match='serialized value may not be as expected.'):
+        ta.dump_python(123)
 
 
 def test_number_gt():
@@ -3862,7 +3924,7 @@ def test_number_multiple_of_float_invalid(value):
 def test_new_type_success():
     a_type = NewType('a_type', int)
     b_type = NewType('b_type', a_type)
-    c_type = NewType('c_type', List[int])
+    c_type = NewType('c_type', list[int])
 
     class Model(BaseModel):
         a: a_type
@@ -3876,7 +3938,7 @@ def test_new_type_success():
 def test_new_type_fails():
     a_type = NewType('a_type', int)
     b_type = NewType('b_type', a_type)
-    c_type = NewType('c_type', List[int])
+    c_type = NewType('c_type', list[int])
 
     class Model(BaseModel):
         a: a_type
@@ -3956,7 +4018,7 @@ def test_valid_simple_json_bytes():
 
 def test_valid_detailed_json():
     class JsonDetailedModel(BaseModel):
-        json_obj: Json[List[int]]
+        json_obj: Json[list[int]]
 
     obj = '[1, 2, 3]'
     assert JsonDetailedModel(json_obj=obj).model_dump() == {'json_obj': [1, 2, 3]}
@@ -3982,7 +4044,7 @@ def test_valid_detailed_json():
 def test_valid_model_json():
     class Model(BaseModel):
         a: int
-        b: List[int]
+        b: list[int]
 
     class JsonDetailedModel(BaseModel):
         json_obj: Json[Model]
@@ -3997,7 +4059,7 @@ def test_valid_model_json():
 def test_invalid_model_json():
     class Model(BaseModel):
         a: int
-        b: List[int]
+        b: list[int]
 
     class JsonDetailedModel(BaseModel):
         json_obj: Json[Model]
@@ -4014,7 +4076,7 @@ def test_invalid_model_json():
 
 def test_invalid_detailed_json_type_error():
     class JsonDetailedModel(BaseModel):
-        json_obj: Json[List[int]]
+        json_obj: Json[list[int]]
 
     obj = '["a", "b", "c"]'
     with pytest.raises(ValidationError) as exc_info:
@@ -4044,7 +4106,7 @@ def test_invalid_detailed_json_type_error():
 
 def test_json_not_str():
     class JsonDetailedModel(BaseModel):
-        json_obj: Json[List[int]]
+        json_obj: Json[list[int]]
 
     obj = 12
     with pytest.raises(ValidationError) as exc_info:
@@ -4088,7 +4150,7 @@ def test_json_optional_simple():
 
 def test_json_optional_complex():
     class JsonOptionalModel(BaseModel):
-        json_obj: Optional[Json[List[int]]]
+        json_obj: Optional[Json[list[int]]]
 
     JsonOptionalModel(json_obj=None)
 
@@ -4166,7 +4228,7 @@ def test_compiled_pattern_in_field(use_field):
     if use_field:
 
         class Foobar(BaseModel):
-            str_regex: str = Field(..., pattern=field_pattern)
+            str_regex: str = Field(pattern=field_pattern)
     else:
 
         class Foobar(BaseModel):
@@ -4200,7 +4262,7 @@ def test_compiled_pattern_in_field(use_field):
 def test_pattern_with_invalid_param():
     with pytest.raises(
         PydanticSchemaGenerationError,
-        match=re.escape('Unable to generate pydantic-core schema for typing.Pattern[int].'),
+        match=re.escape('Unable to generate pydantic-core schema for re.Pattern[int].'),
     ):
 
         class Foo(BaseModel):
@@ -4758,9 +4820,9 @@ def test_secret_bytes_min_max_length():
 
 def test_generic_without_params():
     class Model(BaseModel):
-        generic_list: List
-        generic_dict: Dict
-        generic_tuple: Tuple
+        generic_list: list
+        generic_dict: dict
+        generic_tuple: tuple
 
     m = Model(generic_list=[0, 'a'], generic_dict={0: 'a', 'a': 0}, generic_tuple=(1, 'q'))
     assert m.model_dump() == {'generic_list': [0, 'a'], 'generic_dict': {0: 'a', 'a': 0}, 'generic_tuple': (1, 'q')}
@@ -4768,9 +4830,9 @@ def test_generic_without_params():
 
 def test_generic_without_params_error():
     class Model(BaseModel):
-        generic_list: List
-        generic_dict: Dict
-        generic_tuple: Tuple
+        generic_list: list
+        generic_dict: dict
+        generic_tuple: tuple
 
     with pytest.raises(ValidationError) as exc_info:
         Model(generic_list=0, generic_dict=0, generic_tuple=0)
@@ -4832,7 +4894,7 @@ def test_literal_multiple():
 
 
 def test_typing_mutable_set():
-    s1 = TypeAdapter(Set[int]).core_schema
+    s1 = TypeAdapter(set[int]).core_schema
     s1.pop('metadata', None)
     s2 = TypeAdapter(typing.MutableSet[int]).core_schema
     s2.pop('metadata', None)
@@ -4841,7 +4903,7 @@ def test_typing_mutable_set():
 
 def test_frozenset_field():
     class FrozenSetModel(BaseModel):
-        set: FrozenSet[int]
+        set: frozenset[int]
 
     test_set = frozenset({1, 2, 3})
     object_under_test = FrozenSetModel(set=test_set)
@@ -4860,7 +4922,7 @@ def test_frozenset_field():
 )
 def test_frozenset_field_conversion(value, result):
     class FrozenSetModel(BaseModel):
-        set: FrozenSet[int]
+        set: frozenset[int]
 
     object_under_test = FrozenSetModel(set=value)
 
@@ -4869,7 +4931,7 @@ def test_frozenset_field_conversion(value, result):
 
 def test_frozenset_field_not_convertible():
     class FrozenSetModel(BaseModel):
-        set: FrozenSet[int]
+        set: frozenset[int]
 
     with pytest.raises(ValidationError, match=r'frozenset'):
         FrozenSetModel(set=42)
@@ -4971,8 +5033,8 @@ def test_deque_success():
         (int, (1, 2, 3), deque((1, 2, 3))),
         (int, deque((1, 2, 3)), deque((1, 2, 3))),
         (float, [1.0, 2.0, 3.0], deque([1.0, 2.0, 3.0])),
-        (Set[int], [{1, 2}, {3, 4}, {5, 6}], deque([{1, 2}, {3, 4}, {5, 6}])),
-        (Tuple[int, str], ((1, 'a'), (2, 'b'), (3, 'c')), deque(((1, 'a'), (2, 'b'), (3, 'c')))),
+        (set[int], [{1, 2}, {3, 4}, {5, 6}], deque([{1, 2}, {3, 4}, {5, 6}])),
+        (tuple[int, str], ((1, 'a'), (2, 'b'), (3, 'c')), deque(((1, 'a'), (2, 'b'), (3, 'c')))),
         (str, 'one two three'.split(), deque(['one', 'two', 'three'])),
         (
             int,
@@ -4985,7 +5047,7 @@ def test_deque_success():
             deque([10, 20, 30]),
         ),
         (
-            Tuple[int, int],
+            tuple[int, int],
             {1: 10, 2: 20, 3: 30}.items(),
             deque([(1, 10), (2, 20), (3, 30)]),
         ),
@@ -5003,7 +5065,7 @@ def test_deque_success():
 )
 def test_deque_generic_success(cls, value, result):
     class Model(BaseModel):
-        v: Deque[cls]
+        v: deque[cls]
 
     assert Model(v=value).v == result
 
@@ -5017,7 +5079,7 @@ def test_deque_generic_success(cls, value, result):
 )
 def test_deque_generic_success_strict(cls, value: Any, result):
     class Model(BaseModel):
-        v: Deque[cls]
+        v: deque[cls]
 
         model_config = ConfigDict(strict=True)
 
@@ -5048,7 +5110,7 @@ def test_deque_generic_success_strict(cls, value: Any, result):
             },
         ),
         (
-            Tuple[int, str],
+            tuple[int, str],
             ((1, 'a'), ('a', 'a'), (3, 'c')),
             {
                 'type': 'int_parsing',
@@ -5058,7 +5120,7 @@ def test_deque_generic_success_strict(cls, value: Any, result):
             },
         ),
         (
-            List[int],
+            list[int],
             [{'a': 1, 'b': 2}, [1, 2], [2, 3]],
             {
                 'type': 'list_type',
@@ -5074,7 +5136,7 @@ def test_deque_generic_success_strict(cls, value: Any, result):
 )
 def test_deque_fails(cls, value, expected_error):
     class Model(BaseModel):
-        v: Deque[cls]
+        v: deque[cls]
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=value)
@@ -5088,7 +5150,7 @@ def test_deque_model():
         x: int
 
     class Model(BaseModel):
-        v: Deque[Model2]
+        v: deque[Model2]
 
     seq = [Model2(x=1), Model2(x=2)]
     assert Model(v=seq).v == deque(seq)
@@ -5096,7 +5158,7 @@ def test_deque_model():
 
 def test_deque_json():
     class Model(BaseModel):
-        v: Deque[int]
+        v: deque[int]
 
     assert Model(v=deque((1, 2, 3))).model_dump_json() == '{"v":[1,2,3]}'
 
@@ -5125,64 +5187,40 @@ def test_deque_any_maxlen():
 
 def test_deque_typed_maxlen():
     class DequeModel1(BaseModel):
-        field: Deque[int]
+        field: deque[int]
 
     assert DequeModel1(field=deque()).field.maxlen is None
     assert DequeModel1(field=deque(maxlen=8)).field.maxlen == 8
 
     class DequeModel2(BaseModel):
-        field: Deque[int] = deque()
+        field: deque[int] = deque()
 
     assert DequeModel2().field.maxlen is None
     assert DequeModel2(field=deque()).field.maxlen is None
     assert DequeModel2(field=deque(maxlen=8)).field.maxlen == 8
 
     class DequeModel3(BaseModel):
-        field: Deque[int] = deque(maxlen=5)
+        field: deque[int] = deque(maxlen=5)
 
     assert DequeModel3().field.maxlen == 5
     assert DequeModel3(field=deque()).field.maxlen is None
     assert DequeModel3(field=deque(maxlen=8)).field.maxlen == 8
 
 
-def test_deque_set_maxlen():
+def test_deque_enforces_maxlen():
     class DequeModel1(BaseModel):
-        field: Annotated[Deque[int], Field(max_length=10)]
+        field: Annotated[deque[int], Field(max_length=3)]
 
-    assert DequeModel1(field=deque()).field.maxlen == 10
-    assert DequeModel1(field=deque(maxlen=8)).field.maxlen == 8
-    assert DequeModel1(field=deque(maxlen=15)).field.maxlen == 10
-
-    class DequeModel2(BaseModel):
-        field: Annotated[Deque[int], Field(max_length=10)] = deque()
-
-    assert DequeModel2().field.maxlen is None
-    assert DequeModel2(field=deque()).field.maxlen == 10
-    assert DequeModel2(field=deque(maxlen=8)).field.maxlen == 8
-    assert DequeModel2(field=deque(maxlen=15)).field.maxlen == 10
-
-    class DequeModel3(DequeModel2):
-        model_config = ConfigDict(validate_default=True)
-
-    assert DequeModel3().field.maxlen == 10
-
-    class DequeModel4(BaseModel):
-        field: Annotated[Deque[int], Field(max_length=10)] = deque(maxlen=5)
-
-    assert DequeModel4().field.maxlen == 5
-
-    class DequeModel5(DequeModel4):
-        model_config = ConfigDict(validate_default=True)
-
-    assert DequeModel4().field.maxlen == 5
+    with pytest.raises(ValidationError):
+        DequeModel1(field=deque([1, 2, 3, 4]))
 
 
 @pytest.mark.parametrize('value_type', (None, type(None), None.__class__))
 def test_none(value_type):
     class Model(BaseModel):
         my_none: value_type
-        my_none_list: List[value_type]
-        my_none_dict: Dict[str, value_type]
+        my_none_list: list[value_type]
+        my_none_dict: dict[str, value_type]
         my_json_none: Json[value_type]
 
     Model(
@@ -5239,8 +5277,8 @@ def test_none(value_type):
 def test_none_literal():
     class Model(BaseModel):
         my_none: Literal[None]
-        my_none_list: List[Literal[None]]
-        my_none_dict: Dict[str, Literal[None]]
+        my_none_list: list[Literal[None]]
+        my_none_dict: dict[str, Literal[None]]
         my_json_none: Json[Literal[None]]
 
     Model(
@@ -5255,20 +5293,20 @@ def test_none_literal():
         'title': 'Model',
         'type': 'object',
         'properties': {
-            'my_none': {'const': None, 'enum': [None], 'title': 'My None', 'type': 'null'},
+            'my_none': {'const': None, 'title': 'My None', 'type': 'null'},
             'my_none_list': {
-                'items': {'const': None, 'enum': [None], 'type': 'null'},
+                'items': {'const': None, 'type': 'null'},
                 'title': 'My None List',
                 'type': 'array',
             },
             'my_none_dict': {
-                'additionalProperties': {'const': None, 'enum': [None], 'type': 'null'},
+                'additionalProperties': {'const': None, 'type': 'null'},
                 'title': 'My None Dict',
                 'type': 'object',
             },
             'my_json_none': {
                 'contentMediaType': 'application/json',
-                'contentSchema': {'const': None, 'enum': [None], 'type': 'null'},
+                'contentSchema': {'const': None, 'type': 'null'},
                 'title': 'My Json None',
                 'type': 'string',
             },
@@ -5426,7 +5464,7 @@ def test_union_subclass(max_length: Union[int, None]):
 
 def test_union_compound_types():
     class Model(BaseModel):
-        values: Union[Dict[str, str], List[str], Dict[str, List[str]]]
+        values: Union[dict[str, str], list[str], dict[str, list[str]]]
 
     assert Model(values={'L': '1'}).model_dump() == {'values': {'L': '1'}}
     assert Model(values=['L1']).model_dump() == {'values': ['L1']}
@@ -5460,7 +5498,7 @@ def test_union_compound_types():
 
 def test_smart_union_compounded_types_edge_case():
     class Model(BaseModel):
-        x: Union[List[str], List[int]]
+        x: Union[list[str], list[int]]
 
     assert Model(x=[1, 2]).x == [1, 2]
     assert Model(x=['1', '2']).x == ['1', '2']
@@ -5483,10 +5521,10 @@ def test_union_typeddict():
 def test_custom_generic_containers():
     T = TypeVar('T')
 
-    class GenericList(List[T]):
+    class GenericList(list[T]):
         @classmethod
         def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-            return core_schema.no_info_after_validator_function(GenericList, handler(List[get_args(source_type)[0]]))
+            return core_schema.no_info_after_validator_function(GenericList, handler(list[get_args(source_type)[0]]))
 
     class Model(BaseModel):
         field: GenericList[int]
@@ -5501,7 +5539,7 @@ def test_custom_generic_containers():
         {
             'input': 'a',
             'loc': ('field', 0),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'type': 'int_parsing',
         }
     ]
@@ -5510,23 +5548,19 @@ def test_custom_generic_containers():
 @pytest.mark.parametrize(
     ('field_type', 'input_data', 'expected_value', 'serialized_data'),
     [
-        pytest.param(Base64Bytes, b'Zm9vIGJhcg==\n', b'foo bar', b'Zm9vIGJhcg==\n', id='Base64Bytes-reversible'),
-        pytest.param(Base64Str, 'Zm9vIGJhcg==\n', 'foo bar', 'Zm9vIGJhcg==\n', id='Base64Str-reversible'),
-        pytest.param(Base64Bytes, b'Zm9vIGJhcg==', b'foo bar', b'Zm9vIGJhcg==\n', id='Base64Bytes-bytes-input'),
-        pytest.param(Base64Bytes, 'Zm9vIGJhcg==', b'foo bar', b'Zm9vIGJhcg==\n', id='Base64Bytes-str-input'),
+        pytest.param(Base64Bytes, b'Zm9vIGJhcg==', b'foo bar', b'Zm9vIGJhcg==', id='Base64Bytes-bytes-input'),
+        pytest.param(Base64Bytes, 'Zm9vIGJhcg==', b'foo bar', b'Zm9vIGJhcg==', id='Base64Bytes-str-input'),
         pytest.param(
-            Base64Bytes, bytearray(b'Zm9vIGJhcg=='), b'foo bar', b'Zm9vIGJhcg==\n', id='Base64Bytes-bytearray-input'
+            Base64Bytes, bytearray(b'Zm9vIGJhcg=='), b'foo bar', b'Zm9vIGJhcg==', id='Base64Bytes-bytearray-input'
         ),
-        pytest.param(Base64Str, b'Zm9vIGJhcg==', 'foo bar', 'Zm9vIGJhcg==\n', id='Base64Str-bytes-input'),
-        pytest.param(Base64Str, 'Zm9vIGJhcg==', 'foo bar', 'Zm9vIGJhcg==\n', id='Base64Str-str-input'),
-        pytest.param(
-            Base64Str, bytearray(b'Zm9vIGJhcg=='), 'foo bar', 'Zm9vIGJhcg==\n', id='Base64Str-bytearray-input'
-        ),
+        pytest.param(Base64Str, b'Zm9vIGJhcg==', 'foo bar', 'Zm9vIGJhcg==', id='Base64Str-bytes-input'),
+        pytest.param(Base64Str, 'Zm9vIGJhcg==', 'foo bar', 'Zm9vIGJhcg==', id='Base64Str-str-input'),
+        pytest.param(Base64Str, bytearray(b'Zm9vIGJhcg=='), 'foo bar', 'Zm9vIGJhcg==', id='Base64Str-bytearray-input'),
         pytest.param(
             Base64Bytes,
             b'BCq+6+1/Paun/Q==',
             b'\x04*\xbe\xeb\xed\x7f=\xab\xa7\xfd',
-            b'BCq+6+1/Paun/Q==\n',
+            b'BCq+6+1/Paun/Q==',
             id='Base64Bytes-bytes-alphabet-vanilla',
         ),
     ],
@@ -5687,7 +5721,7 @@ def test_base64url_invalid(field_type, input_data):
 
 
 def test_sequence_subclass_without_core_schema() -> None:
-    class MyList(List[int]):
+    class MyList(list[int]):
         # The point of this is that subclasses can do arbitrary things
         # This is the reason why we don't try to handle them automatically
         # TBD if we introspect `__init__` / `__new__`
@@ -5710,7 +5744,7 @@ def test_sequence_subclass_without_core_schema() -> None:
 
 def test_typing_coercion_defaultdict():
     class Model(BaseModel):
-        x: DefaultDict[int, str]
+        x: defaultdict[int, str]
 
     d = defaultdict(str)
     d['1']
@@ -5747,7 +5781,7 @@ def test_typing_counter_value_validation():
 
 
 def test_mapping_subclass_without_core_schema() -> None:
-    class MyDict(Dict[int, int]):
+    class MyDict(dict[int, int]):
         # The point of this is that subclasses can do arbitrary things
         # This is the reason why we don't try to handle them automatically
         # TBD if we introspect `__init__` / `__new__`
@@ -5774,18 +5808,18 @@ def test_defaultdict_unknown_default_factory() -> None:
     """
     with pytest.raises(
         PydanticSchemaGenerationError,
-        match=r'Unable to infer a default factory for keys of type typing.DefaultDict\[int, int\]',
+        match=r'Unable to infer a default factory for keys of type collections.defaultdict\[int, int\]',
     ):
 
         class Model(BaseModel):
-            d: DefaultDict[int, DefaultDict[int, int]]
+            d: defaultdict[int, defaultdict[int, int]]
 
 
 def test_defaultdict_infer_default_factory() -> None:
     class Model(BaseModel):
-        a: DefaultDict[int, List[int]]
-        b: DefaultDict[int, int]
-        c: DefaultDict[int, set]
+        a: defaultdict[int, list[int]]
+        b: defaultdict[int, int]
+        c: defaultdict[int, set]
 
     m = Model(a={}, b={}, c={})
     assert m.a.default_factory is not None
@@ -5797,11 +5831,11 @@ def test_defaultdict_infer_default_factory() -> None:
 
 
 def test_defaultdict_explicit_default_factory() -> None:
-    class MyList(List[int]):
+    class MyList(list[int]):
         pass
 
     class Model(BaseModel):
-        a: DefaultDict[int, Annotated[List[int], Field(default_factory=lambda: MyList())]]
+        a: defaultdict[int, Annotated[list[int], Field(default_factory=lambda: MyList())]]
 
     m = Model(a={})
     assert m.a.default_factory is not None
@@ -5810,9 +5844,9 @@ def test_defaultdict_explicit_default_factory() -> None:
 
 def test_defaultdict_default_factory_preserved() -> None:
     class Model(BaseModel):
-        a: DefaultDict[int, List[int]]
+        a: defaultdict[int, list[int]]
 
-    class MyList(List[int]):
+    class MyList(list[int]):
         pass
 
     m = Model(a=defaultdict(lambda: MyList()))
@@ -5824,12 +5858,12 @@ def test_custom_default_dict() -> None:
     KT = TypeVar('KT')
     VT = TypeVar('VT')
 
-    class CustomDefaultDict(DefaultDict[KT, VT]):
+    class CustomDefaultDict(defaultdict[KT, VT]):
         @classmethod
         def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
             keys_type, values_type = get_args(source_type)
             return core_schema.no_info_after_validator_function(
-                lambda x: cls(x.default_factory, x), handler(DefaultDict[keys_type, values_type])
+                lambda x: cls(x.default_factory, x), handler(defaultdict[keys_type, values_type])
             )
 
     ta = TypeAdapter(CustomDefaultDict[str, int])
@@ -5855,7 +5889,7 @@ def test_ordered_dict_from_ordered_dict(field_type):
     assert m.od_field is not od_value
 
     assert m.model_json_schema() == {
-        'properties': {'od_field': {'title': 'Od Field', 'type': 'object'}},
+        'properties': {'od_field': {'title': 'Od Field', 'type': 'object', 'additionalProperties': True}},
         'required': ['od_field'],
         'title': 'Model',
         'type': 'object',
@@ -5900,7 +5934,7 @@ def test_ordered_dict_from_dict(field_type):
     assert m.od_field == collections.OrderedDict(od_value)
 
     assert m.model_json_schema() == {
-        'properties': {'od_field': {'title': 'Od Field', 'type': 'object'}},
+        'properties': {'od_field': {'title': 'Od Field', 'type': 'object', 'additionalProperties': True}},
         'required': ['od_field'],
         'title': 'Model',
         'type': 'object',
@@ -6198,14 +6232,14 @@ def test_instanceof_invalid_core_schema():
             'ctx': {'class': 'test_instanceof_invalid_core_schema.<locals>.MyClass'},
             'input': 1,
             'loc': ('a',),
-            'msg': 'Input should be an instance of ' 'test_instanceof_invalid_core_schema.<locals>.MyClass',
+            'msg': 'Input should be an instance of test_instanceof_invalid_core_schema.<locals>.MyClass',
             'type': 'is_instance_of',
         },
         {
             'ctx': {'class': 'test_instanceof_invalid_core_schema.<locals>.MyClass'},
             'input': 1,
             'loc': ('b',),
-            'msg': 'Input should be an instance of ' 'test_instanceof_invalid_core_schema.<locals>.MyClass',
+            'msg': 'Input should be an instance of test_instanceof_invalid_core_schema.<locals>.MyClass',
             'type': 'is_instance_of',
         },
     ]
@@ -6370,7 +6404,7 @@ def test_constraints_arbitrary_type() -> None:
 
 
 def test_annotated_default_value() -> None:
-    t = TypeAdapter(Annotated[List[int], Field(default=['1', '2'])])
+    t = TypeAdapter(Annotated[list[int], Field(default=['1', '2'])])
 
     r = t.get_default_value()
     assert r is not None
@@ -6381,7 +6415,7 @@ def test_annotated_default_value() -> None:
 
 
 def test_annotated_default_value_validate_default() -> None:
-    t = TypeAdapter(Annotated[List[int], Field(default=['1', '2'])], config=ConfigDict(validate_default=True))
+    t = TypeAdapter(Annotated[list[int], Field(default=['1', '2'])], config=ConfigDict(validate_default=True))
 
     r = t.get_default_value()
     assert r is not None
@@ -6397,7 +6431,7 @@ def test_annotated_default_value_functional_validator() -> None:
     WithDefaultValue = Annotated[T, Field(default=['1', '2'])]
 
     # the order of the args should not matter, we always put the default value on the outside
-    for tp in (WithDefaultValue[WithAfterValidator[List[int]]], WithAfterValidator[WithDefaultValue[List[int]]]):
+    for tp in (WithDefaultValue[WithAfterValidator[list[int]]], WithAfterValidator[WithDefaultValue[list[int]]]):
         t = TypeAdapter(tp, config=ConfigDict(validate_default=True))
 
         r = t.get_default_value()
@@ -6572,8 +6606,8 @@ def test_coerce_numbers_to_str_from_json(number: str, expected_str: str) -> None
 
 
 def test_union_tags_in_errors():
-    DoubledList = Annotated[List[int], AfterValidator(lambda x: x * 2)]
-    StringsMap = Dict[str, str]
+    DoubledList = Annotated[list[int], AfterValidator(lambda x: x * 2)]
+    StringsMap = dict[str, str]
 
     adapter = TypeAdapter(Union[DoubledList, StringsMap])
 
@@ -6587,7 +6621,7 @@ def test_union_tags_in_errors():
         {
             'input': 'a',
             'loc': ('function-after[<lambda>(), list[int]]', 0),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'type': 'int_parsing',
         },
         {
@@ -6610,7 +6644,7 @@ def test_union_tags_in_errors():
         {
             'input': 'a',
             'loc': ('DoubledList', 0),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'type': 'int_parsing',
         },
         {
@@ -6681,8 +6715,8 @@ def test_on_error_omit() -> None:
         b: NotRequired[OmittableInt]
 
     class Model(BaseModel):
-        a_list: List[OmittableInt]
-        a_dict: Dict[OmittableInt, OmittableInt]
+        a_list: list[OmittableInt]
+        a_dict: dict[OmittableInt, OmittableInt]
         a_typed_dict: MyTypedDict
 
     actual = Model(
@@ -6858,6 +6892,7 @@ def test_python_re_respects_flags() -> None:
     assert Model(a='abc').a == 'abc'
 
 
+@pytest.mark.skipif(not email_validator, reason='email_validator not installed')
 def test_constraints_on_str_like() -> None:
     """See https://github.com/pydantic/pydantic/issues/8577 for motivation."""
 
@@ -6870,10 +6905,10 @@ def test_constraints_on_str_like() -> None:
 @pytest.mark.parametrize(
     'tp',
     [
-        pytest.param(List[int], id='list'),
-        pytest.param(Tuple[int, ...], id='tuple'),
-        pytest.param(Set[int], id='set'),
-        pytest.param(FrozenSet[int], id='frozenset'),
+        pytest.param(list[int], id='list'),
+        pytest.param(tuple[int, ...], id='tuple'),
+        pytest.param(set[int], id='set'),
+        pytest.param(frozenset[int], id='frozenset'),
     ],
 )
 @pytest.mark.parametrize(
@@ -6882,9 +6917,9 @@ def test_constraints_on_str_like() -> None:
         pytest.param(True, FailFast(), id='fail-fast-default'),
         pytest.param(True, FailFast(True), id='fail-fast-true'),
         pytest.param(False, FailFast(False), id='fail-fast-false'),
-        pytest.param(False, Field(...), id='field-default'),
-        pytest.param(True, Field(..., fail_fast=True), id='field-true'),
-        pytest.param(False, Field(..., fail_fast=False), id='field-false'),
+        pytest.param(False, Field(), id='field-default'),
+        pytest.param(True, Field(fail_fast=True), id='field-true'),
+        pytest.param(False, Field(fail_fast=False), id='field-false'),
     ],
 )
 def test_fail_fast(tp, fail_fast, decl) -> None:
@@ -6916,17 +6951,22 @@ def test_fail_fast(tp, fail_fast, decl) -> None:
     assert exc_info.value.errors(include_url=False) == errors
 
 
-def test_mutable_mapping() -> None:
+def test_mutable_mapping_userdict_subclass() -> None:
     """Addresses https://github.com/pydantic/pydantic/issues/9549.
 
-    Note - we still don't do a good job of handling subclasses, as we convert the input to a dict
-    via the MappingValidator annotation's schema.
+    Note - we still don't do a good job of handling subclasses, as we convert the input to a dict.
     """
-    import collections.abc
+    adapter = TypeAdapter(MutableMapping, config=ConfigDict(strict=True))
 
-    adapter = TypeAdapter(collections.abc.MutableMapping, config=ConfigDict(arbitrary_types_allowed=True, strict=True))
+    assert isinstance(adapter.validate_python(UserDict()), MutableMapping)
 
-    assert isinstance(adapter.validate_python(collections.UserDict()), collections.abc.MutableMapping)
+
+def test_mapping_parameterized() -> None:
+    """https://github.com/pydantic/pydantic/issues/11650"""
+    adapter = TypeAdapter(Mapping[str, int])
+
+    with pytest.raises(ValidationError):
+        adapter.validate_python({'valid': 1, 'invalid': {}})
 
 
 def test_ser_ip_with_union() -> None:
@@ -6944,3 +6984,139 @@ def test_ser_ip_with_unexpected_value() -> None:
 
     with pytest.warns(UserWarning, match='serialized value may not be as expected.'):
         assert ta.dump_python(123)
+
+
+def test_ser_ip_python_and_json() -> None:
+    ta = TypeAdapter(ipaddress.IPv4Address)
+
+    ip = ta.validate_python('127.0.0.1')
+    assert ta.dump_python(ip) == ip
+    assert ta.dump_python(ip, mode='json') == '127.0.0.1'
+    assert ta.dump_json(ip) == b'"127.0.0.1"'
+
+
+@pytest.mark.parametrize('input_data', ['1/3', 1.333, Fraction(1, 3), Decimal('1.333')])
+def test_fraction_validation_lax(input_data) -> None:
+    ta = TypeAdapter(Fraction)
+    fraction = ta.validate_python(input_data)
+    assert isinstance(fraction, Fraction)
+
+
+def test_fraction_validation_strict() -> None:
+    ta = TypeAdapter(Fraction, config=ConfigDict(strict=True))
+
+    assert ta.validate_python(Fraction(1 / 3)) == Fraction(1 / 3)
+
+    # only fractions accepted in strict mode
+    for lax_fraction in ['1/3', 1.333, Decimal('1.333')]:
+        with pytest.raises(ValidationError):
+            ta.validate_python(lax_fraction)
+
+
+def test_fraction_serialization() -> None:
+    ta = TypeAdapter(Fraction)
+    assert ta.dump_python(Fraction(1, 3)) == '1/3'
+    assert ta.dump_json(Fraction(1, 3)) == b'"1/3"'
+
+
+def test_fraction_json_schema() -> None:
+    ta = TypeAdapter(Fraction)
+    assert ta.json_schema() == {'type': 'string', 'format': 'fraction'}
+
+
+def test_annotated_metadata_any_order() -> None:
+    def validator(v):
+        if isinstance(v, (int, float)):
+            return timedelta(days=v)
+        return v
+
+    class BeforeValidatorAfterLe(BaseModel):
+        v: Annotated[timedelta, annotated_types.Le(timedelta(days=365)), BeforeValidator(validator)]
+
+    class BeforeValidatorBeforeLe(BaseModel):
+        v: Annotated[timedelta, BeforeValidator(validator), annotated_types.Le(timedelta(days=365))]
+
+    try:
+        BeforeValidatorAfterLe(v=366)
+    except ValueError as ex:
+        assert '365 days' in str(ex)
+
+    # in this case, the Le constraint comes after the BeforeValidator, so we use functional validators
+    # from pydantic._internal._validators.py (in this case, less_than_or_equal_validator)
+    # which doesn't have access to fancy pydantic-core formatting for timedelta, so we get
+    # the raw timedelta repr in the error `datetime.timedelta(days=365`` vs the above `365 days`
+    try:
+        BeforeValidatorBeforeLe(v=366)
+    except ValueError as ex:
+        assert 'datetime.timedelta(days=365)' in str(ex)
+
+
+@pytest.mark.parametrize('base64_type', [Base64Bytes, Base64Str, Base64UrlBytes, Base64UrlStr])
+def test_base64_with_invalid_min_length(base64_type) -> None:
+    """Check that an error is raised when the length of the base64 type's value is less or more than the min_length and max_length."""
+
+    class Model(BaseModel):
+        base64_value: base64_type = Field(min_length=3, max_length=5)  # type: ignore
+
+    with pytest.raises(ValidationError):
+        Model(**{'base64_value': b''})
+
+    with pytest.raises(ValidationError):
+        Model(**{'base64_value': b'123456'})
+
+
+def test_serialize_as_any_secret_types() -> None:
+    ta_secret_str = TypeAdapter(SecretStr)
+    secret_str = ta_secret_str.validate_python('secret')
+
+    ta_any = TypeAdapter(Any)
+
+    assert ta_any.dump_python(secret_str) == secret_str
+    assert ta_any.dump_python(secret_str, mode='json') == '**********'
+    assert ta_any.dump_json(secret_str) == b'"**********"'
+
+    ta_secret_bytes = TypeAdapter(SecretBytes)
+    secret_bytes = ta_secret_bytes.validate_python(b'secret')
+
+    assert ta_any.dump_python(secret_bytes) == secret_bytes
+    assert ta_any.dump_python(secret_bytes, mode='json') == '**********'
+    assert ta_any.dump_json(secret_bytes) == b'"**********"'
+
+    ta_secret_date = TypeAdapter(SecretDate)
+    secret_date = ta_secret_date.validate_python('2024-01-01')
+
+    assert ta_any.dump_python(secret_date) == secret_date
+    assert ta_any.dump_python(secret_date, mode='json') == '****/**/**'
+    assert ta_any.dump_json(secret_date) == b'"****/**/**"'
+
+
+def test_custom_serializer_override_secret_str() -> None:
+    class User(BaseModel):
+        name: str
+        password: Annotated[SecretStr, PlainSerializer(lambda x: f'secret: {str(x)}')]
+
+    u = User(name='sam', password='hi')
+    assert u.model_dump()['password'] == 'secret: **********'
+
+
+@pytest.mark.parametrize('sequence_type', [list, tuple, deque])
+def test_sequence_with_nested_type(sequence_type: type) -> None:
+    class Model(BaseModel):
+        a: int
+
+    class OuterModel(BaseModel):
+        inner: Sequence[Model]
+
+    models = sequence_type([Model(a=1), Model(a=2)])
+    assert OuterModel(inner=models).model_dump() == {'inner': sequence_type([{'a': 1}, {'a': 2}])}
+
+
+def test_union_respects_local_strict() -> None:
+    class MyBaseModel(BaseModel):
+        model_config = ConfigDict(strict=True)
+
+    class Model(MyBaseModel):
+        a: Union[int, Annotated[tuple[int, int], Strict(False)]] = Field(default=(1, 2))
+
+    m = Model(a=[1, 2])
+    assert m.a == (1, 2)

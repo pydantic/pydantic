@@ -15,7 +15,7 @@ Warning: Deprecated
 import math
 import re
 from colorsys import hls_to_rgb, rgb_to_hls
-from typing import Any, Callable, Optional, Tuple, Type, Union, cast
+from typing import Any, Callable, Optional, Union, cast
 
 from pydantic_core import CoreSchema, PydanticCustomError, core_schema
 from typing_extensions import deprecated
@@ -25,9 +25,9 @@ from ._internal._schema_generation_shared import GetJsonSchemaHandler as _GetJso
 from .json_schema import JsonSchemaValue
 from .warnings import PydanticDeprecatedSince20
 
-ColorTuple = Union[Tuple[int, int, int], Tuple[int, int, int, float]]
+ColorTuple = Union[tuple[int, int, int], tuple[int, int, int, float]]
 ColorType = Union[ColorTuple, str]
-HslColorTuple = Union[Tuple[float, float, float], Tuple[float, float, float, float]]
+HslColorTuple = Union[tuple[float, float, float], tuple[float, float, float, float]]
 
 
 class RGBA:
@@ -41,7 +41,7 @@ class RGBA:
         self.b = b
         self.alpha = alpha
 
-        self._tuple: Tuple[float, float, float, Optional[float]] = (r, g, b, alpha)
+        self._tuple: tuple[float, float, float, Optional[float]] = (r, g, b, alpha)
 
     def __getitem__(self, item: Any) -> Any:
         return self._tuple[item]
@@ -124,7 +124,7 @@ class Color(_repr.Representation):
             ValueError: When no named color is found and fallback is `False`.
         """
         if self._rgba.alpha is None:
-            rgb = cast(Tuple[int, int, int], self.as_rgb_tuple())
+            rgb = cast(tuple[int, int, int], self.as_rgb_tuple())
             try:
                 return COLORS_BY_VALUE[rgb]
             except KeyError as e:
@@ -232,7 +232,7 @@ class Color(_repr.Representation):
 
     @classmethod
     def __get_pydantic_core_schema__(
-        cls, source: Type[Any], handler: Callable[[Any], CoreSchema]
+        cls, source: type[Any], handler: Callable[[Any], CoreSchema]
     ) -> core_schema.CoreSchema:
         return core_schema.with_info_plain_validator_function(
             cls._validate, serialization=core_schema.to_string_ser_schema()
@@ -255,7 +255,7 @@ class Color(_repr.Representation):
         return hash(self.as_rgb_tuple())
 
 
-def parse_tuple(value: Tuple[Any, ...]) -> RGBA:
+def parse_tuple(value: tuple[Any, ...]) -> RGBA:
     """Parse a tuple or list to get RGBA values.
 
     Args:

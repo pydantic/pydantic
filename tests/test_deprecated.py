@@ -1,13 +1,13 @@
 import platform
 import re
+from collections.abc import Iterable
 from datetime import date, timedelta
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Any, Dict, Iterable, List, Type
+from typing import Any, Literal
 
 import pytest
 from pydantic_core import CoreSchema, core_schema
-from typing_extensions import Literal
 
 from pydantic import (
     BaseModel,
@@ -16,8 +16,10 @@ from pydantic import (
     GetCoreSchemaHandler,
     GetJsonSchemaHandler,
     PydanticDeprecatedSince20,
+    PydanticDeprecatedSince211,
     PydanticUserError,
     ValidationError,
+    computed_field,
     conlist,
     root_validator,
 )
@@ -30,8 +32,12 @@ from pydantic.functional_serializers import model_serializer
 from pydantic.json_schema import JsonSchemaValue
 from pydantic.type_adapter import TypeAdapter
 
+# `pytest.warns/raises()` is thread unsafe. As these tests are meant to be
+# removed in V3, we just mark all tests as thread unsafe
+pytestmark = pytest.mark.thread_unsafe
 
-def deprecated_from_orm(model_type: Type[BaseModel], obj: Any) -> Any:
+
+def deprecated_from_orm(model_type: type[BaseModel], obj: Any) -> Any:
     with pytest.warns(
         PydanticDeprecatedSince20,
         match=re.escape(
@@ -58,7 +64,7 @@ def test_from_attributes_root():
     ):
 
         class PokemonList(BaseModel):
-            root: List[Pokemon]
+            root: list[Pokemon]
 
             @root_validator(pre=True)
             @classmethod
@@ -93,7 +99,7 @@ def test_from_attributes_root():
     ):
 
         class PokemonDict(BaseModel):
-            root: Dict[str, Pokemon]
+            root: dict[str, Pokemon]
             model_config = ConfigDict(from_attributes=True)
 
             @root_validator(pre=True)
@@ -127,7 +133,7 @@ def test_from_attributes():
             self.species = species
 
     class PersonCls:
-        def __init__(self, *, name: str, age: float = None, pets: List[PetCls]):
+        def __init__(self, *, name: str, age: float = None, pets: list[PetCls]):
             self.name = name
             self.age = age
             self.pets = pets
@@ -141,7 +147,7 @@ def test_from_attributes():
         model_config = ConfigDict(from_attributes=True)
         name: str
         age: float = None
-        pets: List[Pet]
+        pets: list[Pet]
 
     bones = PetCls(name='Bones', species='dog')
     orion = PetCls(name='Orion', species='cat')
@@ -316,9 +322,20 @@ def test_fields():
         x: int
         y: int = 2
 
+        @computed_field
+        @property
+        def area(self) -> int:
+            return self.x * self.y
+
     m = Model(x=1)
     assert len(Model.model_fields) == 2
-    assert len(m.model_fields) == 2
+
+    with pytest.warns(PydanticDeprecatedSince211, match="Accessing the 'model_fields' attribute"):
+        assert len(m.model_fields) == 2
+
+    with pytest.warns(PydanticDeprecatedSince211, match="Accessing the 'model_computed_fields' attribute"):
+        assert len(m.model_computed_fields) == 1
+
     match = '^The `__fields__` attribute is deprecated, use `model_fields` instead.'
     with pytest.warns(PydanticDeprecatedSince20, match=match):
         assert len(Model.__fields__) == 2
@@ -363,7 +380,7 @@ def test_field_min_items_deprecation():
     with pytest.warns(PydanticDeprecatedSince20, match=m):
 
         class Model(BaseModel):
-            x: List[int] = Field(None, min_items=1)
+            x: list[int] = Field(None, min_items=1)
 
     with pytest.raises(ValidationError) as exc_info:
         Model(x=[])
@@ -383,7 +400,7 @@ def test_field_min_items_with_min_length():
     with pytest.warns(PydanticDeprecatedSince20, match=m):
 
         class Model(BaseModel):
-            x: List[int] = Field(None, min_items=1, min_length=2)
+            x: list[int] = Field(None, min_items=1, min_length=2)
 
     with pytest.raises(ValidationError) as exc_info:
         Model(x=[1])
@@ -403,7 +420,7 @@ def test_field_max_items():
     with pytest.warns(PydanticDeprecatedSince20, match=m):
 
         class Model(BaseModel):
-            x: List[int] = Field(None, max_items=1)
+            x: list[int] = Field(None, max_items=1)
 
     with pytest.raises(ValidationError) as exc_info:
         Model(x=[1, 2])
@@ -423,7 +440,7 @@ def test_field_max_items_with_max_length():
     with pytest.warns(PydanticDeprecatedSince20, match=m):
 
         class Model(BaseModel):
-            x: List[int] = Field(None, max_items=1, max_length=2)
+            x: list[int] = Field(None, max_items=1, max_length=2)
 
     with pytest.raises(ValidationError) as exc_info:
         Model(x=[1, 2, 3])
@@ -463,7 +480,7 @@ def test_unique_items_items():
     with pytest.raises(PydanticUserError, match='`unique_items` is removed. use `Set` instead'):
 
         class Model(BaseModel):
-            x: List[int] = Field(None, unique_items=True)
+            x: list[int] = Field(None, unique_items=True)
 
 
 def test_unique_items_conlist():
@@ -511,7 +528,7 @@ def test_modify_schema_error():
 
         class Model(BaseModel):
             @classmethod
-            def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+            def __modify_schema__(cls, field_schema: dict[str, Any]) -> None:
                 pass
 
 
@@ -548,7 +565,7 @@ def test_v1_v2_custom_type_compatibility() -> None:
             return {'anyOf': [{'type': 'string'}, {'type': 'number'}]}
 
         @classmethod
-        def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+        def __modify_schema__(cls, field_schema: dict[str, Any]) -> None:
             raise NotImplementedError  # not actually called, we just want to make sure the method can exist
 
         @classmethod

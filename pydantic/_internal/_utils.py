@@ -7,15 +7,22 @@ from __future__ import annotations as _annotations
 
 import dataclasses
 import keyword
+import sys
 import typing
+import warnings
 import weakref
 from collections import OrderedDict, defaultdict, deque
+from collections.abc import Mapping
 from copy import deepcopy
+from functools import cached_property
+from inspect import Parameter
 from itertools import zip_longest
 from types import BuiltinFunctionType, CodeType, FunctionType, GeneratorType, LambdaType, ModuleType
-from typing import Any, Mapping, TypeVar
+from typing import Any, Callable, Generic, TypeVar, overload
 
-from typing_extensions import TypeAlias, TypeGuard
+from typing_extensions import TypeAlias, TypeGuard, deprecated
+
+from pydantic import PydanticDeprecatedSince211
 
 from . import _repr, _typing_extra
 from ._import_utils import import_cached_base_model
@@ -60,6 +67,25 @@ BUILTIN_COLLECTIONS: set[type[Any]] = {
     defaultdict,
     deque,
 }
+
+
+def can_be_positional(param: Parameter) -> bool:
+    """Return whether the parameter accepts a positional argument.
+
+    ```python {test="skip" lint="skip"}
+    def func(a, /, b, *, c):
+        pass
+
+    params = inspect.signature(func).parameters
+    can_be_positional(params['a'])
+    #> True
+    can_be_positional(params['b'])
+    #> True
+    can_be_positional(params['c'])
+    #> False
+    ```
+    """
+    return param.kind in (Parameter.POSITIONAL_ONLY, Parameter.POSITIONAL_OR_KEYWORD)
 
 
 def sequence_like(v: Any) -> bool:
@@ -278,18 +304,23 @@ class ValueItems(_repr.Representation):
 
 if typing.TYPE_CHECKING:
 
-    def ClassAttribute(name: str, value: T) -> T: ...
+    def LazyClassAttribute(name: str, get_value: Callable[[], T]) -> T: ...
 
 else:
 
-    class ClassAttribute:
-        """Hide class attribute from its instances."""
+    class LazyClassAttribute:
+        """A descriptor exposing an attribute only accessible on a class (hidden from instances).
 
-        __slots__ = 'name', 'value'
+        The attribute is lazily computed and cached during the first access.
+        """
 
-        def __init__(self, name: str, value: Any) -> None:
+        def __init__(self, name: str, get_value: Callable[[], Any]) -> None:
             self.name = name
-            self.value = value
+            self.get_value = get_value
+
+        @cached_property
+        def value(self) -> Any:
+            return self.get_value()
 
         def __get__(self, instance: Any, owner: type[Any]) -> None:
             if instance is None:
@@ -361,3 +392,40 @@ class SafeGetItemProxy:
 
         def __contains__(self, key: str, /) -> bool:
             return self.wrapped.__contains__(key)
+
+
+_ModelT = TypeVar('_ModelT', bound='BaseModel')
+_RT = TypeVar('_RT')
+
+
+class deprecated_instance_property(Generic[_ModelT, _RT]):
+    """A decorator exposing the decorated class method as a property, with a warning on instance access.
+
+    This decorator takes a class method defined on the `BaseModel` class and transforms it into
+    an attribute. The attribute can be accessed on both the class and instances of the class. If accessed
+    via an instance, a deprecation warning is emitted stating that instance access will be removed in V3.
+    """
+
+    def __init__(self, fget: Callable[[type[_ModelT]], _RT], /) -> None:
+        # Note: fget should be a classmethod:
+        self.fget = fget
+
+    @overload
+    def __get__(self, instance: None, objtype: type[_ModelT]) -> _RT: ...
+    @overload
+    @deprecated(
+        'Accessing this attribute on the instance is deprecated, and will be removed in Pydantic V3. '
+        'Instead, you should access this attribute from the model class.',
+        category=None,
+    )
+    def __get__(self, instance: _ModelT, objtype: type[_ModelT]) -> _RT: ...
+    def __get__(self, instance: _ModelT | None, objtype: type[_ModelT]) -> _RT:
+        if instance is not None:
+            attr_name = self.fget.__name__ if sys.version_info >= (3, 10) else self.fget.__func__.__name__
+            warnings.warn(
+                f'Accessing the {attr_name!r} attribute on the instance is deprecated. '
+                'Instead, you should access this attribute from the model class.',
+                category=PydanticDeprecatedSince211,
+                stacklevel=2,
+            )
+        return self.fget.__get__(instance, objtype)()

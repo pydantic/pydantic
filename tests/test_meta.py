@@ -1,7 +1,8 @@
 """Meta tests, testing the test utils and fixtures."""
 
+from typing import Annotated
+
 import pytest
-from typing_extensions import Annotated
 
 from pydantic import TypeAdapter
 from pydantic.json_schema import WithJsonSchema

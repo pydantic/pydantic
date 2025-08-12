@@ -3,15 +3,12 @@
 from __future__ import annotations as _annotations
 
 import sys
-from contextlib import contextmanager
+from collections.abc import Callable, Iterable
 from dataclasses import is_dataclass
-from functools import cached_property, wraps
+from types import FrameType
 from typing import (
     Any,
-    Callable,
     Generic,
-    Iterable,
-    Iterator,
     Literal,
     TypeVar,
     cast,
@@ -20,13 +17,14 @@ from typing import (
 )
 
 from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator, Some
-from typing_extensions import Concatenate, ParamSpec, is_typeddict
+from typing_extensions import ParamSpec, is_typeddict
 
 from pydantic.errors import PydanticUserError
 from pydantic.main import BaseModel, IncEx
 
-from ._internal import _config, _generate_schema, _mock_val_ser, _typing_extra, _utils
+from ._internal import _config, _generate_schema, _mock_val_ser, _namespace_utils, _repr, _typing_extra, _utils
 from .config import ConfigDict
+from .errors import PydanticUndefinedAnnotation
 from .json_schema import (
     DEFAULT_REF_TEMPLATE,
     GenerateJsonSchema,
@@ -40,61 +38,6 @@ T = TypeVar('T')
 R = TypeVar('R')
 P = ParamSpec('P')
 TypeAdapterT = TypeVar('TypeAdapterT', bound='TypeAdapter')
-
-
-def _get_schema(type_: Any, config_wrapper: _config.ConfigWrapper, parent_depth: int) -> CoreSchema:
-    """`BaseModel` uses its own `__module__` to find out where it was defined
-    and then looks for symbols to resolve forward references in those globals.
-    On the other hand this function can be called with arbitrary objects,
-    including type aliases, where `__module__` (always `typing.py`) is not useful.
-    So instead we look at the globals in our parent stack frame.
-
-    This works for the case where this function is called in a module that
-    has the target of forward references in its scope, but
-    does not always work for more complex cases.
-
-    For example, take the following:
-
-    a.py
-    ```python
-    from typing import Dict, List
-
-    IntList = List[int]
-    OuterDict = Dict[str, 'IntList']
-    ```
-
-    b.py
-    ```python test="skip"
-    from a import OuterDict
-
-    from pydantic import TypeAdapter
-
-    IntList = int  # replaces the symbol the forward reference is looking for
-    v = TypeAdapter(OuterDict)
-    v({'x': 1})  # should fail but doesn't
-    ```
-
-    If `OuterDict` were a `BaseModel`, this would work because it would resolve
-    the forward reference within the `a.py` namespace.
-    But `TypeAdapter(OuterDict)` can't determine what module `OuterDict` came from.
-
-    In other words, the assumption that _all_ forward references exist in the
-    module we are being called from is not technically always true.
-    Although most of the time it is and it works fine for recursive models and such,
-    `BaseModel`'s behavior isn't perfect either and _can_ break in similar ways,
-    so there is no right or wrong between the two.
-
-    But at the very least this behavior is _subtly_ different from `BaseModel`'s.
-    """
-    local_ns = _typing_extra.parent_frame_namespace(parent_depth=parent_depth)
-    global_ns = sys._getframe(max(parent_depth - 1, 1)).f_globals.copy()
-    global_ns.update(local_ns or {})
-    gen = (config_wrapper.schema_generator or _generate_schema.GenerateSchema)(
-        config_wrapper, types_namespace=global_ns, typevars_map={}
-    )
-    schema = gen.generate_schema(type_)
-    schema = gen.clean_schema(schema)
-    return schema
 
 
 def _getattr_no_parents(obj: Any, attribute: str) -> Any:
@@ -122,26 +65,10 @@ def _type_has_config(type_: Any) -> bool:
         return False
 
 
-# This is keeping track of the frame depth for the TypeAdapter functions. This is required for _parent_depth used for
-# ForwardRef resolution. We may enter the TypeAdapter schema building via different TypeAdapter functions. Hence, we
-# need to keep track of the frame depth relative to the originally provided _parent_depth.
-def _frame_depth(
-    depth: int,
-) -> Callable[[Callable[Concatenate[TypeAdapterT, P], R]], Callable[Concatenate[TypeAdapterT, P], R]]:
-    def wrapper(func: Callable[Concatenate[TypeAdapterT, P], R]) -> Callable[Concatenate[TypeAdapterT, P], R]:
-        @wraps(func)
-        def wrapped(self: TypeAdapterT, *args: P.args, **kwargs: P.kwargs) -> R:
-            with self._with_frame_depth(depth + 1):  # depth + 1 for the wrapper function
-                return func(self, *args, **kwargs)
-
-        return wrapped
-
-    return wrapper
-
-
 @final
 class TypeAdapter(Generic[T]):
-    """Usage docs: https://docs.pydantic.dev/2.9/concepts/type_adapter/
+    """!!! abstract "Usage Documentation"
+        [`TypeAdapter`](../concepts/type_adapter.md)
 
     Type adapters provide a flexible way to perform validation and serialization based on a Python type.
 
@@ -150,18 +77,97 @@ class TypeAdapter(Generic[T]):
 
     **Note:** `TypeAdapter` instances are not types, and cannot be used as type annotations for fields.
 
-    **Note:** By default, `TypeAdapter` does not respect the
-    [`defer_build=True`][pydantic.config.ConfigDict.defer_build] setting in the
-    [`model_config`][pydantic.BaseModel.model_config] or in the `TypeAdapter` constructor `config`. You need to also
-    explicitly set [`experimental_defer_build_mode=('model', 'type_adapter')`][pydantic.config.ConfigDict.experimental_defer_build_mode] of the
-    config to defer the model validator and serializer construction. Thus, this feature is opt-in to ensure backwards
-    compatibility.
+    Args:
+        type: The type associated with the `TypeAdapter`.
+        config: Configuration for the `TypeAdapter`, should be a dictionary conforming to
+            [`ConfigDict`][pydantic.config.ConfigDict].
+
+            !!! note
+                You cannot provide a configuration when instantiating a `TypeAdapter` if the type you're using
+                has its own config that cannot be overridden (ex: `BaseModel`, `TypedDict`, and `dataclass`). A
+                [`type-adapter-config-unused`](../errors/usage_errors.md#type-adapter-config-unused) error will
+                be raised in this case.
+        _parent_depth: Depth at which to search for the [parent frame][frame-objects]. This frame is used when
+            resolving forward annotations during schema building, by looking for the globals and locals of this
+            frame. Defaults to 2, which will result in the frame where the `TypeAdapter` was instantiated.
+
+            !!! note
+                This parameter is named with an underscore to suggest its private nature and discourage use.
+                It may be deprecated in a minor version, so we only recommend using it if you're comfortable
+                with potential change in behavior/support. It's default value is 2 because internally,
+                the `TypeAdapter` class makes another call to fetch the frame.
+        module: The module that passes to plugin if provided.
 
     Attributes:
         core_schema: The core schema for the type.
-        validator (SchemaValidator): The schema validator for the type.
+        validator: The schema validator for the type.
         serializer: The schema serializer for the type.
+        pydantic_complete: Whether the core schema for the type is successfully built.
+
+    ??? tip "Compatibility with `mypy`"
+        Depending on the type used, `mypy` might raise an error when instantiating a `TypeAdapter`. As a workaround, you can explicitly
+        annotate your variable:
+
+        ```py
+        from typing import Union
+
+        from pydantic import TypeAdapter
+
+        ta: TypeAdapter[Union[str, int]] = TypeAdapter(Union[str, int])  # type: ignore[arg-type]
+        ```
+
+    ??? info "Namespace management nuances and implementation details"
+
+        Here, we collect some notes on namespace management, and subtle differences from `BaseModel`:
+
+        `BaseModel` uses its own `__module__` to find out where it was defined
+        and then looks for symbols to resolve forward references in those globals.
+        On the other hand, `TypeAdapter` can be initialized with arbitrary objects,
+        which may not be types and thus do not have a `__module__` available.
+        So instead we look at the globals in our parent stack frame.
+
+        It is expected that the `ns_resolver` passed to this function will have the correct
+        namespace for the type we're adapting. See the source code for `TypeAdapter.__init__`
+        and `TypeAdapter.rebuild` for various ways to construct this namespace.
+
+        This works for the case where this function is called in a module that
+        has the target of forward references in its scope, but
+        does not always work for more complex cases.
+
+        For example, take the following:
+
+        ```python {title="a.py"}
+        IntList = list[int]
+        OuterDict = dict[str, 'IntList']
+        ```
+
+        ```python {test="skip" title="b.py"}
+        from a import OuterDict
+
+        from pydantic import TypeAdapter
+
+        IntList = int  # replaces the symbol the forward reference is looking for
+        v = TypeAdapter(OuterDict)
+        v({'x': 1})  # should fail but doesn't
+        ```
+
+        If `OuterDict` were a `BaseModel`, this would work because it would resolve
+        the forward reference within the `a.py` namespace.
+        But `TypeAdapter(OuterDict)` can't determine what module `OuterDict` came from.
+
+        In other words, the assumption that _all_ forward references exist in the
+        module we are being called from is not technically always true.
+        Although most of the time it is and it works fine for recursive models and such,
+        `BaseModel`'s behavior isn't perfect either and _can_ break in similar ways,
+        so there is no right or wrong between the two.
+
+        But at the very least this behavior is _subtly_ different from `BaseModel`'s.
     """
+
+    core_schema: CoreSchema
+    validator: SchemaValidator | PluggableSchemaValidator
+    serializer: SchemaSerializer
+    pydantic_complete: bool
 
     @overload
     def __init__(
@@ -194,39 +200,6 @@ class TypeAdapter(Generic[T]):
         _parent_depth: int = 2,
         module: str | None = None,
     ) -> None:
-        """Initializes the TypeAdapter object.
-
-        Args:
-            type: The type associated with the `TypeAdapter`.
-            config: Configuration for the `TypeAdapter`, should be a dictionary conforming to [`ConfigDict`][pydantic.config.ConfigDict].
-            _parent_depth: depth at which to search the parent namespace to construct the local namespace.
-            module: The module that passes to plugin if provided.
-
-        !!! note
-            You cannot use the `config` argument when instantiating a `TypeAdapter` if the type you're using has its own
-            config that cannot be overridden (ex: `BaseModel`, `TypedDict`, and `dataclass`). A
-            [`type-adapter-config-unused`](../errors/usage_errors.md#type-adapter-config-unused) error will be raised in this case.
-
-        !!! note
-            The `_parent_depth` argument is named with an underscore to suggest its private nature and discourage use.
-            It may be deprecated in a minor version, so we only recommend using it if you're
-            comfortable with potential change in behavior / support.
-
-        ??? tip "Compatibility with `mypy`"
-            Depending on the type used, `mypy` might raise an error when instantiating a `TypeAdapter`. As a workaround, you can explicitly
-            annotate your variable:
-
-            ```py
-            from typing import Union
-
-            from pydantic import TypeAdapter
-
-            ta: TypeAdapter[Union[str, int]] = TypeAdapter(Union[str, int])  # type: ignore[arg-type]
-            ```
-
-        Returns:
-            A type adapter configured for the specified `type`.
-        """
         if _type_has_config(type) and config is not None:
             raise PydanticUserError(
                 'Cannot use `config` when the type is a BaseModel, dataclass or TypedDict.'
@@ -239,44 +212,97 @@ class TypeAdapter(Generic[T]):
         self._type = type
         self._config = config
         self._parent_depth = _parent_depth
-        if module is None:
-            f = sys._getframe(1)
-            self._module_name = cast(str, f.f_globals.get('__name__', ''))
+        self.pydantic_complete = False
+
+        parent_frame = self._fetch_parent_frame()
+        if parent_frame is not None:
+            globalns = parent_frame.f_globals
+            # Do not provide a local ns if the type adapter happens to be instantiated at the module level:
+            localns = parent_frame.f_locals if parent_frame.f_locals is not globalns else {}
         else:
-            self._module_name = module
+            globalns = {}
+            localns = {}
 
-        self._core_schema: CoreSchema | None = None
-        self._validator: SchemaValidator | PluggableSchemaValidator | None = None
-        self._serializer: SchemaSerializer | None = None
+        self._module_name = module or cast(str, globalns.get('__name__', ''))
+        self._init_core_attrs(
+            ns_resolver=_namespace_utils.NsResolver(
+                namespaces_tuple=_namespace_utils.NamespacesTuple(locals=localns, globals=globalns),
+                parent_namespace=localns,
+            ),
+            force=False,
+        )
 
-        if not self._defer_build():
-            # Immediately initialize the core schema, validator and serializer
-            with self._with_frame_depth(1):  # +1 frame depth for this __init__
-                # Model itself may be using deferred building. For backward compatibility we don't rebuild model mocks
-                # here as part of __init__ even though TypeAdapter itself is not using deferred building.
-                self._init_core_attrs(rebuild_mocks=False)
+    def _fetch_parent_frame(self) -> FrameType | None:
+        frame = sys._getframe(self._parent_depth)
+        if frame.f_globals.get('__name__') == 'typing':
+            # Because `TypeAdapter` is generic, explicitly parametrizing the class results
+            # in a `typing._GenericAlias` instance, which proxies instantiation calls to the
+            # "real" `TypeAdapter` class and thus adding an extra frame to the call. To avoid
+            # pulling anything from the `typing` module, use the correct frame (the one before):
+            return frame.f_back
 
-    @contextmanager
-    def _with_frame_depth(self, depth: int) -> Iterator[None]:
-        self._parent_depth += depth
+        return frame
+
+    def _init_core_attrs(
+        self, ns_resolver: _namespace_utils.NsResolver, force: bool, raise_errors: bool = False
+    ) -> bool:
+        """Initialize the core schema, validator, and serializer for the type.
+
+        Args:
+            ns_resolver: The namespace resolver to use when building the core schema for the adapted type.
+            force: Whether to force the construction of the core schema, validator, and serializer.
+                If `force` is set to `False` and `_defer_build` is `True`, the core schema, validator, and serializer will be set to mocks.
+            raise_errors: Whether to raise errors if initializing any of the core attrs fails.
+
+        Returns:
+            `True` if the core schema, validator, and serializer were successfully initialized, otherwise `False`.
+
+        Raises:
+            PydanticUndefinedAnnotation: If `PydanticUndefinedAnnotation` occurs in`__get_pydantic_core_schema__`
+                and `raise_errors=True`.
+        """
+        if not force and self._defer_build:
+            _mock_val_ser.set_type_adapter_mocks(self)
+            self.pydantic_complete = False
+            return False
+
         try:
-            yield
-        finally:
-            self._parent_depth -= depth
+            self.core_schema = _getattr_no_parents(self._type, '__pydantic_core_schema__')
+            self.validator = _getattr_no_parents(self._type, '__pydantic_validator__')
+            self.serializer = _getattr_no_parents(self._type, '__pydantic_serializer__')
 
-    @_frame_depth(1)
-    def _init_core_attrs(self, rebuild_mocks: bool) -> None:
-        try:
-            self._core_schema = _getattr_no_parents(self._type, '__pydantic_core_schema__')
-            self._validator = _getattr_no_parents(self._type, '__pydantic_validator__')
-            self._serializer = _getattr_no_parents(self._type, '__pydantic_serializer__')
+            # TODO: we don't go through the rebuild logic here directly because we don't want
+            # to repeat all of the namespace fetching logic that we've already done
+            # so we simply skip to the block below that does the actual schema generation
+            if (
+                isinstance(self.core_schema, _mock_val_ser.MockCoreSchema)
+                or isinstance(self.validator, _mock_val_ser.MockValSer)
+                or isinstance(self.serializer, _mock_val_ser.MockValSer)
+            ):
+                raise AttributeError()
         except AttributeError:
             config_wrapper = _config.ConfigWrapper(self._config)
+
+            schema_generator = _generate_schema.GenerateSchema(config_wrapper, ns_resolver=ns_resolver)
+
+            try:
+                core_schema = schema_generator.generate_schema(self._type)
+            except PydanticUndefinedAnnotation:
+                if raise_errors:
+                    raise
+                _mock_val_ser.set_type_adapter_mocks(self)
+                return False
+
+            try:
+                self.core_schema = schema_generator.clean_schema(core_schema)
+            except _generate_schema.InvalidSchemaError:
+                _mock_val_ser.set_type_adapter_mocks(self)
+                return False
+
             core_config = config_wrapper.core_config(None)
 
-            self._core_schema = _get_schema(self._type, config_wrapper, parent_depth=self._parent_depth)
-            self._validator = create_schema_validator(
-                schema=self._core_schema,
+            self.validator = create_schema_validator(
+                schema=self.core_schema,
                 schema_type=self._type,
                 schema_type_module=self._module_name,
                 schema_type_name=str(self._type),
@@ -284,61 +310,74 @@ class TypeAdapter(Generic[T]):
                 config=core_config,
                 plugin_settings=config_wrapper.plugin_settings,
             )
-            self._serializer = SchemaSerializer(self._core_schema, core_config)
+            self.serializer = SchemaSerializer(self.core_schema, core_config)
 
-        if rebuild_mocks and isinstance(self._core_schema, _mock_val_ser.MockCoreSchema):
-            self._core_schema.rebuild()
-            self._init_core_attrs(rebuild_mocks=False)
-            assert not isinstance(self._core_schema, _mock_val_ser.MockCoreSchema)
-            assert not isinstance(self._validator, _mock_val_ser.MockValSer)
-            assert not isinstance(self._serializer, _mock_val_ser.MockValSer)
+        self.pydantic_complete = True
+        return True
 
-    @cached_property
-    @_frame_depth(2)  # +2 for @cached_property and core_schema(self)
-    def core_schema(self) -> CoreSchema:
-        """The pydantic-core schema used to build the SchemaValidator and SchemaSerializer."""
-        if self._core_schema is None or isinstance(self._core_schema, _mock_val_ser.MockCoreSchema):
-            self._init_core_attrs(rebuild_mocks=True)  # Do not expose MockCoreSchema from public function
-        assert self._core_schema is not None and not isinstance(self._core_schema, _mock_val_ser.MockCoreSchema)
-        return self._core_schema
-
-    @cached_property
-    @_frame_depth(2)  # +2 for @cached_property + validator(self)
-    def validator(self) -> SchemaValidator | PluggableSchemaValidator:
-        """The pydantic-core SchemaValidator used to validate instances of the model."""
-        if not isinstance(self._validator, (SchemaValidator, PluggableSchemaValidator)):
-            self._init_core_attrs(rebuild_mocks=True)  # Do not expose MockValSer from public function
-        assert isinstance(self._validator, (SchemaValidator, PluggableSchemaValidator))
-        return self._validator
-
-    @cached_property
-    @_frame_depth(2)  # +2 for @cached_property + serializer(self)
-    def serializer(self) -> SchemaSerializer:
-        """The pydantic-core SchemaSerializer used to dump instances of the model."""
-        if not isinstance(self._serializer, SchemaSerializer):
-            self._init_core_attrs(rebuild_mocks=True)  # Do not expose MockValSer from public function
-        assert isinstance(self._serializer, SchemaSerializer)
-        return self._serializer
-
+    @property
     def _defer_build(self) -> bool:
-        config = self._config if self._config is not None else self._model_config()
-        return self._is_defer_build_config(config) if config is not None else False
+        config = self._config if self._config is not None else self._model_config
+        if config:
+            return config.get('defer_build') is True
+        return False
 
+    @property
     def _model_config(self) -> ConfigDict | None:
         type_: Any = _typing_extra.annotated_type(self._type) or self._type  # Eg FastAPI heavily uses Annotated
         if _utils.lenient_issubclass(type_, BaseModel):
             return type_.model_config
         return getattr(type_, '__pydantic_config__', None)
 
-    @staticmethod
-    def _is_defer_build_config(config: ConfigDict) -> bool:
-        # TODO reevaluate this logic when we have a better understanding of how defer_build should work with TypeAdapter
-        # Should we drop the special experimental_defer_build_mode check?
-        return config.get('defer_build', False) is True and 'type_adapter' in config.get(
-            'experimental_defer_build_mode', ()
-        )
+    def __repr__(self) -> str:
+        return f'TypeAdapter({_repr.display_as_type(self._type)})'
 
-    @_frame_depth(1)
+    def rebuild(
+        self,
+        *,
+        force: bool = False,
+        raise_errors: bool = True,
+        _parent_namespace_depth: int = 2,
+        _types_namespace: _namespace_utils.MappingNamespace | None = None,
+    ) -> bool | None:
+        """Try to rebuild the pydantic-core schema for the adapter's type.
+
+        This may be necessary when one of the annotations is a ForwardRef which could not be resolved during
+        the initial attempt to build the schema, and automatic rebuilding fails.
+
+        Args:
+            force: Whether to force the rebuilding of the type adapter's schema, defaults to `False`.
+            raise_errors: Whether to raise errors, defaults to `True`.
+            _parent_namespace_depth: Depth at which to search for the [parent frame][frame-objects]. This
+                frame is used when resolving forward annotations during schema rebuilding, by looking for
+                the locals of this frame. Defaults to 2, which will result in the frame where the method
+                was called.
+            _types_namespace: An explicit types namespace to use, instead of using the local namespace
+                from the parent frame. Defaults to `None`.
+
+        Returns:
+            Returns `None` if the schema is already "complete" and rebuilding was not required.
+            If rebuilding _was_ required, returns `True` if rebuilding was successful, otherwise `False`.
+        """
+        if not force and self.pydantic_complete:
+            return None
+
+        if _types_namespace is not None:
+            rebuild_ns = _types_namespace
+        elif _parent_namespace_depth > 0:
+            rebuild_ns = _typing_extra.parent_frame_namespace(parent_depth=_parent_namespace_depth, force=True) or {}
+        else:
+            rebuild_ns = {}
+
+        # we have to manually fetch globals here because there's no type on the stack of the NsResolver
+        # and so we skip the globalns = get_module_ns_of(typ) call that would normally happen
+        globalns = sys._getframe(max(_parent_namespace_depth - 1, 1)).f_globals
+        ns_resolver = _namespace_utils.NsResolver(
+            namespaces_tuple=_namespace_utils.NamespacesTuple(locals=rebuild_ns, globals=globalns),
+            parent_namespace=rebuild_ns,
+        )
+        return self._init_core_attrs(ns_resolver=ns_resolver, force=True, raise_errors=raise_errors)
+
     def validate_python(
         self,
         object: Any,
@@ -347,6 +386,9 @@ class TypeAdapter(Generic[T]):
         strict: bool | None = None,
         from_attributes: bool | None = None,
         context: dict[str, Any] | None = None,
+        experimental_allow_partial: bool | Literal['off', 'on', 'trailing-strings'] = False,
+        by_alias: bool | None = None,
+        by_name: bool | None = None,
     ) -> T:
         """Validate a Python object against the model.
 
@@ -355,6 +397,13 @@ class TypeAdapter(Generic[T]):
             strict: Whether to strictly check types.
             from_attributes: Whether to extract data from object attributes.
             context: Additional context to pass to the validator.
+            experimental_allow_partial: **Experimental** whether to enable
+                [partial validation](../concepts/experimental.md#partial-validation), e.g. to process streams.
+                * False / 'off': Default behavior, no partial validation.
+                * True / 'on': Enable partial validation.
+                * 'trailing-strings': Enable partial validation and allow trailing strings in the input.
+            by_alias: Whether to use the field's alias when validating against the provided input data.
+            by_name: Whether to use the field's name when validating against the provided input data.
 
         !!! note
             When using `TypeAdapter` with a Pydantic `dataclass`, the use of the `from_attributes`
@@ -363,13 +412,35 @@ class TypeAdapter(Generic[T]):
         Returns:
             The validated object.
         """
-        return self.validator.validate_python(object, strict=strict, from_attributes=from_attributes, context=context)
+        if by_alias is False and by_name is not True:
+            raise PydanticUserError(
+                'At least one of `by_alias` or `by_name` must be set to True.',
+                code='validate-by-alias-and-name-false',
+            )
 
-    @_frame_depth(1)
+        return self.validator.validate_python(
+            object,
+            strict=strict,
+            from_attributes=from_attributes,
+            context=context,
+            allow_partial=experimental_allow_partial,
+            by_alias=by_alias,
+            by_name=by_name,
+        )
+
     def validate_json(
-        self, data: str | bytes, /, *, strict: bool | None = None, context: dict[str, Any] | None = None
+        self,
+        data: str | bytes | bytearray,
+        /,
+        *,
+        strict: bool | None = None,
+        context: dict[str, Any] | None = None,
+        experimental_allow_partial: bool | Literal['off', 'on', 'trailing-strings'] = False,
+        by_alias: bool | None = None,
+        by_name: bool | None = None,
     ) -> T:
-        """Usage docs: https://docs.pydantic.dev/2.9/concepts/json/#json-parsing
+        """!!! abstract "Usage Documentation"
+            [JSON Parsing](../concepts/json.md#json-parsing)
 
         Validate a JSON string or bytes against the model.
 
@@ -377,27 +448,75 @@ class TypeAdapter(Generic[T]):
             data: The JSON data to validate against the model.
             strict: Whether to strictly check types.
             context: Additional context to use during validation.
+            experimental_allow_partial: **Experimental** whether to enable
+                [partial validation](../concepts/experimental.md#partial-validation), e.g. to process streams.
+                * False / 'off': Default behavior, no partial validation.
+                * True / 'on': Enable partial validation.
+                * 'trailing-strings': Enable partial validation and allow trailing strings in the input.
+            by_alias: Whether to use the field's alias when validating against the provided input data.
+            by_name: Whether to use the field's name when validating against the provided input data.
 
         Returns:
             The validated object.
         """
-        return self.validator.validate_json(data, strict=strict, context=context)
+        if by_alias is False and by_name is not True:
+            raise PydanticUserError(
+                'At least one of `by_alias` or `by_name` must be set to True.',
+                code='validate-by-alias-and-name-false',
+            )
 
-    @_frame_depth(1)
-    def validate_strings(self, obj: Any, /, *, strict: bool | None = None, context: dict[str, Any] | None = None) -> T:
+        return self.validator.validate_json(
+            data,
+            strict=strict,
+            context=context,
+            allow_partial=experimental_allow_partial,
+            by_alias=by_alias,
+            by_name=by_name,
+        )
+
+    def validate_strings(
+        self,
+        obj: Any,
+        /,
+        *,
+        strict: bool | None = None,
+        context: dict[str, Any] | None = None,
+        experimental_allow_partial: bool | Literal['off', 'on', 'trailing-strings'] = False,
+        by_alias: bool | None = None,
+        by_name: bool | None = None,
+    ) -> T:
         """Validate object contains string data against the model.
 
         Args:
             obj: The object contains string data to validate.
             strict: Whether to strictly check types.
             context: Additional context to use during validation.
+            experimental_allow_partial: **Experimental** whether to enable
+                [partial validation](../concepts/experimental.md#partial-validation), e.g. to process streams.
+                * False / 'off': Default behavior, no partial validation.
+                * True / 'on': Enable partial validation.
+                * 'trailing-strings': Enable partial validation and allow trailing strings in the input.
+            by_alias: Whether to use the field's alias when validating against the provided input data.
+            by_name: Whether to use the field's name when validating against the provided input data.
 
         Returns:
             The validated object.
         """
-        return self.validator.validate_strings(obj, strict=strict, context=context)
+        if by_alias is False and by_name is not True:
+            raise PydanticUserError(
+                'At least one of `by_alias` or `by_name` must be set to True.',
+                code='validate-by-alias-and-name-false',
+            )
 
-    @_frame_depth(1)
+        return self.validator.validate_strings(
+            obj,
+            strict=strict,
+            context=context,
+            allow_partial=experimental_allow_partial,
+            by_alias=by_alias,
+            by_name=by_name,
+        )
+
     def get_default_value(self, *, strict: bool | None = None, context: dict[str, Any] | None = None) -> Some[T] | None:
         """Get the default value for the wrapped type.
 
@@ -410,7 +529,6 @@ class TypeAdapter(Generic[T]):
         """
         return self.validator.get_default_value(strict=strict, context=context)
 
-    @_frame_depth(1)
     def dump_python(
         self,
         instance: T,
@@ -419,12 +537,13 @@ class TypeAdapter(Generic[T]):
         mode: Literal['json', 'python'] = 'python',
         include: IncEx | None = None,
         exclude: IncEx | None = None,
-        by_alias: bool = False,
+        by_alias: bool | None = None,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
         round_trip: bool = False,
         warnings: bool | Literal['none', 'warn', 'error'] = True,
+        fallback: Callable[[Any], Any] | None = None,
         serialize_as_any: bool = False,
         context: dict[str, Any] | None = None,
     ) -> Any:
@@ -442,6 +561,8 @@ class TypeAdapter(Generic[T]):
             round_trip: Whether to output the serialized data in a way that is compatible with deserialization.
             warnings: How to handle serialization errors. False/"none" ignores them, True/"warn" logs errors,
                 "error" raises a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError].
+            fallback: A function to call when an unknown value is encountered. If not provided,
+                a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError] error is raised.
             serialize_as_any: Whether to serialize fields with duck-typing serialization behavior.
             context: Additional context to pass to the serializer.
 
@@ -459,11 +580,11 @@ class TypeAdapter(Generic[T]):
             exclude_none=exclude_none,
             round_trip=round_trip,
             warnings=warnings,
+            fallback=fallback,
             serialize_as_any=serialize_as_any,
             context=context,
         )
 
-    @_frame_depth(1)
     def dump_json(
         self,
         instance: T,
@@ -472,16 +593,18 @@ class TypeAdapter(Generic[T]):
         indent: int | None = None,
         include: IncEx | None = None,
         exclude: IncEx | None = None,
-        by_alias: bool = False,
+        by_alias: bool | None = None,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
         round_trip: bool = False,
         warnings: bool | Literal['none', 'warn', 'error'] = True,
+        fallback: Callable[[Any], Any] | None = None,
         serialize_as_any: bool = False,
         context: dict[str, Any] | None = None,
     ) -> bytes:
-        """Usage docs: https://docs.pydantic.dev/2.9/concepts/json/#json-serialization
+        """!!! abstract "Usage Documentation"
+            [JSON Serialization](../concepts/json.md#json-serialization)
 
         Serialize an instance of the adapted type to JSON.
 
@@ -497,6 +620,8 @@ class TypeAdapter(Generic[T]):
             round_trip: Whether to serialize and deserialize the instance to ensure round-tripping.
             warnings: How to handle serialization errors. False/"none" ignores them, True/"warn" logs errors,
                 "error" raises a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError].
+            fallback: A function to call when an unknown value is encountered. If not provided,
+                a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError] error is raised.
             serialize_as_any: Whether to serialize fields with duck-typing serialization behavior.
             context: Additional context to pass to the serializer.
 
@@ -514,11 +639,11 @@ class TypeAdapter(Generic[T]):
             exclude_none=exclude_none,
             round_trip=round_trip,
             warnings=warnings,
+            fallback=fallback,
             serialize_as_any=serialize_as_any,
             context=context,
         )
 
-    @_frame_depth(1)
     def json_schema(
         self,
         *,
@@ -539,6 +664,9 @@ class TypeAdapter(Generic[T]):
             The JSON schema for the model as a dictionary.
         """
         schema_generator_instance = schema_generator(by_alias=by_alias, ref_template=ref_template)
+        if isinstance(self.core_schema, _mock_val_ser.MockCoreSchema):
+            self.core_schema.rebuild()
+            assert not isinstance(self.core_schema, _mock_val_ser.MockCoreSchema), 'this is a bug! please report it'
         return schema_generator_instance.generate(self.core_schema, mode=mode)
 
     @staticmethod
@@ -578,8 +706,13 @@ class TypeAdapter(Generic[T]):
 
         inputs_ = []
         for key, mode, adapter in inputs:
-            with adapter._with_frame_depth(1):  # +1 for json_schemas staticmethod
-                inputs_.append((key, mode, adapter.core_schema))
+            # This is the same pattern we follow for model json schemas - we attempt a core schema rebuild if we detect a mock
+            if isinstance(adapter.core_schema, _mock_val_ser.MockCoreSchema):
+                adapter.core_schema.rebuild()
+                assert not isinstance(adapter.core_schema, _mock_val_ser.MockCoreSchema), (
+                    'this is a bug! please report it'
+                )
+            inputs_.append((key, mode, adapter.core_schema))
 
         json_schemas_map, definitions = schema_generator_instance.generate_definitions(inputs_)
 

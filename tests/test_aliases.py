@@ -1,6 +1,7 @@
+from contextlib import AbstractContextManager
 from contextlib import nullcontext as does_not_raise
 from inspect import signature
-from typing import Any, ContextManager, List, Optional
+from typing import Any, Optional, Union
 
 import pytest
 from dirty_equals import IsStr
@@ -13,6 +14,7 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    PydanticUserError,
     ValidationError,
     computed_field,
 )
@@ -24,7 +26,7 @@ def test_alias_generator():
 
     class MyModel(BaseModel):
         model_config = ConfigDict(alias_generator=to_camel)
-        a: List[str] = None
+        a: list[str] = None
         foo_bar: str
 
     data = {'A': ['foo', 'bar'], 'FooBar': 'foobar'}
@@ -118,7 +120,7 @@ def test_annotation_config():
 
 def test_pop_by_field_name():
     class Model(BaseModel):
-        model_config = ConfigDict(extra='forbid', populate_by_name=True)
+        model_config = ConfigDict(extra='forbid', validate_by_name=True)
         last_updated_by: Optional[str] = Field(None, alias='lastUpdatedBy')
 
     assert Model(lastUpdatedBy='foo').model_dump() == {'last_updated_by': 'foo'}
@@ -141,8 +143,8 @@ def test_alias_override_behavior():
         x: int = Field(alias='x1', gt=0)
 
     class Child(Parent):
-        x: int = Field(..., alias='x2')
-        y: int = Field(..., alias='y2')
+        x: int = Field(alias='x2')
+        y: int = Field(alias='y2')
 
     assert Parent.model_fields['x'].alias == 'x1'
     assert Child.model_fields['x'].alias == 'x2'
@@ -174,7 +176,7 @@ def test_alias_override_behavior():
         {
             'input': 'a',
             'loc': ('x2',),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'type': 'int_parsing',
         }
     ]
@@ -182,7 +184,7 @@ def test_alias_override_behavior():
 
 def test_alias_generator_parent():
     class Parent(BaseModel):
-        model_config = ConfigDict(populate_by_name=True, alias_generator=lambda f_name: f_name + '1')
+        model_config = ConfigDict(validate_by_name=True, alias_generator=lambda f_name: f_name + '1')
         x: int
 
     class Child(Parent):
@@ -209,7 +211,7 @@ upper_alias_generator = [
 def test_alias_generator_on_parent(alias_generator):
     class Parent(BaseModel):
         model_config = ConfigDict(alias_generator=alias_generator)
-        x: bool = Field(..., alias='a_b_c')
+        x: bool = Field(alias='a_b_c')
         y: str
 
     class Child(Parent):
@@ -226,7 +228,7 @@ def test_alias_generator_on_parent(alias_generator):
 @pytest.mark.parametrize('alias_generator', upper_alias_generator)
 def test_alias_generator_on_child(alias_generator):
     class Parent(BaseModel):
-        x: bool = Field(..., alias='abc')
+        x: bool = Field(alias='abc')
         y: str
 
     class Child(Parent):
@@ -245,12 +247,12 @@ def test_alias_generator_used_by_default(alias_generator):
         model_config = ConfigDict(alias_generator=alias_generator)
 
         a: str
-        b: str = Field(..., alias='b_alias')
-        c: str = Field(..., validation_alias='c_val_alias')
-        d: str = Field(..., serialization_alias='d_ser_alias')
-        e: str = Field(..., alias='e_alias', validation_alias='e_val_alias')
-        f: str = Field(..., alias='f_alias', serialization_alias='f_ser_alias')
-        g: str = Field(..., alias='g_alias', validation_alias='g_val_alias', serialization_alias='g_ser_alias')
+        b: str = Field(alias='b_alias')
+        c: str = Field(validation_alias='c_val_alias')
+        d: str = Field(serialization_alias='d_ser_alias')
+        e: str = Field(alias='e_alias', validation_alias='e_val_alias')
+        f: str = Field(alias='f_alias', serialization_alias='f_ser_alias')
+        g: str = Field(alias='g_alias', validation_alias='g_val_alias', serialization_alias='g_ser_alias')
 
     assert {
         name: {k: getattr(f, k) for k in ('alias', 'validation_alias', 'serialization_alias')}
@@ -301,9 +303,9 @@ def test_alias_generator_used_by_default(alias_generator):
 @pytest.mark.parametrize('alias_generator', upper_alias_generator)
 def test_low_priority_alias(alias_generator):
     class Parent(BaseModel):
-        w: bool = Field(..., alias='w_', validation_alias='w_val_alias', serialization_alias='w_ser_alias')
+        w: bool = Field(alias='w_', validation_alias='w_val_alias', serialization_alias='w_ser_alias')
         x: bool = Field(
-            ..., alias='abc', alias_priority=1, validation_alias='x_val_alias', serialization_alias='x_ser_alias'
+            alias='abc', alias_priority=1, validation_alias='x_val_alias', serialization_alias='x_ser_alias'
         )
         y: str
 
@@ -381,29 +383,35 @@ def test_empty_string_alias():
 
 
 @pytest.mark.parametrize(
-    'use_construct, populate_by_name_config, arg_name, expectation',
+    'use_construct, validate_by_name_config, arg_name, expectation',
     [
         [False, True, 'bar', does_not_raise()],
         [False, True, 'bar_', does_not_raise()],
         [False, False, 'bar', does_not_raise()],
-        [False, False, 'bar_', pytest.raises(ValueError)],
+        pytest.param(
+            False,
+            False,
+            'bar_',
+            pytest.raises(ValueError),
+            marks=pytest.mark.thread_unsafe(reason='`pytest.raises()` is thread unsafe'),
+        ),
         [True, True, 'bar', does_not_raise()],
         [True, True, 'bar_', does_not_raise()],
         [True, False, 'bar', does_not_raise()],
         [True, False, 'bar_', does_not_raise()],
     ],
 )
-def test_populate_by_name_config(
+def test_validate_by_name_config(
     use_construct: bool,
-    populate_by_name_config: bool,
+    validate_by_name_config: bool,
     arg_name: str,
-    expectation: ContextManager,
+    expectation: AbstractContextManager,
 ):
     expected_value: int = 7
 
     class Foo(BaseModel):
-        model_config = ConfigDict(populate_by_name=populate_by_name_config)
-        bar_: int = Field(..., alias='bar')
+        model_config = ConfigDict(validate_by_name=validate_by_name_config)
+        bar_: int = Field(alias='bar')
 
     with expectation:
         if use_construct:
@@ -661,7 +669,7 @@ def test_alias_generator_with_positional_arg() -> None:
 @pytest.mark.parametrize('alias_generator', upper_alias_generator)
 def test_alias_generator_with_computed_field(alias_generator) -> None:
     class Rectangle(BaseModel):
-        model_config = ConfigDict(populate_by_name=True, alias_generator=alias_generator)
+        model_config = ConfigDict(validate_by_name=True, alias_generator=alias_generator)
 
         width: int
         height: int
@@ -764,3 +772,89 @@ def test_alias_gen_with_empty_string_and_computed_field() -> None:
     assert Model.model_fields['a'].serialization_alias == ''
     assert Model.model_fields['a'].alias == 'a_alias'
     assert Model.model_computed_fields['b'].alias == ''
+
+
+@pytest.mark.parametrize('config_by_alias', [None, True, False])
+@pytest.mark.parametrize('config_by_name', [None, True, False])
+@pytest.mark.parametrize('runtime_by_alias', [None, True, False])
+@pytest.mark.parametrize('runtime_by_name', [None, True, False])
+def test_validation_alias_settings(
+    config_by_alias: Union[bool, None],
+    config_by_name: Union[bool, None],
+    runtime_by_alias: Union[bool, None],
+    runtime_by_name: Union[bool, None],
+) -> None:
+    """This test reflects the priority that applies for config vs runtime validation alias configuration.
+
+    Runtime values take precedence over config values, when set.
+    By default, `by_alias` is True and `by_name` is False.
+    """
+
+    if (config_by_alias is False and config_by_name is not True) or (
+        runtime_by_alias is False and runtime_by_name is not True
+    ):
+        pytest.skip("Can't have both validate_by_alias and validate_by_name as effectively False")
+
+    config_dict = {
+        **({'validate_by_alias': config_by_alias} if config_by_alias is not None else {}),
+        **({'validate_by_name': config_by_name} if config_by_name is not None else {}),
+    }
+
+    class Model(BaseModel):
+        model_config = ConfigDict(**config_dict)
+
+        my_field: int = Field(validation_alias='my_alias')
+
+    alias_allowed = next(x for x in (runtime_by_alias, config_by_alias, True) if x is not None)
+    name_allowed = next(x for x in (runtime_by_name, config_by_name, False) if x is not None)
+
+    if alias_allowed:
+        assert Model.model_validate({'my_alias': 1}, by_alias=runtime_by_alias, by_name=runtime_by_name).my_field == 1
+    if name_allowed:
+        assert Model.model_validate({'my_field': 1}, by_alias=runtime_by_alias, by_name=runtime_by_name).my_field == 1
+
+
+def test_user_error_on_validation_methods() -> None:
+    class Model(BaseModel):
+        my_field: int = Field(alias='my_alias')
+
+    with pytest.raises(PydanticUserError, match='At least one of `by_alias` or `by_name` must be set to True.'):
+        Model.model_validate({'my_alias': 1}, by_alias=False, by_name=False)
+
+    with pytest.raises(PydanticUserError, match='At least one of `by_alias` or `by_name` must be set to True.'):
+        Model.model_validate_json("{'my_alias': 1}", by_alias=False, by_name=False)
+
+    with pytest.raises(PydanticUserError, match='At least one of `by_alias` or `by_name` must be set to True.'):
+        Model.model_validate_strings("{'my_alias': 1}", by_alias=False, by_name=False)
+
+
+@pytest.mark.parametrize(
+    'config,runtime,expected',
+    [
+        (True, True, {'my_alias': 1}),
+        (True, False, {'my_field': 1}),
+        (True, None, {'my_alias': 1}),
+        (False, True, {'my_alias': 1}),
+        (False, False, {'my_field': 1}),
+        (False, None, {'my_field': 1}),
+        (None, True, {'my_alias': 1}),
+        (None, False, {'my_field': 1}),
+        (None, None, {'my_field': 1}),
+    ],
+)
+def test_serialization_alias_settings(
+    config: Union[bool, None], runtime: Union[bool, None], expected: dict[str, int]
+) -> None:
+    """This test reflects the priority that applies for config vs runtime serialization alias configuration.
+
+    Runtime value (by_alias) takes precedence over config value (serialize_by_alias).
+    If neither are set, the default, False, is used.
+    """
+
+    class Model(BaseModel):
+        model_config = ConfigDict(serialize_by_alias=config)
+
+        my_field: int = Field(serialization_alias='my_alias')
+
+    model = Model(my_field=1)
+    assert model.model_dump(by_alias=runtime) == expected

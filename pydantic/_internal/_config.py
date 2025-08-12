@@ -2,23 +2,22 @@ from __future__ import annotations as _annotations
 
 import warnings
 from contextlib import contextmanager
+from re import Pattern
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    Literal,
     cast,
 )
 
 from pydantic_core import core_schema
-from typing_extensions import (
-    Literal,
-    Self,
-)
+from typing_extensions import Self
 
 from ..aliases import AliasGenerator
 from ..config import ConfigDict, ExtraValues, JsonDict, JsonEncoder, JsonSchemaExtraCallable
 from ..errors import PydanticUserError
-from ..warnings import PydanticDeprecatedSince20
+from ..warnings import PydanticDeprecatedSince20, PydanticDeprecatedSince210
 
 if not TYPE_CHECKING:
     # See PyCharm issues https://youtrack.jetbrains.com/issue/PY-21915
@@ -76,10 +75,9 @@ class ConfigWrapper:
     # whether to validate default values during validation, default False
     validate_default: bool
     validate_return: bool
-    protected_namespaces: tuple[str, ...]
+    protected_namespaces: tuple[str | Pattern[str], ...]
     hide_input_in_errors: bool
     defer_build: bool
-    experimental_defer_build_mode: tuple[Literal['model', 'type_adapter'], ...]
     plugin_settings: dict[str, object] | None
     schema_generator: type[GenerateSchema] | None
     json_schema_serialization_defaults_required: bool
@@ -89,6 +87,9 @@ class ConfigWrapper:
     validation_error_cause: bool
     use_attribute_docstrings: bool
     cache_strings: bool | Literal['all', 'keys', 'none']
+    validate_by_alias: bool
+    validate_by_name: bool
+    serialize_by_alias: bool
 
     def __init__(self, config: ConfigDict | dict[str, Any] | type[Any] | None, *, check: bool = True):
         if check:
@@ -123,7 +124,7 @@ class ConfigWrapper:
         config_dict_from_namespace = namespace.get('model_config')
 
         raw_annotations = namespace.get('__annotations__', {})
-        if raw_annotations.get('model_config') and not config_dict_from_namespace:
+        if raw_annotations.get('model_config') and config_dict_from_namespace is None:
             raise PydanticUserError(
                 '`model_config` cannot be used as a model field name. Use `model_config` for model configuration.',
                 code='model-config-invalid-field-name',
@@ -154,48 +155,77 @@ class ConfigWrapper:
                 except KeyError:
                     raise AttributeError(f'Config has no attribute {name!r}') from None
 
-    def core_config(self, obj: Any) -> core_schema.CoreConfig:
-        """Create a pydantic-core config, `obj` is just used to populate `title` if not set in config.
-
-        Pass `obj=None` if you do not want to attempt to infer the `title`.
+    def core_config(self, title: str | None) -> core_schema.CoreConfig:
+        """Create a pydantic-core config.
 
         We don't use getattr here since we don't want to populate with defaults.
 
         Args:
-            obj: An object used to populate `title` if not set in config.
+            title: The title to use if not set in config.
 
         Returns:
             A `CoreConfig` object created from config.
         """
         config = self.config_dict
 
-        core_config_values = {
-            'title': config.get('title') or (obj and obj.__name__),
-            'extra_fields_behavior': config.get('extra'),
-            'allow_inf_nan': config.get('allow_inf_nan'),
-            'populate_by_name': config.get('populate_by_name'),
-            'str_strip_whitespace': config.get('str_strip_whitespace'),
-            'str_to_lower': config.get('str_to_lower'),
-            'str_to_upper': config.get('str_to_upper'),
-            'strict': config.get('strict'),
-            'ser_json_timedelta': config.get('ser_json_timedelta'),
-            'ser_json_bytes': config.get('ser_json_bytes'),
-            'val_json_bytes': config.get('val_json_bytes'),
-            'ser_json_inf_nan': config.get('ser_json_inf_nan'),
-            'from_attributes': config.get('from_attributes'),
-            'loc_by_alias': config.get('loc_by_alias'),
-            'revalidate_instances': config.get('revalidate_instances'),
-            'validate_default': config.get('validate_default'),
-            'str_max_length': config.get('str_max_length'),
-            'str_min_length': config.get('str_min_length'),
-            'hide_input_in_errors': config.get('hide_input_in_errors'),
-            'coerce_numbers_to_str': config.get('coerce_numbers_to_str'),
-            'regex_engine': config.get('regex_engine'),
-            'validation_error_cause': config.get('validation_error_cause'),
-            'cache_strings': config.get('cache_strings'),
-        }
+        if config.get('schema_generator') is not None:
+            warnings.warn(
+                'The `schema_generator` setting has been deprecated since v2.10. This setting no longer has any effect.',
+                PydanticDeprecatedSince210,
+                stacklevel=2,
+            )
 
-        return core_schema.CoreConfig(**{k: v for k, v in core_config_values.items() if v is not None})
+        if (populate_by_name := config.get('populate_by_name')) is not None:
+            # We include this patch for backwards compatibility purposes, but this config setting will be deprecated in v3.0, and likely removed in v4.0.
+            # Thus, the above warning and this patch can be removed then as well.
+            if config.get('validate_by_name') is None:
+                config['validate_by_alias'] = True
+                config['validate_by_name'] = populate_by_name
+
+        # We dynamically patch validate_by_name to be True if validate_by_alias is set to False
+        # and validate_by_name is not explicitly set.
+        if config.get('validate_by_alias') is False and config.get('validate_by_name') is None:
+            config['validate_by_name'] = True
+
+        if (not config.get('validate_by_alias', True)) and (not config.get('validate_by_name', False)):
+            raise PydanticUserError(
+                'At least one of `validate_by_alias` or `validate_by_name` must be set to True.',
+                code='validate-by-alias-and-name-false',
+            )
+
+        return core_schema.CoreConfig(
+            **{  # pyright: ignore[reportArgumentType]
+                k: v
+                for k, v in (
+                    ('title', config.get('title') or title or None),
+                    ('extra_fields_behavior', config.get('extra')),
+                    ('allow_inf_nan', config.get('allow_inf_nan')),
+                    ('str_strip_whitespace', config.get('str_strip_whitespace')),
+                    ('str_to_lower', config.get('str_to_lower')),
+                    ('str_to_upper', config.get('str_to_upper')),
+                    ('strict', config.get('strict')),
+                    ('ser_json_timedelta', config.get('ser_json_timedelta')),
+                    ('ser_json_bytes', config.get('ser_json_bytes')),
+                    ('val_json_bytes', config.get('val_json_bytes')),
+                    ('ser_json_inf_nan', config.get('ser_json_inf_nan')),
+                    ('from_attributes', config.get('from_attributes')),
+                    ('loc_by_alias', config.get('loc_by_alias')),
+                    ('revalidate_instances', config.get('revalidate_instances')),
+                    ('validate_default', config.get('validate_default')),
+                    ('str_max_length', config.get('str_max_length')),
+                    ('str_min_length', config.get('str_min_length')),
+                    ('hide_input_in_errors', config.get('hide_input_in_errors')),
+                    ('coerce_numbers_to_str', config.get('coerce_numbers_to_str')),
+                    ('regex_engine', config.get('regex_engine')),
+                    ('validation_error_cause', config.get('validation_error_cause')),
+                    ('cache_strings', config.get('cache_strings')),
+                    ('validate_by_alias', config.get('validate_by_alias')),
+                    ('validate_by_name', config.get('validate_by_name')),
+                    ('serialize_by_alias', config.get('serialize_by_alias')),
+                )
+                if v is not None
+            }
+        )
 
     def __repr__(self):
         c = ', '.join(f'{k}={v!r}' for k, v in self.config_dict.items())
@@ -258,13 +288,12 @@ config_defaults = ConfigDict(
     ser_json_inf_nan='null',
     validate_default=False,
     validate_return=False,
-    protected_namespaces=('model_',),
+    protected_namespaces=('model_validate', 'model_dump'),
     hide_input_in_errors=False,
     json_encoders=None,
     defer_build=False,
-    experimental_defer_build_mode=('model',),
-    plugin_settings=None,
     schema_generator=None,
+    plugin_settings=None,
     json_schema_serialization_defaults_required=False,
     json_schema_mode_override=None,
     coerce_numbers_to_str=False,
@@ -272,6 +301,9 @@ config_defaults = ConfigDict(
     validation_error_cause=False,
     use_attribute_docstrings=False,
     cache_strings=True,
+    validate_by_alias=True,
+    validate_by_name=False,
+    serialize_by_alias=False,
 )
 
 
@@ -312,7 +344,7 @@ V2_REMOVED_KEYS = {
     'post_init_call',
 }
 V2_RENAMED_KEYS = {
-    'allow_population_by_field_name': 'populate_by_name',
+    'allow_population_by_field_name': 'validate_by_name',
     'anystr_lower': 'str_to_lower',
     'anystr_strip_whitespace': 'str_strip_whitespace',
     'anystr_upper': 'str_to_upper',

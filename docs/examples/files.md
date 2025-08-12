@@ -1,7 +1,7 @@
 `pydantic` is a great tool for validating data coming from various sources.
 In this section, we will look at how to validate data from different types of files.
 
-!!! Note:
+!!! note
     If you're using any of the below file formats to parse configuration / settings, you might want to
     consider using the [`pydantic-settings`][pydantic_settings] library, which offers builtin
     support for parsing this type of data.
@@ -21,7 +21,7 @@ Here is an example of a `.json` file:
 
 To validate this data, we can use a `pydantic` model:
 
-```python test="skip"
+```python {test="skip"}
 import pathlib
 
 from pydantic import BaseModel, EmailStr, PositiveInt
@@ -57,7 +57,7 @@ This data is flawed for three reasons:
 When we try to validate this data, `pydantic` raises a [`ValidationError`][pydantic_core.ValidationError] with all of the
 above issues:
 
-```python test="skip"
+```python {test="skip"}
 import pathlib
 
 from pydantic import BaseModel, EmailStr, PositiveInt, ValidationError
@@ -105,11 +105,10 @@ For example, you might have a list of people:
 ]
 ```
 
-In this case, you can validate the data against a `List[Person]` model:
+In this case, you can validate the data against a `list[Person]` model:
 
-```python test="skip"
+```python {test="skip"}
 import pathlib
-from typing import List
 
 from pydantic import BaseModel, EmailStr, PositiveInt, TypeAdapter
 
@@ -120,7 +119,7 @@ class Person(BaseModel):
     email: EmailStr
 
 
-person_list_adapter = TypeAdapter(List[Person])  # (1)!
+person_list_adapter = TypeAdapter(list[Person])  # (1)!
 
 json_string = pathlib.Path('people.json').read_text()
 people = person_list_adapter.validate_json(json_string)
@@ -145,7 +144,7 @@ Consider the following `.jsonl` file:
 
 We can validate this data with a similar approach to the one we used for `.json` files:
 
-```python test="skip"
+```python {test="skip"}
 import pathlib
 
 from pydantic import BaseModel, EmailStr, PositiveInt
@@ -179,7 +178,7 @@ Jane Doe,25,jane@example.com
 
 Here's how we validate that data:
 
-```py test="skip"
+```python {test="skip"}
 import csv
 
 from pydantic import BaseModel, EmailStr, PositiveInt
@@ -213,7 +212,7 @@ email = "john@example.com"
 
 Here's how we validate that data:
 
-```py test="skip"
+```python {test="skip"}
 import tomllib
 
 from pydantic import BaseModel, EmailStr, PositiveInt

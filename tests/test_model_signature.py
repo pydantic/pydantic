@@ -1,12 +1,13 @@
 import sys
+from collections.abc import Iterable
 from inspect import Parameter, Signature, signature
-from typing import Any, Generic, Iterable, Optional, TypeVar, Union
+from typing import Annotated, Any, Generic, Optional, TypeVar, Union
 
 import pytest
-from typing_extensions import Annotated
+from typing_extensions import get_origin
+from typing_inspection import typing_objects
 
 from pydantic import BaseModel, ConfigDict, Field, create_model
-from pydantic._internal._typing_extra import is_annotated
 
 
 def _equals(a: Union[str, Iterable[str]], b: Union[str, Iterable[str]]) -> bool:
@@ -23,13 +24,14 @@ def _equals(a: Union[str, Iterable[str]], b: Union[str, Iterable[str]]) -> bool:
 
 def test_model_signature():
     class Model(BaseModel):
-        a: float = Field(..., title='A')
+        a: float = Field(title='A')
         b: int = Field(10)
+        c: int = Field(default_factory=lambda: 1)
 
     sig = signature(Model)
     assert sig != signature(BaseModel)
-    assert _equals(map(str, sig.parameters.values()), ('a: float', 'b: int = 10'))
-    assert _equals(str(sig), '(*, a: float, b: int = 10) -> None')
+    assert _equals(map(str, sig.parameters.values()), ('a: float', 'b: int = 10', 'c: int = <factory>'))
+    assert _equals(str(sig), '(*, a: float, b: int = 10, c: int = <factory>) -> None')
 
 
 def test_generic_model_signature():
@@ -48,7 +50,7 @@ def test_custom_init_signature():
     class MyModel(BaseModel):
         id: int
         name: str = 'John Doe'
-        f__: str = Field(..., alias='foo')
+        f__: str = Field(alias='foo')
 
         model_config = ConfigDict(extra='allow')
 
@@ -92,18 +94,18 @@ def test_invalid_identifiers_signature():
 
 def test_use_field_name():
     class Foo(BaseModel):
-        foo: str = Field(..., alias='this is invalid')
+        foo: str = Field(alias='this is invalid')
 
-        model_config = ConfigDict(populate_by_name=True)
+        model_config = ConfigDict(validate_by_name=True)
 
     assert _equals(str(signature(Foo)), '(*, foo: str) -> None')
 
 
 def test_does_not_use_reserved_word():
     class Foo(BaseModel):
-        from_: str = Field(..., alias='from')
+        from_: str = Field(alias='from')
 
-        model_config = ConfigDict(populate_by_name=True)
+        model_config = ConfigDict(validate_by_name=True)
 
     assert _equals(str(signature(Foo)), '(*, from_: str) -> None')
 
@@ -179,7 +181,7 @@ def test_annotated_field():
     sig = signature(Model)
     assert str(sig) == '(*, foo: Annotated[int, Gt(gt=1)] = 1) -> None'
     # check that the `Annotated` we created is a valid `Annotated`
-    assert is_annotated(sig.parameters['foo'].annotation)
+    assert typing_objects.is_annotated(get_origin(sig.parameters['foo'].annotation))
 
 
 @pytest.mark.skipif(sys.version_info < (3, 10), reason='repr different on older versions')

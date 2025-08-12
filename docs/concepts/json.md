@@ -1,6 +1,3 @@
-!!! warning "🚧 Work in Progress"
-    This page is a work in progress.
-
 # JSON
 
 ## Json Parsing
@@ -18,9 +15,8 @@ Pydantic provides builtin JSON parsing, which helps achieve:
 
 Here's an example of Pydantic's builtin JSON parsing via the [`model_validate_json`][pydantic.main.BaseModel.model_validate_json] method, showcasing the support for `strict` specifications while parsing JSON data that doesn't match the model's type annotations:
 
-```py
+```python
 from datetime import date
-from typing import Tuple
 
 from pydantic import BaseModel, ConfigDict, ValidationError
 
@@ -29,7 +25,7 @@ class Event(BaseModel):
     model_config = ConfigDict(strict=True)
 
     when: date
-    where: Tuple[int, int]
+    where: tuple[int, int]
 
 
 json_data = '{"when": "1987-01-28", "where": [51, -1]}'
@@ -64,7 +60,7 @@ in the original JSON input which contained the invalid value.
 
 **Starting in v2.7.0**, Pydantic's [JSON parser](https://docs.rs/jiter/latest/jiter/) offers support for partial JSON parsing, which is exposed via [`pydantic_core.from_json`][pydantic_core.from_json]. Here's an example of this feature in action:
 
-```py
+```python
 from pydantic_core import from_json
 
 partial_json_data = '["aa", "bb", "c'  # (1)!
@@ -86,7 +82,7 @@ print(result)  # (3)!
 
 This also works for deserializing partial dictionaries. For example:
 
-```py
+```python
 from pydantic_core import from_json
 
 partial_dog_json = '{"breed": "lab", "name": "fluffy", "friends": ["buddy", "spot", "rufus"], "age'
@@ -105,7 +101,7 @@ In future versions of Pydantic, we expect to expand support for this feature thr
 
 For now, you can use [`pydantic_core.from_json`][pydantic_core.from_json] in combination with [`pydantic.main.BaseModel.model_validate`][pydantic.main.BaseModel.model_validate] to achieve the same result. Here's an example:
 
-```py
+```python
 from pydantic_core import from_json
 
 from pydantic import BaseModel
@@ -130,11 +126,10 @@ Check out the following example for a more in-depth look at how to use default v
 
 !!! example "Using default values with partial JSON parsing"
 
-    ```py
-    from typing import Any, Optional, Tuple
+    ```python
+    from typing import Annotated, Any, Optional
 
     import pydantic_core
-    from typing_extensions import Annotated
 
     from pydantic import BaseModel, ValidationError, WrapValidator
 
@@ -165,7 +160,7 @@ Check out the following example for a more in-depth look at how to use default v
     class MyModel(BaseModel):
         foo: Optional[str] = None
         bar: Annotated[
-            Optional[Tuple[str, int]], WrapValidator(default_on_error)
+            Optional[tuple[str, int]], WrapValidator(default_on_error)
         ] = None
         nested: Annotated[
             Optional[NestedModel], WrapValidator(default_on_error)

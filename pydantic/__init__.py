@@ -1,5 +1,6 @@
 import typing
 from importlib import import_module
+from warnings import warn
 
 from ._migration import getattr_migration
 from .version import VERSION
@@ -17,7 +18,6 @@ if typing.TYPE_CHECKING:
     )
 
     from . import dataclasses
-    from ._internal._generate_schema import GenerateSchema as GenerateSchema
     from .aliases import AliasChoices, AliasGenerator, AliasPath
     from .annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
     from .config import ConfigDict, with_config
@@ -34,6 +34,7 @@ if typing.TYPE_CHECKING:
         AfterValidator,
         BeforeValidator,
         InstanceOf,
+        ModelWrapValidatorHandler,
         PlainValidator,
         SkipValidation,
         WrapValidator,
@@ -50,6 +51,8 @@ if typing.TYPE_CHECKING:
         PydanticDeprecatedSince20,
         PydanticDeprecatedSince26,
         PydanticDeprecatedSince29,
+        PydanticDeprecatedSince210,
+        PydanticDeprecatedSince211,
         PydanticDeprecationWarning,
         PydanticExperimentalWarning,
     )
@@ -74,6 +77,7 @@ __all__ = (
     'WrapValidator',
     'SkipValidation',
     'InstanceOf',
+    'ModelWrapValidatorHandler',
     # JSON Schema
     'WithJsonSchema',
     # deprecated V1 functional validators, these are imported via `__getattr__` below
@@ -100,6 +104,7 @@ __all__ = (
     'PydanticImportError',
     'PydanticUndefinedAnnotation',
     'PydanticInvalidForJsonSchema',
+    'PydanticForbiddenQualifier',
     # fields
     'Field',
     'computed_field',
@@ -170,6 +175,9 @@ __all__ = (
     'UUID3',
     'UUID4',
     'UUID5',
+    'UUID6',
+    'UUID7',
+    'UUID8',
     'FilePath',
     'DirectoryPath',
     'NewPath',
@@ -177,6 +185,7 @@ __all__ = (
     'Secret',
     'SecretStr',
     'SecretBytes',
+    'SocketPath',
     'StrictBool',
     'StrictBytes',
     'StrictInt',
@@ -212,13 +221,13 @@ __all__ = (
     'PydanticDeprecatedSince20',
     'PydanticDeprecatedSince26',
     'PydanticDeprecatedSince29',
+    'PydanticDeprecatedSince210',
+    'PydanticDeprecatedSince211',
     'PydanticDeprecationWarning',
     'PydanticExperimentalWarning',
     # annotated handlers
     'GetCoreSchemaHandler',
     'GetJsonSchemaHandler',
-    # generate schema from ._internal
-    'GenerateSchema',
     # pydantic_core
     'ValidationError',
     'ValidationInfo',
@@ -241,6 +250,7 @@ _dynamic_imports: 'dict[str, tuple[str, str]]' = {
     'WrapValidator': (__spec__.parent, '.functional_validators'),
     'SkipValidation': (__spec__.parent, '.functional_validators'),
     'InstanceOf': (__spec__.parent, '.functional_validators'),
+    'ModelWrapValidatorHandler': (__spec__.parent, '.functional_validators'),
     # JSON Schema
     'WithJsonSchema': (__spec__.parent, '.json_schema'),
     # functional serializers
@@ -261,6 +271,7 @@ _dynamic_imports: 'dict[str, tuple[str, str]]' = {
     'PydanticImportError': (__spec__.parent, '.errors'),
     'PydanticUndefinedAnnotation': (__spec__.parent, '.errors'),
     'PydanticInvalidForJsonSchema': (__spec__.parent, '.errors'),
+    'PydanticForbiddenQualifier': (__spec__.parent, '.errors'),
     # fields
     'Field': (__spec__.parent, '.fields'),
     'computed_field': (__spec__.parent, '.fields'),
@@ -327,6 +338,9 @@ _dynamic_imports: 'dict[str, tuple[str, str]]' = {
     'UUID3': (__spec__.parent, '.types'),
     'UUID4': (__spec__.parent, '.types'),
     'UUID5': (__spec__.parent, '.types'),
+    'UUID6': (__spec__.parent, '.types'),
+    'UUID7': (__spec__.parent, '.types'),
+    'UUID8': (__spec__.parent, '.types'),
     'FilePath': (__spec__.parent, '.types'),
     'DirectoryPath': (__spec__.parent, '.types'),
     'NewPath': (__spec__.parent, '.types'),
@@ -341,6 +355,7 @@ _dynamic_imports: 'dict[str, tuple[str, str]]' = {
     'PaymentCardNumber': (__spec__.parent, '.types'),
     'ByteSize': (__spec__.parent, '.types'),
     'PastDate': (__spec__.parent, '.types'),
+    'SocketPath': (__spec__.parent, '.types'),
     'FutureDate': (__spec__.parent, '.types'),
     'PastDatetime': (__spec__.parent, '.types'),
     'FutureDatetime': (__spec__.parent, '.types'),
@@ -367,13 +382,13 @@ _dynamic_imports: 'dict[str, tuple[str, str]]' = {
     'PydanticDeprecatedSince20': (__spec__.parent, '.warnings'),
     'PydanticDeprecatedSince26': (__spec__.parent, '.warnings'),
     'PydanticDeprecatedSince29': (__spec__.parent, '.warnings'),
+    'PydanticDeprecatedSince210': (__spec__.parent, '.warnings'),
+    'PydanticDeprecatedSince211': (__spec__.parent, '.warnings'),
     'PydanticDeprecationWarning': (__spec__.parent, '.warnings'),
     'PydanticExperimentalWarning': (__spec__.parent, '.warnings'),
     # annotated handlers
     'GetCoreSchemaHandler': (__spec__.parent, '.annotated_handlers'),
     'GetJsonSchemaHandler': (__spec__.parent, '.annotated_handlers'),
-    # generate schema from ._internal
-    'GenerateSchema': (__spec__.parent, '._internal._generate_schema'),
     # pydantic_core stuff
     'ValidationError': ('pydantic_core', '.'),
     'ValidationInfo': ('pydantic_core', '.core_schema'),
@@ -389,14 +404,23 @@ _dynamic_imports: 'dict[str, tuple[str, str]]' = {
     'parse_obj_as': (__spec__.parent, '.deprecated.tools'),
     'schema_of': (__spec__.parent, '.deprecated.tools'),
     'schema_json_of': (__spec__.parent, '.deprecated.tools'),
+    # deprecated dynamic imports
     'FieldValidationInfo': ('pydantic_core', '.core_schema'),
+    'GenerateSchema': (__spec__.parent, '._internal._generate_schema'),
 }
-_deprecated_dynamic_imports = {'FieldValidationInfo'}
+_deprecated_dynamic_imports = {'FieldValidationInfo', 'GenerateSchema'}
 
 _getattr_migration = getattr_migration(__name__)
 
 
 def __getattr__(attr_name: str) -> object:
+    if attr_name in _deprecated_dynamic_imports:
+        warn(
+            f'Importing {attr_name} from `pydantic` is deprecated. This feature is either no longer supported, or is not public.',
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
     dynamic_attr = _dynamic_imports.get(attr_name)
     if dynamic_attr is None:
         return _getattr_migration(attr_name)

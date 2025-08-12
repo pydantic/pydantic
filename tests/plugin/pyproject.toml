@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "example_plugin"
 version = "0.1.0"
-requires-python = '>=3.8'
+requires-python = '>=3.9'
 
 [project.entry-points.pydantic]
 my_plugin = "example_plugin:plugin"

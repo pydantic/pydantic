@@ -56,7 +56,7 @@ def _extract_source_from_frame(cls: type[Any]) -> list[str] | None:
             lnum = frame.f_lineno
             try:
                 lines, _ = inspect.findsource(frame)
-            except OSError:
+            except OSError:  # pragma: no cover
                 # Source can't be retrieved (maybe because running in an interactive terminal),
                 # we don't want to error here.
                 pass
@@ -93,7 +93,7 @@ def extract_docstrings_from_cls(cls: type[Any], use_inspect: bool = False) -> di
         # Might not work as expected if two classes have the same name in the same source file.
         try:
             source, _ = inspect.getsourcelines(cls)
-        except OSError:
+        except OSError:  # pragma: no cover
             return {}
     else:
         source = _extract_source_from_frame(cls)

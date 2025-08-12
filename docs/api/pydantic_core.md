@@ -12,6 +12,7 @@
         - PydanticCustomError
         - PydanticKnownError
         - PydanticOmit
+        - PydanticUseDefault
         - PydanticSerializationError
         - PydanticSerializationUnexpectedValue
         - Url

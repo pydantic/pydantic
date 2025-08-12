@@ -1,6 +1,3 @@
-!!! warning "🚧 Work in Progress"
-    This page is a work in progress.
-
 This page provides example snippets for creating more complex, custom validators in Pydantic.
 Many of these examples are adapted from Pydantic issues and discussions, and are intended to showcase
 the flexibility and power of Pydantic's validation system.
@@ -14,15 +11,14 @@ The custom validator supports string specification of the timezone, and will rai
 
 We use `__get_pydantic_core_schema__` in the validator to customize the schema of the annotated type (in this case, [`datetime`][datetime.datetime]), which allows us to add custom validation logic. Notably, we use a `wrap` validator function so that we can perform operations both before and after the default `pydantic` validation of a [`datetime`][datetime.datetime].
 
-```py
+```python
 import datetime as dt
 from dataclasses import dataclass
 from pprint import pprint
-from typing import Any, Callable, Optional
+from typing import Annotated, Any, Callable, Optional
 
 import pytz
 from pydantic_core import CoreSchema, core_schema
-from typing_extensions import Annotated
 
 from pydantic import (
     GetCoreSchemaHandler,
@@ -103,15 +99,14 @@ except ValidationError as ve:
 We can also enforce UTC offset constraints in a similar way.  Assuming we have a `lower_bound` and an `upper_bound`, we can create a custom validator to ensure our `datetime` has a UTC offset that is inclusive within the boundary we define:
 
 
-```py
+```python
 import datetime as dt
 from dataclasses import dataclass
 from pprint import pprint
-from typing import Any, Callable
+from typing import Annotated, Any, Callable
 
 import pytz
 from pydantic_core import CoreSchema, core_schema
-from typing_extensions import Annotated
 
 from pydantic import GetCoreSchemaHandler, TypeAdapter, ValidationError
 
@@ -180,9 +175,7 @@ In this example, we construct a validator that checks that each user's password 
 
 One way to do this is to place a custom validator on the outer model:
 
-```py
-from typing import List
-
+```python
 from typing_extensions import Self
 
 from pydantic import BaseModel, ValidationError, model_validator
@@ -194,8 +187,8 @@ class User(BaseModel):
 
 
 class Organization(BaseModel):
-    forbidden_passwords: List[str]
-    users: List[User]
+    forbidden_passwords: list[str]
+    users: list[User]
 
     @model_validator(mode='after')
     def validate_user_passwords(self) -> Self:
@@ -231,9 +224,7 @@ Alternatively, a custom validator can be used in the nested model class (`User`)
 !!! warning
     The ability to mutate the context within a validator adds a lot of power to nested validation, but can also lead to confusing or hard-to-debug code. Use this approach at your own risk!
 
-```py
-from typing import List
-
+```python
 from pydantic import BaseModel, ValidationError, ValidationInfo, field_validator
 
 
@@ -256,12 +247,12 @@ class User(BaseModel):
 
 
 class Organization(BaseModel):
-    forbidden_passwords: List[str]
-    users: List[User]
+    forbidden_passwords: list[str]
+    users: list[User]
 
     @field_validator('forbidden_passwords', mode='after')
     @classmethod
-    def add_context(cls, v: List[str], info: ValidationInfo) -> List[str]:
+    def add_context(cls, v: list[str], info: ValidationInfo) -> list[str]:
         if info.context is not None:
             info.context.update({'forbidden_passwords': v})
         return v

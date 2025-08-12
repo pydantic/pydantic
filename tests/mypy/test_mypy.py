@@ -1,25 +1,38 @@
+from __future__ import annotations
+
 import dataclasses
 import importlib
 import os
 import re
 import sys
 from bisect import insort
+from collections.abc import Collection
 from pathlib import Path
-from typing import Any, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING
 
 import pytest
+from _pytest.mark import Mark, MarkDecorator
+from _pytest.mark.structures import ParameterSet
+from typing_extensions import TypeAlias
 
-try:
+# Pyright doesn't like try/expect blocks for imports:
+if TYPE_CHECKING:
     from mypy import api as mypy_api
     from mypy.version import __version__ as mypy_version
 
     from pydantic.version import parse_mypy_version
+else:
+    try:
+        from mypy import api as mypy_api
+        from mypy.version import __version__ as mypy_version
 
-except ImportError:
-    mypy_api = None
-    mypy_version = None
+        from pydantic.version import parse_mypy_version
 
-    parse_mypy_version = lambda _: (0,)  # noqa: E731
+    except ImportError:
+        mypy_api = None
+        mypy_version = None
+
+        parse_mypy_version = lambda _: (0,)  # noqa: E731
 
 
 MYPY_VERSION_TUPLE = parse_mypy_version(mypy_version)
@@ -35,52 +48,39 @@ pytestmark = pytest.mark.skipif(
 os.chdir(Path(__file__).parent.parent.parent)
 
 
-@dataclasses.dataclass
-class MypyCasesBuilder:
-    configs: Union[str, List[str]]
-    modules: Union[str, List[str]]
-    marks: Any = None
-
-    def build(self) -> List[Union[Tuple[str, str], Any]]:
-        """
-        Produces the cartesian product of the configs and modules, optionally with marks.
-        """
-        if isinstance(self.configs, str):
-            self.configs = [self.configs]
-        if isinstance(self.modules, str):
-            self.modules = [self.modules]
-        built_cases = []
-        for config in self.configs:
-            for module in self.modules:
-                built_cases.append((config, module))
-        if self.marks is not None:
-            built_cases = [pytest.param(config, module, marks=self.marks) for config, module in built_cases]
-        return built_cases
+# Type hint taken from the signature of `pytest.param`:
+Marks: TypeAlias = 'MarkDecorator | Collection[MarkDecorator | Mark]'
 
 
-cases = (
+def build_cases(
+    configs: list[str],
+    modules: list[str],
+    marks: Marks = (),
+) -> list[ParameterSet]:
+    """Produces the cartesian product of the configs and modules, optionally with marks."""
+
+    return [pytest.param(config, module, marks=marks) for config in configs for module in modules]
+
+
+cases: list[ParameterSet | tuple[str, str]] = [
     # No plugin
-    MypyCasesBuilder(
+    *build_cases(
         ['mypy-default.ini', 'pyproject-default.toml'],
-        ['fail1.py', 'fail2.py', 'fail3.py', 'fail4.py', 'pydantic_settings.py'],
-    ).build()
-    + MypyCasesBuilder(
+        ['pydantic_settings.py'],
+    ),
+    *build_cases(
         ['mypy-default.ini', 'pyproject-default.toml'],
-        'success.py',
-        pytest.mark.skipif(MYPY_VERSION_TUPLE > (1, 0, 1), reason='Need to handle some more things for mypy >=1.1.1'),
-    ).build()
-    + MypyCasesBuilder(
-        ['mypy-default.ini', 'pyproject-default.toml'],
-        'root_models.py',
+        ['root_models.py'],
         pytest.mark.skipif(
             MYPY_VERSION_TUPLE < (1, 1, 1), reason='`dataclass_transform` only supported on mypy >= 1.1.1'
         ),
-    ).build()
-    + MypyCasesBuilder(
-        'mypy-default.ini', ['plugin_success.py', 'plugin_success_baseConfig.py', 'metaclass_args.py']
-    ).build()
+    ),
+    *build_cases(
+        ['mypy-default.ini'],
+        ['plugin_success.py', 'plugin_success_baseConfig.py', 'metaclass_args.py'],
+    ),
     # Default plugin config
-    + MypyCasesBuilder(
+    *build_cases(
         ['mypy-plugin.ini', 'pyproject-plugin.toml'],
         [
             'plugin_success.py',
@@ -88,10 +88,11 @@ cases = (
             'plugin_success_baseConfig.py',
             'plugin_fail_baseConfig.py',
             'pydantic_settings.py',
+            'decorator_implicit_classmethod.py',
         ],
-    ).build()
+    ),
     # Strict plugin config
-    + MypyCasesBuilder(
+    *build_cases(
         ['mypy-plugin-strict.ini', 'pyproject-plugin-strict.toml'],
         [
             'plugin_success.py',
@@ -100,9 +101,9 @@ cases = (
             'plugin_success_baseConfig.py',
             'plugin_fail_baseConfig.py',
         ],
-    ).build()
+    ),
     # One-off cases
-    + [
+    *[
         ('mypy-plugin.ini', 'custom_constructor.py'),
         ('mypy-plugin.ini', 'config_conditional_extra.py'),
         ('mypy-plugin.ini', 'covariant_typevar.py'),
@@ -111,31 +112,28 @@ cases = (
         ('mypy-plugin.ini', 'generics.py'),
         ('mypy-plugin.ini', 'root_models.py'),
         ('mypy-plugin.ini', 'plugin_strict_fields.py'),
-        ('mypy-plugin-strict.ini', 'plugin_default_factory.py'),
+        ('mypy-plugin.ini', 'final_with_default.py'),
         ('mypy-plugin-strict-no-any.ini', 'dataclass_no_any.py'),
         ('mypy-plugin-very-strict.ini', 'metaclass_args.py'),
-        ('pyproject-default.toml', 'computed_fields.py'),
-        ('pyproject-default.toml', 'with_config_decorator.py'),
         ('pyproject-plugin-no-strict-optional.toml', 'no_strict_optional.py'),
         ('pyproject-plugin-strict-equality.toml', 'strict_equality.py'),
         ('pyproject-plugin.toml', 'from_orm_v1_noconflict.py'),
-    ]
-)
-
-
-@dataclasses.dataclass
-class MypyTestTarget:
-    parsed_mypy_version: Tuple[int, ...]
-    output_path: Path
+    ],
+]
 
 
 @dataclasses.dataclass
 class MypyTestConfig:
-    existing: Optional[MypyTestTarget]  # the oldest target with an output that is no older than the installed mypy
-    current: MypyTestTarget  # the target for the current installed mypy
+    existing_output_path: Path | None
+    """The path pointing to the existing test result, or `None` if this is the first time the test is run."""
+
+    current_output_path: Path
+    """The path pointing to the current test result to be created or compared to the existing one."""
 
 
 def get_test_config(module_path: Path, config_path: Path) -> MypyTestConfig:
+    """Given a file to test with a specific config, get a test config."""
+
     outputs_dir = PYDANTIC_ROOT / 'tests/mypy/outputs'
     outputs_dir.mkdir(exist_ok=True)
     existing_versions = [
@@ -145,10 +143,10 @@ def get_test_config(module_path: Path, config_path: Path) -> MypyTestConfig:
     def _convert_to_output_path(v: str) -> Path:
         return outputs_dir / v / config_path.name.replace('.', '_') / module_path.name
 
-    existing = None
+    existing: Path | None = None
 
     # Build sorted list of (parsed_version, version) pairs, including the current mypy version being used
-    parsed_version_pairs = sorted([(parse_mypy_version(v), v) for v in existing_versions])
+    parsed_version_pairs = sorted((parse_mypy_version(v), v) for v in existing_versions)
     if MYPY_VERSION_TUPLE not in [x[0] for x in parsed_version_pairs]:
         insort(parsed_version_pairs, (MYPY_VERSION_TUPLE, mypy_version))
 
@@ -157,15 +155,23 @@ def get_test_config(module_path: Path, config_path: Path) -> MypyTestConfig:
             continue
         output_path = _convert_to_output_path(version)
         if output_path.exists():
-            existing = MypyTestTarget(parsed_version, output_path)
+            existing = output_path
             break
 
-    current = MypyTestTarget(MYPY_VERSION_TUPLE, _convert_to_output_path(mypy_version))
-    return MypyTestConfig(existing, current)
+    return MypyTestConfig(existing, _convert_to_output_path(mypy_version))
 
 
-@pytest.mark.filterwarnings('ignore:ast.:DeprecationWarning')  # these are produced by mypy in python 3.12
-@pytest.mark.parametrize('config_filename,python_filename', cases)
+def get_expected_return_code(source_code: str) -> int:
+    """Return 1 if at least one `# MYPY:` comment was found, else 0."""
+    if re.findall(r'^\s*# MYPY:', source_code, flags=re.MULTILINE):
+        return 1
+    return 0
+
+
+@pytest.mark.parametrize(
+    ['config_filename', 'python_filename'],
+    cases,
+)
 def test_mypy_results(config_filename: str, python_filename: str, request: pytest.FixtureRequest) -> None:
     input_path = PYDANTIC_ROOT / 'tests/mypy/modules' / python_filename
     config_path = PYDANTIC_ROOT / 'tests/mypy/configs' / config_filename
@@ -183,7 +189,7 @@ def test_mypy_results(config_filename: str, python_filename: str, request: pytes
         '--show-error-codes',
         '--show-traceback',
     ]
-    print(f"\nExecuting: mypy {' '.join(command)}")  # makes it easier to debug as necessary
+    print(f'\nExecuting: mypy {" ".join(command)}')  # makes it easier to debug as necessary
     mypy_out, mypy_err, mypy_returncode = mypy_api.run(command)
 
     # Need to strip filenames due to differences in formatting by OS
@@ -195,10 +201,10 @@ def test_mypy_results(config_filename: str, python_filename: str, request: pytes
 
     input_code = input_path.read_text()
 
-    existing_output_code: Optional[str] = None
-    if test_config.existing is not None:
-        existing_output_code = test_config.existing.output_path.read_text()
-        print(f'Comparing output with {test_config.existing.output_path}')
+    existing_output_code: str | None = None
+    if test_config.existing_output_path is not None:
+        existing_output_code = test_config.existing_output_path.read_text()
+        print(f'Comparing output with {test_config.existing_output_path}')
     else:
         print(f'Comparing output with {input_path} (expecting no mypy errors)')
 
@@ -208,8 +214,8 @@ def test_mypy_results(config_filename: str, python_filename: str, request: pytes
         # Test passed, no changes needed
         pass
     elif request.config.getoption('update_mypy'):
-        test_config.current.output_path.parent.mkdir(parents=True, exist_ok=True)
-        test_config.current.output_path.write_text(merged_output)
+        test_config.current_output_path.parent.mkdir(parents=True, exist_ok=True)
+        test_config.current_output_path.write_text(merged_output)
     else:
         print('**** Merged Output ****')
         print(merged_output)
@@ -222,65 +228,36 @@ def test_mypy_results(config_filename: str, python_filename: str, request: pytes
 
 def test_bad_toml_config() -> None:
     full_config_filename = 'tests/mypy/configs/pyproject-plugin-bad-param.toml'
-    full_filename = 'tests/mypy/modules/success.py'
+    full_filename = 'tests/mypy/modules/generics.py'  # File doesn't matter
 
-    # Specifying a different cache dir for each configuration dramatically speeds up subsequent execution
-    # It also prevents cache-invalidation-related bugs in the tests
-    cache_dir = '.mypy_cache/test-pyproject-plugin-bad-param'
-    command = [full_filename, '--config-file', full_config_filename, '--cache-dir', cache_dir, '--show-error-codes']
-    if MYPY_VERSION_TUPLE >= (0, 990):
-        command.append('--disable-recursive-aliases')
-    print(f"\nExecuting: mypy {' '.join(command)}")  # makes it easier to debug as necessary
+    command = [full_filename, '--config-file', full_config_filename, '--show-error-codes']
+    print(f'\nExecuting: mypy {" ".join(command)}')  # makes it easier to debug as necessary
     with pytest.raises(ValueError) as e:
         mypy_api.run(command)
 
     assert str(e.value) == 'Configuration value must be a boolean for key: init_forbid_extra'
 
 
-def get_expected_return_code(source_code: str) -> int:
-    if re.findall(r'^\s*# MYPY:', source_code, flags=re.MULTILINE):
-        return 1
-    return 0
-
-
 @pytest.mark.parametrize('module', ['dataclass_no_any', 'plugin_success', 'plugin_success_baseConfig'])
-@pytest.mark.filterwarnings('ignore:.*is deprecated.*:DeprecationWarning')
-@pytest.mark.filterwarnings('ignore:.*are deprecated.*:DeprecationWarning')
 def test_success_cases_run(module: str) -> None:
     """
     Ensure the "success" files can actually be executed
     """
-    importlib.import_module(f'tests.mypy.modules.{module}')
-
-
-def test_explicit_reexports():
-    from pydantic import __all__ as root_all
-    from pydantic.deprecated.tools import __all__ as tools
-    from pydantic.main import __all__ as main
-    from pydantic.networks import __all__ as networks
-    from pydantic.types import __all__ as types
-
-    for name, export_all in [('main', main), ('network', networks), ('tools', tools), ('types', types)]:
-        for export in export_all:
-            assert export in root_all, f'{export} is in {name}.__all__ but missing from re-export in __init__.py'
-
-
-def test_explicit_reexports_exist():
-    import pydantic
-
-    for name in pydantic.__all__:
-        assert hasattr(pydantic, name), f'{name} is in pydantic.__all__ but missing from pydantic'
+    module_name = f'tests.mypy.modules.{module}'
+    try:
+        importlib.import_module(module_name)
+    except Exception:
+        pytest.fail(reason=f'Unable to execute module {module_name}')
 
 
 @pytest.mark.parametrize(
-    'v_str,v_tuple',
+    ['v_str', 'v_tuple'],
     [
-        ('0', (0,)),
-        ('0.930', (0, 930)),
-        ('0.940+dev.04cac4b5d911c4f9529e6ce86a27b44f28846f5d.dirty', (0, 940)),
+        ('1.11.0', (1, 11, 0)),
+        ('1.11.0+dev.d6d9d8cd4f27c52edac1f537e236ec48a01e54cb.dirty', (1, 11, 0)),
     ],
 )
-def test_parse_mypy_version(v_str, v_tuple):
+def test_parse_mypy_version(v_str: str, v_tuple: tuple[int, int, int]) -> None:
     assert parse_mypy_version(v_str) == v_tuple
 
 

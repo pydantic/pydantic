@@ -1,6 +1,3 @@
-!!! warning "🚧 Work in Progress"
-    This page is a work in progress.
-
 Pydantic is quite helpful for validating data that goes into and comes out of queues. Below,
 we'll explore how to validate / serialize data with various queue systems.
 
@@ -15,7 +12,7 @@ Here's a simple example of how you can use Pydantic to:
 1. Serialize data to push to the queue
 2. Deserialize and validate data when it's popped from the queue
 
-```python test="skip"
+```python {test="skip"}
 import redis
 
 from pydantic import BaseModel, EmailStr

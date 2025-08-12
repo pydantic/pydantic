@@ -1,23 +1,20 @@
 import collections.abc
-import json
 import os
 import pickle
 import sys
+import time
 from copy import copy, deepcopy
-from typing import Callable, Dict, Generic, List, NewType, Tuple, TypeVar, Union
+from typing import Annotated, Callable, Generic, TypeVar, Union
 
 import pytest
-from dirty_equals import IsList
-from pydantic_core import PydanticCustomError, PydanticUndefined, core_schema
-from typing_extensions import Annotated, Literal
+from pydantic_core import PydanticCustomError, PydanticUndefined
 
 from pydantic import BaseModel
 from pydantic._internal import _repr
-from pydantic._internal._core_utils import _WalkCoreSchema, pretty_print_core_schema
-from pydantic._internal._typing_extra import all_literal_values, get_origin, is_new_type
+from pydantic._internal._typing_extra import get_origin
 from pydantic._internal._utils import (
     BUILTIN_COLLECTIONS,
-    ClassAttribute,
+    LazyClassAttribute,
     ValueItems,
     all_identical,
     deep_update,
@@ -66,16 +63,15 @@ class LoggedVar(Generic[T]):
         (str, 'str'),
         ('foobar', 'str'),
         ('SomeForwardRefString', 'str'),  # included to document current behavior; could be changed
-        (List['SomeForwardRef'], "List[ForwardRef('SomeForwardRef')]"),  # noqa: F821
         (Union[str, int], 'Union[str, int]'),
         (list, 'list'),
-        (List, 'List'),
         ([1, 2, 3], 'list'),
-        (List[Dict[str, int]], 'List[Dict[str, int]]'),
-        (Tuple[str, int, float], 'Tuple[str, int, float]'),
-        (Tuple[str, ...], 'Tuple[str, ...]'),
-        (Union[int, List[str], Tuple[str, int]], 'Union[int, List[str], Tuple[str, int]]'),
+        (list[dict[str, int]], 'list[dict[str, int]]'),
+        (tuple[str, int, float], 'tuple[str, int, float]'),
+        (tuple[str, ...], 'tuple[str, ...]'),
+        (Union[int, list[str], tuple[str, int]], 'Union[int, list[str], tuple[str, int]]'),
         (foobar, 'foobar'),
+        (time.time_ns, 'time_ns'),
         (LoggedVar, 'LoggedVar'),
         (LoggedVar(), 'LoggedVar'),
     ],
@@ -90,17 +86,15 @@ def test_display_as_type(value, expected):
     [
         (lambda: str, 'str'),
         (lambda: 'SomeForwardRefString', 'str'),  # included to document current behavior; could be changed
-        (lambda: List['SomeForwardRef'], "List[ForwardRef('SomeForwardRef')]"),  # noqa: F821
         (lambda: str | int, 'Union[str, int]'),
         (lambda: list, 'list'),
-        (lambda: List, 'List'),
         (lambda: list[int], 'list[int]'),
-        (lambda: List[int], 'List[int]'),
+        (lambda: list[int], 'list[int]'),
         (lambda: list[dict[str, int]], 'list[dict[str, int]]'),
         (lambda: list[Union[str, int]], 'list[Union[str, int]]'),
         (lambda: list[str | int], 'list[Union[str, int]]'),
         (lambda: LoggedVar[int], 'LoggedVar[int]'),
-        (lambda: LoggedVar[Dict[int, str]], 'LoggedVar[Dict[int, str]]'),
+        (lambda: LoggedVar[dict[int, str]], 'LoggedVar[dict[int, str]]'),
     ],
 )
 def test_display_as_type_310(value_gen, expected):
@@ -115,7 +109,6 @@ def test_lenient_issubclass():
     assert lenient_issubclass(A, str) is True
 
 
-@pytest.mark.skipif(sys.version_info < (3, 9), reason='generic aliases are not available in python < 3.9')
 def test_lenient_issubclass_with_generic_aliases():
     from collections.abc import Mapping
 
@@ -253,18 +246,10 @@ def test_value_items_error():
     assert str(e.value) == "Unexpected type of exclude value <class 'tuple'>"
 
 
-def test_is_new_type():
-    new_type = NewType('new_type', str)
-    new_new_type = NewType('new_new_type', new_type)
-    assert is_new_type(new_type)
-    assert is_new_type(new_new_type)
-    assert not is_new_type(str)
-
-
 def test_pretty():
     class MyTestModel(BaseModel):
         a: int = 1
-        b: List[int] = [1, 2, 3]
+        b: list[int] = [1, 2, 3]
 
     m = MyTestModel()
     assert m.__repr_name__() == 'MyTestModel'
@@ -310,7 +295,7 @@ def test_pretty_color():
 def test_devtools_output():
     class MyTestModel(BaseModel):
         a: int = 1
-        b: List[int] = [1, 2, 3]
+        b: list[int] = [1, 2, 3]
 
     assert devtools.pformat(MyTestModel()) == 'MyTestModel(\n    a=1,\n    b=[1, 2, 3],\n)'
 
@@ -366,7 +351,7 @@ def test_undefined_copy():
 
 def test_class_attribute():
     class Foo:
-        attr = ClassAttribute('attr', 'foo')
+        attr = LazyClassAttribute('attr', lambda: 'foo')
 
     assert Foo.attr == 'foo'
 
@@ -378,21 +363,9 @@ def test_class_attribute():
     assert f.attr == 'not foo'
 
 
-def test_all_literal_values():
-    L1 = Literal['1']
-    assert all_literal_values(L1) == ['1']
-
-    L2 = Literal['2']
-    L12 = Literal[L1, L2]
-    assert all_literal_values(L12) == IsList('1', '2', check_order=False)
-
-    L312 = Literal['3', Literal[L1, L2]]
-    assert all_literal_values(L312) == IsList('3', '1', '2', check_order=False)
-
-
 @pytest.mark.parametrize(
     'obj',
-    (1, 1.0, '1', b'1', int, None, test_all_literal_values, len, test_all_literal_values.__code__, lambda: ..., ...),
+    (1, 1.0, '1', b'1', int, None, test_class_attribute, len, test_class_attribute.__code__, lambda: ..., ...),
 )
 def test_smart_deepcopy_immutable_non_sequence(obj, mocker):
     # make sure deepcopy is not used
@@ -408,6 +381,7 @@ def test_smart_deepcopy_empty_collection(empty_collection, mocker):
         assert smart_deepcopy(empty_collection) is not empty_collection
 
 
+@pytest.mark.thread_unsafe(reason='Monkeypatching')
 @pytest.mark.parametrize(
     'collection', (c.fromkeys((1,)) if issubclass(c, dict) else c((1,)) for c in BUILTIN_COLLECTIONS)
 )
@@ -436,8 +410,8 @@ T = TypeVar('T')
     [
         (Annotated[int, 10] if Annotated else None, Annotated),
         (Callable[[], T][int], collections.abc.Callable),
-        (Dict[str, int], dict),
-        (List[str], list),
+        (dict[str, int], dict),
+        (list[str], list),
         (Union[int, str], Union),
         (int, None),
     ],
@@ -458,9 +432,9 @@ def test_all_identical():
 
     assert all_identical([], [a]) is False, 'Expected iterables with different lengths to evaluate to `False`'
     assert all_identical([a], []) is False, 'Expected iterables with different lengths to evaluate to `False`'
-    assert (
-        all_identical([a, [b], b], [a, [b], b]) is False
-    ), 'New list objects are different objects and should therefore not be identical.'
+    assert all_identical([a, [b], b], [a, [b], b]) is False, (
+        'New list objects are different objects and should therefore not be identical.'
+    )
 
 
 def test_undefined_pickle():
@@ -551,233 +525,3 @@ def test_to_snake(value: str, result: str) -> None:
 
 def test_to_camel_from_camel() -> None:
     assert to_camel('alreadyCamel') == 'alreadyCamel'
-
-
-def test_handle_tuple_schema():
-    schema = core_schema.tuple_schema([core_schema.float_schema(), core_schema.int_schema()])
-
-    def walk(s, recurse):
-        # change extra_schema['type'] to 'str'
-        if s['type'] == 'float':
-            s['type'] = 'str'
-        return s
-
-    schema = _WalkCoreSchema().handle_tuple_schema(schema, walk)
-    assert schema == {
-        'items_schema': [{'type': 'str'}, {'type': 'int'}],
-        'type': 'tuple',
-    }
-
-
-@pytest.mark.parametrize(
-    'params,expected_extra_schema',
-    (
-        pytest.param({}, {}, id='Model fields without extra_validator'),
-        pytest.param(
-            {'extras_schema': core_schema.float_schema()},
-            {'extras_schema': {'type': 'str'}},
-            id='Model fields with extra_validator',
-        ),
-    ),
-)
-def test_handle_model_fields_schema(params, expected_extra_schema):
-    schema = core_schema.model_fields_schema(
-        {
-            'foo': core_schema.model_field(core_schema.int_schema()),
-        },
-        **params,
-    )
-
-    def walk(s, recurse):
-        # change extra_schema['type'] to 'str'
-        if s['type'] == 'float':
-            s['type'] = 'str'
-        return s
-
-    schema = _WalkCoreSchema().handle_model_fields_schema(schema, walk)
-    assert schema == {
-        **expected_extra_schema,
-        'type': 'model-fields',
-        'fields': {'foo': {'type': 'model-field', 'schema': {'type': 'int'}}},
-    }
-
-
-@pytest.mark.parametrize(
-    'params,expected_extra_schema',
-    (
-        pytest.param({}, {}, id='Typeddict without extra_validator'),
-        pytest.param(
-            {'extras_schema': core_schema.float_schema()},
-            {'extras_schema': {'type': 'str'}},
-            id='Typeddict with extra_validator',
-        ),
-    ),
-)
-def test_handle_typed_dict_schema(params, expected_extra_schema):
-    schema = core_schema.typed_dict_schema(
-        {
-            'foo': core_schema.model_field(core_schema.int_schema()),
-        },
-        **params,
-    )
-
-    def walk(s, recurse):
-        # change extra_validator['type'] to 'str'
-        if s['type'] == 'float':
-            s['type'] = 'str'
-        return s
-
-    schema = _WalkCoreSchema().handle_typed_dict_schema(schema, walk)
-    assert schema == {
-        **expected_extra_schema,
-        'type': 'typed-dict',
-        'fields': {'foo': {'type': 'model-field', 'schema': {'type': 'int'}}},
-    }
-
-
-def test_handle_function_schema():
-    schema = core_schema.with_info_before_validator_function(
-        lambda v, _info: v, core_schema.float_schema(), field_name='field_name'
-    )
-
-    def walk(s, recurse):
-        # change type to str
-        if s['type'] == 'float':
-            s['type'] = 'str'
-        return s
-
-    schema = _WalkCoreSchema().handle_function_schema(schema, walk)
-    assert schema['type'] == 'function-before'
-    assert schema['schema'] == {'type': 'str'}
-
-    def walk1(s, recurse):
-        # this is here to make sure this function is not called
-        assert False
-
-    schema = _WalkCoreSchema().handle_function_schema(core_schema.int_schema(), walk1)
-    assert schema['type'] == 'int'
-
-
-def test_handle_call_schema():
-    param_a = core_schema.arguments_parameter(name='a', schema=core_schema.str_schema(), mode='positional_only')
-    args_schema = core_schema.arguments_schema([param_a])
-
-    schema = core_schema.call_schema(
-        arguments=args_schema,
-        function=lambda a: int(a),
-        return_schema=core_schema.str_schema(),
-    )
-
-    def walk(s, recurse):
-        # change return schema
-        if 'return_schema' in schema:
-            schema['return_schema']['type'] = 'int'
-        return s
-
-    schema = _WalkCoreSchema().handle_call_schema(schema, walk)
-    assert schema['return_schema'] == {'type': 'int'}
-
-
-class TestModel:
-    __slots__ = (
-        '__dict__',
-        '__pydantic_fields_set__',
-        '__pydantic_extra__',
-        '__pydantic_private__',
-    )
-
-
-@pytest.mark.parametrize(
-    'include_metadata, schema, expected',
-    [
-        # including metadata with a simple any schema
-        (
-            True,
-            core_schema.AnySchema(
-                type='any',
-                ref='meta_schema',
-                metadata={'schema_type': 'any', 'test_id': '42'},
-                serialization=core_schema.simple_ser_schema('bool'),
-            ),
-            {
-                'type': 'any',
-                'ref': 'meta_schema',
-                'metadata': {'schema_type': 'any', 'test_id': '42'},
-                'serialization': {'type': 'bool'},
-            },
-        ),
-        # excluding metadata with a model_fields_schema
-        (
-            False,
-            core_schema.model_fields_schema(
-                ref='meta_schema',
-                metadata={'schema_type': 'model', 'test_id': '43'},
-                computed_fields=[
-                    core_schema.computed_field(
-                        property_name='TestModel',
-                        return_schema=core_schema.model_fields_schema(
-                            fields={'a': core_schema.model_field(core_schema.str_schema())},
-                        ),
-                        alias='comp_field_1',
-                        metadata={'comp_field_key': 'comp_field_data'},
-                    )
-                ],
-                fields={'a': core_schema.model_field(core_schema.str_schema())},
-            ),
-            {
-                'type': 'model-fields',
-                'fields': {'a': {'type': 'model-field', 'schema': {'type': 'str'}}},
-                'computed_fields': [
-                    {
-                        'type': 'computed-field',
-                        'property_name': 'TestModel',
-                        'return_schema': {
-                            'type': 'model-fields',
-                            'fields': {'a': {'type': 'model-field', 'schema': {'type': 'str'}}},
-                        },
-                        'alias': 'comp_field_1',
-                        'metadata': {'comp_field_key': 'comp_field_data'},
-                    }
-                ],
-                'ref': 'meta_schema',
-            },
-        ),
-        # exclude metadata with a model_schema
-        (
-            False,
-            core_schema.model_schema(
-                ref='meta_schema',
-                metadata={'schema_type': 'model', 'test_id': '43'},
-                custom_init=False,
-                root_model=False,
-                cls=TestModel,
-                config=core_schema.CoreConfig(str_max_length=5),
-                schema=core_schema.model_fields_schema(
-                    fields={'a': core_schema.model_field(core_schema.str_schema())},
-                ),
-            ),
-            {
-                'type': 'model',
-                'schema': {'type': 'model-fields', 'fields': {'a': {'type': 'model-field', 'schema': {'type': 'str'}}}},
-                'config': {'str_max_length': 5},
-                'ref': 'meta_schema',
-            },
-        ),
-    ],
-)
-def test_pretty_print(include_metadata, schema, expected, capfd, monkeypatch):
-    """Verify basic functionality of pretty_print_core_schema, which is used as a utility for debugging.
-
-    Given varied output, this test verifies that the content of the output is as expected,
-    Rather than doing robust formatting testing.
-    """
-    # This can break the test by adding color to the output streams
-    monkeypatch.delenv('FORCE_COLOR', raising=False)
-
-    pretty_print_core_schema(schema=schema, include_metadata=include_metadata)
-    content = capfd.readouterr()
-    # Remove cls due to string formatting (for case 3 above)
-    cls_substring = "'cls': <class 'tests.test_utils.TestModel'>,"
-    new_content_out = content.out.replace(cls_substring, '')
-    content_as_json = json.loads(new_content_out.replace("'", '"'))
-    assert content_as_json == expected

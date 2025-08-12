@@ -3,18 +3,13 @@
 from __future__ import annotations
 
 import datetime
-import sys
 import warnings
 from decimal import Decimal
-from typing import Any, Callable, Dict, FrozenSet, List, Set, Tuple, Union
+from typing import Annotated, Any, Callable, Union
 
 import pytest
 import pytz
 from annotated_types import Interval
-from typing_extensions import Annotated
-
-if sys.version_info >= (3, 9):
-    pass
 
 from pydantic import PydanticExperimentalWarning, TypeAdapter, ValidationError
 
@@ -120,27 +115,27 @@ def test_interval_constraints(type_: Any, pipeline: Any, valid_cases: list[Any],
             ['a', 'abcdef'],
         ),
         (
-            List[int],
-            validate_as(List[int]).len(min_len=1, max_len=3),
+            list[int],
+            validate_as(list[int]).len(min_len=1, max_len=3),
             [[1], [1, 2], [1, 2, 3]],
             [[], [1, 2, 3, 4]],
         ),
-        (Tuple[int, ...], validate_as(Tuple[int, ...]).len(min_len=1, max_len=2), [(1,), (1, 2)], [(), (1, 2, 3)]),
+        (tuple[int, ...], validate_as(tuple[int, ...]).len(min_len=1, max_len=2), [(1,), (1, 2)], [(), (1, 2, 3)]),
         (
-            Set[int],
-            validate_as(Set[int]).len(min_len=2, max_len=4),
+            set[int],
+            validate_as(set[int]).len(min_len=2, max_len=4),
             [{1, 2}, {1, 2, 3}, {1, 2, 3, 4}],
             [{1}, {1, 2, 3, 4, 5}],
         ),
         (
-            FrozenSet[int],
-            validate_as(FrozenSet[int]).len(min_len=2, max_len=3),
+            frozenset[int],
+            validate_as(frozenset[int]).len(min_len=2, max_len=3),
             [frozenset({1, 2}), frozenset({1, 2, 3})],
             [frozenset({1}), frozenset({1, 2, 3, 4})],
         ),
         (
-            Dict[str, int],
-            validate_as(Dict[str, int]).len(min_len=1, max_len=2),
+            dict[str, int],
+            validate_as(dict[str, int]).len(min_len=1, max_len=2),
             [{'a': 1}, {'a': 1, 'b': 2}],
             [{}, {'a': 1, 'b': 2, 'c': 3}],
         ),
@@ -295,7 +290,7 @@ def test_predicates() -> None:
             {'anyOf': [{'type': 'integer', 'exclusiveMinimum': 0}, {'type': 'integer', 'exclusiveMaximum': 100}]},
         ),
         (
-            Annotated[List[int], validate_as(...).len(0, 100)],
+            Annotated[list[int], validate_as(...).len(0, 100)],
             {'type': 'array', 'items': {'type': 'integer'}, 'maxItems': 100},
             {'type': 'array', 'items': {'type': 'integer'}, 'maxItems': 100},
         ),
@@ -421,3 +416,11 @@ def test_composition() -> None:
         ta.validate_python(21)
     assert calls == [('1', 21), ('2', 21), ('3', 21)]
     calls.clear()
+
+
+def test_validate_as_ellipsis_preserves_other_steps() -> None:
+    """https://github.com/pydantic/pydantic/issues/11624"""
+
+    ta = TypeAdapter[float](Annotated[float, validate_as(str).transform(lambda v: v.split()[0]).validate_as(...)])
+
+    assert ta.validate_python('12 ab') == 12.0

@@ -1,5 +1,5 @@
 import sys
-from typing import Any, Callable, Dict
+from typing import Any, Callable
 
 from .version import version_short
 
@@ -300,7 +300,7 @@ def getattr_migration(module: str) -> Callable[[str], Any]:
             )
         if import_path in REMOVED_IN_V2:
             raise PydanticImportError(f'`{import_path}` has been removed in V2.')
-        globals: Dict[str, Any] = sys.modules[module].__dict__
+        globals: dict[str, Any] = sys.modules[module].__dict__
         if name in globals:
             return globals[name]
         raise AttributeError(f'module {module!r} has no attribute {name!r}')

@@ -35,6 +35,11 @@ disallow_untyped_defs = true
 disallow_untyped_decorators = false
 strict_equality = true
 
+python_version = '3.10'
+
+# TODO: when we drop 3.9, drop the following line:
+force_union_syntax = true
+
 [tool.pydantic-mypy]
 init_forbid_extra = true
 init_typed = true

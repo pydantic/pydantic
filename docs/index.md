@@ -6,19 +6,20 @@
 [![CondaForge](https://img.shields.io/conda/v/conda-forge/pydantic.svg)](https://anaconda.org/conda-forge/pydantic)
 [![downloads](https://static.pepy.tech/badge/pydantic/month)](https://pepy.tech/project/pydantic)<br>
 [![license](https://img.shields.io/github/license/pydantic/pydantic.svg)](https://github.com/pydantic/pydantic/blob/main/LICENSE)
+[![llms.txt](https://img.shields.io/badge/llms.txt-green)](https://docs.pydantic.dev/latest/llms.txt)
 
 {{ version }}.
 
 Pydantic is the most widely used data validation library for Python.
 
-Fast and extensible, Pydantic plays nicely with your linters/IDE/brain. Define how data should be in pure, canonical Python 3.8+; validate it with Pydantic.
+Fast and extensible, Pydantic plays nicely with your linters/IDE/brain. Define how data should be in pure, canonical Python 3.9+; validate it with Pydantic.
 
 !!! logfire "Monitor Pydantic with Logfire :fire:"
     Built by the same team as Pydantic, **[Logfire](https://pydantic.dev/logfire)** is an application monitoring tool that is as simple to use and powerful as Pydantic itself.
 
     Logfire integrates with many popular Python libraries including FastAPI, OpenAI and Pydantic itself, so you can use Logfire to monitor Pydantic validations and understand why some inputs fail validation:
 
-    ```py title="Monitoring Pydantic with Logfire" test="skip"
+    ```python {title="Monitoring Pydantic with Logfire" test="skip"}
     from datetime import datetime
 
     import logfire
@@ -58,7 +59,7 @@ Fast and extensible, Pydantic plays nicely with your linters/IDE/brain. Define h
 
 ## Why use Pydantic?
 
-- **Powered by type hints** &mdash; with Pydantic, schema validation and serialization are controlled by type annotations; less to learn, less code to write, and integration with your IDE and static analysis tools. [Learn more…](why.md#type-hints)
+- **Powered by type hints** &mdash; with Pydantic, schema validation and serialization are controlled by type annotations; less to learn, less code to write, and seamless integration with your IDE and static analysis tools. [Learn more…](why.md#type-hints)
 - **Speed** &mdash; Pydantic's core validation logic is written in Rust. As a result, Pydantic is among the fastest data validation libraries for Python. [Learn more…](why.md#performance)
 - **JSON Schema** &mdash; Pydantic models can emit JSON Schema, allowing for easy integration with other tools. [Learn more…](why.md#json-schema)
 - **Strict** and **Lax** mode &mdash; Pydantic can run in either strict mode (where data is not converted) or lax mode where Pydantic tries to coerce data to the correct type where appropriate. [Learn more…](why.md#strict-lax)
@@ -66,7 +67,7 @@ Fast and extensible, Pydantic plays nicely with your linters/IDE/brain. Define h
 - **Customisation** &mdash; Pydantic allows custom validators and serializers to alter how data is processed in many powerful ways. [Learn more…](why.md#customisation)
 - **Ecosystem** &mdash; around 8,000 packages on PyPI use Pydantic, including massively popular libraries like
   _FastAPI_, _huggingface_, _Django Ninja_, _SQLModel_, & _LangChain_. [Learn more…](why.md#ecosystem)
-- **Battle tested** &mdash; Pydantic is downloaded over 70M times/month and is used by all FAANG companies and 20 of the 25 largest companies on NASDAQ. If you're trying to do something with Pydantic, someone else has probably already done it. [Learn more…](why.md#using-pydantic)
+- **Battle tested** &mdash; Pydantic is downloaded over 360M times/month and is used by all FAANG companies and 20 of the 25 largest companies on NASDAQ. If you're trying to do something with Pydantic, someone else has probably already done it. [Learn more…](why.md#using-pydantic)
 
 [Installing Pydantic](install.md) is as simple as: `pip install pydantic`
 
@@ -74,7 +75,7 @@ Fast and extensible, Pydantic plays nicely with your linters/IDE/brain. Define h
 
 To see Pydantic at work, let's start with a simple example, creating a custom class that inherits from `BaseModel`:
 
-```py upgrade="skip" title="Validation Successful" requires="3.10"
+```python {upgrade="skip" title="Validation Successful" requires="3.10"}
 from datetime import datetime
 
 from pydantic import BaseModel, PositiveInt
@@ -130,7 +131,7 @@ print(user.model_dump())  # (10)!
 
 If validation fails, Pydantic will raise an error with a breakdown of what was wrong:
 
-```py upgrade="skip" title="Validation Error" test="skip" lint="skip"
+```python {upgrade="skip" title="Validation Error" test="skip" lint="skip"}
 # continuing the above example...
 
 from datetime import datetime

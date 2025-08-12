@@ -5,6 +5,9 @@ on:
   - cron: '43 3 * * 6,3'
   workflow_dispatch: {}
 
+env:
+  UV_FROZEN: true
+
 jobs:
   find_dependency_cases:
     runs-on: ubuntu-latest
@@ -20,7 +23,7 @@ jobs:
         mode: first-last
 
   test:
-    name: test py${{ matrix.python-version }} on ${{ matrix.PYTHON_DEPENDENCY_CASE }}
+    name: Test py${{ matrix.python-version }} on ${{ matrix.PYTHON_DEPENDENCY_CASE }}
 
     needs:
     - find_dependency_cases
@@ -28,7 +31,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        python-version: ['3.8', '3.11']
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
         PYTHON_DEPENDENCY_CASE: ${{ fromJSON(needs.find_dependency_cases.outputs.PYTHON_DEPENDENCY_CASES) }}
 
     runs-on: ubuntu-latest
@@ -36,15 +39,15 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: set up python
-      uses: actions/setup-python@v5
+    - uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
 
-    - run: pip install pdm && pdm install --no-isolation
+    - run: pip install uv
+    - run: uv sync --all-extras
 
-    - run: pdm run pip install ${{ matrix.PYTHON_DEPENDENCY_CASE }}
+    - run: uv pip install ${{ matrix.PYTHON_DEPENDENCY_CASE }}
 
-    - run: pdm run pip freeze
+    - run: uv pip freeze
 
     - run: make test

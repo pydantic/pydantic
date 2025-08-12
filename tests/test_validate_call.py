@@ -4,17 +4,152 @@ import re
 import sys
 from datetime import datetime, timezone
 from functools import partial
-from typing import Any, List, Tuple
+from typing import Annotated, Any, Generic, Literal, TypeVar, Union
 
 import pytest
 from pydantic_core import ArgsKwargs
-from typing_extensions import Annotated, TypedDict
+from typing_extensions import Required, TypedDict, Unpack
 
-from pydantic import Field, PydanticInvalidForJsonSchema, TypeAdapter, ValidationError, validate_call
-from pydantic.main import BaseModel
+from pydantic import (
+    AfterValidator,
+    BaseModel,
+    BeforeValidator,
+    Field,
+    PydanticInvalidForJsonSchema,
+    PydanticUserError,
+    Strict,
+    TypeAdapter,
+    ValidationError,
+    validate_call,
+    with_config,
+)
 
 
-def test_args():
+def test_wrap() -> None:
+    @validate_call
+    def foo_bar(a: int, b: int):
+        """This is the foo_bar method."""
+        return f'{a}, {b}'
+
+    assert foo_bar.__doc__ == 'This is the foo_bar method.'
+    assert foo_bar.__name__ == 'foo_bar'
+    assert foo_bar.__module__ == 'tests.test_validate_call'
+    assert foo_bar.__qualname__ == 'test_wrap.<locals>.foo_bar'
+    assert callable(foo_bar.raw_function)
+    assert repr(inspect.signature(foo_bar)) == '<Signature (a: int, b: int)>'
+
+
+def test_func_type() -> None:
+    def f(x: int): ...
+
+    class A:
+        def m(self, x: int): ...
+
+    for func in (f, lambda x: None, A.m, A().m):
+        assert validate_call(func).__name__ == func.__name__
+        assert validate_call(func).__qualname__ == func.__qualname__
+        assert validate_call(partial(func)).__name__ == f'partial({func.__name__})'
+        assert validate_call(partial(func)).__qualname__ == f'partial({func.__qualname__})'
+
+    with pytest.raises(
+        PydanticUserError,
+        match=(f'Partial of `{list}` is invalid because the type of `{list}` is not supported by `validate_call`'),
+    ):
+        validate_call(partial(list))
+
+    with pytest.raises(
+        PydanticUserError,
+        match=('`validate_call` should be applied to one of the following: function, method, partial, or lambda'),
+    ):
+        validate_call([])
+
+
+def validate_bare_none() -> None:
+    @validate_call
+    def func(f: None):
+        return f
+
+    assert func(f=None) is None
+
+
+def test_validate_class() -> None:
+    class A:
+        @validate_call
+        def __new__(cls, x: int):
+            return super().__new__(cls)
+
+        @validate_call
+        def __init__(self, x: int) -> None:
+            self.x = x
+
+    class M(type): ...
+
+    for cls in (A, int, type, Exception, M):
+        with pytest.raises(
+            PydanticUserError,
+            match=re.escape(
+                '`validate_call` should be applied to functions, not classes (put `@validate_call` on top of `__init__` or `__new__` instead)'
+            ),
+        ):
+            validate_call(cls)
+
+    assert A('5').x == 5
+
+
+def test_validate_custom_callable() -> None:
+    class A:
+        def __call__(self, x: int) -> int:
+            return x
+
+    with pytest.raises(
+        PydanticUserError,
+        match=re.escape(
+            '`validate_call` should be applied to functions, not instances or other callables. Use `validate_call` explicitly on `__call__` instead.'
+        ),
+    ):
+        validate_call(A())
+
+    a = A()
+    assert validate_call(a.__call__)('5') == 5  # Note: dunder methods cannot be overridden at instance level
+
+    class B:
+        @validate_call
+        def __call__(self, x: int) -> int:
+            return x
+
+    assert B()('5') == 5
+
+
+def test_invalid_signature() -> None:
+    # Builtins functions not supported:
+    with pytest.raises(PydanticUserError, match=(f'Input built-in function `{breakpoint}` is not supported')):
+        validate_call(breakpoint)
+
+    class A:
+        def f(): ...
+
+    # A method require at least one positional arg (i.e. `self`), so the signature is invalid
+    func = A().f
+    with pytest.raises(PydanticUserError, match=(f"Input function `{func}` doesn't have a valid signature")):
+        validate_call(func)
+
+
+@pytest.mark.parametrize('decorator', [staticmethod, classmethod])
+def test_classmethod_order_error(decorator) -> None:
+    name = decorator.__name__
+    with pytest.raises(
+        PydanticUserError,
+        match=re.escape(f'The `@{name}` decorator should be applied after `@validate_call` (put `@{name}` on top)'),
+    ):
+
+        class A:
+            @validate_call
+            @decorator
+            def method(self, x: int):
+                pass
+
+
+def test_args() -> None:
     @validate_call
     def foo(a: int, b: int):
         return f'{a}, {b}'
@@ -81,20 +216,6 @@ def test_optional():
     ]
 
 
-def test_wrap():
-    @validate_call
-    def foo_bar(a: int, b: int):
-        """This is the foo_bar method."""
-        return f'{a}, {b}'
-
-    assert foo_bar.__doc__ == 'This is the foo_bar method.'
-    assert foo_bar.__name__ == 'foo_bar'
-    assert foo_bar.__module__ == 'tests.test_validate_call'
-    assert foo_bar.__qualname__ == 'test_wrap.<locals>.foo_bar'
-    assert callable(foo_bar.raw_function)
-    assert repr(inspect.signature(foo_bar)) == '<Signature (a: int, b: int)>'
-
-
 def test_kwargs():
     @validate_call
     def foo(*, a: int, b: int):
@@ -109,7 +230,7 @@ def test_kwargs():
         {
             'input': 'x',
             'loc': ('b',),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'type': 'int_parsing',
         }
     ]
@@ -162,6 +283,104 @@ def test_var_args_kwargs(validated):
     assert foo(1, 2, kwargs=4, e=5) == "a=1, b=2, args=(), d=3, kwargs={'kwargs': 4, 'e': 5}"
 
 
+def test_unpacked_typed_dict_kwargs_invalid_type() -> None:
+    with pytest.raises(PydanticUserError) as exc:
+
+        @validate_call
+        def foo(**kwargs: Unpack[int]):
+            pass
+
+    assert exc.value.code == 'unpack-typed-dict'
+
+
+def test_unpacked_typed_dict_kwargs_overlaps() -> None:
+    class TD(TypedDict, total=False):
+        a: int
+        b: int
+        c: int
+
+    with pytest.raises(PydanticUserError) as exc:
+
+        @validate_call
+        def foo(a: int, b: int, **kwargs: Unpack[TD]):
+            pass
+
+    assert exc.value.code == 'overlapping-unpack-typed-dict'
+    assert exc.value.message == "Typed dictionary 'TD' overlaps with parameters 'a', 'b'"
+
+    # Works for a pos-only argument
+    @validate_call
+    def foo(a: int, /, **kwargs: Unpack[TD]):
+        pass
+
+    foo(1, a=1)
+
+
+def test_unpacked_typed_dict_kwargs() -> None:
+    @with_config({'strict': True})
+    class TD(TypedDict, total=False):
+        a: int
+        b: Required[str]
+
+    @validate_call
+    def foo1(**kwargs: Unpack[TD]):
+        pass
+
+    @validate_call
+    def foo2(**kwargs: 'Unpack[TD]'):
+        pass
+
+    for foo in (foo1, foo2):
+        foo(a=1, b='test')
+        foo(b='test')
+
+        with pytest.raises(ValidationError) as exc:
+            foo(a='1')
+
+        assert exc.value.errors()[0]['type'] == 'int_type'
+        assert exc.value.errors()[0]['loc'] == ('a',)
+        assert exc.value.errors()[1]['type'] == 'missing'
+        assert exc.value.errors()[1]['loc'] == ('b',)
+
+        # Make sure that when called without any arguments,
+        # empty kwargs are still validated against the typed dict:
+        with pytest.raises(ValidationError) as exc:
+            foo()
+
+        assert exc.value.errors()[0]['type'] == 'missing'
+        assert exc.value.errors()[0]['loc'] == ('b',)
+
+
+def test_unpacked_generic_typed_dict_kwargs() -> None:
+    T = TypeVar('T')
+
+    class TD(TypedDict, Generic[T]):
+        t: T
+
+    @validate_call
+    def foo(**kwargs: Unpack[TD[int]]):
+        pass
+
+    with pytest.raises(ValidationError):
+        foo(t='not_an_int')
+
+
+def test_unpacked_typed_dict_kwargs_functional_syntax() -> None:
+    TD = TypedDict('TD', {'in': int, 'x-y': int})
+
+    @validate_call
+    def foo(**kwargs: Unpack[TD]):
+        pass
+
+    foo(**{'in': 1, 'x-y': 2})
+
+    with pytest.raises(ValidationError) as exc:
+        foo(**{'in': 'not_an_int', 'x-y': 1})
+
+    assert exc.value.errors()[0]['type'] == 'int_parsing'
+    assert exc.value.errors()[0]['loc'] == ('in',)
+
+
 def test_field_can_provide_factory() -> None:
     @validate_call
     def foo(a: int, b: int = Field(default_factory=lambda: 99), *args: int) -> int:
@@ -174,7 +393,7 @@ def test_field_can_provide_factory() -> None:
 
 def test_annotated_field_can_provide_factory() -> None:
     @validate_call
-    def foo2(a: int, b: Annotated[int, Field(default_factory=lambda: 99)], *args: int) -> int:
+    def foo2(a: int, b: 'Annotated[int, Field(default_factory=lambda: 99)]', *args: int) -> int:
         """mypy reports Incompatible default for argument "b" if we don't supply ANY as default"""
         return a + b + sum(args)
 
@@ -257,32 +476,6 @@ def test_args_name():
     ]
 
 
-def test_v_args():
-    @validate_call
-    def foo1(v__args: int):
-        return v__args
-
-    assert foo1(123) == 123
-
-    @validate_call
-    def foo2(v__kwargs: int):
-        return v__kwargs
-
-    assert foo2(123) == 123
-
-    @validate_call
-    def foo3(v__positional_only: int):
-        return v__positional_only
-
-    assert foo3(123) == 123
-
-    @validate_call
-    def foo4(v__duplicate_kwargs: int):
-        return v__duplicate_kwargs
-
-    assert foo4(123) == 123
-
-
 def test_async():
     @validate_call
     async def foo(a, b):
@@ -291,6 +484,9 @@ def test_async():
     async def run():
         v = await foo(1, 2)
         assert v == 'a=1 b=2'
+
+    # insert_assert(inspect.iscoroutinefunction(foo) is True)
+    assert inspect.iscoroutinefunction(foo) is True
 
     asyncio.run(run())
     with pytest.raises(ValidationError) as exc_info:
@@ -303,7 +499,7 @@ def test_async():
 
 def test_string_annotation():
     @validate_call
-    def foo(a: 'List[int]', b: 'float'):
+    def foo(a: 'list[int]', b: 'float'):
         return f'a={a!r} b={b!r}'
 
     assert foo([1, 2, 3], 22) == 'a=[1, 2, 3] b=22.0'
@@ -324,7 +520,7 @@ def test_string_annotation():
 
 
 def test_local_annotation():
-    ListInt = List[int]
+    ListInt = list[int]
 
     @validate_call
     def foo(a: ListInt):
@@ -427,7 +623,7 @@ def test_json_schema():
     with pytest.raises(
         PydanticInvalidForJsonSchema,
         match=(
-            'Unable to generate JSON schema for arguments validator ' 'with positional-only and keyword-only arguments'
+            'Unable to generate JSON schema for arguments validator with positional-only and keyword-only arguments'
         ),
     ):
         TypeAdapter(foo).json_schema()
@@ -463,7 +659,7 @@ def test_json_schema():
     }
 
     @validate_call
-    def foo(a: Annotated[int, Field(..., alias='A')]):
+    def foo(a: Annotated[int, Field(alias='A')]):
         return a
 
     assert foo(1) == 1
@@ -511,7 +707,7 @@ def test_config_arbitrary_types_allowed():
 
 def test_config_strict():
     @validate_call(config=dict(strict=True))
-    def foo(a: int, b: List[str]):
+    def foo(a: int, b: list[str]):
         return f'{a}, {b[0]}'
 
     assert foo(1, ['bar', 'foobar']) == '1, bar'
@@ -521,6 +717,97 @@ def test_config_strict():
         {'type': 'int_type', 'loc': (0,), 'msg': 'Input should be a valid integer', 'input': 'foo'},
         {'type': 'list_type', 'loc': (1,), 'msg': 'Input should be a valid list', 'input': ('bar', 'foobar')},
     ]
+
+
+def test_annotated_num():
+    @validate_call
+    def f(a: Annotated[int, Field(gt=0), Field(lt=10)]):
+        return a
+
+    assert f(5) == 5
+
+    with pytest.raises(ValidationError) as exc_info:
+        f(0)
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'greater_than', 'loc': (0,), 'msg': 'Input should be greater than 0', 'input': 0, 'ctx': {'gt': 0}}
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        f(10)
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'less_than', 'loc': (0,), 'msg': 'Input should be less than 10', 'input': 10, 'ctx': {'lt': 10}}
+    ]
+
+
+def test_annotated_discriminator():
+    class Cat(BaseModel):
+        type: Literal['cat'] = 'cat'
+        food: str
+        meow: int
+
+    class Dog(BaseModel):
+        type: Literal['dog'] = 'dog'
+        food: str
+        bark: int
+
+    Pet = Annotated[Union[Cat, Dog], Field(discriminator='type')]
+
+    @validate_call
+    def f(pet: Pet):
+        return pet
+
+    with pytest.raises(ValidationError) as exc_info:
+        f({'food': 'fish'})
+
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'union_tag_not_found',
+            'loc': (0,),
+            'msg': "Unable to extract tag using discriminator 'type'",
+            'input': {'food': 'fish'},
+            'ctx': {'discriminator': "'type'"},
+        }
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        f({'type': 'dog', 'food': 'fish'})
+
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'missing',
+            'loc': (0, 'dog', 'bark'),
+            'msg': 'Field required',
+            'input': {'type': 'dog', 'food': 'fish'},
+        }
+    ]
+
+
+def test_annotated_validator():
+    @validate_call
+    def f(x: Annotated[int, BeforeValidator(lambda x: x + '2'), AfterValidator(lambda x: x + 1)]):
+        return x
+
+    assert f('1') == 13
+
+
+def test_annotated_strict():
+    @validate_call
+    def f1(x: Annotated[int, Strict()]):
+        return x
+
+    @validate_call
+    def f2(x: 'Annotated[int, Strict()]'):
+        return x
+
+    for f in (f1, f2):
+        assert f(1) == 1
+
+        with pytest.raises(ValidationError) as exc_info:
+            f('1')
+
+        assert exc_info.value.errors(include_url=False) == [
+            {'type': 'int_type', 'loc': (0,), 'msg': 'Input should be a valid integer', 'input': '1'}
+        ]
 
 
 def test_annotated_use_of_alias():
@@ -560,8 +847,8 @@ def test_use_of_alias():
     assert foo(b=10) == 30
 
 
-def test_populate_by_name():
-    @validate_call(config=dict(populate_by_name=True))
+def test_validate_by_name():
+    @validate_call(config=dict(validate_by_name=True))
     def foo(a: Annotated[int, Field(alias='b')], c: Annotated[int, Field(alias='d')]):
         return a + c
 
@@ -648,7 +935,7 @@ def test_model_as_arg() -> None:
         y: int
 
     @validate_call(validate_return=True)
-    def f1(m1: Model1, m2: Model2) -> Tuple[Model1, Model2]:
+    def f1(m1: Model1, m2: Model2) -> tuple[Model1, Model2]:
         return (m1, m2.model_dump())  # type: ignore
 
     res = f1({'x': '1'}, {'y': '2'})  # type: ignore
@@ -714,21 +1001,6 @@ def test_dynamic_method_decoration():
 
     foo = Foo()
     assert foo.bar('test') == 'bar-test'
-
-
-@pytest.mark.parametrize('decorator', [staticmethod, classmethod])
-def test_classmethod_order_error(decorator):
-    name = decorator.__name__
-    with pytest.raises(
-        TypeError,
-        match=re.escape(f'The `@{name}` decorator should be applied after `@validate_call` (put `@{name}` on top)'),
-    ):
-
-        class A:
-            @validate_call
-            @decorator
-            def method(self, x: int):
-                pass
 
 
 def test_async_func() -> None:
@@ -818,34 +1090,146 @@ def test_eval_type_backport():
     ]
 
 
+def test_eval_namespace_basic(create_module):
+    module = create_module(
+        """
+from __future__ import annotations
+from typing import TypeVar
+from pydantic import validate_call
+
+T = TypeVar('T', bound=int)
+
+@validate_call
+def f(x: T): ...
+
+def g():
+    MyList = list
+
+    @validate_call
+    def h(x: MyList[int]): ...
+    return h
+"""
+    )
+    f = module.f
+    f(1)
+    with pytest.raises(ValidationError) as exc_info:
+        f('x')
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'input': 'x',
+            'loc': (0,),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'type': 'int_parsing',
+        }
+    ]
+
+    h = module.g()
+    with pytest.raises(ValidationError) as exc_info:
+        h('not a list')
+    assert exc_info.value.errors(include_url=False) == [
+        {'input': 'not a list', 'loc': (0,), 'msg': 'Input should be a valid list', 'type': 'list_type'}
+    ]
+
+
 @pytest.mark.skipif(sys.version_info < (3, 12), reason='requires Python 3.12+ for PEP 695 syntax with generics')
-def test_validate_call_with_pep_695_syntax() -> None:
+def test_validate_call_with_pep_695_syntax(create_module) -> None:
     """Note: validate_call still doesn't work properly with generics, see https://github.com/pydantic/pydantic/issues/7796.
 
     This test is just to ensure that the syntax is accepted and doesn't raise a NameError."""
-    globs = {}
-    exec(
+
+    module = create_module(
         """
 from typing import Iterable
 from pydantic import validate_call
 
 @validate_call
-def find_max_no_validate_return[T](args: Iterable[T]) -> T:
+def find_max_no_validate_return[T](args: 'Iterable[T]') -> T:
     return sorted(args, reverse=True)[0]
 
 @validate_call(validate_return=True)
-def find_max_validate_return[T](args: Iterable[T]) -> T:
+def find_max_validate_return[T](args: 'Iterable[T]') -> T:
     return sorted(args, reverse=True)[0]
-        """,
-        globs,
+        """
     )
-    functions = [globs['find_max_no_validate_return'], globs['find_max_validate_return']]
+
+    functions = [module.find_max_no_validate_return, module.find_max_validate_return]
     for find_max in functions:
         assert len(find_max.__type_params__) == 1
         assert find_max([1, 2, 10, 5]) == 10
 
         with pytest.raises(ValidationError):
             find_max(1)
+
+
+@pytest.mark.skipif(sys.version_info < (3, 12), reason='requires Python 3.12+ for PEP 695 syntax with generics')
+def test_pep695_with_class(create_module):
+    """Primarily to ensure that the syntax is accepted and doesn't raise a `NameError` with `T`.
+    The validation is not expected to work properly when parameterized at this point."""
+
+    for import_annotations in ('from __future__ import annotations', ''):
+        module = create_module(
+            f"""
+{import_annotations}
+from pydantic import validate_call
+
+class A[T]:
+    @validate_call(validate_return=True)
+    def f(self, a: T) -> T:
+        return str(a)
+            """
+        )
+        A = module.A
+        a = A[int]()
+        # these two are undesired behavior, but it's what happens now
+        assert a.f(1) == '1'
+        assert a.f('1') == '1'
+
+
+@pytest.mark.skipif(sys.version_info < (3, 12), reason='requires Python 3.12+ for PEP 695 syntax with generics')
+def test_pep695_with_nested_scopes(create_module):
+    """Nested scopes generally cannot be caught by `parent_frame_namespace`,
+    so currently this test is expected to fail.
+    """
+
+    module = create_module(
+        """
+from __future__ import annotations
+from pydantic import validate_call
+
+class A[T]:
+    def g(self):
+        @validate_call(validate_return=True)
+        def inner(a: T) -> T: ...
+
+    def h[S](self):
+        @validate_call(validate_return=True)
+        def inner(a: T) -> S: ...
+        """
+    )
+
+    A = module.A
+    a = A[int]()
+    with pytest.raises(NameError):
+        a.g()
+    with pytest.raises(NameError):
+        a.h()
+
+    with pytest.raises(NameError):
+        create_module(
+            """
+from __future__ import annotations
+from pydantic import validate_call
+
+class A[T]:
+    class B:
+        @validate_call(validate_return=True)
+        def f(a: T) -> T: ...
+
+    class C[S]:
+        @validate_call(validate_return=True)
+        def f(a: T) -> S: ...
+            """
+        )
 
 
 class M0(BaseModel):
@@ -865,10 +1249,28 @@ def test_uses_local_ns():
         class M2(BaseModel):
             z: int
 
-        M = M2
+        M = M2  # noqa: F841
 
-        @validate_call
-        def bar(m: M) -> M:
+        @validate_call(validate_return=True)
+        def bar(m: 'M') -> 'M':
             return m
 
         assert bar({'z': 1}) == M2(z=1)
+
+    foo()
+
+
+# The class needs to be defined at the module level
+# For 'DeferBuildClass' to resolve:
+class DeferBuildClass(BaseModel):
+    @classmethod
+    @validate_call(config={'defer_build': True})
+    def cls_meth(cls, x: int) -> 'DeferBuildClass':
+        return DeferBuildClass()
+
+
+def test_validate_call_defer_build() -> None:
+    DeferBuildClass.cls_meth(x=1)
+
+    with pytest.raises(ValidationError):
+        DeferBuildClass.cls_meth(x='not_an_int')
