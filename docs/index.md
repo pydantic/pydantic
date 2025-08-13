@@ -56,6 +56,26 @@ Fast and extensible, Pydantic plays nicely with your linters/IDE/brain. Define h
 
     **[Learn more about Pydantic Logfire](https://logfire.pydantic.dev/docs/)**
 
+    **Sign up to *The Pydantic Stack* newsletter, with updates & tutorials on Logfire, Pydantic AI and Pydantic:**
+
+      <form method="POST" action="https://eu.customerioforms.com/forms/submit_action?site_id=53d2086c3c4214eaecaa&form_id=14b22611745b458&success_url=https://docs.pydantic.dev/" style="display: flex; align-items: center; gap: 10px; max-width: 85%;">
+          <input
+          type="email"
+          id="email_input"
+          name="email"
+          class="md-input"
+          style="border-bottom: none; flex: 1;"
+          required
+          placeholder="Email"
+          data-1p-ignore
+          data-lpignore="true"
+          data-protonpass-ignore="true"
+          data-bwignore="true"
+          />
+          <input type="hidden" id="source_input" name="source" value="pydantic" />
+          <button type="submit" class="md-button" style="width: fit-content;">Subscribe</button>
+      </form>
+
 ## Why use Pydantic?
 
 * **Powered by type hints** &mdash; with Pydantic, schema validation and serialization are controlled by type annotations; less to learn, less code to write, and integration with your IDE and static analysis tools. [Learn more…](why.md#type-hints)
