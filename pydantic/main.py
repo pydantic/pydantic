@@ -1655,6 +1655,7 @@ def create_model(
     __module__: str = __name__,
     __validators__: dict[str, Callable[..., Any]] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
+    __qualname__: str | None = None,
     **field_definitions: Any | tuple[str, Any],
 ) -> type[BaseModel]: ...
 
@@ -1670,6 +1671,7 @@ def create_model(
     __module__: str = __name__,
     __validators__: dict[str, Callable[..., Any]] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
+    __qualname__: str | None = None,
     **field_definitions: Any | tuple[str, Any],
 ) -> type[ModelT]: ...
 
@@ -1684,6 +1686,7 @@ def create_model(  # noqa: C901
     __module__: str | None = None,
     __validators__: dict[str, Callable[..., Any]] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
+    __qualname__: str | None = None,
     # TODO PEP 747: replace `Any` by the TypeForm:
     **field_definitions: Any | tuple[str, Any],
 ) -> type[ModelT]:
@@ -1704,6 +1707,7 @@ def create_model(  # noqa: C901
             be added to the model, and the values are the validation methods themselves. You can read more about functional
             validators [here](https://docs.pydantic.dev/2.9/concepts/validators/#field-validators).
         __cls_kwargs__: A dictionary of keyword arguments for class creation, such as `metaclass`.
+        __qualname__: The qualified name of the newly created model.
         **field_definitions: Field definitions of the new model. Either:
 
             - a single element, representing the type annotation of the field.
@@ -1747,6 +1751,7 @@ def create_model(  # noqa: C901
     namespace: dict[str, Any] = {'__annotations__': annotations, '__module__': __module__}
     if __doc__:
         namespace.update({'__doc__': __doc__})
+    namespace.update({'__qualname__': __qualname__ or model_name})
     if __validators__:
         namespace.update(__validators__)
     namespace.update(fields)
