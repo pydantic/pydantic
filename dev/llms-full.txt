@@ -594,26 +594,59 @@ If your model inherits from multiple bases, Pydantic currently *doesn't* follow 
 
 ## Configuration propagation
 
-Note that when using types that support configuration as field annotations on other types, configuration will *not* be propagated. In the following example, each model has its own "configuration boundary":
+When using types that support configuration as field annotations, configuration may not be propagated:
 
-```python
-from pydantic import BaseModel, ConfigDict
+- For Pydantic models and dataclasses, configuration will *not* be propagated, each model has its own "configuration boundary":
 
-
-class User(BaseModel):
-    name: str
+  ```python
+  from pydantic import BaseModel, ConfigDict
 
 
-class Parent(BaseModel):
-    user: User
-
-    model_config = ConfigDict(str_max_length=2)
+  class User(BaseModel):
+      name: str
 
 
-print(Parent(user={'name': 'John Doe'}))
-#> user=User(name='John Doe')
+  class Parent(BaseModel):
+      user: User
 
-```
+      model_config = ConfigDict(str_to_lower=True)
+
+
+  print(Parent(user={'name': 'JOHN'}))
+  #> user=User(name='JOHN')
+
+  ```
+
+- For stdlib types (dataclasses and typed dictionaries), configuration will be propagated, unless the type has its own configuration set:
+
+  ```python
+  from dataclasses import dataclass
+
+  from pydantic import BaseModel, ConfigDict, with_config
+
+
+  @dataclass
+  class UserWithoutConfig:
+      name: str
+
+
+  @dataclass
+  @with_config(str_to_lower=False)
+  class UserWithConfig:
+      name: str
+
+
+  class Parent(BaseModel):
+      user_1: UserWithoutConfig
+      user_2: UserWithConfig
+
+      model_config = ConfigDict(str_to_lower=True)
+
+
+  print(Parent(user_1={'name': 'JOHN'}, user_2={'name': 'JOHN'}))
+  #> user_1=UserWithoutConfig(name='john') user_2=UserWithConfig(name='JOHN')
+
+  ```
 
 The following table provides details on how Pydantic converts data during validation in both strict and lax modes.
 
