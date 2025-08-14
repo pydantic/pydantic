@@ -1199,6 +1199,25 @@ to help you monitor and understand your
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#at-the-field-level" class="md-nav__link">
+    <span class="md-ellipsis">
+      At the field level
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#as-parameters-to-the-serialization-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      As parameters to the serialization methods
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="As parameters to the serialization methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#excluding-and-including-specific-fields" class="md-nav__link">
     <span class="md-ellipsis">
       Excluding and including specific fields
@@ -1213,6 +1232,11 @@ to help you monitor and understand your
       Excluding and including fields based on their value
     </span>
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -3430,6 +3454,25 @@ to help you monitor and understand your
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#at-the-field-level" class="md-nav__link">
+    <span class="md-ellipsis">
+      At the field level
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#as-parameters-to-the-serialization-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      As parameters to the serialization methods
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="As parameters to the serialization methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#excluding-and-including-specific-fields" class="md-nav__link">
     <span class="md-ellipsis">
       Excluding and including specific fields
@@ -3444,6 +3487,11 @@ to help you monitor and understand your
       Excluding and including fields based on their value
     </span>
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -4139,16 +4187,30 @@ which is where the name comes from.</p>
 <!-- markdownlint-disable-next-line no-empty-links -->
 <p><a href="" id="model-and-field-level-include-and-exclude"></a></p>
 <h2 id="field-inclusion-and-exclusion">Field inclusion and exclusion<a class="headerlink" href="#field-inclusion-and-exclusion" title="Permanent link">&para;</a></h2>
-<p>Model fields can be excluded for the serialization output in two ways:</p>
+<p>For serialization, field inclusion and exclusion can be configured in two ways:</p>
 <ul>
-<li>using the <code>exclude</code> parameter on <a href="../fields/">the <code>Field()</code> function</a>.</li>
+<li>at the field level, using the <code>exclude</code> and <code>exclude_if</code> parameters on <a href="../fields/">the <code>Field()</code> function</a>.</li>
 <li>using the various serialization parameters on the <a href="#serializing-data">serialization methods</a>.</li>
 </ul>
-<p>Setting <code>exclude</code> to <code>True</code> on the <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.Field"><code>Field()</code></a> function will unconditionally exclude it from
-the output (and this setting takes priority over the runtime parameters described below).</p>
+<h3 id="at-the-field-level">At the field level<a class="headerlink" href="#at-the-field-level" title="Permanent link">&para;</a></h3>
+<p>At the field level, the <code>exclude</code> and <code>exclude_if</code> parameters can be used:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Transaction</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">private_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">exclude</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">value</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">ge</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">exclude_if</span><span class="o">=</span><span class="k">lambda</span> <span class="n">v</span><span class="p">:</span> <span class="n">v</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">Transaction</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">private_id</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;id&#39;: 1}</span>
+</code></pre></div>
+<p>Exclusion at the field level takes priority over the <code>include</code> serialization parameter described below.</p>
+<h3 id="as-parameters-to-the-serialization-methods">As parameters to the serialization methods<a class="headerlink" href="#as-parameters-to-the-serialization-methods" title="Permanent link">&para;</a></h3>
 <p>When using the <a href="#serializing-data">serialization methods</a> (such as <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_dump"><code>model_dump()</code></a>),
 several parameters can be used to exclude or include fields.</p>
-<h3 id="excluding-and-including-specific-fields">Excluding and including specific fields<a class="headerlink" href="#excluding-and-including-specific-fields" title="Permanent link">&para;</a></h3>
+<h4 id="excluding-and-including-specific-fields">Excluding and including specific fields<a class="headerlink" href="#excluding-and-including-specific-fields" title="Permanent link">&para;</a></h4>
 <p>Consider the following models:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">SecretStr</span>
 
@@ -4161,7 +4223,7 @@ several parameters can be used to exclude or include fields.</p>
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Transaction</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="nb">id</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">private_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">exclude</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># (1)!</span>
+    <span class="n">private_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">exclude</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">user</span><span class="p">:</span> <span class="n">User</span>
     <span class="n">value</span><span class="p">:</span> <span class="nb">int</span>
 
@@ -4173,9 +4235,6 @@ several parameters can be used to exclude or include fields.</p>
     <span class="n">value</span><span class="o">=</span><span class="mi">9876543210</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
-<ol>
-<li>As said above, this field will always be excluded during serialization.</li>
-</ol>
 <p>The <code>exclude</code> parameter can be used to specify which fields should be excluded (including the others), and vice-versa
 using the <code>include</code> parameter.</p>
 <div class="language-python highlight"><pre><span></span><code><span class="c1"># using a set:</span>
@@ -4186,6 +4245,7 @@ using the <code>include</code> parameter.</p>
 <span class="nb">print</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">exclude</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;user&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;username&#39;</span><span class="p">,</span> <span class="s1">&#39;password&#39;</span><span class="p">},</span> <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}))</span>
 <span class="c1">#&gt; {&#39;id&#39;: &#39;1234567890&#39;, &#39;user&#39;: {&#39;id&#39;: 42}}</span>
 
+<span class="c1"># same configuration using `include`:</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s1">&#39;user&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;id&#39;</span><span class="p">}}))</span>
 <span class="c1">#&gt; {&#39;id&#39;: &#39;1234567890&#39;, &#39;user&#39;: {&#39;id&#39;: 42}}</span>
 </code></pre></div>
@@ -4233,16 +4293,17 @@ using the <code>include</code> parameter.</p>
 <div class="language-python highlight"><pre><span></span><code><span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">exclude</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;hobbies&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;__all__&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;info&#39;</span><span class="p">}}}))</span>
 <span class="c1">#&gt; {&#39;hobbies&#39;: [{&#39;name&#39;: &#39;Programming&#39;}, {&#39;name&#39;: &#39;Gaming&#39;}]}</span>
 </code></pre></div>
-<h3 id="excluding-and-including-fields-based-on-their-value">Excluding and including fields based on their value<a class="headerlink" href="#excluding-and-including-fields-based-on-their-value" title="Permanent link">&para;</a></h3>
+<h4 id="excluding-and-including-fields-based-on-their-value">Excluding and including fields based on their value<a class="headerlink" href="#excluding-and-including-fields-based-on-their-value" title="Permanent link">&para;</a></h4>
 <p>When using the <a href="#serializing-data">serialization methods</a>, it is possible to exclude fields based on their value,
 using the following parameters:</p>
 <ul>
-<li><code>exclude_defaults</code>: Exclude all fields whose value compares equal to the equality (<code>==</code>) comparison operator.</li>
+<li><code>exclude_defaults</code>: Exclude all fields whose value compares equal to the default value
+  (using the equality (<code>==</code>) comparison operator).</li>
 <li><code>exclude_none</code>: Exclude all fields whose value is <code>None</code>.</li>
 <li>
 <p><code>exclude_unset</code>: Pydantic keeps track of fields that were <em>explicitly</em> set during instantiation (using the
   <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_fields_set"><code>model_fields_set</code></a> property). Using <code>exclude_unset</code>, any field that
-  was populated using the default value will be excluded:</p>
+  was not explicitly provided will be excluded:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
 
 
@@ -4258,12 +4319,17 @@ using the following parameters:</p>
 <span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">exclude_unset</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
 <span class="c1">#&gt; {&#39;name&#39;: &#39;John&#39;}</span>
 </code></pre></div>
-<p>Note that altering a field <em>after</em> the instance have been created will remove it from the unset fields:</p>
+<p>Note that altering a field <em>after</em> the instance has been created will remove it from the unset fields:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="n">user</span><span class="o">.</span><span class="n">age</span> <span class="o">=</span> <span class="mi">21</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">exclude_unset</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
 <span class="c1">#&gt; {&#39;name&#39;: &#39;John&#39;, &#39;age&#39;: 21}</span>
 </code></pre></div>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>The experimental <a href="../experimental/#missing-sentinel"><code>MISSING</code> sentinel</a> can be used as an alternative to <code>exclude_unset</code>.
+Any field with <code>MISSING</code> as a value is automatically excluded from the serialization output.</p>
+</div>
 </li>
 </ul>
 

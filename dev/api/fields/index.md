@@ -19,6 +19,7 @@ Field(
     description: str | None = _Unset,
     examples: list[Any] | None = _Unset,
     exclude: bool | None = _Unset,
+    exclude_if: Callable[[Any], bool] | None = _Unset,
     discriminator: str | Discriminator | None = _Unset,
     deprecated: Deprecated | str | bool | None = _Unset,
     json_schema_extra: (
@@ -67,6 +68,7 @@ Field(
     description: str | None = _Unset,
     examples: list[Any] | None = _Unset,
     exclude: bool | None = _Unset,
+    exclude_if: Callable[[Any], bool] | None = _Unset,
     discriminator: str | Discriminator | None = _Unset,
     deprecated: Deprecated | str | bool | None = _Unset,
     json_schema_extra: (
@@ -100,7 +102,7 @@ Field(
 
 ```python
 Field(
-    default: _T" optional hover>_T,
+    default: _T,
     *,
     alias: str | None = _Unset,
     alias_priority: int | None = _Unset,
@@ -115,6 +117,7 @@ Field(
     description: str | None = _Unset,
     examples: list[Any] | None = _Unset,
     exclude: bool | None = _Unset,
+    exclude_if: Callable[[Any], bool] | None = _Unset,
     discriminator: str | Discriminator | None = _Unset,
     deprecated: Deprecated | str | bool | None = _Unset,
     json_schema_extra: (
@@ -165,6 +168,7 @@ Field(
     description: str | None = _Unset,
     examples: list[Any] | None = _Unset,
     exclude: bool | None = _Unset,
+    exclude_if: Callable[[Any], bool] | None = _Unset,
     discriminator: str | Discriminator | None = _Unset,
     deprecated: Deprecated | str | bool | None = _Unset,
     json_schema_extra: (
@@ -215,6 +219,7 @@ Field(
     description: str | None = _Unset,
     examples: list[Any] | None = _Unset,
     exclude: bool | None = _Unset,
+    exclude_if: Callable[[Any], bool] | None = _Unset,
     discriminator: str | Discriminator | None = _Unset,
     deprecated: Deprecated | str | bool | None = _Unset,
     json_schema_extra: (
@@ -262,6 +267,7 @@ Field(
     description: str | None = _Unset,
     examples: list[Any] | None = _Unset,
     exclude: bool | None = _Unset,
+    exclude_if: Callable[[Any], bool] | None = _Unset,
     discriminator: str | Discriminator | None = _Unset,
     deprecated: Deprecated | str | bool | None = _Unset,
     json_schema_extra: (
@@ -315,6 +321,7 @@ Field(
     description: str | None = _Unset,
     examples: list[Any] | None = _Unset,
     exclude: bool | None = _Unset,
+    exclude_if: Callable[[Any], bool] | None = _Unset,
     discriminator: str | Discriminator | None = _Unset,
     deprecated: Deprecated | str | bool | None = _Unset,
     json_schema_extra: (
@@ -360,7 +367,7 @@ Note
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `default` | `Any` | Default value if the field is not set. | `PydanticUndefined` | | `default_factory` | `Callable[[], Any] | Callable[[dict[str, Any]], Any] | None` | A callable to generate the default value. The callable can either take 0 arguments (in which case it is called as is) or a single argument containing the already validated data. | `_Unset` | | `alias` | `str | None` | The name to use for the attribute when validating or serializing by alias. This is often used for things like converting between snake and camel case. | `_Unset` | | `alias_priority` | `int | None` | Priority of the alias. This affects whether an alias generator is used. | `_Unset` | | `validation_alias` | `str | AliasPath | AliasChoices | None` | Like alias, but only affects validation, not serialization. | `_Unset` | | `serialization_alias` | `str | None` | Like alias, but only affects serialization, not validation. | `_Unset` | | `title` | `str | None` | Human-readable title. | `_Unset` | | `field_title_generator` | `Callable[[str, FieldInfo], str] | None` | A callable that takes a field name and returns title for it. | `_Unset` | | `description` | `str | None` | Human-readable description. | `_Unset` | | `examples` | `list[Any] | None` | Example values for this field. | `_Unset` | | `exclude` | `bool | None` | Whether to exclude the field from the model serialization. | `_Unset` | | `discriminator` | `str | Discriminator | None` | Field name or Discriminator for discriminating the type in a tagged union. | `_Unset` | | `deprecated` | `Deprecated | str | bool | None` | A deprecation message, an instance of warnings.deprecated or the typing_extensions.deprecated backport, or a boolean. If True, a default deprecation message will be emitted when accessing the field. | `_Unset` | | `json_schema_extra` | `JsonDict | Callable[[JsonDict], None] | None` | A dict or callable to provide extra JSON schema properties. | `_Unset` | | `frozen` | `bool | None` | Whether the field is frozen. If true, attempts to change the value on an instance will raise an error. | `_Unset` | | `validate_default` | `bool | None` | If True, apply validation to the default value every time you create an instance. Otherwise, for performance reasons, the default value of the field is trusted and not validated. | `_Unset` | | `repr` | `bool` | A boolean indicating whether to include the field in the __repr__ output. | `_Unset` | | `init` | `bool | None` | Whether the field should be included in the constructor of the dataclass. (Only applies to dataclasses.) | `_Unset` | | `init_var` | `bool | None` | Whether the field should only be included in the constructor of the dataclass. (Only applies to dataclasses.) | `_Unset` | | `kw_only` | `bool | None` | Whether the field should be a keyword-only argument in the constructor of the dataclass. (Only applies to dataclasses.) | `_Unset` | | `coerce_numbers_to_str` | `bool | None` | Whether to enable coercion of any Number type to str (not applicable in strict mode). | `_Unset` | | `strict` | `bool | None` | If True, strict validation is applied to the field. See Strict Mode for details. | `_Unset` | | `gt` | `SupportsGt | None` | Greater than. If set, value must be greater than this. Only applicable to numbers. | `_Unset` | | `ge` | `SupportsGe | None` | Greater than or equal. If set, value must be greater than or equal to this. Only applicable to numbers. | `_Unset` | | `lt` | `SupportsLt | None` | Less than. If set, value must be less than this. Only applicable to numbers. | `_Unset` | | `le` | `SupportsLe | None` | Less than or equal. If set, value must be less than or equal to this. Only applicable to numbers. | `_Unset` | | `multiple_of` | `float | None` | Value must be a multiple of this. Only applicable to numbers. | `_Unset` | | `min_length` | `int | None` | Minimum length for iterables. | `_Unset` | | `max_length` | `int | None` | Maximum length for iterables. | `_Unset` | | `pattern` | `str | Pattern[str] | None` | Pattern for strings (a regular expression). | `_Unset` | | `allow_inf_nan` | `bool | None` | Allow inf, -inf, nan. Only applicable to float and Decimal numbers. | `_Unset` | | `max_digits` | `int | None` | Maximum number of allow digits for strings. | `_Unset` | | `decimal_places` | `int | None` | Maximum number of decimal places allowed for numbers. | `_Unset` | | `union_mode` | `Literal['smart', 'left_to_right']` | The strategy to apply when validating a union. Can be smart (the default), or left_to_right. See Union Mode for details. | `_Unset` | | `fail_fast` | `bool | None` | If True, validation will stop on the first error. If False, all validation errors will be collected. This option can be applied only to iterable types (list, tuple, set, and frozenset). | `_Unset` | | `extra` | `Unpack[_EmptyKwargs]` | (Deprecated) Extra fields that will be included in the JSON schema. Warning The extra kwargs is deprecated. Use json_schema_extra instead. | `{}` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `default` | `Any` | Default value if the field is not set. | `PydanticUndefined` | | `default_factory` | `Callable[[], Any] | Callable[[dict[str, Any]], Any] | None` | A callable to generate the default value. The callable can either take 0 arguments (in which case it is called as is) or a single argument containing the already validated data. | `_Unset` | | `alias` | `str | None` | The name to use for the attribute when validating or serializing by alias. This is often used for things like converting between snake and camel case. | `_Unset` | | `alias_priority` | `int | None` | Priority of the alias. This affects whether an alias generator is used. | `_Unset` | | `validation_alias` | `str | AliasPath | AliasChoices | None` | Like alias, but only affects validation, not serialization. | `_Unset` | | `serialization_alias` | `str | None` | Like alias, but only affects serialization, not validation. | `_Unset` | | `title` | `str | None` | Human-readable title. | `_Unset` | | `field_title_generator` | `Callable[[str, FieldInfo], str] | None` | A callable that takes a field name and returns title for it. | `_Unset` | | `description` | `str | None` | Human-readable description. | `_Unset` | | `examples` | `list[Any] | None` | Example values for this field. | `_Unset` | | `exclude` | `bool | None` | Whether to exclude the field from the model serialization. | `_Unset` | | `exclude_if` | `Callable[[Any], bool] | None` | A callable that determines whether to exclude a field during serialization based on its value. | `_Unset` | | `discriminator` | `str | Discriminator | None` | Field name or Discriminator for discriminating the type in a tagged union. | `_Unset` | | `deprecated` | `Deprecated | str | bool | None` | A deprecation message, an instance of warnings.deprecated or the typing_extensions.deprecated backport, or a boolean. If True, a default deprecation message will be emitted when accessing the field. | `_Unset` | | `json_schema_extra` | `JsonDict | Callable[[JsonDict], None] | None` | A dict or callable to provide extra JSON schema properties. | `_Unset` | | `frozen` | `bool | None` | Whether the field is frozen. If true, attempts to change the value on an instance will raise an error. | `_Unset` | | `validate_default` | `bool | None` | If True, apply validation to the default value every time you create an instance. Otherwise, for performance reasons, the default value of the field is trusted and not validated. | `_Unset` | | `repr` | `bool` | A boolean indicating whether to include the field in the __repr__ output. | `_Unset` | | `init` | `bool | None` | Whether the field should be included in the constructor of the dataclass. (Only applies to dataclasses.) | `_Unset` | | `init_var` | `bool | None` | Whether the field should only be included in the constructor of the dataclass. (Only applies to dataclasses.) | `_Unset` | | `kw_only` | `bool | None` | Whether the field should be a keyword-only argument in the constructor of the dataclass. (Only applies to dataclasses.) | `_Unset` | | `coerce_numbers_to_str` | `bool | None` | Whether to enable coercion of any Number type to str (not applicable in strict mode). | `_Unset` | | `strict` | `bool | None` | If True, strict validation is applied to the field. See Strict Mode for details. | `_Unset` | | `gt` | `SupportsGt | None` | Greater than. If set, value must be greater than this. Only applicable to numbers. | `_Unset` | | `ge` | `SupportsGe | None` | Greater than or equal. If set, value must be greater than or equal to this. Only applicable to numbers. | `_Unset` | | `lt` | `SupportsLt | None` | Less than. If set, value must be less than this. Only applicable to numbers. | `_Unset` | | `le` | `SupportsLe | None` | Less than or equal. If set, value must be less than or equal to this. Only applicable to numbers. | `_Unset` | | `multiple_of` | `float | None` | Value must be a multiple of this. Only applicable to numbers. | `_Unset` | | `min_length` | `int | None` | Minimum length for iterables. | `_Unset` | | `max_length` | `int | None` | Maximum length for iterables. | `_Unset` | | `pattern` | `str | Pattern[str] | None` | Pattern for strings (a regular expression). | `_Unset` | | `allow_inf_nan` | `bool | None` | Allow inf, -inf, nan. Only applicable to float and Decimal numbers. | `_Unset` | | `max_digits` | `int | None` | Maximum number of allow digits for strings. | `_Unset` | | `decimal_places` | `int | None` | Maximum number of decimal places allowed for numbers. | `_Unset` | | `union_mode` | `Literal['smart', 'left_to_right']` | The strategy to apply when validating a union. Can be smart (the default), or left_to_right. See Union Mode for details. | `_Unset` | | `fail_fast` | `bool | None` | If True, validation will stop on the first error. If False, all validation errors will be collected. This option can be applied only to iterable types (list, tuple, set, and frozenset). | `_Unset` | | `extra` | `Unpack[_EmptyKwargs]` | (Deprecated) Extra fields that will be included in the JSON schema. Warning The extra kwargs is deprecated. Use json_schema_extra instead. | `{}` |
 
 Returns:
 
@@ -382,6 +389,7 @@ def Field(  # noqa: C901
     description: str | None = _Unset,
     examples: list[Any] | None = _Unset,
     exclude: bool | None = _Unset,
+    exclude_if: Callable[[Any], bool] | None = _Unset,
     discriminator: str | types.Discriminator | None = _Unset,
     deprecated: Deprecated | str | bool | None = _Unset,
     json_schema_extra: JsonDict | Callable[[JsonDict], None] | None = _Unset,
@@ -433,6 +441,7 @@ def Field(  # noqa: C901
         description: Human-readable description.
         examples: Example values for this field.
         exclude: Whether to exclude the field from the model serialization.
+        exclude_if: A callable that determines whether to exclude a field during serialization based on its value.
         discriminator: Field name or Discriminator for discriminating the type in a tagged union.
         deprecated: A deprecation message, an instance of `warnings.deprecated` or the `typing_extensions.deprecated` backport,
             or a boolean. If `True`, a default deprecation message will be emitted when accessing the field.
@@ -550,6 +559,7 @@ def Field(  # noqa: C901
         description=description,
         examples=examples,
         exclude=exclude,
+        exclude_if=exclude_if,
         discriminator=discriminator,
         deprecated=deprecated,
         json_schema_extra=json_schema_extra,
@@ -597,7 +607,7 @@ You generally shouldn't be creating `FieldInfo` directly, you'll only need to us
 
 Attributes:
 
-| Name | Type | Description | | --- | --- | --- | | `annotation` | `type[Any] | None` | The type annotation of the field. | | `default` | `Any` | The default value of the field. | | `default_factory` | `Callable[[], Any] | Callable[[dict[str, Any]], Any] | None` | A callable to generate the default value. The callable can either take 0 arguments (in which case it is called as is) or a single argument containing the already validated data. | | `alias` | `str | None` | The alias name of the field. | | `alias_priority` | `int | None` | The priority of the field's alias. | | `validation_alias` | `str | AliasPath | AliasChoices | None` | The validation alias of the field. | | `serialization_alias` | `str | None` | The serialization alias of the field. | | `title` | `str | None` | The title of the field. | | `field_title_generator` | `Callable[[str, FieldInfo], str] | None` | A callable that takes a field name and returns title for it. | | `description` | `str | None` | The description of the field. | | `examples` | `list[Any] | None` | List of examples of the field. | | `exclude` | `bool | None` | Whether to exclude the field from the model serialization. | | `discriminator` | `str | Discriminator | None` | Field name or Discriminator for discriminating the type in a tagged union. | | `deprecated` | `Deprecated | str | bool | None` | A deprecation message, an instance of warnings.deprecated or the typing_extensions.deprecated backport, or a boolean. If True, a default deprecation message will be emitted when accessing the field. | | `json_schema_extra` | `JsonDict | Callable[[JsonDict], None] | None` | A dict or callable to provide extra JSON schema properties. | | `frozen` | `bool | None` | Whether the field is frozen. | | `validate_default` | `bool | None` | Whether to validate the default value of the field. | | `repr` | `bool` | Whether to include the field in representation of the model. | | `init` | `bool | None` | Whether the field should be included in the constructor of the dataclass. | | `init_var` | `bool | None` | Whether the field should only be included in the constructor of the dataclass, and not stored. | | `kw_only` | `bool | None` | Whether the field should be a keyword-only argument in the constructor of the dataclass. | | `metadata` | `list[Any]` | List of metadata constraints. |
+| Name | Type | Description | | --- | --- | --- | | `annotation` | `type[Any] | None` | The type annotation of the field. | | `default` | `Any` | The default value of the field. | | `default_factory` | `Callable[[], Any] | Callable[[dict[str, Any]], Any] | None` | A callable to generate the default value. The callable can either take 0 arguments (in which case it is called as is) or a single argument containing the already validated data. | | `alias` | `str | None` | The alias name of the field. | | `alias_priority` | `int | None` | The priority of the field's alias. | | `validation_alias` | `str | AliasPath | AliasChoices | None` | The validation alias of the field. | | `serialization_alias` | `str | None` | The serialization alias of the field. | | `title` | `str | None` | The title of the field. | | `field_title_generator` | `Callable[[str, FieldInfo], str] | None` | A callable that takes a field name and returns title for it. | | `description` | `str | None` | The description of the field. | | `examples` | `list[Any] | None` | List of examples of the field. | | `exclude` | `bool | None` | Whether to exclude the field from the model serialization. | | `exclude_if` | `Callable[[Any], bool] | None` | A callable that determines whether to exclude a field during serialization based on its value. | | `discriminator` | `str | Discriminator | None` | Field name or Discriminator for discriminating the type in a tagged union. | | `deprecated` | `Deprecated | str | bool | None` | A deprecation message, an instance of warnings.deprecated or the typing_extensions.deprecated backport, or a boolean. If True, a default deprecation message will be emitted when accessing the field. | | `json_schema_extra` | `JsonDict | Callable[[JsonDict], None] | None` | A dict or callable to provide extra JSON schema properties. | | `frozen` | `bool | None` | Whether the field is frozen. | | `validate_default` | `bool | None` | Whether to validate the default value of the field. | | `repr` | `bool` | Whether to include the field in representation of the model. | | `init` | `bool | None` | Whether the field should be included in the constructor of the dataclass. | | `init_var` | `bool | None` | Whether the field should only be included in the constructor of the dataclass, and not stored. | | `kw_only` | `bool | None` | Whether the field should be a keyword-only argument in the constructor of the dataclass. | | `metadata` | `list[Any]` | List of metadata constraints. |
 
 See the signature of `pydantic.fields.Field` for more details about the expected arguments.
 
@@ -636,6 +646,7 @@ def __init__(self, **kwargs: Unpack[_FieldInfoInputs]) -> None:
     self.description = kwargs.pop('description', None)
     self.examples = kwargs.pop('examples', None)
     self.exclude = kwargs.pop('exclude', None)
+    self.exclude_if = kwargs.pop('exclude_if', None)
     self.discriminator = kwargs.pop('discriminator', None)
     # For compatibility with FastAPI<=0.110.0, we preserve the existing value if it is not overridden
     self.deprecated = kwargs.pop('deprecated', getattr(self, 'deprecated', None))
