@@ -1344,6 +1344,15 @@ to help you monitor and understand your
 </li>
         
           <li class="md-nav__item">
+  <a href="#serializing-cli-arguments" class="md-nav__link">
+    <span class="md-ellipsis">
+      Serializing CLI Arguments
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#mutually-exclusive-groups" class="md-nav__link">
     <span class="md-ellipsis">
       Mutually Exclusive Groups
@@ -1465,6 +1474,15 @@ to help you monitor and understand your
   <a href="#suppressing-fields-from-cli-help-text" class="md-nav__link">
     <span class="md-ellipsis">
       Suppressing Fields from CLI Help Text
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cli-shortcuts-for-arguments" class="md-nav__link">
+    <span class="md-ellipsis">
+      CLI Shortcuts for Arguments
     </span>
   </a>
   
@@ -1669,9 +1687,9 @@ to help you monitor and understand your
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#accesing-the-result-of-previous-sources" class="md-nav__link">
+  <a href="#accessing-the-result-of-previous-sources" class="md-nav__link">
     <span class="md-ellipsis">
-      Accesing the result of previous sources
+      Accessing the result of previous sources
     </span>
   </a>
   
@@ -3721,6 +3739,15 @@ to help you monitor and understand your
 </li>
         
           <li class="md-nav__item">
+  <a href="#serializing-cli-arguments" class="md-nav__link">
+    <span class="md-ellipsis">
+      Serializing CLI Arguments
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#mutually-exclusive-groups" class="md-nav__link">
     <span class="md-ellipsis">
       Mutually Exclusive Groups
@@ -3842,6 +3869,15 @@ to help you monitor and understand your
   <a href="#suppressing-fields-from-cli-help-text" class="md-nav__link">
     <span class="md-ellipsis">
       Suppressing Fields from CLI Help Text
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cli-shortcuts-for-arguments" class="md-nav__link">
+    <span class="md-ellipsis">
+      CLI Shortcuts for Arguments
     </span>
   </a>
   
@@ -4046,9 +4082,9 @@ to help you monitor and understand your
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#accesing-the-result-of-previous-sources" class="md-nav__link">
+  <a href="#accessing-the-result-of-previous-sources" class="md-nav__link">
     <span class="md-ellipsis">
-      Accesing the result of previous sources
+      Accessing the result of previous sources
     </span>
   </a>
   
@@ -5158,7 +5194,26 @@ defined) after instantiation:</p>
     <span class="s1">&#39;directory&#39;</span><span class="p">:</span> <span class="s1">&#39;dir&#39;</span><span class="p">,</span>
 <span class="p">}</span>
 </code></pre></div>
-<p>When executing a subcommand with an asynchronous cli_cmd, Pydantic settings automatically detects whether the current thread already has an active event loop. If so, the async command is run in a fresh thread to avoid conflicts. Otherwise, it uses asyncio.run() in the current thread. This handling ensures your asynchronous subcommands “just work” without additional manual setup.</p>
+<p>When executing a subcommand with an asynchronous cli_cmd, Pydantic settings automatically detects whether the current thread already has an active event loop. If so, the async command is run in a fresh thread to avoid conflicts. Otherwise, it uses asyncio.run() in the current thread. This handling ensures your asynchronous subcommands "just work" without additional manual setup.</p>
+<h3 id="serializing-cli-arguments">Serializing CLI Arguments<a class="headerlink" href="#serializing-cli-arguments" title="Permanent link">&para;</a></h3>
+<p>An instantiated Pydantic model can be serialized into its CLI arguments using the <code>CliApp.serialize</code> method.</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">CliApp</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Nested</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">that</span><span class="p">:</span> <span class="nb">int</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Settings</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">this</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">nested</span><span class="p">:</span> <span class="n">Nested</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">CliApp</span><span class="o">.</span><span class="n">serialize</span><span class="p">(</span><span class="n">Settings</span><span class="p">(</span><span class="n">this</span><span class="o">=</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="n">nested</span><span class="o">=</span><span class="n">Nested</span><span class="p">(</span><span class="n">that</span><span class="o">=</span><span class="mi">123</span><span class="p">))))</span>
+<span class="c1">#&gt; [&#39;--this&#39;, &#39;hello&#39;, &#39;--nested.that&#39;, &#39;123&#39;]</span>
+</code></pre></div>
 <h3 id="mutually-exclusive-groups">Mutually Exclusive Groups<a class="headerlink" href="#mutually-exclusive-groups" title="Permanent link">&para;</a></h3>
 <p>CLI mutually exclusive groups can be created by inheriting from the <code>CliMutuallyExclusiveGroup</code> class.</p>
 <div class="admonition note">
@@ -5565,6 +5620,55 @@ even if <code>cli_use_class_docs_for_groups</code> is set to <code>True</code>.<
 <span class="sd">  -h, --help          show this help message and exit</span>
 <span class="sd">&quot;&quot;&quot;</span>
 </code></pre></div>
+<h4 id="cli-shortcuts-for-arguments">CLI Shortcuts for Arguments<a class="headerlink" href="#cli-shortcuts-for-arguments" title="Permanent link">&para;</a></h4>
+<p>Add alternative CLI argument names (shortcuts) for fields using the <code>cli_shortcuts</code> option in <code>SettingsConfigDict</code>. This allows you to define additional names for CLI arguments, which can be especially useful for providing more user-friendly or shorter aliases for deeply nested or verbose field names.</p>
+<p>The <code>cli_shortcuts</code> option takes a dictionary mapping the target field name (using dot notation for nested fields) to one or more shortcut names. If multiple fields share the same shortcut, the first matching field will take precedence.</p>
+<p><strong>Flat Example:</strong></p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">Field</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">SettingsConfigDict</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+    <span class="n">option</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s1">&#39;foo&#39;</span><span class="p">)</span>
+    <span class="n">list_option</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s1">&#39;fizz&#39;</span><span class="p">)</span>
+
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">SettingsConfigDict</span><span class="p">(</span>
+        <span class="n">cli_shortcuts</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;option&#39;</span><span class="p">:</span> <span class="s1">&#39;option2&#39;</span><span class="p">,</span> <span class="s1">&#39;list_option&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;list_option2&#39;</span><span class="p">]}</span>
+    <span class="p">)</span>
+
+
+<span class="c1"># Now you can use the shortcuts on the CLI:</span>
+<span class="c1"># --option2 sets &#39;option&#39;, --list_option2 sets &#39;list_option&#39;</span>
+</code></pre></div>
+<p><strong>Nested Example:</strong></p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">SettingsConfigDict</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">TwiceNested</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">option</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s1">&#39;foo&#39;</span><span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Nested</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">twice_nested_option</span><span class="p">:</span> <span class="n">TwiceNested</span> <span class="o">=</span> <span class="n">TwiceNested</span><span class="p">()</span>
+    <span class="n">option</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s1">&#39;foo&#39;</span><span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+    <span class="n">nested</span><span class="p">:</span> <span class="n">Nested</span> <span class="o">=</span> <span class="n">Nested</span><span class="p">()</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">SettingsConfigDict</span><span class="p">(</span>
+        <span class="n">cli_shortcuts</span><span class="o">=</span><span class="p">{</span>
+            <span class="s1">&#39;nested.option&#39;</span><span class="p">:</span> <span class="s1">&#39;option2&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;nested.twice_nested_option.option&#39;</span><span class="p">:</span> <span class="s1">&#39;twice_nested_option&#39;</span><span class="p">,</span>
+        <span class="p">}</span>
+    <span class="p">)</span>
+
+
+<span class="c1"># Now you can use --option2 to set nested.option and --twice_nested_option to set nested.twice_nested_option.option</span>
+</code></pre></div>
+<p>If a shortcut collides (is mapped to multiple fields), it will apply to the first matching field in the model.</p>
 <h3 id="integrating-with-existing-parsers">Integrating with Existing Parsers<a class="headerlink" href="#integrating-with-existing-parsers" title="Permanent link">&para;</a></h3>
 <p>A CLI settings source can be integrated with existing parsers by overriding the default CLI settings source with a user
 defined one that specifies the <code>root_parser</code> object.</p>
@@ -6188,7 +6292,7 @@ need to add your own custom sources, <code>settings_customise_sources</code> mak
 <span class="nb">print</span><span class="p">(</span><span class="n">Settings</span><span class="p">())</span>
 <span class="c1">#&gt; foobar=&#39;test&#39;</span>
 </code></pre></div>
-<h4 id="accesing-the-result-of-previous-sources">Accesing the result of previous sources<a class="headerlink" href="#accesing-the-result-of-previous-sources" title="Permanent link">&para;</a></h4>
+<h4 id="accessing-the-result-of-previous-sources">Accessing the result of previous sources<a class="headerlink" href="#accessing-the-result-of-previous-sources" title="Permanent link">&para;</a></h4>
 <p>Each source of settings can access the output of the previous ones.</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
 
