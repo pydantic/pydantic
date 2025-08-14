@@ -100,7 +100,7 @@ Field(
 
 ```python
 Field(
-    default: _T,
+    default: _T" optional hover>_T,
     *,
     alias: str | None = _Unset,
     alias_priority: int | None = _Unset,

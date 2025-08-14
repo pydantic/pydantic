@@ -6253,11 +6253,11 @@ is set to <code>'allow'</code>.</p>
     <span class="c1"># ##### Deprecated methods from v1 #####</span>
     <span class="nd">@property</span>
     <span class="nd">@typing_extensions</span><span class="o">.</span><span class="n">deprecated</span><span class="p">(</span>
-        <span class="s1">&#39;The `__fields__` attribute is deprecated, use `model_fields` instead.&#39;</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="kc">None</span>
+        <span class="s1">&#39;The `__fields__` attribute is deprecated, use the `model_fields` class property instead.&#39;</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="kc">None</span>
     <span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">__fields__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">FieldInfo</span><span class="p">]:</span>
         <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-            <span class="s1">&#39;The `__fields__` attribute is deprecated, use `model_fields` instead.&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;The `__fields__` attribute is deprecated, use the `model_fields` class property instead.&#39;</span><span class="p">,</span>
             <span class="n">category</span><span class="o">=</span><span class="n">PydanticDeprecatedSince20</span><span class="p">,</span>
             <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
         <span class="p">)</span>
