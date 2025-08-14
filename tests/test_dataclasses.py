@@ -3214,3 +3214,20 @@ def test_dataclass_fields_rebuilt_before_schema_generation() -> None:
     ta = TypeAdapter(A)
 
     assert ta.json_schema()['properties']['a']['test'] == 'a'
+
+
+def test_dataclass_field_exclude() -> None:
+    @pydantic.dataclasses.dataclass
+    class Foo:
+        foo: str = Field(exclude=True)
+        bar: int = Field(exclude_if=lambda x: x > 1)
+
+    ta = TypeAdapter(Foo)
+
+    assert ta.dump_python(Foo(foo='bar', bar=1)) == {'bar': 1}
+    assert ta.dump_python(Foo(foo='bar', bar=1), exclude={'bar'}) == {}
+    assert ta.dump_python(Foo(foo='bar', bar=2)) == {}
+
+    assert ta.dump_json(Foo(foo='bar', bar=1)).decode('utf-8') == '{"bar":1}'
+    assert ta.dump_json(Foo(foo='bar', bar=1), exclude={'bar'}).decode('utf-8') == '{}'
+    assert ta.dump_json(Foo(foo='bar', bar=2)).decode('utf-8') == '{}'
