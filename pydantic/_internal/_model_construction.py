@@ -319,10 +319,12 @@ class ModelMetaclass(ABCMeta):
         return field_names, class_vars, private_attributes
 
     @property
-    @deprecated('The `__fields__` attribute is deprecated, use `model_fields` instead.', category=None)
+    @deprecated(
+        'The `__fields__` attribute is deprecated, use the `model_fields` class property instead.', category=None
+    )
     def __fields__(self) -> dict[str, FieldInfo]:
         warnings.warn(
-            'The `__fields__` attribute is deprecated, use `model_fields` instead.',
+            'The `__fields__` attribute is deprecated, use the `model_fields` class property instead.',
             PydanticDeprecatedSince20,
             stacklevel=2,
         )
