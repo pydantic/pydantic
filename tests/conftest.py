@@ -15,9 +15,10 @@ from typing import Any, Callable
 
 import pytest
 from _pytest.assertion.rewrite import AssertionRewritingHook
+from _pytest.nodes import Item
 from jsonschema import Draft202012Validator, SchemaError
 
-from pydantic import GenerateSchema
+from pydantic._internal._generate_schema import GenerateSchema
 from pydantic.json_schema import GenerateJsonSchema
 
 
@@ -43,7 +44,11 @@ def _extract_source_code_from_function(function: FunctionType):
 
 
 def _create_module_file(code: str, tmp_path: Path, name: str) -> tuple[str, str]:
-    name = f'{name}_{secrets.token_hex(5)}'
+    # Max path length in Windows is 260. Leaving some buffer here
+    max_name_len = 240 - len(str(tmp_path))
+    # Windows does not allow these characters in paths. Linux bans slashes only.
+    sanitized_name = re.sub('[' + re.escape('<>:"/\\|?*') + ']', '-', name)[:max_name_len]
+    name = f'{sanitized_name}_{secrets.token_hex(5)}'
     path = tmp_path / f'{name}.py'
     path.write_text(code)
     return name, str(path)
@@ -174,3 +179,24 @@ def validate_json_schemas(monkeypatch: pytest.MonkeyPatch, request: pytest.Fixtu
         return json_schema
 
     monkeypatch.setattr(GenerateJsonSchema, 'generate', generate)
+
+
+_thread_unsafe_fixtures = (
+    'generate_schema_calls',  # Monkeypatches Pydantic code
+    'benchmark',  # Fixture can't be reused
+    'tmp_path',  # Duplicate paths
+    'tmpdir',  # Duplicate dirs
+    'copy_method',  # Uses `pytest.warns()`
+    'reset_plugins',  # Monkeypatching
+)
+
+
+# Note: it is important to add the marker in the `pytest_itemcollected` hook.
+# `pytest-run-parallel` also implements this hook (and ours is running before),
+# and this wouldn't work if we were to add the "thread_unsafe" marker in say
+# `pytest_collection_modifyitems` (which is the last collection hook to be run).
+def pytest_itemcollected(item: Item) -> None:
+    """Mark tests as thread unsafe if they make use of fixtures that doesn't play well across threads."""
+    fixtures: tuple[str, ...] = getattr(item, 'fixturenames', ())
+    if any(fixture in fixtures for fixture in _thread_unsafe_fixtures):
+        item.add_marker('thread_unsafe')

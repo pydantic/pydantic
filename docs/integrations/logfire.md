@@ -14,7 +14,7 @@ Logfire has an out-of-the-box Pydantic integration that lets you understand the 
 
 Once you've got Logfire set up, you can start using it to monitor your Pydantic models and get insights into your data validation:
 
-```py test="skip"
+```python {test="skip"}
 from datetime import date
 
 import logfire
@@ -44,7 +44,7 @@ logfire.info('user processed: {user!r}', user=user)  # (2)!
 You can even record information about the validation process automatically by
 using the builtin [Pydantic integration](https://logfire.pydantic.dev/docs/why-logfire/pydantic/):
 
-```py test="skip"
+```python {test="skip"}
 from datetime import date
 
 import logfire

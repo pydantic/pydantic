@@ -1,4 +1,4 @@
-name: Pydantic People Update
+name: Pydantic people update
 
 on:
   schedule:

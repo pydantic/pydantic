@@ -5,15 +5,23 @@ Import of this module is deferred since it contains imports of many standard lib
 
 from __future__ import annotations as _annotations
 
+import collections.abc
 import math
 import re
 import typing
+from decimal import Decimal
+from fractions import Fraction
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
-from typing import Any, Callable
+from typing import Any, Callable, Union, cast, get_origin
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
+import typing_extensions
 from pydantic_core import PydanticCustomError, core_schema
 from pydantic_core._pydantic_core import PydanticKnownError
-from pydantic_core.core_schema import ErrorType
+from typing_inspection import typing_objects
+
+from pydantic._internal._import_utils import import_cached_field_info
+from pydantic.errors import PydanticSchemaGenerationError
 
 
 def sequence_validator(
@@ -236,79 +244,289 @@ def ip_v6_interface_validator(input_value: Any, /) -> IPv6Interface:
         raise PydanticCustomError('ip_v6_interface', 'Input is not a valid IPv6 interface')
 
 
+def fraction_validator(input_value: Any, /) -> Fraction:
+    if isinstance(input_value, Fraction):
+        return input_value
+
+    try:
+        return Fraction(input_value)
+    except ValueError:
+        raise PydanticCustomError('fraction_parsing', 'Input is not a valid fraction')
+
+
 def forbid_inf_nan_check(x: Any) -> Any:
     if not math.isfinite(x):
         raise PydanticKnownError('finite_number')
     return x
 
 
-_InputType = typing.TypeVar('_InputType')
+def _safe_repr(v: Any) -> int | float | str:
+    """The context argument for `PydanticKnownError` requires a number or str type, so we do a simple repr() coercion for types like timedelta.
+
+    See tests/test_types.py::test_annotated_metadata_any_order for some context.
+    """
+    if isinstance(v, (int, float, str)):
+        return v
+    return repr(v)
 
 
-def create_constraint_validator(
-    constraint_id: str,
-    predicate: Callable[[_InputType, Any], bool],
-    error_type: ErrorType,
-    context_gen: Callable[[Any, Any], dict[str, Any]] | None = None,
-) -> Callable[[_InputType, Any], _InputType]:
-    """Create a validator function for a given constraint.
+def greater_than_validator(x: Any, gt: Any) -> Any:
+    try:
+        if not (x > gt):
+            raise PydanticKnownError('greater_than', {'gt': _safe_repr(gt)})
+        return x
+    except TypeError:
+        raise TypeError(f"Unable to apply constraint 'gt' to supplied value {x}")
+
+
+def greater_than_or_equal_validator(x: Any, ge: Any) -> Any:
+    try:
+        if not (x >= ge):
+            raise PydanticKnownError('greater_than_equal', {'ge': _safe_repr(ge)})
+        return x
+    except TypeError:
+        raise TypeError(f"Unable to apply constraint 'ge' to supplied value {x}")
+
+
+def less_than_validator(x: Any, lt: Any) -> Any:
+    try:
+        if not (x < lt):
+            raise PydanticKnownError('less_than', {'lt': _safe_repr(lt)})
+        return x
+    except TypeError:
+        raise TypeError(f"Unable to apply constraint 'lt' to supplied value {x}")
+
+
+def less_than_or_equal_validator(x: Any, le: Any) -> Any:
+    try:
+        if not (x <= le):
+            raise PydanticKnownError('less_than_equal', {'le': _safe_repr(le)})
+        return x
+    except TypeError:
+        raise TypeError(f"Unable to apply constraint 'le' to supplied value {x}")
+
+
+def multiple_of_validator(x: Any, multiple_of: Any) -> Any:
+    try:
+        if x % multiple_of:
+            raise PydanticKnownError('multiple_of', {'multiple_of': _safe_repr(multiple_of)})
+        return x
+    except TypeError:
+        raise TypeError(f"Unable to apply constraint 'multiple_of' to supplied value {x}")
+
+
+def min_length_validator(x: Any, min_length: Any) -> Any:
+    try:
+        if not (len(x) >= min_length):
+            raise PydanticKnownError(
+                'too_short', {'field_type': 'Value', 'min_length': min_length, 'actual_length': len(x)}
+            )
+        return x
+    except TypeError:
+        raise TypeError(f"Unable to apply constraint 'min_length' to supplied value {x}")
+
+
+def max_length_validator(x: Any, max_length: Any) -> Any:
+    try:
+        if len(x) > max_length:
+            raise PydanticKnownError(
+                'too_long',
+                {'field_type': 'Value', 'max_length': max_length, 'actual_length': len(x)},
+            )
+        return x
+    except TypeError:
+        raise TypeError(f"Unable to apply constraint 'max_length' to supplied value {x}")
+
+
+def _extract_decimal_digits_info(decimal: Decimal) -> tuple[int, int]:
+    """Compute the total number of digits and decimal places for a given [`Decimal`][decimal.Decimal] instance.
+
+    This function handles both normalized and non-normalized Decimal instances.
+    Example: Decimal('1.230') -> 4 digits, 3 decimal places
 
     Args:
-        constraint_id: The constraint identifier, used to identify the constraint in error messages, ex 'gt'.
-        predicate: The predicate function to apply to the input value, ex `lambda x, gt: x > gt`.
-        error_type: The error type to raise if the predicate fails.
-        context_gen: A function to generate the error context from the constraint value and the input value.
+        decimal (Decimal): The decimal number to analyze.
+
+    Returns:
+        tuple[int, int]: A tuple containing the number of decimal places and total digits.
+
+    Though this could be divided into two separate functions, the logic is easier to follow if we couple the computation
+    of the number of decimals and digits together.
     """
+    try:
+        decimal_tuple = decimal.as_tuple()
 
-    def validator(x: _InputType, constraint_value: Any) -> _InputType:
-        try:
-            if not predicate(x, constraint_value):
-                raise PydanticKnownError(
-                    error_type, context_gen(constraint_value, x) if context_gen else {constraint_id: constraint_value}
-                )
-        except TypeError:
-            raise TypeError(f"Unable to apply constraint '{constraint_id}' to supplied value {x}")
+        assert isinstance(decimal_tuple.exponent, int)
+
+        exponent = decimal_tuple.exponent
+        num_digits = len(decimal_tuple.digits)
+
+        if exponent >= 0:
+            # A positive exponent adds that many trailing zeros
+            # Ex: digit_tuple=(1, 2, 3), exponent=2 -> 12300 -> 0 decimal places, 5 digits
+            num_digits += exponent
+            decimal_places = 0
+        else:
+            # If the absolute value of the negative exponent is larger than the
+            # number of digits, then it's the same as the number of digits,
+            # because it'll consume all the digits in digit_tuple and then
+            # add abs(exponent) - len(digit_tuple) leading zeros after the decimal point.
+            # Ex: digit_tuple=(1, 2, 3), exponent=-2 -> 1.23 -> 2 decimal places, 3 digits
+            # Ex: digit_tuple=(1, 2, 3), exponent=-4 -> 0.0123 -> 4 decimal places, 4 digits
+            decimal_places = abs(exponent)
+            num_digits = max(num_digits, decimal_places)
+
+        return decimal_places, num_digits
+    except (AssertionError, AttributeError):
+        raise TypeError(f'Unable to extract decimal digits info from supplied value {decimal}')
+
+
+def max_digits_validator(x: Any, max_digits: Any) -> Any:
+    try:
+        _, num_digits = _extract_decimal_digits_info(x)
+        _, normalized_num_digits = _extract_decimal_digits_info(x.normalize())
+        if (num_digits > max_digits) and (normalized_num_digits > max_digits):
+            raise PydanticKnownError(
+                'decimal_max_digits',
+                {'max_digits': max_digits},
+            )
         return x
+    except TypeError:
+        raise TypeError(f"Unable to apply constraint 'max_digits' to supplied value {x}")
 
-    return validator
+
+def decimal_places_validator(x: Any, decimal_places: Any) -> Any:
+    try:
+        decimal_places_, _ = _extract_decimal_digits_info(x)
+        if decimal_places_ > decimal_places:
+            normalized_decimal_places, _ = _extract_decimal_digits_info(x.normalize())
+            if normalized_decimal_places > decimal_places:
+                raise PydanticKnownError(
+                    'decimal_max_places',
+                    {'decimal_places': decimal_places},
+                )
+        return x
+    except TypeError:
+        raise TypeError(f"Unable to apply constraint 'decimal_places' to supplied value {x}")
 
 
-_CONSTRAINT_TO_VALIDATOR_LOOKUP: dict[str, Callable] = {
-    'gt': create_constraint_validator('gt', lambda x, gt: x > gt, 'greater_than'),
-    'ge': create_constraint_validator('ge', lambda x, ge: x >= ge, 'greater_than_equal'),
-    'lt': create_constraint_validator('lt', lambda x, lt: x < lt, 'less_than'),
-    'le': create_constraint_validator('le', lambda x, le: x <= le, 'less_than_equal'),
-    'multiple_of': create_constraint_validator(
-        'multiple_of', lambda x, multiple_of: x % multiple_of == 0, 'multiple_of'
-    ),
-    'min_length': create_constraint_validator(
-        'min_length',
-        lambda x, min_length: len(x) >= min_length,
-        'too_short',
-        lambda c_val, x: {'field_type': 'Value', 'min_length': c_val, 'actual_length': len(x)},
-    ),
-    'max_length': create_constraint_validator(
-        'max_length',
-        lambda x, max_length: len(x) <= max_length,
-        'too_long',
-        lambda c_val, x: {'field_type': 'Value', 'max_length': c_val, 'actual_length': len(x)},
-    ),
+def deque_validator(input_value: Any, handler: core_schema.ValidatorFunctionWrapHandler) -> collections.deque[Any]:
+    return collections.deque(handler(input_value), maxlen=getattr(input_value, 'maxlen', None))
+
+
+def defaultdict_validator(
+    input_value: Any, handler: core_schema.ValidatorFunctionWrapHandler, default_default_factory: Callable[[], Any]
+) -> collections.defaultdict[Any, Any]:
+    if isinstance(input_value, collections.defaultdict):
+        default_factory = input_value.default_factory
+        return collections.defaultdict(default_factory, handler(input_value))
+    else:
+        return collections.defaultdict(default_default_factory, handler(input_value))
+
+
+def get_defaultdict_default_default_factory(values_source_type: Any) -> Callable[[], Any]:
+    FieldInfo = import_cached_field_info()
+
+    values_type_origin = get_origin(values_source_type)
+
+    def infer_default() -> Callable[[], Any]:
+        allowed_default_types: dict[Any, Any] = {
+            tuple: tuple,
+            collections.abc.Sequence: tuple,
+            collections.abc.MutableSequence: list,
+            list: list,
+            typing.Sequence: list,
+            set: set,
+            typing.MutableSet: set,
+            collections.abc.MutableSet: set,
+            collections.abc.Set: frozenset,
+            typing.MutableMapping: dict,
+            typing.Mapping: dict,
+            collections.abc.Mapping: dict,
+            collections.abc.MutableMapping: dict,
+            float: float,
+            int: int,
+            str: str,
+            bool: bool,
+        }
+        values_type = values_type_origin or values_source_type
+        instructions = 'set using `DefaultDict[..., Annotated[..., Field(default_factory=...)]]`'
+        if typing_objects.is_typevar(values_type):
+
+            def type_var_default_factory() -> None:
+                raise RuntimeError(
+                    'Generic defaultdict cannot be used without a concrete value type or an'
+                    ' explicit default factory, ' + instructions
+                )
+
+            return type_var_default_factory
+        elif values_type not in allowed_default_types:
+            # a somewhat subjective set of types that have reasonable default values
+            allowed_msg = ', '.join([t.__name__ for t in set(allowed_default_types.values())])
+            raise PydanticSchemaGenerationError(
+                f'Unable to infer a default factory for keys of type {values_source_type}.'
+                f' Only {allowed_msg} are supported, other types require an explicit default factory'
+                ' ' + instructions
+            )
+        return allowed_default_types[values_type]
+
+    # Assume Annotated[..., Field(...)]
+    if typing_objects.is_annotated(values_type_origin):
+        field_info = next((v for v in typing_extensions.get_args(values_source_type) if isinstance(v, FieldInfo)), None)
+    else:
+        field_info = None
+    if field_info and field_info.default_factory:
+        # Assume the default factory does not take any argument:
+        default_default_factory = cast(Callable[[], Any], field_info.default_factory)
+    else:
+        default_default_factory = infer_default()
+    return default_default_factory
+
+
+def validate_str_is_valid_iana_tz(value: Any, /) -> ZoneInfo:
+    if isinstance(value, ZoneInfo):
+        return value
+    try:
+        return ZoneInfo(value)
+    except (ZoneInfoNotFoundError, ValueError, TypeError):
+        raise PydanticCustomError('zoneinfo_str', 'invalid timezone: {value}', {'value': value})
+
+
+NUMERIC_VALIDATOR_LOOKUP: dict[str, Callable] = {
+    'gt': greater_than_validator,
+    'ge': greater_than_or_equal_validator,
+    'lt': less_than_validator,
+    'le': less_than_or_equal_validator,
+    'multiple_of': multiple_of_validator,
+    'min_length': min_length_validator,
+    'max_length': max_length_validator,
+    'max_digits': max_digits_validator,
+    'decimal_places': decimal_places_validator,
 }
 
+IpType = Union[IPv4Address, IPv6Address, IPv4Network, IPv6Network, IPv4Interface, IPv6Interface]
 
-def get_constraint_validator(constraint: str) -> Callable:
-    """Fetch the validator function for the given constraint."""
-    try:
-        return _CONSTRAINT_TO_VALIDATOR_LOOKUP[constraint]
-    except KeyError:
-        raise TypeError(f'Unknown constraint {constraint}')
-
-
-IP_VALIDATOR_LOOKUP: dict[type, Callable] = {
+IP_VALIDATOR_LOOKUP: dict[type[IpType], Callable] = {
     IPv4Address: ip_v4_address_validator,
     IPv6Address: ip_v6_address_validator,
     IPv4Network: ip_v4_network_validator,
     IPv6Network: ip_v6_network_validator,
     IPv4Interface: ip_v4_interface_validator,
     IPv6Interface: ip_v6_interface_validator,
+}
+
+MAPPING_ORIGIN_MAP: dict[Any, Any] = {
+    typing.DefaultDict: collections.defaultdict,  # noqa: UP006
+    collections.defaultdict: collections.defaultdict,
+    typing.OrderedDict: collections.OrderedDict,  # noqa: UP006
+    collections.OrderedDict: collections.OrderedDict,
+    typing_extensions.OrderedDict: collections.OrderedDict,
+    typing.Counter: collections.Counter,
+    collections.Counter: collections.Counter,
+    # this doesn't handle subclasses of these
+    typing.Mapping: dict,
+    typing.MutableMapping: dict,
+    # parametrized typing.{Mutable}Mapping creates one of these
+    collections.abc.Mapping: dict,
+    collections.abc.MutableMapping: dict,
 }

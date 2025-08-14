@@ -1,5 +1,3 @@
-import pytest
-
 from pydantic import BaseModel
 
 
@@ -10,7 +8,8 @@ class ModelV2(BaseModel):
 mv2 = ModelV2(my_str='hello')
 
 
-@pytest.mark.benchmark
-def test_isinstance_basemodel() -> None:
-    for _ in range(10000):
-        assert isinstance(mv2, BaseModel)
+def test_isinstance_basemodel(benchmark) -> None:
+    @benchmark
+    def run():
+        for _ in range(10000):
+            assert isinstance(mv2, BaseModel)

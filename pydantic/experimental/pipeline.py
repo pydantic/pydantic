@@ -11,10 +11,10 @@ from collections.abc import Container
 from dataclasses import dataclass
 from decimal import Decimal
 from functools import cached_property, partial
-from typing import TYPE_CHECKING, Any, Callable, Generic, Pattern, Protocol, TypeVar, Union, overload
+from re import Pattern
+from typing import TYPE_CHECKING, Annotated, Any, Callable, Generic, Protocol, TypeVar, Union, overload
 
 import annotated_types
-from typing_extensions import Annotated
 
 if TYPE_CHECKING:
     from pydantic_core import core_schema as cs
@@ -405,7 +405,7 @@ def _apply_parse(
     from pydantic import Strict
 
     if tp is _FieldTypeMarker:
-        return handler(source_type)
+        return cs.chain_schema([s, handler(source_type)]) if s else handler(source_type)
 
     if strict:
         tp = Annotated[tp, Strict()]  # type: ignore
@@ -593,10 +593,8 @@ def _apply_constraint(  # noqa: C901
             import inspect
 
             try:
-                # remove ')' suffix, can use removesuffix once we drop 3.8
                 source = inspect.getsource(func).strip()
-                if source.endswith(')'):
-                    source = source[:-1]
+                source = source.removesuffix(')')
                 lambda_source_code = '`' + ''.join(''.join(source.split('lambda ')[1:]).split(':')[1:]).strip() + '`'
             except OSError:
                 # stringified annotations

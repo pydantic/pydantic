@@ -1,4 +1,4 @@
-from typing import Generic, List, Optional, Set, TypeVar, Union
+from typing import Generic, Optional, Set, TypeVar, Union
 
 from pydantic import BaseModel, ConfigDict, Extra, Field, field_validator
 from pydantic.dataclasses import dataclass
@@ -153,14 +153,14 @@ class DynamicAliasModel2(BaseModel):
     x: str = Field(..., alias=x_alias)
     z: int
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(validate_by_name=True)
 
 
 DynamicAliasModel2(y='y', z=1)
 DynamicAliasModel2(x='y', z=1)
 
 
-class KwargsDynamicAliasModel(BaseModel, populate_by_name=True):
+class KwargsDynamicAliasModel(BaseModel, validate_by_name=True):
     x: str = Field(..., alias=x_alias)
     z: int
 
@@ -249,28 +249,6 @@ class InheritingModel2(FrozenModel):
 
 inheriting2 = InheritingModel2(x=1, y='c')
 inheriting2.y = 'd'
-
-
-def _default_factory() -> str:
-    return 'x'
-
-
-test: List[str] = []
-
-
-class FieldDefaultTestingModel(BaseModel):
-    # Default
-    e: int = Field(None)
-    f: int = None
-
-    # Default factory
-    g: str = Field(default_factory=set)
-    h: int = Field(default_factory=_default_factory)
-    i: List[int] = Field(default_factory=list)
-    l_: str = Field(default_factory=3)
-
-    # Default and default factory
-    m: int = Field(default=1, default_factory=list)
 
 
 class ModelWithAnnotatedValidator(BaseModel):

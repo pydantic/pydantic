@@ -7,11 +7,13 @@
 [![versions](https://img.shields.io/pypi/pyversions/pydantic.svg)](https://github.com/pydantic/pydantic)
 [![license](https://img.shields.io/github/license/pydantic/pydantic.svg)](https://github.com/pydantic/pydantic/blob/main/LICENSE)
 [![Pydantic v2](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/main/docs/badge/v2.json)](https://docs.pydantic.dev/latest/contributing/#badges)
+[![llms.txt](https://img.shields.io/badge/llms.txt-green)](https://docs.pydantic.dev/latest/llms.txt)
+
 
 Data validation using Python type hints.
 
 Fast and extensible, Pydantic plays nicely with your linters/IDE/brain.
-Define how data should be in pure, canonical Python 3.8+; validate it with Pydantic.
+Define how data should be in pure, canonical Python 3.9+; validate it with Pydantic.
 
 ## Pydantic Logfire :fire:
 
@@ -38,16 +40,16 @@ see the [Install](https://docs.pydantic.dev/install/) section in the documentati
 
 ## A Simple Example
 
-```py
+```python
 from datetime import datetime
-from typing import List, Optional
+from typing import Optional
 from pydantic import BaseModel
 
 class User(BaseModel):
     id: int
     name: str = 'John Doe'
     signup_ts: Optional[datetime] = None
-    friends: List[int] = []
+    friends: list[int] = []
 
 external_data = {'id': '123', 'signup_ts': '2017-06-01 12:22', 'friends': [1, '2', b'3']}
 user = User(**external_data)

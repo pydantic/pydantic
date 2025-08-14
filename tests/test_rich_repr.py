@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import Optional
 
 import pytest
 
@@ -13,7 +13,7 @@ def user_fixture():
         id: int
         name: str = 'John Doe'
         signup_ts: Optional[datetime] = None
-        friends: List[int] = []
+        friends: list[int] = []
 
     return User
 

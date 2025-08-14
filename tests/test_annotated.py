@@ -1,13 +1,14 @@
 import datetime as dt
 import sys
+from collections.abc import Iterator
 from dataclasses import dataclass
-from typing import Any, Callable, Generic, Iterator, List, Optional, Set, TypeVar
+from decimal import Decimal
+from typing import Annotated, Any, Callable, Generic, Optional, TypeVar
 
 import pytest
 import pytz
 from annotated_types import BaseMetadata, GroupedMetadata, Gt, Lt, Not, Predicate
 from pydantic_core import CoreSchema, PydanticUndefined, core_schema
-from typing_extensions import Annotated
 
 from pydantic import (
     BaseModel,
@@ -25,6 +26,12 @@ from pydantic.functional_validators import AfterValidator
 NO_VALUE = object()
 
 
+@pytest.mark.thread_unsafe(
+    reason=(
+        'The `FieldInfo.from_annotated_attribute()` implementation directly mutates the assigned value, '
+        'if it is a `Field()`. https://github.com/pydantic/pydantic/issues/11122 tracks this issue'
+    )
+)
 @pytest.mark.parametrize(
     'hint_fn,value,expected_repr',
     [
@@ -112,6 +119,7 @@ def test_annotated_allows_unknown(metadata):
     assert metadata in M.__annotations__['x'].__metadata__, 'Annotated type is recorded'
 
 
+@pytest.mark.thread_unsafe(reason='`pytest.raises()` is thread unsafe')
 @pytest.mark.parametrize(
     ['hint_fn', 'value', 'empty_init_ctx'],
     [
@@ -167,7 +175,7 @@ def test_annotated_alias() -> None:
     StrAlias = Annotated[str, Field(max_length=3)]
     IntAlias = Annotated[int, Field(default_factory=lambda: 2)]
 
-    Nested = Annotated[List[StrAlias], Field(description='foo')]
+    Nested = Annotated[list[StrAlias], Field(description='foo')]
 
     class MyModel(BaseModel):
         a: StrAlias = 'abc'
@@ -182,13 +190,13 @@ def test_annotated_alias() -> None:
         'b': 'FieldInfo(annotation=str, required=True, metadata=[MaxLen(max_length=3)])',
         'c': 'FieldInfo(annotation=int, required=False, default_factory=<lambda>)',
         'd': 'FieldInfo(annotation=int, required=False, default_factory=<lambda>)',
-        'e': "FieldInfo(annotation=List[Annotated[str, FieldInfo(annotation=NoneType, required=True, metadata=[MaxLen(max_length=3)])]], required=True, description='foo')",
+        'e': "FieldInfo(annotation=list[Annotated[str, FieldInfo(annotation=NoneType, required=True, metadata=[MaxLen(max_length=3)])]], required=True, description='foo')",
     }
     assert MyModel(b='def', e=['xyz']).model_dump() == dict(a='abc', b='def', c=2, d=2, e=['xyz'])
 
 
 def test_modify_get_schema_annotated() -> None:
-    calls: List[str] = []
+    calls: list[str] = []
 
     class CustomType:
         @classmethod
@@ -256,7 +264,7 @@ def test_annotated_alias_at_low_level() -> None:
 
 
 def test_get_pydantic_core_schema_source_type() -> None:
-    types: Set[Any] = set()
+    types: set[Any] = set()
 
     class PydanticMarker:
         def __get_pydantic_core_schema__(self, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
@@ -544,9 +552,9 @@ def test_tzinfo_validator_example_pattern() -> None:
                     f'Invalid tz_constraint: {self.tz_constraint}', code='unevaluable-type-annotation'
                 )
             result = handler(value)  # (2)!
-            assert self.tz_constraint == str(
-                result.tzinfo
-            ), f'Invalid tzinfo: {str(result.tzinfo)}, expected: {self.tz_constraint}'
+            assert self.tz_constraint == str(result.tzinfo), (
+                f'Invalid tzinfo: {str(result.tzinfo)}, expected: {self.tz_constraint}'
+            )
 
             return result
 
@@ -634,7 +642,7 @@ def test_utcoffset_validator_example_pattern() -> None:
 
 
 def test_incompatible_metadata_error() -> None:
-    ta = TypeAdapter(Annotated[List[int], Field(pattern='abc')])
+    ta = TypeAdapter(Annotated[list[int], Field(pattern='abc')])
     with pytest.raises(TypeError, match="Unable to apply constraint 'pattern'"):
         ta.validate_python([1, 2, 3])
 
@@ -644,3 +652,20 @@ def test_compatible_metadata_raises_correct_validation_error() -> None:
     ta = TypeAdapter(Annotated[str, BeforeValidator(lambda x: x), Field(pattern='abc')])
     with pytest.raises(ValidationError, match="String should match pattern 'abc'"):
         ta.validate_python('def')
+
+
+def test_decimal_constraints_after_annotation() -> None:
+    DecimalAnnotation = Annotated[Decimal, BeforeValidator(lambda v: v), Field(max_digits=10, decimal_places=4)]
+
+    ta = TypeAdapter(DecimalAnnotation)
+    assert ta.validate_python(Decimal('123.4567')) == Decimal('123.4567')
+
+    with pytest.raises(ValidationError) as e:
+        ta.validate_python(Decimal('123.45678'))
+
+    assert e.value.errors()[0]['type'] == 'decimal_max_places'
+
+    with pytest.raises(ValidationError) as e:
+        ta.validate_python(Decimal('12345678.901'))
+
+    assert e.value.errors()[0]['type'] == 'decimal_max_digits'

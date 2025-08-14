@@ -8,7 +8,7 @@ from pydantic import BaseModel, ValidationError
 from pydantic.types import PaymentCardBrand, PaymentCardNumber
 
 pytestmark = pytest.mark.filterwarnings(
-    'ignore:' 'The `PaymentCardNumber` class is deprecated, use `pydantic_extra_types` instead.*' ':DeprecationWarning'
+    'ignore:The `PaymentCardNumber` class is deprecated, use `pydantic_extra_types` instead.*:DeprecationWarning'
 )
 
 

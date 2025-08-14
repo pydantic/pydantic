@@ -1,4 +1,4 @@
-name: Upload Previews
+name: Upload previews
 
 on:
   workflow_run:
@@ -20,7 +20,7 @@ jobs:
 
       - run: pip install smokeshow
 
-      - uses: dawidd6/action-download-artifact@v6
+      - uses: dawidd6/action-download-artifact@v9
         with:
           workflow: ci.yml
           commit: ${{ github.event.workflow_run.head_sha }}

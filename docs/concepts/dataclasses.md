@@ -1,11 +1,12 @@
 ??? api "API Documentation"
     [`pydantic.dataclasses.dataclass`][pydantic.dataclasses.dataclass]<br>
 
-If you don't want to use Pydantic's `BaseModel` you can instead get the same data validation on standard
-[dataclasses](https://docs.python.org/3/library/dataclasses.html) (introduced in Python 3.7).
+If you don't want to use Pydantic's [`BaseModel`][pydantic.BaseModel] you can instead get the same data validation
+on standard [dataclasses][dataclasses].
 
-```py
+```python
 from datetime import datetime
+from typing import Optional
 
 from pydantic.dataclasses import dataclass
 
@@ -14,7 +15,7 @@ from pydantic.dataclasses import dataclass
 class User:
     id: int
     name: str = 'John Doe'
-    signup_ts: datetime = None
+    signup_ts: Optional[datetime] = None
 
 
 user = User(id='42', signup_ts='2032-06-21T12:00')
@@ -25,30 +26,35 @@ User(id=42, name='John Doe', signup_ts=datetime.datetime(2032, 6, 21, 12, 0))
 ```
 
 !!! note
-    Keep in mind that `pydantic.dataclasses.dataclass` is **not** a replacement for `pydantic.BaseModel`.
-    `pydantic.dataclasses.dataclass` provides a similar functionality to `dataclasses.dataclass` with the addition of
-    Pydantic validation.
-    There are cases where subclassing `pydantic.BaseModel` is the better choice.
+    Keep in mind that Pydantic dataclasses are **not** a replacement for [Pydantic models](../concepts/models.md).
+    They provide a similar functionality to stdlib dataclasses with the addition of Pydantic validation.
+
+    There are cases where subclassing using Pydantic models is the better choice.
 
     For more information and discussion see
     [pydantic/pydantic#710](https://github.com/pydantic/pydantic/issues/710).
 
-Some differences between Pydantic dataclasses and `BaseModel` include:
+Similarities between Pydantic dataclasses and models include support for:
 
-*  How [initialization hooks](#initialization-hooks) work
-*  [JSON dumping](#json-dumping)
+* [Configuration](#dataclass-config) support
+* [Nested](./models.md#nested-models) classes
+* [Generics](./models.md#generic-models)
 
-You can use all the standard Pydantic field types. Note, however, that arguments passed to constructor will be copied in
-order to perform validation and, where necessary coercion.
+Some differences between Pydantic dataclasses and models include:
 
-To perform validation or generate a JSON schema on a Pydantic dataclass, you should now wrap the dataclass
-with a [`TypeAdapter`][pydantic.type_adapter.TypeAdapter] and make use of its methods.
+*  [validators](#validators-and-initialization-hooks)
+*  The behavior with the [`extra`][pydantic.ConfigDict.extra] configuration value
 
-Fields that require a `default_factory` can be specified by either a `pydantic.Field` or a `dataclasses.field`.
+Similarly to Pydantic models, arguments used to instantiate the dataclass are [copied](./models.md#attribute-copies).
 
-```py
+To make use of the [various methods](./models.md#model-methods-and-properties) to validate, dump and generate a JSON Schema,
+you can wrap the dataclass with a [`TypeAdapter`][pydantic.type_adapter.TypeAdapter] and make use of its methods.
+
+You can use both the Pydantic's [`Field()`][pydantic.Field] and the stdlib's [`field()`][dataclasses.field] functions:
+
+```python
 import dataclasses
-from typing import List, Optional
+from typing import Optional
 
 from pydantic import Field, TypeAdapter
 from pydantic.dataclasses import dataclass
@@ -58,10 +64,10 @@ from pydantic.dataclasses import dataclass
 class User:
     id: int
     name: str = 'John Doe'
-    friends: List[int] = dataclasses.field(default_factory=lambda: [0])
+    friends: list[int] = dataclasses.field(default_factory=lambda: [0])
     age: Optional[int] = dataclasses.field(
         default=None,
-        metadata=dict(title='The age of the user', description='do not lie!'),
+        metadata={'title': 'The age of the user', 'description': 'do not lie!'},
     )
     height: Optional[int] = Field(None, title='The height in cm', ge=50, le=300)
 
@@ -100,101 +106,47 @@ print(TypeAdapter(User).json_schema())
 """
 ```
 
-`pydantic.dataclasses.dataclass`'s arguments are the same as the standard decorator, except one extra
-keyword argument `config` which has the same meaning as [model_config][pydantic.config.ConfigDict].
-
-!!! warning
-    After v1.2, [The Mypy plugin](../integrations/mypy.md) must be installed to type check _pydantic_ dataclasses.
-
-For more information about combining validators with dataclasses, see
-[dataclass validators](validators.md#dataclass-validators).
+The Pydantic `@dataclass` decorator accepts the same arguments as the standard decorator, with the addition
+of a `config` parameter.
 
 ## Dataclass config
 
-If you want to modify the `config` like you would with a `BaseModel`, you have two options:
+If you want to modify the configuration like you would with a [`BaseModel`][pydantic.BaseModel], you have two options:
 
-* Apply config to the dataclass decorator as a dict
-* Use `ConfigDict` as the config
+* Use the `config` argument of the decorator.
+* Define the configuration with the `__pydantic_config__` attribute.
 
-```py
+```python
 from pydantic import ConfigDict
 from pydantic.dataclasses import dataclass
 
 
-# Option 1 - use directly a dict
-# Note: `mypy` will still raise typo error
-@dataclass(config=dict(validate_assignment=True))  # (1)!
+# Option 1 -- using the decorator argument:
+@dataclass(config=ConfigDict(validate_assignment=True))  # (1)!
 class MyDataclass1:
     a: int
 
 
-# Option 2 - use `ConfigDict`
-# (same as before at runtime since it's a `TypedDict` but with intellisense)
-@dataclass(config=ConfigDict(validate_assignment=True))
+# Option 2 -- using an attribute:
+@dataclass
 class MyDataclass2:
     a: int
+
+    __pydantic_config__ = ConfigDict(validate_assignment=True)
 ```
 
-1. You can read more about `validate_assignment` in [API reference][pydantic.config.ConfigDict.validate_assignment].
+1. You can read more about `validate_assignment` in the [API reference][pydantic.config.ConfigDict.validate_assignment].
 
 !!! note
-    Pydantic dataclasses support [`extra`][pydantic.config.ConfigDict.extra] configuration to `ignore`, `forbid`, or
-    `allow` extra fields passed to the initializer. However, some default behavior of stdlib dataclasses may prevail.
-    For example, any extra fields present on a Pydantic dataclass using `extra='allow'` are omitted when the dataclass
-    is `print`ed.
+    While Pydantic dataclasses support the [`extra`][pydantic.config.ConfigDict.extra] configuration value, some default
+    behavior of stdlib dataclasses may prevail. For example, any extra fields present on a Pydantic dataclass with
+    [`extra`][pydantic.config.ConfigDict.extra] set to `'allow'` are omitted in the dataclass' string representation.
+    There is also no way to provide validation [using the `__pydantic_extra__` attribute](./models.md#extra-data).
 
-## Nested dataclasses
+## Rebuilding dataclass schema
 
-Nested dataclasses are supported both in dataclasses and normal models.
-
-```py
-from pydantic import AnyUrl
-from pydantic.dataclasses import dataclass
-
-
-@dataclass
-class NavbarButton:
-    href: AnyUrl
-
-
-@dataclass
-class Navbar:
-    button: NavbarButton
-
-
-navbar = Navbar(button={'href': 'https://example.com'})
-print(navbar)
-#> Navbar(button=NavbarButton(href=Url('https://example.com/')))
-```
-
-When used as fields, dataclasses (Pydantic or vanilla) should use dicts as validation inputs.
-
-## Generic dataclasses
-
-Pydantic supports generic dataclasses, including those with type variables.
-
-```py
-from typing import Generic, TypeVar
-
-from pydantic import TypeAdapter
-from pydantic.dataclasses import dataclass
-
-T = TypeVar('T')
-
-
-@dataclass
-class GenericDataclass(Generic[T]):
-    x: T
-
-
-validator = TypeAdapter(GenericDataclass)
-
-assert validator.validate_python({'x': None}).x is None
-assert validator.validate_python({'x': 1}).x == 1
-assert validator.validate_python({'x': 'a'}).x == 'a'
-```
-
-Note that, if you use the dataclass as a field of a `BaseModel` or via FastAPI you don't need a `TypeAdapter`.
+The [`rebuild_dataclass()`][pydantic.dataclasses.rebuild_dataclass] can be used to rebuild the core schema of the dataclass.
+See the [rebuilding model schema](./models.md#rebuilding-model-schema) section for more details.
 
 ## Stdlib dataclasses and Pydantic dataclasses
 
@@ -203,7 +155,7 @@ Note that, if you use the dataclass as a field of a `BaseModel` or via FastAPI y
 Stdlib dataclasses (nested or not) can also be inherited and Pydantic will automatically validate
 all the inherited fields.
 
-```py
+```python
 import dataclasses
 
 import pydantic
@@ -239,15 +191,14 @@ except pydantic.ValidationError as e:
     """
 ```
 
-### Use of stdlib dataclasses with `BaseModel`
+### Usage of stdlib dataclasses with `BaseModel`
 
-Bear in mind that stdlib dataclasses (nested or not) are **automatically converted** into Pydantic
-dataclasses when mixed with `BaseModel`! Furthermore the generated Pydantic dataclass will have
-the **exact same configuration** (`order`, `frozen`, ...) as the original one.
+When a standard library dataclass is used within a Pydantic model, a Pydantic dataclass or a [`TypeAdapter`][pydantic.TypeAdapter],
+validation will be applied (and the [configuration](#dataclass-config) stays the same). This means that using a stdlib or a Pydantic
+dataclass as a field annotation is functionally equivalent.
 
-```py
+```python
 import dataclasses
-from datetime import datetime
 from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, ValidationError
@@ -258,40 +209,30 @@ class User:
     name: str
 
 
-@dataclasses.dataclass
-class File:
-    filename: str
-    last_modification_time: Optional[datetime] = None
-
-
 class Foo(BaseModel):
-    # Required so that pydantic revalidates the model attributes
+    # Required so that pydantic revalidates the model attributes:
     model_config = ConfigDict(revalidate_instances='always')
 
-    file: File
     user: Optional[User] = None
 
 
-file = File(
-    filename=['not', 'a', 'string'],
-    last_modification_time='2020-01-01T00:00',
-)  # nothing is validated as expected
-print(file)
-"""
-File(filename=['not', 'a', 'string'], last_modification_time='2020-01-01T00:00')
-"""
+# nothing is validated as expected:
+user = User(name=['not', 'a', 'string'])
+print(user)
+#> User(name=['not', 'a', 'string'])
+
 
 try:
-    Foo(file=file)
+    Foo(user=user)
 except ValidationError as e:
     print(e)
     """
     1 validation error for Foo
-    file.filename
+    user.name
       Input should be a valid string [type=string_type, input_value=['not', 'a', 'string'], input_type=list]
     """
 
-foo = Foo(file=File(filename='myfile'), user=User(name='pika'))
+foo = Foo(user=User(name='pika'))
 try:
     foo.user.name = 'bulbi'
 except dataclasses.FrozenInstanceError as e:
@@ -299,13 +240,14 @@ except dataclasses.FrozenInstanceError as e:
     #> cannot assign to field 'name'
 ```
 
-### Use custom types
+### Using custom types
 
-Since stdlib dataclasses are automatically converted to add validation, using
-custom types may cause some unexpected behavior.
-In this case you can simply add `arbitrary_types_allowed` in the config!
+As said above, validation is applied on standard library dataclasses. If you make use
+of custom types, you will get an error when trying to refer to the dataclass. To circumvent
+the issue, you can set the [`arbitrary_types_allowed`][pydantic.ConfigDict.arbitrary_types_allowed]
+configuration value on the dataclass:
 
-```py
+```python
 import dataclasses
 
 from pydantic import BaseModel, ConfigDict
@@ -326,7 +268,7 @@ class DC:
     b: str
 
 
-# valid as it is a builtin dataclass without validation
+# valid as it is a stdlib dataclass without validation:
 my_dc = DC(a=ArbitraryType(value=3), b='qwe')
 
 try:
@@ -335,8 +277,9 @@ try:
         dc: DC
         other: str
 
-    # invalid as it is now a pydantic dataclass
+    # invalid as dc is now validated with pydantic, and ArbitraryType is not a known type
     Model(dc=my_dc, other='other')
+
 except PydanticSchemaGenerationError as e:
     print(e.message)
     """
@@ -346,6 +289,7 @@ except PydanticSchemaGenerationError as e:
     """
 
 
+# valid as we set arbitrary_types_allowed=True, and that config pushes down to the nested vanilla dataclass
 class Model(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -358,11 +302,13 @@ print(repr(m))
 #> Model(dc=DC(a=ArbitraryType(value=3), b='qwe'), other='other')
 ```
 
-### Checking if a dataclass is a pydantic dataclass
+### Checking if a dataclass is a Pydantic dataclass
 
-Pydantic dataclasses are still considered dataclasses, so using `dataclasses.is_dataclass` will return `True`. To check if a type is specifically a pydantic dataclass you can use `pydantic.dataclasses.is_pydantic_dataclass`.
+Pydantic dataclasses are still considered dataclasses, so using [`dataclasses.is_dataclass`][] will return `True`. To check
+if a type is specifically a pydantic dataclass you can use the [`is_pydantic_dataclass`][pydantic.dataclasses.is_pydantic_dataclass]
+function.
 
-```py
+```python
 import dataclasses
 
 import pydantic
@@ -386,123 +332,78 @@ print(pydantic.dataclasses.is_pydantic_dataclass(PydanticDataclass))
 #> True
 ```
 
-## Initialization hooks
+## Validators and initialization hooks
 
-When you initialize a dataclass, it is possible to execute code *before* or *after* validation
-with the help of the [`@model_validator`](validators.md#model-validators) decorator `mode` parameter.
+Validators also work with Pydantic dataclasses:
 
-```py
-from typing import Any, Dict
-
-from typing_extensions import Self
-
-from pydantic import model_validator
+```python
+from pydantic import field_validator
 from pydantic.dataclasses import dataclass
 
 
 @dataclass
-class Birth:
-    year: int
-    month: int
-    day: int
+class DemoDataclass:
+    product_id: str  # should be a five-digit string, may have leading zeros
 
-
-@dataclass
-class User:
-    birth: Birth
-
-    @model_validator(mode='before')
+    @field_validator('product_id', mode='before')
     @classmethod
-    def pre_root(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        print(f'First: {values}')
-        """
-        First: ArgsKwargs((), {'birth': {'year': 1995, 'month': 3, 'day': 2}})
-        """
-        return values
-
-    @model_validator(mode='after')
-    def post_root(self) -> Self:
-        print(f'Third: {self}')
-        #> Third: User(birth=Birth(year=1995, month=3, day=2))
-        return self
-
-    def __post_init__(self):
-        print(f'Second: {self.birth}')
-        #> Second: Birth(year=1995, month=3, day=2)
+    def convert_int_serial(cls, v):
+        if isinstance(v, int):
+            v = str(v).zfill(5)
+        return v
 
 
-user = User(**{'birth': {'year': 1995, 'month': 3, 'day': 2}})
+print(DemoDataclass(product_id='01234'))
+#> DemoDataclass(product_id='01234')
+print(DemoDataclass(product_id=2468))
+#> DemoDataclass(product_id='02468')
 ```
 
-The `__post_init__` in Pydantic dataclasses is called in the _middle_ of validators.
-Here is the order:
+The dataclass [`__post_init__()`][dataclasses.__post_init__] method is also supported, and will
+be called between the calls to *before* and *after* model validators.
 
-* `model_validator(mode='before')`
-* `field_validator(mode='before')`
-* `field_validator(mode='after')`
-* Inner validators. e.g. validation for types like `int`, `str`, ...
-* `__post_init__`.
-* `model_validator(mode='after')`
+??? example
 
+    ```python
+    from pydantic_core import ArgsKwargs
+    from typing_extensions import Self
 
-```py
-from dataclasses import InitVar
-from pathlib import Path
-from typing import Optional
-
-from pydantic.dataclasses import dataclass
+    from pydantic import model_validator
+    from pydantic.dataclasses import dataclass
 
 
-@dataclass
-class PathData:
-    path: Path
-    base_path: InitVar[Optional[Path]]
-
-    def __post_init__(self, base_path):
-        print(f'Received path={self.path!r}, base_path={base_path!r}')
-        #> Received path=PosixPath('world'), base_path=PosixPath('/hello')
-        if base_path is not None:
-            self.path = base_path / self.path
+    @dataclass
+    class Birth:
+        year: int
+        month: int
+        day: int
 
 
-path_data = PathData('world', base_path='/hello')
-# Received path='world', base_path='/hello'
-assert path_data.path == Path('/hello/world')
-```
+    @dataclass
+    class User:
+        birth: Birth
 
-### Difference with stdlib dataclasses
+        @model_validator(mode='before')
+        @classmethod
+        def before(cls, values: ArgsKwargs) -> ArgsKwargs:
+            print(f'First: {values}')  # (1)!
+            """
+            First: ArgsKwargs((), {'birth': {'year': 1995, 'month': 3, 'day': 2}})
+            """
+            return values
 
-Note that the `dataclasses.dataclass` from Python stdlib implements only the `__post_init__` method since it doesn't run a validation step.
+        @model_validator(mode='after')
+        def after(self) -> Self:
+            print(f'Third: {self}')
+            #> Third: User(birth=Birth(year=1995, month=3, day=2))
+            return self
 
-## JSON dumping
-
-Pydantic dataclasses do not feature a `.model_dump_json()` function. To dump them as JSON, you will need to
-make use of the [RootModel](models.md#rootmodel-and-custom-root-types) as follows:
-
-```py output="json"
-import dataclasses
-from typing import List
-
-from pydantic import RootModel
-from pydantic.dataclasses import dataclass
-
-
-@dataclass
-class User:
-    id: int
-    name: str = 'John Doe'
-    friends: List[int] = dataclasses.field(default_factory=lambda: [0])
+        def __post_init__(self):
+            print(f'Second: {self.birth}')
+            #> Second: Birth(year=1995, month=3, day=2)
 
 
-user = User(id='42')
-print(RootModel[User](User(id='42')).model_dump_json(indent=4))
-"""
-{
-    "id": 42,
-    "name": "John Doe",
-    "friends": [
-        0
-    ]
-}
-"""
-```
+    user = User(**{'birth': {'year': 1995, 'month': 3, 'day': 2}})
+    ```
+
+    1. Unlike Pydantic models, the `values` parameter is of type [`ArgsKwargs`][pydantic_core.ArgsKwargs]

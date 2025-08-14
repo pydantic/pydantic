@@ -1,5 +1,5 @@
 from dataclasses import InitVar
-from typing import Any, ClassVar, Generic, List, Optional, TypeVar, Union
+from typing import Any, ClassVar, Generic, Optional, TypeVar, Union
 
 from typing_extensions import Self
 
@@ -111,11 +111,15 @@ MultiInheritanceModel().f()
 
 
 class AliasModel(BaseModel):
-    x: str = Field(..., alias='y')
+    x: str = Field(alias='x_alias')
+    y: str = Field(validation_alias='y_alias')
+    z: str = Field(validation_alias='z_alias', alias='unused')
 
 
-alias_model = AliasModel(y='hello')
-assert alias_model.x == 'hello'
+alias_model = AliasModel(x_alias='a', y_alias='a', z_alias='a')
+assert alias_model.x == 'a'
+assert alias_model.y == 'a'
+assert alias_model.z == 'a'
 
 
 class ClassVarModel(BaseModel):
@@ -223,7 +227,7 @@ def _default_factory_str() -> str:
     return 'x'
 
 
-def _default_factory_list() -> List[int]:
+def _default_factory_list() -> list[int]:
     return [1, 2, 3]
 
 
@@ -237,7 +241,7 @@ class FieldDefaultTestingModel(BaseModel):
     d: int = Field(1)
 
     # Default factory
-    g: List[int] = Field(default_factory=_default_factory_list)
+    g: list[int] = Field(default_factory=_default_factory_list)
     h: str = Field(default_factory=_default_factory_str)
     i: str = Field(default_factory=lambda: 'test')
 
@@ -312,3 +316,38 @@ class Foo(BaseModel):
 
 class Bar(Foo, RootModel[int]):
     pass
+
+
+class Model1(BaseModel):
+    model_config = ConfigDict(validate_by_alias=False, validate_by_name=True)
+
+    my_field: str = Field(alias='my_alias')
+
+m1 = Model1(my_field='foo')
+
+class Model2(BaseModel):
+    model_config = ConfigDict(validate_by_alias=True, validate_by_name=False)
+
+    my_field: str = Field(alias='my_alias')
+
+m2 = Model2(my_alias='foo')
+
+class Model3(BaseModel):
+    model_config = ConfigDict(validate_by_alias=True, validate_by_name=True)
+
+    my_field: str = Field(alias='my_alias')
+
+# for this case, we prefer the field name over the alias
+m3 = Model3(my_field='foo')
+
+class Model4(BaseModel):
+    my_field: str = Field(alias='my_alias')
+
+m4 = Model4(my_alias='foo')
+
+class Model5(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    my_field: str = Field(alias='my_alias')
+
+m5 = Model5(my_field='foo')

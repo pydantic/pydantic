@@ -5,12 +5,12 @@ from __future__ import annotations as _annotations
 import dataclasses
 import sys
 import types
-from typing import TYPE_CHECKING, Any, Callable, Generic, NoReturn, TypeVar, overload
+from typing import TYPE_CHECKING, Any, Callable, Generic, Literal, NoReturn, TypeVar, overload
 from warnings import warn
 
-from typing_extensions import Literal, TypeGuard, dataclass_transform
+from typing_extensions import TypeGuard, dataclass_transform
 
-from ._internal import _config, _decorators, _typing_extra
+from ._internal import _config, _decorators, _namespace_utils, _typing_extra
 from ._internal import _dataclasses as _pydantic_dataclasses
 from ._migration import getattr_migration
 from .config import ConfigDict
@@ -19,6 +19,7 @@ from .fields import Field, FieldInfo, PrivateAttr
 
 if TYPE_CHECKING:
     from ._internal._dataclasses import PydanticDataclass
+    from ._internal._namespace_utils import MappingNamespace
 
 __all__ = 'dataclass', 'rebuild_dataclass'
 
@@ -108,7 +109,8 @@ def dataclass(
     kw_only: bool = False,
     slots: bool = False,
 ) -> Callable[[type[_T]], type[PydanticDataclass]] | type[PydanticDataclass]:
-    """Usage docs: https://docs.pydantic.dev/2.9/concepts/dataclasses/
+    """!!! abstract "Usage Documentation"
+        [`dataclasses`](../concepts/dataclasses.md)
 
     A decorator used to create a Pydantic-enhanced dataclass, similar to the standard Python `dataclass`,
     but with added validation.
@@ -155,9 +157,7 @@ def dataclass(
           `x: int = dataclasses.field(default=pydantic.Field(..., kw_only=True), kw_only=True)`
         """
         for annotation_cls in cls.__mro__:
-            # In Python < 3.9, `__annotations__` might not be present if there are no fields.
-            # we therefore need to use `getattr` to avoid an `AttributeError`.
-            annotations = getattr(annotation_cls, '__annotations__', [])
+            annotations: dict[str, Any] = getattr(annotation_cls, '__annotations__', {})
             for field_name in annotations:
                 field_value = getattr(cls, field_name, None)
                 # Process only if this is an instance of `FieldInfo`.
@@ -176,8 +176,8 @@ def dataclass(
                     field_args['repr'] = field_value.repr
 
                 setattr(cls, field_name, dataclasses.field(**field_args))
-                # In Python 3.8, dataclasses checks cls.__dict__['__annotations__'] for annotations,
-                # so we must make sure it's initialized before we add to it.
+                # In Python 3.9, when subclassing, information is pulled from cls.__dict__['__annotations__']
+                # for annotations, so we must make sure it's initialized before we add to it.
                 if cls.__dict__.get('__annotations__') is None:
                     cls.__annotations__ = {}
                 cls.__annotations__[field_name] = annotations[field_name]
@@ -200,6 +200,17 @@ def dataclass(
             )
 
         original_cls = cls
+
+        # we warn on conflicting config specifications, but only if the class doesn't have a dataclass base
+        # because a dataclass base might provide a __pydantic_config__ attribute that we don't want to warn about
+        has_dataclass_base = any(dataclasses.is_dataclass(base) for base in cls.__bases__)
+        if not has_dataclass_base and config is not None and hasattr(cls, '__pydantic_config__'):
+            warn(
+                f'`config` is set via both the `dataclass` decorator and `__pydantic_config__` for dataclass {cls.__name__}. '
+                f'The `config` specification from `dataclass` decorator will take priority.',
+                category=UserWarning,
+                stacklevel=2,
+            )
 
         # if config is not explicitly provided, try to read it from the type
         config_dict = config if config is not None else getattr(cls, '__pydantic_config__', None)
@@ -253,20 +264,36 @@ def dataclass(
             **kwargs,
         )
 
+        # This is an undocumented attribute to distinguish stdlib/Pydantic dataclasses.
+        # It should be set as early as possible:
+        cls.__is_pydantic_dataclass__ = True
+
         cls.__pydantic_decorators__ = decorators  # type: ignore
         cls.__doc__ = original_doc
         cls.__module__ = original_cls.__module__
         cls.__qualname__ = original_cls.__qualname__
+        cls.__pydantic_fields_complete__ = classmethod(_pydantic_fields_complete)
         cls.__pydantic_complete__ = False  # `complete_dataclass` will set it to `True` if successful.
-        _pydantic_dataclasses.complete_dataclass(cls, config_wrapper, raise_errors=False, types_namespace=None)
+        # TODO `parent_namespace` is currently None, but we could do the same thing as Pydantic models:
+        # fetch the parent ns using `parent_frame_namespace` (if the dataclass was defined in a function),
+        # and possibly cache it (see the `__pydantic_parent_namespace__` logic for models).
+        _pydantic_dataclasses.complete_dataclass(cls, config_wrapper, raise_errors=False)
         return cls
 
     return create_dataclass if _cls is None else create_dataclass(_cls)
 
 
+def _pydantic_fields_complete(cls: type[PydanticDataclass]) -> bool:
+    """Return whether the fields where successfully collected (i.e. type hints were successfully resolves).
+
+    This is a private property, not meant to be used outside Pydantic.
+    """
+    return all(field_info._complete for field_info in cls.__pydantic_fields__.values())
+
+
 __getattr__ = getattr_migration(__name__)
 
-if (3, 8) <= sys.version_info < (3, 11):
+if sys.version_info < (3, 11):
     # Monkeypatch dataclasses.InitVar so that typing doesn't error if it occurs as a type when evaluating type hints
     # Starting in 3.11, typing.get_type_hints will not raise an error if the retrieved type hints are not callable.
 
@@ -286,7 +313,7 @@ def rebuild_dataclass(
     force: bool = False,
     raise_errors: bool = True,
     _parent_namespace_depth: int = 2,
-    _types_namespace: dict[str, Any] | None = None,
+    _types_namespace: MappingNamespace | None = None,
 ) -> bool | None:
     """Try to rebuild the pydantic-core schema for the dataclass.
 
@@ -308,25 +335,37 @@ def rebuild_dataclass(
     """
     if not force and cls.__pydantic_complete__:
         return None
-    else:
-        if _types_namespace is not None:
-            types_namespace: dict[str, Any] | None = _types_namespace.copy()
-        else:
-            if _parent_namespace_depth > 0:
-                frame_parent_ns = _typing_extra.parent_frame_namespace(parent_depth=_parent_namespace_depth) or {}
-                # Note: we may need to add something similar to cls.__pydantic_parent_namespace__ from BaseModel
-                #   here when implementing handling of recursive generics. See BaseModel.model_rebuild for reference.
-                types_namespace = frame_parent_ns
-            else:
-                types_namespace = {}
 
-            types_namespace = _typing_extra.merge_cls_and_parent_ns(cls, types_namespace)
-        return _pydantic_dataclasses.complete_dataclass(
-            cls,
-            _config.ConfigWrapper(cls.__pydantic_config__, check=False),
-            raise_errors=raise_errors,
-            types_namespace=types_namespace,
-        )
+    for attr in ('__pydantic_core_schema__', '__pydantic_validator__', '__pydantic_serializer__'):
+        if attr in cls.__dict__:
+            # Deleting the validator/serializer is necessary as otherwise they can get reused in
+            # pydantic-core. Same applies for the core schema that can be reused in schema generation.
+            delattr(cls, attr)
+
+    cls.__pydantic_complete__ = False
+
+    if _types_namespace is not None:
+        rebuild_ns = _types_namespace
+    elif _parent_namespace_depth > 0:
+        rebuild_ns = _typing_extra.parent_frame_namespace(parent_depth=_parent_namespace_depth, force=True) or {}
+    else:
+        rebuild_ns = {}
+
+    ns_resolver = _namespace_utils.NsResolver(
+        parent_namespace=rebuild_ns,
+    )
+
+    return _pydantic_dataclasses.complete_dataclass(
+        cls,
+        _config.ConfigWrapper(cls.__pydantic_config__, check=False),
+        raise_errors=raise_errors,
+        ns_resolver=ns_resolver,
+        # We could provide a different config instead (with `'defer_build'` set to `True`)
+        # of this explicit `_force_build` argument, but because config can come from the
+        # decorator parameter or the `__pydantic_config__` attribute, `complete_dataclass`
+        # will overwrite `__pydantic_config__` with the provided config above:
+        _force_build=True,
+    )
 
 
 def is_pydantic_dataclass(class_: type[Any], /) -> TypeGuard[type[PydanticDataclass]]:
@@ -339,6 +378,6 @@ def is_pydantic_dataclass(class_: type[Any], /) -> TypeGuard[type[PydanticDatacl
         `True` if the class is a pydantic dataclass, `False` otherwise.
     """
     try:
-        return '__pydantic_validator__' in class_.__dict__ and dataclasses.is_dataclass(class_)
+        return '__is_pydantic_dataclass__' in class_.__dict__ and dataclasses.is_dataclass(class_)
     except AttributeError:
         return False

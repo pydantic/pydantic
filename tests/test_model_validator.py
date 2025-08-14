@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, cast
+from typing import Any, cast
 
 import pytest
 
@@ -43,7 +43,7 @@ def test_model_validator_before(classmethod_decorator: Any) -> None:
         def val_model(cls, values: Any, info: ValidationInfo) -> dict[str, Any] | Model:
             assert not info.context
             if isinstance(values, dict):
-                values = cast(Dict[str, Any], values)
+                values = cast(dict[str, Any], values)
                 values['x'] += 1
                 values['y'] += 1
             else:
@@ -69,7 +69,7 @@ def test_model_validator_before_revalidate_always(classmethod_decorator: Any) ->
         def val_model(cls, values: Any, info: ValidationInfo) -> dict[str, Any] | Model:
             assert not info.context
             if isinstance(values, dict):
-                values = cast(Dict[str, Any], values)
+                values = cast(dict[str, Any], values)
                 values['x'] += 1
                 values['y'] += 1
             else:

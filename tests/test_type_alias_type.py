@@ -1,21 +1,21 @@
 import datetime
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Dict, Generic, List, Tuple, TypeVar, Union
+from typing import Annotated, Generic, Literal, TypeVar, Union
 
 import pytest
 from annotated_types import MaxLen
-from typing_extensions import Annotated, Literal, TypeAliasType
+from typing_extensions import TypeAliasType
 
-from pydantic import BaseModel, Field, ValidationError
-from pydantic.type_adapter import TypeAdapter
+from pydantic import BaseModel, PlainSerializer, PydanticUserError, TypeAdapter, ValidationError, WithJsonSchema
 
 T = TypeVar('T')
 
-JsonType = TypeAliasType('JsonType', Union[List['JsonType'], Dict[str, 'JsonType'], str, int, float, bool, None])
+JsonType = TypeAliasType('JsonType', Union[list['JsonType'], dict[str, 'JsonType'], str, int, float, bool, None])
 RecursiveGenericAlias = TypeAliasType(
-    'RecursiveGenericAlias', List[Union['RecursiveGenericAlias[T]', T]], type_params=(T,)
+    'RecursiveGenericAlias', list[Union['RecursiveGenericAlias[T]', T]], type_params=(T,)
 )
-MyList = TypeAliasType('MyList', List[T], type_params=(T,))
+MyList = TypeAliasType('MyList', list[T], type_params=(T,))
 # try mixing with implicit type aliases
 ShortMyList = Annotated[MyList[T], MaxLen(1)]
 ShortRecursiveGenericAlias = Annotated[RecursiveGenericAlias[T], MaxLen(1)]
@@ -168,7 +168,7 @@ def test_type_alias_annotated() -> None:
 
 def test_type_alias_annotated_defs() -> None:
     # force use of refs by referencing the schema in multiple places
-    t = TypeAdapter(Tuple[ShortMyList[int], ShortMyList[int]])
+    t = TypeAdapter(tuple[ShortMyList[int], ShortMyList[int]])
 
     assert t.validate_python((['1'], ['2'])) == ([1], [2])
 
@@ -276,7 +276,7 @@ def test_recursive_generic_type_alias_annotated() -> None:
 
 def test_recursive_generic_type_alias_annotated_defs() -> None:
     # force use of refs by referencing the schema in multiple places
-    t = TypeAdapter(Tuple[ShortRecursiveGenericAlias[int], ShortRecursiveGenericAlias[int]])
+    t = TypeAdapter(tuple[ShortRecursiveGenericAlias[int], ShortRecursiveGenericAlias[int]])
 
     assert t.validate_python(([[]], [[]])) == ([[]], [[]])
 
@@ -315,28 +315,14 @@ def test_recursive_generic_type_alias_annotated_defs() -> None:
     }
 
 
-@pytest.mark.xfail(reason='description is currently dropped')
-def test_field() -> None:
-    SomeAlias = TypeAliasType('SomeAlias', Annotated[int, Field(description='number')])
-
-    ta = TypeAdapter(Annotated[SomeAlias, Field(title='abc')])
-
-    # insert_assert(ta.json_schema())
-    assert ta.json_schema() == {
-        '$defs': {'SomeAlias': {'type': 'integer', 'description': 'number'}},
-        '$ref': '#/$defs/SomeAlias',
-        'title': 'abc',
-    }
-
-
 def test_nested_generic_type_alias_type() -> None:
     class MyModel(BaseModel):
         field_1: MyList[bool]
         field_2: MyList[str]
 
-    model = MyModel(field_1=[True], field_2=['abc'])
+    MyModel(field_1=[True], field_2=['abc'])
 
-    assert model.model_json_schema() == {
+    assert MyModel.model_json_schema() == {
         '$defs': {
             'MyList_bool_': {'items': {'type': 'boolean'}, 'type': 'array'},
             'MyList_str_': {'items': {'type': 'string'}, 'type': 'array'},
@@ -371,7 +357,7 @@ def test_redefined_type_alias():
 def test_type_alias_to_type_with_ref():
     class Div(BaseModel):
         type: Literal['Div'] = 'Div'
-        components: List['AnyComponent']
+        components: list['AnyComponent']
 
     AnyComponent = TypeAliasType('AnyComponent', Div)
 
@@ -388,3 +374,103 @@ def test_type_alias_to_type_with_ref():
             'type': 'literal_error',
         }
     ]
+
+
+def test_intermediate_type_aliases() -> None:
+    # https://github.com/pydantic/pydantic/issues/8984
+    MySeq = TypeAliasType('MySeq', Sequence[T], type_params=(T,))
+    MyIntSeq = TypeAliasType('MyIntSeq', MySeq[int])
+
+    class MyModel(BaseModel):
+        my_int_seq: MyIntSeq
+
+    assert MyModel(my_int_seq=range(1, 4)).my_int_seq == [1, 2, 3]
+
+    assert MyModel.model_json_schema() == {
+        '$defs': {'MyIntSeq': {'items': {'type': 'integer'}, 'type': 'array'}},
+        'properties': {'my_int_seq': {'$ref': '#/$defs/MyIntSeq'}},
+        'required': ['my_int_seq'],
+        'title': 'MyModel',
+        'type': 'object',
+    }
+
+
+def test_intermediate_type_aliases_json_type() -> None:
+    JSON = TypeAliasType('JSON', Union[str, int, bool, 'JSONSeq', 'JSONObj', None])
+    JSONObj = TypeAliasType('JSONObj', dict[str, JSON])
+    JSONSeq = TypeAliasType('JSONSeq', list[JSON])
+    MyJSONAlias1 = TypeAliasType('MyJSONAlias1', JSON)
+    MyJSONAlias2 = TypeAliasType('MyJSONAlias2', MyJSONAlias1)
+    JSONs = TypeAliasType('JSONs', list[MyJSONAlias2])
+
+    adapter = TypeAdapter(JSONs)
+
+    assert adapter.validate_python([{'a': 1}, 2, '3', [4, 5], True, None]) == [{'a': 1}, 2, '3', [4, 5], True, None]
+
+
+def test_intermediate_type_aliases_chain() -> None:
+    A = TypeAliasType('A', int)
+    B = TypeAliasType('B', A)
+    C = TypeAliasType('C', B)
+    D = TypeAliasType('D', C)
+    E = TypeAliasType('E', D)
+
+    TypeAdapter(E)
+
+
+def test_circular_type_aliases() -> None:
+    A = TypeAliasType('A', 'C')
+    B = TypeAliasType('B', A)
+    C = TypeAliasType('C', B)
+
+    with pytest.raises(PydanticUserError) as exc_info:
+
+        class MyModel(BaseModel):
+            a: C
+
+    assert exc_info.value.code == 'circular-reference-schema'
+    assert exc_info.value.message.startswith('tests.test_type_alias_type.C')
+
+
+def test_type_alias_type_with_serialization() -> None:
+    """Regression test for https://github.com/pydantic/pydantic/issues/11642.
+
+    The issue lied in the definition resolving logic, which wasn't taking
+    possible metadata or serialization attached to a `'definition-ref'` schema.
+
+    In this example, the core schema for `B` — before schema cleaning — will look like:
+
+    ```python
+    {
+        'type': 'definition-ref',
+        'schema_ref': '__main__.A',
+        'serialization': {...},
+        'ref': '__main__.B',
+    }
+    ```
+
+    and the "main"/"top-level" core schema is a `'definition-ref'` schema pointing to
+    this `__main__.B` core schema.
+
+    In schema cleaning, when resolving this top-level core schema, we are recursively
+    unpack `'definition-ref'` schemas (and will end up with the actual schema for `__main__.A`),
+    without taking into account the fact that the schema of `B` had a `serialization` key!
+    """
+
+    A = TypeAliasType('A', int)
+    B = TypeAliasType('B', Annotated[A, PlainSerializer(lambda v: 3)])
+
+    ta = TypeAdapter(B)
+
+    assert ta.dump_python(1) == 3
+
+
+@pytest.mark.skip_json_schema_validation(reason='Extra info added.')
+def test_type_alias_type_with_metadata() -> None:
+    """Same as `test_type_alias_type_with_serialization()` but with JSON Metadata."""
+
+    A = TypeAliasType('A', int)
+    B = TypeAliasType('B', Annotated[A, WithJsonSchema({'type': 'int', 'extra': 1})])
+
+    ta = TypeAdapter(B)
+    assert ta.json_schema() == {'type': 'int', 'extra': 1}

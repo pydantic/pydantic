@@ -1,9 +1,7 @@
-import platform
 import re
-from typing import Generic, Optional, Tuple, TypeVar
+from typing import Annotated, Generic, TypeVar
 
 import pytest
-from typing_extensions import Annotated
 
 from pydantic import (
     BaseModel,
@@ -14,37 +12,63 @@ from pydantic import (
     PydanticUserError,
     ValidationError,
     create_model,
-    errors,
     field_validator,
     validator,
 )
-from pydantic.fields import ModelPrivateAttr
 
 
-def test_create_model():
-    model = create_model('FooModel', foo=(str, ...), bar=(int, 123))
-    assert issubclass(model, BaseModel)
-    assert model.model_config == BaseModel.model_config
-    assert model.__name__ == 'FooModel'
-    assert model.model_fields.keys() == {'foo', 'bar'}
+def test_create_model() -> None:
+    FooModel = create_model(
+        'FooModel',
+        foo=(str, ...),
+        bar=(int, 123),
+        baz=int,
+        qux=Annotated[int, Field(title='QUX')],
+    )
+    assert issubclass(FooModel, BaseModel)
+    assert FooModel.model_config == BaseModel.model_config
+    assert FooModel.__name__ == 'FooModel'
+    assert FooModel.model_fields.keys() == {'foo', 'bar', 'baz', 'qux'}
+    assert FooModel.model_fields['foo'].is_required()
+    assert not FooModel.model_fields['bar'].is_required()
+    assert FooModel.model_fields['baz'].is_required()
 
-    assert not model.__pydantic_decorators__.validators
-    assert not model.__pydantic_decorators__.root_validators
-    assert not model.__pydantic_decorators__.field_validators
-    assert not model.__pydantic_decorators__.field_serializers
+    assert FooModel.model_fields['qux'].title == 'QUX'
 
-    assert model.__module__ == 'tests.test_create_model'
+    assert not FooModel.__pydantic_decorators__.validators
+    assert not FooModel.__pydantic_decorators__.root_validators
+    assert not FooModel.__pydantic_decorators__.field_validators
+    assert not FooModel.__pydantic_decorators__.field_serializers
+
+    assert FooModel.__module__ == 'tests.test_create_model'
+
+
+def test_create_model_invalid_tuple():
+    with pytest.raises(PydanticUserError) as exc_info:
+        create_model('FooModel', foo=(tuple[int, int], (1, 2), 'more'))
+
+    assert exc_info.value.code == 'create-model-field-definitions'
 
 
 def test_create_model_usage():
-    model = create_model('FooModel', foo=(str, ...), bar=(int, 123))
-    m = model(foo='hello')
+    FooModel = create_model('FooModel', foo=(str, ...), bar=(int, 123))
+    m = FooModel(foo='hello')
     assert m.foo == 'hello'
     assert m.bar == 123
     with pytest.raises(ValidationError):
-        model()
+        FooModel()
     with pytest.raises(ValidationError):
-        model(foo='hello', bar='xxx')
+        FooModel(foo='hello', bar='xxx')
+
+
+def test_create_model_private_attr() -> None:
+    FooModel = create_model('FooModel', _priv1=int, _priv2=(int, PrivateAttr(default=2)))
+    assert set(FooModel.__private_attributes__) == {'_priv1', '_priv2'}
+
+    m = FooModel()
+    m._priv1 = 1
+    assert m._priv1 == 1
+    assert m._priv2 == 2
 
 
 def test_create_model_pickle(create_module):
@@ -112,20 +136,18 @@ def test_create_model_must_not_reset_parent_namespace():
     ]
 
 
-def test_invalid_name():
-    with pytest.warns(RuntimeWarning):
-        model = create_model('FooModel', _foo=(str, ...))
-    assert len(model.model_fields) == 0
-
-
-def test_field_wrong_tuple():
-    with pytest.raises(errors.PydanticUserError):
-        create_model('FooModel', foo=(1, 2, 3))
-
-
 def test_config_and_base():
-    with pytest.raises(errors.PydanticUserError):
-        create_model('FooModel', __config__=BaseModel.model_config, __base__=BaseModel)
+    class Base(BaseModel):
+        a: str
+
+        model_config = {'str_to_lower': True}
+
+    Model = create_model('Model', __base__=Base, __config__={'str_max_length': 3})
+
+    assert Model(a='AAA').a == 'aaa'
+
+    with pytest.raises(ValidationError):
+        Model(a='AAAA')
 
 
 def test_inheritance():
@@ -229,14 +251,14 @@ def test_inheritance_validators_all():
     assert model(a=2, b=6).model_dump() == {'a': 4, 'b': 12}
 
 
-def test_funky_name():
-    model = create_model('FooModel', **{'this-is-funky': (int, ...)})
-    m = model(**{'this-is-funky': '123'})
-    assert m.model_dump() == {'this-is-funky': 123}
+def test_field_invalid_identifier() -> None:
+    model = create_model('FooModel', **{'invalid-identifier': (int, ...)})
+    m = model(**{'invalid-identifier': '123'})
+    assert m.model_dump() == {'invalid-identifier': 123}
     with pytest.raises(ValidationError) as exc_info:
         model()
     assert exc_info.value.errors(include_url=False) == [
-        {'input': {}, 'loc': ('this-is-funky',), 'msg': 'Field required', 'type': 'missing'}
+        {'input': {}, 'loc': ('invalid-identifier',), 'msg': 'Field required', 'type': 'missing'}
     ]
 
 
@@ -304,268 +326,11 @@ def test_create_model_with_doc():
     assert model.__doc__ == 'The Foo model'
 
 
-@pytest.mark.parametrize('base', [ModelPrivateAttr, object])
-@pytest.mark.parametrize('use_annotation', [True, False])
-def test_private_descriptors(base, use_annotation):
-    set_name_calls = []
-    get_calls = []
-    set_calls = []
-    delete_calls = []
-
-    class MyDescriptor(base):
-        def __init__(self, fn):
-            super().__init__()
-            self.fn = fn
-            self.name = ''
-
-        def __set_name__(self, owner, name):
-            set_name_calls.append((owner, name))
-            self.name = name
-
-        def __get__(self, obj, type=None):
-            get_calls.append((obj, type))
-            return self.fn(obj) if obj else self
-
-        def __set__(self, obj, value):
-            set_calls.append((obj, value))
-            self.fn = lambda obj: value
-
-        def __delete__(self, obj):
-            delete_calls.append(obj)
-
-            def fail(obj):
-                # I have purposely not used the exact formatting you'd get if the attribute wasn't defined,
-                # to make it clear this function is being called, while also having sensible behavior
-                raise AttributeError(f'{self.name!r} is not defined on {obj!r}')
-
-            self.fn = fail
-
-    class A(BaseModel):
-        x: int
-
-        if use_annotation:
-            _some_func: MyDescriptor = MyDescriptor(lambda self: self.x)
-        else:
-            _some_func = MyDescriptor(lambda self: self.x)
-
-        @property
-        def _double_x(self):
-            return self.x * 2
-
-    assert set(A.__private_attributes__) == {'_some_func'}
-    assert set_name_calls == [(A, '_some_func')]
-
-    a = A(x=2)
-
-    assert a._double_x == 4  # Ensure properties with leading underscores work fine and don't become private attributes
-
-    assert get_calls == []
-    assert a._some_func == 2
-    assert get_calls == [(a, A)]
-
-    assert set_calls == []
-    a._some_func = 3
-    assert set_calls == [(a, 3)]
-
-    assert a._some_func == 3
-    assert get_calls == [(a, A), (a, A)]
-
-    assert delete_calls == []
-    del a._some_func
-    assert delete_calls == [a]
-
-    with pytest.raises(AttributeError, match=r"'_some_func' is not defined on A\(x=2\)"):
-        a._some_func
-    assert get_calls == [(a, A), (a, A), (a, A)]
-
-
-def test_private_attr_set_name():
-    class SetNameInt(int):
-        _owner_attr_name: Optional[str] = None
-
-        def __set_name__(self, owner, name):
-            self._owner_attr_name = f'{owner.__name__}.{name}'
-
-    _private_attr_default = SetNameInt(1)
-
-    class Model(BaseModel):
-        _private_attr_1: int = PrivateAttr(default=_private_attr_default)
-        _private_attr_2: SetNameInt = SetNameInt(2)
-
-    assert _private_attr_default._owner_attr_name == 'Model._private_attr_1'
-
-    m = Model()
-    assert m._private_attr_1 == 1
-    assert m._private_attr_1._owner_attr_name == 'Model._private_attr_1'
-    assert m._private_attr_2 == 2
-    assert m._private_attr_2._owner_attr_name == 'Model._private_attr_2'
-
-
-def test_private_attr_default_descriptor_attribute_error():
-    class SetNameInt(int):
-        def __get__(self, obj, cls):
-            return self
-
-    _private_attr_default = SetNameInt(1)
-
-    class Model(BaseModel):
-        _private_attr: int = PrivateAttr(default=_private_attr_default)
-
-    assert Model.__private_attributes__['_private_attr'].__get__(None, Model) == _private_attr_default
-
-    with pytest.raises(AttributeError, match="'ModelPrivateAttr' object has no attribute 'some_attr'"):
-        Model.__private_attributes__['_private_attr'].some_attr
-
-
-def test_private_attr_set_name_do_not_crash_if_not_callable():
-    class SetNameInt(int):
-        __set_name__ = None
-
-    _private_attr_default = SetNameInt(2)
-
-    class Model(BaseModel):
-        _private_attr: int = PrivateAttr(default=_private_attr_default)
-
-    # Checks below are just to ensure that everything is the same as in `test_private_attr_set_name`
-    # The main check is that model class definition above doesn't crash
-    assert Model()._private_attr == 2
-
-
-def test_del_model_attr():
-    class Model(BaseModel):
-        some_field: str
-
-    m = Model(some_field='value')
-    assert hasattr(m, 'some_field')
-
-    del m.some_field
-
-    assert not hasattr(m, 'some_field')
-
-
-@pytest.mark.skipif(
-    platform.python_implementation() == 'PyPy',
-    reason='In this single case `del` behaves weird on pypy',
-)
-def test_del_model_attr_error():
-    class Model(BaseModel):
-        some_field: str
-
-    m = Model(some_field='value')
-    assert not hasattr(m, 'other_field')
-
-    with pytest.raises(AttributeError, match='other_field'):
-        del m.other_field
-
-
-def test_del_model_attr_with_privat_attrs():
-    class Model(BaseModel):
-        _private_attr: int = PrivateAttr(default=1)
-        some_field: str
-
-    m = Model(some_field='value')
-    assert hasattr(m, 'some_field')
-
-    del m.some_field
-
-    assert not hasattr(m, 'some_field')
-
-
-@pytest.mark.skipif(
-    platform.python_implementation() == 'PyPy',
-    reason='In this single case `del` behaves weird on pypy',
-)
-def test_del_model_attr_with_privat_attrs_error():
-    class Model(BaseModel):
-        _private_attr: int = PrivateAttr(default=1)
-        some_field: str
-
-    m = Model(some_field='value')
-    assert not hasattr(m, 'other_field')
-
-    with pytest.raises(AttributeError, match="'Model' object has no attribute 'other_field'"):
-        del m.other_field
-
-
-def test_del_model_attr_with_privat_attrs_twice_error():
-    class Model(BaseModel):
-        _private_attr: int = 1
-        some_field: str
-
-    m = Model(some_field='value')
-    assert hasattr(m, '_private_attr')
-
-    del m._private_attr
-
-    with pytest.raises(AttributeError, match="'Model' object has no attribute '_private_attr'"):
-        del m._private_attr
-
-
-def test_create_model_with_slots():
-    field_definitions = {'__slots__': (Optional[Tuple[str, ...]], None), 'foobar': (Optional[int], None)}
-    with pytest.warns(RuntimeWarning, match='__slots__ should not be passed to create_model'):
-        model = create_model('PartialPet', **field_definitions)
-
-    assert model.model_fields.keys() == {'foobar'}
-
-
-def test_create_model_non_annotated():
-    with pytest.raises(
-        TypeError,
-        match='A non-annotated attribute was detected: `bar = 123`. All model fields require a type annotation',
-    ):
-        create_model('FooModel', foo=(str, ...), bar=123)
-
-
-@pytest.mark.parametrize(
-    'annotation_type,field_info',
-    [
-        (bool, Field(alias='foo_bool_alias', description='foo boolean')),
-        (str, Field(alias='foo_str_alis', description='foo string')),
-    ],
-)
-def test_create_model_typing_annotated_field_info(annotation_type, field_info):
-    annotated_foo = Annotated[annotation_type, field_info]
-    model = create_model('FooModel', foo=annotated_foo, bar=(int, 123))
-
-    assert model.model_fields.keys() == {'foo', 'bar'}
-
-    foo = model.model_fields.get('foo')
-
-    assert foo is not None
-    assert foo.annotation == annotation_type
-    assert foo.alias == field_info.alias
-    assert foo.description == field_info.description
-
-
-def test_create_model_expect_field_info_as_metadata_typing():
-    annotated_foo = Annotated[int, 10]
-
-    with pytest.raises(PydanticUserError, match=r'Field definitions should be a Annotated\[<type>, <FieldInfo>\]'):
-        create_model('FooModel', foo=annotated_foo)
-
-
-def test_create_model_tuple():
-    model = create_model('FooModel', foo=(Tuple[int, int], (1, 2)))
-    assert model().foo == (1, 2)
-    assert model(foo=(3, 4)).foo == (3, 4)
-
-
-def test_create_model_tuple_3():
-    with pytest.raises(PydanticUserError, match=r'^Field definitions should be a `\(<type>, <default>\)`\.\n'):
-        create_model('FooModel', foo=(Tuple[int, int], (1, 2), 'more'))
-
-
 def test_create_model_protected_namespace_default():
     with pytest.warns(
-        UserWarning, match='Field "model_prefixed_field" in Model has conflict with protected namespace "model_"'
+        UserWarning, match='Field "model_dump_something" in Model has conflict with protected namespace "model_dump"'
     ):
-        create_model('Model', model_prefixed_field=(str, ...))
-
-
-def test_create_model_protected_namespace_real_conflict():
-    with pytest.raises(NameError, match='Field "model_dump" conflicts with member .* of protected namespace "model_"'):
-        create_model('Model', model_dump=(str, ...))
+        create_model('Model', model_dump_something=(str, ...))
 
 
 def test_create_model_custom_protected_namespace():

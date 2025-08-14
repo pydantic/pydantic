@@ -1,5 +1,5 @@
 from collections import namedtuple
-from typing import Generic, NamedTuple, Optional, Tuple, TypeVar
+from typing import Generic, NamedTuple, Optional, TypeVar
 
 import pytest
 from typing_extensions import NamedTuple as TypingExtensionsNamedTuple
@@ -62,7 +62,7 @@ def test_namedtuple_schema():
     class Model(BaseModel):
         pos1: Position1
         pos2: Position2
-        pos3: Tuple[int, int]
+        pos3: tuple[int, int]
 
     assert Model.model_json_schema() == {
         'title': 'Model',
@@ -190,7 +190,7 @@ def test_recursive_namedtuple():
         {
             'input': 'a',
             'loc': ('y', 'y', 'x'),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'type': 'int_parsing',
         }
     ]
@@ -213,7 +213,7 @@ def test_recursive_generic_namedtuple():
         {
             'input': 'a',
             'loc': ('y', 'y', 'x'),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'type': 'int_parsing',
         }
     ]

@@ -25,6 +25,8 @@ authors:
     given-names: David
   - family-names: Hall
     given-names: Alex
+  - family-names: Plot
+    given-names: Victorien
 repository-code: 'https://github.com/pydantic/pydantic'
 url: 'https://docs.pydantic.dev/latest/'
 abstract: >-
@@ -33,7 +35,7 @@ abstract: >-
 
   Fast and extensible, Pydantic plays nicely with your
   linters/IDE/brain. Define how data should be in pure,
-  canonical Python 3.8+; validate it with Pydantic.
+  canonical Python 3.9+; validate it with Pydantic.
 keywords:
   - python
   - validation
@@ -42,5 +44,5 @@ keywords:
   - hints
   - typing
 license: MIT
-version: v2.9.0
-date-released: 2024-09-05
+version: v2.11.7
+date-released: 2025-06-14

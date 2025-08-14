@@ -8,19 +8,28 @@ from collections.abc import Hashable
 from dataclasses import InitVar
 from datetime import date, datetime
 from pathlib import Path
-from typing import Any, Callable, ClassVar, Dict, FrozenSet, Generic, List, Optional, Set, TypeVar, Union
+from typing import (
+    Annotated,
+    Any,
+    Callable,
+    ClassVar,
+    Generic,
+    Literal,
+    Optional,
+    TypeVar,
+    Union,
+)
 
 import pytest
+from annotated_types import Gt
 from dirty_equals import HasRepr
-from pydantic_core import ArgsKwargs, CoreSchema, SchemaValidator, core_schema
-from typing_extensions import Annotated, Literal
+from pydantic_core import ArgsKwargs, SchemaValidator
 
 import pydantic
 from pydantic import (
     BaseModel,
     BeforeValidator,
     ConfigDict,
-    GenerateSchema,
     PydanticDeprecatedSince20,
     PydanticUndefinedAnnotation,
     PydanticUserError,
@@ -532,7 +541,7 @@ def test_default_factory_field(field_constructor: Callable):
     @pydantic.dataclasses.dataclass
     class User:
         id: int
-        other: Dict[str, str] = field_constructor(default_factory=lambda: {'John': 'Joey'})
+        other: dict[str, str] = field_constructor(default_factory=lambda: {'John': 'Joey'})
 
     user = User(id=123)
 
@@ -566,7 +575,7 @@ def test_schema():
     class User:
         id: int
         name: str = 'John Doe'
-        aliases: Dict[str, str] = dataclasses.field(default_factory=lambda: {'John': 'Joey'})
+        aliases: dict[str, str] = dataclasses.field(default_factory=lambda: {'John': 'Joey'})
         signup_ts: datetime = None
         age: Optional[int] = dataclasses.field(
             default=None, metadata=dict(title='The age of the user', description='do not lie!')
@@ -632,11 +641,15 @@ def test_initvar():
     class TestInitVar:
         x: int
         y: dataclasses.InitVar
+        z: Annotated[dataclasses.InitVar[int], Gt(1)]
 
-    tiv = TestInitVar(1, 2)
+    tiv = TestInitVar(1, 2, 3)
     assert tiv.x == 1
     with pytest.raises(AttributeError):
         tiv.y
+
+    with pytest.raises(ValidationError):
+        TestInitVar(1, 2, 0)
 
 
 def test_derived_field_from_initvar():
@@ -686,7 +699,7 @@ def test_classvar():
 def test_frozenset_field():
     @pydantic.dataclasses.dataclass
     class TestFrozenSet:
-        set: FrozenSet[int]
+        set: frozenset[int]
 
     test_set = frozenset({1, 2, 3})
     object_under_test = TestFrozenSet(set=test_set)
@@ -819,12 +832,14 @@ def test_override_builtin_dataclass_nested():
         modified_date: Optional[datetime]
         seen_count: int
 
+        __pydantic_config__ = {'revalidate_instances': 'always'}
+
     @dataclasses.dataclass
     class File:
         filename: str
         meta: Meta
 
-    FileChecked = pydantic.dataclasses.dataclass(File, config=ConfigDict(revalidate_instances='always'))
+    FileChecked = pydantic.dataclasses.dataclass(File)
     f = FileChecked(filename=b'thefilename', meta=Meta(modified_date='2020-01-01T00:00', seen_count='7'))
     assert f.filename == 'thefilename'
     assert f.meta.modified_date == datetime(2020, 1, 1, 0, 0)
@@ -1377,13 +1392,13 @@ def test_discriminated_union_basemodel_instance_value():
         'required': ['sub'],
         '$defs': {
             'A': {
-                'properties': {'l': {'const': 'a', 'enum': ['a'], 'title': 'L', 'type': 'string'}},
+                'properties': {'l': {'const': 'a', 'title': 'L', 'type': 'string'}},
                 'required': ['l'],
                 'title': 'A',
                 'type': 'object',
             },
             'B': {
-                'properties': {'l': {'const': 'b', 'enum': ['b'], 'title': 'L', 'type': 'string'}},
+                'properties': {'l': {'const': 'b', 'title': 'L', 'type': 'string'}},
                 'required': ['l'],
                 'title': 'B',
                 'type': 'object',
@@ -1395,12 +1410,12 @@ def test_discriminated_union_basemodel_instance_value():
 def test_post_init_after_validation():
     @dataclasses.dataclass
     class SetWrapper:
-        set: Set[int]
+        set: set[int]
 
         def __post_init__(self):
-            assert isinstance(
-                self.set, set
-            ), f"self.set should be a set but it's {self.set!r} of type {type(self.set).__name__}"
+            assert isinstance(self.set, set), (
+                f"self.set should be a set but it's {self.set!r} of type {type(self.set).__name__}"
+            )
 
     class Model(pydantic.BaseModel):
         set_wrapper: SetWrapper
@@ -1599,8 +1614,7 @@ def test_cross_module_cyclic_reference_dataclass(create_module):
     with pytest.raises(
         PydanticUserError,
         match=re.escape(
-            '`D1` is not fully defined; you should define `D2`, then call'
-            ' `pydantic.dataclasses.rebuild_dataclass(D1)`.'
+            '`D1` is not fully defined; you should define `D2`, then call `pydantic.dataclasses.rebuild_dataclass(D1)`.'
         ),
     ):
         D1()
@@ -1807,7 +1821,7 @@ def test_extra_forbid_list_no_error():
 
     @pydantic.dataclasses.dataclass
     class Foo:
-        a: List[Bar]
+        a: list[Bar]
 
     assert isinstance(Foo(a=[Bar()]).a[0], Bar)
 
@@ -1990,7 +2004,7 @@ def test_validator_info_field_name_data_before():
     ],
     ids=['pydantic', 'stdlib'],
 )
-def test_inheritance_replace(decorator1: Callable[[Any], Any], expected_parent: List[str], expected_child: List[str]):
+def test_inheritance_replace(decorator1: Callable[[Any], Any], expected_parent: list[str], expected_child: list[str]):
     """We promise that if you add a validator
     with the same _function_ name as an existing validator
     it replaces the existing validator and is run instead of it.
@@ -1998,23 +2012,23 @@ def test_inheritance_replace(decorator1: Callable[[Any], Any], expected_parent: 
 
     @decorator1
     class Parent:
-        a: List[str]
+        a: list[str]
 
         @field_validator('a')
         @classmethod
-        def parent_val_before(cls, v: List[str]):
+        def parent_val_before(cls, v: list[str]):
             v.append('parent before')
             return v
 
         @field_validator('a')
         @classmethod
-        def val(cls, v: List[str]):
+        def val(cls, v: list[str]):
             v.append('parent')
             return v
 
         @field_validator('a')
         @classmethod
-        def parent_val_after(cls, v: List[str]):
+        def parent_val_after(cls, v: list[str]):
             v.append('parent after')
             return v
 
@@ -2022,19 +2036,19 @@ def test_inheritance_replace(decorator1: Callable[[Any], Any], expected_parent: 
     class Child(Parent):
         @field_validator('a')
         @classmethod
-        def child_val_before(cls, v: List[str]):
+        def child_val_before(cls, v: list[str]):
             v.append('child before')
             return v
 
         @field_validator('a')
         @classmethod
-        def val(cls, v: List[str]):
+        def val(cls, v: list[str]):
             v.append('child')
             return v
 
         @field_validator('a')
         @classmethod
-        def child_val_after(cls, v: List[str]):
+        def child_val_after(cls, v: list[str]):
             v.append('child after')
             return v
 
@@ -2142,7 +2156,7 @@ def test_unparametrized_generic_dataclass(dataclass_decorator):
                 {
                     'input': 'a',
                     'loc': ('x',),
-                    'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+                    'msg': 'Input should be a valid integer, unable to parse string as an integer',
                     'type': 'int_parsing',
                 }
             ],
@@ -2220,7 +2234,6 @@ def test_recursive_dataclasses_gh_4509(create_module) -> None:
     @create_module
     def module():
         import dataclasses
-        from typing import List
 
         import pydantic
 
@@ -2230,7 +2243,7 @@ def test_recursive_dataclasses_gh_4509(create_module) -> None:
 
         @dataclasses.dataclass
         class Cook:
-            recipes: List[Recipe]
+            recipes: list[Recipe]
 
         @pydantic.dataclasses.dataclass
         class Foo(Cook):
@@ -2488,23 +2501,31 @@ def test_model_config(dataclass_decorator: Any) -> None:
 
 
 def test_model_config_override_in_decorator() -> None:
-    @pydantic.dataclasses.dataclass(config=ConfigDict(str_to_lower=False, str_strip_whitespace=True))
-    class Model:
-        x: str
-        __pydantic_config__ = ConfigDict(str_to_lower=True)
+    with pytest.warns(
+        UserWarning, match='`config` is set via both the `dataclass` decorator and `__pydantic_config__`'
+    ):
 
-    ta = TypeAdapter(Model)
-    assert ta.validate_python({'x': 'ABC '}).x == 'ABC'
+        @pydantic.dataclasses.dataclass(config=ConfigDict(str_to_lower=False, str_strip_whitespace=True))
+        class Model:
+            x: str
+            __pydantic_config__ = ConfigDict(str_to_lower=True)
+
+        ta = TypeAdapter(Model)
+        assert ta.validate_python({'x': 'ABC '}).x == 'ABC'
 
 
 def test_model_config_override_in_decorator_empty_config() -> None:
-    @pydantic.dataclasses.dataclass(config=ConfigDict())
-    class Model:
-        x: str
-        __pydantic_config__ = ConfigDict(str_to_lower=True)
+    with pytest.warns(
+        UserWarning, match='`config` is set via both the `dataclass` decorator and `__pydantic_config__`'
+    ):
 
-    ta = TypeAdapter(Model)
-    assert ta.validate_python({'x': 'ABC '}).x == 'ABC '
+        @pydantic.dataclasses.dataclass(config=ConfigDict())
+        class Model:
+            x: str
+            __pydantic_config__ = ConfigDict(str_to_lower=True)
+
+        ta = TypeAdapter(Model)
+        assert ta.validate_python({'x': 'ABC '}).x == 'ABC '
 
 
 def test_dataclasses_with_config_decorator():
@@ -2652,19 +2673,6 @@ def test_dataclasses_with_slots_and_default():
         b: int = Field(1)
 
     assert B().b == 1
-
-
-def test_schema_generator() -> None:
-    class LaxStrGenerator(GenerateSchema):
-        def str_schema(self) -> CoreSchema:
-            return core_schema.no_info_plain_validator_function(str)
-
-    @pydantic.dataclasses.dataclass
-    class Model:
-        x: str
-        __pydantic_config__ = ConfigDict(schema_generator=LaxStrGenerator)
-
-    assert Model(x=1).x == '1'
 
 
 @pytest.mark.parametrize('decorator1', **dataclass_decorators())
@@ -2858,7 +2866,7 @@ def test_disallow_init_false_and_init_var_true() -> None:
 
         @pydantic.dataclasses.dataclass
         class Foo:
-            bar: str = Field(..., init=False, init_var=True)
+            bar: str = Field(init=False, init_var=True)
 
 
 def test_annotations_valid_for_field_inheritance() -> None:
@@ -3045,3 +3053,56 @@ def test_warns_on_double_frozen() -> None:
         @pydantic.dataclasses.dataclass(frozen=True, config=ConfigDict(frozen=True))
         class DC:
             x: int
+
+
+def test_warns_on_double_config() -> None:
+    with pytest.warns(
+        UserWarning, match='`config` is set via both the `dataclass` decorator and `__pydantic_config__`'
+    ):
+
+        @pydantic.dataclasses.dataclass(config=ConfigDict(title='from decorator'))
+        class Foo:
+            __pydantic_config__ = ConfigDict(title='from __pydantic_config__')
+
+
+def test_config_pushdown_vanilla_dc() -> None:
+    class ArbitraryType:
+        pass
+
+    @dataclasses.dataclass
+    class DC:
+        a: ArbitraryType
+
+    class Model(BaseModel):
+        model_config = ConfigDict(arbitrary_types_allowed=True)
+
+        dc: DC
+
+
+def test_deferred_dataclass_fields_available() -> None:
+    # This aligns with deferred Pydantic models:
+    @pydantic.dataclasses.dataclass(config={'defer_build': True})
+    class A:
+        a: int
+
+    assert 'a' in A.__pydantic_fields__  # pyright: ignore[reportAttributeAccessIssue]
+
+
+def test_dataclass_fields_rebuilt_before_schema_generation() -> None:
+    """https://github.com/pydantic/pydantic/issues/11947"""
+
+    def update_schema(schema: dict[str, Any]) -> None:
+        schema['test'] = schema['title']
+
+    @pydantic.dataclasses.dataclass
+    class A:
+        a: """Annotated[
+            Forward,
+            Field(field_title_generator=lambda name, _: name, json_schema_extra=update_schema)
+        ]""" = True
+
+    Forward = bool
+
+    ta = TypeAdapter(A)
+
+    assert ta.json_schema()['properties']['a']['test'] == 'a'

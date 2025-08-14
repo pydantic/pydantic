@@ -7,9 +7,13 @@ on:
       - docs-update
     tags:
       - '**'
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   COLUMNS: 150
+  UV_FROZEN: true
 
 jobs:
   lint:
@@ -17,13 +21,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: pdm-project/setup-pdm@v4
+      - uses: astral-sh/setup-uv@v5
         with:
-          python-version: '3.11'
-          cache: true
+          python-version: '3.12'
 
-      - name: install
-        run: pdm install -G linting -G email
+      - name: Install dependencies
+        # Installing pip is required for the pre-commit action:
+        run: |
+          uv sync --group linting --all-extras
+          uv pip install pip
 
       - uses: pre-commit/action@v3.0.1
         with:
@@ -36,17 +42,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: pdm-project/setup-pdm@v4
+      - uses: astral-sh/setup-uv@v5
         with:
-          python-version: '3.11'
-          cache: true
+          python-version: '3.12'
 
-      - name: install deps
-        run: pdm install -G testing -G email
+      - name: Install dependencies
+        run: uv sync --group testing-extra --all-extras
 
-      - run: pdm info && pdm list
-
-      - run: 'pdm run python -c "import pydantic.version; print(pydantic.version.version_info())"'
+      - run: 'uv run python -c "import pydantic.version; print(pydantic.version.version_info())"'
 
       - run: make test
 
@@ -57,33 +60,28 @@ jobs:
     timeout-minutes: 30
 
     steps:
-      - name: checkout docs-site
+      - name: Checkout docs-site
         uses: actions/checkout@v4
         with:
           ref: docs-site
 
-      - name: checkout current branch
+      - name: Checkout current branch
         uses: actions/checkout@v4
 
-      - uses: pdm-project/setup-pdm@v4
+      - uses: astral-sh/setup-uv@v5
         with:
-          python-version: '3.10'
+          python-version: '3.12'
 
-      - name: install
-        run: |
-          pdm venv create --with-pip --force $PYTHON
-          pdm install -G docs
-          pdm run python -m pip install --extra-index-url https://pydantic:${PPPR_TOKEN}@pppr.pydantic.dev/simple/ mkdocs-material
+      - run: uv sync --group docs --group docs-upload
+
+      - run: uv pip install --default-index https://pydantic:${PPPR_TOKEN}@pppr.pydantic.dev/simple/ mkdocs-material
         env:
           PPPR_TOKEN: ${{ secrets.PPPR_TOKEN }}
 
-      - run: pdm run python -c 'import docs.plugins.main'
+      - run: uv run python -c 'import docs.plugins.main'
 
-      # Adding local symlinks gets nice source locations like
-      #   pydantic_core/core_schema.py
-      # instead of
-      #   .venv/lib/python3.10/site-packages/pydantic_core/core_schema.py
-      - name: prepare shortcuts for extra modules
+      # Taken from docs-build.sh
+      - name: Prepare shortcuts for extra modules
         run: |
           ln -s .venv/lib/python*/site-packages/pydantic_core pydantic_core
           ln -s .venv/lib/python*/site-packages/pydantic_settings pydantic_settings
@@ -94,17 +92,21 @@ jobs:
           git config --global user.name "${{ github.actor }}"
           git config --global user.email "${{ github.actor }}@users.noreply.github.com"
 
-      - run: pdm run mike deploy -b docs-site dev --push
-        if: "github.ref == 'refs/heads/main'"
+      - run: PYTHONPATH="$PWD${PYTHONPATH:+:${PYTHONPATH}}" uv run mike deploy -b docs-site dev --push
+        if: github.ref == 'refs/heads/main'
 
-      - if: "github.ref == 'refs/heads/docs-update' || startsWith(github.ref, 'refs/tags/')"
+      - if: github.ref == 'refs/heads/docs-update' || startsWith(github.ref, 'refs/tags/')
         id: check-version
         uses: samuelcolvin/check-python-version@v4.1
         with:
           version_file_path: 'pydantic/version.py'
           skip_env_check: true
 
-      - run: pdm run mike deploy -b docs-site ${{ steps.check-version.outputs.VERSION_MAJOR_MINOR }} latest --update-aliases --push
-        if: "(github.ref == 'refs/heads/docs-update' || startsWith(github.ref, 'refs/tags/')) && !fromJSON(steps.check-version.outputs.IS_PRERELEASE)"
+      - run: PYTHONPATH="$PWD${PYTHONPATH:+:${PYTHONPATH}}" uv run mike deploy -b docs-site ${{ steps.check-version.outputs.VERSION_MAJOR_MINOR }} latest --update-aliases --push
+        if: ${{ (github.ref == 'refs/heads/docs-update' || startsWith(github.ref, 'refs/tags/')) && !fromJSON(steps.check-version.outputs.IS_PRERELEASE) }}
         env:
           PYDANTIC_VERSION: v${{ steps.check-version.outputs.VERSION }}
+
+      - run: uv run python docs/plugins/algolia.py upload
+        env:
+          ALGOLIA_WRITE_API_KEY: ${{ secrets.ALGOLIA_WRITE_API_KEY }}

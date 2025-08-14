@@ -1,6 +1,7 @@
 from __future__ import annotations as _annotations
 
-from typing import TYPE_CHECKING, Any, Hashable, Sequence
+from collections.abc import Hashable, Sequence
+from typing import TYPE_CHECKING, Any, cast
 
 from pydantic_core import CoreSchema, core_schema
 
@@ -8,13 +9,11 @@ from ..errors import PydanticUserError
 from . import _core_utils
 from ._core_utils import (
     CoreSchemaField,
-    collect_definitions,
 )
 
 if TYPE_CHECKING:
     from ..types import Discriminator
-
-CORE_SCHEMA_METADATA_DISCRIMINATOR_PLACEHOLDER_KEY = 'pydantic.internal.union_discriminator'
+    from ._core_metadata import CoreMetadata
 
 
 class MissingDefinitionForUnionRef(Exception):
@@ -28,34 +27,8 @@ class MissingDefinitionForUnionRef(Exception):
 
 
 def set_discriminator_in_metadata(schema: CoreSchema, discriminator: Any) -> None:
-    schema.setdefault('metadata', {})
-    metadata = schema.get('metadata')
-    assert metadata is not None
-    metadata[CORE_SCHEMA_METADATA_DISCRIMINATOR_PLACEHOLDER_KEY] = discriminator
-
-
-def apply_discriminators(schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
-    # We recursively walk through the `schema` passed to `apply_discriminators`, applying discriminators
-    # where necessary at each level. During this recursion, we allow references to be resolved from the definitions
-    # that are originally present on the original, outermost `schema`. Before `apply_discriminators` is called,
-    # `simplify_schema_references` is called on the schema (in the `clean_schema` function),
-    # which often puts the definitions in the outermost schema.
-    global_definitions: dict[str, CoreSchema] = collect_definitions(schema)
-
-    def inner(s: core_schema.CoreSchema, recurse: _core_utils.Recurse) -> core_schema.CoreSchema:
-        nonlocal global_definitions
-
-        s = recurse(s, inner)
-        if s['type'] == 'tagged-union':
-            return s
-
-        metadata = s.get('metadata', {})
-        discriminator = metadata.pop(CORE_SCHEMA_METADATA_DISCRIMINATOR_PLACEHOLDER_KEY, None)
-        if discriminator is not None:
-            s = apply_discriminator(s, discriminator, global_definitions)
-        return s
-
-    return _core_utils.walk_core_schema(schema, inner)
+    metadata = cast('CoreMetadata', schema.setdefault('metadata', {}))
+    metadata['pydantic_internal_union_discriminator'] = discriminator
 
 
 def apply_discriminator(
@@ -161,7 +134,7 @@ class _ApplyInferredDiscriminator:
         # in the output TaggedUnionSchema that will replace the union from the input schema
         self._tagged_union_choices: dict[Hashable, core_schema.CoreSchema] = {}
 
-        # `_used` is changed to True after applying the discriminator to prevent accidental re-use
+        # `_used` is changed to True after applying the discriminator to prevent accidental reuse
         self._used = False
 
     def apply(self, schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
@@ -286,10 +259,13 @@ class _ApplyInferredDiscriminator:
             'definition-ref',
         } and not _core_utils.is_function_with_inner_schema(choice):
             # We should eventually handle 'definition-ref' as well
-            raise TypeError(
-                f'{choice["type"]!r} is not a valid discriminated union variant;'
-                ' should be a `BaseModel` or `dataclass`'
-            )
+            err_str = f'The core schema type {choice["type"]!r} is not a valid discriminated union variant.'
+            if choice['type'] == 'list':
+                err_str += (
+                    ' If you are making use of a list of union types, make sure the discriminator is applied to the '
+                    'union type and not the list (e.g. `list[Annotated[<T> | <U>, Field(discriminator=...)]]`).'
+                )
+            raise TypeError(err_str)
         else:
             if choice['type'] == 'tagged-union' and self._is_discriminator_shared(choice):
                 # In this case, this inner tagged-union is compatible with the outer tagged-union,
@@ -323,13 +299,10 @@ class _ApplyInferredDiscriminator:
         """
         if choice['type'] == 'definitions':
             return self._infer_discriminator_values_for_choice(choice['schema'], source_name=source_name)
-        elif choice['type'] == 'function-plain':
-            raise TypeError(
-                f'{choice["type"]!r} is not a valid discriminated union variant;'
-                ' should be a `BaseModel` or `dataclass`'
-            )
+
         elif _core_utils.is_function_with_inner_schema(choice):
             return self._infer_discriminator_values_for_choice(choice['schema'], source_name=source_name)
+
         elif choice['type'] == 'lax-or-strict':
             return sorted(
                 set(
@@ -380,10 +353,13 @@ class _ApplyInferredDiscriminator:
                 raise MissingDefinitionForUnionRef(schema_ref)
             return self._infer_discriminator_values_for_choice(self.definitions[schema_ref], source_name=source_name)
         else:
-            raise TypeError(
-                f'{choice["type"]!r} is not a valid discriminated union variant;'
-                ' should be a `BaseModel` or `dataclass`'
-            )
+            err_str = f'The core schema type {choice["type"]!r} is not a valid discriminated union variant.'
+            if choice['type'] == 'list':
+                err_str += (
+                    ' If you are making use of a list of union types, make sure the discriminator is applied to the '
+                    'union type and not the list (e.g. `list[Annotated[<T> | <U>, Field(discriminator=...)]]`).'
+                )
+            raise TypeError(err_str)
 
     def _infer_discriminator_values_for_typed_dict_choice(
         self, choice: core_schema.TypedDictSchema, source_name: str | None = None

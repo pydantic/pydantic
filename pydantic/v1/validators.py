@@ -27,6 +27,7 @@ from typing import (
     Union,
 )
 from uuid import UUID
+from warnings import warn
 
 from pydantic.v1 import errors
 from pydantic.v1.datetime_parse import parse_date, parse_datetime, parse_duration, parse_time
@@ -762,4 +763,6 @@ def find_validators(  # noqa: C901 (ignore complexity)
     if config.arbitrary_types_allowed:
         yield make_arbitrary_type_validator(type_)
     else:
+        if hasattr(type_, '__pydantic_core_schema__'):
+            warn(f'Mixing V1 and V2 models is not supported. `{type_.__name__}` is a V2 model.', UserWarning)
         raise RuntimeError(f'no validator found for {type_}, see `arbitrary_types_allowed` in Config')

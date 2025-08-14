@@ -9,13 +9,13 @@ import typing
 import warnings
 import weakref
 from abc import ABCMeta
-from functools import lru_cache, partial
+from functools import cache, partial, wraps
 from types import FunctionType
-from typing import Any, Callable, Generic, Literal, NoReturn
+from typing import Any, Callable, Generic, Literal, NoReturn, cast
 
-import typing_extensions
 from pydantic_core import PydanticUndefined, SchemaSerializer
-from typing_extensions import dataclass_transform, deprecated
+from typing_extensions import TypeAliasType, dataclass_transform, deprecated, get_args, get_origin
+from typing_inspection import typing_objects
 
 from ..errors import PydanticUndefinedAnnotation, PydanticUserError
 from ..plugin._schema_validator import create_schema_validator
@@ -23,22 +23,19 @@ from ..warnings import GenericBeforeBaseModelWarning, PydanticDeprecatedSince20
 from ._config import ConfigWrapper
 from ._decorators import DecoratorInfos, PydanticDescriptorProxy, get_attribute_from_bases, unwrap_wrapped_function
 from ._fields import collect_model_fields, is_valid_field_name, is_valid_privateattr_name
-from ._generate_schema import GenerateSchema
+from ._generate_schema import GenerateSchema, InvalidSchemaError
 from ._generics import PydanticGenericMetadata, get_model_typevars_map
 from ._import_utils import import_cached_base_model, import_cached_field_info
 from ._mock_val_ser import set_model_mocks
-from ._schema_generation_shared import CallbackGetCoreSchemaHandler
+from ._namespace_utils import NsResolver
 from ._signature import generate_pydantic_signature
 from ._typing_extra import (
     _make_forward_ref,
     eval_type_backport,
-    is_annotated,
-    is_classvar,
-    merge_cls_and_parent_ns,
+    is_classvar_annotation,
     parent_frame_namespace,
 )
-from ._utils import ClassAttribute, SafeGetItemProxy
-from ._validate_call import ValidateCallWrapper
+from ._utils import LazyClassAttribute, SafeGetItemProxy
 
 if typing.TYPE_CHECKING:
     from ..fields import Field as PydanticModelField
@@ -120,6 +117,7 @@ class ModelMetaclass(ABCMeta):
                 if original_model_post_init is not None:
                     # if there are private_attributes and a model_post_init function, we handle both
 
+                    @wraps(original_model_post_init)
                     def wrapped_model_post_init(self: BaseModel, context: Any, /) -> None:
                         """We need to both initialize private attributes and call the user-defined model_post_init
                         method.
@@ -134,12 +132,11 @@ class ModelMetaclass(ABCMeta):
             namespace['__class_vars__'] = class_vars
             namespace['__private_attributes__'] = {**base_private_attributes, **private_attributes}
 
-            cls: type[BaseModel] = super().__new__(mcs, cls_name, bases, namespace, **kwargs)  # type: ignore
-
-            BaseModel = import_cached_base_model()
+            cls = cast('type[BaseModel]', super().__new__(mcs, cls_name, bases, namespace, **kwargs))
+            BaseModel_ = import_cached_base_model()
 
             mro = cls.__mro__
-            if Generic in mro and mro.index(Generic) < mro.index(BaseModel):
+            if Generic in mro and mro.index(Generic) < mro.index(BaseModel_):
                 warnings.warn(
                     GenericBeforeBaseModelWarning(
                         'Classes should inherit from `BaseModel` before generic classes (e.g. `typing.Generic[T]`) '
@@ -149,7 +146,11 @@ class ModelMetaclass(ABCMeta):
                 )
 
             cls.__pydantic_custom_init__ = not getattr(cls.__init__, '__pydantic_base_init__', False)
-            cls.__pydantic_post_init__ = None if cls.model_post_init is BaseModel.model_post_init else 'model_post_init'
+            cls.__pydantic_post_init__ = (
+                None if cls.model_post_init is BaseModel_.model_post_init else 'model_post_init'
+            )
+
+            cls.__pydantic_setattr_handlers__ = {}
 
             cls.__pydantic_decorators__ = DecoratorInfos.build(cls)
 
@@ -211,30 +212,38 @@ class ModelMetaclass(ABCMeta):
 
             if __pydantic_reset_parent_namespace__:
                 cls.__pydantic_parent_namespace__ = build_lenient_weakvaluedict(parent_frame_namespace())
-            parent_namespace = getattr(cls, '__pydantic_parent_namespace__', None)
+            parent_namespace: dict[str, Any] | None = getattr(cls, '__pydantic_parent_namespace__', None)
             if isinstance(parent_namespace, dict):
                 parent_namespace = unpack_lenient_weakvaluedict(parent_namespace)
 
-            types_namespace = merge_cls_and_parent_ns(cls, parent_namespace)
-            set_model_fields(cls, bases, config_wrapper, types_namespace)
+            ns_resolver = NsResolver(parent_namespace=parent_namespace)
+
+            set_model_fields(cls, config_wrapper=config_wrapper, ns_resolver=ns_resolver)
+
+            # This is also set in `complete_model_class()`, after schema gen because they are recreated.
+            # We set them here as well for backwards compatibility:
+            cls.__pydantic_computed_fields__ = {
+                k: v.info for k, v in cls.__pydantic_decorators__.computed_fields.items()
+            }
+
+            if config_wrapper.defer_build:
+                # TODO we can also stop there if `__pydantic_fields_complete__` is False.
+                # However, `set_model_fields()` is currently lenient and we don't have access to the `NameError`.
+                # (which is useful as we can provide the name in the error message: `set_model_mock(cls, e.name)`)
+                set_model_mocks(cls)
+            else:
+                # Any operation that requires accessing the field infos instances should be put inside
+                # `complete_model_class()`:
+                complete_model_class(
+                    cls,
+                    config_wrapper,
+                    raise_errors=False,
+                    ns_resolver=ns_resolver,
+                    create_model_module=_create_model_module,
+                )
 
             if config_wrapper.frozen and '__hash__' not in namespace:
                 set_default_hash_func(cls, bases)
-
-            complete_model_class(
-                cls,
-                cls_name,
-                config_wrapper,
-                raise_errors=False,
-                types_namespace=types_namespace,
-                create_model_module=_create_model_module,
-            )
-
-            # If this is placed before the complete_model_class call above,
-            # the generic computed fields return type is set to PydanticUndefined
-            cls.model_computed_fields = {k: v.info for k, v in cls.__pydantic_decorators__.computed_fields.items()}
-
-            set_deprecated_descriptors(cls)
 
             # using super(cls, cls) on the next line ensures we only call the parent class's __pydantic_init_subclass__
             # I believe the `type: ignore` is only necessary because mypy doesn't realize that this code branch is
@@ -266,11 +275,18 @@ class ModelMetaclass(ABCMeta):
         return _ModelNamespaceDict()
 
     def __instancecheck__(self, instance: Any) -> bool:
+        """Avoid calling ABC _abc_instancecheck unless we're pretty sure.
+
+        See #3829 and python/cpython#92810
+        """
+        return hasattr(instance, '__pydantic_decorators__') and super().__instancecheck__(instance)
+
+    def __subclasscheck__(self, subclass: type[Any]) -> bool:
         """Avoid calling ABC _abc_subclasscheck unless we're pretty sure.
 
         See #3829 and python/cpython#92810
         """
-        return hasattr(instance, '__pydantic_validator__') and super().__instancecheck__(instance)
+        return hasattr(subclass, '__pydantic_decorators__') and super().__subclasscheck__(subclass)
 
     @staticmethod
     def _collect_bases_data(bases: tuple[type[Any], ...]) -> tuple[set[str], set[str], dict[str, ModelPrivateAttr]]:
@@ -282,7 +298,7 @@ class ModelMetaclass(ABCMeta):
         for base in bases:
             if issubclass(base, BaseModel) and base is not BaseModel:
                 # model_fields might not be defined yet in the case of generics, so we use getattr here:
-                field_names.update(getattr(base, 'model_fields', {}).keys())
+                field_names.update(getattr(base, '__pydantic_fields__', {}).keys())
                 class_vars.update(base.__class_vars__)
                 private_attributes.update(base.__private_attributes__)
         return field_names, class_vars, private_attributes
@@ -291,9 +307,24 @@ class ModelMetaclass(ABCMeta):
     @deprecated('The `__fields__` attribute is deprecated, use `model_fields` instead.', category=None)
     def __fields__(self) -> dict[str, FieldInfo]:
         warnings.warn(
-            'The `__fields__` attribute is deprecated, use `model_fields` instead.', PydanticDeprecatedSince20
+            'The `__fields__` attribute is deprecated, use `model_fields` instead.',
+            PydanticDeprecatedSince20,
+            stacklevel=2,
         )
-        return self.model_fields  # type: ignore
+        return getattr(self, '__pydantic_fields__', {})
+
+    @property
+    def __pydantic_fields_complete__(self) -> bool:
+        """Whether the fields where successfully collected (i.e. type hints were successfully resolves).
+
+        This is a private attribute, not meant to be used outside Pydantic.
+        """
+        if not hasattr(self, '__pydantic_fields__'):
+            return False
+
+        field_infos = cast('dict[str, FieldInfo]', self.__pydantic_fields__)  # pyright: ignore[reportAttributeAccessIssue]
+
+        return all(field_info._complete for field_info in field_infos.values())
 
     def __dir__(self) -> list[str]:
         attributes = list(super().__dir__())
@@ -408,8 +439,8 @@ def inspect_namespace(  # noqa C901
         elif var_name.startswith('__'):
             continue
         elif is_valid_privateattr_name(var_name):
-            if var_name not in raw_annotations or not is_classvar(raw_annotations[var_name]):
-                private_attributes[var_name] = PrivateAttr(default=value)
+            if var_name not in raw_annotations or not is_classvar_annotation(raw_annotations[var_name]):
+                private_attributes[var_name] = cast(ModelPrivateAttr, PrivateAttr(default=value))
                 del namespace[var_name]
         elif var_name in base_class_vars:
             continue
@@ -437,9 +468,9 @@ def inspect_namespace(  # noqa C901
             is_valid_privateattr_name(ann_name)
             and ann_name not in private_attributes
             and ann_name not in ignored_names
-            # This condition is a false negative when `ann_type` is stringified,
-            # but it is handled in `set_model_fields`:
-            and not is_classvar(ann_type)
+            # This condition can be a false negative when `ann_type` is stringified,
+            # but it is handled in most cases in `set_model_fields`:
+            and not is_classvar_annotation(ann_type)
             and ann_type not in all_ignored_types
             and getattr(ann_type, '__module__', None) != 'functools'
         ):
@@ -457,8 +488,8 @@ def inspect_namespace(  # noqa C901
                     except (NameError, TypeError):
                         pass
 
-            if is_annotated(ann_type):
-                _, *metadata = typing_extensions.get_args(ann_type)
+            if typing_objects.is_annotated(get_origin(ann_type)):
+                _, *metadata = get_args(ann_type)
                 private_attr = next((v for v in metadata if isinstance(v, ModelPrivateAttr)), None)
                 if private_attr is not None:
                     private_attributes[ann_name] = private_attr
@@ -482,7 +513,7 @@ def set_default_hash_func(cls: type[BaseModel], bases: tuple[type[Any], ...]) ->
 
 
 def make_hash_func(cls: type[BaseModel]) -> Any:
-    getter = operator.itemgetter(*cls.model_fields.keys()) if cls.model_fields else lambda _: 0
+    getter = operator.itemgetter(*cls.__pydantic_fields__.keys()) if cls.__pydantic_fields__ else lambda _: 0
 
     def hash_func(self: Any) -> int:
         try:
@@ -498,20 +529,21 @@ def make_hash_func(cls: type[BaseModel]) -> Any:
 
 
 def set_model_fields(
-    cls: type[BaseModel], bases: tuple[type[Any], ...], config_wrapper: ConfigWrapper, types_namespace: dict[str, Any]
+    cls: type[BaseModel],
+    config_wrapper: ConfigWrapper,
+    ns_resolver: NsResolver | None,
 ) -> None:
-    """Collect and set `cls.model_fields` and `cls.__class_vars__`.
+    """Collect and set `cls.__pydantic_fields__` and `cls.__class_vars__`.
 
     Args:
         cls: BaseModel or dataclass.
-        bases: Parents of the class, generally `cls.__bases__`.
         config_wrapper: The config wrapper instance.
-        types_namespace: Optional extra namespace to look for types in.
+        ns_resolver: Namespace resolver to use when getting model annotations.
     """
     typevars_map = get_model_typevars_map(cls)
-    fields, class_vars = collect_model_fields(cls, bases, config_wrapper, types_namespace, typevars_map=typevars_map)
+    fields, class_vars = collect_model_fields(cls, config_wrapper, ns_resolver, typevars_map=typevars_map)
 
-    cls.model_fields = fields
+    cls.__pydantic_fields__ = fields
     cls.__class_vars__.update(class_vars)
 
     for k in class_vars:
@@ -529,11 +561,10 @@ def set_model_fields(
 
 def complete_model_class(
     cls: type[BaseModel],
-    cls_name: str,
     config_wrapper: ConfigWrapper,
     *,
     raise_errors: bool = True,
-    types_namespace: dict[str, Any] | None,
+    ns_resolver: NsResolver | None = None,
     create_model_module: str | None = None,
 ) -> bool:
     """Finish building a model class.
@@ -543,10 +574,9 @@ def complete_model_class(
 
     Args:
         cls: BaseModel or dataclass.
-        cls_name: The model or dataclass name.
         config_wrapper: The config wrapper instance.
         raise_errors: Whether to raise errors.
-        types_namespace: Optional extra namespace to look for types in.
+        ns_resolver: The namespace resolver instance to use during schema building.
         create_model_module: The module of the class to be created, if created by `create_model`.
 
     Returns:
@@ -559,37 +589,32 @@ def complete_model_class(
     typevars_map = get_model_typevars_map(cls)
     gen_schema = GenerateSchema(
         config_wrapper,
-        types_namespace,
+        ns_resolver,
         typevars_map,
     )
 
-    handler = CallbackGetCoreSchemaHandler(
-        partial(gen_schema.generate_schema, from_dunder_get_core_schema=False),
-        gen_schema,
-        ref_mode='unpack',
-    )
-
-    if config_wrapper.defer_build and 'model' in config_wrapper.experimental_defer_build_mode:
-        set_model_mocks(cls, cls_name)
-        return False
-
     try:
-        schema = cls.__get_pydantic_core_schema__(cls, handler)
+        schema = gen_schema.generate_schema(cls)
     except PydanticUndefinedAnnotation as e:
         if raise_errors:
             raise
-        set_model_mocks(cls, cls_name, f'`{e.name}`')
+        set_model_mocks(cls, f'`{e.name}`')
         return False
 
-    core_config = config_wrapper.core_config(cls)
+    core_config = config_wrapper.core_config(title=cls.__name__)
 
     try:
         schema = gen_schema.clean_schema(schema)
-    except gen_schema.CollectedInvalid:
-        set_model_mocks(cls, cls_name)
+    except InvalidSchemaError:
+        set_model_mocks(cls)
         return False
 
-    # debug(schema)
+    # This needs to happen *after* model schema generation, as the return type
+    # of the properties are evaluated and the `ComputedFieldInfo` are recreated:
+    cls.__pydantic_computed_fields__ = {k: v.info for k, v in cls.__pydantic_decorators__.computed_fields.items()}
+
+    set_deprecated_descriptors(cls)
+
     cls.__pydantic_core_schema__ = schema
 
     cls.__pydantic_validator__ = create_schema_validator(
@@ -605,22 +630,30 @@ def complete_model_class(
     cls.__pydantic_complete__ = True
 
     # set __signature__ attr only for model class, but not for its instances
-    cls.__signature__ = ClassAttribute(
+    # (because instances can define `__call__`, and `inspect.signature` shouldn't
+    # use the `__signature__` attribute and instead generate from `__call__`).
+    cls.__signature__ = LazyClassAttribute(
         '__signature__',
-        generate_pydantic_signature(init=cls.__init__, fields=cls.model_fields, config_wrapper=config_wrapper),
+        partial(
+            generate_pydantic_signature,
+            init=cls.__init__,
+            fields=cls.__pydantic_fields__,
+            validate_by_name=config_wrapper.validate_by_name,
+            extra=config_wrapper.extra,
+        ),
     )
     return True
 
 
 def set_deprecated_descriptors(cls: type[BaseModel]) -> None:
     """Set data descriptors on the class for deprecated fields."""
-    for field, field_info in cls.model_fields.items():
+    for field, field_info in cls.__pydantic_fields__.items():
         if (msg := field_info.deprecation_message) is not None:
             desc = _DeprecatedFieldDescriptor(msg)
             desc.__set_name__(cls, field)
             setattr(cls, field, desc)
 
-    for field, computed_field_info in cls.model_computed_fields.items():
+    for field, computed_field_info in cls.__pydantic_computed_fields__.items():
         if (
             (msg := computed_field_info.deprecation_message) is not None
             # Avoid having two warnings emitted:
@@ -632,7 +665,7 @@ def set_deprecated_descriptors(cls: type[BaseModel]) -> None:
 
 
 class _DeprecatedFieldDescriptor:
-    """Data descriptor used to emit a runtime deprecation warning before accessing a deprecated field.
+    """Read-only data descriptor used to emit a runtime deprecation warning before accessing a deprecated field.
 
     Attributes:
         msg: The deprecation message to be emitted.
@@ -651,6 +684,8 @@ class _DeprecatedFieldDescriptor:
 
     def __get__(self, obj: BaseModel | None, obj_type: type[BaseModel] | None = None) -> Any:
         if obj is None:
+            if self.wrapped_property is not None:
+                return self.wrapped_property.__get__(None, obj_type)
             raise AttributeError(self.field_name)
 
         warnings.warn(self.msg, builtins.DeprecationWarning, stacklevel=2)
@@ -659,7 +694,7 @@ class _DeprecatedFieldDescriptor:
             return self.wrapped_property.__get__(obj, obj_type)
         return obj.__dict__[self.field_name]
 
-    # Defined to take precedence over the instance's dictionary
+    # Defined to make it a data descriptor and take precedence over the instance's dictionary.
     # Note that it will not be called when setting a value on a model instance
     # as `BaseModel.__setattr__` is defined and takes priority.
     def __set__(self, obj: Any, value: Any) -> NoReturn:
@@ -737,16 +772,21 @@ def unpack_lenient_weakvaluedict(d: dict[str, Any] | None) -> dict[str, Any] | N
     return result
 
 
-@lru_cache(maxsize=None)
+@cache
 def default_ignored_types() -> tuple[type[Any], ...]:
     from ..fields import ComputedFieldInfo
 
-    return (
+    ignored_types = [
         FunctionType,
         property,
         classmethod,
         staticmethod,
         PydanticDescriptorProxy,
         ComputedFieldInfo,
-        ValidateCallWrapper,
-    )
+        TypeAliasType,  # from `typing_extensions`
+    ]
+
+    if sys.version_info >= (3, 12):
+        ignored_types.append(typing.TypeAliasType)
+
+    return tuple(ignored_types)

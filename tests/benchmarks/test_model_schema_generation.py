@@ -1,7 +1,16 @@
-from typing import Any, Callable, Dict, Generic, List, Literal, Optional, TypeVar, Union, get_origin
+from typing import (
+    Annotated,
+    Any,
+    Generic,
+    Literal,
+    Optional,
+    TypeVar,
+    Union,
+    get_origin,
+)
 
 import pytest
-from typing_extensions import Annotated, Self
+from typing_extensions import Self
 
 from pydantic import (
     AfterValidator,
@@ -11,96 +20,101 @@ from pydantic import (
     Field,
     PlainSerializer,
     PlainValidator,
-    SerializerFunctionWrapHandler,
-    ValidatorFunctionWrapHandler,
+    Tag,
     WrapSerializer,
     WrapValidator,
     create_model,
-    field_serializer,
-    field_validator,
     model_serializer,
     model_validator,
 )
-from pydantic.dataclasses import dataclass
-from pydantic.functional_validators import ModelWrapValidatorHandler
+from pydantic.dataclasses import dataclass, rebuild_dataclass
+
+from .shared import DeferredModel, PydanticTypes, StdLibTypes, rebuild_model
 
 
 @pytest.mark.benchmark(group='model_schema_generation')
 def test_simple_model_schema_generation(benchmark) -> None:
-    def generate_schema():
-        class SimpleModel(BaseModel):
-            field1: str
-            field2: int
-            field3: float
+    class SimpleModel(DeferredModel):
+        field1: str
+        field2: int
+        field3: float
 
-    benchmark(generate_schema)
+    benchmark(rebuild_model, SimpleModel)
+
+
+@pytest.mark.benchmark(group='model_schema_generation')
+def test_simple_model_schema_lots_of_fields_generation(benchmark) -> None:
+    IntStr = Union[int, str]
+
+    Model = create_model(
+        'Model',
+        __config__={'defer_build': True},
+        **{f'f{i}': (IntStr, ...) for i in range(100)},
+    )
+
+    benchmark(rebuild_model, Model)
 
 
 @pytest.mark.benchmark(group='model_schema_generation')
 def test_nested_model_schema_generation(benchmark) -> None:
-    def generate_schema():
-        class NestedModel(BaseModel):
-            field1: str
-            field2: List[int]
-            field3: Dict[str, float]
+    class NestedModel(BaseModel):
+        field1: str
+        field2: list[int]
+        field3: dict[str, float]
 
-        class OuterModel(BaseModel):
-            nested: NestedModel
-            optional_nested: Optional[NestedModel]
+    class OuterModel(DeferredModel):
+        nested: NestedModel
+        optional_nested: Optional[NestedModel]
 
-    benchmark(generate_schema)
+    benchmark(rebuild_model, OuterModel)
 
 
 @pytest.mark.benchmark(group='model_schema_generation')
 def test_complex_model_schema_generation(benchmark) -> None:
-    def generate_schema():
-        class ComplexModel(BaseModel):
-            field1: Union[str, int, float]
-            field2: List[Dict[str, Union[int, float]]]
-            field3: Optional[List[Union[str, int]]]
+    class ComplexModel(DeferredModel):
+        field1: Union[str, int, float]
+        field2: list[dict[str, Union[int, float]]]
+        field3: Optional[list[Union[str, int]]]
 
-    benchmark(generate_schema)
+    benchmark(rebuild_model, ComplexModel)
 
 
 @pytest.mark.benchmark(group='model_schema_generation')
 def test_recursive_model_schema_generation(benchmark) -> None:
-    def generate_schema():
-        class RecursiveModel(BaseModel):
-            name: str
-            children: Optional[List['RecursiveModel']] = None
+    class RecursiveModel(DeferredModel):
+        name: str
+        children: Optional[list['RecursiveModel']] = None
 
-    benchmark(generate_schema)
-
-
-@dataclass(frozen=True, kw_only=True)
-class Cat:
-    type: Literal['cat'] = 'cat'
-
-
-@dataclass(frozen=True, kw_only=True)
-class Dog:
-    type: Literal['dog'] = 'dog'
-
-
-@dataclass(frozen=True, kw_only=True)
-class NestedDataClass:
-    animal: Annotated[Union[Cat, Dog], Discriminator('type')]
-
-
-class NestedModel(BaseModel):
-    animal: Annotated[Union[Cat, Dog], Discriminator('type')]
+    benchmark(rebuild_model, RecursiveModel)
 
 
 @pytest.mark.benchmark(group='model_schema_generation')
-def test_construct_schema():
+def test_construct_dataclass_schema(benchmark):
     @dataclass(frozen=True, kw_only=True)
+    class Cat:
+        type: Literal['cat'] = 'cat'
+
+    @dataclass(frozen=True, kw_only=True)
+    class Dog:
+        type: Literal['dog'] = 'dog'
+
+    @dataclass(frozen=True, kw_only=True)
+    class NestedDataClass:
+        animal: Annotated[Union[Cat, Dog], Discriminator('type')]
+
+    class NestedModel(BaseModel):
+        animal: Annotated[Union[Cat, Dog], Discriminator('type')]
+
+    @dataclass(frozen=True, kw_only=True, config={'defer_build': True})
     class Root:
         data_class: NestedDataClass
         model: NestedModel
 
+    benchmark(lambda: rebuild_dataclass(Root, force=True, _types_namespace={}))
+
 
 @pytest.mark.benchmark(group='model_schema_generation')
-def test_lots_of_models_with_lots_of_fields():
+def test_lots_of_models_with_lots_of_fields(benchmark):
     T = TypeVar('T')
 
     class GenericModel(BaseModel, Generic[T]):
@@ -108,7 +122,7 @@ def test_lots_of_models_with_lots_of_fields():
 
     class RecursiveModel(BaseModel):
         name: str
-        children: Optional[List['RecursiveModel']] = None
+        children: Optional[list['RecursiveModel']] = None
 
     class Address(BaseModel):
         street: Annotated[str, Field(max_length=100)]
@@ -122,26 +136,28 @@ def test_lots_of_models_with_lots_of_fields():
 
     class Company(BaseModel):
         name: Annotated[str, Field(min_length=1)]
-        employees: Annotated[List[Person], Field(min_length=1)]
+        employees: Annotated[list[Person], Field(min_length=1)]
 
     class Product(BaseModel):
         id: Annotated[int, Field(ge=1)]
         name: Annotated[str, Field(min_length=1)]
         price: Annotated[float, Field(ge=0)]
-        metadata: Dict[str, str]
+        metadata: dict[str, str]
 
     # Repeat the pattern for other models up to Model_99
+    models: list[type[BaseModel]] = []
+
     for i in range(100):
         model_fields = {}
 
         field_types = [
             Annotated[int, Field(ge=0, le=1000)],
             Annotated[str, Field(max_length=50)],
-            Annotated[List[int], Field(min_length=1, max_length=10)],
+            Annotated[list[int], Field(min_length=1, max_length=10)],
             int,
             str,
-            List[int],
-            Dict[str, Union[str, int]],
+            list[int],
+            dict[str, Union[str, int]],
             GenericModel[int],
             RecursiveModel,
             Address,
@@ -151,8 +167,8 @@ def test_lots_of_models_with_lots_of_fields():
             Union[
                 int,
                 str,
-                List[str],
-                Dict[str, int],
+                list[str],
+                dict[str, int],
                 GenericModel[str],
                 RecursiveModel,
                 Address,
@@ -170,163 +186,137 @@ def test_lots_of_models_with_lots_of_fields():
                 model_fields[f'field_{j}'] = (field_type, ...)
 
         model_name = f'Model_{i}'
-        model = create_model(model_name, **model_fields)
-        globals()[model_name] = model
+        models.append(create_model(model_name, __config__={'defer_build': True}, **model_fields))
 
+    def rebuild_models(models: list[type[BaseModel]]) -> None:
+        for model in models:
+            rebuild_model(model)
 
-@pytest.mark.parametrize('validator_mode', ['before', 'after', 'plain'])
-@pytest.mark.benchmark(group='model_schema_generation')
-def test_custom_field_validator_via_decorator(benchmark, validator_mode) -> None:
-    def schema_gen() -> None:
-        class ModelWithFieldValidator(BaseModel):
-            field: Any
-
-            @field_validator('field', mode=validator_mode)
-            @classmethod
-            def validate_field(cls, v: Any):
-                return v
-
-    benchmark(schema_gen)
+    benchmark(rebuild_models, models)
 
 
 @pytest.mark.benchmark(group='model_schema_generation')
-def test_custom_wrap_field_validator_via_decorator(benchmark) -> None:
-    def schema_gen() -> None:
-        class ModelWithWrapFieldValidator(BaseModel):
-            field: Any
+def test_field_validators_serializers(benchmark) -> None:
+    class ModelWithFieldValidatorsSerializers(DeferredModel):
+        field1: Annotated[Any, BeforeValidator(lambda v: v)]
+        field2: Annotated[Any, AfterValidator(lambda v: v)]
+        field3: Annotated[Any, PlainValidator(lambda v: v)]
+        field4: Annotated[Any, WrapValidator(lambda v, h: h(v))]
+        field5: Annotated[Any, PlainSerializer(lambda x: x, return_type=Any)]
+        field6: Annotated[Any, WrapSerializer(lambda x, nxt: nxt(x), when_used='json')]
 
-            @field_validator('field', mode='wrap')
-            @classmethod
-            def validate_field(cls, v: Any, handler: ValidatorFunctionWrapHandler) -> Any:
-                return handler(v)
-
-    benchmark(schema_gen)
-
-
-@pytest.mark.parametrize('validator_constructor', [BeforeValidator, AfterValidator, PlainValidator])
-@pytest.mark.benchmark(group='model_schema_generation')
-def test_custom_field_validator_via_annotation(benchmark, validator_constructor) -> None:
-    def validate_field(v: Any) -> Any:
-        return v
-
-    def schema_gen(validation_func) -> None:
-        class ModelWithFieldValidator(BaseModel):
-            field: Annotated[Any, validator_constructor(validation_func)]
-
-    benchmark(schema_gen, validate_field)
+    benchmark(rebuild_model, ModelWithFieldValidatorsSerializers)
 
 
 @pytest.mark.benchmark(group='model_schema_generation')
-def test_custom_wrap_field_validator_via_annotation(benchmark) -> None:
-    def validate_field(v: Any, handler: ValidatorFunctionWrapHandler) -> Any:
-        return handler(v)
+def test_model_validators_serializers(benchmark):
+    class ModelWithValidator(DeferredModel):
+        field: Any
 
-    def schema_gen(validator_func: Callable) -> None:
-        class ModelWithWrapFieldValidator(BaseModel):
-            field: Annotated[Any, WrapValidator(validator_func)]
+        @model_validator(mode='before')
+        @classmethod
+        def validate_model_before(cls, data: Any) -> Any:
+            return data
 
-    benchmark(schema_gen, validate_field)
+        @model_validator(mode='after')
+        def validate_model_after(self) -> Self:
+            return self
 
+        @model_serializer
+        def serialize_model(self) -> Any:
+            return self.field
 
-@pytest.mark.benchmark(group='model_schema_generation')
-def test_custom_model_validator_before(benchmark):
-    def schema_gen() -> None:
-        class ModelWithBeforeValidator(BaseModel):
-            field: Any
-
-            @model_validator(mode='before')
-            @classmethod
-            def validate_model_before(cls, data: Any) -> Any:
-                return data
-
-    benchmark(schema_gen)
+    benchmark(rebuild_model, ModelWithValidator)
 
 
 @pytest.mark.benchmark(group='model_schema_generation')
-def test_custom_model_validator_after(benchmark) -> None:
-    def schema_gen() -> None:
-        class ModelWithAfterValidator(BaseModel):
-            field: Any
+def test_failed_rebuild(benchmark):
+    """The defined model has 8 fields with some relatively complex annotations.
 
-            @model_validator(mode='after')
-            def validate_model_after(self: 'ModelWithAfterValidator') -> 'ModelWithAfterValidator':
-                return self
+    The last field has an undefined forward annotation, that will fail to resolve on model rebuild.
+    The benchmark is used to measure time spent in trying to rebuild a model knowing that it will
+    fail when encountering the last field.
+    """
+    fields: dict[str, Any] = {
+        f'f{i}': Annotated[Union[int, Annotated[str, Field(max_length=3)]], AfterValidator(lambda v: v)]
+        for i in range(8)
+    }
+    fields['f8'] = 'Undefined'
 
-    benchmark(schema_gen)
+    ModelWithUndefinedAnnotation = create_model(  # pyright: ignore[reportCallIssue]
+        'ModelWithUndefinedAnnotation',
+        __base__=DeferredModel,
+        **fields,
+    )
 
-
-@pytest.mark.benchmark(group='model_schema_generation')
-def test_custom_model_validator_wrap(benchmark) -> None:
-    def schema_gen() -> None:
-        class ModelWithWrapValidator(BaseModel):
-            field: Any
-
-            @model_validator(mode='wrap')
-            @classmethod
-            def validate_model_wrap(cls, values: Any, handler: ModelWrapValidatorHandler[Self]) -> Any:
-                return handler(values)
-
-    benchmark(schema_gen)
+    benchmark(rebuild_model, ModelWithUndefinedAnnotation, raise_errors=False)
 
 
 @pytest.mark.benchmark(group='model_schema_generation')
-def test_custom_field_serializer_plain(benchmark) -> None:
-    def schema_gen() -> None:
-        class ModelWithFieldSerializer(BaseModel):
-            field1: int
+def test_tagged_union_with_str_discriminator_schema_generation(benchmark):
+    class Cat(BaseModel):
+        pet_type: Literal['cat']
+        meows: int
 
-            @field_serializer('field1', mode='plain')
-            def serialize_field(cls, v: int) -> str:
-                return str(v)
+    class Dog(BaseModel):
+        pet_type: Literal['dog']
+        barks: float
 
-    benchmark(schema_gen)
+    class Lizard(BaseModel):
+        pet_type: Literal['reptile', 'lizard']
+        scales: bool
 
+    class Model(DeferredModel):
+        pet: Union[Cat, Dog, Lizard] = Field(discriminator='pet_type')
+        n: int
 
-@pytest.mark.benchmark(group='model_schema_generation')
-def test_custom_field_serializer_wrap(benchmark) -> None:
-    def schema_gen() -> None:
-        class ModelWithFieldSerializer(BaseModel):
-            field1: int
-
-            @field_serializer('field1', mode='wrap')
-            def serialize_field(cls, v: int, nxt: SerializerFunctionWrapHandler) -> str:
-                return nxt(v)
-
-    benchmark(schema_gen)
+    benchmark(rebuild_model, Model)
 
 
 @pytest.mark.benchmark(group='model_schema_generation')
-def test_custom_model_serializer_decorator(benchmark) -> None:
-    def schema_gen() -> None:
-        class ModelWithModelSerializer(BaseModel):
-            field1: Any
+def test_tagged_union_with_callable_discriminator_schema_generation(benchmark):
+    class Pie(BaseModel):
+        time_to_cook: int
+        num_ingredients: int
 
-            @model_serializer
-            def serialize_model(self) -> Any:
-                return self.field1
+    class ApplePie(Pie):
+        fruit: Literal['apple'] = 'apple'
 
-    benchmark(schema_gen)
+    class PumpkinPie(Pie):
+        filling: Literal['pumpkin'] = 'pumpkin'
+
+    def get_discriminator_value(v: Any) -> str:
+        if isinstance(v, dict):
+            return v.get('fruit', v.get('filling'))
+        return getattr(v, 'fruit', getattr(v, 'filling', None))
+
+    class ThanksgivingDinner(DeferredModel):
+        dessert: Annotated[
+            Union[
+                Annotated[ApplePie, Tag('apple')],
+                Annotated[PumpkinPie, Tag('pumpkin')],
+            ],
+            Discriminator(get_discriminator_value),
+        ]
+
+    benchmark(rebuild_model, ThanksgivingDinner)
 
 
-@pytest.mark.benchmark(group='model_schema_generation')
-def test_custom_serializer_plain_annotated(benchmark) -> None:
-    def schema_gen() -> None:
-        def serialize_idempotent(x: Any) -> Any:
-            return x
+@pytest.mark.parametrize('field_type', StdLibTypes)
+@pytest.mark.benchmark(group='stdlib_schema_generation')
+@pytest.mark.skip('Clutters codspeed CI, but should be enabled on branches where we modify schema building.')
+def test_stdlib_type_schema_generation(benchmark, field_type):
+    class StdlibTypeModel(DeferredModel):
+        field: field_type
 
-        class ModelWithAnnotatedSerializer(BaseModel):
-            field: Annotated[List, PlainSerializer(serialize_idempotent, return_type=Any)]
-
-    benchmark(schema_gen)
+    benchmark(rebuild_model, StdlibTypeModel)
 
 
-@pytest.mark.benchmark(group='model_schema_generation')
-def test_custom_serializer_wrap_annotated(benchmark) -> None:
-    def schema_gen() -> None:
-        def serialize_idempotent(x: Any, nxt: SerializerFunctionWrapHandler) -> Any:
-            return nxt(x)
+@pytest.mark.parametrize('field_type', PydanticTypes)
+@pytest.mark.benchmark(group='pydantic_custom_types_schema_generation')
+@pytest.mark.skip('Clutters codspeed CI, but should be enabled on branches where we modify schema building.')
+def test_pydantic_custom_types_schema_generation(benchmark, field_type):
+    class PydanticTypeModel(DeferredModel):
+        field: field_type
 
-        class ModelWithAnnotatedSerializer(BaseModel):
-            field: Annotated[List, WrapSerializer(serialize_idempotent, when_used='json')]
-
-    benchmark(schema_gen)
+    benchmark(rebuild_model, PydanticTypeModel)

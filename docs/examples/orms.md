@@ -1,6 +1,3 @@
-!!! warning "🚧 Work in Progress"
-    This page is a work in progress. More examples will be added soon.
-
 Pydantic serves as a great tool for defining models for ORM (object relational mapping) libraries.
 ORMs are used to map objects to database tables, and vice versa.
 
@@ -15,9 +12,7 @@ Pydantic can pair with SQLAlchemy, as it can be used to define the schema of the
 If you'd prefer to use pure Pydantic with SQLAlchemy, we recommend using Pydantic models alongside of SQLAlchemy models
 as shown in the example below. In this case, we take advantage of Pydantic's aliases feature to name a `Column` after a reserved SQLAlchemy field, thus avoiding conflicts.
 
-```py
-import typing
-
+```python
 import sqlalchemy as sa
 from sqlalchemy.orm import declarative_base
 
@@ -27,7 +22,7 @@ from pydantic import BaseModel, ConfigDict, Field
 class MyModel(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    metadata: typing.Dict[str, str] = Field(alias='metadata_')
+    metadata: dict[str, str] = Field(alias='metadata_')
 
 
 Base = declarative_base()

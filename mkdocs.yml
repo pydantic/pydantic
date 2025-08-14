@@ -7,20 +7,26 @@ theme:
   name: 'material'
   custom_dir: 'docs/theme'
   palette:
+  - media: "(prefers-color-scheme)"
+    primary: pink
+    accent: pink
+    toggle:
+      icon: material/brightness-auto
+      name: "Switch to light mode"
   - media: "(prefers-color-scheme: light)"
     scheme: default
     primary: pink
     accent: pink
     toggle:
-      icon: material/lightbulb-outline
+      icon: material/brightness-7
       name: "Switch to dark mode"
   - media: "(prefers-color-scheme: dark)"
     scheme: slate
     primary: pink
     accent: pink
     toggle:
-      icon: material/lightbulb
-      name: "Switch to light mode"
+      icon: material/brightness-4
+      name: "Switch to system preference"
   features:
     - content.tabs.link
     - content.code.annotate
@@ -66,11 +72,15 @@ validation:
   omitted_files: warn
   absolute_links: warn
   unrecognized_links: warn
+  anchors: warn
 
 extra_css:
   - 'extra/terminal.css'
   - 'extra/tweaks.css'
 extra_javascript:
+  - "https://cdn.jsdelivr.net/npm/algoliasearch@5.20.0/dist/lite/builds/browser.umd.js"
+  - "https://cdn.jsdelivr.net/npm/instantsearch.js@4.77.3/dist/instantsearch.production.min.js"
+  - 'extra/algolia.js'
   - 'extra/feedback.js'
   - 'extra/fluff.js'
   - 'https://samuelcolvin.github.io/mkdocs-run-code/run_code_main.js'
@@ -97,7 +107,7 @@ nav:
   - Serialization: concepts/serialization.md
   - Validators: concepts/validators.md
   - Dataclasses: concepts/dataclasses.md
-  - Postponed Annotations: concepts/postponed_annotations.md
+  - Forward Annotations: concepts/forward_annotations.md
   - Strict Mode: concepts/strict_mode.md
   - Type Adapter: concepts/type_adapter.md
   - Validation Decorator: concepts/validation_decorator.md
@@ -145,7 +155,9 @@ nav:
     - Semantic Version: api/pydantic_extra_types_semantic_version.md
     - Timezone Name: api/pydantic_extra_types_timezone_name.md
     - ULID: api/pydantic_extra_types_ulid.md
-- Architecture: architecture.md
+- Internals:
+  - Architecture: internals/architecture.md
+  - Resolving Annotations: internals/resolving_annotations.md
 - Examples:
   - Validating File Data: examples/files.md
   - Web and API Requests: examples/requests.md
@@ -158,6 +170,7 @@ nav:
   - Usage Errors: errors/usage_errors.md
 - Integrations:
   - Pydantic Logfire: integrations/logfire.md
+  - LLMs: integrations/llms.md
   - Dev Tools:
     - Mypy: integrations/mypy.md/.
     - PyCharm: integrations/pycharm.md
@@ -167,6 +180,7 @@ nav:
     - devtools: integrations/devtools.md
     - Rich: integrations/rich.md
     - Linting: integrations/linting.md
+    - Documentation: integrations/documentation.md
   - Production Tools:
     - AWS Lambda: integrations/aws_lambda.md
 - Blog: https://blog.pydantic.dev/
@@ -194,12 +208,32 @@ watch:
 
 hooks:
 - 'docs/plugins/main.py'
+- 'docs/plugins/algolia.py'
 
 plugins:
 - social
 - mike:
     alias_type: symlink
     canonical_version: latest
+  # llmstxt must come after the mike plugin:
+- llmstxt:
+    enabled: !ENV [CI, false]
+    full_output: llms-full.txt
+    markdown_description: |-
+      Pydantic is the most widely used data validation library for Python.
+      Fast and extensible, Pydantic plays nicely with your linters/IDE/brain.
+      Define how data should be in pure, canonical Python 3.9+; validate it with Pydantic.
+    sections:
+      Concepts documentation:
+        - concepts/*.md
+      API documentation:
+        - api/*.md
+      Internals:
+        - internals/*.md
+      Optional:
+        - errors/*.md
+        - examples/*.md
+        - integrations/*.md
 - search
 - exclude:
     glob:
@@ -209,7 +243,7 @@ plugins:
 - mkdocstrings:
     handlers:
       python:
-        paths: [.]
+        paths: [.]  # see also: build-docs.sh
         options:
           members_order: source
           separate_signature: true
@@ -219,8 +253,6 @@ plugins:
           merge_init_into_class: true
           show_signature_annotations: true
           signature_crossrefs: true
-          extensions:
-            - docs/plugins/griffe_doclinks.py
         import:
           - url: https://docs.python.org/3/objects.inv
             domains: [py, std]
@@ -275,7 +307,8 @@ plugins:
       'usage/fields.md': 'concepts/fields.md'
       'usage/json_schema.md': 'concepts/json_schema.md'
       'usage/models.md': 'concepts/models.md'
-      'usage/postponed_annotations.md': 'concepts/postponed_annotations.md'
+      'usage/postponed_annotations.md': 'concepts/forward_annotations.md'
+      'concepts/postponed_annotations.md': 'concepts/forward_annotations.md'
       'usage/pydantic_settings.md': 'concepts/pydantic_settings.md'
       'usage/serialization.md': 'concepts/serialization.md'
       'usage/strict_mode.md': 'concepts/strict_mode.md'
@@ -295,3 +328,4 @@ plugins:
       'blog/pydantic-v2.md': 'https://pydantic.dev/articles/pydantic-v2'
       'examples/secrets.md': 'api/types.md#pydantic.types.Secret'
       'examples/validators.md': 'examples/custom_validators.md'
+      'architecture.md': 'internals/architecture.md'

@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import contextlib
+from collections.abc import Generator
 from functools import partial
-from typing import Any, Generator, List
+from typing import Any
 
+import pytest
 from pydantic_core import ValidationError
 
 from pydantic import BaseModel, TypeAdapter, create_model, dataclasses, field_validator, validate_call
@@ -15,6 +17,8 @@ from pydantic.plugin import (
     ValidateStringsHandlerProtocol,
 )
 from pydantic.plugin._loader import _plugins
+
+pytestmark = pytest.mark.thread_unsafe(reason='`install_plugin()` is thread unsafe')
 
 
 @contextlib.contextmanager
@@ -35,6 +39,8 @@ def test_on_validate_json_on_success() -> None:
             strict: bool | None = None,
             context: dict[str, Any] | None = None,
             self_instance: Any | None = None,
+            by_alias: bool | None = None,
+            by_name: bool | None = None,
         ) -> None:
             assert input == '{"a": 1}'
             assert strict is None
@@ -76,6 +82,8 @@ def test_on_validate_json_on_error() -> None:
             strict: bool | None = None,
             context: dict[str, Any] | None = None,
             self_instance: Any | None = None,
+            by_alias: bool | None = None,
+            by_name: bool | None = None,
         ) -> None:
             assert input == '{"a": "potato"}'
             assert strict is None
@@ -88,7 +96,7 @@ def test_on_validate_json_on_error() -> None:
                 {
                     'input': 'potato',
                     'loc': ('a',),
-                    'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+                    'msg': 'Input should be a valid integer, unable to parse string as an integer',
                     'type': 'int_parsing',
                 },
             ]
@@ -120,6 +128,8 @@ def test_on_validate_python_on_success() -> None:
             from_attributes: bool | None = None,
             context: dict[str, Any] | None = None,
             self_instance: Any | None = None,
+            by_alias: bool | None = None,
+            by_name: bool | None = None,
         ) -> None:
             assert input == {'a': 1}
             assert strict is None
@@ -157,6 +167,8 @@ def test_on_validate_python_on_error() -> None:
             from_attributes: bool | None = None,
             context: dict[str, Any] | None = None,
             self_instance: Any | None = None,
+            by_alias: bool | None = None,
+            by_name: bool | None = None,
         ) -> None:
             assert input == {'a': 'potato'}
             assert strict is None
@@ -169,7 +181,7 @@ def test_on_validate_python_on_error() -> None:
                 {
                     'input': 'potato',
                     'loc': ('a',),
-                    'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+                    'msg': 'Input should be a valid integer, unable to parse string as an integer',
                     'type': 'int_parsing',
                 },
             ]
@@ -205,6 +217,8 @@ def test_stateful_plugin() -> None:
             from_attributes: bool | None = None,
             context: dict[str, Any] | None = None,
             self_instance: Any | None = None,
+            by_alias: bool | None = None,
+            by_name: bool | None = None,
         ) -> None:
             stack.append(input)
 
@@ -297,14 +311,14 @@ def test_all_handlers():
         assert Model.model_validate_json('{"a": 2}', context={'c': 2}).model_dump() == {'a': 2}
         # insert_assert(log)
         assert log == [
-            "json enter input={\"a\": 2} kwargs={'strict': None, 'context': {'c': 2}}",
+            "json enter input={\"a\": 2} kwargs={'strict': None, 'context': {'c': 2}, 'by_alias': None, 'by_name': None}",
             'json success result=a=2',
         ]
         log.clear()
         assert Model.model_validate_strings({'a': '3'}, strict=True, context={'c': 3}).model_dump() == {'a': 3}
         # insert_assert(log)
         assert log == [
-            "strings enter input={'a': '3'} kwargs={'strict': True, 'context': {'c': 3}}",
+            "strings enter input={'a': '3'} kwargs={'strict': True, 'context': {'c': 3}, 'by_alias': None, 'by_name': None}",
             'strings success result=a=3',
         ]
 
@@ -334,14 +348,14 @@ def test_plugin_path_type_adapter() -> None:
 
     class Plugin:
         def new_schema_validator(self, schema, schema_type, schema_type_path, schema_kind, config, plugin_settings):
-            assert str(schema_type) == 'typing.List[str]'
-            assert schema_type_path == SchemaTypePath('tests.test_plugins', 'typing.List[str]')
+            assert str(schema_type) == 'list[str]'
+            assert schema_type_path == SchemaTypePath('tests.test_plugins', 'list[str]')
             assert schema_kind == 'TypeAdapter'
             return CustomOnValidatePython(), None, None
 
     plugin = Plugin()
     with install_plugin(plugin):
-        adapter = TypeAdapter(List[str])
+        adapter = TypeAdapter(list[str])
         adapter.validate_python(['a', 'b'])
 
 
@@ -351,14 +365,14 @@ def test_plugin_path_type_adapter_with_module() -> None:
 
     class Plugin:
         def new_schema_validator(self, schema, schema_type, schema_type_path, schema_kind, config, plugin_settings):
-            assert str(schema_type) == 'typing.List[str]'
-            assert schema_type_path == SchemaTypePath('provided_module_by_type_adapter', 'typing.List[str]')
+            assert str(schema_type) == 'list[str]'
+            assert schema_type_path == SchemaTypePath('provided_module_by_type_adapter', 'list[str]')
             assert schema_kind == 'TypeAdapter'
             return CustomOnValidatePython(), None, None
 
     plugin = Plugin()
     with install_plugin(plugin):
-        TypeAdapter(List[str], module='provided_module_by_type_adapter')
+        TypeAdapter(list[str], module='provided_module_by_type_adapter')
 
 
 def test_plugin_path_type_adapter_without_name_in_globals() -> None:
@@ -367,18 +381,16 @@ def test_plugin_path_type_adapter_without_name_in_globals() -> None:
 
     class Plugin:
         def new_schema_validator(self, schema, schema_type, schema_type_path, schema_kind, config, plugin_settings):
-            assert str(schema_type) == 'typing.List[str]'
-            assert schema_type_path == SchemaTypePath('', 'typing.List[str]')
+            assert str(schema_type) == 'list[str]'
+            assert schema_type_path == SchemaTypePath('', 'list[str]')
             assert schema_kind == 'TypeAdapter'
             return CustomOnValidatePython(), None, None
 
     plugin = Plugin()
     with install_plugin(plugin):
         code = """
-from typing import List
-
 import pydantic
-pydantic.TypeAdapter(List[str])
+pydantic.TypeAdapter(list[str])
 """
         exec(code, {'bar': 'baz'})
 

@@ -1,6 +1,6 @@
 repos:
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v4.3.0
+  rev: v5.0.0
   hooks:
   - id: no-commit-to-branch  # prevent direct commits to main branch
   - id: check-yaml
@@ -10,12 +10,12 @@ repos:
   - id: trailing-whitespace
 
 - repo: https://github.com/codespell-project/codespell
-  rev: v2.2.4
+  rev: v2.3.0
   hooks:
   - id: codespell
     additional_dependencies:
       - tomli
-    exclude: '^pdm\.lock$'
+    exclude: '^uv\.lock$'
 - repo: local
   hooks:
   - id: lint
@@ -24,16 +24,9 @@ repos:
     types: [python]
     language: system
     pass_filenames: false
-  - id: usage_docs
-    name: Usage docs links
-    entry: pdm run ./tests/check_usage_docs.py
-    files: '^pydantic/'
-    types: [python]
-    language: system
   - id: typecheck
     name: Typecheck
-    entry: pdm run pyright pydantic
+    entry: uv run pyright pydantic
     types: [python]
-    language: node
+    language: system
     pass_filenames: false
-    additional_dependencies: ["pyright@1.1.369"]  # try to keep this in sync with .github/workflows/ci.yml

@@ -29,6 +29,11 @@ check_untyped_defs = true
 no_implicit_reexport = true
 disallow_untyped_defs = true
 
+python_version = '3.10'
+
+# TODO: when we drop 3.9, drop the following line:
+force_union_syntax = true
+
 [[tool.mypy.overrides]]
 module = [
     'pydantic_core.*',

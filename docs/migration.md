@@ -63,13 +63,13 @@ by importing through `pydantic.v1`.
 For example, you can use the `BaseModel` class from Pydantic V1 instead of the
 Pydantic V2 `pydantic.BaseModel` class:
 
-```python test="skip" lint="skip" upgrade="skip"
+```python {test="skip" lint="skip" upgrade="skip"}
 from pydantic.v1 import BaseModel
 ```
 
 You can also import functions that have been removed from Pydantic V2, such as `lenient_isinstance`:
 
-```python test="skip" lint="skip" upgrade="skip"
+```python {test="skip" lint="skip" upgrade="skip"}
 from pydantic.v1.utils import lenient_isinstance
 ```
 
@@ -85,13 +85,13 @@ features, take the following steps:
 1. Replace `pydantic<2` with `pydantic>=1.10.17`
 2. Find and replace all occurrences of:
 
-```python test="skip" lint="skip" upgrade="skip"
+```python {test="skip" lint="skip" upgrade="skip"}
 from pydantic.<module> import <object>
 ```
 
 with:
 
-```python test="skip" lint="skip" upgrade="skip"
+```python {test="skip" lint="skip" upgrade="skip"}
 from pydantic.v1.<module> import <object>
 ```
 
@@ -100,7 +100,7 @@ Here's how you can import `pydantic`'s v1 features based on your version of `pyd
 === "`pydantic>=1.10.17,<3`"
     As of `v1.10.17` the `.v1` namespace is available in V1, allowing imports as below:
 
-    ```python test="skip" lint="skip" upgrade="skip"
+    ```python {test="skip" lint="skip" upgrade="skip"}
     from pydantic.v1.fields import ModelField
     ```
 
@@ -108,7 +108,7 @@ Here's how you can import `pydantic`'s v1 features based on your version of `pyd
     All versions of Pydantic V1 and V2 support the following import pattern, in case you don't
     know which version of Pydantic you are using:
 
-    ```python test="skip" lint="skip" upgrade="skip"
+    ```python {test="skip" lint="skip" upgrade="skip"}
     try:
         from pydantic.v1.fields import ModelField
     except ImportError:
@@ -188,19 +188,19 @@ to help ease migration, but calling them will emit `DeprecationWarning`s.
 If you'd still like to use said arguments, you can use [this workaround](https://github.com/pydantic/pydantic/issues/8825#issuecomment-1946206415).
 * JSON serialization of non-string key values is generally done with `str(key)`, leading to some changes in behavior such as the following:
 
-```py
-from typing import Dict, Optional
+```python
+from typing import Optional
 
 from pydantic import BaseModel as V2BaseModel
 from pydantic.v1 import BaseModel as V1BaseModel
 
 
 class V1Model(V1BaseModel):
-    a: Dict[Optional[str], int]
+    a: dict[Optional[str], int]
 
 
 class V2Model(V2BaseModel):
-    a: Dict[Optional[str], int]
+    a: dict[Optional[str], int]
 
 
 v1_model = V1Model(a={None: 123})
@@ -218,20 +218,19 @@ print(v2_model.model_dump_json())
 * `model_dump_json()` results are compacted in order to save space, and don't always exactly match that of `json.dumps()` output.
 That being said, you can easily modify the separators used in `json.dumps()` results in order to align the two outputs:
 
-```py
+```python
 import json
-from typing import List
 
 from pydantic import BaseModel as V2BaseModel
 from pydantic.v1 import BaseModel as V1BaseModel
 
 
 class V1Model(V1BaseModel):
-    a: List[str]
+    a: list[str]
 
 
 class V2Model(V2BaseModel):
-    a: List[str]
+    a: list[str]
 
 
 v1_model = V1Model(a=['fancy', 'sushi'])
@@ -294,9 +293,6 @@ The following properties have been removed from or changed in `Field`:
 
 Field constraints are no longer automatically pushed down to the parameters of generics.  For example, you can no longer validate every element of a list matches a regex by providing `my_list: list[str] = Field(pattern=".*")`.  Instead, use [`typing.Annotated`][] to provide an annotation on the `str` itself: `my_list: list[Annotated[str, Field(pattern=".*")]]`
 
-* [TODO: Need to document any other backwards-incompatible changes to `pydantic.Field`]
-
-
 ### Changes to dataclasses
 
 Pydantic [dataclasses](concepts/dataclasses.md) continue to be useful for enabling the data validation on standard
@@ -338,7 +334,7 @@ will be merged, and for any settings defined in both, those from `Model2` will o
     * `fields` — this was the source of various bugs, so has been removed.
       You should be able to use `Annotated` on fields to modify them as desired.
     * `getter_dict` — `orm_mode` has been removed, and this implementation detail is no longer necessary.
-    * `smart_union`.
+    * `smart_union` - the default `union_mode` in Pydantic V2 is `'smart'`.
     * `underscore_attrs_are_private` — the Pydantic V2 behavior is now the same as if this was always set
       to `True` in Pydantic V1.
     * `json_loads`
@@ -347,7 +343,7 @@ will be merged, and for any settings defined in both, those from `Model2` will o
     * `post_init_call`
 
 * The following config settings have been renamed:
-    * `allow_population_by_field_name` → `populate_by_name`
+    * `allow_population_by_field_name` → `populate_by_name` (or `validate_by_name` starting in v2.11)
     * `anystr_lower` → `str_to_lower`
     * `anystr_strip_whitespace` → `str_strip_whitespace`
     * `anystr_upper` → `str_to_upper`
@@ -368,8 +364,8 @@ See the [`ConfigDict` API reference][pydantic.config.ConfigDict] for more detail
     and improvements.
     * The new `@field_validator` decorator does not have the `each_item` keyword argument; validators you want to
         apply to items within a generic container should be added by annotating the type argument. See
-        [validators in Annotated metadata](concepts/types.md#composing-types-via-annotated) for details.
-        This looks like `List[Annotated[int, Field(ge=0)]]`
+        [validators in Annotated metadata](concepts/types.md#using-the-annotated-pattern) for details.
+        This looks like `list[Annotated[int, Field(ge=0)]]`
     * Even if you keep using the deprecated `@validator` decorator, you can no longer add the `field` or
         `config` arguments to the signature of validator functions. If you need access to these, you'll need
         to migrate to `@field_validator` — see the [next section](#changes-to-validators-allowed-signatures)
@@ -382,7 +378,7 @@ See the [`ConfigDict` API reference][pydantic.config.ConfigDict] for more detail
     To avoid this, you can use the `validate_default` argument in the `Field` function. When set to `True`, it mimics the behavior of `always=True` in Pydantic v1. However, the new way of using `validate_default` is encouraged as it provides more flexibility and control.
 
 
-```python test="skip"
+```python {test="skip"}
 from pydantic import BaseModel, validator
 
 
@@ -539,9 +535,7 @@ print(type(v))
 If you want the output type to be a specific type, consider annotating it as such or implementing a custom validator:
 
 ```python
-from typing import Any, Mapping, TypeVar
-
-from typing_extensions import Annotated
+from typing import Annotated, Any, Mapping, TypeVar
 
 from pydantic import (
     TypeAdapter,
@@ -677,7 +671,7 @@ The following table describes the behavior of field annotations in V2:
     Any default value if provided makes a field not required.
 
 Here is a code example demonstrating the above:
-```py
+```python
 from typing import Optional
 
 from pydantic import BaseModel, ValidationError
@@ -713,6 +707,33 @@ If you still want to use Python's regex library, you can use the [`regex_engine`
 
 [regex crate]: https://github.com/rust-lang/regex
 
+### Type conversion from floats to integers
+
+In V1, whenever a field was annotated as `int`, any float value would be accepted, which could lead to a potential data
+loss if the float value contains a non-zero decimal part. In V2, type conversion from floats to integers is only allowed
+if the decimal part is zero:
+
+```python
+from pydantic import BaseModel, ValidationError
+
+
+class Model(BaseModel):
+    x: int
+
+
+print(Model(x=10.0))
+#> x=10
+try:
+    Model(x=10.2)
+except ValidationError as err:
+    print(err)
+    """
+    1 validation error for Model
+    x
+      Input should be a valid integer, got a number with a fractional part [type=int_from_float, input_value=10.2, input_type=float]
+    """
+```
+
 ### Introduction of `TypeAdapter`
 
 Pydantic V1 had weak support for validating or serializing non-`BaseModel` types.
@@ -727,11 +748,9 @@ and also covers some of the use cases of "root" models. ([`RootModel`](concepts/
 [discussed above](#changes-to-pydanticbasemodel), covers the others.)
 
 ```python
-from typing import List
-
 from pydantic import TypeAdapter
 
-adapter = TypeAdapter(List[int])
+adapter = TypeAdapter(list[int])
 assert adapter.validate_python(['1', '2', '3']) == [1, 2, 3]
 print(adapter.json_schema())
 #> {'items': {'type': 'integer'}, 'type': 'array'}
@@ -740,7 +759,7 @@ print(adapter.json_schema())
 Due to limitations of inferring generic types with common type checkers, to get proper typing in some scenarios, you
 may need to explicitly specify the generic parameter:
 
-```python test="skip"
+```python {test="skip"}
 from pydantic import TypeAdapter
 
 adapter = TypeAdapter[str | int](str | int)
@@ -838,7 +857,7 @@ Some of the URL validation differs slightly from the previous behavior in V1.
 One notable difference is that the new `Url` types append slashes to the validated version if no path is included,
 even if a slash is not specified in the argument to a `Url` type constructor. See the example below for this behavior:
 
-```py
+```python
 from pydantic import AnyUrl
 
 assert str(AnyUrl(url='https://google.com')) == 'https://google.com/'
@@ -854,7 +873,7 @@ If you still want to use the old behavior without the appended slash, take a loo
 
 The `Constrained*` classes were _removed_, and you should replace them by `Annotated[<type>, Field(...)]`, for example:
 
-```py test="skip"
+```python {test="skip"}
 from pydantic import BaseModel, ConstrainedInt
 
 
@@ -868,8 +887,8 @@ class Model(BaseModel):
 
 ...becomes:
 
-```py
-from typing_extensions import Annotated
+```python
+from typing import Annotated
 
 from pydantic import BaseModel, Field
 
@@ -880,12 +899,12 @@ class Model(BaseModel):
     x: MyInt
 ```
 
-Read more about it in the [Composing types via `Annotated`](concepts/types.md#composing-types-via-annotated)
+Read more about it in the [Composing types via `Annotated`](concepts/types.md#using-the-annotated-pattern)
 docs.
 
 For `ConstrainedStr` you can use [`StringConstraints`][pydantic.types.StringConstraints] instead.
 
-#### Mypy Plugins
+### Mypy plugins
 
 Pydantic V2 contains a [mypy](https://mypy.readthedocs.io/en/stable/extending_mypy.html#configuring-mypy-to-use-plugins) plugin in
 `pydantic.mypy`.
@@ -893,22 +912,22 @@ Pydantic V2 contains a [mypy](https://mypy.readthedocs.io/en/stable/extending_my
 When using [V1 features](migration.md#continue-using-pydantic-v1-features) the
 `pydantic.v1.mypy` plugin might need to also be enabled.
 
-To configure the `mypy` plugins:
+To configure the mypy plugins:
 
-=== `mypy.ini`
+=== "`mypy.ini`"
 
     ```ini
     [mypy]
-    plugins = pydantic.mypy, pydantic.v1.mypy # include `.v1.mypy` if required.
+    plugins = pydantic.mypy, pydantic.v1.mypy  # include `.v1.mypy` if required.
     ```
 
-=== `pyproject.toml`
+=== "`pyproject.toml`"
 
     ```toml
     [tool.mypy]
     plugins = [
         "pydantic.mypy",
-        "pydantic.v1.mypy",
+        "pydantic.v1.mypy",  # include `.v1.mypy` if required.
     ]
     ```
 
