@@ -586,7 +586,7 @@ def test_schema():
     assert model_json_schema(User) == {
         'properties': {
             'age': {
-                'anyOf': [{'type': 'integer'}, {'type': 'null'}],
+                'oneOf': [{'type': 'integer'}, {'type': 'null'}],
                 'default': None,
                 'title': 'The age of the user',
                 'description': 'do not lie!',
@@ -597,7 +597,7 @@ def test_schema():
                 'type': 'object',
             },
             'height': {
-                'anyOf': [{'maximum': 300, 'minimum': 50, 'type': 'integer'}, {'type': 'null'}],
+                'oneOf': [{'maximum': 300, 'minimum': 50, 'type': 'integer'}, {'type': 'null'}],
                 'default': None,
                 'title': 'The height in cm',
             },
@@ -887,7 +887,7 @@ def test_override_builtin_dataclass_nested_schema():
             'Meta': {
                 'properties': {
                     'modified_date': {
-                        'anyOf': [{'format': 'date-time', 'type': 'string'}, {'type': 'null'}],
+                        'oneOf': [{'format': 'date-time', 'type': 'string'}, {'type': 'null'}],
                         'title': 'Modified Date',
                     },
                     'seen_count': {'title': 'Seen Count', 'type': 'integer'},
