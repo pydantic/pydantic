@@ -802,13 +802,13 @@ Pydantic provides a few special utilities that can be used to customize validati
     1. Note that the validation of the second item is skipped. If it has the wrong type it will emit a
        warning during serialization.
 
-* [`ValidateFrom`][pydantic.functional_validators.ValidateFrom] can be used to validate an custom type from a
+* [`ValidateAs`][pydantic.functional_validators.ValidateAs] can be used to validate an custom type from a
   type natively supported by Pydantic. This is particularly useful when using custom types with multiple fields.
 
     ```python {lint="skip"}
     from typing import Annotated
 
-    from pydantic import BaseModel, TypeAdapter, ValidateFrom
+    from pydantic import BaseModel, TypeAdapter, ValidateAs
 
     class MyCls:
         def __init__(self, a: int) -> None:
@@ -822,7 +822,7 @@ Pydantic provides a few special utilities that can be used to customize validati
 
 
     ta = TypeAdapter(
-        Annotated[MyCls, ValidateFrom(ValModel, instantiation_hook=lambda v: MyCls(a=v.a))]
+        Annotated[MyCls, ValidateAs(ValModel, instantiation_hook=lambda v: MyCls(a=v.a))]
     )
 
     print(ta.validate_python({'a': 1}))

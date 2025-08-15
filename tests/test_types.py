@@ -106,7 +106,7 @@ from pydantic import (
     StringConstraints,
     Tag,
     TypeAdapter,
-    ValidateFrom,
+    ValidateAs,
     ValidationError,
     conbytes,
     condate,
@@ -6029,7 +6029,7 @@ def test_validate_from() -> None:
     class ArbitraryModel(BaseModel):
         a: int
 
-    ta = TypeAdapter(Annotated[Arbitrary, ValidateFrom(ArbitraryModel, instantiation_hook=lambda v: Arbitrary(a=v.a))])
+    ta = TypeAdapter(Annotated[Arbitrary, ValidateAs(ArbitraryModel, instantiation_hook=lambda v: Arbitrary(a=v.a))])
 
     assert ta.validate_python({'a': 1}) == Arbitrary(1)
 

@@ -836,8 +836,8 @@ else:
 _FromTypeT = TypeVar('_FromTypeT')
 
 
-class ValidateFrom:
-    """A helper class to validate a custom type from a type natively supported by Pydantic.
+class ValidateAs:
+    """A helper class to validate a custom type from a type that is natively supported by Pydantic.
 
     Args:
         from_type: The type natively supported by Pydantic to use to perform validation.
@@ -848,7 +848,7 @@ class ValidateFrom:
         ```python {lint="skip"}
         from typing import Annotated
 
-        from pydantic import BaseModel, TypeAdapter, ValidateFrom
+        from pydantic import BaseModel, TypeAdapter, ValidateAs
 
         class MyCls:
             def __init__(self, a: int) -> None:
@@ -862,7 +862,7 @@ class ValidateFrom:
 
 
         ta = TypeAdapter(
-            Annotated[MyCls, ValidateFrom(Model, instantiation_hook=lambda v: MyCls(a=v.a))]
+            Annotated[MyCls, ValidateAs(Model, lambda v: MyCls(a=v.a))]
         )
 
         print(ta.validate_python({'a': 1}))
@@ -871,13 +871,13 @@ class ValidateFrom:
     """
 
     # TODO: make use of PEP 747
-    def __init__(self, from_type: type[_FromTypeT], /, *, instantiation_hook: Callable[[_FromTypeT], Any]) -> None:
+    def __init__(self, from_type: type[_FromTypeT], /, instantiation_hook: Callable[[_FromTypeT], Any]) -> None:
         self.from_type = from_type
         self.instantiation_hook = instantiation_hook
 
     def __get_pydantic_core_schema__(self, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         schema = handler(self.from_type)
         return core_schema.no_info_after_validator_function(
-            lambda value: self.instantiation_hook(value),
+            self.instantiation_hook,
             schema=schema,
         )
