@@ -870,6 +870,7 @@ class ValidateFrom:
         ```
     """
 
+    # TODO: make use of PEP 747
     def __init__(self, from_type: type[_FromTypeT], /, *, instantiation_hook: Callable[[_FromTypeT], Any]) -> None:
         self.from_type = from_type
         self.instantiation_hook = instantiation_hook

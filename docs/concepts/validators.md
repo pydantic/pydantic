@@ -803,7 +803,7 @@ Pydantic provides a few special utilities that can be used to customize validati
        warning during serialization.
 
 * [`ValidateFrom`][pydantic.functional_validators.ValidateFrom] can be used to validate an custom type from a
-  type natively supported by Pydantic.
+  type natively supported by Pydantic. This is particularly useful when using custom types with multiple fields.
 
     ```python {lint="skip"}
     from typing import Annotated
