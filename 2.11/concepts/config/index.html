@@ -3249,9 +3249,11 @@ with a custom configuration, as the configuration is inherited:</p>
 <a href="https://docs.python.org/3/glossary.html#term-method-resolution-order">MRO</a>. For more details, see <a href="https://github.com/pydantic/pydantic/issues/9992">this issue</a>.</p>
 </div>
 <h2 id="configuration-propagation">Configuration propagation<a class="headerlink" href="#configuration-propagation" title="Permanent link">&para;</a></h2>
-<p>Note that when using types that support configuration as field annotations on other types,
-configuration will <em>not</em> be propagated. In the following example, each model has its own
-"configuration boundary":</p>
+<p>When using types that support configuration as field annotations, configuration may not be propagated:</p>
+<ul>
+<li>
+<p>For Pydantic models and dataclasses, configuration will <em>not</em> be propagated, each model has its own
+  "configuration boundary":</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
 
 
@@ -3262,12 +3264,44 @@ configuration will <em>not</em> be propagated. In the following example, each mo
 <span class="k">class</span><span class="w"> </span><span class="nc">Parent</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">user</span><span class="p">:</span> <span class="n">User</span>
 
-    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">str_max_length</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">str_to_lower</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
 
-<span class="nb">print</span><span class="p">(</span><span class="n">Parent</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;John Doe&#39;</span><span class="p">}))</span>
-<span class="c1">#&gt; user=User(name=&#39;John Doe&#39;)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">Parent</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;JOHN&#39;</span><span class="p">}))</span>
+<span class="c1">#&gt; user=User(name=&#39;JOHN&#39;)</span>
 </code></pre></div>
+</li>
+<li>
+<p>For stdlib types (dataclasses and typed dictionaries), configuration will be propagated, unless
+  the type has its own configuration set:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">with_config</span>
+
+
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">UserWithoutConfig</span><span class="p">:</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="nd">@dataclass</span>
+<span class="nd">@with_config</span><span class="p">(</span><span class="n">str_to_lower</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">UserWithConfig</span><span class="p">:</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Parent</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">user_1</span><span class="p">:</span> <span class="n">UserWithoutConfig</span>
+    <span class="n">user_2</span><span class="p">:</span> <span class="n">UserWithConfig</span>
+
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">str_to_lower</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">Parent</span><span class="p">(</span><span class="n">user_1</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;JOHN&#39;</span><span class="p">},</span> <span class="n">user_2</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;JOHN&#39;</span><span class="p">}))</span>
+<span class="c1">#&gt; user_1=UserWithoutConfig(name=&#39;john&#39;) user_2=UserWithConfig(name=&#39;JOHN&#39;)</span>
+</code></pre></div>
+</li>
+</ul>
 
 
 
