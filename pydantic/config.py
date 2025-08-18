@@ -621,15 +621,18 @@ class ConfigDict(TypedDict, total=False):
 
     val_temporal_unit: Literal['seconds', 'milliseconds', 'infer']
     """
-    The unit to assume for validating numeric input for datetime-like types. This includes:
-    - [`datetime.datetime`][]
-    - [`datetime.date`][]
+    The unit to assume for validating numeric input for datetime-like types ([`datetime.datetime`][] and [`datetime.date`][]). Can be one of:
+
+    - `'seconds'` will validate date or time numeric inputs as seconds since the [epoch].
+    - `'milliseconds'` will validate date or time numeric inputs as milliseconds since the [epoch].
+    - `'infer'` will infer the unit from the string numeric input on unix time as:
+
+        * seconds since the [epoch] if $-2^{10} <= v <= 2^{10}$
+        * milliseconds since the [epoch] (if $v < -2^{10}$ or $v > 2^{10}$).
+
     Defaults to `'infer'`.
-    The "epoch" references below refer to the Unix epoch, which is 1970-01-01 00:00:00 UTC.
-    - `'seconds'` will validate date or time numeric inputs as seconds since the epoch.
-    - `'milliseconds'` will validate date or time numeric inputs as milliseconds since the epoch.
-    - `'infer'` will infer the unit from the string numeric input on unix time:
-        i.e. seconds (if >= -2^10 and <= 2^10) or milliseconds (if < -2^10or > 2^10) since the epoch.
+
+    [epoch]: https://en.wikipedia.org/wiki/Unix_time
     """
 
     ser_json_bytes: Literal['utf8', 'base64', 'hex']
