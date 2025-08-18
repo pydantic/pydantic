@@ -594,41 +594,51 @@ class ConfigDict(TypedDict, total=False):
     The format of JSON serialized timedeltas. Accepts the string values of `'iso8601'` and
     `'float'`. Defaults to `'iso8601'`.
 
-    !!! warning
-        In v2.11+ it is recommended to use the [`ser_json_temporal`][pydantic.config.ConfigDict.ser_json_temporal]
-        setting instead of `ser_json_timedelta`. This setting will be deprecated in v3.
     - `'iso8601'` will serialize timedeltas to [ISO 8601 text format](https://en.wikipedia.org/wiki/ISO_8601#Durations).
     - `'float'` will serialize timedeltas to the total number of seconds.
+    
+    !!! warning
+        Starting in v2.11, it is recommended to use the [`ser_json_temporal`][pydantic.config.ConfigDict.ser_json_temporal]
+        setting instead of `ser_json_timedelta`. This setting will be deprecated in v3.
     """
 
     ser_json_temporal: Literal['iso8601', 'seconds', 'milliseconds']
     """
-    The format of JSON serialized temporal types from the `datetime` library. This includes:
+    The format of JSON serialized temporal types from the [`datetime`][] module. This includes:
+
     - [`datetime.datetime`][]
     - [`datetime.date`][]
     - [`datetime.time`][]
     - [`datetime.timedelta`][]
-    !!! note
-        This setting was introduced in v2.11. It overlaps with the `ser_json_timedelta`
-        setting which will likely be deprecated in v3. It also adds more configurability for
-        the other temporal types.
-    Accepts the string values of `'iso8601'`, `'milliseconds'`, and `'seconds'`. Defaults to `'iso8601'`.
+
+    Can be one of:
+
     - `'iso8601'` will serialize date-like types to [ISO 8601 text format](https://en.wikipedia.org/wiki/ISO_8601#Durations).
     - `'milliseconds'` will serialize date-like types to a floating point number of milliseconds since the epoch.
     - `'seconds'` will serialize date-like types to a floating point number of seconds since the epoch.
+
+    Defaults to `'iso8601'`.
+
+    !!! note
+        This setting was introduced in v2.11. It overlaps with the [`ser_json_timedelta`][pydantic.config.ConfigDict.ser_json_timedelta]
+        setting which will be deprecated in v3. It also adds more configurability for
+        the other temporal types.
     """
 
     val_temporal_unit: Literal['seconds', 'milliseconds', 'infer']
     """
-    The unit to assume for validating numeric input for datetime-like types. This includes:
-    - [`datetime.datetime`][]
-    - [`datetime.date`][]
+    The unit to assume for validating numeric input for datetime-like types ([`datetime.datetime`][] and [`datetime.date`][]). Can be one of:
+
+    - `'seconds'` will validate date or time numeric inputs as seconds since the [epoch].
+    - `'milliseconds'` will validate date or time numeric inputs as milliseconds since the [epoch].
+    - `'infer'` will infer the unit from the string numeric input on unix time as:
+
+        * seconds since the [epoch] if $-2^{10} <= v <= 2^{10}$
+        * milliseconds since the [epoch] (if $v < -2^{10}$ or $v > 2^{10}$).
+
     Defaults to `'infer'`.
-    The "epoch" references below refer to the Unix epoch, which is 1970-01-01 00:00:00 UTC.
-    - `'seconds'` will validate date or time numeric inputs as seconds since the epoch.
-    - `'milliseconds'` will validate date or time numeric inputs as milliseconds since the epoch.
-    - `'infer'` will infer the unit from the string numeric input on unix time:
-        i.e. seconds (if >= -2^10 and <= 2^10) or milliseconds (if < -2^10or > 2^10) since the epoch.
+
+    [epoch]: https://en.wikipedia.org/wiki/Unix_time
     """
 
     ser_json_bytes: Literal['utf8', 'base64', 'hex']
