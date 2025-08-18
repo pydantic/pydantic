@@ -594,11 +594,12 @@ class ConfigDict(TypedDict, total=False):
     The format of JSON serialized timedeltas. Accepts the string values of `'iso8601'` and
     `'float'`. Defaults to `'iso8601'`.
 
-    !!! warning
-        In v2.11+ it is recommended to use the [`ser_json_temporal`][pydantic.config.ConfigDict.ser_json_temporal]
-        setting instead of `ser_json_timedelta`. This setting will be deprecated in v3.
     - `'iso8601'` will serialize timedeltas to [ISO 8601 text format](https://en.wikipedia.org/wiki/ISO_8601#Durations).
     - `'float'` will serialize timedeltas to the total number of seconds.
+    
+    !!! warning
+        Starting in v2.11, it is recommended to use the [`ser_json_temporal`][pydantic.config.ConfigDict.ser_json_temporal]
+        setting instead of `ser_json_timedelta`. This setting will be deprecated in v3.
     """
 
     ser_json_temporal: Literal['iso8601', 'seconds', 'milliseconds']
