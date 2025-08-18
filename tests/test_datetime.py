@@ -15,6 +15,7 @@ from pydantic import (
     PastDatetime,
     ValidationError,
     condate,
+    TypeAdapter,
 )
 
 from .conftest import Err
@@ -196,6 +197,81 @@ def test_datetime_parsing(DatetimeModel, value, result):
     else:
         assert DatetimeModel(dt=value).dt == result
 
+
+@pytest.mark.parametrize(
+    'val_temporal_unit, input_value, expected',
+    [
+        # 'seconds' mode: treat as seconds since epoch
+        ('seconds', 1654646400, datetime(2022, 6, 8, tzinfo=timezone.utc)),
+        ('seconds', '1654646400', datetime(2022, 6, 8, tzinfo=timezone.utc)),
+        ('seconds', 1654646400.123456, datetime(2022, 6, 8, 0, 0, 0, 123456, tzinfo=timezone.utc)),
+        ('seconds', 8640000000.0, datetime(2243, 10, 17, tzinfo=timezone.utc)),
+        ('seconds', 92534400000.0, datetime(4902, 4, 20, tzinfo=timezone.utc)),
+        # 'milliseconds' mode: treat as milliseconds since epoch
+        ('milliseconds', 1654646400, datetime(1970, 1, 20, 3, 37, 26, 400000, tzinfo=timezone.utc)),
+        ('milliseconds', 1654646400123, datetime(2022, 6, 8, 0, 0, 0, 123000, tzinfo=timezone.utc)),
+        ('milliseconds', '1654646400123', datetime(2022, 6, 8, 0, 0, 0, 123000, tzinfo=timezone.utc)),
+        ('milliseconds', 8640000000.0, datetime(1970, 4, 11, tzinfo=timezone.utc)),
+        ('milliseconds', 92534400000.0, datetime(1972, 12, 7, tzinfo=timezone.utc)),
+        (
+            'milliseconds',
+            1654646400123.456,
+            datetime(2022, 6, 8, 0, 0, 0, 123456, tzinfo=timezone.utc),
+        ),
+        # 'infer' mode: large numbers are ms, small are s
+        ('infer', 1654646400, datetime(2022, 6, 8, tzinfo=timezone.utc)),
+        ('infer', 1654646400123, datetime(2022, 6, 8, 0, 0, 0, 123000, tzinfo=timezone.utc)),
+        (
+            'infer',
+            1654646400123.456,
+            datetime(2022, 6, 8, 0, 0, 0, 123456, tzinfo=timezone.utc),
+        ),
+        ('infer', 8640000000.0, datetime(2243, 10, 17, tzinfo=timezone.utc)),
+        ('infer', 92534400000.0, datetime(1972, 12, 7, tzinfo=timezone.utc)),
+    ],
+)
+def test_val_temporal_unit_datetime(val_temporal_unit, input_value, expected):
+    class DatetimeModel(BaseModel):
+        dt: datetime
+
+        model_config = {
+            'val_temporal_unit': val_temporal_unit,
+        }
+
+    assert DatetimeModel(dt=input_value).dt == expected
+
+
+@pytest.mark.parametrize(
+    'val_temporal_unit, input_value, expected',
+    [
+        # 'seconds' mode: treat as seconds since epoch
+        ('seconds', 1654646400, date(2022, 6, 8)),
+        ('seconds', '1654646400', date(2022, 6, 8)),
+        ('seconds', 1654646400.0, date(2022, 6, 8)),
+        ('seconds', 8640000000.0, date(2243, 10, 17)),
+        ('seconds', 92534400000.0, date(4902, 4, 20)),
+        # 'milliseconds' mode: treat as milliseconds since epoch
+        ('milliseconds', 1654646400000, date(2022, 6, 8)),
+        ('milliseconds', '1654646400000', date(2022, 6, 8)),
+        ('milliseconds', 1654646400000.0, date(2022, 6, 8)),
+        ('milliseconds', 8640000000.0, date(1970, 4, 11)),
+        ('milliseconds', 92534400000.0, date(1972, 12, 7)),
+        # 'infer' mode: large numbers are ms, small are s
+        ('infer', 1654646400, date(2022, 6, 8)),
+        ('infer', 1654646400000, date(2022, 6, 8)),
+        ('infer', 8640000000.0, date(2243, 10, 17)),
+        ('infer', 92534400000.0, date(1972, 12, 7)),
+    ],
+)
+def test_val_temporal_unit_date(val_temporal_unit, input_value, expected):
+    class DateModel(BaseModel):
+        dt: date
+
+        model_config = {
+            'val_temporal_unit': val_temporal_unit,
+        }
+
+    assert DateModel(dt=input_value).dt == expected
 
 @pytest.mark.parametrize(
     'value,result',
@@ -634,3 +710,107 @@ def test_datetime_from_date_str():
 
     m = Model(value='2015-10-21')
     assert m.value == datetime(2015, 10, 21, 0, 0)
+
+
+
+@pytest.mark.parametrize(
+    'dt,expected_to_json,mode',
+    [
+        (
+            datetime(2024, 1, 1, 0, 0, 0),
+            b'"2024-01-01T00:00:00"',
+            'iso8601',
+        ),
+        (
+            datetime(2024, 1, 1, 0, 0, 0),
+            b'1704067200.0',
+            'seconds',
+        ),
+        (
+            datetime(2024, 1, 1, 0, 0, 0),
+            b'1704067200000.0',
+            'milliseconds',
+        ),
+        (
+            datetime(2024, 1, 1, 1, 1, 1, 23),
+            b'1704070861.000023',
+            'seconds',
+        ),
+        (
+            datetime(2024, 1, 1, 1, 1, 1, 23),
+            b'1704070861000.023',
+            'milliseconds',
+        ),
+    ],
+)
+def test_config_datetime(
+    dt: datetime, expected_to_json, mode
+):
+    ta = TypeAdapter(datetime, config={'ser_json_temporal': mode})
+
+    instance = ta.validate_python(dt)
+
+    assert instance == dt
+    assert ta.dump_json(instance) == expected_to_json
+
+
+@pytest.mark.parametrize(
+    'dt,expected_to_json,mode',
+    [
+        (
+            date(2024, 1, 1),
+            b'"2024-01-01"',
+            'iso8601',
+        ),
+        (
+            date(2024, 1, 1),
+            b'1704067200.0',
+            'seconds',
+        ),
+        (
+            date(2024, 1, 1),
+            b'1704067200000.0',
+            'milliseconds',
+        ),
+    ],
+)
+def test_config_date(
+    dt: date, expected_to_json, mode
+):
+    ta = TypeAdapter(date, config={'ser_json_temporal': mode})
+
+    instance = ta.validate_python(dt)
+
+    assert instance == dt
+    assert ta.dump_json(instance) == expected_to_json
+
+
+@pytest.mark.parametrize(
+    't,expected_to_json,mode',
+    [
+        (
+            time(3, 14, 1, 59263),
+            b'"03:14:01.059263"',
+            'iso8601',
+        ),
+        (
+            time(3, 14, 1, 59263),
+            b'11641.059263',
+            'seconds',
+        ),
+        (
+            time(3, 14, 1, 59263),
+            b'11641059.263',
+            'milliseconds',
+        ),
+    ],
+)
+def test_config_time(
+    t: date, expected_to_json, mode
+):
+    ta= TypeAdapter(time, config={'ser_json_temporal': mode})
+
+    instance = ta.validate_python(t)
+
+    assert instance == t
+    assert ta.dump_json(instance) == expected_to_json
