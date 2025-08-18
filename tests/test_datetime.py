@@ -13,9 +13,9 @@ from pydantic import (
     NaiveDatetime,
     PastDate,
     PastDatetime,
+    TypeAdapter,
     ValidationError,
     condate,
-    TypeAdapter,
 )
 
 from .conftest import Err
@@ -272,6 +272,7 @@ def test_val_temporal_unit_date(val_temporal_unit, input_value, expected):
         }
 
     assert DateModel(dt=input_value).dt == expected
+
 
 @pytest.mark.parametrize(
     'value,result',
@@ -712,7 +713,6 @@ def test_datetime_from_date_str():
     assert m.value == datetime(2015, 10, 21, 0, 0)
 
 
-
 @pytest.mark.parametrize(
     'dt,expected_to_json,mode',
     [
@@ -743,9 +743,7 @@ def test_datetime_from_date_str():
         ),
     ],
 )
-def test_config_datetime(
-    dt: datetime, expected_to_json, mode
-):
+def test_config_datetime(dt: datetime, expected_to_json, mode):
     ta = TypeAdapter(datetime, config={'ser_json_temporal': mode})
 
     instance = ta.validate_python(dt)
@@ -774,9 +772,7 @@ def test_config_datetime(
         ),
     ],
 )
-def test_config_date(
-    dt: date, expected_to_json, mode
-):
+def test_config_date(dt: date, expected_to_json, mode):
     ta = TypeAdapter(date, config={'ser_json_temporal': mode})
 
     instance = ta.validate_python(dt)
@@ -805,10 +801,8 @@ def test_config_date(
         ),
     ],
 )
-def test_config_time(
-    t: date, expected_to_json, mode
-):
-    ta= TypeAdapter(time, config={'ser_json_temporal': mode})
+def test_config_time(t: date, expected_to_json, mode):
+    ta = TypeAdapter(time, config={'ser_json_temporal': mode})
 
     instance = ta.validate_python(t)
 
