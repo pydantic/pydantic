@@ -704,18 +704,37 @@ print(outer_model.model_dump(serialize_as_any=False))  # (2)!
 
 ## Field inclusion and exclusion
 
-Model fields can be excluded for the serialization output in two ways:
+For serialization, field inclusion and exclusion can be configured in two ways:
 
-* using the `exclude` parameter on [the `Field()` function](fields.md).
+* at the field level, using the `exclude` and `exclude_if` parameters on [the `Field()` function](fields.md).
 * using the various serialization parameters on the [serialization methods](#serializing-data).
 
-Setting `exclude` to `True` on the [`Field()`][pydantic.fields.Field] function will unconditionally exclude it from
-the output (and this setting takes priority over the runtime parameters described below).
+### At the field level
+
+At the field level, the `exclude` and `exclude_if` parameters can be used:
+
+```python
+from pydantic import BaseModel, Field
+
+
+class Transaction(BaseModel):
+    id: int
+    private_id: int = Field(exclude=True)
+    value: int = Field(ge=0, exclude_if=lambda v: v == 0)
+
+
+print(Transaction(id=1, private_id=2, value=0).model_dump())
+#> {'id': 1}
+```
+
+Exclusion at the field level takes priority over the `include` serialization parameter described below.
+
+### As parameters to the serialization methods
 
 When using the [serialization methods](#serializing-data) (such as [`model_dump()`][pydantic.BaseModel.model_dump]),
 several parameters can be used to exclude or include fields.
 
-### Excluding and including specific fields
+#### Excluding and including specific fields
 
 Consider the following models:
 
@@ -731,7 +750,7 @@ class User(BaseModel):
 
 class Transaction(BaseModel):
     id: str
-    private_id: str = Field(exclude=True)  # (1)!
+    private_id: str = Field(exclude=True)
     user: User
     value: int
 
@@ -743,8 +762,6 @@ t = Transaction(
     value=9876543210,
 )
 ```
-
-1. As said above, this field will always be excluded during serialization.
 
 The `exclude` parameter can be used to specify which fields should be excluded (including the others), and vice-versa
 using the `include` parameter.
@@ -758,6 +775,7 @@ print(t.model_dump(exclude={'user', 'value'}))
 print(t.model_dump(exclude={'user': {'username', 'password'}, 'value': True}))
 #> {'id': '1234567890', 'user': {'id': 42}}
 
+# same configuration using `include`:
 print(t.model_dump(include={'id': True, 'user': {'id'}}))
 #> {'id': '1234567890', 'user': {'id': 42}}
 ```
@@ -812,16 +830,17 @@ print(user.model_dump(exclude={'hobbies': {'__all__': {'info'}}}))
 #> {'hobbies': [{'name': 'Programming'}, {'name': 'Gaming'}]}
 ```
 
-### Excluding and including fields based on their value
+#### Excluding and including fields based on their value
 
 When using the [serialization methods](#serializing-data), it is possible to exclude fields based on their value,
 using the following parameters:
 
-* `exclude_defaults`: Exclude all fields whose value compares equal to the equality (`==`) comparison operator.
+* `exclude_defaults`: Exclude all fields whose value compares equal to the default value
+  (using the equality (`==`) comparison operator).
 * `exclude_none`: Exclude all fields whose value is `None`.
 * `exclude_unset`: Pydantic keeps track of fields that were *explicitly* set during instantiation (using the
   [`model_fields_set`][pydantic.BaseModel.model_fields_set] property). Using `exclude_unset`, any field that
-  was populated using the default value will be excluded:
+  was not explicitly provided will be excluded:
 
     ```python {group="exclude-unset"}
     from pydantic import BaseModel
@@ -840,7 +859,7 @@ using the following parameters:
     #> {'name': 'John'}
     ```
 
-    Note that altering a field *after* the instance have been created will remove it from the unset fields:
+    Note that altering a field *after* the instance has been created will remove it from the unset fields:
 
     ```python {group="exclude-unset"}
     user.age = 21
@@ -848,3 +867,7 @@ using the following parameters:
     print(user.model_dump(exclude_unset=True))
     #> {'name': 'John', 'age': 21}
     ```
+
+    !!! tip
+        The experimental [`MISSING` sentinel](./experimental.md#missing-sentinel) can be used as an alternative to `exclude_unset`.
+        Any field with `MISSING` as a value is automatically excluded from the serialization output.

@@ -65,6 +65,7 @@ class _FromFieldInfoInputs(typing_extensions.TypedDict, total=False):
     description: str | None
     examples: list[Any] | None
     exclude: bool | None
+    exclude_if: Callable[[Any], bool] | None
     gt: annotated_types.SupportsGt | None
     ge: annotated_types.SupportsGe | None
     lt: annotated_types.SupportsLt | None
@@ -122,6 +123,7 @@ class FieldInfo(_repr.Representation):
         description: The description of the field.
         examples: List of examples of the field.
         exclude: Whether to exclude the field from the model serialization.
+        exclude_if: A callable that determines whether to exclude a field during serialization based on its value.
         discriminator: Field name or Discriminator for discriminating the type in a tagged union.
         deprecated: A deprecation message, an instance of `warnings.deprecated` or the `typing_extensions.deprecated` backport,
             or a boolean. If `True`, a default deprecation message will be emitted when accessing the field.
@@ -147,6 +149,7 @@ class FieldInfo(_repr.Representation):
     description: str | None
     examples: list[Any] | None
     exclude: bool | None
+    exclude_if: Callable[[Any], bool] | None
     discriminator: str | types.Discriminator | None
     deprecated: Deprecated | str | bool | None
     json_schema_extra: JsonDict | Callable[[JsonDict], None] | None
@@ -171,6 +174,7 @@ class FieldInfo(_repr.Representation):
         'description',
         'examples',
         'exclude',
+        'exclude_if',
         'discriminator',
         'deprecated',
         'json_schema_extra',
@@ -240,6 +244,7 @@ class FieldInfo(_repr.Representation):
         self.description = kwargs.pop('description', None)
         self.examples = kwargs.pop('examples', None)
         self.exclude = kwargs.pop('exclude', None)
+        self.exclude_if = kwargs.pop('exclude_if', None)
         self.discriminator = kwargs.pop('discriminator', None)
         # For compatibility with FastAPI<=0.110.0, we preserve the existing value if it is not overridden
         self.deprecated = kwargs.pop('deprecated', getattr(self, 'deprecated', None))
@@ -821,6 +826,7 @@ _DefaultValues = {
     'description': None,
     'examples': None,
     'exclude': None,
+    'exclude_if': None,
     'discriminator': None,
     'json_schema_extra': None,
     'frozen': None,
@@ -863,6 +869,7 @@ def Field(
     description: str | None = _Unset,
     examples: list[Any] | None = _Unset,
     exclude: bool | None = _Unset,
+    exclude_if: Callable[[Any], bool] | None = _Unset,
     discriminator: str | types.Discriminator | None = _Unset,
     deprecated: Deprecated | str | bool | None = _Unset,
     json_schema_extra: JsonDict | Callable[[JsonDict], None] | None = _Unset,
@@ -902,6 +909,7 @@ def Field(
     description: str | None = _Unset,
     examples: list[Any] | None = _Unset,
     exclude: bool | None = _Unset,
+    exclude_if: Callable[[Any], bool] | None = _Unset,
     discriminator: str | types.Discriminator | None = _Unset,
     deprecated: Deprecated | str | bool | None = _Unset,
     json_schema_extra: JsonDict | Callable[[JsonDict], None] | None = _Unset,
@@ -941,6 +949,10 @@ def Field(
     description: str | None = _Unset,
     examples: list[Any] | None = _Unset,
     exclude: bool | None = _Unset,
+    # NOTE: to get proper type checking on `exclude_if`'s argument, we could use `_T` instead of `Any`. However,
+    # this requires (at least for pyright) adding an additional overload where `exclude_if` is required (otherwise
+    # `a: int = Field(default_factory=str)` results in a false negative).
+    exclude_if: Callable[[Any], bool] | None = _Unset,
     discriminator: str | types.Discriminator | None = _Unset,
     deprecated: Deprecated | str | bool | None = _Unset,
     json_schema_extra: JsonDict | Callable[[JsonDict], None] | None = _Unset,
@@ -980,6 +992,7 @@ def Field(  # pyright: ignore[reportOverlappingOverload]
     description: str | None = _Unset,
     examples: list[Any] | None = _Unset,
     exclude: bool | None = _Unset,
+    exclude_if: Callable[[Any], bool] | None = _Unset,
     discriminator: str | types.Discriminator | None = _Unset,
     deprecated: Deprecated | str | bool | None = _Unset,
     json_schema_extra: JsonDict | Callable[[JsonDict], None] | None = _Unset,
@@ -1019,6 +1032,10 @@ def Field(
     description: str | None = _Unset,
     examples: list[Any] | None = _Unset,
     exclude: bool | None = _Unset,
+    # NOTE: to get proper type checking on `exclude_if`'s argument, we could use `_T` instead of `Any`. However,
+    # this requires (at least for pyright) adding an additional overload where `exclude_if` is required (otherwise
+    # `a: int = Field(default_factory=str)` results in a false negative).
+    exclude_if: Callable[[Any], bool] | None = _Unset,
     discriminator: str | types.Discriminator | None = _Unset,
     deprecated: Deprecated | str | bool | None = _Unset,
     json_schema_extra: JsonDict | Callable[[JsonDict], None] | None = _Unset,
@@ -1057,6 +1074,7 @@ def Field(  # No default set
     description: str | None = _Unset,
     examples: list[Any] | None = _Unset,
     exclude: bool | None = _Unset,
+    exclude_if: Callable[[Any], bool] | None = _Unset,
     discriminator: str | types.Discriminator | None = _Unset,
     deprecated: Deprecated | str | bool | None = _Unset,
     json_schema_extra: JsonDict | Callable[[JsonDict], None] | None = _Unset,
@@ -1096,6 +1114,7 @@ def Field(  # noqa: C901
     description: str | None = _Unset,
     examples: list[Any] | None = _Unset,
     exclude: bool | None = _Unset,
+    exclude_if: Callable[[Any], bool] | None = _Unset,
     discriminator: str | types.Discriminator | None = _Unset,
     deprecated: Deprecated | str | bool | None = _Unset,
     json_schema_extra: JsonDict | Callable[[JsonDict], None] | None = _Unset,
@@ -1147,6 +1166,7 @@ def Field(  # noqa: C901
         description: Human-readable description.
         examples: Example values for this field.
         exclude: Whether to exclude the field from the model serialization.
+        exclude_if: A callable that determines whether to exclude a field during serialization based on its value.
         discriminator: Field name or Discriminator for discriminating the type in a tagged union.
         deprecated: A deprecation message, an instance of `warnings.deprecated` or the `typing_extensions.deprecated` backport,
             or a boolean. If `True`, a default deprecation message will be emitted when accessing the field.
@@ -1264,6 +1284,7 @@ def Field(  # noqa: C901
         description=description,
         examples=examples,
         exclude=exclude,
+        exclude_if=exclude_if,
         discriminator=discriminator,
         deprecated=deprecated,
         json_schema_extra=json_schema_extra,

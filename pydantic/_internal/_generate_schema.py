@@ -1209,6 +1209,7 @@ class GenerateSchema:
             serialization_exclude=common_field['serialization_exclude'],
             validation_alias=common_field['validation_alias'],
             serialization_alias=common_field['serialization_alias'],
+            serialization_exclude_if=field_info.exclude_if,
             metadata=common_field['metadata'],
         )
 
@@ -1225,6 +1226,7 @@ class GenerateSchema:
             serialization_exclude=common_field['serialization_exclude'],
             validation_alias=common_field['validation_alias'],
             serialization_alias=common_field['serialization_alias'],
+            serialization_exclude_if=field_info.exclude_if,
             frozen=common_field['frozen'],
             metadata=common_field['metadata'],
         )
@@ -1246,6 +1248,7 @@ class GenerateSchema:
             serialization_exclude=common_field['serialization_exclude'],
             validation_alias=common_field['validation_alias'],
             serialization_alias=common_field['serialization_alias'],
+            serialization_exclude_if=field_info.exclude_if,
             frozen=common_field['frozen'],
             metadata=common_field['metadata'],
         )
