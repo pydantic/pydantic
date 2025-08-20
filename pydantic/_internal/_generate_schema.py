@@ -62,7 +62,12 @@ from ..errors import PydanticSchemaGenerationError, PydanticUndefinedAnnotation,
 from ..functional_validators import AfterValidator, BeforeValidator, FieldValidatorModes, PlainValidator, WrapValidator
 from ..json_schema import JsonSchemaValue
 from ..version import version_short
-from ..warnings import ArbitraryTypeWarning, PydanticDeprecatedSince20, UnsupportedFieldAttributeWarning
+from ..warnings import (
+    ArbitraryTypeWarning,
+    PydanticDeprecatedSince20,
+    TypedDictExtraConfigWarning,
+    UnsupportedFieldAttributeWarning,
+)
 from . import _decorators, _discriminated_union, _known_annotated_metadata, _repr, _typing_extra
 from ._config import ConfigWrapper, ConfigWrapperStack
 from ._core_metadata import CoreMetadata, update_core_metadata
@@ -1474,6 +1479,35 @@ class GenerateSchema:
                         UserWarning,
                     )
 
+                extra_behavior: core_schema.ExtraBehavior = 'ignore'
+                extras_schema: CoreSchema | None = None  # For 'allow', equivalent to `Any` - no validation performed.
+
+                # `__closed__` is `None` when not specified (equivalent to `False`):
+                is_closed = bool(getattr(typed_dict_cls, '__closed__', False))
+                extra_items = getattr(typed_dict_cls, '__extra_items__', typing_extensions.NoExtraItems)
+                if is_closed:
+                    extra_behavior = 'forbid'
+                    extras_schema = None
+                elif not typing_objects.is_noextraitems(extra_items):
+                    extra_behavior = 'allow'
+                    extras_schema = self.generate_schema(replace_types(extra_items, typevars_map))
+
+                if (config_extra := self._config_wrapper.extra) in ('allow', 'forbid'):
+                    if is_closed and config_extra == 'allow':
+                        warnings.warn(
+                            f"TypedDict class {typed_dict_cls.__qualname__!r} is closed, but 'extra' configuration "
+                            "is set to `'allow'`. The 'extra' configuration value will be ignored.",
+                            category=TypedDictExtraConfigWarning,
+                        )
+                    elif not typing_objects.is_noextraitems(extra_items) and config_extra == 'forbid':
+                        warnings.warn(
+                            f"TypedDict class {typed_dict_cls.__qualname__!r} allows extra items, but 'extra' configuration "
+                            "is set to `'forbid'`. The 'extra' configuration value will be ignored.",
+                            category=TypedDictExtraConfigWarning,
+                        )
+                    else:
+                        extra_behavior = config_extra
+
                 td_schema = core_schema.typed_dict_schema(
                     fields,
                     cls=typed_dict_cls,
@@ -1481,6 +1515,8 @@ class GenerateSchema:
                         self._computed_field_schema(d, decorators.field_serializers)
                         for d in decorators.computed_fields.values()
                     ],
+                    extra_behavior=extra_behavior,
+                    extras_schema=extras_schema,
                     ref=typed_dict_ref,
                     config=core_config,
                 )

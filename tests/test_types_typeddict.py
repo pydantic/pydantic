@@ -26,6 +26,7 @@ from pydantic._internal._decorators import get_attribute_from_bases
 from pydantic.functional_serializers import field_serializer, model_serializer
 from pydantic.functional_validators import field_validator, model_validator
 from pydantic.type_adapter import TypeAdapter
+from pydantic.warnings import TypedDictExtraConfigWarning
 
 from .conftest import Err
 
@@ -957,3 +958,111 @@ def test_typeddict_field_exclude() -> None:
     assert ta.dump_json(Foo(foo='bar', bar=1)).decode('utf-8') == '{"bar":1}'
     assert ta.dump_json(Foo(foo='bar', bar=1), exclude={'bar'}).decode('utf-8') == '{}'
     assert ta.dump_json(Foo(foo='bar', bar=2)).decode('utf-8') == '{}'
+
+
+def test_typeddict_extra_allow_serialization() -> None:
+    """https://github.com/pydantic/pydantic/issues/11136.
+
+    Seems like specifying `extra_behavior` in the core schema (which was done when implementing PEP 728)
+    was necessary to make this work.
+    """
+
+    @with_config(extra='allow')
+    class TD(TypedDict, closed=False):
+        name: str
+
+    class Model(BaseModel):
+        a: TD
+
+    m = Model.model_validate({'a': {'name': 'John Doe', 'extra': 'something'}})
+
+    assert m.model_dump() == {'a': {'name': 'John Doe', 'extra': 'something'}}
+
+
+def test_typeddict_closed() -> None:
+    class TD(TypedDict, closed=True):
+        f: int
+
+    ta = TypeAdapter(TD)
+
+    with pytest.raises(ValidationError):
+        ta.validate_python({'f': 1, 'extra': 1})
+
+    assert ta.json_schema() == {
+        'additionalProperties': False,
+        'properties': {'f': {'title': 'F', 'type': 'integer'}},
+        'required': ['f'],
+        'title': 'TD',
+        'type': 'object',
+    }
+
+
+def test_typeddict_extraitems_any() -> None:
+    class TD(TypedDict, extra_items=object):
+        f: int
+
+    ta = TypeAdapter(TD)
+
+    assert ta.validate_python({'f': 1, 'extra': 1}) == {'f': 1, 'extra': 1}
+
+    assert ta.json_schema() == {
+        'additionalProperties': True,
+        'properties': {'f': {'title': 'F', 'type': 'integer'}},
+        'required': ['f'],
+        'title': 'TD',
+        'type': 'object',
+    }
+
+
+def test_typeddict_extraitems_constrained() -> None:
+    class TD(TypedDict, extra_items=str):
+        f: int
+
+    ta = TypeAdapter(TD)
+
+    assert ta.validate_python({'f': 1, 'extra': 'test'}) == {'f': 1, 'extra': 'test'}
+
+    with pytest.raises(ValidationError) as exc:
+        ta.validate_python({'f': 1, 'extra': 1})
+
+    assert exc.value.errors()[0]['loc'] == ('extra',)
+
+    assert ta.json_schema() == {
+        'additionalProperties': {'type': 'string'},
+        'properties': {'f': {'title': 'F', 'type': 'integer'}},
+        'required': ['f'],
+        'title': 'TD',
+        'type': 'object',
+    }
+
+
+def test_typeddict_extraitems_generic() -> None:
+    T = TypeVar('T')
+
+    class TD(TypedDict, Generic[T], extra_items=T):
+        f: int
+
+    ta = TypeAdapter(TD[str])
+
+    assert ta.validate_python({'f': 1, 'extra': 'test'}) == {'f': 1, 'extra': 'test'}
+
+    with pytest.raises(ValidationError) as exc:
+        ta.validate_python({'f': 1, 'extra': 1})
+
+    assert exc.value.errors()[0]['loc'] == ('extra',)
+
+
+def test_typeddict_incompatible_extra_config_warning() -> None:
+    @with_config(extra='allow')
+    class TD1(TypedDict, closed=True):
+        f: int
+
+    with pytest.warns(TypedDictExtraConfigWarning):
+        TypeAdapter(TD1)
+
+    @with_config(extra='forbid')
+    class TD2(TypedDict, extra_items=object):
+        f: int
+
+    with pytest.warns(TypedDictExtraConfigWarning):
+        TypeAdapter(TD2)
