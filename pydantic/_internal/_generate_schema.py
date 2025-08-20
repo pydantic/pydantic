@@ -1473,6 +1473,26 @@ class GenerateSchema:
                         UserWarning,
                     )
 
+                extra_behavior: core_schema.ExtraBehavior
+                extras_schema: CoreSchema | None
+                if (config_extra := self._config_wrapper.extra) in ('allow', 'forbid'):
+                    # TODO raise deprecation warning?
+                    extra_behavior = config_extra
+                    extras_schema = None  # For 'allow', equivalent to `Any` - no validation performed.
+
+                # `__closed__` is `None` when not specified (equivalent to `False`):
+                is_closed = bool(getattr(typed_dict_cls, '__closed__', False))
+                extra_items = getattr(typed_dict_cls, '__extra_items__', typing_extensions.NoExtraItems)
+                if is_closed:
+                    extra_behavior = 'forbid'
+                    extras_schema = None
+                elif not typing_objects.is_noextraitems(extra_items):
+                    extra_behavior = 'allow'
+                    extras_schema = self.generate_schema(extra_items)
+                else:
+                    extra_behavior = 'ignore'
+                    extras_schema = None
+
                 td_schema = core_schema.typed_dict_schema(
                     fields,
                     cls=typed_dict_cls,
@@ -1480,6 +1500,8 @@ class GenerateSchema:
                         self._computed_field_schema(d, decorators.field_serializers)
                         for d in decorators.computed_fields.values()
                     ],
+                    extra_behavior=extra_behavior,
+                    extras_schema=extras_schema,
                     ref=typed_dict_ref,
                     config=core_config,
                 )
