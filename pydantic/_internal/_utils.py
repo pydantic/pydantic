@@ -8,17 +8,17 @@ from __future__ import annotations as _annotations
 import dataclasses
 import keyword
 import sys
-import typing
 import warnings
 import weakref
 from collections import OrderedDict, defaultdict, deque
-from collections.abc import Mapping
+from collections.abc import Callable, Iterable, Mapping
+from collections.abc import Set as AbstractSet
 from copy import deepcopy
 from functools import cached_property
 from inspect import Parameter
 from itertools import zip_longest
 from types import BuiltinFunctionType, CodeType, FunctionType, GeneratorType, LambdaType, ModuleType
-from typing import Any, Callable, Generic, TypeVar, overload
+from typing import TYPE_CHECKING, Any, Generic, TypeVar, overload
 
 from typing_extensions import TypeAlias, TypeGuard, deprecated
 
@@ -27,9 +27,9 @@ from pydantic import PydanticDeprecatedSince211
 from . import _repr, _typing_extra
 from ._import_utils import import_cached_base_model
 
-if typing.TYPE_CHECKING:
-    MappingIntStrAny: TypeAlias = 'typing.Mapping[int, Any] | typing.Mapping[str, Any]'
-    AbstractSetIntStr: TypeAlias = 'typing.AbstractSet[int] | typing.AbstractSet[str]'
+if TYPE_CHECKING:
+    MappingIntStrAny: TypeAlias = Mapping[int, Any] | Mapping[str, Any]
+    AbstractSetIntStr: TypeAlias = AbstractSet[int] | AbstractSet[str]
     from ..main import BaseModel
 
 
@@ -149,7 +149,7 @@ T = TypeVar('T')
 def unique_list(
     input_list: list[T] | tuple[T, ...],
     *,
-    name_factory: typing.Callable[[T], str] = str,
+    name_factory: Callable[[T], str] = str,
 ) -> list[T]:
     """Make a list unique while maintaining order.
     We update the list if another one with the same name is set
@@ -214,7 +214,7 @@ class ValueItems(_repr.Representation):
         normalized_items: dict[int | str, Any] = {}
         all_items = None
         for i, v in items.items():
-            if not (isinstance(v, typing.Mapping) or isinstance(v, typing.AbstractSet) or self.is_true(v)):
+            if not (isinstance(v, Mapping) or isinstance(v, AbstractSet) or self.is_true(v)):
                 raise TypeError(f'Unexpected type of exclude value for index "{i}" {v.__class__}')
             if i == '__all__':
                 all_items = self._coerce_value(v)
@@ -279,9 +279,9 @@ class ValueItems(_repr.Representation):
 
     @staticmethod
     def _coerce_items(items: AbstractSetIntStr | MappingIntStrAny) -> MappingIntStrAny:
-        if isinstance(items, typing.Mapping):
+        if isinstance(items, Mapping):
             pass
-        elif isinstance(items, typing.AbstractSet):
+        elif isinstance(items, AbstractSet):
             items = dict.fromkeys(items, ...)  # type: ignore
         else:
             class_name = getattr(items, '__class__', '???')
@@ -302,7 +302,7 @@ class ValueItems(_repr.Representation):
         return [(None, self._items)]
 
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
 
     def LazyClassAttribute(name: str, get_value: Callable[[], T]) -> T: ...
 
@@ -353,7 +353,7 @@ def smart_deepcopy(obj: Obj) -> Obj:
 _SENTINEL = object()
 
 
-def all_identical(left: typing.Iterable[Any], right: typing.Iterable[Any]) -> bool:
+def all_identical(left: Iterable[Any], right: Iterable[Any]) -> bool:
     """Check that the items of `left` are the same objects as those in `right`.
 
     >>> a, b = object(), object()
@@ -393,7 +393,7 @@ class SafeGetItemProxy:
     # https://github.com/python/mypy/issues/13713
     # https://github.com/python/typeshed/pull/8785
     # Since this is typing-only, hide it in a typing.TYPE_CHECKING block
-    if typing.TYPE_CHECKING:
+    if TYPE_CHECKING:
 
         def __contains__(self, key: str, /) -> bool:
             return self.wrapped.__contains__(key)

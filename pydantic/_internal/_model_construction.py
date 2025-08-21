@@ -2,7 +2,6 @@
 
 from __future__ import annotations as _annotations
 
-import builtins
 import operator
 import sys
 import typing
@@ -11,7 +10,7 @@ import weakref
 from abc import ABCMeta
 from functools import cache, partial, wraps
 from types import FunctionType
-from typing import Any, Callable, Generic, Literal, NoReturn, cast
+from typing import TYPE_CHECKING, Any, Callable, Generic, Literal, NoReturn, cast
 
 from pydantic_core import PydanticUndefined, SchemaSerializer
 from typing_extensions import TypeAliasType, dataclass_transform, deprecated, get_args, get_origin
@@ -37,15 +36,12 @@ from ._typing_extra import (
 )
 from ._utils import LazyClassAttribute, SafeGetItemProxy
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from ..fields import Field as PydanticModelField
     from ..fields import FieldInfo, ModelPrivateAttr
     from ..fields import PrivateAttr as PydanticModelPrivateAttr
     from ..main import BaseModel
 else:
-    # See PyCharm issues https://youtrack.jetbrains.com/issue/PY-21915
-    # and https://youtrack.jetbrains.com/issue/PY-51428
-    DeprecationWarning = PydanticDeprecatedSince20
     PydanticModelField = object()
     PydanticModelPrivateAttr = object()
 
@@ -275,7 +271,7 @@ class ModelMetaclass(ABCMeta):
             namespace.get('__annotations__', {}).clear()
             return super().__new__(mcs, cls_name, bases, namespace, **kwargs)
 
-    if not typing.TYPE_CHECKING:  # pragma: no branch
+    if not TYPE_CHECKING:  # pragma: no branch
         # We put `__getattr__` in a non-TYPE_CHECKING block because otherwise, mypy allows arbitrary attribute access
 
         def __getattr__(self, item: str) -> Any:
@@ -740,7 +736,7 @@ class _DeprecatedFieldDescriptor:
                 return self.wrapped_property.__get__(None, obj_type)
             raise AttributeError(self.field_name)
 
-        warnings.warn(self.msg, builtins.DeprecationWarning, stacklevel=2)
+        warnings.warn(self.msg, DeprecationWarning, stacklevel=2)
 
         if self.wrapped_property is not None:
             return self.wrapped_property.__get__(obj, obj_type)

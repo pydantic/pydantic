@@ -244,16 +244,14 @@ def field_serializer(
     In the below example, a field of type `set` is used to mitigate duplication. A `field_serializer` is used to serialize the data as a sorted list.
 
     ```python
-    from typing import Set
-
     from pydantic import BaseModel, field_serializer
 
     class StudentModel(BaseModel):
         name: str = 'Jane'
-        courses: Set[str]
+        courses: set[str]
 
         @field_serializer('courses', when_used='json')
-        def serialize_courses_in_order(self, courses: Set[str]):
+        def serialize_courses_in_order(self, courses: set[str]):
             return sorted(courses)
 
     student = StudentModel(courses={'Math', 'Chemistry', 'English'})
