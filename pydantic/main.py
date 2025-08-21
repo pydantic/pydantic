@@ -884,7 +884,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             origin = cls.__pydantic_generic_metadata__['origin'] or cls
             model_name = origin.model_parametrized_name(args)
             params = tuple(
-                {param: None for param in _generics.iter_contained_typevars(typevars_map.values())}
+                dict.fromkeys(_generics.iter_contained_typevars(typevars_map.values()))
             )  # use dict as ordered set
 
             with _generics.generic_recursion_self_type(origin, args) as maybe_self_type:
