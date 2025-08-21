@@ -3,8 +3,8 @@
 from __future__ import annotations as _annotations
 
 import types
-from collections.abc import Callable, Generator, Iterable
-from typing import TYPE_CHECKING, Any, ForwardRef
+from collections.abc import Callable, Collection, Generator, Iterable
+from typing import TYPE_CHECKING, Any, ForwardRef, cast
 
 import typing_extensions
 from typing_extensions import TypeAlias
@@ -33,8 +33,7 @@ class Representation:
     # `__rich_repr__` is used by [rich](https://rich.readthedocs.io/en/stable/pretty.html).
     # (this is not a docstring to avoid adding a docstring to classes which inherit from Representation)
 
-    # we don't want to use a type annotation here as it can break get_type_hints
-    __slots__ = ()  # type: Collection[str]
+    __slots__ = ()
 
     def __repr_args__(self) -> ReprArgs:
         """Returns the attributes to show in __str__, __repr__, and __pretty__ this is generally overridden.
@@ -43,7 +42,7 @@ class Representation:
         * name - value pairs, e.g.: `[('foo_name', 'foo'), ('bar_name', ['b', 'a', 'r'])]`
         * or, just values, e.g.: `[(None, 'foo'), (None, ['b', 'a', 'r'])]`
         """
-        attrs_names = self.__slots__
+        attrs_names = cast(Collection[str], self.__slots__)
         if not attrs_names and hasattr(self, '__dict__'):
             attrs_names = self.__dict__.keys()
         attrs = ((s, getattr(self, s)) for s in attrs_names)
