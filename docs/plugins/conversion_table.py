@@ -3,7 +3,7 @@ from __future__ import annotations as _annotations
 import collections
 import typing
 from collections import deque
-from collections.abc import Iterable, Mapping, Sequence, Callable
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
