@@ -1166,31 +1166,13 @@ except ValidationError as exc:
 This error is raised when the input value is not valid as an `Iterable`:
 
 ```python
-from typing import Iterable
-
-from pydantic import BaseModel, ValidationError
-
-
-class Model(BaseModel):
-    y: Iterable
-
-
-try:
-    Model(y=123)
-except ValidationError as exc:
-    print(repr(exc.errors()[0]['type']))
-    #> 'iterable_type'
-
-```
-
-```python
 from collections.abc import Iterable
 
 from pydantic import BaseModel, ValidationError
 
 
 class Model(BaseModel):
-    y: Iterable
+    y: Iterable[str]
 
 
 try:
@@ -1732,24 +1714,6 @@ except ValidationError as exc:
 ## `set_type`
 
 This error is raised when the value type is not valid for a `set` field:
-
-```python
-from typing import Set
-
-from pydantic import BaseModel, ValidationError
-
-
-class Model(BaseModel):
-    x: Set[int]
-
-
-try:
-    Model(x='test')
-except ValidationError as exc:
-    print(repr(exc.errors()[0]['type']))
-    #> 'set_type'
-
-```
 
 ```python
 from pydantic import BaseModel, ValidationError

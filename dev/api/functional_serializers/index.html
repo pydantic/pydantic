@@ -3883,16 +3883,14 @@ logic, and can modify the resulting value before returning it as the final outpu
 
         <p>Decorator that enables custom field serialization.</p>
 <p>In the below example, a field of type <code>set</code> is used to mitigate duplication. A <code>field_serializer</code> is used to serialize the data as a sorted list.</p>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Set</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">field_serializer</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">field_serializer</span>
 
 <span class="k">class</span><span class="w"> </span><span class="nc">StudentModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;Jane&#39;</span>
-    <span class="n">courses</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="n">courses</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
 
     <span class="nd">@field_serializer</span><span class="p">(</span><span class="s1">&#39;courses&#39;</span><span class="p">,</span> <span class="n">when_used</span><span class="o">=</span><span class="s1">&#39;json&#39;</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">serialize_courses_in_order</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">courses</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">serialize_courses_in_order</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">courses</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]):</span>
         <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">courses</span><span class="p">)</span>
 
 <span class="n">student</span> <span class="o">=</span> <span class="n">StudentModel</span><span class="p">(</span><span class="n">courses</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;Math&#39;</span><span class="p">,</span> <span class="s1">&#39;Chemistry&#39;</span><span class="p">,</span> <span class="s1">&#39;English&#39;</span><span class="p">})</span>
@@ -4098,9 +4096,7 @@ logic, and can modify the resulting value before returning it as the final outpu
 <span class="normal">293</span>
 <span class="normal">294</span>
 <span class="normal">295</span>
-<span class="normal">296</span>
-<span class="normal">297</span>
-<span class="normal">298</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">field_serializer</span><span class="p">(</span>
+<span class="normal">296</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">field_serializer</span><span class="p">(</span>
     <span class="o">*</span><span class="n">fields</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;plain&#39;</span><span class="p">,</span> <span class="s1">&#39;wrap&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;plain&#39;</span><span class="p">,</span>
     <span class="c1"># TODO PEP 747 (grep for &#39;return_type&#39; on the whole code base):</span>
@@ -4116,16 +4112,14 @@ logic, and can modify the resulting value before returning it as the final outpu
 <span class="sd">    In the below example, a field of type `set` is used to mitigate duplication. A `field_serializer` is used to serialize the data as a sorted list.</span>
 
 <span class="sd">    ```python</span>
-<span class="sd">    from typing import Set</span>
-
 <span class="sd">    from pydantic import BaseModel, field_serializer</span>
 
 <span class="sd">    class StudentModel(BaseModel):</span>
 <span class="sd">        name: str = &#39;Jane&#39;</span>
-<span class="sd">        courses: Set[str]</span>
+<span class="sd">        courses: set[str]</span>
 
 <span class="sd">        @field_serializer(&#39;courses&#39;, when_used=&#39;json&#39;)</span>
-<span class="sd">        def serialize_courses_in_order(self, courses: Set[str]):</span>
+<span class="sd">        def serialize_courses_in_order(self, courses: set[str]):</span>
 <span class="sd">            return sorted(courses)</span>
 
 <span class="sd">    student = StudentModel(courses={&#39;Math&#39;, &#39;Chemistry&#39;, &#39;English&#39;})</span>
@@ -4371,7 +4365,9 @@ logic, and can modify the resulting value before returning it as the final outpu
 
             <details class="quote">
               <summary>Source code in <code>pydantic/functional_serializers.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">347</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">345</span>
+<span class="normal">346</span>
+<span class="normal">347</span>
 <span class="normal">348</span>
 <span class="normal">349</span>
 <span class="normal">350</span>
@@ -4440,9 +4436,7 @@ logic, and can modify the resulting value before returning it as the final outpu
 <span class="normal">413</span>
 <span class="normal">414</span>
 <span class="normal">415</span>
-<span class="normal">416</span>
-<span class="normal">417</span>
-<span class="normal">418</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">model_serializer</span><span class="p">(</span>
+<span class="normal">416</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">model_serializer</span><span class="p">(</span>
     <span class="n">f</span><span class="p">:</span> <span class="n">_ModelPlainSerializerT</span> <span class="o">|</span> <span class="n">_ModelWrapSerializerT</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">/</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>

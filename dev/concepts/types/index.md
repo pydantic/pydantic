@@ -1008,7 +1008,8 @@ except ValidationError as e:
 The same idea can be applied to create generic container types, like a custom `Sequence` type:
 
 ```python
-from typing import Any, Sequence, TypeVar
+from collections.abc import Sequence
+from typing import Any, TypeVar
 
 from pydantic_core import ValidationError, core_schema
 from typing_extensions import get_args
@@ -1081,8 +1082,8 @@ except ValidationError as exc:
 ```
 
 ```python
-from typing import Any, TypeVar
 from collections.abc import Sequence
+from typing import Any, TypeVar
 
 from pydantic_core import ValidationError, core_schema
 from typing import get_args

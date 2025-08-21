@@ -537,30 +537,13 @@ This is intended for use when the provided value may be an iterable that shouldn
 Here is a simple example using typing.Sequence:
 
 ```python
-from typing import Sequence
-
-from pydantic import BaseModel
-
-
-class Model(BaseModel):
-    sequence_of_ints: Sequence[int] = None
-
-
-print(Model(sequence_of_ints=[1, 2, 3, 4]).sequence_of_ints)
-#> [1, 2, 3, 4]
-print(Model(sequence_of_ints=(1, 2, 3, 4)).sequence_of_ints)
-#> (1, 2, 3, 4)
-
-```
-
-```python
 from collections.abc import Sequence
 
 from pydantic import BaseModel
 
 
 class Model(BaseModel):
-    sequence_of_ints: Sequence[int] = None
+    sequence_of_ints: Sequence[int]
 
 
 print(Model(sequence_of_ints=[1, 2, 3, 4]).sequence_of_ints)
@@ -575,47 +558,6 @@ print(Model(sequence_of_ints=(1, 2, 3, 4)).sequence_of_ints)
 If you have a generator you want to validate, you can still use `Sequence` as described above. In that case, the generator will be consumed and stored on the model as a list and its values will be validated against the type parameter of the `Sequence` (e.g. `int` in `Sequence[int]`).
 
 However, if you have a generator that you *don't* want to be eagerly consumed (e.g. an infinite generator or a remote data loader), you can use a field of type Iterable:
-
-```python
-from typing import Iterable
-
-from pydantic import BaseModel
-
-
-class Model(BaseModel):
-    infinite: Iterable[int]
-
-
-def infinite_ints():
-    i = 0
-    while True:
-        yield i
-        i += 1
-
-
-m = Model(infinite=infinite_ints())
-print(m)
-"""
-infinite=ValidatorIterator(index=0, schema=Some(Int(IntValidator { strict: false })))
-"""
-
-for i in m.infinite:
-    print(i)
-    #> 0
-    #> 1
-    #> 2
-    #> 3
-    #> 4
-    #> 5
-    #> 6
-    #> 7
-    #> 8
-    #> 9
-    #> 10
-    if i == 10:
-        break
-
-```
 
 ```python
 from collections.abc import Iterable
@@ -663,39 +605,6 @@ Warning
 During initial validation, `Iterable` fields only perform a simple check that the provided argument is iterable. To prevent it from being consumed, no validation of the yielded values is performed eagerly.
 
 Though the yielded values are not validated eagerly, they are still validated when yielded, and will raise a `ValidationError` at yield time when appropriate:
-
-```python
-from typing import Iterable
-
-from pydantic import BaseModel, ValidationError
-
-
-class Model(BaseModel):
-    int_iterator: Iterable[int]
-
-
-def my_iterator():
-    yield 13
-    yield '27'
-    yield 'a'
-
-
-m = Model(int_iterator=my_iterator())
-print(next(m.int_iterator))
-#> 13
-print(next(m.int_iterator))
-#> 27
-try:
-    next(m.int_iterator)
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for ValidatorIterator
-    2
-      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='a', input_type=str]
-    """
-
-```
 
 ```python
 from collections.abc import Iterable
@@ -1219,7 +1128,8 @@ While instances of `str` are technically valid instances of the `Sequence[str]` 
 As a result, Pydantic raises a `ValidationError` if you attempt to pass a `str` or `bytes` instance into a field of type `Sequence[str]` or `Sequence[bytes]`:
 
 ```python
-from typing import Optional, Sequence
+from collections.abc import Sequence
+from typing import Optional
 
 from pydantic import BaseModel, ValidationError
 

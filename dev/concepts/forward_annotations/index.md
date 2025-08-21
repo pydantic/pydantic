@@ -118,9 +118,11 @@ except ValidationError as exc:
 Because this error is raised without actually exceeding the maximum recursion depth, you can catch and handle the raised ValidationError without needing to worry about the limited remaining recursion depth:
 
 ```python
+from __future__ import annotations
+
+from collections.abc import Generator
 from contextlib import contextmanager
 from dataclasses import field
-from typing import Iterator
 
 from pydantic import BaseModel, ValidationError, field_validator
 
@@ -131,7 +133,7 @@ def is_recursion_validation_error(exc: ValidationError) -> bool:
 
 
 @contextmanager
-def suppress_recursion_validation_error() -> Iterator[None]:
+def suppress_recursion_validation_error() -> Generator[None]:
     try:
         yield
     except ValidationError as exc:
@@ -141,61 +143,7 @@ def suppress_recursion_validation_error() -> Iterator[None]:
 
 class Node(BaseModel):
     id: int
-    children: list['Node'] = field(default_factory=list)
-
-    @field_validator('children', mode='wrap')
-    @classmethod
-    def drop_cyclic_references(cls, children, h):
-        try:
-            return h(children)
-        except ValidationError as exc:
-            if not (
-                is_recursion_validation_error(exc)
-                and isinstance(children, list)
-            ):
-                raise exc
-
-            value_without_cyclic_refs = []
-            for child in children:
-                with suppress_recursion_validation_error():
-                    value_without_cyclic_refs.extend(h([child]))
-            return h(value_without_cyclic_refs)
-
-
-# Create data with cyclic references representing the graph 1 -> 2 -> 3 -> 1
-node_data = {'id': 1, 'children': [{'id': 2, 'children': [{'id': 3}]}]}
-node_data['children'][0]['children'][0]['children'] = [node_data]
-
-print(Node.model_validate(node_data))
-#> id=1 children=[Node(id=2, children=[Node(id=3, children=[])])]
-
-```
-
-```python
-from contextlib import contextmanager
-from dataclasses import field
-from collections.abc import Iterator
-
-from pydantic import BaseModel, ValidationError, field_validator
-
-
-def is_recursion_validation_error(exc: ValidationError) -> bool:
-    errors = exc.errors()
-    return len(errors) == 1 and errors[0]['type'] == 'recursion_loop'
-
-
-@contextmanager
-def suppress_recursion_validation_error() -> Iterator[None]:
-    try:
-        yield
-    except ValidationError as exc:
-        if not is_recursion_validation_error(exc):
-            raise exc
-
-
-class Node(BaseModel):
-    id: int
-    children: list['Node'] = field(default_factory=list)
+    children: list[Node] = field(default_factory=list)
 
     @field_validator('children', mode='wrap')
     @classmethod
