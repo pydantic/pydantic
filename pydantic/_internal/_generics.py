@@ -255,12 +255,12 @@ def replace_types(type_: Any, type_map: Mapping[TypeVar, Any] | None) -> Any:
 
     Example:
         ```python
-        from typing import List, Union
+        from typing import Union
 
         from pydantic._internal._generics import replace_types
 
-        replace_types(tuple[str, Union[List[str], float]], {str: int})
-        #> tuple[int, Union[List[int], float]]
+        replace_types(tuple[str, Union[list[str], float]], {str: int})
+        #> tuple[int, Union[list[int], float]]
         ```
     """
     if not type_map:

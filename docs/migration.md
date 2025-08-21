@@ -515,7 +515,7 @@ Going back to the `Mapping` example, we promise the output will be a valid `Mapp
 plain `dict`:
 
 ```python
-from typing import Mapping
+from collections.abc import Mapping
 
 from pydantic import TypeAdapter
 
@@ -533,7 +533,8 @@ print(type(v))
 If you want the output type to be a specific type, consider annotating it as such or implementing a custom validator:
 
 ```python
-from typing import Annotated, Any, Mapping, TypeVar
+from collections.abc import Mapping
+from typing import Annotated, Any, TypeVar
 
 from pydantic import (
     TypeAdapter,

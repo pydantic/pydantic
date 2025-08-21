@@ -364,7 +364,7 @@ When generic parameters are provided, the appropriate validation is applied to t
 
 Handled the same as `deque` above.
 
-```python
+```python {lint="skip"}
 from typing import Deque, Optional
 
 from pydantic import BaseModel
@@ -389,7 +389,7 @@ When a generic parameter is provided, the appropriate validation is applied to a
 
 Handled the same as `set` above.
 
-```python
+```python {lint="skip"}
 from typing import Optional, Set
 
 from pydantic import BaseModel
@@ -417,7 +417,7 @@ When a generic parameter is provided, the appropriate validation is applied to a
 
 Handled the same as `frozenset` above.
 
-```python
+```python {lint="skip"}
 from typing import FrozenSet, Optional
 
 from pydantic import BaseModel
@@ -462,13 +462,13 @@ is provided, the post-validation value of a field of type [`typing.Iterable`][] 
 Here is a simple example using [`typing.Sequence`][]:
 
 ```python
-from typing import Sequence
+from collections.abc import Sequence
 
 from pydantic import BaseModel
 
 
 class Model(BaseModel):
-    sequence_of_ints: Sequence[int] = None
+    sequence_of_ints: Sequence[int]
 
 
 print(Model(sequence_of_ints=[1, 2, 3, 4]).sequence_of_ints)
@@ -487,7 +487,7 @@ However, if you have a generator that you *don't* want to be eagerly consumed (e
 generator or a remote data loader), you can use a field of type [`Iterable`][typing.Iterable]:
 
 ```python
-from typing import Iterable
+from collections.abc import Iterable
 
 from pydantic import BaseModel
 
@@ -534,7 +534,7 @@ Though the yielded values are not validated eagerly, they are still validated wh
 `ValidationError` at yield time when appropriate:
 
 ```python
-from typing import Iterable
+from collections.abc import Iterable
 
 from pydantic import BaseModel, ValidationError
 
@@ -877,7 +877,8 @@ All other types cause an error.
     `Sequence[str]` or `Sequence[bytes]`:
 
 ```python
-from typing import Optional, Sequence
+from collections.abc import Sequence
+from typing import Optional
 
 from pydantic import BaseModel, ValidationError
 
