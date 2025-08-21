@@ -61,11 +61,6 @@ if TYPE_CHECKING:
         @classmethod
         def __pydantic_fields_complete__(cls) -> bool: ...
 
-else:
-    # See PyCharm issues https://youtrack.jetbrains.com/issue/PY-21915
-    # and https://youtrack.jetbrains.com/issue/PY-51428
-    DeprecationWarning = PydanticDeprecatedSince20
-
 
 def set_dataclass_fields(
     cls: type[StandardDataclass],
@@ -138,7 +133,8 @@ def complete_dataclass(
 
     if hasattr(cls, '__post_init_post_parse__'):
         warnings.warn(
-            'Support for `__post_init_post_parse__` has been dropped, the method will not be called', DeprecationWarning
+            'Support for `__post_init_post_parse__` has been dropped, the method will not be called',
+            PydanticDeprecatedSince20,
         )
 
     typevars_map = get_standard_typevars_map(cls)

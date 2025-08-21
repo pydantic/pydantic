@@ -64,10 +64,7 @@ if TYPE_CHECKING:
     from ._internal._utils import AbstractSetIntStr, MappingIntStrAny
     from .deprecated.parse import Protocol as DeprecatedParseProtocol
     from .fields import ComputedFieldInfo, FieldInfo, ModelPrivateAttr
-else:
-    # See PyCharm issues https://youtrack.jetbrains.com/issue/PY-21915
-    # and https://youtrack.jetbrains.com/issue/PY-51428
-    DeprecationWarning = PydanticDeprecatedSince20
+
 
 __all__ = 'BaseModel', 'create_model'
 

@@ -2,7 +2,6 @@
 
 from __future__ import annotations as _annotations
 
-import builtins
 import operator
 import sys
 import typing
@@ -43,9 +42,6 @@ if TYPE_CHECKING:
     from ..fields import PrivateAttr as PydanticModelPrivateAttr
     from ..main import BaseModel
 else:
-    # See PyCharm issues https://youtrack.jetbrains.com/issue/PY-21915
-    # and https://youtrack.jetbrains.com/issue/PY-51428
-    DeprecationWarning = PydanticDeprecatedSince20
     PydanticModelField = object()
     PydanticModelPrivateAttr = object()
 
@@ -740,7 +736,7 @@ class _DeprecatedFieldDescriptor:
                 return self.wrapped_property.__get__(None, obj_type)
             raise AttributeError(self.field_name)
 
-        warnings.warn(self.msg, builtins.DeprecationWarning, stacklevel=2)
+        warnings.warn(self.msg, DeprecationWarning, stacklevel=2)
 
         if self.wrapped_property is not None:
             return self.wrapped_property.__get__(obj, obj_type)
