@@ -5,12 +5,11 @@ from __future__ import annotations as _annotations
 import copy
 import dataclasses
 import sys
-import typing
 import warnings
 from collections.abc import Generator
 from contextlib import contextmanager
 from functools import partial
-from typing import Any, ClassVar, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Protocol, cast
 
 from pydantic_core import (
     ArgsKwargs,
@@ -33,12 +32,12 @@ from ._namespace_utils import NsResolver
 from ._signature import generate_pydantic_signature
 from ._utils import LazyClassAttribute
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from _typeshed import DataclassInstance as StandardDataclass
 
     from ..config import ConfigDict
 
-    class PydanticDataclass(StandardDataclass, typing.Protocol):
+    class PydanticDataclass(StandardDataclass, Protocol):
         """A protocol containing attributes only available once a class has been decorated as a Pydantic dataclass.
 
         Attributes:
@@ -184,7 +183,7 @@ def complete_dataclass(
 
     # We are about to set all the remaining required properties expected for this cast;
     # __pydantic_decorators__ and __pydantic_fields__ should already be set
-    cls = typing.cast('type[PydanticDataclass]', cls)
+    cls = cast('type[PydanticDataclass]', cls)
 
     cls.__pydantic_core_schema__ = schema
     cls.__pydantic_validator__ = create_schema_validator(

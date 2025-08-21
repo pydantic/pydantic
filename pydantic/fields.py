@@ -4,13 +4,13 @@ from __future__ import annotations as _annotations
 
 import dataclasses
 import inspect
+import re
 import sys
-import typing
 from collections.abc import Callable, Mapping
 from copy import copy
 from dataclasses import Field as DataclassField
 from functools import cached_property
-from typing import Annotated, Any, ClassVar, Literal, TypeVar, cast, final, overload
+from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Literal, TypedDict, TypeVar, cast, final, overload
 from warnings import warn
 
 import annotated_types
@@ -29,7 +29,7 @@ from .errors import PydanticForbiddenQualifier, PydanticUserError
 from .json_schema import PydanticJsonSchemaWarning
 from .warnings import PydanticDeprecatedSince20
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from ._internal._config import ConfigWrapper
     from ._internal._repr import ReprArgs
 else:
@@ -50,7 +50,7 @@ else:
     Deprecated: TypeAlias = deprecated
 
 
-class _FromFieldInfoInputs(typing_extensions.TypedDict, total=False):
+class _FromFieldInfoInputs(TypedDict, total=False):
     """This class exists solely to add type checking for the `**kwargs` in `FieldInfo.from_field`."""
 
     # TODO PEP 747: use TypeForm:
@@ -74,7 +74,7 @@ class _FromFieldInfoInputs(typing_extensions.TypedDict, total=False):
     strict: bool | None
     min_length: int | None
     max_length: int | None
-    pattern: str | typing.Pattern[str] | None
+    pattern: str | re.Pattern[str] | None
     allow_inf_nan: bool | None
     max_digits: int | None
     decimal_places: int | None
@@ -194,7 +194,7 @@ class FieldInfo(_repr.Representation):
 
     # used to convert kwargs to metadata/constraints,
     # None has a special meaning - these items are collected into a `PydanticGeneralMetadata`
-    metadata_lookup: ClassVar[dict[str, typing.Callable[[Any], Any] | None]] = {
+    metadata_lookup: ClassVar[dict[str, Callable[[Any], Any] | None]] = {
         'strict': types.Strict,
         'gt': annotated_types.Gt,
         'ge': annotated_types.Ge,
@@ -811,7 +811,7 @@ class FieldInfo(_repr.Representation):
                     yield s, value
 
 
-class _EmptyKwargs(typing_extensions.TypedDict):
+class _EmptyKwargs(TypedDict):
     """This class exists solely to ensure that type checking warns about passing `**extra` in `Field`."""
 
 
@@ -879,7 +879,7 @@ def Field(
     init: bool | None = _Unset,
     init_var: bool | None = _Unset,
     kw_only: bool | None = _Unset,
-    pattern: str | typing.Pattern[str] | None = _Unset,
+    pattern: str | re.Pattern[str] | None = _Unset,
     strict: bool | None = _Unset,
     coerce_numbers_to_str: bool | None = _Unset,
     gt: annotated_types.SupportsGt | None = _Unset,
@@ -919,7 +919,7 @@ def Field(
     init: bool | None = _Unset,
     init_var: bool | None = _Unset,
     kw_only: bool | None = _Unset,
-    pattern: str | typing.Pattern[str] | None = _Unset,
+    pattern: str | re.Pattern[str] | None = _Unset,
     strict: bool | None = _Unset,
     coerce_numbers_to_str: bool | None = _Unset,
     gt: annotated_types.SupportsGt | None = _Unset,
@@ -962,7 +962,7 @@ def Field(
     init: bool | None = _Unset,
     init_var: bool | None = _Unset,
     kw_only: bool | None = _Unset,
-    pattern: str | typing.Pattern[str] | None = _Unset,
+    pattern: str | re.Pattern[str] | None = _Unset,
     strict: bool | None = _Unset,
     coerce_numbers_to_str: bool | None = _Unset,
     gt: annotated_types.SupportsGt | None = _Unset,
@@ -1002,7 +1002,7 @@ def Field(  # pyright: ignore[reportOverlappingOverload]
     init: bool | None = _Unset,
     init_var: bool | None = _Unset,
     kw_only: bool | None = _Unset,
-    pattern: str | typing.Pattern[str] | None = _Unset,
+    pattern: str | re.Pattern[str] | None = _Unset,
     strict: bool | None = _Unset,
     coerce_numbers_to_str: bool | None = _Unset,
     gt: annotated_types.SupportsGt | None = _Unset,
@@ -1045,7 +1045,7 @@ def Field(
     init: bool | None = _Unset,
     init_var: bool | None = _Unset,
     kw_only: bool | None = _Unset,
-    pattern: str | typing.Pattern[str] | None = _Unset,
+    pattern: str | re.Pattern[str] | None = _Unset,
     strict: bool | None = _Unset,
     coerce_numbers_to_str: bool | None = _Unset,
     gt: annotated_types.SupportsGt | None = _Unset,
@@ -1084,7 +1084,7 @@ def Field(  # No default set
     init: bool | None = _Unset,
     init_var: bool | None = _Unset,
     kw_only: bool | None = _Unset,
-    pattern: str | typing.Pattern[str] | None = _Unset,
+    pattern: str | re.Pattern[str] | None = _Unset,
     strict: bool | None = _Unset,
     coerce_numbers_to_str: bool | None = _Unset,
     gt: annotated_types.SupportsGt | None = _Unset,
@@ -1124,7 +1124,7 @@ def Field(  # noqa: C901
     init: bool | None = _Unset,
     init_var: bool | None = _Unset,
     kw_only: bool | None = _Unset,
-    pattern: str | typing.Pattern[str] | None = _Unset,
+    pattern: str | re.Pattern[str] | None = _Unset,
     strict: bool | None = _Unset,
     coerce_numbers_to_str: bool | None = _Unset,
     gt: annotated_types.SupportsGt | None = _Unset,
@@ -1331,16 +1331,14 @@ class ModelPrivateAttr(_repr.Representation):
 
     __slots__ = ('default', 'default_factory')
 
-    def __init__(
-        self, default: Any = PydanticUndefined, *, default_factory: typing.Callable[[], Any] | None = None
-    ) -> None:
+    def __init__(self, default: Any = PydanticUndefined, *, default_factory: Callable[[], Any] | None = None) -> None:
         if default is Ellipsis:
             self.default = PydanticUndefined
         else:
             self.default = default
         self.default_factory = default_factory
 
-    if not typing.TYPE_CHECKING:
+    if not TYPE_CHECKING:
         # We put `__getattr__` in a non-TYPE_CHECKING block because otherwise, mypy allows arbitrary attribute access
 
         def __getattr__(self, item: str) -> Any:
@@ -1532,27 +1530,27 @@ def _wrapped_property_is_private(property_: cached_property | property) -> bool:
 
 # this should really be `property[T], cached_property[T]` but property is not generic unlike cached_property
 # See https://github.com/python/typing/issues/985 and linked issues
-PropertyT = typing.TypeVar('PropertyT')
+PropertyT = TypeVar('PropertyT')
 
 
-@typing.overload
+@overload
 def computed_field(func: PropertyT, /) -> PropertyT: ...
 
 
-@typing.overload
+@overload
 def computed_field(
     *,
     alias: str | None = None,
     alias_priority: int | None = None,
     title: str | None = None,
-    field_title_generator: typing.Callable[[str, ComputedFieldInfo], str] | None = None,
+    field_title_generator: Callable[[str, ComputedFieldInfo], str] | None = None,
     description: str | None = None,
     deprecated: Deprecated | str | bool | None = None,
     examples: list[Any] | None = None,
-    json_schema_extra: JsonDict | typing.Callable[[JsonDict], None] | None = None,
+    json_schema_extra: JsonDict | Callable[[JsonDict], None] | None = None,
     repr: bool = True,
     return_type: Any = PydanticUndefined,
-) -> typing.Callable[[PropertyT], PropertyT]: ...
+) -> Callable[[PropertyT], PropertyT]: ...
 
 
 def computed_field(
@@ -1562,14 +1560,14 @@ def computed_field(
     alias: str | None = None,
     alias_priority: int | None = None,
     title: str | None = None,
-    field_title_generator: typing.Callable[[str, ComputedFieldInfo], str] | None = None,
+    field_title_generator: Callable[[str, ComputedFieldInfo], str] | None = None,
     description: str | None = None,
     deprecated: Deprecated | str | bool | None = None,
     examples: list[Any] | None = None,
-    json_schema_extra: JsonDict | typing.Callable[[JsonDict], None] | None = None,
+    json_schema_extra: JsonDict | Callable[[JsonDict], None] | None = None,
     repr: bool | None = None,
     return_type: Any = PydanticUndefined,
-) -> PropertyT | typing.Callable[[PropertyT], PropertyT]:
+) -> PropertyT | Callable[[PropertyT], PropertyT]:
     """!!! abstract "Usage Documentation"
         [The `computed_field` decorator](../concepts/fields.md#the-computed_field-decorator)
 

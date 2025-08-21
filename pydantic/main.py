@@ -9,7 +9,6 @@ from __future__ import annotations as _annotations
 import operator
 import sys
 import types
-import typing
 import warnings
 from collections.abc import Generator, Mapping
 from copy import copy, deepcopy
@@ -20,6 +19,7 @@ from typing import (
     Callable,
     ClassVar,
     Dict,
+    Generic,
     Literal,
     TypeVar,
     Union,
@@ -577,7 +577,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         Raises:
             TypeError: Raised when trying to generate concrete names for non-generic models.
         """
-        if not issubclass(cls, typing.Generic):
+        if not issubclass(cls, Generic):
             raise TypeError('Concrete names should only be generated for generic models.')
 
         # Any strings received should represent forward references, so we handle them specially below.
@@ -859,7 +859,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             raise TypeError('Type parameters should be placed on typing.Generic, not BaseModel')
         if not hasattr(cls, '__parameters__'):
             raise TypeError(f'{cls} cannot be parametrized because it does not inherit from typing.Generic')
-        if not cls.__pydantic_generic_metadata__['parameters'] and typing.Generic not in cls.__bases__:
+        if not cls.__pydantic_generic_metadata__['parameters'] and Generic not in cls.__bases__:
             raise TypeError(f'{cls} is not a generic class')
 
         if not isinstance(typevar_values, tuple):

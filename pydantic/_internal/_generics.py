@@ -11,7 +11,7 @@ from contextvars import ContextVar
 from functools import reduce
 from itertools import zip_longest
 from types import prepare_class
-from typing import TYPE_CHECKING, Annotated, Any, TypeVar
+from typing import TYPE_CHECKING, Annotated, Any, TypedDict, TypeVar, cast
 from weakref import WeakValueDictionary
 
 import typing_extensions
@@ -96,7 +96,7 @@ else:
 _GENERIC_TYPES_CACHE: ContextVar[GenericTypesCache | None] = ContextVar('_GENERIC_TYPES_CACHE', default=None)
 
 
-class PydanticGenericMetadata(typing_extensions.TypedDict):
+class PydanticGenericMetadata(TypedDict):
     origin: type[BaseModel] | None  # analogous to typing._GenericAlias.__origin__
     args: tuple[Any, ...]  # analogous to typing._GenericAlias.__args__
     parameters: tuple[TypeVar, ...]  # analogous to typing.Generic.__parameters__
@@ -372,7 +372,7 @@ def map_generic_model_arguments(cls: type[BaseModel], args: tuple[Any, ...]) -> 
             raise TypeError(f'Too many arguments for {cls}; actual {len(args)}, expected {expected_len}')
 
         if argument is _missing:
-            param = typing.cast(TypeVar, parameter)
+            param = cast(TypeVar, parameter)
             try:
                 has_default = param.has_default()
             except AttributeError:
@@ -380,13 +380,13 @@ def map_generic_model_arguments(cls: type[BaseModel], args: tuple[Any, ...]) -> 
                 has_default = False
             if has_default:
                 # The default might refer to other type parameters. For an example, see:
-                # https://typing.readthedocs.io/en/latest/spec/generics.html#type-parameters-as-parameters-to-generics
+                # https://typing.python.org/en/latest/spec/generics.html#type-parameters-as-parameters-to-generics
                 typevars_map[param] = replace_types(param.__default__, typevars_map)
             else:
                 expected_len -= sum(hasattr(p, 'has_default') and p.has_default() for p in parameters)
                 raise TypeError(f'Too few arguments for {cls}; actual {len(args)}, expected at least {expected_len}')
         else:
-            param = typing.cast(TypeVar, parameter)
+            param = cast(TypeVar, parameter)
             typevars_map[param] = argument
 
     return typevars_map
