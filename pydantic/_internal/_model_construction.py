@@ -276,7 +276,6 @@ class ModelMetaclass(ABCMeta):
 
         def __getattr__(self, item: str) -> Any:
             """This is necessary to keep attribute access working for class attribute access."""
-
             # Access private model attributes
             private_attributes = self.__dict__.get('__private_attributes__')
             if private_attributes and item in private_attributes:
