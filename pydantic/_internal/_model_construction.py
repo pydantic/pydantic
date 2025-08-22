@@ -276,9 +276,22 @@ class ModelMetaclass(ABCMeta):
 
         def __getattr__(self, item: str) -> Any:
             """This is necessary to keep attribute access working for class attribute access."""
+
+            # Access private model attributes
             private_attributes = self.__dict__.get('__private_attributes__')
             if private_attributes and item in private_attributes:
                 return private_attributes[item]
+
+            # Access public model fields
+            pydantic_fields = self.__dict__.get('__pydantic_fields__')
+            if pydantic_fields and item in pydantic_fields:
+                return pydantic_fields[item]
+
+            # Access public model computed fields
+            pydantic_computed_fields = self.__dict__.get('__pydantic_computed_fields__')
+            if pydantic_computed_fields and item in pydantic_computed_fields:
+                return pydantic_computed_fields[item]
+
             raise AttributeError(item)
 
     @classmethod
