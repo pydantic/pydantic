@@ -5590,7 +5590,7 @@ def test_base64(field_type, input_data, expected_value, serialized_data):
                 'type': 'string',
             },
             'base64_value_or_none': {
-                'anyOf': [{'type': 'string', 'format': 'base64'}, {'type': 'null'}],
+                'oneOf': [{'type': 'string', 'format': 'base64'}, {'type': 'null'}],
                 'default': None,
                 'title': 'Base64 Value Or None',
             },
@@ -5683,7 +5683,7 @@ def test_base64url(field_type, input_data, expected_value, serialized_data):
                 'type': 'string',
             },
             'base64url_value_or_none': {
-                'anyOf': [{'type': 'string', 'format': 'base64url'}, {'type': 'null'}],
+                'oneOf': [{'type': 'string', 'format': 'base64url'}, {'type': 'null'}],
                 'default': None,
                 'title': 'Base64Url Value Or None',
             },
