@@ -266,10 +266,21 @@ def dataclass(
             )
 
         if config_wrapper.validate_assignment:
+            original_setattr = cls.__setattr__
 
             @functools.wraps(cls.__setattr__)
-            def validated_setattr(instance: Any, field: str, value: str, /) -> None:
-                type(instance).__pydantic_validator__.validate_assignment(instance, field, value)
+            def validated_setattr(instance: PydanticDataclass, name: str, value: Any, /) -> None:
+                if frozen_:
+                    return original_setattr(instance, name, value)  # pyright: ignore[reportCallIssue]
+                inst_cls = type(instance)
+                attr = getattr(inst_cls, name, None)
+
+                if isinstance(attr, property):
+                    attr.__set__(instance, value)
+                elif isinstance(attr, functools.cached_property):
+                    instance.__dict__.__setitem__(name, value)
+                else:
+                    inst_cls.__pydantic_validator__.validate_assignment(instance, name, value)
 
             cls.__setattr__ = validated_setattr.__get__(None, cls)  # type: ignore
 
