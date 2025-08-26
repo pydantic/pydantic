@@ -19,11 +19,6 @@ from ..config import ConfigDict, ExtraValues, JsonDict, JsonEncoder, JsonSchemaE
 from ..errors import PydanticUserError
 from ..warnings import PydanticDeprecatedSince20, PydanticDeprecatedSince210
 
-if not TYPE_CHECKING:
-    # See PyCharm issues https://youtrack.jetbrains.com/issue/PY-21915
-    # and https://youtrack.jetbrains.com/issue/PY-51428
-    DeprecationWarning = PydanticDeprecatedSince20
-
 if TYPE_CHECKING:
     from .._internal._schema_generation_shared import GenerateSchema
     from ..fields import ComputedFieldInfo, FieldInfo
@@ -332,7 +327,7 @@ def prepare_config(config: ConfigDict | dict[str, Any] | type[Any] | None) -> Co
         return ConfigDict()
 
     if not isinstance(config, dict):
-        warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning, stacklevel=4)
+        warnings.warn(DEPRECATION_MESSAGE, PydanticDeprecatedSince20, stacklevel=4)
         config = {k: getattr(config, k) for k in dir(config) if not k.startswith('__')}
 
     config_dict = cast(ConfigDict, config)

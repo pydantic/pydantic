@@ -92,9 +92,11 @@ handle the raised [`ValidationError`][pydantic_core.ValidationError] without nee
 remaining recursion depth:
 
 ```python
+from __future__ import annotations
+
+from collections.abc import Generator
 from contextlib import contextmanager
 from dataclasses import field
-from typing import Iterator
 
 from pydantic import BaseModel, ValidationError, field_validator
 
@@ -105,7 +107,7 @@ def is_recursion_validation_error(exc: ValidationError) -> bool:
 
 
 @contextmanager
-def suppress_recursion_validation_error() -> Iterator[None]:
+def suppress_recursion_validation_error() -> Generator[None]:
     try:
         yield
     except ValidationError as exc:
@@ -115,7 +117,7 @@ def suppress_recursion_validation_error() -> Iterator[None]:
 
 class Node(BaseModel):
     id: int
-    children: list['Node'] = field(default_factory=list)
+    children: list[Node] = field(default_factory=list)
 
     @field_validator('children', mode='wrap')
     @classmethod

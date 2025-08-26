@@ -822,8 +822,9 @@ The process for `Annotated` metadata is much the same except that you can genera
 Pydantic handle generating the schema.
 
 ```python
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Annotated, Any, Sequence
+from typing import Annotated, Any
 
 from pydantic_core import core_schema
 

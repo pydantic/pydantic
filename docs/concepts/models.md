@@ -789,7 +789,7 @@ Here is an example using a generic Pydantic model to create an easily-reused HTT
 
 === "Python 3.12 and above (new syntax)"
 
-    ```python {requires="3.12" upgrade="skip"}
+    ```python {requires="3.12" upgrade="skip" lint="skip"}
     from pydantic import BaseModel, ValidationError
 
 

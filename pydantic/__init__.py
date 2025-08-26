@@ -1,11 +1,11 @@
-import typing
 from importlib import import_module
+from typing import TYPE_CHECKING
 from warnings import warn
 
 from ._migration import getattr_migration
 from .version import VERSION
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     # import of virtually everything is supported via `__getattr__` below,
     # but we need them here for type checking and IDE support
     import pydantic_core
