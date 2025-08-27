@@ -326,6 +326,59 @@ This can be useful if you want to use a type annotation for documentation/IDE/ty
 
 Because this converts the validation schema to `any_schema`, subsequent annotation-applied transformations may not have the expected effects. Therefore, when used, this annotation should generally be the final annotation applied to a type.
 
+## ValidateAs
+
+```python
+ValidateAs(
+    from_type: type[_FromTypeT],
+    /,
+    instantiation_hook: Callable[[_FromTypeT], Any],
+)
+
+```
+
+A helper class to validate a custom type from a type that is natively supported by Pydantic.
+
+Parameters:
+
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `from_type` | `type[_FromTypeT]` | The type natively supported by Pydantic to use to perform validation. | *required* | | `instantiation_hook` | `Callable[[_FromTypeT], Any]` | A callable taking the validated type as an argument, and returning the populated custom type. | *required* |
+
+Example
+
+```python
+from typing import Annotated
+
+from pydantic import BaseModel, TypeAdapter, ValidateAs
+
+class MyCls:
+    def __init__(self, a: int) -> None:
+        self.a = a
+
+    def __repr__(self) -> str:
+        return f"MyCls(a={self.a})"
+
+class Model(BaseModel):
+    a: int
+
+
+ta = TypeAdapter(
+    Annotated[MyCls, ValidateAs(Model, lambda v: MyCls(a=v.a))]
+)
+
+print(ta.validate_python({'a': 1}))
+#> MyCls(a=1)
+
+```
+
+Source code in `pydantic/functional_validators.py`
+
+```python
+def __init__(self, from_type: type[_FromTypeT], /, instantiation_hook: Callable[[_FromTypeT], Any]) -> None:
+    self.from_type = from_type
+    self.instantiation_hook = instantiation_hook
+
+```
+
 ## field_validator
 
 ```python
