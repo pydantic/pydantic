@@ -822,7 +822,7 @@ Pydantic provides a few special utilities that can be used to customize validati
 
 
     ta = TypeAdapter(
-        Annotated[MyCls, ValidateAs(ValModel, instantiation_hook=lambda v: MyCls(a=v.a))]
+        Annotated[MyCls, ValidateAs(ValModel, lambda v: MyCls(a=v.a))]
     )
 
     print(ta.validate_python({'a': 1}))
