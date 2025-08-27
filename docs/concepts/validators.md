@@ -803,6 +803,33 @@ Pydantic provides a few special utilities that can be used to customize validati
     1. Note that the validation of the second item is skipped. If it has the wrong type it will emit a
        warning during serialization.
 
+* [`ValidateAs`][pydantic.functional_validators.ValidateAs] can be used to validate an custom type from a
+  type natively supported by Pydantic. This is particularly useful when using custom types with multiple fields.
+
+    ```python {lint="skip"}
+    from typing import Annotated
+
+    from pydantic import BaseModel, TypeAdapter, ValidateAs
+
+    class MyCls:
+        def __init__(self, a: int) -> None:
+            self.a = a
+
+        def __repr__(self) -> str:
+            return f"MyCls(a={self.a})"
+
+    class ValModel(BaseModel):
+        a: int
+
+
+    ta = TypeAdapter(
+        Annotated[MyCls, ValidateAs(ValModel, lambda v: MyCls(a=v.a))]
+    )
+
+    print(ta.validate_python({'a': 1}))
+    #> MyCls(a=1)
+    ```
+
 * [`PydanticUseDefault`][pydantic_core.PydanticUseDefault] can be used to notify Pydantic that the default value
   should be used.
 
