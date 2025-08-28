@@ -351,3 +351,12 @@ class Model5(BaseModel):
     my_field: str = Field(alias='my_alias')
 
 m5 = Model5(my_field='foo')
+
+
+class Sample(BaseModel):
+    foo: str
+    bar: Optional[str] = Field(description='optional')
+    zoo: Any
+
+
+Sample(foo='hello world')

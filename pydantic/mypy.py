@@ -5,7 +5,7 @@ from __future__ import annotations
 import sys
 from collections.abc import Iterator
 from configparser import ConfigParser
-from typing import Any, Callable
+from typing import Any, Callable, Optional
 
 from mypy.errorcodes import ErrorCode
 from mypy.expandtype import expand_type, expand_type_by_instance
@@ -24,6 +24,7 @@ from mypy.nodes import (
     ClassDef,
     Context,
     Decorator,
+    ProperType,
     DictExpr,
     EllipsisExpr,
     Expression,
@@ -1025,8 +1026,27 @@ class PydanticModelTransformer:
                 if name == 'default_factory':
                     return not (isinstance(arg, NameExpr) and arg.fullname == 'builtins.None')
             return False
+        # In this case, default and default_factory are not specified, so we need to look at the annotation
+        value_type = get_proper_type(stmt.type)
+        return not PydanticModelTransformer.type_has_implicit_default(value_type)
         # Has no default if the "default value" is Ellipsis (i.e., `field_name: Annotation = ...`)
         return not isinstance(expr, EllipsisExpr)
+
+    @staticmethod
+    def type_has_implicit_default(type_: Optional[ProperType]) -> bool:
+        """
+        Returns True if the passed type will be given an implicit default value.
+        In pydantic v1, this is the case for Optional types and Any (with default value None).
+        """
+        if isinstance(type_, AnyType):
+            # Annotated as Any
+            return True
+        if isinstance(type_, UnionType) and any(
+            isinstance(item, NoneType) or isinstance(item, AnyType) for item in type_.items
+        ):
+            # Annotated as Optional, or otherwise having NoneType or AnyType in the union
+            return True
+        return False
 
     @staticmethod
     def get_strict(stmt: AssignmentStmt) -> bool | None:
