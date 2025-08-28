@@ -5,7 +5,7 @@ from __future__ import annotations
 import sys
 from collections.abc import Iterator
 from configparser import ConfigParser
-from typing import Any, Callable, Optional
+from typing import Any, Callable
 
 from mypy.errorcodes import ErrorCode
 from mypy.expandtype import expand_type, expand_type_by_instance
@@ -1032,9 +1032,8 @@ class PydanticModelTransformer:
         return not isinstance(expr, EllipsisExpr)
 
     @staticmethod
-    def type_has_implicit_default(type_: Optional[ProperType]) -> bool:
-        """
-        Returns True if the passed type will be given an implicit default value.
+    def type_has_implicit_default(type_: ProperType | None) -> bool:
+        """Returns True if the passed type will be given an implicit default value.
         In pydantic v1, this is the case for Optional types and Any (with default value None).
         """
         if isinstance(type_, AnyType):
