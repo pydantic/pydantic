@@ -3,7 +3,10 @@ from typing import TYPE_CHECKING
 from warnings import warn
 
 from ._migration import getattr_migration
-from .version import VERSION
+from .version import VERSION, _ensure_pydantic_core_version
+
+_ensure_pydantic_core_version()
+del _ensure_pydantic_core_version
 
 if TYPE_CHECKING:
     # import of virtually everything is supported via `__getattr__` below,
@@ -444,5 +447,5 @@ def __getattr__(attr_name: str) -> object:
         return result
 
 
-def __dir__() -> 'list[str]':
+def __dir__() -> list[str]:
     return list(__all__)
