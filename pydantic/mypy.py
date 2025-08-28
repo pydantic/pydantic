@@ -24,7 +24,6 @@ from mypy.nodes import (
     ClassDef,
     Context,
     Decorator,
-    ProperType,
     DictExpr,
     EllipsisExpr,
     Expression,
@@ -66,6 +65,7 @@ from mypy.types import (
     CallableType,
     Instance,
     NoneType,
+    ProperType,
     Type,
     TypeOfAny,
     TypeType,
@@ -1025,10 +1025,9 @@ class PydanticModelTransformer:
                     return arg.__class__ is not EllipsisExpr
                 if name == 'default_factory':
                     return not (isinstance(arg, NameExpr) and arg.fullname == 'builtins.None')
-            return False
-        # In this case, default and default_factory are not specified, so we need to look at the annotation
-        value_type = get_proper_type(stmt.type)
-        return not PydanticModelTransformer.type_has_implicit_default(value_type)
+            # In this case, default and default_factory are not specified, so we need to look at the annotation
+            value_type = get_proper_type(stmt.type)
+            return PydanticModelTransformer.type_has_implicit_default(value_type)
         # Has no default if the "default value" is Ellipsis (i.e., `field_name: Annotation = ...`)
         return not isinstance(expr, EllipsisExpr)
 
