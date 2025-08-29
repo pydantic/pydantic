@@ -387,7 +387,7 @@ def test_resolve_ref_schema_recursive_model():
         '$defs': {
             'Model': {
                 'examples': [{'foo': {'mini_me': None}}],
-                'properties': {'mini_me': {'anyOf': [{'$ref': '#/$defs/Model'}, {'type': 'null'}]}},
+                'properties': {'mini_me': {'oneOf': [{'$ref': '#/$defs/Model'}, {'type': 'null'}]}},
                 'required': ['mini_me'],
                 'title': 'Model',
                 'type': 'object',
