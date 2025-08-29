@@ -83,8 +83,8 @@ extra_javascript:
   - 'extra/algolia.js'
   - 'extra/feedback.js'
   - 'extra/fluff.js'
+  - 'extra/mathjax.js'
   - 'https://samuelcolvin.github.io/mkdocs-run-code/run_code_main.js'
-  - 'javascripts/mathjax.js'
   - 'https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js'
 
 nav:
