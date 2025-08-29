@@ -77,7 +77,6 @@ def version_info() -> str:
 
 def check_pydantic_core_version() -> bool:
     """Check that the installed `pydantic-core` dependency is compatible."""
-    # Keep this in sync with the version constraint in the `pyproject.toml` dependencies:
     return __pydantic_core_version__ == _COMPATIBLE_PYDANTIC_CORE_VERSION
 
 
@@ -98,7 +97,6 @@ def _ensure_pydantic_core_version() -> None:  # pragma: no cover
                 f'with the current pydantic version, which requires {_COMPATIBLE_PYDANTIC_CORE_VERSION}. '
                 "If you encounter this error, make sure that you haven't upgraded pydantic-core manually."
             )
-
 
 
 def parse_mypy_version(version: str) -> tuple[int, int, int]:
