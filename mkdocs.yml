@@ -83,7 +83,9 @@ extra_javascript:
   - 'extra/algolia.js'
   - 'extra/feedback.js'
   - 'extra/fluff.js'
+  - 'extra/mathjax.js'
   - 'https://samuelcolvin.github.io/mkdocs-run-code/run_code_main.js'
+  - 'https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js'
 
 nav:
 - Get Started:
@@ -202,6 +204,8 @@ markdown_extensions:
     emoji_generator: !!python/name:material.extensions.emoji.to_svg
 - pymdownx.tabbed:
     alternate_style: true
+- pymdownx.arithmatex:
+    generic: true
 
 watch:
 - pydantic
