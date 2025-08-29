@@ -3680,7 +3680,7 @@ For example:</p>
 <p>This is a deliberate decision of Pydantic, and is frequently the most useful approach. See
 <a href="https://github.com/pydantic/pydantic/issues/578">here</a> for a longer discussion on the subject.</p>
 <p>Nevertheless, Pydantic provides a <a href="../strict_mode/">strict mode</a>, where no data conversion is performed.
-Values must be of the same type than the declared field type.</p>
+Values must be of the same type as the declared field type.</p>
 <p>This is also the case for collections. In most cases, you shouldn't make use of abstract container classes
 and just use a concrete type, such as <a class="autorefs autorefs-external" href="https://docs.python.org/3/glossary.html#term-list"><code>list</code></a>:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
