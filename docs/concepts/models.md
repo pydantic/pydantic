@@ -200,7 +200,7 @@ This is a deliberate decision of Pydantic, and is frequently the most useful app
 [here](https://github.com/pydantic/pydantic/issues/578) for a longer discussion on the subject.
 
 Nevertheless, Pydantic provides a [strict mode](strict_mode.md), where no data conversion is performed.
-Values must be of the same type than the declared field type.
+Values must be of the same type as the declared field type.
 
 This is also the case for collections. In most cases, you shouldn't make use of abstract container classes
 and just use a concrete type, such as [`list`][]:

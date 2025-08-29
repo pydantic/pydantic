@@ -3,7 +3,10 @@ from typing import TYPE_CHECKING
 from warnings import warn
 
 from ._migration import getattr_migration
-from .version import VERSION
+from .version import VERSION, _ensure_pydantic_core_version
+
+_ensure_pydantic_core_version()
+del _ensure_pydantic_core_version
 
 if TYPE_CHECKING:
     # import of virtually everything is supported via `__getattr__` below,
@@ -37,6 +40,7 @@ if TYPE_CHECKING:
         ModelWrapValidatorHandler,
         PlainValidator,
         SkipValidation,
+        ValidateAs,
         WrapValidator,
         field_validator,
         model_validator,
@@ -76,6 +80,7 @@ __all__ = (
     'PlainValidator',
     'WrapValidator',
     'SkipValidation',
+    'ValidateAs',
     'InstanceOf',
     'ModelWrapValidatorHandler',
     # JSON Schema
@@ -250,6 +255,7 @@ _dynamic_imports: 'dict[str, tuple[str, str]]' = {
     'WrapValidator': (__spec__.parent, '.functional_validators'),
     'SkipValidation': (__spec__.parent, '.functional_validators'),
     'InstanceOf': (__spec__.parent, '.functional_validators'),
+    'ValidateAs': (__spec__.parent, '.functional_validators'),
     'ModelWrapValidatorHandler': (__spec__.parent, '.functional_validators'),
     # JSON Schema
     'WithJsonSchema': (__spec__.parent, '.json_schema'),
@@ -441,5 +447,5 @@ def __getattr__(attr_name: str) -> object:
         return result
 
 
-def __dir__() -> 'list[str]':
+def __dir__() -> list[str]:
     return list(__all__)
