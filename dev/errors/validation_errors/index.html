@@ -5496,7 +5496,7 @@ during validation:</p>
     <span class="c1">#&gt; &#39;frozen_field&#39;</span>
 </code></pre></div>
 <h2 id="frozen_instance"><code>frozen_instance</code><a class="headerlink" href="#frozen_instance" title="Permanent link">&para;</a></h2>
-<p>This error is raised when <code>model_config['frozen] == True</code> and you attempt to delete or assign a new value to
+<p>This error is raised when <code>frozen</code> is set in the <a href="../../concepts/config/">configuration</a> and you attempt to delete or assign a new value to
 any of the fields:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
 
