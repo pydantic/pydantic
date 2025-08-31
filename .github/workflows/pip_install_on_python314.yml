@@ -1,0 +1,15 @@
+name: python314_pip_install
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+jobs:
+  python314_pip_install:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5
+    - uses: actions/setup-python@v5
+      with:
+        python-version: 3.14
+        allow-prereleases: true
+    - run: pip install pydantic
