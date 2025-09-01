@@ -3,6 +3,8 @@ hypothesis==6.79.1
 # pin importlib-metadata as upper versions need typing-extensions to work if on Python < 3.8
 importlib-metadata==3.6.0;python_version<"3.8"
 mypy==0.971
+# Pinning as '1.1.0' deprecated `mypy_extensions.TypedDict`, used by mypy up until 1.9.0:
+mypy-extensions==1.0.0
 pytest==7.2.1
 pytest-cov==4.0.0
 pytest-mock==3.10.0
