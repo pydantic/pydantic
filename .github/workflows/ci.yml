@@ -372,7 +372,7 @@ jobs:
 
       - name: Check version
         id: check-tag
-        uses: samuelcolvin/check-python-version@v4.1
+        uses: samuelcolvin/check-python-version@v5
         with:
           version_file_path: pydantic/version.py
 
