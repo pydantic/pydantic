@@ -6547,8 +6547,6 @@ which detail why validation failed.</p>
     <div class="doc doc-contents ">
 
         <p>Python constructor for a Validation Error.</p>
-<p>The API for constructing validation errors will probably change in the future,
-hence the static method rather than <code>__init__</code>.</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -8587,7 +8585,8 @@ identifies a value as being present, and provides a way to access it.</p>
 
 
 <a href="#pydantic_core.TzInfo" class="headerlink" title="Permanent link">&para;</a></h2>
-
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">TzInfo</span><span class="p">(</span><span class="n">seconds</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">)</span>
+</code></pre></div>
 
     <div class="doc doc-contents ">
             <p class="doc doc-class-bases">
@@ -8595,6 +8594,38 @@ identifies a value as being present, and provides a way to access it.</p>
 
 
         <p>An <code>pydantic-core</code> implementation of the abstract <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/datetime.html#datetime.tzinfo"><code>datetime.tzinfo</code></a> class.</p>
+
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>seconds</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The offset from UTC in seconds. Defaults to 0.0 (UTC).</p>
+              </div>
+            </td>
+            <td>
+                  <code>0.0</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
 
@@ -9805,7 +9836,7 @@ if <code>None</code> a <a class="autorefs autorefs-internal" href="#pydantic_cor
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.12.0a1+dev", "pydantic-core==2.37.2", "pydantic-extra-types==2.10.0"]
+    window.mkdocs_run_deps = ["pydantic==2.12.0a1+dev", "pydantic-core==2.38.0", "pydantic-extra-types==2.10.0"]
     </script>
 
               </article>
@@ -9866,7 +9897,11 @@ if <code>None</code> a <a class="autorefs autorefs-internal" href="#pydantic_cor
       
         <script src="../../extra/fluff.js"></script>
       
+        <script src="../../extra/mathjax.js"></script>
+      
         <script src="https://samuelcolvin.github.io/mkdocs-run-code/run_code_main.js"></script>
+      
+        <script src="https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js"></script>
       
     
   </body>

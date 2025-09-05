@@ -1683,6 +1683,24 @@ to help you monitor and understand your
 </li>
         
           <li class="md-nav__item">
+  <a href="#pydantic.config.ConfigDict.ser_json_temporal" class="md-nav__link">
+    <span class="md-ellipsis">
+      ser_json_temporal
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pydantic.config.ConfigDict.val_temporal_unit" class="md-nav__link">
+    <span class="md-ellipsis">
+      val_temporal_unit
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#pydantic.config.ConfigDict.ser_json_bytes" class="md-nav__link">
     <span class="md-ellipsis">
       ser_json_bytes
@@ -3689,6 +3707,24 @@ to help you monitor and understand your
 </li>
         
           <li class="md-nav__item">
+  <a href="#pydantic.config.ConfigDict.ser_json_temporal" class="md-nav__link">
+    <span class="md-ellipsis">
+      ser_json_temporal
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pydantic.config.ConfigDict.val_temporal_unit" class="md-nav__link">
+    <span class="md-ellipsis">
+      val_temporal_unit
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#pydantic.config.ConfigDict.ser_json_bytes" class="md-nav__link">
     <span class="md-ellipsis">
       ser_json_bytes
@@ -5121,9 +5157,105 @@ of subclasses of the model.</p>
         <p>The format of JSON serialized timedeltas. Accepts the string values of <code>'iso8601'</code> and
 <code>'float'</code>. Defaults to <code>'iso8601'</code>.</p>
 <ul>
-<li><code>'iso8601'</code> will serialize timedeltas to ISO 8601 durations.</li>
+<li><code>'iso8601'</code> will serialize timedeltas to <a href="https://en.wikipedia.org/wiki/ISO_8601#Durations">ISO 8601 text format</a>.</li>
 <li><code>'float'</code> will serialize timedeltas to the total number of seconds.</li>
 </ul>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Starting in v2.11, it is recommended to use the <a class="autorefs autorefs-internal" href="#pydantic.config.ConfigDict.ser_json_temporal"><code>ser_json_temporal</code></a>
+setting instead of <code>ser_json_timedelta</code>. This setting will be deprecated in v3.</p>
+</div>
+    </div>
+
+</div>
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="pydantic.config.ConfigDict.ser_json_temporal" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">ser_json_temporal</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#pydantic.config.ConfigDict.ser_json_temporal" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">ser_json_temporal</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span>
+    <span class="s2">&quot;iso8601&quot;</span><span class="p">,</span> <span class="s2">&quot;seconds&quot;</span><span class="p">,</span> <span class="s2">&quot;milliseconds&quot;</span>
+<span class="p">]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>The format of JSON serialized temporal types from the <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/datetime.html#module-datetime"><code>datetime</code></a> module. This includes:</p>
+<ul>
+<li><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/datetime.html#datetime.datetime"><code>datetime.datetime</code></a></li>
+<li><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/datetime.html#datetime.date"><code>datetime.date</code></a></li>
+<li><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/datetime.html#datetime.time"><code>datetime.time</code></a></li>
+<li><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/datetime.html#datetime.timedelta"><code>datetime.timedelta</code></a></li>
+</ul>
+<p>Can be one of:</p>
+<ul>
+<li><code>'iso8601'</code> will serialize date-like types to <a href="https://en.wikipedia.org/wiki/ISO_8601#Durations">ISO 8601 text format</a>.</li>
+<li><code>'milliseconds'</code> will serialize date-like types to a floating point number of milliseconds since the epoch.</li>
+<li><code>'seconds'</code> will serialize date-like types to a floating point number of seconds since the epoch.</li>
+</ul>
+<p>Defaults to <code>'iso8601'</code>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This setting was introduced in v2.11. It overlaps with the <a class="autorefs autorefs-internal" href="#pydantic.config.ConfigDict.ser_json_timedelta"><code>ser_json_timedelta</code></a>
+setting which will be deprecated in v3. It also adds more configurability for
+the other temporal types.</p>
+</div>
+    </div>
+
+</div>
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="pydantic.config.ConfigDict.val_temporal_unit" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">val_temporal_unit</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#pydantic.config.ConfigDict.val_temporal_unit" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">val_temporal_unit</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span>
+    <span class="s2">&quot;seconds&quot;</span><span class="p">,</span> <span class="s2">&quot;milliseconds&quot;</span><span class="p">,</span> <span class="s2">&quot;infer&quot;</span>
+<span class="p">]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>The unit to assume for validating numeric input for datetime-like types (<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/datetime.html#datetime.datetime"><code>datetime.datetime</code></a> and <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/datetime.html#datetime.date"><code>datetime.date</code></a>). Can be one of:</p>
+<ul>
+<li><code>'seconds'</code> will validate date or time numeric inputs as seconds since the <a href="https://en.wikipedia.org/wiki/Unix_time">epoch</a>.</li>
+<li><code>'milliseconds'</code> will validate date or time numeric inputs as milliseconds since the <a href="https://en.wikipedia.org/wiki/Unix_time">epoch</a>.</li>
+<li>
+<p><code>'infer'</code> will infer the unit from the string numeric input on unix time as:</p>
+<ul>
+<li>seconds since the <a href="https://en.wikipedia.org/wiki/Unix_time">epoch</a> if <span class="arithmatex">\(-2^{10} &lt;= v &lt;= 2^{10}\)</span></li>
+<li>milliseconds since the <a href="https://en.wikipedia.org/wiki/Unix_time">epoch</a> (if <span class="arithmatex">\(v &lt; -2^{10}\)</span> or <span class="arithmatex">\(v &gt; 2^{10}\)</span>).</li>
+</ul>
+</li>
+</ul>
+<p>Defaults to <code>'infer'</code>.</p>
     </div>
 
 </div>
@@ -6174,50 +6306,7 @@ especially with <code>TypedDict</code>.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/config.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1157</span>
-<span class="normal">1158</span>
-<span class="normal">1159</span>
-<span class="normal">1160</span>
-<span class="normal">1161</span>
-<span class="normal">1162</span>
-<span class="normal">1163</span>
-<span class="normal">1164</span>
-<span class="normal">1165</span>
-<span class="normal">1166</span>
-<span class="normal">1167</span>
-<span class="normal">1168</span>
-<span class="normal">1169</span>
-<span class="normal">1170</span>
-<span class="normal">1171</span>
-<span class="normal">1172</span>
-<span class="normal">1173</span>
-<span class="normal">1174</span>
-<span class="normal">1175</span>
-<span class="normal">1176</span>
-<span class="normal">1177</span>
-<span class="normal">1178</span>
-<span class="normal">1179</span>
-<span class="normal">1180</span>
-<span class="normal">1181</span>
-<span class="normal">1182</span>
-<span class="normal">1183</span>
-<span class="normal">1184</span>
-<span class="normal">1185</span>
-<span class="normal">1186</span>
-<span class="normal">1187</span>
-<span class="normal">1188</span>
-<span class="normal">1189</span>
-<span class="normal">1190</span>
-<span class="normal">1191</span>
-<span class="normal">1192</span>
-<span class="normal">1193</span>
-<span class="normal">1194</span>
-<span class="normal">1195</span>
-<span class="normal">1196</span>
-<span class="normal">1197</span>
-<span class="normal">1198</span>
-<span class="normal">1199</span>
-<span class="normal">1200</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1200</span>
 <span class="normal">1201</span>
 <span class="normal">1202</span>
 <span class="normal">1203</span>
@@ -6227,7 +6316,50 @@ especially with <code>TypedDict</code>.</p>
 <span class="normal">1207</span>
 <span class="normal">1208</span>
 <span class="normal">1209</span>
-<span class="normal">1210</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">with_config</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="n">ConfigDict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">/</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_TypeT</span><span class="p">],</span> <span class="n">_TypeT</span><span class="p">]:</span>
+<span class="normal">1210</span>
+<span class="normal">1211</span>
+<span class="normal">1212</span>
+<span class="normal">1213</span>
+<span class="normal">1214</span>
+<span class="normal">1215</span>
+<span class="normal">1216</span>
+<span class="normal">1217</span>
+<span class="normal">1218</span>
+<span class="normal">1219</span>
+<span class="normal">1220</span>
+<span class="normal">1221</span>
+<span class="normal">1222</span>
+<span class="normal">1223</span>
+<span class="normal">1224</span>
+<span class="normal">1225</span>
+<span class="normal">1226</span>
+<span class="normal">1227</span>
+<span class="normal">1228</span>
+<span class="normal">1229</span>
+<span class="normal">1230</span>
+<span class="normal">1231</span>
+<span class="normal">1232</span>
+<span class="normal">1233</span>
+<span class="normal">1234</span>
+<span class="normal">1235</span>
+<span class="normal">1236</span>
+<span class="normal">1237</span>
+<span class="normal">1238</span>
+<span class="normal">1239</span>
+<span class="normal">1240</span>
+<span class="normal">1241</span>
+<span class="normal">1242</span>
+<span class="normal">1243</span>
+<span class="normal">1244</span>
+<span class="normal">1245</span>
+<span class="normal">1246</span>
+<span class="normal">1247</span>
+<span class="normal">1248</span>
+<span class="normal">1249</span>
+<span class="normal">1250</span>
+<span class="normal">1251</span>
+<span class="normal">1252</span>
+<span class="normal">1253</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">with_config</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="n">ConfigDict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">/</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_TypeT</span><span class="p">],</span> <span class="n">_TypeT</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;!!! abstract &quot;Usage Documentation&quot;</span>
 <span class="sd">        [Configuration with other types](../concepts/config.md#configuration-on-other-supported-types)</span>
 
@@ -6742,7 +6874,7 @@ especially with <code>TypedDict</code>.</p>
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.12.0a1+dev", "pydantic-core==2.37.2", "pydantic-extra-types==2.10.0"]
+    window.mkdocs_run_deps = ["pydantic==2.12.0a1+dev", "pydantic-core==2.38.0", "pydantic-extra-types==2.10.0"]
     </script>
 
               </article>
@@ -6803,7 +6935,11 @@ especially with <code>TypedDict</code>.</p>
       
         <script src="../../extra/fluff.js"></script>
       
+        <script src="../../extra/mathjax.js"></script>
+      
         <script src="https://samuelcolvin.github.io/mkdocs-run-code/run_code_main.js"></script>
+      
+        <script src="https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js"></script>
       
     
   </body>

@@ -333,8 +333,6 @@ from_exception_data(
 
 Python constructor for a Validation Error.
 
-The API for constructing validation errors will probably change in the future, hence the static method rather than `__init__`.
-
 Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `title` | `str` | The title of the error, as used in the heading of str(validation_error) | *required* | | `line_errors` | `list[InitErrorDetails]` | A list of InitErrorDetails which contain information about errors that occurred during validation. | *required* | | `input_type` | `Literal['python', 'json']` | Whether the error is for a Python object or JSON. | `'python'` | | `hide_input` | `bool` | Whether to hide the input value in the error message. | `False` |
@@ -955,9 +953,18 @@ Returns the value wrapped by `Some`.
 
 ## TzInfo
 
+```python
+TzInfo(seconds: float = 0.0)
+
+```
+
 Bases: `tzinfo`
 
 An `pydantic-core` implementation of the abstract datetime.tzinfo class.
+
+Parameters:
+
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `seconds` | `float` | The offset from UTC in seconds. Defaults to 0.0 (UTC). | `0.0` |
 
 ### tzname
 
