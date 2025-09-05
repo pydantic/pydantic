@@ -21,6 +21,7 @@ from pydantic import (
     field_validator,
 )
 from pydantic.alias_generators import to_camel
+from pydantic.config import ConfigDict
 from pydantic.errors import PydanticUserError
 
 
@@ -173,6 +174,40 @@ def test_computed_fields_del():
     assert user.model_dump() == {'first': 'Pika', 'last': 'Chu', 'fullname': 'Pika Chu'}
     del user.fullname
     assert user.model_dump() == {'first': '', 'last': '', 'fullname': ' '}
+
+
+@pytest.mark.parametrize('should_validate', (True, False))
+def test_cached_property_validate_assignment(should_validate: bool):
+    class A(BaseModel):
+        model_config = ConfigDict(validate_assignment=should_validate)
+        b: int = 0
+
+        @computed_field
+        @cached_property
+        def random_number(self) -> int:
+            self.b = 123
+            return random.randint(0, 1_000)
+
+    a = A()
+    assert a.random_number == a.random_number
+
+
+def test_cached_computed_field_runs_once_with_validate_assignment():
+    class A(BaseModel):
+        model_config = ConfigDict(validate_assignment=True)
+        b: int = 0
+        _calls: int = PrivateAttr(default=0)
+
+        @computed_field
+        @cached_property
+        def random_number(self) -> int:
+            self._calls += 1
+            self.b = 123
+            return 7
+
+    a = A()
+    assert a.random_number == a.random_number == 7
+    assert a._calls == 1
 
 
 def test_cached_property():
