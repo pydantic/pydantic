@@ -3145,10 +3145,8 @@ def test_simple_frozen() -> None:
 
     inst = MyDataclass('hello')
 
-    try:
+    with pytest.raises(dataclasses.FrozenInstanceError, match="cannot assign to field 'x'"):
         inst.x = 'other'
-    except Exception as e:
-        assert "cannot assign to field 'x'" in repr(e)
 
     @pydantic.dataclasses.dataclass(config=ConfigDict(frozen=True))
     class MyDataclass2:
@@ -3156,10 +3154,8 @@ def test_simple_frozen() -> None:
 
     inst = MyDataclass2('hello')
 
-    try:
+    with pytest.raises(dataclasses.FrozenInstanceError, match="cannot assign to field 'x'"):
         inst.x = 'other'
-    except Exception as e:
-        assert "cannot assign to field 'x'" in repr(e)
 
 
 def test_frozen_with_validate_assignment() -> None:
