@@ -2803,7 +2803,8 @@ def kw_arguments_schema(
     for argument in arguments:
         name = self.get_argument_name(argument)
         argument_schema = self.generate_inner(argument['schema']).copy()
-        argument_schema['title'] = self.get_title_from_name(name)
+        if 'title' not in argument_schema and self.field_title_should_be_set(argument['schema']):
+            argument_schema['title'] = self.get_title_from_name(name)
         properties[name] = argument_schema
 
         if argument['schema']['type'] != 'default':
@@ -2867,7 +2868,8 @@ def p_arguments_schema(
         name = self.get_argument_name(argument)
 
         argument_schema = self.generate_inner(argument['schema']).copy()
-        argument_schema['title'] = self.get_title_from_name(name)
+        if 'title' not in argument_schema and self.field_title_should_be_set(argument['schema']):
+            argument_schema['title'] = self.get_title_from_name(name)
         prefix_items.append(argument_schema)
 
         if argument['schema']['type'] != 'default':
