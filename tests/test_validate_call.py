@@ -680,6 +680,18 @@ def test_json_schema_custom_title() -> None:
     assert ta.json_schema()['properties']['a']['title'] == 'atest'
 
 
+def test_json_schema_title_not_set_on_ref() -> None:
+    class Model(BaseModel):
+        pass
+
+    def func(m: Model):
+        pass
+
+    ta = TypeAdapter(func)
+
+    assert ta.json_schema()['properties']['m'] == {'$ref': '#/$defs/Model'}
+
+
 def test_alias_generator():
     @validate_call(config=dict(alias_generator=lambda x: x * 2))
     def foo(a: int, b: int):
