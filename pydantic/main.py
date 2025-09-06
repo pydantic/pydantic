@@ -106,9 +106,18 @@ def _private_setattr_handler(model: BaseModel, name: str, val: Any) -> None:
     model.__pydantic_private__[name] = val  # pyright: ignore[reportOptionalSubscript]
 
 
+def _validate_assignment_setattr_handler(model: BaseModel, name: str, val: Any) -> None:
+    prev_dict = model.__dict__
+    model.__pydantic_validator__.validate_assignment(model, name, val)
+    cur_dict = model.__dict__
+    if cur_dict is not prev_dict:
+        prev_dict.update(cur_dict)
+        _object_setattr(model, '__dict__', prev_dict)
+
+
 _SIMPLE_SETATTR_HANDLERS: Mapping[str, Callable[[BaseModel, str, Any], None]] = {
     'model_field': _model_field_setattr_handler,
-    'validate_assignment': lambda model, name, val: model.__pydantic_validator__.validate_assignment(model, name, val),  # pyright: ignore[reportAssignmentType]
+    'validate_assignment': _validate_assignment_setattr_handler,
     'private': _private_setattr_handler,
     'cached_property': lambda model, name, val: model.__dict__.__setitem__(name, val),
     'extra_known': lambda model, name, val: _object_setattr(model, name, val),
