@@ -254,6 +254,81 @@ def test_validate_json_strict() -> None:
     ]
 
 
+def test_validate_python_extra() -> None:
+    class Model(TypedDict):
+        x: int
+
+    class ModelForbid(Model):
+        __pydantic_config__ = ConfigDict(extra='forbid')  # type: ignore
+
+    ignore_validator = TypeAdapter(Model)
+    forbid_validator = TypeAdapter(ModelForbid)
+
+    assert ignore_validator.validate_python({'x': '1', 'y': '2'}) == Model(x=1)
+    with pytest.raises(ValidationError) as exc_info:
+        ignore_validator.validate_python({'x': '1', 'y': '2'}, extra='forbid')
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'extra_forbidden', 'loc': ('y',), 'msg': 'Extra inputs are not permitted', 'input': '2'}
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        forbid_validator.validate_python({'x': '1', 'y': '2'})
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'extra_forbidden', 'loc': ('y',), 'msg': 'Extra inputs are not permitted', 'input': '2'}
+    ]
+    assert forbid_validator.validate_python({'x': '1', 'y': '2'}, extra='ignore') == Model(x=1)
+
+
+def test_validate_json_extra() -> None:
+    class Model(TypedDict):
+        x: int
+
+    class ModelForbid(Model):
+        __pydantic_config__ = ConfigDict(extra='forbid')  # type: ignore
+
+    ignore_validator = TypeAdapter(Model)
+    forbid_validator = TypeAdapter(ModelForbid)
+
+    assert ignore_validator.validate_json(json.dumps({'x': '1', 'y': '2'})) == Model(x=1)
+    with pytest.raises(ValidationError) as exc_info:
+        ignore_validator.validate_json(json.dumps({'x': '1', 'y': '2'}), extra='forbid')
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'extra_forbidden', 'loc': ('y',), 'msg': 'Extra inputs are not permitted', 'input': '2'}
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        forbid_validator.validate_json(json.dumps({'x': '1', 'y': '2'}))
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'extra_forbidden', 'loc': ('y',), 'msg': 'Extra inputs are not permitted', 'input': '2'}
+    ]
+    assert forbid_validator.validate_json(json.dumps({'x': '1', 'y': '2'}), extra='ignore') == Model(x=1)
+
+
+def test_validate_strings_extra() -> None:
+    class Model(TypedDict):
+        x: bool
+
+    class ModelForbid(Model):
+        __pydantic_config__ = ConfigDict(extra='forbid')  # type: ignore
+
+    ignore_validator = TypeAdapter(Model)
+    forbid_validator = TypeAdapter(ModelForbid)
+
+    assert ignore_validator.validate_strings({'x': 'true', 'y': 'true'}) == Model(x=True)
+    with pytest.raises(ValidationError) as exc_info:
+        ignore_validator.validate_strings({'x': 'true', 'y': 'true'}, extra='forbid')
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'extra_forbidden', 'loc': ('y',), 'msg': 'Extra inputs are not permitted', 'input': 'true'}
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        forbid_validator.validate_strings({'x': 'true', 'y': 'true'})
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'extra_forbidden', 'loc': ('y',), 'msg': 'Extra inputs are not permitted', 'input': 'true'}
+    ]
+    assert forbid_validator.validate_strings({'x': 'true', 'y': 'true'}, extra='ignore') == Model(x=True)
+
+
 def test_validate_python_context() -> None:
     contexts: list[Any] = [None, None, {'foo': 'bar'}]
 

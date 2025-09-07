@@ -11,6 +11,8 @@ from typing import Any, Callable, Literal, NamedTuple
 from pydantic_core import CoreConfig, CoreSchema, ValidationError
 from typing_extensions import Protocol, TypeAlias
 
+from pydantic.config import ExtraValues
+
 __all__ = (
     'PydanticPluginProtocol',
     'BaseValidateHandlerProtocol',
@@ -113,6 +115,7 @@ class ValidatePythonHandlerProtocol(BaseValidateHandlerProtocol, Protocol):
         input: Any,
         *,
         strict: bool | None = None,
+        extra: ExtraValues | None = None,
         from_attributes: bool | None = None,
         context: dict[str, Any] | None = None,
         self_instance: Any | None = None,
@@ -124,6 +127,7 @@ class ValidatePythonHandlerProtocol(BaseValidateHandlerProtocol, Protocol):
         Args:
             input: The input to be validated.
             strict: Whether to validate the object in strict mode.
+            extra: Whether to ignore, allow, or forbid extra data during model validation.
             from_attributes: Whether to validate objects as inputs by extracting attributes.
             context: The context to use for validation, this is passed to functional validators.
             self_instance: An instance of a model to set attributes on from validation, this is used when running
@@ -141,6 +145,7 @@ class ValidateJsonHandlerProtocol(BaseValidateHandlerProtocol, Protocol):
         input: str | bytes | bytearray,
         *,
         strict: bool | None = None,
+        extra: ExtraValues | None = None,
         context: dict[str, Any] | None = None,
         self_instance: Any | None = None,
         by_alias: bool | None = None,
@@ -151,6 +156,7 @@ class ValidateJsonHandlerProtocol(BaseValidateHandlerProtocol, Protocol):
         Args:
             input: The JSON data to be validated.
             strict: Whether to validate the object in strict mode.
+            extra: Whether to ignore, allow, or forbid extra data during model validation.
             context: The context to use for validation, this is passed to functional validators.
             self_instance: An instance of a model to set attributes on from validation, this is used when running
                 validation from the `__init__` method of a model.
@@ -170,6 +176,7 @@ class ValidateStringsHandlerProtocol(BaseValidateHandlerProtocol, Protocol):
         input: StringInput,
         *,
         strict: bool | None = None,
+        extra: ExtraValues | None = None,
         context: dict[str, Any] | None = None,
         by_alias: bool | None = None,
         by_name: bool | None = None,
@@ -179,6 +186,7 @@ class ValidateStringsHandlerProtocol(BaseValidateHandlerProtocol, Protocol):
         Args:
             input: The string data to be validated.
             strict: Whether to validate the object in strict mode.
+            extra: Whether to ignore, allow, or forbid extra data during model validation.
             context: The context to use for validation, this is passed to functional validators.
             by_alias: Whether to use the field's alias to match the input data to an attribute.
             by_name: Whether to use the field's name to match the input data to an attribute.
