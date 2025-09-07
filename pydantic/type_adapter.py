@@ -23,7 +23,7 @@ from pydantic.errors import PydanticUserError
 from pydantic.main import BaseModel, IncEx
 
 from ._internal import _config, _generate_schema, _mock_val_ser, _namespace_utils, _repr, _typing_extra, _utils
-from .config import ConfigDict
+from .config import ConfigDict, ExtraValues
 from .errors import PydanticUndefinedAnnotation
 from .json_schema import (
     DEFAULT_REF_TEMPLATE,
@@ -384,6 +384,7 @@ class TypeAdapter(Generic[T]):
         /,
         *,
         strict: bool | None = None,
+        extra: ExtraValues | None = None,
         from_attributes: bool | None = None,
         context: dict[str, Any] | None = None,
         experimental_allow_partial: bool | Literal['off', 'on', 'trailing-strings'] = False,
@@ -395,6 +396,8 @@ class TypeAdapter(Generic[T]):
         Args:
             object: The Python object to validate against the model.
             strict: Whether to strictly check types.
+            extra: Whether to ignore, allow, or forbid extra data during model validation.
+                See the [`extra` configuration value][pydantic.ConfigDict.extra] for details.
             from_attributes: Whether to extract data from object attributes.
             context: Additional context to pass to the validator.
             experimental_allow_partial: **Experimental** whether to enable
@@ -421,6 +424,7 @@ class TypeAdapter(Generic[T]):
         return self.validator.validate_python(
             object,
             strict=strict,
+            extra=extra,
             from_attributes=from_attributes,
             context=context,
             allow_partial=experimental_allow_partial,
@@ -434,6 +438,7 @@ class TypeAdapter(Generic[T]):
         /,
         *,
         strict: bool | None = None,
+        extra: ExtraValues | None = None,
         context: dict[str, Any] | None = None,
         experimental_allow_partial: bool | Literal['off', 'on', 'trailing-strings'] = False,
         by_alias: bool | None = None,
@@ -447,6 +452,8 @@ class TypeAdapter(Generic[T]):
         Args:
             data: The JSON data to validate against the model.
             strict: Whether to strictly check types.
+            extra: Whether to ignore, allow, or forbid extra data during model validation.
+                See the [`extra` configuration value][pydantic.ConfigDict.extra] for details.
             context: Additional context to use during validation.
             experimental_allow_partial: **Experimental** whether to enable
                 [partial validation](../concepts/experimental.md#partial-validation), e.g. to process streams.
@@ -468,6 +475,7 @@ class TypeAdapter(Generic[T]):
         return self.validator.validate_json(
             data,
             strict=strict,
+            extra=extra,
             context=context,
             allow_partial=experimental_allow_partial,
             by_alias=by_alias,
@@ -480,6 +488,7 @@ class TypeAdapter(Generic[T]):
         /,
         *,
         strict: bool | None = None,
+        extra: ExtraValues | None = None,
         context: dict[str, Any] | None = None,
         experimental_allow_partial: bool | Literal['off', 'on', 'trailing-strings'] = False,
         by_alias: bool | None = None,
@@ -490,6 +499,8 @@ class TypeAdapter(Generic[T]):
         Args:
             obj: The object contains string data to validate.
             strict: Whether to strictly check types.
+            extra: Whether to ignore, allow, or forbid extra data during model validation.
+                See the [`extra` configuration value][pydantic.ConfigDict.extra] for details.
             context: Additional context to use during validation.
             experimental_allow_partial: **Experimental** whether to enable
                 [partial validation](../concepts/experimental.md#partial-validation), e.g. to process streams.
@@ -511,6 +522,7 @@ class TypeAdapter(Generic[T]):
         return self.validator.validate_strings(
             obj,
             strict=strict,
+            extra=extra,
             context=context,
             allow_partial=experimental_allow_partial,
             by_alias=by_alias,
