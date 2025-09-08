@@ -1,5 +1,4 @@
 import collections
-import dataclasses
 import ipaddress
 import itertools
 import json
@@ -1050,11 +1049,12 @@ def test_import_string_sys_stdout() -> None:
     import_things = ImportThings(obj='sys.stdout')
     assert import_things.model_dump_json() == '{"obj":"sys.stdout"}'
 
+
 def test_import_string_thing_with_name() -> None:
     class ImportThings(BaseModel):
         obj: ImportString
 
-    @dataclasses.dataclass
+    @dataclass
     class ThingWithName:
         name: str
 
