@@ -7,6 +7,7 @@ import traceback
 from collections.abc import Hashable
 from dataclasses import InitVar
 from datetime import date, datetime
+from functools import cached_property
 from pathlib import Path
 from typing import (
     Annotated,
@@ -174,6 +175,39 @@ def test_validate_assignment_value_change():
 
     d.a = 3
     assert d.a == 6
+
+
+def test_validate_assignment_properties() -> None:
+    """https://github.com/pydantic/pydantic/issues/12112"""
+
+    @pydantic.dataclasses.dataclass(config=ConfigDict(validate_assignment=True))
+    class MyDataclass:
+        @property
+        def prop1(self) -> int:
+            return 1
+
+        @prop1.setter
+        def prop1(self, value: int) -> None:
+            pass
+
+        @computed_field
+        @property
+        def prop2(self) -> int:
+            return 1
+
+        @prop2.setter
+        def prop2(self, value: int) -> None:
+            pass
+
+        @cached_property
+        def prop3(self) -> int:
+            return 1
+
+    m = MyDataclass()
+
+    m.prop1 = 1
+    m.prop2 = 1
+    m.prop3 = 1
 
 
 @pytest.mark.parametrize(
@@ -3111,10 +3145,8 @@ def test_simple_frozen() -> None:
 
     inst = MyDataclass('hello')
 
-    try:
+    with pytest.raises(dataclasses.FrozenInstanceError, match="cannot assign to field 'x'"):
         inst.x = 'other'
-    except Exception as e:
-        assert "cannot assign to field 'x'" in repr(e)
 
     @pydantic.dataclasses.dataclass(config=ConfigDict(frozen=True))
     class MyDataclass2:
@@ -3122,10 +3154,8 @@ def test_simple_frozen() -> None:
 
     inst = MyDataclass2('hello')
 
-    try:
+    with pytest.raises(dataclasses.FrozenInstanceError, match="cannot assign to field 'x'"):
         inst.x = 'other'
-    except Exception as e:
-        assert "cannot assign to field 'x'" in repr(e)
 
 
 def test_frozen_with_validate_assignment() -> None:
@@ -3137,10 +3167,8 @@ def test_frozen_with_validate_assignment() -> None:
 
     inst = MyDataclass('hello')
 
-    try:
+    with pytest.raises(dataclasses.FrozenInstanceError, match="cannot assign to field 'x'"):
         inst.x = 'other'
-    except Exception as e:
-        assert "cannot assign to field 'x'" in repr(e)
 
     @pydantic.dataclasses.dataclass(config=ConfigDict(frozen=True, validate_assignment=True))
     class MyDataclass2:
@@ -3148,11 +3176,8 @@ def test_frozen_with_validate_assignment() -> None:
 
     inst = MyDataclass2('hello')
 
-    # we want to make sure that the error raised relates to the frozen nature of the instance
-    try:
+    with pytest.raises(dataclasses.FrozenInstanceError, match="cannot assign to field 'x'"):
         inst.x = 'other'
-    except ValidationError as e:
-        assert 'Instance is frozen' in repr(e)
 
 
 def test_warns_on_double_frozen() -> None:

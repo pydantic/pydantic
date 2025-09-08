@@ -19,7 +19,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: astral-sh/setup-uv@v6
         with:
@@ -40,7 +40,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: astral-sh/setup-uv@v6
         with:
@@ -61,12 +61,12 @@ jobs:
 
     steps:
       - name: Checkout docs-site
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: docs-site
 
       - name: Checkout current branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - uses: astral-sh/setup-uv@v6
         with:
@@ -97,7 +97,7 @@ jobs:
 
       - if: github.ref == 'refs/heads/docs-update' || startsWith(github.ref, 'refs/tags/')
         id: check-version
-        uses: samuelcolvin/check-python-version@v4.1
+        uses: samuelcolvin/check-python-version@v5
         with:
           version_file_path: 'pydantic/version.py'
           skip_env_check: true

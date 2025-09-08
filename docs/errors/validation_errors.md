@@ -825,7 +825,7 @@ except ValidationError as exc:
 
 ## `frozen_instance`
 
-This error is raised when `model_config['frozen] == True` and you attempt to delete or assign a new value to
+This error is raised when `frozen` is set in the [configuration](../concepts/config.md) and you attempt to delete or assign a new value to
 any of the fields:
 
 ```python

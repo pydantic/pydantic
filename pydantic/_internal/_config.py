@@ -64,6 +64,8 @@ class ConfigWrapper:
     # whether instances of models and dataclasses (including subclass instances) should re-validate, default 'never'
     revalidate_instances: Literal['always', 'never', 'subclass-instances']
     ser_json_timedelta: Literal['iso8601', 'float']
+    ser_json_temporal: Literal['iso8601', 'seconds', 'milliseconds']
+    val_temporal_unit: Literal['seconds', 'milliseconds', 'infer']
     ser_json_bytes: Literal['utf8', 'base64', 'hex']
     val_json_bytes: Literal['utf8', 'base64', 'hex']
     ser_json_inf_nan: Literal['null', 'constants', 'strings']
@@ -206,6 +208,8 @@ class ConfigWrapper:
                     ('str_to_upper', config.get('str_to_upper')),
                     ('strict', config.get('strict')),
                     ('ser_json_timedelta', config.get('ser_json_timedelta')),
+                    ('ser_json_temporal', config.get('ser_json_temporal')),
+                    ('val_temporal_unit', config.get('val_temporal_unit')),
                     ('ser_json_bytes', config.get('ser_json_bytes')),
                     ('val_json_bytes', config.get('val_json_bytes')),
                     ('ser_json_inf_nan', config.get('ser_json_inf_nan')),
@@ -284,6 +288,8 @@ config_defaults = ConfigDict(
     strict=False,
     revalidate_instances='never',
     ser_json_timedelta='iso8601',
+    ser_json_temporal='iso8601',
+    val_temporal_unit='infer',
     ser_json_bytes='utf8',
     val_json_bytes='utf8',
     ser_json_inf_nan='null',
