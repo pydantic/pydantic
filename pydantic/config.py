@@ -367,7 +367,7 @@ class ConfigDict(TypedDict, total=False):
     If you want to use different alias generators for validation and serialization, you can use
     [`AliasGenerator`][pydantic.aliases.AliasGenerator] instead.
 
-    If data source field names do not match your code style (e. g. CamelCase fields),
+    If data source field names do not match your code style (e.g. CamelCase fields),
     you can automatically generate aliases using `alias_generator`. Here's an example with
     a basic callable:
 
