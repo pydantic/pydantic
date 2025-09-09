@@ -17932,7 +17932,7 @@ A callable that takes a field name and returns an alias for it or an instance of
 
 When using a callable, the alias generator is used for both validation and serialization. If you want to use different alias generators for validation and serialization, you can use AliasGenerator instead.
 
-If data source field names do not match your code style (e. g. CamelCase fields), you can automatically generate aliases using `alias_generator`. Here's an example with a basic callable:
+If data source field names do not match your code style (e.g. CamelCase fields), you can automatically generate aliases using `alias_generator`. Here's an example with a basic callable:
 
 ```python
 from pydantic import BaseModel, ConfigDict
