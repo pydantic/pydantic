@@ -1050,6 +1050,20 @@ def test_import_string_sys_stdout() -> None:
     assert import_things.model_dump_json() == '{"obj":"sys.stdout"}'
 
 
+def test_import_string_thing_with_name() -> None:
+    """https://github.com/pydantic/pydantic/issues/12218"""
+
+    class ImportThings(BaseModel):
+        obj: ImportString
+
+    @dataclass
+    class ThingWithName:
+        name: str
+
+    import_things = ImportThings(obj=ThingWithName('foo'))
+    assert import_things.model_dump_json() == '{"obj":{"name":"foo"}}'
+
+
 def test_decimal():
     class Model(BaseModel):
         v: Decimal
