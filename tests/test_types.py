@@ -1051,6 +1051,7 @@ def test_import_string_sys_stdout() -> None:
 
 
 def test_import_string_thing_with_name() -> None:
+    """https://github.com/pydantic/pydantic/issues/12218"""
     class ImportThings(BaseModel):
         obj: ImportString
 
