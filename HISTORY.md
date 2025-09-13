@@ -1,3 +1,13 @@
+## v2.11.9 (2025-09-13)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.11.9)
+
+### What's Changed
+
+#### Fixes
+
+* Backport v1.10.23 changes by @Viicos
+
 ## v2.11.8 (2025-09-13)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.11.8)
