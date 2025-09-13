@@ -1,3 +1,13 @@
+## v2.11.8 (2025-09-13)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.11.8)
+
+### What's Changed
+
+#### Fixes
+
+* Fix mypy plugin for mypy 1.18 by @cdce8p in [#12209](https://github.com/pydantic/pydantic/pull/12209)
+
 ## v2.11.7 (2025-06-14)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.11.7)

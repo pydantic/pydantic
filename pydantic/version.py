@@ -6,7 +6,7 @@ from pydantic_core import __version__ as __pydantic_core_version__
 
 __all__ = 'VERSION', 'version_info'
 
-VERSION = '2.11.7'
+VERSION = '2.11.8'
 """The version of Pydantic."""
 
 
