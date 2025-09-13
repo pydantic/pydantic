@@ -1,3 +1,7 @@
+## v1.10.23 (2025-09-13)
+
+* Fix mypy plugin for mypy 1.18 by @cdce8p in https://github.com/pydantic/pydantic/pull/12207
+
 ## v1.10.22 (2025-04-17)
 
 * Fix compatibility with `typing-extensions` by @Viicos in https://github.com/pydantic/pydantic/pull/11764
