@@ -1327,8 +1327,7 @@ class ImportString:
                 return 'sys.stdin'
             elif v.name == '<stderr>':
                 return 'sys.stderr'
-        else:
-            return v
+        return v
 
     def __repr__(self) -> str:
         return 'ImportString'
