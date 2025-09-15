@@ -131,6 +131,7 @@ impl Validator for ModelFieldsValidator {
         state.allow_partial = false.into();
 
         let strict = state.strict_or(self.strict);
+        let extra_behavior = state.extra_behavior_or(self.extra_behavior);
         let from_attributes = state.extra().from_attributes.unwrap_or(self.from_attributes);
 
         // we convert the DictType error to a ModelType error
@@ -167,12 +168,12 @@ impl Validator for ModelFieldsValidator {
 
         // we only care about which keys have been used if we're iterating over the object for extra after
         // the first pass
-        let mut used_keys: Option<AHashSet<&str>> =
-            if self.extra_behavior == ExtraBehavior::Ignore || dict.is_py_get_attr() {
-                None
-            } else {
-                Some(AHashSet::with_capacity(self.fields.len()))
-            };
+        let mut used_keys: Option<AHashSet<&str>> = if extra_behavior == ExtraBehavior::Ignore || dict.is_py_get_attr()
+        {
+            None
+        } else {
+            Some(AHashSet::with_capacity(self.fields.len()))
+        };
 
         {
             let state = &mut state.rebind_extra(|extra| extra.data = Some(model_dict.clone()));
@@ -351,13 +352,13 @@ impl Validator for ModelFieldsValidator {
                 used_keys,
                 errors: &mut errors,
                 fields_set_vec: &mut fields_set_vec,
-                extra_behavior: self.extra_behavior,
+                extra_behavior,
                 extras_validator: self.extras_validator.as_deref(),
                 extras_keys_validator: self.extras_keys_validator.as_deref(),
                 state,
             })??;
 
-            if matches!(self.extra_behavior, ExtraBehavior::Allow) {
+            if matches!(extra_behavior, ExtraBehavior::Allow) {
                 model_extra_dict_op = Some(model_extra_dict);
             }
         }
@@ -370,7 +371,7 @@ impl Validator for ModelFieldsValidator {
 
             // if we have extra=allow, but we didn't create a dict because we were validating
             // from attributes, set it now so __pydantic_extra__ is always a dict if extra=allow
-            if matches!(self.extra_behavior, ExtraBehavior::Allow) && model_extra_dict_op.is_none() {
+            if matches!(extra_behavior, ExtraBehavior::Allow) && model_extra_dict_op.is_none() {
                 model_extra_dict_op = Some(PyDict::new(py));
             }
 
@@ -387,6 +388,7 @@ impl Validator for ModelFieldsValidator {
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         let dict = obj.downcast::<PyDict>()?;
+        let extra_behavior = state.extra_behavior_or(self.extra_behavior);
 
         let get_updated_dict = |output: &Bound<'py, PyAny>| {
             dict.set_item(field_name, output)?;
@@ -435,7 +437,7 @@ impl Validator for ModelFieldsValidator {
                 // to determine how to handle assignment
                 // For models / typed dicts we forbid assigning extra attributes
                 // unless the user explicitly set extra_behavior to 'allow'
-                match self.extra_behavior {
+                match extra_behavior {
                     ExtraBehavior::Allow => match self.extras_validator {
                         Some(ref validator) => prepare_result(validator.validate(py, field_value, state))?,
                         None => get_updated_dict(field_value)?,
@@ -454,7 +456,7 @@ impl Validator for ModelFieldsValidator {
             }
         };
 
-        let new_extra = match &self.extra_behavior {
+        let new_extra = match &extra_behavior {
             ExtraBehavior::Allow => {
                 let non_extra_data = PyDict::new(py);
                 self.fields.iter().try_for_each(|f| -> PyResult<()> {

@@ -155,6 +155,7 @@ impl Validator for DataclassArgsValidator {
         let mut used_keys: AHashSet<&str> = AHashSet::with_capacity(self.fields.len());
 
         let state = &mut state.rebind_extra(|extra| extra.data = Some(output_dict.clone()));
+        let extra_behavior = state.extra_behavior_or(self.extra_behavior);
 
         let validate_by_alias = state.validate_by_alias_or(self.validate_by_alias);
         let validate_by_name = state.validate_by_name_or(self.validate_by_name);
@@ -308,7 +309,7 @@ impl Validator for DataclassArgsValidator {
                         Ok(either_str) => {
                             if !used_keys.contains(either_str.as_cow()?.as_ref()) {
                                 // Unknown / extra field
-                                match self.extra_behavior {
+                                match extra_behavior {
                                     ExtraBehavior::Forbid => {
                                         errors.push(ValLineError::new_with_loc(
                                             ErrorTypeDefaults::UnexpectedKeywordArgument,
@@ -379,6 +380,7 @@ impl Validator for DataclassArgsValidator {
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         let dict = obj.downcast::<PyDict>()?;
+        let extra_behavior = state.extra_behavior_or(self.extra_behavior);
 
         let ok = |output: PyObject| {
             dict.set_item(field_name, output)?;
@@ -426,7 +428,7 @@ impl Validator for DataclassArgsValidator {
             // Handle extra (unknown) field
             // We partially use the extra_behavior for initialization / validation
             // to determine how to handle assignment
-            match self.extra_behavior {
+            match extra_behavior {
                 // For dataclasses we allow assigning unknown fields
                 // to match stdlib dataclass behavior
                 ExtraBehavior::Allow => ok(field_value.clone().unbind()),

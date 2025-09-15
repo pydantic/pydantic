@@ -9,6 +9,7 @@ import pytest
 from dirty_equals import IsListOrTuple, IsStr
 
 from pydantic_core import ArgsKwargs, SchemaValidator, ValidationError, core_schema
+from pydantic_core.core_schema import ExtraBehavior
 
 from ..conftest import Err, PyAndJson, assert_gc
 
@@ -948,16 +949,25 @@ def test_frozen_field():
 
 
 @pytest.mark.parametrize(
-    'config,schema_extra_behavior_kw',
+    'config,schema_extra_behavior_kw,validate_fn_extra_kw',
     [
-        (core_schema.CoreConfig(extra_fields_behavior='ignore'), {}),
-        (core_schema.CoreConfig(extra_fields_behavior='ignore'), {'extra_behavior': None}),
-        (core_schema.CoreConfig(), {'extra_behavior': 'ignore'}),
-        (None, {'extra_behavior': 'ignore'}),
-        (core_schema.CoreConfig(extra_fields_behavior='allow'), {'extra_behavior': 'ignore'}),
+        (core_schema.CoreConfig(extra_fields_behavior='ignore'), {}, None),
+        (core_schema.CoreConfig(extra_fields_behavior='ignore'), {'extra_behavior': None}, None),
+        (core_schema.CoreConfig(), {'extra_behavior': 'ignore'}, None),
+        (None, {'extra_behavior': 'ignore'}, None),
+        (core_schema.CoreConfig(extra_fields_behavior='allow'), {'extra_behavior': 'ignore'}, None),
+        (core_schema.CoreConfig(extra_fields_behavior='allow'), {}, 'ignore'),
+        (core_schema.CoreConfig(extra_fields_behavior='allow'), {'extra_behavior': None}, 'ignore'),
+        (core_schema.CoreConfig(), {'extra_behavior': 'allow'}, 'ignore'),
+        (None, {'extra_behavior': 'allow'}, 'ignore'),
+        (core_schema.CoreConfig(extra_fields_behavior='forbid'), {'extra_behavior': 'allow'}, 'ignore'),
     ],
 )
-def test_extra_behavior_ignore(config: Union[core_schema.CoreConfig, None], schema_extra_behavior_kw: dict[str, Any]):
+def test_extra_behavior_ignore(
+    config: Union[core_schema.CoreConfig, None],
+    schema_extra_behavior_kw: dict[str, Any],
+    validate_fn_extra_kw: Union[ExtraBehavior, None],
+):
     @dataclasses.dataclass
     class MyModel:
         f: str
@@ -973,15 +983,15 @@ def test_extra_behavior_ignore(config: Union[core_schema.CoreConfig, None], sche
         config=config,
     )
 
-    m: MyModel = v.validate_python({'f': 'x', 'extra_field': 123})
+    m: MyModel = v.validate_python({'f': 'x', 'extra_field': 123}, extra=validate_fn_extra_kw)
     assert m.f == 'x'
     assert not hasattr(m, 'extra_field')
 
-    v.validate_assignment(m, 'f', 'y')
+    v.validate_assignment(m, 'f', 'y', extra=validate_fn_extra_kw)
     assert m.f == 'y'
 
     with pytest.raises(ValidationError) as exc_info:
-        v.validate_assignment(m, 'not_f', 'xyz')
+        v.validate_assignment(m, 'not_f', 'xyz', extra=validate_fn_extra_kw)
 
     assert exc_info.value.errors(include_url=False) == [
         {
@@ -996,16 +1006,28 @@ def test_extra_behavior_ignore(config: Union[core_schema.CoreConfig, None], sche
 
 
 @pytest.mark.parametrize(
-    'config,schema_extra_behavior_kw',
+    'config,schema_extra_behavior_kw,validate_fn_extra_kw',
     [
-        (core_schema.CoreConfig(extra_fields_behavior='forbid'), {}),
-        (core_schema.CoreConfig(extra_fields_behavior='forbid'), {'extra_behavior': None}),
-        (core_schema.CoreConfig(), {'extra_behavior': 'forbid'}),
-        (None, {'extra_behavior': 'forbid'}),
-        (core_schema.CoreConfig(extra_fields_behavior='ignore'), {'extra_behavior': 'forbid'}),
+        (core_schema.CoreConfig(extra_fields_behavior='forbid'), {}, None),
+        (core_schema.CoreConfig(extra_fields_behavior='forbid'), {'extra_behavior': None}, None),
+        (core_schema.CoreConfig(), {'extra_behavior': 'forbid'}, None),
+        (None, {'extra_behavior': 'forbid'}, None),
+        (core_schema.CoreConfig(extra_fields_behavior='ignore'), {'extra_behavior': 'forbid'}, None),
+        (core_schema.CoreConfig(extra_fields_behavior='ignore'), {}, 'forbid'),
+        (core_schema.CoreConfig(extra_fields_behavior='ignore'), {'extra_behavior': None}, 'forbid'),
+        (core_schema.CoreConfig(), {'extra_behavior': 'ignore'}, 'forbid'),
+        (None, {'extra_behavior': 'ignore'}, 'forbid'),
+        (core_schema.CoreConfig(extra_fields_behavior='allow'), {'extra_behavior': 'ignore'}, 'forbid'),
+        (core_schema.CoreConfig(), {}, 'forbid'),
+        (core_schema.CoreConfig(), {'extra_behavior': None}, 'forbid'),
+        (None, {'extra_behavior': None}, 'forbid'),
     ],
 )
-def test_extra_behavior_forbid(config: Union[core_schema.CoreConfig, None], schema_extra_behavior_kw: dict[str, Any]):
+def test_extra_behavior_forbid(
+    config: Union[core_schema.CoreConfig, None],
+    schema_extra_behavior_kw: dict[str, Any],
+    validate_fn_extra_kw: Union[ExtraBehavior, None],
+):
     @dataclasses.dataclass
     class MyModel:
         f: str
@@ -1021,14 +1043,14 @@ def test_extra_behavior_forbid(config: Union[core_schema.CoreConfig, None], sche
         config=config,
     )
 
-    m: MyModel = v.validate_python({'f': 'x'})
+    m: MyModel = v.validate_python({'f': 'x'}, extra=validate_fn_extra_kw)
     assert m.f == 'x'
 
-    v.validate_assignment(m, 'f', 'y')
+    v.validate_assignment(m, 'f', 'y', extra=validate_fn_extra_kw)
     assert m.f == 'y'
 
     with pytest.raises(ValidationError) as exc_info:
-        v.validate_assignment(m, 'not_f', 'xyz')
+        v.validate_assignment(m, 'not_f', 'xyz', extra=validate_fn_extra_kw)
     assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'no_such_attribute',
@@ -1042,16 +1064,28 @@ def test_extra_behavior_forbid(config: Union[core_schema.CoreConfig, None], sche
 
 
 @pytest.mark.parametrize(
-    'config,schema_extra_behavior_kw',
+    'config,schema_extra_behavior_kw,validate_fn_extra_kw',
     [
-        (core_schema.CoreConfig(extra_fields_behavior='allow'), {}),
-        (core_schema.CoreConfig(extra_fields_behavior='allow'), {'extra_behavior': None}),
-        (core_schema.CoreConfig(), {'extra_behavior': 'allow'}),
-        (None, {'extra_behavior': 'allow'}),
-        (core_schema.CoreConfig(extra_fields_behavior='forbid'), {'extra_behavior': 'allow'}),
+        (core_schema.CoreConfig(extra_fields_behavior='allow'), {}, None),
+        (core_schema.CoreConfig(extra_fields_behavior='allow'), {'extra_behavior': None}, None),
+        (core_schema.CoreConfig(), {'extra_behavior': 'allow'}, None),
+        (None, {'extra_behavior': 'allow'}, None),
+        (core_schema.CoreConfig(extra_fields_behavior='forbid'), {'extra_behavior': 'allow'}, None),
+        (core_schema.CoreConfig(extra_fields_behavior='forbid'), {}, 'allow'),
+        (core_schema.CoreConfig(extra_fields_behavior='forbid'), {'extra_behavior': None}, 'allow'),
+        (core_schema.CoreConfig(), {'extra_behavior': 'forbid'}, 'allow'),
+        (None, {'extra_behavior': 'forbid'}, 'allow'),
+        (core_schema.CoreConfig(extra_fields_behavior='ignore'), {'extra_behavior': 'forbid'}, 'allow'),
+        (core_schema.CoreConfig(), {}, 'allow'),
+        (core_schema.CoreConfig(), {'extra_behavior': None}, 'allow'),
+        (None, {'extra_behavior': None}, 'allow'),
     ],
 )
-def test_extra_behavior_allow(config: Union[core_schema.CoreConfig, None], schema_extra_behavior_kw: dict[str, Any]):
+def test_extra_behavior_allow(
+    config: Union[core_schema.CoreConfig, None],
+    schema_extra_behavior_kw: dict[str, Any],
+    validate_fn_extra_kw: Union[ExtraBehavior, None],
+):
     @dataclasses.dataclass
     class MyModel:
         f: str
@@ -1067,14 +1101,14 @@ def test_extra_behavior_allow(config: Union[core_schema.CoreConfig, None], schem
         )
     )
 
-    m: MyModel = v.validate_python({'f': 'x', 'extra_field': '123'})
+    m: MyModel = v.validate_python({'f': 'x', 'extra_field': '123'}, extra=validate_fn_extra_kw)
     assert m.f == 'x'
     assert getattr(m, 'extra_field') == '123'
 
-    v.validate_assignment(m, 'f', 'y')
+    v.validate_assignment(m, 'f', 'y', extra=validate_fn_extra_kw)
     assert m.f == 'y'
 
-    v.validate_assignment(m, 'not_f', '123')
+    v.validate_assignment(m, 'not_f', '123', extra=validate_fn_extra_kw)
     assert getattr(m, 'not_f') == '123'
 
 

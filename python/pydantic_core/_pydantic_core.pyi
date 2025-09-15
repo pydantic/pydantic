@@ -6,7 +6,7 @@ from _typeshed import SupportsAllComparisons
 from typing_extensions import LiteralString, Self, TypeAlias
 
 from pydantic_core import ErrorDetails, ErrorTypeInfo, InitErrorDetails, MultiHostHost
-from pydantic_core.core_schema import CoreConfig, CoreSchema, ErrorType
+from pydantic_core.core_schema import CoreConfig, CoreSchema, ErrorType, ExtraBehavior
 
 __all__ = [
     '__version__',
@@ -92,6 +92,7 @@ class SchemaValidator:
         input: Any,
         *,
         strict: bool | None = None,
+        extra: ExtraBehavior | None = None,
         from_attributes: bool | None = None,
         context: Any | None = None,
         self_instance: Any | None = None,
@@ -106,6 +107,8 @@ class SchemaValidator:
             input: The Python object to validate.
             strict: Whether to validate the object in strict mode.
                 If `None`, the value of [`CoreConfig.strict`][pydantic_core.core_schema.CoreConfig] is used.
+            extra: Whether to ignore, allow, or forbid extra data during model validation.
+                If `None`, the value of [`CoreConfig.extra_fields_behavior`][pydantic_core.core_schema.CoreConfig] is used.
             from_attributes: Whether to validate objects as inputs to models by extracting attributes.
                 If `None`, the value of [`CoreConfig.from_attributes`][pydantic_core.core_schema.CoreConfig] is used.
             context: The context to use for validation, this is passed to functional validators as
@@ -130,6 +133,7 @@ class SchemaValidator:
         input: Any,
         *,
         strict: bool | None = None,
+        extra: ExtraBehavior | None = None,
         from_attributes: bool | None = None,
         context: Any | None = None,
         self_instance: Any | None = None,
@@ -150,6 +154,7 @@ class SchemaValidator:
         input: str | bytes | bytearray,
         *,
         strict: bool | None = None,
+        extra: ExtraBehavior | None = None,
         context: Any | None = None,
         self_instance: Any | None = None,
         allow_partial: bool | Literal['off', 'on', 'trailing-strings'] = False,
@@ -169,6 +174,8 @@ class SchemaValidator:
             input: The JSON data to validate.
             strict: Whether to validate the object in strict mode.
                 If `None`, the value of [`CoreConfig.strict`][pydantic_core.core_schema.CoreConfig] is used.
+            extra: Whether to ignore, allow, or forbid extra data during model validation.
+                If `None`, the value of [`CoreConfig.extra_fields_behavior`][pydantic_core.core_schema.CoreConfig] is used.
             context: The context to use for validation, this is passed to functional validators as
                 [`info.context`][pydantic_core.core_schema.ValidationInfo.context].
             self_instance: An instance of a model set attributes on from validation.
@@ -190,6 +197,7 @@ class SchemaValidator:
         input: _StringInput,
         *,
         strict: bool | None = None,
+        extra: ExtraBehavior | None = None,
         context: Any | None = None,
         allow_partial: bool | Literal['off', 'on', 'trailing-strings'] = False,
         by_alias: bool | None = None,
@@ -205,6 +213,8 @@ class SchemaValidator:
             input: The input as a string, or bytes/bytearray if `strict=False`.
             strict: Whether to validate the object in strict mode.
                 If `None`, the value of [`CoreConfig.strict`][pydantic_core.core_schema.CoreConfig] is used.
+            extra: Whether to ignore, allow, or forbid extra data during model validation.
+                If `None`, the value of [`CoreConfig.extra_fields_behavior`][pydantic_core.core_schema.CoreConfig] is used.
             context: The context to use for validation, this is passed to functional validators as
                 [`info.context`][pydantic_core.core_schema.ValidationInfo.context].
             allow_partial: Whether to allow partial validation; if `True` errors in the last element of sequences
@@ -227,6 +237,7 @@ class SchemaValidator:
         field_value: Any,
         *,
         strict: bool | None = None,
+        extra: ExtraBehavior | None = None,
         from_attributes: bool | None = None,
         context: Any | None = None,
         by_alias: bool | None = None,
@@ -241,6 +252,8 @@ class SchemaValidator:
             field_value: The value to assign to the field.
             strict: Whether to validate the object in strict mode.
                 If `None`, the value of [`CoreConfig.strict`][pydantic_core.core_schema.CoreConfig] is used.
+            extra: Whether to ignore, allow, or forbid extra data during model validation.
+                If `None`, the value of [`CoreConfig.extra_fields_behavior`][pydantic_core.core_schema.CoreConfig] is used.
             from_attributes: Whether to validate objects as inputs to models by extracting attributes.
                 If `None`, the value of [`CoreConfig.from_attributes`][pydantic_core.core_schema.CoreConfig] is used.
             context: The context to use for validation, this is passed to functional validators as

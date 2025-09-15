@@ -9,6 +9,7 @@ import pytest
 from dirty_equals import FunctionCheck
 
 from pydantic_core import CoreConfig, SchemaError, SchemaValidator, ValidationError, core_schema
+from pydantic_core.core_schema import ExtraBehavior
 
 from ..conftest import Err, PyAndJson, assert_gc
 
@@ -166,15 +167,22 @@ def test_ignore_extra():
     assert v.validate_python({'field_a': b'123', 'field_b': 1, 'field_c': 123}) == {'field_a': '123', 'field_b': 1}
 
 
-def test_forbid_extra():
+@pytest.mark.parametrize(
+    'schema_extra_behavior,validate_fn_extra_kw',
+    [
+        ({'extra_behavior': 'forbid'}, None),
+        ({}, 'forbid'),
+    ],
+)
+def test_forbid_extra(schema_extra_behavior: dict[str, Any], validate_fn_extra_kw: Union[ExtraBehavior, None]):
     v = SchemaValidator(
         core_schema.typed_dict_schema(
-            fields={'field_a': core_schema.typed_dict_field(schema=core_schema.str_schema())}, extra_behavior='forbid'
+            fields={'field_a': core_schema.typed_dict_field(schema=core_schema.str_schema())}, **schema_extra_behavior
         )
     )
 
     with pytest.raises(ValidationError) as exc_info:
-        v.validate_python({'field_a': 'abc', 'field_b': 1})
+        v.validate_python({'field_a': 'abc', 'field_b': 1}, extra=validate_fn_extra_kw)
 
     assert exc_info.value.errors(include_url=False) == [
         {'type': 'extra_forbidden', 'loc': ('field_b',), 'msg': 'Extra inputs are not permitted', 'input': 1}
@@ -1089,6 +1097,9 @@ def test_extra_behavior_allow(
     assert m == {'f': 'x', 'extra_field': expected_extra_value}
 
 
+# We can't test the extra parameter of the validate_* functions above, since the
+# extras_schema parameter isn't valid unless the models are configured with extra='allow'.
+# Test the validate_* extra parameter separately here instead:
 @pytest.mark.parametrize(
     'config,schema_extra_behavior_kw',
     [
@@ -1096,39 +1107,90 @@ def test_extra_behavior_allow(
         (core_schema.CoreConfig(extra_fields_behavior='forbid'), {'extra_behavior': None}),
         (core_schema.CoreConfig(), {'extra_behavior': 'forbid'}),
         (None, {'extra_behavior': 'forbid'}),
-        (core_schema.CoreConfig(extra_fields_behavior='allow'), {'extra_behavior': 'forbid'}),
+        (core_schema.CoreConfig(extra_fields_behavior='ignore'), {'extra_behavior': 'forbid'}),
+        (core_schema.CoreConfig(), {}),
+        (core_schema.CoreConfig(), {'extra_behavior': None}),
+        (None, {'extra_behavior': None}),
     ],
 )
-def test_extra_behavior_forbid(config: Union[core_schema.CoreConfig, None], schema_extra_behavior_kw: dict[str, Any]):
+def test_extra_behavior_allow_with_validate_fn_override(
+    config: Union[core_schema.CoreConfig, None],
+    schema_extra_behavior_kw: dict[str, Any],
+):
     v = SchemaValidator(
         core_schema.typed_dict_schema(
-            {'f': core_schema.typed_dict_field(core_schema.str_schema())}, **schema_extra_behavior_kw, config=config
+            {'f': core_schema.typed_dict_field(core_schema.str_schema())},
+            **schema_extra_behavior_kw,
+            config=config,
         )
     )
 
-    m: dict[str, Any] = v.validate_python({'f': 'x'})
+    m: dict[str, Any] = v.validate_python({'f': 'x', 'extra_field': '123'}, extra='allow')
+    assert m == {'f': 'x', 'extra_field': '123'}
+
+
+@pytest.mark.parametrize(
+    'config,schema_extra_behavior_kw,validate_fn_extra_kw',
+    [
+        (core_schema.CoreConfig(extra_fields_behavior='forbid'), {}, None),
+        (core_schema.CoreConfig(extra_fields_behavior='forbid'), {'extra_behavior': None}, None),
+        (core_schema.CoreConfig(), {'extra_behavior': 'forbid'}, None),
+        (None, {'extra_behavior': 'forbid'}, None),
+        (core_schema.CoreConfig(extra_fields_behavior='allow'), {'extra_behavior': 'forbid'}, None),
+        (core_schema.CoreConfig(extra_fields_behavior='ignore'), {}, 'forbid'),
+        (core_schema.CoreConfig(extra_fields_behavior='ignore'), {'extra_behavior': None}, 'forbid'),
+        (core_schema.CoreConfig(), {'extra_behavior': 'ignore'}, 'forbid'),
+        (None, {'extra_behavior': 'ignore'}, 'forbid'),
+        (core_schema.CoreConfig(extra_fields_behavior='allow'), {'extra_behavior': 'ignore'}, 'forbid'),
+        (core_schema.CoreConfig(), {}, 'forbid'),
+        (core_schema.CoreConfig(), {'extra_behavior': None}, 'forbid'),
+        (None, {'extra_behavior': None}, 'forbid'),
+    ],
+)
+def test_extra_behavior_forbid(
+    config: Union[core_schema.CoreConfig, None],
+    schema_extra_behavior_kw: dict[str, Any],
+    validate_fn_extra_kw: Union[ExtraBehavior, None],
+):
+    v = SchemaValidator(
+        core_schema.typed_dict_schema(
+            {'f': core_schema.typed_dict_field(core_schema.str_schema())},
+            **schema_extra_behavior_kw,
+            config=config,
+        )
+    )
+
+    m: dict[str, Any] = v.validate_python({'f': 'x'}, extra=validate_fn_extra_kw)
     assert m == {'f': 'x'}
 
     with pytest.raises(ValidationError) as exc_info:
-        v.validate_python({'f': 'x', 'extra_field': 123})
+        v.validate_python({'f': 'x', 'extra_field': 123}, extra=validate_fn_extra_kw)
     assert exc_info.value.errors(include_url=False) == [
         {'type': 'extra_forbidden', 'loc': ('extra_field',), 'msg': 'Extra inputs are not permitted', 'input': 123}
     ]
 
 
 @pytest.mark.parametrize(
-    'config,schema_extra_behavior_kw',
+    'config,schema_extra_behavior_kw,validate_fn_extra_kw',
     [
-        (core_schema.CoreConfig(extra_fields_behavior='ignore'), {}),
-        (core_schema.CoreConfig(), {'extra_behavior': 'ignore'}),
-        (None, {'extra_behavior': 'ignore'}),
-        (core_schema.CoreConfig(extra_fields_behavior='forbid'), {'extra_behavior': 'ignore'}),
-        (core_schema.CoreConfig(), {}),
-        (core_schema.CoreConfig(), {'extra_behavior': None}),
-        (None, {'extra_behavior': None}),
+        (core_schema.CoreConfig(extra_fields_behavior='ignore'), {}, None),
+        (core_schema.CoreConfig(), {'extra_behavior': 'ignore'}, None),
+        (None, {'extra_behavior': 'ignore'}, None),
+        (core_schema.CoreConfig(extra_fields_behavior='forbid'), {'extra_behavior': 'ignore'}, None),
+        (core_schema.CoreConfig(), {}, None),
+        (core_schema.CoreConfig(), {'extra_behavior': None}, None),
+        (None, {'extra_behavior': None}, None),
+        (core_schema.CoreConfig(extra_fields_behavior='allow'), {}, 'ignore'),
+        (core_schema.CoreConfig(), {'extra_behavior': 'allow'}, 'ignore'),
+        (None, {'extra_behavior': 'allow'}, 'ignore'),
+        (core_schema.CoreConfig(extra_fields_behavior='forbid'), {'extra_behavior': 'allow'}, 'ignore'),
     ],
 )
-def test_extra_behavior_ignore(config: Union[core_schema.CoreConfig, None], schema_extra_behavior_kw: dict[str, Any]):
+def test_extra_behavior_ignore(
+    config: Union[core_schema.CoreConfig, None],
+    schema_extra_behavior_kw: dict[str, Any],
+    validate_fn_extra_kw: Union[ExtraBehavior, None],
+):
     v = SchemaValidator(
         core_schema.typed_dict_schema(
             {'f': core_schema.typed_dict_field(core_schema.str_schema())}, **schema_extra_behavior_kw
@@ -1136,7 +1198,7 @@ def test_extra_behavior_ignore(config: Union[core_schema.CoreConfig, None], sche
         config=config,
     )
 
-    m: dict[str, Any] = v.validate_python({'f': 'x', 'extra_field': 123})
+    m: dict[str, Any] = v.validate_python({'f': 'x', 'extra_field': 123}, extra=validate_fn_extra_kw)
     assert m == {'f': 'x'}
 
 

@@ -16,7 +16,7 @@ import hypothesis
 import pytest
 
 from pydantic_core import ArgsKwargs, CoreSchema, SchemaValidator, ValidationError
-from pydantic_core.core_schema import CoreConfig
+from pydantic_core.core_schema import CoreConfig, ExtraBehavior
 
 __all__ = 'Err', 'PyAndJson', 'assert_gc', 'is_free_threaded', 'plain_repr', 'infinite_generator'
 
@@ -73,14 +73,19 @@ class PyAndJsonValidator:
     def validate_json(self, json_str: str, strict: bool | None = None, context: Any = None):
         return self.validator.validate_json(json_str, strict=strict, context=context)
 
-    def validate_test(self, py_input, strict: bool | None = None, context: Any = None):
+    def validate_test(
+        self, py_input, strict: bool | None = None, context: Any = None, extra: ExtraBehavior | None = None
+    ):
         if self.validator_type == 'json':
             return self.validator.validate_json(
-                json.dumps(py_input, default=json_default), strict=strict, context=context
+                json.dumps(py_input, default=json_default),
+                strict=strict,
+                extra=extra,
+                context=context,
             )
         else:
             assert self.validator_type == 'python', self.validator_type
-            return self.validator.validate_python(py_input, strict=strict, context=context)
+            return self.validator.validate_python(py_input, strict=strict, context=context, extra=extra)
 
     def isinstance_test(self, py_input, strict: bool | None = None, context: Any = None):
         if self.validator_type == 'json':

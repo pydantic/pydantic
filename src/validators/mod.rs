@@ -1,14 +1,15 @@
 use std::fmt::Debug;
+use std::str::FromStr;
 
 use enum_dispatch::enum_dispatch;
 use jiter::{PartialMode, StringCacheMode};
 
-use pyo3::exceptions::PyTypeError;
+use pyo3::exceptions::{PyTypeError, PyValueError};
 use pyo3::types::{PyAny, PyDict, PyString, PyTuple, PyType};
 use pyo3::{intern, PyTraverseError, PyVisit};
 use pyo3::{prelude::*, IntoPyObjectExt};
 
-use crate::build_tools::{py_schema_err, py_schema_error_type};
+use crate::build_tools::{py_schema_err, py_schema_error_type, ExtraBehavior};
 use crate::definitions::{Definitions, DefinitionsBuilder};
 use crate::errors::{LocItem, ValError, ValResult, ValidationError};
 use crate::input::{Input, InputType, StringMapping};
@@ -159,12 +160,13 @@ impl SchemaValidator {
     }
 
     #[allow(clippy::too_many_arguments)]
-    #[pyo3(signature = (input, *, strict=None, from_attributes=None, context=None, self_instance=None, allow_partial=PartialMode::Off, by_alias=None, by_name=None))]
+    #[pyo3(signature = (input, *, strict=None, extra=None, from_attributes=None, context=None, self_instance=None, allow_partial=PartialMode::Off, by_alias=None, by_name=None))]
     pub fn validate_python(
         &self,
         py: Python,
         input: &Bound<'_, PyAny>,
         strict: Option<bool>,
+        extra: Option<&Bound<'_, PyString>>,
         from_attributes: Option<bool>,
         context: Option<&Bound<'_, PyAny>>,
         self_instance: Option<&Bound<'_, PyAny>>,
@@ -172,12 +174,17 @@ impl SchemaValidator {
         by_alias: Option<bool>,
         by_name: Option<bool>,
     ) -> PyResult<PyObject> {
+        let extra_behavior = extra
+            .map(|e| ExtraBehavior::from_str(e.to_str()?).map_err(|err| PyValueError::new_err(err.to_string())))
+            .transpose()?;
+
         #[allow(clippy::used_underscore_items)]
         self._validate(
             py,
             input,
             InputType::Python,
             strict,
+            extra_behavior,
             from_attributes,
             context,
             self_instance,
@@ -189,24 +196,30 @@ impl SchemaValidator {
     }
 
     #[allow(clippy::too_many_arguments)]
-    #[pyo3(signature = (input, *, strict=None, from_attributes=None, context=None, self_instance=None, by_alias=None, by_name=None))]
+    #[pyo3(signature = (input, *, strict=None, extra=None, from_attributes=None, context=None, self_instance=None, by_alias=None, by_name=None))]
     pub fn isinstance_python(
         &self,
         py: Python,
         input: &Bound<'_, PyAny>,
         strict: Option<bool>,
+        extra: Option<&Bound<'_, PyString>>,
         from_attributes: Option<bool>,
         context: Option<&Bound<'_, PyAny>>,
         self_instance: Option<&Bound<'_, PyAny>>,
         by_alias: Option<bool>,
         by_name: Option<bool>,
     ) -> PyResult<bool> {
+        let extra_behavior = extra
+            .map(|e| ExtraBehavior::from_str(e.to_str()?).map_err(|err| PyValueError::new_err(err.to_string())))
+            .transpose()?;
+
         #[allow(clippy::used_underscore_items)]
         match self._validate(
             py,
             input,
             InputType::Python,
             strict,
+            extra_behavior,
             from_attributes,
             context,
             self_instance,
@@ -223,18 +236,23 @@ impl SchemaValidator {
     }
 
     #[allow(clippy::too_many_arguments)]
-    #[pyo3(signature = (input, *, strict=None, context=None, self_instance=None, allow_partial=PartialMode::Off, by_alias=None, by_name=None))]
+    #[pyo3(signature = (input, *, strict=None, extra=None, context=None, self_instance=None, allow_partial=PartialMode::Off, by_alias=None, by_name=None))]
     pub fn validate_json(
         &self,
         py: Python,
         input: &Bound<'_, PyAny>,
         strict: Option<bool>,
+        extra: Option<&Bound<'_, PyString>>,
         context: Option<&Bound<'_, PyAny>>,
         self_instance: Option<&Bound<'_, PyAny>>,
         allow_partial: PartialMode,
         by_alias: Option<bool>,
         by_name: Option<bool>,
     ) -> PyResult<PyObject> {
+        let extra_behavior = extra
+            .map(|e| ExtraBehavior::from_str(e.to_str()?).map_err(|err| PyValueError::new_err(err.to_string())))
+            .transpose()?;
+
         let r = match json::validate_json_bytes(input) {
             #[allow(clippy::used_underscore_items)]
             Ok(v_match) => self._validate_json(
@@ -242,6 +260,7 @@ impl SchemaValidator {
                 input,
                 v_match.into_inner().as_slice(),
                 strict,
+                extra_behavior,
                 context,
                 self_instance,
                 allow_partial,
@@ -254,12 +273,13 @@ impl SchemaValidator {
     }
 
     #[allow(clippy::too_many_arguments)]
-    #[pyo3(signature = (input, *, strict=None, context=None, allow_partial=PartialMode::Off, by_alias=None, by_name=None))]
+    #[pyo3(signature = (input, *, strict=None, extra=None, context=None, allow_partial=PartialMode::Off, by_alias=None, by_name=None))]
     pub fn validate_strings(
         &self,
         py: Python,
         input: Bound<'_, PyAny>,
         strict: Option<bool>,
+        extra: Option<&Bound<'_, PyString>>,
         context: Option<&Bound<'_, PyAny>>,
         allow_partial: PartialMode,
         by_alias: Option<bool>,
@@ -267,6 +287,9 @@ impl SchemaValidator {
     ) -> PyResult<PyObject> {
         let t = InputType::String;
         let string_mapping = StringMapping::new_value(input).map_err(|e| self.prepare_validation_err(py, e, t))?;
+        let extra_behavior = extra
+            .map(|e| ExtraBehavior::from_str(e.to_str()?).map_err(|err| PyValueError::new_err(err.to_string())))
+            .transpose()?;
 
         #[allow(clippy::used_underscore_items)]
         match self._validate(
@@ -274,6 +297,7 @@ impl SchemaValidator {
             &string_mapping,
             t,
             strict,
+            extra_behavior,
             None,
             context,
             None,
@@ -287,7 +311,7 @@ impl SchemaValidator {
     }
 
     #[allow(clippy::too_many_arguments)]
-    #[pyo3(signature = (obj, field_name, field_value, *, strict=None, from_attributes=None, context=None, by_alias=None, by_name=None))]
+    #[pyo3(signature = (obj, field_name, field_value, *, strict=None, extra=None,from_attributes=None, context=None, by_alias=None, by_name=None))]
     pub fn validate_assignment(
         &self,
         py: Python,
@@ -295,15 +319,21 @@ impl SchemaValidator {
         field_name: &str,
         field_value: Bound<'_, PyAny>,
         strict: Option<bool>,
+        extra: Option<&Bound<'_, PyString>>,
         from_attributes: Option<bool>,
         context: Option<&Bound<'_, PyAny>>,
         by_alias: Option<bool>,
         by_name: Option<bool>,
     ) -> PyResult<PyObject> {
+        let extra_behavior = extra
+            .map(|e| ExtraBehavior::from_str(e.to_str()?).map_err(|err| PyValueError::new_err(err.to_string())))
+            .transpose()?;
+
         let extra = Extra {
             input_type: InputType::Python,
             data: None,
             strict,
+            extra_behavior,
             from_attributes,
             field_name: Some(PyString::new(py, field_name)),
             context,
@@ -331,6 +361,7 @@ impl SchemaValidator {
             input_type: InputType::Python,
             data: None,
             strict,
+            extra_behavior: None,
             from_attributes: None,
             field_name: None,
             context,
@@ -388,6 +419,7 @@ impl SchemaValidator {
         input: &(impl Input<'py> + ?Sized),
         input_type: InputType,
         strict: Option<bool>,
+        extra_behavior: Option<ExtraBehavior>,
         from_attributes: Option<bool>,
         context: Option<&Bound<'py, PyAny>>,
         self_instance: Option<&Bound<'py, PyAny>>,
@@ -399,6 +431,7 @@ impl SchemaValidator {
         let mut state = ValidationState::new(
             Extra::new(
                 strict,
+                extra_behavior,
                 from_attributes,
                 context,
                 self_instance,
@@ -420,6 +453,7 @@ impl SchemaValidator {
         input: &Bound<'_, PyAny>,
         json_data: &[u8],
         strict: Option<bool>,
+        extra_behavior: Option<ExtraBehavior>,
         context: Option<&Bound<'_, PyAny>>,
         self_instance: Option<&Bound<'_, PyAny>>,
         allow_partial: PartialMode,
@@ -434,6 +468,7 @@ impl SchemaValidator {
             &json_value,
             InputType::Json,
             strict,
+            extra_behavior,
             None,
             context,
             self_instance,
@@ -636,6 +671,9 @@ pub struct Extra<'a, 'py> {
     pub data: Option<Bound<'py, PyDict>>,
     /// whether we're in strict or lax mode
     pub strict: Option<bool>,
+    /// Whether to ignore, allow, or forbid extra data during model validation
+    #[allow(clippy::struct_field_names)]
+    pub extra_behavior: Option<ExtraBehavior>,
     /// Validation time setting of `from_attributes`
     pub from_attributes: Option<bool>,
     /// context used in validator functions
@@ -656,6 +694,7 @@ impl<'a, 'py> Extra<'a, 'py> {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         strict: Option<bool>,
+        extra_behavior: Option<ExtraBehavior>,
         from_attributes: Option<bool>,
         context: Option<&'a Bound<'py, PyAny>>,
         self_instance: Option<&'a Bound<'py, PyAny>>,
@@ -668,6 +707,7 @@ impl<'a, 'py> Extra<'a, 'py> {
             input_type,
             data: None,
             strict,
+            extra_behavior,
             from_attributes,
             field_name: None,
             context,
@@ -685,6 +725,7 @@ impl Extra<'_, '_> {
             input_type: self.input_type,
             data: self.data.clone(),
             strict: Some(true),
+            extra_behavior: self.extra_behavior,
             from_attributes: self.from_attributes,
             field_name: self.field_name.clone(),
             context: self.context,

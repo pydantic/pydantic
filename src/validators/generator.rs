@@ -4,6 +4,7 @@ use std::sync::Arc;
 use pyo3::types::{PyDict, PyString};
 use pyo3::{prelude::*, IntoPyObjectExt, PyTraverseError, PyVisit};
 
+use crate::build_tools::ExtraBehavior;
 use crate::errors::{ErrorType, LocItem, ValError, ValResult};
 use crate::input::{BorrowInput, GenericIterator, Input};
 use crate::py_gc::PyGcTraverse;
@@ -220,6 +221,7 @@ pub struct InternalValidator {
     // TODO, do we need data?
     data: Option<Py<PyDict>>,
     strict: Option<bool>,
+    extra_behavior: Option<ExtraBehavior>,
     from_attributes: Option<bool>,
     context: Option<PyObject>,
     self_instance: Option<PyObject>,
@@ -252,6 +254,7 @@ impl InternalValidator {
             validator,
             data: extra.data.as_ref().map(|d| d.clone().into()),
             strict: extra.strict,
+            extra_behavior: extra.extra_behavior,
             from_attributes: extra.from_attributes,
             context: extra.context.map(|d| d.clone().unbind()),
             self_instance: extra.self_instance.map(|d| d.clone().unbind()),
@@ -277,6 +280,7 @@ impl InternalValidator {
             input_type: self.validation_mode,
             data: self.data.as_ref().map(|data| data.bind(py).clone()),
             strict: self.strict,
+            extra_behavior: self.extra_behavior,
             from_attributes: self.from_attributes,
             field_name: Some(PyString::new(py, field_name)),
             context: self.context.as_ref().map(|data| data.bind(py)),
@@ -315,6 +319,7 @@ impl InternalValidator {
             input_type: self.validation_mode,
             data: self.data.as_ref().map(|data| data.bind(py).clone()),
             strict: self.strict,
+            extra_behavior: self.extra_behavior,
             from_attributes: self.from_attributes,
             field_name: None,
             context: self.context.as_ref().map(|data| data.bind(py)),
