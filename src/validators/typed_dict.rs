@@ -156,6 +156,7 @@ impl Validator for TypedDictValidator {
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         let strict = state.strict_or(self.strict);
+        let extra_behavior = state.extra_behavior_or(self.extra_behavior);
         let dict = input.validate_dict(strict)?;
 
         let output_dict = PyDict::new(py);
@@ -173,12 +174,12 @@ impl Validator for TypedDictValidator {
 
         // we only care about which keys have been used if we're iterating over the object for extra after
         // the first pass
-        let mut used_keys: Option<AHashSet<&str>> =
-            if self.extra_behavior == ExtraBehavior::Ignore || dict.is_py_get_attr() {
-                None
-            } else {
-                Some(AHashSet::with_capacity(self.fields.len()))
-            };
+        let mut used_keys: Option<AHashSet<&str>> = if extra_behavior == ExtraBehavior::Ignore || dict.is_py_get_attr()
+        {
+            None
+        } else {
+            Some(AHashSet::with_capacity(self.fields.len()))
+        };
 
         {
             let state = &mut state.rebind_extra(|extra| extra.data = Some(output_dict.clone()));
@@ -366,7 +367,7 @@ impl Validator for TypedDictValidator {
                 extras_validator: self.extras_validator.as_deref(),
                 output_dict: &output_dict,
                 state,
-                extra_behavior: self.extra_behavior,
+                extra_behavior,
                 partial_last_key,
                 allow_partial,
             })??;

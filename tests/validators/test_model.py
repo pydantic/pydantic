@@ -2,12 +2,13 @@ import re
 import sys
 from copy import deepcopy
 from decimal import Decimal
-from typing import Any, Callable
+from typing import Any, Callable, Union
 
 import pytest
 from dirty_equals import HasRepr, IsInstance
 
 from pydantic_core import CoreConfig, SchemaError, SchemaValidator, ValidationError, core_schema
+from pydantic_core.core_schema import ExtraBehavior
 
 
 def test_model_class():
@@ -46,7 +47,14 @@ def test_model_class():
     assert m2.__dict__ == {'field_a': 'test', 'field_b': 12}
 
 
-def test_model_class_extra():
+@pytest.mark.parametrize(
+    'schema_extra_behavior,validate_fn_extra_kw',
+    [
+        ('allow', None),
+        ('ignore', 'allow'),
+    ],
+)
+def test_model_class_extra(schema_extra_behavior: dict[str, Any], validate_fn_extra_kw: Union[ExtraBehavior, None]):
     class MyModel:
         # this is not required, but it avoids `__pydantic_fields_set__` being included in `__dict__`
         __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
@@ -61,11 +69,11 @@ def test_model_class_extra():
                     'field_a': core_schema.model_field(core_schema.str_schema()),
                     'field_b': core_schema.model_field(core_schema.int_schema()),
                 },
-                extra_behavior='allow',
+                extra_behavior=schema_extra_behavior,
             ),
         )
     )
-    m = v.validate_python({'field_a': 'test', 'field_b': 12, 'field_c': 'extra'})
+    m = v.validate_python({'field_a': 'test', 'field_b': 12, 'field_c': 'extra'}, extra=validate_fn_extra_kw)
     assert isinstance(m, MyModel)
     assert m.field_a == 'test'
     assert m.field_b == 12
@@ -74,7 +82,16 @@ def test_model_class_extra():
     assert m.__dict__ == {'field_a': 'test', 'field_b': 12}
 
 
-def test_model_class_extra_forbid():
+@pytest.mark.parametrize(
+    'schema_extra_behavior,validate_fn_extra_kw',
+    [
+        ('forbid', None),
+        ('ignore', 'forbid'),
+    ],
+)
+def test_model_class_extra_forbid(
+    schema_extra_behavior: dict[str, Any], validate_fn_extra_kw: Union[ExtraBehavior, None]
+):
     class MyModel:
         class Meta:
             pass
@@ -102,20 +119,20 @@ def test_model_class_extra_forbid():
                     'field_a': core_schema.model_field(core_schema.str_schema()),
                     'field_b': core_schema.model_field(core_schema.int_schema()),
                 },
-                extra_behavior='forbid',
+                extra_behavior=schema_extra_behavior,
             ),
         )
     )
-    m = v.validate_python({'field_a': 'test', 'field_b': 12})
+    m = v.validate_python({'field_a': 'test', 'field_b': 12}, extra=validate_fn_extra_kw)
     assert isinstance(m, MyModel)
     assert m.field_a == 'test'
     assert m.field_b == 12
 
     # try revalidating from the model's attributes
-    m = v.validate_python(Wrapper(m), from_attributes=True)
+    m = v.validate_python(Wrapper(m), from_attributes=True, extra=validate_fn_extra_kw)
 
     with pytest.raises(ValidationError) as exc_info:
-        m = v.validate_python({'field_a': 'test', 'field_b': 12, 'field_c': 'extra'})
+        m = v.validate_python({'field_a': 'test', 'field_b': 12, 'field_c': 'extra'}, extra=validate_fn_extra_kw)
 
     assert exc_info.value.errors(include_url=False) == [
         {'type': 'extra_forbidden', 'loc': ('field_c',), 'msg': 'Extra inputs are not permitted', 'input': 'extra'}

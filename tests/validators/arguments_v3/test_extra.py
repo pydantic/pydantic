@@ -1,3 +1,5 @@
+from typing import Any, Union
+
 import pytest
 
 from pydantic_core import ArgsKwargs, ValidationError
@@ -7,6 +9,13 @@ from ...conftest import PyAndJson
 
 
 @pytest.mark.parametrize(
+    'schema_extra_behavior,validate_fn_extra_kw',
+    [
+        ('forbid', None),
+        ('ignore', 'forbid'),
+    ],
+)
+@pytest.mark.parametrize(
     ['input_value', 'err_type'],
     (
         [ArgsKwargs((), {'a': 1, 'b': 2, 'c': 3}), 'unexpected_keyword_argument'],
@@ -15,19 +24,25 @@ from ...conftest import PyAndJson
         [{'a': 1, 'c': 3, 'extra': 'value'}, 'extra_forbidden'],
     ),
 )
-def test_extra_forbid(py_and_json: PyAndJson, input_value, err_type) -> None:
+def test_extra_forbid(
+    py_and_json: PyAndJson,
+    schema_extra_behavior: dict[str, Any],
+    validate_fn_extra_kw: Union[cs.ExtraBehavior, None],
+    input_value,
+    err_type,
+) -> None:
     v = py_and_json(
         cs.arguments_v3_schema(
             [
                 cs.arguments_v3_parameter(name='a', schema=cs.int_schema()),
                 cs.arguments_v3_parameter(name='b', schema=cs.int_schema(), alias='c'),
             ],
-            extra_behavior='forbid',
+            extra_behavior=schema_extra_behavior,
         ),
     )
 
     with pytest.raises(ValidationError) as exc_info:
-        v.validate_test(input_value)
+        v.validate_test(input_value, extra=validate_fn_extra_kw)
 
     error = exc_info.value.errors()[0]
 

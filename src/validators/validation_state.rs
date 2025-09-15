@@ -3,6 +3,7 @@ use pyo3::types::PyString;
 
 use jiter::{PartialMode, StringCacheMode};
 
+use crate::build_tools::ExtraBehavior;
 use crate::recursion_guard::{ContainsRecursionState, RecursionState};
 use crate::tools::new_py_string;
 
@@ -62,6 +63,10 @@ impl<'a, 'py> ValidationState<'a, 'py> {
 
     pub fn strict_or(&self, default: bool) -> bool {
         self.extra.strict.unwrap_or(default)
+    }
+
+    pub fn extra_behavior_or(&self, default: ExtraBehavior) -> ExtraBehavior {
+        self.extra.extra_behavior.unwrap_or(default)
     }
 
     pub fn validate_by_alias_or(&self, default: Option<bool>) -> bool {
