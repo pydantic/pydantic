@@ -155,7 +155,7 @@ exclude_lines = [
 
 # configuring https://github.com/pydantic/hooky
 [tool.hooky]
-reviewers = ['sydney-runkle', 'davidhewitt']
+reviewers = ['Viicos', 'davidhewitt']
 require_change_file = false
 
 [tool.pyright]
