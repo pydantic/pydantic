@@ -241,13 +241,15 @@ impl ArgumentsV3Validator {
 
         let validate_by_alias = state.validate_by_alias_or(self.validate_by_alias);
         let validate_by_name = state.validate_by_name_or(self.validate_by_name);
+        let extra_behavior = state.extra_behavior_or(self.extra);
 
         // Keep track of used keys for extra behavior:
-        let mut used_keys: Option<AHashSet<&str>> = if self.extra == ExtraBehavior::Ignore || mapping.is_py_get_attr() {
-            None
-        } else {
-            Some(AHashSet::with_capacity(self.parameters.len()))
-        };
+        let mut used_keys: Option<AHashSet<&str>> =
+            if extra_behavior == ExtraBehavior::Ignore || mapping.is_py_get_attr() {
+                None
+            } else {
+                Some(AHashSet::with_capacity(self.parameters.len()))
+            };
 
         for parameter in &self.parameters {
             let lookup_key = parameter
@@ -492,7 +494,7 @@ impl ArgumentsV3Validator {
             mapping.iterate(ValidateExtra {
                 used_keys,
                 errors: &mut errors,
-                extra_behavior: self.extra,
+                extra_behavior,
             })??;
         }
 
@@ -524,6 +526,7 @@ impl ArgumentsV3Validator {
 
         let validate_by_alias = state.validate_by_alias_or(self.validate_by_alias);
         let validate_by_name = state.validate_by_name_or(self.validate_by_name);
+        let extra_behavior = state.extra_behavior_or(self.extra);
 
         // go through non variadic parameters, getting the value from args or kwargs and validating it
         for (index, parameter) in self.parameters.iter().filter(|p| !p.is_variadic()).enumerate() {
@@ -687,7 +690,7 @@ impl ArgumentsV3Validator {
 
                         match maybe_var_kwargs_parameter {
                             None => {
-                                if self.extra == ExtraBehavior::Forbid {
+                                if extra_behavior == ExtraBehavior::Forbid {
                                     errors.push(ValLineError::new_with_loc(
                                         ErrorTypeDefaults::UnexpectedKeywordArgument,
                                         value,

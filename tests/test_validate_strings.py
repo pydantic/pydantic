@@ -119,3 +119,16 @@ def test_typed_dict():
     assert m2 == {'field_a': 1, 'field_b': date(2017, 1, 1)}
     m2 = v.validate_strings({'field_a': '1', 'field_b': '2017-01-01'}, strict=True)
     assert m2 == {'field_a': 1, 'field_b': date(2017, 1, 1)}
+
+
+def test_validate_strings_forbid_extra_fn_override():
+    v = SchemaValidator(
+        core_schema.typed_dict_schema(
+            {
+                'f': core_schema.typed_dict_field(core_schema.int_schema()),
+            }
+        )
+    )
+
+    with pytest.raises(ValidationError, match='Extra inputs are not permitted'):
+        v.validate_strings({'f': '1', 'extra_field': '123'}, extra='forbid')
