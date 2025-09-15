@@ -482,3 +482,25 @@ def test_dataclass_serialization_json(benchmark):
 def test_dataclass_to_json(benchmark):
     dc = Foo(a='hello', b=b'more', c=123, d=1.23)
     benchmark(to_json, dc)
+
+
+@pytest.mark.benchmark(group='function')
+def test_function_wrap_python(benchmark):
+    def f(value, serializer, _info):
+        return f'result={serializer(len(value))}'
+
+    s = SchemaSerializer(
+        core_schema.int_schema(serialization=core_schema.wrap_serializer_function_ser_schema(f, info_arg=True))
+    )
+    benchmark(s.to_python, 'foo')
+
+
+@pytest.mark.benchmark(group='function')
+def test_function_wrap_json(benchmark):
+    def f(value, serializer, _info):
+        return f'result={serializer(len(value))}'
+
+    s = SchemaSerializer(
+        core_schema.int_schema(serialization=core_schema.wrap_serializer_function_ser_schema(f, info_arg=True))
+    )
+    benchmark(s.to_json, 'foo')
