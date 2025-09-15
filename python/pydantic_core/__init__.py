@@ -117,7 +117,7 @@ class ErrorTypeInfo(_TypedDict):
     """
 
     type: ErrorType
-    """The type of error that occurred, this should a "slug" identifier that changes rarely or never."""
+    """The type of error that occurred, this should be a "slug" identifier that changes rarely or never."""
     message_template_python: str
     """String template to render a human readable error message from using context, when the input is Python."""
     example_message_python: str
