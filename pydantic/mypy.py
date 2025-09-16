@@ -210,8 +210,6 @@ class PydanticPlugin(Plugin):
 
             if isinstance(default_factory_type, CallableType):
                 ret_type = get_proper_type(default_factory_type.ret_type)
-                # mypy doesn't think `ret_type` has `args`, you'd think mypy should know,
-                # add this check in case it varies by version
                 if (
                     isinstance(ret_type, Instance)
                     and ret_type.args
