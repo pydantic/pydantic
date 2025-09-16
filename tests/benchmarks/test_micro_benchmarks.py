@@ -1475,3 +1475,17 @@ def test_enum_str_core(benchmark):
     assert v.validate_python('apple') is FooStr.a
 
     benchmark(v.validate_python, 'apple')
+
+
+@pytest.mark.benchmark(group='url')
+def test_url_core(benchmark):
+    v = SchemaValidator(core_schema.url_schema())
+
+    benchmark(v.validate_python, 'https://example.com/some/path?query=string#fragment')
+
+
+@pytest.mark.benchmark(group='url')
+def test_multi_host_url_core(benchmark):
+    v = SchemaValidator(core_schema.multi_host_url_schema())
+
+    benchmark(v.validate_python, 'https://example.com,b:2@example.org:777/some/path?query=string#fragment')
