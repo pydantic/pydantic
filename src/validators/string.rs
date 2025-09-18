@@ -47,7 +47,7 @@ impl Validator for StrValidator {
         py: Python<'py>,
         input: &(impl Input<'py> + ?Sized),
         state: &mut ValidationState<'_, 'py>,
-    ) -> ValResult<PyObject> {
+    ) -> ValResult<Py<PyAny>> {
         input
             .validate_str(state.strict_or(self.strict), self.coerce_numbers_to_str)
             .and_then(|val_match| {
@@ -84,7 +84,7 @@ impl Validator for StrConstrainedValidator {
         py: Python<'py>,
         input: &(impl Input<'py> + ?Sized),
         state: &mut ValidationState<'_, 'py>,
-    ) -> ValResult<PyObject> {
+    ) -> ValResult<Py<PyAny>> {
         let either_str = input
             .validate_str(state.strict_or(self.strict), self.coerce_numbers_to_str)?
             .unpack(state);
@@ -226,7 +226,7 @@ struct Pattern {
 #[derive(Debug, Clone)]
 enum RegexEngine {
     RustRegex(Regex),
-    PythonRe(PyObject),
+    PythonRe(Py<PyAny>),
 }
 
 impl RegexEngine {

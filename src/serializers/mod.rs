@@ -129,7 +129,7 @@ impl SchemaSerializer {
         fallback: Option<&Bound<'_, PyAny>>,
         serialize_as_any: bool,
         context: Option<&Bound<'_, PyAny>>,
-    ) -> PyResult<PyObject> {
+    ) -> PyResult<Py<PyAny>> {
         let mode: SerMode = mode.into();
         let warnings_mode = match warnings {
             WarningsArg::Bool(b) => b.into(),
@@ -180,7 +180,7 @@ impl SchemaSerializer {
         fallback: Option<&Bound<'_, PyAny>>,
         serialize_as_any: bool,
         context: Option<&Bound<'_, PyAny>>,
-    ) -> PyResult<PyObject> {
+    ) -> PyResult<Py<PyAny>> {
         let warnings_mode = match warnings {
             WarningsArg::Bool(b) => b.into(),
             WarningsArg::Literal(mode) => mode,
@@ -268,7 +268,7 @@ pub fn to_json(
     fallback: Option<&Bound<'_, PyAny>>,
     serialize_as_any: bool,
     context: Option<&Bound<'_, PyAny>>,
-) -> PyResult<PyObject> {
+) -> PyResult<Py<PyAny>> {
     let state = SerializationState::new(timedelta_mode, temporal_mode, bytes_mode, inf_nan_mode)?;
     let extra = state.extra(
         py,
@@ -317,7 +317,7 @@ pub fn to_jsonable_python(
     fallback: Option<&Bound<'_, PyAny>>,
     serialize_as_any: bool,
     context: Option<&Bound<'_, PyAny>>,
-) -> PyResult<PyObject> {
+) -> PyResult<Py<PyAny>> {
     let state = SerializationState::new(timedelta_mode, temporal_mode, bytes_mode, inf_nan_mode)?;
     let extra = state.extra(
         py,

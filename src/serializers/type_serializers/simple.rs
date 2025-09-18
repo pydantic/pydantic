@@ -42,7 +42,7 @@ impl TypeSerializer for NoneSerializer {
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
         extra: &Extra,
-    ) -> PyResult<PyObject> {
+    ) -> PyResult<Py<PyAny>> {
         let py = value.py();
         match extra.ob_type_lookup.is_type(value, ObType::None) {
             IsType::Exact => Ok(py.None()),
@@ -118,7 +118,7 @@ macro_rules! build_simple_serializer {
                 include: Option<&Bound<'_, PyAny>>,
                 exclude: Option<&Bound<'_, PyAny>>,
                 extra: &Extra,
-            ) -> PyResult<PyObject> {
+            ) -> PyResult<Py<PyAny>> {
                 let py = value.py();
                 match extra.ob_type_lookup.is_type(value, $ob_type) {
                     IsType::Exact => Ok(value.clone().unbind()),

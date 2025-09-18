@@ -35,7 +35,7 @@ impl TypeSerializer for PrebuiltSerializer {
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
         extra: &Extra,
-    ) -> PyResult<PyObject> {
+    ) -> PyResult<Py<PyAny>> {
         self.schema_serializer
             .get()
             .serializer

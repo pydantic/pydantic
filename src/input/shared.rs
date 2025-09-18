@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
 use pyo3::prelude::*;
-use pyo3::sync::GILOnceCell;
+use pyo3::sync::PyOnceLock;
 use pyo3::{intern, Py, PyAny, Python};
 
 use jiter::{JsonErrorType, NumberInt};
@@ -9,7 +9,7 @@ use jiter::{JsonErrorType, NumberInt};
 use crate::errors::{ErrorTypeDefaults, ValError, ValResult};
 
 use super::{EitherFloat, EitherInt, Input};
-static ENUM_META_OBJECT: GILOnceCell<Py<PyAny>> = GILOnceCell::new();
+static ENUM_META_OBJECT: PyOnceLock<Py<PyAny>> = PyOnceLock::new();
 
 pub fn get_enum_meta_object(py: Python<'_>) -> &Bound<'_, PyAny> {
     ENUM_META_OBJECT

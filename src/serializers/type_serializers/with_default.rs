@@ -43,7 +43,7 @@ impl TypeSerializer for WithDefaultSerializer {
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
         extra: &Extra,
-    ) -> PyResult<PyObject> {
+    ) -> PyResult<Py<PyAny>> {
         self.serializer.to_python(value, include, exclude, extra)
     }
 
@@ -71,7 +71,7 @@ impl TypeSerializer for WithDefaultSerializer {
         self.serializer.retry_with_lax_check()
     }
 
-    fn get_default(&self, py: Python) -> PyResult<Option<PyObject>> {
+    fn get_default(&self, py: Python) -> PyResult<Option<Py<PyAny>>> {
         if let DefaultType::DefaultFactory(_, _takes_data @ true) = self.default {
             // We currently don't compute the default if the default factory takes
             // the data from other fields.

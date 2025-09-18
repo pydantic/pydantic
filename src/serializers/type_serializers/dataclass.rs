@@ -149,7 +149,7 @@ impl TypeSerializer for DataclassSerializer {
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
         extra: &Extra,
-    ) -> PyResult<PyObject> {
+    ) -> PyResult<Py<PyAny>> {
         let model = Some(value);
         let dc_extra = Extra { model, ..*extra };
         if self.allow_value(value, &dc_extra)? {

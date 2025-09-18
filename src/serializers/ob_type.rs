@@ -1,5 +1,5 @@
 use pyo3::prelude::*;
-use pyo3::sync::GILOnceCell;
+use pyo3::sync::PyOnceLock;
 use pyo3::types::{
     PyBool, PyByteArray, PyBytes, PyComplex, PyDate, PyDateTime, PyDelta, PyDict, PyFloat, PyFrozenSet, PyInt,
     PyIterator, PyList, PyNone, PySet, PyString, PyTime, PyTuple, PyType,
@@ -22,7 +22,7 @@ pub struct ObTypeLookup {
     list: usize,
     dict: usize,
     // other numeric types
-    decimal_object: PyObject,
+    decimal_object: Py<PyAny>,
     // other string types
     bytes: usize,
     bytearray: usize,
@@ -39,19 +39,19 @@ pub struct ObTypeLookup {
     url: usize,
     multi_host_url: usize,
     // enum type
-    enum_object: PyObject,
+    enum_object: Py<PyAny>,
     // generator
-    generator_object: PyObject,
+    generator_object: Py<PyAny>,
     // path
-    path_object: PyObject,
+    path_object: Py<PyAny>,
     // pattern
-    pattern_object: PyObject,
+    pattern_object: Py<PyAny>,
     // uuid type
-    uuid_object: PyObject,
+    uuid_object: Py<PyAny>,
     complex: usize,
 }
 
-static TYPE_LOOKUP: GILOnceCell<ObTypeLookup> = GILOnceCell::new();
+static TYPE_LOOKUP: PyOnceLock<ObTypeLookup> = PyOnceLock::new();
 
 #[derive(Debug)]
 pub enum IsType {

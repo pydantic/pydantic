@@ -38,7 +38,7 @@ impl Validator for NullableValidator {
         py: Python<'py>,
         input: &(impl Input<'py> + ?Sized),
         state: &mut ValidationState<'_, 'py>,
-    ) -> ValResult<PyObject> {
+    ) -> ValResult<Py<PyAny>> {
         match input.is_none() {
             true => Ok(py.None()),
             false => self.validator.validate(py, input, state),

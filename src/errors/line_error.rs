@@ -166,6 +166,6 @@ impl ValLineError {
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[derive(Clone, IntoPyObject)]
 pub enum InputValue {
-    Python(PyObject),
+    Python(Py<PyAny>),
     Json(JsonValue<'static>),
 }

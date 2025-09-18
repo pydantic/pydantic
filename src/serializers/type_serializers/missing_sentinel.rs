@@ -42,7 +42,7 @@ impl TypeSerializer for MissingSentinelSerializer {
         _include: Option<&Bound<'_, PyAny>>,
         _exclude: Option<&Bound<'_, PyAny>>,
         _extra: &Extra,
-    ) -> PyResult<PyObject> {
+    ) -> PyResult<Py<PyAny>> {
         let missing_sentinel = get_missing_sentinel_object(value.py());
 
         if value.is(missing_sentinel) {

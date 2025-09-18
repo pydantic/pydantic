@@ -39,7 +39,7 @@ macro_rules! build_serializer {
                 include: Option<&Bound<'_, PyAny>>,
                 exclude: Option<&Bound<'_, PyAny>>,
                 extra: &Extra,
-            ) -> PyResult<PyObject> {
+            ) -> PyResult<Py<PyAny>> {
                 let py = value.py();
                 match value.extract::<$extract>() {
                     Ok(py_url) => match extra.mode {

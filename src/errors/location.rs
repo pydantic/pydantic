@@ -1,5 +1,5 @@
 use pyo3::exceptions::PyTypeError;
-use pyo3::sync::GILOnceCell;
+use pyo3::sync::PyOnceLock;
 use std::borrow::Cow;
 use std::fmt;
 
@@ -103,7 +103,7 @@ impl Default for Location {
     }
 }
 
-static EMPTY_TUPLE: GILOnceCell<Py<PyTuple>> = GILOnceCell::new();
+static EMPTY_TUPLE: PyOnceLock<Py<PyTuple>> = PyOnceLock::new();
 
 impl<'py> IntoPyObject<'py> for &'_ Location {
     type Target = PyTuple;

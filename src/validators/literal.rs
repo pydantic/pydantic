@@ -244,7 +244,7 @@ impl<T: PyGcTraverse + Debug> PyGcTraverse for LiteralLookup<T> {
 
 #[derive(Debug, Clone)]
 pub struct LiteralValidator {
-    lookup: LiteralLookup<PyObject>,
+    lookup: LiteralLookup<Py<PyAny>>,
     expected_repr: String,
     name: String,
 }
@@ -284,7 +284,7 @@ impl Validator for LiteralValidator {
         py: Python<'py>,
         input: &(impl Input<'py> + ?Sized),
         _state: &mut ValidationState<'_, 'py>,
-    ) -> ValResult<PyObject> {
+    ) -> ValResult<Py<PyAny>> {
         match self.lookup.validate(py, input)? {
             Some((_, v)) => Ok(v.clone()),
             None => Err(ValError::new(

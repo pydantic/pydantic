@@ -55,7 +55,7 @@ impl WhenUsed {
 
 #[derive(Debug)]
 pub struct FormatSerializer {
-    format_func: PyObject,
+    format_func: Py<PyAny>,
     formatting_string: Py<PyString>,
     when_used: WhenUsed,
 }
@@ -87,7 +87,7 @@ impl BuildSerializer for FormatSerializer {
 }
 
 impl FormatSerializer {
-    fn call(&self, value: &Bound<'_, PyAny>) -> Result<PyObject, String> {
+    fn call(&self, value: &Bound<'_, PyAny>) -> Result<Py<PyAny>, String> {
         let py = value.py();
         self.format_func
             .call1(py, (value, &self.formatting_string))
@@ -113,7 +113,7 @@ impl TypeSerializer for FormatSerializer {
         _include: Option<&Bound<'_, PyAny>>,
         _exclude: Option<&Bound<'_, PyAny>>,
         extra: &Extra,
-    ) -> PyResult<PyObject> {
+    ) -> PyResult<Py<PyAny>> {
         if self.when_used.should_use(value, extra) {
             self.call(value).map_err(PydanticSerializationError::new_err)
         } else {
@@ -189,7 +189,7 @@ impl TypeSerializer for ToStringSerializer {
         _include: Option<&Bound<'_, PyAny>>,
         _exclude: Option<&Bound<'_, PyAny>>,
         extra: &Extra,
-    ) -> PyResult<PyObject> {
+    ) -> PyResult<Py<PyAny>> {
         if self.when_used.should_use(value, extra) {
             value.str().map(Into::into)
         } else {

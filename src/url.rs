@@ -6,7 +6,7 @@ use std::hash::{Hash, Hasher};
 use idna::punycode::decode_to_string;
 use pyo3::exceptions::PyValueError;
 use pyo3::pyclass::CompareOp;
-use pyo3::sync::GILOnceCell;
+use pyo3::sync::PyOnceLock;
 use pyo3::types::{PyDict, PyType};
 use pyo3::{intern, prelude::*, IntoPyObjectExt};
 use url::Url;
@@ -14,7 +14,7 @@ use url::Url;
 use crate::tools::SchemaDict;
 use crate::SchemaValidator;
 
-static SCHEMA_DEFINITION_URL: GILOnceCell<SchemaValidator> = GILOnceCell::new();
+static SCHEMA_DEFINITION_URL: PyOnceLock<SchemaValidator> = PyOnceLock::new();
 
 #[pyclass(name = "Url", module = "pydantic_core._pydantic_core", subclass, frozen)]
 #[derive(Clone, Hash)]
@@ -217,7 +217,7 @@ impl PyMultiHostUrl {
     }
 }
 
-static SCHEMA_DEFINITION_MULTI_HOST_URL: GILOnceCell<SchemaValidator> = GILOnceCell::new();
+static SCHEMA_DEFINITION_MULTI_HOST_URL: PyOnceLock<SchemaValidator> = PyOnceLock::new();
 
 #[pymethods]
 impl PyMultiHostUrl {

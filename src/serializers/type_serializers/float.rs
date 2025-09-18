@@ -70,7 +70,7 @@ impl TypeSerializer for FloatSerializer {
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
         extra: &Extra,
-    ) -> PyResult<PyObject> {
+    ) -> PyResult<Py<PyAny>> {
         let py = value.py();
         match extra.ob_type_lookup.is_type(value, ObType::Float) {
             IsType::Exact => Ok(value.clone().unbind()),

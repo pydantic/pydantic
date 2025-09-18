@@ -74,7 +74,7 @@ impl Validator for DefinitionRefValidator {
         py: Python<'py>,
         input: &(impl Input<'py> + ?Sized),
         state: &mut ValidationState<'_, 'py>,
-    ) -> ValResult<PyObject> {
+    ) -> ValResult<Py<PyAny>> {
         // this validator does not yet support partial validation, disable it to avoid incorrect results
         state.allow_partial = false.into();
 
@@ -97,7 +97,7 @@ impl Validator for DefinitionRefValidator {
         _py: Python<'py>,
         _outer_loc: Option<impl Into<crate::errors::LocItem>>,
         _state: &mut ValidationState<'_, 'py>,
-    ) -> ValResult<Option<PyObject>> {
+    ) -> ValResult<Option<Py<PyAny>>> {
         self.definition.read(|validator| {
             let validator = validator.unwrap();
             validator.default_value(_py, _outer_loc, _state)
@@ -111,7 +111,7 @@ impl Validator for DefinitionRefValidator {
         field_name: &str,
         field_value: &Bound<'py, PyAny>,
         state: &mut ValidationState<'_, 'py>,
-    ) -> ValResult<PyObject> {
+    ) -> ValResult<Py<PyAny>> {
         self.definition.read(|validator| {
             let validator = validator.unwrap();
             let Ok(mut guard) = RecursionGuard::new(state, py_identity(obj), self.definition.id()) else {

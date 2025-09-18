@@ -32,7 +32,7 @@ impl Validator for MissingSentinelValidator {
         py: Python<'py>,
         input: &(impl Input<'py> + ?Sized),
         _state: &mut ValidationState<'_, 'py>,
-    ) -> ValResult<PyObject> {
+    ) -> ValResult<Py<PyAny>> {
         let missing_sentinel = get_missing_sentinel_object(py);
 
         match input.as_python() {

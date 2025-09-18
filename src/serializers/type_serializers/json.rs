@@ -52,7 +52,7 @@ impl TypeSerializer for JsonSerializer {
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
         extra: &Extra,
-    ) -> PyResult<PyObject> {
+    ) -> PyResult<Py<PyAny>> {
         if extra.round_trip {
             let bytes = to_json_bytes(value, &self.serializer, include, exclude, extra, None, false, 0)?;
             let py = value.py();
