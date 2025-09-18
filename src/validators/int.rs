@@ -66,7 +66,7 @@ impl Validator for IntValidator {
         py: Python<'py>,
         input: &(impl Input<'py> + ?Sized),
         state: &mut ValidationState<'_, 'py>,
-    ) -> ValResult<PyObject> {
+    ) -> ValResult<Py<PyAny>> {
         input
             .validate_int(state.strict_or(self.strict))
             .and_then(|val_match| Ok(val_match.unpack(state).into_py_any(py)?))
@@ -110,7 +110,7 @@ impl Validator for ConstrainedIntValidator {
         py: Python<'py>,
         input: &(impl Input<'py> + ?Sized),
         state: &mut ValidationState<'_, 'py>,
-    ) -> ValResult<PyObject> {
+    ) -> ValResult<Py<PyAny>> {
         let either_int = input.validate_int(state.strict_or(self.strict))?.unpack(state);
         let int_value = either_int.as_int()?;
 

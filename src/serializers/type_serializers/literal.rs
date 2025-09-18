@@ -116,7 +116,7 @@ impl TypeSerializer for LiteralSerializer {
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
         extra: &Extra,
-    ) -> PyResult<PyObject> {
+    ) -> PyResult<Py<PyAny>> {
         let py = value.py();
         match self.check(value, extra)? {
             OutputValue::OkInt(int) => match extra.mode {

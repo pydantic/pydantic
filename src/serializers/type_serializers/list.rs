@@ -55,7 +55,7 @@ impl TypeSerializer for ListSerializer {
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
         extra: &Extra,
-    ) -> PyResult<PyObject> {
+    ) -> PyResult<Py<PyAny>> {
         match value.downcast::<PyList>() {
             Ok(py_list) => {
                 let py = value.py();

@@ -39,7 +39,7 @@ impl TypeSerializer for NullableSerializer {
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
         extra: &Extra,
-    ) -> PyResult<PyObject> {
+    ) -> PyResult<Py<PyAny>> {
         let py = value.py();
         match extra.ob_type_lookup.is_type(value, ObType::None) {
             IsType::Exact => Ok(py.None()),

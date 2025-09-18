@@ -70,7 +70,7 @@ impl Validator for DictValidator {
         py: Python<'py>,
         input: &(impl Input<'py> + ?Sized),
         state: &mut ValidationState<'_, 'py>,
-    ) -> ValResult<PyObject> {
+    ) -> ValResult<Py<PyAny>> {
         let strict = state.strict_or(self.strict);
         let dict = input.validate_dict(strict)?;
         dict.iterate(ValidateToDict {
@@ -105,8 +105,8 @@ where
     Key: BorrowInput<'py> + Clone + Into<LocItem>,
     Value: BorrowInput<'py>,
 {
-    type Output = ValResult<PyObject>;
-    fn consume_iterator(self, iterator: impl Iterator<Item = ValResult<(Key, Value)>>) -> ValResult<PyObject> {
+    type Output = ValResult<Py<PyAny>>;
+    fn consume_iterator(self, iterator: impl Iterator<Item = ValResult<(Key, Value)>>) -> ValResult<Py<PyAny>> {
         let output = PyDict::new(self.py);
         let mut errors: Vec<ValLineError> = Vec::new();
         let allow_partial = self.state.allow_partial;

@@ -4,7 +4,7 @@ use std::fmt;
 
 use pyo3::exceptions::{PyKeyError, PyTypeError};
 use pyo3::prelude::*;
-use pyo3::sync::GILOnceCell;
+use pyo3::sync::PyOnceLock;
 use pyo3::types::{PyDict, PyList};
 
 use ahash::AHashMap;
@@ -299,10 +299,10 @@ error_types! {
     // ---------------------
     // python errors from functions
     ValueError {
-        error: {ctx_type: Option<PyObject>, ctx_fn: field_from_context}, // Use Option because EnumIter requires Default to be implemented
+        error: {ctx_type: Option<Py<PyAny>>, ctx_fn: field_from_context}, // Use Option because EnumIter requires Default to be implemented
     },
     AssertionError {
-        error: {ctx_type: Option<PyObject>, ctx_fn: field_from_context}, // Use Option because EnumIter requires Default to be implemented
+        error: {ctx_type: Option<Py<PyAny>>, ctx_fn: field_from_context}, // Use Option because EnumIter requires Default to be implemented
     },
     // Note: strum message and serialize are not used here
     CustomError {
@@ -465,7 +465,7 @@ fn plural_s<T: From<u8> + PartialEq>(value: T) -> &'static str {
     }
 }
 
-static ERROR_TYPE_LOOKUP: GILOnceCell<AHashMap<String, ErrorType>> = GILOnceCell::new();
+static ERROR_TYPE_LOOKUP: PyOnceLock<AHashMap<String, ErrorType>> = PyOnceLock::new();
 
 impl ErrorType {
     pub fn new_custom_error(py: Python, custom_error: PydanticCustomError) -> Self {

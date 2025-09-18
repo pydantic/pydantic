@@ -33,7 +33,7 @@ impl Validator for FrozenSetValidator {
         py: Python<'py>,
         input: &(impl Input<'py> + ?Sized),
         state: &mut ValidationState<'_, 'py>,
-    ) -> ValResult<PyObject> {
+    ) -> ValResult<Py<PyAny>> {
         let collection = input.validate_frozenset(state.strict_or(self.strict))?.unpack(state);
         let f_set = PyFrozenSet::empty(py)?;
         collection.iterate(ValidateToFrozenSet {

@@ -55,7 +55,7 @@ impl TypeSerializer for GeneratorSerializer {
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
         extra: &Extra,
-    ) -> PyResult<PyObject> {
+    ) -> PyResult<Py<PyAny>> {
         match value.downcast::<PyIterator>() {
             Ok(py_iter) => {
                 let py = value.py();
@@ -159,8 +159,8 @@ pub(crate) struct SerializationIterator {
     item_serializer: Arc<CombinedSerializer>,
     extra_owned: ExtraOwned,
     filter: SchemaFilter<usize>,
-    include: Option<PyObject>,
-    exclude: Option<PyObject>,
+    include: Option<Py<PyAny>>,
+    exclude: Option<Py<PyAny>>,
 }
 
 impl SerializationIterator {
@@ -217,7 +217,7 @@ impl SerializationIterator {
         slf
     }
 
-    fn __next__(&mut self, py: Python) -> PyResult<Option<PyObject>> {
+    fn __next__(&mut self, py: Python) -> PyResult<Option<Py<PyAny>>> {
         let iterator = self.iterator.bind(py);
         let include = self.include.as_ref().map(|o| o.bind(py));
         let exclude = self.exclude.as_ref().map(|o| o.bind(py));

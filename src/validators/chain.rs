@@ -75,7 +75,7 @@ impl Validator for ChainValidator {
         py: Python<'py>,
         input: &(impl Input<'py> + ?Sized),
         state: &mut ValidationState<'_, 'py>,
-    ) -> ValResult<PyObject> {
+    ) -> ValResult<Py<PyAny>> {
         let mut steps_iter = self.steps.iter();
         let first_step = steps_iter.next().unwrap();
         let value = first_step.validate(py, input, state)?;

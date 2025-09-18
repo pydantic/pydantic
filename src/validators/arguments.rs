@@ -188,13 +188,13 @@ impl Validator for ArgumentsValidator {
         py: Python<'py>,
         input: &(impl Input<'py> + ?Sized),
         state: &mut ValidationState<'_, 'py>,
-    ) -> ValResult<PyObject> {
+    ) -> ValResult<Py<PyAny>> {
         // this validator does not yet support partial validation, disable it to avoid incorrect results
         state.allow_partial = false.into();
 
         let args = input.validate_args()?;
 
-        let mut output_args: Vec<PyObject> = Vec::with_capacity(self.positional_params_count);
+        let mut output_args: Vec<Py<PyAny>> = Vec::with_capacity(self.positional_params_count);
         let output_kwargs = PyDict::new(py);
         let mut errors: Vec<ValLineError> = Vec::new();
         let mut used_kwargs: AHashSet<&str> = AHashSet::with_capacity(self.parameters.len());

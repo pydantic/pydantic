@@ -52,7 +52,7 @@ pub fn pydate_as_date(py_date: &Bound<'_, PyAny>) -> PyResult<Date> {
 }
 
 impl<'py> EitherDate<'py> {
-    pub fn try_into_py(self, py: Python<'py>, input: &(impl Input<'py> + ?Sized)) -> ValResult<PyObject> {
+    pub fn try_into_py(self, py: Python<'py>, input: &(impl Input<'py> + ?Sized)) -> ValResult<Py<PyAny>> {
         match self {
             Self::Raw(date) => {
                 if date.year == 0 {
@@ -376,7 +376,7 @@ pub fn pydatetime_as_datetime(py_dt: &Bound<'_, PyAny>) -> PyResult<DateTime> {
 }
 
 impl<'py> EitherDateTime<'py> {
-    pub fn try_into_py(self, py: Python<'py>, input: &(impl Input<'py> + ?Sized)) -> ValResult<PyObject> {
+    pub fn try_into_py(self, py: Python<'py>, input: &(impl Input<'py> + ?Sized)) -> ValResult<Py<PyAny>> {
         match self {
             Self::Raw(dt) => {
                 if dt.date.year == 0 {

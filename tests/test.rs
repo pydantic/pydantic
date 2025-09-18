@@ -7,7 +7,7 @@ mod tests {
 
     #[test]
     fn test_build_schema_serializer() {
-        Python::with_gil(|py| {
+        Python::attach(|py| {
             // 'type': 'typed-dict',
             //     'fields': {
             //         'root': {
@@ -55,7 +55,7 @@ mod tests {
 
     #[test]
     fn test_literal_schema() {
-        Python::with_gil(|py| {
+        Python::attach(|py| {
             let code = c_str!(
                 r#"
 schema = {
@@ -88,7 +88,7 @@ json_input = '{"a": "something"}'
 
     #[test]
     fn test_segfault_for_recursive_schemas() {
-        Python::with_gil(|py| {
+        Python::attach(|py| {
             let code = c_str!(
                 r"
 schema = {

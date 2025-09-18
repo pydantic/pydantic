@@ -72,11 +72,11 @@ pub use with_default::DefaultType;
 #[pyclass(module = "pydantic_core._pydantic_core", name = "Some")]
 pub struct PySome {
     #[pyo3(get)]
-    value: PyObject,
+    value: Py<PyAny>,
 }
 
 impl PySome {
-    fn new(value: PyObject) -> Self {
+    fn new(value: Py<PyAny>) -> Self {
         Self { value }
     }
 }
@@ -88,7 +88,7 @@ impl PySome {
     }
 
     #[new]
-    pub fn py_new(value: PyObject) -> Self {
+    pub fn py_new(value: Py<PyAny>) -> Self {
         Self { value }
     }
 
@@ -114,7 +114,7 @@ pub struct SchemaValidator {
     py_schema: Py<PyAny>,
     py_config: Option<Py<PyDict>>,
     #[pyo3(get)]
-    title: PyObject,
+    title: Py<PyAny>,
     hide_input_in_errors: bool,
     validation_error_cause: bool,
     cache_str: StringCacheMode,
@@ -173,7 +173,7 @@ impl SchemaValidator {
         allow_partial: PartialMode,
         by_alias: Option<bool>,
         by_name: Option<bool>,
-    ) -> PyResult<PyObject> {
+    ) -> PyResult<Py<PyAny>> {
         let extra_behavior = extra
             .map(|e| ExtraBehavior::from_str(e.to_str()?).map_err(|err| PyValueError::new_err(err.to_string())))
             .transpose()?;
@@ -248,7 +248,7 @@ impl SchemaValidator {
         allow_partial: PartialMode,
         by_alias: Option<bool>,
         by_name: Option<bool>,
-    ) -> PyResult<PyObject> {
+    ) -> PyResult<Py<PyAny>> {
         let extra_behavior = extra
             .map(|e| ExtraBehavior::from_str(e.to_str()?).map_err(|err| PyValueError::new_err(err.to_string())))
             .transpose()?;
@@ -284,7 +284,7 @@ impl SchemaValidator {
         allow_partial: PartialMode,
         by_alias: Option<bool>,
         by_name: Option<bool>,
-    ) -> PyResult<PyObject> {
+    ) -> PyResult<Py<PyAny>> {
         let t = InputType::String;
         let string_mapping = StringMapping::new_value(input).map_err(|e| self.prepare_validation_err(py, e, t))?;
         let extra_behavior = extra
@@ -324,7 +324,7 @@ impl SchemaValidator {
         context: Option<&Bound<'_, PyAny>>,
         by_alias: Option<bool>,
         by_name: Option<bool>,
-    ) -> PyResult<PyObject> {
+    ) -> PyResult<Py<PyAny>> {
         let extra_behavior = extra
             .map(|e| ExtraBehavior::from_str(e.to_str()?).map_err(|err| PyValueError::new_err(err.to_string())))
             .transpose()?;
@@ -356,7 +356,7 @@ impl SchemaValidator {
         py: Python,
         strict: Option<bool>,
         context: Option<&Bound<'_, PyAny>>,
-    ) -> PyResult<PyObject> {
+    ) -> PyResult<Py<PyAny>> {
         let extra = Extra {
             input_type: InputType::Python,
             data: None,
@@ -426,7 +426,7 @@ impl SchemaValidator {
         allow_partial: PartialMode,
         by_alias: Option<bool>,
         by_name: Option<bool>,
-    ) -> ValResult<PyObject> {
+    ) -> ValResult<Py<PyAny>> {
         let mut recursion_guard = RecursionState::default();
         let mut state = ValidationState::new(
             Extra::new(
@@ -459,7 +459,7 @@ impl SchemaValidator {
         allow_partial: PartialMode,
         by_alias: Option<bool>,
         by_name: Option<bool>,
-    ) -> ValResult<PyObject> {
+    ) -> ValResult<Py<PyAny>> {
         let json_value = jiter::JsonValue::parse_with_config(json_data, true, allow_partial)
             .map_err(|e| json::map_json_err(input, e, json_data))?;
         #[allow(clippy::used_underscore_items)]
@@ -850,7 +850,7 @@ pub trait Validator: Send + Sync + Debug {
         py: Python<'py>,
         input: &(impl Input<'py> + ?Sized),
         state: &mut ValidationState<'_, 'py>,
-    ) -> ValResult<PyObject>;
+    ) -> ValResult<Py<PyAny>>;
 
     /// Get a default value, currently only used by `WithDefaultValidator`
     fn default_value<'py>(
@@ -858,7 +858,7 @@ pub trait Validator: Send + Sync + Debug {
         _py: Python<'py>,
         _outer_loc: Option<impl Into<LocItem>>,
         _state: &mut ValidationState<'_, 'py>,
-    ) -> ValResult<Option<PyObject>> {
+    ) -> ValResult<Option<Py<PyAny>>> {
         Ok(None)
     }
 
@@ -871,7 +871,7 @@ pub trait Validator: Send + Sync + Debug {
         _field_name: &str,
         _field_value: &Bound<'py, PyAny>,
         _state: &mut ValidationState<'_, 'py>,
-    ) -> ValResult<PyObject> {
+    ) -> ValResult<Py<PyAny>> {
         let py_err = PyTypeError::new_err(format!("validate_assignment is not supported for {}", self.get_name()));
         Err(py_err.into())
     }

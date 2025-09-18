@@ -60,7 +60,7 @@ pub struct ModelValidator {
     frozen: bool,
     custom_init: bool,
     root_model: bool,
-    undefined: PyObject,
+    undefined: Py<PyAny>,
     name: String,
 }
 
@@ -120,7 +120,7 @@ impl Validator for ModelValidator {
         py: Python<'py>,
         input: &(impl Input<'py> + ?Sized),
         state: &mut ValidationState<'_, 'py>,
-    ) -> ValResult<PyObject> {
+    ) -> ValResult<Py<PyAny>> {
         if let Some(self_instance) = state.extra().self_instance {
             // in the case that self_instance is Some, we're calling validation from within `BaseModel.__init__`
             return self.validate_init(py, self_instance, input, state);
@@ -188,7 +188,7 @@ impl Validator for ModelValidator {
         field_name: &str,
         field_value: &Bound<'py, PyAny>,
         state: &mut ValidationState<'_, 'py>,
-    ) -> ValResult<PyObject> {
+    ) -> ValResult<Py<PyAny>> {
         if self.frozen {
             return Err(ValError::new(ErrorTypeDefaults::FrozenInstance, field_value));
         } else if self.root_model {
@@ -252,7 +252,7 @@ impl ModelValidator {
         self_instance: &Bound<'py, PyAny>,
         input: &(impl Input<'py> + ?Sized),
         state: &mut ValidationState<'_, 'py>,
-    ) -> ValResult<PyObject> {
+    ) -> ValResult<Py<PyAny>> {
         // we need to set `self_instance` to None for nested validators as we don't want to operate on self_instance
         // anymore
         let state = &mut state.rebind_extra(|extra| extra.self_instance = None);
@@ -284,7 +284,7 @@ impl ModelValidator {
         input: &(impl Input<'py> + ?Sized),
         existing_fields_set: Option<&Bound<'_, PyAny>>,
         state: &mut ValidationState<'_, 'py>,
-    ) -> ValResult<PyObject> {
+    ) -> ValResult<Py<PyAny>> {
         if self.custom_init {
             // If we wanted, we could introspect the __init__ signature, and store the
             // keyword arguments and types, and create a validator for them.
@@ -329,7 +329,7 @@ impl ModelValidator {
         instance: Bound<'_, PyAny>,
         input: &(impl Input<'py> + ?Sized),
         extra: &Extra,
-    ) -> ValResult<PyObject> {
+    ) -> ValResult<Py<PyAny>> {
         if let Some(ref post_init) = self.post_init {
             instance
                 .call_method1(post_init.bind(py), (extra.context,))

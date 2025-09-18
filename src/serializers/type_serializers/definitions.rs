@@ -90,7 +90,7 @@ impl TypeSerializer for DefinitionRefSerializer {
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
         mut extra: &Extra,
-    ) -> PyResult<PyObject> {
+    ) -> PyResult<Py<PyAny>> {
         self.definition.read(|comb_serializer| {
             let comb_serializer = comb_serializer.unwrap();
             let mut guard = extra.recursion_guard(value, self.definition.id())?;

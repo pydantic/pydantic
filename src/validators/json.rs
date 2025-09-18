@@ -53,7 +53,7 @@ impl Validator for JsonValidator {
         py: Python<'py>,
         input: &(impl Input<'py> + ?Sized),
         state: &mut ValidationState<'_, 'py>,
-    ) -> ValResult<PyObject> {
+    ) -> ValResult<Py<PyAny>> {
         let v_match = validate_json_bytes(input)?;
         let json_either_bytes = v_match.unpack(state);
         let json_bytes = json_either_bytes.as_slice();

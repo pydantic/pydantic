@@ -126,7 +126,7 @@ impl Validator for ModelFieldsValidator {
         py: Python<'py>,
         input: &(impl Input<'py> + ?Sized),
         state: &mut ValidationState<'_, 'py>,
-    ) -> ValResult<PyObject> {
+    ) -> ValResult<Py<PyAny>> {
         // this validator does not yet support partial validation, disable it to avoid incorrect results
         state.allow_partial = false.into();
 
@@ -386,7 +386,7 @@ impl Validator for ModelFieldsValidator {
         field_name: &str,
         field_value: &Bound<'py, PyAny>,
         state: &mut ValidationState<'_, 'py>,
-    ) -> ValResult<PyObject> {
+    ) -> ValResult<Py<PyAny>> {
         let dict = obj.downcast::<PyDict>()?;
         let extra_behavior = state.extra_behavior_or(self.extra_behavior);
 
@@ -395,7 +395,7 @@ impl Validator for ModelFieldsValidator {
             Ok(dict)
         };
 
-        let prepare_result = |result: ValResult<PyObject>| match result {
+        let prepare_result = |result: ValResult<Py<PyAny>>| match result {
             Ok(output) => get_updated_dict(&output.into_bound(py)),
             Err(ValError::LineErrors(line_errors)) => {
                 let errors = line_errors

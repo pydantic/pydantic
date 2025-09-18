@@ -9,7 +9,7 @@ pub enum Discriminator {
     /// use `LookupKey` to find the tag, same as we do to find values in typed_dict aliases
     LookupKey(LookupKey),
     /// call a function to find the tag to use
-    Function(PyObject),
+    Function(Py<PyAny>),
 }
 
 impl Discriminator {

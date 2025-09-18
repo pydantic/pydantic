@@ -74,7 +74,7 @@ impl BuildSerializer for FunctionPlainSerializerBuilder {
 
 #[derive(Debug)]
 pub struct FunctionPlainSerializer {
-    func: PyObject,
+    func: Py<PyAny>,
     name: String,
     function_name: String,
     return_serializer: Box<CombinedSerializer>,
@@ -147,7 +147,7 @@ impl FunctionPlainSerializer {
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
         extra: &Extra,
-    ) -> PyResult<(bool, PyObject)> {
+    ) -> PyResult<(bool, Py<PyAny>)> {
         let py = value.py();
         if self.when_used.should_use(value, extra) {
             let v = if self.is_field_serializer {
@@ -217,7 +217,7 @@ macro_rules! function_type_serializer {
                 include: Option<&Bound<'_, PyAny>>,
                 exclude: Option<&Bound<'_, PyAny>>,
                 extra: &Extra,
-            ) -> PyResult<PyObject> {
+            ) -> PyResult<Py<PyAny>> {
                 let py = value.py();
                 match self.call(value, include, exclude, extra) {
                     // None for include/exclude here, as filtering should be done
@@ -329,7 +329,7 @@ impl BuildSerializer for FunctionWrapSerializerBuilder {
 #[derive(Debug)]
 pub struct FunctionWrapSerializer {
     serializer: Arc<CombinedSerializer>,
-    func: PyObject,
+    func: Py<PyAny>,
     name: String,
     function_name: String,
     return_serializer: Arc<CombinedSerializer>,
@@ -390,7 +390,7 @@ impl FunctionWrapSerializer {
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
         extra: &Extra,
-    ) -> PyResult<(bool, PyObject)> {
+    ) -> PyResult<(bool, Py<PyAny>)> {
         let py = value.py();
         if self.when_used.should_use(value, extra) {
             let serialize = SerializationCallable::new(&self.serializer, include, exclude, extra);
@@ -440,8 +440,8 @@ pub(crate) struct SerializationCallable {
     serializer: Arc<CombinedSerializer>,
     extra_owned: ExtraOwned,
     filter: AnyFilter,
-    include: Option<PyObject>,
-    exclude: Option<PyObject>,
+    include: Option<Py<PyAny>>,
+    exclude: Option<Py<PyAny>>,
 }
 
 impl SerializationCallable {
@@ -496,7 +496,7 @@ impl SerializationCallable {
         py: Python,
         value: &Bound<'_, PyAny>,
         index_key: Option<&Bound<'_, PyAny>>,
-    ) -> PyResult<Option<PyObject>> {
+    ) -> PyResult<Option<Py<PyAny>>> {
         // NB wrap serializers have strong coupling to their inner type,
         // so use to_python_no_infer so that type inference can't apply
         // at this layer
@@ -543,11 +543,11 @@ impl SerializationCallable {
 #[cfg_attr(debug_assertions, derive(Debug))]
 struct SerializationInfo {
     #[pyo3(get)]
-    include: Option<PyObject>,
+    include: Option<Py<PyAny>>,
     #[pyo3(get)]
-    exclude: Option<PyObject>,
+    exclude: Option<Py<PyAny>>,
     #[pyo3(get)]
-    context: Option<PyObject>,
+    context: Option<Py<PyAny>>,
     #[pyo3(get, name = "mode")]
     _mode: SerMode,
     #[pyo3(get)]
