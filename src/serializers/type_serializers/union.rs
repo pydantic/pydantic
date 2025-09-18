@@ -134,7 +134,7 @@ impl TypeSerializer for UnionSerializer {
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
         extra: &Extra,
-    ) -> PyResult<PyObject> {
+    ) -> PyResult<Py<PyAny>> {
         union_serialize(
             |comb_serializer, new_extra| comb_serializer.to_python(value, include, exclude, new_extra),
             extra,
@@ -241,7 +241,7 @@ impl TypeSerializer for TaggedUnionSerializer {
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
         extra: &Extra,
-    ) -> PyResult<PyObject> {
+    ) -> PyResult<Py<PyAny>> {
         self.tagged_union_serialize(
             value,
             |comb_serializer: &CombinedSerializer, new_extra: &Extra| {

@@ -93,7 +93,7 @@ impl Validator for CustomErrorValidator {
         py: Python<'py>,
         input: &(impl Input<'py> + ?Sized),
         state: &mut ValidationState<'_, 'py>,
-    ) -> ValResult<PyObject> {
+    ) -> ValResult<Py<PyAny>> {
         self.validator
             .validate(py, input, state)
             .map_err(|_| self.custom_error.as_val_error(input))

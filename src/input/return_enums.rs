@@ -126,8 +126,8 @@ pub(crate) fn validate_iter_to_vec<'py>(
     validator: &CombinedValidator,
     state: &mut ValidationState<'_, 'py>,
     fail_fast: bool,
-) -> ValResult<Vec<PyObject>> {
-    let mut output: Vec<PyObject> = Vec::with_capacity(capacity);
+) -> ValResult<Vec<Py<PyAny>>> {
+    let mut output: Vec<Py<PyAny>> = Vec::with_capacity(capacity);
     let mut errors: Vec<ValLineError> = Vec::new();
     let allow_partial = state.allow_partial;
 
@@ -164,13 +164,13 @@ pub(crate) fn validate_iter_to_vec<'py>(
 }
 
 pub trait BuildSet {
-    fn build_add(&self, item: PyObject) -> PyResult<()>;
+    fn build_add(&self, item: Py<PyAny>) -> PyResult<()>;
 
     fn build_len(&self) -> usize;
 }
 
 impl BuildSet for Bound<'_, PySet> {
-    fn build_add(&self, item: PyObject) -> PyResult<()> {
+    fn build_add(&self, item: Py<PyAny>) -> PyResult<()> {
         self.add(item)
     }
 
@@ -180,7 +180,7 @@ impl BuildSet for Bound<'_, PySet> {
 }
 
 impl BuildSet for Bound<'_, PyFrozenSet> {
-    fn build_add(&self, item: PyObject) -> PyResult<()> {
+    fn build_add(&self, item: Py<PyAny>) -> PyResult<()> {
         py_error_on_minusone(self.py(), unsafe {
             // Safety: self.as_ptr() the _only_ pointer to the `frozenset`, and it's allowed
             // to mutate this via the C API when nothing else can refer to it.
@@ -278,7 +278,7 @@ pub(crate) fn no_validator_iter_to_vec<'py>(
     input: &(impl Input<'py> + ?Sized),
     iter: impl Iterator<Item = PyResult<impl BorrowInput<'py>>>,
     mut max_length_check: MaxLengthCheck<'_, impl Input<'py> + ?Sized>,
-) -> ValResult<Vec<PyObject>> {
+) -> ValResult<Vec<Py<PyAny>>> {
     iter.enumerate()
         .map(|(index, result)| {
             let v = result.map_err(|e| any_next_error!(py, e, input, index))?;
@@ -400,7 +400,7 @@ impl From<&Bound<'_, PyAny>> for GenericIterator<'_> {
 
 #[derive(Debug, Clone)]
 pub struct GenericPyIterator {
-    obj: PyObject,
+    obj: Py<PyAny>,
     iter: Py<PyIterator>,
     index: usize,
 }

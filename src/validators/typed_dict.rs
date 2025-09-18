@@ -154,7 +154,7 @@ impl Validator for TypedDictValidator {
         py: Python<'py>,
         input: &(impl Input<'py> + ?Sized),
         state: &mut ValidationState<'_, 'py>,
-    ) -> ValResult<PyObject> {
+    ) -> ValResult<Py<PyAny>> {
         let strict = state.strict_or(self.strict);
         let extra_behavior = state.extra_behavior_or(self.extra_behavior);
         let dict = input.validate_dict(strict)?;

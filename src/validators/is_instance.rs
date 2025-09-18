@@ -11,7 +11,7 @@ use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationSta
 
 #[derive(Debug, Clone)]
 pub struct IsInstanceValidator {
-    class: PyObject,
+    class: Py<PyAny>,
     class_repr: String,
     name: String,
 }
@@ -53,7 +53,7 @@ impl Validator for IsInstanceValidator {
         py: Python<'py>,
         input: &(impl Input<'py> + ?Sized),
         _state: &mut ValidationState<'_, 'py>,
-    ) -> ValResult<PyObject> {
+    ) -> ValResult<Py<PyAny>> {
         let Some(obj) = input.as_python() else {
             let method_name = "isinstance".to_string();
             return Err(ValError::new(

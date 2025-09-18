@@ -66,7 +66,7 @@ impl Validator for GeneratorValidator {
         py: Python<'py>,
         input: &(impl Input<'py> + ?Sized),
         state: &mut ValidationState<'_, 'py>,
-    ) -> ValResult<PyObject> {
+    ) -> ValResult<Py<PyAny>> {
         // this validator does not yet support partial validation, disable it to avoid incorrect results
         state.allow_partial = false.into();
 
@@ -114,7 +114,7 @@ impl ValidatorIterator {
         slf
     }
 
-    fn __next__(mut slf: PyRefMut<'_, Self>, py: Python) -> PyResult<Option<PyObject>> {
+    fn __next__(mut slf: PyRefMut<'_, Self>, py: Python) -> PyResult<Option<Py<PyAny>>> {
         let min_length = slf.min_length;
         let max_length = slf.max_length;
         let hide_input_in_errors = slf.hide_input_in_errors;
@@ -223,8 +223,8 @@ pub struct InternalValidator {
     strict: Option<bool>,
     extra_behavior: Option<ExtraBehavior>,
     from_attributes: Option<bool>,
-    context: Option<PyObject>,
-    self_instance: Option<PyObject>,
+    context: Option<Py<PyAny>>,
+    self_instance: Option<Py<PyAny>>,
     recursion_guard: RecursionState,
     pub(crate) exactness: Option<Exactness>,
     pub(crate) fields_set_count: Option<usize>,
@@ -275,7 +275,7 @@ impl InternalValidator {
         field_name: &str,
         field_value: &Bound<'py, PyAny>,
         outer_location: Option<LocItem>,
-    ) -> PyResult<PyObject> {
+    ) -> PyResult<Py<PyAny>> {
         let extra = Extra {
             input_type: self.validation_mode,
             data: self.data.as_ref().map(|data| data.bind(py).clone()),
@@ -314,7 +314,7 @@ impl InternalValidator {
         py: Python<'py>,
         input: &(impl Input<'py> + ?Sized),
         outer_location: Option<LocItem>,
-    ) -> PyResult<PyObject> {
+    ) -> PyResult<Py<PyAny>> {
         let extra = Extra {
             input_type: self.validation_mode,
             data: self.data.as_ref().map(|data| data.bind(py).clone()),

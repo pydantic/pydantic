@@ -180,7 +180,7 @@ impl TypeSerializer for ModelSerializer {
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
         extra: &Extra,
-    ) -> PyResult<PyObject> {
+    ) -> PyResult<Py<PyAny>> {
         let model = Some(value);
 
         let model_extra = Extra { model, ..*extra };

@@ -124,7 +124,7 @@ impl Validator for ListValidator {
         py: Python<'py>,
         input: &(impl Input<'py> + ?Sized),
         state: &mut ValidationState<'_, 'py>,
-    ) -> ValResult<PyObject> {
+    ) -> ValResult<Py<PyAny>> {
         let seq = input.validate_list(state.strict_or(self.strict))?.unpack(state);
 
         let actual_length = seq.len();
@@ -197,8 +197,8 @@ impl<'py, T, I: Input<'py> + ?Sized> ConsumeIterator<PyResult<T>> for ValidateTo
 where
     T: BorrowInput<'py>,
 {
-    type Output = ValResult<Vec<PyObject>>;
-    fn consume_iterator(self, iterator: impl Iterator<Item = PyResult<T>>) -> ValResult<Vec<PyObject>> {
+    type Output = ValResult<Vec<Py<PyAny>>>;
+    fn consume_iterator(self, iterator: impl Iterator<Item = PyResult<T>>) -> ValResult<Vec<Py<PyAny>>> {
         let capacity = self.actual_length.unwrap_or(DEFAULT_CAPACITY);
         let max_length_check = MaxLengthCheck::new(self.max_length, self.field_type, self.input, self.actual_length);
         validate_iter_to_vec(
@@ -225,8 +225,8 @@ impl<'py, T, I: Input<'py> + ?Sized> ConsumeIterator<PyResult<T>> for ToVec<'_, 
 where
     T: BorrowInput<'py>,
 {
-    type Output = ValResult<Vec<PyObject>>;
-    fn consume_iterator(self, iterator: impl Iterator<Item = PyResult<T>>) -> ValResult<Vec<PyObject>> {
+    type Output = ValResult<Vec<Py<PyAny>>>;
+    fn consume_iterator(self, iterator: impl Iterator<Item = PyResult<T>>) -> ValResult<Vec<Py<PyAny>>> {
         let max_length_check = MaxLengthCheck::new(self.max_length, self.field_type, self.input, self.actual_length);
         no_validator_iter_to_vec(self.py, self.input, iterator, max_length_check)
     }

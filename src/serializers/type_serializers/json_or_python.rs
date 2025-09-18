@@ -54,7 +54,7 @@ impl TypeSerializer for JsonOrPythonSerializer {
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
         extra: &Extra,
-    ) -> PyResult<PyObject> {
+    ) -> PyResult<Py<PyAny>> {
         self.python.to_python(value, include, exclude, extra)
     }
 

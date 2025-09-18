@@ -29,7 +29,7 @@ impl Validator for NoneValidator {
         py: Python<'py>,
         input: &(impl Input<'py> + ?Sized),
         _state: &mut ValidationState<'_, 'py>,
-    ) -> ValResult<PyObject> {
+    ) -> ValResult<Py<PyAny>> {
         match input.is_none() {
             true => Ok(py.None()),
             false => Err(ValError::new(ErrorTypeDefaults::NoneRequired, input)),

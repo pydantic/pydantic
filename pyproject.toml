@@ -1,5 +1,5 @@
 [build-system]
-requires = ['maturin>=1.9,<2']
+requires = ['maturin>=1.9.4,<2']
 build-backend = 'maturin'
 
 [project]
@@ -97,7 +97,6 @@ all = [
 python-source = "python"
 module-name = "pydantic_core._pydantic_core"
 bindings = 'pyo3'
-features = ["pyo3/extension-module"]
 
 [tool.ruff]
 line-length = 120

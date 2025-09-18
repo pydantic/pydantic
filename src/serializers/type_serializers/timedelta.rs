@@ -48,7 +48,7 @@ impl TypeSerializer for TimeDeltaSerializer {
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
         extra: &Extra,
-    ) -> PyResult<PyObject> {
+    ) -> PyResult<Py<PyAny>> {
         match extra.mode {
             SerMode::Json => match EitherTimedelta::try_from(value) {
                 Ok(either_timedelta) => Ok(self.temporal_mode.timedelta_to_json(value.py(), either_timedelta)?),

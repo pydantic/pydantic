@@ -48,7 +48,7 @@ impl Validator for IsSubclassValidator {
         py: Python<'py>,
         input: &(impl Input<'py> + ?Sized),
         _state: &mut ValidationState<'_, 'py>,
-    ) -> ValResult<PyObject> {
+    ) -> ValResult<Py<PyAny>> {
         let Some(obj) = input.as_python() else {
             let method_name = "issubclass".to_string();
             return Err(ValError::new(

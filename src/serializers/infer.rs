@@ -29,7 +29,7 @@ pub(crate) fn infer_to_python(
     include: Option<&Bound<'_, PyAny>>,
     exclude: Option<&Bound<'_, PyAny>>,
     extra: &Extra,
-) -> PyResult<PyObject> {
+) -> PyResult<Py<PyAny>> {
     infer_to_python_known(extra.ob_type_lookup.get_type(value), value, include, exclude, extra)
 }
 
@@ -43,7 +43,7 @@ pub(crate) fn infer_to_python_known(
     include: Option<&Bound<'_, PyAny>>,
     exclude: Option<&Bound<'_, PyAny>>,
     mut extra: &Extra,
-) -> PyResult<PyObject> {
+) -> PyResult<Py<PyAny>> {
     let py = value.py();
 
     let mode = extra.mode;
@@ -65,7 +65,7 @@ pub(crate) fn infer_to_python_known(
                 .downcast::<$t>()?
                 .iter()
                 .map(|v| infer_to_python(&v, None, None, extra))
-                .collect::<PyResult<Vec<PyObject>>>()?
+                .collect::<PyResult<Vec<Py<PyAny>>>>()?
         };
     }
 
@@ -704,7 +704,7 @@ fn serialize_pairs_python<'py>(
     exclude: Option<&Bound<'_, PyAny>>,
     extra: &Extra,
     key_transform: impl Fn(Bound<'py, PyAny>) -> PyResult<Bound<'py, PyAny>>,
-) -> PyResult<PyObject> {
+) -> PyResult<Py<PyAny>> {
     let new_dict = PyDict::new(py);
     let filter = AnyFilter::new();
 

@@ -55,7 +55,7 @@ impl TypeSerializer for EnumSerializer {
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
         extra: &Extra,
-    ) -> PyResult<PyObject> {
+    ) -> PyResult<Py<PyAny>> {
         let py = value.py();
         if value.is_exact_instance(self.class.bind(py)) {
             // if we're in JSON mode, we need to get the value attribute and serialize that

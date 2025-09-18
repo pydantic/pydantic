@@ -148,7 +148,7 @@ impl From<TimedeltaMode> for TemporalMode {
 }
 
 impl TemporalMode {
-    pub fn datetime_to_json(self, py: Python, datetime: &Bound<'_, PyDateTime>) -> PyResult<PyObject> {
+    pub fn datetime_to_json(self, py: Python, datetime: &Bound<'_, PyDateTime>) -> PyResult<Py<PyAny>> {
         match self {
             Self::Iso8601 => datetime_to_string(datetime)?.into_py_any(py),
             Self::Seconds => datetime_to_seconds(datetime)?.into_py_any(py),
@@ -156,7 +156,7 @@ impl TemporalMode {
         }
     }
 
-    pub fn date_to_json(self, py: Python, date: &Bound<'_, PyDate>) -> PyResult<PyObject> {
+    pub fn date_to_json(self, py: Python, date: &Bound<'_, PyDate>) -> PyResult<Py<PyAny>> {
         match self {
             Self::Iso8601 => date_to_string(date)?.into_py_any(py),
             Self::Seconds => date_to_seconds(date)?.into_py_any(py),
@@ -164,7 +164,7 @@ impl TemporalMode {
         }
     }
 
-    pub fn time_to_json(self, py: Python, time: &Bound<'_, PyTime>) -> PyResult<PyObject> {
+    pub fn time_to_json(self, py: Python, time: &Bound<'_, PyTime>) -> PyResult<Py<PyAny>> {
         match self {
             Self::Iso8601 => time_to_string(time)?.into_py_any(py),
             Self::Seconds => time_to_seconds(time)?.into_py_any(py),
@@ -172,7 +172,7 @@ impl TemporalMode {
         }
     }
 
-    pub fn timedelta_to_json(self, py: Python, either_delta: EitherTimedelta) -> PyResult<PyObject> {
+    pub fn timedelta_to_json(self, py: Python, either_delta: EitherTimedelta) -> PyResult<Py<PyAny>> {
         match self {
             Self::Iso8601 => {
                 let d = either_delta.to_duration()?;

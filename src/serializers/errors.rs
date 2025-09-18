@@ -100,7 +100,7 @@ impl PydanticSerializationError {
 pub struct PydanticSerializationUnexpectedValue {
     message: Option<String>,
     field_type: Option<String>,
-    input_value: Option<PyObject>,
+    input_value: Option<Py<PyAny>>,
 }
 
 impl PydanticSerializationUnexpectedValue {
@@ -112,7 +112,7 @@ impl PydanticSerializationUnexpectedValue {
         }
     }
 
-    pub fn new_from_parts(field_type: Option<String>, input_value: Option<PyObject>) -> Self {
+    pub fn new_from_parts(field_type: Option<String>, input_value: Option<Py<PyAny>>) -> Self {
         Self {
             message: None,
             field_type,
@@ -120,7 +120,7 @@ impl PydanticSerializationUnexpectedValue {
         }
     }
 
-    pub fn new(message: Option<String>, field_type: Option<String>, input_value: Option<PyObject>) -> Self {
+    pub fn new(message: Option<String>, field_type: Option<String>, input_value: Option<Py<PyAny>>) -> Self {
         Self {
             message,
             field_type,
@@ -129,7 +129,7 @@ impl PydanticSerializationUnexpectedValue {
     }
 
     pub fn to_py_err(&self) -> PyErr {
-        PyErr::new::<Self, (Option<String>, Option<String>, Option<PyObject>)>((
+        PyErr::new::<Self, (Option<String>, Option<String>, Option<Py<PyAny>>)>((
             self.message.clone(),
             self.field_type.clone(),
             self.input_value.clone(),
@@ -141,7 +141,7 @@ impl PydanticSerializationUnexpectedValue {
 impl PydanticSerializationUnexpectedValue {
     #[new]
     #[pyo3(signature = (message=None, field_type=None, input_value=None, /))]
-    fn py_new(message: Option<String>, field_type: Option<String>, input_value: Option<PyObject>) -> Self {
+    fn py_new(message: Option<String>, field_type: Option<String>, input_value: Option<Py<PyAny>>) -> Self {
         Self {
             message,
             field_type,

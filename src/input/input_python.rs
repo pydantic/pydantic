@@ -3,7 +3,7 @@ use std::str::from_utf8;
 use pyo3::intern;
 use pyo3::prelude::*;
 
-use pyo3::sync::GILOnceCell;
+use pyo3::sync::PyOnceLock;
 use pyo3::types::PyType;
 use pyo3::types::{
     PyBool, PyByteArray, PyBytes, PyComplex, PyDate, PyDateTime, PyDict, PyFloat, PyFrozenSet, PyInt, PyIterator,
@@ -48,7 +48,7 @@ use super::{
     Input,
 };
 
-static FRACTION_TYPE: GILOnceCell<Py<PyType>> = GILOnceCell::new();
+static FRACTION_TYPE: PyOnceLock<Py<PyType>> = PyOnceLock::new();
 
 pub fn get_fraction_type(py: Python<'_>) -> &Bound<'_, PyType> {
     FRACTION_TYPE
