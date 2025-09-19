@@ -73,6 +73,7 @@ jobs:
           - 'pypy3.10'
           - 'pypy3.11'
           - 'graalpy-3.11'
+          - 'graalpy-3.12'
 
     runs-on: ubuntu-latest
 
@@ -409,6 +410,7 @@ jobs:
           - os: linux
             manylinux: auto
             target: aarch64
+            interpreter: 3.9 3.10 3.11 3.12 3.13 3.14 pypy3.10 pypy3.11 graalpy3.11 graalpy3.12
           - os: linux
             manylinux: auto
             target: armv7
@@ -428,7 +430,7 @@ jobs:
           - os: linux
             manylinux: auto
             target: x86_64
-            interpreter: graalpy3.11
+            interpreter: graalpy3.11 graalpy3.12
 
           # musllinux
           - os: linux
@@ -446,9 +448,10 @@ jobs:
           # arm pypy and older pythons which can't be run on the arm hardware for PGO
           - os: macos
             target: x86_64
+            interpreter: 3.9 3.10 3.11 3.12 3.13 3.14 pypy3.10 pypy3.11 graalpy3.11 graalpy3.12
           - os: macos
             target: aarch64
-            interpreter: 3.9 pypy3.10 pypy3.11
+            interpreter: 3.9 pypy3.10 pypy3.11 graalpy3.11 graalpy3.12
 
           # windows;
           # x86_64 pypy builds are not PGO optimized
@@ -490,7 +493,6 @@ jobs:
           args: --release --out dist --interpreter ${{ matrix.interpreter || '3.9 3.10 3.11 3.12 3.13 3.14 pypy3.10 pypy3.11' }}
           rust-toolchain: stable
           docker-options: -e CI
-          before-script-linux: ${{ contains(matrix.interpreter, 'graalpy') && 'manylinux-interpreters ensure-all' || '' }}
 
       - run: ${{ (matrix.os == 'windows' && 'dir') || 'ls -lh' }} dist/
 
