@@ -1010,11 +1010,11 @@ class GenerateSchema:
 
         if isinstance(obj, ForwardRef):
             return self.generate_schema(self._resolve_forward_ref(obj))
-        
+
         if isinstance(obj, type) and inspect.isabstract(obj):
             schema = self._add_abstract_class_validation(core_schema.any_schema(), obj)
             return schema
-        
+
         BaseModel = import_cached_base_model()
 
         if lenient_issubclass(obj, BaseModel):
@@ -2149,26 +2149,23 @@ class GenerateSchema:
             d.cls_var_name, return_schema=return_type_schema, alias=d.info.alias, metadata=core_metadata
         )
 
-    def _add_abstract_class_validation(
-        self, schema: CoreSchema, abstract_class: type
-    ) -> CoreSchema:
+    def _add_abstract_class_validation(self, schema: CoreSchema, abstract_class: type) -> CoreSchema:
         """Add validation to prevent instantiation of abstract classes."""
+
         def validate_abstract_class(value: Any) -> Any:
             if isinstance(value, abstract_class):
-                abstract_methods = getattr(abstract_class, "__abstractmethods__", set())
+                abstract_methods = getattr(abstract_class, '__abstractmethods__', set())
                 if abstract_methods:
                     raise PydanticCustomError(
-                        "abstract_class_instantiation",
-                        f"Cannot instantiate abstract class {abstract_class.__name__} "
+                        'abstract_class_instantiation',
+                        f'Cannot instantiate abstract class {abstract_class.__name__} '
                         f'with abstract methods: {", ".join(abstract_methods)}',
                     )
 
             return value
 
-        return core_schema.no_info_after_validator_function(
-            validate_abstract_class, schema
-        )
-        
+        return core_schema.no_info_after_validator_function(validate_abstract_class, schema)
+
     def _annotated_schema(self, annotated_type: Any) -> core_schema.CoreSchema:
         """Generate schema for an Annotated type, e.g. `Annotated[int, Field(...)]` or `Annotated[int, Gt(0)]`."""
         FieldInfo = import_cached_field_info()
