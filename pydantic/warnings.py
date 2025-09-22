@@ -93,7 +93,6 @@ class GenericBeforeBaseModelWarning(Warning):
 class PydanticExperimentalWarning(Warning):
     """A Pydantic specific experimental functionality warning.
 
-    This warning is raised when using experimental functionality in Pydantic.
     It is raised to warn users that the functionality may change or be removed in future versions of Pydantic.
     """
 
