@@ -80,10 +80,16 @@ class Event(BaseModel):
 event = Event(dt='2032-04-23T10:20:30.400+02:30')
 
 print(event.model_dump())
-"""
-{'dt': datetime.datetime(2032, 4, 23, 10, 20, 30, 400000, tzinfo=TzInfo(9000))}
-"""
+#> {'dt': datetime.datetime(2032, 4, 23, 10, 20, 30, 400000, tzinfo=TzInfo(9000))}
+print(event.model_dump(mode='json'))
+#> {'dt': '2032-04-23T10:20:30.400000+02:30'}
+print(event.model_dump_json())
+#> {"dt":"2032-04-23T10:20:30.400000+02:30"}
 ```
+
+!!! note
+    Named timezone support (in [RFC 9557](https://www.rfc-editor.org/rfc/rfc9557.html#name-examples) format)
+    is an [open issue](https://github.com/pydantic/pydantic/issues/12252) that we hope to add in the future.
 
 ### [`datetime.date`][]
 
@@ -108,6 +114,10 @@ my_birthday = Birthday(d=1679616000.0)
 
 print(my_birthday.model_dump())
 #> {'d': datetime.date(2023, 3, 24)}
+print(my_birthday.model_dump(mode='json'))
+#> {'d': '2023-03-24'}
+print(my_birthday.model_dump_json())
+#> {"d":"2023-03-24"}
 ```
 
 ### [`datetime.time`][]
@@ -132,7 +142,15 @@ m = Meeting(t=time(4, 8, 16))
 
 print(m.model_dump())
 #> {'t': datetime.time(4, 8, 16)}
+print(m.model_dump(mode='json'))
+#> {'t': '04:08:16'}
+print(m.model_dump_json())
+#> {"t":"04:08:16"}
 ```
+
+!!! note
+    Named timezones such as those from the `zoneinfo` standard library module are not serialized
+    with time objects - this is consistent with [`time.isoformat()`](https://docs.python.org/3/library/datetime.html#datetime.time.isoformat).
 
 ### [`datetime.timedelta`][]
 
@@ -159,6 +177,10 @@ m = Model(td='P3DT12H30M5S')
 
 print(m.model_dump())
 #> {'td': datetime.timedelta(days=3, seconds=45005)}
+print(m.model_dump(mode='json'))
+#> {'td': 'P3DT12H30M5S'}
+print(m.model_dump_json())
+#> {"td":"P3DT12H30M5S"}
 ```
 
 ## Number Types
