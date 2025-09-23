@@ -1097,6 +1097,20 @@ def test_validation_each_item():
     assert Model(foobar={1: 1}).foobar == {1: 2}
 
 
+def test_validation_each_item_tuple():
+    with pytest.warns(PydanticDeprecatedSince20, match=V1_VALIDATOR_DEPRECATION_MATCH):
+
+        class Model(BaseModel):
+            foobar: tuple[int, ...]
+
+            @validator('foobar', each_item=True)
+            @classmethod
+            def check_foobar(cls, v: Any):
+                return v + 1
+
+    assert Model(foobar=(1, 2, 1)).foobar == (2, 3, 2)
+
+
 def test_validation_each_item_invalid_type():
     with pytest.raises(
         TypeError, match=re.escape('@validator(..., each_item=True)` cannot be applied to fields with a schema of int')
