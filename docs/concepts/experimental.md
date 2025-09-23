@@ -10,18 +10,6 @@ We welcome feedback on experimental features! Please open an issue on the [Pydan
 
 We also encourage you to read through existing feedback and add your thoughts to existing issues.
 
-## Warnings on Import
-
-When you import an experimental feature from the `experimental` module, you'll see a warning message that the feature is experimental. You can disable this warning with the following:
-
-```python
-import warnings
-
-from pydantic import PydanticExperimentalWarning
-
-warnings.filterwarnings('ignore', category=PydanticExperimentalWarning)
-```
-
 ## Pipeline API
 
 Pydantic v2.8.0 introduced an experimental "pipeline" API that allows composing of parsing (validation), constraints and transformations in a more type-safe manner than existing APIs. This API is subject to change or removal, we are looking for feedback and suggestions before making it a permanent part of Pydantic.

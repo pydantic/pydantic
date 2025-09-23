@@ -54,18 +54,6 @@ We use one of the following naming conventions to indicate that a feature is exp
 
 New features with these naming conventions are subject to change or removal, and we are looking for feedback and suggestions before making them a permanent part of Pydantic. See the [feedback section](./concepts/experimental.md#feedback) for more information.
 
-### Importing Experimental Features
-
-When you import an experimental feature from the [`experimental`](api/experimental.md) module, you'll see a warning message that the feature is experimental. You can disable this warning with the following:
-
-```python
-import warnings
-
-from pydantic import PydanticExperimentalWarning
-
-warnings.filterwarnings('ignore', category=PydanticExperimentalWarning)
-```
-
 ### Lifecycle of Experimental Features
 
 1. A new feature is added, either in the [`experimental`](api/experimental.md) module or with the `experimental_` prefix.
