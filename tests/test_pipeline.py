@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import datetime
-import warnings
 from decimal import Decimal
 from typing import Annotated, Any, Callable, Union
 
@@ -11,11 +10,8 @@ import pytest
 import pytz
 from annotated_types import Interval
 
-from pydantic import PydanticExperimentalWarning, TypeAdapter, ValidationError
-
-with warnings.catch_warnings():
-    warnings.filterwarnings('ignore', category=PydanticExperimentalWarning)
-    from pydantic.experimental.pipeline import _Pipeline, transform, validate_as  # type: ignore
+from pydantic import TypeAdapter, ValidationError
+from pydantic.experimental.pipeline import _Pipeline, transform, validate_as  # pyright: ignore[reportPrivateUsage]
 
 
 @pytest.mark.parametrize('potato_variation', ['potato', ' potato ', ' potato', 'potato ', ' POTATO ', ' PoTatO '])
