@@ -2093,10 +2093,7 @@ class GenerateSchema:
 
         if bound := typevar.__bound__:
             schema = self.generate_schema(bound)
-            schema['serialization'] = core_schema.wrap_serializer_function_ser_schema(
-                lambda x, h: h(x),
-                schema=core_schema.any_schema(),
-            )
+            schema['serialization'] = core_schema.simple_ser_schema('any')
             return schema
 
         return core_schema.any_schema()
