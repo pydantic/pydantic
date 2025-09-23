@@ -1199,15 +1199,6 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
-  <a href="#warnings-on-import" class="md-nav__link">
-    <span class="md-ellipsis">
-      Warnings on Import
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#pipeline-api" class="md-nav__link">
     <span class="md-ellipsis">
       Pipeline API
@@ -3144,15 +3135,6 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
-  <a href="#warnings-on-import" class="md-nav__link">
-    <span class="md-ellipsis">
-      Warnings on Import
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#pipeline-api" class="md-nav__link">
     <span class="md-ellipsis">
       Pipeline API
@@ -3327,14 +3309,6 @@ to help you monitor and understand your
 <h2 id="feedback">Feedback<a class="headerlink" href="#feedback" title="Permanent link">&para;</a></h2>
 <p>We welcome feedback on experimental features! Please open an issue on the <a href="https://github.com/pydantic/pydantic/issues/new/choose">Pydantic GitHub repository</a> to share your thoughts, requests, or suggestions.</p>
 <p>We also encourage you to read through existing feedback and add your thoughts to existing issues.</p>
-<h2 id="warnings-on-import">Warnings on Import<a class="headerlink" href="#warnings-on-import" title="Permanent link">&para;</a></h2>
-<p>When you import an experimental feature from the <code>experimental</code> module, you'll see a warning message that the feature is experimental. You can disable this warning with the following:</p>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">PydanticExperimentalWarning</span>
-
-<span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s1">&#39;ignore&#39;</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="n">PydanticExperimentalWarning</span><span class="p">)</span>
-</code></pre></div>
 <h2 id="pipeline-api">Pipeline API<a class="headerlink" href="#pipeline-api" title="Permanent link">&para;</a></h2>
 <p>Pydantic v2.8.0 introduced an experimental "pipeline" API that allows composing of parsing (validation), constraints and transformations in a more type-safe manner than existing APIs. This API is subject to change or removal, we are looking for feedback and suggestions before making it a permanent part of Pydantic.</p>
 <details class="api">
