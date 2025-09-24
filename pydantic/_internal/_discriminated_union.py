@@ -424,7 +424,6 @@ class _ApplyInferredDiscriminator:
         """When inferring discriminator values for a field, we typically extract the expected values from a literal
         schema. This function does that, but also handles nested unions and defaults.
         """
-        print("_infer_discriminator_values_for_inner_schema", schema['type'])
         if schema['type'] == 'literal':
             return schema['expected']
 

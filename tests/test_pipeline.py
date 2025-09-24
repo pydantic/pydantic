@@ -161,7 +161,6 @@ def test_parse_tz() -> None:
         ]
     )
     date = datetime.datetime(2032, 6, 4, 11, 15, 30, 400000)
-    import pdb; pdb.set_trace()
     assert ta_tz.validate_python(date) == date
     date_a = datetime.datetime(2032, 6, 4, 11, 15, 30, 400000, tzinfo=pytz.UTC)
     with pytest.raises(ValueError):
