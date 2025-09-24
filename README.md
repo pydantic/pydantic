@@ -59,6 +59,73 @@ print(user.id)
 #> 123
 ```
 
+## Model Injector Decorator
+
+Pydantic now includes a `model_inject` decorator that automatically instantiates Pydantic models from function keyword arguments, similar to FastAPI's behavior:
+
+```python
+from pydantic import BaseModel, Field, model_inject
+
+class UserModel(BaseModel):
+    name: str = Field(..., description="User's name")
+    age: int = Field(..., ge=0, le=150, description="User's age")
+    email: str = Field(..., description="User's email")
+
+@model_inject
+def create_user(user: UserModel) -> str:
+    """Create a user profile from user data."""
+    return f"User: {user.name} (Age: {user.age}) - {user.email}"
+
+# Usage - the decorator automatically instantiates UserModel from kwargs
+result = create_user(
+    name="John Doe",
+    age=30,
+    email="john@example.com"
+)
+print(result)  # Output: "User: John Doe (Age: 30) - john@example.com"
+```
+
+The decorator supports multiple models, nested models, positional arguments, and provides enhanced error messages with model and field context.
+
+### Positional Arguments Support
+
+The decorator also supports positional arguments for model parameters:
+
+```python
+from pydantic import BaseModel, Field, model_inject
+
+class UserModel(BaseModel):
+    name: str = Field(..., description="User's name")
+    age: int = Field(..., ge=0, le=150, description="User's age")
+
+@model_inject
+def create_user(user: UserModel) -> str:
+    return f"User: {user.name} (Age: {user.age})"
+
+# Positional dict argument
+result = create_user({
+    "name": "John Doe",
+    "age": 30
+})
+
+# Positional single value (uses first field)
+result = create_user("Alice Johnson")  # Sets name="Alice Johnson"
+```
+
+For multiple model parameters, positional arguments are assigned in sequence:
+
+```python
+@model_inject
+def setup_user(user: UserModel, settings: SettingsModel) -> dict:
+    return {"user": user.name, "theme": settings.theme}
+
+# Both models as positional arguments
+result = setup_user(
+    {"name": "Jane", "age": 25},  # user parameter
+    {"theme": "dark"}             # settings parameter
+)
+```
+
 ## Contributing
 
 For guidance on setting up a development environment and how to make a

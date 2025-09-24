@@ -51,6 +51,7 @@ if TYPE_CHECKING:
     from .type_adapter import TypeAdapter
     from .types import *
     from .validate_call_decorator import validate_call
+    from .model_injector import model_inject
     from .warnings import (
         PydanticDeprecatedSince20,
         PydanticDeprecatedSince26,
@@ -102,6 +103,8 @@ __all__ = (
     'Extra',
     # validate_call
     'validate_call',
+    # model_injector
+    'model_inject',
     # errors
     'PydanticErrorCodes',
     'PydanticUserError',
@@ -270,6 +273,8 @@ _dynamic_imports: 'dict[str, tuple[str, str]]' = {
     'with_config': (__spec__.parent, '.config'),
     # validate call
     'validate_call': (__spec__.parent, '.validate_call_decorator'),
+    # model_injector
+    'model_inject': (__spec__.parent, '.model_injector'),
     # errors
     'PydanticErrorCodes': (__spec__.parent, '.errors'),
     'PydanticUserError': (__spec__.parent, '.errors'),
