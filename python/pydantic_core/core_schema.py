@@ -1939,6 +1939,7 @@ class DictSchema(TypedDict, total=False):
     values_schema: CoreSchema  # default: AnySchema
     min_length: int
     max_length: int
+    fail_fast: bool
     strict: bool
     ref: str
     metadata: dict[str, Any]
@@ -1951,6 +1952,7 @@ def dict_schema(
     *,
     min_length: int | None = None,
     max_length: int | None = None,
+    fail_fast: bool | None = None,
     strict: bool | None = None,
     ref: str | None = None,
     metadata: dict[str, Any] | None = None,
@@ -1974,6 +1976,7 @@ def dict_schema(
         values_schema: The value must be a dict with values that match this schema
         min_length: The value must be a dict with at least this many items
         max_length: The value must be a dict with at most this many items
+        fail_fast: Stop validation on the first error
         strict: Whether the keys and values should be validated with strict mode
         ref: optional unique identifier of the schema, used to reference the schema in other places
         metadata: Any other information you want to include with the schema, not used by pydantic-core
@@ -1985,6 +1988,7 @@ def dict_schema(
         values_schema=values_schema,
         min_length=min_length,
         max_length=max_length,
+        fail_fast=fail_fast,
         strict=strict,
         ref=ref,
         metadata=metadata,
