@@ -67,7 +67,6 @@ def definition_schema():
             [
                 cs.typed_dict_schema(
                     {
-                        'name': cs.typed_dict_field(cs.str_schema()),
                         'sub_branch': cs.typed_dict_field(
                             cs.with_default_schema(
                                 cs.nullable_schema(cs.definition_reference_schema('Branch')), default=None
@@ -82,11 +81,10 @@ def definition_schema():
 
 
 def test_definition_simple(definition_schema):
-    assert definition_schema.validate_python({'name': 'root'}) == {'name': 'root', 'sub_branch': None}
+    assert definition_schema.validate_python({}) == {'sub_branch': None}
 
 
 class BranchModel(TypedDict):
-    name: str
     sub_branch: Optional['BranchModel']
 
 
@@ -97,34 +95,30 @@ def test_recursive(definition_schema, data):
     assert definition_schema.validate_python(data) == data
 
 
-@strategies.composite
-def branch_models_with_cycles(draw, existing=None):
-    if existing is None:
-        existing = []
-    model = BranchModel(name=draw(strategies.text()), sub_branch=None)
-    existing.append(model)
-    model['sub_branch'] = draw(
-        strategies.none()
-        | strategies.builds(BranchModel, name=strategies.text(), sub_branch=branch_models_with_cycles(existing))
-        | strategies.sampled_from(existing)
-    )
-    return model
-
-
-@given(branch_models_with_cycles())
+@given(strategies.integers(min_value=0, max_value=10))
 @pytest.mark.thread_unsafe  # https://github.com/Quansight-Labs/pytest-run-parallel/issues/20
-def test_definition_cycles(definition_schema, data):
-    try:
-        assert definition_schema.validate_python(data) == data
-    except ValidationError as exc:
-        assert exc.errors(include_url=False) == [
-            {
-                'type': 'recursion_loop',
-                'loc': IsTuple(length=(1, None)),
-                'msg': 'Recursion error - cyclic reference detected',
-                'input': AnyThing(),
-            }
-        ]
+def test_definition_cycles(definition_schema, depth):
+    data = BranchModel(sub_branch=None)
+    model = data
+
+    for _ in range(depth):
+        next_model = BranchModel(sub_branch=None)
+        model['sub_branch'] = next_model
+        model = next_model
+
+    model['sub_branch'] = data
+
+    with pytest.raises(ValidationError) as exc_info:
+        definition_schema.validate_python(data)
+
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'recursion_loop',
+            'loc': IsTuple(length=(1, None)),
+            'msg': 'Recursion error - cyclic reference detected',
+            'input': AnyThing(),
+        }
+    ]
 
 
 def test_definition_broken(definition_schema):
