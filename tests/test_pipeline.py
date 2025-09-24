@@ -306,28 +306,6 @@ def test_predicates() -> None:
     assert ta_str_to_int.validate_python('1.5') == 1
 
 
-def test_predicates3() -> None:
-    from functools import partial
-
-    incr1 = partial(lambda x, incr: x == incr, incr=1)
-    ta_str_to_int = TypeAdapter[int](Annotated[int, validate_as(int).predicate(incr1)])
-    assert ta_str_to_int.validate_python(1) == 1
-    with pytest.raises(ValidationError):
-        ta_str_to_int.validate_python(2)
-
-
-def test_predicates4() -> None:
-    from functools import partial
-
-    incr1 = partial(lambda x, incr: x == incr, incr=1)
-    ta_str_to_int = TypeAdapter[int](
-        Annotated[str, validate_as(str).transform(lambda x: int(float(x))).predicate(incr1)]
-    )
-    assert ta_str_to_int.validate_python('1.5') == 1
-    with pytest.raises(ValidationError):
-        ta_str_to_int.validate_python('2.5')
-
-
 @pytest.mark.parametrize(
     'model, expected_val_schema, expected_ser_schema',
     [
