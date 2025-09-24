@@ -468,20 +468,20 @@ impl<'data> GenericJsonIterator<'data> {
 }
 
 #[cfg_attr(debug_assertions, derive(Debug))]
-pub enum EitherString<'a> {
+pub enum EitherString<'a, 'py> {
     Cow(Cow<'a, str>),
-    Py(Bound<'a, PyString>),
+    Py(Bound<'py, PyString>),
 }
 
-impl<'a> EitherString<'a> {
+impl<'py> EitherString<'_, 'py> {
     pub fn as_cow(&self) -> ValResult<Cow<'_, str>> {
         match self {
-            Self::Cow(data) => Ok(data.clone()),
+            Self::Cow(data) => Ok(Cow::Borrowed(data)),
             Self::Py(py_str) => Ok(Cow::Borrowed(py_string_str(py_str)?)),
         }
     }
 
-    pub fn as_py_string(&'a self, py: Python<'a>, cache_str: StringCacheMode) -> Bound<'a, PyString> {
+    pub fn as_py_string(&self, py: Python<'py>, cache_str: StringCacheMode) -> Bound<'py, PyString> {
         match self {
             Self::Cow(cow) => new_py_string(py, cow.as_ref(), cache_str),
             Self::Py(py_string) => py_string.clone(),
@@ -489,20 +489,20 @@ impl<'a> EitherString<'a> {
     }
 }
 
-impl<'a> From<&'a str> for EitherString<'a> {
+impl<'a> From<&'a str> for EitherString<'a, '_> {
     fn from(data: &'a str) -> Self {
         Self::Cow(Cow::Borrowed(data))
     }
 }
 
-impl From<String> for EitherString<'_> {
+impl From<String> for EitherString<'_, '_> {
     fn from(data: String) -> Self {
         Self::Cow(Cow::Owned(data))
     }
 }
 
-impl<'a> From<Bound<'a, PyString>> for EitherString<'a> {
-    fn from(date: Bound<'a, PyString>) -> Self {
+impl<'py> From<Bound<'py, PyString>> for EitherString<'_, 'py> {
+    fn from(date: Bound<'py, PyString>) -> Self {
         Self::Py(date)
     }
 }

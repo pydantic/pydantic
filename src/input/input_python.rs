@@ -163,7 +163,11 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
         }
     }
 
-    fn validate_str(&self, strict: bool, coerce_numbers_to_str: bool) -> ValResult<ValidationMatch<EitherString<'_>>> {
+    fn validate_str(
+        &self,
+        strict: bool,
+        coerce_numbers_to_str: bool,
+    ) -> ValResult<ValidationMatch<EitherString<'_, 'py>>> {
         if let Ok(py_str) = self.downcast_exact::<PyString>() {
             return Ok(ValidationMatch::exact(py_str.clone().into()));
         } else if let Ok(py_str) = self.downcast::<PyString>() {
@@ -310,7 +314,7 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
         }
     }
 
-    fn exact_str(&self) -> ValResult<EitherString<'_>> {
+    fn exact_str(&self) -> ValResult<EitherString<'_, 'py>> {
         if let Ok(py_str) = self.downcast_exact() {
             Ok(EitherString::Py(py_str.clone()))
         } else {

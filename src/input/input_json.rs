@@ -107,7 +107,11 @@ impl<'py, 'data> Input<'py> for JsonValue<'data> {
         }
     }
 
-    fn validate_str(&self, strict: bool, coerce_numbers_to_str: bool) -> ValResult<ValidationMatch<EitherString<'_>>> {
+    fn validate_str(
+        &self,
+        strict: bool,
+        coerce_numbers_to_str: bool,
+    ) -> ValResult<ValidationMatch<EitherString<'_, 'py>>> {
         // Justification for `strict` instead of `exact` is that in JSON strings can also
         // represent other datatypes such as UUID and date more exactly, so string is a
         // converting input
@@ -163,7 +167,7 @@ impl<'py, 'data> Input<'py> for JsonValue<'data> {
         }
     }
 
-    fn exact_str(&self) -> ValResult<EitherString<'_>> {
+    fn exact_str(&self) -> ValResult<EitherString<'_, 'py>> {
         match self {
             JsonValue::Str(s) => Ok(s.as_ref().into()),
             _ => Err(ValError::new(ErrorTypeDefaults::StringType, self)),
@@ -414,7 +418,7 @@ impl<'py> Input<'py> for str {
         &self,
         _strict: bool,
         _coerce_numbers_to_str: bool,
-    ) -> ValResult<ValidationMatch<EitherString<'_>>> {
+    ) -> ValResult<ValidationMatch<EitherString<'_, 'py>>> {
         // Justification for `strict` instead of `exact` is that in JSON strings can also
         // represent other datatypes such as UUID and date more exactly, so string is a
         // converting input
