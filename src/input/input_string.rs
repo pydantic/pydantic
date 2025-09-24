@@ -105,7 +105,7 @@ impl<'py> Input<'py> for StringMapping<'py> {
         &self,
         _strict: bool,
         _coerce_numbers_to_str: bool,
-    ) -> ValResult<ValidationMatch<EitherString<'_>>> {
+    ) -> ValResult<ValidationMatch<EitherString<'_, 'py>>> {
         match self {
             Self::String(s) => Ok(ValidationMatch::strict(s.clone().into())),
             Self::Mapping(_) => Err(ValError::new(ErrorTypeDefaults::StringType, self)),
