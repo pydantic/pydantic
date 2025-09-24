@@ -259,6 +259,7 @@ def test_predicates() -> None:
     with pytest.raises(ValidationError):
         ta_str_to_int.validate_python(2)
 
+
 @pytest.mark.parametrize(
     'model, expected_val_schema, expected_ser_schema',
     [

@@ -596,7 +596,9 @@ def _apply_constraint(  # noqa: C901
                 try:
                     source = inspect.getsource(func).strip()
                     source = source.removesuffix(')')
-                    lambda_source_code = '`' + ''.join(''.join(source.split('lambda ')[1:]).split(':')[1:]).strip() + '`'
+                    lambda_source_code = (
+                        '`' + ''.join(''.join(source.split('lambda ')[1:]).split(':')[1:]).strip() + '`'
+                    )
                 except OSError:
                     # stringified annotations
                     lambda_source_code = 'lambda'
@@ -606,10 +608,11 @@ def _apply_constraint(  # noqa: C901
                 s = _check_func(func, func.__name__, s)
         else:
             from functools import partial
+
             if isinstance(func, partial):
-                s = _check_func(func, "partial", s)
+                s = _check_func(func, 'partial', s)
             else:
-                s = _check_func(func, "callable", s)
+                s = _check_func(func, 'callable', s)
 
     elif isinstance(constraint, _NotEq):
         value = constraint.value
