@@ -1,3 +1,11 @@
+## v1.10.24 (2025-09-25)
+
+* Add user warning when using Python 3.14 by @Viicos in https://github.com/pydantic/pydantic/pull/12263
+  Pydantic V1 will *not* work with Python 3.14 and greater. A warning is now raised as no actual
+  error show up when using it, but the core behavior will silently get broken at runtime.
+* Fix mypy plugin issue for mypy v1.18 by @cdce8p in https://github.com/pydantic/pydantic/pull/12254
+  This fixes another mypy issue that was discovered after the previous v1.10.23 release.
+
 ## v1.10.23 (2025-09-13)
 
 * Fix mypy plugin for mypy 1.18 by @cdce8p in https://github.com/pydantic/pydantic/pull/12207
