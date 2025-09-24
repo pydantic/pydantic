@@ -21,6 +21,7 @@ pub struct DictValidator {
     value_validator: Box<CombinedValidator>,
     min_length: Option<usize>,
     max_length: Option<usize>,
+    fail_fast: bool,
     name: String,
 }
 
@@ -53,6 +54,7 @@ impl BuildValidator for DictValidator {
             value_validator,
             min_length: schema.get_as(intern!(py, "min_length"))?,
             max_length: schema.get_as(intern!(py, "max_length"))?,
+            fail_fast: schema.get_as(intern!(py, "fail_fast"))?.unwrap_or(false),
             name,
         }
         .into())
@@ -78,6 +80,7 @@ impl Validator for DictValidator {
             input,
             min_length: self.min_length,
             max_length: self.max_length,
+            fail_fast: self.fail_fast,
             key_validator: &self.key_validator,
             value_validator: &self.value_validator,
             state,
@@ -94,6 +97,7 @@ struct ValidateToDict<'a, 's, 'py, I: Input<'py> + ?Sized> {
     input: &'a I,
     min_length: Option<usize>,
     max_length: Option<usize>,
+    fail_fast: bool,
     key_validator: &'a CombinedValidator,
     value_validator: &'a CombinedValidator,
     state: &'a mut ValidationState<'s, 'py>,
@@ -110,6 +114,12 @@ where
         let output = PyDict::new(self.py);
         let mut errors: Vec<ValLineError> = Vec::new();
         let allow_partial = self.state.allow_partial;
+
+        macro_rules! should_fail_fast {
+            () => {
+                self.fail_fast && !errors.is_empty()
+            };
+        }
 
         for (_, is_last_partial, item_result) in self.state.enumerate_last_partial(iterator) {
             self.state.allow_partial = false.into();
@@ -130,6 +140,11 @@ where
                 true => allow_partial,
                 false => false.into(),
             };
+
+            if should_fail_fast!() {
+                break;
+            }
+
             let output_value = match self.value_validator.validate(self.py, value.borrow_input(), self.state) {
                 Ok(value) => value,
                 Err(ValError::LineErrors(line_errors)) => {
@@ -141,6 +156,11 @@ where
                 Err(ValError::Omit) => continue,
                 Err(err) => return Err(err),
             };
+
+            if should_fail_fast!() {
+                break;
+            }
+
             if let Some(key) = output_key {
                 output.set_item(key, output_value)?;
             }
