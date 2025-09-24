@@ -85,7 +85,7 @@ pub trait Input<'py>: fmt::Debug {
 
     fn validate_dataclass_args<'a>(&'a self, dataclass_name: &str) -> ValResult<Self::Arguments<'a>>;
 
-    fn validate_str(&self, strict: bool, coerce_numbers_to_str: bool) -> ValMatch<EitherString<'_>>;
+    fn validate_str(&self, strict: bool, coerce_numbers_to_str: bool) -> ValMatch<EitherString<'_, 'py>>;
 
     fn validate_bytes<'a>(&'a self, strict: bool, mode: ValBytesMode) -> ValMatch<EitherBytes<'a, 'py>>;
 
@@ -103,7 +103,7 @@ pub trait Input<'py>: fmt::Debug {
 
     /// Extract a String from the input, only allowing exact
     /// matches for a String (no subclasses)
-    fn exact_str(&self) -> ValResult<EitherString<'_>> {
+    fn exact_str(&self) -> ValResult<EitherString<'_, 'py>> {
         self.validate_str(true, false).and_then(|val_match| {
             val_match
                 .require_exact()
