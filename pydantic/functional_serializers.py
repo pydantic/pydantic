@@ -445,9 +445,7 @@ else:
             while schema_to_update['type'] == 'definitions':
                 schema_to_update = schema_to_update.copy()
                 schema_to_update = schema_to_update['schema']
-            schema_to_update['serialization'] = core_schema.wrap_serializer_function_ser_schema(
-                lambda x, h: h(x), schema=core_schema.any_schema()
-            )
+            schema_to_update['serialization'] = core_schema.simple_ser_schema('any')
             return schema
 
         __hash__ = object.__hash__
