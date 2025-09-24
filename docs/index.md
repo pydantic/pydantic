@@ -13,6 +13,11 @@ Data validation and settings management using Python type annotations.
 
 Define how data should be in pure, canonical Python; validate it with *pydantic*.
 
+!!! note "Limited support"
+    Active development of V1 has stopped. However critical bug fixes and security vulnerabilities will be fixed in V1 until the release of Pydantic V3.
+
+    The last supported Python version is 3.13. Pydantic V1 does *not* work on Python 3.14 and greater.
+
 ## Example
 
 {!.tmp_examples/index_main.md!}
