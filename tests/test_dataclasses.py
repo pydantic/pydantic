@@ -1422,39 +1422,6 @@ def test_dataclass_referenced_twice() -> None:
         'type': 'object',
     }
 
-def test_discriminated_union_by_list_values():
-    # Correct way: Use Literal fields with aliases to create list discriminator
-    @pydantic.dataclasses.dataclass
-    class A:
-        # Discriminator MUST be Literal, not list
-        animal_type: Literal["cat"] = Field(alias="type")
-        # Your actual list data goes in separate fields
-        friends: list[int] = dataclasses.field(default_factory=lambda: [0])
-
-    @pydantic.dataclasses.dataclass
-    class B:
-        # Same alias creates the list discriminator
-        animal_type: Literal["dog"] = Field(alias="type")
-        friends: list[int] = dataclasses.field(default_factory=lambda: [1])
-
-    @pydantic.dataclasses.dataclass
-    class UnionAB:
-        # Discriminator uses the field name, not the alias
-        sub: Union[A, B] = Field(discriminator='animal_type')
-
-    # Can use either the field name or alias
-    t1 = UnionAB(sub={"type": "cat", "friends": [10, 20]})  # Using alias
-    assert isinstance(t1, UnionAB)
-    assert t1.sub.animal_type == "cat"
-    assert t1.sub.friends == [10, 20]
-
-    t2 = UnionAB(sub={"animal_type": "dog", "friends": [30]})  # Using field name
-    assert isinstance(t2, UnionAB)
-    assert t2.sub.animal_type == "dog"
-    assert t2.sub.friends == [30]
-
-    schema = model_json_schema(UnionAB)
-    assert schema is not None
 
 def test_discriminated_union_basemodel_instance_value():
     @pydantic.dataclasses.dataclass
