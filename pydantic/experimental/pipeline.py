@@ -586,23 +586,31 @@ def _apply_constraint(  # noqa: C901
     elif isinstance(constraint, annotated_types.Predicate):
         func = constraint.func
 
-        if func.__name__ == '<lambda>':
-            # attempt to extract the source code for a lambda function
-            # to use as the function name in error messages
-            # TODO: is there a better way? should we just not do this?
-            import inspect
+        if hasattr(func, '__name__'):
+            if func.__name__ == '<lambda>':
+                # attempt to extract the source code for a lambda function
+                # to use as the function name in error messages
+                # TODO: is there a better way? should we just not do this?
+                import inspect
 
-            try:
-                source = inspect.getsource(func).strip()
-                source = source.removesuffix(')')
-                lambda_source_code = '`' + ''.join(''.join(source.split('lambda ')[1:]).split(':')[1:]).strip() + '`'
-            except OSError:
-                # stringified annotations
-                lambda_source_code = 'lambda'
+                try:
+                    source = inspect.getsource(func).strip()
+                    source = source.removesuffix(')')
+                    lambda_source_code = '`' + ''.join(''.join(source.split('lambda ')[1:]).split(':')[1:]).strip() + '`'
+                except OSError:
+                    # stringified annotations
+                    lambda_source_code = 'lambda'
 
-            s = _check_func(func, lambda_source_code, s)
+                s = _check_func(func, lambda_source_code, s)
+            else:
+                s = _check_func(func, func.__name__, s)
         else:
-            s = _check_func(func, func.__name__, s)
+            from functools import partial
+            if isinstance(func, partial):
+                s = _check_func(func, "partial", s)
+            else:
+                s = _check_func(func, "callable", s)
+
     elif isinstance(constraint, _NotEq):
         value = constraint.value
 

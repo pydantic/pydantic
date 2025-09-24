@@ -241,6 +241,8 @@ def test_parse_str_to_int() -> None:
 
 
 def test_predicates() -> None:
+    from functools import partial
+
     ta_int = TypeAdapter[int](Annotated[int, validate_as(int).predicate(lambda x: x % 2 == 0)])
     assert ta_int.validate_python(2) == 2
     with pytest.raises(ValidationError):
@@ -251,6 +253,11 @@ def test_predicates() -> None:
     with pytest.raises(ValidationError):
         ta_str.validate_python('potato')
 
+    incr1 = partial(lambda x, incr: x == incr, incr=1)
+    ta_str_to_int = TypeAdapter[int](Annotated[int, validate_as(int).predicate(incr1)])
+    assert ta_str_to_int.validate_python(1) == 1
+    with pytest.raises(ValidationError):
+        ta_str_to_int.validate_python(2)
 
 @pytest.mark.parametrize(
     'model, expected_val_schema, expected_ser_schema',
