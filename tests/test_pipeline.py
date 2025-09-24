@@ -14,6 +14,7 @@ from pydantic import TypeAdapter, ValidationError
 from pydantic.experimental.pipeline import _Pipeline, transform, validate_as  # pyright: ignore[reportPrivateUsage]
 
 
+
 @pytest.mark.parametrize('potato_variation', ['potato', ' potato ', ' potato', 'potato ', ' POTATO ', ' PoTatO '])
 def test_parse_str(potato_variation: str) -> None:
     ta_lower = TypeAdapter[str](Annotated[str, validate_as(...).str_strip().str_lower()])
@@ -160,6 +161,7 @@ def test_parse_tz() -> None:
         ]
     )
     date = datetime.datetime(2032, 6, 4, 11, 15, 30, 400000)
+    import pdb; pdb.set_trace()
     assert ta_tz.validate_python(date) == date
     date_a = datetime.datetime(2032, 6, 4, 11, 15, 30, 400000, tzinfo=pytz.UTC)
     with pytest.raises(ValueError):
@@ -175,6 +177,54 @@ def test_parse_tz() -> None:
     assert ta_tza.validate_python(date_a) == date_a
     with pytest.raises(ValueError):
         ta_tza.validate_python(date)
+
+
+
+def test_timezone_constraint_else_block() -> None:
+    """Test to hit the else block in Timezone constraint handling.
+
+    This happens when tz is ... but the schema is NOT datetime type.
+    The else block creates a check_tz_aware function that expects datetime objects.
+    """
+
+    ta_tz_aware = TypeAdapter[datetime.datetime](
+        Annotated[
+            datetime.datetime,
+            validate_as(str)
+            .transform(lambda x: datetime.datetime.strptime(x, "%Y-%m-%dT%H:%M:%S.%f").replace(tzinfo=datetime.timezone.utc))
+            .datetime_tz_aware(),
+        ]
+    )
+
+    assert ta_tz_aware.validate_python("2032-06-04T11:15:30.400000") == datetime.datetime(
+        2032, 6, 4, 11, 15, 30, 400000, tzinfo=datetime.timezone.utc)
+
+    ta_tz_aware_success = TypeAdapter[datetime.datetime](
+        Annotated[
+            datetime.datetime,
+            validate_as(str)
+            .transform(lambda x: datetime.datetime.strptime(x, "%Y-%m-%dT%H:%M:%S.%f%z"))
+            .datetime_tz_aware(),
+        ]
+    )
+
+    result = ta_tz_aware_success.validate_python("2032-06-04T11:15:30.400000+00:00")
+    assert result == datetime.datetime(2032, 6, 4, 11, 15, 30, 400000, tzinfo=datetime.timezone.utc)
+    assert result.tzinfo is not None
+
+    ta_tz_naive = TypeAdapter[datetime.datetime](
+        Annotated[
+            datetime.datetime,
+            validate_as(str)
+            .transform(lambda x: datetime.datetime.strptime(x, "%Y-%m-%dT%H:%M:%S.%f"))
+            .datetime_tz_naive(),
+        ]
+    )
+
+    result_naive = ta_tz_naive.validate_python("2032-06-04T11:15:30.400000")
+    assert result_naive.tzinfo is None
+    assert result_naive == datetime.datetime(2032, 6, 4, 11, 15, 30, 400000)
+
 
 
 @pytest.mark.parametrize(
@@ -250,6 +300,27 @@ def test_predicates() -> None:
     assert ta_str.validate_python('tomato') == 'tomato'
     with pytest.raises(ValidationError):
         ta_str.validate_python('potato')
+
+    ta_str_to_int = TypeAdapter[int](Annotated[str, validate_as(str).transform(lambda x: int(float(x))).predicate(float)])
+    assert ta_str_to_int.validate_python('1.5') == 1
+
+
+def test_predicates3() -> None:
+    from functools import partial
+    incr1 = partial(lambda x, incr: x == incr, incr=1)
+    ta_str_to_int = TypeAdapter[int](Annotated[int, validate_as(int).predicate(incr1)])
+    assert ta_str_to_int.validate_python(1) == 1
+    with pytest.raises(ValidationError):
+        ta_str_to_int.validate_python(2)
+
+def test_predicates4() -> None:
+    from functools import partial
+    incr1 = partial(lambda x, incr: x == incr, incr=1)
+    ta_str_to_int = TypeAdapter[int](Annotated[str, validate_as(str).transform(lambda x: int(float(x))).predicate(incr1)])
+    assert ta_str_to_int.validate_python('1.5') == 1
+    with pytest.raises(ValidationError):
+        ta_str_to_int.validate_python('2.5')
+
 
 
 @pytest.mark.parametrize(

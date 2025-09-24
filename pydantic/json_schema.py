@@ -1305,6 +1305,7 @@ class GenerateJsonSchema:
     ) -> str | None:
         """Extract a compatible OpenAPI discriminator from the schema and one_of choices that end up in the final
         schema."""
+        # import pdb; pdb.set_trace()
         openapi_discriminator: str | None = None
 
         if isinstance(schema['discriminator'], str):

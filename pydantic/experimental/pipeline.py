@@ -550,6 +550,7 @@ def _apply_constraint(  # noqa: C901
         tz = constraint.tz
 
         if tz is ...:
+            # raise ValueError('Use tz_aware() or tz_naive() to constrain to aware or naive datetimes respectively')
             if s and s['type'] == 'datetime':
                 s = s.copy()
                 s['tz_constraint'] = 'aware'
