@@ -385,7 +385,7 @@ class TypeAdapter(Generic[T]):
         *,
         strict: bool | None = None,
         from_attributes: bool | None = None,
-        context: dict[str, Any] | None = None,
+        context: Any | None = None,
         experimental_allow_partial: bool | Literal['off', 'on', 'trailing-strings'] = False,
         by_alias: bool | None = None,
         by_name: bool | None = None,
@@ -434,7 +434,7 @@ class TypeAdapter(Generic[T]):
         /,
         *,
         strict: bool | None = None,
-        context: dict[str, Any] | None = None,
+        context: Any | None = None,
         experimental_allow_partial: bool | Literal['off', 'on', 'trailing-strings'] = False,
         by_alias: bool | None = None,
         by_name: bool | None = None,
@@ -480,7 +480,7 @@ class TypeAdapter(Generic[T]):
         /,
         *,
         strict: bool | None = None,
-        context: dict[str, Any] | None = None,
+        context: Any | None = None,
         experimental_allow_partial: bool | Literal['off', 'on', 'trailing-strings'] = False,
         by_alias: bool | None = None,
         by_name: bool | None = None,
@@ -517,7 +517,7 @@ class TypeAdapter(Generic[T]):
             by_name=by_name,
         )
 
-    def get_default_value(self, *, strict: bool | None = None, context: dict[str, Any] | None = None) -> Some[T] | None:
+    def get_default_value(self, *, strict: bool | None = None, context: Any | None = None) -> Some[T] | None:
         """Get the default value for the wrapped type.
 
         Args:
@@ -545,7 +545,7 @@ class TypeAdapter(Generic[T]):
         warnings: bool | Literal['none', 'warn', 'error'] = True,
         fallback: Callable[[Any], Any] | None = None,
         serialize_as_any: bool = False,
-        context: dict[str, Any] | None = None,
+        context: Any | None = None,
     ) -> Any:
         """Dump an instance of the adapted type to a Python object.
 
@@ -602,7 +602,7 @@ class TypeAdapter(Generic[T]):
         warnings: bool | Literal['none', 'warn', 'error'] = True,
         fallback: Callable[[Any], Any] | None = None,
         serialize_as_any: bool = False,
-        context: dict[str, Any] | None = None,
+        context: Any | None = None,
     ) -> bytes:
         """!!! abstract "Usage Documentation"
             [JSON Serialization](../concepts/json.md#json-serialization)
