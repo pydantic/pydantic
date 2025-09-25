@@ -154,7 +154,7 @@ def test_ref_template():
         'properties': {
             'a': {'default': None, 'title': 'A', 'type': 'number'},
             'key_lime': {
-                'anyOf': [{'$ref': 'foobar/KeyLimePie.json'}, {'type': 'null'}],
+                'oneOf': [{'$ref': 'foobar/KeyLimePie.json'}, {'type': 'null'}],
                 'default': None,
             },
         },
@@ -167,7 +167,7 @@ def test_ref_template():
         },
     }
     assert ApplePie.model_json_schema()['properties']['key_lime'] == {
-        'anyOf': [{'$ref': '#/$defs/KeyLimePie'}, {'type': 'null'}],
+        'oneOf': [{'$ref': '#/$defs/KeyLimePie'}, {'type': 'null'}],
         'default': None,
     }
     json_schema = json.dumps(ApplePie.model_json_schema(ref_template='foobar/{model}.json'))
@@ -214,7 +214,7 @@ def test_sub_model():
         },
         'properties': {
             'a': {'type': 'integer', 'title': 'A'},
-            'b': {'anyOf': [{'$ref': '#/$defs/Foo'}, {'type': 'null'}], 'default': None},
+            'b': {'oneOf': [{'$ref': '#/$defs/Foo'}, {'type': 'null'}], 'default': None},
         },
         'required': ['a'],
     }
@@ -322,7 +322,7 @@ def test_enum_modify_schema():
                 'type': 'string',
             }
         },
-        'properties': {'spam': {'anyOf': [{'$ref': '#/$defs/SpamEnum'}, {'type': 'null'}], 'default': None}},
+        'properties': {'spam': {'oneOf': [{'$ref': '#/$defs/SpamEnum'}, {'type': 'null'}], 'default': None}},
         'title': 'Model',
         'type': 'object',
     }
@@ -585,7 +585,7 @@ def test_optional():
     assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'a': {'anyOf': [{'type': 'string'}, {'type': 'null'}], 'title': 'A'}},
+        'properties': {'a': {'oneOf': [{'type': 'string'}, {'type': 'null'}], 'title': 'A'}},
         'required': ['a'],
     }
 
@@ -786,7 +786,7 @@ class Foo(BaseModel):
                         'required': ['a'],
                     }
                 },
-                'properties': {'a': {'anyOf': [{'$ref': '#/$defs/Foo'}, {'type': 'null'}]}},
+                'properties': {'a': {'oneOf': [{'$ref': '#/$defs/Foo'}, {'type': 'null'}]}},
                 'required': ['a'],
                 'title': 'Model',
                 'type': 'object',
@@ -870,10 +870,10 @@ def test_complex_types():
 @pytest.mark.parametrize(
     'field_type,expected_schema',
     [
-        (Optional[str], {'properties': {'a': {'anyOf': [{'type': 'string'}, {'type': 'null'}], 'title': 'A'}}}),
+        (Optional[str], {'properties': {'a': {'oneOf': [{'type': 'string'}, {'type': 'null'}], 'title': 'A'}}}),
         (
             Optional[bytes],
-            {'properties': {'a': {'title': 'A', 'anyOf': [{'type': 'string', 'format': 'binary'}, {'type': 'null'}]}}},
+            {'properties': {'a': {'title': 'A', 'oneOf': [{'type': 'string', 'format': 'binary'}, {'type': 'null'}]}}},
         ),
         (
             Union[str, bytes],
@@ -889,7 +889,7 @@ def test_complex_types():
                 'properties': {
                     'a': {
                         'title': 'A',
-                        'anyOf': [{'type': 'string'}, {'type': 'string', 'format': 'binary'}, {'type': 'null'}],
+                        'oneOf': [{'type': 'string'}, {'type': 'string', 'format': 'binary'}, {'type': 'null'}],
                     }
                 }
             },
@@ -1496,7 +1496,7 @@ def test_schema_overrides():
             'Baz': {
                 'title': 'Baz',
                 'type': 'object',
-                'properties': {'c': {'anyOf': [{'$ref': '#/$defs/Bar'}, {'type': 'null'}]}},
+                'properties': {'c': {'oneOf': [{'$ref': '#/$defs/Bar'}, {'type': 'null'}]}},
                 'required': ['c'],
             },
         },
@@ -2318,7 +2318,7 @@ def test_optional_dict():
         'type': 'object',
         'properties': {
             'something': {
-                'anyOf': [{'type': 'object', 'additionalProperties': True}, {'type': 'null'}],
+                'oneOf': [{'type': 'object', 'additionalProperties': True}, {'type': 'null'}],
                 'default': None,
                 'title': 'Something',
             }
@@ -2345,7 +2345,7 @@ def test_optional_validator():
         'properties': {
             'something': {
                 'title': 'Something',
-                'anyOf': [{'type': 'string'}, {'type': 'null'}],
+                'oneOf': [{'type': 'string'}, {'type': 'null'}],
                 'default': None,
             }
         },
@@ -2379,7 +2379,7 @@ def test_field_with_validator():
         'title': 'Model',
         'type': 'object',
         'properties': {
-            'something': {'anyOf': [{'type': 'integer'}, {'type': 'null'}], 'default': None, 'title': 'Something'}
+            'something': {'oneOf': [{'type': 'integer'}, {'type': 'null'}], 'default': None, 'title': 'Something'}
         },
     }
 
@@ -2799,7 +2799,7 @@ def test_typeddict_with__callable_json_schema_extra():
         (
             Optional[int],
             dict(gt=0),
-            {'title': 'A', 'anyOf': [{'exclusiveMinimum': 0, 'type': 'integer'}, {'type': 'null'}]},
+            {'title': 'A', 'oneOf': [{'exclusiveMinimum': 0, 'type': 'integer'}, {'type': 'null'}]},
         ),
         (
             tuple[Annotated[int, Field(gt=0)], ...],
@@ -5261,7 +5261,7 @@ def test_arbitrary_type_json_schema(field_schema, model_schema, instance_of):
         (
             WithJsonSchema({'type': 'number'}),
             {
-                'properties': {'x': {'anyOf': [{'type': 'number'}, {'type': 'null'}], 'title': 'X'}},
+                'properties': {'x': {'oneOf': [{'type': 'number'}, {'type': 'null'}], 'title': 'X'}},
                 'required': ['x'],
                 'title': 'Model',
                 'type': 'object',
@@ -5272,7 +5272,7 @@ def test_arbitrary_type_json_schema(field_schema, model_schema, instance_of):
             {
                 'properties': {
                     'x': {
-                        'anyOf': [{'examples': [1, 2, 3], 'type': 'integer'}, {'type': 'null'}],
+                        'oneOf': [{'examples': [1, 2, 3], 'type': 'integer'}, {'type': 'null'}],
                         'title': 'X',
                     }
                 },
@@ -6167,7 +6167,7 @@ def test_recursive_non_generic_model() -> None:
                 'type': 'object',
             },
             'Foo': {
-                'properties': {'maybe_bar': {'anyOf': [{'$ref': '#/$defs/Bar'}, {'type': 'null'}]}},
+                'properties': {'maybe_bar': {'oneOf': [{'$ref': '#/$defs/Bar'}, {'type': 'null'}]}},
                 'required': ['maybe_bar'],
                 'title': 'Foo',
                 'type': 'object',
@@ -6859,7 +6859,7 @@ def test_with_json_schema_doesnt_share_schema() -> None:
         field1: AnnBool = Field(default=False)
         field2: Optional[AnnBool] = Field(default=None)
 
-    assert Model.model_json_schema()['properties']['field2']['anyOf'][0] == dict()
+    assert Model.model_json_schema()['properties']['field2']['oneOf'][0] == dict()
 
 
 def test_json_schema_arguments_v3() -> None:
