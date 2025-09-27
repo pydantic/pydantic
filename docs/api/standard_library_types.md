@@ -2,8 +2,11 @@
 description: Support for common types from the Python standard library.
 ---
 
-Pydantic supports many common types from the Python standard library. If you need stricter processing see
-[Strict Types](../concepts/types.md#strict-types), including if you need to constrain the values allowed (e.g. to require a positive `int`).
+This section enumerates the supported built-in and standard library types: the allowed values,
+the possible constraints, and whether strictness can be configured.
+
+!!! note
+    Unless specified otherwise, values are serialized as-is, in both Python and JSON modes.
 
 !!! note
     Pydantic still supports older (3.8-) typing constructs like `typing.List` and `typing.Dict`, but
@@ -11,19 +14,21 @@ Pydantic supports many common types from the Python standard library. If you nee
 
 ## Booleans
 
-A standard `bool` field will raise a `ValidationError` if the value is not one of the following:
+Built-in type: [`bool`][]
 
-* A valid boolean (i.e. `True` or `False`),
-* The integers `0` or `1`,
-* a `str` which when converted to lower case is one of
-  `'0', 'off', 'f', 'false', 'n', 'no', '1', 'on', 't', 'true', 'y', 'yes'`
-* a `bytes` which is valid per the previous rule when decoded to `str`
+<h3>Validation</h3>
 
-!!! note
-    If you want stricter boolean logic (e.g. a field which only permits `True` and `False`) you can
-    use [`StrictBool`](../api/types.md#pydantic.types.StrictBool).
+* A valid [`bool`][] instance, i.e. `True` or `False`
+* The integers `0` or `1`
+* A string, which when converted to lowercase is one of `'0'`, `'off'`, `'f'`, `'false'`, `'n'`, `'no'`, `'1'`, `'on'` `'t'`, `'true'`, `'y'`, `'yes'`
+* In Python mode, a [`bytes`][] object which is valid per the previous rule when decoded to a string. 
 
-Here is a script demonstrating some of these behaviors:
+<h3>Strictness</h3>
+
+In strict mode, only boolean values are valid. Pydantic provides the [`StrictBool`][pydantic.types.StrictBool]
+type as a convenience to `Annotated[bool, Strict()]`.
+
+<h3>Example</h3>
 
 ```python
 from pydantic import BaseModel, ValidationError
@@ -50,31 +55,396 @@ except ValidationError as e:
     """
 ```
 
-## Datetime Types
+## Strings
 
-Pydantic supports the following [datetime](https://docs.python.org/library/datetime.html#available-types)
-types:
+Built-in type: [`str`][]
 
-### [`datetime.datetime`][]
+<h3>Validation</h3>
 
-* `datetime` fields will accept values of type:
-    * `datetime`; an existing `datetime` object
-    * `int` or `float`; assumed as Unix time, i.e. seconds (if >= `-2e10` and <= `2e10`) or milliseconds
-      (if < `-2e10`or > `2e10`) since 1 January 1970
-    * `str`; the following formats are accepted:
-        * `YYYY-MM-DD[T]HH:MM[:SS[.ffffff]][Z or [±]HH[:]MM]`
-        * `YYYY-MM-DD` is accepted in lax mode, but not in strict mode
-        * `int` or `float` as a string (assumed as Unix time)
-    * [`datetime.date`][] instances are accepted in lax mode, but not in strict mode
+* Strings are accepted as-is
+* [`bytes`][] and [`bytearray`][] are decoded to UTF-8 strings
+* [Enums][enum] are converted using the [`value`][enum.Enum.value] attribute, by calling [`str()`][str]
+  on it.
+* If [`coerce_numbers_to_str`][pydantic.ConfigDict.coerce_numbers_to_str] is set, any number type
+  ([`int`][], [`float`][] and [`Decimal`][decimal.Decimal]) will be coerced to a string and accepted
+  as-is.
+
+<h3>Constraints</h3>
+
+Strings support the following constraints:
+
+| Constraint         | Description                                       | JSON Schema                                                                                      |
+| ------------------ | ------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `pattern`          | A regex pattern that the string must match        | [`pattern`](https://json-schema.org/understanding-json-schema/reference/string#regexp) keyword   |
+| `min_length`       | The minimum length of the string                  | [`minLength`](https://json-schema.org/understanding-json-schema/reference/string#length) keyword |
+| `max_length`       | The maximum length of the string                  | [`maxLength`](https://json-schema.org/understanding-json-schema/reference/string#length) keyword |
+| `strip_whitespace` | Whether to remove leading and trailing whitespace | N/A                                                                                              |
+| `to_upper`         | Whether to convert the string to uppercase        | N/A                                                                                              |
+| `to_lower`         | Whether to convert the string to lowercase        | N/A                                                                                              |
+
+These constraints can be provided using the [`StringConstraints`][pydantic.types.StringConstraints] metadata type, or using the [`Field()`][pydantic.Field] function (except for `to_upper` and `to_lower`).
+The `MinLen`, `MaxLen`, `Len`, `LowerCase`, `UpperCase` metadata types from the [`annotated-types`](https://github.com/annotated-types/annotated-types)
+library can also be used.
+
+<h3>Strictness</h3>
+
+In strict mode, only string values are valid. Pydantic provides the [`StrictStr`][pydantic.types.StrictStr]
+type as a convenience to `Annotated[str, Strict()]`.
+
+<h3>Example</h3>
+
+```python
+from pydantic import BaseModel, StringConstraints
+
+
+class StringModel(BaseModel):
+    str_value: str = ""
+    constrained_str_value: Annotated[str, StringConstraints(to_lower=True)] = ""
+
+print(StringModel(str_value="test").str_value)
+#> str_value="test"
+print(StringModel(constrained_str_value='TEST').constrained_str_value)
+#> constrained_str_value="test"
+```
+
+!!! warning "Strings aren't treated as sequences"
+
+    While [`str`][] instances are technically valid [sequence][] instances, this is frequently not intended as is a common source of bugs.
+
+    As a result, Pydantic will *not* accept
+     raises a `ValidationError` if you attempt to pass a `str` or `bytes` instance into a field of type
+    `Sequence[str]` or `Sequence[bytes]`:
+
+
+```python
+from collections.abc import Sequence
+from typing import Optional
+
+from pydantic import BaseModel, ValidationError
+
+
+class Model(BaseModel):
+    sequence_of_strs: Optional[Sequence[str]] = None
+    sequence_of_bytes: Optional[Sequence[bytes]] = None
+
+
+print(Model(sequence_of_strs=['a', 'bc']).sequence_of_strs)
+#> ['a', 'bc']
+print(Model(sequence_of_strs=('a', 'bc')).sequence_of_strs)
+#> ('a', 'bc')
+print(Model(sequence_of_bytes=[b'a', b'bc']).sequence_of_bytes)
+#> [b'a', b'bc']
+print(Model(sequence_of_bytes=(b'a', b'bc')).sequence_of_bytes)
+#> (b'a', b'bc')
+
+
+try:
+    Model(sequence_of_strs='abc')
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for Model
+    sequence_of_strs
+      'str' instances are not allowed as a Sequence value [type=sequence_str, input_value='abc', input_type=str]
+    """
+try:
+    Model(sequence_of_bytes=b'abc')
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for Model
+    sequence_of_bytes
+      'bytes' instances are not allowed as a Sequence value [type=sequence_str, input_value=b'abc', input_type=bytes]
+    """
+```
+
+<!-- old anchor added for backwards compatibility -->
+<!-- markdownlint-disable-next-line no-empty-links -->
+[](){#number-types}
+## Numbers
+
+Pydantic supports the following numeric types from the Python standard library:
+
+<!-- old anchor added for backwards compatibility -->
+<!-- markdownlint-disable-next-line no-empty-links -->
+[](){#int}
+### Integers
+
+Built-in type: [`int`][].
+
+<h4>Validation</h4>
+
+* Integers are validated as-is
+* Strings and bytes are attempted to be converted to integers and validated as-is
+  (see the [jiter implementation](https://docs.rs/jiter/latest/jiter/enum.NumberInt.html#impl-TryFrom%3C%26%5Bu8%5D%3E-for-NumberInt) for details)
+* Floats are validated as integers, provided the float input is not infinite or a NaN (not-a-number)
+  and the fractional part is 0
+* [`Decimal`][decimal.Decimal] instances, provided they are [finite][decimal.Decimal.is_finite] and the
+  denominator is 1
+* [`Fraction`][fractions.Fraction] instances, provided they are [integers][fractions.Fraction.is_integer].
+* [Enums][enum] are converted using the [`value`][enum.Enum.value] attribute.
+
+<h4>Constraints</h4>
+
+Integers support the following constraints (numbers must be coercible to integers):
+
+| Constraint    | Description                                            | JSON Schema                                                                                             |
+| ------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------- |
+| `le`          | The value must be less than or equal to this number    | [`maximum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword          |
+| `ge`          | The value must be greater than or equal to this number | [`minimum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword          |
+| `lt`          | The value must be strictly less than this number       | [`exclusiveMaximum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword |
+| `gt`          | The value must be strictly greater than this number    | [`exclusiveMinimum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword |
+| `multiple_of` | The value must be a multiple of this number            | [`multipleOf`](https://json-schema.org/understanding-json-schema/reference/numeric#multiples) keyword   |
+
+These constraints can be provided using the [`Field()`][pydantic.Field] function.
+The `Le`, `Ge`, `Lt`, `Gt` and `MultipleOf` metadata types from the [`annotated-types`](https://github.com/annotated-types/annotated-types)
+library can also be used.
+
+<h4>Strictness</h4>
+
+In strict mode, only integer values are valid. Pydantic provides the [`StrictInt`][pydantic.types.StrictInt]
+type as a convenience to `Annotated[int, Strict()]`.
+
+<!-- old anchor added for backwards compatibility -->
+<!-- markdownlint-disable-next-line no-empty-links -->
+[](){#float}
+### Floats
+
+Built-in type: [`float`][].
+
+<h4>Validation</h4>
+
+* Floats are validated as-is
+* String and bytes are attempted to be converted to floats and validated as-is
+  (see the [Rust implementation](https://doc.rust-lang.org/src/core/num/dec2flt/mod.rs.html) for details)
+* If the input has a [`__float__()`][object.__float__] method, it will be called to convert the input into
+  a float. If `__float__()` is not defined, it falls back to [`__index__()`][object.__index__]. This includes
+  (but not limited to) the [`Decimal`][decimal.Decimal] and [`Fraction`][fractions.Fraction] types.
+
+<h4>Constraints</h4>
+
+Floats support the following constraints:
+
+| Constraint      | Description                                             | JSON Schema                                                                                             |
+| --------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `le`            | The value must be less than or equal to this number     | [`maximum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword          |
+| `ge`            | The value must be greater than or equal to this number  | [`minimum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword          |
+| `lt`            | The value must be strictly less than this number        | [`exclusiveMaximum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword |
+| `gt`            | The value must be strictly greater than this number     | [`exclusiveMinimum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword |
+| `multiple_of`   | The value must be a multiple of this number             | [`multipleOf`](https://json-schema.org/understanding-json-schema/reference/numeric#multiples) keyword   |
+| `allow_inf_nan` | Whether to allow NaN (not-a-number) and infinite values | N/A                                                                                                     |
+
+These constraints can be provided using the [`Field()`][pydantic.Field] function.
+The `Le`, `Ge`, `Lt`, `Gt` and `MultipleOf` metadata types from the [`annotated-types`](https://github.com/annotated-types/annotated-types)
+library can also be used.
+
+<h4>Strictness</h4>
+
+In strict mode, only float values and inputs having a [`__float__()`][object.__float__]
+or [`__index__()`][object.__index__] method are valid.
+Pydantic provides the [`StrictFloat`][pydantic.types.StrictFloat] type as a convenience to `Annotated[float, Strict()]`.
+
+<!-- old anchor added for backwards compatibility -->
+<!-- markdownlint-disable-next-line no-empty-links -->
+[](){#enum.IntEnum}
+### Integer enums
+
+Standard library type: [`enum.IntEnum`][].
+
+<h4>Validation</h4>
+
+* If the [`enum.IntEnum`][] type is used directly, any [`enum.IntEnum`][] instance is validated as-is
+* Id an [`enum.IntEnum`][] subclass is used as a type, any enum member or value that correspond to the
+  enum members values is validated as-is.
+
+See [Enums and Choices](#enum) for more details.
+
+<!-- old anchor added for backwards compatibility -->
+<!-- markdownlint-disable-next-line no-empty-links -->
+[](){#decimal.Decimal}
+### Decimals
+
+Standard library type: [`decimal.Decimal`][].
+
+<h4>Validation</h4>
+
+* [`Decimal`][decimal.Decimal] instances are validated as is
+* Any value accepted by the [`Decimal`][decimal.Decimal] constructor (apart from the
+  three-tuple input) will validate.
+
+<h4>Constraints</h4>
+
+Decimals support the following constraints (numbers must be coercible to decimals):
+
+| Constraint       | Description                                                                                                         | JSON Schema                                                                                                                    |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `le`             | The value must be less than or equal to this number                                                                 | [`maximum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword                                 |
+| `ge`             | The value must be greater than or equal to this number                                                              | [`minimum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword                                 |
+| `lt`             | The value must be strictly less than this number                                                                    | [`exclusiveMaximum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword                        |
+| `gt`             | The value must be strictly greater than this number                                                                 | [`exclusiveMinimum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword                        |
+| `multiple_of`    | The value must be a multiple of this number                                                                         | [`multipleOf`](https://json-schema.org/understanding-json-schema/reference/numeric#multiples) keyword                          |
+| `allow_inf_nan`  | Whether to allow NaN (not-a-number) and infinite values                                                             | N/A                                                                                                                            |
+| `max_digits`     | The maximum number of decimal digits allowed. The zero before the decimal point and trailing zeros are not counted. | [`pattern`](https://json-schema.org/understanding-json-schema/reference/string#regexp) keyword, to describe the string pattern |
+| `decimal_places` | The maximum number of decimal places allowed. Trailing zeros are not counted.                                       | [`pattern`](https://json-schema.org/understanding-json-schema/reference/string#regexp) keyword, to describe the string pattern |
+
+Note that the JSON Schema [`pattern`](https://json-schema.org/understanding-json-schema/reference/string#regexp) keyword will be specified
+in the JSON Schema to describe the string pattern in all cases (and can vary if `max_digits` and/or `decimal_places` is specified).
+
+These constraints can be provided using the [`Field()`][pydantic.Field] function.
+The `Le`, `Ge`, `Lt`, `Gt` and `MultipleOf` metadata types from the [`annotated-types`](https://github.com/annotated-types/annotated-types)
+library can also be used.
+
+<h4>Strictness</h4>
+
+In strict mode, only [`decimal.Decimal`][] instances are accepted. In JSON mode, strict mode has no effect.
+
+Strict mode can be enabled using `Annotated[float, Strict()]`.
+
+<h4>Serialization</h4>
+
+In [Python mode](../concepts/serialization.md#python-mode), [`Decimal`][decimal.Decimal] instances are 
+serialized as is.
+
+In [JSON mode](../concepts/serialization.md#json-mode), they are serialized as strings.
+A [serializer](../concepts/serialization.md#field-plain-serializer) can be used to override this behavior:
+
+```python
+from decimal import Decimal
+from typing import Annotated
+
+from pydantic import BaseModel, PlainSerializer
+
+
+class Model(BaseModel):
+    f: Annotated[Decimal, PlainSerializer(float, when_used='json')]
+
+
+my_model = Model(f=Decimal('2.1'))
+
+print(my_model.model_dump())  # (1)!
+#> {'f': Decimal('2.1')}
+print(my_model.model_dump_json())  # (2)!
+#> '{"f":2.1}'
+```
+
+1. In Python mode, `f`remains a [`Decimal`][decimal.Decimal] instance.
+2. In JSON mode, `f` is serialized as a float.
+
+<!-- old anchor added for backwards compatibility -->
+<!-- markdownlint-disable-next-line no-empty-links -->
+[](){#complex}
+### Complex numbers
+
+Built-in type: [`complex`][].
+
+<h4>Validation</h4>
+
+* [`complex`][] instances are validated as-is
+* Strings are validated using the [`complex()`][complex] constructor
+* Numbers (integers and floats) are used as the real part
+* Objects defining [`__complex__()`][object.__complex__], [`__float__()`][object.__float__]
+  or [`__index__()`][object.__index__] are currently *not* accepted.
+
+<h4>Strictness</h4>
+
+In strict mode, only [`complex`][] instances are accepted. In JSON mode, only strings that are
+accepted by the [`complex()`][complex] constructor are allowed.
+
+<h4>Serialization</h4>
+
+In [Python mode](../concepts/serialization.md#python-mode), [`Decimal`][decimal.Decimal] instances are 
+serialized as is.
+
+In [JSON mode](../concepts/serialization.md#json-mode), they are serialized as strings.
+
+<!-- old anchor added for backwards compatibility -->
+<!-- markdownlint-disable-next-line no-empty-links -->
+[](){#fractions.Fraction}
+### Fractions
+
+Standard library type: [`fractions.Fraction`][].
+
+<h4>Validation</h4>
+
+* [`Fraction`][fractions.Fraction] instances are validated as is
+* Floats, strings and [`decimal.Decimal`][] instances are validated using the [`Fraction()`][fractions.Fraction]
+  constructor.
+
+<h4>Strictness</h4>
+
+In strict mode, only [`Fraction`][fractions.Fraction] instances are accepted. In JSON mode, strict mode has no effect.
+
+<h4>Serialization</h4>
+
+Fractions are serialized as strings, both in [Python](../concepts/serialization.md#python-mode)
+and [JSON](../concepts/serialization.md#json-mode) modes.
+
+<!-- old anchor added for backwards compatibility -->
+<!-- markdownlint-disable-next-line no-empty-links -->
+[](){#datetime-types}
+## Date and time types
+
+Pydantic supports the following [date and time](https://docs.python.org/library/datetime.html#available-types)
+types from the [`datetime`][] standard library:
+
+<!-- old anchor added for backwards compatibility -->
+<!-- markdownlint-disable-next-line no-empty-links -->
+[](){#datetime.datetime}
+### Datetimes
+
+Standard library type: [`datetime.datetime`][].
+
+<h4>Validation</h4>
+
+* [`datetime`][datetime.datetime] instances are validated as is.
+* Strings and bytes are validated in two ways:
+    * Strings complying to the [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339) format (both datetime and date).
+      See the [speedate](https://docs.rs/speedate/) documentation for more details.
+    * Unix timestamps, both as seconds or miliseconds sinch the [epoch](https://en.wikipedia.org/wiki/Unix_time).
+      See the [`val_temporal_unit`][pydantic.ConfigDict.val_temporal_unit] configuration value for more details.
+* Integers and floats (or types that can be coerced as integers or floats) are validated as unix timestamps, following the
+  same semantics as strings.
+* [`datetime.date`][] instances are accepted, and converted to a [`datetime`][datetime.datetime] instance
+  by setting the [`hour`][datetime.datetime.hour], [`minute`][datetime.datetime.minute], [`second`][datetime.datetime.second] and
+  [`microsecond`][datetime.datetime.microsecond] attributes to `0`, and the [`tzinfo`][datetime.datetime.tzinfo] attribute to `None`.
+
+<h4>Constraints</h4>
+
+Datetimes support the following constraints (constraint values must be coercible to a [`datetime`][datetime.datetime] instance):
+
+| Constraint | Description                                              | JSON Schema |
+| ---------- | -------------------------------------------------------- | ----------- |
+| `le`       | The value must be less than or equal to this datetime    | N/A         |
+| `ge`       | The value must be greater than or equal to this datetime | N/A         |
+| `lt`       | The value must be strictly less than this datetime       | N/A         |
+| `gt`       | The value must be strictly greater than this datetime    | N/A         |
+
+These constraints can be provided using the [`Field()`][pydantic.Field] function.
+The `Le`, `Ge`, `Lt` and `Gt` metadata types from the [`annotated-types`](https://github.com/annotated-types/annotated-types)
+library can also be used.
+
+Pydantic also provides the following types to further constrain the allowed datetime values:
+
+* [`AwareDatetime`][pydantic.types.AwareDatetime]: Requires the input to have a timezone.
+* [`NaiveDatetime`][pydantic.types.NaiveDatetime]: Requires the input to *not* have a timezone.
+* [`PastDatetime`][pydantic.types.PastDatetime]: Requires the input to be in the past when validated.
+* [`FutureDatetime`][pydantic.types.FutureDatetime]: Requires the input to be in the future when validated.
+
+<h4>Strictness</h4>[]
+
+In strict mode, only [`datetime`][datetime.datetime] instances are accepted. In JSON mode, only strings complying to the
+[RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339) format (*only* datetime) or as unix timestamps are accepted.
+
+<h4>Example</h4>
 
 ```python
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import AwareDatetime, BaseModel, Field
 
 
 class Event(BaseModel):
-    dt: datetime = None
+    dt: Annotated[AwareDatetime, Field(gt=datetime(2000, 1, 1))]
 
 
 event = Event(dt='2032-04-23T10:20:30.400+02:30')
@@ -85,14 +455,50 @@ print(event.model_dump())
 """
 ```
 
-### [`datetime.date`][]
+<!-- old anchor added for backwards compatibility -->
+<!-- markdownlint-disable-next-line no-empty-links -->
+[](){#datetime.date}
+### Dates
 
-* `date` fields will accept values of type:
-    * `date`; an existing `date` object
-    * `int` or `float`; handled the same as described for `datetime` above
-    * `str`; the following formats are accepted:
-        * `YYYY-MM-DD`
-        * `int` or `float` as a string (assumed as Unix time)
+Standard library type: [`datetime.date`][].
+
+<h4>Validation</h4>
+
+* [`date`][datetime.date] instances are validated as is.
+* Strings and bytes are validated in two ways:
+    * Strings complying to the [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339) date format.
+      See the [speedate](https://docs.rs/speedate/) documentation for more details.
+    * Unix timestamps, both as seconds or miliseconds sinch the [epoch](https://en.wikipedia.org/wiki/Unix_time).
+      See the [`val_temporal_unit`][pydantic.ConfigDict.val_temporal_unit] configuration value for more details.
+* If the validation fails, the input can be [validated as a datetime](#datetimes) (including as numbers),
+  provided that the time component is 0 and that it is naive.
+
+<h4>Constraints</h4>
+
+Dates support the following constraints (constraint values must be coercible to a [`date`][datetime.date] instance):
+
+| Constraint | Description                                          | JSON Schema |
+| ---------- | ---------------------------------------------------- | ----------- |
+| `le`       | The value must be less than or equal to this date    | N/A         |
+| `ge`       | The value must be greater than or equal to this date | N/A         |
+| `lt`       | The value must be strictly less than this date       | N/A         |
+| `gt`       | The value must be strictly greater than this date    | N/A         |
+
+These constraints can be provided using the [`Field()`][pydantic.Field] function.
+The `Le`, `Ge`, `Lt` and `Gt` metadata types from the [`annotated-types`](https://github.com/annotated-types/annotated-types)
+library can also be used.
+
+Pydantic also provides the following types to further constrain the allowed date values:
+
+* [`PastDate`][pydantic.types.PastDate]: Requires the input to be in the past when validated.
+* [`FutureDate`][pydantic.types.FutureDate]: Requires the input to be in the future when validated.
+
+<h4>Strictness</h4>[]
+
+In strict mode, only [`date`][datetime.date] instances are accepted. In JSON mode, only strings complying to the
+[RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339) format (*only* date) or as unix timestamps are accepted.
+
+<h4>Example</h4>
 
 ```python
 from datetime import date
@@ -101,7 +507,7 @@ from pydantic import BaseModel
 
 
 class Birthday(BaseModel):
-    d: date = None
+    d: date
 
 
 my_birthday = Birthday(d=1679616000.0)
@@ -160,72 +566,6 @@ m = Model(td='P3DT12H30M5S')
 print(m.model_dump())
 #> {'td': datetime.timedelta(days=3, seconds=45005)}
 ```
-
-## Number Types
-
-Pydantic supports the following numeric types from the Python standard library:
-
-### [`int`][]
-
-* Pydantic uses `int(v)` to coerce types to an `int`;
-  see [Data conversion](../concepts/models.md#data-conversion) for details on loss of information during data conversion.
-
-### [`float`][]
-
-* Pydantic uses `float(v)` to coerce values to floats.
-
-### [`enum.IntEnum`][]
-
-* Validation: Pydantic checks that the value is a valid `IntEnum` instance.
-* Validation for subclass of `enum.IntEnum`: checks that the value is a valid member of the integer enum;
-  see [Enums and Choices](#enum) for more details.
-
-### [`decimal.Decimal`][]
-
-* Validation: Pydantic attempts to convert the value to a string, then passes the string to `Decimal(v)`.
-* Serialization: Pydantic serializes [`Decimal`][decimal.Decimal] types as strings.
-You can use a custom serializer to override this behavior if desired. For example:
-
-```python
-from decimal import Decimal
-from typing import Annotated
-
-from pydantic import BaseModel, PlainSerializer
-
-
-class Model(BaseModel):
-    x: Decimal
-    y: Annotated[
-        Decimal,
-        PlainSerializer(
-            lambda x: float(x), return_type=float, when_used='json'
-        ),
-    ]
-
-
-my_model = Model(x=Decimal('1.1'), y=Decimal('2.1'))
-
-print(my_model.model_dump())  # (1)!
-#> {'x': Decimal('1.1'), 'y': Decimal('2.1')}
-print(my_model.model_dump(mode='json'))  # (2)!
-#> {'x': '1.1', 'y': 2.1}
-print(my_model.model_dump_json())  # (3)!
-#> {"x":"1.1","y":2.1}
-```
-
-1. Using [`model_dump`][pydantic.main.BaseModel.model_dump], both `x` and `y` remain instances of the `Decimal` type
-2. Using [`model_dump`][pydantic.main.BaseModel.model_dump] with `mode='json'`, `x` is serialized as a `string`, and `y` is serialized as a `float` because of the custom serializer applied.
-3. Using [`model_dump_json`][pydantic.main.BaseModel.model_dump_json], `x` is serialized as a `string`, and `y` is serialized as a `float` because of the custom serializer applied.
-
-### [`complex`][]
-
-* Validation: Pydantic supports `complex` types or `str` values that can be converted to a `complex` type.
-* Serialization: Pydantic serializes [`complex`][] types as strings.
-
-### [`fractions.Fraction`][fractions.Fraction]
-
-* Validation: Pydantic attempts to convert the value to a `Fraction` using `Fraction(v)`.
-* Serialization: Pydantic serializes [`Fraction`][fractions.Fraction] types as strings.
 
 ## [`Enum`][enum.Enum]
 
@@ -859,64 +1199,6 @@ print(Model(a=None, b=1, c=1))
 [`None`][], `type(None)`, or `Literal[None]` are all equivalent according to [the typing specification](https://typing.readthedocs.io/en/latest/spec/special-types.html#none).
 Allows only `None` value.
 
-## Strings
-
-* [`str`][]: Strings are accepted as-is.
-* [`bytes`][] and [`bytearray`][] are converted using the [`decode()`][bytes.decode] method.
-* Enums inheriting from [`str`][] are converted using the [`value`][enum.Enum.value] attribute.
-
-All other types cause an error.
-<!-- * TODO: add note about optional number to string conversion from lig's PR -->
-
-!!! warning "Strings aren't Sequences"
-
-    While instances of `str` are technically valid instances of the `Sequence[str]` protocol from a type-checker's point of
-    view, this is frequently not intended as is a common source of bugs.
-
-    As a result, Pydantic raises a `ValidationError` if you attempt to pass a `str` or `bytes` instance into a field of type
-    `Sequence[str]` or `Sequence[bytes]`:
-
-```python
-from collections.abc import Sequence
-from typing import Optional
-
-from pydantic import BaseModel, ValidationError
-
-
-class Model(BaseModel):
-    sequence_of_strs: Optional[Sequence[str]] = None
-    sequence_of_bytes: Optional[Sequence[bytes]] = None
-
-
-print(Model(sequence_of_strs=['a', 'bc']).sequence_of_strs)
-#> ['a', 'bc']
-print(Model(sequence_of_strs=('a', 'bc')).sequence_of_strs)
-#> ('a', 'bc')
-print(Model(sequence_of_bytes=[b'a', b'bc']).sequence_of_bytes)
-#> [b'a', b'bc']
-print(Model(sequence_of_bytes=(b'a', b'bc')).sequence_of_bytes)
-#> (b'a', b'bc')
-
-
-try:
-    Model(sequence_of_strs='abc')
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for Model
-    sequence_of_strs
-      'str' instances are not allowed as a Sequence value [type=sequence_str, input_value='abc', input_type=str]
-    """
-try:
-    Model(sequence_of_bytes=b'abc')
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for Model
-    sequence_of_bytes
-      'bytes' instances are not allowed as a Sequence value [type=sequence_str, input_value=b'abc', input_type=bytes]
-    """
-```
 
 ## Bytes
 

@@ -1,13 +1,15 @@
-Where possible Pydantic uses [standard library types](../api/standard_library_types.md) to define fields, thus smoothing
-the learning curve. For many useful applications, however, no standard library type exists,
-so Pydantic implements many commonly used types.
+Pydantic uses types to define how validation and serialization should be performed.
+[Built-in and standard library types](../api/standard_library_types.md) (such as [`int`][],
+[`str`][], [`date`][datetime.date]à can be used as is. Strictness can be controlled and constraints
+can be applied on them.
 
-There are also more complex types that can be found in the
-[Pydantic Extra Types](https://github.com/pydantic/pydantic-extra-types) package.
+On top of these, Pydantic provides extra types, either [directly in the library](../api/types.md)
+(e.g. [`SecretStr`][pydantic.types.SecretStr]) or in the [`pydantic-extra-types`](https://github.com/pydantic/pydantic-extra-types) external library. These are implemented using the patterns described
+in the [custom types](#custom-types) section. Strictness and constraints *can't* be applied on them.
 
-If no existing type suits your purpose you can also implement your [own Pydantic-compatible types](#custom-types) with custom properties and validation.
-
-The following sections describe the types supported by Pydantic.
+The [built-in and standard library types](../api/standard_library_types.md) documentation goes over
+the supported types: the allowed values, the possible validation constraints, and whether strictness
+can be configured.
 
 * [Standard Library Types](../api/standard_library_types.md) &mdash; types from the Python standard library.
 * [Strict Types](#strict-types) &mdash; types that enable you to prevent coercion from compatible types.

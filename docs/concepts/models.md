@@ -76,8 +76,10 @@ class User(BaseModel):
 
 In this example, `User` is a model with two fields:
 
-* `id`, which is an integer and is required
-* `name`, which is a string and is not required (it has a default value).
+* `id`, which is an integer (defined using the [`int`][] type) and is required
+* `name`, which is a string (defined using the [`str`][] type) and is not required (it has a default value).
+
+The documentation on [types](./types.md) expands on the supported types.
 
 Fields can be customized in a number of ways using the [`Field()`][pydantic.Field] function.
 See the [documentation on fields](./fields.md) for more information.
