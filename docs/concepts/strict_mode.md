@@ -2,17 +2,24 @@
     [`pydantic.types.Strict`][pydantic.types.Strict]<br>
 
 By default, Pydantic will attempt to coerce values to the desired type when possible.
-For example, you can pass the string `"123"` as the input to an `int` field, and it will be converted to `123`.
+For example, you can pass the string `'123'` as the input for the [`int` number type](../api/standard_library_types.md#integers),
+and it will be converted to the value`123`.
 This coercion behavior is useful in many scenarios — think: UUIDs, URL parameters, HTTP headers, environment variables,
-user input, etc.
+dates, etc.
 
 However, there are also situations where this is not desirable, and you want Pydantic to error instead of coercing data.
 
-To better support this use case, Pydantic provides a "strict mode" that can be enabled on a per-model, per-field, or
-even per-validation-call basis. When strict mode is enabled, Pydantic will be much less lenient when coercing data,
-and will instead error if the data is not of the correct type.
+To better support this use case, Pydantic provides a "strict mode". When strict mode is enabled, Pydantic will be much
+less lenient when coercing data, and will instead error if the data is not of the correct type.
 
-Here is a brief example showing the difference between validation behavior in strict and the default/"lax" mode:
+Most of the time, strict mode will only allow instances of the type to be provided, although looser rules may apply
+to JSON input (for instance, the [date and time types](../api/standard_library_types.md#date-and-time-types) allow strings
+even in strict mode).
+
+The strict behavior for each type can be found in the [standard library types](../api/standard_library_types.md) documentation,
+and is summarized in the [conversion table](./conversion_table.md).
+
+Here is a brief example showing the validation behavior difference in strict and the default lax mode:
 
 ```python
 from pydantic import BaseModel, ValidationError
@@ -36,7 +43,7 @@ except ValidationError as exc:
     """
 ```
 
-There are various ways to get strict-mode validation while using Pydantic, which will be discussed in more detail below:
+Strict mode can be enabled in various ways:
 
 * [Passing `strict=True` to the validation methods](#strict-mode-in-method-calls), such as `BaseModel.model_validate`,
   `TypeAdapter.validate_python`, and similar for JSON
@@ -45,161 +52,48 @@ There are various ways to get strict-mode validation while using Pydantic, which
     * Pydantic provides some type aliases that are already annotated with `Strict`, such as `pydantic.types.StrictInt`
 * [Using `ConfigDict(strict=True)`](#strict-mode-with-configdict)
 
-## Type coercions in strict mode
 
-For most types, when validating data from python in strict mode, only the instances of the exact types are accepted.
-For example, when validating an `int` field, only instances of `int` are accepted; passing instances of `float` or `str`
-will result in raising a `ValidationError`.
+<!-- old anchor added for backwards compatibility -->
+<!-- markdownlint-disable-next-line no-empty-links -->
+[](){#strict-mode-in-method-calls}
+## Strict mode as a validation parameter
 
-Note that we are looser when validating data from JSON in strict mode. For example, when validating a `UUID` field,
-instances of `str` will be accepted when validating from JSON, but not from python:
-
-```python
-import json
-from uuid import UUID
-
-from pydantic import BaseModel, ValidationError
-
-
-class MyModel(BaseModel):
-    guid: UUID
-
-
-data = {'guid': '12345678-1234-1234-1234-123456789012'}
-
-print(MyModel.model_validate(data))  # OK: lax
-#> guid=UUID('12345678-1234-1234-1234-123456789012')
-
-print(
-    MyModel.model_validate_json(json.dumps(data), strict=True)
-)  # OK: strict, but from json
-#> guid=UUID('12345678-1234-1234-1234-123456789012')
-
-try:
-    MyModel.model_validate(data, strict=True)  # Not OK: strict, from python
-except ValidationError as exc:
-    print(exc.errors(include_url=False))
-    """
-    [
-        {
-            'type': 'is_instance_of',
-            'loc': ('guid',),
-            'msg': 'Input should be an instance of UUID',
-            'input': '12345678-1234-1234-1234-123456789012',
-            'ctx': {'class': 'UUID'},
-        }
-    ]
-    """
-```
-
-For more details about what types are allowed as inputs in strict mode, you can review the
-[Conversion Table](conversion_table.md).
-
-## Strict mode in method calls
-
-All the examples included so far get strict-mode validation through the use of `strict=True` as a keyword argument to
-the validation methods. While we have shown this for `BaseModel.model_validate`, this also works with arbitrary types
-through the use of `TypeAdapter`:
+Strict mode can be enaled on a per-validation-call basis, when using the [validation methods](./models.md#validating-data)
+on Pydantic models and [type adapters](./type_adapter.md).
 
 ```python
-from pydantic import TypeAdapter, ValidationError
-
-print(TypeAdapter(bool).validate_python('yes'))  # OK: lax
-#> True
-
-try:
-    TypeAdapter(bool).validate_python('yes', strict=True)  # Not OK: strict
-except ValidationError as exc:
-    print(exc)
-    """
-    1 validation error for bool
-      Input should be a valid boolean [type=bool_type, input_value='yes', input_type=str]
-    """
-```
-
-Note this also works even when using more "complex" types in `TypeAdapter`:
-
-```python
-from dataclasses import dataclass
+from datetime import date
 
 from pydantic import TypeAdapter, ValidationError
 
 
-@dataclass
-class MyDataclass:
-    x: int
-
+print(TypeAdapter(date).validate_python('2000-01-01'))  # OK: lax
+#> 2000-01-01
 
 try:
-    TypeAdapter(MyDataclass).validate_python({'x': '123'}, strict=True)
+    TypeAdapter(date).validate_python('2000-01-01', strict=True)  # Not OK: strict
 except ValidationError as exc:
     print(exc)
     """
-    1 validation error for MyDataclass
-      Input should be an instance of MyDataclass [type=dataclass_exact_type, input_value={'x': '123'}, input_type=dict]
+    1 validation error for date
+      Input should be a valid date [type=date_type, input_value='2000-01-01', input_type=str]
     """
+
+TypeAdapter(date).validate_json('"2000-01-01"', strict=True)  # (1)!
+#> 2000-01-01
 ```
 
-This also works with the `TypeAdapter.validate_json` and `BaseModel.model_validate_json` methods:
+1. As mentioned, strict mode is looser when validating from JSON.
 
-```python
-import json
-from uuid import UUID
+<!-- old anchor added for backwards compatibility -->
+<!-- markdownlint-disable-next-line no-empty-links -->
+[](){#strict-mode-with-field}
+## Strict mode at the field level
 
-from pydantic import BaseModel, TypeAdapter, ValidationError
+Strict mode can be enabled on specific fields, by setting the `strict` parameter of the
+[`Field()`][pydantic.Field] function to `True`. Strict mode will be applied for such fields,
+even when the [validation methods](./models.md#validating-data) are called in lax mode.
 
-try:
-    TypeAdapter(list[int]).validate_json('["1", 2, "3"]', strict=True)
-except ValidationError as exc:
-    print(exc)
-    """
-    2 validation errors for list[int]
-    0
-      Input should be a valid integer [type=int_type, input_value='1', input_type=str]
-    2
-      Input should be a valid integer [type=int_type, input_value='3', input_type=str]
-    """
-
-
-class Model(BaseModel):
-    x: int
-    y: UUID
-
-
-data = {'x': '1', 'y': '12345678-1234-1234-1234-123456789012'}
-try:
-    Model.model_validate(data, strict=True)
-except ValidationError as exc:
-    # Neither x nor y are valid in strict mode from python:
-    print(exc)
-    """
-    2 validation errors for Model
-    x
-      Input should be a valid integer [type=int_type, input_value='1', input_type=str]
-    y
-      Input should be an instance of UUID [type=is_instance_of, input_value='12345678-1234-1234-1234-123456789012', input_type=str]
-    """
-
-json_data = json.dumps(data)
-try:
-    Model.model_validate_json(json_data, strict=True)
-except ValidationError as exc:
-    # From JSON, x is still not valid in strict mode, but y is:
-    print(exc)
-    """
-    1 validation error for Model
-    x
-      Input should be a valid integer [type=int_type, input_value='1', input_type=str]
-    """
-```
-
-## Strict mode with `Field`
-
-For individual fields on a model, you can [set `strict=True` on the field](../api/fields.md#pydantic.fields.Field).
-This will cause strict-mode validation to be used for that field, even when the validation methods are called without
-`strict=True`.
-
-Only the fields for which `strict=True` is set will be affected:
 
 ```python
 from pydantic import BaseModel, Field, ValidationError
@@ -207,117 +101,54 @@ from pydantic import BaseModel, Field, ValidationError
 
 class User(BaseModel):
     name: str
-    age: int
-    n_pets: int
+    age: int = Field(strict=True)  # (1)!
 
 
-user = User(name='John', age='42', n_pets='1')
+user = User(name='John', age=42)
 print(user)
-#> name='John' age=42 n_pets=1
-
-
-class AnotherUser(BaseModel):
-    name: str
-    age: int = Field(strict=True)
-    n_pets: int
+#> name='John' age=42
 
 
 try:
-    anotheruser = AnotherUser(name='John', age='42', n_pets='1')
+    another_user = User(name='John', age='42')
 except ValidationError as e:
     print(e)
     """
-    1 validation error for AnotherUser
+    1 validation error for User
     age
       Input should be a valid integer [type=int_type, input_value='42', input_type=str]
     """
 ```
 
-Note that making fields strict will also affect the validation performed when instantiating the model class:
+1. The strict constraint can also be applied using the [annotated pattern](./fields.md#the-annotated-pattern):
+   `Annotated[int, Field(strict=True)]`
 
-```python
-from pydantic import BaseModel, Field, ValidationError
-
-
-class Model(BaseModel):
-    x: int = Field(strict=True)
-    y: int = Field(strict=False)
-
-
-try:
-    Model(x='1', y='2')
-except ValidationError as exc:
-    print(exc)
-    """
-    1 validation error for Model
-    x
-      Input should be a valid integer [type=int_type, input_value='1', input_type=str]
-    """
-```
-
-### Using `Field` as an annotation
-
-Note that `Field(strict=True)` (or with any other keyword arguments) can be used as an annotation if necessary, e.g.,
-when working with `TypedDict`:
-
-```python
-from typing import Annotated
-
-from typing_extensions import TypedDict
-
-from pydantic import Field, TypeAdapter, ValidationError
-
-
-class MyDict(TypedDict):
-    x: Annotated[int, Field(strict=True)]
-
-
-try:
-    TypeAdapter(MyDict).validate_python({'x': '1'})
-except ValidationError as exc:
-    print(exc)
-    """
-    1 validation error for MyDict
-    x
-      Input should be a valid integer [type=int_type, input_value='1', input_type=str]
-    """
-```
-
-## Strict mode with `Annotated[..., Strict()]`
+<!-- old anchor added for backwards compatibility -->
+<!-- markdownlint-disable-next-line no-empty-links -->
+[](){#strict-mode-with-annotated-strict}
+### Using the `Strict()` metadata class
 
 ??? api "API Documentation"
     [`pydantic.types.Strict`][pydantic.types.Strict]<br>
 
-Pydantic also provides the [`Strict`](../api/types.md#pydantic.types.Strict) class, which is intended for use as
-metadata with [`typing.Annotated`][] class; this annotation indicates that the annotated field should be validated in
-strict mode:
+As an alternative to the [`Field()`][pydantic.Field] function, Pydantic provides the [`Strict`][pydantic.types.Strict]
+metadata class, meant to be used with the [annotated pattern](./fields.md#the-annotated-pattern). It also provides
+convenience aliases for the most common types (namely [`StrictBool`][pydantic.types.StrictBool],
+[`StrictInt`][pydantic.types.StrictInt], [`StrictFloat`][pydantic.types.StrictFloat], [`StrictStr`][pydantic.types.StrictStr]
+and [`StrictBytes`][pydantic.types.StrictBytes]).
 
 ```python
-from typing import Annotated
+from uuid import UUID
 
-from pydantic import BaseModel, Strict, ValidationError
+from pydantic import BaseModel, Strict, StrictInt
 
 
 class User(BaseModel):
-    name: str
-    age: int
-    is_active: Annotated[bool, Strict()]
-
-
-User(name='David', age=33, is_active=True)
-try:
-    User(name='David', age=33, is_active='True')
-except ValidationError as exc:
-    print(exc)
-    """
-    1 validation error for User
-    is_active
-      Input should be a valid boolean [type=bool_type, input_value='True', input_type=str]
-    """
+    id: Annotated[UUID, Strict()]
+    age: StrictInt  # (1)!
 ```
 
-This is, in fact, the method used to implement some of the strict-out-of-the-box types provided by Pydantic,
-such as [`StrictInt`](../api/types.md#pydantic.types.StrictInt).
+1. Equivalent to `Annotated[int, Strict()]`.
 
 ## Strict mode with `ConfigDict`
 
