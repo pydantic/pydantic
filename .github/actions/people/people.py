@@ -464,8 +464,7 @@ def get_issues_experts(settings: Settings) -> tuple[Counter, Counter, dict[str, 
     issue_edges = get_graphql_issue_edges(settings=settings)
 
     while issue_edges:
-        for edge in issue_edges:
-            issue_nodes.append(edge.node)
+        issue_nodes.extend(edge.node for edge in issue_edges)
         last_edge = issue_edges[-1]
         issue_edges = get_graphql_issue_edges(settings=settings, after=last_edge.cursor)
 
@@ -511,8 +510,7 @@ def get_discussions_experts(settings: Settings) -> tuple[Counter, Counter, dict[
     discussion_edges = get_graphql_question_discussion_edges(settings=settings)
 
     while discussion_edges:
-        for discussion_edge in discussion_edges:
-            discussion_nodes.append(discussion_edge.node)
+        discussion_nodes.extend(discussion_edge.node for discussion_edge in discussion_edges)
         last_edge = discussion_edges[-1]
         discussion_edges = get_graphql_question_discussion_edges(settings=settings, after=last_edge.cursor)
 
@@ -597,8 +595,7 @@ def get_contributors(settings: Settings) -> tuple[Counter, Counter, Counter, dic
     pr_edges = get_graphql_pr_edges(settings=settings)
 
     while pr_edges:
-        for edge in pr_edges:
-            pr_nodes.append(edge.node)
+        pr_nodes.extend(edge.node for edge in pr_edges)
         last_edge = pr_edges[-1]
         pr_edges = get_graphql_pr_edges(settings=settings, after=last_edge.cursor)
 

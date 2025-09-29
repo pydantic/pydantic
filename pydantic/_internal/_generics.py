@@ -512,10 +512,7 @@ def _union_orderings_key(typevar_values: Any) -> Any:
     (See https://github.com/python/cpython/issues/86483 for reference.)
     """
     if isinstance(typevar_values, tuple):
-        args_data = []
-        for value in typevar_values:
-            args_data.append(_union_orderings_key(value))
-        return tuple(args_data)
+        return tuple(_union_orderings_key(value) for value in typevar_values)
     elif typing_objects.is_union(typing_extensions.get_origin(typevar_values)):
         return get_args(typevar_values)
     else:

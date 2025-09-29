@@ -84,9 +84,9 @@ class ConversionTable:
         return f'| {" | ".join(cols)} |'
 
     def as_markdown(self) -> str:
-        lines = [self.row_as_markdown(self.col_names), self.row_as_markdown(['-'] * len(self.col_names))]
-        for row in self.rows:
-            lines.append(self.row_as_markdown(self.col_values(row)))
+        lines = [self.row_as_markdown(self.col_names), self.row_as_markdown(['-'] * len(self.col_names))] + [
+            self.row_as_markdown(self.col_values(row)) for row in self.rows
+        ]
         return '\n'.join(lines)
 
     @staticmethod
