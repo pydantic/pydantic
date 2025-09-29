@@ -84,6 +84,10 @@ impl Validator for IntValidator {
     fn get_name(&self) -> &str {
         Self::EXPECTED_TYPE
     }
+
+    fn children(&self) -> Vec<&Arc<CombinedValidator>> {
+        vec![]
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -183,5 +187,9 @@ impl Validator for ConstrainedIntValidator {
 
     fn get_name(&self) -> &'static str {
         "constrained-int"
+    }
+
+    fn children(&self) -> Vec<&Arc<CombinedValidator>> {
+        vec![]
     }
 }

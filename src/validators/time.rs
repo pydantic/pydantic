@@ -86,6 +86,10 @@ impl Validator for TimeValidator {
     fn get_name(&self) -> &str {
         Self::EXPECTED_TYPE
     }
+
+    fn children(&self) -> Vec<&Arc<CombinedValidator>> {
+        vec![]
+    }
 }
 
 fn convert_pytime(schema: &Bound<'_, PyDict>, key: &Bound<'_, PyString>) -> PyResult<Option<Time>> {

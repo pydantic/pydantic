@@ -3,6 +3,7 @@ use std::sync::Arc;
 use pyo3::types::{PyDict, PySet};
 use pyo3::{prelude::*, IntoPyObjectExt};
 
+use crate::build_tools::py_schema_err;
 use crate::errors::ValResult;
 use crate::input::{validate_iter_to_set, BorrowInput, ConsumeIterator, Input, ValidatedSet};
 use crate::tools::SchemaDict;
@@ -82,6 +83,25 @@ impl Validator for SetValidator {
 
     fn get_name(&self) -> &str {
         &self.name
+    }
+
+    fn children(&self) -> Vec<&Arc<CombinedValidator>> {
+        vec![&self.item_validator]
+    }
+
+    fn with_new_children(&self, children: Vec<Arc<CombinedValidator>>) -> PyResult<Arc<CombinedValidator>> {
+        if children.len() != 1 {
+            return py_schema_err!("Set must have exactly one child");
+        }
+        Ok(CombinedValidator::Set(Self {
+            strict: self.strict,
+            item_validator: children.into_iter().next().unwrap(),
+            min_length: self.min_length,
+            max_length: self.max_length,
+            name: self.name.clone(),
+            fail_fast: self.fail_fast,
+        })
+        .into())
     }
 }
 

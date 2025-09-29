@@ -161,6 +161,10 @@ impl Validator for UuidValidator {
     fn get_name(&self) -> &str {
         Self::EXPECTED_TYPE
     }
+
+    fn children(&self) -> Vec<&Arc<CombinedValidator>> {
+        vec![]
+    }
 }
 
 impl UuidValidator {

@@ -5,6 +5,7 @@ use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict, PyString};
 use pyo3::{intern, PyTraverseError, PyVisit};
 
+use crate::build_tools::py_schema_err;
 use crate::errors::{
     ErrorType, PydanticCustomError, PydanticKnownError, PydanticOmit, ToErrorValue, ValError, ValResult,
     ValidationError,
@@ -153,6 +154,25 @@ impl Validator for FunctionBeforeValidator {
     fn get_name(&self) -> &str {
         &self.name
     }
+
+    fn children(&self) -> Vec<&Arc<CombinedValidator>> {
+        vec![&self.validator]
+    }
+
+    fn with_new_children(&self, children: Vec<Arc<CombinedValidator>>) -> PyResult<Arc<CombinedValidator>> {
+        if children.len() != 1 {
+            return py_schema_err!("Exactly one child is required for a function-before validator");
+        }
+        Ok(CombinedValidator::FunctionBefore(Self {
+            validator: children.into_iter().next().unwrap(),
+            func: self.func.clone(),
+            config: self.config.clone(),
+            name: self.name.clone(),
+            field_name: self.field_name.clone(),
+            info_arg: self.info_arg,
+        })
+        .into())
+    }
 }
 
 #[derive(Debug)]
@@ -227,6 +247,25 @@ impl Validator for FunctionAfterValidator {
     fn get_name(&self) -> &str {
         &self.name
     }
+
+    fn children(&self) -> Vec<&Arc<CombinedValidator>> {
+        vec![&self.validator]
+    }
+
+    fn with_new_children(&self, children: Vec<Arc<CombinedValidator>>) -> PyResult<Arc<CombinedValidator>> {
+        if children.len() != 1 {
+            return py_schema_err!("Exactly one child is required for a function-after validator");
+        }
+        Ok(CombinedValidator::FunctionAfter(Self {
+            validator: children.into_iter().next().unwrap(),
+            func: self.func.clone(),
+            config: self.config.clone(),
+            name: self.name.clone(),
+            field_name: self.field_name.clone(),
+            info_arg: self.info_arg,
+        })
+        .into())
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -288,6 +327,10 @@ impl Validator for FunctionPlainValidator {
 
     fn get_name(&self) -> &str {
         &self.name
+    }
+
+    fn children(&self) -> Vec<&Arc<CombinedValidator>> {
+        vec![]
     }
 }
 
@@ -413,6 +456,27 @@ impl Validator for FunctionWrapValidator {
 
     fn get_name(&self) -> &str {
         &self.name
+    }
+
+    fn children(&self) -> Vec<&Arc<CombinedValidator>> {
+        vec![&self.validator]
+    }
+
+    fn with_new_children(&self, children: Vec<Arc<CombinedValidator>>) -> PyResult<Arc<CombinedValidator>> {
+        if children.len() != 1 {
+            return py_schema_err!("Exactly one child is required for a function-wrap validator");
+        }
+        Ok(CombinedValidator::FunctionWrap(Self {
+            validator: children.into_iter().next().unwrap(),
+            func: self.func.clone(),
+            config: self.config.clone(),
+            name: self.name.clone(),
+            field_name: self.field_name.clone(),
+            info_arg: self.info_arg,
+            hide_input_in_errors: self.hide_input_in_errors,
+            validation_error_cause: self.validation_error_cause,
+        })
+        .into())
     }
 }
 

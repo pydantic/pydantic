@@ -76,4 +76,8 @@ impl Validator for IsSubclassValidator {
     fn get_name(&self) -> &str {
         &self.name
     }
+
+    fn children(&self) -> Vec<&Arc<CombinedValidator>> {
+        vec![]
+    }
 }

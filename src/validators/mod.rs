@@ -128,8 +128,13 @@ impl SchemaValidator {
     pub fn py_new(py: Python, schema: &Bound<'_, PyAny>, config: Option<&Bound<'_, PyDict>>) -> PyResult<Self> {
         let mut definitions_builder = DefinitionsBuilder::new();
 
-        let validator = build_validator_base(schema, config, &mut definitions_builder)?;
+        let validator = Arc::new(build_validator_base(schema, config, &mut definitions_builder)?);
         let definitions = definitions_builder.finish()?;
+
+        // now optimize the schemas:
+        // - replace any `DefinitionRef` with actual definition (unless it's recursive)
+        let validator = inline_definitions(&validator, &definitions)?;
+
         let py_schema = schema.clone().unbind();
         let py_config = match config {
             Some(c) if !c.is_empty() => Some(c.clone().into()),
@@ -880,4 +885,120 @@ pub trait Validator: Send + Sync + Debug {
     /// `get_name` generally returns `Self::EXPECTED_TYPE` or some other clear identifier of the validator
     /// this is used in the error location in unions, and in the top level message in `ValidationError`
     fn get_name(&self) -> &str;
+
+    /// Return a list of all child validators, if any
+    fn children(&self) -> Vec<&Arc<CombinedValidator>>;
+
+    /// Create a new instance of this validator with different children, used by optimization passes
+    fn with_new_children(&self, _children: Vec<Arc<CombinedValidator>>) -> PyResult<Arc<CombinedValidator>> {
+        unimplemented!(
+            "with_new_children not implemented for {}, should be implemented if `children` returns non-empty",
+            self.get_name()
+        )
+    }
+}
+
+trait TreeNodeTransformer {
+    /// Called when entering a node, before visiting children.
+    ///
+    /// If it returns `Some`, the traversal will skip this node's children and call to
+    /// `transform_up`, and return to the parent.
+    fn transform_down(&mut self, node: &Arc<CombinedValidator>) -> PyResult<Option<Arc<CombinedValidator>>> {
+        Ok(None)
+    }
+
+    /// Called when exiting a node, after visiting children.
+    ///
+    /// If any of the children were replaced, `node` will be the modified one, not the original one
+    /// passed to `transform_down`.
+    fn transform_up(&mut self, node: &Arc<CombinedValidator>) -> PyResult<Option<Arc<CombinedValidator>>> {
+        Ok(None)
+    }
+}
+
+/// Applies `f` to each node in the validator tree. If `f` returns `Some` then the parent nodes will
+/// be rebuilt with the new child, otherwise the original node is kept.
+fn transform_validator_tree(
+    validator: &Arc<CombinedValidator>,
+    f: &mut impl TreeNodeTransformer,
+) -> PyResult<Arc<CombinedValidator>> {
+    if let Some(new_validator) = f.transform_down(validator)? {
+        return Ok(new_validator);
+    }
+
+    let children = validator.children();
+    if children.is_empty() {
+        return Ok(validator.clone());
+    }
+    let mut new_children = Vec::with_capacity(children.len());
+    let mut changed = false;
+    for child in children {
+        let new_child = transform_validator_tree(child, f)?;
+        if !changed && !Arc::ptr_eq(child, &new_child) {
+            changed = true;
+        }
+        new_children.push(new_child);
+    }
+
+    let output = if changed {
+        validator.with_new_children(new_children)?
+    } else {
+        validator.clone()
+    };
+
+    f.transform_up(validator)?;
+    Ok(output)
+}
+
+/// Inlines `definition` validators where they are used, except in the case of recursive models
+fn inline_definitions(
+    root_validator: &Arc<CombinedValidator>,
+    definitions: &Definitions<Arc<CombinedValidator>>,
+) -> PyResult<Arc<CombinedValidator>> {
+    struct DefinitionInliner<'a> {
+        stack: Vec<Arc<CombinedValidator>>,
+        // if recursion was detected, all parents above this index should be considered recursive
+        // (if we are on a recursive path, we don't inline any definitions)
+        stack_contains_recursion: Option<usize>,
+        definitions: &'a Definitions<Arc<CombinedValidator>>,
+    }
+
+    impl TreeNodeTransformer for DefinitionInliner<'_> {
+        fn transform_down(&mut self, node: &Arc<CombinedValidator>) -> PyResult<Option<Arc<CombinedValidator>>> {
+            if let CombinedValidator::DefinitionRef(def_ref) = node.as_ref() {
+                let Some(def) = def_ref.definition().read(|def| def.cloned()) else {
+                    // todo make a nicer error
+                    panic!("definition was never filled");
+                };
+
+                let stack_len = self.stack.len();
+                let is_recursive = stack_len > 1 && self.stack[..stack_len - 1].iter().any(|n| {
+                    std::ptr::eq(n, node)
+                });
+
+                if !is_recursive {
+                    self.stack.push(def.clone());
+                    return Ok(Some(def));
+                }
+            }
+
+            self.stack.push(node.clone());
+            Ok(None)
+        }
+
+        fn transform_up(&mut self, node: &Arc<CombinedValidator>) -> PyResult<Option<Arc<CombinedValidator>>> {
+            // TODO: on the way up, we should insert a recursion guard if we have a recursive path
+            self.stack.pop();
+            Ok(None)
+        }
+    }
+
+    transform_validator_tree(
+        root_validator,
+        &mut DefinitionInliner {
+            stack: Vec::new(),
+            stack_contains_recursion: None,
+            definitions,
+        },
+    )
 }

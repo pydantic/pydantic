@@ -104,4 +104,20 @@ impl Validator for CustomErrorValidator {
     fn get_name(&self) -> &str {
         &self.name
     }
+
+    fn children(&self) -> Vec<&Arc<CombinedValidator>> {
+        vec![&self.validator]
+    }
+
+    fn with_new_children(&self, children: Vec<Arc<CombinedValidator>>) -> PyResult<Arc<CombinedValidator>> {
+        if children.len() != 1 {
+            return py_schema_err!("Exactly one child is required for a custom-error validator");
+        }
+        Ok(CombinedValidator::CustomError(Self {
+            validator: children.into_iter().next().unwrap(),
+            custom_error: self.custom_error.clone(),
+            name: self.name.clone(),
+        })
+        .into())
+    }
 }

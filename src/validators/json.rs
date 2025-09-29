@@ -6,6 +6,7 @@ use pyo3::types::PyDict;
 
 use jiter::{FloatMode, JsonValue, PythonParse};
 
+use crate::build_tools::py_schema_err;
 use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValLineError, ValResult};
 use crate::input::{EitherBytes, Input, InputType, ValidationMatch};
 use crate::serializers::BytesMode;
@@ -86,6 +87,32 @@ impl Validator for JsonValidator {
 
     fn get_name(&self) -> &str {
         &self.name
+    }
+
+    fn children(&self) -> Vec<&Arc<CombinedValidator>> {
+        self.validator.iter().collect()
+    }
+
+    fn with_new_children(&self, children: Vec<Arc<CombinedValidator>>) -> PyResult<Arc<CombinedValidator>> {
+        if self.validator.is_none() {
+            if !children.is_empty() {
+                return py_schema_err!("No children expected for 'json' validator without schema");
+            }
+            return Ok(CombinedValidator::Json(Self {
+                validator: None,
+                name: self.name.clone(),
+            })
+            .into());
+        } else {
+            if children.len() != 1 {
+                return py_schema_err!("Exactly one child expected for 'json' validator with schema");
+            }
+            return Ok(CombinedValidator::Json(Self {
+                validator: Some(children[0].clone()),
+                name: self.name.clone(),
+            })
+            .into());
+        }
     }
 }
 

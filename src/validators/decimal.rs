@@ -277,6 +277,10 @@ impl Validator for DecimalValidator {
     fn get_name(&self) -> &str {
         Self::EXPECTED_TYPE
     }
+
+    fn children(&self) -> Vec<&Arc<CombinedValidator>> {
+        vec![]
+    }
 }
 
 pub(crate) fn create_decimal<'py>(arg: &Bound<'py, PyAny>, input: impl ToErrorValue) -> ValResult<Bound<'py, PyAny>> {

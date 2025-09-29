@@ -5,6 +5,7 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
 use crate::build_tools::is_strict;
+use crate::build_tools::py_schema_err;
 use crate::errors::ValResult;
 use crate::input::Input;
 use crate::tools::SchemaDict;
@@ -82,5 +83,23 @@ impl Validator for LaxOrStrictValidator {
 
     fn get_name(&self) -> &str {
         &self.name
+    }
+
+    fn children(&self) -> Vec<&Arc<CombinedValidator>> {
+        vec![&self.lax_validator, &self.strict_validator]
+    }
+
+    fn with_new_children(&self, children: Vec<Arc<CombinedValidator>>) -> PyResult<Arc<CombinedValidator>> {
+        if children.len() != 2 {
+            return py_schema_err!("LaxOrStrict must have exactly two children: lax and strict");
+        }
+        let mut iter = children.into_iter();
+        Ok(CombinedValidator::LaxOrStrict(Self {
+            lax_validator: iter.next().unwrap(),
+            strict_validator: iter.next().unwrap(),
+            name: self.name.clone(),
+            strict: self.strict,
+        })
+        .into())
     }
 }

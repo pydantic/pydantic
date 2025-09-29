@@ -35,22 +35,7 @@ impl BuildValidator for ChainValidator {
             .flatten()
             .collect();
 
-        match steps.len() {
-            0 => py_schema_err!("One or more steps are required for a chain validator"),
-            1 => {
-                let step = steps.into_iter().next().unwrap();
-                Ok(step)
-            }
-            _ => {
-                let descr = steps.iter().map(|v| v.get_name()).collect::<Vec<_>>().join(",");
-
-                Ok(CombinedValidator::Chain(Self {
-                    steps,
-                    name: format!("{}[{descr}]", Self::EXPECTED_TYPE),
-                })
-                .into())
-            }
-        }
+        ChainValidator::from_steps(steps)
     }
 }
 
@@ -71,6 +56,27 @@ fn build_validator_steps(
 
 impl_py_gc_traverse!(ChainValidator { steps });
 
+impl ChainValidator {
+    fn from_steps(steps: Vec<Arc<CombinedValidator>>) -> PyResult<Arc<CombinedValidator>> {
+        match steps.len() {
+            0 => py_schema_err!("One or more steps are required for a chain validator"),
+            1 => {
+                let step = steps.into_iter().next().unwrap();
+                Ok(step)
+            }
+            _ => {
+                let descr = steps.iter().map(|v| v.get_name()).collect::<Vec<_>>().join(",");
+
+                Ok(CombinedValidator::Chain(Self {
+                    steps,
+                    name: format!("{}[{descr}]", Self::EXPECTED_TYPE),
+                })
+                .into())
+            }
+        }
+    }
+}
+
 impl Validator for ChainValidator {
     fn validate<'py>(
         &self,
@@ -87,5 +93,13 @@ impl Validator for ChainValidator {
 
     fn get_name(&self) -> &str {
         &self.name
+    }
+
+    fn children(&self) -> Vec<&Arc<CombinedValidator>> {
+        self.steps.iter().collect()
+    }
+
+    fn with_new_children(&self, children: Vec<Arc<CombinedValidator>>) -> PyResult<Arc<CombinedValidator>> {
+        ChainValidator::from_steps(children)
     }
 }

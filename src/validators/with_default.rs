@@ -212,6 +212,26 @@ impl Validator for WithDefaultValidator {
     fn get_name(&self) -> &str {
         &self.name
     }
+
+    fn children(&self) -> Vec<&Arc<CombinedValidator>> {
+        vec![&self.validator]
+    }
+
+    fn with_new_children(&self, children: Vec<Arc<CombinedValidator>>) -> PyResult<Arc<CombinedValidator>> {
+        if children.len() != 1 {
+            return py_schema_err!("Expected 1 child, got {}", children.len());
+        }
+        Ok(CombinedValidator::WithDefault(Self {
+            default: self.default.clone(),
+            on_error: self.on_error.clone(),
+            validator: children.into_iter().next().unwrap(),
+            validate_default: self.validate_default,
+            copy_default: self.copy_default,
+            name: self.name.clone(),
+            undefined: self.undefined.clone(),
+        })
+        .into())
+    }
 }
 
 impl WithDefaultValidator {
