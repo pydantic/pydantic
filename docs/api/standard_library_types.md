@@ -421,6 +421,17 @@ Standard library type: [`datetime.datetime`][].
   by setting the [`hour`][datetime.datetime.hour], [`minute`][datetime.datetime.minute], [`second`][datetime.datetime.second] and
   [`microsecond`][datetime.datetime.microsecond] attributes to `0`, and the [`tzinfo`][datetime.datetime.tzinfo] attribute to `None`.
 
+!!! note
+    Named timezone support (as specified in [RFC 9557](https://datatracker.ietf.org/doc/html/rfc9557.html))
+    can be tracked in [this issue](https://github.com/pydantic/pydantic/issues/12252).
+
+<h4>Serialization</h4>
+
+In [Python mode](../concepts/serialization.md#python-mode), [`datetime`][datetime.datetime] instances are 
+serialized as is.
+
+In [JSON mode](../concepts/serialization.md#json-mode), they are serialized as strings.
+
 <h4>Constraints</h4>
 
 Datetimes support the following constraints (constraint values must be coercible to a [`datetime`][datetime.datetime] instance):
@@ -466,6 +477,8 @@ print(event.model_dump())
 """
 {'dt': datetime.datetime(2032, 4, 23, 10, 20, 30, 400000, tzinfo=TzInfo(9000))}
 """
+print(event.model_dump_json())
+#> {"dt":"2032-04-23T10:20:30.400000+02:30"}
 ```
 
 <!-- old anchor added for backwards compatibility -->
@@ -485,6 +498,13 @@ Standard library type: [`datetime.date`][].
       See the [`val_temporal_unit`][pydantic.ConfigDict.val_temporal_unit] configuration value for more details.
 * If the validation fails, the input can be [validated as a datetime](#datetimes) (including as numbers),
   provided that the time component is 0 and that it is naive.
+
+<h4>Serialization</h4>
+
+In [Python mode](../concepts/serialization.md#python-mode), [`date`][datetime.date] instances are 
+serialized as is.
+
+In [JSON mode](../concepts/serialization.md#json-mode), they are serialized as strings.
 
 <h4>Constraints</h4>
 
@@ -527,6 +547,8 @@ my_birthday = Birthday(d=1679616000.0)
 
 print(my_birthday.model_dump())
 #> {'d': datetime.date(2023, 3, 24)}
+print(my_birthday.model_dump_json())
+#> {"d":"2023-03-24"}
 ```
 
 <!-- old anchor added for backwards compatibility -->
@@ -541,6 +563,17 @@ Standard library type: [`datetime.time`][].
 * [`time`][datetime.time] instances are validated as is.
 * Strings and bytes are validated according to the [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339) time format.
 * Integers and floats (or values that can be coerced to such numbers) are validated as seconds. The value should not exceed 86 399.
+
+<h4>Serialization</h4>
+
+In [Python mode](../concepts/serialization.md#python-mode), [`time`][datetime.time] instances are 
+serialized as is.
+
+In [JSON mode](../concepts/serialization.md#json-mode), they are serialized as strings.
+
+!!! note
+    Named timezones from the [IANA time zone database](https://www.iana.org/time-zones) (see the [`zoneinfo`][] module) are *not* serialized
+    with time objects. This is consistent with the [`time.isoformat()`][] method.
 
 <h4>Constraints</h4>
 
@@ -578,6 +611,8 @@ m = Meeting(t=time(4, 8, 16))
 
 print(m.model_dump())
 #> {'t': datetime.time(4, 8, 16)}
+print(m.model_dump_json())
+#> {"t":"04:08:16"}
 ```
 
 <!-- old anchor added for backwards compatibility -->
@@ -608,6 +643,13 @@ These constraints can be provided using the [`Field()`][pydantic.Field] function
 The `Le`, `Ge`, `Lt` and `Gt` metadata types from the [`annotated-types`](https://github.com/annotated-types/annotated-types)
 library can also be used.
 
+<h4>Serialization</h4>
+
+In [Python mode](../concepts/serialization.md#python-mode), [`timedelta`][datetime.timedelta] instances are 
+serialized as is.
+
+In [JSON mode](../concepts/serialization.md#json-mode), they are serialized as strings.
+
 <h4>Strictness</h4>
 
 In [strict mode](../concepts/strict_mode.md), only [`timedelta`][datetime.timedelta] instances are accepted. In JSON mode, only strings complying to the
@@ -629,6 +671,8 @@ m = Model(td='P3DT12H30M5S')
 
 print(m.model_dump())
 #> {'td': datetime.timedelta(days=3, seconds=45005)}
+print(m.model_dump_json())
+#> {"td":"P3DT12H30M5S"}
 ```
 
 <!-- old anchor added for backwards compatibility -->
