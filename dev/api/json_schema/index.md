@@ -3247,7 +3247,7 @@ def definitions_schema(self, schema: core_schema.DefinitionsSchema) -> JsonSchem
     for definition in schema['definitions']:
         try:
             self.generate_inner(definition)
-        except PydanticInvalidForJsonSchema as e:
+        except PydanticInvalidForJsonSchema as e:  # noqa: PERF203
             core_ref: CoreRef = CoreRef(definition['ref'])  # type: ignore
             self._core_defs_invalid_for_json_schema[self.get_defs_ref((core_ref, self.mode))] = e
             continue
