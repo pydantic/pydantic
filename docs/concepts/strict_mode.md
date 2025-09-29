@@ -45,18 +45,15 @@ except ValidationError as exc:
 
 Strict mode can be enabled in various ways:
 
-* [Passing `strict=True` to the validation methods](#strict-mode-in-method-calls), such as `BaseModel.model_validate`,
-  `TypeAdapter.validate_python`, and similar for JSON
-* [Using `Field(strict=True)`](#strict-mode-with-field) with fields of a `BaseModel`, `dataclass`, or `TypedDict`
-* [Using `pydantic.types.Strict` as a type annotation](#strict-mode-with-annotated-strict) on a field
-    * Pydantic provides some type aliases that are already annotated with `Strict`, such as `pydantic.types.StrictInt`
-* [Using `ConfigDict(strict=True)`](#strict-mode-with-configdict)
-
+* [As a validation parameter](#as-a-validation-parameter), such as when using [`model_validate()`][BaseModel.model_validate],
+  on Pydantic models.
+* [At the field level](#at-the-field-level).
+* [At the configuration level](#with-configdict) (with the possibility to override at the field level).
 
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
 [](){#strict-mode-in-method-calls}
-## Strict mode as a validation parameter
+## As a validation parameter
 
 Strict mode can be enaled on a per-validation-call basis, when using the [validation methods](./models.md#validating-data)
 on Pydantic models and [type adapters](./type_adapter.md).
@@ -88,7 +85,7 @@ TypeAdapter(date).validate_json('"2000-01-01"', strict=True)  # (1)!
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
 [](){#strict-mode-with-field}
-## Strict mode at the field level
+## At the field level
 
 Strict mode can be enabled on specific fields, by setting the `strict` parameter of the
 [`Field()`][pydantic.Field] function to `True`. Strict mode will be applied for such fields,
@@ -150,204 +147,26 @@ class User(BaseModel):
 
 1. Equivalent to `Annotated[int, Strict()]`.
 
-## Strict mode with `ConfigDict`
+<!-- old anchor added for backwards compatibility -->
+<!-- markdownlint-disable-next-line no-empty-links -->
+[](){#strict-mode-with-configdict}
+## As a configuration value
 
-### `BaseModel`
-
-If you want to enable strict mode for all fields on a complex input type, you can use
-[`ConfigDict(strict=True)`](../api/config.md#pydantic.config.ConfigDict) in the `model_config`:
+Strict mode behavior can be controlled at the [configuration](./config.md) level. When used on
+a Pydantic model (or model like class such as [dataclasses](./dataclasses.md)), strictness can still
+be overridden at the [field level](#at-the-field-level):
 
 ```python
-from pydantic import BaseModel, ConfigDict, ValidationError
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class User(BaseModel):
     model_config = ConfigDict(strict=True)
 
     name: str
-    age: int
-    is_active: bool
+    age: int = Field(strict=False)
 
 
-try:
-    User(name='David', age='33', is_active='yes')
-except ValidationError as exc:
-    print(exc)
-    """
-    2 validation errors for User
-    age
-      Input should be a valid integer [type=int_type, input_value='33', input_type=str]
-    is_active
-      Input should be a valid boolean [type=bool_type, input_value='yes', input_type=str]
-    """
-```
-
-!!! note
-    When using `strict=True` through a model's `model_config`, you can still override the strictness
-    of individual fields by setting `strict=False` on individual fields:
-
-    ```python
-    from pydantic import BaseModel, ConfigDict, Field
-
-
-    class User(BaseModel):
-        model_config = ConfigDict(strict=True)
-
-        name: str
-        age: int = Field(strict=False)
-    ```
-
-Note that strict mode is not recursively applied to nested model fields:
-
-```python
-from pydantic import BaseModel, ConfigDict, ValidationError
-
-
-class Inner(BaseModel):
-    y: int
-
-
-class Outer(BaseModel):
-    model_config = ConfigDict(strict=True)
-
-    x: int
-    inner: Inner
-
-
-print(Outer(x=1, inner=Inner(y='2')))
-#> x=1 inner=Inner(y=2)
-
-try:
-    Outer(x='1', inner=Inner(y='2'))
-except ValidationError as exc:
-    print(exc)
-    """
-    1 validation error for Outer
-    x
-      Input should be a valid integer [type=int_type, input_value='1', input_type=str]
-    """
-```
-
-(This is also the case for dataclasses and `TypedDict`.)
-
-If this is undesirable, you should make sure that strict mode is enabled for all the types involved.
-For example, this can be done for model classes by using a shared base class with
-`model_config = ConfigDict(strict=True)`:
-
-```python
-from pydantic import BaseModel, ConfigDict, ValidationError
-
-
-class MyBaseModel(BaseModel):
-    model_config = ConfigDict(strict=True)
-
-
-class Inner(MyBaseModel):
-    y: int
-
-
-class Outer(MyBaseModel):
-    x: int
-    inner: Inner
-
-
-try:
-    Outer.model_validate({'x': 1, 'inner': {'y': '2'}})
-except ValidationError as exc:
-    print(exc)
-    """
-    1 validation error for Outer
-    inner.y
-      Input should be a valid integer [type=int_type, input_value='2', input_type=str]
-    """
-```
-
-### Dataclasses and `TypedDict`
-
-Pydantic dataclasses behave similarly to the examples shown above with `BaseModel`, just that instead of `model_config`
-you should use the `config` keyword argument to the `@pydantic.dataclasses.dataclass` decorator.
-
-When possible, you can achieve nested strict mode for vanilla dataclasses or `TypedDict` subclasses by annotating fields
-with the [`pydantic.types.Strict` annotation](#strict-mode-with-annotated-strict).
-
-However, if this is *not* possible (e.g., when working with third-party types), you can set the config that Pydantic
-should use for the type by setting the `__pydantic_config__` attribute on the type:
-
-```python
-from typing_extensions import TypedDict
-
-from pydantic import ConfigDict, TypeAdapter, ValidationError
-
-
-class Inner(TypedDict):
-    y: int
-
-
-Inner.__pydantic_config__ = ConfigDict(strict=True)
-
-
-class Outer(TypedDict):
-    x: int
-    inner: Inner
-
-
-adapter = TypeAdapter(Outer)
-print(adapter.validate_python({'x': '1', 'inner': {'y': 2}}))
-#> {'x': 1, 'inner': {'y': 2}}
-
-
-try:
-    adapter.validate_python({'x': '1', 'inner': {'y': '2'}})
-except ValidationError as exc:
-    print(exc)
-    """
-    1 validation error for Outer
-    inner.y
-      Input should be a valid integer [type=int_type, input_value='2', input_type=str]
-    """
-```
-
-### `TypeAdapter`
-
-You can also get strict mode through the use of the config keyword argument to the
-[`TypeAdapter`](../api/type_adapter.md) class:
-
-```python
-from pydantic import ConfigDict, TypeAdapter, ValidationError
-
-adapter = TypeAdapter(bool, config=ConfigDict(strict=True))
-
-try:
-    adapter.validate_python('yes')
-except ValidationError as exc:
-    print(exc)
-    """
-    1 validation error for bool
-      Input should be a valid boolean [type=bool_type, input_value='yes', input_type=str]
-    """
-```
-
-### `@validate_call`
-
-Strict mode is also usable with the [`@validate_call`](../api/validate_call.md#pydantic.validate_call_decorator.validate_call)
-decorator by passing the `config` keyword argument:
-
-```python
-from pydantic import ConfigDict, ValidationError, validate_call
-
-
-@validate_call(config=ConfigDict(strict=True))
-def foo(x: int) -> int:
-    return x
-
-
-try:
-    foo('1')
-except ValidationError as exc:
-    print(exc)
-    """
-    1 validation error for foo
-    0
-      Input should be a valid integer [type=int_type, input_value='1', input_type=str]
-    """
+print(Model(name='John', age='18'))
+#> name='John' age=18
 ```
