@@ -73,18 +73,26 @@ Built-in type: [`str`][]
 
 Strings support the following constraints:
 
-| Constraint         | Description                                       | JSON Schema                                                                                      |
-| ------------------ | ------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| `pattern`          | A regex pattern that the string must match        | [`pattern`](https://json-schema.org/understanding-json-schema/reference/string#regexp) keyword   |
-| `min_length`       | The minimum length of the string                  | [`minLength`](https://json-schema.org/understanding-json-schema/reference/string#length) keyword |
-| `max_length`       | The maximum length of the string                  | [`maxLength`](https://json-schema.org/understanding-json-schema/reference/string#length) keyword |
-| `strip_whitespace` | Whether to remove leading and trailing whitespace | N/A                                                                                              |
-| `to_upper`         | Whether to convert the string to uppercase        | N/A                                                                                              |
-| `to_lower`         | Whether to convert the string to lowercase        | N/A                                                                                              |
+| Constraint         | Description                                       | JSON Schema                                                                                                       |
+| ------------------ | ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `pattern`          | A regex pattern that the string must match        | [`pattern`](https://json-schema.org/understanding-json-schema/reference/string#regexp) keyword (see note below).  |
+| `min_length`       | The minimum length of the string                  | [`minLength`](https://json-schema.org/understanding-json-schema/reference/string#length) keyword                  |
+| `max_length`       | The maximum length of the string                  | [`maxLength`](https://json-schema.org/understanding-json-schema/reference/string#length) keyword                  |
+| `strip_whitespace` | Whether to remove leading and trailing whitespace | N/A                                                                                                               |
+| `to_upper`         | Whether to convert the string to uppercase        | N/A                                                                                                               |
+| `to_lower`         | Whether to convert the string to lowercase        | N/A                                                                                                               |
 
 These constraints can be provided using the [`StringConstraints`][pydantic.types.StringConstraints] metadata type, or using the [`Field()`][pydantic.Field] function (except for `to_upper` and `to_lower`).
 The `MinLen`, `MaxLen`, `Len`, `LowerCase`, `UpperCase` metadata types from the [`annotated-types`](https://github.com/annotated-types/annotated-types)
 library can also be used.
+
+!!! note "`pattern` constraint"
+    By default, Pydantic will use the [`regex`](https://docs.rs/regex) Rust crate to enforce the `pattern` constraint. The regex engine can be controlled
+    using the [`regex_engine`][pydantic.ConfigDict.regex_engine] configuration value. If a compiled [regular expression object][re.Pattern] is used for
+    `pattern`, the Python engine will automatically be used.
+
+    While the JSON Schema [recommends](https://json-schema.org/draft/2020-12/json-schema-core#name-regular-expressions) using patterns valid according
+    to dialect described in [ECMA-262](https://262.ecma-international.org/11.0/index.html#sec-patterns), Pydantic will *not* enforce it.
 
 <h3>Strictness</h3>
 
