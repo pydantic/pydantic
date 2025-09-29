@@ -25,8 +25,8 @@ Built-in type: [`bool`][]
 
 <h3>Strictness</h3>
 
-In strict mode, only boolean values are valid. Pydantic provides the [`StrictBool`][pydantic.types.StrictBool]
-type as a convenience to `Annotated[bool, Strict()]`.
+In [strict mode](../concepts/strict_mode.md), only boolean values are valid. Pydantic provides the [`StrictBool`][pydantic.types.StrictBool]
+type as a convenience to [using the `Strict()` metadata class](../concepts/strict_mode.md#using-the-strict-metadata-class).
 
 <h3>Example</h3>
 
@@ -88,8 +88,8 @@ library can also be used.
 
 <h3>Strictness</h3>
 
-In strict mode, only string values are valid. Pydantic provides the [`StrictStr`][pydantic.types.StrictStr]
-type as a convenience to `Annotated[str, Strict()]`.
+In [strict mode](../concepts/strict_mode.md), only string values are valid. Pydantic provides the [`StrictStr`][pydantic.types.StrictStr]
+type as a convenience to [using the `Strict()` metadata class](../concepts/strict_mode.md#using-the-strict-metadata-class).
 
 <h3>Example</h3>
 
@@ -200,10 +200,17 @@ These constraints can be provided using the [`Field()`][pydantic.Field] function
 The `Le`, `Ge`, `Lt`, `Gt` and `MultipleOf` metadata types from the [`annotated-types`](https://github.com/annotated-types/annotated-types)
 library can also be used.
 
+Pydantic also provides the following types to further constrain the allowed integer values:
+
+* [`PositiveInt`][pydantic.types.PositiveInt]: Requires the input to be greater than zero.
+* [`NegativeInt`][pydantic.types.NegativeInt]: Requires the input to be less than zero.
+* [`NonPositiveInt`][pydantic.types.NonPositiveInt]: Requires the input to be less than or equal to zero.
+* [`NonNegativeInt`][pydantic.types.NonNegativeInt]: Requires the input to be greater than or equal to zero.
+
 <h4>Strictness</h4>
 
-In strict mode, only integer values are valid. Pydantic provides the [`StrictInt`][pydantic.types.StrictInt]
-type as a convenience to `Annotated[int, Strict()]`.
+In [strict mode](../concepts/strict_mode.md), only integer values are valid. Pydantic provides the [`StrictInt`][pydantic.types.StrictInt]
+type as a convenience to [using the `Strict()` metadata class](../concepts/strict_mode.md#using-the-strict-metadata-class).
 
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
@@ -236,13 +243,21 @@ Floats support the following constraints:
 
 These constraints can be provided using the [`Field()`][pydantic.Field] function.
 The `Le`, `Ge`, `Lt`, `Gt` and `MultipleOf` metadata types from the [`annotated-types`](https://github.com/annotated-types/annotated-types)
-library can also be used.
+library and the [`AllowInfNan`][pydantic.types.AllowInfNan] type can also be used.
+
+Pydantic also provides the following types to further constrain the allowed float values:
+
+* [`PositiveFloat`][pydantic.types.PositiveFloat]: Requires the input to be greater than zero.
+* [`NegativeFloat`][pydantic.types.NegativeFloat]: Requires the input to be less than zero.
+* [`NonPositiveFloat`][pydantic.types.NonPositiveFloat]: Requires the input to be less than or equal to zero.
+* [`NonNegativeFloat`][pydantic.types.NonNegativeFloat]: Requires the input to be greater than or equal to zero.
 
 <h4>Strictness</h4>
 
-In strict mode, only float values and inputs having a [`__float__()`][object.__float__]
+In [strict mode](../concepts/strict_mode.md), only float values and inputs having a [`__float__()`][object.__float__]
 or [`__index__()`][object.__index__] method are valid.
-Pydantic provides the [`StrictFloat`][pydantic.types.StrictFloat] type as a convenience to `Annotated[float, Strict()]`.
+Pydantic provides the [`StrictFloat`][pydantic.types.StrictFloat] type as a convenience to
+[using the `Strict()` metadata class](../concepts/strict_mode.md#using-the-strict-metadata-class).
 
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
@@ -257,7 +272,7 @@ Standard library type: [`enum.IntEnum`][].
 * Id an [`enum.IntEnum`][] subclass is used as a type, any enum member or value that correspond to the
   enum members values is validated as-is.
 
-See [Enums and Choices](#enum) for more details.
+See [Enums](#enums) for more details.
 
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
@@ -292,13 +307,11 @@ in the JSON Schema to describe the string pattern in all cases (and can vary if 
 
 These constraints can be provided using the [`Field()`][pydantic.Field] function.
 The `Le`, `Ge`, `Lt`, `Gt` and `MultipleOf` metadata types from the [`annotated-types`](https://github.com/annotated-types/annotated-types)
-library can also be used.
+library and the [`AllowInfNan`][pydantic.types.AllowInfNan] type can also be used.
 
 <h4>Strictness</h4>
 
-In strict mode, only [`decimal.Decimal`][] instances are accepted. In JSON mode, strict mode has no effect.
-
-Strict mode can be enabled using `Annotated[float, Strict()]`.
+In [strict mode](../concepts/strict_mode.md), only [`decimal.Decimal`][] instances are accepted. In JSON mode, strict mode has no effect.
 
 <h4>Serialization</h4>
 
@@ -347,7 +360,7 @@ Built-in type: [`complex`][].
 
 <h4>Strictness</h4>
 
-In strict mode, only [`complex`][] instances are accepted. In JSON mode, only strings that are
+In [strict mode](../concepts/strict_mode.md), only [`complex`][] instances are accepted. In JSON mode, only strings that are
 accepted by the [`complex()`][complex] constructor are allowed.
 
 <h4>Serialization</h4>
@@ -372,7 +385,7 @@ Standard library type: [`fractions.Fraction`][].
 
 <h4>Strictness</h4>
 
-In strict mode, only [`Fraction`][fractions.Fraction] instances are accepted. In JSON mode, strict mode has no effect.
+In [strict mode](../concepts/strict_mode.md), only [`Fraction`][fractions.Fraction] instances are accepted. In JSON mode, strict mode has no effect.
 
 <h4>Serialization</h4>
 
@@ -430,9 +443,9 @@ Pydantic also provides the following types to further constrain the allowed date
 * [`PastDatetime`][pydantic.types.PastDatetime]: Requires the input to be in the past when validated.
 * [`FutureDatetime`][pydantic.types.FutureDatetime]: Requires the input to be in the future when validated.
 
-<h4>Strictness</h4>[]
+<h4>Strictness</h4>
 
-In strict mode, only [`datetime`][datetime.datetime] instances are accepted. In JSON mode, only strings complying to the
+In [strict mode](../concepts/strict_mode.md), only [`datetime`][datetime.datetime] instances are accepted. In JSON mode, only strings complying to the
 [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339) format (*only* datetime) or as unix timestamps are accepted.
 
 <h4>Example</h4>
@@ -493,9 +506,9 @@ Pydantic also provides the following types to further constrain the allowed date
 * [`PastDate`][pydantic.types.PastDate]: Requires the input to be in the past when validated.
 * [`FutureDate`][pydantic.types.FutureDate]: Requires the input to be in the future when validated.
 
-<h4>Strictness</h4>[]
+<h4>Strictness</h4>
 
-In strict mode, only [`date`][datetime.date] instances are accepted. In JSON mode, only strings complying to the
+In [strict mode](../concepts/strict_mode.md), only [`date`][datetime.date] instances are accepted. In JSON mode, only strings complying to the
 [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339) format (*only* date) or as unix timestamps are accepted.
 
 <h4>Example</h4>
@@ -516,13 +529,40 @@ print(my_birthday.model_dump())
 #> {'d': datetime.date(2023, 3, 24)}
 ```
 
-### [`datetime.time`][]
+<!-- old anchor added for backwards compatibility -->
+<!-- markdownlint-disable-next-line no-empty-links -->
+[](){#datetime.time}
+### Time
 
-* `time` fields will accept values of type:
+Standard library type: [`datetime.time`][].
 
-    * `time`; an existing `time` object
-    * `str`; the following formats are accepted:
-        * `HH:MM[:SS[.ffffff]][Z or [±]HH[:]MM]`
+<h4>Validation</h4>
+
+* [`time`][datetime.time] instances are validated as is.
+* Strings and bytes are validated according to the [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339) time format.
+* Integers and floats (or values that can be coerced to such numbers) are validated as seconds. The value should not exceed 86 399.
+
+<h4>Constraints</h4>
+
+Time support the following constraints (constraint values must be coercible to a [`time`][datetime.time] instance):
+
+| Constraint | Description                                          | JSON Schema |
+| ---------- | ---------------------------------------------------- | ----------- |
+| `le`       | The value must be less than or equal to this time    | N/A         |
+| `ge`       | The value must be greater than or equal to this time | N/A         |
+| `lt`       | The value must be strictly less than this time       | N/A         |
+| `gt`       | The value must be strictly greater than this time    | N/A         |
+
+These constraints can be provided using the [`Field()`][pydantic.Field] function.
+The `Le`, `Ge`, `Lt` and `Gt` metadata types from the [`annotated-types`](https://github.com/annotated-types/annotated-types)
+library can also be used.
+
+<h4>Strictness</h4>
+
+In [strict mode](../concepts/strict_mode.md), only [`time`][datetime.time] instances are accepted. In JSON mode, only strings complying to the
+[RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339) format are accepted.
+
+<h4>Example</h4>
 
 ```python
 from datetime import time
@@ -531,7 +571,7 @@ from pydantic import BaseModel
 
 
 class Meeting(BaseModel):
-    t: time = None
+    t: time
 
 
 m = Meeting(t=time(4, 8, 16))
@@ -540,16 +580,40 @@ print(m.model_dump())
 #> {'t': datetime.time(4, 8, 16)}
 ```
 
-### [`datetime.timedelta`][]
+<!-- old anchor added for backwards compatibility -->
+<!-- markdownlint-disable-next-line no-empty-links -->
+[](){#datetime.timedelta}
+### Timedeltas
 
-* `timedelta` fields will accept values of type:
+Standard library type: [`datetime.timedelta`][].
 
-    * `timedelta`; an existing `timedelta` object
-    * `int` or `float`; assumed to be seconds
-    * `str`; the following formats are accepted:
-        * `[-][[DD]D,]HH:MM:SS[.ffffff]`
-            * Ex: `'1d,01:02:03.000004'` or `'1D01:02:03.000004'` or `'01:02:03'`
-        * `[±]P[DD]DT[HH]H[MM]M[SS]S` ([ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) format for timedelta)
+<h4>Validation</h4>
+
+* [`timedelta`][datetime.timedelta] instances are validated as is.
+* Strings and bytes are validated according to the [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339) time format.
+* Integers and floats (or values that can be coerced to such numbers) are validated as seconds.
+
+<h4>Constraints</h4>
+
+Timedeltas support the following constraints (constraint values must be coercible to a [`timedata`][datetime.timedelta] instance):
+
+| Constraint | Description                                               | JSON Schema |
+| ---------- | ---------------------------------------------------- -----| ----------- |
+| `le`       | The value must be less than or equal to this timedelta    | N/A         |
+| `ge`       | The value must be greater than or equal to this timedelta | N/A         |
+| `lt`       | The value must be strictly less than this timedelta       | N/A         |
+| `gt`       | The value must be strictly greater than this timedelta    | N/A         |
+
+These constraints can be provided using the [`Field()`][pydantic.Field] function.
+The `Le`, `Ge`, `Lt` and `Gt` metadata types from the [`annotated-types`](https://github.com/annotated-types/annotated-types)
+library can also be used.
+
+<h4>Strictness</h4>
+
+In [strict mode](../concepts/strict_mode.md), only [`timedelta`][datetime.timedelta] instances are accepted. In JSON mode, only strings complying to the
+[RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339) format are accepted.
+
+<h4>Example</h4>
 
 ```python
 from datetime import timedelta
@@ -558,7 +622,7 @@ from pydantic import BaseModel
 
 
 class Model(BaseModel):
-    td: timedelta = None
+    td: timedelta
 
 
 m = Model(td='P3DT12H30M5S')
@@ -567,12 +631,20 @@ print(m.model_dump())
 #> {'td': datetime.timedelta(days=3, seconds=45005)}
 ```
 
-## [`Enum`][enum.Enum]
+<!-- old anchor added for backwards compatibility -->
+<!-- markdownlint-disable-next-line no-empty-links -->
+[](){#enum.enum}
+## Enums
 
-Pydantic uses Python's standard [`enum`][] classes to define choices.
+Standard library type: [`enum.Enum`][].
 
-`enum.Enum` checks that the value is a valid `Enum` instance.
-Subclass of `enum.Enum` checks that the value is a valid member of the enum.
+<h3>Validation</h3>
+
+* If the [`enum.Enum`][] type is used directly, any [`enum.Enum`][] instance is validated as-is
+* Id an [`enum.Enum`][] subclass is used as a type, any enum member or value that correspond to the
+  enum members values is validated as-is.
+
+<h3>Example</h3>
 
 ```python
 from enum import Enum, IntEnum
@@ -581,24 +653,24 @@ from pydantic import BaseModel, ValidationError
 
 
 class FruitEnum(str, Enum):
-    pear = 'pear'
-    banana = 'banana'
+    PEAR = 'pear'
+    BANANA = 'banana'
 
 
 class ToolEnum(IntEnum):
-    spanner = 1
-    wrench = 2
+    SPANNER = 1
+    WRENCH = 2
 
 
 class CookingModel(BaseModel):
-    fruit: FruitEnum = FruitEnum.pear
-    tool: ToolEnum = ToolEnum.spanner
+    fruit: FruitEnum = FruitEnum.PEAR
+    tool: ToolEnum = ToolEnum.SPANNER
 
 
 print(CookingModel())
-#> fruit=<FruitEnum.pear: 'pear'> tool=<ToolEnum.spanner: 1>
+#> fruit=<FruitEnum.PEAR: 'pear'> tool=<ToolEnum.SPANNER: 1>
 print(CookingModel(tool=2, fruit='banana'))
-#> fruit=<FruitEnum.banana: 'banana'> tool=<ToolEnum.wrench: 2>
+#> fruit=<FruitEnum.BANANA: 'banana'> tool=<ToolEnum.WRENCH: 2>
 try:
     CookingModel(fruit='other')
 except ValidationError as e:

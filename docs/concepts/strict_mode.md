@@ -45,10 +45,10 @@ except ValidationError as exc:
 
 Strict mode can be enabled in various ways:
 
-* [As a validation parameter](#as-a-validation-parameter), such as when using [`model_validate()`][BaseModel.model_validate],
+* [As a validation parameter](#as-a-validation-parameter), such as when using [`model_validate()`][pydantic.BaseModel.model_validate],
   on Pydantic models.
 * [At the field level](#at-the-field-level).
-* [At the configuration level](#with-configdict) (with the possibility to override at the field level).
+* [At the configuration level](#as-a-configuration-value) (with the possibility to override at the field level).
 
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
