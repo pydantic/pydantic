@@ -4,6 +4,7 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyTuple};
 use smallvec::SmallVec;
 use std::borrow::Cow;
+use std::sync::Arc;
 
 use crate::build_tools::py_schema_err;
 use crate::common::union::{Discriminator, SMALL_UNION_THRESHOLD};
@@ -18,7 +19,7 @@ use super::{
 
 #[derive(Debug)]
 pub struct UnionSerializer {
-    choices: Vec<CombinedSerializer>,
+    choices: Vec<Arc<CombinedSerializer>>,
     name: String,
 }
 
@@ -28,10 +29,10 @@ impl BuildSerializer for UnionSerializer {
     fn build(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        definitions: &mut DefinitionsBuilder<CombinedSerializer>,
-    ) -> PyResult<CombinedSerializer> {
+        definitions: &mut DefinitionsBuilder<Arc<CombinedSerializer>>,
+    ) -> PyResult<Arc<CombinedSerializer>> {
         let py = schema.py();
-        let choices: Vec<CombinedSerializer> = schema
+        let choices = schema
             .get_as_req::<Bound<'_, PyList>>(intern!(py, "choices"))?
             .iter()
             .map(|choice| {
@@ -41,27 +42,23 @@ impl BuildSerializer for UnionSerializer {
                 };
                 CombinedSerializer::build(choice.downcast()?, config, definitions)
             })
-            .collect::<PyResult<Vec<CombinedSerializer>>>()?;
+            .collect::<PyResult<_>>()?;
 
         Self::from_choices(choices)
     }
 }
 
 impl UnionSerializer {
-    fn from_choices(choices: Vec<CombinedSerializer>) -> PyResult<CombinedSerializer> {
+    fn from_choices(choices: Vec<Arc<CombinedSerializer>>) -> PyResult<Arc<CombinedSerializer>> {
         match choices.len() {
             0 => py_schema_err!("One or more union choices required"),
             1 => Ok(choices.into_iter().next().unwrap()),
             _ => {
-                let descr = choices
-                    .iter()
-                    .map(TypeSerializer::get_name)
-                    .collect::<Vec<_>>()
-                    .join(", ");
-                Ok(Self {
+                let descr = choices.iter().map(|v| v.get_name()).collect::<Vec<_>>().join(", ");
+                Ok(CombinedSerializer::Union(Self {
                     choices,
                     name: format!("Union[{descr}]"),
-                }
+                })
                 .into())
             }
         }
@@ -76,7 +73,7 @@ fn union_serialize<S>(
     // Finally, `Err(err)` if we encountered errors while trying to serialize
     mut selector: impl FnMut(&CombinedSerializer, &Extra) -> PyResult<S>,
     extra: &Extra,
-    choices: &[CombinedSerializer],
+    choices: &[Arc<CombinedSerializer>],
     retry_with_lax_check: bool,
     py: Python<'_>,
 ) -> PyResult<Option<S>> {
@@ -182,7 +179,7 @@ impl TypeSerializer for UnionSerializer {
     }
 
     fn retry_with_lax_check(&self) -> bool {
-        self.choices.iter().any(CombinedSerializer::retry_with_lax_check)
+        self.choices.iter().any(|c| c.retry_with_lax_check())
     }
 }
 
@@ -190,7 +187,7 @@ impl TypeSerializer for UnionSerializer {
 pub struct TaggedUnionSerializer {
     discriminator: Discriminator,
     lookup: HashMap<String, usize>,
-    choices: Vec<CombinedSerializer>,
+    choices: Vec<Arc<CombinedSerializer>>,
     name: String,
 }
 
@@ -200,8 +197,8 @@ impl BuildSerializer for TaggedUnionSerializer {
     fn build(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        definitions: &mut DefinitionsBuilder<CombinedSerializer>,
-    ) -> PyResult<CombinedSerializer> {
+        definitions: &mut DefinitionsBuilder<Arc<CombinedSerializer>>,
+    ) -> PyResult<Arc<CombinedSerializer>> {
         let py = schema.py();
         let discriminator = Discriminator::new(py, &schema.get_as_req(intern!(py, "discriminator"))?)?;
 
@@ -216,18 +213,14 @@ impl BuildSerializer for TaggedUnionSerializer {
             lookup.insert(choice_key.to_string(), idx);
         }
 
-        let descr = choices
-            .iter()
-            .map(TypeSerializer::get_name)
-            .collect::<Vec<_>>()
-            .join(", ");
+        let descr = choices.iter().map(|s| s.get_name()).collect::<Vec<_>>().join(", ");
 
-        Ok(Self {
+        Ok(CombinedSerializer::TaggedUnion(Self {
             discriminator,
             lookup,
             choices,
             name: format!("TaggedUnion[{descr}]"),
-        }
+        })
         .into())
     }
 }
@@ -287,7 +280,7 @@ impl TypeSerializer for TaggedUnionSerializer {
     }
 
     fn retry_with_lax_check(&self) -> bool {
-        self.choices.iter().any(CombinedSerializer::retry_with_lax_check)
+        self.choices.iter().any(|c| c.retry_with_lax_check())
     }
 }
 

@@ -3,9 +3,11 @@ use pyo3::types::PyDict;
 use pyo3::IntoPyObjectExt;
 
 use std::borrow::Cow;
+use std::sync::Arc;
 
 use serde::Serialize;
 
+use crate::build_tools::LazyLock;
 use crate::PydanticSerializationUnexpectedValue;
 use crate::{definitions::DefinitionsBuilder, input::Int};
 
@@ -17,15 +19,17 @@ use super::{
 #[derive(Debug)]
 pub struct NoneSerializer;
 
+static NONE_SERIALIZER: LazyLock<Arc<CombinedSerializer>> = LazyLock::new(|| Arc::new(NoneSerializer.into()));
+
 impl BuildSerializer for NoneSerializer {
     const EXPECTED_TYPE: &'static str = "none";
 
     fn build(
         _schema: &Bound<'_, PyDict>,
         _config: Option<&Bound<'_, PyDict>>,
-        _definitions: &mut DefinitionsBuilder<CombinedSerializer>,
-    ) -> PyResult<CombinedSerializer> {
-        Ok(Self {}.into())
+        _definitions: &mut DefinitionsBuilder<Arc<CombinedSerializer>>,
+    ) -> PyResult<Arc<CombinedSerializer>> {
+        Ok(NONE_SERIALIZER.clone())
     }
 }
 
@@ -92,8 +96,10 @@ macro_rules! build_simple_serializer {
         pub struct $struct_name;
 
         impl $struct_name {
-            pub fn new() -> Self {
-                Self {}
+            pub fn get() -> &'static std::sync::Arc<CombinedSerializer> {
+                static INSTANCE: $crate::build_tools::LazyLock<std::sync::Arc<CombinedSerializer>> =
+                    $crate::build_tools::LazyLock::new(|| std::sync::Arc::new($struct_name.into()));
+                &INSTANCE
             }
         }
 
@@ -103,9 +109,9 @@ macro_rules! build_simple_serializer {
             fn build(
                 _schema: &Bound<'_, PyDict>,
                 _config: Option<&Bound<'_, PyDict>>,
-                _definitions: &mut DefinitionsBuilder<CombinedSerializer>,
-            ) -> PyResult<CombinedSerializer> {
-                Ok(Self::new().into())
+                _definitions: &mut DefinitionsBuilder<std::sync::Arc<CombinedSerializer>>,
+            ) -> PyResult<std::sync::Arc<CombinedSerializer>> {
+                Ok(Self::get().clone())
             }
         }
 

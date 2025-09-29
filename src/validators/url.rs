@@ -1,6 +1,7 @@
 use std::cell::RefCell;
 use std::iter::Peekable;
 use std::str::Chars;
+use std::sync::Arc;
 
 use pyo3::intern;
 use pyo3::prelude::*;
@@ -43,11 +44,11 @@ impl BuildValidator for UrlValidator {
     fn build(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        _definitions: &mut DefinitionsBuilder<CombinedValidator>,
-    ) -> PyResult<CombinedValidator> {
+        _definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
+    ) -> PyResult<Arc<CombinedValidator>> {
         let (allowed_schemes, name) = get_allowed_schemes(schema, Self::EXPECTED_TYPE)?;
 
-        Ok(Self {
+        Ok(CombinedValidator::Url(Self {
             strict: is_strict(schema, config)?,
             max_length: schema.get_as(intern!(schema.py(), "max_length"))?,
             host_required: schema.get_as(intern!(schema.py(), "host_required"))?.unwrap_or(false),
@@ -56,7 +57,7 @@ impl BuildValidator for UrlValidator {
             default_path: schema.get_as(intern!(schema.py(), "default_path"))?,
             allowed_schemes,
             name,
-        }
+        })
         .into())
     }
 }
@@ -199,8 +200,8 @@ impl BuildValidator for MultiHostUrlValidator {
     fn build(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        _definitions: &mut DefinitionsBuilder<CombinedValidator>,
-    ) -> PyResult<CombinedValidator> {
+        _definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
+    ) -> PyResult<Arc<CombinedValidator>> {
         let (allowed_schemes, name) = get_allowed_schemes(schema, Self::EXPECTED_TYPE)?;
 
         let default_host: Option<String> = schema.get_as(intern!(schema.py(), "default_host"))?;
@@ -209,7 +210,7 @@ impl BuildValidator for MultiHostUrlValidator {
                 return py_schema_err!("default_host cannot contain a comma, see pydantic-core#326");
             }
         }
-        Ok(Self {
+        Ok(CombinedValidator::MultiHostUrl(Self {
             strict: is_strict(schema, config)?,
             max_length: schema.get_as(intern!(schema.py(), "max_length"))?,
             allowed_schemes,
@@ -218,7 +219,7 @@ impl BuildValidator for MultiHostUrlValidator {
             default_port: schema.get_as(intern!(schema.py(), "default_port"))?,
             default_path: schema.get_as(intern!(schema.py(), "default_path"))?,
             name,
-        }
+        })
         .into())
     }
 }

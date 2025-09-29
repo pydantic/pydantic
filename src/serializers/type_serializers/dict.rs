@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::sync::Arc;
 
 use pyo3::intern;
 use pyo3::prelude::*;
@@ -18,8 +19,8 @@ use super::{
 
 #[derive(Debug)]
 pub struct DictSerializer {
-    key_serializer: Box<CombinedSerializer>,
-    value_serializer: Box<CombinedSerializer>,
+    key_serializer: Arc<CombinedSerializer>,
+    value_serializer: Arc<CombinedSerializer>,
     // isize because we look up include exclude via `.hash()` which returns an isize
     filter: SchemaFilter<isize>,
     name: String,
@@ -31,8 +32,8 @@ impl BuildSerializer for DictSerializer {
     fn build(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        definitions: &mut DefinitionsBuilder<CombinedSerializer>,
-    ) -> PyResult<CombinedSerializer> {
+        definitions: &mut DefinitionsBuilder<Arc<CombinedSerializer>>,
+    ) -> PyResult<Arc<CombinedSerializer>> {
         let py = schema.py();
         let key_serializer = match schema.get_as(intern!(py, "keys_schema"))? {
             Some(items_schema) => CombinedSerializer::build(&items_schema, config, definitions)?,
@@ -56,12 +57,12 @@ impl BuildSerializer for DictSerializer {
             key_serializer.get_name(),
             value_serializer.get_name()
         );
-        Ok(Self {
-            key_serializer: Box::new(key_serializer),
-            value_serializer: Box::new(value_serializer),
+        Ok(CombinedSerializer::Dict(Self {
+            key_serializer,
+            value_serializer,
             filter,
             name,
-        }
+        })
         .into())
     }
 }

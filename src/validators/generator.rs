@@ -33,9 +33,9 @@ impl BuildValidator for GeneratorValidator {
     fn build(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        definitions: &mut DefinitionsBuilder<CombinedValidator>,
-    ) -> PyResult<CombinedValidator> {
-        let item_validator = get_items_schema(schema, config, definitions)?.map(Arc::new);
+        definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
+    ) -> PyResult<Arc<CombinedValidator>> {
+        let item_validator = get_items_schema(schema, config, definitions)?;
         let name = match item_validator {
             Some(ref v) => format!("{}[{}]", Self::EXPECTED_TYPE, v.get_name()),
             None => format!("{}[any]", Self::EXPECTED_TYPE),
@@ -46,14 +46,14 @@ impl BuildValidator for GeneratorValidator {
         let validation_error_cause: bool = config
             .get_as(pyo3::intern!(schema.py(), "validation_error_cause"))?
             .unwrap_or(false);
-        Ok(Self {
+        Ok(CombinedValidator::Generator(Self {
             item_validator,
             name,
             min_length: schema.get_as(pyo3::intern!(schema.py(), "min_length"))?,
             max_length: schema.get_as(pyo3::intern!(schema.py(), "max_length"))?,
             hide_input_in_errors,
             validation_error_cause,
-        }
+        })
         .into())
     }
 }

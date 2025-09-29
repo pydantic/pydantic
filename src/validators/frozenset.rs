@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use pyo3::types::{PyDict, PyFrozenSet};
 use pyo3::{prelude::*, IntoPyObjectExt};
 
@@ -13,7 +15,7 @@ use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, Validator};
 #[derive(Debug)]
 pub struct FrozenSetValidator {
     strict: bool,
-    item_validator: Box<CombinedValidator>,
+    item_validator: Arc<CombinedValidator>,
     min_length: Option<usize>,
     max_length: Option<usize>,
     name: String,

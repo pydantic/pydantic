@@ -1,4 +1,5 @@
 use std::collections::VecDeque;
+use std::sync::Arc;
 
 use pyo3::intern;
 use pyo3::prelude::*;
@@ -15,7 +16,7 @@ use super::{build_validator, BuildValidator, CombinedValidator, DefinitionsBuild
 #[derive(Debug)]
 pub struct TupleValidator {
     strict: bool,
-    validators: Vec<CombinedValidator>,
+    validators: Vec<Arc<CombinedValidator>>,
     variadic_item_index: Option<usize>,
     min_length: Option<usize>,
     max_length: Option<usize>,
@@ -28,16 +29,16 @@ impl BuildValidator for TupleValidator {
     fn build(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        definitions: &mut DefinitionsBuilder<CombinedValidator>,
-    ) -> PyResult<CombinedValidator> {
+        definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
+    ) -> PyResult<Arc<CombinedValidator>> {
         let py = schema.py();
         let items: Bound<'_, PyList> = schema.get_as_req(intern!(py, "items_schema"))?;
-        let validators: Vec<CombinedValidator> = items
+        let validators: Vec<Arc<CombinedValidator>> = items
             .iter()
             .map(|item| build_validator(&item, config, definitions))
             .collect::<PyResult<_>>()?;
 
-        let mut validator_names = validators.iter().map(Validator::get_name).collect::<Vec<_>>();
+        let mut validator_names = validators.iter().map(|v| v.get_name()).collect::<Vec<_>>();
         let variadic_item_index: Option<usize> = schema.get_as(intern!(py, "variadic_item_index"))?;
         // FIXME add friendly schema error if item out of bounds
         if let Some(variadic_item_index) = variadic_item_index {
@@ -45,7 +46,7 @@ impl BuildValidator for TupleValidator {
         }
         let name = format!("tuple[{}]", validator_names.join(", "));
 
-        Ok(Self {
+        Ok(CombinedValidator::Tuple(Self {
             strict: is_strict(schema, config)?,
             validators,
             variadic_item_index,
@@ -53,7 +54,7 @@ impl BuildValidator for TupleValidator {
             max_length: schema.get_as(intern!(py, "max_length"))?,
             name,
             fail_fast: schema.get_as(intern!(py, "fail_fast"))?.unwrap_or(false),
-        }
+        })
         .into())
     }
 }
@@ -69,7 +70,7 @@ impl TupleValidator {
         state: &mut ValidationState<'_, 'py>,
         output: &mut Vec<Py<PyAny>>,
         errors: &mut Vec<ValLineError>,
-        item_validators: &[CombinedValidator],
+        item_validators: &[Arc<CombinedValidator>],
         collection_iter: &mut NextCountingIterator<impl Iterator<Item = I>>,
         actual_length: Option<usize>,
         fail_fast: bool,

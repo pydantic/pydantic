@@ -1,9 +1,12 @@
+use std::sync::Arc;
+
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyString};
 use pyo3::IntoPyObjectExt;
 use regex::Regex;
 
+use crate::build_tools::LazyLock;
 use crate::build_tools::{is_strict, py_schema_error_type, schema_or_config, schema_or_config_same};
 use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::Input;
@@ -17,23 +20,45 @@ pub struct StrValidator {
     coerce_numbers_to_str: bool,
 }
 
+static STRICT_STR_VALIDATOR: LazyLock<Arc<CombinedValidator>> = LazyLock::new(|| {
+    CombinedValidator::Str(StrValidator {
+        strict: true,
+        coerce_numbers_to_str: false,
+    })
+    .into()
+});
+
+static LAX_STR_VALIDATOR: LazyLock<Arc<CombinedValidator>> = LazyLock::new(|| {
+    CombinedValidator::Str(StrValidator {
+        strict: false,
+        coerce_numbers_to_str: false,
+    })
+    .into()
+});
+
 impl BuildValidator for StrValidator {
     const EXPECTED_TYPE: &'static str = "str";
 
     fn build(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        _definitions: &mut DefinitionsBuilder<CombinedValidator>,
-    ) -> PyResult<CombinedValidator> {
+        _definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
+    ) -> PyResult<Arc<CombinedValidator>> {
         let con_str_validator = StrConstrainedValidator::build(schema, config)?;
 
         if con_str_validator.has_constraints_set() {
-            Ok(con_str_validator.into())
+            Ok(Arc::new(con_str_validator.into()))
+        } else if !con_str_validator.coerce_numbers_to_str {
+            if is_strict(schema, config)? {
+                Ok(STRICT_STR_VALIDATOR.clone())
+            } else {
+                Ok(LAX_STR_VALIDATOR.clone())
+            }
         } else {
-            Ok(Self {
+            Ok(CombinedValidator::Str(StrValidator {
                 strict: con_str_validator.strict,
                 coerce_numbers_to_str: con_str_validator.coerce_numbers_to_str,
-            }
+            })
             .into())
         }
     }

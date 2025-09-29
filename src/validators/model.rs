@@ -1,4 +1,5 @@
 use std::ptr::null_mut;
+use std::sync::Arc;
 
 use pyo3::exceptions::PyTypeError;
 use pyo3::types::{PyDict, PySet, PyString, PyTuple, PyType};
@@ -53,7 +54,7 @@ impl Revalidate {
 #[derive(Debug)]
 pub struct ModelValidator {
     revalidate: Revalidate,
-    validator: Box<CombinedValidator>,
+    validator: Arc<CombinedValidator>,
     class: Py<PyType>,
     generic_origin: Option<Py<PyType>>,
     post_init: Option<Py<PyString>>,
@@ -70,8 +71,8 @@ impl BuildValidator for ModelValidator {
     fn build(
         schema: &Bound<'_, PyDict>,
         _config: Option<&Bound<'_, PyDict>>,
-        definitions: &mut DefinitionsBuilder<CombinedValidator>,
-    ) -> PyResult<CombinedValidator> {
+        definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
+    ) -> PyResult<Arc<CombinedValidator>> {
         let py = schema.py();
         // models ignore the parent config and always use the config from this model
         let config = schema.get_as(intern!(py, "config"))?;
@@ -82,7 +83,7 @@ impl BuildValidator for ModelValidator {
         let validator = build_validator(&sub_schema, config.as_ref(), definitions)?;
         let name = class.getattr(intern!(py, "__name__"))?.extract()?;
 
-        Ok(Self {
+        Ok(CombinedValidator::Model(Self {
             revalidate: Revalidate::from_str(
                 schema_or_config_same::<Bound<'_, PyString>>(
                     schema,
@@ -93,7 +94,7 @@ impl BuildValidator for ModelValidator {
                 .map(|s| s.to_str())
                 .transpose()?,
             )?,
-            validator: Box::new(validator),
+            validator,
             class: class.into(),
             generic_origin: generic_origin.map(std::convert::Into::into),
             post_init: schema.get_as(intern!(py, "post_init"))?,
@@ -103,7 +104,7 @@ impl BuildValidator for ModelValidator {
             undefined: PydanticUndefinedType::new(py).into_any(),
             // Get the class's `__name__`, not using `class.qualname()`
             name,
-        }
+        })
         .into())
     }
 }

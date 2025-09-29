@@ -1,4 +1,5 @@
 use std::str::FromStr;
+use std::sync::Arc;
 
 use pyo3::intern;
 use pyo3::prelude::*;
@@ -52,7 +53,7 @@ struct Parameter {
     name: String,
     mode: ParameterMode,
     lookup_key_collection: LookupKeyCollection,
-    validator: CombinedValidator,
+    validator: Arc<CombinedValidator>,
 }
 
 impl Parameter {
@@ -80,8 +81,8 @@ impl BuildValidator for ArgumentsV3Validator {
     fn build(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        definitions: &mut DefinitionsBuilder<CombinedValidator>,
-    ) -> PyResult<CombinedValidator> {
+        definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
+    ) -> PyResult<Arc<CombinedValidator>> {
         let py = schema.py();
 
         let arguments_schema: Bound<'_, PyList> = schema.get_as_req(intern!(py, "arguments_schema"))?;
@@ -167,8 +168,8 @@ impl BuildValidator for ArgumentsV3Validator {
                 Err(err) => return py_schema_err!("Parameter '{}':\n  {}", name, err),
             };
 
-            let has_default = match validator {
-                CombinedValidator::WithDefault(ref v) => {
+            let has_default = match validator.as_ref() {
+                CombinedValidator::WithDefault(v) => {
                     if v.omit_on_error() {
                         return py_schema_err!("Parameter '{}': omit_on_error cannot be used with arguments", name);
                     }
@@ -204,14 +205,14 @@ impl BuildValidator for ArgumentsV3Validator {
             })
             .count();
 
-        Ok(Self {
+        Ok(CombinedValidator::ArgumentsV3(Self {
             parameters,
             positional_params_count,
             loc_by_alias: config.get_as(intern!(py, "loc_by_alias"))?.unwrap_or(true),
             extra: ExtraBehavior::from_schema_or_config(py, schema, config, ExtraBehavior::Forbid)?,
             validate_by_alias: schema_or_config_same(schema, config, intern!(py, "validate_by_alias"))?,
             validate_by_name: schema_or_config_same(schema, config, intern!(py, "validate_by_name"))?,
-        }
+        })
         .into())
     }
 }

@@ -1,8 +1,10 @@
 use std::borrow::Cow;
+use std::sync::Arc;
 
 use pyo3::types::{PyBytes, PyDict};
 use pyo3::{prelude::*, IntoPyObjectExt};
 
+use crate::build_tools::LazyLock;
 use crate::definitions::DefinitionsBuilder;
 use crate::serializers::config::{BytesMode, FromConfig};
 
@@ -16,16 +18,47 @@ pub struct BytesSerializer {
     bytes_mode: BytesMode,
 }
 
+static BYTES_SERIALIZER_UTF8: LazyLock<Arc<CombinedSerializer>> = LazyLock::new(|| {
+    Arc::new(
+        BytesSerializer {
+            bytes_mode: BytesMode::Utf8,
+        }
+        .into(),
+    )
+});
+
+static BYTES_SERIALIZER_BASE64: LazyLock<Arc<CombinedSerializer>> = LazyLock::new(|| {
+    Arc::new(
+        BytesSerializer {
+            bytes_mode: BytesMode::Base64,
+        }
+        .into(),
+    )
+});
+
+static BYTES_SERIALIZER_HEX: LazyLock<Arc<CombinedSerializer>> = LazyLock::new(|| {
+    Arc::new(
+        BytesSerializer {
+            bytes_mode: BytesMode::Hex,
+        }
+        .into(),
+    )
+});
+
 impl BuildSerializer for BytesSerializer {
     const EXPECTED_TYPE: &'static str = "bytes";
 
     fn build(
         _schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        _definitions: &mut DefinitionsBuilder<CombinedSerializer>,
-    ) -> PyResult<CombinedSerializer> {
+        _definitions: &mut DefinitionsBuilder<Arc<CombinedSerializer>>,
+    ) -> PyResult<Arc<CombinedSerializer>> {
         let bytes_mode = BytesMode::from_config(config)?;
-        Ok(Self { bytes_mode }.into())
+        match bytes_mode {
+            BytesMode::Utf8 => Ok(BYTES_SERIALIZER_UTF8.clone()),
+            BytesMode::Base64 => Ok(BYTES_SERIALIZER_BASE64.clone()),
+            BytesMode::Hex => Ok(BYTES_SERIALIZER_HEX.clone()),
+        }
     }
 }
 

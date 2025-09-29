@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::sync::Arc;
 
 use pyo3::intern;
 use pyo3::prelude::*;
@@ -21,8 +22,8 @@ impl BuildSerializer for DefinitionsSerializerBuilder {
     fn build(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        definitions: &mut DefinitionsBuilder<CombinedSerializer>,
-    ) -> PyResult<CombinedSerializer> {
+        definitions: &mut DefinitionsBuilder<Arc<CombinedSerializer>>,
+    ) -> PyResult<Arc<CombinedSerializer>> {
         let py = schema.py();
 
         let schema_definitions: Bound<'_, PyList> = schema.get_as_req(intern!(py, "definitions"))?;
@@ -40,18 +41,8 @@ impl BuildSerializer for DefinitionsSerializerBuilder {
 }
 
 pub struct DefinitionRefSerializer {
-    definition: DefinitionRef<CombinedSerializer>,
+    definition: DefinitionRef<Arc<CombinedSerializer>>,
     retry_with_lax_check: RecursionSafeCache<bool>,
-}
-
-// TODO(DH): Remove the need to clone serializers
-impl Clone for DefinitionRefSerializer {
-    fn clone(&self) -> Self {
-        Self {
-            definition: self.definition.clone(),
-            retry_with_lax_check: RecursionSafeCache::new(),
-        }
-    }
 }
 
 impl std::fmt::Debug for DefinitionRefSerializer {
@@ -69,14 +60,14 @@ impl BuildSerializer for DefinitionRefSerializer {
     fn build(
         schema: &Bound<'_, PyDict>,
         _config: Option<&Bound<'_, PyDict>>,
-        definitions: &mut DefinitionsBuilder<CombinedSerializer>,
-    ) -> PyResult<CombinedSerializer> {
+        definitions: &mut DefinitionsBuilder<Arc<CombinedSerializer>>,
+    ) -> PyResult<Arc<CombinedSerializer>> {
         let schema_ref: PyBackedStr = schema.get_as_req(intern!(schema.py(), "schema_ref"))?;
         let definition = definitions.get_definition(&schema_ref);
-        Ok(Self {
+        Ok(CombinedSerializer::Recursive(Self {
             definition,
             retry_with_lax_check: RecursionSafeCache::new(),
-        }
+        })
         .into())
     }
 }

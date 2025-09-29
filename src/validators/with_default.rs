@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::sync::PyOnceLock;
@@ -88,7 +90,7 @@ enum OnError {
 pub struct WithDefaultValidator {
     default: DefaultType,
     on_error: OnError,
-    validator: Box<CombinedValidator>,
+    validator: Arc<CombinedValidator>,
     validate_default: bool,
     copy_default: bool,
     name: String,
@@ -101,8 +103,8 @@ impl BuildValidator for WithDefaultValidator {
     fn build(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        definitions: &mut DefinitionsBuilder<CombinedValidator>,
-    ) -> PyResult<CombinedValidator> {
+        definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
+    ) -> PyResult<Arc<CombinedValidator>> {
         let py = schema.py();
         let default = DefaultType::new(schema)?;
         let on_error = match schema
@@ -125,7 +127,7 @@ impl BuildValidator for WithDefaultValidator {
         };
 
         let sub_schema = schema.get_as_req(intern!(schema.py(), "schema"))?;
-        let validator = Box::new(build_validator(&sub_schema, config, definitions)?);
+        let validator = build_validator(&sub_schema, config, definitions)?;
 
         let copy_default = if let DefaultType::Default(default_obj) = &default {
             default_obj.bind(py).hash().is_err()
@@ -135,7 +137,7 @@ impl BuildValidator for WithDefaultValidator {
 
         let name = format!("{}[{}]", Self::EXPECTED_TYPE, validator.get_name());
 
-        Ok(Self {
+        Ok(CombinedValidator::WithDefault(Self {
             default,
             on_error,
             validator,
@@ -143,7 +145,7 @@ impl BuildValidator for WithDefaultValidator {
             copy_default,
             name,
             undefined: PydanticUndefinedType::new(py).into_any(),
-        }
+        })
         .into())
     }
 }

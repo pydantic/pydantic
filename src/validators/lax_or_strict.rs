@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
@@ -14,8 +16,8 @@ use super::{build_validator, BuildValidator, CombinedValidator, DefinitionsBuild
 #[derive(Debug)]
 pub struct LaxOrStrictValidator {
     strict: bool,
-    lax_validator: Box<CombinedValidator>,
-    strict_validator: Box<CombinedValidator>,
+    lax_validator: Arc<CombinedValidator>,
+    strict_validator: Arc<CombinedValidator>,
     name: String,
 }
 
@@ -25,14 +27,14 @@ impl BuildValidator for LaxOrStrictValidator {
     fn build(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        definitions: &mut DefinitionsBuilder<CombinedValidator>,
-    ) -> PyResult<CombinedValidator> {
+        definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
+    ) -> PyResult<Arc<CombinedValidator>> {
         let py = schema.py();
         let lax_schema = schema.get_as_req(intern!(py, "lax_schema"))?;
-        let lax_validator = Box::new(build_validator(&lax_schema, config, definitions)?);
+        let lax_validator = build_validator(&lax_schema, config, definitions)?;
 
         let strict_schema = schema.get_as_req(intern!(py, "strict_schema"))?;
-        let strict_validator = Box::new(build_validator(&strict_schema, config, definitions)?);
+        let strict_validator = build_validator(&strict_schema, config, definitions)?;
 
         let name = format!(
             "{}[lax={},strict={}]",
@@ -40,12 +42,12 @@ impl BuildValidator for LaxOrStrictValidator {
             lax_validator.get_name(),
             strict_validator.get_name()
         );
-        Ok(Self {
+        Ok(CombinedValidator::LaxOrStrict(Self {
             strict: is_strict(schema, config)?,
             lax_validator,
             strict_validator,
             name,
-        }
+        })
         .into())
     }
 }

@@ -1,4 +1,5 @@
 use std::str::FromStr;
+use std::sync::Arc;
 
 use pyo3::intern;
 use pyo3::prelude::*;
@@ -43,7 +44,7 @@ struct Parameter {
     positional: bool,
     name: String,
     kwarg_key: Option<Py<PyString>>,
-    validator: CombinedValidator,
+    validator: Arc<CombinedValidator>,
     lookup_key_collection: LookupKeyCollection,
     mode: String,
 }
@@ -52,9 +53,9 @@ struct Parameter {
 pub struct ArgumentsValidator {
     parameters: Vec<Parameter>,
     positional_params_count: usize,
-    var_args_validator: Option<Box<CombinedValidator>>,
+    var_args_validator: Option<Arc<CombinedValidator>>,
     var_kwargs_mode: VarKwargsMode,
-    var_kwargs_validator: Option<Box<CombinedValidator>>,
+    var_kwargs_validator: Option<Arc<CombinedValidator>>,
     loc_by_alias: bool,
     extra: ExtraBehavior,
     validate_by_alias: Option<bool>,
@@ -67,8 +68,8 @@ impl BuildValidator for ArgumentsValidator {
     fn build(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        definitions: &mut DefinitionsBuilder<CombinedValidator>,
-    ) -> PyResult<CombinedValidator> {
+        definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
+    ) -> PyResult<Arc<CombinedValidator>> {
         let py = schema.py();
 
         let arguments_schema: Bound<'_, PyList> = schema.get_as_req(intern!(py, "arguments_schema"))?;
@@ -111,8 +112,8 @@ impl BuildValidator for ArgumentsValidator {
                 Err(err) => return py_schema_err!("Parameter '{}':\n  {}", name, err),
             };
 
-            let has_default = match validator {
-                CombinedValidator::WithDefault(ref v) => {
+            let has_default = match validator.as_ref() {
+                CombinedValidator::WithDefault(v) => {
                     if v.omit_on_error() {
                         return py_schema_err!("Parameter '{}': omit_on_error cannot be used with arguments", name);
                     }
@@ -146,7 +147,7 @@ impl BuildValidator for ArgumentsValidator {
 
         let var_kwargs_mode = VarKwargsMode::from_str(py_var_kwargs_mode.to_str()?)?;
         let var_kwargs_validator = match schema.get_item(intern!(py, "var_kwargs_schema"))? {
-            Some(v) => Some(Box::new(build_validator(&v, config, definitions)?)),
+            Some(v) => Some(build_validator(&v, config, definitions)?),
             None => None,
         };
 
@@ -156,11 +157,11 @@ impl BuildValidator for ArgumentsValidator {
             );
         }
 
-        Ok(Self {
+        Ok(CombinedValidator::Arguments(Self {
             parameters,
             positional_params_count,
             var_args_validator: match schema.get_item(intern!(py, "var_args_schema"))? {
-                Some(v) => Some(Box::new(build_validator(&v, config, definitions)?)),
+                Some(v) => Some(build_validator(&v, config, definitions)?),
                 None => None,
             },
             var_kwargs_mode,
@@ -169,7 +170,7 @@ impl BuildValidator for ArgumentsValidator {
             extra: ExtraBehavior::from_schema_or_config(py, schema, config, ExtraBehavior::Forbid)?,
             validate_by_alias: schema_or_config_same(schema, config, intern!(py, "validate_by_alias"))?,
             validate_by_name: schema_or_config_same(schema, config, intern!(py, "validate_by_name"))?,
-        }
+        })
         .into())
     }
 }

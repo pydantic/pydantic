@@ -2,6 +2,7 @@ use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyString, PyType};
 use std::borrow::Cow;
+use std::sync::Arc;
 
 use ahash::AHashMap;
 use serde::ser::SerializeMap;
@@ -24,8 +25,8 @@ impl BuildSerializer for DataclassArgsBuilder {
     fn build(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        definitions: &mut DefinitionsBuilder<CombinedSerializer>,
-    ) -> PyResult<CombinedSerializer> {
+        definitions: &mut DefinitionsBuilder<Arc<CombinedSerializer>>,
+    ) -> PyResult<Arc<CombinedSerializer>> {
         let py = schema.py();
 
         let fields_list: Bound<'_, PyList> = schema.get_as_req(intern!(py, "fields"))?;
@@ -74,14 +75,14 @@ impl BuildSerializer for DataclassArgsBuilder {
         }
         let computed_fields = ComputedFields::new(schema, config, definitions)?;
 
-        Ok(GeneralFieldsSerializer::new(fields, fields_mode, None, computed_fields).into())
+        Ok(CombinedSerializer::Fields(GeneralFieldsSerializer::new(fields, fields_mode, None, computed_fields)).into())
     }
 }
 
 #[derive(Debug)]
 pub struct DataclassSerializer {
     class: Py<PyType>,
-    serializer: Box<CombinedSerializer>,
+    serializer: Arc<CombinedSerializer>,
     fields: Vec<Py<PyString>>,
     name: String,
 }
@@ -92,8 +93,8 @@ impl BuildSerializer for DataclassSerializer {
     fn build(
         schema: &Bound<'_, PyDict>,
         _config: Option<&Bound<'_, PyDict>>,
-        definitions: &mut DefinitionsBuilder<CombinedSerializer>,
-    ) -> PyResult<CombinedSerializer> {
+        definitions: &mut DefinitionsBuilder<Arc<CombinedSerializer>>,
+    ) -> PyResult<Arc<CombinedSerializer>> {
         let py = schema.py();
 
         // models ignore the parent config and always use the config from this model
@@ -101,7 +102,7 @@ impl BuildSerializer for DataclassSerializer {
 
         let class: Bound<'_, PyType> = schema.get_as_req(intern!(py, "cls"))?;
         let sub_schema = schema.get_as_req(intern!(py, "schema"))?;
-        let serializer = Box::new(CombinedSerializer::build(&sub_schema, config.as_ref(), definitions)?);
+        let serializer = CombinedSerializer::build(&sub_schema, config.as_ref(), definitions)?;
 
         let fields = schema
             .get_as_req::<Bound<'_, PyList>>(intern!(py, "fields"))?
@@ -109,12 +110,12 @@ impl BuildSerializer for DataclassSerializer {
             .map(|s| Ok(s.downcast_into::<PyString>()?.unbind()))
             .collect::<PyResult<Vec<_>>>()?;
 
-        Ok(Self {
+        Ok(CombinedSerializer::Dataclass(Self {
             class: class.clone().unbind(),
             serializer,
             fields,
             name: class.getattr(intern!(py, "__name__"))?.extract()?,
-        }
+        })
         .into())
     }
 }

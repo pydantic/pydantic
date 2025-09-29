@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use num_bigint::BigInt;
 use pyo3::exceptions::PyValueError;
 use pyo3::intern;
@@ -6,6 +8,7 @@ use pyo3::types::{PyDict, PyString};
 use pyo3::IntoPyObjectExt;
 
 use crate::build_tools::is_strict;
+use crate::build_tools::LazyLock;
 use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::{Input, Int};
 
@@ -33,27 +36,33 @@ pub struct IntValidator {
     strict: bool,
 }
 
+static STRICT_INT_VALIDATOR: LazyLock<Arc<CombinedValidator>> =
+    LazyLock::new(|| Arc::new(IntValidator { strict: true }.into()));
+
+static LAX_INT_VALIDATOR: LazyLock<Arc<CombinedValidator>> =
+    LazyLock::new(|| Arc::new(IntValidator { strict: false }.into()));
+
 impl BuildValidator for IntValidator {
     const EXPECTED_TYPE: &'static str = "int";
 
     fn build(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        _definitions: &mut DefinitionsBuilder<CombinedValidator>,
-    ) -> PyResult<CombinedValidator> {
+        _definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
+    ) -> PyResult<Arc<CombinedValidator>> {
         let py = schema.py();
         let use_constrained = schema.get_item(intern!(py, "multiple_of"))?.is_some()
             || schema.get_item(intern!(py, "le"))?.is_some()
             || schema.get_item(intern!(py, "lt"))?.is_some()
             || schema.get_item(intern!(py, "ge"))?.is_some()
             || schema.get_item(intern!(py, "gt"))?.is_some();
+
         if use_constrained {
             ConstrainedIntValidator::build(schema, config)
+        } else if is_strict(schema, config)? {
+            Ok(STRICT_INT_VALIDATOR.clone())
         } else {
-            Ok(Self {
-                strict: is_strict(schema, config)?,
-            }
-            .into())
+            Ok(LAX_INT_VALIDATOR.clone())
         }
     }
 }
@@ -88,16 +97,16 @@ pub struct ConstrainedIntValidator {
 }
 
 impl ConstrainedIntValidator {
-    fn build(schema: &Bound<'_, PyDict>, config: Option<&Bound<'_, PyDict>>) -> PyResult<CombinedValidator> {
+    fn build(schema: &Bound<'_, PyDict>, config: Option<&Bound<'_, PyDict>>) -> PyResult<Arc<CombinedValidator>> {
         let py = schema.py();
-        Ok(Self {
+        Ok(CombinedValidator::ConstrainedInt(Self {
             strict: is_strict(schema, config)?,
             multiple_of: validate_as_int(schema, intern!(py, "multiple_of"))?,
             le: validate_as_int(schema, intern!(py, "le"))?,
             lt: validate_as_int(schema, intern!(py, "lt"))?,
             ge: validate_as_int(schema, intern!(py, "ge"))?,
             gt: validate_as_int(schema, intern!(py, "gt"))?,
-        }
+        })
         .into())
     }
 }

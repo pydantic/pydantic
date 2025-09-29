@@ -31,17 +31,17 @@ impl BuildSerializer for GeneratorSerializer {
     fn build(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        definitions: &mut DefinitionsBuilder<CombinedSerializer>,
-    ) -> PyResult<CombinedSerializer> {
+        definitions: &mut DefinitionsBuilder<Arc<CombinedSerializer>>,
+    ) -> PyResult<Arc<CombinedSerializer>> {
         let py = schema.py();
         let item_serializer = match schema.get_as(intern!(py, "items_schema"))? {
             Some(items_schema) => CombinedSerializer::build(&items_schema, config, definitions)?,
             None => AnySerializer::build(schema, config, definitions)?,
         };
-        Ok(Self {
-            item_serializer: Arc::new(item_serializer),
+        Ok(CombinedSerializer::Generator(Self {
+            item_serializer,
             filter: SchemaFilter::from_schema(schema)?,
-        }
+        })
         .into())
     }
 }

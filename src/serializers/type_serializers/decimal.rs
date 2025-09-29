@@ -1,8 +1,10 @@
 use std::borrow::Cow;
+use std::sync::Arc;
 
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
+use crate::build_tools::LazyLock;
 use crate::definitions::DefinitionsBuilder;
 use crate::serializers::infer::{infer_json_key_known, infer_serialize_known, infer_to_python_known};
 use crate::serializers::ob_type::{IsType, ObType};
@@ -14,15 +16,17 @@ use super::{
 #[derive(Debug)]
 pub struct DecimalSerializer {}
 
+static DECIMAL_SERIALIZER: LazyLock<Arc<CombinedSerializer>> = LazyLock::new(|| Arc::new(DecimalSerializer {}.into()));
+
 impl BuildSerializer for DecimalSerializer {
     const EXPECTED_TYPE: &'static str = "decimal";
 
     fn build(
         _schema: &Bound<'_, PyDict>,
         _config: Option<&Bound<'_, PyDict>>,
-        _definitions: &mut DefinitionsBuilder<CombinedSerializer>,
-    ) -> PyResult<CombinedSerializer> {
-        Ok(Self {}.into())
+        _definitions: &mut DefinitionsBuilder<Arc<CombinedSerializer>>,
+    ) -> PyResult<Arc<CombinedSerializer>> {
+        Ok(DECIMAL_SERIALIZER.clone())
     }
 }
 

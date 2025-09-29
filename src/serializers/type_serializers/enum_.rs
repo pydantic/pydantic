@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::sync::Arc;
 
 use crate::build_tools::py_schema_err;
 use pyo3::intern;
@@ -18,7 +19,7 @@ use super::{BuildSerializer, CombinedSerializer, Extra, TypeSerializer};
 #[derive(Debug)]
 pub struct EnumSerializer {
     class: Py<PyType>,
-    serializer: Option<Box<CombinedSerializer>>,
+    serializer: Option<Arc<CombinedSerializer>>,
 }
 
 impl BuildSerializer for EnumSerializer {
@@ -27,21 +28,21 @@ impl BuildSerializer for EnumSerializer {
     fn build(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        _definitions: &mut DefinitionsBuilder<CombinedSerializer>,
-    ) -> PyResult<CombinedSerializer> {
+        _definitions: &mut DefinitionsBuilder<Arc<CombinedSerializer>>,
+    ) -> PyResult<Arc<CombinedSerializer>> {
         let sub_type: Option<String> = schema.get_as(intern!(schema.py(), "sub_type"))?;
 
         let serializer = match sub_type.as_deref() {
-            Some("int") => Some(Box::new(IntSerializer::new().into())),
-            Some("str") => Some(Box::new(StrSerializer::new().into())),
-            Some("float") => Some(Box::new(FloatSerializer::new(schema.py(), config)?.into())),
+            Some("int") => Some(IntSerializer::get().clone()),
+            Some("str") => Some(StrSerializer::get().clone()),
+            Some("float") => Some(FloatSerializer::get(schema.py(), config)?.clone()),
             Some(_) => return py_schema_err!("`sub_type` must be one of: 'int', 'str', 'float' or None"),
             None => None,
         };
-        Ok(Self {
+        Ok(CombinedSerializer::Enum(Self {
             class: schema.get_as_req(intern!(schema.py(), "cls"))?,
             serializer,
-        }
+        })
         .into())
     }
 }

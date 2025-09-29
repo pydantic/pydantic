@@ -2,6 +2,7 @@ use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 use std::borrow::Cow;
+use std::sync::Arc;
 
 use crate::definitions::DefinitionsBuilder;
 use crate::input::EitherTimedelta;
@@ -23,8 +24,8 @@ impl BuildSerializer for TimeDeltaSerializer {
     fn build(
         _schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        _definitions: &mut DefinitionsBuilder<CombinedSerializer>,
-    ) -> PyResult<CombinedSerializer> {
+        _definitions: &mut DefinitionsBuilder<Arc<CombinedSerializer>>,
+    ) -> PyResult<Arc<CombinedSerializer>> {
         let temporal_set = config
             .and_then(|cfg| cfg.contains(intern!(cfg.py(), "ser_json_temporal")).ok())
             .unwrap_or(false);
@@ -35,7 +36,7 @@ impl BuildSerializer for TimeDeltaSerializer {
             td_mode.into()
         };
 
-        Ok(Self { temporal_mode }.into())
+        Ok(Arc::new(Self { temporal_mode }.into()))
     }
 }
 

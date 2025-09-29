@@ -1,5 +1,6 @@
 use std::fmt::Write;
 use std::str::FromStr;
+use std::sync::Arc;
 
 use crate::py_gc::PyGcTraverse;
 use pyo3::prelude::*;
@@ -41,7 +42,7 @@ impl FromStr for UnionMode {
 #[derive(Debug)]
 pub struct UnionValidator {
     mode: UnionMode,
-    choices: Vec<(CombinedValidator, Option<String>)>,
+    choices: Vec<(Arc<CombinedValidator>, Option<String>)>,
     custom_error: Option<CustomError>,
     name: String,
 }
@@ -52,10 +53,10 @@ impl BuildValidator for UnionValidator {
     fn build(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        definitions: &mut DefinitionsBuilder<CombinedValidator>,
-    ) -> PyResult<CombinedValidator> {
+        definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
+    ) -> PyResult<Arc<CombinedValidator>> {
         let py = schema.py();
-        let choices: Vec<(CombinedValidator, Option<String>)> = schema
+        let choices: Vec<(Arc<CombinedValidator>, Option<String>)> = schema
             .get_as_req::<Bound<'_, PyList>>(intern!(py, "choices"))?
             .iter()
             .map(|choice| {
@@ -70,7 +71,7 @@ impl BuildValidator for UnionValidator {
                 };
                 Ok((build_validator(&choice, config, definitions)?, label))
             })
-            .collect::<PyResult<Vec<(CombinedValidator, Option<String>)>>>()?;
+            .collect::<PyResult<_>>()?;
 
         let auto_collapse = || schema.get_as_req(intern!(py, "auto_collapse")).unwrap_or(true);
         let mode = schema
@@ -86,12 +87,12 @@ impl BuildValidator for UnionValidator {
                     .collect::<Vec<_>>()
                     .join(",");
 
-                Ok(Self {
+                Ok(CombinedValidator::Union(Self {
                     mode,
                     choices,
                     custom_error: CustomError::build(schema, config, definitions)?,
                     name: format!("{}[{descr}]", Self::EXPECTED_TYPE),
-                }
+                })
                 .into())
             }
         }
@@ -282,7 +283,7 @@ impl<'a> MaybeErrors<'a> {
 #[derive(Debug)]
 pub struct TaggedUnionValidator {
     discriminator: Discriminator,
-    lookup: LiteralLookup<CombinedValidator>,
+    lookup: LiteralLookup<Arc<CombinedValidator>>,
     from_attributes: bool,
     custom_error: Option<CustomError>,
     tags_repr: String,
@@ -296,8 +297,8 @@ impl BuildValidator for TaggedUnionValidator {
     fn build(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        definitions: &mut DefinitionsBuilder<CombinedValidator>,
-    ) -> PyResult<CombinedValidator> {
+        definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
+    ) -> PyResult<Arc<CombinedValidator>> {
         let py = schema.py();
         let discriminator = Discriminator::new(py, &schema.get_as_req(intern!(py, "discriminator"))?)?;
         let discriminator_repr = discriminator.to_string_py(py)?;
@@ -328,7 +329,7 @@ impl BuildValidator for TaggedUnionValidator {
         let key = intern!(py, "from_attributes");
         let from_attributes = schema_or_config(schema, config, key, key)?.unwrap_or(true);
 
-        Ok(Self {
+        Ok(CombinedValidator::TaggedUnion(Self {
             discriminator,
             lookup,
             from_attributes,
@@ -336,7 +337,7 @@ impl BuildValidator for TaggedUnionValidator {
             tags_repr,
             discriminator_repr,
             name: format!("{}[{descr}]", Self::EXPECTED_TYPE),
-        }
+        })
         .into())
     }
 }

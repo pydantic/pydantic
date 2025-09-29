@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::sync::Arc;
 
 use pyo3::intern;
 use pyo3::prelude::*;
@@ -10,8 +11,8 @@ use crate::tools::SchemaDict;
 
 #[derive(Debug)]
 pub struct JsonOrPythonSerializer {
-    json: Box<CombinedSerializer>,
-    python: Box<CombinedSerializer>,
+    json: Arc<CombinedSerializer>,
+    python: Arc<CombinedSerializer>,
     name: String,
 }
 
@@ -21,8 +22,8 @@ impl BuildSerializer for JsonOrPythonSerializer {
     fn build(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        definitions: &mut DefinitionsBuilder<CombinedSerializer>,
-    ) -> PyResult<CombinedSerializer> {
+        definitions: &mut DefinitionsBuilder<Arc<CombinedSerializer>>,
+    ) -> PyResult<Arc<CombinedSerializer>> {
         let py = schema.py();
         let json_schema = schema.get_as_req(intern!(py, "json_schema"))?;
         let python_schema = schema.get_as_req(intern!(py, "python_schema"))?;
@@ -36,12 +37,7 @@ impl BuildSerializer for JsonOrPythonSerializer {
             json.get_name(),
             python.get_name(),
         );
-        Ok(Self {
-            json: Box::new(json),
-            python: Box::new(python),
-            name,
-        }
-        .into())
+        Ok(Arc::new(Self { json, python, name }.into()))
     }
 }
 

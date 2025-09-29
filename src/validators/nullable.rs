@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
@@ -11,7 +13,7 @@ use super::{build_validator, BuildValidator, CombinedValidator, DefinitionsBuild
 
 #[derive(Debug)]
 pub struct NullableValidator {
-    validator: Box<CombinedValidator>,
+    validator: Arc<CombinedValidator>,
     name: String,
 }
 
@@ -21,12 +23,12 @@ impl BuildValidator for NullableValidator {
     fn build(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        definitions: &mut DefinitionsBuilder<CombinedValidator>,
-    ) -> PyResult<CombinedValidator> {
+        definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
+    ) -> PyResult<Arc<CombinedValidator>> {
         let schema = schema.get_as_req(intern!(schema.py(), "schema"))?;
-        let validator = Box::new(build_validator(&schema, config, definitions)?);
+        let validator = build_validator(&schema, config, definitions)?;
         let name = format!("{}[{}]", Self::EXPECTED_TYPE, validator.get_name());
-        Ok(Self { validator, name }.into())
+        Ok(CombinedValidator::Nullable(Self { validator, name }).into())
     }
 }
 

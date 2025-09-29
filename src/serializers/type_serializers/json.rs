@@ -1,5 +1,6 @@
 use std::borrow::Cow;
 use std::str::from_utf8;
+use std::sync::Arc;
 
 use pyo3::intern;
 use pyo3::prelude::*;
@@ -19,7 +20,7 @@ use super::{
 
 #[derive(Debug)]
 pub struct JsonSerializer {
-    serializer: Box<CombinedSerializer>,
+    serializer: Arc<CombinedSerializer>,
 }
 
 impl BuildSerializer for JsonSerializer {
@@ -28,18 +29,15 @@ impl BuildSerializer for JsonSerializer {
     fn build(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        definitions: &mut DefinitionsBuilder<CombinedSerializer>,
-    ) -> PyResult<CombinedSerializer> {
+        definitions: &mut DefinitionsBuilder<Arc<CombinedSerializer>>,
+    ) -> PyResult<Arc<CombinedSerializer>> {
         let py = schema.py();
 
         let serializer = match schema.get_as(intern!(py, "schema"))? {
             Some(items_schema) => CombinedSerializer::build(&items_schema, config, definitions)?,
             None => AnySerializer::build(schema, config, definitions)?,
         };
-        Ok(Self {
-            serializer: Box::new(serializer),
-        }
-        .into())
+        Ok(Arc::new(Self { serializer }.into()))
     }
 }
 

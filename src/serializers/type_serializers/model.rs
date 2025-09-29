@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::sync::Arc;
 
 use pyo3::intern;
 use pyo3::prelude::*;
@@ -28,8 +29,8 @@ impl BuildSerializer for ModelFieldsBuilder {
     fn build(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        definitions: &mut DefinitionsBuilder<CombinedSerializer>,
-    ) -> PyResult<CombinedSerializer> {
+        definitions: &mut DefinitionsBuilder<Arc<CombinedSerializer>>,
+    ) -> PyResult<Arc<CombinedSerializer>> {
         let py = schema.py();
 
         let fields_mode = match has_extra(schema, config)? {
@@ -85,14 +86,16 @@ impl BuildSerializer for ModelFieldsBuilder {
 
         let computed_fields = ComputedFields::new(schema, config, definitions)?;
 
-        Ok(GeneralFieldsSerializer::new(fields, fields_mode, extra_serializer, computed_fields).into())
+        Ok(Arc::new(
+            GeneralFieldsSerializer::new(fields, fields_mode, extra_serializer, computed_fields).into(),
+        ))
     }
 }
 
 #[derive(Debug)]
 pub struct ModelSerializer {
     class: Py<PyType>,
-    serializer: Box<CombinedSerializer>,
+    serializer: Arc<CombinedSerializer>,
     has_extra: bool,
     root_model: bool,
     name: String,
@@ -104,8 +107,8 @@ impl BuildSerializer for ModelSerializer {
     fn build(
         schema: &Bound<'_, PyDict>,
         _config: Option<&Bound<'_, PyDict>>,
-        definitions: &mut DefinitionsBuilder<CombinedSerializer>,
-    ) -> PyResult<CombinedSerializer> {
+        definitions: &mut DefinitionsBuilder<Arc<CombinedSerializer>>,
+    ) -> PyResult<Arc<CombinedSerializer>> {
         let py = schema.py();
 
         // models ignore the parent config and always use the config from this model
@@ -113,17 +116,17 @@ impl BuildSerializer for ModelSerializer {
 
         let class: Py<PyType> = schema.get_as_req(intern!(py, "cls"))?;
         let sub_schema = schema.get_as_req(intern!(py, "schema"))?;
-        let serializer = Box::new(CombinedSerializer::build(&sub_schema, config.as_ref(), definitions)?);
+        let serializer = CombinedSerializer::build(&sub_schema, config.as_ref(), definitions)?;
         let root_model = schema.get_as(intern!(py, "root_model"))?.unwrap_or(false);
         let name = class.bind(py).getattr(intern!(py, "__name__"))?.extract()?;
 
-        Ok(Self {
+        Ok(CombinedSerializer::Model(Self {
             class,
             serializer,
             has_extra: has_extra(schema, config.as_ref())?,
             root_model,
             name,
-        }
+        })
         .into())
     }
 }

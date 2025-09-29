@@ -1,8 +1,10 @@
 use core::fmt::Debug;
+use std::sync::Arc;
 
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
+use crate::build_tools::LazyLock;
 use crate::common::missing_sentinel::get_missing_sentinel_object;
 use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::Input;
@@ -12,15 +14,18 @@ use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationSta
 #[derive(Debug, Clone)]
 pub struct MissingSentinelValidator {}
 
+static MISSING_SENTINEL_VALIDATOR: LazyLock<Arc<CombinedValidator>> =
+    LazyLock::new(|| CombinedValidator::MissingSentinel(MissingSentinelValidator {}).into());
+
 impl BuildValidator for MissingSentinelValidator {
     const EXPECTED_TYPE: &'static str = "missing-sentinel";
 
     fn build(
         _schema: &Bound<'_, PyDict>,
         _config: Option<&Bound<'_, PyDict>>,
-        _definitions: &mut DefinitionsBuilder<CombinedValidator>,
-    ) -> PyResult<CombinedValidator> {
-        Ok(CombinedValidator::MissingSentinel(Self {}))
+        _definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
+    ) -> PyResult<Arc<CombinedValidator>> {
+        Ok(MISSING_SENTINEL_VALIDATOR.clone())
     }
 }
 

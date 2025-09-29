@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyType};
@@ -21,8 +23,8 @@ impl BuildValidator for IsSubclassValidator {
     fn build(
         schema: &Bound<'_, PyDict>,
         _config: Option<&Bound<'_, PyDict>>,
-        _definitions: &mut DefinitionsBuilder<CombinedValidator>,
-    ) -> PyResult<CombinedValidator> {
+        _definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
+    ) -> PyResult<Arc<CombinedValidator>> {
         let py = schema.py();
         let class = schema.get_as_req::<Bound<'_, PyType>>(intern!(py, "cls"))?;
 
@@ -31,11 +33,11 @@ impl BuildValidator for IsSubclassValidator {
             None => class.qualname()?.to_string(),
         };
         let name = format!("{}[{class_repr}]", Self::EXPECTED_TYPE);
-        Ok(Self {
+        Ok(CombinedValidator::IsSubclass(Self {
             class: class.into(),
             class_repr,
             name,
-        }
+        })
         .into())
     }
 }

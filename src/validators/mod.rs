@@ -1,5 +1,6 @@
 use std::fmt::Debug;
 use std::str::FromStr;
+use std::sync::Arc;
 
 use enum_dispatch::enum_dispatch;
 use jiter::{PartialMode, StringCacheMode};
@@ -107,8 +108,8 @@ impl PySome {
 #[pyclass(module = "pydantic_core._pydantic_core", frozen)]
 #[derive(Debug)]
 pub struct SchemaValidator {
-    validator: CombinedValidator,
-    definitions: Definitions<CombinedValidator>,
+    validator: Arc<CombinedValidator>,
+    definitions: Definitions<Arc<CombinedValidator>>,
     // References to the Python schema and config objects are saved to enable
     // reconstructing the object for cloudpickle support (see `__reduce__`).
     py_schema: Py<PyAny>,
@@ -499,8 +500,8 @@ pub trait BuildValidator: Sized {
     fn build(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        definitions: &mut DefinitionsBuilder<CombinedValidator>,
-    ) -> PyResult<CombinedValidator>;
+        definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
+    ) -> PyResult<Arc<CombinedValidator>>;
 }
 
 /// Logic to create a particular validator, called in the `validator_match` macro, then in turn by `build_validator`
@@ -508,8 +509,8 @@ fn build_specific_validator<T: BuildValidator>(
     val_type: &str,
     schema_dict: &Bound<'_, PyDict>,
     config: Option<&Bound<'_, PyDict>>,
-    definitions: &mut DefinitionsBuilder<CombinedValidator>,
-) -> PyResult<CombinedValidator> {
+    definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
+) -> PyResult<Arc<CombinedValidator>> {
     T::build(schema_dict, config, definitions)
         .map_err(|err| py_schema_error_type!("Error building \"{}\" validator:\n  {}", val_type, err))
 }
@@ -532,25 +533,25 @@ macro_rules! validator_match {
 pub fn build_validator_base(
     schema: &Bound<'_, PyAny>,
     config: Option<&Bound<'_, PyDict>>,
-    definitions: &mut DefinitionsBuilder<CombinedValidator>,
-) -> PyResult<CombinedValidator> {
+    definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
+) -> PyResult<Arc<CombinedValidator>> {
     build_validator_inner(schema, config, definitions, false)
 }
 
 pub fn build_validator(
     schema: &Bound<'_, PyAny>,
     config: Option<&Bound<'_, PyDict>>,
-    definitions: &mut DefinitionsBuilder<CombinedValidator>,
-) -> PyResult<CombinedValidator> {
+    definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
+) -> PyResult<Arc<CombinedValidator>> {
     build_validator_inner(schema, config, definitions, true)
 }
 
 fn build_validator_inner(
     schema: &Bound<'_, PyAny>,
     config: Option<&Bound<'_, PyDict>>,
-    definitions: &mut DefinitionsBuilder<CombinedValidator>,
+    definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
     use_prebuilt: bool,
-) -> PyResult<CombinedValidator> {
+) -> PyResult<Arc<CombinedValidator>> {
     let dict = schema.downcast::<PyDict>()?;
     let py = schema.py();
     let type_: Bound<'_, PyString> = dict.get_as_req(intern!(py, "type"))?;
@@ -559,7 +560,7 @@ fn build_validator_inner(
     if use_prebuilt {
         // if we have a SchemaValidator on the type already, use it
         if let Ok(Some(prebuilt_validator)) = prebuilt::PrebuiltValidator::try_get_from_schema(type_, dict) {
-            return Ok(prebuilt_validator);
+            return Ok(Arc::new(prebuilt_validator));
         }
     }
 
