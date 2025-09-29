@@ -1,11 +1,12 @@
 use std::borrow::Cow;
+use std::sync::Arc;
 
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 use pyo3::IntoPyObjectExt;
 
+use crate::build_tools::LazyLock;
 use crate::definitions::DefinitionsBuilder;
-
 use crate::url::{PyMultiHostUrl, PyUrl};
 
 use super::{
@@ -24,9 +25,11 @@ macro_rules! build_serializer {
             fn build(
                 _schema: &Bound<'_, PyDict>,
                 _config: Option<&Bound<'_, PyDict>>,
-                _definitions: &mut DefinitionsBuilder<CombinedSerializer>,
-            ) -> PyResult<CombinedSerializer> {
-                Ok(Self {}.into())
+                _definitions: &mut DefinitionsBuilder<Arc<CombinedSerializer>>,
+            ) -> PyResult<Arc<CombinedSerializer>> {
+                static SERIALIZER: LazyLock<Arc<CombinedSerializer>> =
+                    LazyLock::new(|| Arc::new(CombinedSerializer::from($struct_name {})));
+                Ok(SERIALIZER.clone())
             }
         }
 

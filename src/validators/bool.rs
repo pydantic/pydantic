@@ -1,7 +1,9 @@
+use std::sync::Arc;
+
 use pyo3::types::PyDict;
 use pyo3::{prelude::*, IntoPyObjectExt};
 
-use crate::build_tools::is_strict;
+use crate::build_tools::{is_strict, LazyLock};
 use crate::errors::ValResult;
 use crate::input::Input;
 
@@ -12,18 +14,25 @@ pub struct BoolValidator {
     strict: bool,
 }
 
+static STRICT_BOOL_VALIDATOR: LazyLock<Arc<CombinedValidator>> =
+    LazyLock::new(|| Arc::new(BoolValidator { strict: true }.into()));
+
+static LAX_BOOL_VALIDATOR: LazyLock<Arc<CombinedValidator>> =
+    LazyLock::new(|| Arc::new(BoolValidator { strict: false }.into()));
+
 impl BuildValidator for BoolValidator {
     const EXPECTED_TYPE: &'static str = "bool";
 
     fn build(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        _definitions: &mut DefinitionsBuilder<CombinedValidator>,
-    ) -> PyResult<CombinedValidator> {
-        Ok(Self {
-            strict: is_strict(schema, config)?,
+        _definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
+    ) -> PyResult<Arc<CombinedValidator>> {
+        if is_strict(schema, config)? {
+            Ok(STRICT_BOOL_VALIDATOR.clone())
+        } else {
+            Ok(LAX_BOOL_VALIDATOR.clone())
         }
-        .into())
     }
 }
 

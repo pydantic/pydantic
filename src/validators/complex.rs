@@ -1,9 +1,11 @@
+use std::sync::Arc;
+
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::sync::PyOnceLock;
 use pyo3::types::{PyComplex, PyDict, PyString, PyType};
 
-use crate::build_tools::is_strict;
+use crate::build_tools::{is_strict, LazyLock};
 use crate::errors::{ErrorTypeDefaults, ToErrorValue, ValError, ValResult};
 use crate::input::Input;
 
@@ -22,17 +24,24 @@ pub struct ComplexValidator {
     strict: bool,
 }
 
+static STRICT_COMPLEX_VALIDATOR: LazyLock<Arc<CombinedValidator>> =
+    LazyLock::new(|| Arc::new(ComplexValidator { strict: true }.into()));
+
+static LAX_COMPLEX_VALIDATOR: LazyLock<Arc<CombinedValidator>> =
+    LazyLock::new(|| Arc::new(ComplexValidator { strict: false }.into()));
+
 impl BuildValidator for ComplexValidator {
     const EXPECTED_TYPE: &'static str = "complex";
     fn build(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        _definitions: &mut DefinitionsBuilder<CombinedValidator>,
-    ) -> PyResult<CombinedValidator> {
-        Ok(Self {
-            strict: is_strict(schema, config)?,
+        _definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
+    ) -> PyResult<Arc<CombinedValidator>> {
+        if is_strict(schema, config)? {
+            Ok(STRICT_COMPLEX_VALIDATOR.clone())
+        } else {
+            Ok(LAX_COMPLEX_VALIDATOR.clone())
         }
-        .into())
     }
 }
 

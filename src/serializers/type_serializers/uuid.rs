@@ -1,9 +1,11 @@
 use std::borrow::Cow;
+use std::sync::Arc;
 
 use pyo3::types::PyDict;
 use pyo3::{intern, prelude::*, IntoPyObjectExt};
 use uuid::Uuid;
 
+use crate::build_tools::LazyLock;
 use crate::definitions::DefinitionsBuilder;
 
 use super::{
@@ -21,6 +23,9 @@ pub(crate) fn uuid_to_string(py_uuid: &Bound<'_, PyAny>) -> PyResult<String> {
 #[derive(Debug)]
 pub struct UuidSerializer;
 
+static UUID_SERIALIZER: LazyLock<Arc<CombinedSerializer>> =
+    LazyLock::new(|| Arc::new(CombinedSerializer::from(UuidSerializer {})));
+
 impl_py_gc_traverse!(UuidSerializer {});
 
 impl BuildSerializer for UuidSerializer {
@@ -29,9 +34,9 @@ impl BuildSerializer for UuidSerializer {
     fn build(
         _schema: &Bound<'_, PyDict>,
         _config: Option<&Bound<'_, PyDict>>,
-        _definitions: &mut DefinitionsBuilder<CombinedSerializer>,
-    ) -> PyResult<CombinedSerializer> {
-        Ok(Self {}.into())
+        _definitions: &mut DefinitionsBuilder<Arc<CombinedSerializer>>,
+    ) -> PyResult<Arc<CombinedSerializer>> {
+        Ok(UUID_SERIALIZER.clone())
     }
 }
 

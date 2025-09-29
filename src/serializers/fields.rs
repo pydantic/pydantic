@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::sync::Arc;
 
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyString};
@@ -25,7 +26,7 @@ pub(super) struct SerField {
     pub alias: Option<String>,
     pub alias_py: Option<Py<PyString>>,
     // None serializer means exclude
-    pub serializer: Option<CombinedSerializer>,
+    pub serializer: Option<Arc<CombinedSerializer>>,
     pub required: bool,
     pub serialize_by_alias: Option<bool>,
     pub serialization_exclude_if: Option<Py<PyAny>>,
@@ -38,7 +39,7 @@ impl SerField {
         py: Python,
         key_py: Py<PyString>,
         alias: Option<String>,
-        serializer: Option<CombinedSerializer>,
+        serializer: Option<Arc<CombinedSerializer>>,
         required: bool,
         serialize_by_alias: Option<bool>,
         serialization_exclude_if: Option<Py<PyAny>>,
@@ -113,7 +114,7 @@ pub struct GeneralFieldsSerializer {
     fields: AHashMap<String, SerField>,
     computed_fields: Option<ComputedFields>,
     mode: FieldsMode,
-    extra_serializer: Option<Box<CombinedSerializer>>,
+    extra_serializer: Option<Arc<CombinedSerializer>>,
     // isize because we look up filter via `.hash()` which returns an isize
     filter: SchemaFilter<isize>,
     required_fields: usize,
@@ -132,14 +133,14 @@ impl GeneralFieldsSerializer {
     pub(super) fn new(
         fields: AHashMap<String, SerField>,
         mode: FieldsMode,
-        extra_serializer: Option<CombinedSerializer>,
+        extra_serializer: Option<Arc<CombinedSerializer>>,
         computed_fields: Option<ComputedFields>,
     ) -> Self {
         let required_fields = fields.values().filter(|f| f.required).count();
         Self {
             fields,
             mode,
-            extra_serializer: extra_serializer.map(Box::new),
+            extra_serializer,
             filter: SchemaFilter::default(),
             computed_fields,
             required_fields,

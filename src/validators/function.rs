@@ -51,8 +51,8 @@ macro_rules! impl_build {
             fn build(
                 schema: &Bound<'_, PyDict>,
                 config: Option<&Bound<'_, PyDict>>,
-                definitions: &mut DefinitionsBuilder<CombinedValidator>,
-            ) -> PyResult<CombinedValidator> {
+                definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
+            ) -> PyResult<Arc<CombinedValidator>> {
                 let py = schema.py();
                 let validator = build_validator(&schema.get_as_req(intern!(py, "schema"))?, config, definitions)?;
                 let func_info = destructure_function_schema(schema)?;
@@ -62,18 +62,20 @@ macro_rules! impl_build {
                     function_name(func_info.function.bind(py))?,
                     validator.get_name()
                 );
-                Ok(Self {
-                    validator: Box::new(validator),
-                    func: func_info.function,
-                    config: match config {
-                        Some(c) => c.clone().into(),
-                        None => py.None(),
-                    },
-                    name,
-                    field_name: func_info.field_name,
-                    info_arg: func_info.info_arg,
-                }
-                .into())
+                Ok(Arc::new(
+                    Self {
+                        validator,
+                        func: func_info.function,
+                        config: match config {
+                            Some(c) => c.clone().into(),
+                            None => py.None(),
+                        },
+                        name,
+                        field_name: func_info.field_name,
+                        info_arg: func_info.info_arg,
+                    }
+                    .into(),
+                ))
             }
         }
     };
@@ -81,7 +83,7 @@ macro_rules! impl_build {
 
 #[derive(Debug)]
 pub struct FunctionBeforeValidator {
-    validator: Box<CombinedValidator>,
+    validator: Arc<CombinedValidator>,
     func: Py<PyAny>,
     config: Py<PyAny>,
     name: String,
@@ -155,7 +157,7 @@ impl Validator for FunctionBeforeValidator {
 
 #[derive(Debug)]
 pub struct FunctionAfterValidator {
-    validator: Box<CombinedValidator>,
+    validator: Arc<CombinedValidator>,
     func: Py<PyAny>,
     config: Py<PyAny>,
     name: String,
@@ -242,11 +244,11 @@ impl BuildValidator for FunctionPlainValidator {
     fn build(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        _definitions: &mut DefinitionsBuilder<CombinedValidator>,
-    ) -> PyResult<CombinedValidator> {
+        _definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
+    ) -> PyResult<Arc<CombinedValidator>> {
         let py = schema.py();
         let function_info = destructure_function_schema(schema)?;
-        Ok(Self {
+        Ok(CombinedValidator::FunctionPlain(Self {
             func: function_info.function.clone(),
             config: match config {
                 Some(c) => c.clone().into(),
@@ -255,7 +257,7 @@ impl BuildValidator for FunctionPlainValidator {
             name: format!("function-plain[{}()]", function_name(function_info.function.bind(py))?),
             field_name: function_info.field_name.clone(),
             info_arg: function_info.info_arg,
-        }
+        })
         .into())
     }
 }
@@ -307,15 +309,15 @@ impl BuildValidator for FunctionWrapValidator {
     fn build(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        definitions: &mut DefinitionsBuilder<CombinedValidator>,
-    ) -> PyResult<CombinedValidator> {
+        definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
+    ) -> PyResult<Arc<CombinedValidator>> {
         let py = schema.py();
         let validator = build_validator(&schema.get_as_req(intern!(py, "schema"))?, config, definitions)?;
         let function_info = destructure_function_schema(schema)?;
         let hide_input_in_errors: bool = config.get_as(intern!(py, "hide_input_in_errors"))?.unwrap_or(false);
         let validation_error_cause: bool = config.get_as(intern!(py, "validation_error_cause"))?.unwrap_or(false);
-        Ok(Self {
-            validator: Arc::new(validator),
+        Ok(CombinedValidator::FunctionWrap(Self {
+            validator,
             func: function_info.function.clone(),
             config: match config {
                 Some(c) => c.clone().into(),
@@ -326,7 +328,7 @@ impl BuildValidator for FunctionWrapValidator {
             info_arg: function_info.info_arg,
             hide_input_in_errors,
             validation_error_cause,
-        }
+        })
         .into())
     }
 }

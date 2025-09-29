@@ -1,5 +1,6 @@
 // Validator for Enums, so named because "enum" is a reserved keyword in Rust.
 use std::marker::PhantomData;
+use std::sync::Arc;
 
 use pyo3::exceptions::PyTypeError;
 use pyo3::intern;
@@ -24,8 +25,8 @@ impl BuildValidator for BuildEnumValidator {
     fn build(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        _definitions: &mut DefinitionsBuilder<CombinedValidator>,
-    ) -> PyResult<CombinedValidator> {
+        _definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
+    ) -> PyResult<Arc<CombinedValidator>> {
         let members: Bound<PyList> = schema.get_as_req(intern!(schema.py(), "members"))?;
         if members.is_empty() {
             return py_schema_err!("`members` should have length > 0");
@@ -65,11 +66,11 @@ impl BuildValidator for BuildEnumValidator {
 
         let sub_type: Option<String> = schema.get_as(intern!(py, "sub_type"))?;
         match sub_type.as_deref() {
-            Some("int") => Ok(CombinedValidator::IntEnum(build!(IntEnumValidator, "int-enum"))),
-            Some("str") => Ok(CombinedValidator::StrEnum(build!(StrEnumValidator, "str-enum"))),
-            Some("float") => Ok(CombinedValidator::FloatEnum(build!(FloatEnumValidator, "float-enum"))),
+            Some("int") => Ok(CombinedValidator::IntEnum(build!(IntEnumValidator, "int-enum")).into()),
+            Some("str") => Ok(CombinedValidator::StrEnum(build!(StrEnumValidator, "str-enum")).into()),
+            Some("float") => Ok(CombinedValidator::FloatEnum(build!(FloatEnumValidator, "float-enum")).into()),
             Some(_) => py_schema_err!("`sub_type` must be one of: 'int', 'str', 'float' or None"),
-            None => Ok(CombinedValidator::PlainEnum(build!(PlainEnumValidator, "enum"))),
+            None => Ok(CombinedValidator::PlainEnum(build!(PlainEnumValidator, "enum")).into()),
         }
     }
 }
