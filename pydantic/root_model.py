@@ -118,7 +118,7 @@ class RootModel(BaseModel, Generic[RootModelRootType], metaclass=_RootModelMetac
         def model_dump(  # type: ignore
             self,
             *,
-            mode: Literal['json', 'python'] | str = 'python',
+            mode: Literal['json', 'python'] = 'python',
             include: Any = None,
             exclude: Any = None,
             context: dict[str, Any] | None = None,
