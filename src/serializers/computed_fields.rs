@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyString};
 use pyo3::{intern, PyTraverseError, PyVisit};
@@ -21,7 +23,7 @@ impl ComputedFields {
     pub fn new(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        definitions: &mut DefinitionsBuilder<CombinedSerializer>,
+        definitions: &mut DefinitionsBuilder<Arc<CombinedSerializer>>,
     ) -> PyResult<Option<Self>> {
         let py = schema.py();
         if let Some(computed_fields) = schema.get_as::<Bound<'_, PyList>>(intern!(py, "computed_fields"))? {
@@ -182,7 +184,7 @@ struct ComputedFieldToSerialize<'a, 'py> {
 struct ComputedField {
     property_name: String,
     property_name_py: Py<PyString>,
-    serializer: CombinedSerializer,
+    serializer: Arc<CombinedSerializer>,
     alias: String,
     alias_py: Py<PyString>,
     serialize_by_alias: Option<bool>,
@@ -192,7 +194,7 @@ impl ComputedField {
     pub fn new(
         schema: &Bound<'_, PyAny>,
         config: Option<&Bound<'_, PyDict>>,
-        definitions: &mut DefinitionsBuilder<CombinedSerializer>,
+        definitions: &mut DefinitionsBuilder<Arc<CombinedSerializer>>,
     ) -> PyResult<Self> {
         let py = schema.py();
         let schema: &Bound<'_, PyDict> = schema.downcast()?;

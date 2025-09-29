@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::sync::Arc;
 
 use pyo3::intern;
 use pyo3::prelude::*;
@@ -11,7 +12,7 @@ use super::{infer_json_key_known, BuildSerializer, CombinedSerializer, Extra, Is
 
 #[derive(Debug)]
 pub struct NullableSerializer {
-    serializer: Box<CombinedSerializer>,
+    serializer: Arc<CombinedSerializer>,
 }
 
 impl BuildSerializer for NullableSerializer {
@@ -20,12 +21,12 @@ impl BuildSerializer for NullableSerializer {
     fn build(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        definitions: &mut DefinitionsBuilder<CombinedSerializer>,
-    ) -> PyResult<CombinedSerializer> {
+        definitions: &mut DefinitionsBuilder<Arc<CombinedSerializer>>,
+    ) -> PyResult<Arc<CombinedSerializer>> {
         let sub_schema = schema.get_as_req(intern!(schema.py(), "schema"))?;
-        Ok(Self {
-            serializer: Box::new(CombinedSerializer::build(&sub_schema, config, definitions)?),
-        }
+        Ok(CombinedSerializer::Nullable(Self {
+            serializer: CombinedSerializer::build(&sub_schema, config, definitions)?,
+        })
         .into())
     }
 }

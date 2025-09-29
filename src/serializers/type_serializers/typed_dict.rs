@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyString};
@@ -20,8 +22,8 @@ impl BuildSerializer for TypedDictBuilder {
     fn build(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        definitions: &mut DefinitionsBuilder<CombinedSerializer>,
-    ) -> PyResult<CombinedSerializer> {
+        definitions: &mut DefinitionsBuilder<Arc<CombinedSerializer>>,
+    ) -> PyResult<Arc<CombinedSerializer>> {
         let py = schema.py();
 
         let total =
@@ -82,6 +84,8 @@ impl BuildSerializer for TypedDictBuilder {
 
         let computed_fields = ComputedFields::new(schema, config, definitions)?;
 
-        Ok(GeneralFieldsSerializer::new(fields, fields_mode, extra_serializer, computed_fields).into())
+        Ok(Arc::new(
+            GeneralFieldsSerializer::new(fields, fields_mode, extra_serializer, computed_fields).into(),
+        ))
     }
 }

@@ -31,8 +31,8 @@ impl BuildSerializer for FunctionBeforeSerializerBuilder {
     fn build(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        definitions: &mut DefinitionsBuilder<CombinedSerializer>,
-    ) -> PyResult<CombinedSerializer> {
+        definitions: &mut DefinitionsBuilder<Arc<CombinedSerializer>>,
+    ) -> PyResult<Arc<CombinedSerializer>> {
         let py = schema.py();
         // `before` schemas will obviously have type from `schema` since the validator is called second
         let schema = schema.get_as_req(intern!(py, "schema"))?;
@@ -47,8 +47,8 @@ impl BuildSerializer for FunctionAfterSerializerBuilder {
     fn build(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        definitions: &mut DefinitionsBuilder<CombinedSerializer>,
-    ) -> PyResult<CombinedSerializer> {
+        definitions: &mut DefinitionsBuilder<Arc<CombinedSerializer>>,
+    ) -> PyResult<Arc<CombinedSerializer>> {
         let py = schema.py();
         // While `before` function schemas do not modify the output type (and therefore affect the
         // serialization), for `after` schemas, there's no way to directly infer what schema should
@@ -66,8 +66,8 @@ impl BuildSerializer for FunctionPlainSerializerBuilder {
     fn build(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        definitions: &mut DefinitionsBuilder<CombinedSerializer>,
-    ) -> PyResult<CombinedSerializer> {
+        definitions: &mut DefinitionsBuilder<Arc<CombinedSerializer>>,
+    ) -> PyResult<Arc<CombinedSerializer>> {
         super::any::AnySerializer::build(schema, config, definitions)
     }
 }
@@ -77,9 +77,9 @@ pub struct FunctionPlainSerializer {
     func: Py<PyAny>,
     name: String,
     function_name: String,
-    return_serializer: Box<CombinedSerializer>,
+    return_serializer: Arc<CombinedSerializer>,
     // fallback serializer - used when when_used decides that this serializer should not be used
-    fallback_serializer: Option<Box<CombinedSerializer>>,
+    fallback_serializer: Option<Arc<CombinedSerializer>>,
     when_used: WhenUsed,
     is_field_serializer: bool,
     info_arg: bool,
@@ -102,8 +102,8 @@ impl BuildSerializer for FunctionPlainSerializer {
     fn build(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        definitions: &mut DefinitionsBuilder<CombinedSerializer>,
-    ) -> PyResult<CombinedSerializer> {
+        definitions: &mut DefinitionsBuilder<Arc<CombinedSerializer>>,
+    ) -> PyResult<Arc<CombinedSerializer>> {
         let py = schema.py();
 
         let ser_schema = schema.get_as_req(intern!(py, "serialization"))?;
@@ -112,8 +112,8 @@ impl BuildSerializer for FunctionPlainSerializer {
         let function_name = function_name(&function)?;
 
         let return_serializer = match ser_schema.get_as(intern!(py, "return_schema"))? {
-            Some(s) => Box::new(CombinedSerializer::build(&s, config, definitions)?),
-            None => Box::new(AnySerializer::build(schema, config, definitions)?),
+            Some(s) => CombinedSerializer::build(&s, config, definitions)?,
+            None => AnySerializer::build(schema, config, definitions)?,
         };
 
         let when_used = WhenUsed::new(&ser_schema, WhenUsed::Always)?;
@@ -121,12 +121,12 @@ impl BuildSerializer for FunctionPlainSerializer {
             WhenUsed::Always => None,
             _ => {
                 let new_schema = copy_outer_schema(schema)?;
-                Some(Box::new(CombinedSerializer::build(&new_schema, config, definitions)?))
+                Some(CombinedSerializer::build(&new_schema, config, definitions)?)
             }
         };
 
         let name = format!("plain_function[{function_name}]");
-        Ok(Self {
+        Ok(CombinedSerializer::Function(Self {
             func: function.unbind(),
             function_name,
             name,
@@ -135,7 +135,7 @@ impl BuildSerializer for FunctionPlainSerializer {
             when_used,
             is_field_serializer,
             info_arg,
-        }
+        })
         .into())
     }
 }
@@ -314,8 +314,8 @@ impl BuildSerializer for FunctionWrapSerializerBuilder {
     fn build(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        definitions: &mut DefinitionsBuilder<CombinedSerializer>,
-    ) -> PyResult<CombinedSerializer> {
+        definitions: &mut DefinitionsBuilder<Arc<CombinedSerializer>>,
+    ) -> PyResult<Arc<CombinedSerializer>> {
         let py = schema.py();
         // While `before` function schemas do not modify the output type (and therefore affect the
         // serialization), for `wrap` schemas (like `after`), there's no way to directly infer what
@@ -346,8 +346,8 @@ impl BuildSerializer for FunctionWrapSerializer {
     fn build(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        definitions: &mut DefinitionsBuilder<CombinedSerializer>,
-    ) -> PyResult<CombinedSerializer> {
+        definitions: &mut DefinitionsBuilder<Arc<CombinedSerializer>>,
+    ) -> PyResult<Arc<CombinedSerializer>> {
         let py = schema.py();
         let ser_schema = schema.get_as_req(intern!(py, "serialization"))?;
 
@@ -369,16 +369,16 @@ impl BuildSerializer for FunctionWrapSerializer {
         };
 
         let name = format!("wrap_function[{function_name}, {}]", serializer.get_name());
-        Ok(Self {
-            serializer: Arc::new(serializer),
+        Ok(CombinedSerializer::FunctionWrap(Self {
+            serializer,
             func: function.into(),
             function_name,
             name,
-            return_serializer: Arc::new(return_serializer),
+            return_serializer,
             when_used: WhenUsed::new(&ser_schema, WhenUsed::Always)?,
             is_field_serializer,
             info_arg,
-        }
+        })
         .into())
     }
 }

@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
@@ -17,8 +19,8 @@ use super::{build_validator, BuildValidator, CombinedValidator, DefinitionsBuild
 #[derive(Debug)]
 pub struct DictValidator {
     strict: bool,
-    key_validator: Box<CombinedValidator>,
-    value_validator: Box<CombinedValidator>,
+    key_validator: Arc<CombinedValidator>,
+    value_validator: Arc<CombinedValidator>,
     min_length: Option<usize>,
     max_length: Option<usize>,
     fail_fast: bool,
@@ -31,16 +33,16 @@ impl BuildValidator for DictValidator {
     fn build(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        definitions: &mut DefinitionsBuilder<CombinedValidator>,
-    ) -> PyResult<CombinedValidator> {
+        definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
+    ) -> PyResult<Arc<CombinedValidator>> {
         let py = schema.py();
         let key_validator = match schema.get_item(intern!(py, "keys_schema"))? {
-            Some(schema) => Box::new(build_validator(&schema, config, definitions)?),
-            None => Box::new(AnyValidator::build(schema, config, definitions)?),
+            Some(schema) => build_validator(&schema, config, definitions)?,
+            None => AnyValidator::build(schema, config, definitions)?,
         };
         let value_validator = match schema.get_item(intern!(py, "values_schema"))? {
-            Some(d) => Box::new(build_validator(&d, config, definitions)?),
-            None => Box::new(AnyValidator::build(schema, config, definitions)?),
+            Some(d) => build_validator(&d, config, definitions)?,
+            None => AnyValidator::build(schema, config, definitions)?,
         };
         let name = format!(
             "{}[{},{}]",
@@ -48,7 +50,7 @@ impl BuildValidator for DictValidator {
             key_validator.get_name(),
             value_validator.get_name()
         );
-        Ok(Self {
+        Ok(CombinedValidator::Dict(Self {
             strict: is_strict(schema, config)?,
             key_validator,
             value_validator,
@@ -56,7 +58,7 @@ impl BuildValidator for DictValidator {
             max_length: schema.get_as(intern!(py, "max_length"))?,
             fail_fast: schema.get_as(intern!(py, "fail_fast"))?.unwrap_or(false),
             name,
-        }
+        })
         .into())
     }
 }

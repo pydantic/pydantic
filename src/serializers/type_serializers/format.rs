@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::sync::Arc;
 
 use pyo3::intern;
 use pyo3::prelude::*;
@@ -66,21 +67,21 @@ impl BuildSerializer for FormatSerializer {
     fn build(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        definitions: &mut DefinitionsBuilder<CombinedSerializer>,
-    ) -> PyResult<CombinedSerializer> {
+        definitions: &mut DefinitionsBuilder<Arc<CombinedSerializer>>,
+    ) -> PyResult<Arc<CombinedSerializer>> {
         let py = schema.py();
         let formatting_string: Bound<'_, PyString> = schema.get_as_req(intern!(py, "formatting_string"))?;
         if formatting_string.is_empty()? {
             ToStringSerializer::build(schema, config, definitions)
         } else {
-            Ok(Self {
+            Ok(CombinedSerializer::Format(Self {
                 format_func: py
                     .import(intern!(py, "builtins"))?
                     .getattr(intern!(py, "format"))?
                     .unbind(),
                 formatting_string: formatting_string.unbind(),
                 when_used: WhenUsed::new(schema, WhenUsed::JsonUnlessNone)?,
-            }
+            })
             .into())
         }
     }
@@ -171,11 +172,11 @@ impl BuildSerializer for ToStringSerializer {
     fn build(
         schema: &Bound<'_, PyDict>,
         _config: Option<&Bound<'_, PyDict>>,
-        _definitions: &mut DefinitionsBuilder<CombinedSerializer>,
-    ) -> PyResult<CombinedSerializer> {
-        Ok(Self {
+        _definitions: &mut DefinitionsBuilder<Arc<CombinedSerializer>>,
+    ) -> PyResult<Arc<CombinedSerializer>> {
+        Ok(CombinedSerializer::ToString(Self {
             when_used: WhenUsed::new(schema, WhenUsed::JsonUnlessNone)?,
-        }
+        })
         .into())
     }
 }

@@ -5,21 +5,24 @@
 // core schema is used standalone (e.g. with a Pydantic type adapter), but this isn't
 // something we explicitly support.
 
-use std::borrow::Cow;
+use std::{borrow::Cow, sync::Arc};
 
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
 use serde::ser::Error;
 
-use crate::common::missing_sentinel::get_missing_sentinel_object;
 use crate::definitions::DefinitionsBuilder;
 use crate::PydanticSerializationUnexpectedValue;
+use crate::{build_tools::LazyLock, common::missing_sentinel::get_missing_sentinel_object};
 
 use super::{BuildSerializer, CombinedSerializer, Extra, TypeSerializer};
 
 #[derive(Debug)]
 pub struct MissingSentinelSerializer {}
+
+static MISSING_SENTINEL_SERIALIZER: LazyLock<Arc<CombinedSerializer>> =
+    LazyLock::new(|| Arc::new(MissingSentinelSerializer {}.into()));
 
 impl BuildSerializer for MissingSentinelSerializer {
     const EXPECTED_TYPE: &'static str = "missing-sentinel";
@@ -27,9 +30,9 @@ impl BuildSerializer for MissingSentinelSerializer {
     fn build(
         _schema: &Bound<'_, PyDict>,
         _config: Option<&Bound<'_, PyDict>>,
-        _definitions: &mut DefinitionsBuilder<CombinedSerializer>,
-    ) -> PyResult<CombinedSerializer> {
-        Ok(Self {}.into())
+        _definitions: &mut DefinitionsBuilder<Arc<CombinedSerializer>>,
+    ) -> PyResult<Arc<CombinedSerializer>> {
+        Ok(MISSING_SENTINEL_SERIALIZER.clone())
     }
 }
 

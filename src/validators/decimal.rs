@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use pyo3::exceptions::{PyTypeError, PyValueError};
 use pyo3::intern;
 use pyo3::sync::PyOnceLock;
@@ -63,8 +65,8 @@ impl BuildValidator for DecimalValidator {
     fn build(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        _definitions: &mut DefinitionsBuilder<CombinedValidator>,
-    ) -> PyResult<CombinedValidator> {
+        _definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
+    ) -> PyResult<Arc<CombinedValidator>> {
         let py = schema.py();
 
         let allow_inf_nan = schema_or_config_same(schema, config, intern!(py, "allow_inf_nan"))?.unwrap_or(false);
@@ -76,7 +78,7 @@ impl BuildValidator for DecimalValidator {
             ));
         }
 
-        Ok(Self {
+        Ok(CombinedValidator::Decimal(Self {
             strict: is_strict(schema, config)?,
             allow_inf_nan,
             check_digits: decimal_places.is_some() || max_digits.is_some(),
@@ -87,7 +89,7 @@ impl BuildValidator for DecimalValidator {
             ge: validate_as_decimal(py, schema, intern!(py, "ge"))?,
             gt: validate_as_decimal(py, schema, intern!(py, "gt"))?,
             max_digits,
-        }
+        })
         .into())
     }
 }

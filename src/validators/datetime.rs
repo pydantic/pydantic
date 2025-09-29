@@ -5,6 +5,7 @@ use pyo3::sync::PyOnceLock;
 use pyo3::types::{PyDict, PyString};
 use speedate::{DateTime, MicrosecondsPrecisionOverflowBehavior, Time};
 use std::cmp::Ordering;
+use std::sync::Arc;
 use strum::EnumMessage;
 
 use crate::build_tools::{is_strict, py_schema_error_type};
@@ -46,14 +47,14 @@ impl BuildValidator for DateTimeValidator {
     fn build(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        _definitions: &mut DefinitionsBuilder<CombinedValidator>,
-    ) -> PyResult<CombinedValidator> {
-        Ok(Self {
+        _definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
+    ) -> PyResult<Arc<CombinedValidator>> {
+        Ok(CombinedValidator::Datetime(Self {
             strict: is_strict(schema, config)?,
             constraints: DateTimeConstraints::from_py(schema)?,
             microseconds_precision: extract_microseconds_precision(schema, config)?,
             val_temporal_unit: TemporalUnitMode::from_config(config)?,
-        }
+        })
         .into())
     }
 }

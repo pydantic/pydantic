@@ -1,8 +1,10 @@
 use std::borrow::Cow;
+use std::sync::Arc;
 
 use pyo3::types::{PyComplex, PyDict};
 use pyo3::{prelude::*, IntoPyObjectExt};
 
+use crate::build_tools::LazyLock;
 use crate::definitions::DefinitionsBuilder;
 
 use super::{infer_serialize, infer_to_python, BuildSerializer, CombinedSerializer, Extra, SerMode, TypeSerializer};
@@ -10,14 +12,16 @@ use super::{infer_serialize, infer_to_python, BuildSerializer, CombinedSerialize
 #[derive(Debug, Clone)]
 pub struct ComplexSerializer {}
 
+static COMPLEX_SERIALIZER: LazyLock<Arc<CombinedSerializer>> = LazyLock::new(|| Arc::new(ComplexSerializer {}.into()));
+
 impl BuildSerializer for ComplexSerializer {
     const EXPECTED_TYPE: &'static str = "complex";
     fn build(
         _schema: &Bound<'_, PyDict>,
         _config: Option<&Bound<'_, PyDict>>,
-        _definitions: &mut DefinitionsBuilder<CombinedSerializer>,
-    ) -> PyResult<CombinedSerializer> {
-        Ok(Self {}.into())
+        _definitions: &mut DefinitionsBuilder<Arc<CombinedSerializer>>,
+    ) -> PyResult<Arc<CombinedSerializer>> {
+        Ok(COMPLEX_SERIALIZER.clone())
     }
 }
 

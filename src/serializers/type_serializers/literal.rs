@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::sync::Arc;
 
 use pyo3::intern;
 use pyo3::prelude::*;
@@ -31,8 +32,8 @@ impl BuildSerializer for LiteralSerializer {
     fn build(
         schema: &Bound<'_, PyDict>,
         _config: Option<&Bound<'_, PyDict>>,
-        _definitions: &mut DefinitionsBuilder<CombinedSerializer>,
-    ) -> PyResult<CombinedSerializer> {
+        _definitions: &mut DefinitionsBuilder<Arc<CombinedSerializer>>,
+    ) -> PyResult<Arc<CombinedSerializer>> {
         let expected: Bound<'_, PyList> = schema.get_as_req(intern!(schema.py(), "expected"))?;
 
         if expected.is_empty() {
@@ -56,16 +57,18 @@ impl BuildSerializer for LiteralSerializer {
             }
         }
 
-        Ok(Self {
-            expected_int,
-            expected_str,
-            expected_py: match expected_py.is_empty() {
-                true => None,
-                false => Some(expected_py.into()),
-            },
-            name: format!("{}[{}]", Self::EXPECTED_TYPE, repr_args.join(",")),
-        }
-        .into())
+        Ok(Arc::new(
+            Self {
+                expected_int,
+                expected_str,
+                expected_py: match expected_py.is_empty() {
+                    true => None,
+                    false => Some(expected_py.into()),
+                },
+                name: format!("{}[{}]", Self::EXPECTED_TYPE, repr_args.join(",")),
+            }
+            .into(),
+        ))
     }
 }
 

@@ -1,4 +1,5 @@
 use std::cmp::Ordering;
+use std::sync::Arc;
 
 use pyo3::intern;
 use pyo3::prelude::*;
@@ -19,8 +20,8 @@ impl BuildValidator for FloatBuilder {
     fn build(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        definitions: &mut DefinitionsBuilder<CombinedValidator>,
-    ) -> PyResult<CombinedValidator> {
+        definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
+    ) -> PyResult<Arc<CombinedValidator>> {
         let py = schema.py();
         let use_constrained = schema.get_item(intern!(py, "multiple_of"))?.is_some()
             || schema.get_item(intern!(py, "le"))?.is_some()
@@ -30,10 +31,10 @@ impl BuildValidator for FloatBuilder {
         if use_constrained {
             ConstrainedFloatValidator::build(schema, config, definitions)
         } else {
-            Ok(FloatValidator {
+            Ok(CombinedValidator::Float(FloatValidator {
                 strict: is_strict(schema, config)?,
                 allow_inf_nan: schema_or_config_same(schema, config, intern!(py, "allow_inf_nan"))?.unwrap_or(true),
-            }
+            })
             .into())
         }
     }
@@ -51,13 +52,13 @@ impl BuildValidator for FloatValidator {
     fn build(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        _definitions: &mut DefinitionsBuilder<CombinedValidator>,
-    ) -> PyResult<CombinedValidator> {
+        _definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
+    ) -> PyResult<Arc<CombinedValidator>> {
         let py = schema.py();
-        Ok(Self {
+        Ok(CombinedValidator::Float(Self {
             strict: is_strict(schema, config)?,
             allow_inf_nan: schema_or_config_same(schema, config, intern!(py, "allow_inf_nan"))?.unwrap_or(true),
-        }
+        })
         .into())
     }
 }
@@ -179,10 +180,10 @@ impl BuildValidator for ConstrainedFloatValidator {
     fn build(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        _definitions: &mut DefinitionsBuilder<CombinedValidator>,
-    ) -> PyResult<CombinedValidator> {
+        _definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
+    ) -> PyResult<Arc<CombinedValidator>> {
         let py = schema.py();
-        Ok(Self {
+        Ok(CombinedValidator::ConstrainedFloat(Self {
             strict: is_strict(schema, config)?,
             allow_inf_nan: schema_or_config_same(schema, config, intern!(py, "allow_inf_nan"))?.unwrap_or(true),
             multiple_of: schema.get_as(intern!(py, "multiple_of"))?,
@@ -190,7 +191,7 @@ impl BuildValidator for ConstrainedFloatValidator {
             lt: schema.get_as(intern!(py, "lt"))?,
             ge: schema.get_as(intern!(py, "ge"))?,
             gt: schema.get_as(intern!(py, "gt"))?,
-        }
+        })
         .into())
     }
 }

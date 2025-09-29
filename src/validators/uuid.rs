@@ -1,4 +1,5 @@
 use std::str::from_utf8;
+use std::sync::Arc;
 
 use pyo3::intern;
 use pyo3::prelude::*;
@@ -80,15 +81,15 @@ impl BuildValidator for UuidValidator {
     fn build(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        _definitions: &mut DefinitionsBuilder<CombinedValidator>,
-    ) -> PyResult<CombinedValidator> {
+        _definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
+    ) -> PyResult<Arc<CombinedValidator>> {
         let py = schema.py();
         // Note(lig): let's keep this conversion through the Version enum just for the sake of validation
         let version = schema.get_as::<u8>(intern!(py, "version"))?.map(Version::from);
-        Ok(Self {
+        Ok(CombinedValidator::Uuid(Self {
             strict: is_strict(schema, config)?,
             version: version.map(usize::from),
-        }
+        })
         .into())
     }
 }

@@ -2,6 +2,7 @@
 // which can be an int, a string, bytes or an Enum value (including `class Foo(str, Enum)` type enums)
 use core::fmt::Debug;
 use std::cell::OnceCell;
+use std::sync::Arc;
 
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyInt, PyList};
@@ -255,8 +256,8 @@ impl BuildValidator for LiteralValidator {
     fn build(
         schema: &Bound<'_, PyDict>,
         _config: Option<&Bound<'_, PyDict>>,
-        _definitions: &mut DefinitionsBuilder<CombinedValidator>,
-    ) -> PyResult<CombinedValidator> {
+        _definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
+    ) -> PyResult<Arc<CombinedValidator>> {
         let expected: Bound<PyList> = schema.get_as_req(intern!(schema.py(), "expected"))?;
         if expected.is_empty() {
             return py_schema_err!("`expected` should have length > 0");
@@ -272,7 +273,8 @@ impl BuildValidator for LiteralValidator {
             lookup,
             expected_repr,
             name,
-        }))
+        })
+        .into())
     }
 }
 

@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyString, PyType};
@@ -23,7 +25,7 @@ struct TypedDictField {
     lookup_key_collection: LookupKeyCollection,
     name_py: Py<PyString>,
     required: bool,
-    validator: CombinedValidator,
+    validator: Arc<CombinedValidator>,
 }
 
 impl_py_gc_traverse!(TypedDictField { validator });
@@ -32,7 +34,7 @@ impl_py_gc_traverse!(TypedDictField { validator });
 pub struct TypedDictValidator {
     fields: Vec<TypedDictField>,
     extra_behavior: ExtraBehavior,
-    extras_validator: Option<Box<CombinedValidator>>,
+    extras_validator: Option<Arc<CombinedValidator>>,
     strict: bool,
     loc_by_alias: bool,
     validate_by_alias: Option<bool>,
@@ -46,8 +48,8 @@ impl BuildValidator for TypedDictValidator {
     fn build(
         schema: &Bound<'_, PyDict>,
         _config: Option<&Bound<'_, PyDict>>,
-        definitions: &mut DefinitionsBuilder<CombinedValidator>,
-    ) -> PyResult<CombinedValidator> {
+        definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
+    ) -> PyResult<Arc<CombinedValidator>> {
         let py = schema.py();
 
         // typed dicts ignore the parent config and always use the config from this TypedDict
@@ -62,7 +64,7 @@ impl BuildValidator for TypedDictValidator {
         let extra_behavior = ExtraBehavior::from_schema_or_config(py, schema, config, ExtraBehavior::Ignore)?;
 
         let extras_validator = match (schema.get_item(intern!(py, "extras_schema"))?, &extra_behavior) {
-            (Some(v), ExtraBehavior::Allow) => Some(Box::new(build_validator(&v, config, definitions)?)),
+            (Some(v), ExtraBehavior::Allow) => Some(build_validator(&v, config, definitions)?),
             (Some(_), _) => return py_schema_err!("extras_schema can only be used if extra_behavior=allow"),
             (_, _) => None,
         };
@@ -93,7 +95,7 @@ impl BuildValidator for TypedDictValidator {
             let required = match field_info.get_as::<bool>(intern!(py, "required"))? {
                 Some(required) => {
                     if required {
-                        if let CombinedValidator::WithDefault(ref val) = validator {
+                        if let CombinedValidator::WithDefault(ref val) = validator.as_ref() {
                             if val.has_default() {
                                 return py_schema_err!(
                                     "Field '{}': a required field cannot have a default value",
@@ -108,7 +110,7 @@ impl BuildValidator for TypedDictValidator {
             };
 
             if required {
-                if let CombinedValidator::WithDefault(ref val) = validator {
+                if let CombinedValidator::WithDefault(ref val) = validator.as_ref() {
                     if val.omit_on_error() {
                         return py_schema_err!(
                             "Field '{}': 'on_error = omit' cannot be set for required fields",
@@ -129,7 +131,7 @@ impl BuildValidator for TypedDictValidator {
                 required,
             });
         }
-        Ok(Self {
+        Ok(CombinedValidator::TypedDict(Self {
             fields,
             extra_behavior,
             extras_validator,
@@ -138,7 +140,7 @@ impl BuildValidator for TypedDictValidator {
             validate_by_alias: config.get_as(intern!(py, "validate_by_alias"))?,
             validate_by_name: config.get_as(intern!(py, "validate_by_name"))?,
             cls_name,
-        }
+        })
         .into())
     }
 }

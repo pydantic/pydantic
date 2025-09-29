@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
@@ -11,8 +13,8 @@ use super::{build_validator, BuildValidator, CombinedValidator, InputType, Valid
 
 #[derive(Debug)]
 pub struct JsonOrPython {
-    json: Box<CombinedValidator>,
-    python: Box<CombinedValidator>,
+    json: Arc<CombinedValidator>,
+    python: Arc<CombinedValidator>,
     name: String,
 }
 
@@ -22,8 +24,8 @@ impl BuildValidator for JsonOrPython {
     fn build(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        definitions: &mut DefinitionsBuilder<CombinedValidator>,
-    ) -> PyResult<CombinedValidator> {
+        definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
+    ) -> PyResult<Arc<CombinedValidator>> {
         let py = schema.py();
         let json_schema = schema.get_as_req(intern!(py, "json_schema"))?;
         let python_schema = schema.get_as_req(intern!(py, "python_schema"))?;
@@ -37,12 +39,7 @@ impl BuildValidator for JsonOrPython {
             json.get_name(),
             python.get_name(),
         );
-        Ok(Self {
-            json: Box::new(json),
-            python: Box::new(python),
-            name,
-        }
-        .into())
+        Ok(CombinedValidator::JsonOrPython(Self { json, python, name }).into())
     }
 }
 

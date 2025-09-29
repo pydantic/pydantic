@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
@@ -24,18 +26,18 @@ impl BuildValidator for BytesValidator {
     fn build(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        _definitions: &mut DefinitionsBuilder<CombinedValidator>,
-    ) -> PyResult<CombinedValidator> {
+        _definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
+    ) -> PyResult<Arc<CombinedValidator>> {
         let py = schema.py();
         let use_constrained = schema.get_item(intern!(py, "max_length"))?.is_some()
             || schema.get_item(intern!(py, "min_length"))?.is_some();
         if use_constrained {
             BytesConstrainedValidator::build(schema, config)
         } else {
-            Ok(Self {
+            Ok(CombinedValidator::Bytes(Self {
                 strict: is_strict(schema, config)?,
                 bytes_mode: ValBytesMode::from_config(config)?,
-            }
+            })
             .into())
         }
     }
@@ -113,14 +115,14 @@ impl Validator for BytesConstrainedValidator {
 }
 
 impl BytesConstrainedValidator {
-    fn build(schema: &Bound<'_, PyDict>, config: Option<&Bound<'_, PyDict>>) -> PyResult<CombinedValidator> {
+    fn build(schema: &Bound<'_, PyDict>, config: Option<&Bound<'_, PyDict>>) -> PyResult<Arc<CombinedValidator>> {
         let py = schema.py();
-        Ok(Self {
+        Ok(CombinedValidator::ConstrainedBytes(Self {
             strict: is_strict(schema, config)?,
             bytes_mode: ValBytesMode::from_config(config)?,
             min_length: schema.get_as(intern!(py, "min_length"))?,
             max_length: schema.get_as(intern!(py, "max_length"))?,
-        }
+        })
         .into())
     }
 }

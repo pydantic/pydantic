@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyType};
@@ -22,8 +24,8 @@ impl BuildValidator for IsInstanceValidator {
     fn build(
         schema: &Bound<'_, PyDict>,
         _config: Option<&Bound<'_, PyDict>>,
-        _definitions: &mut DefinitionsBuilder<CombinedValidator>,
-    ) -> PyResult<CombinedValidator> {
+        _definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
+    ) -> PyResult<Arc<CombinedValidator>> {
         let py = schema.py();
         let cls_key = intern!(py, "cls");
         let class = schema.get_as_req(cls_key)?;
@@ -36,11 +38,11 @@ impl BuildValidator for IsInstanceValidator {
 
         let class_repr = class_repr(schema, &class)?;
         let name = format!("{}[{class_repr}]", Self::EXPECTED_TYPE);
-        Ok(Self {
+        Ok(CombinedValidator::IsInstance(Self {
             class: class.into(),
             class_repr,
             name,
-        }
+        })
         .into())
     }
 }

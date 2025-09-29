@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::sync::Arc;
 
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyFrozenSet, PyList, PySet};
@@ -19,7 +20,7 @@ macro_rules! build_serializer {
     ($struct_name:ident, $expected_type:literal, $py_type:ty) => {
         #[derive(Debug)]
         pub struct $struct_name {
-            item_serializer: Box<CombinedSerializer>,
+            item_serializer: Arc<CombinedSerializer>,
             name: String,
         }
 
@@ -29,19 +30,21 @@ macro_rules! build_serializer {
             fn build(
                 schema: &Bound<'_, PyDict>,
                 config: Option<&Bound<'_, PyDict>>,
-                definitions: &mut DefinitionsBuilder<CombinedSerializer>,
-            ) -> PyResult<CombinedSerializer> {
+                definitions: &mut DefinitionsBuilder<Arc<CombinedSerializer>>,
+            ) -> PyResult<Arc<CombinedSerializer>> {
                 let py = schema.py();
                 let item_serializer = match schema.get_as(intern!(py, "items_schema"))? {
                     Some(items_schema) => CombinedSerializer::build(&items_schema, config, definitions)?,
                     None => AnySerializer::build(schema, config, definitions)?,
                 };
                 let name = format!("{}[{}]", Self::EXPECTED_TYPE, item_serializer.get_name());
-                Ok(Self {
-                    item_serializer: Box::new(item_serializer),
-                    name,
-                }
-                .into())
+                Ok(Arc::new(
+                    Self {
+                        item_serializer,
+                        name,
+                    }
+                    .into(),
+                ))
             }
         }
 

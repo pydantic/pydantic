@@ -1,6 +1,7 @@
 use std::borrow::Cow;
 use std::fmt::Debug;
 use std::io::{self, Write};
+use std::sync::Arc;
 
 use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
@@ -30,8 +31,8 @@ pub(crate) trait BuildSerializer: Sized {
     fn build(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        definitions: &mut DefinitionsBuilder<CombinedSerializer>,
-    ) -> PyResult<CombinedSerializer>;
+        definitions: &mut DefinitionsBuilder<Arc<CombinedSerializer>>,
+    ) -> PyResult<Arc<CombinedSerializer>>;
 }
 
 /// Build the `CombinedSerializer` enum and implement a `find_serializer` method for it.
@@ -53,8 +54,8 @@ macro_rules! combined_serializer {
                 lookup_type: &str,
                 schema: &Bound<'_, PyDict>,
                 config: Option<&Bound<'_, PyDict>>,
-                definitions: &mut DefinitionsBuilder<CombinedSerializer>
-            ) -> PyResult<CombinedSerializer> {
+                definitions: &mut DefinitionsBuilder<Arc<CombinedSerializer>>
+            ) -> PyResult<Arc<CombinedSerializer>> {
                 match lookup_type {
                     $(
                         <$b_serializer>::EXPECTED_TYPE => match <$b_serializer>::build(schema, config, definitions) {
@@ -156,17 +157,17 @@ impl CombinedSerializer {
     pub fn build_base(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        definitions: &mut DefinitionsBuilder<CombinedSerializer>,
-    ) -> PyResult<CombinedSerializer> {
+        definitions: &mut DefinitionsBuilder<Arc<CombinedSerializer>>,
+    ) -> PyResult<Arc<CombinedSerializer>> {
         Self::_build(schema, config, definitions, false)
     }
 
     fn _build(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        definitions: &mut DefinitionsBuilder<CombinedSerializer>,
+        definitions: &mut DefinitionsBuilder<Arc<CombinedSerializer>>,
         use_prebuilt: bool,
-    ) -> PyResult<CombinedSerializer> {
+    ) -> PyResult<Arc<CombinedSerializer>> {
         let py = schema.py();
         let type_key = intern!(py, "type");
 
@@ -217,7 +218,7 @@ impl CombinedSerializer {
             if let Ok(Some(prebuilt_serializer)) =
                 super::prebuilt::PrebuiltSerializer::try_get_from_schema(type_, schema)
             {
-                return Ok(prebuilt_serializer);
+                return Ok(Arc::new(prebuilt_serializer));
             }
         }
 
@@ -300,8 +301,8 @@ impl BuildSerializer for CombinedSerializer {
     fn build(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        definitions: &mut DefinitionsBuilder<CombinedSerializer>,
-    ) -> PyResult<CombinedSerializer> {
+        definitions: &mut DefinitionsBuilder<Arc<CombinedSerializer>>,
+    ) -> PyResult<Arc<CombinedSerializer>> {
         Self::_build(schema, config, definitions, true)
     }
 }

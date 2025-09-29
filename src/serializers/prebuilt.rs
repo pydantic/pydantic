@@ -18,7 +18,10 @@ impl PrebuiltSerializer {
     pub fn try_get_from_schema(type_: &str, schema: &Bound<'_, PyDict>) -> PyResult<Option<CombinedSerializer>> {
         get_prebuilt(type_, schema, "__pydantic_serializer__", |py_any| {
             let schema_serializer = py_any.extract::<Py<SchemaSerializer>>()?;
-            if matches!(schema_serializer.get().serializer, CombinedSerializer::FunctionWrap(_)) {
+            if matches!(
+                schema_serializer.get().serializer.as_ref(),
+                CombinedSerializer::FunctionWrap(_)
+            ) {
                 return Ok(None);
             }
             Ok(Some(Self { schema_serializer }.into()))

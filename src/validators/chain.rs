@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList};
@@ -12,7 +14,7 @@ use super::{build_validator, BuildValidator, CombinedValidator, DefinitionsBuild
 
 #[derive(Debug)]
 pub struct ChainValidator {
-    steps: Vec<CombinedValidator>,
+    steps: Vec<Arc<CombinedValidator>>,
     name: String,
 }
 
@@ -22,16 +24,16 @@ impl BuildValidator for ChainValidator {
     fn build(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        definitions: &mut DefinitionsBuilder<CombinedValidator>,
-    ) -> PyResult<CombinedValidator> {
-        let steps: Vec<CombinedValidator> = schema
+        definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
+    ) -> PyResult<Arc<CombinedValidator>> {
+        let steps: Vec<Arc<CombinedValidator>> = schema
             .get_as_req::<Bound<'_, PyList>>(intern!(schema.py(), "steps"))?
             .iter()
             .map(|step| build_validator_steps(&step, config, definitions))
-            .collect::<PyResult<Vec<Vec<CombinedValidator>>>>()?
+            .collect::<PyResult<Vec<Vec<Arc<CombinedValidator>>>>>()?
             .into_iter()
             .flatten()
-            .collect::<Vec<CombinedValidator>>();
+            .collect();
 
         match steps.len() {
             0 => py_schema_err!("One or more steps are required for a chain validator"),
@@ -40,12 +42,12 @@ impl BuildValidator for ChainValidator {
                 Ok(step)
             }
             _ => {
-                let descr = steps.iter().map(Validator::get_name).collect::<Vec<_>>().join(",");
+                let descr = steps.iter().map(|v| v.get_name()).collect::<Vec<_>>().join(",");
 
-                Ok(Self {
+                Ok(CombinedValidator::Chain(Self {
                     steps,
                     name: format!("{}[{descr}]", Self::EXPECTED_TYPE),
-                }
+                })
                 .into())
             }
         }
@@ -57,11 +59,11 @@ impl BuildValidator for ChainValidator {
 fn build_validator_steps(
     step: &Bound<'_, PyAny>,
     config: Option<&Bound<'_, PyDict>>,
-    definitions: &mut DefinitionsBuilder<CombinedValidator>,
-) -> PyResult<Vec<CombinedValidator>> {
+    definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
+) -> PyResult<Vec<Arc<CombinedValidator>>> {
     let validator = build_validator(step, config, definitions)?;
-    if let CombinedValidator::Chain(chain_validator) = validator {
-        Ok(chain_validator.steps)
+    if let CombinedValidator::Chain(chain_validator) = validator.as_ref() {
+        Ok(chain_validator.steps.clone())
     } else {
         Ok(vec![validator])
     }

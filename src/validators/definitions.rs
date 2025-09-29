@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::PyString;
@@ -21,8 +23,8 @@ impl BuildValidator for DefinitionsValidatorBuilder {
     fn build(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        definitions: &mut DefinitionsBuilder<CombinedValidator>,
-    ) -> PyResult<CombinedValidator> {
+        definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
+    ) -> PyResult<Arc<CombinedValidator>> {
         let py = schema.py();
 
         let schema_definitions: Bound<'_, PyList> = schema.get_as_req(intern!(py, "definitions"))?;
@@ -42,11 +44,11 @@ impl BuildValidator for DefinitionsValidatorBuilder {
 
 #[derive(Debug, Clone)]
 pub struct DefinitionRefValidator {
-    definition: DefinitionRef<CombinedValidator>,
+    definition: DefinitionRef<Arc<CombinedValidator>>,
 }
 
 impl DefinitionRefValidator {
-    pub fn new(definition: DefinitionRef<CombinedValidator>) -> Self {
+    pub fn new(definition: DefinitionRef<Arc<CombinedValidator>>) -> Self {
         Self { definition }
     }
 }
@@ -57,12 +59,12 @@ impl BuildValidator for DefinitionRefValidator {
     fn build(
         schema: &Bound<'_, PyDict>,
         _config: Option<&Bound<'_, PyDict>>,
-        definitions: &mut DefinitionsBuilder<CombinedValidator>,
-    ) -> PyResult<CombinedValidator> {
+        definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
+    ) -> PyResult<Arc<CombinedValidator>> {
         let schema_ref: Bound<'_, PyString> = schema.get_as_req(intern!(schema.py(), "schema_ref"))?;
 
         let definition = definitions.get_definition(schema_ref.to_str()?);
-        Ok(Self::new(definition).into())
+        Ok(CombinedValidator::DefinitionRef(Self::new(definition)).into())
     }
 }
 

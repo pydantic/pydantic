@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use pyo3::types::{PyDict, PySet};
 use pyo3::{prelude::*, IntoPyObjectExt};
 
@@ -11,7 +13,7 @@ use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationSta
 #[derive(Debug)]
 pub struct SetValidator {
     strict: bool,
-    item_validator: Box<CombinedValidator>,
+    item_validator: Arc<CombinedValidator>,
     min_length: Option<usize>,
     max_length: Option<usize>,
     name: String,
@@ -23,29 +25,27 @@ macro_rules! set_build {
         fn build(
             schema: &Bound<'_, PyDict>,
             config: Option<&Bound<'_, PyDict>>,
-            definitions: &mut DefinitionsBuilder<CombinedValidator>,
-        ) -> PyResult<CombinedValidator> {
+            definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
+        ) -> PyResult<Arc<CombinedValidator>> {
             let py = schema.py();
             let item_validator = match schema.get_item(pyo3::intern!(schema.py(), "items_schema"))? {
-                Some(d) => Box::new(crate::validators::build_validator(&d, config, definitions)?),
-                None => Box::new(crate::validators::any::AnyValidator::build(
-                    schema,
-                    config,
-                    definitions,
-                )?),
+                Some(d) => crate::validators::build_validator(&d, config, definitions)?,
+                None => crate::validators::any::AnyValidator::build(schema, config, definitions)?,
             };
             let inner_name = item_validator.get_name();
             let max_length = schema.get_as(pyo3::intern!(py, "max_length"))?;
             let name = format!("{}[{}]", Self::EXPECTED_TYPE, inner_name);
-            Ok(Self {
-                strict: crate::build_tools::is_strict(schema, config)?,
-                item_validator,
-                min_length: schema.get_as(pyo3::intern!(py, "min_length"))?,
-                max_length,
-                name,
-                fail_fast: schema.get_as(pyo3::intern!(py, "fail_fast"))?.unwrap_or(false),
-            }
-            .into())
+            Ok(Arc::new(
+                Self {
+                    strict: crate::build_tools::is_strict(schema, config)?,
+                    item_validator,
+                    min_length: schema.get_as(pyo3::intern!(py, "min_length"))?,
+                    max_length,
+                    name,
+                    fail_fast: schema.get_as(pyo3::intern!(py, "fail_fast"))?.unwrap_or(false),
+                }
+                .into(),
+            ))
         }
     };
 }
