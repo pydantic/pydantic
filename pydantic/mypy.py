@@ -955,7 +955,7 @@ class PydanticModelTransformer:
                 elif isinstance(var, PlaceholderNode) and not self._api.final_iteration:
                     # See https://github.com/pydantic/pydantic/issues/5191 to hit this branch for test coverage
                     self._api.defer()
-                # `var` can also be a FuncDef or Decorator node (e.g. when overridding a field with a function or property).
+                # `var` can also be a FuncDef or Decorator node (e.g. when overriding a field with a function or property).
                 # In that case, we don't want to do anything. Mypy will already raise an error that a field was not properly
                 # overridden.
             else:

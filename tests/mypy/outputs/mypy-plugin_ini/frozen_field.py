@@ -15,8 +15,8 @@ class Parent(BaseModel):
     parent_attr: str = Field(exclude=True)
 
 
-# We don't wan't to froze `parent_attr` in the plugin:
-class Chield(Parent):
+# We don't want to freeze `parent_attr` in the plugin:
+class Child(Parent):
     child_attr: str = Field(exclude=True)
 
     @property
