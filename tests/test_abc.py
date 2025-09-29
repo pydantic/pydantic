@@ -46,3 +46,14 @@ def test_model_subclassing_abstract_base_classes_without_implementation_raises_e
         "Can't instantiate abstract class Model without an implementation for abstract methods "
         "'my_abstract_classmethod', 'my_abstract_method', 'my_abstract_property', 'my_abstract_staticmethod'"
     )
+
+
+def test_register_warning_on_abstract_base_classes_subclassing_model() -> None:
+    class Model(BaseModel, abc.ABC):
+        some_field: str
+
+    with pytest.warns(UserWarning):
+
+        @Model.register
+        class RegisteredModel:
+            pass
