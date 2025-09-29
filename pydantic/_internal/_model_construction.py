@@ -291,10 +291,12 @@ class ModelMetaclass(ABCMeta):
 
     # Due to performance and memory issues, in the ABCMeta.__subclasscheck__ implementation, we don't support
     # registered virtual subclasses. See https://github.com/python/cpython/issues/92810#issuecomment-2762454345.
+    # This may change once the CPython gets fixed (possibly in 3.15), in which case we should conditionally
+    # define `register()`.
     def register(self, subclass: type[_T]) -> type[_T]:
         warnings.warn(
-            f'For performance reasons, virtual subclasses registered using {self.__name__}.register() '
-            'are not supported in isinstance() and issubclass() checks.',
+            f"For performance reasons, virtual subclasses registered using '{self.__qualname__}.register()' "
+            "are not supported in 'isinstance()' and 'issubclass()' checks.",
             stacklevel=2,
         )
         return super().register(subclass)
