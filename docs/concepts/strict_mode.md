@@ -63,12 +63,12 @@ from datetime import date
 
 from pydantic import TypeAdapter, ValidationError
 
-
 print(TypeAdapter(date).validate_python('2000-01-01'))  # OK: lax
 #> 2000-01-01
 
 try:
-    TypeAdapter(date).validate_python('2000-01-01', strict=True)  # Not OK: strict
+    # Not OK: strict:
+    TypeAdapter(date).validate_python('2000-01-01', strict=True)
 except ValidationError as exc:
     print(exc)
     """
@@ -135,6 +135,7 @@ convenience aliases for the most common types (namely [`StrictBool`][pydantic.ty
 and [`StrictBytes`][pydantic.types.StrictBytes]).
 
 ```python
+from typing import Annotated
 from uuid import UUID
 
 from pydantic import BaseModel, Strict, StrictInt
@@ -167,6 +168,6 @@ class User(BaseModel):
     age: int = Field(strict=False)
 
 
-print(Model(name='John', age='18'))
+print(User(name='John', age='18'))
 #> name='John' age=18
 ```

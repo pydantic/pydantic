@@ -102,6 +102,8 @@ type as a convenience to [using the `Strict()` metadata class](../concepts/stric
 <h3>Example</h3>
 
 ```python
+from typing import Annotated
+
 from pydantic import BaseModel, StringConstraints
 
 
@@ -109,10 +111,11 @@ class StringModel(BaseModel):
     str_value: str = ""
     constrained_str_value: Annotated[str, StringConstraints(to_lower=True)] = ""
 
+
 print(StringModel(str_value="test").str_value)
-#> str_value="test"
+#> test
 print(StringModel(constrained_str_value='TEST').constrained_str_value)
-#> constrained_str_value="test"
+#> test
 ```
 
 !!! warning "Strings aren't treated as sequences"
@@ -345,7 +348,7 @@ my_model = Model(f=Decimal('2.1'))
 print(my_model.model_dump())  # (1)!
 #> {'f': Decimal('2.1')}
 print(my_model.model_dump_json())  # (2)!
-#> '{"f":2.1}'
+#> {"f":2.1}
 ```
 
 1. In Python mode, `f`remains a [`Decimal`][decimal.Decimal] instance.
@@ -471,6 +474,7 @@ In [strict mode](../concepts/strict_mode.md), only [`datetime`][datetime.datetim
 
 ```python
 from datetime import datetime
+from typing import Annotated
 
 from pydantic import AwareDatetime, BaseModel, Field
 
@@ -877,7 +881,7 @@ they are serialized as arrays.
 ```python
 from typing import NamedTuple
 
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel
 
 
 class Point(NamedTuple):
@@ -945,7 +949,7 @@ class Model(BaseModel):
 print(Model(simple_set=['1', '2', '3']).simple_set)
 #> {'1', '2', '3'}
 print(Model(set_of_ints=['1', '2', '3']).set_of_ints)
-#> {frozenset({1, 2, 3})
+#> frozenset({1, 2, 3})
 ```
 
 ### Deque
