@@ -6484,6 +6484,46 @@ def test_type_adapter_with_inline_defs_custom_schema() -> None:
     assert schema['$defs'] == {'inline': {'type': 'string', 'description': 'inline definition'}}
 
 
+def test_type_adapter_with_inline_defs_nested_resolution() -> None:
+    class InlineDefs:
+        @classmethod
+        def __get_pydantic_core_schema__(
+            cls, source_type: Any, handler: GetCoreSchemaHandler
+        ) -> core_schema.CoreSchema:
+            return handler.generate_schema(str)
+
+        @classmethod
+        def __get_pydantic_json_schema__(
+            cls, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+        ) -> JsonSchemaValue:
+            return {
+                '$ref': '#/$defs/inline',
+                '$defs': {'inline': {'type': 'string'}},
+            }
+
+    class Container:
+        @classmethod
+        def __get_pydantic_core_schema__(
+            cls, source_type: Any, handler: GetCoreSchemaHandler
+        ) -> core_schema.CoreSchema:
+            return core_schema.list_schema(handler.generate_schema(InlineDefs))
+
+        @classmethod
+        def __get_pydantic_json_schema__(
+            cls, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+        ) -> JsonSchemaValue:
+            schema = handler(core_schema)
+            items_schema = schema['items']
+            resolved_schema = handler.resolve_ref_schema(items_schema)
+            resolved_schema['description'] = 'inline definition'
+            return schema
+
+    schema = TypeAdapter(Container).json_schema()
+
+    assert schema['items']['$ref'] == '#/$defs/inline'
+    assert schema['items']['$defs'] == {'inline': {'type': 'string', 'description': 'inline definition'}}
+
+
 def test_min_and_max_in_schema() -> None:
     TSeq = TypeAdapter(Annotated[Sequence[int], Field(min_length=2, max_length=5)])
     assert TSeq.json_schema() == {'items': {'type': 'integer'}, 'maxItems': 5, 'minItems': 2, 'type': 'array'}

@@ -53,7 +53,7 @@ class GenerateJsonSchemaHandler(GetJsonSchemaHandler):
         if '$ref' not in maybe_ref_json_schema:
             return maybe_ref_json_schema
         ref = maybe_ref_json_schema['$ref']
-        json_schema = self.generate_json_schema.get_schema_from_definitions(ref)
+        json_schema = self.generate_json_schema.get_schema_from_definitions(ref, root=maybe_ref_json_schema)
         if json_schema is None:
             raise LookupError(
                 f'Could not find a ref for {ref}.'

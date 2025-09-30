@@ -397,7 +397,7 @@ class GenerateJsonSchema:
 
         ref = cast(JsonRef, json_schema.get('$ref'))
         while ref is not None:  # may need to unpack multiple levels
-            ref_json_schema = self.get_schema_from_definitions(ref)
+            ref_json_schema = self.get_schema_from_definitions(ref, root=json_schema)
             if json_ref_counts[ref] == 1 and ref_json_schema is not None and len(json_schema) == 1:
                 # "Unpack" the ref since this is the only reference and there are no sibling keys
                 json_schema = ref_json_schema.copy()  # copy to prevent recursive dict reference
@@ -1563,12 +1563,15 @@ class GenerateJsonSchema:
         Raises:
             RuntimeError: If the schema reference can't be found in definitions.
         """
+        root_schema: JsonSchemaValue | None = json_schema
         while '$ref' in json_schema:
             ref = json_schema['$ref']
-            schema_to_update = self.get_schema_from_definitions(JsonRef(ref))
+            schema_to_update = self.get_schema_from_definitions(JsonRef(ref), root=root_schema)
             if schema_to_update is None:
                 raise RuntimeError(f'Cannot update undefined schema for $ref={ref}')
             json_schema = schema_to_update
+            if isinstance(json_schema, dict):
+                root_schema = json_schema
         return json_schema
 
     def model_fields_schema(self, schema: core_schema.ModelFieldsSchema) -> JsonSchemaValue:
@@ -2115,7 +2118,7 @@ class GenerateJsonSchema:
             # prevent modifications to the input; this copy may be safe to drop if there is significant overhead
             json_schema = json_schema.copy()
 
-            referenced_json_schema = self.get_schema_from_definitions(JsonRef(json_schema['$ref']))
+            referenced_json_schema = self.get_schema_from_definitions(JsonRef(json_schema['$ref']), root=json_schema)
             if referenced_json_schema is None:
                 # This can happen when building schemas for models with not-yet-defined references.
                 # It may be a good idea to do a recursive pass at the end of the generation to remove
@@ -2129,13 +2132,17 @@ class GenerateJsonSchema:
 
         return json_schema
 
-    def get_schema_from_definitions(self, json_ref: JsonRef) -> JsonSchemaValue | None:
+    def get_schema_from_definitions(self, json_ref: JsonRef, *, root: Any | None = None) -> JsonSchemaValue | None:
         try:
             def_ref = self.json_to_defs_refs[json_ref]
             if def_ref in self._core_defs_invalid_for_json_schema:
                 raise self._core_defs_invalid_for_json_schema[def_ref]
             return self.definitions.get(def_ref, None)
         except KeyError:
+            if root is not None:
+                resolved_schema = _resolve_json_ref(root, json_ref)
+                if resolved_schema is not None:
+                    return resolved_schema
             if json_ref.startswith(('http://', 'https://')):
                 return None
             raise
