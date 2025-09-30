@@ -188,23 +188,40 @@ class _DefinitionsRemapping:
         """
         Recursively update the JSON schema replacing all $refs
         """
-        if isinstance(schema, str):
-            # Note: this may not really be a JsonRef; we rely on having no collisions between JsonRefs and other strings
-            return self.remap_json_ref(JsonRef(schema))
-        elif isinstance(schema, list):
-            return [self.remap_json_schema(item) for item in schema]
-        elif isinstance(schema, dict):
-            for key, value in schema.items():
-                if key == '$ref' and isinstance(value, str):
-                    schema['$ref'] = self.remap_json_ref(JsonRef(value))
-                elif key == '$defs':
-                    schema['$defs'] = {
-                        self.remap_defs_ref(DefsRef(key)): self.remap_json_schema(value)
-                        for key, value in schema['$defs'].items()
-                    }
-                else:
-                    schema[key] = self.remap_json_schema(value)
-        return schema
+
+        seen_containers: set[int] = set()
+
+        def _remap(value: Any) -> Any:
+            if isinstance(value, str):
+                # Note: this may not really be a JsonRef; we rely on having no collisions between JsonRefs and other strings
+                return self.remap_json_ref(JsonRef(value))
+            if isinstance(value, list):
+                container_id = id(value)
+                if container_id in seen_containers:
+                    return value
+                seen_containers.add(container_id)
+                for index, item in enumerate(value):
+                    value[index] = _remap(item)
+                return value
+            if isinstance(value, dict):
+                container_id = id(value)
+                if container_id in seen_containers:
+                    return value
+                seen_containers.add(container_id)
+                for key, item in list(value.items()):
+                    if key == '$ref' and isinstance(item, str):
+                        value['$ref'] = self.remap_json_ref(JsonRef(item))
+                    elif key == '$defs':
+                        value['$defs'] = {
+                            self.remap_defs_ref(DefsRef(defs_key)): _remap(defs_value)
+                            for defs_key, defs_value in item.items()
+                        }
+                    else:
+                        value[key] = _remap(item)
+                return value
+            return value
+
+        return _remap(schema)
 
 
 class GenerateJsonSchema:
@@ -282,6 +299,7 @@ class GenerateJsonSchema:
         # This changes to True after generating a schema, to prevent issues caused by accidental reuse
         # of a single instance of a schema generator
         self._used = False
+        self._resolved_json_refs_cache: dict[JsonRef, JsonSchemaValue] = {}
 
     @property
     def _config(self) -> _config.ConfigWrapper:
@@ -538,9 +556,19 @@ class GenerateJsonSchema:
                 if _core_utils.is_core_schema(schema_or_field):
                     json_schema = populate_defs(schema_or_field, json_schema)
                 original_schema = current_handler.resolve_ref_schema(json_schema)
-                ref = json_schema.pop('$ref', None)
-                if ref and json_schema:
-                    original_schema.update(json_schema)
+                ref = json_schema.get('$ref')
+                extras = {k: v for k, v in json_schema.items() if k not in {'$ref', '$defs'}}
+                if ref and extras:
+                    original_schema.update(extras)
+                if ref is not None:
+                    result_schema: JsonSchemaValue = {'$ref': ref}
+                    if extras:
+                        result_schema.update(extras)
+                    if '$defs' in json_schema:
+                        result_schema['$defs'] = json_schema['$defs']
+                    return result_schema
+                if '$defs' in json_schema and '$defs' not in original_schema:
+                    original_schema['$defs'] = json_schema['$defs']
                 return original_schema
 
             current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(self, new_handler_func)
@@ -567,28 +595,31 @@ class GenerateJsonSchema:
         By default, alphabetically sort the keys in the JSON schema, skipping the 'properties' and 'default' keys to preserve field definition order.
         This sort is recursive, so it will sort all nested dictionaries as well.
         """
-        sorted_dict: dict[str, JsonSchemaValue] = {}
-        keys = value.keys()
-        if parent_key not in ('properties', 'default'):
-            keys = sorted(keys)
-        for key in keys:
-            sorted_dict[key] = self._sort_recursive(value[key], parent_key=key)
-        return sorted_dict
+        seen_containers: set[int] = set()
+        return self._sort_recursive(value, parent_key=parent_key, seen_containers=seen_containers)
 
-    def _sort_recursive(self, value: Any, parent_key: str | None = None) -> Any:
+    def _sort_recursive(self, value: Any, parent_key: str | None = None, *, seen_containers: set[int]) -> Any:
         """Recursively sort a JSON schema value."""
         if isinstance(value, dict):
+            container_id = id(value)
+            if container_id in seen_containers:
+                return value
+            seen_containers.add(container_id)
             sorted_dict: dict[str, JsonSchemaValue] = {}
             keys = value.keys()
             if parent_key not in ('properties', 'default'):
                 keys = sorted(keys)
             for key in keys:
-                sorted_dict[key] = self._sort_recursive(value[key], parent_key=key)
+                sorted_dict[key] = self._sort_recursive(value[key], parent_key=key, seen_containers=seen_containers)
             return sorted_dict
         elif isinstance(value, list):
+            container_id = id(value)
+            if container_id in seen_containers:
+                return value
+            seen_containers.add(container_id)
             sorted_list: list[JsonSchemaValue] = []
             for item in value:
-                sorted_list.append(self._sort_recursive(item, parent_key))
+                sorted_list.append(self._sort_recursive(item, parent_key, seen_containers=seen_containers))
             return sorted_list
         else:
             return value
@@ -2240,8 +2271,21 @@ class GenerateJsonSchema:
         json_refs: dict[JsonRef, int] = Counter()
         user_supplied_refs: set[JsonRef] = set()
 
+        seen_containers: set[int] = set()
+        self._resolved_json_refs_cache = {}
+
+        def _already_processed(value: Any) -> bool:
+            if isinstance(value, (dict, list)):
+                value_id = id(value)
+                if value_id in seen_containers:
+                    return True
+                seen_containers.add(value_id)
+            return False
+
         def _add_json_refs(schema: Any) -> None:
             if isinstance(schema, dict):
+                if _already_processed(schema):
+                    return
                 if '$ref' in schema:
                     json_ref = JsonRef(schema['$ref'])
                     if not isinstance(json_ref, str):
@@ -2256,8 +2300,11 @@ class GenerateJsonSchema:
                             raise self._core_defs_invalid_for_json_schema[defs_ref]
                         _add_json_refs(self.definitions[defs_ref])
                     except KeyError:
-                        resolved_schema = _resolve_json_ref(json_schema, json_ref)
+                        resolved_schema = _resolve_json_ref(schema, json_ref)
+                        if resolved_schema is None:
+                            resolved_schema = _resolve_json_ref(json_schema, json_ref)
                         if resolved_schema is not None:
+                            self._resolved_json_refs_cache[json_ref] = resolved_schema
                             if json_ref in user_supplied_refs:
                                 return
                             user_supplied_refs.add(json_ref)
@@ -2272,6 +2319,8 @@ class GenerateJsonSchema:
                         continue
                     _add_json_refs(v)
             elif isinstance(schema, list):
+                if _already_processed(schema):
+                    return
                 for v in schema:
                     _add_json_refs(v)
 
@@ -2323,6 +2372,8 @@ class GenerateJsonSchema:
         visited_defs_refs: set[DefsRef] = set()
         unvisited_json_refs = _get_all_json_refs(schema)
         user_supplied_refs: set[JsonRef] = set()
+        seen_resolved_containers: set[int] = set()
+
         while unvisited_json_refs:
             next_json_ref = unvisited_json_refs.pop()
             try:
@@ -2332,10 +2383,17 @@ class GenerateJsonSchema:
                 visited_defs_refs.add(next_defs_ref)
                 unvisited_json_refs.update(_get_all_json_refs(self.definitions[next_defs_ref]))
             except KeyError:
-                resolved_schema = _resolve_json_ref(schema, next_json_ref)
+                resolved_schema = self._resolved_json_refs_cache.get(next_json_ref)
+                if resolved_schema is None:
+                    resolved_schema = _resolve_json_ref(schema, next_json_ref)
                 if resolved_schema is not None:
                     if next_json_ref in user_supplied_refs:
                         continue
+                    if isinstance(resolved_schema, (dict, list)):
+                        schema_id = id(resolved_schema)
+                        if schema_id in seen_resolved_containers:
+                            continue
+                        seen_resolved_containers.add(schema_id)
                     user_supplied_refs.add(next_json_ref)
                     unvisited_json_refs.update(_get_all_json_refs(resolved_schema))
                 elif not next_json_ref.startswith(('http://', 'https://')):
@@ -2602,10 +2660,15 @@ def _get_all_json_refs(item: Any) -> set[JsonRef]:
     """Get all the definitions references from a JSON schema."""
     refs: set[JsonRef] = set()
     stack = [item]
+    seen_containers: set[int] = set()
 
     while stack:
         current = stack.pop()
         if isinstance(current, dict):
+            current_id = id(current)
+            if current_id in seen_containers:
+                continue
+            seen_containers.add(current_id)
             for key, value in current.items():
                 if key == 'examples' and isinstance(value, list):
                     # Skip examples that may contain arbitrary values and references
@@ -2621,6 +2684,10 @@ def _get_all_json_refs(item: Any) -> set[JsonRef]:
                 elif isinstance(value, list):
                     stack.extend(value)
         elif isinstance(current, list):
+            current_id = id(current)
+            if current_id in seen_containers:
+                continue
+            seen_containers.add(current_id)
             stack.extend(current)
 
     return refs
