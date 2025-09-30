@@ -209,6 +209,7 @@ select = [
     'T10',    # flake8-debugger
     'T20',    # flake8-print
     'C4',     # flake8-comprehensions
+    'PERF',   # Perflint
     'PIE',    # flake8-pie
     'PYI006', # flake8-pyi
     'PYI062', # flake8-pyi

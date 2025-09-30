@@ -4,7 +4,7 @@
 
 ## Prerequisites
 
-* gh` cli is installed - see installation instructions [here](https://docs.github.com/en/github-cli/github-cli/quickstart)
+* gh` cli is installed - see [installation instructions](https://docs.github.com/en/github-cli/github-cli/quickstart)
     * Run `gh auth login` to authenticate with GitHub, which is needed for the API calls made in the release process.
 
 ## Semi-automated Release Process

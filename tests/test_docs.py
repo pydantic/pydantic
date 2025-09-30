@@ -97,7 +97,7 @@ def run_example(example: CodeExample, eval_example: EvalExample, mocker: Any) ->
     group_name = prefix_settings.get('group')
 
     eval_example.set_config(
-        ruff_ignore=['D', 'T', 'B', 'C4', 'E721', 'Q001', 'PIE790'],
+        ruff_ignore=['D', 'T', 'B', 'C4', 'E721', 'Q001', 'PERF', 'PIE790'],
         line_length=LINE_LENGTH,
         target_version=TARGET_VERSION,
     )

@@ -590,9 +590,7 @@ class GenerateJsonSchema:
                 sorted_dict[key] = self._sort_recursive(value[key], parent_key=key)
             return sorted_dict
         elif isinstance(value, list):
-            sorted_list: list[JsonSchemaValue] = []
-            for item in value:
-                sorted_list.append(self._sort_recursive(item, parent_key))
+            sorted_list: list[JsonSchemaValue] = [self._sort_recursive(item, parent_key) for item in value]
             return sorted_list
         else:
             return value
@@ -2012,7 +2010,7 @@ class GenerateJsonSchema:
         for definition in schema['definitions']:
             try:
                 self.generate_inner(definition)
-            except PydanticInvalidForJsonSchema as e:
+            except PydanticInvalidForJsonSchema as e:  # noqa: PERF203
                 core_ref: CoreRef = CoreRef(definition['ref'])  # type: ignore
                 self._core_defs_invalid_for_json_schema[self.get_defs_ref((core_ref, self.mode))] = e
                 continue

@@ -278,4 +278,4 @@ except ValidationError as e:
 
 Note that if the context property is not included in `model_validate`, then `info.context` will be `None` and the forbidden passwords list will not get added to the context in the above implementation. As such, `validate_user_passwords` would not carry out the desired password validation.
 
-More details about validation context can be found [here](../concepts/validators.md#validation-context).
+More details about validation context can be found in the [validators documentation](../concepts/validators.md#validation-context).

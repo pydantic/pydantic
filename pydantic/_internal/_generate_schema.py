@@ -1268,9 +1268,10 @@ class GenerateSchema:
             return schema
 
         # Convert `@field_validator` decorators to `Before/After/Plain/WrapValidator` instances:
-        validators_from_decorators = []
-        for decorator in filter_field_decorator_info_by_field(decorators.field_validators.values(), name):
-            validators_from_decorators.append(_mode_to_validator[decorator.info.mode]._from_decorator(decorator))
+        validators_from_decorators = [
+            _mode_to_validator[decorator.info.mode]._from_decorator(decorator)
+            for decorator in filter_field_decorator_info_by_field(decorators.field_validators.values(), name)
+        ]
 
         with self.field_name_stack.push(name):
             if field_info.discriminator is not None:
