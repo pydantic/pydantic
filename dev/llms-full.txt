@@ -8403,7 +8403,7 @@ print(Settings().model_dump())
 
 #### CLI Kebab Case for Arguments
 
-Change whether CLI arguments should use kebab case by enabling `cli_kebab_case`.
+Change whether CLI arguments should use kebab case by enabling `cli_kebab_case`. By default, `cli_kebab_case=True` will ignore enum fields, and is equivalent to `cli_kebab_case='no_enums'`. To apply kebab case to everything, including enums, use `cli_kebab_case='all'`.
 
 ```py
 import sys

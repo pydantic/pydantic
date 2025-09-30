@@ -5371,7 +5371,9 @@ does not ignore any args. Ignored arguments can then be retrieved using the <cod
 <span class="c1">#&gt; {&#39;good_arg&#39;: &#39;hello world&#39;, &#39;ignored_args&#39;: [&#39;--bad-arg=bad&#39;, &#39;ANOTHER_BAD_ARG&#39;]}</span>
 </code></pre></div>
 <h4 id="cli-kebab-case-for-arguments">CLI Kebab Case for Arguments<a class="headerlink" href="#cli-kebab-case-for-arguments" title="Permanent link">&para;</a></h4>
-<p>Change whether CLI arguments should use kebab case by enabling <code>cli_kebab_case</code>.</p>
+<p>Change whether CLI arguments should use kebab case by enabling <code>cli_kebab_case</code>. By default, <code>cli_kebab_case=True</code> will
+ignore enum fields, and is equivalent to <code>cli_kebab_case='no_enums'</code>. To apply kebab case to everything, including
+enums, use <code>cli_kebab_case='all'</code>.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">Field</span>
