@@ -296,6 +296,11 @@ class GenerateJsonSchema:
         # store the error raised and re-throw it if we end up needing that def
         self._core_defs_invalid_for_json_schema: dict[DefsRef, PydanticInvalidForJsonSchema] = {}
 
+        # Store user provided metadata for definitions that are referenced via `$ref`
+        # before the actual definition has been generated. These updates are merged
+        # back into the real definition once it becomes available.
+        self._deferred_definitions_updates: dict[DefsRef, dict[str, Any]] = {}
+
         # This changes to True after generating a schema, to prevent issues caused by accidental reuse
         # of a single instance of a schema generator
         self._used = False
@@ -465,12 +470,46 @@ class GenerateJsonSchema:
                 core_ref = CoreRef(core_schema['ref'])  # type: ignore[typeddict-item]
                 defs_ref, ref_json_schema = self.get_cache_defs_ref_schema(core_ref)
                 json_ref = JsonRef(ref_json_schema['$ref'])
+                extras = {k: v for k, v in json_schema.items() if k not in {'$ref', '$defs'}}
+                defs_updates: dict[str, Any] = {}
+                if extras:
+                    defs_updates.update(extras)
+                if '$defs' in json_schema:
+                    defs_updates['$defs'] = json_schema['$defs']
+
                 # Replace the schema if it's not a reference to itself
                 # What we want to avoid is having the def be just a ref to itself
                 # which is what would happen if we blindly assigned any
                 if json_schema.get('$ref', None) != json_ref:
+                    if defs_ref in self._deferred_definitions_updates and defs_updates:
+                        deferred_updates = self._deferred_definitions_updates.pop(defs_ref)
+                        json_schema = json_schema.copy()
+                        json_schema.update(deferred_updates)
                     self.definitions[defs_ref] = json_schema
                     self._core_defs_invalid_for_json_schema.pop(defs_ref, None)
+                elif defs_updates:
+                    existing_definition = self.definitions.get(defs_ref)
+                    if existing_definition is not None:
+                        if '$defs' in defs_updates and '$defs' in existing_definition:
+                            existing_defs = existing_definition['$defs']
+                            new_defs = defs_updates.pop('$defs')
+                            if isinstance(existing_defs, dict) and isinstance(new_defs, dict):
+                                existing_defs.update(new_defs)
+                            else:
+                                existing_definition['$defs'] = new_defs
+                        existing_definition.update(defs_updates)
+                        self._deferred_definitions_updates.pop(defs_ref, None)
+                    else:
+                        deferred_updates = self._deferred_definitions_updates.setdefault(defs_ref, {})
+                        if '$defs' in defs_updates:
+                            new_defs = defs_updates.pop('$defs')
+                            existing_defs = deferred_updates.get('$defs')
+                            if isinstance(existing_defs, dict) and isinstance(new_defs, dict):
+                                existing_defs.update(new_defs)
+                            else:
+                                deferred_updates['$defs'] = new_defs
+                        for key, value in defs_updates.items():
+                            deferred_updates[key] = value
                 json_schema = ref_json_schema
             return json_schema
 
@@ -560,13 +599,6 @@ class GenerateJsonSchema:
                 extras = {k: v for k, v in json_schema.items() if k not in {'$ref', '$defs'}}
                 if ref and extras:
                     original_schema.update(extras)
-                if ref is not None:
-                    result_schema: JsonSchemaValue = {'$ref': ref}
-                    if extras:
-                        result_schema.update(extras)
-                    if '$defs' in json_schema:
-                        result_schema['$defs'] = json_schema['$defs']
-                    return result_schema
                 if '$defs' in json_schema and '$defs' not in original_schema:
                     original_schema['$defs'] = json_schema['$defs']
                 return original_schema
