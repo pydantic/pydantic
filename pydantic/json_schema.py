@@ -2368,6 +2368,18 @@ class GenerateJsonSchema:
         return tuple(pointer[1:].split('/'))
 
     @staticmethod
+    def _encode_json_pointer_token(token: str) -> str:
+        return token.replace('~', '~0').replace('/', '~1')
+
+    @staticmethod
+    def _decode_json_pointer_token(token: str) -> str:
+        return token.replace('~1', '/').replace('~0', '~')
+
+    @classmethod
+    def _re_encode_json_pointer_tokens(cls, tokens: Sequence[str]) -> list[str]:
+        return [cls._encode_json_pointer_token(cls._decode_json_pointer_token(token)) for token in tokens]
+
+    @staticmethod
     def _json_pointer_from_tokens(tokens: Sequence[str]) -> JsonRef:
         if not tokens:
             return JsonRef('#')
@@ -2389,11 +2401,8 @@ class GenerateJsonSchema:
                 seen_containers.add(value_id)
             return False
 
-        def _encode_json_pointer_token(token: str) -> str:
-            return token.replace('~', '~0').replace('/', '~1')
-
         def _maybe_cache_parent_pointer(json_ref: JsonRef, container: Any) -> None:
-            tokens = self._json_pointer_tokens(json_ref)
+            tokens = list(self._json_pointer_tokens(json_ref))
             if len(tokens) < 2:
                 return
             try:
@@ -2403,7 +2412,8 @@ class GenerateJsonSchema:
             if last_defs_index == 0:
                 return
             parent_tokens = tokens[:last_defs_index]
-            parent_pointer = self._json_pointer_from_tokens(parent_tokens)
+            encoded_parent_tokens = self._re_encode_json_pointer_tokens(parent_tokens)
+            parent_pointer = self._json_pointer_from_tokens(encoded_parent_tokens)
             if isinstance(container, (dict, list)):
                 self._resolved_json_refs_cache.setdefault(parent_pointer, container)
 
@@ -2442,7 +2452,7 @@ class GenerateJsonSchema:
                         # Skip examples that may contain arbitrary values and references
                         # (see the comment in `_get_all_json_refs` for more details).
                         continue
-                    encoded_key = _encode_json_pointer_token(k)
+                    encoded_key = self._encode_json_pointer_token(k)
                     _add_json_refs(v, pointer_tokens + (encoded_key,))
             elif isinstance(schema, list):
                 if _already_processed(schema):
@@ -2483,13 +2493,14 @@ class GenerateJsonSchema:
         tokens = list(self._json_pointer_tokens(json_ref))
         if not tokens:
             return None
-        for index in range(len(tokens) - 1, 0, -1):
-            parent_pointer = self._json_pointer_from_tokens(tokens[:index])
+        encoded_tokens = self._re_encode_json_pointer_tokens(tokens)
+        for index in range(len(encoded_tokens) - 1, 0, -1):
+            parent_pointer = self._json_pointer_from_tokens(encoded_tokens[:index])
             parent_schema = self._resolved_json_refs_cache.get(parent_pointer)
             if parent_schema is None:
                 continue
 
-            remainder_tokens = tokens[index:]
+            remainder_tokens = encoded_tokens[index:]
             if not remainder_tokens:
                 continue
             remainder_pointer = self._json_pointer_from_tokens(remainder_tokens)

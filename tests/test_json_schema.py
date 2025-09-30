@@ -6527,6 +6527,49 @@ def test_type_adapter_with_inline_defs_nested_resolution() -> None:
     Draft202012Validator.check_schema(schema)
 
 
+def test_type_adapter_with_inline_defs_requires_escaping() -> None:
+    class InlineDefs:
+        @classmethod
+        def __get_pydantic_core_schema__(
+            cls, source_type: Any, handler: GetCoreSchemaHandler
+        ) -> core_schema.CoreSchema:
+            return handler.generate_schema(str)
+
+        @classmethod
+        def __get_pydantic_json_schema__(
+            cls, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+        ) -> JsonSchemaValue:
+            return {
+                '$ref': '#/$defs/wheel~1tire',
+                '$defs': {'wheel/tire': {'type': 'string'}},
+            }
+
+    class Container:
+        @classmethod
+        def __get_pydantic_core_schema__(
+            cls, source_type: Any, handler: GetCoreSchemaHandler
+        ) -> core_schema.CoreSchema:
+            return core_schema.list_schema(handler.generate_schema(InlineDefs))
+
+        @classmethod
+        def __get_pydantic_json_schema__(
+            cls, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+        ) -> JsonSchemaValue:
+            schema = handler(core_schema)
+            resolved_schema = handler.resolve_ref_schema(schema['items'])
+            resolved_schema['description'] = 'definition requiring pointer escaping'
+            return schema
+
+    schema = TypeAdapter(Container).json_schema()
+
+    assert schema['items']['$ref'] == '#/$defs/wheel~1tire'
+    assert schema['$defs']['wheel/tire'] == {
+        'type': 'string',
+        'description': 'definition requiring pointer escaping',
+    }
+    Draft202012Validator.check_schema(schema)
+
+
 def test_type_adapter_with_inline_defs_nested_defs() -> None:
     class InlineDefs:
         @classmethod
