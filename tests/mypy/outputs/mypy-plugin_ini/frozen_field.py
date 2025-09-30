@@ -15,7 +15,7 @@ class Parent(BaseModel):
     parent_attr: str = Field(exclude=True)
 
 
-# We don't want to freeze `parent_attr` in the plugin:
+# `parent_attr` is writable, mypy should error when overriding with a read-only property
 class Child(Parent):
     child_attr: str = Field(exclude=True)
 
