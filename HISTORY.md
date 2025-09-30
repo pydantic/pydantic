@@ -1,4 +1,5 @@
 <!-- markdownlint-disable no-bare-urls -->
+<!-- markdownlint-disable descriptive-link-text -->
 <!-- markdownlint-disable-next-line first-line-heading -->
 
 ## v2.12.0a1 (2025-07-26)

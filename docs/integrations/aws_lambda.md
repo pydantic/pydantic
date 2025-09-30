@@ -98,7 +98,7 @@ pythonRequirements:
     fileName: requirements.txt
 ```
 
-You can read more about this fix, and other `slim` settings that might be relevant [here](https://biercoff.com/how-to-fix-package-not-found-error-importlib-metadata/).
+You can read more about this fix, and other `slim` settings that might be relevant in this [blog post](https://biercoff.com/how-to-fix-package-not-found-error-importlib-metadata/).
 
 If you're using a `.zip` archive for your code and/or dependencies, make sure that your package contains the required version metadata. To do this, make sure you include the `dist-info` directory in your `.zip` archive for the `email-validator` package.
 
