@@ -30,6 +30,7 @@ from uuid import UUID
 
 import pytest
 from dirty_equals import HasRepr
+from jsonschema import Draft202012Validator
 from packaging.version import Version
 from pydantic_core import CoreSchema, SchemaValidator, core_schema, to_jsonable_python
 from pydantic_core.core_schema import ValidatorFunctionWrapHandler
@@ -6482,6 +6483,7 @@ def test_type_adapter_with_inline_defs_custom_schema() -> None:
 
     assert schema['$ref'] == '#/$defs/inline'
     assert schema['$defs'] == {'inline': {'type': 'string', 'description': 'inline definition'}}
+    Draft202012Validator.check_schema(schema)
 
 
 def test_type_adapter_with_inline_defs_nested_resolution() -> None:
@@ -6521,7 +6523,8 @@ def test_type_adapter_with_inline_defs_nested_resolution() -> None:
     schema = TypeAdapter(Container).json_schema()
 
     assert schema['items']['$ref'] == '#/$defs/inline'
-    assert schema['items']['$defs'] == {'inline': {'type': 'string', 'description': 'inline definition'}}
+    assert schema['$defs']['inline'] == {'type': 'string', 'description': 'inline definition'}
+    Draft202012Validator.check_schema(schema)
 
 
 def test_type_adapter_with_inline_defs_nested_defs() -> None:
@@ -6557,6 +6560,7 @@ def test_type_adapter_with_inline_defs_nested_defs() -> None:
             }
         },
     }
+    Draft202012Validator.check_schema(schema)
 
 
 def test_min_and_max_in_schema() -> None:

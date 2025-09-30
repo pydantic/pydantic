@@ -18,7 +18,7 @@ import os
 import re
 import warnings
 from collections import Counter, defaultdict
-from collections.abc import Hashable, Iterable, Sequence
+from collections.abc import Hashable, Iterable, Mapping, Sequence
 from copy import deepcopy
 from enum import Enum
 from re import Pattern
@@ -277,6 +277,8 @@ class GenerateJsonSchema:
         self._config_wrapper_stack = _config.ConfigWrapperStack(_config.ConfigWrapper({}))
 
         self._mode: JsonSchemaMode = 'validation'
+        self._user_json_refs: set[JsonRef] = set()
+        self._user_defs_refs: set[DefsRef] = set()
 
         # The following includes a mapping of a fully-unique defs ref choice to a list of preferred
         # alternatives, which are generally simpler, such as only including the class name.
@@ -420,6 +422,8 @@ class GenerateJsonSchema:
 
         ref = cast(JsonRef, json_schema.get('$ref'))
         while ref is not None:  # may need to unpack multiple levels
+            if ref in self._user_json_refs:
+                break
             ref_json_schema = self.get_schema_from_definitions(ref, root=json_schema)
             if json_ref_counts[ref] == 1 and ref_json_schema is not None and len(json_schema) == 1:
                 # "Unpack" the ref since this is the only reference and there are no sibling keys
@@ -466,6 +470,12 @@ class GenerateJsonSchema:
                 return {'$ref': self.core_to_json_refs[core_mode_ref]}
 
         def populate_defs(core_schema: CoreSchema, json_schema: JsonSchemaValue) -> JsonSchemaValue:
+            inline_defs = json_schema.get('$defs')
+            if isinstance(inline_defs, Mapping):
+                self._store_json_schema_defs(inline_defs)
+                json_schema = json_schema.copy()
+                json_schema.pop('$defs', None)
+
             if 'ref' in core_schema:
                 core_ref = CoreRef(core_schema['ref'])  # type: ignore[typeddict-item]
                 defs_ref, ref_json_schema = self.get_cache_defs_ref_schema(core_ref)
@@ -474,8 +484,6 @@ class GenerateJsonSchema:
                 defs_updates: dict[str, Any] = {}
                 if extras:
                     defs_updates.update(extras)
-                if '$defs' in json_schema:
-                    defs_updates['$defs'] = json_schema['$defs']
 
                 # Replace the schema if it's not a reference to itself
                 # What we want to avoid is having the def be just a ref to itself
@@ -485,29 +493,19 @@ class GenerateJsonSchema:
                         deferred_updates = self._deferred_definitions_updates.pop(defs_ref)
                         json_schema = json_schema.copy()
                         json_schema.update(deferred_updates)
-                    self.definitions[defs_ref] = json_schema
+                    schema_for_definition: JsonSchemaValue = json_schema
+                    if isinstance(inline_defs, Mapping) and '$defs' in schema_for_definition:
+                        schema_for_definition = schema_for_definition.copy()
+                        schema_for_definition.pop('$defs', None)
+                    self.definitions[defs_ref] = schema_for_definition
                     self._core_defs_invalid_for_json_schema.pop(defs_ref, None)
                 elif defs_updates:
                     existing_definition = self.definitions.get(defs_ref)
                     if existing_definition is not None:
-                        if '$defs' in defs_updates and '$defs' in existing_definition:
-                            existing_defs = existing_definition['$defs']
-                            new_defs = defs_updates.pop('$defs')
-                            if isinstance(existing_defs, dict) and isinstance(new_defs, dict):
-                                existing_defs.update(new_defs)
-                            else:
-                                existing_definition['$defs'] = new_defs
                         existing_definition.update(defs_updates)
                         self._deferred_definitions_updates.pop(defs_ref, None)
                     else:
                         deferred_updates = self._deferred_definitions_updates.setdefault(defs_ref, {})
-                        if '$defs' in defs_updates:
-                            new_defs = defs_updates.pop('$defs')
-                            existing_defs = deferred_updates.get('$defs')
-                            if isinstance(existing_defs, dict) and isinstance(new_defs, dict):
-                                existing_defs.update(new_defs)
-                            else:
-                                deferred_updates['$defs'] = new_defs
                         for key, value in defs_updates.items():
                             deferred_updates[key] = value
                 json_schema = ref_json_schema
@@ -594,13 +592,17 @@ class GenerateJsonSchema:
                 json_schema = js_modify_function(schema_or_field, current_handler)
                 if _core_utils.is_core_schema(schema_or_field):
                     json_schema = populate_defs(schema_or_field, json_schema)
-                original_schema = current_handler.resolve_ref_schema(json_schema)
                 ref = json_schema.get('$ref')
+                extras = {k: v for k, v in json_schema.items() if k not in {'$ref', '$defs'}}
+                if ref and JsonRef(ref) in self._user_json_refs:
+                    if extras:
+                        json_schema = json_schema.copy()
+                        json_schema.update(extras)
+                    return json_schema
+                original_schema = current_handler.resolve_ref_schema(json_schema)
                 extras = {k: v for k, v in json_schema.items() if k not in {'$ref', '$defs'}}
                 if ref and extras:
                     original_schema.update(extras)
-                if '$defs' in json_schema and '$defs' not in original_schema:
-                    original_schema['$defs'] = json_schema['$defs']
                 return original_schema
 
             current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(self, new_handler_func)
@@ -620,6 +622,27 @@ class GenerateJsonSchema:
         if _core_utils.is_core_schema(schema):
             json_schema = populate_defs(schema, json_schema)
         return json_schema
+
+    def _store_json_schema_defs(self, json_schema_defs: Mapping[str, Any]) -> None:
+        for raw_key, definition in json_schema_defs.items():
+            if not isinstance(raw_key, str):
+                continue
+
+            defs_ref = DefsRef(raw_key)
+            definition_copy = deepcopy(definition)
+            self.definitions[defs_ref] = definition_copy
+            self._prioritized_defsref_choices.setdefault(defs_ref, [defs_ref])
+            self._core_defs_invalid_for_json_schema.pop(defs_ref, None)
+            self._user_defs_refs.add(defs_ref)
+
+            template_json_ref = JsonRef(self.ref_template.format(model=defs_ref))
+            self.json_to_defs_refs[template_json_ref] = defs_ref
+            self._user_json_refs.add(template_json_ref)
+
+            escaped_key = raw_key.replace('~', '~0').replace('/', '~1')
+            canonical_json_ref = JsonRef(f'#/$defs/{escaped_key}')
+            self.json_to_defs_refs[canonical_json_ref] = defs_ref
+            self._user_json_refs.add(canonical_json_ref)
 
     def sort(self, value: JsonSchemaValue, parent_key: str | None = None) -> JsonSchemaValue:
         """Override this method to customize the sorting of the JSON schema (e.g., don't sort at all, sort all keys unconditionally, etc.)
@@ -2202,6 +2225,9 @@ class GenerateJsonSchema:
                 raise self._core_defs_invalid_for_json_schema[def_ref]
             return self.definitions.get(def_ref, None)
         except KeyError:
+            resolved_schema = _resolve_json_ref({'$defs': self.definitions}, json_ref)
+            if resolved_schema is not None:
+                return resolved_schema
             if root is not None:
                 resolved_schema = _resolve_json_ref(root, json_ref)
                 if resolved_schema is not None:
@@ -2335,6 +2361,8 @@ class GenerateJsonSchema:
                         resolved_schema = _resolve_json_ref(schema, json_ref)
                         if resolved_schema is None:
                             resolved_schema = _resolve_json_ref(json_schema, json_ref)
+                        if resolved_schema is None:
+                            resolved_schema = _resolve_json_ref({'$defs': self.definitions}, json_ref)
                         if resolved_schema is not None:
                             self._resolved_json_refs_cache[json_ref] = resolved_schema
                             if json_ref in user_supplied_refs:
@@ -2418,6 +2446,8 @@ class GenerateJsonSchema:
                 resolved_schema = self._resolved_json_refs_cache.get(next_json_ref)
                 if resolved_schema is None:
                     resolved_schema = _resolve_json_ref(schema, next_json_ref)
+                if resolved_schema is None:
+                    resolved_schema = _resolve_json_ref({'$defs': self.definitions}, next_json_ref)
                 if resolved_schema is not None:
                     if next_json_ref in user_supplied_refs:
                         continue
@@ -2431,6 +2461,7 @@ class GenerateJsonSchema:
                 elif not next_json_ref.startswith(('http://', 'https://')):
                     raise
 
+        visited_defs_refs.update(self._user_defs_refs)
         self.definitions = {k: v for k, v in self.definitions.items() if k in visited_defs_refs}
 
 
