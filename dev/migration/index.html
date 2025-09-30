@@ -3859,9 +3859,9 @@ to help ease migration, but calling them will emit <code>DeprecationWarning</cod
   bugs. You can read more about this (including how to opt out of this behavior) in the
   <a href="../concepts/serialization/#subclasses-of-model-like-types">relevant section</a> of the model exporting docs.</li>
 <li><code>GetterDict</code> has been removed as it was just an implementation detail of <code>orm_mode</code>, which has been removed.</li>
-<li>In many cases, arguments passed to the constructor will be <strong>copied</strong> in order to perform validation and, where necessary, coercion.
-  This is notable in the case of passing mutable objects as arguments to a constructor.
-  You can see an example + more detail <a href="https://docs.pydantic.dev/latest/concepts/models/#attribute-copies">here</a>.</li>
+<li>In many cases, arguments passed to the constructor will be <strong>copied</strong> in order to perform validation and, where necessary, coercion
+  (see the <a href="../concepts/models/#attribute-copies">documentation</a>).
+  This is notable in the case of passing mutable objects as arguments to a constructor.</li>
 <li>The <code>.json()</code> method is deprecated, and attempting to use this deprecated method with arguments such as
 <code>indent</code> or <code>ensure_ascii</code> may lead to confusing errors. For best results, switch to V2's equivalent, <code>model_dump_json()</code>.
 If you'd still like to use said arguments, you can use <a href="https://github.com/pydantic/pydantic/issues/8825#issuecomment-1946206415">this workaround</a>.</li>

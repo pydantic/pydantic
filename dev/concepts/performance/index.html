@@ -3155,9 +3155,9 @@ On the other hand, <code>model_validate_json()</code> already performs the valid
 <p>There are a few cases where <code>model_validate(json.loads(...))</code> may be faster. Specifically, when using a <code>'before'</code> or <code>'wrap'</code> validator
 on a model, validation may be faster with the two step method. You can read more about these special cases in
 <a href="https://github.com/pydantic/pydantic/discussions/6388#discussioncomment-8193105">this discussion</a>.</p>
-<p>Many performance improvements are currently in the works for <code>pydantic-core</code>, as discussed
-<a href="https://github.com/pydantic/pydantic/discussions/6388#discussioncomment-8194048">here</a>. Once these changes are merged, we should be at
-the point where <code>model_validate_json()</code> is always faster than <code>model_validate(json.loads(...))</code>.</p>
+<p>Many performance improvements are currently in the works for <code>pydantic-core</code>, see
+<a href="https://github.com/pydantic/pydantic/discussions/6388#discussioncomment-8194048">this discussion</a>.
+Once these changes are merged, we should be at the point where <code>model_validate_json()</code> is always faster than <code>model_validate(json.loads(...))</code>.</p>
 <h2 id="typeadapter-instantiated-once"><code>TypeAdapter</code> instantiated once<a class="headerlink" href="#typeadapter-instantiated-once" title="Permanent link">&para;</a></h2>
 <p>The idea here is to avoid constructing validators and serializers more than necessary. Each time a <code>TypeAdapter</code> is instantiated,
 it will construct a new validator and serializer. If you're using a <code>TypeAdapter</code> in a function, it will be instantiated each time

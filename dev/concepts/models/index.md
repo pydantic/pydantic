@@ -170,7 +170,7 @@ print(Model(a=3.000, b='2.72', c=b'binary data').model_dump())
 
 ```
 
-This is a deliberate decision of Pydantic, and is frequently the most useful approach. See [here](https://github.com/pydantic/pydantic/issues/578) for a longer discussion on the subject.
+This is a deliberate decision of Pydantic, and is frequently the most useful approach. See [this issue](https://github.com/pydantic/pydantic/issues/578) for a longer discussion on the subject.
 
 Nevertheless, Pydantic provides a [strict mode](../strict_mode/), where no data conversion is performed. Values must be of the same type as the declared field type.
 

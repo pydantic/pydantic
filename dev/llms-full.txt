@@ -3173,7 +3173,7 @@ print(dog_dict)
 
 Validating LLM Output
 
-This feature is particularly beneficial for validating LLM outputs. We've written some blog posts about this topic, which you can find [here](https://pydantic.dev/articles).
+This feature is particularly beneficial for validating LLM outputs. We've written some blog posts about this topic, which you can find on [our website](https://pydantic.dev/articles).
 
 In future versions of Pydantic, we expect to expand support for this feature through either Pydantic's other JSON validation functions (pydantic.main.BaseModel.model_validate_json and pydantic.type_adapter.TypeAdapter.validate_json) or model configuration. Stay tuned 🚀!
 
@@ -5186,7 +5186,7 @@ print(Model(a=3.000, b='2.72', c=b'binary data').model_dump())
 
 ```
 
-This is a deliberate decision of Pydantic, and is frequently the most useful approach. See [here](https://github.com/pydantic/pydantic/issues/578) for a longer discussion on the subject.
+This is a deliberate decision of Pydantic, and is frequently the most useful approach. See [this issue](https://github.com/pydantic/pydantic/issues/578) for a longer discussion on the subject.
 
 Nevertheless, Pydantic provides a [strict mode](../strict_mode/), where no data conversion is performed. Values must be of the same type as the declared field type.
 
@@ -6888,7 +6888,7 @@ On `model_validate(json.loads(...))`, the JSON is parsed in Python, then convert
 
 There are a few cases where `model_validate(json.loads(...))` may be faster. Specifically, when using a `'before'` or `'wrap'` validator on a model, validation may be faster with the two step method. You can read more about these special cases in [this discussion](https://github.com/pydantic/pydantic/discussions/6388#discussioncomment-8193105).
 
-Many performance improvements are currently in the works for `pydantic-core`, as discussed [here](https://github.com/pydantic/pydantic/discussions/6388#discussioncomment-8194048). Once these changes are merged, we should be at the point where `model_validate_json()` is always faster than `model_validate(json.loads(...))`.
+Many performance improvements are currently in the works for `pydantic-core`, see [this discussion](https://github.com/pydantic/pydantic/discussions/6388#discussioncomment-8194048). Once these changes are merged, we should be at the point where `model_validate_json()` is always faster than `model_validate(json.loads(...))`.
 
 ## `TypeAdapter` instantiated once
 
@@ -52267,7 +52267,7 @@ except ValidationError as e:
 
 Note that if the context property is not included in `model_validate`, then `info.context` will be `None` and the forbidden passwords list will not get added to the context in the above implementation. As such, `validate_user_passwords` would not carry out the desired password validation.
 
-More details about validation context can be found [here](../../concepts/validators/#validation-context).
+More details about validation context can be found in the [validators documentation](../../concepts/validators/#validation-context).
 
 `pydantic` is a great tool for validating data coming from various sources. In this section, we will look at how to validate data from different types of files.
 
@@ -53067,7 +53067,7 @@ pythonRequirements:
 
 ```
 
-You can read more about this fix, and other `slim` settings that might be relevant [here](https://biercoff.com/how-to-fix-package-not-found-error-importlib-metadata/).
+You can read more about this fix, and other `slim` settings that might be relevant in this [blog post](https://biercoff.com/how-to-fix-package-not-found-error-importlib-metadata/).
 
 If you're using a `.zip` archive for your code and/or dependencies, make sure that your package contains the required version metadata. To do this, make sure you include the `dist-info` directory in your `.zip` archive for the `email-validator` package.
 
@@ -53329,7 +53329,7 @@ The Pydantic documentation is available in the [llms.txt](https://llmstxt.org/) 
 
 Two formats are available:
 
-- [llms.txt](https://docs.pydantic.dev/latest/llms.txt): a file containing a brief description of the project, along with links to the different sections of the documentation. The structure of this file is described in details [here](https://llmstxt.org/#format).
+- [llms.txt](https://docs.pydantic.dev/latest/llms.txt): a file containing a brief description of the project, along with links to the different sections of the documentation. The structure of this file is described in details in the [format documentation](https://llmstxt.org/#format).
 - [llms-full.txt](https://docs.pydantic.dev/latest/llms-full.txt): Similar to the `llms.txt` file, but every link content is included. Note that this file may be too large for some LLMs.
 
 As of today, these files *cannot* be natively leveraged by LLM frameworks or IDEs. Alternatively, a [MCP server](https://modelcontextprotocol.io/) can be implemented to properly parse the `llms.txt` file.
