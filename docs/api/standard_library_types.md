@@ -91,8 +91,8 @@ library can also be used.
     using the [`regex_engine`][pydantic.ConfigDict.regex_engine] configuration value. If a compiled [regular expression object][re.Pattern] is used for
     `pattern`, the Python engine will automatically be used.
 
-    While the JSON Schema [recommends](https://json-schema.org/draft/2020-12/json-schema-core#name-regular-expressions) using patterns valid according
-    to dialect described in [ECMA-262](https://262.ecma-international.org/11.0/index.html#sec-patterns), Pydantic will *not* enforce it.
+    While the JSON Schema specification [recommends](https://json-schema.org/draft/2020-12/json-schema-core#name-regular-expressions) using patterns
+    valid according to dialect described in [ECMA-262](https://262.ecma-international.org/11.0/index.html#sec-patterns), Pydantic will *not* enforce it.
 
 <h3>Strictness</h3>
 
@@ -581,7 +581,7 @@ In [JSON mode](../concepts/serialization.md#json-mode), they are serialized as s
 
 !!! note
     Named timezones from the [IANA time zone database](https://www.iana.org/time-zones) (see the [`zoneinfo`][] module) are *not* serialized
-    with time objects. This is consistent with the [`time.isoformat()`][] method.
+    with time objects. This is consistent with the [`time.isoformat()`][datetime.time.isoformat] method.
 
 <h4>Constraints</h4>
 
@@ -694,7 +694,16 @@ Standard library type: [`enum.Enum`][].
 
 * If the [`enum.Enum`][] type is used directly, any [`enum.Enum`][] instance is validated as-is
 * Id an [`enum.Enum`][] subclass is used as a type, any enum member or value that correspond to the
-  enum members values is validated as-is.
+  enum members [values][enum.Enum.value] is validated as-is.
+
+<h3>Serialization</h3>
+
+In [Python mode](../concepts/serialization.md#python-mode), enum instances are serialized as is.
+The [`use_enum_values`][pydantic.ConfigDict.use_enum_values] configuration value can be set to
+use the enum [value][enum.Enum.value] during validation (so that it is also used during serialization).
+
+In [JSON mode](../concepts/serialization.md#json-mode), enum instances are serialized using
+their [value][enum.Enum.value].
 
 <h3>Example</h3>
 
@@ -734,38 +743,99 @@ except ValidationError as e:
     """
 ```
 
-## Lists and Tuples
+## Generic types
 
-### [`list`][]
+Pydantic supports a wide variety of generic collection types, both built-ins (such as [`list`][]) and abstract base classes
+from the [`collections.abc`][] module (such as [`Sequence`][collections.abc.Sequence]).
 
-Allows [`list`][], [`tuple`][], [`set`][], [`frozenset`][], [`deque`][collections.deque], or generators and casts to a [`list`][].
-When a generic parameter is provided, the appropriate validation is applied to all items of the list.
+In most cases, it is recommended to make use of the built-in types over the abstract ones, which allow other collections types
+and are more performant.
+
+### Lists
+
+Built-in type: [`list`][] (deprecated alias: [`typing.List`][]).
+
+<h4>Validation</h4>
+
+* Allows [`list`][], [`tuple`][], [`set`][] and [`frozenset`][] instances, or any iterable that is *not* a
+  [string][str], [bytes][], [bytearray][], [dict][] or [mapping][]. Produces a [`list`][] instance.
+* If a generic parameter is provided, the appropriate validation is applied to all items of the list.
+
+<h4>Constraints</h4>
+
+Lists support the following constraints:
+
+| Constraint   | Description                                 | JSON Schema                                                                                    |
+|--------------|---------------------------------------------|------------------------------------------------------------------------------------------------|
+| `min_length` | The list must have at least this many items | [`minItems`](https://json-schema.org/understanding-json-schema/reference/array#length) keyword |
+| `max_length` | The list must have at most this many items  | [`maxItems`](https://json-schema.org/understanding-json-schema/reference/array#length) keyword |
+
+These constraints can be provided using the [`Field()`][pydantic.Field] function.
+The `MinLen` and `MaxLen` metadata types from the [`annotated-types`](https://github.com/annotated-types/annotated-types)
+library can also be used.
+
+<h4>Strictness</h4>
+
+In [strict mode](../concepts/strict_mode.md), only [`list`][] instances are valid. Strict mode does *not* apply to the items of the list.
+The strict constraint must be applied to the parameter type for this to work.
+
+<h4>Example</h4>
 
 ```python
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class Model(BaseModel):
-    simple_list: Optional[list] = None
-    list_of_ints: Optional[list[int]] = None
+    simple_list: Optional[list[object]] = None
+    list_of_ints: Optional[list[int]] = Field(default=None, strict=True)
 
 
-print(Model(simple_list=['1', '2', '3']).simple_list)
+print(Model(simple_list=('1', '2', '3')).simple_list)
 #> ['1', '2', '3']
-print(Model(list_of_ints=['1', '2', '3']).list_of_ints)
+print(Model(list_of_ints=['1', 2, 3]).list_of_ints)
 #> [1, 2, 3]
 ```
 
-### [`tuple`][]
+### Tuples
 
-Allows [`list`][], [`tuple`][], [`set`][], [`frozenset`][], [`deque`][collections.deque], or generators and casts to a [`tuple`][].
-When generic parameters are provided, the appropriate validation is applied to the respective items of the tuple
+Built-in type: [`tuple`][] (deprecated alias: [`typing.Tuple`][]).
 
-### [`typing.Tuple`][]
+!!! note
+    [Unpacked tuple types](https://typing.python.org/en/latest/spec/generics.html#unpacking-tuple-types)
+    (as specified by [PEP 646](https://peps.python.org/pep-0646/)) is *not* yet supported, and can be
+    tracked in [this issue](https://github.com/pydantic/pydantic/issues/5952).
 
-Handled the same as `tuple` above.
+<h4>Validation</h4>
+
+* Allows [`tuple`][], [`list`][], [`set`][] and [`frozenset`][] instances, or any iterable that is *not* a
+  [string][str], [bytes][], [bytearray][], [dict][] or [mapping][]. Produces a [`tuple`][] instance.
+* Appropriate validation is applied to items of the tuple, if [element types](https://typing.python.org/en/latest/spec/tuples.html#tuple-type-form)
+  are specified.
+
+<h4>Constraints</h4>
+
+Lists support the following constraints:
+
+| Constraint   | Description                                  | JSON Schema                                                                                    |
+|--------------|----------------------------------------------|------------------------------------------------------------------------------------------------|
+| `min_length` | The tuple must have at least this many items | [`minItems`](https://json-schema.org/understanding-json-schema/reference/array#length) keyword |
+| `max_length` | The tuple must have at most this many items  | [`maxItems`](https://json-schema.org/understanding-json-schema/reference/array#length) keyword |
+
+These constraints can be provided using the [`Field()`][pydantic.Field] function.
+The `MinLen` and `MaxLen` metadata types from the [`annotated-types`](https://github.com/annotated-types/annotated-types)
+library can also be used.
+
+Additionally, the [`prefixItems`](https://json-schema.org/understanding-json-schema/reference/array#tupleValidation) JSON Schema keyword may be used
+depending on the tuple shape.
+
+<h4>Strictness</h4>
+
+In [strict mode](../concepts/strict_mode.md), only [`tuple`][] instances are valid. Strict mode does *not* apply to the items of the tuple.
+The strict constraint must be applied to the parameter types for this to work.
+
+<h4>Example</h4>
 
 ```python
 from typing import Optional
@@ -784,12 +854,25 @@ print(Model(tuple_of_different_types=[3, 2, 1]).tuple_of_different_types)
 #> (3, 2.0, True)
 ```
 
-### [`typing.NamedTuple`][]
+<!-- old anchor added for backwards compatibility -->
+<!-- markdownlint-disable-next-line no-empty-links -->
+[](){#typingnamedtuple}
+### Named tuples
 
-Subclasses of [`typing.NamedTuple`][] are similar to `tuple`, but create instances of the given `namedtuple` class.
+Standard library typle: [`typing.NamedTuple`][] (and types created by the [`collections.namedtuple()`][collections.namedtuple] factory function
+– each field will implicitly have the type [`Any`][typing.Any]).
 
-Subclasses of [`collections.namedtuple`][] are similar to subclass of [`typing.NamedTuple`][], but since field types are not specified,
-all fields are treated as having type [`Any`][typing.Any].
+<h4>Validation</h4>
+
+* Allows [`tuple`][] and [`list`][] instances. Validate each item according to the field definition.
+* Allows [`dict`][] instances. Keys must match the named tuple field names, and values are validated according to the field definition.
+
+<h4>Serialization</h4>
+
+In [Python mode](../concepts/serialization.md#python-mode), named tuples are serialized as tuples. In [JSON mode](../concepts/serialization.md#json-mode),
+they are serialized as arrays.
+
+<h4>Example</h4>
 
 ```python
 from typing import NamedTuple
@@ -806,103 +889,110 @@ class Model(BaseModel):
     p: Point
 
 
-try:
-    Model(p=('1.3', '2'))
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for Model
-    p.0
-      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='1.3', input_type=str]
-    """
+model = Model(p=('1', 2))
+
+print(model.model_dump())
+#> {'p': (1, 2)}
 ```
 
-## Deque
+### Sets
 
-### [`deque`][collections.deque]
+Types: [`set`][] (or [`collections.abc.MutableSet`][]) and [`frozenset`][] (or [`collections.abc.Set`][])
+(deprecated aliases: [`typing.Set`][] and [`typing.FrozenSet`][]).
 
-Allows [`list`][], [`tuple`][], [`set`][], [`frozenset`][], [`deque`][collections.deque], or generators and casts to a [`deque`][collections.deque].
-When generic parameters are provided, the appropriate validation is applied to the respective items of the `deque`.
+<h4>Validation</h4>
 
-### [`typing.Deque`][]
+* Allows [`set`][], [`frozenset`][], [`tuple`][] and [`list`][] instances, or any iterable that is *not* a
+  [string][str], [bytes][], [bytearray][], [dict][] or [mapping][]. Produces a [`set`][] or [`frozenset`][] instance.
+* If a generic parameter is provided, the appropriate validation is applied to all items of the set/frozenset.
 
-Handled the same as `deque` above.
+<h4>Constraints</h4>
 
-```python {lint="skip"}
-from typing import Deque, Optional
+Sets support the following constraints:
 
-from pydantic import BaseModel
+| Constraint   | Description                                | JSON Schema                                                                                    |
+|--------------|--------------------------------------------|------------------------------------------------------------------------------------------------|
+| `min_length` | The set must have at least this many items | [`minItems`](https://json-schema.org/understanding-json-schema/reference/array#length) keyword |
+| `max_length` | The set must have at most this many items  | [`maxItems`](https://json-schema.org/understanding-json-schema/reference/array#length) keyword |
 
+These constraints can be provided using the [`Field()`][pydantic.Field] function.
+The `MinLen` and `MaxLen` metadata types from the [`annotated-types`](https://github.com/annotated-types/annotated-types)
+library can also be used.
 
-class Model(BaseModel):
-    deque: Optional[Deque[int]] = None
+<h4>Strictness</h4>
 
+In [strict mode](../concepts/strict_mode.md), only [`set`][]/[`frozenset`][] instances are valid. Strict mode does *not* apply to the items of the set.
+The strict constraint must be applied to the parameter type for this to work.
 
-print(Model(deque=[1, 2, 3]).deque)
-#> deque([1, 2, 3])
-```
+<h4>Serialization</h4>
 
-## Sets
+In [Python mode](../concepts/serialization.md#python-mode), sets are serialized as is. In [JSON mode](../concepts/serialization.md#json-mode),
+they are serialized as arrays.
 
-### [`set`][]
+<h4>Example</h4>
 
-Allows [`list`][], [`tuple`][], [`set`][], [`frozenset`][], [`deque`][collections.deque], or generators and casts to a [`set`][].
-When a generic parameter is provided, the appropriate validation is applied to all items of the set.
-
-### [`typing.Set`][]
-
-Handled the same as `set` above.
-
-```python {lint="skip"}
-from typing import Optional, Set
+```python
+from typing import Optional
 
 from pydantic import BaseModel
 
 
 class Model(BaseModel):
     simple_set: Optional[set] = None
-    set_of_ints: Optional[Set[int]] = None
+    set_of_ints: Optional[frozenset[int]] = None
 
 
-print(Model(simple_set={'1', '2', '3'}).simple_set)
-#> {'1', '2', '3'}
 print(Model(simple_set=['1', '2', '3']).simple_set)
 #> {'1', '2', '3'}
 print(Model(set_of_ints=['1', '2', '3']).set_of_ints)
-#> {1, 2, 3}
+#> {frozenset({1, 2, 3})
 ```
 
-### [`frozenset`][]
+### Deque
 
-Allows [`list`][], [`tuple`][], [`set`][], [`frozenset`][], [`deque`][collections.deque], or generators and casts to a [`frozenset`][].
-When a generic parameter is provided, the appropriate validation is applied to all items of the frozen set.
+Standard library type: [`collections.deque`][] (deprecated alias: [`typing.Deque`][]).
 
-### [`typing.FrozenSet`][]
+<h4>Validation</h4>
 
-Handled the same as `frozenset` above.
+Values are first validated as a [list](#lists), and then passed to the [`deque`][collections.deque] constructor.
 
-```python {lint="skip"}
-from typing import FrozenSet, Optional
+<h4>Constraints</h4>
+
+Deques support the following constraints:
+
+| Constraint   | Description                                  | JSON Schema                                                                                    |
+|--------------|----------------------------------------------|------------------------------------------------------------------------------------------------|
+| `min_length` | The deque must have at least this many items | [`minItems`](https://json-schema.org/understanding-json-schema/reference/array#length) keyword |
+| `max_length` | The deque must have at most this many items  | [`maxItems`](https://json-schema.org/understanding-json-schema/reference/array#length) keyword |
+
+These constraints can be provided using the [`Field()`][pydantic.Field] function.
+The `MinLen` and `MaxLen` metadata types from the [`annotated-types`](https://github.com/annotated-types/annotated-types)
+library can also be used.
+
+<h4>Strictness</h4>
+
+In [strict mode](../concepts/strict_mode.md), only [`deque`][collections.deque] instances are valid. Strict mode does *not* apply to the items of the deque.
+The strict constraint must be applied to the parameter type for this to work.
+
+<h4>Serialization</h4>
+
+In [Python mode](../concepts/serialization.md#python-mode), deques are serialized as is. In [JSON mode](../concepts/serialization.md#json-mode),
+they are serialized as arrays.
+
+<h4>Example</h4>
+
+```python
+from collections import deque
 
 from pydantic import BaseModel
 
 
 class Model(BaseModel):
-    simple_frozenset: Optional[frozenset] = None
-    frozenset_of_ints: Optional[FrozenSet[int]] = None
+    deque: deque[int]
 
 
-m1 = Model(simple_frozenset=['1', '2', '3'])
-print(type(m1.simple_frozenset))
-#> <class 'frozenset'>
-print(sorted(m1.simple_frozenset))
-#> ['1', '2', '3']
-
-m2 = Model(frozenset_of_ints=['1', '2', '3'])
-print(type(m2.frozenset_of_ints))
-#> <class 'frozenset'>
-print(sorted(m2.frozenset_of_ints))
-#> [1, 2, 3]
+print(Model(deque=[1, 2, 3]).deque)
+#> deque([1, 2, 3])
 ```
 
 ## Other Iterables
