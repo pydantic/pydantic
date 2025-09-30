@@ -5,12 +5,10 @@ description: Support for common types from the Python standard library.
 This section enumerates the supported built-in and standard library types: the allowed values,
 the possible constraints, and whether strictness can be configured.
 
-!!! note
-    Unless specified otherwise, values are serialized as-is, in both Python and JSON modes.
+See also the [conversion table](../concepts/conversion_table.md) for a summary of the allowed values for each type.
 
 !!! note
-    Pydantic still supports older (3.8-) typing constructs like `typing.List` and `typing.Dict`, but
-    it's best practice to use the newer types like `list` and `dict`.
+    Unless specified otherwise, values are serialized as-is, in both Python and JSON modes.
 
 ## Booleans
 
@@ -18,10 +16,10 @@ Built-in type: [`bool`][]
 
 <h3>Validation</h3>
 
-* A valid [`bool`][] instance, i.e. `True` or `False`
-* The integers `0` or `1`
-* A string, which when converted to lowercase is one of `'0'`, `'off'`, `'f'`, `'false'`, `'n'`, `'no'`, `'1'`, `'on'` `'t'`, `'true'`, `'y'`, `'yes'`
-* In Python mode, a [`bytes`][] object which is valid per the previous rule when decoded to a string. 
+* A valid [`bool`][] instance, i.e. `True` or `False`.
+* The integers `0` or `1`.
+* A string, which when converted to lowercase is one of `'0'`, `'off'`, `'f'`, `'false'`, `'n'`, `'no'`, `'1'`, `'on'` `'t'`, `'true'`, `'y'`, `'yes'`.
+* In Python mode, a [`bytes`][] object which is valid per the previous rule when decoded to a string.
 
 <h3>Strictness</h3>
 
@@ -61,8 +59,8 @@ Built-in type: [`str`][]
 
 <h3>Validation</h3>
 
-* Strings are accepted as-is
-* [`bytes`][] and [`bytearray`][] are decoded to UTF-8 strings
+* Strings are accepted as-is.
+* [`bytes`][] and [`bytearray`][] are decoded to UTF-8 strings.
 * [Enums][enum] are converted using the [`value`][enum.Enum.value] attribute, by calling [`str()`][str]
   on it.
 * If [`coerce_numbers_to_str`][pydantic.ConfigDict.coerce_numbers_to_str] is set, any number type
@@ -165,13 +163,13 @@ Built-in type: [`int`][].
 
 <h4>Validation</h4>
 
-* Integers are validated as-is
+* Integers are validated as-is.
 * Strings and bytes are attempted to be converted to integers and validated as-is
-  (see the [jiter implementation](https://docs.rs/jiter/latest/jiter/enum.NumberInt.html#impl-TryFrom%3C%26%5Bu8%5D%3E-for-NumberInt) for details)
+  (see the [jiter implementation](https://docs.rs/jiter/latest/jiter/enum.NumberInt.html#impl-TryFrom%3C%26%5Bu8%5D%3E-for-NumberInt) for details).
 * Floats are validated as integers, provided the float input is not infinite or a NaN (not-a-number)
-  and the fractional part is 0
+  and the fractional part is 0.
 * [`Decimal`][decimal.Decimal] instances, provided they are [finite][decimal.Decimal.is_finite] and the
-  denominator is 1
+  denominator is 1.
 * [`Fraction`][fractions.Fraction] instances, provided they are [integers][fractions.Fraction.is_integer].
 * [Enums][enum] are converted using the [`value`][enum.Enum.value] attribute.
 
@@ -212,9 +210,9 @@ Built-in type: [`float`][].
 
 <h4>Validation</h4>
 
-* Floats are validated as-is
-* String and bytes are attempted to be converted to floats and validated as-is
-  (see the [Rust implementation](https://doc.rust-lang.org/src/core/num/dec2flt/mod.rs.html) for details)
+* Floats are validated as-is.
+* String and bytes are attempted to be converted to floats and validated as-is.
+  (see the [Rust implementation](https://doc.rust-lang.org/src/core/num/dec2flt/mod.rs.html) for details).
 * If the input has a [`__float__()`][object.__float__] method, it will be called to convert the input into
   a float. If `__float__()` is not defined, it falls back to [`__index__()`][object.__index__]. This includes
   (but not limited to) the [`Decimal`][decimal.Decimal] and [`Fraction`][fractions.Fraction] types.
@@ -236,12 +234,13 @@ These constraints can be provided using the [`Field()`][pydantic.Field] function
 The `Le`, `Ge`, `Lt`, `Gt` and `MultipleOf` metadata types from the [`annotated-types`](https://github.com/annotated-types/annotated-types)
 library and the [`AllowInfNan`][pydantic.types.AllowInfNan] type can also be used.
 
-Pydantic also provides the following types to further constrain the allowed float values:
+Pydantic also provides the following types as convenience aliases:
 
 * [`PositiveFloat`][pydantic.types.PositiveFloat]: Requires the input to be greater than zero.
 * [`NegativeFloat`][pydantic.types.NegativeFloat]: Requires the input to be less than zero.
 * [`NonPositiveFloat`][pydantic.types.NonPositiveFloat]: Requires the input to be less than or equal to zero.
 * [`NonNegativeFloat`][pydantic.types.NonNegativeFloat]: Requires the input to be greater than or equal to zero.
+* [`FiniteFloat`][pydantic.types.FiniteFloat]: Prevents NaN (not-a-number) and infinite values.
 
 <h4>Strictness</h4>
 
@@ -274,7 +273,7 @@ Standard library type: [`decimal.Decimal`][].
 
 <h4>Validation</h4>
 
-* [`Decimal`][decimal.Decimal] instances are validated as is
+* [`Decimal`][decimal.Decimal] instances are validated as is.
 * Any value accepted by the [`Decimal`][decimal.Decimal] constructor (apart from the
   three-tuple input) will validate.
 
@@ -306,7 +305,7 @@ In [strict mode](../concepts/strict_mode.md), only [`decimal.Decimal`][] instanc
 
 <h4>Serialization</h4>
 
-In [Python mode](../concepts/serialization.md#python-mode), [`Decimal`][decimal.Decimal] instances are 
+In [Python mode](../concepts/serialization.md#python-mode), [`Decimal`][decimal.Decimal] instances are
 serialized as is.
 
 In [JSON mode](../concepts/serialization.md#json-mode), they are serialized as strings.
@@ -343,10 +342,10 @@ Built-in type: [`complex`][].
 
 <h4>Validation</h4>
 
-* [`complex`][] instances are validated as-is
-* Strings are validated using the [`complex()`][complex] constructor
-* Numbers (integers and floats) are used as the real part
-* Objects defining [`__complex__()`][object.__complex__], [`__float__()`][object.__float__]
+* [`complex`][] instances are validated as-is.
+* Strings are validated using the [`complex()`][complex] constructor.
+* Numbers (integers and floats) are used as the real part.
+* Objects defining [`__complex__()`][object.__complex__], [`__float__()`][object.__float__].
   or [`__index__()`][object.__index__] are currently *not* accepted.
 
 <h4>Strictness</h4>
@@ -356,7 +355,7 @@ accepted by the [`complex()`][complex] constructor are allowed.
 
 <h4>Serialization</h4>
 
-In [Python mode](../concepts/serialization.md#python-mode), [`Decimal`][decimal.Decimal] instances are 
+In [Python mode](../concepts/serialization.md#python-mode), [`Decimal`][decimal.Decimal] instances are
 serialized as is.
 
 In [JSON mode](../concepts/serialization.md#json-mode), they are serialized as strings.
@@ -370,7 +369,7 @@ Standard library type: [`fractions.Fraction`][].
 
 <h4>Validation</h4>
 
-* [`Fraction`][fractions.Fraction] instances are validated as is
+* [`Fraction`][fractions.Fraction] instances are validated as is.
 * Floats, strings and [`decimal.Decimal`][] instances are validated using the [`Fraction()`][fractions.Fraction]
   constructor.
 
@@ -418,7 +417,7 @@ Standard library type: [`datetime.datetime`][].
 
 <h4>Serialization</h4>
 
-In [Python mode](../concepts/serialization.md#python-mode), [`datetime`][datetime.datetime] instances are 
+In [Python mode](../concepts/serialization.md#python-mode), [`datetime`][datetime.datetime] instances are
 serialized as is.
 
 In [JSON mode](../concepts/serialization.md#json-mode), they are serialized as strings.
@@ -493,7 +492,7 @@ Standard library type: [`datetime.date`][].
 
 <h4>Serialization</h4>
 
-In [Python mode](../concepts/serialization.md#python-mode), [`date`][datetime.date] instances are 
+In [Python mode](../concepts/serialization.md#python-mode), [`date`][datetime.date] instances are
 serialized as is.
 
 In [JSON mode](../concepts/serialization.md#json-mode), they are serialized as strings.
@@ -558,7 +557,7 @@ Standard library type: [`datetime.time`][].
 
 <h4>Serialization</h4>
 
-In [Python mode](../concepts/serialization.md#python-mode), [`time`][datetime.time] instances are 
+In [Python mode](../concepts/serialization.md#python-mode), [`time`][datetime.time] instances are
 serialized as is.
 
 In [JSON mode](../concepts/serialization.md#json-mode), they are serialized as strings.
@@ -637,7 +636,7 @@ library can also be used.
 
 <h4>Serialization</h4>
 
-In [Python mode](../concepts/serialization.md#python-mode), [`timedelta`][datetime.timedelta] instances are 
+In [Python mode](../concepts/serialization.md#python-mode), [`timedelta`][datetime.timedelta] instances are
 serialized as is.
 
 In [JSON mode](../concepts/serialization.md#json-mode), they are serialized as strings.
@@ -676,7 +675,7 @@ Standard library type: [`enum.Enum`][].
 
 <h3>Validation</h3>
 
-* If the [`enum.Enum`][] type is used directly, any [`enum.Enum`][] instance is validated as-is
+* If the [`enum.Enum`][] type is used directly, any [`enum.Enum`][] instance is validated as-is.
 * Id an [`enum.Enum`][] subclass is used as a type, any enum member or value that correspond to the
   enum members [values][enum.Enum.value] is validated as-is.
 
@@ -731,9 +730,9 @@ except ValidationError as e:
 
 Supported types: [`None`][], [`NoneType`][types.NoneType] or `Literal[None]` (they are [equivalent](https://typing.readthedocs.io/en/latest/spec/special-types.html#none)).
 
-Allows only `None` as a value
+Allows only `None` as a value.
 
-## Generic types
+## Generic collection types
 
 Pydantic supports a wide variety of generic collection types, both built-ins (such as [`list`][]) and abstract base classes
 from the [`collections.abc`][] module (such as [`Sequence`][collections.abc.Sequence]).
@@ -794,7 +793,7 @@ Built-in type: [`tuple`][] (deprecated alias: [`typing.Tuple`][]).
 
 !!! note
     [Unpacked tuple types](https://typing.python.org/en/latest/spec/generics.html#unpacking-tuple-types)
-    (as specified by [PEP 646](https://peps.python.org/pep-0646/)) is *not* yet supported, and can be
+    (as specified by [PEP 646](https://peps.python.org/pep-0646/)) are *not* yet supported, and can be
     tracked in [this issue](https://github.com/pydantic/pydantic/issues/5952).
 
 <h4>Validation</h4>
@@ -1030,6 +1029,7 @@ from collections.abc import Sequence
 
 from pydantic import BaseModel, ValidationError
 
+
 class Model(BaseModel):
     sequence_of_strs: Sequence[str]
 
@@ -1153,89 +1153,26 @@ except ValidationError as e:
     """
 ```
 
-## Other Iterables
+<!-- old anchor added for backwards compatibility -->
+<!-- markdownlint-disable-next-line no-empty-links -->
+[](){#typingiterable}
+### Iterables
 
-### [`typing.Iterable`][]
+Standard library type: [`collections.abc.Iterable`][] (deprecated alias: [`typing.Iterable`][]).
 
-This is intended for use when the provided value may be an iterable that shouldn't be consumed.
-See [Infinite Generators](#infinite-generators) below for more detail on parsing and validation.
-Similar to [`typing.Sequence`][], we guarantee that the validated result will be a valid [`typing.Iterable`][],
-but it may have a different type than was provided. In particular, even if a non-generator type such as a `list`
-is provided, the post-validation value of a field of type [`typing.Iterable`][] will be a generator.
+<h4>Validation</h4>
 
-Here is a simple example using [`typing.Sequence`][]:
+Iterables are lazily validated, and wrapped in an internal datastructure that can be iterated over
+(and will validated the items type while doing so). This means that even if you provide a concrete
+container such as a list, the validated type will *not* be of type [`list`][]. However, Pydantic
+will ensure that the input value is iterable by getting an [iterator][] from it (by calling
+[`iter()`][iter] on the value).
 
-```python
-from collections.abc import Sequence
+It is recommended to use concrete collection types (such as [lists](#lists)) instead, unless
+you are using an infinite iterator (in which case eagerly validating the input would result
+in an infinite loop).
 
-from pydantic import BaseModel
-
-
-class Model(BaseModel):
-    sequence_of_ints: Sequence[int]
-
-
-print(Model(sequence_of_ints=[1, 2, 3, 4]).sequence_of_ints)
-#> [1, 2, 3, 4]
-print(Model(sequence_of_ints=(1, 2, 3, 4)).sequence_of_ints)
-#> (1, 2, 3, 4)
-```
-
-### Infinite Generators
-
-If you have a generator you want to validate, you can still use `Sequence` as described above.
-In that case, the generator will be consumed and stored on the model as a list and its values will be
-validated against the type parameter of the `Sequence` (e.g. `int` in `Sequence[int]`).
-
-However, if you have a generator that you *don't* want to be eagerly consumed (e.g. an infinite
-generator or a remote data loader), you can use a field of type [`Iterable`][typing.Iterable]:
-
-```python
-from collections.abc import Iterable
-
-from pydantic import BaseModel
-
-
-class Model(BaseModel):
-    infinite: Iterable[int]
-
-
-def infinite_ints():
-    i = 0
-    while True:
-        yield i
-        i += 1
-
-
-m = Model(infinite=infinite_ints())
-print(m)
-"""
-infinite=ValidatorIterator(index=0, schema=Some(Int(IntValidator { strict: false })))
-"""
-
-for i in m.infinite:
-    print(i)
-    #> 0
-    #> 1
-    #> 2
-    #> 3
-    #> 4
-    #> 5
-    #> 6
-    #> 7
-    #> 8
-    #> 9
-    #> 10
-    if i == 10:
-        break
-```
-
-!!! warning
-    During initial validation, `Iterable` fields only perform a simple check that the provided argument is iterable.
-    To prevent it from being consumed, no validation of the yielded values is performed eagerly.
-
-Though the yielded values are not validated eagerly, they are still validated when yielded, and will raise a
-`ValidationError` at yield time when appropriate:
+<h4>Example</h4>
 
 ```python
 from collections.abc import Iterable
@@ -1244,28 +1181,19 @@ from pydantic import BaseModel, ValidationError
 
 
 class Model(BaseModel):
-    int_iterator: Iterable[int]
+    f: Iterable[str]
 
 
-def my_iterator():
-    yield 13
-    yield '27'
-    yield 'a'
+m = Model(f=[1, 2])  # Validates fine
 
-
-m = Model(int_iterator=my_iterator())
-print(next(m.int_iterator))
-#> 13
-print(next(m.int_iterator))
-#> 27
 try:
-    next(m.int_iterator)
+    next(m.f)
 except ValidationError as e:
     print(e)
     """
     1 validation error for ValidatorIterator
-    2
-      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='a', input_type=str]
+    0
+      Input should be a valid string [type=string_type, input_value=1, input_type=int]
     """
 ```
 
@@ -1312,8 +1240,8 @@ Standard library types:
 * [`ipaddress.IPv6Interface`][]
 * [`ipaddress.IPv6Network`][]
 
-See also: the [`IPvAnyAddress`][pydantic.types.IPvAnyAddress], [`IPvAnyInterface`][pydantic.types.IPvAnyInterface] and [`IPvAnyNetwork`][pydantic.types.IPvAnyNetwork]
-Pydantic types.
+See also: the [`IPvAnyAddress`][pydantic.networks.IPvAnyAddress], [`IPvAnyInterface`][pydantic.networks.IPvAnyInterface]
+and [`IPvAnyNetwork`][pydantic.networks.IPvAnyNetwork] Pydantic types.
 
 <h3>Validation</h3>
 
@@ -1336,15 +1264,16 @@ Standard library type: [`uuid.UUID`][].
 
 <h3>Validation</h3>
 
-* [`UUID`][uuid.UUID] instances are validated as is
+* [`UUID`][uuid.UUID] instances are validated as is.
 * Strings and bytes are validated as UUIDs, and casted to a [`UUID`][uuid.UUID] instance.
 
 <h3>Constraints</h3>
 
 The [`UUID`][uuid.UUID] type supports a `version` constraint. The [`UuidVersion`][pydantic.types.UuidVersion] metadata type can be used.
 
-Pydantic also provides the following types: [`UUID1`][pydantic.types.UUID1], [`UUID3`][pydantic.types.UUID3], [`UUID4`][pydantic.types.UUID4],
-[`UUID5`][pydantic.types.UUID5], [`UUID6`][pydantic.types.UUID6], [`UUID7`][pydantic.types.UUID7], [`UUID8`][pydantic.types.UUID8].
+Pydantic also provides the following types as convenience aliases: [`UUID1`][pydantic.types.UUID1], [`UUID3`][pydantic.types.UUID3],
+[`UUID4`][pydantic.types.UUID4], [`UUID5`][pydantic.types.UUID5], [`UUID6`][pydantic.types.UUID6], [`UUID7`][pydantic.types.UUID7],
+[`UUID8`][pydantic.types.UUID8].
 
 <h3>Strictness</h3>
 
@@ -1373,7 +1302,12 @@ class Model(BaseModel):
 
 
 
-print(Model(u1='01999b2c-8353-749b-8dac-859307fae22b', u2=UUID('125725f3-e1b4-44e3-90c3-1a20eab12da5')))
+print(
+    Model(
+        u1='01999b2c-8353-749b-8dac-859307fae22b',
+        u2=UUID('125725f3-e1b4-44e3-90c3-1a20eab12da5'),
+    )
+)
 #> u1=UUID('01999b2c-8353-749b-8dac-859307fae22b') u2=UUID('125725f3-e1b4-44e3-90c3-1a20eab12da5')
 ```
 
@@ -1476,21 +1410,74 @@ except ValidationError as e:
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
 [](){#typingany}
-## Any object
+## Any
 
 Types: [`typing.Any`][] or [`object`][].
 
 Allows any value, including `None`.
 
-## [`typing.Hashable`][]
+<!-- old anchor added for backwards compatibility -->
+<!-- markdownlint-disable-next-line no-empty-links -->
+[](){#typinghashable}
+## Hashables
 
-* From Python, supports any data that passes an `isinstance(v, Hashable)` check.
-* From JSON, first loads the data via an `Any` validator, then checks if the data is hashable with `isinstance(v, Hashable)`.
+Standard library type: [`collections.abc.Hashable`][] (deprecated alias: [`typing.Hashable`][]).
 
-## [`typing.Pattern`][]
+<h3>Validation</h3>
 
-Will cause the input value to be passed to `re.compile(v)` to create a regular expression pattern.
+Any value that is hashable (using `isinstance(value, Hashable)`).
 
-## [`pathlib.Path`][]
 
-Simply uses the type itself for validation by passing the value to `Path(v)`.
+<!-- old anchor added for backwards compatibility -->
+<!-- markdownlint-disable-next-line no-empty-links -->
+[](){#typingpattern}
+## Regex patterns
+
+Standard library type: [`re.Pattern`][] (deprecated alias: [`typing.Pattern`][]).
+
+<h3>Validation</h3>
+
+* For [`Pattern`][re.Pattern] instances, check that the [`pattern`][re.Pattern.pattern] attribute
+  is of the right type ([`str`][] or [`bytes`][] depending on the [`Pattern`][re.Pattern] type
+  parameter).
+* If the type parameter is [`str`][] or [`bytes`][], input values of type [`str`][] (or [`bytes`][] respectively)
+  are attempted to be compiled using [`re.compile()`][re.compile].
+
+<h3>Serialization</h3>
+
+In [Python mode](../concepts/serialization.md#python-mode), [`Pattern`][re.Pattern] instances are 
+serialized as is.
+
+In [JSON mode](../concepts/serialization.md#json-mode), they are serialized as strings.
+
+<!-- old anchor added for backwards compatibility -->
+<!-- markdownlint-disable-next-line no-empty-links -->
+[](){#pathlibpath}
+## Paths
+
+Standard library types:
+
+* [`pathlib.Path`][].
+* [`pathlib.PurePath`][].
+* [`pathlib.PosixPath`][].
+* [`pathlib.PurePosixPath`][].
+* [`pathlib.PureWindowsPath`][].
+* [`os.PathLike`][] (must be parameterized with [`str`][], [`bytes`][] or [`Any`][typing.Any]).
+
+<h3>Validation</h3>
+
+* Path instances are validated as is.
+* Strings are accepted and passed to the type constructor. If [`os.PathLike`][] was used,
+  bytes are accepted if it was parameterized with the [`bytes`][] type.
+
+<h3>Strictness</h3>
+
+In [strict mode](../concepts/strict_mode.md), only Path instances are accepted.
+In JSON mode, strict mode has no effect.
+
+<h3>Serialization</h3>
+
+In [Python mode](../concepts/serialization.md#python-mode), Path instances are
+serialized as is.
+
+In [JSON mode](../concepts/serialization.md#json-mode), they are serialized as strings.
