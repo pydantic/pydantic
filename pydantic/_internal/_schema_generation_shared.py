@@ -2,14 +2,15 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Callable, Literal
+from copy import deepcopy
+from typing import TYPE_CHECKING, Any, Callable, Literal, cast
 
 from pydantic_core import core_schema
 
 from ..annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
 
 if TYPE_CHECKING:
-    from ..json_schema import GenerateJsonSchema, JsonSchemaValue
+    from ..json_schema import GenerateJsonSchema, JsonRef, JsonSchemaValue
     from ._core_utils import CoreSchemaOrField
     from ._generate_schema import GenerateSchema
     from ._namespace_utils import NamespacesTuple
@@ -53,6 +54,7 @@ class GenerateJsonSchemaHandler(GetJsonSchemaHandler):
         if '$ref' not in maybe_ref_json_schema:
             return maybe_ref_json_schema
         ref = maybe_ref_json_schema['$ref']
+        self.generate_json_schema._inline_ref_schemas.setdefault(cast('JsonRef', ref), deepcopy(maybe_ref_json_schema))
         json_schema = self.generate_json_schema.get_schema_from_definitions(ref, root=maybe_ref_json_schema)
         if json_schema is None:
             raise LookupError(
