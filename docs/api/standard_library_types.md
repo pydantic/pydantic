@@ -150,6 +150,7 @@ In JSON mode, strict mode has no effect.
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
 [](){#number-types}
+
 ## Numbers
 
 Pydantic supports the following numeric types from the Python standard library:
@@ -157,6 +158,7 @@ Pydantic supports the following numeric types from the Python standard library:
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
 [](){#int}
+
 ### Integers
 
 Built-in type: [`int`][].
@@ -204,6 +206,7 @@ type as a convenience to [using the `Strict()` metadata class](../concepts/stric
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
 [](){#float}
+
 ### Floats
 
 Built-in type: [`float`][].
@@ -252,6 +255,7 @@ Pydantic provides the [`StrictFloat`][pydantic.types.StrictFloat] type as a conv
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
 [](){#enumintenum}
+
 ### Integer enums
 
 Standard library type: [`enum.IntEnum`][].
@@ -267,6 +271,7 @@ See [Enums](#enums) for more details.
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
 [](){#decimaldecimal}
+
 ### Decimals
 
 Standard library type: [`decimal.Decimal`][].
@@ -336,6 +341,7 @@ print(my_model.model_dump_json())  # (2)!
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
 [](){#complex}
+
 ### Complex numbers
 
 Built-in type: [`complex`][].
@@ -363,6 +369,7 @@ In [JSON mode](../concepts/serialization.md#json-mode), they are serialized as s
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
 [](){#fractionsfraction}
+
 ### Fractions
 
 Standard library type: [`fractions.Fraction`][].
@@ -385,6 +392,7 @@ and [JSON](../concepts/serialization.md#json-mode) modes.
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
 [](){#datetime-types}
+
 ## Date and time types
 
 Pydantic supports the following [date and time](https://docs.python.org/library/datetime.html#available-types)
@@ -393,6 +401,7 @@ types from the [`datetime`][] standard library:
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
 [](){#datetimedatetime}
+
 ### Datetimes
 
 Standard library type: [`datetime.datetime`][].
@@ -403,7 +412,7 @@ Standard library type: [`datetime.datetime`][].
 * Strings and bytes are validated in two ways:
     * Strings complying to the [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339) format (both datetime and date).
       See the [speedate](https://docs.rs/speedate/) documentation for more details.
-    * Unix timestamps, both as seconds or miliseconds sinch the [epoch](https://en.wikipedia.org/wiki/Unix_time).
+    * Unix timestamps, both as seconds or milliseconds sinch the [epoch](https://en.wikipedia.org/wiki/Unix_time).
       See the [`val_temporal_unit`][pydantic.ConfigDict.val_temporal_unit] configuration value for more details.
 * Integers and floats (or types that can be coerced as integers or floats) are validated as unix timestamps, following the
   same semantics as strings.
@@ -475,6 +484,7 @@ print(event.model_dump_json())
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
 [](){#datetimedate}
+
 ### Dates
 
 Standard library type: [`datetime.date`][].
@@ -485,7 +495,7 @@ Standard library type: [`datetime.date`][].
 * Strings and bytes are validated in two ways:
     * Strings complying to the [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339) date format.
       See the [speedate](https://docs.rs/speedate/) documentation for more details.
-    * Unix timestamps, both as seconds or miliseconds sinch the [epoch](https://en.wikipedia.org/wiki/Unix_time).
+    * Unix timestamps, both as seconds or milliseconds sinch the [epoch](https://en.wikipedia.org/wiki/Unix_time).
       See the [`val_temporal_unit`][pydantic.ConfigDict.val_temporal_unit] configuration value for more details.
 * If the validation fails, the input can be [validated as a datetime](#datetimes) (including as numbers),
   provided that the time component is 0 and that it is naive.
@@ -545,6 +555,7 @@ print(my_birthday.model_dump_json())
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
 [](){#datetimetime}
+
 ### Time
 
 Standard library type: [`datetime.time`][].
@@ -609,6 +620,7 @@ print(m.model_dump_json())
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
 [](){#datetimetimedelta}
+
 ### Timedeltas
 
 Standard library type: [`datetime.timedelta`][].
@@ -669,6 +681,7 @@ print(m.model_dump_json())
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
 [](){#enum}
+
 ## Enums
 
 Standard library type: [`enum.Enum`][].
@@ -846,9 +859,10 @@ print(Model(tuple_of_different_types=[3, 2, 1]).tuple_of_different_types)
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
 [](){#typingnamedtuple}
+
 ### Named tuples
 
-Standard library typle: [`typing.NamedTuple`][] (and types created by the [`collections.namedtuple()`][collections.namedtuple] factory function
+Standard library type: [`typing.NamedTuple`][] (and types created by the [`collections.namedtuple()`][collections.namedtuple] factory function
 – each field will implicitly have the type [`Any`][typing.Any]).
 
 <h4>Validation</h4>
@@ -987,6 +1001,7 @@ print(Model(deque=[1, 2, 3]).deque)
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
 [](){#typingsequence}
+
 ### Sequences
 
 Standard library type: [`collections.abc.Sequence`][] (deprecated alias: [`typing.Sequence`][]).
@@ -1106,6 +1121,7 @@ except ValidationError as e:
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
 [](){#typeddict}
+
 ### Typed dictionaries
 
 Standard library type: [`typing.TypedDict`][] (see also: the [typing specification](https://typing.python.org/en/latest/spec/typeddict.html)).
@@ -1156,6 +1172,7 @@ except ValidationError as e:
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
 [](){#typingiterable}
+
 ### Iterables
 
 Standard library type: [`collections.abc.Iterable`][] (deprecated alias: [`typing.Iterable`][]).
@@ -1229,6 +1246,7 @@ Callables are serialized as is. Callables can't be serialized in [JSON mode](../
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
 [](){#ip-address-types}
+
 ## IP Addresses
 
 Standard library types:
@@ -1289,7 +1307,6 @@ they are serialized as strings.
 
 ```python
 from typing import Annotated
-
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -1301,14 +1318,15 @@ class Model(BaseModel):
     u2: Annotated[UUID, UuidVersion(4)]
 
 
-
 print(
     Model(
         u1='01999b2c-8353-749b-8dac-859307fae22b',
         u2=UUID('125725f3-e1b4-44e3-90c3-1a20eab12da5'),
     )
 )
-#> u1=UUID('01999b2c-8353-749b-8dac-859307fae22b') u2=UUID('125725f3-e1b4-44e3-90c3-1a20eab12da5')
+"""
+u1=UUID('01999b2c-8353-749b-8dac-859307fae22b') u2=UUID('125725f3-e1b4-44e3-90c3-1a20eab12da5')
+"""
 ```
 
 ## Type
@@ -1362,6 +1380,7 @@ except ValidationError as e:
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
 [](){#typingliteral}
+
 ## Literals
 
 Typing construct: [`typing.Literal`][] (see also: the [typing specification](https://typing.python.org/en/latest/spec/literal.html#literal)).
@@ -1371,7 +1390,6 @@ Literals can be used to only allow specific literal values.
 Note that Pydantic applies [strict mode](../concepts/strict_mode.md) behavior when validating literal values (see [this issue](https://github.com/pydantic/pydantic/issues/9991)).
 
 <h3>Example</h3>
-
 
 ```python
 from typing import Literal
@@ -1410,6 +1428,7 @@ except ValidationError as e:
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
 [](){#typingany}
+
 ## Any
 
 Types: [`typing.Any`][] or [`object`][].
@@ -1419,6 +1438,7 @@ Allows any value, including `None`.
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
 [](){#typinghashable}
+
 ## Hashables
 
 Standard library type: [`collections.abc.Hashable`][] (deprecated alias: [`typing.Hashable`][]).
@@ -1427,10 +1447,10 @@ Standard library type: [`collections.abc.Hashable`][] (deprecated alias: [`typin
 
 Any value that is hashable (using `isinstance(value, Hashable)`).
 
-
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
 [](){#typingpattern}
+
 ## Regex patterns
 
 Standard library type: [`re.Pattern`][] (deprecated alias: [`typing.Pattern`][]).
@@ -1445,7 +1465,7 @@ Standard library type: [`re.Pattern`][] (deprecated alias: [`typing.Pattern`][])
 
 <h3>Serialization</h3>
 
-In [Python mode](../concepts/serialization.md#python-mode), [`Pattern`][re.Pattern] instances are 
+In [Python mode](../concepts/serialization.md#python-mode), [`Pattern`][re.Pattern] instances are
 serialized as is.
 
 In [JSON mode](../concepts/serialization.md#json-mode), they are serialized as strings.
@@ -1453,6 +1473,7 @@ In [JSON mode](../concepts/serialization.md#json-mode), they are serialized as s
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
 [](){#pathlibpath}
+
 ## Paths
 
 Standard library types:

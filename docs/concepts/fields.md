@@ -382,6 +382,14 @@ print(user.model_dump(by_alias=True))  # (2)!
     #> {'my_field': 1}
     ```
 
+<!-- old anchor added for backwards compatibility -->
+<!-- markdownlint-disable-next-line no-empty-links -->
+[](){#numeric-constraints}
+<!-- markdownlint-disable-next-line no-empty-links -->
+[](){#string-constraints}
+<!-- markdownlint-disable-next-line no-empty-links -->
+[](){#decimal-constraints}
+
 ## Field constraints
 
 The [`Field()`][pydantic.Field] function can also be used to add constraints to specific types:
@@ -404,6 +412,7 @@ in the [standard library types](../api/standard_library_types.md) documentation.
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
 [](){#strict-mode}
+
 ## Strict fields
 
 The `strict` parameter of the [`Field()`][pydantic.Field] function specifies whether the field should be validated in
@@ -431,6 +440,7 @@ The [standard library types](../api/standard_library_types.md) documentation des
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
 [](){#dataclass-constraints}
+
 ## Dataclass fields
 
 Some parameters of the [`Field()`][pydantic.Field] function can be used on [dataclasses](./dataclasses.md):

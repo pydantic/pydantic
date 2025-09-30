@@ -53,6 +53,7 @@ Strict mode can be enabled in various ways:
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
 [](){#strict-mode-in-method-calls}
+
 ## As a validation parameter
 
 Strict mode can be enaled on a per-validation-call basis, when using the [validation methods](./models.md#validating-data)
@@ -85,12 +86,12 @@ TypeAdapter(date).validate_json('"2000-01-01"', strict=True)  # (1)!
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
 [](){#strict-mode-with-field}
+
 ## At the field level
 
 Strict mode can be enabled on specific fields, by setting the `strict` parameter of the
 [`Field()`][pydantic.Field] function to `True`. Strict mode will be applied for such fields,
 even when the [validation methods](./models.md#validating-data) are called in lax mode.
-
 
 ```python
 from pydantic import BaseModel, Field, ValidationError
@@ -123,6 +124,7 @@ except ValidationError as e:
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
 [](){#strict-mode-with-annotated-strict}
+
 ### Using the `Strict()` metadata class
 
 ??? api "API Documentation"
@@ -151,6 +153,7 @@ class User(BaseModel):
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
 [](){#strict-mode-with-configdict}
+
 ## As a configuration value
 
 Strict mode behavior can be controlled at the [configuration](./config.md) level. When used on
