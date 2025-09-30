@@ -684,9 +684,15 @@ class GenerateSchema:
             return schema
 
     def clean_schema(self, schema: CoreSchema) -> CoreSchema:
-        if not self.needs_apply_deferred_discriminators:
-            return schema
-        return self.defs.finalize_schema(schema)
+        if self.needs_apply_deferred_discriminators:
+            # run full cleaning pass to apply any deferred discriminators
+            return self.defs.finalize_schema(schema)
+
+        elif self.defs._definitions:
+            # if there are definitions, we need to wrap in a definitions schema
+            return core_schema.definitions_schema(schema, definitions=list(self.defs._definitions.values()))
+
+        return schema
 
     def _add_js_function(self, metadata_schema: CoreSchema, js_function: Callable[..., Any]) -> None:
         metadata = metadata_schema.get('metadata', {})
