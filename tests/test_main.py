@@ -2755,6 +2755,54 @@ def test_validate_json_context() -> None:
     assert contexts == []
 
 
+def test_model_validate_with_validate_fn_override() -> None:
+    class Model(BaseModel):
+        a: float
+
+    assert Model.model_validate({'a': 0.2, 'b': 0.1}) == Model(a=0.2)
+
+    allow = Model.model_validate({'a': 0.2, 'b': 0.1}, extra='allow')
+    assert allow.model_extra == {'b': 0.1}
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model.model_validate({'a': 0.2, 'b': 0.1}, extra='forbid')
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'extra_forbidden', 'loc': ('b',), 'msg': 'Extra inputs are not permitted', 'input': 0.1}
+    ]
+
+
+def test_model_validate_json_with_validate_fn_override() -> None:
+    class Model(BaseModel):
+        a: float
+
+    assert Model.model_validate_json('{"a": 0.2, "b": 0.1}') == Model(a=0.2)
+
+    allow = Model.model_validate_json('{"a": 0.2, "b": 0.1}', extra='allow')
+    assert allow.model_extra == {'b': 0.1}
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model.model_validate_json('{"a": 0.2, "b": 0.1}', extra='forbid')
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'extra_forbidden', 'loc': ('b',), 'msg': 'Extra inputs are not permitted', 'input': 0.1}
+    ]
+
+
+def test_model_validate_strings_with_validate_fn_override() -> None:
+    class Model(BaseModel):
+        a: float
+
+    assert Model.model_validate_strings({'a': '0.2', 'b': '0.1'}) == Model(a=0.2)
+
+    allow = Model.model_validate_strings({'a': '0.2', 'b': '0.1'}, extra='allow')
+    assert allow.model_extra == {'b': '0.1'}
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model.model_validate_strings({'a': '0.2', 'b': '0.1'}, extra='forbid')
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'extra_forbidden', 'loc': ('b',), 'msg': 'Extra inputs are not permitted', 'input': '0.1'}
+    ]
+
+
 def test_pydantic_hooks() -> None:
     calls = []
 
