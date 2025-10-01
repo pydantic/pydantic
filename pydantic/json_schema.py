@@ -1433,7 +1433,7 @@ class GenerateJsonSchema:
             # `additionalProperties` if already present:
             self._update_class_schema(json_schema, cls, config)
         elif 'additionalProperties' not in json_schema:
-            extra = config.get('extra')
+            extra = schema.get('config', {}).get('extra_fields_behavior')
             if extra == 'forbid':
                 json_schema['additionalProperties'] = False
             elif extra == 'allow':

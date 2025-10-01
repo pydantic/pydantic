@@ -25,6 +25,7 @@ from pydantic import (
 from pydantic._internal._decorators import get_attribute_from_bases
 from pydantic.functional_serializers import field_serializer, model_serializer
 from pydantic.functional_validators import field_validator, model_validator
+from pydantic.json_schema import GenerateJsonSchema
 from pydantic.type_adapter import TypeAdapter
 from pydantic.warnings import TypedDictExtraConfigWarning
 
@@ -1066,3 +1067,25 @@ def test_typeddict_incompatible_extra_config_warning() -> None:
 
     with pytest.warns(TypedDictExtraConfigWarning):
         TypeAdapter(TD2)
+
+
+def test_typeddict_core_schema_no_cls_extra_config() -> None:
+    cs_forbid = core_schema.typed_dict_schema(
+        fields={},
+        cls=None,
+        config={'extra_fields_behavior': 'forbid'},
+    )
+
+    assert GenerateJsonSchema().generate(cs_forbid) == {
+        'additionalProperties': False,
+        'properties': {},
+        'type': 'object',
+    }
+
+    cs_allow = core_schema.typed_dict_schema(
+        fields={},
+        cls=None,
+        config={'extra_fields_behavior': 'allow'},
+    )
+
+    assert GenerateJsonSchema().generate(cs_allow) == {'additionalProperties': True, 'properties': {}, 'type': 'object'}
