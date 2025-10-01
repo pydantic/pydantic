@@ -2081,13 +2081,13 @@ class GenerateSchema:
 
     def _unsubstituted_typevar_schema(self, typevar: typing.TypeVar) -> core_schema.CoreSchema:
         try:
-            has_default = typevar.has_default()
+            has_default = typevar.has_default()  # pyright: ignore[reportAttributeAccessIssue]
         except AttributeError:
             # Happens if using `typing.TypeVar` (and not `typing_extensions`) on Python < 3.13
             pass
         else:
             if has_default:
-                return self.generate_schema(typevar.__default__)
+                return self.generate_schema(typevar.__default__)  # pyright: ignore[reportAttributeAccessIssue]
 
         if constraints := typevar.__constraints__:
             return self._union_schema(typing.Union[constraints])

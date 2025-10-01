@@ -197,7 +197,7 @@ class PydanticDescriptorProxy(Generic[ReturnType]):
 
     def __get__(self, obj: object | None, obj_type: type[object] | None = None) -> PydanticDescriptorProxy[ReturnType]:
         try:
-            return self.wrapped.__get__(obj, obj_type)
+            return self.wrapped.__get__(obj, obj_type)  # pyright: ignore[reportReturnType]
         except AttributeError:
             # not a descriptor, e.g. a partial object
             return self.wrapped  # type: ignore[return-value]

@@ -374,16 +374,16 @@ def map_generic_model_arguments(cls: type[BaseModel], args: tuple[Any, ...]) -> 
         if argument is _missing:
             param = cast(TypeVar, parameter)
             try:
-                has_default = param.has_default()
+                has_default = param.has_default()  # pyright: ignore[reportAttributeAccessIssue]
             except AttributeError:
                 # Happens if using `typing.TypeVar` (and not `typing_extensions`) on Python < 3.13.
                 has_default = False
             if has_default:
                 # The default might refer to other type parameters. For an example, see:
                 # https://typing.python.org/en/latest/spec/generics.html#type-parameters-as-parameters-to-generics
-                typevars_map[param] = replace_types(param.__default__, typevars_map)
+                typevars_map[param] = replace_types(param.__default__, typevars_map)  # pyright: ignore[reportAttributeAccessIssue]
             else:
-                expected_len -= sum(hasattr(p, 'has_default') and p.has_default() for p in parameters)
+                expected_len -= sum(hasattr(p, 'has_default') and p.has_default() for p in parameters)  # pyright: ignore[reportAttributeAccessIssue]
                 raise TypeError(f'Too few arguments for {cls}; actual {len(args)}, expected at least {expected_len}')
         else:
             param = cast(TypeVar, parameter)
