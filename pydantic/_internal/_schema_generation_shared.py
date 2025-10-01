@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sys
 from copy import deepcopy
 from typing import TYPE_CHECKING, Any, Callable, Literal, cast
 
@@ -51,16 +52,47 @@ class GenerateJsonSchemaHandler(GetJsonSchemaHandler):
         Raises:
             LookupError: If it can't find the definition for `$ref`.
         """
+        mark_user_definition = True
+        try:
+            caller_module = sys._getframe(1).f_globals.get('__name__', '')
+        except ValueError:  # pragma: no cover - defensive, sys._getframe may be disabled
+            caller_module = ''
+        if caller_module.startswith('pydantic.'):
+            mark_user_definition = False
         if '$ref' not in maybe_ref_json_schema:
+            if mark_user_definition:
+                self.generate_json_schema._user_managed_schemas.add(id(maybe_ref_json_schema))
             return maybe_ref_json_schema
         ref = maybe_ref_json_schema['$ref']
-        self.generate_json_schema._inline_ref_schemas.setdefault(cast('JsonRef', ref), deepcopy(maybe_ref_json_schema))
+        json_ref = cast('JsonRef', ref)
+        if mark_user_definition:
+            wrapper_schema = deepcopy(maybe_ref_json_schema)
+            self.generate_json_schema._inline_ref_schemas.setdefault(json_ref, wrapper_schema)
+
+            tokens = self.generate_json_schema._json_pointer_tokens(json_ref)
+            if len(tokens) >= 2:
+                parent_tokens: tuple[str, ...] | None = None
+                for index in range(len(tokens) - 1):
+                    if tokens[index] == '$defs':
+                        name_index = index + 1
+                        if name_index < len(tokens):
+                            parent_tokens = tuple(tokens[: name_index + 1])
+                        break
+                if parent_tokens is not None:
+                    parent_ref = self.generate_json_schema._json_pointer_from_tokens(parent_tokens)
+                    self.generate_json_schema._inline_ref_schemas.setdefault(parent_ref, wrapper_schema)
+        defs_ref = self.generate_json_schema.json_to_defs_refs.get(json_ref)
         json_schema = self.generate_json_schema.get_schema_from_definitions(ref, root=maybe_ref_json_schema)
         if json_schema is None:
             raise LookupError(
                 f'Could not find a ref for {ref}.'
                 ' Maybe you tried to call resolve_ref_schema from within a recursive model?'
             )
+        if mark_user_definition:
+            self.generate_json_schema._pending_user_json_refs.add(json_ref)
+            if defs_ref is not None:
+                self.generate_json_schema._pending_user_defs_refs.add(defs_ref)
+            self.generate_json_schema._user_managed_schemas.add(id(json_schema))
         return json_schema
 
 

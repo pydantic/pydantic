@@ -5419,6 +5419,11 @@ def test_metadata_resolve_ref_schema_preserves_defs() -> None:
     assert wrapper_definition['description'] == 'custom description'
     assert wrapper_definition['properties'] == {'x': {'title': 'X', 'type': 'integer'}}
 
+    wrapper_schema = TypeAdapter(WrapperModel).json_schema()
+    wrapper_defs = wrapper_schema.get('$defs', {})
+    assert 'WrapperModel' in wrapper_defs
+    assert wrapper_defs['WrapperModel'] == wrapper_definition
+
 
 def test_examples_annotation() -> None:
     ListWithExamples = Annotated[
