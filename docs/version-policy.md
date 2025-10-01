@@ -25,6 +25,8 @@ The following changes will **NOT** be considered breaking changes, and may occur
 * Adding new [`ValidationError`][pydantic_core.ValidationError] errors.
 * Changing how `__repr__` behaves, even of public classes.
 * The contents of the [core schemas](./internals/architecture.md#communicating-between-pydantic-and-pydantic-core-the-core-schema) (usually available under the
+<!-- https://github.com/DavidAnson/markdownlint/issues/1472 -->
+<!-- markdownlint-disable-next-line strong-style -->
   [`__pydantic_core_schema__`][pydantic.BaseModel.__pydantic_core_schema__] attribute for Pydantic models and `core_schema` for [type adapters](./concepts/type_adapter.md))
   may change between releases (this is a low-level format Pydantic uses to plan how to execute validation and serialization).
 
