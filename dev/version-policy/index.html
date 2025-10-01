@@ -3137,7 +3137,12 @@ the release of Pydantic V3.</p>
 <li>Adding new keys to <a class="autorefs autorefs-internal" href="../api/pydantic_core/#pydantic_core.ValidationError"><code>ValidationError</code></a> exceptions &mdash; e.g. we intend to add <code>line_number</code> and <code>column_number</code> to errors when validating JSON once we migrate to a new JSON parser.</li>
 <li>Adding new <a class="autorefs autorefs-internal" href="../api/pydantic_core/#pydantic_core.ValidationError"><code>ValidationError</code></a> errors.</li>
 <li>Changing how <code>__repr__</code> behaves, even of public classes.</li>
+<li>The contents of the <a href="../internals/architecture/#communicating-between-pydantic-and-pydantic-core-the-core-schema">core schemas</a> (usually available under the</li>
 </ul>
+<!-- https://github.com/DavidAnson/markdownlint/issues/1472 -->
+<!-- markdownlint-disable-next-line strong-style -->
+<p><a class="autorefs autorefs-internal" href="../api/base_model/#pydantic.BaseModel.__pydantic_core_schema__"><code>__pydantic_core_schema__</code></a> attribute for Pydantic models and <code>core_schema</code> for <a href="../concepts/type_adapter/">type adapters</a>)
+  may change between releases (this is a low-level format Pydantic uses to plan how to execute validation and serialization).</p>
 <p>In all cases we will aim to minimize churn and do so only when justified by the increase of quality of Pydantic for users.</p>
 <h2 id="pydantic-v3-and-beyond">Pydantic V3 and beyond<a class="headerlink" href="#pydantic-v3-and-beyond" title="Permanent link">&para;</a></h2>
 <p>We expect to make new major releases roughly once a year going forward, although as mentioned above, any associated breaking changes should be trivial to fix compared to the V1-to-V2 transition.</p>
