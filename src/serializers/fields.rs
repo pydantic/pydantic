@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::string::ToString;
 use std::sync::Arc;
 
 use pyo3::prelude::*;
@@ -217,6 +218,7 @@ impl GeneralFieldsSerializer {
                 } else if field_extra.check == SerCheck::Strict {
                     return Err(PydanticSerializationUnexpectedValue::new(
                         Some(format!("Unexpected field `{key}`")),
+                        field_extra.field_name.map(ToString::to_string),
                         field_extra.model_type_name().map(|bound| bound.to_string()),
                         None,
                     )
@@ -235,6 +237,7 @@ impl GeneralFieldsSerializer {
 
             Err(PydanticSerializationUnexpectedValue::new(
                 Some(format!("Expected {required_fields} fields but got {used_req_fields}").to_string()),
+                extra.field_name.map(ToString::to_string),
                 extra.model_type_name().map(|bound| bound.to_string()),
                 extra.model.map(|bound| bound.clone().unbind()),
             )

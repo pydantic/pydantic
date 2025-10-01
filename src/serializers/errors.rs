@@ -99,6 +99,7 @@ impl PydanticSerializationError {
 #[derive(Debug, Clone)]
 pub struct PydanticSerializationUnexpectedValue {
     message: Option<String>,
+    field_name: Option<String>,
     field_type: Option<String>,
     input_value: Option<Py<PyAny>>,
 }
@@ -107,30 +108,43 @@ impl PydanticSerializationUnexpectedValue {
     pub fn new_from_msg(message: Option<String>) -> Self {
         Self {
             message,
+            field_name: None,
             field_type: None,
             input_value: None,
         }
     }
 
-    pub fn new_from_parts(field_type: Option<String>, input_value: Option<Py<PyAny>>) -> Self {
+    pub fn new_from_parts(
+        field_name: Option<String>,
+        field_type: Option<String>,
+        input_value: Option<Py<PyAny>>,
+    ) -> Self {
         Self {
             message: None,
+            field_name,
             field_type,
             input_value,
         }
     }
 
-    pub fn new(message: Option<String>, field_type: Option<String>, input_value: Option<Py<PyAny>>) -> Self {
+    pub fn new(
+        message: Option<String>,
+        field_name: Option<String>,
+        field_type: Option<String>,
+        input_value: Option<Py<PyAny>>,
+    ) -> Self {
         Self {
             message,
+            field_name,
             field_type,
             input_value,
         }
     }
 
     pub fn to_py_err(&self) -> PyErr {
-        PyErr::new::<Self, (Option<String>, Option<String>, Option<Py<PyAny>>)>((
+        PyErr::new::<Self, (Option<String>, Option<String>, Option<String>, Option<Py<PyAny>>)>((
             self.message.clone(),
+            self.field_name.clone(),
             self.field_type.clone(),
             self.input_value.clone(),
         ))
@@ -140,10 +154,16 @@ impl PydanticSerializationUnexpectedValue {
 #[pymethods]
 impl PydanticSerializationUnexpectedValue {
     #[new]
-    #[pyo3(signature = (message=None, field_type=None, input_value=None, /))]
-    fn py_new(message: Option<String>, field_type: Option<String>, input_value: Option<Py<PyAny>>) -> Self {
+    #[pyo3(signature = (message=None, field_name=None, field_type=None, input_value=None, /))]
+    fn py_new(
+        message: Option<String>,
+        field_name: Option<String>,
+        field_type: Option<String>,
+        input_value: Option<Py<PyAny>>,
+    ) -> Self {
         Self {
             message,
+            field_name,
             field_type,
             input_value,
         }
@@ -172,8 +192,16 @@ impl PydanticSerializationUnexpectedValue {
 
             let value_str = truncate_safe_repr(bound_input, None);
 
-            write!(message, " [input_value={value_str}, input_type={input_type}]")
+            if let Some(field_name) = &self.field_name {
+                write!(
+                    message,
+                    " [field_name={field_name}, input_value={value_str}, input_type={input_type}]"
+                )
                 .expect("writing to string should never fail");
+            } else {
+                write!(message, " [input_value={value_str}, input_type={input_type}]")
+                    .expect("writing to string should never fail");
+            }
         }
 
         if message.is_empty() {
