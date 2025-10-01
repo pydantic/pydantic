@@ -3109,12 +3109,10 @@ to help you monitor and understand your
 <span class="normal">71</span>
 <span class="normal">72</span>
 <span class="normal">73</span>
-<span class="normal">74</span>
-<span class="normal">75</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">version_info</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="normal">74</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">version_info</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return complete version information for Pydantic and its dependencies.&quot;&quot;&quot;</span>
     <span class="kn">import</span><span class="w"> </span><span class="nn">importlib.metadata</span>
     <span class="kn">import</span><span class="w"> </span><span class="nn">platform</span>
-    <span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 
     <span class="kn">import</span><span class="w"> </span><span class="nn">pydantic_core._pydantic_core</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pdc</span>
@@ -3145,8 +3143,8 @@ to help you monitor and understand your
 
     <span class="n">info</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s1">&#39;pydantic version&#39;</span><span class="p">:</span> <span class="n">VERSION</span><span class="p">,</span>
-        <span class="s1">&#39;pydantic-core version&#39;</span><span class="p">:</span> <span class="n">pdc</span><span class="o">.</span><span class="n">__version__</span><span class="p">,</span>
-        <span class="s1">&#39;pydantic-core build&#39;</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">pdc</span><span class="p">,</span> <span class="s1">&#39;build_info&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">pdc</span><span class="o">.</span><span class="n">build_profile</span><span class="p">,</span>
+        <span class="s1">&#39;pydantic-core version&#39;</span><span class="p">:</span> <span class="n">__pydantic_core_version__</span><span class="p">,</span>
+        <span class="s1">&#39;pydantic-core build&#39;</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">pdc</span><span class="p">,</span> <span class="s1">&#39;build_info&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">pdc</span><span class="o">.</span><span class="n">build_profile</span><span class="p">,</span>  <span class="c1"># pyright: ignore[reportPrivateImportUsage]</span>
         <span class="s1">&#39;python version&#39;</span><span class="p">:</span> <span class="n">sys</span><span class="o">.</span><span class="n">version</span><span class="p">,</span>
         <span class="s1">&#39;platform&#39;</span><span class="p">:</span> <span class="n">platform</span><span class="o">.</span><span class="n">platform</span><span class="p">(),</span>
         <span class="s1">&#39;related packages&#39;</span><span class="p">:</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">related_packages</span><span class="p">),</span>

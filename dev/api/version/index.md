@@ -21,7 +21,6 @@ def version_info() -> str:
     """Return complete version information for Pydantic and its dependencies."""
     import importlib.metadata
     import platform
-    import sys
     from pathlib import Path
 
     import pydantic_core._pydantic_core as pdc
@@ -52,8 +51,8 @@ def version_info() -> str:
 
     info = {
         'pydantic version': VERSION,
-        'pydantic-core version': pdc.__version__,
-        'pydantic-core build': getattr(pdc, 'build_info', None) or pdc.build_profile,
+        'pydantic-core version': __pydantic_core_version__,
+        'pydantic-core build': getattr(pdc, 'build_info', None) or pdc.build_profile,  # pyright: ignore[reportPrivateImportUsage]
         'python version': sys.version,
         'platform': platform.platform(),
         'related packages': ' '.join(related_packages),
