@@ -145,7 +145,7 @@ class SerializationInfo(Protocol[ContextT]):
         ...
 
     @property
-    def mode(self) -> Literal['python', 'json']:
+    def mode(self) -> Literal['python', 'json'] | str:
         """The serialization mode set during serialization."""
         ...
 
