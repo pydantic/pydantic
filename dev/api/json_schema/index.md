@@ -2229,10 +2229,26 @@ def typed_dict_schema(self, schema: core_schema.TypedDictSchema) -> JsonSchemaVa
     with self._config_wrapper_stack.push(config):
         json_schema = self._named_required_fields_schema(named_required_fields)
 
+    # There's some duplication between `extra_behavior` and
+    # the config's `extra`/core config's `extra_fields_behavior`.
+    # However, it is common to manually create TypedDictSchemas,
+    # where you don't necessarily have a class.
+    # At runtime, `extra_behavior` takes priority over the config
+    # for validation, so follow the same for the JSON Schema:
+    if schema.get('extra_behavior') == 'forbid':
+        json_schema['additionalProperties'] = False
+    elif schema.get('extra_behavior') == 'allow':
+        if 'extras_schema' in schema and schema['extras_schema'] != {'type': 'any'}:
+            json_schema['additionalProperties'] = self.generate_inner(schema['extras_schema'])
+        else:
+            json_schema['additionalProperties'] = True
+
     if cls is not None:
+        # `_update_class_schema()` will not override
+        # `additionalProperties` if already present:
         self._update_class_schema(json_schema, cls, config)
-    else:
-        extra = config.get('extra')
+    elif 'additionalProperties' not in json_schema:
+        extra = schema.get('config', {}).get('extra_fields_behavior')
         if extra == 'forbid':
             json_schema['additionalProperties'] = False
         elif extra == 'allow':

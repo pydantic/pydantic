@@ -102,7 +102,7 @@ Field(
 
 ```python
 Field(
-    default: _T,
+    default: _T" optional hover>_T,
     *,
     alias: str | None = _Unset,
     alias_priority: int | None = _Unset,
@@ -204,7 +204,7 @@ Field(
 Field(
     *,
     default_factory: (
-        Callable[[], _T" optional hover>_T] | Callable[[dict[str, Any]], _T" optional hover>_T]
+        Callable[[], _T] | Callable[[dict[str, Any]], _T]
     ),
     alias: str | None = _Unset,
     alias_priority: int | None = _Unset,
