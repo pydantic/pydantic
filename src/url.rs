@@ -1,52 +1,111 @@
+use std::borrow::Cow;
 use std::collections::hash_map::DefaultHasher;
 use std::fmt;
 use std::fmt::Formatter;
 use std::hash::{Hash, Hasher};
+use std::sync::OnceLock;
 
 use idna::punycode::decode_to_string;
+use jiter::{PartialMode, StringCacheMode};
 use pyo3::exceptions::PyValueError;
 use pyo3::pyclass::CompareOp;
-use pyo3::sync::PyOnceLock;
+use pyo3::sync::OnceLockExt;
 use pyo3::types::{PyDict, PyType};
 use pyo3::{intern, prelude::*, IntoPyObjectExt};
 use url::Url;
 
+use crate::input::InputType;
+use crate::recursion_guard::RecursionState;
 use crate::tools::SchemaDict;
-use crate::SchemaValidator;
-
-static SCHEMA_DEFINITION_URL: PyOnceLock<SchemaValidator> = PyOnceLock::new();
+use crate::validators::url::{MultiHostUrlValidator, UrlValidator};
+use crate::validators::{Extra, ValidationState, Validator};
+use crate::ValidationError;
 
 #[pyclass(name = "Url", module = "pydantic_core._pydantic_core", subclass, frozen)]
-#[derive(Clone, Hash)]
+#[derive(Clone)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct PyUrl {
     lib_url: Url,
+    /// Override to treat the path as empty when it is `/`. The `url` crate always normalizes an empty path to `/`,
+    /// but users may want to preserve the empty path when round-tripping.
+    path_is_empty: bool,
+    /// Cache for the serialized representation where this diverges from `lib_url.as_str()`
+    /// (i.e. when trailing slash was added to the empty path, but user didn't want that)
+    serialized: OnceLock<String>,
+}
+
+impl Hash for PyUrl {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.lib_url.hash(state);
+        self.path_is_empty.hash(state);
+        // no need to hash `serialized` as it's derived from the other two fields
+    }
 }
 
 impl PyUrl {
-    pub fn new(lib_url: Url) -> Self {
-        Self { lib_url }
+    pub fn new(lib_url: Url, path_is_empty: bool) -> Self {
+        Self {
+            lib_url,
+            path_is_empty,
+            serialized: OnceLock::new(),
+        }
     }
 
     pub fn url(&self) -> &Url {
         &self.lib_url
     }
-}
 
-fn build_schema_validator(py: Python, schema_type: &str) -> SchemaValidator {
-    let schema = PyDict::new(py);
-    schema.set_item("type", schema_type).unwrap();
-    SchemaValidator::py_new(py, &schema, None).unwrap()
+    pub fn url_mut(&mut self) -> &mut Url {
+        &mut self.lib_url
+    }
+
+    fn serialized(&self, py: Python<'_>) -> &str {
+        if self.path_is_empty {
+            self.serialized
+                .get_or_init_py_attached(py, || serialize_url_without_path_slash(&self.lib_url))
+        } else {
+            self.lib_url.as_str()
+        }
+    }
 }
 
 #[pymethods]
 impl PyUrl {
     #[new]
-    pub fn py_new(py: Python, url: &Bound<'_, PyAny>) -> PyResult<Self> {
-        let schema_obj = SCHEMA_DEFINITION_URL
-            .get_or_init(py, || build_schema_validator(py, "url"))
-            .validate_python(py, url, None, None, None, None, None, false.into(), None, None)?;
-        schema_obj.extract(py)
+    #[pyo3(signature = (url, *, preserve_empty_path=false))]
+    pub fn py_new(py: Python, url: &Bound<'_, PyAny>, preserve_empty_path: bool) -> PyResult<Self> {
+        let validator = UrlValidator::get_simple(false, preserve_empty_path);
+        let url_obj = validator
+            .validate(
+                py,
+                url,
+                &mut ValidationState::new(
+                    Extra::new(
+                        None,
+                        None,
+                        None,
+                        None,
+                        None,
+                        InputType::Python,
+                        StringCacheMode::None,
+                        None,
+                        None,
+                    ),
+                    &mut RecursionState::default(),
+                    PartialMode::Off,
+                ),
+            )
+            .map_err(|e| {
+                let name = match validator.get_name().into_py_any(py) {
+                    Ok(name) => name,
+                    Err(e) => return e,
+                };
+                ValidationError::from_val_error(py, name, InputType::Python, e, None, false, false)
+            })?
+            .downcast_bound::<Self>(py)?
+            .get()
+            .clone(); // FIXME: avoid the clone, would need to make `validate` be aware of what URL subclass to create
+        Ok(url_obj)
     }
 
     #[getter]
@@ -89,6 +148,7 @@ impl PyUrl {
     pub fn path(&self) -> Option<&str> {
         match self.lib_url.path() {
             "" => None,
+            "/" if self.path_is_empty => None,
             path => Some(path),
         }
     }
@@ -113,16 +173,16 @@ impl PyUrl {
     }
 
     // string representation of the URL, with punycode decoded when appropriate
-    pub fn unicode_string(&self) -> String {
-        unicode_url(&self.lib_url)
+    pub fn unicode_string(&self, py: Python<'_>) -> Cow<'_, str> {
+        unicode_url(self.serialized(py), &self.lib_url)
     }
 
-    pub fn __str__(&self) -> &str {
-        self.lib_url.as_str()
+    pub fn __str__(&self, py: Python<'_>) -> &str {
+        self.serialized(py)
     }
 
-    pub fn __repr__(&self) -> String {
-        format!("Url('{}')", self.lib_url)
+    pub fn __repr__(&self, py: Python<'_>) -> String {
+        format!("Url('{}')", self.serialized(py))
     }
 
     fn __richcmp__(&self, other: &Self, op: CompareOp) -> PyResult<bool> {
@@ -151,8 +211,8 @@ impl PyUrl {
         self.clone().into_py_any(py)
     }
 
-    fn __getnewargs__(&self) -> (&str,) {
-        (self.__str__(),)
+    fn __getnewargs__(&self, py: Python<'_>) -> (&str,) {
+        (self.__str__(py),)
     }
 
     #[classmethod]
@@ -201,11 +261,8 @@ pub struct PyMultiHostUrl {
 }
 
 impl PyMultiHostUrl {
-    pub fn new(ref_url: Url, extra_urls: Option<Vec<Url>>) -> Self {
-        Self {
-            ref_url: PyUrl::new(ref_url),
-            extra_urls,
-        }
+    pub fn new(ref_url: PyUrl, extra_urls: Option<Vec<Url>>) -> Self {
+        Self { ref_url, extra_urls }
     }
 
     pub fn lib_url(&self) -> &Url {
@@ -217,16 +274,43 @@ impl PyMultiHostUrl {
     }
 }
 
-static SCHEMA_DEFINITION_MULTI_HOST_URL: PyOnceLock<SchemaValidator> = PyOnceLock::new();
-
 #[pymethods]
 impl PyMultiHostUrl {
     #[new]
-    pub fn py_new(py: Python, url: &Bound<'_, PyAny>) -> PyResult<Self> {
-        let schema_obj = SCHEMA_DEFINITION_MULTI_HOST_URL
-            .get_or_init(py, || build_schema_validator(py, "multi-host-url"))
-            .validate_python(py, url, None, None, None, None, None, false.into(), None, None)?;
-        schema_obj.extract(py)
+    #[pyo3(signature = (url, *, preserve_empty_path=false))]
+    pub fn py_new(py: Python, url: &Bound<'_, PyAny>, preserve_empty_path: bool) -> PyResult<Self> {
+        let validator = MultiHostUrlValidator::get_simple(false, preserve_empty_path);
+        let url_obj = validator
+            .validate(
+                py,
+                url,
+                &mut ValidationState::new(
+                    Extra::new(
+                        None,
+                        None,
+                        None,
+                        None,
+                        None,
+                        InputType::Python,
+                        StringCacheMode::None,
+                        None,
+                        None,
+                    ),
+                    &mut RecursionState::default(),
+                    PartialMode::Off,
+                ),
+            )
+            .map_err(|e| {
+                let name = match validator.get_name().into_py_any(py) {
+                    Ok(name) => name,
+                    Err(e) => return e,
+                };
+                ValidationError::from_val_error(py, name, InputType::Python, e, None, false, false)
+            })?
+            .downcast_bound::<Self>(py)?
+            .get()
+            .clone(); // FIXME: avoid the clone, would need to make `validate` be aware of what URL subclass to create
+        Ok(url_obj)
     }
 
     #[getter]
@@ -269,12 +353,12 @@ impl PyMultiHostUrl {
     }
 
     // string representation of the URL, with punycode decoded when appropriate
-    pub fn unicode_string(&self) -> String {
+    pub fn unicode_string(&self, py: Python<'_>) -> Cow<'_, str> {
         if let Some(extra_urls) = &self.extra_urls {
             let scheme = self.ref_url.lib_url.scheme();
             let host_offset = scheme.len() + 3;
 
-            let mut full_url = self.ref_url.unicode_string();
+            let mut full_url = self.ref_url.unicode_string(py).into_owned();
             full_url.insert(host_offset, ',');
 
             // special urls will have had a trailing slash added, non-special urls will not
@@ -285,24 +369,24 @@ impl PyMultiHostUrl {
             let hosts = extra_urls
                 .iter()
                 .map(|url| {
-                    let str = unicode_url(url);
+                    let str = unicode_url(url.as_str(), url);
                     str[host_offset..str.len() - sub].to_string()
                 })
                 .collect::<Vec<String>>()
                 .join(",");
             full_url.insert_str(host_offset, &hosts);
-            full_url
+            Cow::Owned(full_url)
         } else {
-            self.ref_url.unicode_string()
+            self.ref_url.unicode_string(py)
         }
     }
 
-    pub fn __str__(&self) -> String {
+    pub fn __str__(&self, py: Python<'_>) -> String {
         if let Some(extra_urls) = &self.extra_urls {
             let scheme = self.ref_url.lib_url.scheme();
             let host_offset = scheme.len() + 3;
 
-            let mut full_url = self.ref_url.lib_url.to_string();
+            let mut full_url = self.ref_url.serialized(py).to_string();
             full_url.insert(host_offset, ',');
 
             // special urls will have had a trailing slash added, non-special urls will not
@@ -321,22 +405,22 @@ impl PyMultiHostUrl {
             full_url.insert_str(host_offset, &hosts);
             full_url
         } else {
-            self.ref_url.__str__().to_string()
+            self.ref_url.__str__(py).to_string()
         }
     }
 
-    pub fn __repr__(&self) -> String {
-        format!("MultiHostUrl('{}')", self.__str__())
+    pub fn __repr__(&self, py: Python<'_>) -> String {
+        format!("MultiHostUrl('{}')", self.__str__(py))
     }
 
-    fn __richcmp__(&self, other: &Self, op: CompareOp) -> PyResult<bool> {
+    fn __richcmp__(&self, other: &Self, op: CompareOp, py: Python<'_>) -> PyResult<bool> {
         match op {
-            CompareOp::Lt => Ok(self.unicode_string() < other.unicode_string()),
-            CompareOp::Le => Ok(self.unicode_string() <= other.unicode_string()),
-            CompareOp::Eq => Ok(self.unicode_string() == other.unicode_string()),
-            CompareOp::Ne => Ok(self.unicode_string() != other.unicode_string()),
-            CompareOp::Gt => Ok(self.unicode_string() > other.unicode_string()),
-            CompareOp::Ge => Ok(self.unicode_string() >= other.unicode_string()),
+            CompareOp::Lt => Ok(self.unicode_string(py) < other.unicode_string(py)),
+            CompareOp::Le => Ok(self.unicode_string(py) <= other.unicode_string(py)),
+            CompareOp::Eq => Ok(self.unicode_string(py) == other.unicode_string(py)),
+            CompareOp::Ne => Ok(self.unicode_string(py) != other.unicode_string(py)),
+            CompareOp::Gt => Ok(self.unicode_string(py) > other.unicode_string(py)),
+            CompareOp::Ge => Ok(self.unicode_string(py) >= other.unicode_string(py)),
         }
     }
 
@@ -354,8 +438,8 @@ impl PyMultiHostUrl {
         self.clone().into_py_any(py)
     }
 
-    fn __getnewargs__(&self) -> (String,) {
-        (self.__str__(),)
+    fn __getnewargs__(&self, py: Python<'_>) -> (String,) {
+        (self.__str__(py),)
     }
 
     #[classmethod]
@@ -477,19 +561,18 @@ fn host_to_dict<'a>(py: Python<'a>, lib_url: &Url) -> PyResult<Bound<'a, PyDict>
     Ok(dict)
 }
 
-fn unicode_url(lib_url: &Url) -> String {
-    let mut s = lib_url.to_string();
-
+fn unicode_url<'s>(serialized: &'s str, lib_url: &Url) -> Cow<'s, str> {
     match lib_url.host() {
         Some(url::Host::Domain(domain)) if is_punnycode_domain(lib_url, domain) => {
+            let mut s = serialized.to_string();
             if let Some(decoded) = decode_punycode(domain) {
                 // replace the range containing the punycode domain with the decoded domain
                 let start = lib_url.scheme().len() + 3;
                 s.replace_range(start..start + domain.len(), &decoded);
             }
-            s
+            Cow::Owned(s)
         }
-        _ => s,
+        _ => Cow::Borrowed(serialized),
     }
 }
 
@@ -516,4 +599,28 @@ fn is_punnycode_domain(lib_url: &Url, domain: &str) -> bool {
 // based on https://github.com/servo/rust-url/blob/1c1e406874b3d2aa6f36c5d2f3a5c2ea74af9efb/url/src/parser.rs#L161-L167
 pub fn scheme_is_special(scheme: &str) -> bool {
     matches!(scheme, "http" | "https" | "ws" | "wss" | "ftp" | "file")
+}
+
+fn serialize_url_without_path_slash(url: &Url) -> String {
+    // use pointer arithmetic to find the pieces we need to build the string
+    let s = url.as_str();
+    let path = url.path();
+    assert_eq!(path, "/", "`path_is_empty` expected to be set only when path is '/'");
+
+    assert!(
+        // Safety for the below: `s` and `path` should be from the same text slice, so
+        // we can pull out the slices of `s` that don't include `path`.
+        s.as_ptr() <= path.as_ptr() && unsafe { s.as_ptr().add(s.len()) } >= unsafe { path.as_ptr().add(path.len()) }
+    );
+
+    let prefix_len = path.as_ptr() as usize - s.as_ptr() as usize;
+    let suffix_len = s.len() - (prefix_len + path.len());
+
+    // Safety: prefix is the slice of `s` leading to `path`, protected by the assert above.
+    let prefix = unsafe { std::str::from_utf8_unchecked(std::slice::from_raw_parts(s.as_ptr(), prefix_len)) };
+    // Safety: suffix is the slice of `s` after `path`, protected by the assert above.
+    let suffix =
+        unsafe { std::str::from_utf8_unchecked(std::slice::from_raw_parts(path.as_ptr().add(path.len()), suffix_len)) };
+
+    format!("{prefix}{suffix}")
 }

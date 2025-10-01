@@ -197,11 +197,11 @@ pub(crate) fn infer_to_python_known(
             }
             ObType::Url => {
                 let py_url: PyUrl = value.extract()?;
-                py_url.__str__().into_py_any(py)?
+                py_url.__str__(py).into_py_any(py)?
             }
             ObType::MultiHostUrl => {
                 let py_url: PyMultiHostUrl = value.extract()?;
-                py_url.__str__().into_py_any(py)?
+                py_url.__str__(py).into_py_any(py)?
             }
             ObType::Uuid => {
                 let uuid = super::type_serializers::uuid::uuid_to_string(value)?;
@@ -476,11 +476,11 @@ pub(crate) fn infer_serialize_known<S: Serializer>(
         }
         ObType::Url => {
             let py_url: PyUrl = value.extract().map_err(py_err_se_err)?;
-            serializer.serialize_str(py_url.__str__())
+            serializer.serialize_str(py_url.__str__(value.py()))
         }
         ObType::MultiHostUrl => {
             let py_url: PyMultiHostUrl = value.extract().map_err(py_err_se_err)?;
-            serializer.serialize_str(&py_url.__str__())
+            serializer.serialize_str(&py_url.__str__(value.py()))
         }
         ObType::PydanticSerializable => {
             let py = value.py();
@@ -644,11 +644,11 @@ pub(crate) fn infer_json_key_known<'a>(
         }
         ObType::Url => {
             let py_url: PyUrl = key.extract()?;
-            Ok(Cow::Owned(py_url.__str__().to_string()))
+            Ok(Cow::Owned(py_url.__str__(key.py()).to_string()))
         }
         ObType::MultiHostUrl => {
             let py_url: PyMultiHostUrl = key.extract()?;
-            Ok(Cow::Owned(py_url.__str__()))
+            Ok(Cow::Owned(py_url.__str__(key.py()).to_string()))
         }
         ObType::Tuple => {
             let mut key_build = super::type_serializers::tuple::KeyBuilder::new();
