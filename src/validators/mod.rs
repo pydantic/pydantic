@@ -62,7 +62,7 @@ mod timedelta;
 mod tuple;
 mod typed_dict;
 mod union;
-mod url;
+pub(crate) mod url;
 mod uuid;
 mod validation_state;
 mod with_default;
