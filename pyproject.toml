@@ -48,7 +48,7 @@ dependencies = [
     'typing-extensions>=4.14.1',
     'annotated-types>=0.6.0',
     # Keep this in sync with the version in the `check_pydantic_core_version()` function:
-    'pydantic-core==2.38.0',
+    'pydantic-core @ git+https://github.com/pydantic/pydantic-core.git@dh/inline-definitions',
     'typing-inspection>=0.4.0',
 ]
 dynamic = ['version', 'readme']
