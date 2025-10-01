@@ -28,7 +28,7 @@ rust-version = "1.75"
 # TODO it would be very nice to remove the "py-clone" feature as it can panic,
 # but needs a bit of work to make sure it's not used in the codebase
 pyo3 = { version = "0.26", features = ["generate-import-lib", "num-bigint", "py-clone"] }
-regex = "1.11.1"
+regex = "1.11.3"
 strum = { version = "0.27", features = ["derive"] }
 strum_macros = "0.27"
 serde_json = { version = "1.0.145", features = ["arbitrary_precision"] }
