@@ -1,6 +1,6 @@
 use std::{io, num::FpCategory};
 
-use serde::{ser::Impossible, serde_if_integer128, Serialize, Serializer};
+use serde::{ser::Impossible, Serialize, Serializer};
 use serde_json::ser::{CompactFormatter, Formatter, PrettyFormatter, State};
 
 use super::errors::PythonSerializerError;
@@ -908,25 +908,23 @@ where
         Ok(())
     }
 
-    serde_if_integer128! {
-        fn serialize_i128(self, value: i128) -> Result<()> {
-            tri!(self
-                .ser
-                .formatter
-                .begin_string(&mut self.ser.writer)
-                .map_err(|e| PythonSerializerError { message: e.to_string() }));
-            tri!(self
-                .ser
-                .formatter
-                .write_number_str(&mut self.ser.writer, &value.to_string())
-                .map_err(|e| PythonSerializerError { message: e.to_string() }));
-            tri!(self
-                .ser
-                .formatter
-                .end_string(&mut self.ser.writer)
-                .map_err(|e| PythonSerializerError { message: e.to_string() }));
-            Ok(())
-        }
+    fn serialize_i128(self, value: i128) -> Result<()> {
+        tri!(self
+            .ser
+            .formatter
+            .begin_string(&mut self.ser.writer)
+            .map_err(|e| PythonSerializerError { message: e.to_string() }));
+        tri!(self
+            .ser
+            .formatter
+            .write_number_str(&mut self.ser.writer, &value.to_string())
+            .map_err(|e| PythonSerializerError { message: e.to_string() }));
+        tri!(self
+            .ser
+            .formatter
+            .end_string(&mut self.ser.writer)
+            .map_err(|e| PythonSerializerError { message: e.to_string() }));
+        Ok(())
     }
 
     fn serialize_u8(self, value: u8) -> Result<()> {
@@ -1005,25 +1003,23 @@ where
         Ok(())
     }
 
-    serde_if_integer128! {
-        fn serialize_u128(self, value: u128) -> Result<()> {
-            tri!(self
-                .ser
-                .formatter
-                .begin_string(&mut self.ser.writer)
-                .map_err(|e| PythonSerializerError { message: e.to_string() }));
-            tri!(self
-                .ser
-                .formatter
-                .write_number_str(&mut self.ser.writer, &value.to_string())
-                .map_err(|e| PythonSerializerError { message: e.to_string() }));
-            tri!(self
-                .ser
-                .formatter
-                .end_string(&mut self.ser.writer)
-                .map_err(|e| PythonSerializerError { message: e.to_string() }));
-            Ok(())
-        }
+    fn serialize_u128(self, value: u128) -> Result<()> {
+        tri!(self
+            .ser
+            .formatter
+            .begin_string(&mut self.ser.writer)
+            .map_err(|e| PythonSerializerError { message: e.to_string() }));
+        tri!(self
+            .ser
+            .formatter
+            .write_number_str(&mut self.ser.writer, &value.to_string())
+            .map_err(|e| PythonSerializerError { message: e.to_string() }));
+        tri!(self
+            .ser
+            .formatter
+            .end_string(&mut self.ser.writer)
+            .map_err(|e| PythonSerializerError { message: e.to_string() }));
+        Ok(())
     }
 
     fn serialize_f32(self, _value: f32) -> Result<()> {
@@ -1156,10 +1152,8 @@ impl<W: io::Write, F: Formatter> serde::ser::Serializer for NumberStrEmitter<'_,
         Err(invalid_number())
     }
 
-    serde_if_integer128! {
-        fn serialize_i128(self, _v: i128) -> Result<()> {
-            Err(invalid_number())
-        }
+    fn serialize_i128(self, _v: i128) -> Result<()> {
+        Err(invalid_number())
     }
 
     fn serialize_u8(self, _v: u8) -> Result<()> {
@@ -1178,10 +1172,8 @@ impl<W: io::Write, F: Formatter> serde::ser::Serializer for NumberStrEmitter<'_,
         Err(invalid_number())
     }
 
-    serde_if_integer128! {
-        fn serialize_u128(self, _v: u128) -> Result<()> {
-            Err(invalid_number())
-        }
+    fn serialize_u128(self, _v: u128) -> Result<()> {
+        Err(invalid_number())
     }
 
     fn serialize_f32(self, _v: f32) -> Result<()> {
