@@ -338,6 +338,7 @@ impl TaggedUnionSerializer {
                 PydanticSerializationUnexpectedValue::new(
                     Some("Defaulting to left to right union serialization - failed to get discriminator value for tagged union serialization".to_string()),
                     None,
+                    None,
                     Some(value.clone().unbind()),
                 )
             );

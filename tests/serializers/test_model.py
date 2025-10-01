@@ -284,6 +284,12 @@ def test_model_wrong_warn():
     ):
         assert s.to_python({'foo': 1, 'bar': b'more'}) == {'foo': 1, 'bar': b'more'}
 
+    with pytest.warns(
+        UserWarning,
+        match=r"Expected `int` - serialized value may not be as expected \[field_name=foo, input_value='lorem', input_type=str\]",
+    ):
+        assert s.to_python(BasicModel(foo='lorem')) == {'foo': 'lorem'}
+
 
 def test_exclude_none():
     s = SchemaSerializer(

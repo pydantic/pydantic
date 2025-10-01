@@ -1,6 +1,7 @@
 use std::convert::Infallible;
 use std::ffi::CString;
 use std::fmt;
+use std::string::ToString;
 use std::sync::Mutex;
 
 use pyo3::exceptions::{PyTypeError, PyUserWarning, PyValueError};
@@ -383,12 +384,13 @@ impl CollectWarnings {
             Ok(())
         } else if extra.check.enabled() {
             Err(PydanticSerializationUnexpectedValue::new_from_parts(
+                extra.field_name.map(ToString::to_string),
                 Some(field_type.to_string()),
                 Some(value.clone().unbind()),
             )
             .to_py_err())
         } else {
-            self.fallback_warning(field_type, value);
+            self.fallback_warning(extra.field_name, field_type, value);
             Ok(())
         }
     }
@@ -408,14 +410,15 @@ impl CollectWarnings {
             // in particular, in future we could allow errors instead of warnings on fallback
             Err(S::Error::custom(UNEXPECTED_TYPE_SER_MARKER))
         } else {
-            self.fallback_warning(field_type, value);
+            self.fallback_warning(extra.field_name, field_type, value);
             Ok(())
         }
     }
 
-    fn fallback_warning(&self, field_type: &str, value: &Bound<'_, PyAny>) {
+    fn fallback_warning(&self, field_name: Option<&str>, field_type: &str, value: &Bound<'_, PyAny>) {
         if self.mode != WarningsMode::None {
             self.register_warning(PydanticSerializationUnexpectedValue::new_from_parts(
+                field_name.map(ToString::to_string),
                 Some(field_type.to_string()),
                 Some(value.clone().unbind()),
             ));
