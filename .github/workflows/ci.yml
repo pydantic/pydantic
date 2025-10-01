@@ -564,7 +564,7 @@ jobs:
       - uses: actions/checkout@v5
 
       - name: get dist artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           pattern: pypi_files_*
           merge-multiple: true
@@ -605,7 +605,7 @@ jobs:
       - uses: actions/checkout@v5
 
       - name: get dist artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           pattern: pypi_files_linux_*
           merge-multiple: true
@@ -656,7 +656,7 @@ jobs:
         uses: astral-sh/setup-uv@v6
 
       - name: get dist artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           pattern: pypi_files_*
           merge-multiple: true
@@ -687,7 +687,7 @@ jobs:
         run: uv run .github/check_version.py
 
       - name: get dist artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           pattern: pypi_files_*
           merge-multiple: true
@@ -696,7 +696,7 @@ jobs:
       - run: uv publish --trusted-publishing always
 
       - name: get wasm dist artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: wasm_wheels
           path: wasm
