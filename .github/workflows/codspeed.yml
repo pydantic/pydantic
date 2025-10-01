@@ -60,6 +60,7 @@ jobs:
         run: uv pip install ${{ steps.pgo-wheel.outputs.wheel }} --force-reinstall
 
       - name: Run CodSpeed benchmarks
-        uses: CodSpeedHQ/action@v3
+        uses: CodSpeedHQ/action@v4
         with:
+          mode: instrumentation
           run: uv run --group=codspeed pytest tests/benchmarks/ --codspeed
