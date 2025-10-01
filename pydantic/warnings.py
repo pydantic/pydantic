@@ -14,6 +14,7 @@ __all__ = (
     'PydanticExperimentalWarning',
     'ArbitraryTypeWarning',
     'UnsupportedFieldAttributeWarning',
+    'TypedDictExtraConfigWarning',
 )
 
 
@@ -107,3 +108,7 @@ class ArbitraryTypeWarning(CoreSchemaGenerationWarning):
 
 class UnsupportedFieldAttributeWarning(CoreSchemaGenerationWarning):
     """A warning raised when a `Field()` attribute isn't supported in the context it is used."""
+
+
+class TypedDictExtraConfigWarning(CoreSchemaGenerationWarning):
+    """A warning raised when the [`extra`][pydantic.ConfigDict.extra] configuration is incompatible with the `closed` or `extra_items` specification."""
