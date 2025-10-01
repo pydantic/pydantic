@@ -46,7 +46,7 @@ macro_rules! build_serializer {
                 let py = value.py();
                 match value.extract::<$extract>() {
                     Ok(py_url) => match extra.mode {
-                        SerMode::Json => py_url.__str__().into_py_any(py),
+                        SerMode::Json => py_url.__str__(value.py()).into_py_any(py),
                         _ => Ok(value.clone().unbind()),
                     },
                     Err(_) => {
@@ -58,7 +58,7 @@ macro_rules! build_serializer {
 
             fn json_key<'a>(&self, key: &'a Bound<'_, PyAny>, extra: &Extra) -> PyResult<Cow<'a, str>> {
                 match key.extract::<$extract>() {
-                    Ok(py_url) => Ok(Cow::Owned(py_url.__str__().to_string())),
+                    Ok(py_url) => Ok(Cow::Owned(py_url.__str__(key.py()).to_string())),
                     Err(_) => {
                         extra.warnings.on_fallback_py(self.get_name(), key, extra)?;
                         infer_json_key(key, extra)
@@ -75,7 +75,7 @@ macro_rules! build_serializer {
                 extra: &Extra,
             ) -> Result<S::Ok, S::Error> {
                 match value.extract::<$extract>() {
-                    Ok(py_url) => serializer.serialize_str(&py_url.__str__()),
+                    Ok(py_url) => serializer.serialize_str(&py_url.__str__(value.py())),
                     Err(_) => {
                         extra
                             .warnings
