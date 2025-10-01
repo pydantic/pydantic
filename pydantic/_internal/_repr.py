@@ -14,8 +14,9 @@ from typing_inspection.introspection import is_union_origin
 from . import _typing_extra
 
 if TYPE_CHECKING:
-    ReprArgs: TypeAlias = Iterable[tuple[str | None, Any]]
-    RichReprResult: TypeAlias = Iterable[Any | tuple[Any] | tuple[str, Any] | tuple[str, Any, Any]]
+    # TODO remove type error comments when we drop support for Python 3.9
+    ReprArgs: TypeAlias = Iterable[tuple[str | None, Any]]  # pyright: ignore[reportGeneralTypeIssues]
+    RichReprResult: TypeAlias = Iterable[Any | tuple[Any] | tuple[str, Any] | tuple[str, Any, Any]]  # pyright: ignore[reportGeneralTypeIssues]
 
 
 class PlainRepr(str):

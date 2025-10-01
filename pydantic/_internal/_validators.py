@@ -17,8 +17,7 @@ from typing import Any, Callable, TypeVar, Union, cast
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import typing_extensions
-from pydantic_core import PydanticCustomError, core_schema
-from pydantic_core._pydantic_core import PydanticKnownError
+from pydantic_core import PydanticCustomError, PydanticKnownError, core_schema
 from typing_extensions import get_args, get_origin
 from typing_inspection import typing_objects
 
