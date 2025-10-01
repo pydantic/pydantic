@@ -286,7 +286,7 @@ def test_model_wrong_warn():
 
     with pytest.warns(
         UserWarning,
-        match=r"Expected `int` - serialized value may not be as expected \[field_name=foo, input_value='lorem', input_type=str\]",
+        match=r"Expected `int` - serialized value may not be as expected \[field_name='foo', input_value='lorem', input_type=str\]",
     ):
         assert s.to_python(BasicModel(foo='lorem')) == {'foo': 'lorem'}
 

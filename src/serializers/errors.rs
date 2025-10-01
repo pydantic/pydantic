@@ -195,7 +195,7 @@ impl PydanticSerializationUnexpectedValue {
             if let Some(field_name) = &self.field_name {
                 write!(
                     message,
-                    " [field_name={field_name}, input_value={value_str}, input_type={input_type}]"
+                    " [field_name='{field_name}', input_value={value_str}, input_type={input_type}]"
                 )
                 .expect("writing to string should never fail");
             } else {
