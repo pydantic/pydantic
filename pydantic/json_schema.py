@@ -2264,6 +2264,8 @@ class GenerateJsonSchema:
         extras = {k: v for k, v in json_schema.items() if k not in {'$ref', '$defs'}}
         if extras:
             restored_schema.update(extras)
+        if '$defs' in json_schema:
+            restored_schema['$defs'] = json_schema['$defs']
         return restored_schema
 
     def encode_default(self, dft: Any) -> Any:

@@ -5386,6 +5386,40 @@ def test_resolve_def_schema_from_core_schema() -> None:
     }
 
 
+def test_metadata_resolve_ref_schema_preserves_defs() -> None:
+    class Inner(BaseModel):
+        x: int
+
+    inner_core_schema = TypeAdapter(Inner).core_schema
+
+    def modify_schema(_schema_or_field: core_schema.CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
+        json_schema = handler(inner_core_schema)
+        resolved_schema = handler.resolve_ref_schema(json_schema)
+        resolved_schema['description'] = 'custom description'
+        return json_schema
+
+    class WrapperModel(BaseModel):
+        x: Inner
+
+        @classmethod
+        def __get_pydantic_core_schema__(
+            cls, source: type[Any], handler: GetCoreSchemaHandler
+        ) -> core_schema.CoreSchema:
+            schema = handler(source)
+            schema = schema.copy()
+            metadata = schema.setdefault('metadata', {})
+            metadata.setdefault('pydantic_js_functions', []).append(modify_schema)
+            return schema
+
+    schema_map, schema_defs = models_json_schema([(WrapperModel, 'validation')])
+    schema = schema_map[(WrapperModel, 'validation')]
+
+    assert schema == {'$ref': '#/$defs/WrapperModel'}
+    wrapper_definition = schema_defs['$defs']['WrapperModel']
+    assert wrapper_definition['description'] == 'custom description'
+    assert wrapper_definition['properties'] == {'x': {'title': 'X', 'type': 'integer'}}
+
+
 def test_examples_annotation() -> None:
     ListWithExamples = Annotated[
         list[float],
