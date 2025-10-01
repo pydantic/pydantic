@@ -634,6 +634,7 @@ class TypeAdapter(Generic[T]):
         return self.serializer.to_json(
             instance,
             indent=indent,
+            ensure_ascii=ensure_ascii,
             include=include,
             exclude=exclude,
             by_alias=by_alias,
