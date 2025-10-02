@@ -300,11 +300,12 @@ impl ModelValidator {
             }
         }
 
-        let instance = create_class(self.class.bind(py))?;
+        let instance;
 
         if self.root_model {
             let state = &mut state.rebind_extra(|extra| extra.field_name = Some(PyString::new(py, ROOT_FIELD)));
             let output = self.validator.validate(py, input, state)?;
+            instance = create_class(self.class.bind(py))?;
 
             let fields_set = if input.as_python().is_some_and(|py_input| py_input.is(&self.undefined)) {
                 PySet::empty(py)?
@@ -315,6 +316,7 @@ impl ModelValidator {
             force_setattr(py, &instance, intern!(py, ROOT_FIELD), output)?;
         } else {
             let output = self.validator.validate(py, input, state)?;
+            instance = create_class(self.class.bind(py))?;
 
             let (model_dict, model_extra, val_fields_set): (Bound<PyAny>, Bound<PyAny>, Bound<PyAny>) =
                 output.extract(py)?;
