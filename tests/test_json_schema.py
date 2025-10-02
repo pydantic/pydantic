@@ -5587,7 +5587,7 @@ def test_resolve_ref_schema_nested_ref_preserves_parent_mapping() -> None:
     class WrapperModel(BaseModel):
         items: list[Inner]
 
-    def find_nested_ref(schema: Any, parent_ref: str) -> str | None:
+    def find_nested_ref(schema: Any, parent_ref: str) -> Optional[str]:
         if isinstance(schema, dict):
             ref = schema.get('$ref')
             if isinstance(ref, str) and ref.startswith(f'{parent_ref}/$defs/'):
