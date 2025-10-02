@@ -59,6 +59,7 @@ from pydantic import (
     field_serializer,
     field_validator,
 )
+from pydantic._internal._schema_generation_shared import GenerateJsonSchemaHandler
 from pydantic.color import Color
 from pydantic.config import ConfigDict
 from pydantic.dataclasses import dataclass
@@ -5423,6 +5424,56 @@ def test_metadata_resolve_ref_schema_preserves_defs() -> None:
     wrapper_defs = wrapper_schema.get('$defs', {})
     assert 'WrapperModel' in wrapper_defs
     assert wrapper_defs['WrapperModel'] == wrapper_definition
+
+
+def test_resolve_ref_schema_nested_ref_preserves_parent_mapping() -> None:
+    class Inner(BaseModel):
+        value: int
+
+    class WrapperModel(BaseModel):
+        items: list[Inner]
+
+    def find_nested_ref(schema: Any, parent_ref: str) -> str | None:
+        if isinstance(schema, dict):
+            ref = schema.get('$ref')
+            if isinstance(ref, str) and ref.startswith(f'{parent_ref}/$defs/'):
+                return ref
+            for value in schema.values():
+                nested = find_nested_ref(value, parent_ref)
+                if nested is not None:
+                    return nested
+        elif isinstance(schema, list):
+            for item in schema:
+                nested = find_nested_ref(item, parent_ref)
+                if nested is not None:
+                    return nested
+        return None
+
+    adapter = TypeAdapter(WrapperModel)
+    generator = GenerateJsonSchema()
+    handler = GenerateJsonSchemaHandler(generator, None)
+
+    parent_schema = generator.generate_inner(adapter.core_schema)
+    parent_ref = parent_schema['$ref']
+    defs_ref = generator.json_to_defs_refs[parent_ref]
+    parent_definition = generator.definitions[defs_ref]
+    properties = parent_definition['properties']
+    items_schema = properties['items']
+
+    nested_key = 'NestedItems'
+    nested_ref = f'{parent_ref}/$defs/{nested_key}'
+    parent_definition.setdefault('$defs', {})[nested_key] = items_schema
+    properties['items'] = {'$ref': nested_ref, 'title': items_schema.get('title', 'Items')}
+
+    nested_schema = handler.resolve_ref_schema({'$ref': nested_ref, '$defs': generator.definitions})
+    assert nested_schema == items_schema
+
+    resolved_parent = handler.resolve_ref_schema({'$ref': parent_ref, '$defs': generator.definitions})
+    assert find_nested_ref(resolved_parent, parent_ref) == nested_ref
+
+    schema_map, schema_defs = TypeAdapter.json_schemas([((WrapperModel, 'validation'), 'validation', adapter)])
+    wrapper_schema = schema_map[((WrapperModel, 'validation'), 'validation')]
+    assert wrapper_schema == {'$ref': '#/$defs/WrapperModel'}
 
 
 def test_examples_annotation() -> None:

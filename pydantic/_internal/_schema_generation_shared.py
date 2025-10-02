@@ -80,7 +80,8 @@ class GenerateJsonSchemaHandler(GetJsonSchemaHandler):
                         break
                 if parent_tokens is not None:
                     parent_ref = self.generate_json_schema._json_pointer_from_tokens(parent_tokens)
-                    self.generate_json_schema._inline_ref_schemas.setdefault(parent_ref, wrapper_schema)
+                    if wrapper_schema.get('$ref') == parent_ref:
+                        self.generate_json_schema._inline_ref_schemas.setdefault(parent_ref, wrapper_schema)
         defs_ref = self.generate_json_schema.json_to_defs_refs.get(json_ref)
         json_schema = self.generate_json_schema.get_schema_from_definitions(ref, root=maybe_ref_json_schema)
         if json_schema is None:
