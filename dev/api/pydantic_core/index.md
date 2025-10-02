@@ -36,6 +36,7 @@ validate_python(
     input: Any,
     *,
     strict: bool | None = None,
+    extra: ExtraBehavior | None = None,
     from_attributes: bool | None = None,
     context: Any | None = None,
     self_instance: Any | None = None,
@@ -52,7 +53,7 @@ Validate a Python object against the schema and return the validated object.
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `input` | `Any` | The Python object to validate. | *required* | | `strict` | `bool | None` | Whether to validate the object in strict mode. If None, the value of CoreConfig.strict is used. | `None` | | `from_attributes` | `bool | None` | Whether to validate objects as inputs to models by extracting attributes. If None, the value of CoreConfig.from_attributes is used. | `None` | | `context` | `Any | None` | The context to use for validation, this is passed to functional validators as info.context. | `None` | | `self_instance` | `Any | None` | An instance of a model set attributes on from validation, this is used when running validation from the __init__ method of a model. | `None` | | `allow_partial` | `bool | Literal['off', 'on', 'trailing-strings']` | Whether to allow partial validation; if True errors in the last element of sequences and mappings are ignored. 'trailing-strings' means any final unfinished JSON string is included in the result. | `False` | | `by_alias` | `bool | None` | Whether to use the field's alias when validating against the provided input data. | `None` | | `by_name` | `bool | None` | Whether to use the field's name when validating against the provided input data. | `None` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `input` | `Any` | The Python object to validate. | *required* | | `strict` | `bool | None` | Whether to validate the object in strict mode. If None, the value of CoreConfig.strict is used. | `None` | | `extra` | `ExtraBehavior | None` | Whether to ignore, allow, or forbid extra data during model validation. If None, the value of CoreConfig.extra_fields_behavior is used. | `None` | | `from_attributes` | `bool | None` | Whether to validate objects as inputs to models by extracting attributes. If None, the value of CoreConfig.from_attributes is used. | `None` | | `context` | `Any | None` | The context to use for validation, this is passed to functional validators as info.context. | `None` | | `self_instance` | `Any | None` | An instance of a model set attributes on from validation, this is used when running validation from the __init__ method of a model. | `None` | | `allow_partial` | `bool | Literal['off', 'on', 'trailing-strings']` | Whether to allow partial validation; if True errors in the last element of sequences and mappings are ignored. 'trailing-strings' means any final unfinished JSON string is included in the result. | `False` | | `by_alias` | `bool | None` | Whether to use the field's alias when validating against the provided input data. | `None` | | `by_name` | `bool | None` | Whether to use the field's name when validating against the provided input data. | `None` |
 
 Raises:
 
@@ -69,6 +70,7 @@ isinstance_python(
     input: Any,
     *,
     strict: bool | None = None,
+    extra: ExtraBehavior | None = None,
     from_attributes: bool | None = None,
     context: Any | None = None,
     self_instance: Any | None = None,
@@ -93,6 +95,7 @@ validate_json(
     input: str | bytes | bytearray,
     *,
     strict: bool | None = None,
+    extra: ExtraBehavior | None = None,
     context: Any | None = None,
     self_instance: Any | None = None,
     allow_partial: (
@@ -112,7 +115,7 @@ It also handles constructing the correct Python type even in strict mode, where 
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `input` | `str | bytes | bytearray` | The JSON data to validate. | *required* | | `strict` | `bool | None` | Whether to validate the object in strict mode. If None, the value of CoreConfig.strict is used. | `None` | | `context` | `Any | None` | The context to use for validation, this is passed to functional validators as info.context. | `None` | | `self_instance` | `Any | None` | An instance of a model set attributes on from validation. | `None` | | `allow_partial` | `bool | Literal['off', 'on', 'trailing-strings']` | Whether to allow partial validation; if True incomplete JSON will be parsed successfully and errors in the last element of sequences and mappings are ignored. 'trailing-strings' means any final unfinished JSON string is included in the result. | `False` | | `by_alias` | `bool | None` | Whether to use the field's alias when validating against the provided input data. | `None` | | `by_name` | `bool | None` | Whether to use the field's name when validating against the provided input data. | `None` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `input` | `str | bytes | bytearray` | The JSON data to validate. | *required* | | `strict` | `bool | None` | Whether to validate the object in strict mode. If None, the value of CoreConfig.strict is used. | `None` | | `extra` | `ExtraBehavior | None` | Whether to ignore, allow, or forbid extra data during model validation. If None, the value of CoreConfig.extra_fields_behavior is used. | `None` | | `context` | `Any | None` | The context to use for validation, this is passed to functional validators as info.context. | `None` | | `self_instance` | `Any | None` | An instance of a model set attributes on from validation. | `None` | | `allow_partial` | `bool | Literal['off', 'on', 'trailing-strings']` | Whether to allow partial validation; if True incomplete JSON will be parsed successfully and errors in the last element of sequences and mappings are ignored. 'trailing-strings' means any final unfinished JSON string is included in the result. | `False` | | `by_alias` | `bool | None` | Whether to use the field's alias when validating against the provided input data. | `None` | | `by_name` | `bool | None` | Whether to use the field's name when validating against the provided input data. | `None` |
 
 Raises:
 
@@ -129,6 +132,7 @@ validate_strings(
     input: _StringInput,
     *,
     strict: bool | None = None,
+    extra: ExtraBehavior | None = None,
     context: Any | None = None,
     allow_partial: (
         bool | Literal["off", "on", "trailing-strings"]
@@ -145,7 +149,7 @@ This is similar to `validate_json` but applies to scenarios where the input will
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `input` | `_StringInput` | The input as a string, or bytes/bytearray if strict=False. | *required* | | `strict` | `bool | None` | Whether to validate the object in strict mode. If None, the value of CoreConfig.strict is used. | `None` | | `context` | `Any | None` | The context to use for validation, this is passed to functional validators as info.context. | `None` | | `allow_partial` | `bool | Literal['off', 'on', 'trailing-strings']` | Whether to allow partial validation; if True errors in the last element of sequences and mappings are ignored. 'trailing-strings' means any final unfinished JSON string is included in the result. | `False` | | `by_alias` | `bool | None` | Whether to use the field's alias when validating against the provided input data. | `None` | | `by_name` | `bool | None` | Whether to use the field's name when validating against the provided input data. | `None` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `input` | `_StringInput` | The input as a string, or bytes/bytearray if strict=False. | *required* | | `strict` | `bool | None` | Whether to validate the object in strict mode. If None, the value of CoreConfig.strict is used. | `None` | | `extra` | `ExtraBehavior | None` | Whether to ignore, allow, or forbid extra data during model validation. If None, the value of CoreConfig.extra_fields_behavior is used. | `None` | | `context` | `Any | None` | The context to use for validation, this is passed to functional validators as info.context. | `None` | | `allow_partial` | `bool | Literal['off', 'on', 'trailing-strings']` | Whether to allow partial validation; if True errors in the last element of sequences and mappings are ignored. 'trailing-strings' means any final unfinished JSON string is included in the result. | `False` | | `by_alias` | `bool | None` | Whether to use the field's alias when validating against the provided input data. | `None` | | `by_name` | `bool | None` | Whether to use the field's name when validating against the provided input data. | `None` |
 
 Raises:
 
@@ -164,6 +168,7 @@ validate_assignment(
     field_value: Any,
     *,
     strict: bool | None = None,
+    extra: ExtraBehavior | None = None,
     from_attributes: bool | None = None,
     context: Any | None = None,
     by_alias: bool | None = None,
@@ -179,7 +184,7 @@ Validate an assignment to a field on a model.
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `obj` | `Any` | The model instance being assigned to. | *required* | | `field_name` | `str` | The name of the field to validate assignment for. | *required* | | `field_value` | `Any` | The value to assign to the field. | *required* | | `strict` | `bool | None` | Whether to validate the object in strict mode. If None, the value of CoreConfig.strict is used. | `None` | | `from_attributes` | `bool | None` | Whether to validate objects as inputs to models by extracting attributes. If None, the value of CoreConfig.from_attributes is used. | `None` | | `context` | `Any | None` | The context to use for validation, this is passed to functional validators as info.context. | `None` | | `by_alias` | `bool | None` | Whether to use the field's alias when validating against the provided input data. | `None` | | `by_name` | `bool | None` | Whether to use the field's name when validating against the provided input data. | `None` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `obj` | `Any` | The model instance being assigned to. | *required* | | `field_name` | `str` | The name of the field to validate assignment for. | *required* | | `field_value` | `Any` | The value to assign to the field. | *required* | | `strict` | `bool | None` | Whether to validate the object in strict mode. If None, the value of CoreConfig.strict is used. | `None` | | `extra` | `ExtraBehavior | None` | Whether to ignore, allow, or forbid extra data during model validation. If None, the value of CoreConfig.extra_fields_behavior is used. | `None` | | `from_attributes` | `bool | None` | Whether to validate objects as inputs to models by extracting attributes. If None, the value of CoreConfig.from_attributes is used. | `None` | | `context` | `Any | None` | The context to use for validation, this is passed to functional validators as info.context. | `None` | | `by_alias` | `bool | None` | Whether to use the field's alias when validating against the provided input data. | `None` | | `by_name` | `bool | None` | Whether to use the field's name when validating against the provided input data. | `None` |
 
 Raises:
 
@@ -240,6 +245,7 @@ to_python(
     exclude_unset: bool = False,
     exclude_defaults: bool = False,
     exclude_none: bool = False,
+    exclude_computed_fields: bool = False,
     round_trip: bool = False,
     warnings: (
         bool | Literal["none", "warn", "error"]
@@ -255,7 +261,7 @@ Serialize/marshal a Python object to a Python object including transforming and 
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `value` | `Any` | The Python object to serialize. | *required* | | `mode` | `str | None` | The serialization mode to use, either 'python' or 'json', defaults to 'python'. In JSON mode, all values are converted to JSON compatible types, e.g. None, int, float, str, list, dict. | `None` | | `include` | `_IncEx | None` | A set of fields to include, if None all fields are included. | `None` | | `exclude` | `_IncEx | None` | A set of fields to exclude, if None no fields are excluded. | `None` | | `by_alias` | `bool | None` | Whether to use the alias names of fields. | `None` | | `exclude_unset` | `bool` | Whether to exclude fields that are not set, e.g. are not included in __pydantic_fields_set__. | `False` | | `exclude_defaults` | `bool` | Whether to exclude fields that are equal to their default value. | `False` | | `exclude_none` | `bool` | Whether to exclude fields that have a value of None. | `False` | | `round_trip` | `bool` | Whether to enable serialization and validation round-trip support. | `False` | | `warnings` | `bool | Literal['none', 'warn', 'error']` | How to handle invalid fields. False/"none" ignores them, True/"warn" logs errors, "error" raises a PydanticSerializationError. | `True` | | `fallback` | `Callable[[Any], Any] | None` | A function to call when an unknown value is encountered, if None a PydanticSerializationError error is raised. | `None` | | `serialize_as_any` | `bool` | Whether to serialize fields with duck-typing serialization behavior. | `False` | | `context` | `Any | None` | The context to use for serialization, this is passed to functional serializers as info.context. | `None` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `value` | `Any` | The Python object to serialize. | *required* | | `mode` | `str | None` | The serialization mode to use, either 'python' or 'json', defaults to 'python'. In JSON mode, all values are converted to JSON compatible types, e.g. None, int, float, str, list, dict. | `None` | | `include` | `_IncEx | None` | A set of fields to include, if None all fields are included. | `None` | | `exclude` | `_IncEx | None` | A set of fields to exclude, if None no fields are excluded. | `None` | | `by_alias` | `bool | None` | Whether to use the alias names of fields. | `None` | | `exclude_unset` | `bool` | Whether to exclude fields that are not set, e.g. are not included in __pydantic_fields_set__. | `False` | | `exclude_defaults` | `bool` | Whether to exclude fields that are equal to their default value. | `False` | | `exclude_none` | `bool` | Whether to exclude fields that have a value of None. | `False` | | `exclude_computed_fields` | `bool` | Whether to exclude computed fields. | `False` | | `round_trip` | `bool` | Whether to enable serialization and validation round-trip support. | `False` | | `warnings` | `bool | Literal['none', 'warn', 'error']` | How to handle invalid fields. False/"none" ignores them, True/"warn" logs errors, "error" raises a PydanticSerializationError. | `True` | | `fallback` | `Callable[[Any], Any] | None` | A function to call when an unknown value is encountered, if None a PydanticSerializationError error is raised. | `None` | | `serialize_as_any` | `bool` | Whether to serialize fields with duck-typing serialization behavior. | `False` | | `context` | `Any | None` | The context to use for serialization, this is passed to functional serializers as info.context. | `None` |
 
 Raises:
 
@@ -279,6 +285,7 @@ to_json(
     exclude_unset: bool = False,
     exclude_defaults: bool = False,
     exclude_none: bool = False,
+    exclude_computed_fields: bool = False,
     round_trip: bool = False,
     warnings: (
         bool | Literal["none", "warn", "error"]
@@ -294,7 +301,7 @@ Serialize a Python object to JSON including transforming and filtering data.
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `value` | `Any` | The Python object to serialize. | *required* | | `indent` | `int | None` | If None, the JSON will be compact, otherwise it will be pretty-printed with the indent provided. | `None` | | `ensure_ascii` | `bool` | If True, the output is guaranteed to have all incoming non-ASCII characters escaped. If False (the default), these characters will be output as-is. | `False` | | `include` | `_IncEx | None` | A set of fields to include, if None all fields are included. | `None` | | `exclude` | `_IncEx | None` | A set of fields to exclude, if None no fields are excluded. | `None` | | `by_alias` | `bool | None` | Whether to use the alias names of fields. | `None` | | `exclude_unset` | `bool` | Whether to exclude fields that are not set, e.g. are not included in __pydantic_fields_set__. | `False` | | `exclude_defaults` | `bool` | Whether to exclude fields that are equal to their default value. | `False` | | `exclude_none` | `bool` | Whether to exclude fields that have a value of None. | `False` | | `round_trip` | `bool` | Whether to enable serialization and validation round-trip support. | `False` | | `warnings` | `bool | Literal['none', 'warn', 'error']` | How to handle invalid fields. False/"none" ignores them, True/"warn" logs errors, "error" raises a PydanticSerializationError. | `True` | | `fallback` | `Callable[[Any], Any] | None` | A function to call when an unknown value is encountered, if None a PydanticSerializationError error is raised. | `None` | | `serialize_as_any` | `bool` | Whether to serialize fields with duck-typing serialization behavior. | `False` | | `context` | `Any | None` | The context to use for serialization, this is passed to functional serializers as info.context. | `None` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `value` | `Any` | The Python object to serialize. | *required* | | `indent` | `int | None` | If None, the JSON will be compact, otherwise it will be pretty-printed with the indent provided. | `None` | | `ensure_ascii` | `bool` | If True, the output is guaranteed to have all incoming non-ASCII characters escaped. If False (the default), these characters will be output as-is. | `False` | | `include` | `_IncEx | None` | A set of fields to include, if None all fields are included. | `None` | | `exclude` | `_IncEx | None` | A set of fields to exclude, if None no fields are excluded. | `None` | | `by_alias` | `bool | None` | Whether to use the alias names of fields. | `None` | | `exclude_unset` | `bool` | Whether to exclude fields that are not set, e.g. are not included in __pydantic_fields_set__. | `False` | | `exclude_defaults` | `bool` | Whether to exclude fields that are equal to their default value. | `False` | | `exclude_none` | `bool` | Whether to exclude fields that have a value of None. | `False` | | `exclude_computed_fields` | `bool` | Whether to exclude computed fields. | `False` | | `round_trip` | `bool` | Whether to enable serialization and validation round-trip support. | `False` | | `warnings` | `bool | Literal['none', 'warn', 'error']` | How to handle invalid fields. False/"none" ignores them, True/"warn" logs errors, "error" raises a PydanticSerializationError. | `True` | | `fallback` | `Callable[[Any], Any] | None` | A function to call when an unknown value is encountered, if None a PydanticSerializationError error is raised. | `None` | | `serialize_as_any` | `bool` | Whether to serialize fields with duck-typing serialization behavior. | `False` | | `context` | `Any | None` | The context to use for serialization, this is passed to functional serializers as info.context. | `None` |
 
 Raises:
 
@@ -1023,7 +1030,7 @@ type: ErrorType
 
 ```
 
-The type of error that occurred, this should a "slug" identifier that changes rarely or never.
+The type of error that occurred, this should be a "slug" identifier that changes rarely or never.
 
 ### message_template_python
 

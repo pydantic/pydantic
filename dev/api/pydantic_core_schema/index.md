@@ -62,7 +62,7 @@ The current serialization context.
 ### mode
 
 ```python
-mode: Literal['python', 'json']
+mode: Literal['python', 'json'] | str
 
 ```
 
@@ -103,6 +103,15 @@ exclude_none: bool
 ```
 
 The `exclude_none` argument set during serialization.
+
+### exclude_computed_fields
+
+```python
+exclude_computed_fields: bool
+
+```
+
+The `exclude_computed_fields` argument set during serialization.
 
 ### serialize_as_any
 
@@ -2554,6 +2563,7 @@ dict_schema(
     *,
     min_length: int | None = None,
     max_length: int | None = None,
+    fail_fast: bool | None = None,
     strict: bool | None = None,
     ref: str | None = None,
     metadata: dict[str, Any] | None = None,
@@ -2577,7 +2587,7 @@ assert v.validate_python({'a': '1', 'b': 2}) == {'a': 1, 'b': 2}
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `keys_schema` | `CoreSchema | None` | The value must be a dict with keys that match this schema | `None` | | `values_schema` | `CoreSchema | None` | The value must be a dict with values that match this schema | `None` | | `min_length` | `int | None` | The value must be a dict with at least this many items | `None` | | `max_length` | `int | None` | The value must be a dict with at most this many items | `None` | | `strict` | `bool | None` | Whether the keys and values should be validated with strict mode | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `keys_schema` | `CoreSchema | None` | The value must be a dict with keys that match this schema | `None` | | `values_schema` | `CoreSchema | None` | The value must be a dict with values that match this schema | `None` | | `min_length` | `int | None` | The value must be a dict with at least this many items | `None` | | `max_length` | `int | None` | The value must be a dict with at most this many items | `None` | | `fail_fast` | `bool | None` | Stop validation on the first error | `None` | | `strict` | `bool | None` | Whether the keys and values should be validated with strict mode | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
 Source code in `pydantic_core/core_schema.py`
 
@@ -2588,6 +2598,7 @@ def dict_schema(
     *,
     min_length: int | None = None,
     max_length: int | None = None,
+    fail_fast: bool | None = None,
     strict: bool | None = None,
     ref: str | None = None,
     metadata: dict[str, Any] | None = None,
@@ -2611,6 +2622,7 @@ def dict_schema(
         values_schema: The value must be a dict with values that match this schema
         min_length: The value must be a dict with at least this many items
         max_length: The value must be a dict with at most this many items
+        fail_fast: Stop validation on the first error
         strict: Whether the keys and values should be validated with strict mode
         ref: optional unique identifier of the schema, used to reference the schema in other places
         metadata: Any other information you want to include with the schema, not used by pydantic-core
@@ -2622,6 +2634,7 @@ def dict_schema(
         values_schema=values_schema,
         min_length=min_length,
         max_length=max_length,
+        fail_fast=fail_fast,
         strict=strict,
         ref=ref,
         metadata=metadata,
@@ -5487,6 +5500,7 @@ url_schema(
     default_host: str | None = None,
     default_port: int | None = None,
     default_path: str | None = None,
+    preserve_empty_path: bool | None = None,
     strict: bool | None = None,
     ref: str | None = None,
     metadata: dict[str, Any] | None = None,
@@ -5509,7 +5523,7 @@ print(v.validate_python('https://example.com'))
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `max_length` | `int | None` | The maximum length of the URL | `None` | | `allowed_schemes` | `list[str] | None` | The allowed URL schemes | `None` | | `host_required` | `bool | None` | Whether the URL must have a host | `None` | | `default_host` | `str | None` | The default host to use if the URL does not have a host | `None` | | `default_port` | `int | None` | The default port to use if the URL does not have a port | `None` | | `default_path` | `str | None` | The default path to use if the URL does not have a path | `None` | | `strict` | `bool | None` | Whether to use strict URL parsing | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `max_length` | `int | None` | The maximum length of the URL | `None` | | `allowed_schemes` | `list[str] | None` | The allowed URL schemes | `None` | | `host_required` | `bool | None` | Whether the URL must have a host | `None` | | `default_host` | `str | None` | The default host to use if the URL does not have a host | `None` | | `default_port` | `int | None` | The default port to use if the URL does not have a port | `None` | | `default_path` | `str | None` | The default path to use if the URL does not have a path | `None` | | `preserve_empty_path` | `bool | None` | Whether to preserve an empty path or convert it to '/', default False | `None` | | `strict` | `bool | None` | Whether to use strict URL parsing | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
 Source code in `pydantic_core/core_schema.py`
 
@@ -5522,6 +5536,7 @@ def url_schema(
     default_host: str | None = None,
     default_port: int | None = None,
     default_path: str | None = None,
+    preserve_empty_path: bool | None = None,
     strict: bool | None = None,
     ref: str | None = None,
     metadata: dict[str, Any] | None = None,
@@ -5546,6 +5561,7 @@ def url_schema(
         default_host: The default host to use if the URL does not have a host
         default_port: The default port to use if the URL does not have a port
         default_path: The default path to use if the URL does not have a path
+        preserve_empty_path: Whether to preserve an empty path or convert it to '/', default False
         strict: Whether to use strict URL parsing
         ref: optional unique identifier of the schema, used to reference the schema in other places
         metadata: Any other information you want to include with the schema, not used by pydantic-core
@@ -5559,6 +5575,7 @@ def url_schema(
         default_host=default_host,
         default_port=default_port,
         default_path=default_path,
+        preserve_empty_path=preserve_empty_path,
         strict=strict,
         ref=ref,
         metadata=metadata,
@@ -5578,6 +5595,7 @@ multi_host_url_schema(
     default_host: str | None = None,
     default_port: int | None = None,
     default_path: str | None = None,
+    preserve_empty_path: bool | None = None,
     strict: bool | None = None,
     ref: str | None = None,
     metadata: dict[str, Any] | None = None,
@@ -5600,7 +5618,7 @@ print(v.validate_python('redis://localhost,0.0.0.0,127.0.0.1'))
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `max_length` | `int | None` | The maximum length of the URL | `None` | | `allowed_schemes` | `list[str] | None` | The allowed URL schemes | `None` | | `host_required` | `bool | None` | Whether the URL must have a host | `None` | | `default_host` | `str | None` | The default host to use if the URL does not have a host | `None` | | `default_port` | `int | None` | The default port to use if the URL does not have a port | `None` | | `default_path` | `str | None` | The default path to use if the URL does not have a path | `None` | | `strict` | `bool | None` | Whether to use strict URL parsing | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `max_length` | `int | None` | The maximum length of the URL | `None` | | `allowed_schemes` | `list[str] | None` | The allowed URL schemes | `None` | | `host_required` | `bool | None` | Whether the URL must have a host | `None` | | `default_host` | `str | None` | The default host to use if the URL does not have a host | `None` | | `default_port` | `int | None` | The default port to use if the URL does not have a port | `None` | | `default_path` | `str | None` | The default path to use if the URL does not have a path | `None` | | `preserve_empty_path` | `bool | None` | Whether to preserve an empty path or convert it to '/', default False | `None` | | `strict` | `bool | None` | Whether to use strict URL parsing | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
 Source code in `pydantic_core/core_schema.py`
 
@@ -5613,6 +5631,7 @@ def multi_host_url_schema(
     default_host: str | None = None,
     default_port: int | None = None,
     default_path: str | None = None,
+    preserve_empty_path: bool | None = None,
     strict: bool | None = None,
     ref: str | None = None,
     metadata: dict[str, Any] | None = None,
@@ -5637,6 +5656,7 @@ def multi_host_url_schema(
         default_host: The default host to use if the URL does not have a host
         default_port: The default port to use if the URL does not have a port
         default_path: The default path to use if the URL does not have a path
+        preserve_empty_path: Whether to preserve an empty path or convert it to '/', default False
         strict: Whether to use strict URL parsing
         ref: optional unique identifier of the schema, used to reference the schema in other places
         metadata: Any other information you want to include with the schema, not used by pydantic-core
@@ -5650,6 +5670,7 @@ def multi_host_url_schema(
         default_host=default_host,
         default_port=default_port,
         default_path=default_path,
+        preserve_empty_path=preserve_empty_path,
         strict=strict,
         ref=ref,
         metadata=metadata,
