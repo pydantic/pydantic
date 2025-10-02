@@ -22,7 +22,7 @@ jobs:
       - uses: astral-sh/setup-uv@v6
 
       # Using this action is still necessary for CodSpeed to work:
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
