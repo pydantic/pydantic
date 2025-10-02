@@ -77,4 +77,5 @@ jobs:
       - name: Run CodSpeed benchmarks
         uses: CodSpeedHQ/action@v4
         with:
+          mode: instrumentation
           run: uv run --no-sync pytest ./tests/benchmarks --codspeed
