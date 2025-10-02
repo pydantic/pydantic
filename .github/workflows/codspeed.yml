@@ -75,6 +75,7 @@ jobs:
           CARGO_PROFILE_RELEASE_STRIP: "false"
 
       - name: Run CodSpeed benchmarks
-        uses: CodSpeedHQ/action@v3
+        uses: CodSpeedHQ/action@v4
         with:
+          mode: instrumentation
           run: uv run --no-sync pytest ./tests/benchmarks --codspeed
