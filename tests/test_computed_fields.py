@@ -355,17 +355,17 @@ def test_expected_type_wrong():
     m = Model(x=1)
     with pytest.warns(
         UserWarning,
-        match=r"Expected `list\[int\]` - serialized value may not be as expected \[input_value='not a list', input_type=str\]",
+        match=r"Expected `list\[int\]` - serialized value may not be as expected \[field_name='x_list', input_value='not a list', input_type=str\]",
     ):
         m.model_dump()
     with pytest.warns(
         UserWarning,
-        match=r"Expected `list\[int\]` - serialized value may not be as expected \[input_value='not a list', input_type=str\]",
+        match=r"Expected `list\[int\]` - serialized value may not be as expected \[field_name='x_list', input_value='not a list', input_type=str\]",
     ):
         m.model_dump(mode='json')
     with pytest.warns(
         UserWarning,
-        match=r"Expected `list\[int\]` - serialized value may not be as expected \[input_value='not a list', input_type=str\]",
+        match=r"Expected `list\[int\]` - serialized value may not be as expected \[field_name='x_list', input_value='not a list', input_type=str\]",
     ):
         m.model_dump_json()
 
@@ -787,7 +787,7 @@ def test_generic_computed_field():
 
     with pytest.warns(
         UserWarning,
-        match=r"Expected `int` - serialized value may not be as expected \[input_value='abc', input_type=str\]",
+        match=r"Expected `int` - serialized value may not be as expected \[field_name='double_x', input_value='abc', input_type=str\]",
     ):
         B[int]().model_dump()
 

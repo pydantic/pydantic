@@ -10,6 +10,7 @@ import sys
 import typing
 import uuid
 import warnings
+from abc import ABC, abstractmethod
 from collections import Counter, OrderedDict, UserDict, defaultdict, deque
 from collections.abc import Iterable, Mapping, MutableMapping, Sequence
 from dataclasses import dataclass
@@ -7167,3 +7168,34 @@ def test_union_respects_local_strict() -> None:
 
     m = Model(a=[1, 2])
     assert m.a == (1, 2)
+
+
+def test_union_abc() -> None:
+    """https://github.com/pydantic/pydantic/issues/12230"""
+
+    class ABC_1(BaseModel, ABC):
+        @abstractmethod
+        def do_something(self):
+            pass
+
+    class ABC_2(BaseModel, ABC):
+        @abstractmethod
+        def do_something_else(self):
+            pass
+
+    class A1(ABC_1):
+        def do_something(self):
+            print('Doing something in A1')
+
+    class A2(ABC_2):
+        def do_something_else(self):
+            print('Doing something else in A2')
+
+    class X(BaseModel):
+        x: Union[ABC_1, ABC_2]
+
+    a1 = A1()
+    a2 = A2()
+
+    X(x=a1)
+    X(x=a2)
