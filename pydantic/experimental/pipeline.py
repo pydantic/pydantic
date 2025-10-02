@@ -405,7 +405,7 @@ def _apply_parse(
     from pydantic import Strict
 
     if tp is _FieldTypeMarker:
-        return handler(source_type)
+        return cs.chain_schema([s, handler(source_type)]) if s else handler(source_type)
 
     if strict:
         tp = Annotated[tp, Strict()]  # type: ignore

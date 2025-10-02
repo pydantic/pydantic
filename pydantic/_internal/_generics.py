@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import operator
 import sys
 import types
 import typing
@@ -7,20 +8,20 @@ from collections import ChainMap
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from contextvars import ContextVar
+from functools import reduce
 from itertools import zip_longest
 from types import prepare_class
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Annotated, Any, TypedDict, TypeVar, cast
 from weakref import WeakValueDictionary
 
 import typing_extensions
+from typing_inspection import typing_objects
+from typing_inspection.introspection import is_union_origin
 
 from . import _typing_extra
 from ._core_utils import get_type_ref
 from ._forward_ref import PydanticRecursiveRef
 from ._utils import all_identical, is_model_class
-
-if sys.version_info >= (3, 10):
-    from typing import _UnionGenericAlias  # type: ignore[attr-defined]
 
 if TYPE_CHECKING:
     from ..main import BaseModel
@@ -92,10 +93,10 @@ else:
 # and discover later on that we need to re-add all this infrastructure...
 # _GENERIC_TYPES_CACHE = DeepChainMap(GenericTypesCache(), LimitedDict())
 
-_GENERIC_TYPES_CACHE = GenericTypesCache()
+_GENERIC_TYPES_CACHE: ContextVar[GenericTypesCache | None] = ContextVar('_GENERIC_TYPES_CACHE', default=None)
 
 
-class PydanticGenericMetadata(typing_extensions.TypedDict):
+class PydanticGenericMetadata(TypedDict):
     origin: type[BaseModel] | None  # analogous to typing._GenericAlias.__origin__
     args: tuple[Any, ...]  # analogous to typing._GenericAlias.__args__
     parameters: tuple[TypeVar, ...]  # analogous to typing.Generic.__parameters__
@@ -254,27 +255,25 @@ def replace_types(type_: Any, type_map: Mapping[TypeVar, Any] | None) -> Any:
 
     Example:
         ```python
-        from typing import List, Union
+        from typing import Union
 
         from pydantic._internal._generics import replace_types
 
-        replace_types(tuple[str, Union[List[str], float]], {str: int})
-        #> tuple[int, Union[List[int], float]]
+        replace_types(tuple[str, Union[list[str], float]], {str: int})
+        #> tuple[int, Union[list[int], float]]
         ```
     """
     if not type_map:
         return type_
 
     type_args = get_args(type_)
-
-    if _typing_extra.is_annotated(type_):
-        annotated_type, *annotations = type_args
-        annotated = replace_types(annotated_type, type_map)
-        for annotation in annotations:
-            annotated = typing.Annotated[annotated, annotation]
-        return annotated
-
     origin_type = get_origin(type_)
+
+    if typing_objects.is_annotated(origin_type):
+        annotated_type, *annotations = type_args
+        annotated_type = replace_types(annotated_type, type_map)
+        # TODO remove parentheses when we drop support for Python 3.10:
+        return Annotated[(annotated_type, *annotations)]
 
     # Having type args is a good indicator that this is a typing special form
     # instance or a generic alias of some sort.
@@ -297,21 +296,21 @@ def replace_types(type_: Any, type_map: Mapping[TypeVar, Any] | None) -> Any:
             origin_type = getattr(typing, type_._name)
         assert origin_type is not None
 
-        if _typing_extra.origin_is_union(origin_type):
-            if any(_typing_extra.is_any(arg) for arg in resolved_type_args):
+        if is_union_origin(origin_type):
+            if any(typing_objects.is_any(arg) for arg in resolved_type_args):
                 # `Any | T` ~ `Any`:
                 resolved_type_args = (Any,)
             # `Never | T` ~ `T`:
             resolved_type_args = tuple(
                 arg
                 for arg in resolved_type_args
-                if not (_typing_extra.is_no_return(arg) or _typing_extra.is_never(arg))
+                if not (typing_objects.is_noreturn(arg) or typing_objects.is_never(arg))
             )
 
         # PEP-604 syntax (Ex.: list | str) is represented with a types.UnionType object that does not have __getitem__.
         # We also cannot use isinstance() since we have to compare types.
         if sys.version_info >= (3, 10) and origin_type is types.UnionType:
-            return _UnionGenericAlias(origin_type, resolved_type_args)
+            return reduce(operator.or_, resolved_type_args)
         # NotRequired[T] and Required[T] don't support tuple type resolved_type_args, hence the condition below
         return origin_type[resolved_type_args[0] if len(resolved_type_args) == 1 else resolved_type_args]
 
@@ -341,7 +340,7 @@ def replace_types(type_: Any, type_map: Mapping[TypeVar, Any] | None) -> Any:
 
 
 def map_generic_model_arguments(cls: type[BaseModel], args: tuple[Any, ...]) -> dict[TypeVar, Any]:
-    """Return a mapping between the arguments of a generic model and the provided arguments during parametrization.
+    """Return a mapping between the parameters of a generic model and the provided arguments during parameterization.
 
     Raises:
         TypeError: If the number of arguments does not match the parameters (i.e. if providing too few or too many arguments).
@@ -356,7 +355,7 @@ def map_generic_model_arguments(cls: type[BaseModel], args: tuple[Any, ...]) -> 
         map_generic_model_arguments(Model, (str,))
         #> TypeError: Too few arguments for <class '__main__.Model'>; actual 1, expected at least 2
 
-        map_generic_model_argumenst(Model, (str, bytes, int, complex))
+        map_generic_model_arguments(Model, (str, bytes, int, complex))
         #> TypeError: Too many arguments for <class '__main__.Model'>; actual 4, expected 3
         ```
 
@@ -373,19 +372,21 @@ def map_generic_model_arguments(cls: type[BaseModel], args: tuple[Any, ...]) -> 
             raise TypeError(f'Too many arguments for {cls}; actual {len(args)}, expected {expected_len}')
 
         if argument is _missing:
-            param = typing.cast(TypeVar, parameter)
+            param = cast(TypeVar, parameter)
             try:
-                has_default = param.has_default()
+                has_default = param.has_default()  # pyright: ignore[reportAttributeAccessIssue]
             except AttributeError:
                 # Happens if using `typing.TypeVar` (and not `typing_extensions`) on Python < 3.13.
                 has_default = False
             if has_default:
-                typevars_map[param] = param.__default__
+                # The default might refer to other type parameters. For an example, see:
+                # https://typing.python.org/en/latest/spec/generics.html#type-parameters-as-parameters-to-generics
+                typevars_map[param] = replace_types(param.__default__, typevars_map)  # pyright: ignore[reportAttributeAccessIssue]
             else:
-                expected_len -= sum(hasattr(p, 'has_default') and p.has_default() for p in parameters)
+                expected_len -= sum(hasattr(p, 'has_default') and p.has_default() for p in parameters)  # pyright: ignore[reportAttributeAccessIssue]
                 raise TypeError(f'Too few arguments for {cls}; actual {len(args)}, expected at least {expected_len}')
         else:
-            param = typing.cast(TypeVar, parameter)
+            param = cast(TypeVar, parameter)
             typevars_map[param] = argument
 
     return typevars_map
@@ -451,14 +452,24 @@ def get_cached_generic_type_early(parent: type[BaseModel], typevar_values: Any) 
     during validation, I think it is worthwhile to ensure that types that are functionally equivalent are actually
     equal.
     """
-    return _GENERIC_TYPES_CACHE.get(_early_cache_key(parent, typevar_values))
+    generic_types_cache = _GENERIC_TYPES_CACHE.get()
+    if generic_types_cache is None:
+        generic_types_cache = GenericTypesCache()
+        _GENERIC_TYPES_CACHE.set(generic_types_cache)
+    return generic_types_cache.get(_early_cache_key(parent, typevar_values))
 
 
 def get_cached_generic_type_late(
     parent: type[BaseModel], typevar_values: Any, origin: type[BaseModel], args: tuple[Any, ...]
 ) -> type[BaseModel] | None:
     """See the docstring of `get_cached_generic_type_early` for more information about the two-stage cache lookup."""
-    cached = _GENERIC_TYPES_CACHE.get(_late_cache_key(origin, args, typevar_values))
+    generic_types_cache = _GENERIC_TYPES_CACHE.get()
+    if (
+        generic_types_cache is None
+    ):  # pragma: no cover (early cache is guaranteed to run first and initialize the cache)
+        generic_types_cache = GenericTypesCache()
+        _GENERIC_TYPES_CACHE.set(generic_types_cache)
+    cached = generic_types_cache.get(_late_cache_key(origin, args, typevar_values))
     if cached is not None:
         set_cached_generic_type(parent, typevar_values, cached, origin, args)
     return cached
@@ -474,11 +485,17 @@ def set_cached_generic_type(
     """See the docstring of `get_cached_generic_type_early` for more information about why items are cached with
     two different keys.
     """
-    _GENERIC_TYPES_CACHE[_early_cache_key(parent, typevar_values)] = type_
+    generic_types_cache = _GENERIC_TYPES_CACHE.get()
+    if (
+        generic_types_cache is None
+    ):  # pragma: no cover (cache lookup is guaranteed to run first and initialize the cache)
+        generic_types_cache = GenericTypesCache()
+        _GENERIC_TYPES_CACHE.set(generic_types_cache)
+    generic_types_cache[_early_cache_key(parent, typevar_values)] = type_
     if len(typevar_values) == 1:
-        _GENERIC_TYPES_CACHE[_early_cache_key(parent, typevar_values[0])] = type_
+        generic_types_cache[_early_cache_key(parent, typevar_values[0])] = type_
     if origin and args:
-        _GENERIC_TYPES_CACHE[_late_cache_key(origin, args, typevar_values)] = type_
+        generic_types_cache[_late_cache_key(origin, args, typevar_values)] = type_
 
 
 def _union_orderings_key(typevar_values: Any) -> Any:
@@ -495,11 +512,8 @@ def _union_orderings_key(typevar_values: Any) -> Any:
     (See https://github.com/python/cpython/issues/86483 for reference.)
     """
     if isinstance(typevar_values, tuple):
-        args_data = []
-        for value in typevar_values:
-            args_data.append(_union_orderings_key(value))
-        return tuple(args_data)
-    elif _typing_extra.is_union(typevar_values):
+        return tuple(_union_orderings_key(value) for value in typevar_values)
+    elif typing_objects.is_union(typing_extensions.get_origin(typevar_values)):
         return get_args(typevar_values)
     else:
         return ()

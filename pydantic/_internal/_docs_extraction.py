@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import ast
 import inspect
+import sys
 import textwrap
 from typing import Any
 
@@ -56,7 +57,7 @@ def _extract_source_from_frame(cls: type[Any]) -> list[str] | None:
             lnum = frame.f_lineno
             try:
                 lines, _ = inspect.findsource(frame)
-            except OSError:
+            except OSError:  # pragma: no cover
                 # Source can't be retrieved (maybe because running in an interactive terminal),
                 # we don't want to error here.
                 pass
@@ -89,13 +90,17 @@ def extract_docstrings_from_cls(cls: type[Any], use_inspect: bool = False) -> di
     Returns:
         A mapping containing attribute names and their corresponding docstring.
     """
-    if use_inspect:
-        # Might not work as expected if two classes have the same name in the same source file.
+    if use_inspect or sys.version_info >= (3, 13):
+        # On Python < 3.13, `inspect.getsourcelines()` might not work as expected
+        # if two classes have the same name in the same source file.
+        # On Python 3.13+, it will use the new `__firstlineno__` class attribute,
+        # making it way more robust.
         try:
             source, _ = inspect.getsourcelines(cls)
-        except OSError:
+        except OSError:  # pragma: no cover
             return {}
     else:
+        # TODO remove this implementation when we drop support for Python 3.12:
         source = _extract_source_from_frame(cls)
 
     if not source:

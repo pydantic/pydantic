@@ -4,7 +4,7 @@ from typing import Any, cast
 
 import pytest
 
-from pydantic import BaseModel, ValidationInfo, ValidatorFunctionWrapHandler, model_validator
+from pydantic import BaseModel, PydanticUserError, ValidationInfo, ValidatorFunctionWrapHandler, model_validator
 
 
 def test_model_validator_wrap() -> None:
@@ -136,3 +136,13 @@ def test_nested_models() -> None:
     Model.model_validate({'inner': {'inner': {'inner': None}}})
     assert calls == ['before'] * 3 + ['after'] * 3
     calls.clear()
+
+
+def test_after_validator_wrong_signature() -> None:
+    with pytest.raises(PydanticUserError):
+
+        class Model(BaseModel):
+            @model_validator(mode='after')
+            # This used to be converted into a classmethod, resulting
+            # in this inconsistent signature still accepted:
+            def validator(cls, model, info): ...

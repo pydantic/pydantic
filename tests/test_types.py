@@ -9,8 +9,9 @@ import re
 import sys
 import typing
 import uuid
-from collections import Counter, OrderedDict, defaultdict, deque
-from collections.abc import Iterable, Sequence
+import warnings
+from collections import Counter, OrderedDict, UserDict, defaultdict, deque
+from collections.abc import Iterable, Mapping, MutableMapping, Sequence
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta, timezone
 from decimal import Decimal
@@ -105,6 +106,7 @@ from pydantic import (
     StringConstraints,
     Tag,
     TypeAdapter,
+    ValidateAs,
     ValidationError,
     conbytes,
     condate,
@@ -1048,6 +1050,20 @@ def test_import_string_sys_stdout() -> None:
     assert import_things.model_dump_json() == '{"obj":"sys.stdout"}'
 
 
+def test_import_string_thing_with_name() -> None:
+    """https://github.com/pydantic/pydantic/issues/12218"""
+
+    class ImportThings(BaseModel):
+        obj: ImportString
+
+    @dataclass
+    class ThingWithName:
+        name: str
+
+    import_things = ImportThings(obj=ThingWithName('foo'))
+    assert import_things.model_dump_json() == '{"obj":{"name":"foo"}}'
+
+
 def test_decimal():
     class Model(BaseModel):
         v: Decimal
@@ -1969,7 +1985,7 @@ def test_dict():
     (
         ([1, 2, '3'], [1, 2, '3']),
         ((1, 2, '3'), [1, 2, '3']),
-        ((i**2 for i in range(5)), [0, 1, 4, 9, 16]),
+        pytest.param((i**2 for i in range(5)), [0, 1, 4, 9, 16], marks=pytest.mark.thread_unsafe),
         (deque([1, 2, 3]), [1, 2, 3]),
         ({1, '2'}, IsOneOf([1, '2'], ['2', 1])),
     ),
@@ -2019,7 +2035,7 @@ def test_ordered_dict():
     (
         ([1, 2, '3'], (1, 2, '3')),
         ((1, 2, '3'), (1, 2, '3')),
-        ((i**2 for i in range(5)), (0, 1, 4, 9, 16)),
+        pytest.param((i**2 for i in range(5)), (0, 1, 4, 9, 16), marks=pytest.mark.thread_unsafe),
         (deque([1, 2, 3]), (1, 2, 3)),
         ({1, '2'}, IsOneOf((1, '2'), ('2', 1))),
     ),
@@ -2049,7 +2065,7 @@ def test_tuple_fails(value):
     (
         ([1, 2, '3'], int, (1, 2, 3)),
         ((1, 2, '3'), int, (1, 2, 3)),
-        ((i**2 for i in range(5)), int, (0, 1, 4, 9, 16)),
+        pytest.param((i**2 for i in range(5)), int, (0, 1, 4, 9, 16), marks=pytest.mark.thread_unsafe),
         (('a', 'b', 'c'), str, ('a', 'b', 'c')),
     ),
 )
@@ -6016,6 +6032,37 @@ def test_skip_validation_json_schema():
     }
 
 
+def test_validate_from() -> None:
+    class Arbitrary:
+        def __init__(self, a: int) -> None:
+            self.a = a
+
+        def __eq__(self, other) -> bool:
+            return self.a == other.a
+
+    class ArbitraryModel(BaseModel):
+        a: int
+
+    ta = TypeAdapter(Annotated[Arbitrary, ValidateAs(ArbitraryModel, instantiation_hook=lambda v: Arbitrary(a=v.a))])
+
+    assert ta.validate_python({'a': 1}) == Arbitrary(1)
+
+
+@pytest.mark.skipif(sys.version_info < (3, 12), reason="`Annotated` doesn't allow instances in <3.12")
+def test_skip_validation_arbitrary_type_object() -> None:
+    """https://github.com/pydantic/pydantic/issues/11997.
+
+    Using an arbitrary object (and not a type) normally raises a warning,
+    which should be suppressed when using `SkipValidation`.
+    """
+
+    with warnings.catch_warnings():
+        warnings.simplefilter('error')
+
+        class Model(BaseModel, arbitrary_types_allowed=True):
+            field: Annotated[object(), SkipValidation]
+
+
 def test_transform_schema():
     ValidateStrAsInt = Annotated[str, GetPydanticSchema(lambda _s, h: core_schema.int_schema())]
 
@@ -6951,17 +6998,22 @@ def test_fail_fast(tp, fail_fast, decl) -> None:
     assert exc_info.value.errors(include_url=False) == errors
 
 
-def test_mutable_mapping() -> None:
+def test_mutable_mapping_userdict_subclass() -> None:
     """Addresses https://github.com/pydantic/pydantic/issues/9549.
 
-    Note - we still don't do a good job of handling subclasses, as we convert the input to a dict
-    via the MappingValidator annotation's schema.
+    Note - we still don't do a good job of handling subclasses, as we convert the input to a dict.
     """
-    import collections.abc
+    adapter = TypeAdapter(MutableMapping, config=ConfigDict(strict=True))
 
-    adapter = TypeAdapter(collections.abc.MutableMapping, config=ConfigDict(strict=True))
+    assert isinstance(adapter.validate_python(UserDict()), MutableMapping)
 
-    assert isinstance(adapter.validate_python(collections.UserDict()), collections.abc.MutableMapping)
+
+def test_mapping_parameterized() -> None:
+    """https://github.com/pydantic/pydantic/issues/11650"""
+    adapter = TypeAdapter(Mapping[str, int])
+
+    with pytest.raises(ValidationError):
+        adapter.validate_python({'valid': 1, 'invalid': {}})
 
 
 def test_ser_ip_with_union() -> None:
@@ -7104,3 +7156,14 @@ def test_sequence_with_nested_type(sequence_type: type) -> None:
 
     models = sequence_type([Model(a=1), Model(a=2)])
     assert OuterModel(inner=models).model_dump() == {'inner': sequence_type([{'a': 1}, {'a': 2}])}
+
+
+def test_union_respects_local_strict() -> None:
+    class MyBaseModel(BaseModel):
+        model_config = ConfigDict(strict=True)
+
+    class Model(MyBaseModel):
+        a: Union[int, Annotated[tuple[int, int], Strict(False)]] = Field(default=(1, 2))
+
+    m = Model(a=[1, 2])
+    assert m.a == (1, 2)

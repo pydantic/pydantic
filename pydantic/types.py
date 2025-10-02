@@ -30,8 +30,9 @@ import annotated_types
 from annotated_types import BaseMetadata, MaxLen, MinLen
 from pydantic_core import CoreSchema, PydanticCustomError, SchemaSerializer, core_schema
 from typing_extensions import Protocol, TypeAlias, TypeAliasType, deprecated, get_args, get_origin
+from typing_inspection.introspection import is_union_origin
 
-from ._internal import _fields, _internal_dataclass, _typing_extra, _utils, _validators
+from ._internal import _fields, _internal_dataclass, _utils, _validators
 from ._migration import getattr_migration
 from .annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
 from .errors import PydanticUserError
@@ -67,6 +68,9 @@ __all__ = (
     'UUID3',
     'UUID4',
     'UUID5',
+    'UUID6',
+    'UUID7',
+    'UUID8',
     'FilePath',
     'DirectoryPath',
     'NewPath',
@@ -1024,8 +1028,7 @@ else:
                     return 'sys.stdin'
                 elif v.name == '<stderr>':
                     return 'sys.stderr'
-            else:
-                return v
+            return v
 
         def __repr__(self) -> str:
             return 'ImportString'
@@ -1138,7 +1141,7 @@ class UuidVersion:
     Use this class as an annotation via [`Annotated`](https://docs.python.org/3/library/typing.html#typing.Annotated), as seen below.
 
     Attributes:
-        uuid_version: The version of the UUID. Must be one of 1, 3, 4, or 5.
+        uuid_version: The version of the UUID. Must be one of 1, 3, 4, 5, 6, 7 or 8.
 
     Example:
         ```python
@@ -1151,7 +1154,7 @@ class UuidVersion:
         ```
     """
 
-    uuid_version: Literal[1, 3, 4, 5]
+    uuid_version: Literal[1, 3, 4, 5, 6, 7, 8]
 
     def __get_pydantic_json_schema__(
         self, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
@@ -1162,15 +1165,10 @@ class UuidVersion:
         return field_schema
 
     def __get_pydantic_core_schema__(self, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
-        if isinstance(self, source):
-            # used directly as a type
-            return core_schema.uuid_schema(version=self.uuid_version)
-        else:
-            # update existing schema with self.uuid_version
-            schema = handler(source)
-            _check_annotated_type(schema['type'], 'uuid', self.__class__.__name__)
-            schema['version'] = self.uuid_version  # type: ignore
-            return schema
+        schema = handler(source)
+        _check_annotated_type(schema['type'], 'uuid', self.__class__.__name__)
+        schema['version'] = self.uuid_version  # type: ignore
+        return schema
 
     def __hash__(self) -> int:
         return hash(type(self.uuid_version))
@@ -1232,7 +1230,48 @@ class Model(BaseModel):
 Model(uuid5=uuid.uuid5(uuid.NAMESPACE_DNS, 'pydantic.org'))
 ```
 """
+UUID6 = Annotated[UUID, UuidVersion(6)]
+"""A [UUID](https://docs.python.org/3/library/uuid.html) that must be version 6.
 
+```python
+import uuid
+
+from pydantic import UUID6, BaseModel
+
+class Model(BaseModel):
+    uuid6: UUID6
+
+Model(uuid6=uuid.UUID('1efea953-c2d6-6790-aa0a-69db8c87df97'))
+```
+"""
+UUID7 = Annotated[UUID, UuidVersion(7)]
+"""A [UUID](https://docs.python.org/3/library/uuid.html) that must be version 7.
+
+```python
+import uuid
+
+from pydantic import UUID7, BaseModel
+
+class Model(BaseModel):
+    uuid7: UUID7
+
+Model(uuid7=uuid.UUID('0194fdcb-1c47-7a09-b52c-561154de0b4a'))
+```
+"""
+UUID8 = Annotated[UUID, UuidVersion(8)]
+"""A [UUID](https://docs.python.org/3/library/uuid.html) that must be version 8.
+
+```python
+import uuid
+
+from pydantic import UUID8, BaseModel
+
+class Model(BaseModel):
+    uuid8: UUID8
+
+Model(uuid8=uuid.UUID('81a0b92e-6078-8551-9c81-8ccb666bdab8'))
+```
+"""
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ PATH TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -1490,7 +1529,8 @@ else:
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ SECRET TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-SecretType = TypeVar('SecretType')
+# The `Secret` class being conceptually immutable, make the type variable covariant:
+SecretType = TypeVar('SecretType', covariant=True)
 
 
 class _SecretBase(Generic[SecretType]):
@@ -1719,12 +1759,12 @@ class _SecretField(_SecretBase[SecretType]):
             )
             return json_schema
 
-        json_schema = core_schema.no_info_after_validator_function(
-            source,  # construct the type
-            cls._inner_schema,
-        )
-
         def get_secret_schema(strict: bool) -> CoreSchema:
+            inner_schema = {**cls._inner_schema, 'strict': strict}
+            json_schema = core_schema.no_info_after_validator_function(
+                source,  # construct the type
+                inner_schema,  # pyright: ignore[reportArgumentType]
+            )
             return core_schema.json_or_python_schema(
                 python_schema=core_schema.union_schema(
                     [
@@ -1732,7 +1772,6 @@ class _SecretField(_SecretBase[SecretType]):
                         json_schema,
                     ],
                     custom_error_type=cls._error_kind,
-                    strict=strict,
                 ),
                 json_schema=json_schema,
                 serialization=core_schema.plain_serializer_function_ser_schema(
@@ -3012,7 +3051,7 @@ class Discriminator:
     A `str` discriminator must be the name of a field to discriminate against.
     """
     custom_error_type: str | None = None
-    """Type to use in [custom errors](../errors/errors.md#custom-errors) replacing the standard discriminated union
+    """Type to use in [custom errors](../errors/errors.md) replacing the standard discriminated union
     validation errors.
     """
     custom_error_message: str | None = None
@@ -3021,8 +3060,7 @@ class Discriminator:
     """Context to use in custom errors."""
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-        origin = _typing_extra.get_origin(source_type)
-        if not origin or not _typing_extra.origin_is_union(origin):
+        if not is_union_origin(get_origin(source_type)):
             raise TypeError(f'{type(self).__name__} must be used with a Union type, not {source_type}')
 
         if isinstance(self.discriminator, str):
@@ -3031,9 +3069,11 @@ class Discriminator:
             return handler(Annotated[source_type, Field(discriminator=self.discriminator)])
         else:
             original_schema = handler(source_type)
-            return self._convert_schema(original_schema)
+            return self._convert_schema(original_schema, handler)
 
-    def _convert_schema(self, original_schema: core_schema.CoreSchema) -> core_schema.TaggedUnionSchema:
+    def _convert_schema(
+        self, original_schema: core_schema.CoreSchema, handler: GetCoreSchemaHandler | None = None
+    ) -> core_schema.TaggedUnionSchema:
         if original_schema['type'] != 'union':
             # This likely indicates that the schema was a single-item union that was simplified.
             # In this case, we do the same thing we do in
@@ -3050,10 +3090,23 @@ class Discriminator:
             if metadata is not None:
                 tag = metadata.get('pydantic_internal_union_tag_key') or tag
             if tag is None:
-                raise PydanticUserError(
-                    f'`Tag` not provided for choice {choice} used with `Discriminator`',
-                    code='callable-discriminator-no-tag',
-                )
+                # `handler` is None when this method is called from `apply_discriminator()` (deferred discriminators)
+                if handler is not None and choice['type'] == 'definition-ref':
+                    # If choice was built from a PEP 695 type alias, try to resolve the def:
+                    try:
+                        choice = handler.resolve_ref_schema(choice)
+                    except LookupError:
+                        pass
+                    else:
+                        metadata = cast('CoreMetadata | None', choice.get('metadata'))
+                        if metadata is not None:
+                            tag = metadata.get('pydantic_internal_union_tag_key')
+
+                if tag is None:
+                    raise PydanticUserError(
+                        f'`Tag` not provided for choice {choice} used with `Discriminator`',
+                        code='callable-discriminator-no-tag',
+                    )
             tagged_union_choices[tag] = choice
 
         # Have to do these verbose checks to ensure falsy values ('' and {}) don't get ignored

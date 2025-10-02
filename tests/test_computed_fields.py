@@ -353,11 +353,20 @@ def test_expected_type_wrong():
             return 'not a list'
 
     m = Model(x=1)
-    with pytest.warns(UserWarning, match=r'Expected `list\[int\]` but got `str`'):
+    with pytest.warns(
+        UserWarning,
+        match=r"Expected `list\[int\]` - serialized value may not be as expected \[input_value='not a list', input_type=str\]",
+    ):
         m.model_dump()
-    with pytest.warns(UserWarning, match=r'Expected `list\[int\]` but got `str`'):
+    with pytest.warns(
+        UserWarning,
+        match=r"Expected `list\[int\]` - serialized value may not be as expected \[input_value='not a list', input_type=str\]",
+    ):
         m.model_dump(mode='json')
-    with pytest.warns(UserWarning, match=r'Expected `list\[int\]` but got `str`'):
+    with pytest.warns(
+        UserWarning,
+        match=r"Expected `list\[int\]` - serialized value may not be as expected \[input_value='not a list', input_type=str\]",
+    ):
         m.model_dump_json()
 
 
@@ -612,7 +621,7 @@ def test_alias_generator():
             return self.my_standard_field + 4
 
     class MySubModel(MyModel):
-        model_config = dict(alias_generator=to_camel, populate_by_name=True)
+        model_config = dict(alias_generator=to_camel, validate_by_name=True)
 
     model = MyModel(my_standard_field=1)
     assert model.model_dump() == {
@@ -645,6 +654,18 @@ def test_alias_generator():
         'myAliasedComputedField1': 4,
         'my_alias_2': 5,
     }
+
+
+def test_alias_generator_defer_build() -> None:
+    class Model(BaseModel):
+        model_config = {'alias_generator': to_camel, 'defer_build': True}
+
+        @computed_field
+        @property
+        def my_prop(self) -> int:
+            return 1
+
+    assert Model.__pydantic_decorators__.computed_fields['my_prop'].info.alias == 'myProp'
 
 
 def make_base_model() -> Any:
@@ -765,7 +786,8 @@ def test_generic_computed_field():
             return 'abc'  # this may not match the annotated return type, and will warn if not
 
     with pytest.warns(
-        UserWarning, match="Expected `int` but got `str` with value `'abc'` - serialized value may not be as expected"
+        UserWarning,
+        match=r"Expected `int` - serialized value may not be as expected \[input_value='abc', input_type=str\]",
     ):
         B[int]().model_dump()
 

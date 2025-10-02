@@ -1,4 +1,4 @@
-# Why use Pydantic?
+# Why use Pydantic Validation?
 
 Today, Pydantic is downloaded <span id="download-count">many</span> times a month and used by some of the largest and most recognisable organisations in the world.
 
@@ -363,7 +363,7 @@ Functional validators and serializers, as well as a powerful protocol for custom
 
 
     print(Meeting(when='2020-01-01T12:00+01:00'))
-    #> when=datetime.datetime(2020, 1, 1, 12, 0, tzinfo=TzInfo(+01:00))
+    #> when=datetime.datetime(2020, 1, 1, 12, 0, tzinfo=TzInfo(3600))
     print(Meeting(when='now'))
     #> when=datetime.datetime(2032, 1, 2, 3, 4, 5, 6)
     print(Meeting(when='2020-01-01T12:00'))
@@ -371,7 +371,8 @@ Functional validators and serializers, as well as a powerful protocol for custom
     ```
 
 !!! tip "Learn more"
-    See the documentation on [validators](concepts/validators.md), [custom serializers](concepts/serialization.md#custom-serializers), and [custom types](concepts/types.md#custom-types).
+    See the documentation on [validators](concepts/validators.md), [custom serializers](concepts/serialization.md#serializers),
+    and [custom types](concepts/types.md#custom-types).
 
 ## Ecosystem
 

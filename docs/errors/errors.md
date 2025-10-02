@@ -2,40 +2,42 @@
 Pydantic will raise a [`ValidationError`][pydantic_core.ValidationError] whenever it finds an error in the data it's validating.
 
 !!! note
-    Validation code should not raise `ValidationError` itself, but rather raise a `ValueError` or
-    `AssertionError` (or subclass thereof) which will be caught and used to populate
-    `ValidationError`.
+    Validation code should not raise the [`ValidationError`][pydantic_core.ValidationError] itself,
+    but rather raise a [`ValueError`][] or a [`AssertionError`][] (or subclass thereof) which will
+    be caught and used to populate the final [`ValidationError`][pydantic_core.ValidationError].
 
-One exception will be raised regardless of the number of errors found, that `ValidationError` will
-contain information about all the errors and how they happened.
+    For more details, refer to the [dedicated section](../concepts/validators.md#raising-validation-errors)
+    of the validators documentation.
+
+That [`ValidationError`][pydantic_core.ValidationError] will contain information about all the errors and how they happened.
 
 You can access these errors in several ways:
 
-| Method            | Description                                            |
-|-------------------|--------------------------------------------------------|
-| `e.errors()`      | Returns a list of errors found in the input data.      |
-| `e.error_count()` | Returns the number of errors found in `errors`.        |
-| `e.json()`        | Returns a JSON representation of `errors`.             |
-| `str(e)`          | Returns a human-readable representation of the errors. |
+| Method                                                       | Description                                                                                    |
+|--------------------------------------------------------------|------------------------------------------------------------------------------------------------|
+| [`errors()`][pydantic_core.ValidationError.errors]           | Returns a list of [`ErrorDetails`][pydantic_core.ErrorDetails] errors found in the input data. |
+| [`error_count()`][pydantic_core.ValidationError.error_count] | Returns the number of errors.                                                                  |
+| [`json()`][pydantic_core.ValidationError.json]               | Returns a JSON representation of the list errors.                                              |
+| `str(e)`                                                     | Returns a human-readable representation of the errors.                                         |
 
-Each error object contains:
+The [`ErrorDetails`][pydantic_core.ErrorDetails] object is a dictionary. It contains the following:
 
-| Property | Description                                                                    |
-|----------|--------------------------------------------------------------------------------|
-| `ctx`    | An optional object which contains values required to render the error message. |
-| `input`  | The input provided for validation.                                             |
-| `loc`    | The error's location as a list.                                                |
-| `msg`    | A human-readable explanation of the error.                                     |
-| `type`   | A computer-readable identifier of the error type.                              |
-| `url`    | The URL to further information about the error.                                |
+| Property                                    | Description                                                                    |
+|---------------------------------------------|--------------------------------------------------------------------------------|
+| [`ctx`][pydantic_core.ErrorDetails.ctx]     | An optional object which contains values required to render the error message. |
+| [`input`][pydantic_core.ErrorDetails.input] | The input provided for validation.                                             |
+| [`loc`][pydantic_core.ErrorDetails.loc]     | The error's location as a list.                                                |
+| [`msg`][pydantic_core.ErrorDetails.msg]     | A human-readable explanation of the error.                                     |
+| [`type`][pydantic_core.ErrorDetails.type]   | A computer-readable identifier of the error type.                              |
+| [`url`][pydantic_core.ErrorDetails.url]     | The documentation URL giving information about the error.                      |
 
-The first item in the `loc` list will be the field where the error occurred, and if the field is a
+The first item in the [`loc`][pydantic_core.ErrorDetails.loc] list will be the field where the error occurred, and if the field is a
 [sub-model](../concepts/models.md#nested-models), subsequent items will be present to indicate the nested location of the error.
 
 As a demonstration:
 
 ```python
-from pydantic import BaseModel, ValidationError, conint
+from pydantic import BaseModel, Field, ValidationError, field_validator
 
 
 class Location(BaseModel):
@@ -45,18 +47,25 @@ class Location(BaseModel):
 
 class Model(BaseModel):
     is_required: float
-    gt_int: conint(gt=42)
-    list_of_ints: list[int] = None
-    a_float: float = None
-    recursive_model: Location = None
+    gt_int: int = Field(gt=42)
+    list_of_ints: list[int]
+    a_float: float
+    recursive_model: Location
+
+    @field_validator('a_float', mode='after')
+    @classmethod
+    def validate_float(cls, value: float) -> float:
+        if value > 2.0:
+            raise ValueError('Invalid float value')
+        return value
 
 
-data = dict(
-    list_of_ints=['1', 2, 'bad'],
-    a_float='not a float',
-    recursive_model={'lat': 4.2, 'lng': 'New York'},
-    gt_int=21,
-)
+data = {
+    'list_of_ints': ['1', 2, 'bad'],
+    'a_float': 3.0,
+    'recursive_model': {'lat': 4.2, 'lng': 'New York'},
+    'gt_int': 21,
+}
 
 try:
     Model(**data)
@@ -71,7 +80,7 @@ except ValidationError as e:
     list_of_ints.2
       Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='bad', input_type=str]
     a_float
-      Input should be a valid number, unable to parse string as a number [type=float_parsing, input_value='not a float', input_type=str]
+      Value error, Invalid float value [type=value_error, input_value=3.0, input_type=float]
     recursive_model.lng
       Input should be a valid number, unable to parse string as a number [type=float_parsing, input_value='New York', input_type=str]
     """
@@ -88,7 +97,7 @@ except ValidationError as e:
             'msg': 'Field required',
             'input': {
                 'list_of_ints': ['1', 2, 'bad'],
-                'a_float': 'not a float',
+                'a_float': 3.0,
                 'recursive_model': {'lat': 4.2, 'lng': 'New York'},
                 'gt_int': 21,
             },
@@ -110,11 +119,12 @@ except ValidationError as e:
             'url': 'https://errors.pydantic.dev/2/v/int_parsing',
         },
         {
-            'type': 'float_parsing',
+            'type': 'value_error',
             'loc': ('a_float',),
-            'msg': 'Input should be a valid number, unable to parse string as a number',
-            'input': 'not a float',
-            'url': 'https://errors.pydantic.dev/2/v/float_parsing',
+            'msg': 'Value error, Invalid float value',
+            'input': 3.0,
+            'ctx': {'error': ValueError('Invalid float value')},
+            'url': 'https://errors.pydantic.dev/2/v/value_error',
         },
         {
             'type': 'float_parsing',
@@ -127,92 +137,12 @@ except ValidationError as e:
     """
 ```
 
-### Custom Errors
-
-In your custom data types or validators you should use `ValueError` or `AssertionError` to raise errors.
-
-See [validators](../concepts/validators.md) for more details on use of the `@validator` decorator.
-
-```python
-from pydantic import BaseModel, ValidationError, field_validator
-
-
-class Model(BaseModel):
-    foo: str
-
-    @field_validator('foo')
-    def value_must_equal_bar(cls, v):
-        if v != 'bar':
-            raise ValueError('value must be "bar"')
-
-        return v
-
-
-try:
-    Model(foo='ber')
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for Model
-    foo
-      Value error, value must be "bar" [type=value_error, input_value='ber', input_type=str]
-    """
-    print(e.errors())
-    """
-    [
-        {
-            'type': 'value_error',
-            'loc': ('foo',),
-            'msg': 'Value error, value must be "bar"',
-            'input': 'ber',
-            'ctx': {'error': ValueError('value must be "bar"')},
-            'url': 'https://errors.pydantic.dev/2/v/value_error',
-        }
-    ]
-    """
-```
-
-You can also use [`PydanticCustomError`][pydantic_core.PydanticCustomError], to fully control the error structure:
-
-```python
-from pydantic_core import PydanticCustomError
-
-from pydantic import BaseModel, ValidationError, field_validator
-
-
-class Model(BaseModel):
-    foo: str
-
-    @field_validator('foo')
-    def value_must_equal_bar(cls, v):
-        if v != 'bar':
-            raise PydanticCustomError(
-                'not_a_bar',
-                'value is not "bar", got "{wrong_value}"',
-                dict(wrong_value=v),
-            )
-        return v
-
-
-try:
-    Model(foo='ber')
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for Model
-    foo
-      value is not "bar", got "ber" [type=not_a_bar, input_value='ber', input_type=str]
-    """
-```
-
 ## Error messages
 
-Pydantic attempts to provide useful default error messages for validation and usage errors.
+Pydantic attempts to provide useful default error messages for validation and usage errors, which can be found here:
 
-We've provided documentation for default error codes in the following sections:
-
-- [Validation Errors](validation_errors.md)
-- [Usage Errors](usage_errors.md)
+* [Validation Errors](validation_errors.md): Errors that happen during data validation.
+* [Usage Errors](usage_errors.md): Errors that happen when using Pydantic.
 
 ### Customize error messages
 

@@ -42,7 +42,7 @@ There are various ways to get strict-mode validation while using Pydantic, which
   `TypeAdapter.validate_python`, and similar for JSON
 * [Using `Field(strict=True)`](#strict-mode-with-field) with fields of a `BaseModel`, `dataclass`, or `TypedDict`
 * [Using `pydantic.types.Strict` as a type annotation](#strict-mode-with-annotated-strict) on a field
-  * Pydantic provides some type aliases that are already annotated with `Strict`, such as `pydantic.types.StrictInt`
+    * Pydantic provides some type aliases that are already annotated with `Strict`, such as `pydantic.types.StrictInt`
 * [Using `ConfigDict(strict=True)`](#strict-mode-with-configdict)
 
 ## Type coercions in strict mode
@@ -118,6 +118,7 @@ except ValidationError as exc:
 ```
 
 Note this also works even when using more "complex" types in `TypeAdapter`:
+
 ```python
 from dataclasses import dataclass
 
@@ -191,7 +192,6 @@ except ValidationError as exc:
       Input should be a valid integer [type=int_type, input_value='1', input_type=str]
     """
 ```
-
 
 ## Strict mode with `Field`
 
@@ -277,7 +277,7 @@ try:
 except ValidationError as exc:
     print(exc)
     """
-    1 validation error for typed-dict
+    1 validation error for MyDict
     x
       Input should be a valid integer [type=int_type, input_value='1', input_type=str]
     """
@@ -439,7 +439,7 @@ you should use the `config` keyword argument to the `@pydantic.dataclasses.datac
 When possible, you can achieve nested strict mode for vanilla dataclasses or `TypedDict` subclasses by annotating fields
 with the [`pydantic.types.Strict` annotation](#strict-mode-with-annotated-strict).
 
-However, if this is _not_ possible (e.g., when working with third-party types), you can set the config that Pydantic
+However, if this is *not* possible (e.g., when working with third-party types), you can set the config that Pydantic
 should use for the type by setting the `__pydantic_config__` attribute on the type:
 
 ```python
@@ -470,7 +470,7 @@ try:
 except ValidationError as exc:
     print(exc)
     """
-    1 validation error for typed-dict
+    1 validation error for Outer
     inner.y
       Input should be a valid integer [type=int_type, input_value='2', input_type=str]
     """

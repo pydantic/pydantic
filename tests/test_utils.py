@@ -4,15 +4,14 @@ import pickle
 import sys
 import time
 from copy import copy, deepcopy
-from typing import Annotated, Callable, Generic, Literal, NewType, TypeVar, Union
+from typing import Annotated, Callable, Generic, TypeVar, Union
 
 import pytest
-from dirty_equals import IsList
 from pydantic_core import PydanticCustomError, PydanticUndefined
 
 from pydantic import BaseModel
 from pydantic._internal import _repr
-from pydantic._internal._typing_extra import get_origin, is_new_type, literal_values
+from pydantic._internal._typing_extra import get_origin
 from pydantic._internal._utils import (
     BUILTIN_COLLECTIONS,
     LazyClassAttribute,
@@ -247,14 +246,6 @@ def test_value_items_error():
     assert str(e.value) == "Unexpected type of exclude value <class 'tuple'>"
 
 
-def test_is_new_type():
-    new_type = NewType('new_type', str)
-    new_new_type = NewType('new_new_type', new_type)
-    assert is_new_type(new_type)
-    assert is_new_type(new_new_type)
-    assert not is_new_type(str)
-
-
 def test_pretty():
     class MyTestModel(BaseModel):
         a: int = 1
@@ -372,21 +363,9 @@ def test_class_attribute():
     assert f.attr == 'not foo'
 
 
-def test_literal_values():
-    L1 = Literal['1']
-    assert literal_values(L1) == ['1']
-
-    L2 = Literal['2']
-    L12 = Literal[L1, L2]
-    assert literal_values(L12) == IsList('1', '2', check_order=False)
-
-    L312 = Literal['3', Literal[L1, L2]]
-    assert literal_values(L312) == IsList('3', '1', '2', check_order=False)
-
-
 @pytest.mark.parametrize(
     'obj',
-    (1, 1.0, '1', b'1', int, None, test_literal_values, len, test_literal_values.__code__, lambda: ..., ...),
+    (1, 1.0, '1', b'1', int, None, test_class_attribute, len, test_class_attribute.__code__, lambda: ..., ...),
 )
 def test_smart_deepcopy_immutable_non_sequence(obj, mocker):
     # make sure deepcopy is not used
@@ -402,6 +381,7 @@ def test_smart_deepcopy_empty_collection(empty_collection, mocker):
         assert smart_deepcopy(empty_collection) is not empty_collection
 
 
+@pytest.mark.thread_unsafe(reason='Monkeypatching')
 @pytest.mark.parametrize(
     'collection', (c.fromkeys((1,)) if issubclass(c, dict) else c((1,)) for c in BUILTIN_COLLECTIONS)
 )

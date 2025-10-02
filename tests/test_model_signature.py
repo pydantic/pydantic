@@ -4,9 +4,10 @@ from inspect import Parameter, Signature, signature
 from typing import Annotated, Any, Generic, Optional, TypeVar, Union
 
 import pytest
+from typing_extensions import get_origin
+from typing_inspection import typing_objects
 
 from pydantic import BaseModel, ConfigDict, Field, create_model
-from pydantic._internal._typing_extra import is_annotated
 
 
 def _equals(a: Union[str, Iterable[str]], b: Union[str, Iterable[str]]) -> bool:
@@ -95,7 +96,7 @@ def test_use_field_name():
     class Foo(BaseModel):
         foo: str = Field(alias='this is invalid')
 
-        model_config = ConfigDict(populate_by_name=True)
+        model_config = ConfigDict(validate_by_name=True)
 
     assert _equals(str(signature(Foo)), '(*, foo: str) -> None')
 
@@ -104,7 +105,7 @@ def test_does_not_use_reserved_word():
     class Foo(BaseModel):
         from_: str = Field(alias='from')
 
-        model_config = ConfigDict(populate_by_name=True)
+        model_config = ConfigDict(validate_by_name=True)
 
     assert _equals(str(signature(Foo)), '(*, from_: str) -> None')
 
@@ -180,10 +181,10 @@ def test_annotated_field():
     sig = signature(Model)
     assert str(sig) == '(*, foo: Annotated[int, Gt(gt=1)] = 1) -> None'
     # check that the `Annotated` we created is a valid `Annotated`
-    assert is_annotated(sig.parameters['foo'].annotation)
+    assert typing_objects.is_annotated(get_origin(sig.parameters['foo'].annotation))
 
 
-@pytest.mark.skipif(sys.version_info < (3, 10), reason='repr different on older versions')
+@pytest.mark.skipif(sys.version_info < (3, 10), sys.version_info >= (3, 14), reason='repr different on older versions')
 def test_annotated_optional_field():
     from annotated_types import Gt
 

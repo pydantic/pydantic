@@ -9,12 +9,10 @@ If no existing type suits your purpose you can also implement your [own Pydantic
 
 The following sections describe the types supported by Pydantic.
 
-
 * [Standard Library Types](../api/standard_library_types.md) &mdash; types from the Python standard library.
 * [Strict Types](#strict-types) &mdash; types that enable you to prevent coercion from compatible types.
 * [Custom Data Types](#custom-types) &mdash; create your own custom data types.
 * [Field Type Conversions](../concepts/conversion_table.md) &mdash; strict and lax conversion between different field types.
-
 
 ## Type conversion
 
@@ -24,16 +22,15 @@ There are two modes of coercion: strict and lax. See [Conversion Table](../conce
 
 See [Strict mode](../concepts/strict_mode.md) and [Strict Types](#strict-types) for details on enabling strict coercion.
 
-
 ## Strict Types
 
 Pydantic provides the following strict types:
 
-- [`StrictBool`][pydantic.types.StrictBool]
-- [`StrictBytes`][pydantic.types.StrictBytes]
-- [`StrictFloat`][pydantic.types.StrictFloat]
-- [`StrictInt`][pydantic.types.StrictInt]
-- [`StrictStr`][pydantic.types.StrictStr]
+* [`StrictBool`][pydantic.types.StrictBool]
+* [`StrictBytes`][pydantic.types.StrictBytes]
+* [`StrictFloat`][pydantic.types.StrictFloat]
+* [`StrictInt`][pydantic.types.StrictInt]
+* [`StrictStr`][pydantic.types.StrictStr]
 
 These types will only pass validation when the validated value is of the respective type or is a subtype of that type.
 
@@ -41,26 +38,25 @@ These types will only pass validation when the validated value is of the respect
 
 This behavior is also exposed via the `strict` field of the constrained types and can be combined with a multitude of complex validation rules. See the individual type signatures for supported arguments.
 
-- [`conbytes()`][pydantic.types.conbytes]
-- [`condate()`][pydantic.types.condate]
-- [`condecimal()`][pydantic.types.condecimal]
-- [`confloat()`][pydantic.types.confloat]
-- [`confrozenset()`][pydantic.types.confrozenset]
-- [`conint()`][pydantic.types.conint]
-- [`conlist()`][pydantic.types.conlist]
-- [`conset()`][pydantic.types.conset]
-- [`constr()`][pydantic.types.constr]
+* [`conbytes()`][pydantic.types.conbytes]
+* [`condate()`][pydantic.types.condate]
+* [`condecimal()`][pydantic.types.condecimal]
+* [`confloat()`][pydantic.types.confloat]
+* [`confrozenset()`][pydantic.types.confrozenset]
+* [`conint()`][pydantic.types.conint]
+* [`conlist()`][pydantic.types.conlist]
+* [`conset()`][pydantic.types.conset]
+* [`constr()`][pydantic.types.constr]
 
 The following caveats apply:
 
-- `StrictBytes` (and the `strict` option of `conbytes()`) will accept both `bytes`,
+* `StrictBytes` (and the `strict` option of `conbytes()`) will accept both `bytes`,
    and `bytearray` types.
-- `StrictInt` (and the `strict` option of `conint()`) will not accept `bool` types,
+* `StrictInt` (and the `strict` option of `conint()`) will not accept `bool` types,
     even though `bool` is a subclass of `int` in Python. Other subclasses will work.
-- `StrictFloat` (and the `strict` option of `confloat()`) will not accept `int`.
+* `StrictFloat` (and the `strict` option of `confloat()`) will not accept `int`.
 
 Besides the above, you can also have a [`FiniteFloat`][pydantic.types.FiniteFloat] type that will only accept finite values (i.e. not `inf`, `-inf` or `nan`).
-
 
 ## Custom Types
 
@@ -95,11 +91,12 @@ except ValidationError as exc:
 
 1. Note that you can also use constraints from the [annotated-types](https://github.com/annotated-types/annotated-types)
   library to make this Pydantic-agnostic:
-  ```python {test="skip" lint="skip"}
-  from annotated_types import Gt
 
-  PositiveInt = Annotated[int, Gt(0)]
-  ```
+    ```python {test="skip" lint="skip"}
+    from annotated_types import Gt
+
+    PositiveInt = Annotated[int, Gt(0)]
+    ```
 
 #### Adding validation and serialization
 
@@ -194,13 +191,13 @@ The above examples make use of *implicit* type aliases, assigned to a variable. 
 has no way of knowing the name of the variable it was assigned to, and this can be problematic for
 two reasons:
 
-- The [JSON Schema](./json_schema.md) of the alias won't be converted into a
+* The [JSON Schema](./json_schema.md) of the alias won't be converted into a
   [definition](https://json-schema.org/understanding-json-schema/structuring#defs).
   This is mostly useful when you are using the alias more than once in a model definition.
-- In most cases, [recursive type aliases](#named-recursive-types) won't work.
+* In most cases, [recursive type aliases](#named-recursive-types) won't work.
 
 By leveraging the new [`type` statement](https://typing.readthedocs.io/en/latest/spec/aliases.html#type-statement)
-(introduced in [PEP 695]), you can define aliases as follows:
+(introduced in [PEP 695](https://peps.python.org/pep-0695/)), you can define aliases as follows:
 
 === "Python 3.9 and above"
 
@@ -242,7 +239,6 @@ By leveraging the new [`type` statement](https://typing.readthedocs.io/en/latest
 
     1. If `PositiveIntList` were to be defined as an implicit type alias, its definition
        would have been duplicated in both `'x'` and `'y'`.
-
 
 === "Python 3.12 and above (new syntax)"
 
@@ -292,7 +288,7 @@ By leveraging the new [`type` statement](https://typing.readthedocs.io/en/latest
 
     === "Python 3.9 and above"
 
-        ```python
+        ```python {test="skip"}
         from typing import Annotated
 
         from typing_extensions import TypeAliasType
@@ -308,7 +304,7 @@ By leveraging the new [`type` statement](https://typing.readthedocs.io/en/latest
 
     === "Python 3.12 and above (new syntax)"
 
-        ```python {requires="3.12" upgrade="skip" lint="skip"}
+        ```python {requires="3.12" upgrade="skip" lint="skip" test="skip"}
         from typing import Annotated
 
         from pydantic import BaseModel, Field
@@ -322,6 +318,9 @@ By leveraging the new [`type` statement](https://typing.readthedocs.io/en/latest
 
     Only metadata that can be applied to the annotated type itself is allowed
     (e.g. [validation constraints](./fields.md#field-constraints) and JSON metadata).
+    Trying to support field-specific metadata would require eagerly inspecting the
+    type alias's [`__value__`][typing.TypeAliasType.__value__], and as such Pydantic
+    wouldn't be able to have the alias stored as a JSON Schema definition.
 
 !!! note
     As with implicit type aliases, [type variables][typing.TypeVar] can also be used inside the generic alias:
@@ -870,7 +869,8 @@ except ValidationError as e:
 The same idea can be applied to create generic container types, like a custom `Sequence` type:
 
 ```python
-from typing import Any, Sequence, TypeVar
+from collections.abc import Sequence
+from typing import Any, TypeVar
 
 from pydantic_core import ValidationError, core_schema
 from typing_extensions import get_args
@@ -976,7 +976,7 @@ class CustomType:
         cls, source_type: Any, handler: GetCoreSchemaHandler
     ) -> core_schema.CoreSchema:
         return core_schema.with_info_after_validator_function(
-            cls.validate, handler(int), field_name=handler.field_name
+            cls.validate, handler(int)
         )
 
 
@@ -1009,7 +1009,3 @@ m = MyModel(my_field=1)
 print(m.my_field)
 #> <1 'my_field'>
 ```
-
-[PEP 593]: https://peps.python.org/pep-0593/
-[PEP 695]: https://peps.python.org/pep-0695/
-[typing-extensions]: https://github.com/python/typing_extensions

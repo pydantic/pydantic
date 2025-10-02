@@ -36,9 +36,10 @@ from typing import (
 )
 
 import pydantic_core
-from pydantic_core import CoreSchema, PydanticOmit, core_schema, to_jsonable_python
+from pydantic_core import MISSING, CoreSchema, PydanticOmit, core_schema, to_jsonable_python
 from pydantic_core.core_schema import ComputedField
 from typing_extensions import TypeAlias, assert_never, deprecated, final
+from typing_inspection.introspection import get_literal_values
 
 from pydantic.warnings import PydanticDeprecatedSince26, PydanticDeprecatedSince29
 
@@ -50,7 +51,6 @@ from ._internal import (
     _internal_dataclass,
     _mock_val_ser,
     _schema_generation_shared,
-    _typing_extra,
 )
 from .annotated_handlers import GetJsonSchemaHandler
 from .config import JsonDict, JsonValue
@@ -104,6 +104,12 @@ class PydanticJsonSchemaWarning(UserWarning):
     [`GenerateJsonSchema.render_warning_message`][pydantic.json_schema.GenerateJsonSchema.render_warning_message]
     methods for more details; these can be overridden to control warning behavior.
     """
+
+
+NoDefault = object()
+"""A sentinel value used to indicate that no default value should be used when generating a JSON Schema
+for a core schema with a default value.
+"""
 
 
 # ##### JSON Schema Generation #####
@@ -336,9 +342,7 @@ class GenerateJsonSchema:
             TypeError: If no method has been defined for generating a JSON schema for a given pydantic core schema type.
         """
         mapping: dict[CoreSchemaOrFieldType, Callable[[CoreSchemaOrField], JsonSchemaValue]] = {}
-        core_schema_types: list[CoreSchemaOrFieldType] = _typing_extra.literal_values(
-            CoreSchemaOrFieldType  # type: ignore
-        )
+        core_schema_types: list[CoreSchemaOrFieldType] = list(get_literal_values(CoreSchemaOrFieldType))
         for key in core_schema_types:
             method_name = f'{key.replace("-", "_")}_schema'
             try:
@@ -738,10 +742,7 @@ class GenerateJsonSchema:
             if container_id in seen_containers:
                 return value
             seen_containers.add(container_id)
-            sorted_list: list[JsonSchemaValue] = []
-            for item in value:
-                sorted_list.append(self._sort_recursive(item, parent_key, seen_containers=seen_containers))
-            return sorted_list
+            return [self._sort_recursive(item, parent_key, seen_containers=seen_containers) for item in value]
         else:
             return value
 
@@ -822,7 +823,49 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        json_schema = self.str_schema(core_schema.str_schema())
+
+        def get_decimal_pattern(schema: core_schema.DecimalSchema) -> str:
+            max_digits = schema.get('max_digits')
+            decimal_places = schema.get('decimal_places')
+
+            pattern = (
+                r'^(?!^[-+.]*$)[+-]?0*'  # check it is not empty string and not one or sequence of ".+-" characters.
+            )
+
+            # Case 1: Both max_digits and decimal_places are set
+            if max_digits is not None and decimal_places is not None:
+                integer_places = max(0, max_digits - decimal_places)
+                pattern += (
+                    rf'(?:'
+                    rf'\d{{0,{integer_places}}}'
+                    rf'|'
+                    rf'(?=[\d.]{{1,{max_digits + 1}}}0*$)'
+                    rf'\d{{0,{integer_places}}}\.\d{{0,{decimal_places}}}0*$'
+                    rf')'
+                )
+
+            # Case 2: Only max_digits is set
+            elif max_digits is not None and decimal_places is None:
+                pattern += (
+                    rf'(?:'
+                    rf'\d{{0,{max_digits}}}'
+                    rf'|'
+                    rf'(?=[\d.]{{1,{max_digits + 1}}}0*$)'
+                    rf'\d*\.\d*0*$'
+                    rf')'
+                )
+
+            # Case 3: Only decimal_places is set
+            elif max_digits is None and decimal_places is not None:
+                pattern += rf'\d*\.?\d{{0,{decimal_places}}}0*$'
+
+            # Case 4: Both are None (no restrictions)
+            else:
+                pattern += r'\d*\.?\d*$'  # look for arbitrary integer or decimal
+
+            return pattern
+
+        json_schema = self.str_schema(core_schema.str_schema(pattern=get_decimal_pattern(schema)))
         if self.mode == 'validation':
             multiple_of = schema.get('multiple_of')
             le = schema.get('le')
@@ -952,6 +995,17 @@ class GenerateJsonSchema:
         elif types == {type(None)}:
             result['type'] = 'null'
         return result
+
+    def missing_sentinel_schema(self, schema: core_schema.MissingSentinelSchema) -> JsonSchemaValue:
+        """Generates a JSON schema that matches the `MISSING` sentinel value.
+
+        Args:
+            schema: The core schema.
+
+        Returns:
+            The generated JSON schema.
+        """
+        raise PydanticOmit
 
     def enum_schema(self, schema: core_schema.EnumSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches an Enum value.
@@ -1256,43 +1310,35 @@ class GenerateJsonSchema:
         """
         json_schema = self.generate_inner(schema['schema'])
 
-        if 'default' not in schema:
+        default = self.get_default_value(schema)
+        if default is NoDefault or default is MISSING:
             return json_schema
-        default = schema['default']
-        # Note: if you want to include the value returned by the default_factory,
-        # override this method and replace the code above with:
-        # if 'default' in schema:
-        #     default = schema['default']
-        # elif 'default_factory' in schema:
-        #     default = schema['default_factory']()
-        # else:
-        #     return json_schema
 
         # we reflect the application of custom plain, no-info serializers to defaults for
         # JSON Schemas viewed in serialization mode:
         # TODO: improvements along with https://github.com/pydantic/pydantic/issues/8208
-        if (
-            self.mode == 'serialization'
-            and (ser_schema := schema['schema'].get('serialization'))
-            and (ser_func := ser_schema.get('function'))
-            and ser_schema.get('type') == 'function-plain'
-            and not ser_schema.get('info_arg')
-            and not (default is None and ser_schema.get('when_used') in ('unless-none', 'json-unless-none'))
-        ):
-            try:
-                default = ser_func(default)  # type: ignore
-            except Exception:
-                # It might be that the provided default needs to be validated (read: parsed) first
-                # (assuming `validate_default` is enabled). However, we can't perform
-                # such validation during JSON Schema generation so we don't support
-                # this pattern for now.
-                # (One example is when using `foo: ByteSize = '1MB'`, which validates and
-                # serializes as an int. In this case, `ser_func` is `int` and `int('1MB')` fails).
-                self.emit_warning(
-                    'non-serializable-default',
-                    f'Unable to serialize value {default!r} with the plain serializer; excluding default from JSON schema',
-                )
-                return json_schema
+        if self.mode == 'serialization':
+            # `_get_ser_schema_for_default_value()` is used to unpack potentially nested validator schemas:
+            ser_schema = _get_ser_schema_for_default_value(schema['schema'])
+            if (
+                ser_schema is not None
+                and (ser_func := ser_schema.get('function'))
+                and not (default is None and ser_schema.get('when_used') in ('unless-none', 'json-unless-none'))
+            ):
+                try:
+                    default = ser_func(default)  # type: ignore
+                except Exception:
+                    # It might be that the provided default needs to be validated (read: parsed) first
+                    # (assuming `validate_default` is enabled). However, we can't perform
+                    # such validation during JSON Schema generation so we don't support
+                    # this pattern for now.
+                    # (One example is when using `foo: ByteSize = '1MB'`, which validates and
+                    # serializes as an int. In this case, `ser_func` is `int` and `int('1MB')` fails).
+                    self.emit_warning(
+                        'non-serializable-default',
+                        f'Unable to serialize value {default!r} with the plain serializer; excluding default from JSON schema',
+                    )
+                    return json_schema
 
         try:
             encoded_default = self.encode_default(default)
@@ -1306,6 +1352,21 @@ class GenerateJsonSchema:
 
         json_schema['default'] = encoded_default
         return json_schema
+
+    def get_default_value(self, schema: core_schema.WithDefaultSchema) -> Any:
+        """Get the default value to be used when generating a JSON Schema for a core schema with a default.
+
+        The default implementation is to use the statically defined default value. This method can be overridden
+        if you want to make use of the default factory.
+
+        Args:
+            schema: The `'with-default'` core schema.
+
+        Returns:
+            The default value to use, or [`NoDefault`][pydantic.json_schema.NoDefault] if no default
+                value is available.
+        """
+        return schema.get('default', NoDefault)
 
     def nullable_schema(self, schema: core_schema.NullableSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a schema that allows null values.
@@ -1504,10 +1565,26 @@ class GenerateJsonSchema:
         with self._config_wrapper_stack.push(config):
             json_schema = self._named_required_fields_schema(named_required_fields)
 
+        # There's some duplication between `extra_behavior` and
+        # the config's `extra`/core config's `extra_fields_behavior`.
+        # However, it is common to manually create TypedDictSchemas,
+        # where you don't necessarily have a class.
+        # At runtime, `extra_behavior` takes priority over the config
+        # for validation, so follow the same for the JSON Schema:
+        if schema.get('extra_behavior') == 'forbid':
+            json_schema['additionalProperties'] = False
+        elif schema.get('extra_behavior') == 'allow':
+            if 'extras_schema' in schema and schema['extras_schema'] != {'type': 'any'}:
+                json_schema['additionalProperties'] = self.generate_inner(schema['extras_schema'])
+            else:
+                json_schema['additionalProperties'] = True
+
         if cls is not None:
+            # `_update_class_schema()` will not override
+            # `additionalProperties` if already present:
             self._update_class_schema(json_schema, cls, config)
-        else:
-            extra = config.get('extra')
+        elif 'additionalProperties' not in json_schema:
+            extra = schema.get('config', {}).get('extra_fields_behavior')
             if extra == 'forbid':
                 json_schema['additionalProperties'] = False
             elif extra == 'allow':
@@ -1666,7 +1743,7 @@ class GenerateJsonSchema:
             json_schema.setdefault('description', root_description)
 
         extra = config.get('extra')
-        if 'additionalProperties' not in json_schema:
+        if 'additionalProperties' not in json_schema:  # This check is particularly important for `typed_dict_schema()`
             if extra == 'allow':
                 json_schema['additionalProperties'] = True
             elif extra == 'forbid':
@@ -1819,7 +1896,7 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        from ._internal._dataclasses import is_builtin_dataclass
+        from ._internal._dataclasses import is_stdlib_dataclass
 
         cls = schema['cls']
         config: ConfigDict = getattr(cls, '__pydantic_config__', cast('ConfigDict', {}))
@@ -1830,7 +1907,7 @@ class GenerateJsonSchema:
         self._update_class_schema(json_schema, cls, config)
 
         # Dataclass-specific handling of description
-        if is_builtin_dataclass(cls):
+        if is_stdlib_dataclass(cls):
             # vanilla dataclass; don't use cls.__doc__ as it will contain the class signature by default
             description = None
         else:
@@ -1892,7 +1969,8 @@ class GenerateJsonSchema:
         for argument in arguments:
             name = self.get_argument_name(argument)
             argument_schema = self.generate_inner(argument['schema']).copy()
-            argument_schema['title'] = self.get_title_from_name(name)
+            if 'title' not in argument_schema and self.field_title_should_be_set(argument['schema']):
+                argument_schema['title'] = self.get_title_from_name(name)
             properties[name] = argument_schema
 
             if argument['schema']['type'] != 'default':
@@ -1931,7 +2009,8 @@ class GenerateJsonSchema:
             name = self.get_argument_name(argument)
 
             argument_schema = self.generate_inner(argument['schema']).copy()
-            argument_schema['title'] = self.get_title_from_name(name)
+            if 'title' not in argument_schema and self.field_title_should_be_set(argument['schema']):
+                argument_schema['title'] = self.get_title_from_name(name)
             prefix_items.append(argument_schema)
 
             if argument['schema']['type'] != 'default':
@@ -1955,7 +2034,7 @@ class GenerateJsonSchema:
 
         return json_schema
 
-    def get_argument_name(self, argument: core_schema.ArgumentsParameter) -> str:
+    def get_argument_name(self, argument: core_schema.ArgumentsParameter | core_schema.ArgumentsV3Parameter) -> str:
         """Retrieves the name of an argument.
 
         Args:
@@ -1972,6 +2051,45 @@ class GenerateJsonSchema:
             else:
                 pass  # might want to do something else?
         return name
+
+    def arguments_v3_schema(self, schema: core_schema.ArgumentsV3Schema) -> JsonSchemaValue:
+        """Generates a JSON schema that matches a schema that defines a function's arguments.
+
+        Args:
+            schema: The core schema.
+
+        Returns:
+            The generated JSON schema.
+        """
+        arguments = schema['arguments_schema']
+        properties: dict[str, JsonSchemaValue] = {}
+        required: list[str] = []
+        for argument in arguments:
+            mode = argument.get('mode', 'positional_or_keyword')
+            name = self.get_argument_name(argument)
+            argument_schema = self.generate_inner(argument['schema']).copy()
+            if mode == 'var_args':
+                argument_schema = {'type': 'array', 'items': argument_schema}
+            elif mode == 'var_kwargs_uniform':
+                argument_schema = {'type': 'object', 'additionalProperties': argument_schema}
+
+            argument_schema.setdefault('title', self.get_title_from_name(name))
+            properties[name] = argument_schema
+
+            if (
+                (mode == 'var_kwargs_unpacked_typed_dict' and 'required' in argument_schema)
+                or mode not in {'var_args', 'var_kwargs_uniform', 'var_kwargs_unpacked_typed_dict'}
+                and argument['schema']['type'] != 'default'
+            ):
+                # This assumes that if the argument has a default value,
+                # the inner schema must be of type WithDefaultSchema.
+                # I believe this is true, but I am not 100% sure
+                required.append(name)
+
+        json_schema: JsonSchemaValue = {'type': 'object', 'properties': properties}
+        if required:
+            json_schema['required'] = required
+        return json_schema
 
     def call_schema(self, schema: core_schema.CallSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a schema that defines a function call.
@@ -2062,7 +2180,7 @@ class GenerateJsonSchema:
         for definition in schema['definitions']:
             try:
                 self.generate_inner(definition)
-            except PydanticInvalidForJsonSchema as e:
+            except PydanticInvalidForJsonSchema as e:  # noqa: PERF203
                 core_ref: CoreRef = CoreRef(definition['ref'])  # type: ignore
                 self._core_defs_invalid_for_json_schema[self.get_defs_ref((core_ref, self.mode))] = e
                 continue
@@ -2349,15 +2467,15 @@ class GenerateJsonSchema:
             default = (
                 dft
                 if _type_has_config(type(dft))
-                else TypeAdapter(type(dft), config=config.config_dict).dump_python(dft, mode='json')
+                else TypeAdapter(type(dft), config=config.config_dict).dump_python(
+                    dft, by_alias=self.by_alias, mode='json'
+                )
             )
         except PydanticSchemaGenerationError:
             raise pydantic_core.PydanticSerializationError(f'Unable to encode default value {dft}')
 
         return pydantic_core.to_jsonable_python(
-            default,
-            timedelta_mode=config.ser_json_timedelta,
-            bytes_mode=config.ser_json_bytes,
+            default, timedelta_mode=config.ser_json_timedelta, bytes_mode=config.ser_json_bytes, by_alias=self.by_alias
         )
 
     def update_with_validations(
@@ -3016,3 +3134,18 @@ def _get_typed_dict_config(cls: type[Any] | None) -> ConfigDict:
         except AttributeError:
             pass
     return {}
+
+
+def _get_ser_schema_for_default_value(schema: CoreSchema) -> core_schema.PlainSerializerFunctionSerSchema | None:
+    """Get a `'function-plain'` serialization schema that can be used to serialize a default value.
+
+    This takes into account having the serialization schema nested under validation schema(s).
+    """
+    if (
+        (ser_schema := schema.get('serialization'))
+        and ser_schema['type'] == 'function-plain'
+        and not ser_schema.get('info_arg')
+    ):
+        return ser_schema
+    if _core_utils.is_function_with_inner_schema(schema):
+        return _get_ser_schema_for_default_value(schema['schema'])

@@ -28,8 +28,8 @@ def test_public_api_dynamic_imports(attr_name, value):
         assert isinstance(imported_object, object)
 
 
+@pytest.mark.thread_unsafe
 @pytest.mark.filterwarnings('ignore::DeprecationWarning')
-@pytest.mark.filterwarnings('ignore::pydantic.warnings.PydanticExperimentalWarning')
 def test_public_internal():
     """
     check we don't make anything from _internal public

@@ -3,6 +3,7 @@
 from __future__ import annotations as _annotations
 
 import dataclasses
+import functools
 import sys
 import types
 from typing import TYPE_CHECKING, Any, Callable, Generic, Literal, NoReturn, TypeVar, overload
@@ -149,39 +150,6 @@ def dataclass(
     else:
         kwargs = {}
 
-    def make_pydantic_fields_compatible(cls: type[Any]) -> None:
-        """Make sure that stdlib `dataclasses` understands `Field` kwargs like `kw_only`
-        To do that, we simply change
-          `x: int = pydantic.Field(..., kw_only=True)`
-        into
-          `x: int = dataclasses.field(default=pydantic.Field(..., kw_only=True), kw_only=True)`
-        """
-        for annotation_cls in cls.__mro__:
-            annotations: dict[str, Any] = getattr(annotation_cls, '__annotations__', {})
-            for field_name in annotations:
-                field_value = getattr(cls, field_name, None)
-                # Process only if this is an instance of `FieldInfo`.
-                if not isinstance(field_value, FieldInfo):
-                    continue
-
-                # Initialize arguments for the standard `dataclasses.field`.
-                field_args: dict = {'default': field_value}
-
-                # Handle `kw_only` for Python 3.10+
-                if sys.version_info >= (3, 10) and field_value.kw_only:
-                    field_args['kw_only'] = True
-
-                # Set `repr` attribute if it's explicitly specified to be not `True`.
-                if field_value.repr is not True:
-                    field_args['repr'] = field_value.repr
-
-                setattr(cls, field_name, dataclasses.field(**field_args))
-                # In Python 3.9, when subclassing, information is pulled from cls.__dict__['__annotations__']
-                # for annotations, so we must make sure it's initialized before we add to it.
-                if cls.__dict__.get('__annotations__') is None:
-                    cls.__annotations__ = {}
-                cls.__annotations__[field_name] = annotations[field_name]
-
     def create_dataclass(cls: type[Any]) -> type[PydanticDataclass]:
         """Create a Pydantic dataclass from a regular dataclass.
 
@@ -216,15 +184,16 @@ def dataclass(
         config_dict = config if config is not None else getattr(cls, '__pydantic_config__', None)
         config_wrapper = _config.ConfigWrapper(config_dict)
         decorators = _decorators.DecoratorInfos.build(cls)
+        decorators.update_from_config(config_wrapper)
 
         # Keep track of the original __doc__ so that we can restore it after applying the dataclasses decorator
         # Otherwise, classes with no __doc__ will have their signature added into the JSON schema description,
         # since dataclasses.dataclass will set this as the __doc__
         original_doc = cls.__doc__
 
-        if _pydantic_dataclasses.is_builtin_dataclass(cls):
-            # Don't preserve the docstring for vanilla dataclasses, as it may include the signature
-            # This matches v1 behavior, and there was an explicit test for it
+        if _pydantic_dataclasses.is_stdlib_dataclass(cls):
+            # Vanilla dataclasses include a default docstring (representing the class signature),
+            # which we don't want to preserve.
             original_doc = None
 
             # We don't want to add validation to the existing std lib dataclass, so we will subclass it
@@ -235,8 +204,6 @@ def dataclass(
                 generic_base = Generic[cls.__parameters__]  # type: ignore
                 bases = bases + (generic_base,)
             cls = types.new_class(cls.__name__, bases)
-
-        make_pydantic_fields_compatible(cls)
 
         # Respect frozen setting from dataclass constructor and fallback to config setting if not provided
         if frozen is not None:
@@ -252,26 +219,90 @@ def dataclass(
         else:
             frozen_ = config_wrapper.frozen or False
 
-        cls = dataclasses.dataclass(  # type: ignore[call-overload]
-            cls,
-            # the value of init here doesn't affect anything except that it makes it easier to generate a signature
-            init=True,
-            repr=repr,
-            eq=eq,
-            order=order,
-            unsafe_hash=unsafe_hash,
-            frozen=frozen_,
-            **kwargs,
-        )
+        # Make Pydantic's `Field()` function compatible with stdlib dataclasses. As we'll decorate
+        # `cls` with the stdlib `@dataclass` decorator first, there are two attributes, `kw_only` and
+        # `repr` that need to be understood *during* the stdlib creation. We do so in two steps:
+
+        # 1. On the decorated class, wrap `Field()` assignment with `dataclass.field()`, with the
+        # two attributes set (done in `as_dataclass_field()`)
+        cls_anns = _typing_extra.safe_get_annotations(cls)
+        for field_name in cls_anns:
+            # We should look for assignments in `__dict__` instead, but for now we follow
+            # the same behavior as stdlib dataclasses (see https://github.com/python/cpython/issues/88609)
+            field_value = getattr(cls, field_name, None)
+            if isinstance(field_value, FieldInfo):
+                setattr(cls, field_name, _pydantic_dataclasses.as_dataclass_field(field_value))
+
+        # 2. For bases of `cls` that are stdlib dataclasses, we temporarily patch their fields
+        # (see the docstring of the context manager):
+        with _pydantic_dataclasses.patch_base_fields(cls):
+            cls = dataclasses.dataclass(  # pyright: ignore[reportCallIssue]
+                cls,
+                # the value of init here doesn't affect anything except that it makes it easier to generate a signature
+                init=True,
+                repr=repr,
+                eq=eq,
+                order=order,
+                unsafe_hash=unsafe_hash,
+                frozen=frozen_,
+                **kwargs,
+            )
+
+        if config_wrapper.validate_assignment:
+            original_setattr = cls.__setattr__
+
+            @functools.wraps(cls.__setattr__)
+            def validated_setattr(instance: PydanticDataclass, name: str, value: Any, /) -> None:
+                if frozen_:
+                    return original_setattr(instance, name, value)  # pyright: ignore[reportCallIssue]
+                inst_cls = type(instance)
+                attr = getattr(inst_cls, name, None)
+
+                if isinstance(attr, property):
+                    attr.__set__(instance, value)
+                elif isinstance(attr, functools.cached_property):
+                    instance.__dict__.__setitem__(name, value)
+                else:
+                    inst_cls.__pydantic_validator__.validate_assignment(instance, name, value)
+
+            cls.__setattr__ = validated_setattr.__get__(None, cls)  # type: ignore
+
+            if slots and not hasattr(cls, '__setstate__'):
+                # If slots is set, `pickle` (relied on by `copy.copy()`) will use
+                # `__setattr__()` to reconstruct the dataclass. However, the custom
+                # `__setattr__()` set above relies on `validate_assignment()`, which
+                # in turn expects all the field values to be already present on the
+                # instance, resulting in attribute errors.
+                # As such, we make use of `object.__setattr__()` instead.
+                # Note that we do so only if `__setstate__()` isn't already set (this is the
+                # case if on top of `slots`, `frozen` is used).
+
+                # Taken from `dataclasses._dataclass_get/setstate()`:
+                def _dataclass_getstate(self: Any) -> list[Any]:
+                    return [getattr(self, f.name) for f in dataclasses.fields(self)]
+
+                def _dataclass_setstate(self: Any, state: list[Any]) -> None:
+                    for field, value in zip(dataclasses.fields(self), state):
+                        object.__setattr__(self, field.name, value)
+
+                cls.__getstate__ = _dataclass_getstate  # pyright: ignore[reportAttributeAccessIssue]
+                cls.__setstate__ = _dataclass_setstate  # pyright: ignore[reportAttributeAccessIssue]
 
         # This is an undocumented attribute to distinguish stdlib/Pydantic dataclasses.
         # It should be set as early as possible:
         cls.__is_pydantic_dataclass__ = True
-
         cls.__pydantic_decorators__ = decorators  # type: ignore
         cls.__doc__ = original_doc
+        # Can be non-existent for dynamically created classes:
+        firstlineno = getattr(original_cls, '__firstlineno__', None)
         cls.__module__ = original_cls.__module__
+        if sys.version_info >= (3, 13) and firstlineno is not None:
+            # As per https://docs.python.org/3/reference/datamodel.html#type.__firstlineno__:
+            # Setting the `__module__` attribute removes the `__firstlineno__` item from the type’s dictionary.
+            original_cls.__firstlineno__ = firstlineno
+            cls.__firstlineno__ = firstlineno
         cls.__qualname__ = original_cls.__qualname__
+        cls.__pydantic_fields_complete__ = classmethod(_pydantic_fields_complete)
         cls.__pydantic_complete__ = False  # `complete_dataclass` will set it to `True` if successful.
         # TODO `parent_namespace` is currently None, but we could do the same thing as Pydantic models:
         # fetch the parent ns using `parent_frame_namespace` (if the dataclass was defined in a function),
@@ -280,6 +311,14 @@ def dataclass(
         return cls
 
     return create_dataclass if _cls is None else create_dataclass(_cls)
+
+
+def _pydantic_fields_complete(cls: type[PydanticDataclass]) -> bool:
+    """Return whether the fields where successfully collected (i.e. type hints were successfully resolves).
+
+    This is a private property, not meant to be used outside Pydantic.
+    """
+    return all(field_info._complete for field_info in cls.__pydantic_fields__.values())
 
 
 __getattr__ = getattr_migration(__name__)
@@ -330,7 +369,7 @@ def rebuild_dataclass(
     for attr in ('__pydantic_core_schema__', '__pydantic_validator__', '__pydantic_serializer__'):
         if attr in cls.__dict__:
             # Deleting the validator/serializer is necessary as otherwise they can get reused in
-            # pycantic-core. Same applies for the core schema that can be reused in schema generation.
+            # pydantic-core. Same applies for the core schema that can be reused in schema generation.
             delattr(cls, attr)
 
     cls.__pydantic_complete__ = False

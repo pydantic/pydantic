@@ -283,16 +283,7 @@ This is a limitation of dataclass transforms and cannot be fixed in pydantic.
 
     These details are only useful for other library authors, etc.
 
-This additional editor support works by implementing the proposed draft standard for [Dataclass Transform (PEP 681)](https://peps.python.org/pep-0681/).
+This additional editor support works by making use of the [`@dataclass_transform` decorator](https://typing.python.org/en/latest/spec/dataclasses.html#the-dataclass-transform-decorator)
+(introduced by [PEP 681](https://peps.python.org/pep-0681/)).
 
-The proposed draft standard is written by Eric Traut, from the Microsoft team, the same author of the open source package Pyright (used by Pylance to provide Python support in VS Code).
-
-The intention of the standard is to provide a way for libraries like Pydantic and others to tell editors and tools that they (the editors) should treat these libraries (e.g. Pydantic) as if they were `dataclasses`, providing autocompletion, type checks, etc.
-
-The draft standard also includes an [Alternate Form](https://github.com/microsoft/pyright/blob/master/specs/dataclass_transforms.md#alternate-form) for early adopters, like Pydantic, to add support for it right away, even before the new draft standard is finished and approved.
-
-This new draft standard, with the Alternate Form, is already supported by Pyright, so it can be used via Pylance in VS Code.
-
-As it is being proposed as an official standard for Python, other editors can also easily add support for it.
-
-And authors of other libraries similar to Pydantic can also easily adopt the standard right away (using the "Alternate Form") and get the benefits of these additional editor features.
+The standard provides a way for libraries like Pydantic and others to tell editors and tools that they (the editors) should treat these libraries (e.g. Pydantic) as if they were [dataclasses][dataclasses], providing autocompletion, type checks, etc.

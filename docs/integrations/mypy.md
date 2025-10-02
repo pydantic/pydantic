@@ -28,7 +28,7 @@ Model()  # will raise a validation error for age and list_of_ints
 Without any special configuration, mypy does not catch the [missing model field annotation](../errors/usage_errors.md#model-field-missing-annotation)
 and errors about the `list_of_ints` argument which Pydantic parses correctly:
 
-```
+```output
 15: error: List item 1 has incompatible type "str"; expected "int"  [list-item]
 15: error: List item 2 has incompatible type "bytes"; expected "int"  [list-item]
 16: error: "Model" has no attribute "middle_name"  [attr-defined]
@@ -37,7 +37,8 @@ and errors about the `list_of_ints` argument which Pydantic parses correctly:
 ```
 
 But [with the plugin enabled](#enabling-the-plugin), it gives the correct errors:
-```
+
+```output
 9: error: Untyped fields disallowed  [pydantic-field]
 16: error: "Model" has no attribute "middle_name"  [attr-defined]
 17: error: Missing named argument "age" for "Model"  [call-arg]
@@ -50,6 +51,8 @@ if your field names or types change.
 Note that mypy already supports some features without using the Pydantic plugin, such as synthesizing a `__init__`
 method for Pydantic models and dataclasses. See the [mypy plugin capabilities](#mypy-plugin-capabilities) for a list
 of additional features.
+
+The Pydantic mypy plugin is tested against the latest mypy version. Older versions might work but won't be tested.
 
 ## Enabling the Plugin
 
@@ -76,19 +79,13 @@ To enable the plugin, just add `pydantic.mypy` to the list of plugins in your
 
 See the [plugin configuration](#configuring-the-plugin) for more details.
 
-## Supported mypy versions
-
-Pydantic supports the mypy versions released less than 6 months ago. Older versions may still work with the plugin
-but won't be tested. The list of released mypy versions can be found [here](https://mypy-lang.org/news.html). Note
-that the version support policy is subject to change at discretion of contributors.
-
 ## Mypy plugin capabilities
 
 ### Generate a `__init__` signature for Pydantic models
 
 * Any required fields that don't have dynamically-determined aliases will be included as required
   keyword arguments.
-* If the [`populate_by_name`][pydantic.ConfigDict.populate_by_name] model configuration value is set to
+* If the [`validate_by_name`][pydantic.ConfigDict.validate_by_name] model configuration value is set to
   `True`, the generated signature will use the field names rather than aliases.
 * The [`init_forbid_extra`](#init_forbid_extra) and [`init_typed`](#init_typed) plugin configuration
   values can further fine-tune the synthesized `__init__` method.
@@ -196,7 +193,7 @@ For this reason, the plugin will add an extra `**kwargs: Any` parameter when syn
 ### `warn_required_dynamic_aliases`
 
 Whether to error when using a dynamically-determined alias or alias generator on a model with
-[`populate_by_name`][pydantic.ConfigDict.populate_by_name] set to `False`. If such aliases are
+[`validate_by_name`][pydantic.ConfigDict.validate_by_name] set to `False`. If such aliases are
 present, mypy cannot properly type check calls to `__init__`. In this case, it will default to
 treating all arguments as not required.
 

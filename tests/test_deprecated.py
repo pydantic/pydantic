@@ -32,6 +32,10 @@ from pydantic.functional_serializers import model_serializer
 from pydantic.json_schema import JsonSchemaValue
 from pydantic.type_adapter import TypeAdapter
 
+# `pytest.warns/raises()` is thread unsafe. As these tests are meant to be
+# removed in V3, we just mark all tests as thread unsafe
+pytestmark = pytest.mark.thread_unsafe
+
 
 def deprecated_from_orm(model_type: type[BaseModel], obj: Any) -> Any:
     with pytest.warns(
@@ -326,13 +330,13 @@ def test_fields():
     m = Model(x=1)
     assert len(Model.model_fields) == 2
 
-    with pytest.warns(PydanticDeprecatedSince211):
+    with pytest.warns(PydanticDeprecatedSince211, match="Accessing the 'model_fields' attribute"):
         assert len(m.model_fields) == 2
 
-    with pytest.warns(PydanticDeprecatedSince211):
+    with pytest.warns(PydanticDeprecatedSince211, match="Accessing the 'model_computed_fields' attribute"):
         assert len(m.model_computed_fields) == 1
 
-    match = '^The `__fields__` attribute is deprecated, use `model_fields` instead.'
+    match = '^The `__fields__` attribute is deprecated, use the `model_fields` class property instead.'
     with pytest.warns(PydanticDeprecatedSince20, match=match):
         assert len(Model.__fields__) == 2
     with pytest.warns(PydanticDeprecatedSince20, match=match):

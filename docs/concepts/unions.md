@@ -118,9 +118,9 @@ In this mode, pydantic attempts to select the best match for the input from the 
 
     For `exactness`, Pydantic scores a match of a union member into one of the following three groups (from highest score to lowest score):
 
-    - An exact type match, for example an `int` input to a `float | int` union validation is an exact type match for the `int` member
-    - Validation would have succeeded in [`strict` mode](../concepts/strict_mode.md)
-    - Validation would have succeeded in lax mode
+    * An exact type match, for example an `int` input to a `float | int` union validation is an exact type match for the `int` member
+    * Validation would have succeeded in [`strict` mode](../concepts/strict_mode.md)
+    * Validation would have succeeded in lax mode
 
     The union match which produced the highest exactness score will be considered the best match.
 
@@ -137,7 +137,7 @@ In this mode, pydantic attempts to select the best match for the input from the 
     === "All other data types"
 
         1. Union members are attempted left to right, with any successful matches scored into one of the three exactness categories described above.
-            - If validation succeeds with an exact type match, that member is returned immediately and following members will not be attempted.
+            * If validation succeeds with an exact type match, that member is returned immediately and following members will not be attempted.
         2. If validation succeeded on at least one member as a "strict" match, the leftmost of those "strict" matches is returned.
         3. If validation succeeded on at least one member in "lax" mode, the leftmost match is returned.
         4. Validation failed on all the members, return all the errors.

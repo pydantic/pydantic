@@ -387,6 +387,8 @@ class TypeAdapter(Generic[T]):
         from_attributes: bool | None = None,
         context: dict[str, Any] | None = None,
         experimental_allow_partial: bool | Literal['off', 'on', 'trailing-strings'] = False,
+        by_alias: bool | None = None,
+        by_name: bool | None = None,
     ) -> T:
         """Validate a Python object against the model.
 
@@ -400,6 +402,8 @@ class TypeAdapter(Generic[T]):
                 * False / 'off': Default behavior, no partial validation.
                 * True / 'on': Enable partial validation.
                 * 'trailing-strings': Enable partial validation and allow trailing strings in the input.
+            by_alias: Whether to use the field's alias when validating against the provided input data.
+            by_name: Whether to use the field's name when validating against the provided input data.
 
         !!! note
             When using `TypeAdapter` with a Pydantic `dataclass`, the use of the `from_attributes`
@@ -408,12 +412,20 @@ class TypeAdapter(Generic[T]):
         Returns:
             The validated object.
         """
+        if by_alias is False and by_name is not True:
+            raise PydanticUserError(
+                'At least one of `by_alias` or `by_name` must be set to True.',
+                code='validate-by-alias-and-name-false',
+            )
+
         return self.validator.validate_python(
             object,
             strict=strict,
             from_attributes=from_attributes,
             context=context,
             allow_partial=experimental_allow_partial,
+            by_alias=by_alias,
+            by_name=by_name,
         )
 
     def validate_json(
@@ -424,6 +436,8 @@ class TypeAdapter(Generic[T]):
         strict: bool | None = None,
         context: dict[str, Any] | None = None,
         experimental_allow_partial: bool | Literal['off', 'on', 'trailing-strings'] = False,
+        by_alias: bool | None = None,
+        by_name: bool | None = None,
     ) -> T:
         """!!! abstract "Usage Documentation"
             [JSON Parsing](../concepts/json.md#json-parsing)
@@ -439,12 +453,25 @@ class TypeAdapter(Generic[T]):
                 * False / 'off': Default behavior, no partial validation.
                 * True / 'on': Enable partial validation.
                 * 'trailing-strings': Enable partial validation and allow trailing strings in the input.
+            by_alias: Whether to use the field's alias when validating against the provided input data.
+            by_name: Whether to use the field's name when validating against the provided input data.
 
         Returns:
             The validated object.
         """
+        if by_alias is False and by_name is not True:
+            raise PydanticUserError(
+                'At least one of `by_alias` or `by_name` must be set to True.',
+                code='validate-by-alias-and-name-false',
+            )
+
         return self.validator.validate_json(
-            data, strict=strict, context=context, allow_partial=experimental_allow_partial
+            data,
+            strict=strict,
+            context=context,
+            allow_partial=experimental_allow_partial,
+            by_alias=by_alias,
+            by_name=by_name,
         )
 
     def validate_strings(
@@ -455,6 +482,8 @@ class TypeAdapter(Generic[T]):
         strict: bool | None = None,
         context: dict[str, Any] | None = None,
         experimental_allow_partial: bool | Literal['off', 'on', 'trailing-strings'] = False,
+        by_alias: bool | None = None,
+        by_name: bool | None = None,
     ) -> T:
         """Validate object contains string data against the model.
 
@@ -467,12 +496,25 @@ class TypeAdapter(Generic[T]):
                 * False / 'off': Default behavior, no partial validation.
                 * True / 'on': Enable partial validation.
                 * 'trailing-strings': Enable partial validation and allow trailing strings in the input.
+            by_alias: Whether to use the field's alias when validating against the provided input data.
+            by_name: Whether to use the field's name when validating against the provided input data.
 
         Returns:
             The validated object.
         """
+        if by_alias is False and by_name is not True:
+            raise PydanticUserError(
+                'At least one of `by_alias` or `by_name` must be set to True.',
+                code='validate-by-alias-and-name-false',
+            )
+
         return self.validator.validate_strings(
-            obj, strict=strict, context=context, allow_partial=experimental_allow_partial
+            obj,
+            strict=strict,
+            context=context,
+            allow_partial=experimental_allow_partial,
+            by_alias=by_alias,
+            by_name=by_name,
         )
 
     def get_default_value(self, *, strict: bool | None = None, context: dict[str, Any] | None = None) -> Some[T] | None:
@@ -495,7 +537,7 @@ class TypeAdapter(Generic[T]):
         mode: Literal['json', 'python'] = 'python',
         include: IncEx | None = None,
         exclude: IncEx | None = None,
-        by_alias: bool = False,
+        by_alias: bool | None = None,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
@@ -549,9 +591,10 @@ class TypeAdapter(Generic[T]):
         /,
         *,
         indent: int | None = None,
+        ensure_ascii: bool = False,
         include: IncEx | None = None,
         exclude: IncEx | None = None,
-        by_alias: bool = False,
+        by_alias: bool | None = None,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
@@ -569,6 +612,8 @@ class TypeAdapter(Generic[T]):
         Args:
             instance: The instance to be serialized.
             indent: Number of spaces for JSON indentation.
+            ensure_ascii: If `True`, the output is guaranteed to have all incoming non-ASCII characters escaped.
+                If `False` (the default), these characters will be output as-is.
             include: Fields to include.
             exclude: Fields to exclude.
             by_alias: Whether to use alias names for field names.
@@ -589,6 +634,7 @@ class TypeAdapter(Generic[T]):
         return self.serializer.to_json(
             instance,
             indent=indent,
+            ensure_ascii=ensure_ascii,
             include=include,
             exclude=exclude,
             by_alias=by_alias,

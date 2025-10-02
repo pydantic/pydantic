@@ -44,6 +44,9 @@ def get_heading_text(heading: Tag):
 
 
 def on_page_content(html: str, page: Page, config: Config, files: Files) -> str:
+    if not os.getenv('CI'):
+        return html
+
     from bs4 import BeautifulSoup
 
     assert page.title is not None, 'Page title must not be None'

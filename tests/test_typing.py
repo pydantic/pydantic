@@ -1,21 +1,16 @@
 import sys
-import typing
 from collections import namedtuple
 from typing import Annotated, Callable, ClassVar, ForwardRef, Literal, NamedTuple
 
 import pytest
-from typing_extensions import get_origin
 
 from pydantic import BaseModel, Field  # noqa: F401
 from pydantic._internal._typing_extra import (
     NoneType,
-    eval_type,
     get_function_type_hints,
     is_classvar_annotation,
-    is_literal,
     is_namedtuple,
     is_none_type,
-    origin_is_union,
     parent_frame_namespace,
 )
 
@@ -58,33 +53,6 @@ def test_is_none_type():
     # `collections.abc.Callable` (even with python >= 3.9) as they behave
     # differently
     assert is_none_type(Callable) is False
-
-
-@pytest.mark.parametrize(
-    'union',
-    [
-        typing.Union[int, str],
-        eval_type('int | str'),
-        *([int | str] if sys.version_info >= (3, 10) else []),
-    ],
-)
-def test_is_union(union):
-    origin = get_origin(union)
-    assert origin_is_union(origin)
-
-
-def test_is_literal_with_typing_extension_literal():
-    from typing_extensions import Literal
-
-    assert is_literal(Literal) is False
-    assert is_literal(Literal['foo']) is True
-
-
-def test_is_literal_with_typing_literal():
-    from typing import Literal
-
-    assert is_literal(Literal) is False
-    assert is_literal(Literal['foo']) is True
 
 
 @pytest.mark.parametrize(

@@ -4,7 +4,7 @@ import re
 import sys
 from datetime import datetime, timezone
 from functools import partial
-from typing import Annotated, Any, Literal, Union
+from typing import Annotated, Any, Generic, Literal, TypeVar, Union
 
 import pytest
 from pydantic_core import ArgsKwargs
@@ -351,6 +351,20 @@ def test_unpacked_typed_dict_kwargs() -> None:
         assert exc.value.errors()[0]['loc'] == ('b',)
 
 
+def test_unpacked_generic_typed_dict_kwargs() -> None:
+    T = TypeVar('T')
+
+    class TD(TypedDict, Generic[T]):
+        t: T
+
+    @validate_call
+    def foo(**kwargs: Unpack[TD[int]]):
+        pass
+
+    with pytest.raises(ValidationError):
+        foo(t='not_an_int')
+
+
 def test_unpacked_typed_dict_kwargs_functional_syntax() -> None:
     TD = TypedDict('TD', {'in': int, 'x-y': int})
 
@@ -365,6 +379,41 @@ def test_unpacked_typed_dict_kwargs_functional_syntax() -> None:
 
     assert exc.value.errors()[0]['type'] == 'int_parsing'
     assert exc.value.errors()[0]['loc'] == ('in',)
+
+
+def test_unpacked_typed_dict_kwargs_closed() -> None:
+    class TD(TypedDict, closed=True):
+        a: int
+
+    @validate_call
+    def foo(**kwargs: Unpack[TD]):
+        pass
+
+    foo(a=1)
+
+    with pytest.raises(ValidationError) as exc:
+        foo(a=1, b=2)
+
+    assert exc.value.errors()[0]['type'] == 'extra_forbidden'
+    assert exc.value.errors()[0]['loc'] == ('b',)
+
+
+def test_unpacked_typed_dict_extra_items() -> None:
+    class TD(TypedDict, extra_items=str):
+        a: int
+
+    @validate_call
+    def foo(**kwargs: Unpack[TD]):
+        return kwargs
+
+    assert foo(a='1') == {'a': 1}
+    assert foo(a=1, b='x', c='y') == {'a': 1, 'b': 'x', 'c': 'y'}
+
+    with pytest.raises(ValidationError) as exc:
+        foo(a=1, b=2)
+
+    assert exc.value.errors()[0]['type'] == 'string_type'
+    assert exc.value.errors()[0]['loc'] == ('b',)
 
 
 def test_field_can_provide_factory() -> None:
@@ -657,6 +706,27 @@ def test_json_schema():
     }
 
 
+def test_json_schema_custom_title() -> None:
+    def func(a: int):
+        pass
+
+    ta = TypeAdapter(func, config={'field_title_generator': lambda f_name, _: f_name + 'test'})
+
+    assert ta.json_schema()['properties']['a']['title'] == 'atest'
+
+
+def test_json_schema_title_not_set_on_ref() -> None:
+    class Model(BaseModel):
+        pass
+
+    def func(m: Model):
+        pass
+
+    ta = TypeAdapter(func)
+
+    assert ta.json_schema()['properties']['m'] == {'$ref': '#/$defs/Model'}
+
+
 def test_alias_generator():
     @validate_call(config=dict(alias_generator=lambda x: x * 2))
     def foo(a: int, b: int):
@@ -833,8 +903,8 @@ def test_use_of_alias():
     assert foo(b=10) == 30
 
 
-def test_populate_by_name():
-    @validate_call(config=dict(populate_by_name=True))
+def test_validate_by_name():
+    @validate_call(config=dict(validate_by_name=True))
     def foo(a: Annotated[int, Field(alias='b')], c: Annotated[int, Field(alias='d')]):
         return a + c
 
@@ -1244,3 +1314,19 @@ def test_uses_local_ns():
         assert bar({'z': 1}) == M2(z=1)
 
     foo()
+
+
+# The class needs to be defined at the module level
+# For 'DeferBuildClass' to resolve:
+class DeferBuildClass(BaseModel):
+    @classmethod
+    @validate_call(config={'defer_build': True})
+    def cls_meth(cls, x: int) -> 'DeferBuildClass':
+        return DeferBuildClass()
+
+
+def test_validate_call_defer_build() -> None:
+    DeferBuildClass.cls_meth(x=1)
+
+    with pytest.raises(ValidationError):
+        DeferBuildClass.cls_meth(x='not_an_int')

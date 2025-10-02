@@ -12,6 +12,9 @@ __all__ = (
     'PydanticDeprecatedSince211',
     'PydanticDeprecationWarning',
     'PydanticExperimentalWarning',
+    'ArbitraryTypeWarning',
+    'UnsupportedFieldAttributeWarning',
+    'TypedDictExtraConfigWarning',
 )
 
 
@@ -91,6 +94,21 @@ class GenericBeforeBaseModelWarning(Warning):
 class PydanticExperimentalWarning(Warning):
     """A Pydantic specific experimental functionality warning.
 
-    This warning is raised when using experimental functionality in Pydantic.
     It is raised to warn users that the functionality may change or be removed in future versions of Pydantic.
     """
+
+
+class CoreSchemaGenerationWarning(UserWarning):
+    """A warning raised during core schema generation."""
+
+
+class ArbitraryTypeWarning(CoreSchemaGenerationWarning):
+    """A warning raised when Pydantic fails to generate a core schema for an arbitrary type."""
+
+
+class UnsupportedFieldAttributeWarning(CoreSchemaGenerationWarning):
+    """A warning raised when a `Field()` attribute isn't supported in the context it is used."""
+
+
+class TypedDictExtraConfigWarning(CoreSchemaGenerationWarning):
+    """A warning raised when the [`extra`][pydantic.ConfigDict.extra] configuration is incompatible with the `closed` or `extra_items` specification."""

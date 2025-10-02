@@ -148,7 +148,7 @@ def test_representation_integrations():
 
     obj = Obj()
 
-    if sys.version_info < (3, 11):
+    if sys.version_info < (3, 11) or sys.implementation.name == 'pypy':
         assert str(devtools.debug.format(obj)).split('\n')[1:] == [
             '    Obj(',
             '        int_attr=42,',

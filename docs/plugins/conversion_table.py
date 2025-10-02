@@ -3,7 +3,7 @@ from __future__ import annotations as _annotations
 import collections
 import typing
 from collections import deque
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
@@ -84,9 +84,9 @@ class ConversionTable:
         return f'| {" | ".join(cols)} |'
 
     def as_markdown(self) -> str:
-        lines = [self.row_as_markdown(self.col_names), self.row_as_markdown(['-'] * len(self.col_names))]
-        for row in self.rows:
-            lines.append(self.row_as_markdown(self.col_values(row)))
+        lines = [self.row_as_markdown(self.col_names), self.row_as_markdown(['-'] * len(self.col_names))] + [
+            self.row_as_markdown(self.col_values(row)) for row in self.rows
+        ]
         return '\n'.join(lines)
 
     @staticmethod
@@ -101,7 +101,7 @@ class ConversionTable:
     def sorted(self) -> ConversionTable:
         return ConversionTable(sorted(self.rows, key=self.row_sort_key))
 
-    def filtered(self, predicate: typing.Callable[[Row], bool]) -> ConversionTable:
+    def filtered(self, predicate: Callable[[Row], bool]) -> ConversionTable:
         return ConversionTable([row for row in self.rows if predicate(row)])
 
 

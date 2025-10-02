@@ -80,7 +80,7 @@ def _process_param_defaults(param: Parameter) -> Parameter:
 def _generate_signature_parameters(  # noqa: C901 (ignore complexity, could use a refactor)
     init: Callable[..., None],
     fields: dict[str, FieldInfo],
-    populate_by_name: bool,
+    validate_by_name: bool,
     extra: ExtraValues | None,
 ) -> dict[str, Parameter]:
     """Generate a mapping of parameter names to Parameter objects for a pydantic BaseModel or dataclass."""
@@ -107,7 +107,7 @@ def _generate_signature_parameters(  # noqa: C901 (ignore complexity, could use 
         merged_params[param.name] = param
 
     if var_kw:  # if custom init has no var_kw, fields which are not declared in it cannot be passed through
-        allow_names = populate_by_name
+        allow_names = validate_by_name
         for field_name, field in fields.items():
             # when alias is a str it should be used for signature generation
             param_name = _field_name_for_signature(field_name, field)
@@ -164,7 +164,7 @@ def _generate_signature_parameters(  # noqa: C901 (ignore complexity, could use 
 def generate_pydantic_signature(
     init: Callable[..., None],
     fields: dict[str, FieldInfo],
-    populate_by_name: bool,
+    validate_by_name: bool,
     extra: ExtraValues | None,
     is_dataclass: bool = False,
 ) -> Signature:
@@ -173,14 +173,14 @@ def generate_pydantic_signature(
     Args:
         init: The class init.
         fields: The model fields.
-        populate_by_name: The `populate_by_name` value of the config.
+        validate_by_name: The `validate_by_name` value of the config.
         extra: The `extra` value of the config.
         is_dataclass: Whether the model is a dataclass.
 
     Returns:
         The dataclass/BaseModel subclass signature.
     """
-    merged_params = _generate_signature_parameters(init, fields, populate_by_name, extra)
+    merged_params = _generate_signature_parameters(init, fields, validate_by_name, extra)
 
     if is_dataclass:
         merged_params = {k: _process_param_defaults(v) for k, v in merged_params.items()}

@@ -21,7 +21,7 @@ from unittest.mock import MagicMock
 import pytest
 from dirty_equals import HasRepr, IsInstance
 from pydantic_core import core_schema
-from typing_extensions import TypedDict
+from typing_extensions import TypeAliasType, TypedDict
 
 from pydantic import (
     BaseModel,
@@ -717,7 +717,11 @@ def test_validate_not_always():
 @pytest.mark.parametrize(
     'decorator, pytest_warns',
     [
-        (validator, pytest.warns(PydanticDeprecatedSince20, match=V1_VALIDATOR_DEPRECATION_MATCH)),
+        pytest.param(
+            validator,
+            pytest.warns(PydanticDeprecatedSince20, match=V1_VALIDATOR_DEPRECATION_MATCH),
+            marks=pytest.mark.thread_unsafe(reason='`pytest.warns()` is thread unsafe'),
+        ),
         (field_validator, contextlib.nullcontext()),
     ],
 )
@@ -758,7 +762,11 @@ def test_wildcard_validators(decorator, pytest_warns):
 @pytest.mark.parametrize(
     'decorator, pytest_warns',
     [
-        (validator, pytest.warns(PydanticDeprecatedSince20, match=V1_VALIDATOR_DEPRECATION_MATCH)),
+        pytest.param(
+            validator,
+            pytest.warns(PydanticDeprecatedSince20, match=V1_VALIDATOR_DEPRECATION_MATCH),
+            marks=pytest.mark.thread_unsafe(reason='`pytest.warns()` is thread unsafe'),
+        ),
         (field_validator, contextlib.nullcontext()),
     ],
 )
@@ -1087,6 +1095,20 @@ def test_validation_each_item():
                 return v + 1
 
     assert Model(foobar={1: 1}).foobar == {1: 2}
+
+
+def test_validation_each_item_tuple():
+    with pytest.warns(PydanticDeprecatedSince20, match=V1_VALIDATOR_DEPRECATION_MATCH):
+
+        class Model(BaseModel):
+            foobar: tuple[int, ...]
+
+            @validator('foobar', each_item=True)
+            @classmethod
+            def check_foobar(cls, v: Any):
+                return v + 1
+
+    assert Model(foobar=(1, 2, 1)).foobar == (2, 3, 2)
 
 
 def test_validation_each_item_invalid_type():
@@ -2537,7 +2559,7 @@ def test_validator_allow_reuse_different_field_3():
             y: int
 
             val_x = field_validator('x')(val1)
-            val_x = field_validator('y')(val2)
+            val_x = field_validator('y')(val2)  # noqa: PIE794
 
     assert Model(x=1, y=2).model_dump() == {'x': 1, 'y': 4}
 
@@ -2676,7 +2698,7 @@ def foobar_validate(value: Any, info: core_schema.ValidationInfo):
 class Foobar:
     @classmethod
     def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
-        return core_schema.with_info_plain_validator_function(foobar_validate, field_name=handler.field_name)
+        return core_schema.with_info_plain_validator_function(foobar_validate)
 
 
 def test_custom_type_field_name_model():
@@ -2769,6 +2791,29 @@ def test_plain_validator_field_name():
     m = MyModel(x='123', foobar='1')
     # insert_assert(m.foobar)
     assert m.foobar == {'value': '1', 'field_name': 'foobar', 'data': {'x': 123}}
+
+
+def test_validator_field_name_with_reused_type_alias():
+    calls = []
+
+    def validate_my_field(value: str, info: ValidationInfo):
+        calls.append((info.field_name, value))
+        return value
+
+    MyField = TypeAliasType('MyField', Annotated[str, AfterValidator(validate_my_field)])
+
+    class MyModel(BaseModel):
+        field1: MyField
+        field2: MyField
+
+    MyModel.model_validate(
+        {
+            'field1': 'value1',
+            'field2': 'value2',
+        }
+    )
+
+    assert calls == [('field1', 'value1'), ('field2', 'value2')]
 
 
 def validate_wrap(value: Any, handler: core_schema.ValidatorFunctionWrapHandler, info: core_schema.ValidationInfo):
@@ -2971,3 +3016,88 @@ def test_non_self_return_val_warns() -> None:
         c = Child(name='name')
         # confirmation of behavior: non-self return value is ignored
         assert c.name == 'name'
+
+
+def test_wrap_val_called_once() -> None:
+    """See https://github.com/pydantic/pydantic/issues/11505 for context.
+
+    This is effectively confirming that prebuilt validators aren't used for wrap validators.
+    """
+
+    class MyModel(BaseModel):
+        inner_value: str
+
+        @model_validator(mode='wrap')
+        @classmethod
+        def my_wrap_validator(cls, data, validator):
+            data['inner_value'] = 'wrap_prefix:' + data['inner_value']
+            return validator(data)
+
+    class MyParentModel(BaseModel):
+        nested: MyModel
+
+        @field_validator('nested', mode='wrap')
+        @classmethod
+        def wrapped_field_serializer(cls, field_value, validator):
+            return validator(field_value)
+
+    my_model = MyParentModel.model_validate({'nested': {'inner_value': 'foo'}})
+    assert my_model.nested.inner_value == 'wrap_prefix:foo'
+
+
+def test_after_val_called_once() -> None:
+    """See https://github.com/pydantic/pydantic/issues/11505 for context.
+
+    This is effectively confirming that prebuilt validators aren't used for after validators.
+    """
+
+    class MyModel(BaseModel):
+        inner_value: str
+
+        @model_validator(mode='after')
+        def my_after_validator(self):
+            self.inner_value = 'after_prefix:' + self.inner_value
+            return self
+
+    class MyParentModel(BaseModel):
+        nested: MyModel
+
+        @field_validator('nested', mode='wrap')
+        @classmethod
+        def wrapped_field_serializer(cls, field_value, validator):
+            return validator(field_value)
+
+    my_model = MyParentModel.model_validate({'nested': {'inner_value': 'foo'}})
+    assert my_model.nested.inner_value == 'after_prefix:foo'
+
+
+def test_after_and_wrap_combo_called_once() -> None:
+    """See https://github.com/pydantic/pydantic/issues/11505 for context.
+
+    This is effectively confirming that prebuilt validators aren't used for combinations of wrap and after validators.
+    """
+
+    class MyModel(BaseModel):
+        inner_value: str
+
+        @model_validator(mode='wrap')
+        @classmethod
+        def my_wrap_validator(cls, data, validator):
+            data['inner_value'] = 'wrap_prefix:' + data['inner_value']
+            return validator(data)
+
+        @model_validator(mode='after')
+        def my_after_validator(self):
+            self.inner_value = 'after_prefix:' + self.inner_value
+            return self
+
+    class MyParentModel(BaseModel):
+        nested: MyModel
+
+        @field_validator('nested', mode='wrap')
+        @classmethod
+        def wrapped_field_serializer(cls, field_value, validator):
+            return validator(field_value)
+
+    my_model = MyParentModel.model_validate({'nested': {'inner_value': 'foo'}})
+    assert my_model.nested.inner_value == 'after_prefix:wrap_prefix:foo'

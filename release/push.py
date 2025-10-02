@@ -1,16 +1,15 @@
 """Automate the release draft + PR creation process."""
 
 import re
-import time
 from pathlib import Path
 from subprocess import CalledProcessError
 
 import requests
 
 from release.shared import (
-    REPO,
     GITHUB_TOKEN,
     HISTORY_FILE,
+    REPO,
     run_command,
 )
 
@@ -73,15 +72,17 @@ def open_pull_request(rl_version: str):
     try:
         response.raise_for_status()
     except requests.exceptions.HTTPError as e:
-        print(f"HTTP error occurred: {e}")
-        print(f"Response content: {response.content.decode()}")
+        print(f'HTTP error occurred: {e}')
+        print(f'Response content: {response.content.decode()}')
         raise e
     return response.json()['html_url']
+
 
 def create_version_tag(rl_version: str):
     """Create a version tag."""
     run_command('git', 'tag', f'v{rl_version}')
     run_command('git', 'push', 'origin', f'v{rl_version}')
+
 
 def create_github_release(new_version: str, notes: str):
     """Create a new release on GitHub."""
@@ -106,9 +107,10 @@ def create_github_release(new_version: str, notes: str):
     try:
         response.raise_for_status()
     except requests.exceptions.HTTPError as e:
-        print(f"HTTP error occurred: {e}")
-        print(f"Response content: {response.content.decode()}")
+        print(f'HTTP error occurred: {e}')
+        print(f'Response content: {response.content.decode()}')
         raise e
+
 
 def create_github_release_draft(rl_version: str, rl_release_notes: str):
     """Create a GitHub release draft."""
@@ -125,13 +127,14 @@ def create_github_release_draft(rl_version: str, rl_release_notes: str):
     try:
         response.raise_for_status()
     except requests.exceptions.HTTPError as e:
-        print(f"HTTP error occurred: {e}")
-        print(f"Response content: {response.content.decode()}")
+        print(f'HTTP error occurred: {e}')
+        print(f'Response content: {response.content.decode()}')
         raise e
     release_url = response.json()['html_url']
     # Publishing happens in the edit page
     edit_url = release_url.replace('/releases/tag/', '/releases/edit/')
     return edit_url
+
 
 if __name__ == '__main__':
     version = get_latest_version_from_changelog()

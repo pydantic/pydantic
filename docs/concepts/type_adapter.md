@@ -35,7 +35,7 @@ try:
 except ValidationError as e:
     print(e)
     """
-    1 validation error for list[typed-dict]
+    1 validation error for list[User]
     0.id
       Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='wrong', input_type=str]
     """
@@ -90,7 +90,6 @@ handle as fields of a [`BaseModel`][pydantic.main.BaseModel].
     When creating an instance of [`TypeAdapter`][pydantic.type_adapter.TypeAdapter], the provided type must be analyzed and converted into a pydantic-core
     schema. This comes with some non-trivial overhead, so it is recommended to create a `TypeAdapter` for a given type
     just once and reuse it in loops or other performance-critical code.
-
 
 ## Rebuilding a `TypeAdapter`'s schema
 

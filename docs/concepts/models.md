@@ -14,7 +14,7 @@ You can find more discussion of this in the [Dataclasses](dataclasses.md) sectio
 Untrusted data can be passed to a model and, after parsing and validation, Pydantic guarantees that the fields
 of the resultant model instance will conform to the field types defined on the model.
 
-!!! note "Validation — a _deliberate_ misnomer"
+!!! note "Validation — a *deliberate* misnomer"
     <h3>TL;DR</h3>
 
     We use the term "validation" to refer to the process of instantiating a model (or other type) that adheres to specified types and
@@ -57,8 +57,8 @@ of the resultant model instance will conform to the field types defined on the m
     Pydantic relies heavily on the existing Python typing constructs to define models. If you are not familiar with those, the following resources
     can be useful:
 
-    - The [Type System Guides](https://typing.readthedocs.io/en/latest/guides/index.html)
-    - The [mypy documentation](https://mypy.readthedocs.io/en/latest/)
+    * The [Type System Guides](https://typing.readthedocs.io/en/latest/guides/index.html)
+    * The [mypy documentation](https://mypy.readthedocs.io/en/latest/)
 
 ```python {group="basic-model"}
 from pydantic import BaseModel, ConfigDict
@@ -155,10 +155,10 @@ Models possess the following methods and attributes:
 * [`model_construct()`][pydantic.main.BaseModel.model_construct]: Creates models without running validation. See
     [Creating models without validation](#creating-models-without-validation).
 * [`model_dump()`][pydantic.main.BaseModel.model_dump]: Returns a dictionary of the model's fields and values. See
-    [Serialization](serialization.md#model_dump).
-* [`model_dump_json()`][pydantic.main.BaseModel.model_dump_json]: Returns a JSON string representation of [`model_dump()`][pydantic.main.BaseModel.model_dump]. See [Serialization](serialization.md#model_dump_json).
+    [Serialization](serialization.md#python-mode).
+* [`model_dump_json()`][pydantic.main.BaseModel.model_dump_json]: Returns a JSON string representation of [`model_dump()`][pydantic.main.BaseModel.model_dump]. See [Serialization](serialization.md#json-mode).
 * [`model_copy()`][pydantic.main.BaseModel.model_copy]: Returns a copy (by default, shallow copy) of the model. See
-    [Serialization](serialization.md#model_copy).
+    [Model copy](#model-copy).
 * [`model_json_schema()`][pydantic.main.BaseModel.model_json_schema]: Returns a jsonable dictionary representing the model's JSON Schema. See [JSON Schema](json_schema.md).
 * [`model_fields`][pydantic.main.BaseModel.model_fields]: A mapping between field names and their definitions ([`FieldInfo`][pydantic.fields.FieldInfo] instances).
 * [`model_computed_fields`][pydantic.main.BaseModel.model_computed_fields]: A mapping between computed field names and their definitions ([`ComputedFieldInfo`][pydantic.fields.ComputedFieldInfo] instances).
@@ -197,10 +197,10 @@ print(Model(a=3.000, b='2.72', c=b'binary data').model_dump())
 ```
 
 This is a deliberate decision of Pydantic, and is frequently the most useful approach. See
-[here](https://github.com/pydantic/pydantic/issues/578) for a longer discussion on the subject.
+[this issue](https://github.com/pydantic/pydantic/issues/578) for a longer discussion on the subject.
 
 Nevertheless, Pydantic provides a [strict mode](strict_mode.md), where no data conversion is performed.
-Values must be of the same type than the declared field type.
+Values must be of the same type as the declared field type.
 
 This is also the case for collections. In most cases, you shouldn't make use of abstract container classes
 and just use a concrete type, such as [`list`][]:
@@ -225,6 +225,7 @@ Besides, using these abstract types can also lead to [poor validation performanc
 will avoid unnecessary checks.
 
 <!-- old anchor added for backwards compatibility -->
+<!-- markdownlint-disable-next-line no-empty-links -->
 [](){#extra-fields}
 
 ## Extra data
@@ -264,9 +265,9 @@ assert m.__pydantic_extra__ == {'y': 'a'}
 
 The configuration can take three values:
 
-- `'ignore'`: Providing extra data is ignored (the default).
-- `'forbid'`: Providing extra data is not permitted.
-- `'allow'`: Providing extra data is allowed and stored in the `__pydantic_extra__` dictionary attribute.
+* `'ignore'`: Providing extra data is ignored (the default).
+* `'forbid'`: Providing extra data is not permitted.
+* `'allow'`: Providing extra data is allowed and stored in the `__pydantic_extra__` dictionary attribute.
   The `__pydantic_extra__` can explicitly be annotated to provide validation for extra fields.
 
 For more details, refer to the [`extra`][pydantic.ConfigDict.extra] API documentation.
@@ -687,11 +688,47 @@ Here are some additional notes on the behavior of [`model_construct()`][pydantic
 * No `__init__` method from the model or any of its parent classes will be called, even when a custom `__init__` method is defined.
 
 !!! note "On [extra data](#extra-data) behavior with [`model_construct()`][pydantic.main.BaseModel.model_construct]"
+
     * For models with [`extra`][pydantic.ConfigDict.extra] set to `'allow'`, data not corresponding to fields will be correctly stored in
     the `__pydantic_extra__` dictionary and saved to the model's `__dict__` attribute.
     * For models with [`extra`][pydantic.ConfigDict.extra] set to `'ignore'`, data not corresponding to fields will be ignored — that is,
     not stored in `__pydantic_extra__` or `__dict__` on the instance.
-    * Unlike when instiating the model with validation, a call to [`model_construct()`][pydantic.main.BaseModel.model_construct] with [`extra`][pydantic.ConfigDict.extra] set to `'forbid'` doesn't raise an error in the presence of data not corresponding to fields. Rather, said input data is simply ignored.
+    * Unlike when instantiating the model with validation, a call to [`model_construct()`][pydantic.main.BaseModel.model_construct] with [`extra`][pydantic.ConfigDict.extra] set to `'forbid'` doesn't raise an error in the presence of data not corresponding to fields. Rather, said input data is simply ignored.
+
+## Model copy
+
+??? api "API Documentation"
+    [`pydantic.main.BaseModel.model_copy`][pydantic.main.BaseModel.model_copy]<br>
+
+The [`model_copy()`][pydantic.BaseModel.model_copy] method allows models to be duplicated (with optional updates),
+which is particularly useful when working with frozen models.
+
+```python
+from pydantic import BaseModel
+
+
+class BarModel(BaseModel):
+    whatever: int
+
+
+class FooBarModel(BaseModel):
+    banana: float
+    foo: str
+    bar: BarModel
+
+
+m = FooBarModel(banana=3.14, foo='hello', bar={'whatever': 123})
+
+print(m.model_copy(update={'banana': 0}))
+#> banana=0 foo='hello' bar=BarModel(whatever=123)
+
+# normal copy gives the same object reference for bar:
+print(id(m.bar) == id(m.model_copy().bar))
+#> True
+# deep copy gives a new object reference for `bar`:
+print(id(m.bar) == id(m.model_copy(deep=True).bar))
+#> False
+```
 
 ## Generic models
 
@@ -702,6 +739,8 @@ and the old syntax are supported (refer to
 for more details).
 
 Here is an example using a generic Pydantic model to create an easily-reused HTTP response payload wrapper:
+
+<!-- TODO: tabs should be auto-generated if using Ruff (https://github.com/pydantic/pydantic/issues/10083) -->
 
 === "Python 3.9 and above"
 
@@ -750,7 +789,7 @@ Here is an example using a generic Pydantic model to create an easily-reused HTT
 
 === "Python 3.12 and above (new syntax)"
 
-    ```python {requires="3.12" upgrade="skip"}
+    ```python {requires="3.12" upgrade="skip" lint="skip"}
     from pydantic import BaseModel, ValidationError
 
 
@@ -1198,7 +1237,6 @@ or a default value (as per [PEP 696](https://peps.python.org/pep-0696/)) is bein
 will be used for both validation and serialization if the type variable is not parametrized. You can override this behavior
 using [`SerializeAsAny`](./serialization.md#serializeasany-annotation):
 
-
 ```python
 from typing import Generic
 
@@ -1279,8 +1317,8 @@ class StaticFoobarModel(BaseModel):
 
 Field definitions are specified as keyword arguments, and should either be:
 
-- A single element, representing the type annotation of the field.
-- A two-tuple, the first element being the type and the second element the assigned value
+* A single element, representing the type annotation of the field.
+* A two-tuple, the first element being the type and the second element the assigned value
   (either a default or the [`Field()`][pydantic.Field] function).
 
 Here is a more advanced example:
@@ -1366,12 +1404,11 @@ except ValidationError as e:
    internally, Pydantic gathers all members into a namespace and mimics the normal
    creation of a class using the [`types` module utilities](https://docs.python.org/3/library/types.html#dynamic-type-creation).
 
-
 !!! note
     To pickle a dynamically created model:
 
-    - the model must be defined globally
-    - the `__module__` argument must be provided
+    * the model must be defined globally
+    * the `__module__` argument must be provided
 
 ## `RootModel` and custom root types
 
@@ -1453,7 +1490,6 @@ print(my_pets.describe())
 #> Pets: dog, cat
 ```
 
-
 ## Faux immutability
 
 Models can be configured to be immutable via `model_config['frozen'] = True`. When this is set, attempting to change the
@@ -1528,7 +1564,7 @@ Field order affects models in the following ways:
 
 * field order is preserved in the model [JSON Schema](json_schema.md)
 * field order is preserved in [validation errors](#error-handling)
-* field order is preserved by [`.model_dump()` and `.model_dump_json()` etc.](serialization.md#model_dump)
+* field order is preserved when [serializing data](serialization.md#serializing-data)
 
 ```python
 from pydantic import BaseModel, ValidationError
@@ -1668,7 +1704,7 @@ To be included in the signature, a field's alias or name must be a valid Python 
 Pydantic will prioritize a field's alias over its name when generating the signature, but may use the field name if the
 alias is not a valid Python identifier.
 
-If a field's alias and name are _both_ not valid identifiers (which may be possible through exotic use of `create_model`),
+If a field's alias and name are *both* not valid identifiers (which may be possible through exotic use of `create_model`),
 a `**data` argument will be added. In addition, the `**data` argument will always be present in the signature if
 `model_config['extra'] == 'allow'`.
 

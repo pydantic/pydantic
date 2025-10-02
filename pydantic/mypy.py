@@ -5,7 +5,7 @@ from __future__ import annotations
 import sys
 from collections.abc import Iterator
 from configparser import ConfigParser
-from typing import Any, Callable, cast
+from typing import Any, Callable
 
 from mypy.errorcodes import ErrorCode
 from mypy.expandtype import expand_type, expand_type_by_instance
@@ -58,6 +58,7 @@ from mypy.plugins.common import (
 from mypy.semanal import set_callable_name
 from mypy.server.trigger import make_wildcard_trigger
 from mypy.state import state
+from mypy.type_visitor import TypeTranslator
 from mypy.typeops import map_type_from_supertype
 from mypy.types import (
     AnyType,
@@ -289,7 +290,7 @@ class PydanticModelField:
 
         strict = model_strict if self.strict is None else self.strict
         if typed or strict:
-            type_annotation = self.expand_type(current_info, api)
+            type_annotation = self.expand_type(current_info, api, include_root_type=True)
         else:
             type_annotation = AnyType(TypeOfAny.explicit)
 
@@ -303,7 +304,11 @@ class PydanticModelField:
         )
 
     def expand_type(
-        self, current_info: TypeInfo, api: SemanticAnalyzerPluginInterface, force_typevars_invariant: bool = False
+        self,
+        current_info: TypeInfo,
+        api: SemanticAnalyzerPluginInterface,
+        force_typevars_invariant: bool = False,
+        include_root_type: bool = False,
     ) -> Type | None:
         """Based on mypy.plugins.dataclasses.DataclassAttribute.expand_type."""
         if force_typevars_invariant:
@@ -331,10 +336,13 @@ class PydanticModelField:
                             arg.variance = INVARIANT
 
                 expanded_type = expand_type(self.type, {self.info.self_type.id: filled_with_typevars})
-                if isinstance(expanded_type, Instance) and is_root_model(expanded_type.type):
+                if include_root_type and isinstance(expanded_type, Instance) and is_root_model(expanded_type.type):
                     # When a root model is used as a field, Pydantic allows both an instance of the root model
                     # as well as instances of the `root` field type:
-                    root_type = cast(Type, expanded_type.type['root'].type)
+                    root_type = expanded_type.type['root'].type
+                    if root_type is None:
+                        # Happens if the hint for 'root' has unsolved forward references
+                        return expanded_type
                     expanded_root_type = expand_type_by_instance(root_type, expanded_type)
                     expanded_type = UnionType([expanded_type, expanded_root_type])
                 return expanded_type
@@ -423,6 +431,8 @@ class PydanticModelTransformer:
         'frozen',
         'from_attributes',
         'populate_by_name',
+        'validate_by_alias',
+        'validate_by_name',
         'alias_generator',
         'strict',
     }
@@ -564,7 +574,7 @@ class PydanticModelTransformer:
             if (
                 stmt
                 and config.has_alias_generator
-                and not config.populate_by_name
+                and not (config.validate_by_name or config.populate_by_name)
                 and self.plugin_config.warn_required_dynamic_aliases
             ):
                 error_required_dynamic_aliases(self._api, stmt)
@@ -776,7 +786,11 @@ class PydanticModelTransformer:
             return PydanticModelClassVar(lhs.name)
 
         alias, has_dynamic_alias = self.get_alias_info(stmt)
-        if has_dynamic_alias and not model_config.populate_by_name and self.plugin_config.warn_required_dynamic_aliases:
+        if (
+            has_dynamic_alias
+            and not (model_config.validate_by_name or model_config.populate_by_name)
+            and self.plugin_config.warn_required_dynamic_aliases
+        ):
             error_required_dynamic_aliases(self._api, stmt)
         is_frozen = self.is_field_frozen(stmt)
 
@@ -844,8 +858,8 @@ class PydanticModelTransformer:
 
         typed = self.plugin_config.init_typed
         model_strict = bool(config.strict)
-        use_alias = config.populate_by_name is not True
-        requires_dynamic_aliases = bool(config.has_alias_generator and not config.populate_by_name)
+        use_alias = not (config.validate_by_name or config.populate_by_name) and config.validate_by_alias is not False
+        requires_dynamic_aliases = bool(config.has_alias_generator and not config.validate_by_name)
         args = self.get_field_arguments(
             fields,
             typed=typed,
@@ -870,6 +884,13 @@ class PydanticModelTransformer:
                         if arg_name is None or arg_name.startswith('__') or not arg_name.startswith('_'):
                             continue
                         analyzed_variable_type = self._api.anal_type(func_type.arg_types[arg_idx])
+                        if analyzed_variable_type is not None and arg_name == '_cli_settings_source':
+                            # _cli_settings_source is defined as CliSettingsSource[Any], and as such
+                            # the Any causes issues with --disallow-any-explicit. As a workaround, change
+                            # the Any type (as if CliSettingsSource was left unparameterized):
+                            analyzed_variable_type = analyzed_variable_type.accept(
+                                ChangeExplicitTypeOfAny(TypeOfAny.from_omitted_generics)
+                            )
                         variable = Var(arg_name, analyzed_variable_type)
                         args.append(Argument(variable, analyzed_variable_type, None, ARG_OPT))
 
@@ -934,15 +955,9 @@ class PydanticModelTransformer:
                 elif isinstance(var, PlaceholderNode) and not self._api.final_iteration:
                     # See https://github.com/pydantic/pydantic/issues/5191 to hit this branch for test coverage
                     self._api.defer()
-                else:  # pragma: no cover
-                    # I don't know whether it's possible to hit this branch, but I've added it for safety
-                    try:
-                        var_str = str(var)
-                    except TypeError:
-                        # This happens for PlaceholderNode; perhaps it will happen for other types in the future..
-                        var_str = repr(var)
-                    detail = f'sym_node.node: {var_str} (of type {var.__class__})'
-                    error_unexpected_behavior(detail, self._api, self._cls)
+                # `var` can also be a FuncDef or Decorator node (e.g. when overriding a field with a function or property).
+                # In that case, we don't want to do anything. Mypy will already raise an error that a field was not properly
+                # overridden.
             else:
                 var = field.to_var(info, api, use_alias=False)
                 var.info = info
@@ -1116,7 +1131,7 @@ class PydanticModelTransformer:
         We disallow arbitrary kwargs if the extra config setting is "forbid", or if the plugin config says to,
         *unless* a required dynamic alias is present (since then we can't determine a valid signature).
         """
-        if not config.populate_by_name:
+        if not (config.validate_by_name or config.populate_by_name):
             if self.is_dynamic_alias_present(fields, bool(config.has_alias_generator)):
                 return False
         if config.forbid_extra:
@@ -1138,6 +1153,20 @@ class PydanticModelTransformer:
         return False
 
 
+class ChangeExplicitTypeOfAny(TypeTranslator):
+    """A type translator used to change type of Any's, if explicit."""
+
+    def __init__(self, type_of_any: int) -> None:
+        self._type_of_any = type_of_any
+        super().__init__()
+
+    def visit_any(self, t: AnyType) -> Type:  # noqa: D102
+        if t.type_of_any == TypeOfAny.explicit:
+            return t.copy_modified(type_of_any=self._type_of_any)
+        else:
+            return t
+
+
 class ModelConfigData:
     """Pydantic mypy plugin model config class."""
 
@@ -1147,6 +1176,8 @@ class ModelConfigData:
         frozen: bool | None = None,
         from_attributes: bool | None = None,
         populate_by_name: bool | None = None,
+        validate_by_alias: bool | None = None,
+        validate_by_name: bool | None = None,
         has_alias_generator: bool | None = None,
         strict: bool | None = None,
     ):
@@ -1154,6 +1185,8 @@ class ModelConfigData:
         self.frozen = frozen
         self.from_attributes = from_attributes
         self.populate_by_name = populate_by_name
+        self.validate_by_alias = validate_by_alias
+        self.validate_by_name = validate_by_name
         self.has_alias_generator = has_alias_generator
         self.strict = strict
 
@@ -1280,9 +1313,9 @@ def add_method(
         arg_names.append(arg.variable.name)
         arg_kinds.append(arg.kind)
 
-    signature = CallableType(arg_types, arg_kinds, arg_names, return_type, function_type)
-    if tvar_def:
-        signature.variables = [tvar_def]
+    signature = CallableType(
+        arg_types, arg_kinds, arg_names, return_type, function_type, variables=[tvar_def] if tvar_def else None
+    )
 
     func = FuncDef(name, args, Block([PassStmt()]))
     func.info = info

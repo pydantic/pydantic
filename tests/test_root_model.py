@@ -511,7 +511,10 @@ def test_mixed_discriminated_union(data):
         root: Union[SModel, RModel] = Field(discriminator='kind')
 
     if data['kind'] == 'IModel':
-        with pytest.warns(UserWarning, match='Failed to get discriminator value for tagged union serialization'):
+        with pytest.warns(
+            UserWarning,
+            match='Defaulting to left to right union serialization - failed to get discriminator value for tagged union serialization',
+        ):
             assert Model(data).model_dump() == data
             assert Model(**data).model_dump() == data
     else:

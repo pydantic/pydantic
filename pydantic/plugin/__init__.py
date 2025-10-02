@@ -116,6 +116,8 @@ class ValidatePythonHandlerProtocol(BaseValidateHandlerProtocol, Protocol):
         from_attributes: bool | None = None,
         context: dict[str, Any] | None = None,
         self_instance: Any | None = None,
+        by_alias: bool | None = None,
+        by_name: bool | None = None,
     ) -> None:
         """Callback to be notified of validation start, and create an instance of the event handler.
 
@@ -126,8 +128,9 @@ class ValidatePythonHandlerProtocol(BaseValidateHandlerProtocol, Protocol):
             context: The context to use for validation, this is passed to functional validators.
             self_instance: An instance of a model to set attributes on from validation, this is used when running
                 validation from the `__init__` method of a model.
+            by_alias: Whether to use the field's alias to match the input data to an attribute.
+            by_name: Whether to use the field's name to match the input data to an attribute.
         """
-        pass
 
 
 class ValidateJsonHandlerProtocol(BaseValidateHandlerProtocol, Protocol):
@@ -140,6 +143,8 @@ class ValidateJsonHandlerProtocol(BaseValidateHandlerProtocol, Protocol):
         strict: bool | None = None,
         context: dict[str, Any] | None = None,
         self_instance: Any | None = None,
+        by_alias: bool | None = None,
+        by_name: bool | None = None,
     ) -> None:
         """Callback to be notified of validation start, and create an instance of the event handler.
 
@@ -149,8 +154,9 @@ class ValidateJsonHandlerProtocol(BaseValidateHandlerProtocol, Protocol):
             context: The context to use for validation, this is passed to functional validators.
             self_instance: An instance of a model to set attributes on from validation, this is used when running
                 validation from the `__init__` method of a model.
+            by_alias: Whether to use the field's alias to match the input data to an attribute.
+            by_name: Whether to use the field's name to match the input data to an attribute.
         """
-        pass
 
 
 StringInput: TypeAlias = 'dict[str, StringInput]'
@@ -160,7 +166,13 @@ class ValidateStringsHandlerProtocol(BaseValidateHandlerProtocol, Protocol):
     """Event handler for `SchemaValidator.validate_strings`."""
 
     def on_enter(
-        self, input: StringInput, *, strict: bool | None = None, context: dict[str, Any] | None = None
+        self,
+        input: StringInput,
+        *,
+        strict: bool | None = None,
+        context: dict[str, Any] | None = None,
+        by_alias: bool | None = None,
+        by_name: bool | None = None,
     ) -> None:
         """Callback to be notified of validation start, and create an instance of the event handler.
 
@@ -168,5 +180,6 @@ class ValidateStringsHandlerProtocol(BaseValidateHandlerProtocol, Protocol):
             input: The string data to be validated.
             strict: Whether to validate the object in strict mode.
             context: The context to use for validation, this is passed to functional validators.
+            by_alias: Whether to use the field's alias to match the input data to an attribute.
+            by_name: Whether to use the field's name to match the input data to an attribute.
         """
-        pass

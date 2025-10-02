@@ -2,14 +2,16 @@
 
 from __future__ import annotations as _annotations
 
+import warnings
 from re import Pattern
-from typing import TYPE_CHECKING, Any, Callable, Literal, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, Literal, TypeVar, Union, cast, overload
 
-from typing_extensions import TypeAlias, TypedDict
+from typing_extensions import TypeAlias, TypedDict, Unpack, deprecated
 
 from ._migration import getattr_migration
 from .aliases import AliasGenerator
 from .errors import PydanticUserError
+from .warnings import PydanticDeprecatedSince211
 
 if TYPE_CHECKING:
     from ._internal._generate_schema import GenerateSchema as _GenerateSchema
@@ -168,30 +170,38 @@ class ConfigDict(TypedDict, total=False):
     Whether an aliased field may be populated by its name as given by the model
     attribute, as well as the alias. Defaults to `False`.
 
-    Note:
-        The name of this configuration setting was changed in **v2.0** from
-        `allow_population_by_field_name` to `populate_by_name`.
+    !!! warning
+        `populate_by_name` usage is not recommended in v2.11+ and will be deprecated in v3.
+        Instead, you should use the [`validate_by_name`][pydantic.config.ConfigDict.validate_by_name] configuration setting.
 
-    ```python
-    from pydantic import BaseModel, ConfigDict, Field
+        When `validate_by_name=True` and `validate_by_alias=True`, this is strictly equivalent to the
+        previous behavior of `populate_by_name=True`.
 
-    class User(BaseModel):
-        model_config = ConfigDict(populate_by_name=True)
+        In v2.11, we also introduced a [`validate_by_alias`][pydantic.config.ConfigDict.validate_by_alias] setting that introduces more fine grained
+        control for validation behavior.
 
-        name: str = Field(alias='full_name')  # (1)!
-        age: int
+        Here's how you might go about using the new settings to achieve the same behavior:
 
-    user = User(full_name='John Doe', age=20)  # (2)!
-    print(user)
-    #> name='John Doe' age=20
-    user = User(name='John Doe', age=20)  # (3)!
-    print(user)
-    #> name='John Doe' age=20
-    ```
+        ```python
+        from pydantic import BaseModel, ConfigDict, Field
 
-    1. The field `'name'` has an alias `'full_name'`.
-    2. The model is populated by the alias `'full_name'`.
-    3. The model is populated by the field name `'name'`.
+        class Model(BaseModel):
+            model_config = ConfigDict(validate_by_name=True, validate_by_alias=True)
+
+            my_field: str = Field(alias='my_alias')  # (1)!
+
+        m = Model(my_alias='foo')  # (2)!
+        print(m)
+        #> my_field='foo'
+
+        m = Model(my_field='foo')  # (3)!
+        print(m)
+        #> my_field='foo'
+        ```
+
+        1. The field `'my_field'` has an alias `'my_alias'`.
+        2. The model is populated by the alias `'my_alias'`.
+        3. The model is populated by the attribute name `'my_field'`.
     """
 
     use_enum_values: bool
@@ -357,7 +367,7 @@ class ConfigDict(TypedDict, total=False):
     If you want to use different alias generators for validation and serialization, you can use
     [`AliasGenerator`][pydantic.aliases.AliasGenerator] instead.
 
-    If data source field names do not match your code style (e. g. CamelCase fields),
+    If data source field names do not match your code style (e.g. CamelCase fields),
     you can automatically generate aliases using `alias_generator`. Here's an example with
     a basic callable:
 
@@ -584,8 +594,51 @@ class ConfigDict(TypedDict, total=False):
     The format of JSON serialized timedeltas. Accepts the string values of `'iso8601'` and
     `'float'`. Defaults to `'iso8601'`.
 
-    - `'iso8601'` will serialize timedeltas to ISO 8601 durations.
+    - `'iso8601'` will serialize timedeltas to [ISO 8601 text format](https://en.wikipedia.org/wiki/ISO_8601#Durations).
     - `'float'` will serialize timedeltas to the total number of seconds.
+
+    !!! warning
+        Starting in v2.11, it is recommended to use the [`ser_json_temporal`][pydantic.config.ConfigDict.ser_json_temporal]
+        setting instead of `ser_json_timedelta`. This setting will be deprecated in v3.
+    """
+
+    ser_json_temporal: Literal['iso8601', 'seconds', 'milliseconds']
+    """
+    The format of JSON serialized temporal types from the [`datetime`][] module. This includes:
+
+    - [`datetime.datetime`][]
+    - [`datetime.date`][]
+    - [`datetime.time`][]
+    - [`datetime.timedelta`][]
+
+    Can be one of:
+
+    - `'iso8601'` will serialize date-like types to [ISO 8601 text format](https://en.wikipedia.org/wiki/ISO_8601#Durations).
+    - `'milliseconds'` will serialize date-like types to a floating point number of milliseconds since the epoch.
+    - `'seconds'` will serialize date-like types to a floating point number of seconds since the epoch.
+
+    Defaults to `'iso8601'`.
+
+    !!! note
+        This setting was introduced in v2.11. It overlaps with the [`ser_json_timedelta`][pydantic.config.ConfigDict.ser_json_timedelta]
+        setting which will be deprecated in v3. It also adds more configurability for
+        the other temporal types.
+    """
+
+    val_temporal_unit: Literal['seconds', 'milliseconds', 'infer']
+    """
+    The unit to assume for validating numeric input for datetime-like types ([`datetime.datetime`][] and [`datetime.date`][]). Can be one of:
+
+    - `'seconds'` will validate date or time numeric inputs as seconds since the [epoch].
+    - `'milliseconds'` will validate date or time numeric inputs as milliseconds since the [epoch].
+    - `'infer'` will infer the unit from the string numeric input on unix time as:
+
+        * seconds since the [epoch] if $-2^{10} <= v <= 2^{10}$
+        * milliseconds since the [epoch] (if $v < -2^{10}$ or $v > 2^{10}$).
+
+    Defaults to `'infer'`.
+
+    [epoch]: https://en.wikipedia.org/wiki/Unix_time
     """
 
     ser_json_bytes: Literal['utf8', 'base64', 'hex']
@@ -656,9 +709,9 @@ class ConfigDict(TypedDict, total=False):
     except UserWarning as e:
         print(e)
         '''
-        Field "model_dump_something" in Model has conflict with protected namespace "model_dump".
+        Field 'model_dump_something' in 'Model' conflicts with protected namespace 'model_dump'.
 
-        You may be able to resolve this warning by setting `model_config['protected_namespaces'] = ('model_validate',)`.
+        You may be able to solve this by setting the 'protected_namespaces' configuration to ('model_validate',).
         '''
     ```
 
@@ -689,11 +742,11 @@ class ConfigDict(TypedDict, total=False):
     for warning in caught_warnings:
         print(f'{warning.message}')
         '''
-        Field "also_protect_field" in Model has conflict with protected namespace "also_protect_".
-        You may be able to resolve this warning by setting `model_config['protected_namespaces'] = ('protect_me_', re.compile('^protect_this$'))`.
+        Field 'also_protect_field' in 'Model' conflicts with protected namespace 'also_protect_'.
+        You may be able to solve this by setting the 'protected_namespaces' configuration to ('protect_me_', re.compile('^protect_this$'))`.
 
-        Field "protect_this" in Model has conflict with protected namespace "re.compile('^protect_this$')".
-        You may be able to resolve this warning by setting `model_config['protected_namespaces'] = ('protect_me_', 'also_protect_')`.
+        Field 'protect_this' in 'Model' conflicts with protected namespace 're.compile('^protect_this$')'.
+        You may be able to solve this by setting the 'protected_namespaces' configuration to ('protect_me_', 'also_protect_')`.
         '''
     ```
 
@@ -710,10 +763,10 @@ class ConfigDict(TypedDict, total=False):
 
             model_config = ConfigDict(protected_namespaces=('model_',))
 
-    except NameError as e:
+    except ValueError as e:
         print(e)
         '''
-        Field "model_validate" conflicts with member <bound method BaseModel.model_validate of <class 'pydantic.main.BaseModel'>> of protected namespace "model_".
+        Field 'model_validate' conflicts with member <bound method BaseModel.model_validate of <class 'pydantic.main.BaseModel'>> of protected namespace 'model_'.
         '''
     ```
     """
@@ -1003,7 +1056,7 @@ class ConfigDict(TypedDict, total=False):
         [`TypedDict`][typing.TypedDict] and stdlib dataclasses, in particular when:
 
         - inheritance is being used.
-        - multiple classes have the same name in the same source file.
+        - multiple classes have the same name in the same source file (unless Python 3.13 or greater is used).
     '''
 
     cache_strings: bool | Literal['all', 'keys', 'none']
@@ -1025,11 +1078,126 @@ class ConfigDict(TypedDict, total=False):
         as the performance difference is minimal if repeated strings are rare.
     """
 
+    validate_by_alias: bool
+    """
+    Whether an aliased field may be populated by its alias. Defaults to `True`.
+
+    !!! note
+        In v2.11, `validate_by_alias` was introduced in conjunction with [`validate_by_name`][pydantic.ConfigDict.validate_by_name]
+        to empower users with more fine grained validation control. In <v2.11, disabling validation by alias was not possible.
+
+    Here's an example of disabling validation by alias:
+
+    ```py
+    from pydantic import BaseModel, ConfigDict, Field
+
+    class Model(BaseModel):
+        model_config = ConfigDict(validate_by_name=True, validate_by_alias=False)
+
+        my_field: str = Field(validation_alias='my_alias')  # (1)!
+
+    m = Model(my_field='foo')  # (2)!
+    print(m)
+    #> my_field='foo'
+    ```
+
+    1. The field `'my_field'` has an alias `'my_alias'`.
+    2. The model can only be populated by the attribute name `'my_field'`.
+
+    !!! warning
+        You cannot set both `validate_by_alias` and `validate_by_name` to `False`.
+        This would make it impossible to populate an attribute.
+
+        See [usage errors](../errors/usage_errors.md#validate-by-alias-and-name-false) for an example.
+
+        If you set `validate_by_alias` to `False`, under the hood, Pydantic dynamically sets
+        `validate_by_name` to `True` to ensure that validation can still occur.
+    """
+
+    validate_by_name: bool
+    """
+    Whether an aliased field may be populated by its name as given by the model
+    attribute. Defaults to `False`.
+
+    !!! note
+        In v2.0-v2.10, the `populate_by_name` configuration setting was used to specify
+        whether or not a field could be populated by its name **and** alias.
+
+        In v2.11, `validate_by_name` was introduced in conjunction with [`validate_by_alias`][pydantic.ConfigDict.validate_by_alias]
+        to empower users with more fine grained validation behavior control.
+
+    ```python
+    from pydantic import BaseModel, ConfigDict, Field
+
+    class Model(BaseModel):
+        model_config = ConfigDict(validate_by_name=True, validate_by_alias=True)
+
+        my_field: str = Field(validation_alias='my_alias')  # (1)!
+
+    m = Model(my_alias='foo')  # (2)!
+    print(m)
+    #> my_field='foo'
+
+    m = Model(my_field='foo')  # (3)!
+    print(m)
+    #> my_field='foo'
+    ```
+
+    1. The field `'my_field'` has an alias `'my_alias'`.
+    2. The model is populated by the alias `'my_alias'`.
+    3. The model is populated by the attribute name `'my_field'`.
+
+    !!! warning
+        You cannot set both `validate_by_alias` and `validate_by_name` to `False`.
+        This would make it impossible to populate an attribute.
+
+        See [usage errors](../errors/usage_errors.md#validate-by-alias-and-name-false) for an example.
+    """
+
+    serialize_by_alias: bool
+    """
+    Whether an aliased field should be serialized by its alias. Defaults to `False`.
+
+    Note: In v2.11, `serialize_by_alias` was introduced to address the
+    [popular request](https://github.com/pydantic/pydantic/issues/8379)
+    for consistency with alias behavior for validation and serialization settings.
+    In v3, the default value is expected to change to `True` for consistency with the validation default.
+
+    ```python
+    from pydantic import BaseModel, ConfigDict, Field
+
+    class Model(BaseModel):
+        model_config = ConfigDict(serialize_by_alias=True)
+
+        my_field: str = Field(serialization_alias='my_alias')  # (1)!
+
+    m = Model(my_field='foo')
+    print(m.model_dump())  # (2)!
+    #> {'my_alias': 'foo'}
+    ```
+
+    1. The field `'my_field'` has an alias `'my_alias'`.
+    2. The model is serialized using the alias `'my_alias'` for the `'my_field'` attribute.
+    """
+
 
 _TypeT = TypeVar('_TypeT', bound=type)
 
 
-def with_config(config: ConfigDict) -> Callable[[_TypeT], _TypeT]:
+@overload
+@deprecated('Passing `config` as a keyword argument is deprecated. Pass `config` as a positional argument instead.')
+def with_config(*, config: ConfigDict) -> Callable[[_TypeT], _TypeT]: ...
+
+
+@overload
+def with_config(config: ConfigDict, /) -> Callable[[_TypeT], _TypeT]: ...
+
+
+@overload
+def with_config(**config: Unpack[ConfigDict]) -> Callable[[_TypeT], _TypeT]: ...
+
+
+def with_config(config: ConfigDict | None = None, /, **kwargs: Any) -> Callable[[_TypeT], _TypeT]:
     """!!! abstract "Usage Documentation"
         [Configuration with other types](../concepts/config.md#configuration-on-other-supported-types)
 
@@ -1046,15 +1214,27 @@ def with_config(config: ConfigDict) -> Callable[[_TypeT], _TypeT]:
         from pydantic import ConfigDict, TypeAdapter, with_config
 
         @with_config(ConfigDict(str_to_lower=True))
-        class Model(TypedDict):
+        class TD(TypedDict):
             x: str
 
-        ta = TypeAdapter(Model)
+        ta = TypeAdapter(TD)
 
         print(ta.validate_python({'x': 'ABC'}))
         #> {'x': 'abc'}
         ```
     """
+    if config is not None and kwargs:
+        raise ValueError('Cannot specify both `config` and keyword arguments')
+
+    if len(kwargs) == 1 and (kwargs_conf := kwargs.get('config')) is not None:
+        warnings.warn(
+            'Passing `config` as a keyword argument is deprecated. Pass `config` as a positional argument instead',
+            category=PydanticDeprecatedSince211,
+            stacklevel=2,
+        )
+        final_config = cast(ConfigDict, kwargs_conf)
+    else:
+        final_config = config if config is not None else cast(ConfigDict, kwargs)
 
     def inner(class_: _TypeT, /) -> _TypeT:
         # Ideally, we would check for `class_` to either be a `TypedDict` or a stdlib dataclass.
@@ -1067,7 +1247,7 @@ def with_config(config: ConfigDict) -> Callable[[_TypeT], _TypeT]:
                 f'Cannot use `with_config` on {class_.__name__} as it is a Pydantic model',
                 code='with-config-on-model',
             )
-        class_.__pydantic_config__ = config
+        class_.__pydantic_config__ = final_config
         return class_
 
     return inner

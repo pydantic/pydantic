@@ -1,9 +1,25 @@
-from typing import Union
+from typing import Annotated, Any, Final, Union
 
 import pytest
+from annotated_types import Gt
+from pydantic_core import PydanticUndefined
+from typing_extensions import TypeAliasType
 
 import pydantic.dataclasses
-from pydantic import BaseModel, ConfigDict, Field, PydanticUserError, RootModel, ValidationError, computed_field, fields
+from pydantic import (
+    AfterValidator,
+    BaseModel,
+    ConfigDict,
+    Field,
+    PydanticUserError,
+    RootModel,
+    ValidationError,
+    computed_field,
+    create_model,
+    validate_call,
+)
+from pydantic.fields import FieldInfo
+from pydantic.warnings import UnsupportedFieldAttributeWarning
 
 
 def test_field_info_annotation_keyword_argument():
@@ -14,7 +30,7 @@ def test_field_info_annotation_keyword_argument():
     third-party tools.
     """
     with pytest.raises(TypeError) as e:
-        fields.FieldInfo.from_field(annotation=())
+        FieldInfo.from_field(annotation=())
 
     assert e.value.args == ('"annotation" is not permitted as a Field keyword argument',)
 
@@ -142,6 +158,9 @@ def test_computed_field_raises_correct_attribute_error():
     with pytest.raises(AttributeError, match='Property attribute error'):
         Model().prop_field
 
+    with pytest.raises(AttributeError, match='Property attribute error'):
+        Model(some_extra_field='some value').prop_field
+
     with pytest.raises(AttributeError, match=f"'{Model.__name__}' object has no attribute 'invalid_field'"):
         Model().invalid_field
 
@@ -170,3 +189,155 @@ def test_coerce_numbers_to_str_field_precedence(number):
         field: str = Field(coerce_numbers_to_str=True)
 
     assert Model(field=number).field == str(number)
+
+
+def test_rebuild_model_fields_preserves_description() -> None:
+    """https://github.com/pydantic/pydantic/issues/11696"""
+
+    class Model(BaseModel):
+        model_config = ConfigDict(use_attribute_docstrings=True)
+
+        f: 'Int'
+        """test doc"""
+
+    assert Model.model_fields['f'].description == 'test doc'
+
+    Int = int
+
+    Model.model_rebuild()
+
+    assert Model.model_fields['f'].description == 'test doc'
+
+
+def test_final_to_frozen_with_assignment() -> None:
+    class Model(BaseModel):
+        # A buggy implementation made it so that `frozen` wouldn't
+        # be set on the `FieldInfo`:
+        b: Annotated[Final[int], ...] = Field(alias='test')
+
+    assert Model.model_fields['b'].frozen
+
+
+def test_metadata_preserved_with_assignment() -> None:
+    def func1(v):
+        pass
+
+    def func2(v):
+        pass
+
+    class Model(BaseModel):
+        # A buggy implementation made it so that the first validator
+        # would be dropped:
+        a: Annotated[int, AfterValidator(func1), Field(gt=1), AfterValidator(func2)] = Field(...)
+
+    metadata = Model.model_fields['a'].metadata
+
+    assert isinstance(metadata[0], AfterValidator)
+    assert isinstance(metadata[1], Gt)
+    assert isinstance(metadata[2], AfterValidator)
+
+
+def test_reused_field_not_mutated() -> None:
+    """https://github.com/pydantic/pydantic/issues/11876"""
+
+    Ann = Annotated[int, Field()]
+
+    class Foo(BaseModel):
+        f: Ann = 50
+
+    class Bar(BaseModel):
+        f: Annotated[Ann, Field()]
+
+    assert Bar.model_fields['f'].default is PydanticUndefined
+
+
+def test_no_duplicate_metadata_with_assignment_and_rebuild() -> None:
+    """https://github.com/pydantic/pydantic/issues/11870"""
+
+    class Model(BaseModel):
+        f: Annotated['Int', Gt(1)] = Field()
+
+    Int = int
+
+    Model.model_rebuild()
+
+    assert len(Model.model_fields['f'].metadata) == 1
+
+
+def test_fastapi_compatibility_hack() -> None:
+    class Body(FieldInfo):
+        """A reproduction of the FastAPI's `Body` param."""
+
+    field = Body()
+    # Assigning after doesn't update `_attributes_set`, which is currently
+    # relied on to merge `FieldInfo` instances during field creation.
+    # This is also what the FastAPI code is doing in some places.
+    # The FastAPI compatibility hack makes it so that it still works.
+    field.default = 1
+
+    Model = create_model('Model', f=(int, field))
+    model_field = Model.model_fields['f']
+
+    assert isinstance(model_field, Body)
+    assert not model_field.is_required()
+
+
+_unsupported_standalone_fieldinfo_attributes = (
+    ('alias', 'alias'),
+    ('validation_alias', 'alias'),
+    ('serialization_alias', 'alias'),
+    ('default', 1),
+    ('default_factory', lambda: 1),
+    ('exclude', True),
+    ('deprecated', True),
+    ('repr', False),
+    ('validate_default', True),
+    ('frozen', True),
+    ('init', True),
+    ('init_var', True),
+    ('kw_only', True),
+)
+
+
+@pytest.mark.parametrize(
+    ['attribute', 'value'],
+    _unsupported_standalone_fieldinfo_attributes,
+)
+def test_unsupported_field_attribute_type_alias(attribute: str, value: Any) -> None:
+    TestType = TypeAliasType('TestType', Annotated[int, Field(**{attribute: value})])
+
+    with pytest.warns(UnsupportedFieldAttributeWarning):
+
+        class Model(BaseModel):
+            f: TestType
+
+
+@pytest.mark.parametrize(
+    ['attribute', 'value'],
+    _unsupported_standalone_fieldinfo_attributes,
+)
+def test_unsupported_field_attribute_nested(attribute: str, value: Any) -> None:
+    TestType = TypeAliasType('TestType', Annotated[int, Field(**{attribute: value})])
+
+    with pytest.warns(UnsupportedFieldAttributeWarning):
+
+        class Model(BaseModel):
+            f: list[TestType]
+
+
+@pytest.mark.parametrize(
+    ['attribute', 'value'],
+    [
+        (attr, value)
+        for attr, value in _unsupported_standalone_fieldinfo_attributes
+        if attr not in ('default', 'default_factory')
+    ],
+)
+def test_unsupported_field_attribute_nested_with_function(attribute: str, value: Any) -> None:
+    TestType = TypeAliasType('TestType', Annotated[int, Field(**{attribute: value})])
+
+    with pytest.warns(UnsupportedFieldAttributeWarning):
+
+        @validate_call
+        def func(a: list[TestType]) -> None:
+            return None

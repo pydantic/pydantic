@@ -20,11 +20,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13', '3.14']
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@v6
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -42,9 +42,9 @@ jobs:
   docs-build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
 
-    - uses: astral-sh/setup-uv@v5
+    - uses: astral-sh/setup-uv@v6
       with:
         python-version: '3.12'
 
@@ -56,25 +56,22 @@ jobs:
 
     - run: uv run python -c 'import docs.plugins.main'
 
-    # Adding local symlinks gets nice source locations like
-    #   pydantic_core/core_schema.py
-    # instead of
-    #   .venv/lib/python3.10/site-packages/pydantic_core/core_schema.py
+    # Taken from docs-build.sh
     - name: prepare shortcuts for extra modules
       run: |
         ln -s .venv/lib/python*/site-packages/pydantic_core pydantic_core
         ln -s .venv/lib/python*/site-packages/pydantic_settings pydantic_settings
         ln -s .venv/lib/python*/site-packages/pydantic_extra_types pydantic_extra_types
 
-    - run: uv run mkdocs build
+    - run: PYTHONPATH="$PWD${PYTHONPATH:+:${PYTHONPATH}}" uv run mkdocs build
 
   test-memray:
     name: Test memray
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@v6
         with:
           python-version: '3.12'
 
@@ -89,8 +86,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-13, macos-latest, windows-latest]
-        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
+        os: [ubuntu-latest, macos-15-intel, macos-latest, windows-latest]
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13', '3.14', '3.14t']
         include:
           # no pydantic-core binaries for pypy on windows, so tests take absolute ages
           # macos tests with pypy take ages (>10mins) since pypy is very slow
@@ -99,13 +96,14 @@ jobs:
             python-version: 'pypy3.9'
           - os: ubuntu-latest
             python-version: 'pypy3.10'
+          - os: ubuntu-latest
+            python-version: 'pypy3.11'
         exclude:
-          # Python 3.9 is not available on macOS 14
-          - os: macos-13
+          - os: macos-15-intel
             python-version: '3.10'
-          - os: macos-13
+          - os: macos-15-intel
             python-version: '3.11'
-          - os: macos-13
+          - os: macos-15-intel
             python-version: '3.12'
           - os: macos-latest
             python-version: '3.13'
@@ -120,9 +118,9 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
 
-    - uses: astral-sh/setup-uv@v5
+    - uses: astral-sh/setup-uv@v6
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -135,16 +133,26 @@ jobs:
 
     - name: Test without email-validator
       # speed up by skipping this step on pypy
-      if: "!startsWith(matrix.python-version, 'pypy')"
-      run: make test
+      if: ${{ !startsWith(matrix.python-version, 'pypy') }}
+      run: make test NUM_THREADS=${{ endsWith(matrix.python-version, 't') && '4' || '1' }}
+      # Free threaded is flaky, allow failures for now:
+      continue-on-error: ${{ endsWith(matrix.python-version, 't') }}
       env:
         COVERAGE_FILE: coverage/.coverage.${{ runner.os }}-py${{ matrix.python-version }}-without-deps
         CONTEXT: ${{ runner.os }}-py${{ matrix.python-version }}-without-deps
 
+    # TODO remove when memray supports 3.14:
+    - name: Install memray system dependencies
+      if: ${{ matrix.python-version == '3.14' && matrix.os == 'ubuntu-latest' }}
+      run: sudo apt-get install libunwind-dev libdebuginfod-dev
+
     - name: Install extra dependencies
+      # Skip free threaded, we can't install memray
+      if: ${{ !endsWith(matrix.python-version, 't') }}
       run: uv sync --group testing-extra --all-extras
 
     - name: Test with all extra dependencies
+      if: ${{ !endsWith(matrix.python-version, 't') }}
       run: make test
       env:
         COVERAGE_FILE: coverage/.coverage.${{ runner.os }}-py${{ matrix.python-version }}-with-deps
@@ -161,9 +169,9 @@ jobs:
     name: Test Pydantic plugin
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@v6
         with:
           python-version: '3.12'
 
@@ -178,52 +186,30 @@ jobs:
           TEST_PLUGIN: 1
 
   test-mypy:
-    name: mypy ${{ matrix.mypy-version }} / ${{ matrix.python-version }}
+    name: Mypy typechecking tests
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        # test the latest version on all supported Python versions and the rest on 3.12
-        mypy-version: ['1.10.1', '1.11.2']
-        python-version: ['3.12']
-        include:
-          - mypy-version: '1.12.0'
-            python-version: '3.9'
-          - mypy-version: '1.12.0'
-            python-version: '3.10'
-          - mypy-version: '1.12.0'
-            python-version: '3.11'
-          - mypy-version: '1.12.0'
-            python-version: '3.12'
-          - mypy-version: '1.12.0'
-            python-version: '3.13'
-
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
 
-    - uses: astral-sh/setup-uv@v5
+    - uses: astral-sh/setup-uv@v6
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: '3.13'
 
     - name: Install dependencies
       run: uv sync --group typechecking --all-extras
-
-    - name: Install mypy
-      if: steps.cache.outputs.cache-hit != 'true'
-      run: uv pip install 'mypy==${{ matrix.mypy-version }}'
 
     - run: mkdir coverage
 
     - name: Run mypy tests
       run: uv run coverage run -m pytest tests/mypy --test-mypy
       env:
-        COVERAGE_FILE: coverage/.coverage.linux-py${{ matrix.python-version }}-mypy${{ matrix.mypy-version }}
-        CONTEXT: linux-py${{ matrix.python-version }}-mypy${{ matrix.mypy-version }}
+        COVERAGE_FILE: coverage/.coverage.linux-mypy
+        CONTEXT: linux-mypy
 
     - name: Store coverage files
       uses: actions/upload-artifact@v4
       with:
-        name: coverage-${{ matrix.python-version }}-mypy${{ matrix.mypy-version }}
+        name: coverage-mypy
         path: coverage
         include-hidden-files: true
 
@@ -231,9 +217,9 @@ jobs:
     name: Typechecking integration tests
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
 
-    - uses: astral-sh/setup-uv@v5
+    - uses: astral-sh/setup-uv@v6
       with:
         python-version: '3.12'
 
@@ -246,19 +232,22 @@ jobs:
     - name: Run typechecking integration tests (Mypy)
       run: make test-typechecking-mypy
 
+    - name: Run typechecking integration tests (Pyrefly)
+      run: make test-typechecking-pyrefly
+
   coverage-combine:
     needs: [test, test-mypy]
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
       - name: Get coverage files
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           merge-multiple: true
           pattern: coverage-*
@@ -293,10 +282,10 @@ jobs:
       contents: write
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Download coverage data
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: coverage-data
 
@@ -319,11 +308,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13', '3.14']
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
 
-    - uses: astral-sh/setup-uv@v5
+    - uses: astral-sh/setup-uv@v6
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -373,7 +362,7 @@ jobs:
       pydantic-version: ${{ steps.check-tag.outputs.VERSION }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: actions/setup-python@v5
         with:
@@ -384,7 +373,7 @@ jobs:
 
       - name: Check version
         id: check-tag
-        uses: samuelcolvin/check-python-version@v4.1
+        uses: samuelcolvin/check-python-version@v5
         with:
           version_file_path: pydantic/version.py
 

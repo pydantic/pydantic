@@ -16,10 +16,12 @@ authors = [
     {name = 'Marcelo Trylesinski', email = 'marcelotryle@gmail.com'},
     {name = 'Sydney Runkle', email = 'sydneymarierunkle@gmail.com'},
     {name = 'David Hewitt', email = 'mail@davidhewitt.io'},
-    {name = 'Alex Hall', email='alex.mojaki@gmail.com'},
-    {name = 'Victorien Plot', email='contact@vctrn.dev'},
+    {name = 'Alex Hall', email = 'alex.mojaki@gmail.com'},
+    {name = 'Victorien Plot', email = 'contact@vctrn.dev'},
+    {name = 'Douwe Maan', email = 'hi@douwe.me'},
 ]
 license = 'MIT'
+license-files = ['LICENSE']
 classifiers = [
     'Development Status :: 5 - Production/Stable',
     'Programming Language :: Python',
@@ -32,9 +34,9 @@ classifiers = [
     'Programming Language :: Python :: 3.11',
     'Programming Language :: Python :: 3.12',
     'Programming Language :: Python :: 3.13',
+    'Programming Language :: Python :: 3.14',
     'Intended Audience :: Developers',
     'Intended Audience :: Information Technology',
-    'License :: OSI Approved :: MIT License',
     'Operating System :: OS Independent',
     'Framework :: Hypothesis',
     'Framework :: Pydantic',
@@ -43,10 +45,11 @@ classifiers = [
 ]
 requires-python = '>=3.9'
 dependencies = [
-    'typing-extensions>=4.12.2',
+    'typing-extensions>=4.14.1',
     'annotated-types>=0.6.0',
     # Keep this in sync with the version in the `check_pydantic_core_version()` function:
-    'pydantic-core==2.29.0',
+    'pydantic-core==2.38.0',
+    'typing-inspection>=0.4.2',
 ]
 dynamic = ['version', 'readme']
 
@@ -77,16 +80,15 @@ dev = [
     'faker',
     'pytest-benchmark',
     'pytest-codspeed',
-    'pytest-memray; platform_python_implementation == "CPython" and platform_system != "Windows"',
+    'pytest-run-parallel>=0.3.1',
     'packaging',
     'jsonschema',
 ]
 docs = [
     'autoflake',
-    "bs4>=0.0.2",
-    "markdownify>=0.14.1",
     'mkdocs',
     'mkdocs-exclude',
+    'mkdocs-llmstxt',
     'mkdocs-material[imaging]',
     'mkdocs-redirects',
     'mkdocstrings-python',
@@ -113,10 +115,12 @@ testing-extra = [
     'devtools',
     # used in docs tests
     'sqlalchemy',
+    'pytest-memray; platform_python_implementation == "CPython" and platform_system != "Windows"',
 ]
 typechecking = [
     'mypy',
     'pyright',
+    'pyrefly',
     'pydantic-settings',
 ]
 
@@ -180,10 +184,11 @@ markers = [
 
 [tool.uv]
 default-groups = ['dev']
+required-version = '>=0.8.4'
 
 # configuring https://github.com/pydantic/hooky
 [tool.hooky]
-reviewers = ['sydney-runkle']
+reviewers = ['Viicos', 'DouweM']
 require_change_file = false
 unconfirmed_label = 'pending'
 
@@ -204,12 +209,14 @@ select = [
     'T10',    # flake8-debugger
     'T20',    # flake8-print
     'C4',     # flake8-comprehensions
+    'PERF',   # Perflint
+    'PIE',    # flake8-pie
     'PYI006', # flake8-pyi
     'PYI062', # flake8-pyi
     'PYI063', # flake8-pyi
     'PYI066', # flake8-pyi
 ]
-ignore = ['D105', 'D107', 'D205', 'D415', 'E501', 'B011', 'B028', 'B904']
+ignore = ['D105', 'D107', 'D205', 'D415', 'E501', 'B011', 'B028', 'B904', 'PIE804']
 flake8-quotes = {inline-quotes = 'single', multiline-quotes = 'double'}
 isort = { known-first-party = ['pydantic', 'tests'] }
 mccabe = { max-complexity = 14 }
@@ -219,7 +226,11 @@ pydocstyle = { convention = 'google' }
 'docs/*' = ['D']
 'pydantic/__init__.py' = ['F405', 'F403', 'D']
 'tests/test_forward_ref.py' = ['F821']
+# We can't configure a specific Python version per file (this one only supports 3.14+):
+'tests/test_deferred_annotations.py' = ['F821', 'F841']
+'tests/test_main.py' = ['PIE807']
 'tests/*' = ['D', 'B', 'C4']
+'pydantic/_internal/_known_annotated_metadata.py' = ['PIE800']
 'pydantic/deprecated/*' = ['D', 'PYI']
 'pydantic/color.py' = ['PYI']
 'pydantic/_internal/_decorators_v1.py' = ['PYI']

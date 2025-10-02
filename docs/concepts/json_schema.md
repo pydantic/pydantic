@@ -28,7 +28,6 @@ Use the following functions to generate JSON schema:
     [`TypeAdapter.json_schema`][pydantic.type_adapter.TypeAdapter.json_schema], calling
     `json.dumps(TypeAdapter(<some_type>).json_schema())` returns a valid JSON string.
 
-
 !!! tip
     Pydantic offers support for both of:
 
@@ -277,7 +276,13 @@ print(Model.model_json_schema(mode='validation'))
 {
     'properties': {
         'a': {
-            'anyOf': [{'type': 'number'}, {'type': 'string'}],
+            'anyOf': [
+                {'type': 'number'},
+                {
+                    'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                    'type': 'string',
+                },
+            ],
             'default': '12.34',
             'title': 'A',
         }
@@ -290,13 +295,19 @@ print(Model.model_json_schema(mode='validation'))
 print(Model.model_json_schema(mode='serialization'))
 """
 {
-    'properties': {'a': {'default': '12.34', 'title': 'A', 'type': 'string'}},
+    'properties': {
+        'a': {
+            'default': '12.34',
+            'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+            'title': 'A',
+            'type': 'string',
+        }
+    },
     'title': 'Model',
     'type': 'object',
 }
 """
 ```
-
 
 ## Customizing JSON Schema
 
@@ -811,8 +822,9 @@ The process for `Annotated` metadata is much the same except that you can genera
 Pydantic handle generating the schema.
 
 ```python
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Annotated, Any, Sequence
+from typing import Annotated, Any
 
 from pydantic_core import core_schema
 
@@ -1048,7 +1060,6 @@ print(json.dumps(TypeAdapter(Person).json_schema(), indent=2))
 """
 ```
 
-
 ### Using `field_title_generator`
 
 The `field_title_generator` parameter can be used to programmatically generate the title for a field based on its name and info.
@@ -1152,7 +1163,6 @@ following priority order (when there is an equivalent available):
 The field schema mapping from Python or Pydantic to JSON schema is done as follows:
 
 {{ schema_mappings_table }}
-
 
 ## Top-level schema generation
 

@@ -17,9 +17,9 @@ jobs:
     name: CodSpeed profiling
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@v6
 
       # Using this action is still necessary for CodSpeed to work:
       - uses: actions/setup-python@v5
@@ -47,7 +47,7 @@ jobs:
         run: uv sync --python 3.12 --group testing-extra --extra email --frozen
 
       - name: checkout pydantic-core
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: pydantic/pydantic-core
           ref: ${{ steps.core-version.outputs.core-ref }}

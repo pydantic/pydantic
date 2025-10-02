@@ -24,6 +24,7 @@ from ._utils import can_be_positional
 if TYPE_CHECKING:
     from ..fields import ComputedFieldInfo
     from ..functional_validators import FieldValidatorModes
+    from ._config import ConfigWrapper
 
 
 @dataclass(**slots_true)
@@ -196,7 +197,7 @@ class PydanticDescriptorProxy(Generic[ReturnType]):
 
     def __get__(self, obj: object | None, obj_type: type[object] | None = None) -> PydanticDescriptorProxy[ReturnType]:
         try:
-            return self.wrapped.__get__(obj, obj_type)
+            return self.wrapped.__get__(obj, obj_type)  # pyright: ignore[reportReturnType]
         except AttributeError:
             # not a descriptor, e.g. a partial object
             return self.wrapped  # type: ignore[return-value]
@@ -513,6 +514,11 @@ class DecoratorInfos:
             for name, value in to_replace:
                 setattr(model_dc, name, value)
         return res
+
+    def update_from_config(self, config_wrapper: ConfigWrapper) -> None:
+        """Update the decorator infos from the configuration of the class they are attached to."""
+        for name, computed_field_dec in self.computed_fields.items():
+            computed_field_dec.info._update_from_config(config_wrapper, name)
 
 
 def inspect_validator(validator: Callable[..., Any], mode: FieldValidatorModes) -> bool:

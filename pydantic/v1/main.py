@@ -211,7 +211,7 @@ class ModelMetaclass(ABCMeta):
                     if not is_valid_private_name(var_name):
                         raise NameError(
                             f'Private attributes "{var_name}" must not be a valid field name; '
-                            f'Use sunder or dunder names, e. g. "_{var_name}" or "__{var_name}__"'
+                            f'Use sunder or dunder names, e.g. "_{var_name}" or "__{var_name}__"'
                         )
                     private_attributes[var_name] = value
                 elif config.underscore_attrs_are_private and is_valid_private_name(var_name) and can_be_changed:
@@ -282,6 +282,12 @@ class ModelMetaclass(ABCMeta):
         cls = super().__new__(mcs, name, bases, new_namespace, **kwargs)
         # set __signature__ attr only for model class, but not for its instances
         cls.__signature__ = ClassAttribute('__signature__', generate_model_signature(cls.__init__, fields, config))
+
+        if not _is_base_model_class_defined:
+            # Cython does not understand the `if TYPE_CHECKING:` condition in the
+            # BaseModel's body (where annotations are set), so clear them manually:
+            getattr(cls, '__annotations__', {}).clear()
+
         if resolve_forward_refs:
             cls.__try_update_forward_refs__()
 

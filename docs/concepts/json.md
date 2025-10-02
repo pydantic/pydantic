@@ -93,7 +93,7 @@ print(dog_dict)
 
 !!! tip "Validating LLM Output"
     This feature is particularly beneficial for validating LLM outputs.
-    We've written some blog posts about this topic, which you can find [here](https://pydantic.dev/articles).
+    We've written some blog posts about this topic, which you can find on [our website](https://pydantic.dev/articles).
 
 In future versions of Pydantic, we expect to expand support for this feature through either Pydantic's other JSON validation functions
 ([`pydantic.main.BaseModel.model_validate_json`][pydantic.main.BaseModel.model_validate_json] and
@@ -204,7 +204,6 @@ Using the string caching feature results in performance improvements, but increa
     3. There is some overhead to looking up the cache, which is normally worth it to avoid constructing strings.
     However, if you know there will be very few repeated strings in your data, you might get a performance boost by disabling this setting with `cache_strings=False`.
 
-
 ## JSON Serialization
 
 ??? api "API Documentation"
@@ -212,4 +211,4 @@ Using the string caching feature results in performance improvements, but increa
     [`pydantic.type_adapter.TypeAdapter.dump_json`][pydantic.type_adapter.TypeAdapter.dump_json]<br>
     [`pydantic_core.to_json`][pydantic_core.to_json]<br>
 
-For more information on JSON serialization, see the [Serialization Concepts](./serialization.md#modelmodel_dump_json) page.
+For more information on JSON serialization, see the [serialization concepts](./serialization.md) page.

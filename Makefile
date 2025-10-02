@@ -1,5 +1,6 @@
-# .DEFAULT_GOAL := all
-sources = pydantic tests docs/plugins
+.DEFAULT_GOAL := all
+sources = pydantic tests docs/plugins release/
+NUM_THREADS?=1
 
 .PHONY: .uv  ## Check that uv is installed
 .uv:
@@ -45,13 +46,6 @@ test-mypy: .uv
 test-mypy-update: .uv
 	uv run coverage run -m pytest tests/mypy --test-mypy --update-mypy
 
-.PHONY: test-mypy-update-all  ## Update the mypy integration tests for all mypy versions
-test-mypy-update-all: .uv
-	rm -rf tests/mypy/outputs
-	uv pip install mypy==1.10.1 && make test-mypy-update
-	uv pip install mypy==1.11.2 && make test-mypy-update
-	uv pip install mypy==1.12.0 && make test-mypy-update
-
 .PHONY: test-typechecking-pyright  ## Typechecking integration tests (Pyright)
 test-typechecking-pyright: .uv
 	uv run bash -c 'cd tests/typechecking && pyright --version && pyright -p pyproject.toml'
@@ -60,9 +54,13 @@ test-typechecking-pyright: .uv
 test-typechecking-mypy: .uv
 	uv run bash -c 'cd tests/typechecking && mypy --version && mypy --cache-dir=/dev/null --config-file pyproject.toml .'
 
+.PHONY: test-typechecking-pyrefly  ## Typechecking integration tests (Pyrefly).
+test-typechecking-pyrefly: .uv
+	uv run bash -c 'cd tests/typechecking && pyrefly --version && pyrefly check'
+
 .PHONY: test  ## Run all tests, skipping the type-checker integration tests
 test: .uv
-	uv run coverage run -m pytest --durations=10
+	uv run coverage run -m pytest --durations=10 --parallel-threads $(NUM_THREADS)
 
 .PHONY: benchmark  ## Run all benchmarks
 benchmark: .uv

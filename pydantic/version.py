@@ -2,12 +2,24 @@
 
 from __future__ import annotations as _annotations
 
+import sys
+
 from pydantic_core import __version__ as __pydantic_core_version__
 
 __all__ = 'VERSION', 'version_info'
 
-VERSION = '2.11.0a2'
-"""The version of Pydantic."""
+VERSION = '2.12.0a1+dev'
+"""The version of Pydantic.
+
+This version specifier is guaranteed to be compliant with the [specification],
+introduced by [PEP 440].
+
+[specification]: https://packaging.python.org/en/latest/specifications/version-specifiers/
+[PEP 440]: https://peps.python.org/pep-0440/
+"""
+
+# Keep this in sync with the version constraint in the `pyproject.toml` dependencies:
+_COMPATIBLE_PYDANTIC_CORE_VERSION = '2.38.0'
 
 
 def version_short() -> str:
@@ -20,10 +32,8 @@ def version_short() -> str:
 
 def version_info() -> str:
     """Return complete version information for Pydantic and its dependencies."""
-    import importlib.metadata as importlib_metadata
-    import os
+    import importlib.metadata
     import platform
-    import sys
     from pathlib import Path
 
     import pydantic_core._pydantic_core as pdc
@@ -42,21 +52,20 @@ def version_info() -> str:
     }
     related_packages = []
 
-    for dist in importlib_metadata.distributions():
+    for dist in importlib.metadata.distributions():
         name = dist.metadata['Name']
         if name in package_names:
             related_packages.append(f'{name}-{dist.version}')
 
-    pydantic_dir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
+    pydantic_dir = Path(__file__).parents[1].resolve()
     most_recent_commit = (
         git.git_revision(pydantic_dir) if git.is_git_repo(pydantic_dir) and git.have_git() else 'unknown'
     )
 
     info = {
         'pydantic version': VERSION,
-        'pydantic-core version': pdc.__version__,
-        'pydantic-core build': getattr(pdc, 'build_info', None) or pdc.build_profile,
-        'install path': Path(__file__).resolve().parent,
+        'pydantic-core version': __pydantic_core_version__,
+        'pydantic-core build': getattr(pdc, 'build_info', None) or pdc.build_profile,  # pyright: ignore[reportPrivateImportUsage]
         'python version': sys.version,
         'platform': platform.platform(),
         'related packages': ' '.join(related_packages),
@@ -67,8 +76,26 @@ def version_info() -> str:
 
 def check_pydantic_core_version() -> bool:
     """Check that the installed `pydantic-core` dependency is compatible."""
-    # Keep this in sync with the version constraint in the `pyproject.toml` dependencies:
-    return __pydantic_core_version__ == '2.29.0'
+    return __pydantic_core_version__ == _COMPATIBLE_PYDANTIC_CORE_VERSION
+
+
+def _ensure_pydantic_core_version() -> None:  # pragma: no cover
+    if not check_pydantic_core_version():
+        raise_error = True
+        # Do not raise the error if pydantic is installed in editable mode (i.e. in development):
+        if sys.version_info >= (3, 13):  # origin property added in 3.13
+            from importlib.metadata import distribution
+
+            dist = distribution('pydantic')
+            if getattr(getattr(dist.origin, 'dir_info', None), 'editable', False):
+                raise_error = False
+
+        if raise_error:
+            raise SystemError(
+                f'The installed pydantic-core version ({__pydantic_core_version__}) is incompatible '
+                f'with the current pydantic version, which requires {_COMPATIBLE_PYDANTIC_CORE_VERSION}. '
+                "If you encounter this error, make sure that you haven't upgraded pydantic-core manually."
+            )
 
 
 def parse_mypy_version(version: str) -> tuple[int, int, int]:

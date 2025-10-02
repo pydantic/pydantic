@@ -1,4 +1,4 @@
-site_name: Pydantic
+site_name: Pydantic Validation
 site_description: Data validation using Python type hints
 strict: true
 site_url: https://docs.pydantic.dev/
@@ -8,25 +8,24 @@ theme:
   custom_dir: 'docs/theme'
   palette:
   - media: "(prefers-color-scheme)"
-    scheme: default
     primary: pink
     accent: pink
     toggle:
-      icon: material/lightbulb
+      icon: material/brightness-auto
       name: "Switch to light mode"
   - media: "(prefers-color-scheme: light)"
     scheme: default
     primary: pink
     accent: pink
     toggle:
-      icon: material/lightbulb-outline
+      icon: material/brightness-7
       name: "Switch to dark mode"
   - media: "(prefers-color-scheme: dark)"
     scheme: slate
     primary: pink
     accent: pink
     toggle:
-      icon: material/lightbulb-auto-outline
+      icon: material/brightness-4
       name: "Switch to system preference"
   features:
     - content.tabs.link
@@ -84,7 +83,9 @@ extra_javascript:
   - 'extra/algolia.js'
   - 'extra/feedback.js'
   - 'extra/fluff.js'
+  - 'extra/mathjax.js'
   - 'https://samuelcolvin.github.io/mkdocs-run-code/run_code_main.js'
+  - 'https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js'
 
 nav:
 - Get Started:
@@ -171,6 +172,7 @@ nav:
   - Usage Errors: errors/usage_errors.md
 - Integrations:
   - Pydantic Logfire: integrations/logfire.md
+  - LLMs: integrations/llms.md
   - Dev Tools:
     - Mypy: integrations/mypy.md/.
     - PyCharm: integrations/pycharm.md
@@ -202,13 +204,14 @@ markdown_extensions:
     emoji_generator: !!python/name:material.extensions.emoji.to_svg
 - pymdownx.tabbed:
     alternate_style: true
+- pymdownx.arithmatex:
+    generic: true
 
 watch:
 - pydantic
 
 hooks:
 - 'docs/plugins/main.py'
-- 'docs/plugins/build_llms_txt.py'
 - 'docs/plugins/algolia.py'
 
 plugins:
@@ -216,6 +219,25 @@ plugins:
 - mike:
     alias_type: symlink
     canonical_version: latest
+  # llmstxt must come after the mike plugin:
+- llmstxt:
+    enabled: !ENV [CI, false]
+    full_output: llms-full.txt
+    markdown_description: |-
+      Pydantic is the most widely used data validation library for Python.
+      Fast and extensible, Pydantic plays nicely with your linters/IDE/brain.
+      Define how data should be in pure, canonical Python 3.9+; validate it with Pydantic.
+    sections:
+      Concepts documentation:
+        - concepts/*.md
+      API documentation:
+        - api/*.md
+      Internals:
+        - internals/*.md
+      Optional:
+        - errors/*.md
+        - examples/*.md
+        - integrations/*.md
 - search
 - exclude:
     glob:
@@ -225,7 +247,7 @@ plugins:
 - mkdocstrings:
     handlers:
       python:
-        paths: [.]
+        paths: [.]  # see also: build-docs.sh
         options:
           members_order: source
           separate_signature: true
@@ -238,6 +260,7 @@ plugins:
         import:
           - url: https://docs.python.org/3/objects.inv
             domains: [py, std]
+          - url: https://typing-extensions.readthedocs.io/en/latest/objects.inv
 - redirects:
     redirect_maps:
       'usage/mypy.md': 'integrations/mypy.md'

@@ -26,6 +26,12 @@ from pydantic.functional_validators import AfterValidator
 NO_VALUE = object()
 
 
+@pytest.mark.thread_unsafe(
+    reason=(
+        'The `FieldInfo.from_annotated_attribute()` implementation directly mutates the assigned value, '
+        'if it is a `Field()`. https://github.com/pydantic/pydantic/issues/11122 tracks this issue'
+    )
+)
 @pytest.mark.parametrize(
     'hint_fn,value,expected_repr',
     [
@@ -113,6 +119,7 @@ def test_annotated_allows_unknown(metadata):
     assert metadata in M.__annotations__['x'].__metadata__, 'Annotated type is recorded'
 
 
+@pytest.mark.thread_unsafe(reason='`pytest.raises()` is thread unsafe')
 @pytest.mark.parametrize(
     ['hint_fn', 'value', 'empty_init_ctx'],
     [
@@ -242,18 +249,6 @@ def test_modify_get_schema_annotated() -> None:
     ]
 
     calls.clear()
-
-
-def test_annotated_alias_at_low_level() -> None:
-    with pytest.warns(
-        UserWarning,
-        match=r'`alias` specification on field "low_level_alias_field" must be set on outermost annotation to take effect.',
-    ):
-
-        class Model(BaseModel):
-            low_level_alias_field: Optional[Annotated[int, Field(alias='field_alias')]] = None
-
-    assert Model(field_alias=1).low_level_alias_field is None
 
 
 def test_get_pydantic_core_schema_source_type() -> None:
@@ -494,28 +489,6 @@ def test_min_length_field_info_not_lost():
             'input': '00',
             'ctx': {'min_length': 3},
             'msg': 'String should have at least 3 characters',
-            'type': 'string_too_short',
-        }
-    ]
-
-    # Ensure that the inner annotation does not override the outer, even for metadata:
-    class AnnotatedFieldModel2(BaseModel):
-        foo: 'Annotated[String, Field(min_length=3)]' = Field(description='hello', min_length=2)
-
-    AnnotatedFieldModel2(foo='00')
-
-    class AnnotatedFieldModel4(BaseModel):
-        foo: 'Annotated[String, Field(min_length=3)]' = Field(description='hello', min_length=4)
-
-    with pytest.raises(ValidationError) as exc_info:
-        AnnotatedFieldModel4(foo='00')
-
-    assert exc_info.value.errors(include_url=False) == [
-        {
-            'loc': ('foo',),
-            'input': '00',
-            'ctx': {'min_length': 4},
-            'msg': 'String should have at least 4 characters',
             'type': 'string_too_short',
         }
     ]
