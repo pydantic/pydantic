@@ -6833,6 +6833,40 @@ def test_type_adapter_with_inline_defs_nested_defs() -> None:
     Draft202012Validator.check_schema(schema)
 
 
+def test_type_adapter_with_inline_defs_object_properties() -> None:
+    class InlineDefs:
+        @classmethod
+        def __get_pydantic_core_schema__(
+            cls, source_type: Any, handler: GetCoreSchemaHandler
+        ) -> core_schema.CoreSchema:
+            return handler.generate_schema(str)
+
+        @classmethod
+        def __get_pydantic_json_schema__(
+            cls, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+        ) -> JsonSchemaValue:
+            return {
+                'type': 'object',
+                'properties': {
+                    'a': {'$ref': '#/$defs/inline'},
+                    'b': {'$ref': '#/$defs/inline'},
+                },
+                '$defs': {'inline': {'type': 'string', 'description': 'shared inline definition'}},
+            }
+
+    schema = TypeAdapter(InlineDefs).json_schema()
+
+    assert schema == {
+        'type': 'object',
+        'properties': {
+            'a': {'$ref': '#/$defs/inline'},
+            'b': {'$ref': '#/$defs/inline'},
+        },
+        '$defs': {'inline': {'type': 'string', 'description': 'shared inline definition'}},
+    }
+    Draft202012Validator.check_schema(schema)
+
+
 def test_min_and_max_in_schema() -> None:
     TSeq = TypeAdapter(Annotated[Sequence[int], Field(min_length=2, max_length=5)])
     assert TSeq.json_schema() == {'items': {'type': 'integer'}, 'maxItems': 5, 'minItems': 2, 'type': 'array'}

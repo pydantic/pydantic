@@ -316,7 +316,6 @@ class GenerateJsonSchema:
         # This changes to True after generating a schema, to prevent issues caused by accidental reuse
         # of a single instance of a schema generator
         self._used = False
-        self._resolved_json_refs_cache: dict[JsonRef, Any] = {}
         self._inline_ref_schemas: dict[JsonRef, JsonSchemaValue] = {}
 
     @property
@@ -2419,19 +2418,21 @@ class GenerateJsonSchema:
         return json_schema
 
     def get_schema_from_definitions(self, json_ref: JsonRef, *, root: Any | None = None) -> JsonSchemaValue | None:
-        try:
-            def_ref = self.json_to_defs_refs[json_ref]
+        def_ref = self.json_to_defs_refs.get(json_ref)
+        if def_ref is not None:
             if def_ref in self._core_defs_invalid_for_json_schema:
                 raise self._core_defs_invalid_for_json_schema[def_ref]
             return self.definitions.get(def_ref, None)
-        except KeyError:
-            roots: tuple[Any, ...] = (root,) if root is not None else ()
-            resolved_schema = self._resolve_user_json_ref(json_ref, roots)
+
+        if root is not None:
+            resolved_schema = _resolve_json_ref(root, json_ref)
             if resolved_schema is not None:
                 return resolved_schema
-            if json_ref.startswith(('http://', 'https://')):
-                return None
-            raise
+
+        if isinstance(json_ref, str) and json_ref.startswith(('http://', 'https://')):
+            return None
+
+        raise KeyError(json_ref)
 
     def _restore_inline_refs(self, json_schema: JsonSchemaValue) -> JsonSchemaValue:
         ref = json_schema.get('$ref')
@@ -2567,147 +2568,75 @@ class GenerateJsonSchema:
         return tuple(pointer[1:].split('/'))
 
     @staticmethod
-    def _encode_json_pointer_token(token: str) -> str:
-        return token.replace('~', '~0').replace('/', '~1')
-
-    @staticmethod
-    def _decode_json_pointer_token(token: str) -> str:
-        return token.replace('~1', '/').replace('~0', '~')
-
-    @classmethod
-    def _re_encode_json_pointer_tokens(cls, tokens: Sequence[str]) -> list[str]:
-        return [cls._encode_json_pointer_token(cls._decode_json_pointer_token(token)) for token in tokens]
-
-    @staticmethod
     def _json_pointer_from_tokens(tokens: Sequence[str]) -> JsonRef:
         if not tokens:
             return JsonRef('#')
         return JsonRef('#/' + '/'.join(tokens))
 
+    def _iter_referenced_schemas(self, json_ref: JsonRef, root: Any | Sequence[Any] | None) -> Iterable[Any]:
+        if isinstance(root, Sequence) and not isinstance(root, (str, bytes, bytearray, Mapping)):
+            roots: tuple[Any, ...] = tuple(root)
+        elif root is None:
+            roots = ()
+        else:
+            roots = (root,)
+
+        found_schema = False
+        last_error: Exception | None = None
+
+        try:
+            resolved_schema = self.get_schema_from_definitions(json_ref)
+        except KeyError as exc:
+            last_error = exc
+        else:
+            last_error = None
+            if resolved_schema is not None:
+                found_schema = True
+                yield resolved_schema
+            return
+
+        for candidate in roots:
+            try:
+                resolved_schema = self.get_schema_from_definitions(json_ref, root=candidate)
+            except KeyError as exc:  # noqa: PERF203
+                last_error = exc
+                continue
+            else:
+                last_error = None
+                if resolved_schema is not None:
+                    found_schema = True
+                    yield resolved_schema
+
+        if not found_schema and last_error is not None:
+            raise last_error
+
     def get_json_ref_counts(self, json_schema: JsonSchemaValue) -> dict[JsonRef, int]:
         """Get all values corresponding to the key '$ref' anywhere in the json_schema."""
         json_refs: dict[JsonRef, int] = Counter()
-        user_supplied_refs: set[JsonRef] = set()
+        visited_json_refs: set[JsonRef] = set()
 
-        seen_containers: set[int] = set()
-        self._resolved_json_refs_cache = {}
-
-        def _already_processed(value: Any) -> bool:
-            if isinstance(value, (dict, list)):
-                value_id = id(value)
-                if value_id in seen_containers:
-                    return True
-                seen_containers.add(value_id)
-            return False
-
-        def _maybe_cache_parent_pointer(json_ref: JsonRef, container: Any) -> None:
-            tokens = list(self._json_pointer_tokens(json_ref))
-            if len(tokens) < 2:
-                return
-            try:
-                last_defs_index = max(i for i, token in enumerate(tokens[:-1]) if token == '$defs')
-            except ValueError:
-                return
-            if last_defs_index == 0:
-                return
-            parent_tokens = tokens[:last_defs_index]
-            encoded_parent_tokens = self._re_encode_json_pointer_tokens(parent_tokens)
-            parent_pointer = self._json_pointer_from_tokens(encoded_parent_tokens)
-            if isinstance(container, (dict, list)):
-                self._resolved_json_refs_cache.setdefault(parent_pointer, container)
-
-        def _add_json_refs(schema: Any, pointer_tokens: tuple[str, ...]) -> None:
+        def _add_json_refs(schema: Any, roots: tuple[Any, ...]) -> None:
             if isinstance(schema, dict):
-                if _already_processed(schema):
-                    return
-                current_pointer = self._json_pointer_from_tokens(pointer_tokens)
-                self._resolved_json_refs_cache.setdefault(current_pointer, schema)
-                if '$ref' in schema:
-                    json_ref = JsonRef(schema['$ref'])
-                    if not isinstance(json_ref, str):
-                        return  # in this case, '$ref' might have been the name of a property
-                    _maybe_cache_parent_pointer(json_ref, schema)
-                    already_visited = json_ref in json_refs
+                current_roots = roots + (schema,)
+                ref_value = schema.get('$ref')
+                if isinstance(ref_value, str):
+                    json_ref = JsonRef(ref_value)
                     json_refs[json_ref] += 1
-                    if already_visited:
-                        return  # prevent recursion on a definition that was already visited
-                    try:
-                        defs_ref = self.json_to_defs_refs[json_ref]
-                        if defs_ref in self._core_defs_invalid_for_json_schema:
-                            raise self._core_defs_invalid_for_json_schema[defs_ref]
-                        _add_json_refs(self.definitions[defs_ref], self._json_pointer_tokens(json_ref))
-                    except KeyError:
-                        resolved_schema = self._resolve_user_json_ref(json_ref, (schema, json_schema))
-                        if resolved_schema is not None:
-                            if json_ref in user_supplied_refs:
-                                return
-                            user_supplied_refs.add(json_ref)
-                            _add_json_refs(resolved_schema, self._json_pointer_tokens(json_ref))
-                        elif not json_ref.startswith(('http://', 'https://')):
-                            raise
+                    if json_ref not in visited_json_refs:
+                        visited_json_refs.add(json_ref)
+                        for resolved_schema in self._iter_referenced_schemas(json_ref, current_roots):
+                            _add_json_refs(resolved_schema, current_roots)
 
-                for k, v in schema.items():
-                    if k == 'examples' and isinstance(v, list):
-                        # Skip examples that may contain arbitrary values and references
-                        # (see the comment in `_get_all_json_refs` for more details).
+                for key, value in schema.items():
+                    if key == '$ref' or (key == 'examples' and isinstance(value, list)):
                         continue
-                    encoded_key = self._encode_json_pointer_token(k)
-                    _add_json_refs(v, pointer_tokens + (encoded_key,))
+                    _add_json_refs(value, current_roots)
             elif isinstance(schema, list):
-                if _already_processed(schema):
-                    return
-                current_pointer = self._json_pointer_from_tokens(pointer_tokens)
-                self._resolved_json_refs_cache.setdefault(current_pointer, schema)
-                for index, v in enumerate(schema):
-                    _add_json_refs(v, pointer_tokens + (str(index),))
+                for value in schema:
+                    _add_json_refs(value, roots)
 
-        _add_json_refs(json_schema, ())
+        _add_json_refs(json_schema, (json_schema,))
         return json_refs
-
-    def _resolve_user_json_ref(self, json_ref: JsonRef, roots: Sequence[Any]) -> Any | None:
-        if json_ref in self._resolved_json_refs_cache:
-            return self._resolved_json_refs_cache[json_ref]
-
-        resolved_schema: Any | None = None
-        for root in roots:
-            resolved_schema = _resolve_json_ref(root, json_ref)
-            if resolved_schema is not None:
-                break
-
-        if resolved_schema is None:
-            resolved_schema = self._resolve_json_ref_from_cached_parents(json_ref)
-
-        if resolved_schema is not None:
-            self._resolved_json_refs_cache[json_ref] = resolved_schema
-        return resolved_schema
-
-    def _resolve_json_ref_from_cached_parents(self, json_ref: JsonRef) -> Any | None:
-        if not isinstance(json_ref, str) or not json_ref.startswith('#/'):
-            return None
-
-        pointer = json_ref[2:]
-        if not pointer:
-            return None
-
-        tokens = list(self._json_pointer_tokens(json_ref))
-        if not tokens:
-            return None
-        encoded_tokens = self._re_encode_json_pointer_tokens(tokens)
-        for index in range(len(encoded_tokens) - 1, 0, -1):
-            parent_pointer = self._json_pointer_from_tokens(encoded_tokens[:index])
-            parent_schema = self._resolved_json_refs_cache.get(parent_pointer)
-            if parent_schema is None:
-                continue
-
-            remainder_tokens = encoded_tokens[index:]
-            if not remainder_tokens:
-                continue
-            remainder_pointer = self._json_pointer_from_tokens(remainder_tokens)
-            resolved_schema = _resolve_json_ref(parent_schema, remainder_pointer)
-            if resolved_schema is not None:
-                return resolved_schema
-
-        return None
 
     def handle_invalid_for_json_schema(self, schema: CoreSchemaOrField, error_info: str) -> JsonSchemaValue:
         raise PydanticInvalidForJsonSchema(f'Cannot generate a JsonSchema for {error_info}')
@@ -2755,11 +2684,13 @@ class GenerateJsonSchema:
         unvisited_json_refs = _get_all_json_refs(schema)
         if self._inline_ref_schemas:
             unvisited_json_refs.update(JsonRef(ref) for ref in self._inline_ref_schemas)
-        user_supplied_refs: set[JsonRef] = set()
-        seen_resolved_containers: set[int] = set()
+        processed_json_refs: set[JsonRef] = set()
 
         while unvisited_json_refs:
             next_json_ref = unvisited_json_refs.pop()
+            if next_json_ref in processed_json_refs:
+                continue
+            processed_json_refs.add(next_json_ref)
             try:
                 next_defs_ref = self.json_to_defs_refs[next_json_ref]
                 if next_defs_ref in visited_defs_refs:
@@ -2767,19 +2698,8 @@ class GenerateJsonSchema:
                 visited_defs_refs.add(next_defs_ref)
                 unvisited_json_refs.update(_get_all_json_refs(self.definitions[next_defs_ref]))
             except KeyError:
-                resolved_schema = self._resolve_user_json_ref(next_json_ref, (schema,))
-                if resolved_schema is not None:
-                    if next_json_ref in user_supplied_refs:
-                        continue
-                    if isinstance(resolved_schema, (dict, list)):
-                        schema_id = id(resolved_schema)
-                        if schema_id in seen_resolved_containers:
-                            continue
-                        seen_resolved_containers.add(schema_id)
-                    user_supplied_refs.add(next_json_ref)
+                for resolved_schema in self._iter_referenced_schemas(next_json_ref, (schema,)):
                     unvisited_json_refs.update(_get_all_json_refs(resolved_schema))
-                elif not next_json_ref.startswith(('http://', 'https://')):
-                    raise
 
         visited_defs_refs.update(self._user_defs_refs)
         self.definitions = {k: v for k, v in self.definitions.items() if k in visited_defs_refs}
