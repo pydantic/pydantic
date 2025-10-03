@@ -3,7 +3,7 @@
 
 By default, Pydantic will attempt to coerce values to the desired type when possible.
 For example, you can pass the string `'123'` as the input for the [`int` number type](../api/standard_library_types.md#integers),
-and it will be converted to the value`123`.
+and it will be converted to the value `123`.
 This coercion behavior is useful in many scenarios — think: UUIDs, URL parameters, HTTP headers, environment variables,
 dates, etc.
 
@@ -57,7 +57,7 @@ Strict mode can be enabled in various ways:
 ## As a validation parameter
 
 Strict mode can be enaled on a per-validation-call basis, when using the [validation methods](./models.md#validating-data)
-on Pydantic models and [type adapters](./type_adapter.md).
+on [Pydantic models](./models.md) and [type adapters](./type_adapter.md).
 
 ```python
 from datetime import date

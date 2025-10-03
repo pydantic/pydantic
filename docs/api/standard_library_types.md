@@ -19,7 +19,7 @@ Built-in type: [`bool`][]
 * A valid [`bool`][] instance, i.e. `True` or `False`.
 * The integers `0` or `1`.
 * A string, which when converted to lowercase is one of `'0'`, `'off'`, `'f'`, `'false'`, `'n'`, `'no'`, `'1'`, `'on'` `'t'`, `'true'`, `'y'`, `'yes'`.
-* In Python mode, a [`bytes`][] object which is valid per the previous rule when decoded to a string.
+* [`bytes`][] objects that are valid per the previous rule when decoded to a string.
 
 <h3>Strictness</h3>
 
@@ -71,18 +71,21 @@ Built-in type: [`str`][]
 
 Strings support the following constraints:
 
-| Constraint         | Description                                       | JSON Schema                                                                                                       |
-| ------------------ | ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `pattern`          | A regex pattern that the string must match        | [`pattern`](https://json-schema.org/understanding-json-schema/reference/string#regexp) keyword (see note below).  |
-| `min_length`       | The minimum length of the string                  | [`minLength`](https://json-schema.org/understanding-json-schema/reference/string#length) keyword                  |
-| `max_length`       | The maximum length of the string                  | [`maxLength`](https://json-schema.org/understanding-json-schema/reference/string#length) keyword                  |
-| `strip_whitespace` | Whether to remove leading and trailing whitespace | N/A                                                                                                               |
-| `to_upper`         | Whether to convert the string to uppercase        | N/A                                                                                                               |
-| `to_lower`         | Whether to convert the string to lowercase        | N/A                                                                                                               |
+| Constraint         | Description                                       | JSON Schema                                                                                                                                   |
+| ------------------ | ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pattern`          | A regex pattern that the string must match        | [`pattern`](https://json-schema.org/understanding-json-schema/reference/string#regexp) keyword (see [note](#pattern-constraint-note) below).  |
+| `min_length`       | The minimum length of the string                  | [`minLength`](https://json-schema.org/understanding-json-schema/reference/string#length) keyword                                              |
+| `max_length`       | The maximum length of the string                  | [`maxLength`](https://json-schema.org/understanding-json-schema/reference/string#length) keyword                                              |
+| `strip_whitespace` | Whether to remove leading and trailing whitespace | N/A                                                                                                                                           |
+| `to_upper`         | Whether to convert the string to uppercase        | N/A                                                                                                                                           |
+| `to_lower`         | Whether to convert the string to lowercase        | N/A                                                                                                                                           |
 
 These constraints can be provided using the [`StringConstraints`][pydantic.types.StringConstraints] metadata type, or using the [`Field()`][pydantic.Field] function (except for `to_upper` and `to_lower`).
 The `MinLen`, `MaxLen`, `Len`, `LowerCase`, `UpperCase` metadata types from the [`annotated-types`](https://github.com/annotated-types/annotated-types)
 library can also be used.
+
+<!-- markdownlint-disable-next-line no-empty-links -->
+[](){#pattern-constraint-note}
 
 !!! note "`pattern` constraint"
     By default, Pydantic will use the [`regex`](https://docs.rs/regex) Rust crate to enforce the `pattern` constraint. The regex engine can be controlled
@@ -361,7 +364,7 @@ accepted by the [`complex()`][complex] constructor are allowed.
 
 <h4>Serialization</h4>
 
-In [Python mode](../concepts/serialization.md#python-mode), [`Decimal`][decimal.Decimal] instances are
+In [Python mode](../concepts/serialization.md#python-mode), [`complex`][] instances are
 serialized as is.
 
 In [JSON mode](../concepts/serialization.md#json-mode), they are serialized as strings.
@@ -750,8 +753,12 @@ Allows only `None` as a value.
 Pydantic supports a wide variety of generic collection types, both built-ins (such as [`list`][]) and abstract base classes
 from the [`collections.abc`][] module (such as [`Sequence`][collections.abc.Sequence]).
 
-In most cases, it is recommended to make use of the built-in types over the abstract ones, which allow other collections types
-and are more performant.
+In most cases, it is recommended to make use of the built-in types over the abstract ones. Due to [data coercion](../concepts/models.md#data-conversion),
+using [`list`][] or [`tuple`][] will allow most other iterables as input, with better performance.
+
+!!! note "Strictness on collection types"
+    When applying [strict mode](../concepts/strict_mode.md) on collection types, strictness will *not* apply
+    to the inner types. This may change in the future, see [this issue](https://github.com/pydantic/pydantic/issues/12319).
 
 ### Lists
 
