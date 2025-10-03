@@ -299,27 +299,31 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
         elif isinstance(annotation, (at.Predicate, at.Not)):
             predicate_name = f'{annotation.func.__qualname__!r} ' if hasattr(annotation.func, '__qualname__') else ''
 
-            def val_func(v: Any) -> Any:
-                # Note: B023 is ignored because even though we iterate over `other_metadata`, it is guaranteed
-                # to be of length 1. `apply_known_metadata()` is called from `GenerateSchema`, were annotations
-                # are already expanded via `expand_grouped_metadata()`. Confusing, but this falls into the annotations
-                # refactor.
-                predicate_satisfied = annotation.func(v)  # noqa: B023
+            # Note: B023 is ignored because even though we iterate over `other_metadata`, it is guaranteed
+            # to be of length 1. `apply_known_metadata()` is called from `GenerateSchema`, where annotations
+            # were already expanded via `expand_grouped_metadata()`. Confusing, but this falls into the annotations
+            # refactor.
+            if isinstance(annotation, at.Predicate):
 
-                # annotation.func may also raise an exception, let it pass through
-                if isinstance(annotation, at.Predicate):  # noqa: B023
+                def val_func(v: Any) -> Any:
+                    predicate_satisfied = annotation.func(v)  # noqa: B023
                     if not predicate_satisfied:
                         raise PydanticCustomError(
                             'predicate_failed',
                             f'Predicate {predicate_name}failed',  # pyright: ignore[reportArgumentType]  # noqa: B023
                         )
-                else:
+                    return v
+
+            else:
+
+                def val_func(v: Any) -> Any:
+                    predicate_satisfied = annotation.func(v)  # noqa: B023
                     if predicate_satisfied:
                         raise PydanticCustomError(
                             'not_operation_failed',
                             f'Not of {predicate_name}failed',  # pyright: ignore[reportArgumentType]  # noqa: B023
                         )
-                return v
+                    return v
 
             schema = cs.no_info_after_validator_function(val_func, schema)
         else:
