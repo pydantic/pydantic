@@ -608,7 +608,7 @@ class GenerateJsonSchema:
         current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(
             self,
             handler_func,
-            mark_user_managed_refs=False,
+            mark_user_definition=False,
         )
 
         metadata = cast(_core_metadata.CoreMetadata, schema.get('metadata', {}))
@@ -627,7 +627,7 @@ class GenerateJsonSchema:
             current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(
                 self,
                 js_updates_handler_func,
-                mark_user_managed_refs=False,
+                mark_user_definition=False,
             )
 
         if js_extra := metadata.get('pydantic_js_extra'):
@@ -647,7 +647,7 @@ class GenerateJsonSchema:
             current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(
                 self,
                 js_extra_handler_func,
-                mark_user_managed_refs=False,
+                mark_user_definition=False,
             )
 
         for js_modify_function in metadata.get('pydantic_js_functions', ()):
@@ -688,9 +688,7 @@ class GenerateJsonSchema:
                 return original_schema
 
             current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(
-                self,
-                new_handler_func,
-                mark_user_managed_refs=True,
+                self, new_handler_func, mark_user_definition=True
             )
 
         for js_modify_function in metadata.get('pydantic_js_annotation_functions', ()):
@@ -703,9 +701,7 @@ class GenerateJsonSchema:
                 return js_modify_function(schema_or_field, current_handler)
 
             current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(
-                self,
-                new_handler_func,
-                mark_user_managed_refs=True,
+                self, new_handler_func, mark_user_definition=True
             )
 
         json_schema = current_handler(schema)

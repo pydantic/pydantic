@@ -34,12 +34,12 @@ class GenerateJsonSchemaHandler(GetJsonSchemaHandler):
         generate_json_schema: GenerateJsonSchema,
         handler_override: HandlerOverride | None,
         *,
-        mark_user_managed_refs: bool = False,
+        mark_user_definition: bool = False,
     ) -> None:
         self.generate_json_schema = generate_json_schema
         self.handler = handler_override or generate_json_schema.generate_inner
         self.mode = generate_json_schema.mode
-        self._mark_user_managed_refs = mark_user_managed_refs
+        self.mark_user_definition = mark_user_definition
 
     def __call__(self, core_schema: CoreSchemaOrField, /) -> JsonSchemaValue:
         return self.handler(core_schema)
@@ -58,7 +58,7 @@ class GenerateJsonSchemaHandler(GetJsonSchemaHandler):
         Raises:
             LookupError: If it can't find the definition for `$ref`.
         """
-        mark_user_definition = self._mark_user_managed_refs or self.generate_json_schema._in_js_modify_function
+        mark_user_definition = self.mark_user_definition
         if '$ref' not in maybe_ref_json_schema:
             if mark_user_definition:
                 self.generate_json_schema._user_managed_schemas.add(id(maybe_ref_json_schema))

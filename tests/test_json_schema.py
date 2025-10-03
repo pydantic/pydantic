@@ -5605,7 +5605,7 @@ def test_resolve_ref_schema_nested_ref_preserves_parent_mapping() -> None:
 
     adapter = TypeAdapter(WrapperModel)
     generator = GenerateJsonSchema()
-    handler = GenerateJsonSchemaHandler(generator, None, mark_user_managed_refs=True)
+    handler = GenerateJsonSchemaHandler(generator, None, mark_user_definition=True)
 
     parent_schema = generator.generate_inner(adapter.core_schema)
     parent_ref = parent_schema['$ref']
