@@ -6439,13 +6439,13 @@ def test_constraints_arbitrary_type() -> None:
         {
             'type': 'predicate_failed',
             'loc': ('predicate',),
-            'msg': 'Predicate test_constraints_arbitrary_type.<locals>.Model.<lambda> failed',
+            'msg': "Predicate 'test_constraints_arbitrary_type.<locals>.Model.<lambda>' failed",
             'input': CustomType(-1),
         },
         {
             'type': 'not_operation_failed',
             'loc': ('not_multiple_of_3',),
-            'msg': 'Not of test_constraints_arbitrary_type.<locals>.Model.<lambda> failed',
+            'msg': "Not of 'test_constraints_arbitrary_type.<locals>.Model.<lambda>' failed",
             'input': CustomType(6),
         },
     ]
