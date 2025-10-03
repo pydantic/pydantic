@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import sys
 from copy import deepcopy
 from typing import TYPE_CHECKING, Any, Callable, Literal, cast
 
@@ -30,10 +29,17 @@ class GenerateJsonSchemaHandler(GetJsonSchemaHandler):
     See `GetJsonSchemaHandler` for the handler API.
     """
 
-    def __init__(self, generate_json_schema: GenerateJsonSchema, handler_override: HandlerOverride | None) -> None:
+    def __init__(
+        self,
+        generate_json_schema: GenerateJsonSchema,
+        handler_override: HandlerOverride | None,
+        *,
+        mark_user_managed_refs: bool = False,
+    ) -> None:
         self.generate_json_schema = generate_json_schema
         self.handler = handler_override or generate_json_schema.generate_inner
         self.mode = generate_json_schema.mode
+        self._mark_user_managed_refs = mark_user_managed_refs
 
     def __call__(self, core_schema: CoreSchemaOrField, /) -> JsonSchemaValue:
         return self.handler(core_schema)
@@ -52,13 +58,7 @@ class GenerateJsonSchemaHandler(GetJsonSchemaHandler):
         Raises:
             LookupError: If it can't find the definition for `$ref`.
         """
-        mark_user_definition = True
-        try:
-            caller_module = sys._getframe(1).f_globals.get('__name__', '')
-        except ValueError:  # pragma: no cover - defensive, sys._getframe may be disabled
-            caller_module = ''
-        if caller_module.startswith('pydantic.'):
-            mark_user_definition = False
+        mark_user_definition = self._mark_user_managed_refs or self.generate_json_schema._in_js_modify_function
         if '$ref' not in maybe_ref_json_schema:
             if mark_user_definition:
                 self.generate_json_schema._user_managed_schemas.add(id(maybe_ref_json_schema))
