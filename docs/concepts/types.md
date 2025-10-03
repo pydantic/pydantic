@@ -238,6 +238,9 @@ By leveraging the new [`type` statement](https://typing.readthedocs.io/en/latest
     1. If `PositiveIntList` were to be defined as an implicit type alias, its definition
        would have been duplicated in both `'x'` and `'y'`.
 
+<!-- markdownlint-disable-next-line no-empty-links -->
+[](){#metadata-type-alias-warning}
+
 !!! warning "When to use named type aliases"
 
     While (named) PEP 695 and implicit type aliases are meant to be equivalent for static type checkers,
