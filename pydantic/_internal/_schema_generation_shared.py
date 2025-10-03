@@ -61,27 +61,14 @@ class GenerateJsonSchemaHandler(GetJsonSchemaHandler):
         mark_user_definition = self.mark_user_definition
         if '$ref' not in maybe_ref_json_schema:
             if mark_user_definition:
-                self.generate_json_schema._user_managed_schemas.add(id(maybe_ref_json_schema))
+                state_info = self.generate_json_schema._find_state_for_canonical_schema(maybe_ref_json_schema)
+                if state_info is not None:
+                    defs_ref, state = state_info
+                    state.pending = True
+                    state.schema = maybe_ref_json_schema
             return maybe_ref_json_schema
         ref = maybe_ref_json_schema['$ref']
         json_ref = cast('JsonRef', ref)
-        if mark_user_definition:
-            wrapper_schema = deepcopy(maybe_ref_json_schema)
-            self.generate_json_schema._inline_ref_schemas.setdefault(json_ref, wrapper_schema)
-
-            tokens = self.generate_json_schema._json_pointer_tokens(json_ref)
-            if len(tokens) >= 2:
-                parent_tokens: tuple[str, ...] | None = None
-                for index in range(len(tokens) - 1):
-                    if tokens[index] == '$defs':
-                        name_index = index + 1
-                        if name_index < len(tokens):
-                            parent_tokens = tuple(tokens[: name_index + 1])
-                        break
-                if parent_tokens is not None:
-                    parent_ref = self.generate_json_schema._json_pointer_from_tokens(parent_tokens)
-                    if wrapper_schema.get('$ref') == parent_ref:
-                        self.generate_json_schema._inline_ref_schemas.setdefault(parent_ref, wrapper_schema)
         defs_ref = self.generate_json_schema.json_to_defs_refs.get(json_ref)
         json_schema = self.generate_json_schema.get_schema_from_definitions(ref, root=maybe_ref_json_schema)
         if json_schema is None:
@@ -90,10 +77,33 @@ class GenerateJsonSchemaHandler(GetJsonSchemaHandler):
                 ' Maybe you tried to call resolve_ref_schema from within a recursive model?'
             )
         if mark_user_definition:
-            self.generate_json_schema._pending_user_json_refs.add(json_ref)
+            wrapper_schema = deepcopy(maybe_ref_json_schema)
             if defs_ref is not None:
-                self.generate_json_schema._pending_user_defs_refs.add(defs_ref)
-            self.generate_json_schema._user_managed_schemas.add(id(json_schema))
+                state = self.generate_json_schema._get_user_definition_state(defs_ref)
+                state.pending = True
+                state.schema = json_schema
+                state.wrappers.setdefault(json_ref, wrapper_schema)
+                tokens = self.generate_json_schema._json_pointer_tokens(json_ref)
+                if len(tokens) >= 2:
+                    parent_tokens: tuple[str, ...] | None = None
+                    for index in range(len(tokens) - 1):
+                        if tokens[index] == '$defs':
+                            name_index = index + 1
+                            if name_index < len(tokens):
+                                parent_tokens = tuple(tokens[: name_index + 1])
+                            break
+                    if parent_tokens is not None:
+                        parent_ref = self.generate_json_schema._json_pointer_from_tokens(parent_tokens)
+                        parent_defs_ref = self.generate_json_schema.json_to_defs_refs.get(parent_ref)
+                        if parent_defs_ref is not None and wrapper_schema.get('$ref') == parent_ref:
+                            parent_state = self.generate_json_schema._get_user_definition_state(parent_defs_ref)
+                            parent_state.wrappers.setdefault(parent_ref, wrapper_schema)
+            else:
+                state_info = self.generate_json_schema._find_state_for_canonical_schema(json_schema)
+                if state_info is not None:
+                    defs_ref, state = state_info
+                    state.pending = True
+                    state.schema = json_schema
         return json_schema
 
 

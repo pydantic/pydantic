@@ -133,6 +133,14 @@ JsonSchemaKeyT = TypeVar('JsonSchemaKeyT', bound=Hashable)
 
 
 @dataclasses.dataclass(**_internal_dataclass.slots_true)
+class UserDefinitionState:
+    schema: JsonSchemaValue | None = None
+    wrappers: dict[JsonRef, JsonSchemaValue] = dataclasses.field(default_factory=dict)
+    user_managed: bool = False
+    pending: bool = False
+
+
+@dataclasses.dataclass(**_internal_dataclass.slots_true)
 class _DefinitionsRemapping:
     defs_remapping: dict[DefsRef, DefsRef]
     json_remapping: dict[JsonRef, JsonRef]
@@ -285,9 +293,7 @@ class GenerateJsonSchema:
         self._mode: JsonSchemaMode = 'validation'
         self._user_json_refs: set[JsonRef] = set()
         self._user_defs_refs: set[DefsRef] = set()
-        self._pending_user_json_refs: set[JsonRef] = set()
-        self._pending_user_defs_refs: set[DefsRef] = set()
-        self._user_managed_schemas: set[int] = set()
+        self._user_definition_metadata: dict[DefsRef, UserDefinitionState] = {}
         self._in_js_modify_function = False
 
         # The following includes a mapping of a fully-unique defs ref choice to a list of preferred
@@ -316,7 +322,7 @@ class GenerateJsonSchema:
         # This changes to True after generating a schema, to prevent issues caused by accidental reuse
         # of a single instance of a schema generator
         self._used = False
-        self._inline_ref_schemas: dict[JsonRef, JsonSchemaValue] = {}
+        self._resolved_json_refs_cache: dict[JsonRef, Any] = {}
 
     @property
     def _config(self) -> _config.ConfigWrapper:
@@ -387,6 +393,7 @@ class GenerateJsonSchema:
                 code='json-schema-already-used',
             )
 
+        self._user_definition_metadata.clear()
         for _, mode, schema in inputs:
             self._mode = mode
             self.generate_inner(schema)
@@ -425,10 +432,7 @@ class GenerateJsonSchema:
                 code='json-schema-already-used',
             )
 
-        self._inline_ref_schemas = {}
-        self._user_managed_schemas.clear()
-        self._pending_user_json_refs.clear()
-        self._pending_user_defs_refs.clear()
+        self._user_definition_metadata.clear()
         self._in_js_modify_function = False
         json_schema: JsonSchemaValue = self.generate_inner(schema)
         json_ref_counts = self.get_json_ref_counts(json_schema)
@@ -463,6 +467,24 @@ class GenerateJsonSchema:
 
         self._used = True
         return self.sort(json_schema)
+
+    def _get_user_definition_state(self, defs_ref: DefsRef) -> UserDefinitionState:
+        state = self._user_definition_metadata.get(defs_ref)
+        if state is None:
+            state = UserDefinitionState()
+            self._user_definition_metadata[defs_ref] = state
+        return state
+
+    def _find_state_for_canonical_schema(self, schema: JsonSchemaValue) -> tuple[DefsRef, UserDefinitionState] | None:
+        for defs_ref, state in self._user_definition_metadata.items():
+            if state.schema is schema:
+                return defs_ref, state
+        for defs_ref, definition in self.definitions.items():
+            if definition is schema:
+                state = self._get_user_definition_state(defs_ref)
+                state.schema = definition
+                return defs_ref, state
+        return None
 
     def generate_inner(self, schema: CoreSchemaOrField) -> JsonSchemaValue:  # noqa: C901
         """Generates a JSON schema for a given core schema.
@@ -499,30 +521,31 @@ class GenerateJsonSchema:
                 json_ref = JsonRef(ref_json_schema['$ref'])
                 original_ref = json_schema.get('$ref')
                 preserve_wrapper = original_ref == json_ref
-                has_pending_ref = json_ref in self._pending_user_json_refs or defs_ref in self._pending_user_defs_refs
+                state = self._get_user_definition_state(defs_ref)
+                has_pending_ref = state.pending
                 should_keep_wrapper = preserve_wrapper or (self._in_js_modify_function and not has_pending_ref)
 
                 def _promote_user_ref() -> None:
-                    if json_ref in self._pending_user_json_refs:
-                        self._pending_user_json_refs.discard(json_ref)
+                    state.pending = False
+                    state.user_managed = True
                     self._user_json_refs.add(json_ref)
-                    if defs_ref in self._pending_user_defs_refs:
-                        self._pending_user_defs_refs.discard(defs_ref)
                     self._user_defs_refs.add(defs_ref)
 
-                def _discard_pending_user_ref() -> None:
-                    self._pending_user_json_refs.discard(json_ref)
-                    self._pending_user_defs_refs.discard(defs_ref)
+                def _discard_user_ref() -> None:
+                    state.pending = False
+                    state.user_managed = False
                     self._user_json_refs.discard(json_ref)
                     self._user_defs_refs.discard(defs_ref)
 
                 existing_definition = self.definitions.get(defs_ref)
+                if existing_definition is not None and state.schema is None:
+                    state.schema = existing_definition
                 if (
                     should_keep_wrapper
                     and existing_definition is not None
-                    and id(existing_definition) in self._user_managed_schemas
+                    and state.pending
+                    and state.schema is existing_definition
                 ):
-                    self._user_managed_schemas.discard(id(existing_definition))
                     _promote_user_ref()
                 extras = {k: v for k, v in json_schema.items() if k not in {'$ref', '$defs'}}
                 defs_updates: dict[str, Any] = {}
@@ -542,18 +565,18 @@ class GenerateJsonSchema:
                         schema_for_definition = schema_for_definition.copy()
                         schema_for_definition.pop('$defs', None)
                     self.definitions[defs_ref] = schema_for_definition
-                    schema_id = id(schema_for_definition)
-                    if schema_id in self._user_managed_schemas:
-                        self._user_managed_schemas.discard(schema_id)
+                    state.schema = schema_for_definition
+                    self._core_defs_invalid_for_json_schema.pop(defs_ref, None)
+                    if state.pending:
                         if should_keep_wrapper:
                             _promote_user_ref()
                         else:
-                            _discard_pending_user_ref()
-                    self._core_defs_invalid_for_json_schema.pop(defs_ref, None)
+                            _discard_user_ref()
                 elif defs_updates:
                     existing_definition = self.definitions.get(defs_ref)
                     if existing_definition is not None:
                         existing_definition.update(defs_updates)
+                        state.schema = existing_definition
                         self._deferred_definitions_updates.pop(defs_ref, None)
                     else:
                         deferred_updates = self._deferred_definitions_updates.setdefault(defs_ref, {})
@@ -563,7 +586,7 @@ class GenerateJsonSchema:
                 if should_keep_wrapper:
                     _promote_user_ref()
                 else:
-                    _discard_pending_user_ref()
+                    _discard_user_ref()
             return json_schema
 
         def handler_func(schema_or_field: CoreSchemaOrField) -> JsonSchemaValue:
@@ -676,7 +699,12 @@ class GenerateJsonSchema:
                 if ref:
                     json_ref = JsonRef(ref)
                     if json_ref in self._user_json_refs:
-                        restored_schema = self._inline_ref_schemas.get(json_ref)
+                        restored_schema: JsonSchemaValue | None = None
+                        defs_ref = self.json_to_defs_refs.get(json_ref)
+                        if defs_ref is not None:
+                            state = self._user_definition_metadata.get(defs_ref)
+                            if state is not None:
+                                restored_schema = state.wrappers.get(json_ref)
                         if restored_schema is not None:
                             restored_schema = deepcopy(restored_schema)
                             if extras:
@@ -716,6 +744,10 @@ class GenerateJsonSchema:
             defs_ref = DefsRef(raw_key)
             definition_copy = deepcopy(definition)
             self.definitions[defs_ref] = definition_copy
+            state = self._get_user_definition_state(defs_ref)
+            state.schema = definition_copy
+            state.user_managed = True
+            state.pending = False
             self._prioritized_defsref_choices.setdefault(defs_ref, [defs_ref])
             self._core_defs_invalid_for_json_schema.pop(defs_ref, None)
             self._user_defs_refs.add(defs_ref)
@@ -2454,7 +2486,13 @@ class GenerateJsonSchema:
             return json_schema
 
         parent_ref = self._json_pointer_from_tokens(parent_tokens)
-        wrapper = self._inline_ref_schemas.get(parent_ref)
+        defs_ref = self.json_to_defs_refs.get(parent_ref)
+        if defs_ref is None:
+            return json_schema
+        state = self._user_definition_metadata.get(defs_ref)
+        if state is None:
+            return json_schema
+        wrapper = state.wrappers.get(parent_ref)
         if wrapper is None:
             return json_schema
 
@@ -2682,15 +2720,15 @@ class GenerateJsonSchema:
     def _garbage_collect_definitions(self, schema: JsonSchemaValue) -> None:
         visited_defs_refs: set[DefsRef] = set()
         unvisited_json_refs = _get_all_json_refs(schema)
-        if self._inline_ref_schemas:
-            unvisited_json_refs.update(JsonRef(ref) for ref in self._inline_ref_schemas)
-        processed_json_refs: set[JsonRef] = set()
-
+        for state in self._user_definition_metadata.values():
+            if state.wrappers:
+                unvisited_json_refs.update(state.wrappers.keys())
+        user_supplied_refs: set[JsonRef] = set()
         while unvisited_json_refs:
             next_json_ref = unvisited_json_refs.pop()
-            if next_json_ref in processed_json_refs:
+            if next_json_ref in user_supplied_refs:
                 continue
-            processed_json_refs.add(next_json_ref)
+            user_supplied_refs.add(next_json_ref)
             try:
                 next_defs_ref = self.json_to_defs_refs[next_json_ref]
                 if next_defs_ref in visited_defs_refs:
@@ -2703,6 +2741,11 @@ class GenerateJsonSchema:
 
         visited_defs_refs.update(self._user_defs_refs)
         self.definitions = {k: v for k, v in self.definitions.items() if k in visited_defs_refs}
+        self._user_definition_metadata = {
+            defs_ref: state
+            for defs_ref, state in self._user_definition_metadata.items()
+            if defs_ref in visited_defs_refs
+        }
 
 
 # ##### Start JSON Schema Generation Functions #####

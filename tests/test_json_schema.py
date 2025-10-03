@@ -6745,12 +6745,18 @@ def test_type_adapter_with_inline_defs_nested_resolution() -> None:
             items_schema = schema['items']
             resolved_schema = handler.resolve_ref_schema(items_schema)
             resolved_schema['description'] = 'inline definition'
+            resolved_again = handler.resolve_ref_schema(items_schema)
+            resolved_again['title'] = 'Inline Title'
             return schema
 
     schema = TypeAdapter(Container).json_schema()
 
     assert schema['items']['$ref'] == '#/$defs/inline'
-    assert schema['$defs']['inline'] == {'type': 'string', 'description': 'inline definition'}
+    assert schema['$defs']['inline'] == {
+        'description': 'inline definition',
+        'title': 'Inline Title',
+        'type': 'string',
+    }
     Draft202012Validator.check_schema(schema)
 
 
@@ -6785,12 +6791,15 @@ def test_type_adapter_with_inline_defs_requires_escaping() -> None:
             schema = handler(core_schema)
             resolved_schema = handler.resolve_ref_schema(schema['items'])
             resolved_schema['description'] = 'definition requiring pointer escaping'
+            second_resolution = handler.resolve_ref_schema(schema['items'])
+            second_resolution['examples'] = ['wheel/tire']
             return schema
 
     schema = TypeAdapter(Container).json_schema()
 
     assert schema['items']['$ref'] == '#/$defs/wheel~1tire'
     assert schema['$defs']['wheel/tire'] == {
+        'examples': ['wheel/tire'],
         'type': 'string',
         'description': 'definition requiring pointer escaping',
     }
