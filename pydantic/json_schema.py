@@ -756,7 +756,7 @@ class GenerateJsonSchema:
             self.json_to_defs_refs[template_json_ref] = defs_ref
             self._user_json_refs.add(template_json_ref)
 
-            escaped_key = raw_key.replace('~', '~0').replace('/', '~1')
+            escaped_key = self._escape_json_pointer_token(raw_key)
             canonical_json_ref = JsonRef(f'#/$defs/{escaped_key}')
             self.json_to_defs_refs[canonical_json_ref] = defs_ref
             self._user_json_refs.add(canonical_json_ref)
@@ -2611,6 +2611,10 @@ class GenerateJsonSchema:
             return JsonRef('#')
         return JsonRef('#/' + '/'.join(tokens))
 
+    @staticmethod
+    def _escape_json_pointer_token(token: str) -> str:
+        return token.replace('~', '~0').replace('/', '~1')
+
     def _iter_referenced_schemas(
         self,
         json_ref: JsonRef,
@@ -2688,7 +2692,9 @@ class GenerateJsonSchema:
                     if key == '$ref' or (key == 'examples' and isinstance(value, list)):
                         continue
                     if isinstance(value, (dict, list)):
-                        next_tokens = pointer_tokens + (key,)
+                        key_str = key if isinstance(key, str) else str(key)
+                        escaped_key = self._escape_json_pointer_token(key_str)
+                        next_tokens = pointer_tokens + (escaped_key,)
                         _add_json_refs(value, current_roots, next_tokens)
 
                 ref_value = schema.get('$ref')
@@ -2784,7 +2790,10 @@ class GenerateJsonSchema:
                     _get_all_json_refs(
                         self.definitions[next_defs_ref],
                         container_cache=container_cache,
-                        base_tokens=('$defs', str(next_defs_ref)),
+                        base_tokens=(
+                            '$defs',
+                            self._escape_json_pointer_token(str(next_defs_ref)),
+                        ),
                     )
                 )
             except KeyError:
@@ -3096,10 +3105,12 @@ def _get_all_json_refs(
                 if key == '$ref' and isinstance(value, str):
                     refs.add(JsonRef(value))
                     continue
+                key_str = key if isinstance(key, str) else str(key)
+                escaped_key = GenerateJsonSchema._escape_json_pointer_token(key_str)
                 if isinstance(value, dict):
-                    stack.append((value, tokens + (key,)))
+                    stack.append((value, tokens + (escaped_key,)))
                 elif isinstance(value, list):
-                    stack.append((value, tokens + (key,)))
+                    stack.append((value, tokens + (escaped_key,)))
         elif isinstance(current, list):
             for index, value in enumerate(current):
                 if isinstance(value, (dict, list)):

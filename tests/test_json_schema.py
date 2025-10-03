@@ -6842,6 +6842,48 @@ def test_type_adapter_with_inline_defs_nested_defs() -> None:
     Draft202012Validator.check_schema(schema)
 
 
+def test_type_adapter_with_inline_defs_nested_defs_and_escaping() -> None:
+    class InlineDefs:
+        @classmethod
+        def __get_pydantic_core_schema__(
+            cls, source_type: Any, handler: GetCoreSchemaHandler
+        ) -> core_schema.CoreSchema:
+            return handler.generate_schema(str)
+
+        @classmethod
+        def __get_pydantic_json_schema__(
+            cls, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+        ) -> JsonSchemaValue:
+            return {
+                '$ref': '#/$defs/needs~1escaping',
+                '$defs': {
+                    'needs/escaping': {
+                        '$ref': '#/$defs/needs~1escaping/$defs/nested~1ref',
+                        '$defs': {'nested/ref': {'type': 'string'}},
+                        'properties': {'value': {'$ref': '#/$defs/needs~1escaping/$defs/nested~1ref'}},
+                        'required': ['value'],
+                        'type': 'object',
+                    }
+                },
+            }
+
+    schema = TypeAdapter(InlineDefs).json_schema()
+
+    assert schema == {
+        '$ref': '#/$defs/needs~1escaping',
+        '$defs': {
+            'needs/escaping': {
+                '$ref': '#/$defs/needs~1escaping/$defs/nested~1ref',
+                '$defs': {'nested/ref': {'type': 'string'}},
+                'properties': {'value': {'$ref': '#/$defs/needs~1escaping/$defs/nested~1ref'}},
+                'required': ['value'],
+                'type': 'object',
+            }
+        },
+    }
+    Draft202012Validator.check_schema(schema)
+
+
 def test_type_adapter_with_inline_defs_object_properties() -> None:
     class InlineDefs:
         @classmethod
