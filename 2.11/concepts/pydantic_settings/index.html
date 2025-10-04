@@ -1551,6 +1551,15 @@ to help you monitor and understand your
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#snake-case-conversion" class="md-nav__link">
+    <span class="md-ellipsis">
+      Snake case conversion
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#dash-to-underscore-mapping" class="md-nav__link">
     <span class="md-ellipsis">
       Dash to underscore mapping
@@ -3946,6 +3955,15 @@ to help you monitor and understand your
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#snake-case-conversion" class="md-nav__link">
+    <span class="md-ellipsis">
+      Snake case conversion
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#dash-to-underscore-mapping" class="md-nav__link">
     <span class="md-ellipsis">
       Dash to underscore mapping
@@ -5353,7 +5371,9 @@ does not ignore any args. Ignored arguments can then be retrieved using the <cod
 <span class="c1">#&gt; {&#39;good_arg&#39;: &#39;hello world&#39;, &#39;ignored_args&#39;: [&#39;--bad-arg=bad&#39;, &#39;ANOTHER_BAD_ARG&#39;]}</span>
 </code></pre></div>
 <h4 id="cli-kebab-case-for-arguments">CLI Kebab Case for Arguments<a class="headerlink" href="#cli-kebab-case-for-arguments" title="Permanent link">&para;</a></h4>
-<p>Change whether CLI arguments should use kebab case by enabling <code>cli_kebab_case</code>.</p>
+<p>Change whether CLI arguments should use kebab case by enabling <code>cli_kebab_case</code>. By default, <code>cli_kebab_case=True</code> will
+ignore enum fields, and is equivalent to <code>cli_kebab_case='no_enums'</code>. To apply kebab case to everything, including
+enums, use <code>cli_kebab_case='all'</code>.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">Field</span>
@@ -5886,6 +5906,40 @@ as the target mount point. If you want to use a different location, change <code
             <span class="n">az_key_vault_settings</span><span class="p">,</span>
         <span class="p">)</span>
 </code></pre></div>
+<h3 id="snake-case-conversion">Snake case conversion<a class="headerlink" href="#snake-case-conversion" title="Permanent link">&para;</a></h3>
+<p>The Azure Key Vault source accepts a <code>snake_case_convertion</code> option, disabled by default, to convert Key Vault secret names by mapping them to Python's snake_case field names, without the need to use aliases.</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">azure.identity</span><span class="w"> </span><span class="kn">import</span> <span class="n">DefaultAzureCredential</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_settings</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">AzureKeyVaultSettingsSource</span><span class="p">,</span>
+    <span class="n">BaseSettings</span><span class="p">,</span>
+    <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">AzureKeyVaultSettings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+    <span class="n">my_setting</span><span class="p">:</span> <span class="nb">str</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">settings_customise_sources</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">settings_cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">BaseSettings</span><span class="p">],</span>
+        <span class="n">init_settings</span><span class="p">:</span> <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+        <span class="n">env_settings</span><span class="p">:</span> <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+        <span class="n">dotenv_settings</span><span class="p">:</span> <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+        <span class="n">file_secret_settings</span><span class="p">:</span> <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">PydanticBaseSettingsSource</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+        <span class="n">az_key_vault_settings</span> <span class="o">=</span> <span class="n">AzureKeyVaultSettingsSource</span><span class="p">(</span>
+            <span class="n">settings_cls</span><span class="p">,</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;AZURE_KEY_VAULT_URL&#39;</span><span class="p">],</span>
+            <span class="n">DefaultAzureCredential</span><span class="p">(),</span>
+            <span class="n">snake_case_conversion</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">az_key_vault_settings</span><span class="p">,)</span>
+</code></pre></div>
+<p>This setup will load Azure Key Vault secrets (e.g., <code>MySetting</code>, <code>mySetting</code>, <code>my-secret</code> or <code>MY-SECRET</code>), mapping them to the snake case version (<code>my_setting</code> in this case).</p>
 <h3 id="dash-to-underscore-mapping">Dash to underscore mapping<a class="headerlink" href="#dash-to-underscore-mapping" title="Permanent link">&para;</a></h3>
 <p>The Azure Key Vault source accepts a <code>dash_to_underscore</code> option, disabled by default, to support Key Vault kebab-case secret names by mapping them to Python's snake_case field names. When enabled, dashes (<code>-</code>) in secret names are mapped to underscores (<code>_</code>) in field names during validation.</p>
 <p>This mapping applies only to <em>field names</em>, not to aliases.</p>
@@ -6443,7 +6497,7 @@ need to add your own custom sources, <code>settings_customise_sources</code> mak
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.11.9", "pydantic-core==2.33.2", "pydantic-extra-types==2.10.0"]
+    window.mkdocs_run_deps = ["pydantic==2.11.10", "pydantic-core==2.33.2", "pydantic-extra-types==2.10.0"]
     </script>
 
               </article>
