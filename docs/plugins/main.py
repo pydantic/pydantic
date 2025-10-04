@@ -14,7 +14,7 @@ import requests
 import tomli
 import yaml
 from jinja2 import Template  # type: ignore
-from mkdocs.config import Config
+from mkdocs.config.defaults import MkDocsConfig
 from mkdocs.structure.files import Files
 from mkdocs.structure.pages import Page
 
@@ -36,7 +36,25 @@ except ImportError:
 # Start definition of MkDocs hooks
 
 
-def on_pre_build(config: Config) -> None:
+def on_config(config: MkDocsConfig) -> MkDocsConfig:
+    if os.getenv('DISABLE_RUN_CODE'):
+        logger.info('Building for dev, disabling mkdocs-run-code javascript plugin')
+        config.extra_javascript = [
+            extra_js
+            for extra_js in config.extra_javascript
+            if (
+                isinstance(extra_js, str)
+                and extra_js != 'https://samuelcolvin.github.io/mkdocs-run-code/run_code_main.js'
+            )
+            or (
+                not isinstance(extra_js, str)
+                and extra_js.path != 'https://samuelcolvin.github.io/mkdocs-run-code/run_code_main.js'
+            )
+        ]
+    return config
+
+
+def on_pre_build(config: MkDocsConfig) -> None:
     """
     Before the build starts.
     """
@@ -44,14 +62,7 @@ def on_pre_build(config: Config) -> None:
     add_mkdocs_run_deps()
 
 
-def on_files(files: Files, config: Config) -> Files:
-    """
-    After the files are loaded, but before they are read.
-    """
-    return files
-
-
-def on_page_markdown(markdown: str, page: Page, config: Config, files: Files) -> str:
+def on_page_markdown(markdown: str, page: Page, config: MkDocsConfig, files: Files) -> str:
     """
     Called on each file after it is read and before it is converted to HTML.
     """
@@ -110,7 +121,7 @@ def add_mkdocs_run_deps() -> None:
 
     mkdocs_run_deps = json.dumps(
         [
-            f'pydantic=={pydantic_version}',
+            f'pydantic[email]=={pydantic_version}',
             f'pydantic-core=={pydantic_core_version}',
             f'pydantic-extra-types=={pydantic_extra_types_version}',
         ]
