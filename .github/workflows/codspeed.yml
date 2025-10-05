@@ -11,6 +11,7 @@ on:
 
 env:
   UV_FROZEN: true
+  UV_PYTHON: 3.13
 
 jobs:
   codspeed-profiling:
@@ -24,7 +25,7 @@ jobs:
       # Using this action is still necessary for CodSpeed to work:
       - uses: actions/setup-python@v6
         with:
-          python-version: "3.12"
+          python-version: ${{ env.UV_PYTHON }}
 
       - id: core-version
         name: resolve pydantic-core tag
@@ -44,7 +45,7 @@ jobs:
           ") >> $GITHUB_OUTPUT
 
       - name: install deps
-        run: uv sync --python 3.12 --group testing-extra --extra email --frozen
+        run: uv sync --group testing-extra --extra email --frozen
 
       - name: checkout pydantic-core
         uses: actions/checkout@v5
