@@ -26,6 +26,10 @@ pub struct ValidationState<'a, 'py> {
     pub fields_set_count: Option<usize>,
     // True if `allow_partial=true` and we're validating the last element of a sequence or mapping.
     pub allow_partial: PartialMode,
+    // Whether at least one field had a validation error. This is used in the context of structured types
+    // (models, dataclasses, etc), where we need to know if a validation error occurred before calling
+    // a default factory that takes the validated data.
+    pub has_field_error: bool,
     // deliberately make Extra readonly
     extra: Extra<'a, 'py>,
 }
@@ -37,6 +41,7 @@ impl<'a, 'py> ValidationState<'a, 'py> {
             exactness: None,
             fields_set_count: None,
             allow_partial,
+            has_field_error: false,
             extra,
         }
     }

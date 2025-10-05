@@ -528,7 +528,8 @@ impl PyLineError {
         };
         write!(output, "  {message} [type={}", self.error_type.type_string())?;
 
-        if !hide_input {
+        // special case: don't show input for DefaultFactoryNotCalled errors - there is no valid input
+        if !hide_input && !matches!(self.error_type, ErrorType::DefaultFactoryNotCalled { .. }) {
             let input_value = self.input_value.bind(py);
             let input_str = safe_repr(input_value);
             write!(output, ", input_value=")?;

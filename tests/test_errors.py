@@ -267,6 +267,11 @@ all_errors = [
     ('model_attributes_type', 'Input should be a valid dictionary or object to extract fields from', None),
     ('dataclass_exact_type', 'Input should be an instance of Foobar', {'class_name': 'Foobar'}),
     ('dataclass_type', 'Input should be a dictionary or an instance of Foobar', {'class_name': 'Foobar'}),
+    (
+        'default_factory_not_called',
+        'The default factory uses validated data, but at least one validation error occurred',
+        None,
+    ),
     ('missing', 'Field required', None),
     ('frozen_field', 'Field is frozen', None),
     ('frozen_instance', 'Instance is frozen', None),

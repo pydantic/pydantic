@@ -668,7 +668,7 @@ fn build_validator_inner(
 pub struct Extra<'a, 'py> {
     /// Validation mode
     pub input_type: InputType,
-    /// This is used as the `data` kwargs to validator functions
+    /// This is used as the `data` kwargs to validator functions and default factories (if they accept the argument)
     pub data: Option<Bound<'py, PyDict>>,
     /// whether we're in strict or lax mode
     pub strict: Option<bool>,
