@@ -14,7 +14,7 @@ As you type `Model()`, Pyrefly hints that you need to use the name `x_` to popul
 
 ## Type checker
 
-Pyrefly can also catch errors on your code before you run it. Consider the following example:
+Pyrefly can also catch errors in your code before you run it. Consider the following example:
 
 ```python {test="skip" linenums="1"}
 from pydantic import BaseModel, ConfigDict
