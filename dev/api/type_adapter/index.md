@@ -199,6 +199,7 @@ validate_python(
     /,
     *,
     strict: bool | None = None,
+    extra: ExtraValues | None = None,
     from_attributes: bool | None = None,
     context: dict[str, Any] | None = None,
     experimental_allow_partial: (
@@ -214,7 +215,7 @@ Validate a Python object against the model.
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `object` | `Any` | The Python object to validate against the model. | *required* | | `strict` | `bool | None` | Whether to strictly check types. | `None` | | `from_attributes` | `bool | None` | Whether to extract data from object attributes. | `None` | | `context` | `dict[str, Any] | None` | Additional context to pass to the validator. | `None` | | `experimental_allow_partial` | `bool | Literal['off', 'on', 'trailing-strings']` | Experimental whether to enable partial validation, e.g. to process streams. * False / 'off': Default behavior, no partial validation. * True / 'on': Enable partial validation. * 'trailing-strings': Enable partial validation and allow trailing strings in the input. | `False` | | `by_alias` | `bool | None` | Whether to use the field's alias when validating against the provided input data. | `None` | | `by_name` | `bool | None` | Whether to use the field's name when validating against the provided input data. | `None` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `object` | `Any` | The Python object to validate against the model. | *required* | | `strict` | `bool | None` | Whether to strictly check types. | `None` | | `extra` | `ExtraValues | None` | Whether to ignore, allow, or forbid extra data during model validation. See the extra configuration value for details. | `None` | | `from_attributes` | `bool | None` | Whether to extract data from object attributes. | `None` | | `context` | `dict[str, Any] | None` | Additional context to pass to the validator. | `None` | | `experimental_allow_partial` | `bool | Literal['off', 'on', 'trailing-strings']` | Experimental whether to enable partial validation, e.g. to process streams. * False / 'off': Default behavior, no partial validation. * True / 'on': Enable partial validation. * 'trailing-strings': Enable partial validation and allow trailing strings in the input. | `False` | | `by_alias` | `bool | None` | Whether to use the field's alias when validating against the provided input data. | `None` | | `by_name` | `bool | None` | Whether to use the field's name when validating against the provided input data. | `None` |
 
 Note
 
@@ -233,6 +234,7 @@ def validate_python(
     /,
     *,
     strict: bool | None = None,
+    extra: ExtraValues | None = None,
     from_attributes: bool | None = None,
     context: dict[str, Any] | None = None,
     experimental_allow_partial: bool | Literal['off', 'on', 'trailing-strings'] = False,
@@ -244,6 +246,8 @@ def validate_python(
     Args:
         object: The Python object to validate against the model.
         strict: Whether to strictly check types.
+        extra: Whether to ignore, allow, or forbid extra data during model validation.
+            See the [`extra` configuration value][pydantic.ConfigDict.extra] for details.
         from_attributes: Whether to extract data from object attributes.
         context: Additional context to pass to the validator.
         experimental_allow_partial: **Experimental** whether to enable
@@ -270,6 +274,7 @@ def validate_python(
     return self.validator.validate_python(
         object,
         strict=strict,
+        extra=extra,
         from_attributes=from_attributes,
         context=context,
         allow_partial=experimental_allow_partial,
@@ -287,6 +292,7 @@ validate_json(
     /,
     *,
     strict: bool | None = None,
+    extra: ExtraValues | None = None,
     context: dict[str, Any] | None = None,
     experimental_allow_partial: (
         bool | Literal["off", "on", "trailing-strings"]
@@ -305,7 +311,7 @@ Validate a JSON string or bytes against the model.
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `data` | `str | bytes | bytearray` | The JSON data to validate against the model. | *required* | | `strict` | `bool | None` | Whether to strictly check types. | `None` | | `context` | `dict[str, Any] | None` | Additional context to use during validation. | `None` | | `experimental_allow_partial` | `bool | Literal['off', 'on', 'trailing-strings']` | Experimental whether to enable partial validation, e.g. to process streams. * False / 'off': Default behavior, no partial validation. * True / 'on': Enable partial validation. * 'trailing-strings': Enable partial validation and allow trailing strings in the input. | `False` | | `by_alias` | `bool | None` | Whether to use the field's alias when validating against the provided input data. | `None` | | `by_name` | `bool | None` | Whether to use the field's name when validating against the provided input data. | `None` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `data` | `str | bytes | bytearray` | The JSON data to validate against the model. | *required* | | `strict` | `bool | None` | Whether to strictly check types. | `None` | | `extra` | `ExtraValues | None` | Whether to ignore, allow, or forbid extra data during model validation. See the extra configuration value for details. | `None` | | `context` | `dict[str, Any] | None` | Additional context to use during validation. | `None` | | `experimental_allow_partial` | `bool | Literal['off', 'on', 'trailing-strings']` | Experimental whether to enable partial validation, e.g. to process streams. * False / 'off': Default behavior, no partial validation. * True / 'on': Enable partial validation. * 'trailing-strings': Enable partial validation and allow trailing strings in the input. | `False` | | `by_alias` | `bool | None` | Whether to use the field's alias when validating against the provided input data. | `None` | | `by_name` | `bool | None` | Whether to use the field's name when validating against the provided input data. | `None` |
 
 Returns:
 
@@ -320,6 +326,7 @@ def validate_json(
     /,
     *,
     strict: bool | None = None,
+    extra: ExtraValues | None = None,
     context: dict[str, Any] | None = None,
     experimental_allow_partial: bool | Literal['off', 'on', 'trailing-strings'] = False,
     by_alias: bool | None = None,
@@ -333,6 +340,8 @@ def validate_json(
     Args:
         data: The JSON data to validate against the model.
         strict: Whether to strictly check types.
+        extra: Whether to ignore, allow, or forbid extra data during model validation.
+            See the [`extra` configuration value][pydantic.ConfigDict.extra] for details.
         context: Additional context to use during validation.
         experimental_allow_partial: **Experimental** whether to enable
             [partial validation](../concepts/experimental.md#partial-validation), e.g. to process streams.
@@ -354,6 +363,7 @@ def validate_json(
     return self.validator.validate_json(
         data,
         strict=strict,
+        extra=extra,
         context=context,
         allow_partial=experimental_allow_partial,
         by_alias=by_alias,
@@ -370,6 +380,7 @@ validate_strings(
     /,
     *,
     strict: bool | None = None,
+    extra: ExtraValues | None = None,
     context: dict[str, Any] | None = None,
     experimental_allow_partial: (
         bool | Literal["off", "on", "trailing-strings"]
@@ -384,7 +395,7 @@ Validate object contains string data against the model.
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `obj` | `Any` | The object contains string data to validate. | *required* | | `strict` | `bool | None` | Whether to strictly check types. | `None` | | `context` | `dict[str, Any] | None` | Additional context to use during validation. | `None` | | `experimental_allow_partial` | `bool | Literal['off', 'on', 'trailing-strings']` | Experimental whether to enable partial validation, e.g. to process streams. * False / 'off': Default behavior, no partial validation. * True / 'on': Enable partial validation. * 'trailing-strings': Enable partial validation and allow trailing strings in the input. | `False` | | `by_alias` | `bool | None` | Whether to use the field's alias when validating against the provided input data. | `None` | | `by_name` | `bool | None` | Whether to use the field's name when validating against the provided input data. | `None` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `obj` | `Any` | The object contains string data to validate. | *required* | | `strict` | `bool | None` | Whether to strictly check types. | `None` | | `extra` | `ExtraValues | None` | Whether to ignore, allow, or forbid extra data during model validation. See the extra configuration value for details. | `None` | | `context` | `dict[str, Any] | None` | Additional context to use during validation. | `None` | | `experimental_allow_partial` | `bool | Literal['off', 'on', 'trailing-strings']` | Experimental whether to enable partial validation, e.g. to process streams. * False / 'off': Default behavior, no partial validation. * True / 'on': Enable partial validation. * 'trailing-strings': Enable partial validation and allow trailing strings in the input. | `False` | | `by_alias` | `bool | None` | Whether to use the field's alias when validating against the provided input data. | `None` | | `by_name` | `bool | None` | Whether to use the field's name when validating against the provided input data. | `None` |
 
 Returns:
 
@@ -399,6 +410,7 @@ def validate_strings(
     /,
     *,
     strict: bool | None = None,
+    extra: ExtraValues | None = None,
     context: dict[str, Any] | None = None,
     experimental_allow_partial: bool | Literal['off', 'on', 'trailing-strings'] = False,
     by_alias: bool | None = None,
@@ -409,6 +421,8 @@ def validate_strings(
     Args:
         obj: The object contains string data to validate.
         strict: Whether to strictly check types.
+        extra: Whether to ignore, allow, or forbid extra data during model validation.
+            See the [`extra` configuration value][pydantic.ConfigDict.extra] for details.
         context: Additional context to use during validation.
         experimental_allow_partial: **Experimental** whether to enable
             [partial validation](../concepts/experimental.md#partial-validation), e.g. to process streams.
@@ -430,6 +444,7 @@ def validate_strings(
     return self.validator.validate_strings(
         obj,
         strict=strict,
+        extra=extra,
         context=context,
         allow_partial=experimental_allow_partial,
         by_alias=by_alias,

@@ -186,6 +186,28 @@ Three configuration values are available:
 
   1. The `= Field(init=False)` does not have any effect at runtime, but prevents the `__pydantic_extra__` field from being included as a parameter to the model's `__init__` method by type checkers.
 
+As well as specifying an `extra` configuration value on the model, you can also provide it as an argument to the validation methods. This will override any `extra` configuration value set on the model:
+
+```python
+from pydantic import BaseModel, ConfigDict, ValidationError
+
+class Model(BaseModel):
+    x: int
+    model_config = ConfigDict(extra="allow")
+
+try:
+    # Override model config and forbid extra fields just this time
+    Model.model_validate({"x": 1, "y": 2}, extra="forbid")
+except ValidationError as exc:
+    print(exc)
+    """
+    1 validation error for Model
+    y
+      Extra inputs are not permitted [type=extra_forbidden, input_value=2, input_type=int]
+    """
+
+```
+
 ### frozen
 
 ```python

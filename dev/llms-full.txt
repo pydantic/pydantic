@@ -5252,6 +5252,8 @@ The configuration can take three values:
 - `'forbid'`: Providing extra data is not permitted.
 - `'allow'`: Providing extra data is allowed and stored in the `__pydantic_extra__` dictionary attribute. The `__pydantic_extra__` can explicitly be annotated to provide validation for extra fields.
 
+The validation methods (e.g. model_validate()) have an optional `extra` argument that will override the `extra` configuration value of the model for that validation call.
+
 For more details, refer to the extra API documentation.
 
 Pydantic dataclasses also support extra data (see the [dataclass configuration](../dataclasses/#dataclass-config) section).
@@ -15414,6 +15416,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         obj: Any,
         *,
         strict: bool | None = None,
+        extra: ExtraValues | None = None,
         from_attributes: bool | None = None,
         context: Any | None = None,
         by_alias: bool | None = None,
@@ -15424,6 +15427,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         Args:
             obj: The object to validate.
             strict: Whether to enforce types strictly.
+            extra: Whether to ignore, allow, or forbid extra data during model validation.
+                See the [`extra` configuration value][pydantic.ConfigDict.extra] for details.
             from_attributes: Whether to extract data from object attributes.
             context: Additional context to pass to the validator.
             by_alias: Whether to use the field's alias when validating against the provided input data.
@@ -15445,7 +15450,13 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             )
 
         return cls.__pydantic_validator__.validate_python(
-            obj, strict=strict, from_attributes=from_attributes, context=context, by_alias=by_alias, by_name=by_name
+            obj,
+            strict=strict,
+            extra=extra,
+            from_attributes=from_attributes,
+            context=context,
+            by_alias=by_alias,
+            by_name=by_name,
         )
 
     @classmethod
@@ -15454,6 +15465,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         json_data: str | bytes | bytearray,
         *,
         strict: bool | None = None,
+        extra: ExtraValues | None = None,
         context: Any | None = None,
         by_alias: bool | None = None,
         by_name: bool | None = None,
@@ -15466,6 +15478,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         Args:
             json_data: The JSON data to validate.
             strict: Whether to enforce types strictly.
+            extra: Whether to ignore, allow, or forbid extra data during model validation.
+                See the [`extra` configuration value][pydantic.ConfigDict.extra] for details.
             context: Extra variables to pass to the validator.
             by_alias: Whether to use the field's alias when validating against the provided input data.
             by_name: Whether to use the field's name when validating against the provided input data.
@@ -15486,7 +15500,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             )
 
         return cls.__pydantic_validator__.validate_json(
-            json_data, strict=strict, context=context, by_alias=by_alias, by_name=by_name
+            json_data, strict=strict, extra=extra, context=context, by_alias=by_alias, by_name=by_name
         )
 
     @classmethod
@@ -15495,6 +15509,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         obj: Any,
         *,
         strict: bool | None = None,
+        extra: ExtraValues | None = None,
         context: Any | None = None,
         by_alias: bool | None = None,
         by_name: bool | None = None,
@@ -15504,6 +15519,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         Args:
             obj: The object containing string data to validate.
             strict: Whether to enforce types strictly.
+            extra: Whether to ignore, allow, or forbid extra data during model validation.
+                See the [`extra` configuration value][pydantic.ConfigDict.extra] for details.
             context: Extra variables to pass to the validator.
             by_alias: Whether to use the field's alias when validating against the provided input data.
             by_name: Whether to use the field's name when validating against the provided input data.
@@ -15521,7 +15538,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             )
 
         return cls.__pydantic_validator__.validate_strings(
-            obj, strict=strict, context=context, by_alias=by_alias, by_name=by_name
+            obj, strict=strict, extra=extra, context=context, by_alias=by_alias, by_name=by_name
         )
 
     @classmethod
@@ -17143,6 +17160,7 @@ model_validate(
     obj: Any,
     *,
     strict: bool | None = None,
+    extra: ExtraValues | None = None,
     from_attributes: bool | None = None,
     context: Any | None = None,
     by_alias: bool | None = None,
@@ -17155,7 +17173,7 @@ Validate a pydantic model instance.
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `obj` | `Any` | The object to validate. | *required* | | `strict` | `bool | None` | Whether to enforce types strictly. | `None` | | `from_attributes` | `bool | None` | Whether to extract data from object attributes. | `None` | | `context` | `Any | None` | Additional context to pass to the validator. | `None` | | `by_alias` | `bool | None` | Whether to use the field's alias when validating against the provided input data. | `None` | | `by_name` | `bool | None` | Whether to use the field's name when validating against the provided input data. | `None` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `obj` | `Any` | The object to validate. | *required* | | `strict` | `bool | None` | Whether to enforce types strictly. | `None` | | `extra` | `ExtraValues | None` | Whether to ignore, allow, or forbid extra data during model validation. See the extra configuration value for details. | `None` | | `from_attributes` | `bool | None` | Whether to extract data from object attributes. | `None` | | `context` | `Any | None` | Additional context to pass to the validator. | `None` | | `by_alias` | `bool | None` | Whether to use the field's alias when validating against the provided input data. | `None` | | `by_name` | `bool | None` | Whether to use the field's name when validating against the provided input data. | `None` |
 
 Raises:
 
@@ -17174,6 +17192,7 @@ def model_validate(
     obj: Any,
     *,
     strict: bool | None = None,
+    extra: ExtraValues | None = None,
     from_attributes: bool | None = None,
     context: Any | None = None,
     by_alias: bool | None = None,
@@ -17184,6 +17203,8 @@ def model_validate(
     Args:
         obj: The object to validate.
         strict: Whether to enforce types strictly.
+        extra: Whether to ignore, allow, or forbid extra data during model validation.
+            See the [`extra` configuration value][pydantic.ConfigDict.extra] for details.
         from_attributes: Whether to extract data from object attributes.
         context: Additional context to pass to the validator.
         by_alias: Whether to use the field's alias when validating against the provided input data.
@@ -17205,7 +17226,13 @@ def model_validate(
         )
 
     return cls.__pydantic_validator__.validate_python(
-        obj, strict=strict, from_attributes=from_attributes, context=context, by_alias=by_alias, by_name=by_name
+        obj,
+        strict=strict,
+        extra=extra,
+        from_attributes=from_attributes,
+        context=context,
+        by_alias=by_alias,
+        by_name=by_name,
     )
 
 ```
@@ -17217,6 +17244,7 @@ model_validate_json(
     json_data: str | bytes | bytearray,
     *,
     strict: bool | None = None,
+    extra: ExtraValues | None = None,
     context: Any | None = None,
     by_alias: bool | None = None,
     by_name: bool | None = None
@@ -17232,7 +17260,7 @@ Validate the given JSON data against the Pydantic model.
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `json_data` | `str | bytes | bytearray` | The JSON data to validate. | *required* | | `strict` | `bool | None` | Whether to enforce types strictly. | `None` | | `context` | `Any | None` | Extra variables to pass to the validator. | `None` | | `by_alias` | `bool | None` | Whether to use the field's alias when validating against the provided input data. | `None` | | `by_name` | `bool | None` | Whether to use the field's name when validating against the provided input data. | `None` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `json_data` | `str | bytes | bytearray` | The JSON data to validate. | *required* | | `strict` | `bool | None` | Whether to enforce types strictly. | `None` | | `extra` | `ExtraValues | None` | Whether to ignore, allow, or forbid extra data during model validation. See the extra configuration value for details. | `None` | | `context` | `Any | None` | Extra variables to pass to the validator. | `None` | | `by_alias` | `bool | None` | Whether to use the field's alias when validating against the provided input data. | `None` | | `by_name` | `bool | None` | Whether to use the field's name when validating against the provided input data. | `None` |
 
 Returns:
 
@@ -17251,6 +17279,7 @@ def model_validate_json(
     json_data: str | bytes | bytearray,
     *,
     strict: bool | None = None,
+    extra: ExtraValues | None = None,
     context: Any | None = None,
     by_alias: bool | None = None,
     by_name: bool | None = None,
@@ -17263,6 +17292,8 @@ def model_validate_json(
     Args:
         json_data: The JSON data to validate.
         strict: Whether to enforce types strictly.
+        extra: Whether to ignore, allow, or forbid extra data during model validation.
+            See the [`extra` configuration value][pydantic.ConfigDict.extra] for details.
         context: Extra variables to pass to the validator.
         by_alias: Whether to use the field's alias when validating against the provided input data.
         by_name: Whether to use the field's name when validating against the provided input data.
@@ -17283,7 +17314,7 @@ def model_validate_json(
         )
 
     return cls.__pydantic_validator__.validate_json(
-        json_data, strict=strict, context=context, by_alias=by_alias, by_name=by_name
+        json_data, strict=strict, extra=extra, context=context, by_alias=by_alias, by_name=by_name
     )
 
 ```
@@ -17295,6 +17326,7 @@ model_validate_strings(
     obj: Any,
     *,
     strict: bool | None = None,
+    extra: ExtraValues | None = None,
     context: Any | None = None,
     by_alias: bool | None = None,
     by_name: bool | None = None
@@ -17306,7 +17338,7 @@ Validate the given object with string data against the Pydantic model.
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `obj` | `Any` | The object containing string data to validate. | *required* | | `strict` | `bool | None` | Whether to enforce types strictly. | `None` | | `context` | `Any | None` | Extra variables to pass to the validator. | `None` | | `by_alias` | `bool | None` | Whether to use the field's alias when validating against the provided input data. | `None` | | `by_name` | `bool | None` | Whether to use the field's name when validating against the provided input data. | `None` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `obj` | `Any` | The object containing string data to validate. | *required* | | `strict` | `bool | None` | Whether to enforce types strictly. | `None` | | `extra` | `ExtraValues | None` | Whether to ignore, allow, or forbid extra data during model validation. See the extra configuration value for details. | `None` | | `context` | `Any | None` | Extra variables to pass to the validator. | `None` | | `by_alias` | `bool | None` | Whether to use the field's alias when validating against the provided input data. | `None` | | `by_name` | `bool | None` | Whether to use the field's name when validating against the provided input data. | `None` |
 
 Returns:
 
@@ -17321,6 +17353,7 @@ def model_validate_strings(
     obj: Any,
     *,
     strict: bool | None = None,
+    extra: ExtraValues | None = None,
     context: Any | None = None,
     by_alias: bool | None = None,
     by_name: bool | None = None,
@@ -17330,6 +17363,8 @@ def model_validate_strings(
     Args:
         obj: The object containing string data to validate.
         strict: Whether to enforce types strictly.
+        extra: Whether to ignore, allow, or forbid extra data during model validation.
+            See the [`extra` configuration value][pydantic.ConfigDict.extra] for details.
         context: Extra variables to pass to the validator.
         by_alias: Whether to use the field's alias when validating against the provided input data.
         by_name: Whether to use the field's name when validating against the provided input data.
@@ -17347,7 +17382,7 @@ def model_validate_strings(
         )
 
     return cls.__pydantic_validator__.validate_strings(
-        obj, strict=strict, context=context, by_alias=by_alias, by_name=by_name
+        obj, strict=strict, extra=extra, context=context, by_alias=by_alias, by_name=by_name
     )
 
 ```
@@ -17713,6 +17748,28 @@ Three configuration values are available:
   ```
 
   1. The `= Field(init=False)` does not have any effect at runtime, but prevents the `__pydantic_extra__` field from being included as a parameter to the model's `__init__` method by type checkers.
+
+As well as specifying an `extra` configuration value on the model, you can also provide it as an argument to the validation methods. This will override any `extra` configuration value set on the model:
+
+```python
+from pydantic import BaseModel, ConfigDict, ValidationError
+
+class Model(BaseModel):
+    x: int
+    model_config = ConfigDict(extra="allow")
+
+try:
+    # Override model config and forbid extra fields just this time
+    Model.model_validate({"x": 1, "y": 2}, extra="forbid")
+except ValidationError as exc:
+    print(exc)
+    """
+    1 validation error for Model
+    y
+      Extra inputs are not permitted [type=extra_forbidden, input_value=2, input_type=int]
+    """
+
+```
 
 ### frozen
 
@@ -40949,6 +41006,7 @@ validate_python(
     /,
     *,
     strict: bool | None = None,
+    extra: ExtraValues | None = None,
     from_attributes: bool | None = None,
     context: dict[str, Any] | None = None,
     experimental_allow_partial: (
@@ -40964,7 +41022,7 @@ Validate a Python object against the model.
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `object` | `Any` | The Python object to validate against the model. | *required* | | `strict` | `bool | None` | Whether to strictly check types. | `None` | | `from_attributes` | `bool | None` | Whether to extract data from object attributes. | `None` | | `context` | `dict[str, Any] | None` | Additional context to pass to the validator. | `None` | | `experimental_allow_partial` | `bool | Literal['off', 'on', 'trailing-strings']` | Experimental whether to enable partial validation, e.g. to process streams. * False / 'off': Default behavior, no partial validation. * True / 'on': Enable partial validation. * 'trailing-strings': Enable partial validation and allow trailing strings in the input. | `False` | | `by_alias` | `bool | None` | Whether to use the field's alias when validating against the provided input data. | `None` | | `by_name` | `bool | None` | Whether to use the field's name when validating against the provided input data. | `None` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `object` | `Any` | The Python object to validate against the model. | *required* | | `strict` | `bool | None` | Whether to strictly check types. | `None` | | `extra` | `ExtraValues | None` | Whether to ignore, allow, or forbid extra data during model validation. See the extra configuration value for details. | `None` | | `from_attributes` | `bool | None` | Whether to extract data from object attributes. | `None` | | `context` | `dict[str, Any] | None` | Additional context to pass to the validator. | `None` | | `experimental_allow_partial` | `bool | Literal['off', 'on', 'trailing-strings']` | Experimental whether to enable partial validation, e.g. to process streams. * False / 'off': Default behavior, no partial validation. * True / 'on': Enable partial validation. * 'trailing-strings': Enable partial validation and allow trailing strings in the input. | `False` | | `by_alias` | `bool | None` | Whether to use the field's alias when validating against the provided input data. | `None` | | `by_name` | `bool | None` | Whether to use the field's name when validating against the provided input data. | `None` |
 
 Note
 
@@ -40983,6 +41041,7 @@ def validate_python(
     /,
     *,
     strict: bool | None = None,
+    extra: ExtraValues | None = None,
     from_attributes: bool | None = None,
     context: dict[str, Any] | None = None,
     experimental_allow_partial: bool | Literal['off', 'on', 'trailing-strings'] = False,
@@ -40994,6 +41053,8 @@ def validate_python(
     Args:
         object: The Python object to validate against the model.
         strict: Whether to strictly check types.
+        extra: Whether to ignore, allow, or forbid extra data during model validation.
+            See the [`extra` configuration value][pydantic.ConfigDict.extra] for details.
         from_attributes: Whether to extract data from object attributes.
         context: Additional context to pass to the validator.
         experimental_allow_partial: **Experimental** whether to enable
@@ -41020,6 +41081,7 @@ def validate_python(
     return self.validator.validate_python(
         object,
         strict=strict,
+        extra=extra,
         from_attributes=from_attributes,
         context=context,
         allow_partial=experimental_allow_partial,
@@ -41037,6 +41099,7 @@ validate_json(
     /,
     *,
     strict: bool | None = None,
+    extra: ExtraValues | None = None,
     context: dict[str, Any] | None = None,
     experimental_allow_partial: (
         bool | Literal["off", "on", "trailing-strings"]
@@ -41055,7 +41118,7 @@ Validate a JSON string or bytes against the model.
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `data` | `str | bytes | bytearray` | The JSON data to validate against the model. | *required* | | `strict` | `bool | None` | Whether to strictly check types. | `None` | | `context` | `dict[str, Any] | None` | Additional context to use during validation. | `None` | | `experimental_allow_partial` | `bool | Literal['off', 'on', 'trailing-strings']` | Experimental whether to enable partial validation, e.g. to process streams. * False / 'off': Default behavior, no partial validation. * True / 'on': Enable partial validation. * 'trailing-strings': Enable partial validation and allow trailing strings in the input. | `False` | | `by_alias` | `bool | None` | Whether to use the field's alias when validating against the provided input data. | `None` | | `by_name` | `bool | None` | Whether to use the field's name when validating against the provided input data. | `None` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `data` | `str | bytes | bytearray` | The JSON data to validate against the model. | *required* | | `strict` | `bool | None` | Whether to strictly check types. | `None` | | `extra` | `ExtraValues | None` | Whether to ignore, allow, or forbid extra data during model validation. See the extra configuration value for details. | `None` | | `context` | `dict[str, Any] | None` | Additional context to use during validation. | `None` | | `experimental_allow_partial` | `bool | Literal['off', 'on', 'trailing-strings']` | Experimental whether to enable partial validation, e.g. to process streams. * False / 'off': Default behavior, no partial validation. * True / 'on': Enable partial validation. * 'trailing-strings': Enable partial validation and allow trailing strings in the input. | `False` | | `by_alias` | `bool | None` | Whether to use the field's alias when validating against the provided input data. | `None` | | `by_name` | `bool | None` | Whether to use the field's name when validating against the provided input data. | `None` |
 
 Returns:
 
@@ -41070,6 +41133,7 @@ def validate_json(
     /,
     *,
     strict: bool | None = None,
+    extra: ExtraValues | None = None,
     context: dict[str, Any] | None = None,
     experimental_allow_partial: bool | Literal['off', 'on', 'trailing-strings'] = False,
     by_alias: bool | None = None,
@@ -41083,6 +41147,8 @@ def validate_json(
     Args:
         data: The JSON data to validate against the model.
         strict: Whether to strictly check types.
+        extra: Whether to ignore, allow, or forbid extra data during model validation.
+            See the [`extra` configuration value][pydantic.ConfigDict.extra] for details.
         context: Additional context to use during validation.
         experimental_allow_partial: **Experimental** whether to enable
             [partial validation](../concepts/experimental.md#partial-validation), e.g. to process streams.
@@ -41104,6 +41170,7 @@ def validate_json(
     return self.validator.validate_json(
         data,
         strict=strict,
+        extra=extra,
         context=context,
         allow_partial=experimental_allow_partial,
         by_alias=by_alias,
@@ -41120,6 +41187,7 @@ validate_strings(
     /,
     *,
     strict: bool | None = None,
+    extra: ExtraValues | None = None,
     context: dict[str, Any] | None = None,
     experimental_allow_partial: (
         bool | Literal["off", "on", "trailing-strings"]
@@ -41134,7 +41202,7 @@ Validate object contains string data against the model.
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `obj` | `Any` | The object contains string data to validate. | *required* | | `strict` | `bool | None` | Whether to strictly check types. | `None` | | `context` | `dict[str, Any] | None` | Additional context to use during validation. | `None` | | `experimental_allow_partial` | `bool | Literal['off', 'on', 'trailing-strings']` | Experimental whether to enable partial validation, e.g. to process streams. * False / 'off': Default behavior, no partial validation. * True / 'on': Enable partial validation. * 'trailing-strings': Enable partial validation and allow trailing strings in the input. | `False` | | `by_alias` | `bool | None` | Whether to use the field's alias when validating against the provided input data. | `None` | | `by_name` | `bool | None` | Whether to use the field's name when validating against the provided input data. | `None` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `obj` | `Any` | The object contains string data to validate. | *required* | | `strict` | `bool | None` | Whether to strictly check types. | `None` | | `extra` | `ExtraValues | None` | Whether to ignore, allow, or forbid extra data during model validation. See the extra configuration value for details. | `None` | | `context` | `dict[str, Any] | None` | Additional context to use during validation. | `None` | | `experimental_allow_partial` | `bool | Literal['off', 'on', 'trailing-strings']` | Experimental whether to enable partial validation, e.g. to process streams. * False / 'off': Default behavior, no partial validation. * True / 'on': Enable partial validation. * 'trailing-strings': Enable partial validation and allow trailing strings in the input. | `False` | | `by_alias` | `bool | None` | Whether to use the field's alias when validating against the provided input data. | `None` | | `by_name` | `bool | None` | Whether to use the field's name when validating against the provided input data. | `None` |
 
 Returns:
 
@@ -41149,6 +41217,7 @@ def validate_strings(
     /,
     *,
     strict: bool | None = None,
+    extra: ExtraValues | None = None,
     context: dict[str, Any] | None = None,
     experimental_allow_partial: bool | Literal['off', 'on', 'trailing-strings'] = False,
     by_alias: bool | None = None,
@@ -41159,6 +41228,8 @@ def validate_strings(
     Args:
         obj: The object contains string data to validate.
         strict: Whether to strictly check types.
+        extra: Whether to ignore, allow, or forbid extra data during model validation.
+            See the [`extra` configuration value][pydantic.ConfigDict.extra] for details.
         context: Additional context to use during validation.
         experimental_allow_partial: **Experimental** whether to enable
             [partial validation](../concepts/experimental.md#partial-validation), e.g. to process streams.
@@ -41180,6 +41251,7 @@ def validate_strings(
     return self.validator.validate_strings(
         obj,
         strict=strict,
+        extra=extra,
         context=context,
         allow_partial=experimental_allow_partial,
         by_alias=by_alias,
