@@ -19,12 +19,15 @@ Pyrefly can also catch errors on your code before you run it. Consider the follo
 ```python {test="skip" linenums="1"}
 from pydantic import BaseModel, ConfigDict
 
+
 class Model1(BaseModel, frozen=True):
     x: int
+
 
 class Model2(BaseModel):
     model_config = ConfigDict(frozen=True)
     x: int
+
 
 model1 = Model1(x=0)
 model1.x = 1  # validation error: mutating a frozen field
