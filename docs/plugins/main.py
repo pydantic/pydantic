@@ -104,8 +104,7 @@ def add_mkdocs_run_deps(site_url: str) -> None:
 
     version_py = (PROJECT_ROOT / 'pydantic' / 'version.py').read_text()
     pydantic_version_str: str = re.search(r'^VERSION ?= (["\'])(.+)\1', version_py, flags=re.M).group(2)  # pyright: ignore[reportOptionalMemberAccess]
-    pydantic_version = Version(pydantic_version_str)
-    if os.getenv('CI') and pydantic_version.local == 'dev':
+    if os.getenv('CI') and Version(pydantic_version_str).local == 'dev':
         build_package(
             PROJECT_ROOT,
             DOCS_DIR,
