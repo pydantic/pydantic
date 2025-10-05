@@ -92,7 +92,7 @@ jobs:
           git config --global user.name "${{ github.actor }}"
           git config --global user.email "${{ github.actor }}@users.noreply.github.com"
 
-      - run: PYTHONPATH="$PWD${PYTHONPATH:+:${PYTHONPATH}}" DISABLE_RUN_CODE=1 uv run mike deploy -b docs-site dev --push
+      - run: PYTHONPATH="$PWD${PYTHONPATH:+:${PYTHONPATH}}" uv run mike deploy -b docs-site dev --push
         if: github.ref == 'refs/heads/main'
 
       - if: github.ref == 'refs/heads/docs-update' || startsWith(github.ref, 'refs/tags/')

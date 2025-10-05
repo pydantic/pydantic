@@ -13,10 +13,14 @@ import pyupgrade._main as pyupgrade_main  # type: ignore
 import requests
 import tomli
 import yaml
+from build.__main__ import (
+    build_package,
+)  # Might be private, but there's currently no public API to programatically build wheels..
 from jinja2 import Template  # type: ignore
 from mkdocs.config.defaults import MkDocsConfig
 from mkdocs.structure.files import Files
 from mkdocs.structure.pages import Page
+from packaging.version import Version
 
 logger = logging.getLogger('mkdocs.plugin')
 THIS_DIR = Path(__file__).parent
@@ -34,24 +38,6 @@ except ImportError:
     from conversion_table import conversion_table
 
 # Start definition of MkDocs hooks
-
-
-def on_config(config: MkDocsConfig) -> MkDocsConfig:
-    if os.getenv('DISABLE_RUN_CODE'):
-        logger.info('Building for dev, disabling mkdocs-run-code javascript plugin')
-        config.extra_javascript = [
-            extra_js
-            for extra_js in config.extra_javascript
-            if (
-                isinstance(extra_js, str)
-                and extra_js != 'https://samuelcolvin.github.io/mkdocs-run-code/run_code_main.js'
-            )
-            or (
-                not isinstance(extra_js, str)
-                and extra_js.path != 'https://samuelcolvin.github.io/mkdocs-run-code/run_code_main.js'
-            )
-        ]
-    return config
 
 
 def on_pre_build(config: MkDocsConfig) -> None:
@@ -114,14 +100,26 @@ def add_mkdocs_run_deps() -> None:
     pydantic_core_version = m.group(1)
 
     version_py = (PROJECT_ROOT / 'pydantic' / 'version.py').read_text()
-    pydantic_version = re.search(r'^VERSION ?= (["\'])(.+)\1', version_py, flags=re.M).group(2)
+    pydantic_version_str: str = re.search(r'^VERSION ?= (["\'])(.+)\1', version_py, flags=re.M).group(2)  # pyright: ignore[reportOptionalMemberAccess]
+    pydantic_version = Version(pydantic_version_str)
+    if os.getenv('CI') and pydantic_version.local == 'dev':
+        build_package(
+            PROJECT_ROOT,
+            DOCS_DIR,
+            distributions=['wheel'],
+        )
+        wheel_file = next(DOCS_DIR.glob('*.whl'))
+        pydantic_dep = f'https://docs.pydantic.dev/dev/{wheel_file.name}'
+    else:
+        pydantic_dep = f'pydantic=={pydantic_version_str}'
 
     uv_lock = (PROJECT_ROOT / 'uv.lock').read_text()
-    pydantic_extra_types_version = re.search(r'name = "pydantic-extra-types"\nversion = "(.+?)"', uv_lock).group(1)
+    pydantic_extra_types_version: str = re.search(r'name = "pydantic-extra-types"\nversion = "(.+?)"', uv_lock).group(1)  # pyright: ignore[reportOptionalMemberAccess]
 
     mkdocs_run_deps = json.dumps(
         [
-            f'pydantic[email]=={pydantic_version}',
+            pydantic_dep,
+            'email-validator>=2.0.0',
             f'pydantic-core=={pydantic_core_version}',
             f'pydantic-extra-types=={pydantic_extra_types_version}',
         ]
