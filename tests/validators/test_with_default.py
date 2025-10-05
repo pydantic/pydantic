@@ -8,6 +8,7 @@ import pytest
 
 from pydantic_core import (
     ArgsKwargs,
+    PydanticUndefined,
     PydanticUseDefault,
     SchemaError,
     SchemaValidator,
@@ -819,3 +820,59 @@ def test_validate_default_raises_dataclass(input_value: dict, expected: Any) -> 
         v.validate_python(input_value)
 
     assert exc_info.value.errors(include_url=False, include_context=False) == expected
+
+
+def test_default_factory_not_called_if_existing_error(pydantic_version) -> None:
+    class Test:
+        def __init__(self, a: int, b: int):
+            self.a = a
+            self.b = b
+
+    schema = core_schema.model_schema(
+        cls=Test,
+        schema=core_schema.model_fields_schema(
+            computed_fields=[],
+            fields={
+                'a': core_schema.model_field(
+                    schema=core_schema.int_schema(),
+                ),
+                'b': core_schema.model_field(
+                    schema=core_schema.with_default_schema(
+                        schema=core_schema.int_schema(),
+                        default_factory=lambda data: data['a'],
+                        default_factory_takes_data=True,
+                    ),
+                ),
+            },
+        ),
+    )
+
+    v = SchemaValidator(schema)
+    with pytest.raises(ValidationError) as e:
+        v.validate_python({'a': 'not_an_int'})
+
+    assert e.value.errors(include_url=False) == [
+        {
+            'type': 'int_parsing',
+            'loc': ('a',),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'not_an_int',
+        },
+        {
+            'input': PydanticUndefined,
+            'loc': ('b',),
+            'msg': 'The default factory uses validated data, but at least one validation error occurred',
+            'type': 'default_factory_not_called',
+        },
+    ]
+
+    assert (
+        str(e.value)
+        == f"""2 validation errors for Test
+a
+  Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='not_an_int', input_type=str]
+    For further information visit https://errors.pydantic.dev/{pydantic_version}/v/int_parsing
+b
+  The default factory uses validated data, but at least one validation error occurred [type=default_factory_not_called]
+    For further information visit https://errors.pydantic.dev/{pydantic_version}/v/default_factory_not_called"""
+    )

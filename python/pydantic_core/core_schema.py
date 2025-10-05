@@ -4236,6 +4236,7 @@ ErrorType = Literal[
     'model_attributes_type',
     'dataclass_type',
     'dataclass_exact_type',
+    'default_factory_not_called',
     'none_required',
     'greater_than',
     'greater_than_equal',

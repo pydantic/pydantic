@@ -196,6 +196,9 @@ error_types! {
         class_name: {ctx_type: String, ctx_fn: field_from_context},
     },
     // ---------------------
+    // Default factory not called (happens when there's already an error and the factory takes data)
+    DefaultFactoryNotCalled {},
+    // ---------------------
     // None errors
     NoneRequired {},
     // ---------------------
@@ -493,6 +496,7 @@ impl ErrorType {
             Self::ModelAttributesType {..} => "Input should be a valid dictionary or object to extract fields from",
             Self::DataclassType {..} => "Input should be a dictionary or an instance of {class_name}",
             Self::DataclassExactType {..} => "Input should be an instance of {class_name}",
+            Self::DefaultFactoryNotCalled {..} => "The default factory uses validated data, but at least one validation error occurred",
             Self::NoneRequired {..} => "Input should be None",
             Self::GreaterThan {..} => "Input should be greater than {gt}",
             Self::GreaterThanEqual {..} => "Input should be greater than or equal to {ge}",
