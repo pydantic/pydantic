@@ -84,7 +84,6 @@ extra_javascript:
   - 'extra/feedback.js'
   - 'extra/fluff.js'
   - 'extra/mathjax.js'
-  # Note: this extra is used in the `on_config()` hook, make sure to keep them in sync:
   - 'https://samuelcolvin.github.io/mkdocs-run-code/run_code_main.js'
   - 'https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js'
 
