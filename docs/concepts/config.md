@@ -89,6 +89,10 @@ print(ta.validate_python([1, 2]))
 #> ['1', '2']
 ```
 
+Configuration can't be provided if the type adapter directly wraps a type that support it.
+The [configuration propagation](#configuration-propagation) rules also apply. Pydantic will raise a `PydanticUserError` in most of these cases.
+For example, attempting to allow extra fields via a `TypeAdapter` on a `BaseModel` that forbids them is not supported. 
+
 ## Configuration on other supported types
 
 If you are using [standard library dataclasses][dataclasses] or [`TypedDict`][typing.TypedDict] classes,
