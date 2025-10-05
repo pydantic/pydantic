@@ -210,13 +210,18 @@ impl Validator for ModelFieldsValidator {
                             fields_set_vec.push(field.name_py.clone_ref(py));
                             fields_set_count += 1;
                         }
-                        Err(ValError::Omit) => continue,
-                        Err(ValError::LineErrors(line_errors)) => {
-                            for err in line_errors {
-                                errors.push(lookup_path.apply_error_loc(err, self.loc_by_alias, &field.name));
+                        Err(e) => {
+                            state.has_field_error = true;
+                            match e {
+                                ValError::Omit => continue,
+                                ValError::LineErrors(line_errors) => {
+                                    for err in line_errors {
+                                        errors.push(lookup_path.apply_error_loc(err, self.loc_by_alias, &field.name));
+                                    }
+                                }
+                                err => return Err(err),
                             }
                         }
-                        Err(err) => return Err(err),
                     }
                     continue;
                 }
