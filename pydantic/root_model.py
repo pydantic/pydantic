@@ -126,6 +126,7 @@ class RootModel(BaseModel, Generic[RootModelRootType], metaclass=_RootModelMetac
             exclude_unset: bool = False,
             exclude_defaults: bool = False,
             exclude_none: bool = False,
+            exclude_computed_fields: bool = False,
             round_trip: bool = False,
             warnings: bool | Literal['none', 'warn', 'error'] = True,
             serialize_as_any: bool = False,
