@@ -270,7 +270,8 @@ The configuration can take three values:
 * `'allow'`: Providing extra data is allowed and stored in the `__pydantic_extra__` dictionary attribute.
   The `__pydantic_extra__` can explicitly be annotated to provide validation for extra fields.
 
-The validation methods (e.g. [`model_validate()`][pydantic.main.BaseModel.model_validate]) have an optional `extra` argument that will override the `extra` configuration value of the model for that validation call.
+The validation methods (e.g. [`model_validate()`][pydantic.main.BaseModel.model_validate]) have an optional `extra` argument
+that will override the `extra` configuration value of the model for that validation call.
 
 For more details, refer to the [`extra`][pydantic.ConfigDict.extra] API documentation.
 
