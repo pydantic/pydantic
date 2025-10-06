@@ -89,6 +89,10 @@ print(ta.validate_python([1, 2]))
 #> ['1', '2']
 ```
 
+Configuration can't be provided if the type adapter directly wraps a type that support it, and a
+[usage error](../errors/usage_errors.md) is raised in this case.
+The [configuration propagation](#configuration-propagation) rules also apply.
+
 ## Configuration on other supported types
 
 If you are using [standard library dataclasses][dataclasses] or [`TypedDict`][typing.TypedDict] classes,
