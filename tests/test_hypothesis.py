@@ -150,6 +150,9 @@ _URL_PARSE_ERRORS = {'input is empty', 'relative URL without a base', 'empty hos
 
 
 @given(strategies.text())
+@pytest.mark.timeout(
+    300  # this is very slow on emulated alpine aarch64, https://github.com/pydantic/pydantic-core/pull/1821
+)
 @pytest.mark.thread_unsafe  # https://github.com/Quansight-Labs/pytest-run-parallel/issues/20
 def test_urls_text(url_validator, text):
     try:
@@ -167,6 +170,9 @@ def multi_host_url_validator():
 
 
 @given(strategies.text())
+@pytest.mark.timeout(
+    300  # this is very slow on emulated alpine aarch64, https://github.com/pydantic/pydantic-core/pull/1821
+)
 @pytest.mark.thread_unsafe  # https://github.com/Quansight-Labs/pytest-run-parallel/issues/20
 def test_multi_host_urls_text(multi_host_url_validator, text):
     try:
