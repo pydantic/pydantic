@@ -8,7 +8,7 @@ from pydantic_core import __version__ as __pydantic_core_version__
 
 __all__ = 'VERSION', 'version_info'
 
-VERSION = '2.12.0a1+dev'
+VERSION = '2.12.0b1+dev'
 """The version of Pydantic.
 
 This version specifier is guaranteed to be compliant with the [specification],
@@ -19,7 +19,7 @@ introduced by [PEP 440].
 """
 
 # Keep this in sync with the version constraint in the `pyproject.toml` dependencies:
-_COMPATIBLE_PYDANTIC_CORE_VERSION = '2.38.0'
+_COMPATIBLE_PYDANTIC_CORE_VERSION = '2.40.1'
 
 
 def version_short() -> str:
@@ -34,7 +34,6 @@ def version_info() -> str:
     """Return complete version information for Pydantic and its dependencies."""
     import importlib.metadata
     import platform
-    import sys
     from pathlib import Path
 
     import pydantic_core._pydantic_core as pdc
@@ -65,8 +64,8 @@ def version_info() -> str:
 
     info = {
         'pydantic version': VERSION,
-        'pydantic-core version': pdc.__version__,
-        'pydantic-core build': getattr(pdc, 'build_info', None) or pdc.build_profile,
+        'pydantic-core version': __pydantic_core_version__,
+        'pydantic-core build': getattr(pdc, 'build_info', None) or pdc.build_profile,  # pyright: ignore[reportPrivateImportUsage]
         'python version': sys.version,
         'platform': platform.platform(),
         'related packages': ' '.join(related_packages),

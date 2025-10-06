@@ -197,7 +197,7 @@ print(Model(a=3.000, b='2.72', c=b'binary data').model_dump())
 ```
 
 This is a deliberate decision of Pydantic, and is frequently the most useful approach. See
-[here](https://github.com/pydantic/pydantic/issues/578) for a longer discussion on the subject.
+[this issue](https://github.com/pydantic/pydantic/issues/578) for a longer discussion on the subject.
 
 Nevertheless, Pydantic provides a [strict mode](strict_mode.md), where no data conversion is performed.
 Values must be of the same type as the declared field type.
@@ -269,6 +269,8 @@ The configuration can take three values:
 * `'forbid'`: Providing extra data is not permitted.
 * `'allow'`: Providing extra data is allowed and stored in the `__pydantic_extra__` dictionary attribute.
   The `__pydantic_extra__` can explicitly be annotated to provide validation for extra fields.
+
+The validation methods (e.g. [`model_validate()`][pydantic.main.BaseModel.model_validate]) have an optional `extra` argument that will override the `extra` configuration value of the model for that validation call.
 
 For more details, refer to the [`extra`][pydantic.ConfigDict.extra] API documentation.
 

@@ -579,6 +579,7 @@ def get_function_type_hints(
     return type_hints
 
 
+# TODO use typing.ForwardRef directly when we stop supporting 3.9:
 if sys.version_info < (3, 9, 8) or (3, 10) <= sys.version_info < (3, 10, 1):
 
     def _make_forward_ref(
@@ -598,10 +599,10 @@ if sys.version_info < (3, 9, 8) or (3, 10) <= sys.version_info < (3, 10, 1):
 
         Implemented as EAFP with memory.
         """
-        return typing.ForwardRef(arg, is_argument)
+        return typing.ForwardRef(arg, is_argument)  # pyright: ignore[reportCallIssue]
 
 else:
-    _make_forward_ref = typing.ForwardRef
+    _make_forward_ref = typing.ForwardRef  # pyright: ignore[reportAssignmentType]
 
 
 if sys.version_info >= (3, 10):

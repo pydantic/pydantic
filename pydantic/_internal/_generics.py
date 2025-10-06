@@ -374,16 +374,16 @@ def map_generic_model_arguments(cls: type[BaseModel], args: tuple[Any, ...]) -> 
         if argument is _missing:
             param = cast(TypeVar, parameter)
             try:
-                has_default = param.has_default()
+                has_default = param.has_default()  # pyright: ignore[reportAttributeAccessIssue]
             except AttributeError:
                 # Happens if using `typing.TypeVar` (and not `typing_extensions`) on Python < 3.13.
                 has_default = False
             if has_default:
                 # The default might refer to other type parameters. For an example, see:
                 # https://typing.python.org/en/latest/spec/generics.html#type-parameters-as-parameters-to-generics
-                typevars_map[param] = replace_types(param.__default__, typevars_map)
+                typevars_map[param] = replace_types(param.__default__, typevars_map)  # pyright: ignore[reportAttributeAccessIssue]
             else:
-                expected_len -= sum(hasattr(p, 'has_default') and p.has_default() for p in parameters)
+                expected_len -= sum(hasattr(p, 'has_default') and p.has_default() for p in parameters)  # pyright: ignore[reportAttributeAccessIssue]
                 raise TypeError(f'Too few arguments for {cls}; actual {len(args)}, expected at least {expected_len}')
         else:
             param = cast(TypeVar, parameter)
@@ -512,10 +512,7 @@ def _union_orderings_key(typevar_values: Any) -> Any:
     (See https://github.com/python/cpython/issues/86483 for reference.)
     """
     if isinstance(typevar_values, tuple):
-        args_data = []
-        for value in typevar_values:
-            args_data.append(_union_orderings_key(value))
-        return tuple(args_data)
+        return tuple(_union_orderings_key(value) for value in typevar_values)
     elif typing_objects.is_union(typing_extensions.get_origin(typevar_values)):
         return get_args(typevar_values)
     else:

@@ -1,5 +1,48 @@
 <!-- markdownlint-disable no-bare-urls -->
+<!-- markdownlint-disable descriptive-link-text -->
 <!-- markdownlint-disable-next-line first-line-heading -->
+
+## v2.12.0b1 (2025-10-03)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.12.0b1)
+
+This is the first beta release of the upcoming 2.12 release.
+
+### What's Changed
+
+#### Packaging
+
+* Bump `pydantic-core` to v2.40.1 by @Viicos in [#12314](https://github.com/pydantic/pydantic/pull/12314)
+
+#### New Features
+
+* Add support for `exclude_if` at the field level by @andresliszt in [#12141](https://github.com/pydantic/pydantic/pull/12141)
+* Add `ValidateAs` annotation helper by @Viicos in [#11942](https://github.com/pydantic/pydantic/pull/11942)
+* Add configuration options for validation and JSON serialization of temporal types by @ollz272 in [#12068](https://github.com/pydantic/pydantic/pull/12068)
+* Add support for PEP 728 by @Viicos in [#12179](https://github.com/pydantic/pydantic/pull/12179)
+* Add field name in serialization error by @NicolasPllr1 in [pydantic-core#1799](https://github.com/pydantic/pydantic-core/pull/1799)
+* Add option to preserve empty URL paths by @davidhewitt in [pydantic-core#1789](https://github.com/pydantic/pydantic-core/pull/1789)
+
+#### Changes
+
+* Raise error if an incompatible `pydantic-core` version is installed by @Viicos in [#12196](https://github.com/pydantic/pydantic/pull/12196)
+* Remove runtime warning for experimental features by @Viicos in [#12265](https://github.com/pydantic/pydantic/pull/12265)
+* Warn if registering virtual subclasses on Pydantic models by @Viicos in [#11669](https://github.com/pydantic/pydantic/pull/11669)
+
+#### Fixes
+
+* Fix `__getattr__()` behavior on Pydantic models when a property raised an `AttributeError` and extra values are present by @raspuchin in [#12106](https://github.com/pydantic/pydantic/pull/12106)
+* Add test to prevent regression with Pydantic models used as annotated metadata by @Viicos in [#12133](https://github.com/pydantic/pydantic/pull/12133)
+* Allow to use property setters on Pydantic dataclasses with `validate_assignment` set by @Viicos in [#12173](https://github.com/pydantic/pydantic/pull/12173)
+* Fix mypy v2 plugin for upcoming mypy release by @cdce8p in [#12209](https://github.com/pydantic/pydantic/pull/12209)
+* Respect custom title in functions JSON Schema by @Viicos in [#11892](https://github.com/pydantic/pydantic/pull/11892)
+* Fix `ImportString` JSON serialization for objects with a `name` attribute by @chr1sj0nes in [#12219](https://github.com/pydantic/pydantic/pull/12219)
+* Do not error on fields overridden by methods in the mypy plugin by @Viicos in [#12290](https://github.com/pydantic/pydantic/pull/12290)
+
+### New Contributors
+
+* @raspuchin made their first contribution in [#12106](https://github.com/pydantic/pydantic/pull/12106)
+* @chr1sj0nes made their first contribution in [#12219](https://github.com/pydantic/pydantic/pull/12219)
 
 ## v2.12.0a1 (2025-07-26)
 

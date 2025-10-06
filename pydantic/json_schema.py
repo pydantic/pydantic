@@ -590,9 +590,7 @@ class GenerateJsonSchema:
                 sorted_dict[key] = self._sort_recursive(value[key], parent_key=key)
             return sorted_dict
         elif isinstance(value, list):
-            sorted_list: list[JsonSchemaValue] = []
-            for item in value:
-                sorted_list.append(self._sort_recursive(item, parent_key))
+            sorted_list: list[JsonSchemaValue] = [self._sort_recursive(item, parent_key) for item in value]
             return sorted_list
         else:
             return value
@@ -1416,10 +1414,26 @@ class GenerateJsonSchema:
         with self._config_wrapper_stack.push(config):
             json_schema = self._named_required_fields_schema(named_required_fields)
 
+        # There's some duplication between `extra_behavior` and
+        # the config's `extra`/core config's `extra_fields_behavior`.
+        # However, it is common to manually create TypedDictSchemas,
+        # where you don't necessarily have a class.
+        # At runtime, `extra_behavior` takes priority over the config
+        # for validation, so follow the same for the JSON Schema:
+        if schema.get('extra_behavior') == 'forbid':
+            json_schema['additionalProperties'] = False
+        elif schema.get('extra_behavior') == 'allow':
+            if 'extras_schema' in schema and schema['extras_schema'] != {'type': 'any'}:
+                json_schema['additionalProperties'] = self.generate_inner(schema['extras_schema'])
+            else:
+                json_schema['additionalProperties'] = True
+
         if cls is not None:
+            # `_update_class_schema()` will not override
+            # `additionalProperties` if already present:
             self._update_class_schema(json_schema, cls, config)
-        else:
-            extra = config.get('extra')
+        elif 'additionalProperties' not in json_schema:
+            extra = schema.get('config', {}).get('extra_fields_behavior')
             if extra == 'forbid':
                 json_schema['additionalProperties'] = False
             elif extra == 'allow':
@@ -1578,7 +1592,7 @@ class GenerateJsonSchema:
             json_schema.setdefault('description', root_description)
 
         extra = config.get('extra')
-        if 'additionalProperties' not in json_schema:
+        if 'additionalProperties' not in json_schema:  # This check is particularly important for `typed_dict_schema()`
             if extra == 'allow':
                 json_schema['additionalProperties'] = True
             elif extra == 'forbid':
@@ -2012,7 +2026,7 @@ class GenerateJsonSchema:
         for definition in schema['definitions']:
             try:
                 self.generate_inner(definition)
-            except PydanticInvalidForJsonSchema as e:
+            except PydanticInvalidForJsonSchema as e:  # noqa: PERF203
                 core_ref: CoreRef = CoreRef(definition['ref'])  # type: ignore
                 self._core_defs_invalid_for_json_schema[self.get_defs_ref((core_ref, self.mode))] = e
                 continue

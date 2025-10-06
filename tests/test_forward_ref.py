@@ -1362,6 +1362,58 @@ def test_uses_the_correct_globals_to_resolve_forward_refs_on_serializers(create_
     Sub.model_rebuild()
 
 
+def test_type_adapter_uses_function_module_namespace_and_parent_namespace(create_module):
+    """https://github.com/pydantic/pydantic/issues/12165"""
+
+    @create_module
+    def module_1():
+        Int = int
+
+        def func(a: 'Int', b: 'MyInt'):
+            return (a, b)
+
+    module_2 = create_module(
+        f"""
+from {module_1.__name__} import func
+
+from pydantic import TypeAdapter
+
+MyInt = int
+
+ta = TypeAdapter(func)
+        """
+    )
+
+    assert module_2.ta.validate_python({'a': '1', 'b': '2'}) == (1, 2)
+
+
+@pytest.mark.skipif(sys.version_info < (3, 12), reason='Test related to PEP 695 syntax.')
+def test_type_adapter_uses_function_type_params_namespace(create_module):
+    """Relevant to https://github.com/pydantic/pydantic/issues/12165"""
+    module_1 = create_module(
+        """
+Int = int
+
+def func[T](a: 'Int', b: 'T'):
+    return (a, b)
+        """
+    )
+
+    module_2 = create_module(
+        f"""
+from {module_1.__name__} import func
+
+from pydantic import TypeAdapter
+
+MyInt = int
+
+ta = TypeAdapter(func)
+        """
+    )
+
+    assert module_2.ta.validate_python({'a': '1', 'b': True}) == (1, True)
+
+
 @pytest.mark.xfail(reason='parent namespace is used for every type in `NsResolver`, for backwards compatibility.')
 def test_do_not_use_parent_ns_when_outside_the_function(create_module):
     @create_module
