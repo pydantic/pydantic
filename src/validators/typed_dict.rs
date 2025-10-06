@@ -185,6 +185,7 @@ impl Validator for TypedDictValidator {
 
         {
             let state = &mut state.rebind_extra(|extra| extra.data = Some(output_dict.clone()));
+            let state = &mut state.scoped_set(|state| &mut state.has_field_error, false);
 
             let mut fields_set_count: usize = 0;
 
@@ -229,15 +230,24 @@ impl Validator for TypedDictValidator {
                             output_dict.set_item(&field.name_py, value)?;
                             fields_set_count += 1;
                         }
-                        Err(ValError::Omit) => continue,
-                        Err(ValError::LineErrors(line_errors)) => {
-                            if !is_last_partial || field.required {
-                                for err in line_errors {
-                                    errors.push(lookup_path.apply_error_loc(err, self.loc_by_alias, &field.name));
+                        Err(e) => {
+                            state.has_field_error = true;
+                            match e {
+                                ValError::Omit => {}
+                                ValError::LineErrors(line_errors) => {
+                                    if !is_last_partial || field.required {
+                                        for err in line_errors {
+                                            errors.push(lookup_path.apply_error_loc(
+                                                err,
+                                                self.loc_by_alias,
+                                                &field.name,
+                                            ));
+                                        }
+                                    }
                                 }
+                                err => return Err(err),
                             }
                         }
-                        Err(err) => return Err(err),
                     }
                     continue;
                 }
@@ -260,6 +270,7 @@ impl Validator for TypedDictValidator {
                     }
                     Err(ValError::Omit) => {}
                     Err(ValError::LineErrors(line_errors)) => {
+                        state.has_field_error = true;
                         for err in line_errors {
                             // Note: this will always use the field name even if there is an alias
                             // However, we don't mind so much because this error can only happen if the

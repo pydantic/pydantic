@@ -157,6 +157,8 @@ impl Validator for DataclassArgsValidator {
         let mut used_keys: AHashSet<&str> = AHashSet::with_capacity(self.fields.len());
 
         let state = &mut state.rebind_extra(|extra| extra.data = Some(output_dict.clone()));
+        let state = &mut state.scoped_set(|state| &mut state.has_field_error, false);
+
         let extra_behavior = state.extra_behavior_or(self.extra_behavior);
 
         let validate_by_alias = state.validate_by_alias_or(self.validate_by_alias);
@@ -235,6 +237,7 @@ impl Validator for DataclassArgsValidator {
                         fields_set_count += 1;
                     }
                     Err(ValError::LineErrors(line_errors)) => {
+                        state.has_field_error = true;
                         errors.extend(line_errors.into_iter().map(|err| err.with_outer_location(index)));
                     }
                     Err(err) => return Err(err),
@@ -246,6 +249,7 @@ impl Validator for DataclassArgsValidator {
                         fields_set_count += 1;
                     }
                     Err(ValError::LineErrors(line_errors)) => {
+                        state.has_field_error = true;
                         errors.extend(
                             line_errors
                                 .into_iter()
@@ -272,6 +276,7 @@ impl Validator for DataclassArgsValidator {
                         }
                         Err(ValError::Omit) => {}
                         Err(ValError::LineErrors(line_errors)) => {
+                            state.has_field_error = true;
                             for err in line_errors {
                                 // Note: this will always use the field name even if there is an alias
                                 // However, we don't mind so much because this error can only happen if the
