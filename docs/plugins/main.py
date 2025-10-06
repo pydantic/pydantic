@@ -13,10 +13,15 @@ import pyupgrade._main as pyupgrade_main  # type: ignore
 import requests
 import tomli
 import yaml
+from build.__main__ import (
+    build_package,
+)  # Might be private, but there's currently no public API to programmatically build wheels..
 from jinja2 import Template  # type: ignore
-from mkdocs.config import Config
+from mkdocs.config.defaults import MkDocsConfig
+from mkdocs.exceptions import PluginError
 from mkdocs.structure.files import Files
 from mkdocs.structure.pages import Page
+from packaging.version import Version
 
 logger = logging.getLogger('mkdocs.plugin')
 THIS_DIR = Path(__file__).parent
@@ -36,22 +41,17 @@ except ImportError:
 # Start definition of MkDocs hooks
 
 
-def on_pre_build(config: Config) -> None:
+def on_pre_build(config: MkDocsConfig) -> None:
     """
     Before the build starts.
     """
     add_changelog()
-    add_mkdocs_run_deps()
+    if not config.site_url:
+        raise PluginError("'site_url' must be set")
+    add_mkdocs_run_deps(config.site_url)
 
 
-def on_files(files: Files, config: Config) -> Files:
-    """
-    After the files are loaded, but before they are read.
-    """
-    return files
-
-
-def on_page_markdown(markdown: str, page: Page, config: Config, files: Files) -> str:
+def on_page_markdown(markdown: str, page: Page, config: MkDocsConfig, files: Files) -> str:
     """
     Called on each file after it is read and before it is converted to HTML.
     """
@@ -90,7 +90,7 @@ def add_changelog() -> None:
         new_file.write_text(history, encoding='utf-8')
 
 
-def add_mkdocs_run_deps() -> None:
+def add_mkdocs_run_deps(site_url: str) -> None:
     # set the pydantic, pydantic-core, pydantic-extra-types versions to configure for running examples in the browser
     pyproject_toml = (PROJECT_ROOT / 'pyproject.toml').read_text()
     m = re.search(r'pydantic-core==(.+?)["\']', pyproject_toml)
@@ -103,14 +103,25 @@ def add_mkdocs_run_deps() -> None:
     pydantic_core_version = m.group(1)
 
     version_py = (PROJECT_ROOT / 'pydantic' / 'version.py').read_text()
-    pydantic_version = re.search(r'^VERSION ?= (["\'])(.+)\1', version_py, flags=re.M).group(2)
+    pydantic_version_str: str = re.search(r'^VERSION ?= (["\'])(.+)\1', version_py, flags=re.M).group(2)  # pyright: ignore[reportOptionalMemberAccess]
+    if os.getenv('CI') and Version(pydantic_version_str).local == 'dev':
+        build_package(
+            PROJECT_ROOT,
+            DOCS_DIR,
+            distributions=['wheel'],
+        )
+        wheel_file = next(DOCS_DIR.glob('*.whl'))
+        pydantic_dep = f'{site_url.removesuffix("/")}/dev/{wheel_file.name}'
+    else:
+        pydantic_dep = f'pydantic=={pydantic_version_str}'
 
     uv_lock = (PROJECT_ROOT / 'uv.lock').read_text()
-    pydantic_extra_types_version = re.search(r'name = "pydantic-extra-types"\nversion = "(.+?)"', uv_lock).group(1)
+    pydantic_extra_types_version: str = re.search(r'name = "pydantic-extra-types"\nversion = "(.+?)"', uv_lock).group(1)  # pyright: ignore[reportOptionalMemberAccess]
 
     mkdocs_run_deps = json.dumps(
         [
-            f'pydantic=={pydantic_version}',
+            pydantic_dep,
+            'email-validator>=2.0.0',
             f'pydantic-core=={pydantic_core_version}',
             f'pydantic-extra-types=={pydantic_extra_types_version}',
         ]

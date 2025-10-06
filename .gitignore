@@ -36,6 +36,7 @@ run_mypy_on_file.py
 
 # Documentation files
 /docs/changelog.md
+/docs/*.whl
 /docs/theme/mkdocs_run_deps.html
 /site/
 /site.zip
