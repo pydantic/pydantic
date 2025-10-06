@@ -3,6 +3,7 @@
 from __future__ import annotations as _annotations
 
 import sys
+import types
 from collections.abc import Callable, Iterable
 from dataclasses import is_dataclass
 from types import FrameType
@@ -215,19 +216,35 @@ class TypeAdapter(Generic[T]):
         self.pydantic_complete = False
 
         parent_frame = self._fetch_parent_frame()
-        if parent_frame is not None:
-            globalns = parent_frame.f_globals
-            # Do not provide a local ns if the type adapter happens to be instantiated at the module level:
-            localns = parent_frame.f_locals if parent_frame.f_locals is not globalns else {}
+        if isinstance(type, types.FunctionType):
+            # Special case functions, which are *not* pushed to the `NsResolver` stack and without this special case
+            # would only have access to the parent namespace where the `TypeAdapter` was instantiated (if the function is defined
+            # in another module, we need to look at that module's globals).
+            if parent_frame is not None:
+                # `f_locals` is the namespace where the type adapter was instantiated (~ to `f_globals` if at the module level):
+                parent_ns = parent_frame.f_locals
+            else:  # pragma: no cover
+                parent_ns = None
+            globalns, localns = _namespace_utils.ns_for_function(
+                type,
+                parent_namespace=parent_ns,
+            )
+            parent_namespace = None
         else:
-            globalns = {}
-            localns = {}
+            if parent_frame is not None:
+                globalns = parent_frame.f_globals
+                # Do not provide a local ns if the type adapter happens to be instantiated at the module level:
+                localns = parent_frame.f_locals if parent_frame.f_locals is not globalns else {}
+            else:  # pragma: no cover
+                globalns = {}
+                localns = {}
+            parent_namespace = localns
 
         self._module_name = module or cast(str, globalns.get('__name__', ''))
         self._init_core_attrs(
             ns_resolver=_namespace_utils.NsResolver(
                 namespaces_tuple=_namespace_utils.NamespacesTuple(locals=localns, globals=globalns),
-                parent_namespace=localns,
+                parent_namespace=parent_namespace,
             ),
             force=False,
         )
