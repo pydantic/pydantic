@@ -4645,11 +4645,12 @@ def test_override_generate_json_schema():
             cls,
             by_alias: bool = True,
             ref_template: str = DEFAULT_REF_TEMPLATE,
-            union_format: Literal['any_of', 'primitive_type_array'] = 'any_of',
             schema_generator: type[GenerateJsonSchema] = MyGenerateJsonSchema,
             mode='validation',
+            *,
+            union_format: Literal['any_of', 'primitive_type_array'] = 'any_of',
         ) -> dict[str, Any]:
-            return super().model_json_schema(by_alias, ref_template, union_format, schema_generator, mode)
+            return super().model_json_schema(by_alias, ref_template, schema_generator, mode, union_format=union_format)
 
     class MyModel(MyBaseModel):
         x: int

@@ -1247,8 +1247,6 @@ class GenerateJsonSchema:
         if inner_json_schema == null_schema:
             return null_schema
         else:
-            # Thanks to the equality check against `null_schema` above, I think 'oneOf' would also be valid here;
-            # I'll use 'anyOf' for now, but it could be changed it if it would work better with some external tooling
             return self.get_union_of_schemas([inner_json_schema, null_schema])
 
     def union_schema(self, schema: core_schema.UnionSchema) -> JsonSchemaValue:
@@ -1290,13 +1288,6 @@ class GenerateJsonSchema:
         if self.union_format == 'primitive_type_array':
             types: list[str] = []
             for schema in schemas:
-                if len(schema) != 1:
-                    # We only want to include types that don't have any constraints. For instance,
-                    # if `schemas = [{'type': 'string', 'maxLength': 3}, {'type': 'string', 'minLength': 5}]`,
-                    # we don't want to produce `{'type': 'string', 'maxLength': 3, 'minLength': 5}`.
-                    # Same if we have some metadata (e.g. `title`) on a specific union member, we want to preserve it.
-                    break
-
                 schema_types: list[str] | str | None = schema.get('type')
                 if schema_types is None:
                     # No type, meaning it can be a ref or an empty schema.
@@ -1305,6 +1296,13 @@ class GenerateJsonSchema:
                     schema_types = [schema_types]
                 if not all(t in _PRIMITIVE_JSON_SCHEMA_TYPES for t in schema_types):
                     break
+                if len(schema) != 1:
+                    # We only want to include types that don't have any constraints. For instance,
+                    # if `schemas = [{'type': 'string', 'maxLength': 3}, {'type': 'string', 'minLength': 5}]`,
+                    # we don't want to produce `{'type': 'string', 'maxLength': 3, 'minLength': 5}`.
+                    # Same if we have some metadata (e.g. `title`) on a specific union member, we want to preserve it.
+                    break
+
                 types.extend(schema_types)
             else:
                 # If we got there, all the schemas where valid to be used with the `'primitive_type_array` format
