@@ -10,28 +10,28 @@
       
       
       
-        <link rel="canonical" href="https://docs.pydantic.dev/latest/contributing/">
+        <link rel="canonical" href="https://docs.pydantic.dev/latest/integrations/pyrefly/">
       
       
-        <link rel="prev" href="../version-policy/">
+        <link rel="prev" href="../mypy/">
       
       
-        <link rel="next" href="../changelog/">
+        <link rel="next" href="../pycharm/">
       
       
-      <link rel="icon" href="../favicon.png">
+      <link rel="icon" href="../../favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.50">
     
     
       
-        <title>Contributing - Pydantic Validation</title>
+        <title>Pyrefly - Pydantic Validation</title>
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.a40c8224.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.a40c8224.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
       
       
 
@@ -50,13 +50,13 @@
       
     
     
-      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
     
-      <link rel="stylesheet" href="../extra/terminal.css">
+      <link rel="stylesheet" href="../../extra/terminal.css">
     
-      <link rel="stylesheet" href="../extra/tweaks.css">
+      <link rel="stylesheet" href="../../extra/tweaks.css">
     
-    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
   
@@ -67,11 +67,11 @@
       
         <meta  property="og:type"  content="website" >
       
-        <meta  property="og:title"  content="Contributing - Pydantic Validation" >
+        <meta  property="og:title"  content="Pyrefly - Pydantic Validation" >
       
         <meta  property="og:description"  content="Data validation using Python type hints" >
       
-        <meta  property="og:image"  content="https://docs.pydantic.dev/latest/assets/images/social/contributing.png" >
+        <meta  property="og:image"  content="https://docs.pydantic.dev/latest/assets/images/social/integrations/pyrefly.png" >
       
         <meta  property="og:image:type"  content="image/png" >
       
@@ -79,15 +79,15 @@
       
         <meta  property="og:image:height"  content="630" >
       
-        <meta  property="og:url"  content="https://docs.pydantic.dev/latest/contributing/" >
+        <meta  property="og:url"  content="https://docs.pydantic.dev/latest/integrations/pyrefly/" >
       
         <meta  name="twitter:card"  content="summary_large_image" >
       
-        <meta  name="twitter:title"  content="Contributing - Pydantic Validation" >
+        <meta  name="twitter:title"  content="Pyrefly - Pydantic Validation" >
       
         <meta  name="twitter:description"  content="Data validation using Python type hints" >
       
-        <meta  name="twitter:image"  content="https://docs.pydantic.dev/latest/assets/images/social/contributing.png" >
+        <meta  name="twitter:image"  content="https://docs.pydantic.dev/latest/assets/images/social/integrations/pyrefly.png" >
       
     
     
@@ -110,7 +110,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#issues" class="md-skip">
+        <a href="#ide-extension" class="md-skip">
           Skip to content
         </a>
       
@@ -151,9 +151,9 @@ to help you monitor and understand your
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href=".." title="Pydantic Validation" class="md-header__button md-logo" aria-label="Pydantic Validation" data-md-component="logo">
+    <a href="../.." title="Pydantic Validation" class="md-header__button md-logo" aria-label="Pydantic Validation" data-md-component="logo">
       
-  <img src="../logo-white.svg" alt="logo">
+  <img src="../../logo-white.svg" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -170,7 +170,7 @@ to help you monitor and understand your
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Contributing
+              Pyrefly
             
           </span>
         </div>
@@ -285,13 +285,11 @@ to help you monitor and understand your
         
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href=".." class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../.." class="md-tabs__link">
           
   
   Get Started
@@ -309,7 +307,7 @@ to help you monitor and understand your
     
     
       <li class="md-tabs__item">
-        <a href="../concepts/models/" class="md-tabs__link">
+        <a href="../../concepts/models/" class="md-tabs__link">
           
   
   Concepts
@@ -333,7 +331,7 @@ to help you monitor and understand your
     
     
       <li class="md-tabs__item">
-        <a href="../api/base_model/" class="md-tabs__link">
+        <a href="../../api/base_model/" class="md-tabs__link">
           
   
   API Documentation
@@ -354,7 +352,7 @@ to help you monitor and understand your
     
     
       <li class="md-tabs__item">
-        <a href="../internals/architecture/" class="md-tabs__link">
+        <a href="../../internals/architecture/" class="md-tabs__link">
           
   
   Internals
@@ -372,7 +370,7 @@ to help you monitor and understand your
     
     
       <li class="md-tabs__item">
-        <a href="../examples/files/" class="md-tabs__link">
+        <a href="../../examples/files/" class="md-tabs__link">
           
   
   Examples
@@ -390,7 +388,7 @@ to help you monitor and understand your
     
     
       <li class="md-tabs__item">
-        <a href="../errors/errors/" class="md-tabs__link">
+        <a href="../../errors/errors/" class="md-tabs__link">
           
   
   Error Messages
@@ -404,11 +402,13 @@ to help you monitor and understand your
         
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../integrations/logfire/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../logfire/" class="md-tabs__link">
           
   
   Integrations
@@ -441,7 +441,7 @@ to help you monitor and understand your
   
   
     <li class="md-tabs__item">
-      <a href="../pydantic_people/" class="md-tabs__link">
+      <a href="../../pydantic_people/" class="md-tabs__link">
         
   
     
@@ -475,9 +475,9 @@ to help you monitor and understand your
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href=".." title="Pydantic Validation" class="md-nav__button md-logo" aria-label="Pydantic Validation" data-md-component="logo">
+    <a href="../.." title="Pydantic Validation" class="md-nav__button md-logo" aria-label="Pydantic Validation" data-md-component="logo">
       
-  <img src="../logo-white.svg" alt="logo">
+  <img src="../../logo-white.svg" alt="logo">
 
     </a>
     Pydantic Validation
@@ -501,30 +501,25 @@ to help you monitor and understand your
       
   
   
-    
   
   
-  
     
     
     
-      
-        
-        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" >
         
           
-          <label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="">
+          <label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -535,7 +530,7 @@ to help you monitor and understand your
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_1">
             <span class="md-nav__icon md-icon"></span>
             Get Started
@@ -549,7 +544,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href=".." class="md-nav__link">
+      <a href="../.." class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -570,7 +565,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../why/" class="md-nav__link">
+      <a href="../../why/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -591,7 +586,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../help_with_pydantic/" class="md-nav__link">
+      <a href="../../help_with_pydantic/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -612,7 +607,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../install/" class="md-nav__link">
+      <a href="../../install/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -633,7 +628,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../migration/" class="md-nav__link">
+      <a href="../../migration/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -654,7 +649,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../version-policy/" class="md-nav__link">
+      <a href="../../version-policy/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -672,28 +667,10 @@ to help you monitor and understand your
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    Contributing
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../contributing/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -702,212 +679,6 @@ to help you monitor and understand your
   
 
       </a>
-      
-        
-
-  
-
-<nav class="md-nav md-nav--secondary" aria-label="Page contents">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Page contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#issues" class="md-nav__link">
-    <span class="md-ellipsis">
-      Issues
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pull-requests" class="md-nav__link">
-    <span class="md-ellipsis">
-      Pull Requests
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Pull Requests">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#prerequisites" class="md-nav__link">
-    <span class="md-ellipsis">
-      Prerequisites
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#installation-and-setup" class="md-nav__link">
-    <span class="md-ellipsis">
-      Installation and setup
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#check-out-a-new-branch-and-make-your-changes" class="md-nav__link">
-    <span class="md-ellipsis">
-      Check out a new branch and make your changes
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#run-tests-and-linting" class="md-nav__link">
-    <span class="md-ellipsis">
-      Run tests and linting
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#build-documentation" class="md-nav__link">
-    <span class="md-ellipsis">
-      Build documentation
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Build documentation">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#updating-the-documentation" class="md-nav__link">
-    <span class="md-ellipsis">
-      Updating the documentation
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#commit-and-push-your-changes" class="md-nav__link">
-    <span class="md-ellipsis">
-      Commit and push your changes
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#documentation-style" class="md-nav__link">
-    <span class="md-ellipsis">
-      Documentation style
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Documentation style">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#code-documentation" class="md-nav__link">
-    <span class="md-ellipsis">
-      Code documentation
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#documentation-style_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      Documentation Style
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#debugging-python-and-rust" class="md-nav__link">
-    <span class="md-ellipsis">
-      Debugging Python and Rust
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#badges" class="md-nav__link">
-    <span class="md-ellipsis">
-      Badges
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Badges">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#with-markdown" class="md-nav__link">
-    <span class="md-ellipsis">
-      With Markdown
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#with-restructuredtext" class="md-nav__link">
-    <span class="md-ellipsis">
-      With reStructuredText
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#with-html" class="md-nav__link">
-    <span class="md-ellipsis">
-      With HTML
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#adding-your-library-as-part-of-pydantics-third-party-test-suite" class="md-nav__link">
-    <span class="md-ellipsis">
-      Adding your library as part of Pydantic's third party test suite
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -920,7 +691,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../changelog/" class="md-nav__link">
+      <a href="../../changelog/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -988,7 +759,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../concepts/models/" class="md-nav__link">
+      <a href="../../concepts/models/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1009,7 +780,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../concepts/fields/" class="md-nav__link">
+      <a href="../../concepts/fields/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1030,7 +801,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../concepts/json_schema/" class="md-nav__link">
+      <a href="../../concepts/json_schema/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1051,7 +822,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../concepts/json/" class="md-nav__link">
+      <a href="../../concepts/json/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1072,7 +843,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../concepts/types/" class="md-nav__link">
+      <a href="../../concepts/types/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1093,7 +864,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../concepts/unions/" class="md-nav__link">
+      <a href="../../concepts/unions/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1114,7 +885,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../concepts/alias/" class="md-nav__link">
+      <a href="../../concepts/alias/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1135,7 +906,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../concepts/config/" class="md-nav__link">
+      <a href="../../concepts/config/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1156,7 +927,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../concepts/serialization/" class="md-nav__link">
+      <a href="../../concepts/serialization/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1177,7 +948,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../concepts/validators/" class="md-nav__link">
+      <a href="../../concepts/validators/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1198,7 +969,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../concepts/dataclasses/" class="md-nav__link">
+      <a href="../../concepts/dataclasses/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1219,7 +990,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../concepts/forward_annotations/" class="md-nav__link">
+      <a href="../../concepts/forward_annotations/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1240,7 +1011,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../concepts/strict_mode/" class="md-nav__link">
+      <a href="../../concepts/strict_mode/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1261,7 +1032,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../concepts/type_adapter/" class="md-nav__link">
+      <a href="../../concepts/type_adapter/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1282,7 +1053,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../concepts/validation_decorator/" class="md-nav__link">
+      <a href="../../concepts/validation_decorator/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1303,7 +1074,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../concepts/conversion_table/" class="md-nav__link">
+      <a href="../../concepts/conversion_table/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1324,7 +1095,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../concepts/pydantic_settings/" class="md-nav__link">
+      <a href="../../concepts/pydantic_settings/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1345,7 +1116,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../concepts/performance/" class="md-nav__link">
+      <a href="../../concepts/performance/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1366,7 +1137,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../concepts/experimental/" class="md-nav__link">
+      <a href="../../concepts/experimental/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1474,7 +1245,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../api/base_model/" class="md-nav__link">
+      <a href="../../api/base_model/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1495,7 +1266,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../api/root_model/" class="md-nav__link">
+      <a href="../../api/root_model/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1516,7 +1287,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../api/dataclasses/" class="md-nav__link">
+      <a href="../../api/dataclasses/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1537,7 +1308,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../api/type_adapter/" class="md-nav__link">
+      <a href="../../api/type_adapter/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1558,7 +1329,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../api/validate_call/" class="md-nav__link">
+      <a href="../../api/validate_call/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1579,7 +1350,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../api/fields/" class="md-nav__link">
+      <a href="../../api/fields/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1600,7 +1371,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../api/aliases/" class="md-nav__link">
+      <a href="../../api/aliases/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1621,7 +1392,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../api/config/" class="md-nav__link">
+      <a href="../../api/config/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1642,7 +1413,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../api/json_schema/" class="md-nav__link">
+      <a href="../../api/json_schema/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1663,7 +1434,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../api/errors/" class="md-nav__link">
+      <a href="../../api/errors/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1684,7 +1455,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../api/functional_validators/" class="md-nav__link">
+      <a href="../../api/functional_validators/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1705,7 +1476,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../api/functional_serializers/" class="md-nav__link">
+      <a href="../../api/functional_serializers/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1726,7 +1497,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../api/standard_library_types/" class="md-nav__link">
+      <a href="../../api/standard_library_types/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1747,7 +1518,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../api/types/" class="md-nav__link">
+      <a href="../../api/types/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1768,7 +1539,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../api/networks/" class="md-nav__link">
+      <a href="../../api/networks/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1789,7 +1560,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../api/version/" class="md-nav__link">
+      <a href="../../api/version/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1810,7 +1581,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../api/annotated_handlers/" class="md-nav__link">
+      <a href="../../api/annotated_handlers/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1831,7 +1602,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../api/experimental/" class="md-nav__link">
+      <a href="../../api/experimental/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1900,7 +1671,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../api/pydantic_core/" class="md-nav__link">
+      <a href="../../api/pydantic_core/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1921,7 +1692,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../api/pydantic_core_schema/" class="md-nav__link">
+      <a href="../../api/pydantic_core_schema/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1950,7 +1721,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../api/pydantic_settings/" class="md-nav__link">
+      <a href="../../api/pydantic_settings/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2011,7 +1782,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../api/pydantic_extra_types_color/" class="md-nav__link">
+      <a href="../../api/pydantic_extra_types_color/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2032,7 +1803,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../api/pydantic_extra_types_country/" class="md-nav__link">
+      <a href="../../api/pydantic_extra_types_country/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2053,7 +1824,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../api/pydantic_extra_types_payment/" class="md-nav__link">
+      <a href="../../api/pydantic_extra_types_payment/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2074,7 +1845,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../api/pydantic_extra_types_phone_numbers/" class="md-nav__link">
+      <a href="../../api/pydantic_extra_types_phone_numbers/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2095,7 +1866,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../api/pydantic_extra_types_routing_numbers/" class="md-nav__link">
+      <a href="../../api/pydantic_extra_types_routing_numbers/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2116,7 +1887,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../api/pydantic_extra_types_coordinate/" class="md-nav__link">
+      <a href="../../api/pydantic_extra_types_coordinate/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2137,7 +1908,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../api/pydantic_extra_types_mac_address/" class="md-nav__link">
+      <a href="../../api/pydantic_extra_types_mac_address/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2158,7 +1929,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../api/pydantic_extra_types_isbn/" class="md-nav__link">
+      <a href="../../api/pydantic_extra_types_isbn/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2179,7 +1950,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../api/pydantic_extra_types_pendulum_dt/" class="md-nav__link">
+      <a href="../../api/pydantic_extra_types_pendulum_dt/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2200,7 +1971,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../api/pydantic_extra_types_currency_code/" class="md-nav__link">
+      <a href="../../api/pydantic_extra_types_currency_code/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2221,7 +1992,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../api/pydantic_extra_types_language_code/" class="md-nav__link">
+      <a href="../../api/pydantic_extra_types_language_code/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2242,7 +2013,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../api/pydantic_extra_types_script_code/" class="md-nav__link">
+      <a href="../../api/pydantic_extra_types_script_code/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2263,7 +2034,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../api/pydantic_extra_types_semantic_version/" class="md-nav__link">
+      <a href="../../api/pydantic_extra_types_semantic_version/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2284,7 +2055,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../api/pydantic_extra_types_timezone_name/" class="md-nav__link">
+      <a href="../../api/pydantic_extra_types_timezone_name/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2305,7 +2076,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../api/pydantic_extra_types_ulid/" class="md-nav__link">
+      <a href="../../api/pydantic_extra_types_ulid/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2381,7 +2152,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../internals/architecture/" class="md-nav__link">
+      <a href="../../internals/architecture/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2402,7 +2173,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../internals/resolving_annotations/" class="md-nav__link">
+      <a href="../../internals/resolving_annotations/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2470,7 +2241,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../examples/files/" class="md-nav__link">
+      <a href="../../examples/files/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2491,7 +2262,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../examples/requests/" class="md-nav__link">
+      <a href="../../examples/requests/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2512,7 +2283,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../examples/queues/" class="md-nav__link">
+      <a href="../../examples/queues/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2533,7 +2304,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../examples/orms/" class="md-nav__link">
+      <a href="../../examples/orms/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2554,7 +2325,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../examples/custom_validators/" class="md-nav__link">
+      <a href="../../examples/custom_validators/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2622,7 +2393,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../errors/errors/" class="md-nav__link">
+      <a href="../../errors/errors/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2643,7 +2414,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../errors/validation_errors/" class="md-nav__link">
+      <a href="../../errors/validation_errors/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2664,7 +2435,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../errors/usage_errors/" class="md-nav__link">
+      <a href="../../errors/usage_errors/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2689,25 +2460,30 @@ to help you monitor and understand your
       
   
   
+    
   
   
+  
     
     
     
+      
+        
+        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
         
           
-          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
             
   
   <span class="md-ellipsis">
@@ -2718,7 +2494,7 @@ to help you monitor and understand your
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             Integrations
@@ -2732,7 +2508,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../integrations/logfire/" class="md-nav__link">
+      <a href="../logfire/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2753,7 +2529,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../integrations/llms/" class="md-nav__link">
+      <a href="../llms/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2771,25 +2547,30 @@ to help you monitor and understand your
                 
   
   
+    
   
   
+  
     
     
     
       
       
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7_3" >
         
           
-          <label class="md-nav__link" for="__nav_7_3" id="__nav_7_3_label" tabindex="0">
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_7_3" id="__nav_7_3_label" tabindex="">
             
   
   <span class="md-ellipsis">
@@ -2800,7 +2581,7 @@ to help you monitor and understand your
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_3_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_3_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_7_3">
             <span class="md-nav__icon md-icon"></span>
             Dev Tools
@@ -2814,7 +2595,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../integrations/mypy/" class="md-nav__link">
+      <a href="../mypy/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2832,10 +2613,28 @@ to help you monitor and understand your
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../integrations/pyrefly/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Pyrefly
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -2844,6 +2643,44 @@ to help you monitor and understand your
   
 
       </a>
+      
+        
+
+  
+
+<nav class="md-nav md-nav--secondary" aria-label="Page contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Page contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#ide-extension" class="md-nav__link">
+    <span class="md-ellipsis">
+      IDE extension
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#type-checker" class="md-nav__link">
+    <span class="md-ellipsis">
+      Type checker
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -2856,7 +2693,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../integrations/pycharm/" class="md-nav__link">
+      <a href="../pycharm/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2877,7 +2714,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../integrations/hypothesis/" class="md-nav__link">
+      <a href="../hypothesis/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2898,7 +2735,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../integrations/visual_studio_code/" class="md-nav__link">
+      <a href="../visual_studio_code/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2919,7 +2756,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../integrations/datamodel_code_generator/" class="md-nav__link">
+      <a href="../datamodel_code_generator/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2940,7 +2777,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../integrations/devtools/" class="md-nav__link">
+      <a href="../devtools/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2961,7 +2798,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../integrations/rich/" class="md-nav__link">
+      <a href="../rich/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2982,7 +2819,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../integrations/linting/" class="md-nav__link">
+      <a href="../linting/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -3003,7 +2840,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../integrations/documentation/" class="md-nav__link">
+      <a href="../documentation/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -3037,17 +2874,20 @@ to help you monitor and understand your
       
       
         
+          
+          
+        
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
         <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7_4" >
         
           
-          <label class="md-nav__link" for="__nav_7_4" id="__nav_7_4_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_7_4" id="__nav_7_4_label" tabindex="">
             
   
   <span class="md-ellipsis">
@@ -3072,7 +2912,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../integrations/aws_lambda/" class="md-nav__link">
+      <a href="../aws_lambda/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -3128,7 +2968,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../pydantic_people/" class="md-nav__link">
+      <a href="../../pydantic_people/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -3168,186 +3008,18 @@ to help you monitor and understand your
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#issues" class="md-nav__link">
+  <a href="#ide-extension" class="md-nav__link">
     <span class="md-ellipsis">
-      Issues
+      IDE extension
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#pull-requests" class="md-nav__link">
+  <a href="#type-checker" class="md-nav__link">
     <span class="md-ellipsis">
-      Pull Requests
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Pull Requests">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#prerequisites" class="md-nav__link">
-    <span class="md-ellipsis">
-      Prerequisites
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#installation-and-setup" class="md-nav__link">
-    <span class="md-ellipsis">
-      Installation and setup
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#check-out-a-new-branch-and-make-your-changes" class="md-nav__link">
-    <span class="md-ellipsis">
-      Check out a new branch and make your changes
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#run-tests-and-linting" class="md-nav__link">
-    <span class="md-ellipsis">
-      Run tests and linting
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#build-documentation" class="md-nav__link">
-    <span class="md-ellipsis">
-      Build documentation
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Build documentation">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#updating-the-documentation" class="md-nav__link">
-    <span class="md-ellipsis">
-      Updating the documentation
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#commit-and-push-your-changes" class="md-nav__link">
-    <span class="md-ellipsis">
-      Commit and push your changes
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#documentation-style" class="md-nav__link">
-    <span class="md-ellipsis">
-      Documentation style
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Documentation style">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#code-documentation" class="md-nav__link">
-    <span class="md-ellipsis">
-      Code documentation
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#documentation-style_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      Documentation Style
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#debugging-python-and-rust" class="md-nav__link">
-    <span class="md-ellipsis">
-      Debugging Python and Rust
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#badges" class="md-nav__link">
-    <span class="md-ellipsis">
-      Badges
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Badges">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#with-markdown" class="md-nav__link">
-    <span class="md-ellipsis">
-      With Markdown
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#with-restructuredtext" class="md-nav__link">
-    <span class="md-ellipsis">
-      With reStructuredText
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#with-html" class="md-nav__link">
-    <span class="md-ellipsis">
-      With HTML
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#adding-your-library-as-part-of-pydantics-third-party-test-suite" class="md-nav__link">
-    <span class="md-ellipsis">
-      Adding your library as part of Pydantic's third party test suite
+      Type checker
     </span>
   </a>
   
@@ -3372,206 +3044,69 @@ to help you monitor and understand your
   
 
 
-  <h1>Contributing</h1>
+  <h1>Pyrefly</h1>
 
-<p>We'd love you to contribute to Pydantic!</p>
-<h2 id="issues">Issues<a class="headerlink" href="#issues" title="Permanent link">&para;</a></h2>
-<p>Questions, feature requests and bug reports are all welcome as <a href="https://github.com/pydantic/pydantic/issues/new/choose">discussions or issues</a>.
-<strong>However, to report a security vulnerability, please see our <a href="https://github.com/pydantic/pydantic/security/policy">security policy</a>.</strong></p>
-<p>To make it as simple as possible for us to help you, please include the output of the following call in your issue:</p>
-<div class="language-bash highlight"><pre><span></span><code>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import pydantic.version; print(pydantic.version.version_info())&quot;</span>
+<p><a href="https://pyrefly.org/">Pyrefly</a> is a Python type checker and language server with built-in support for a number of Pydantic-specific features. This support works out-of-the-box with Pydantic and Pyrefly installed, with no additional configuration needed.</p>
+<p>Pyrefly is available as both an <a href="https://pyrefly.org/en/docs/IDE/">IDE extension</a> and a <a href="https://pyrefly.org/en/docs/installation/">command-line type checker</a>.</p>
+<h2 id="ide-extension">IDE extension<a class="headerlink" href="#ide-extension" title="Permanent link">&para;</a></h2>
+<p>Pyrefly gives you IDE features such as go-to-definition and autocomplete on your Pydantic models.</p>
+<p>Here’s an example of signature help, powered by Pyrefly’s understanding of the Pydantic-specific <code>validation_alias</code> keyword:</p>
+<p><img alt="Signature help with the Pyrefly IDE extension" src="../../img/pyrefly.png" /></p>
+<p>As you type <code>Model()</code>, Pyrefly hints that you need to use the name <code>x_</code> to populate the <code>x</code> field.</p>
+<h2 id="type-checker">Type checker<a class="headerlink" href="#type-checker" title="Permanent link">&para;</a></h2>
+<p>Pyrefly can also catch errors in your code before you run it. Consider the following example:</p>
+<div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Model1</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="n">x</span><span class="p">:</span> <span class="nb">int</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Model2</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">x</span><span class="p">:</span> <span class="nb">int</span>
+
+
+<span class="n">model1</span> <span class="o">=</span> <span class="n">Model1</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">model1</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># validation error: mutating a frozen field</span>
+
+<span class="n">model2</span> <span class="o">=</span> <span class="n">Model2</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">model2</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># validation error: mutating a frozen field</span>
+</code></pre></div></td></tr></table></div>
+<p>Since <code>Model1</code> declares that it is frozen using a <a href="https://typing.python.org/en/latest/spec/dataclasses.html#the-dataclass-transform-decorator">standard type system feature</a>, any type checker of your choice will catch the validation error from mutating <code>model1.x</code>. However, a type checker without special support for the Pydantic <code>ConfigDict</code> class will miss the validation error from mutating <code>model2.x</code>.</p>
+<p>Pyrefly catches both errors:</p>
+<div class="language-output highlight"><pre><span></span><code><span class="go">ERROR Cannot set field `x` [read-only]</span>
+<span class="go">  --&gt; foo.py:11:1</span>
+<span class="go">   |</span>
+<span class="go">11 | model1.x = 1  # validation error: mutating a frozen field</span>
+<span class="go">   | ^^^^^^^^</span>
+<span class="go">   |</span>
+<span class="go">  This field belongs to a frozen Pydantic model</span>
+<span class="go">ERROR Cannot set field `x` [read-only]</span>
+<span class="go">  --&gt; foo.py:14:1</span>
+<span class="go">   |</span>
+<span class="go">14 | model2.x = 1  # validation error: mutating a frozen field</span>
+<span class="go">   | ^^^^^^^^</span>
+<span class="go">   |</span>
+<span class="go">  This field belongs to a frozen Pydantic model</span>
 </code></pre></div>
-<p>If you're using Pydantic prior to <strong>v2.0</strong> please use:</p>
-<div class="language-bash highlight"><pre><span></span><code>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import pydantic.utils; print(pydantic.utils.version_info())&quot;</span>
-</code></pre></div>
-<p>Please try to always include the above unless you're unable to install Pydantic or <strong>know</strong> it's not relevant
-to your question or feature request.</p>
-<h2 id="pull-requests">Pull Requests<a class="headerlink" href="#pull-requests" title="Permanent link">&para;</a></h2>
-<p>It should be extremely simple to get started and create a Pull Request.
-Pydantic is released regularly so you should see your improvements release in a matter of days or weeks 🚀.</p>
-<p>Unless your change is trivial (typo, docs tweak etc.), please create an issue to discuss the change before
-creating a pull request.</p>
-<div class="admonition note">
-<p class="admonition-title">Pydantic V1 is in maintenance mode</p>
-<p>Pydantic v1 is in maintenance mode, meaning that only bug fixes and security fixes will be accepted.
-New features should be targeted at Pydantic v2.</p>
-<p>To submit a fix to Pydantic v1, use the <code>1.10.X-fixes</code> as a target branch.</p>
-</div>
-<p>If you're looking for something to get your teeth into, check out the
-<a href="https://github.com/pydantic/pydantic/issues?q=is%3Aopen+is%3Aissue+label%3A%22help+wanted%22">"help wanted"</a>
-label on github.</p>
-<p>To make contributing as easy and fast as possible, you'll want to run tests and linting locally. Luckily,
-Pydantic has few dependencies, doesn't require compiling and tests don't need access to databases, etc.
-Because of this, setting up and running the tests should be very simple.</p>
-<div class="admonition tip">
-<p class="admonition-title">Tip</p>
-<p><strong>tl;dr</strong>: use <code>make format</code> to fix formatting, <code>make</code> to run tests and linting and <code>make docs</code>
-to build the docs.</p>
-</div>
-<h3 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h3>
-<p>You'll need the following prerequisites:</p>
-<ul>
-<li>Any Python version between <strong>Python 3.9 and 3.12</strong></li>
-<li><a href="https://docs.astral.sh/uv/getting-started/installation/"><strong>uv</strong></a> or other virtual environment tool</li>
-<li><strong>git</strong></li>
-<li><strong>make</strong></li>
-</ul>
-<h3 id="installation-and-setup">Installation and setup<a class="headerlink" href="#installation-and-setup" title="Permanent link">&para;</a></h3>
-<p>Fork the repository on GitHub and clone your fork locally.</p>
-<div class="language-bash highlight"><pre><span></span><code><span class="c1"># Clone your fork and cd into the repo directory</span>
-git<span class="w"> </span>clone<span class="w"> </span>git@github.com:&lt;your<span class="w"> </span>username&gt;/pydantic.git
-<span class="nb">cd</span><span class="w"> </span>pydantic
-
-<span class="c1"># Install UV and pre-commit</span>
-<span class="c1"># We use pipx here, for other options see:</span>
-<span class="c1"># https://docs.astral.sh/uv/getting-started/installation/</span>
-<span class="c1"># https://pre-commit.com/#install</span>
-<span class="c1"># To get pipx itself:</span>
-<span class="c1"># https://pypa.github.io/pipx/</span>
-pipx<span class="w"> </span>install<span class="w"> </span>uv
-pipx<span class="w"> </span>install<span class="w"> </span>pre-commit
-
-<span class="c1"># Install pydantic, dependencies, test dependencies and doc dependencies</span>
-make<span class="w"> </span>install
-</code></pre></div>
-<h3 id="check-out-a-new-branch-and-make-your-changes">Check out a new branch and make your changes<a class="headerlink" href="#check-out-a-new-branch-and-make-your-changes" title="Permanent link">&para;</a></h3>
-<p>Create a new branch for your changes.</p>
-<div class="language-bash highlight"><pre><span></span><code><span class="c1"># Checkout a new branch and make your changes</span>
-git<span class="w"> </span>checkout<span class="w"> </span>-b<span class="w"> </span>my-new-feature-branch
-<span class="c1"># Make your changes...</span>
-</code></pre></div>
-<h3 id="run-tests-and-linting">Run tests and linting<a class="headerlink" href="#run-tests-and-linting" title="Permanent link">&para;</a></h3>
-<p>Run tests and linting locally to make sure everything is working as expected.</p>
-<div class="language-bash highlight"><pre><span></span><code><span class="c1"># Run automated code formatting and linting</span>
-make<span class="w"> </span>format
-<span class="c1"># Pydantic uses ruff, an awesome Python linter written in rust</span>
-<span class="c1"># https://github.com/astral-sh/ruff</span>
-
-<span class="c1"># Run tests and linting</span>
-make
-<span class="c1"># There are a few sub-commands in Makefile like `test`, `testcov` and `lint`</span>
-<span class="c1"># which you might want to use, but generally just `make` should be all you need.</span>
-<span class="c1"># You can run `make help` to see more options.</span>
-</code></pre></div>
-<h3 id="build-documentation">Build documentation<a class="headerlink" href="#build-documentation" title="Permanent link">&para;</a></h3>
-<p>If you've made any changes to the documentation (including changes to function signatures, class definitions, or docstrings that will appear in the API documentation), make sure it builds successfully.</p>
-<p>We use <code>mkdocs-material[imaging]</code> to support social previews (see the <a href="https://squidfunk.github.io/mkdocs-material/plugins/requirements/image-processing/">plugin documentation</a>).</p>
-<div class="language-bash highlight"><pre><span></span><code><span class="c1"># Build documentation</span>
-make<span class="w"> </span>docs
-<span class="c1"># If you have changed the documentation, make sure it builds successfully.</span>
-<span class="c1"># You can also use `uv run mkdocs serve` to serve the documentation at localhost:8000</span>
-</code></pre></div>
-<p>If this isn't working due to issues with the imaging plugin, try commenting out the <code>social</code> plugin line in <code>mkdocs.yml</code> and running <code>make docs</code> again.</p>
-<h4 id="updating-the-documentation">Updating the documentation<a class="headerlink" href="#updating-the-documentation" title="Permanent link">&para;</a></h4>
-<p>We push a new version of the documentation with each minor release, and we push to a <code>dev</code> path with each commit to <code>main</code>.</p>
-<p>If you're updating the documentation out of cycle with a minor release and want your changes to be reflected on <code>latest</code>,
-do the following:</p>
-<ol>
-<li>Open a PR against <code>main</code> with your docs changes</li>
-<li>Once the PR is merged, checkout the <code>docs-update</code> branch. This branch should be up to date with the latest patch release.
-For example, if the latest release is <code>v2.9.2</code>, you should make sure <code>docs-update</code> is up to date with the <code>v2.9.2</code> tag.</li>
-<li>Checkout a new branch from <code>docs-update</code> and cherry-pick your changes onto this branch.</li>
-<li>Push your changes and open a PR against <code>docs-update</code>.</li>
-<li>Once the PR is merged, the new docs will be built and deployed.</li>
-</ol>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Maintainer shortcut - as a maintainer, you can skip the second PR and just cherry pick directly onto the <code>docs-update</code> branch.</p>
-</div>
-<h3 id="commit-and-push-your-changes">Commit and push your changes<a class="headerlink" href="#commit-and-push-your-changes" title="Permanent link">&para;</a></h3>
-<p>Commit your changes, push your branch to GitHub, and create a pull request.</p>
-<p>Please follow the pull request template and fill in as much information as possible. Link to any relevant issues and include a description of your changes.</p>
-<p>When your pull request is ready for review, add a comment with the message "please review" and we'll take a look as soon as we can.</p>
-<h2 id="documentation-style">Documentation style<a class="headerlink" href="#documentation-style" title="Permanent link">&para;</a></h2>
-<p>Documentation is written in Markdown and built using <a href="https://squidfunk.github.io/mkdocs-material/">Material for MkDocs</a>. API documentation is build from docstrings using <a href="https://mkdocstrings.github.io/">mkdocstrings</a>.</p>
-<h3 id="code-documentation">Code documentation<a class="headerlink" href="#code-documentation" title="Permanent link">&para;</a></h3>
-<p>When contributing to Pydantic, please make sure that all code is well documented. The following should be documented using properly formatted docstrings:</p>
-<ul>
-<li>Modules</li>
-<li>Class definitions</li>
-<li>Function definitions</li>
-<li>Module-level variables</li>
-</ul>
-<p>Pydantic uses <a href="https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings">Google-style docstrings</a> formatted according to <a href="https://www.python.org/dev/peps/pep-0257/">PEP 257</a> guidelines. (See <a href="https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html">Example Google Style Python Docstrings</a> for further examples.)</p>
-<p><a href="https://www.pydocstyle.org/en/stable/index.html">pydocstyle</a> is used for linting docstrings. You can run <code>make format</code> to check your docstrings.</p>
-<p>Where this is a conflict between Google-style docstrings and pydocstyle linting, follow the pydocstyle linting hints.</p>
-<p>Class attributes and function arguments should be documented in the format "name: description." When applicable, a return type should be documented with just a description. Types are inferred from the signature.</p>
-<div class="language-python highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Foo</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A class docstring.</span>
-
-<span class="sd">    Attributes:</span>
-<span class="sd">        bar: A description of bar. Defaults to &quot;bar&quot;.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="n">bar</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;bar&#39;</span>
-</code></pre></div>
-<div class="language-python highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">bar</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">baz</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A function docstring.</span>
-
-<span class="sd">    Args:</span>
-<span class="sd">        baz: A description of `baz`.</span>
-
-<span class="sd">    Returns:</span>
-<span class="sd">        A description of the return value.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="k">return</span> <span class="s1">&#39;bar&#39;</span>
-</code></pre></div>
-<p>You may include example code in docstrings. This code should be complete, self-contained, and runnable. Docstring examples are tested, so make sure they are correct and complete. See <a class="autorefs autorefs-internal" href="../api/fields/#pydantic.fields.FieldInfo.from_annotated_attribute"><code>FieldInfo.from_annotated_attribute</code></a> for an example.</p>
-<div class="admonition note">
-<p class="admonition-title">Class and instance attributes</p>
-<p>Class attributes should be documented in the class docstring.</p>
-<p>Instance attributes should be documented as "Args" in the <code>__init__</code> docstring.</p>
-</div>
-<h3 id="documentation-style_1">Documentation Style<a class="headerlink" href="#documentation-style_1" title="Permanent link">&para;</a></h3>
-<p>In general, documentation should be written in a friendly, approachable style. It should be easy to read and understand, and should be as concise as possible while still being complete.</p>
-<p>Code examples are encouraged, but should be kept short and simple. However, every code example should be complete, self-contained, and runnable. (If you're not sure how to do this, ask for help!) We prefer print output to naked asserts, but if you're testing something that doesn't have a useful print output, asserts are fine.</p>
-<p>Pydantic's unit test will test all code examples in the documentation, so it's important that they are correct and complete. When adding a new code example, use the following to test examples and update their formatting and output:</p>
-<div class="language-bash highlight"><pre><span></span><code><span class="c1"># Run tests and update code examples</span>
-pytest<span class="w"> </span>tests/test_docs.py<span class="w"> </span>--update-examples
-</code></pre></div>
-<h2 id="debugging-python-and-rust">Debugging Python and Rust<a class="headerlink" href="#debugging-python-and-rust" title="Permanent link">&para;</a></h2>
-<p>If you're working with <code>pydantic</code> and <code>pydantic-core</code>, you might find it helpful to debug Python and Rust code together.
-Here's a quick guide on how to do that. This tutorial is done in VSCode, but you can use similar steps in other IDEs.</p>
-<div style="position: relative; padding-bottom: 56.4035546262415%; height: 0;">
-    <iframe src="https://www.loom.com/embed/71019f8b92b04839ae233eb70c23c5b5?sid=1ea39ca9-d0cc-494b-8214-159f7cc26190" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;">
-    </iframe>
-</div>
-
-<h2 id="badges">Badges<a class="headerlink" href="#badges" title="Permanent link">&para;</a></h2>
-<p><a href="https://pydantic.dev"><img alt="Pydantic v1" src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/main/docs/badge/v1.json" /></a>
-<a href="https://pydantic.dev"><img alt="Pydantic v2" src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/main/docs/badge/v2.json" /></a></p>
-<p>Pydantic has a badge that you can use to show that your project uses Pydantic. You can use this badge in your <code>README.md</code>:</p>
-<h3 id="with-markdown">With Markdown<a class="headerlink" href="#with-markdown" title="Permanent link">&para;</a></h3>
-<div class="language-md highlight"><pre><span></span><code>[<span class="nt">![Pydantic v1</span>](<span class="na">https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/main/docs/badge/v1.json</span>)](https://pydantic.dev)
-
-[<span class="nt">![Pydantic v2</span>](<span class="na">https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/main/docs/badge/v2.json</span>)](https://pydantic.dev)
-</code></pre></div>
-<h3 id="with-restructuredtext">With reStructuredText<a class="headerlink" href="#with-restructuredtext" title="Permanent link">&para;</a></h3>
-<div class="language-rst highlight"><pre><span></span><code><span class="p">..</span> <span class="ow">image</span><span class="p">::</span> https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/main/docs/badge/v1.json
-    <span class="nc">:target:</span> https://pydantic.dev
-    <span class="nc">:alt:</span> Pydantic
-
-<span class="p">..</span> <span class="ow">image</span><span class="p">::</span> https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/main/docs/badge/v2.json
-    <span class="nc">:target:</span> https://pydantic.dev
-    <span class="nc">:alt:</span> Pydantic
-</code></pre></div>
-<h3 id="with-html">With HTML<a class="headerlink" href="#with-html" title="Permanent link">&para;</a></h3>
-<div class="language-html highlight"><pre><span></span><code><span class="p">&lt;</span><span class="nt">a</span> <span class="na">href</span><span class="o">=</span><span class="s">&quot;https://pydantic.dev&quot;</span><span class="p">&gt;&lt;</span><span class="nt">img</span> <span class="na">src</span><span class="o">=</span><span class="s">&quot;https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/main/docs/badge/v1.json&quot;</span> <span class="na">alt</span><span class="o">=</span><span class="s">&quot;Pydantic Version 1&quot;</span> <span class="na">style</span><span class="o">=</span><span class="s">&quot;max-width:100%;&quot;</span><span class="p">&gt;&lt;/</span><span class="nt">a</span><span class="p">&gt;</span>
-
-<span class="p">&lt;</span><span class="nt">a</span> <span class="na">href</span><span class="o">=</span><span class="s">&quot;https://pydantic.dev&quot;</span><span class="p">&gt;&lt;</span><span class="nt">img</span> <span class="na">src</span><span class="o">=</span><span class="s">&quot;https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/main/docs/badge/v2.json&quot;</span> <span class="na">alt</span><span class="o">=</span><span class="s">&quot;Pydantic Version 2&quot;</span> <span class="na">style</span><span class="o">=</span><span class="s">&quot;max-width:100%;&quot;</span><span class="p">&gt;&lt;/</span><span class="nt">a</span><span class="p">&gt;</span>
-</code></pre></div>
-<h2 id="adding-your-library-as-part-of-pydantics-third-party-test-suite">Adding your library as part of Pydantic's third party test suite<a class="headerlink" href="#adding-your-library-as-part-of-pydantics-third-party-test-suite" title="Permanent link">&para;</a></h2>
-<p>To be able to identify regressions early during development, Pydantic runs tests on various third-party projects
-using Pydantic. We consider adding support for testing new open source projects (that rely heavily on Pydantic) if your said project matches some of the following criteria:</p>
-<ul>
-<li>The project is actively maintained.</li>
-<li>The project makes use of Pydantic internals (e.g. relying on the <a class="autorefs autorefs-internal" href="../api/base_model/#pydantic.BaseModel"><code>BaseModel</code></a> metaclass, typing utilities).</li>
-<li>The project is popular enough (although small projects can still be included depending on how Pydantic is being used).</li>
-<li>The project CI is simple enough to be ported into Pydantic's testing workflow.</li>
-</ul>
-<p>If your project meets some of these criteria, you can <a href="https://github.com/pydantic/pydantic/issues/new?assignees=&amp;labels=feature+request&amp;projects=&amp;template=feature_request.yml">open feature request</a>
-to discuss the inclusion of your project.</p>
+<p>See the <a href="https://pyrefly.org/en/docs/pydantic/">Pyrefly documentation</a> for more information.</p>
 
 
 
@@ -3678,22 +3213,22 @@ to discuss the inclusion of your project.</p>
       <div class="md-progress" data-md-component="progress" role="progressbar"></div>
     
     
-    <script id="__config" type="application/json">{"base": "..", "features": ["content.tabs.link", "content.code.annotate", "content.code.copy", "announce.dismiss", "navigation.tabs", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.preview", "navigation.instant.progress", "navigation.path", "navigation.sections", "navigation.top", "navigation.tracking", "search.suggest", "toc.follow"], "search": "../assets/javascripts/workers/search.f8cc74c7.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["content.tabs.link", "content.code.annotate", "content.code.copy", "announce.dismiss", "navigation.tabs", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.preview", "navigation.instant.progress", "navigation.path", "navigation.sections", "navigation.top", "navigation.tracking", "search.suggest", "toc.follow"], "search": "../../assets/javascripts/workers/search.f8cc74c7.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.60a45f97.min.js"></script>
+      <script src="../../assets/javascripts/bundle.60a45f97.min.js"></script>
       
         <script src="https://cdn.jsdelivr.net/npm/algoliasearch@5.20.0/dist/lite/builds/browser.umd.js"></script>
       
         <script src="https://cdn.jsdelivr.net/npm/instantsearch.js@4.77.3/dist/instantsearch.production.min.js"></script>
       
-        <script src="../extra/algolia.js"></script>
+        <script src="../../extra/algolia.js"></script>
       
-        <script src="../extra/feedback.js"></script>
+        <script src="../../extra/feedback.js"></script>
       
-        <script src="../extra/fluff.js"></script>
+        <script src="../../extra/fluff.js"></script>
       
-        <script src="../extra/mathjax.js"></script>
+        <script src="../../extra/mathjax.js"></script>
       
         <script src="https://samuelcolvin.github.io/mkdocs-run-code/run_code_main.js"></script>
       

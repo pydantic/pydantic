@@ -92,6 +92,7 @@ Define how data should be in pure, canonical Python 3.9+; validate it with Pydan
 - [Pydantic Logfire](https://docs.pydantic.dev/latest/integrations/logfire/index.md)
 - [Mypy](https://docs.pydantic.dev/latest/integrations/mypy/index.md)
 - [PyCharm](https://docs.pydantic.dev/latest/integrations/pycharm/index.md)
+- [Pyrefly](https://docs.pydantic.dev/latest/integrations/pyrefly/index.md)
 - [Rich](https://docs.pydantic.dev/latest/integrations/rich/index.md)
 - [Visual Studio Code](https://docs.pydantic.dev/latest/integrations/visual_studio_code/index.md)
 
