@@ -15,7 +15,7 @@ import tomli
 import yaml
 from build.__main__ import (
     build_package,
-)  # Might be private, but there's currently no public API to programatically build wheels..
+)  # Might be private, but there's currently no public API to programmatically build wheels..
 from jinja2 import Template  # type: ignore
 from mkdocs.config.defaults import MkDocsConfig
 from mkdocs.exceptions import PluginError
