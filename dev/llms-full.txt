@@ -41026,7 +41026,7 @@ validate_python(
     strict: bool | None = None,
     extra: ExtraValues | None = None,
     from_attributes: bool | None = None,
-    context: dict[str, Any] | None = None,
+    context: Any | None = None,
     experimental_allow_partial: (
         bool | Literal["off", "on", "trailing-strings"]
     ) = False,
@@ -41040,7 +41040,7 @@ Validate a Python object against the model.
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `object` | `Any` | The Python object to validate against the model. | *required* | | `strict` | `bool | None` | Whether to strictly check types. | `None` | | `extra` | `ExtraValues | None` | Whether to ignore, allow, or forbid extra data during model validation. See the extra configuration value for details. | `None` | | `from_attributes` | `bool | None` | Whether to extract data from object attributes. | `None` | | `context` | `dict[str, Any] | None` | Additional context to pass to the validator. | `None` | | `experimental_allow_partial` | `bool | Literal['off', 'on', 'trailing-strings']` | Experimental whether to enable partial validation, e.g. to process streams. * False / 'off': Default behavior, no partial validation. * True / 'on': Enable partial validation. * 'trailing-strings': Enable partial validation and allow trailing strings in the input. | `False` | | `by_alias` | `bool | None` | Whether to use the field's alias when validating against the provided input data. | `None` | | `by_name` | `bool | None` | Whether to use the field's name when validating against the provided input data. | `None` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `object` | `Any` | The Python object to validate against the model. | *required* | | `strict` | `bool | None` | Whether to strictly check types. | `None` | | `extra` | `ExtraValues | None` | Whether to ignore, allow, or forbid extra data during model validation. See the extra configuration value for details. | `None` | | `from_attributes` | `bool | None` | Whether to extract data from object attributes. | `None` | | `context` | `Any | None` | Additional context to pass to the validator. | `None` | | `experimental_allow_partial` | `bool | Literal['off', 'on', 'trailing-strings']` | Experimental whether to enable partial validation, e.g. to process streams. * False / 'off': Default behavior, no partial validation. * True / 'on': Enable partial validation. * 'trailing-strings': Enable partial validation and allow trailing strings in the input. | `False` | | `by_alias` | `bool | None` | Whether to use the field's alias when validating against the provided input data. | `None` | | `by_name` | `bool | None` | Whether to use the field's name when validating against the provided input data. | `None` |
 
 Note
 
@@ -41061,7 +41061,7 @@ def validate_python(
     strict: bool | None = None,
     extra: ExtraValues | None = None,
     from_attributes: bool | None = None,
-    context: dict[str, Any] | None = None,
+    context: Any | None = None,
     experimental_allow_partial: bool | Literal['off', 'on', 'trailing-strings'] = False,
     by_alias: bool | None = None,
     by_name: bool | None = None,
@@ -41118,7 +41118,7 @@ validate_json(
     *,
     strict: bool | None = None,
     extra: ExtraValues | None = None,
-    context: dict[str, Any] | None = None,
+    context: Any | None = None,
     experimental_allow_partial: (
         bool | Literal["off", "on", "trailing-strings"]
     ) = False,
@@ -41136,7 +41136,7 @@ Validate a JSON string or bytes against the model.
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `data` | `str | bytes | bytearray` | The JSON data to validate against the model. | *required* | | `strict` | `bool | None` | Whether to strictly check types. | `None` | | `extra` | `ExtraValues | None` | Whether to ignore, allow, or forbid extra data during model validation. See the extra configuration value for details. | `None` | | `context` | `dict[str, Any] | None` | Additional context to use during validation. | `None` | | `experimental_allow_partial` | `bool | Literal['off', 'on', 'trailing-strings']` | Experimental whether to enable partial validation, e.g. to process streams. * False / 'off': Default behavior, no partial validation. * True / 'on': Enable partial validation. * 'trailing-strings': Enable partial validation and allow trailing strings in the input. | `False` | | `by_alias` | `bool | None` | Whether to use the field's alias when validating against the provided input data. | `None` | | `by_name` | `bool | None` | Whether to use the field's name when validating against the provided input data. | `None` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `data` | `str | bytes | bytearray` | The JSON data to validate against the model. | *required* | | `strict` | `bool | None` | Whether to strictly check types. | `None` | | `extra` | `ExtraValues | None` | Whether to ignore, allow, or forbid extra data during model validation. See the extra configuration value for details. | `None` | | `context` | `Any | None` | Additional context to use during validation. | `None` | | `experimental_allow_partial` | `bool | Literal['off', 'on', 'trailing-strings']` | Experimental whether to enable partial validation, e.g. to process streams. * False / 'off': Default behavior, no partial validation. * True / 'on': Enable partial validation. * 'trailing-strings': Enable partial validation and allow trailing strings in the input. | `False` | | `by_alias` | `bool | None` | Whether to use the field's alias when validating against the provided input data. | `None` | | `by_name` | `bool | None` | Whether to use the field's name when validating against the provided input data. | `None` |
 
 Returns:
 
@@ -41152,7 +41152,7 @@ def validate_json(
     *,
     strict: bool | None = None,
     extra: ExtraValues | None = None,
-    context: dict[str, Any] | None = None,
+    context: Any | None = None,
     experimental_allow_partial: bool | Literal['off', 'on', 'trailing-strings'] = False,
     by_alias: bool | None = None,
     by_name: bool | None = None,
@@ -41206,7 +41206,7 @@ validate_strings(
     *,
     strict: bool | None = None,
     extra: ExtraValues | None = None,
-    context: dict[str, Any] | None = None,
+    context: Any | None = None,
     experimental_allow_partial: (
         bool | Literal["off", "on", "trailing-strings"]
     ) = False,
@@ -41220,7 +41220,7 @@ Validate object contains string data against the model.
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `obj` | `Any` | The object contains string data to validate. | *required* | | `strict` | `bool | None` | Whether to strictly check types. | `None` | | `extra` | `ExtraValues | None` | Whether to ignore, allow, or forbid extra data during model validation. See the extra configuration value for details. | `None` | | `context` | `dict[str, Any] | None` | Additional context to use during validation. | `None` | | `experimental_allow_partial` | `bool | Literal['off', 'on', 'trailing-strings']` | Experimental whether to enable partial validation, e.g. to process streams. * False / 'off': Default behavior, no partial validation. * True / 'on': Enable partial validation. * 'trailing-strings': Enable partial validation and allow trailing strings in the input. | `False` | | `by_alias` | `bool | None` | Whether to use the field's alias when validating against the provided input data. | `None` | | `by_name` | `bool | None` | Whether to use the field's name when validating against the provided input data. | `None` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `obj` | `Any` | The object contains string data to validate. | *required* | | `strict` | `bool | None` | Whether to strictly check types. | `None` | | `extra` | `ExtraValues | None` | Whether to ignore, allow, or forbid extra data during model validation. See the extra configuration value for details. | `None` | | `context` | `Any | None` | Additional context to use during validation. | `None` | | `experimental_allow_partial` | `bool | Literal['off', 'on', 'trailing-strings']` | Experimental whether to enable partial validation, e.g. to process streams. * False / 'off': Default behavior, no partial validation. * True / 'on': Enable partial validation. * 'trailing-strings': Enable partial validation and allow trailing strings in the input. | `False` | | `by_alias` | `bool | None` | Whether to use the field's alias when validating against the provided input data. | `None` | | `by_name` | `bool | None` | Whether to use the field's name when validating against the provided input data. | `None` |
 
 Returns:
 
@@ -41236,7 +41236,7 @@ def validate_strings(
     *,
     strict: bool | None = None,
     extra: ExtraValues | None = None,
-    context: dict[str, Any] | None = None,
+    context: Any | None = None,
     experimental_allow_partial: bool | Literal['off', 'on', 'trailing-strings'] = False,
     by_alias: bool | None = None,
     by_name: bool | None = None,
@@ -41284,7 +41284,7 @@ def validate_strings(
 get_default_value(
     *,
     strict: bool | None = None,
-    context: dict[str, Any] | None = None
+    context: Any | None = None
 ) -> Some[T] | None
 
 ```
@@ -41293,7 +41293,7 @@ Get the default value for the wrapped type.
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `strict` | `bool | None` | Whether to strictly check types. | `None` | | `context` | `dict[str, Any] | None` | Additional context to pass to the validator. | `None` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `strict` | `bool | None` | Whether to strictly check types. | `None` | | `context` | `Any | None` | Additional context to pass to the validator. | `None` |
 
 Returns:
 
@@ -41302,7 +41302,7 @@ Returns:
 Source code in `pydantic/type_adapter.py`
 
 ```python
-def get_default_value(self, *, strict: bool | None = None, context: dict[str, Any] | None = None) -> Some[T] | None:
+def get_default_value(self, *, strict: bool | None = None, context: Any | None = None) -> Some[T] | None:
     """Get the default value for the wrapped type.
 
     Args:
@@ -41336,7 +41336,7 @@ dump_python(
     ) = True,
     fallback: Callable[[Any], Any] | None = None,
     serialize_as_any: bool = False,
-    context: dict[str, Any] | None = None,
+    context: Any | None = None,
 ) -> Any
 
 ```
@@ -41345,7 +41345,7 @@ Dump an instance of the adapted type to a Python object.
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `instance` | `T` | The Python object to serialize. | *required* | | `mode` | `Literal['json', 'python']` | The output format. | `'python'` | | `include` | `IncEx | None` | Fields to include in the output. | `None` | | `exclude` | `IncEx | None` | Fields to exclude from the output. | `None` | | `by_alias` | `bool | None` | Whether to use alias names for field names. | `None` | | `exclude_unset` | `bool` | Whether to exclude unset fields. | `False` | | `exclude_defaults` | `bool` | Whether to exclude fields with default values. | `False` | | `exclude_none` | `bool` | Whether to exclude fields with None values. | `False` | | `round_trip` | `bool` | Whether to output the serialized data in a way that is compatible with deserialization. | `False` | | `warnings` | `bool | Literal['none', 'warn', 'error']` | How to handle serialization errors. False/"none" ignores them, True/"warn" logs errors, "error" raises a PydanticSerializationError. | `True` | | `fallback` | `Callable[[Any], Any] | None` | A function to call when an unknown value is encountered. If not provided, a PydanticSerializationError error is raised. | `None` | | `serialize_as_any` | `bool` | Whether to serialize fields with duck-typing serialization behavior. | `False` | | `context` | `dict[str, Any] | None` | Additional context to pass to the serializer. | `None` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `instance` | `T` | The Python object to serialize. | *required* | | `mode` | `Literal['json', 'python']` | The output format. | `'python'` | | `include` | `IncEx | None` | Fields to include in the output. | `None` | | `exclude` | `IncEx | None` | Fields to exclude from the output. | `None` | | `by_alias` | `bool | None` | Whether to use alias names for field names. | `None` | | `exclude_unset` | `bool` | Whether to exclude unset fields. | `False` | | `exclude_defaults` | `bool` | Whether to exclude fields with default values. | `False` | | `exclude_none` | `bool` | Whether to exclude fields with None values. | `False` | | `round_trip` | `bool` | Whether to output the serialized data in a way that is compatible with deserialization. | `False` | | `warnings` | `bool | Literal['none', 'warn', 'error']` | How to handle serialization errors. False/"none" ignores them, True/"warn" logs errors, "error" raises a PydanticSerializationError. | `True` | | `fallback` | `Callable[[Any], Any] | None` | A function to call when an unknown value is encountered. If not provided, a PydanticSerializationError error is raised. | `None` | | `serialize_as_any` | `bool` | Whether to serialize fields with duck-typing serialization behavior. | `False` | | `context` | `Any | None` | Additional context to pass to the serializer. | `None` |
 
 Returns:
 
@@ -41370,7 +41370,7 @@ def dump_python(
     warnings: bool | Literal['none', 'warn', 'error'] = True,
     fallback: Callable[[Any], Any] | None = None,
     serialize_as_any: bool = False,
-    context: dict[str, Any] | None = None,
+    context: Any | None = None,
 ) -> Any:
     """Dump an instance of the adapted type to a Python object.
 
@@ -41433,7 +41433,7 @@ dump_json(
     ) = True,
     fallback: Callable[[Any], Any] | None = None,
     serialize_as_any: bool = False,
-    context: dict[str, Any] | None = None,
+    context: Any | None = None,
 ) -> bytes
 
 ```
@@ -41446,7 +41446,7 @@ Serialize an instance of the adapted type to JSON.
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `instance` | `T` | The instance to be serialized. | *required* | | `indent` | `int | None` | Number of spaces for JSON indentation. | `None` | | `ensure_ascii` | `bool` | If True, the output is guaranteed to have all incoming non-ASCII characters escaped. If False (the default), these characters will be output as-is. | `False` | | `include` | `IncEx | None` | Fields to include. | `None` | | `exclude` | `IncEx | None` | Fields to exclude. | `None` | | `by_alias` | `bool | None` | Whether to use alias names for field names. | `None` | | `exclude_unset` | `bool` | Whether to exclude unset fields. | `False` | | `exclude_defaults` | `bool` | Whether to exclude fields with default values. | `False` | | `exclude_none` | `bool` | Whether to exclude fields with a value of None. | `False` | | `round_trip` | `bool` | Whether to serialize and deserialize the instance to ensure round-tripping. | `False` | | `warnings` | `bool | Literal['none', 'warn', 'error']` | How to handle serialization errors. False/"none" ignores them, True/"warn" logs errors, "error" raises a PydanticSerializationError. | `True` | | `fallback` | `Callable[[Any], Any] | None` | A function to call when an unknown value is encountered. If not provided, a PydanticSerializationError error is raised. | `None` | | `serialize_as_any` | `bool` | Whether to serialize fields with duck-typing serialization behavior. | `False` | | `context` | `dict[str, Any] | None` | Additional context to pass to the serializer. | `None` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `instance` | `T` | The instance to be serialized. | *required* | | `indent` | `int | None` | Number of spaces for JSON indentation. | `None` | | `ensure_ascii` | `bool` | If True, the output is guaranteed to have all incoming non-ASCII characters escaped. If False (the default), these characters will be output as-is. | `False` | | `include` | `IncEx | None` | Fields to include. | `None` | | `exclude` | `IncEx | None` | Fields to exclude. | `None` | | `by_alias` | `bool | None` | Whether to use alias names for field names. | `None` | | `exclude_unset` | `bool` | Whether to exclude unset fields. | `False` | | `exclude_defaults` | `bool` | Whether to exclude fields with default values. | `False` | | `exclude_none` | `bool` | Whether to exclude fields with a value of None. | `False` | | `round_trip` | `bool` | Whether to serialize and deserialize the instance to ensure round-tripping. | `False` | | `warnings` | `bool | Literal['none', 'warn', 'error']` | How to handle serialization errors. False/"none" ignores them, True/"warn" logs errors, "error" raises a PydanticSerializationError. | `True` | | `fallback` | `Callable[[Any], Any] | None` | A function to call when an unknown value is encountered. If not provided, a PydanticSerializationError error is raised. | `None` | | `serialize_as_any` | `bool` | Whether to serialize fields with duck-typing serialization behavior. | `False` | | `context` | `Any | None` | Additional context to pass to the serializer. | `None` |
 
 Returns:
 
@@ -41472,7 +41472,7 @@ def dump_json(
     warnings: bool | Literal['none', 'warn', 'error'] = True,
     fallback: Callable[[Any], Any] | None = None,
     serialize_as_any: bool = False,
-    context: dict[str, Any] | None = None,
+    context: Any | None = None,
 ) -> bytes:
     """!!! abstract "Usage Documentation"
         [JSON Serialization](../concepts/json.md#json-serialization)
