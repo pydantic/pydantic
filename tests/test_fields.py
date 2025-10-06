@@ -13,6 +13,7 @@ from pydantic import (
     Field,
     PydanticUserError,
     RootModel,
+    TypeAdapter,
     ValidationError,
     computed_field,
     create_model,
@@ -341,3 +342,14 @@ def test_unsupported_field_attribute_nested_with_function(attribute: str, value:
         @validate_call
         def func(a: list[TestType]) -> None:
             return None
+
+
+def test_default_factory_validated_data_argument_unsupported() -> None:
+    with pytest.warns(
+        UnsupportedFieldAttributeWarning,
+        match=(
+            r"A 'default_factory' taking validated data as an argument was provided to the `Field\(\)` function, "
+            'but no validated data is available in the context it was used.'
+        ),
+    ):
+        TypeAdapter(Annotated[int, Field(default_factory=lambda v: v['key'])])
