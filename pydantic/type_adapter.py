@@ -221,9 +221,8 @@ class TypeAdapter(Generic[T]):
             # would only have access to the parent namespace where the `TypeAdapter` was instantiated (if the function is defined
             # in another module, we need to look at that module's globals).
             if parent_frame is not None:
-                parent_ns = (
-                    parent_frame.f_globals if parent_frame.f_globals is parent_frame.f_locals else parent_frame.f_locals
-                )
+                # `f_locals` is the namespace where the type adapter was instantiated (~ to `f_globals` if at the module level):
+                parent_ns = parent_frame.f_locals
             else:  # pragma: no cover
                 parent_ns = None
             globalns, localns = _namespace_utils.ns_for_function(
