@@ -175,6 +175,7 @@ nav:
   - LLMs: integrations/llms.md
   - Dev Tools:
     - Mypy: integrations/mypy.md/.
+    - Pyrefly: integrations/pyrefly.md
     - PyCharm: integrations/pycharm.md
     - Hypothesis: integrations/hypothesis.md
     - Visual Studio Code: integrations/visual_studio_code.md
