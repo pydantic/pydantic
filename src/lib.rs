@@ -107,7 +107,7 @@ pub fn build_info() -> String {
 }
 
 #[pymodule(gil_used = false)]
-mod _pydantic_core {
+pub mod _pydantic_core {
     #[allow(clippy::wildcard_imports)]
     use super::*;
 
