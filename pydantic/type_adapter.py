@@ -697,9 +697,9 @@ class TypeAdapter(Generic[T]):
             The JSON schema for the model as a dictionary.
         """
         schema_generator_instance = schema_generator(by_alias=by_alias, ref_template=ref_template)
-        if isinstance(self.core_schema, _mock_val_ser.MockCoreSchema):
-            self.core_schema.rebuild()
-            assert not isinstance(self.core_schema, _mock_val_ser.MockCoreSchema), 'this is a bug! please report it'
+        if not self.pydantic_complete:
+            self.rebuild(_parent_namespace_depth=0)
+
         return schema_generator_instance.generate(self.core_schema, mode=mode)
 
     @staticmethod
@@ -739,12 +739,9 @@ class TypeAdapter(Generic[T]):
 
         inputs_ = []
         for key, mode, adapter in inputs:
-            # This is the same pattern we follow for model json schemas - we attempt a core schema rebuild if we detect a mock
-            if isinstance(adapter.core_schema, _mock_val_ser.MockCoreSchema):
-                adapter.core_schema.rebuild()
-                assert not isinstance(adapter.core_schema, _mock_val_ser.MockCoreSchema), (
-                    'this is a bug! please report it'
-                )
+            if not adapter.pydantic_complete:
+                adapter.rebuild(_parent_namespace_depth=0)
+
             inputs_.append((key, mode, adapter.core_schema))
 
         json_schemas_map, definitions = schema_generator_instance.generate_definitions(inputs_)

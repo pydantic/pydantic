@@ -656,6 +656,13 @@ def test_defer_build_raise_errors() -> None:
     assert not isinstance(ta.core_schema, _mock_val_ser.MockCoreSchema)
 
 
+def test_type_adapter_raises_error_on_attribute_access() -> None:
+    ta = TypeAdapter('MyInt')
+
+    with pytest.raises(PydanticUserError):
+        len(ta.core_schema)
+
+
 @dataclass
 class SimpleDataclass:
     x: int

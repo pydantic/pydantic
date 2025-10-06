@@ -2470,13 +2470,19 @@ def model_json_schema(
     """
     from .main import BaseModel
 
-    schema_generator_instance = schema_generator(by_alias=by_alias, ref_template=ref_template)
-
-    if isinstance(cls.__pydantic_core_schema__, _mock_val_ser.MockCoreSchema):
-        cls.__pydantic_core_schema__.rebuild()
-
     if cls is BaseModel:
         raise AttributeError('model_json_schema() must be called on a subclass of BaseModel, not BaseModel itself.')
+
+    schema_generator_instance = schema_generator(by_alias=by_alias, ref_template=ref_template)
+
+    if not cls.__pydantic_complete__:
+        if issubclass(cls, BaseModel):
+            cls.model_rebuild(_parent_namespace_depth=0)
+        else:
+            # a dataclass
+            from .dataclasses import rebuild_dataclass  # circ. import
+
+            rebuild_dataclass(cls, _parent_namespace_depth=0)
 
     assert not isinstance(cls.__pydantic_core_schema__, _mock_val_ser.MockCoreSchema), 'this is a bug! please report it'
     return schema_generator_instance.generate(cls.__pydantic_core_schema__, mode=mode)
@@ -2510,8 +2516,14 @@ def models_json_schema(
                     element, along with the optional title and description keys.
     """
     for cls, _ in models:
-        if isinstance(cls.__pydantic_core_schema__, _mock_val_ser.MockCoreSchema):
-            cls.__pydantic_core_schema__.rebuild()
+        if not cls.__pydantic_complete__:
+            if issubclass(cls, BaseModel):
+                cls.model_rebuild(_parent_namespace_depth=0)
+            else:
+                # a dataclass
+                from .dataclasses import rebuild_dataclass  # circ. import
+
+                rebuild_dataclass(cls, _parent_namespace_depth=0)
 
     instance = schema_generator(by_alias=by_alias, ref_template=ref_template)
     inputs: list[tuple[type[BaseModel] | type[PydanticDataclass], JsonSchemaMode, CoreSchema]] = [

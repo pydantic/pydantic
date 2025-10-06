@@ -332,6 +332,38 @@ class InvalidSchemaError(Exception):
     """The core schema is invalid."""
 
 
+class EvaluationContext:
+    def __init__(self):
+        self._stack: list[type[Any] | TypeAliasType | str] = []
+
+    @contextmanager
+    def push(self, element: type[Any] | TypeAliasType | str) -> Generator[None]:
+        self._stack.append(element)
+        yield
+        self._stack.pop()
+
+    def __str__(self) -> str:
+        str_elems: list[str] = []
+        for elem in self._stack:
+            if isinstance(elem, type):
+                BaseModel_ = import_cached_base_model()
+                if isinstance(elem, BaseModel_):
+                    str_prefix = 'Pydantic model'
+                elif is_typeddict(elem):
+                    str_prefix = 'TypedDict'
+                elif dataclasses.is_dataclass(elem):
+                    str_prefix = 'Dataclass'
+                else:
+                    str_prefix = 'Class'
+                str_elems.append(f'{str_prefix} {elem.__qualname__!r}')
+            elif typing_objects.is_typealiastype(elem):
+                str_elems.append(f'Type alias {elem.__qualname__}')
+            elif isinstance(elem, str):
+                str_elems.append(f'Field {elem!r}')
+
+        return ' -> '.join(str_elems)
+
+
 class GenerateSchema:
     """Generate core schema for a Pydantic model, dataclass and types like `str`, `datetime`, ... ."""
 
@@ -341,6 +373,7 @@ class GenerateSchema:
         '_typevars_map',
         'field_name_stack',
         'model_type_stack',
+        'evaluation_context',
         'defs',
     )
 
@@ -356,6 +389,7 @@ class GenerateSchema:
         self._typevars_map = typevars_map
         self.field_name_stack = _FieldNameStack()
         self.model_type_stack = _ModelTypeStack()
+        self.evaluation_context = EvaluationContext()
         self.defs = _Definitions()
 
     def __init_subclass__(cls) -> None:
@@ -758,7 +792,11 @@ class GenerateSchema:
 
             config_wrapper = ConfigWrapper(cls.model_config, check=False)
 
-            with self._config_wrapper_stack.push(config_wrapper), self._ns_resolver.push(cls):
+            with (
+                self._config_wrapper_stack.push(config_wrapper),
+                self._ns_resolver.push(cls),
+                self.evaluation_context.push(cls),
+            ):
                 core_config = self._config_wrapper.core_config(title=cls.__name__)
 
                 if cls.__pydantic_fields_complete__ or cls is BaseModel_:
@@ -1819,6 +1857,7 @@ class GenerateSchema:
         """Generate schema for a dataclass."""
         with (
             self.model_type_stack.push(dataclass),
+            self.evaluation_context.push(dataclass),
             self.defs.get_schema_or_ref(dataclass) as (
                 dataclass_ref,
                 maybe_schema,

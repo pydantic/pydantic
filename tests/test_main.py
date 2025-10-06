@@ -3435,6 +3435,24 @@ def test_deferred_core_schema(is_dataclass: bool) -> None:
     assert isinstance(Foo.__pydantic_core_schema__, dict)
 
 
+def test_deferred_core_schema_len() -> None:
+    class Foo(BaseModel):
+        x: 'Forward'
+
+    Forward = int
+
+    assert len(Foo.__pydantic_core_schema__)
+
+
+def test_deferred_core_schema_iter() -> None:
+    class Foo(BaseModel):
+        x: 'Forward'
+
+    Forward = int
+
+    assert list(iter(Foo.__pydantic_core_schema__))
+
+
 def test_help(create_module):
     module = create_module(
         # language=Python
