@@ -224,7 +224,7 @@ class TypeAdapter(Generic[T]):
                 parent_ns = (
                     parent_frame.f_globals if parent_frame.f_globals is parent_frame.f_locals else parent_frame.f_locals
                 )
-            else:
+            else:  # pragma: no cover
                 parent_ns = None
             globalns, localns = _namespace_utils.ns_for_function(
                 type,
@@ -236,7 +236,7 @@ class TypeAdapter(Generic[T]):
                 globalns = parent_frame.f_globals
                 # Do not provide a local ns if the type adapter happens to be instantiated at the module level:
                 localns = parent_frame.f_locals if parent_frame.f_locals is not globalns else {}
-            else:
+            else:  # pragma: no cover
                 globalns = {}
                 localns = {}
             parent_namespace = localns
