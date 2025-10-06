@@ -5580,6 +5580,43 @@ def test_metadata_resolve_ref_schema_preserves_defs() -> None:
     assert wrapper_defs['WrapperModel'] == wrapper_definition
 
 
+def test_js_functions_resolve_ref_schema_restores_wrapper() -> None:
+    class Inner(BaseModel):
+        x: int
+
+    def modify_schema(schema_or_field: core_schema.CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
+        json_schema = handler(schema_or_field)
+        json_schema['description'] = 'wrapper description'
+        resolved_schema = handler.resolve_ref_schema(json_schema)
+        resolved_schema['title'] = 'Inner Title'
+        return json_schema
+
+    class JsFunctionAnnotation:
+        def __get_pydantic_core_schema__(
+            self, source_type: Any, handler: GetCoreSchemaHandler
+        ) -> core_schema.CoreSchema:
+            schema = handler(source_type)
+            metadata = schema.setdefault('metadata', {})
+            metadata.setdefault('pydantic_js_functions', []).append(modify_schema)
+            return schema
+
+    adapter = TypeAdapter(Annotated[Inner, JsFunctionAnnotation()])
+
+    assert adapter.json_schema() == {
+        '$defs': {
+            'Inner': {
+                'description': 'wrapper description',
+                'properties': {'x': {'title': 'X', 'type': 'integer'}},
+                'required': ['x'],
+                'title': 'Inner Title',
+                'type': 'object',
+            }
+        },
+        '$ref': '#/$defs/Inner',
+        'description': 'wrapper description',
+    }
+
+
 def test_resolve_ref_schema_nested_ref_preserves_parent_mapping() -> None:
     class Inner(BaseModel):
         value: int

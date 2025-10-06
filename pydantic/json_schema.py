@@ -435,6 +435,17 @@ class GenerateJsonSchema:
         self._user_definition_metadata.clear()
         self._in_js_modify_function = False
         json_schema: JsonSchemaValue = self.generate_inner(schema)
+        wrapper_schema = json_schema
+        ref = wrapper_schema.get('$ref')
+        if isinstance(ref, str):
+            extras = {k: v for k, v in wrapper_schema.items() if k not in {'$ref', '$defs'}}
+            json_ref = JsonRef(ref)
+            if not extras and json_ref not in self._user_json_refs:
+                resolved_schema = self.get_schema_from_definitions(json_ref, root=wrapper_schema)
+                if resolved_schema is not None:
+                    json_schema = deepcopy(resolved_schema)
+                    if '$defs' in wrapper_schema:
+                        json_schema['$defs'] = wrapper_schema['$defs']
         json_ref_counts = self.get_json_ref_counts(json_schema)
 
         ref = cast(JsonRef, json_schema.get('$ref'))
@@ -515,15 +526,24 @@ class GenerateJsonSchema:
                 json_schema = json_schema.copy()
                 json_schema.pop('$defs', None)
 
+            ref_key: str | None = None
             if 'ref' in core_schema:
-                core_ref = CoreRef(core_schema['ref'])  # type: ignore[typeddict-item]
+                ref_key = 'ref'
+            elif core_schema.get('type') == 'definition-ref':
+                ref_key = 'schema_ref'
+            if ref_key is not None:
+                core_ref = CoreRef(core_schema[ref_key])  # type: ignore[typeddict-item]
                 defs_ref, ref_json_schema = self.get_cache_defs_ref_schema(core_ref)
                 json_ref = JsonRef(ref_json_schema['$ref'])
                 original_ref = json_schema.get('$ref')
                 preserve_wrapper = original_ref == json_ref
+                has_wrapper_ref = '$ref' in json_schema
+                extras = {k: v for k, v in json_schema.items() if k not in {'$ref', '$defs'}}
                 state = self._get_user_definition_state(defs_ref)
                 has_pending_ref = state.pending
-                should_keep_wrapper = preserve_wrapper or (self._in_js_modify_function and not has_pending_ref)
+                should_keep_wrapper = preserve_wrapper or (
+                    has_wrapper_ref and self._in_js_modify_function and (not has_pending_ref or bool(extras))
+                )
 
                 def _promote_user_ref() -> None:
                     state.pending = False
@@ -546,11 +566,20 @@ class GenerateJsonSchema:
                     and state.pending
                     and state.schema is existing_definition
                 ):
-                    _promote_user_ref()
-                extras = {k: v for k, v in json_schema.items() if k not in {'$ref', '$defs'}}
+                    state.user_managed = True
+                    self._user_json_refs.add(json_ref)
+                    self._user_defs_refs.add(defs_ref)
                 defs_updates: dict[str, Any] = {}
                 if extras:
-                    defs_updates.update(extras)
+                    if not should_keep_wrapper:
+                        defs_updates.update(extras)
+                    elif state.pending:
+                        if existing_definition is None:
+                            defs_updates.update(extras)
+                        else:
+                            defs_updates.update(
+                                {key: value for key, value in extras.items() if key not in existing_definition}
+                            )
 
                 # Replace the schema if it's not a reference to itself
                 # What we want to avoid is having the def be just a ref to itself
@@ -582,11 +611,28 @@ class GenerateJsonSchema:
                         deferred_updates = self._deferred_definitions_updates.setdefault(defs_ref, {})
                         for key, value in defs_updates.items():
                             deferred_updates[key] = value
-                json_schema = ref_json_schema
-                if should_keep_wrapper:
-                    _promote_user_ref()
-                else:
-                    _discard_user_ref()
+                replace_with_ref_schema = True
+                if ref_key == 'schema_ref':
+                    if original_ref is not None and original_ref != json_ref and not should_keep_wrapper:
+                        replace_with_ref_schema = False
+                elif ref_key == 'ref':
+                    if original_ref is not None and original_ref != json_ref and not should_keep_wrapper:
+                        replace_with_ref_schema = False
+
+                apply_extras = bool(extras) and should_keep_wrapper
+
+                if replace_with_ref_schema:
+                    if should_keep_wrapper:
+                        if apply_extras:
+                            json_schema = json_schema.copy()
+                            json_schema.update(extras)
+                        _promote_user_ref()
+                    else:
+                        json_schema = ref_json_schema
+                        if apply_extras:
+                            json_schema = json_schema.copy()
+                            json_schema.update(extras)
+                        _discard_user_ref()
             return json_schema
 
         def handler_func(schema_or_field: CoreSchemaOrField) -> JsonSchemaValue:
@@ -672,17 +718,24 @@ class GenerateJsonSchema:
                 mark_user_definition=False,
             )
 
-        for js_modify_function in metadata.get('pydantic_js_functions', ()):
-
+        def wrap_js_modify_function(
+            current_handler: GetJsonSchemaHandler,
+            js_modify_function: GetJsonSchemaFunction,
+        ) -> _schema_generation_shared.GenerateJsonSchemaHandler:
             def new_handler_func(
                 schema_or_field: CoreSchemaOrField,
                 current_handler: GetJsonSchemaHandler = current_handler,
                 js_modify_function: GetJsonSchemaFunction = js_modify_function,
             ) -> JsonSchemaValue:
+                handler_for_user = _schema_generation_shared.GenerateJsonSchemaHandler(
+                    self,
+                    current_handler,
+                    mark_user_definition=True,
+                )
                 previous_flag = self._in_js_modify_function
                 self._in_js_modify_function = True
                 try:
-                    json_schema = js_modify_function(schema_or_field, current_handler)
+                    json_schema = js_modify_function(schema_or_field, handler_for_user)
                 finally:
                     self._in_js_modify_function = previous_flag
                 if _core_utils.is_core_schema(schema_or_field):
@@ -694,9 +747,12 @@ class GenerateJsonSchema:
                         json_schema = json_schema.copy()
                         json_schema.update(extras)
                     return json_schema
-                original_schema = current_handler.resolve_ref_schema(json_schema)
-                extras = {k: v for k, v in json_schema.items() if k not in {'$ref', '$defs'}}
+                original_schema: JsonSchemaValue | None = json_schema
                 if ref:
+                    try:
+                        original_schema = current_handler.resolve_ref_schema(json_schema)
+                    except LookupError:
+                        return json_schema
                     json_ref = JsonRef(ref)
                     if json_ref in self._user_json_refs:
                         restored_schema: JsonSchemaValue | None = None
@@ -710,26 +766,23 @@ class GenerateJsonSchema:
                             if extras:
                                 restored_schema.update(extras)
                             return restored_schema
-                if ref and extras:
-                    original_schema.update(extras)
+                if ref:
+                    if extras:
+                        return json_schema
+                    return original_schema
                 return original_schema
 
-            current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(
-                self, new_handler_func, mark_user_definition=True
+            return _schema_generation_shared.GenerateJsonSchemaHandler(
+                self,
+                new_handler_func,
+                mark_user_definition=True,
             )
 
-        for js_modify_function in metadata.get('pydantic_js_annotation_functions', ()):
+        for js_modify_function in metadata.get('pydantic_js_functions', ()):  # type: ignore[assignment]
+            current_handler = wrap_js_modify_function(current_handler, js_modify_function)
 
-            def new_handler_func(
-                schema_or_field: CoreSchemaOrField,
-                current_handler: GetJsonSchemaHandler = current_handler,
-                js_modify_function: GetJsonSchemaFunction = js_modify_function,
-            ) -> JsonSchemaValue:
-                return js_modify_function(schema_or_field, current_handler)
-
-            current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(
-                self, new_handler_func, mark_user_definition=True
-            )
+        for js_modify_function in metadata.get('pydantic_js_annotation_functions', ()):  # type: ignore[assignment]
+            current_handler = wrap_js_modify_function(current_handler, js_modify_function)
 
         json_schema = current_handler(schema)
         if _core_utils.is_core_schema(schema):
