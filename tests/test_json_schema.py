@@ -6843,6 +6843,56 @@ def test_type_adapter_with_inline_defs_requires_escaping() -> None:
     Draft202012Validator.check_schema(schema)
 
 
+def test_type_adapter_with_user_managed_defs() -> None:
+    class CarDict:
+        @classmethod
+        def __get_pydantic_core_schema__(
+            cls, source_type: Any, handler: GetCoreSchemaHandler
+        ) -> core_schema.CoreSchema:
+            return core_schema.dict_schema(keys_schema=core_schema.str_schema(), values_schema=core_schema.any_schema())
+
+        @classmethod
+        def __get_pydantic_json_schema__(
+            cls, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+        ) -> JsonSchemaValue:
+            return {
+                'type': 'object',
+                'properties': {
+                    'tires': {'type': 'array', 'items': {'$ref': '#/$defs/Tire'}},
+                },
+                'required': ['tires'],
+                '$defs': {
+                    'Tire': {
+                        'type': 'object',
+                        'properties': {
+                            'brand': {'type': 'string'},
+                            'psi': {'type': 'number'},
+                        },
+                        'required': ['brand', 'psi'],
+                    }
+                },
+            }
+
+    schema = TypeAdapter(CarDict).json_schema()
+
+    assert schema == {
+        'type': 'object',
+        'properties': {'tires': {'type': 'array', 'items': {'$ref': '#/$defs/Tire'}}},
+        'required': ['tires'],
+        '$defs': {
+            'Tire': {
+                'type': 'object',
+                'properties': {
+                    'brand': {'type': 'string'},
+                    'psi': {'type': 'number'},
+                },
+                'required': ['brand', 'psi'],
+            }
+        },
+    }
+    Draft202012Validator.check_schema(schema)
+
+
 def test_type_adapter_with_inline_defs_nested_defs() -> None:
     class InlineDefs:
         @classmethod
