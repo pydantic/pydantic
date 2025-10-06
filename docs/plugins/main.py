@@ -111,7 +111,7 @@ def add_mkdocs_run_deps(site_url: str) -> None:
             distributions=['wheel'],
         )
         wheel_file = next(DOCS_DIR.glob('*.whl'))
-        pydantic_dep = f'{site_url.removesuffix("/")}/dev/{wheel_file.name}'
+        pydantic_dep = f'{site_url.removesuffix("/").removesuffix("/latest")}/dev/{wheel_file.name}'
     else:
         pydantic_dep = f'pydantic=={pydantic_version_str}'
 
