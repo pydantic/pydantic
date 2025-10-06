@@ -179,6 +179,7 @@ impl Validator for ModelFieldsValidator {
 
         {
             let state = &mut state.rebind_extra(|extra| extra.data = Some(model_dict.clone()));
+            let state = &mut state.scoped_set(|state| &mut state.has_field_error, false);
 
             for field in &self.fields {
                 let lookup_key = field
@@ -242,6 +243,7 @@ impl Validator for ModelFieldsValidator {
                     }
                     Err(ValError::Omit) => {}
                     Err(ValError::LineErrors(line_errors)) => {
+                        state.has_field_error = true;
                         for err in line_errors {
                             // Note: this will always use the field name even if there is an alias
                             // However, we don't mind so much because this error can only happen if the
