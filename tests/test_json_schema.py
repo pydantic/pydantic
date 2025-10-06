@@ -7128,3 +7128,14 @@ def test_union_format_primitive_type_array_deduplicated() -> None:
     assert gen_js.union_schema(
         core_schema.union_schema([core_schema.int_schema(), core_schema.str_schema(), core_schema.int_schema()])
     ) == {'type': ['integer', 'string']}
+
+    assert gen_js.union_schema(
+        core_schema.union_schema(
+            [
+                core_schema.int_schema(),
+                core_schema.str_schema(),
+                core_schema.str_schema(max_length=1),
+                core_schema.int_schema(),
+            ]
+        )
+    ) == {'anyOf': [{'type': 'integer'}, {'type': 'string'}, {'type': 'string', 'maxLength': 1}]}

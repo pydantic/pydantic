@@ -538,9 +538,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         cls,
         by_alias: bool = True,
         ref_template: str = DEFAULT_REF_TEMPLATE,
-        union_format: Literal['any_of', 'primitive_type_array'] = 'any_of',
         schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
         mode: JsonSchemaMode = 'validation',
+        *,
+        union_format: Literal['any_of', 'primitive_type_array'] = 'any_of',
     ) -> dict[str, Any]:
         """Generates a JSON schema for a model class.
 
