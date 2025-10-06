@@ -3193,6 +3193,9 @@ by providing a <code>config</code> argument.</p>
 <span class="nb">print</span><span class="p">(</span><span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]))</span>
 <span class="c1">#&gt; [&#39;1&#39;, &#39;2&#39;]</span>
 </code></pre></div>
+<p>Configuration can't be provided if the type adapter directly wraps a type that support it, and a
+<a href="../../errors/usage_errors/">usage error</a> is raised in this case.
+The <a href="#configuration-propagation">configuration propagation</a> rules also apply.</p>
 <h2 id="configuration-on-other-supported-types">Configuration on other supported types<a class="headerlink" href="#configuration-on-other-supported-types" title="Permanent link">&para;</a></h2>
 <p>If you are using <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/dataclasses.html#module-dataclasses">standard library dataclasses</a> or <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.TypedDict"><code>TypedDict</code></a> classes,
 the configuration can be set in two ways:</p>
