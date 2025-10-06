@@ -395,15 +395,17 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
         Self: 'a;
 
     fn strict_dict<'a>(&'a self) -> ValResult<GenericPyMapping<'a, 'py>> {
-        if let Ok(dict) = self.downcast::<PyDict>() {
+        if let Ok(dict) = self.downcast_exact::<PyDict>() {
             Ok(GenericPyMapping::Dict(dict))
+        } else if self.is_instance_of::<PyDict>() {
+            Ok(GenericPyMapping::Mapping(self.downcast::<PyMapping>()?))
         } else {
             Err(ValError::new(ErrorTypeDefaults::DictType, self))
         }
     }
 
     fn lax_dict<'a>(&'a self) -> ValResult<GenericPyMapping<'a, 'py>> {
-        if let Ok(dict) = self.downcast::<PyDict>() {
+        if let Ok(dict) = self.downcast_exact::<PyDict>() {
             Ok(GenericPyMapping::Dict(dict))
         } else if let Ok(mapping) = self.downcast::<PyMapping>() {
             Ok(GenericPyMapping::Mapping(mapping))
