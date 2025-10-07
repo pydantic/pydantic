@@ -619,7 +619,7 @@ class ConfigDict(TypedDict, total=False):
     - `'float'` will serialize timedeltas to the total number of seconds.
 
     !!! warning
-        Starting in v2.11, it is recommended to use the [`ser_json_temporal`][pydantic.config.ConfigDict.ser_json_temporal]
+        Starting in v2.12, it is recommended to use the [`ser_json_temporal`][pydantic.config.ConfigDict.ser_json_temporal]
         setting instead of `ser_json_timedelta`. This setting will be deprecated in v3.
     """
 
@@ -641,7 +641,7 @@ class ConfigDict(TypedDict, total=False):
     Defaults to `'iso8601'`.
 
     !!! note
-        This setting was introduced in v2.11. It overlaps with the [`ser_json_timedelta`][pydantic.config.ConfigDict.ser_json_timedelta]
+        This setting was introduced in v2.12. It overlaps with the [`ser_json_timedelta`][pydantic.config.ConfigDict.ser_json_timedelta]
         setting which will be deprecated in v3. It also adds more configurability for
         the other temporal types.
     """
