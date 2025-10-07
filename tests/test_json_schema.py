@@ -4647,8 +4647,10 @@ def test_override_generate_json_schema():
             ref_template: str = DEFAULT_REF_TEMPLATE,
             schema_generator: type[GenerateJsonSchema] = MyGenerateJsonSchema,
             mode='validation',
+            *,
+            union_format: Literal['any_of', 'primitive_type_array'] = 'any_of',
         ) -> dict[str, Any]:
-            return super().model_json_schema(by_alias, ref_template, schema_generator, mode)
+            return super().model_json_schema(by_alias, ref_template, schema_generator, mode, union_format=union_format)
 
     class MyModel(MyBaseModel):
         x: int
@@ -7072,3 +7074,69 @@ def test_decimal_pattern_reject_invalid_not_numerical_values_with_decimal_places
 ) -> None:
     pattern = get_decimal_pattern()
     assert re.fullmatch(pattern, invalid_decimal) is None
+
+
+def test_union_format_primitive_type_array() -> None:
+    class Sub(BaseModel):
+        pass
+
+    class Model(BaseModel):
+        a: Optional[int]
+        b: Union[int, str, bool]
+        c: Union[Annotated[str, Field(max_length=3)], Annotated[str, Field(min_length=5)]]
+        d: Union[int, str, Annotated[bool, Field(description='test')]]
+        e: Union[int, list[int]]
+        f: Union[int, Sub]
+
+    assert Model.model_json_schema(union_format='primitive_type_array') == {
+        '$defs': {'Sub': {'properties': {}, 'title': 'Sub', 'type': 'object'}},
+        'properties': {
+            'a': {'title': 'A', 'type': ['integer', 'null']},
+            'b': {'title': 'B', 'type': ['integer', 'string', 'boolean']},
+            'c': {
+                'anyOf': [
+                    {'maxLength': 3, 'type': 'string'},
+                    {'minLength': 5, 'type': 'string'},
+                ],
+                'title': 'C',
+            },
+            'd': {
+                'anyOf': [
+                    {'type': 'integer'},
+                    {'type': 'string'},
+                    {'description': 'test', 'type': 'boolean'},
+                ],
+                'title': 'D',
+            },
+            'e': {
+                'anyOf': [
+                    {'type': 'integer'},
+                    {'items': {'type': 'integer'}, 'type': 'array'},
+                ],
+                'title': 'E',
+            },
+            'f': {'anyOf': [{'type': 'integer'}, {'$ref': '#/$defs/Sub'}], 'title': 'F'},
+        },
+        'required': ['a', 'b', 'c', 'd', 'e', 'f'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
+def test_union_format_primitive_type_array_deduplicated() -> None:
+    gen_js = GenerateJsonSchema(union_format='primitive_type_array')
+
+    assert gen_js.union_schema(
+        core_schema.union_schema([core_schema.int_schema(), core_schema.str_schema(), core_schema.int_schema()])
+    ) == {'type': ['integer', 'string']}
+
+    assert gen_js.union_schema(
+        core_schema.union_schema(
+            [
+                core_schema.int_schema(),
+                core_schema.str_schema(),
+                core_schema.str_schema(max_length=1),
+                core_schema.int_schema(),
+            ]
+        )
+    ) == {'anyOf': [{'type': 'integer'}, {'type': 'string'}, {'type': 'string', 'maxLength': 1}]}
