@@ -838,3 +838,18 @@ def test_computed_field_with_field_serializer():
             return f'{info.field_name} = {value}'
 
     assert MyModel().model_dump() == {'my_field': 'my_field = foo', 'other_field': 'other_field = 42'}
+
+
+def test_computed_fields_exclude() -> None:
+    class Model(BaseModel):
+        @computed_field
+        def prop(self) -> int:
+            return 1
+
+    m = Model()
+    assert m.model_dump() == {'prop': 1}
+    assert m.model_dump(exclude_computed_fields=True) == {}
+    assert m.model_dump(mode='json') == {'prop': 1}
+    assert m.model_dump(mode='json', exclude_computed_fields=True) == {}
+    assert m.model_dump_json() == '{"prop":1}'
+    assert m.model_dump_json(exclude_computed_fields=True) == '{}'
