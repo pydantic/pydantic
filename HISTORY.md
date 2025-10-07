@@ -2,6 +2,47 @@
 <!-- markdownlint-disable descriptive-link-text -->
 <!-- markdownlint-disable-next-line first-line-heading -->
 
+## v2.12.0 (2025-10-07)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.12.0)
+
+### What's Changed
+
+This is the final 2.12 release. It features the work of 20 external contributors and provides useful new features, along with initial Python 3.14 support.
+Several minor changes (considered non-breaking changes according to our [versioning policy](https://docs.pydantic.dev/2.12/version-policy/#pydantic-v2))
+are also included in this release. Make sure to look into them before upgrading.
+
+Changes (see the alpha and beta releases for additional changes since 2.11):
+
+#### Packaging
+
+* Update V1 copy to v1.10.24 by @Viicos in [#12338](https://github.com/pydantic/pydantic/pull/12338)
+
+#### New Features
+
+* Add `extra` parameter to the validate functions by @anvilpete in [#12233](https://github.com/pydantic/pydantic/pull/12233)
+* Add `exclude_computed_fields` serialization option by @Viicos in [#12334](https://github.com/pydantic/pydantic/pull/12334)
+* Add `preverse_empty_path` URL options by @Viicos in [#12336](https://github.com/pydantic/pydantic/pull/12336)
+* Add `union_format` parameter to JSON Schema generation by @Viicos in [#12147](https://github.com/pydantic/pydantic/pull/12147)
+* Add `__qualname__` parameter for `create_model` by @Atry in [#12001](https://github.com/pydantic/pydantic/pull/12001)
+
+#### Fixes
+
+* Do not try to infer name from lambda definitions in pipelines API by @Viicos in [#12289](https://github.com/pydantic/pydantic/pull/12289)
+* Use proper namespace for functions in `TypeAdapter` by @Viicos in [#12324](https://github.com/pydantic/pydantic/pull/12324)
+* Use `Any` for context type annotation in `TypeAdapter` by @inducer in [#12279](https://github.com/pydantic/pydantic/pull/12279)
+* Expose `FieldInfo` in `pydantic.fields.__all__` by @Viicos in [#12339](https://github.com/pydantic/pydantic/pull/12339)
+* Respect `validation_alias` in `@validate_call` by @Viicos in [#12340](https://github.com/pydantic/pydantic/pull/12340)
+* Use `Any` as context annotation in plugin API by @Viicos in [#12341](https://github.com/pydantic/pydantic/pull/12341)
+* Use proper `stacklevel` in warnings when possible by @Viicos in [#12342](https://github.com/pydantic/pydantic/pull/12342)
+
+### New Contributors
+
+* @anvilpete made their first contribution in [#12233](https://github.com/pydantic/pydantic/pull/12233)
+* @JonathanWindell made their first contribution in [#12327](https://github.com/pydantic/pydantic/pull/12327)
+* @inducer made their first contribution in [#12279](https://github.com/pydantic/pydantic/pull/12279)
+* @Atry made their first contribution in [#12001](https://github.com/pydantic/pydantic/pull/12001)
+
 ## v2.12.0b1 (2025-10-03)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.12.0b1)
