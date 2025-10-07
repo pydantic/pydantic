@@ -12,6 +12,7 @@ from typing_extensions import Required, TypedDict, Unpack
 
 from pydantic import (
     AfterValidator,
+    AliasChoices,
     BaseModel,
     BeforeValidator,
     Field,
@@ -893,6 +894,17 @@ def test_annotated_use_of_alias():
         {'type': 'unexpected_keyword_argument', 'loc': ('a',), 'msg': 'Unexpected keyword argument', 'input': 10},
         {'type': 'unexpected_keyword_argument', 'loc': ('d',), 'msg': 'Unexpected keyword argument', 'input': 1},
     ]
+
+
+def test_validation_alias():
+    @validate_call
+    def foo(
+        a: Annotated[int, Field(validation_alias='b')],
+        c: Annotated[int, Field(validation_alias=AliasChoices('d', 'e'))],
+    ):
+        return a + c
+
+    assert foo(b=1, e=4) == 5
 
 
 def test_use_of_alias():

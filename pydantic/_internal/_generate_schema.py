@@ -169,7 +169,7 @@ ValidateCallSupportedTypes = Union[
 ]
 
 VALIDATE_CALL_SUPPORTED_TYPES = get_args(ValidateCallSupportedTypes)
-UNSUPPORTED_STANDALONE_FIELDINFO_ATTRIBUTES = [
+UNSUPPORTED_STANDALONE_FIELDINFO_ATTRIBUTES: list[tuple[str, Any]] = [
     ('alias', None),
     ('validation_alias', None),
     ('serialization_alias', None),
@@ -1593,11 +1593,12 @@ class GenerateSchema:
         if not field.is_required():
             schema = wrap_default(field, schema)
 
-        parameter_schema = core_schema.arguments_parameter(name, schema)
-        if mode is not None:
-            parameter_schema['mode'] = mode
-        if field.alias is not None:
-            parameter_schema['alias'] = field.alias
+        parameter_schema = core_schema.arguments_parameter(
+            name,
+            schema,
+            mode=mode,
+            alias=_convert_to_aliases(field.validation_alias),
+        )
 
         return parameter_schema
 
@@ -1646,9 +1647,8 @@ class GenerateSchema:
             name=name,
             schema=schema,
             mode=mode,
+            alias=_convert_to_aliases(field.validation_alias),
         )
-        if field.alias is not None:
-            parameter_schema['alias'] = field.alias
 
         return parameter_schema
 
@@ -2332,13 +2332,13 @@ class GenerateSchema:
                     unused_metadata_name not in ('default', 'default_factory')
                     or self.model_type_stack.get() is not None
                 )
-            ):
                 # Setting `alias` will set `validation/serialization_alias` as well, so we want to avoid duplicate warnings:
-                if (
+                and (
                     unused_metadata_name not in ('validation_alias', 'serialization_alias')
                     or 'alias' not in field_info._attributes_set
-                ):
-                    unused_metadata.append((unused_metadata_name, unused_metadata_value))
+                )
+            ):
+                unused_metadata.append((unused_metadata_name, unused_metadata_value))
 
         return unused_metadata
 
