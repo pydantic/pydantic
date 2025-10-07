@@ -23,7 +23,7 @@ jobs:
 
       - uses: astral-sh/setup-uv@v6
         with:
-          python-version: '3.12'
+          python-version: '3.13'
 
       - name: Install dependencies
         # Installing pip is required for the pre-commit action:
@@ -44,7 +44,7 @@ jobs:
 
       - uses: astral-sh/setup-uv@v6
         with:
-          python-version: '3.12'
+          python-version: '3.13'
 
       - name: Install dependencies
         run: uv sync --group testing-extra --all-extras
@@ -70,7 +70,7 @@ jobs:
 
       - uses: astral-sh/setup-uv@v6
         with:
-          python-version: '3.12'
+          python-version: '3.13'
 
       - run: uv sync --group docs --group docs-upload
 
