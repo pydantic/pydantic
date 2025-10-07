@@ -711,7 +711,7 @@ The format of JSON serialized timedeltas. Accepts the string values of `'iso8601
 
 Warning
 
-Starting in v2.11, it is recommended to use the ser_json_temporal setting instead of `ser_json_timedelta`. This setting will be deprecated in v3.
+Starting in v2.12, it is recommended to use the ser_json_temporal setting instead of `ser_json_timedelta`. This setting will be deprecated in v3.
 
 ### ser_json_temporal
 
@@ -739,7 +739,7 @@ Defaults to `'iso8601'`.
 
 Note
 
-This setting was introduced in v2.11. It overlaps with the ser_json_timedelta setting which will be deprecated in v3. It also adds more configurability for the other temporal types.
+This setting was introduced in v2.12. It overlaps with the ser_json_timedelta setting which will be deprecated in v3. It also adds more configurability for the other temporal types.
 
 ### val_temporal_unit
 

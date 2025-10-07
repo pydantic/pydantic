@@ -94,6 +94,7 @@ model_dump(
     exclude_unset: bool = False,
     exclude_defaults: bool = False,
     exclude_none: bool = False,
+    exclude_computed_fields: bool = False,
     round_trip: bool = False,
     warnings: (
         bool | Literal["none", "warn", "error"]
@@ -123,6 +124,7 @@ def model_dump(  # type: ignore
     exclude_unset: bool = False,
     exclude_defaults: bool = False,
     exclude_none: bool = False,
+    exclude_computed_fields: bool = False,
     round_trip: bool = False,
     warnings: bool | Literal['none', 'warn', 'error'] = True,
     serialize_as_any: bool = False,

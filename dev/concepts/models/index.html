@@ -3760,7 +3760,8 @@ will avoid unnecessary checks.</p>
 <li><code>'allow'</code>: Providing extra data is allowed and stored in the <code>__pydantic_extra__</code> dictionary attribute.
   The <code>__pydantic_extra__</code> can explicitly be annotated to provide validation for extra fields.</li>
 </ul>
-<p>The validation methods (e.g. <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_validate"><code>model_validate()</code></a>) have an optional <code>extra</code> argument that will override the <code>extra</code> configuration value of the model for that validation call.</p>
+<p>The validation methods (e.g. <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_validate"><code>model_validate()</code></a>) have an optional <code>extra</code> argument
+that will override the <code>extra</code> configuration value of the model for that validation call.</p>
 <p>For more details, refer to the <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.extra"><code>extra</code></a> API documentation.</p>
 <p>Pydantic dataclasses also support extra data (see the <a href="../dataclasses/#dataclass-config">dataclass configuration</a> section).</p>
 <h2 id="nested-models">Nested models<a class="headerlink" href="#nested-models" title="Permanent link">&para;</a></h2>

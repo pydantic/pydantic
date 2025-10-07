@@ -521,6 +521,7 @@ dump_python(
     exclude_unset: bool = False,
     exclude_defaults: bool = False,
     exclude_none: bool = False,
+    exclude_computed_fields: bool = False,
     round_trip: bool = False,
     warnings: (
         bool | Literal["none", "warn", "error"]
@@ -536,7 +537,7 @@ Dump an instance of the adapted type to a Python object.
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `instance` | `T` | The Python object to serialize. | *required* | | `mode` | `Literal['json', 'python']` | The output format. | `'python'` | | `include` | `IncEx | None` | Fields to include in the output. | `None` | | `exclude` | `IncEx | None` | Fields to exclude from the output. | `None` | | `by_alias` | `bool | None` | Whether to use alias names for field names. | `None` | | `exclude_unset` | `bool` | Whether to exclude unset fields. | `False` | | `exclude_defaults` | `bool` | Whether to exclude fields with default values. | `False` | | `exclude_none` | `bool` | Whether to exclude fields with None values. | `False` | | `round_trip` | `bool` | Whether to output the serialized data in a way that is compatible with deserialization. | `False` | | `warnings` | `bool | Literal['none', 'warn', 'error']` | How to handle serialization errors. False/"none" ignores them, True/"warn" logs errors, "error" raises a PydanticSerializationError. | `True` | | `fallback` | `Callable[[Any], Any] | None` | A function to call when an unknown value is encountered. If not provided, a PydanticSerializationError error is raised. | `None` | | `serialize_as_any` | `bool` | Whether to serialize fields with duck-typing serialization behavior. | `False` | | `context` | `Any | None` | Additional context to pass to the serializer. | `None` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `instance` | `T` | The Python object to serialize. | *required* | | `mode` | `Literal['json', 'python']` | The output format. | `'python'` | | `include` | `IncEx | None` | Fields to include in the output. | `None` | | `exclude` | `IncEx | None` | Fields to exclude from the output. | `None` | | `by_alias` | `bool | None` | Whether to use alias names for field names. | `None` | | `exclude_unset` | `bool` | Whether to exclude unset fields. | `False` | | `exclude_defaults` | `bool` | Whether to exclude fields with default values. | `False` | | `exclude_none` | `bool` | Whether to exclude fields with None values. | `False` | | `exclude_computed_fields` | `bool` | Whether to exclude computed fields. While this can be useful for round-tripping, it is usually recommended to use the dedicated round_trip parameter instead. | `False` | | `round_trip` | `bool` | Whether to output the serialized data in a way that is compatible with deserialization. | `False` | | `warnings` | `bool | Literal['none', 'warn', 'error']` | How to handle serialization errors. False/"none" ignores them, True/"warn" logs errors, "error" raises a PydanticSerializationError. | `True` | | `fallback` | `Callable[[Any], Any] | None` | A function to call when an unknown value is encountered. If not provided, a PydanticSerializationError error is raised. | `None` | | `serialize_as_any` | `bool` | Whether to serialize fields with duck-typing serialization behavior. | `False` | | `context` | `Any | None` | Additional context to pass to the serializer. | `None` |
 
 Returns:
 
@@ -557,6 +558,7 @@ def dump_python(
     exclude_unset: bool = False,
     exclude_defaults: bool = False,
     exclude_none: bool = False,
+    exclude_computed_fields: bool = False,
     round_trip: bool = False,
     warnings: bool | Literal['none', 'warn', 'error'] = True,
     fallback: Callable[[Any], Any] | None = None,
@@ -574,6 +576,9 @@ def dump_python(
         exclude_unset: Whether to exclude unset fields.
         exclude_defaults: Whether to exclude fields with default values.
         exclude_none: Whether to exclude fields with None values.
+        exclude_computed_fields: Whether to exclude computed fields.
+            While this can be useful for round-tripping, it is usually recommended to use the dedicated
+            `round_trip` parameter instead.
         round_trip: Whether to output the serialized data in a way that is compatible with deserialization.
         warnings: How to handle serialization errors. False/"none" ignores them, True/"warn" logs errors,
             "error" raises a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError].
@@ -594,6 +599,7 @@ def dump_python(
         exclude_unset=exclude_unset,
         exclude_defaults=exclude_defaults,
         exclude_none=exclude_none,
+        exclude_computed_fields=exclude_computed_fields,
         round_trip=round_trip,
         warnings=warnings,
         fallback=fallback,
@@ -618,6 +624,7 @@ dump_json(
     exclude_unset: bool = False,
     exclude_defaults: bool = False,
     exclude_none: bool = False,
+    exclude_computed_fields: bool = False,
     round_trip: bool = False,
     warnings: (
         bool | Literal["none", "warn", "error"]
@@ -637,7 +644,7 @@ Serialize an instance of the adapted type to JSON.
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `instance` | `T` | The instance to be serialized. | *required* | | `indent` | `int | None` | Number of spaces for JSON indentation. | `None` | | `ensure_ascii` | `bool` | If True, the output is guaranteed to have all incoming non-ASCII characters escaped. If False (the default), these characters will be output as-is. | `False` | | `include` | `IncEx | None` | Fields to include. | `None` | | `exclude` | `IncEx | None` | Fields to exclude. | `None` | | `by_alias` | `bool | None` | Whether to use alias names for field names. | `None` | | `exclude_unset` | `bool` | Whether to exclude unset fields. | `False` | | `exclude_defaults` | `bool` | Whether to exclude fields with default values. | `False` | | `exclude_none` | `bool` | Whether to exclude fields with a value of None. | `False` | | `round_trip` | `bool` | Whether to serialize and deserialize the instance to ensure round-tripping. | `False` | | `warnings` | `bool | Literal['none', 'warn', 'error']` | How to handle serialization errors. False/"none" ignores them, True/"warn" logs errors, "error" raises a PydanticSerializationError. | `True` | | `fallback` | `Callable[[Any], Any] | None` | A function to call when an unknown value is encountered. If not provided, a PydanticSerializationError error is raised. | `None` | | `serialize_as_any` | `bool` | Whether to serialize fields with duck-typing serialization behavior. | `False` | | `context` | `Any | None` | Additional context to pass to the serializer. | `None` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `instance` | `T` | The instance to be serialized. | *required* | | `indent` | `int | None` | Number of spaces for JSON indentation. | `None` | | `ensure_ascii` | `bool` | If True, the output is guaranteed to have all incoming non-ASCII characters escaped. If False (the default), these characters will be output as-is. | `False` | | `include` | `IncEx | None` | Fields to include. | `None` | | `exclude` | `IncEx | None` | Fields to exclude. | `None` | | `by_alias` | `bool | None` | Whether to use alias names for field names. | `None` | | `exclude_unset` | `bool` | Whether to exclude unset fields. | `False` | | `exclude_defaults` | `bool` | Whether to exclude fields with default values. | `False` | | `exclude_none` | `bool` | Whether to exclude fields with a value of None. | `False` | | `exclude_computed_fields` | `bool` | Whether to exclude computed fields. While this can be useful for round-tripping, it is usually recommended to use the dedicated round_trip parameter instead. | `False` | | `round_trip` | `bool` | Whether to serialize and deserialize the instance to ensure round-tripping. | `False` | | `warnings` | `bool | Literal['none', 'warn', 'error']` | How to handle serialization errors. False/"none" ignores them, True/"warn" logs errors, "error" raises a PydanticSerializationError. | `True` | | `fallback` | `Callable[[Any], Any] | None` | A function to call when an unknown value is encountered. If not provided, a PydanticSerializationError error is raised. | `None` | | `serialize_as_any` | `bool` | Whether to serialize fields with duck-typing serialization behavior. | `False` | | `context` | `Any | None` | Additional context to pass to the serializer. | `None` |
 
 Returns:
 
@@ -659,6 +666,7 @@ def dump_json(
     exclude_unset: bool = False,
     exclude_defaults: bool = False,
     exclude_none: bool = False,
+    exclude_computed_fields: bool = False,
     round_trip: bool = False,
     warnings: bool | Literal['none', 'warn', 'error'] = True,
     fallback: Callable[[Any], Any] | None = None,
@@ -681,6 +689,9 @@ def dump_json(
         exclude_unset: Whether to exclude unset fields.
         exclude_defaults: Whether to exclude fields with default values.
         exclude_none: Whether to exclude fields with a value of `None`.
+        exclude_computed_fields: Whether to exclude computed fields.
+            While this can be useful for round-tripping, it is usually recommended to use the dedicated
+            `round_trip` parameter instead.
         round_trip: Whether to serialize and deserialize the instance to ensure round-tripping.
         warnings: How to handle serialization errors. False/"none" ignores them, True/"warn" logs errors,
             "error" raises a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError].
@@ -702,6 +713,7 @@ def dump_json(
         exclude_unset=exclude_unset,
         exclude_defaults=exclude_defaults,
         exclude_none=exclude_none,
+        exclude_computed_fields=exclude_computed_fields,
         round_trip=round_trip,
         warnings=warnings,
         fallback=fallback,
