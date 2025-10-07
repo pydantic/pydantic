@@ -126,6 +126,9 @@ class User(BaseModel):
     id: str = Field(default_factory=lambda: uuid4().hex)
 ```
 
+<!-- markdownlint-disable-next-line no-empty-links -->
+[](){#default-factory-validated-data}
+
 The default factory can also take a single required argument, in which case the already validated data will be passed as a dictionary.
 
 ```python

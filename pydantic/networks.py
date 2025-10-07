@@ -78,6 +78,7 @@ class UrlConstraints:
         default_host: The default host. Defaults to `None`.
         default_port: The default port. Defaults to `None`.
         default_path: The default path. Defaults to `None`.
+        preserve_empty_path: Whether to preserve empty URL paths. Defaults to `None`.
     """
 
     max_length: int | None = None
@@ -86,6 +87,7 @@ class UrlConstraints:
     default_host: str | None = None
     default_port: int | None = None
     default_path: str | None = None
+    preserve_empty_path: bool | None = None
 
     def __hash__(self) -> int:
         return hash(
@@ -96,6 +98,7 @@ class UrlConstraints:
                 self.default_host,
                 self.default_port,
                 self.default_path,
+                self.preserve_empty_path,
             )
         )
 

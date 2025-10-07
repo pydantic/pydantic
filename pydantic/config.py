@@ -1201,6 +1201,24 @@ class ConfigDict(TypedDict, total=False):
     2. The model is serialized using the alias `'my_alias'` for the `'my_field'` attribute.
     """
 
+    url_preserve_empty_path: bool
+    """
+    Whether to preserve empty URL paths when validating values for a URL type. Defaults to `False`.
+
+    ```python
+    from pydantic import AnyUrl, BaseModel, ConfigDict
+
+    class Model(BaseModel):
+        model_config = ConfigDict(url_preserve_empty_path=True)
+
+        url: AnyUrl
+
+    m = Model(url='http://example.com')
+    print(m.url)
+    #> http://example.com
+    ```
+    """
+
 
 _TypeT = TypeVar('_TypeT', bound=type)
 
