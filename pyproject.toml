@@ -288,7 +288,7 @@ enableExperimentalFeatures = true
 skip = '.git,env*,pydantic/v1/*,uv.lock'
 # `ser` - abbreviation for "ser"ialisation
 # `crate` - a rust crate
-ignore-words-list = 'gir,ser,crate'
+ignore-words-list = 'gir,ser,crate,deques'
 
 [tool.codeflash]
 module-root = "pydantic"

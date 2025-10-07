@@ -997,14 +997,13 @@ class ConfigDict(TypedDict, total=False):
     The regex engine to be used for pattern validation.
     Defaults to `'rust-regex'`.
 
-    - `rust-regex` uses the [`regex`](https://docs.rs/regex) Rust crate,
+    - `'rust-regex'` uses the [`regex`](https://docs.rs/regex) Rust crate,
       which is non-backtracking and therefore more DDoS resistant, but does not support all regex features.
-    - `python-re` use the [`re`](https://docs.python.org/3/library/re.html) module,
-      which supports all regex features, but may be slower.
+    - `'python-re'` use the [`re`][] module, which supports all regex features, but may be slower.
 
     !!! note
-        If you use a compiled regex pattern, the python-re engine will be used regardless of this setting.
-        This is so that flags such as `re.IGNORECASE` are respected.
+        If you use a compiled regex pattern, the `'python-re'` engine will be used regardless of this setting.
+        This is so that flags such as [`re.IGNORECASE`][] are respected.
 
     ```python
     from pydantic import BaseModel, ConfigDict, Field, ValidationError
