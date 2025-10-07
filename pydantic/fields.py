@@ -34,7 +34,7 @@ if TYPE_CHECKING:
     from ._internal._repr import ReprArgs
 
 
-__all__ = 'Field', 'PrivateAttr', 'computed_field'
+__all__ = 'Field', 'FieldInfo', 'PrivateAttr', 'computed_field'
 
 
 _Unset: Any = PydanticUndefined
