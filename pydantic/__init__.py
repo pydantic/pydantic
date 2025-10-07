@@ -421,9 +421,11 @@ _getattr_migration = getattr_migration(__name__)
 
 def __getattr__(attr_name: str) -> object:
     if attr_name in _deprecated_dynamic_imports:
+        from pydantic.warnings import PydanticDeprecatedSince20
+
         warn(
             f'Importing {attr_name} from `pydantic` is deprecated. This feature is either no longer supported, or is not public.',
-            DeprecationWarning,
+            PydanticDeprecatedSince20,
             stacklevel=2,
         )
 

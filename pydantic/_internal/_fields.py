@@ -329,6 +329,7 @@ def collect_model_fields(  # noqa: C901
                     f'Field name "{ann_name}" in "{cls.__qualname__}" shadows an attribute in parent '
                     f'"{base.__qualname__}"',
                     UserWarning,
+                    stacklevel=4,
                 )
 
         if assigned_value is PydanticUndefined:  # no assignment, just a plain annotation
