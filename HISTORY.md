@@ -163,6 +163,36 @@ This is the first alpha release of the upcoming 2.12 release, which adds initial
 * @GSemikozov made their first contribution in [#12050](https://github.com/pydantic/pydantic/pull/12050)
 * @hannah-heywa made their first contribution in [#12082](https://github.com/pydantic/pydantic/pull/12082)
 
+## v2.11.10 (2025-10-04)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.11.10)
+
+### What's Changed
+
+#### Fixes
+
+* Backport v1.10.24 changes by @Viicos
+
+## v2.11.9 (2025-09-13)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.11.9)
+
+### What's Changed
+
+#### Fixes
+
+* Backport v1.10.23 changes by @Viicos
+
+## v2.11.8 (2025-09-13)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.11.8)
+
+### What's Changed
+
+#### Fixes
+
+* Fix mypy plugin for mypy 1.18 by @cdce8p in [#12209](https://github.com/pydantic/pydantic/pull/12209)
+
 ## v2.11.7 (2025-06-14)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.11.7)
@@ -2170,6 +2200,22 @@ See the full changelog [here](https://github.com/pydantic/pydantic/releases/tag/
 First pre-release of Pydantic V2!
 
 See [this post](https://docs.pydantic.dev/blog/pydantic-v2-alpha/) for more details.
+
+## v1.10.24 (2025-09-25)
+
+* Add user warning when using Python 3.14 by @Viicos in https://github.com/pydantic/pydantic/pull/12263
+  Pydantic V1 will *not* work with Python 3.14 and greater. A warning is now raised as no actual
+  error show up when using it, but the core behavior will silently get broken at runtime.
+* Fix mypy plugin issue for mypy v1.18 by @cdce8p in https://github.com/pydantic/pydantic/pull/12254
+  This fixes another mypy issue that was discovered after the previous v1.10.23 release.
+
+## v1.10.23 (2025-09-13)
+
+* Fix mypy plugin for mypy 1.18 by @cdce8p in https://github.com/pydantic/pydantic/pull/12207
+
+## v1.10.22 (2025-04-17)
+
+* Fix compatibility with `typing-extensions` by @Viicos in https://github.com/pydantic/pydantic/pull/11764
 
 ## v1.10.21 (2025-01-10)
 
