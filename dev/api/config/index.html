@@ -6158,31 +6158,7 @@ as the performance difference is minimal if repeated strings are rare.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>In v2.11, <code>validate_by_alias</code> was introduced in conjunction with <a class="autorefs autorefs-internal" href="#pydantic.config.ConfigDict.validate_by_name"><code>validate_by_name</code></a>
-to empower users with more fine grained validation control. In &lt;v2.11, disabling validation by alias was not possible.</p>
-</div>
-<p>Here's an example of disabling validation by alias:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">Field</span>
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">validate_by_name</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">validate_by_alias</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-
-    <span class="n">my_field</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">validation_alias</span><span class="o">=</span><span class="s1">&#39;my_alias&#39;</span><span class="p">)</span>  <span class="c1"># (1)!</span>
-
-<span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">my_field</span><span class="o">=</span><span class="s1">&#39;foo&#39;</span><span class="p">)</span>  <span class="c1"># (2)!</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
-<span class="c1">#&gt; my_field=&#39;foo&#39;</span>
-</code></pre></div>
-<ol>
-<li>The field <code>'my_field'</code> has an alias <code>'my_alias'</code>.</li>
-<li>The model can only be populated by the attribute name <code>'my_field'</code>.</li>
-</ol>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>You cannot set both <code>validate_by_alias</code> and <code>validate_by_name</code> to <code>False</code>.
-This would make it impossible to populate an attribute.</p>
-<p>See <a href="../../errors/usage_errors/#validate-by-alias-and-name-false">usage errors</a> for an example.</p>
-<p>If you set <code>validate_by_alias</code> to <code>False</code>, under the hood, Pydantic dynamically sets
-<code>validate_by_name</code> to <code>True</code> to ensure that validation can still occur.</p>
+to empower users with more fine grained validation control. In </p>
 </div>
     </div>
 

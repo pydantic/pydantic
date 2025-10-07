@@ -1272,34 +1272,7 @@ Whether an aliased field may be populated by its alias. Defaults to `True`.
 
 Note
 
-In v2.11, `validate_by_alias` was introduced in conjunction with validate_by_name to empower users with more fine grained validation control. In \<v2.11, disabling validation by alias was not possible.
-
-Here's an example of disabling validation by alias:
-
-```py
-from pydantic import BaseModel, ConfigDict, Field
-
-class Model(BaseModel):
-    model_config = ConfigDict(validate_by_name=True, validate_by_alias=False)
-
-    my_field: str = Field(validation_alias='my_alias')  # (1)!
-
-m = Model(my_field='foo')  # (2)!
-print(m)
-#> my_field='foo'
-
-```
-
-1. The field `'my_field'` has an alias `'my_alias'`.
-1. The model can only be populated by the attribute name `'my_field'`.
-
-Warning
-
-You cannot set both `validate_by_alias` and `validate_by_name` to `False`. This would make it impossible to populate an attribute.
-
-See [usage errors](../../errors/usage_errors/#validate-by-alias-and-name-false) for an example.
-
-If you set `validate_by_alias` to `False`, under the hood, Pydantic dynamically sets `validate_by_name` to `True` to ensure that validation can still occur.
+In v2.11, `validate_by_alias` was introduced in conjunction with validate_by_name to empower users with more fine grained validation control. In
 
 ### validate_by_name
 
