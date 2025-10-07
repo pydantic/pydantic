@@ -1146,12 +1146,12 @@ regex_engine: Literal['rust-regex', 'python-re']
 
 The regex engine to be used for pattern validation. Defaults to `'rust-regex'`.
 
-- `rust-regex` uses the [`regex`](https://docs.rs/regex) Rust crate, which is non-backtracking and therefore more DDoS resistant, but does not support all regex features.
-- `python-re` use the [`re`](https://docs.python.org/3/library/re.html) module, which supports all regex features, but may be slower.
+- `'rust-regex'` uses the [`regex`](https://docs.rs/regex) Rust crate, which is non-backtracking and therefore more DDoS resistant, but does not support all regex features.
+- `'python-re'` use the re module, which supports all regex features, but may be slower.
 
 Note
 
-If you use a compiled regex pattern, the python-re engine will be used regardless of this setting. This is so that flags such as `re.IGNORECASE` are respected.
+If you use a compiled regex pattern, the `'python-re'` engine will be used regardless of this setting. This is so that flags such as re.IGNORECASE are respected.
 
 ```python
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
@@ -1371,6 +1371,29 @@ print(m.model_dump())  # (2)!
 
 1. The field `'my_field'` has an alias `'my_alias'`.
 1. The model is serialized using the alias `'my_alias'` for the `'my_field'` attribute.
+
+### url_preserve_empty_path
+
+```python
+url_preserve_empty_path: bool
+
+```
+
+Whether to preserve empty URL paths when validating values for a URL type. Defaults to `False`.
+
+```python
+from pydantic import AnyUrl, BaseModel, ConfigDict
+
+class Model(BaseModel):
+    model_config = ConfigDict(url_preserve_empty_path=True)
+
+    url: AnyUrl
+
+m = Model(url='http://example.com')
+print(m.url)
+#> http://example.com
+
+```
 
 ## with_config
 

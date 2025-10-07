@@ -991,6 +991,15 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
+  <a href="#configuration-on-the-validate_call-decorator" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configuration on the @validate_call decorator
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#change-behaviour-globally" class="md-nav__link">
     <span class="md-ellipsis">
       Change behaviour globally
@@ -3072,6 +3081,15 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
+  <a href="#configuration-on-the-validate_call-decorator" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configuration on the @validate_call decorator
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#change-behaviour-globally" class="md-nav__link">
     <span class="md-ellipsis">
       Change behaviour globally
@@ -3151,15 +3169,13 @@ specified for Pydantic's supported types.</p>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-    <span class="n">a</span><span class="p">:</span> <span class="nb">str</span>  <span class="c1"># (1)!</span>
+    <span class="n">a</span><span class="p">:</span> <span class="nb">str</span>
 </code></pre></div>
-<ol>
-<li>Unlike the <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_config"><code>model_config</code></a> class attribute,
-   static type checkers will recognize the <code>frozen</code> argument, and so any instance
-   mutation will be flagged as an type checking error.</li>
-</ol>
 </li>
 </ul>
+<p>Unlike the <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_config"><code>model_config</code></a> class attribute,
+  static type checkers will recognize class arguments. For <code>frozen</code>, any instance
+  mutation will be flagged as an type checking error.</p>
 <h2 id="configuration-on-pydantic-dataclasses">Configuration on Pydantic dataclasses<a class="headerlink" href="#configuration-on-pydantic-dataclasses" title="Permanent link">&para;</a></h2>
 <p><a href="../dataclasses/">Pydantic dataclasses</a> also support configuration (read more in the
 <a href="../dataclasses/#dataclass-config">dedicated section</a>).</p>
@@ -3185,7 +3201,7 @@ specified for Pydantic's supported types.</p>
 </code></pre></div>
 <h2 id="configuration-on-typeadapter">Configuration on <code>TypeAdapter</code><a class="headerlink" href="#configuration-on-typeadapter" title="Permanent link">&para;</a></h2>
 <p><a href="../type_adapter/">Type adapters</a> (using the <a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic.type_adapter.TypeAdapter"><code>TypeAdapter</code></a> class) support configuration,
-by providing a <code>config</code> argument.</p>
+by providing the <code>config</code> argument.</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">TypeAdapter</span>
 
 <span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">config</span><span class="o">=</span><span class="n">ConfigDict</span><span class="p">(</span><span class="n">coerce_numbers_to_str</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
@@ -3216,7 +3232,7 @@ the configuration can be set in two ways:</p>
 </code></pre></div>
 </li>
 <li>
-<p>Using the <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.with_config"><code>with_config</code></a> decorator (this avoids static type checking errors with
+<p>Using the <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.with_config"><code>@with_config</code></a> decorator (this avoids static type checking errors with
   <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.TypedDict"><code>TypedDict</code></a>):</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing_extensions</span><span class="w"> </span><span class="kn">import</span> <span class="n">TypedDict</span>
 
@@ -3229,6 +3245,9 @@ the configuration can be set in two ways:</p>
 </code></pre></div>
 </li>
 </ul>
+<h2 id="configuration-on-the-validate_call-decorator">Configuration on the <code>@validate_call</code> decorator<a class="headerlink" href="#configuration-on-the-validate_call-decorator" title="Permanent link">&para;</a></h2>
+<p>The <a href="../validation_decorator/"><code>@validate_call</code></a> also supports setting custom configuration. See the
+<a href="../validation_decorator/#custom-configuration">dedicated section</a> for more details.</p>
 <h2 id="change-behaviour-globally">Change behaviour globally<a class="headerlink" href="#change-behaviour-globally" title="Permanent link">&para;</a></h2>
 <p>If you wish to change the behaviour of Pydantic globally, you can create your own custom parent class
 with a custom configuration, as the configuration is inherited:</p>
@@ -3386,7 +3405,7 @@ with a custom configuration, as the configuration is inherited:</p>
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["https://docs.pydantic.dev/dev/pydantic-2.12.0b1+dev-py3-none-any.whl", "email-validator>=2.0.0", "pydantic-core==2.40.1", "pydantic-extra-types==2.10.0"]
+    window.mkdocs_run_deps = ["https://docs.pydantic.dev/dev/pydantic-2.12.0b1+dev-py3-none-any.whl", "email-validator>=2.0.0", "pydantic-core==2.41.1", "pydantic-extra-types==2.10.0"]
     </script>
 
               </article>

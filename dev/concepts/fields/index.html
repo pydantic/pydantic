@@ -880,36 +880,27 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
-  <a href="#numeric-constraints" class="md-nav__link">
+  <a href="#field-constraints" class="md-nav__link">
     <span class="md-ellipsis">
-      Numeric Constraints
+      Field constraints
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#string-constraints" class="md-nav__link">
+  <a href="#strict-fields" class="md-nav__link">
     <span class="md-ellipsis">
-      String Constraints
+      Strict fields
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#decimal-constraints" class="md-nav__link">
+  <a href="#dataclass-fields" class="md-nav__link">
     <span class="md-ellipsis">
-      Decimal Constraints
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#dataclass-constraints" class="md-nav__link">
-    <span class="md-ellipsis">
-      Dataclass Constraints
+      Dataclass fields
     </span>
   </a>
   
@@ -928,15 +919,6 @@ to help you monitor and understand your
   <a href="#discriminator" class="md-nav__link">
     <span class="md-ellipsis">
       Discriminator
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#strict-mode" class="md-nav__link">
-    <span class="md-ellipsis">
-      Strict Mode
     </span>
   </a>
   
@@ -3225,36 +3207,27 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
-  <a href="#numeric-constraints" class="md-nav__link">
+  <a href="#field-constraints" class="md-nav__link">
     <span class="md-ellipsis">
-      Numeric Constraints
+      Field constraints
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#string-constraints" class="md-nav__link">
+  <a href="#strict-fields" class="md-nav__link">
     <span class="md-ellipsis">
-      String Constraints
+      Strict fields
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#decimal-constraints" class="md-nav__link">
+  <a href="#dataclass-fields" class="md-nav__link">
     <span class="md-ellipsis">
-      Decimal Constraints
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#dataclass-constraints" class="md-nav__link">
-    <span class="md-ellipsis">
-      Dataclass Constraints
+      Dataclass fields
     </span>
   </a>
   
@@ -3273,15 +3246,6 @@ to help you monitor and understand your
   <a href="#discriminator" class="md-nav__link">
     <span class="md-ellipsis">
       Discriminator
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#strict-mode" class="md-nav__link">
-    <span class="md-ellipsis">
-      Strict Mode
     </span>
   </a>
   
@@ -3391,9 +3355,11 @@ to help you monitor and understand your
 <p><a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.Field"><code>pydantic.fields.Field</code></a><br></p>
 </details>
 <p>In this section, we will go through the available mechanisms to customize Pydantic model fields:
-default values, JSON Schema metadata, constraints, etc.</p>
+<a href="#default-values">default values</a>, <a href="#customizing-json-schema">JSON Schema metadata</a>,
+<a href="#field-constraints">constraints</a>, etc.</p>
 <p>To do so, the <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.Field"><code>Field()</code></a> function is used a lot, and behaves the same way as
-the standard library <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/dataclasses.html#dataclasses.field"><code>field()</code></a> function for dataclasses:</p>
+the standard library <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/dataclasses.html#dataclasses.field"><code>field()</code></a> function for dataclasses – by assigning to the
+annotated attribute:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
 
 
@@ -3411,7 +3377,7 @@ to emphasize on the fact that a value must be provided, you can use the <a class
 </div>
 <h2 id="the-annotated-pattern">The annotated pattern<a class="headerlink" href="#the-annotated-pattern" title="Permanent link">&para;</a></h2>
 <p>To apply constraints or attach <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.Field"><code>Field()</code></a> functions to a model field, Pydantic
-supports the <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Annotated"><code>Annotated</code></a> typing construct to attach metadata to an annotation:</p>
+also supports the <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Annotated"><code>Annotated</code></a> typing construct to attach metadata to an annotation:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">WithJsonSchema</span>
@@ -3435,7 +3401,7 @@ the available metadata to add validation logic, type constraints, etc.</p>
 </ul>
 <p>However, note that certain arguments to the <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.Field"><code>Field()</code></a> function (namely, <code>default</code>,
 <code>default_factory</code>, and <code>alias</code>) are taken into account by static type checkers to synthesize a correct
-<code>__init__</code> method. The annotated pattern is <em>not</em> understood by them, so you should use the normal
+<code>__init__()</code> method. The annotated pattern is <em>not</em> understood by them, so you should use the normal
 assignment form instead.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
@@ -3497,6 +3463,8 @@ default was explicitly specified. This is no longer the case in Pydantic V2.</p>
 <span class="k">class</span><span class="w"> </span><span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="nb">id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span><span class="p">)</span>
 </code></pre></div>
+<!-- markdownlint-disable-next-line no-empty-links -->
+<p><a href="" id="default-factory-validated-data"></a></p>
 <p>The default factory can also take a single required argument, in which case the already validated data will be passed as a dictionary.</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">EmailStr</span><span class="p">,</span> <span class="n">Field</span>
 
@@ -3717,208 +3685,61 @@ serialization:</p>
 <span class="c1">#&gt; {&#39;my_field&#39;: 1}</span>
 </code></pre></div>
 </details>
+<!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
-<p><a href="" id="field-constraints"></a></p>
-<h2 id="numeric-constraints">Numeric Constraints<a class="headerlink" href="#numeric-constraints" title="Permanent link">&para;</a></h2>
-<p>There are some keyword arguments that can be used to constrain numeric values:</p>
-<ul>
-<li><code>gt</code> - greater than</li>
-<li><code>lt</code> - less than</li>
-<li><code>ge</code> - greater than or equal to</li>
-<li><code>le</code> - less than or equal to</li>
-<li><code>multiple_of</code> - a multiple of the given number</li>
-<li><code>allow_inf_nan</code> - allow <code>'inf'</code>, <code>'-inf'</code>, <code>'nan'</code> values</li>
-</ul>
-<p>Here's an example:</p>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">positive</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">gt</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-    <span class="n">non_negative</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">ge</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-    <span class="n">negative</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">lt</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-    <span class="n">non_positive</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">le</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-    <span class="n">even</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">multiple_of</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-    <span class="n">love_for_pydantic</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">allow_inf_nan</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-
-
-<span class="n">foo</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">(</span>
-    <span class="n">positive</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-    <span class="n">non_negative</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-    <span class="n">negative</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
-    <span class="n">non_positive</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-    <span class="n">even</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
-    <span class="n">love_for_pydantic</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">),</span>
-<span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">foo</span><span class="p">)</span>
-<span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">positive=1 non_negative=0 negative=-1 non_positive=0 even=2 love_for_pydantic=inf</span>
-<span class="sd">&quot;&quot;&quot;</span>
-</code></pre></div>
-<details class="info">
-<summary>JSON Schema</summary>
-<p>In the generated JSON schema:</p>
-<ul>
-<li><code>gt</code> and <code>lt</code> constraints will be translated to <code>exclusiveMinimum</code> and <code>exclusiveMaximum</code>.</li>
-<li><code>ge</code> and <code>le</code> constraints will be translated to <code>minimum</code> and <code>maximum</code>.</li>
-<li><code>multiple_of</code> constraint will be translated to <code>multipleOf</code>.</li>
-</ul>
-<p>The above snippet will generate the following JSON Schema:</p>
-<div class="language-json highlight"><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Foo&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;object&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;properties&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="nt">&quot;positive&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Positive&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;integer&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;exclusiveMinimum&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span>
-<span class="w">    </span><span class="p">},</span>
-<span class="w">    </span><span class="nt">&quot;non_negative&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Non Negative&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;integer&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;minimum&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span>
-<span class="w">    </span><span class="p">},</span>
-<span class="w">    </span><span class="nt">&quot;negative&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Negative&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;integer&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;exclusiveMaximum&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span>
-<span class="w">    </span><span class="p">},</span>
-<span class="w">    </span><span class="nt">&quot;non_positive&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Non Positive&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;integer&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;maximum&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span>
-<span class="w">    </span><span class="p">},</span>
-<span class="w">    </span><span class="nt">&quot;even&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Even&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;integer&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;multipleOf&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span>
-<span class="w">    </span><span class="p">},</span>
-<span class="w">    </span><span class="nt">&quot;love_for_pydantic&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Love For Pydantic&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;number&quot;</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">  </span><span class="p">},</span>
-<span class="w">  </span><span class="nt">&quot;required&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">    </span><span class="s2">&quot;positive&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;non_negative&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;negative&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;non_positive&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;even&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;love_for_pydantic&quot;</span>
-<span class="w">  </span><span class="p">]</span>
-<span class="p">}</span>
-</code></pre></div>
-<p>See the [JSON Schema Draft 2020-12] for more details.</p>
-</details>
-<div class="admonition warning">
-<p class="admonition-title">Constraints on compound types</p>
-<p>In case you use field constraints with compound types, an error can happen in some cases. To avoid potential issues,
-you can use <code>Annotated</code>:</p>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span><span class="p">,</span> <span class="n">Optional</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">positive</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">gt</span><span class="o">=</span><span class="mi">0</span><span class="p">)]]</span>
-    <span class="c1"># Can error in some cases, not recommended:</span>
-    <span class="n">non_negative</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">ge</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-</code></pre></div>
-</div>
-<h2 id="string-constraints">String Constraints<a class="headerlink" href="#string-constraints" title="Permanent link">&para;</a></h2>
-<details class="api">
-<summary>API Documentation</summary>
-<p><a class="autorefs autorefs-internal" href="../../api/types/#pydantic.types.StringConstraints"><code>pydantic.types.StringConstraints</code></a><br></p>
-</details>
-<p>There are fields that can be used to constrain strings:</p>
-<ul>
-<li><code>min_length</code>: Minimum length of the string.</li>
-<li><code>max_length</code>: Maximum length of the string.</li>
-<li><code>pattern</code>: A regular expression that the string must match.</li>
-</ul>
-<p>Here's an example:</p>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">short</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">min_length</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
-    <span class="n">long</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
-    <span class="n">regex</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">pattern</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;^\d*$&#39;</span><span class="p">)</span>  <span class="c1"># (1)!</span>
-
-
-<span class="n">foo</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">(</span><span class="n">short</span><span class="o">=</span><span class="s1">&#39;foo&#39;</span><span class="p">,</span> <span class="n">long</span><span class="o">=</span><span class="s1">&#39;foobarbaz&#39;</span><span class="p">,</span> <span class="n">regex</span><span class="o">=</span><span class="s1">&#39;123&#39;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">foo</span><span class="p">)</span>
-<span class="c1">#&gt; short=&#39;foo&#39; long=&#39;foobarbaz&#39; regex=&#39;123&#39;</span>
-</code></pre></div>
-<ol>
-<li>Only digits are allowed.</li>
-</ol>
-<details class="info">
-<summary>JSON Schema</summary>
-<p>In the generated JSON schema:</p>
-<ul>
-<li><code>min_length</code> constraint will be translated to <code>minLength</code>.</li>
-<li><code>max_length</code> constraint will be translated to <code>maxLength</code>.</li>
-<li><code>pattern</code> constraint will be translated to <code>pattern</code>.</li>
-</ul>
-<p>The above snippet will generate the following JSON Schema:</p>
-<div class="language-json highlight"><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Foo&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;object&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;properties&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="nt">&quot;short&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Short&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;string&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;minLength&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span>
-<span class="w">    </span><span class="p">},</span>
-<span class="w">    </span><span class="nt">&quot;long&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Long&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;string&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;maxLength&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span>
-<span class="w">    </span><span class="p">},</span>
-<span class="w">    </span><span class="nt">&quot;regex&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Regex&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;string&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;pattern&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;^\\d*$&quot;</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">  </span><span class="p">},</span>
-<span class="w">  </span><span class="nt">&quot;required&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">    </span><span class="s2">&quot;short&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;long&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;regex&quot;</span>
-<span class="w">  </span><span class="p">]</span>
-<span class="p">}</span>
-</code></pre></div>
-</details>
-<h2 id="decimal-constraints">Decimal Constraints<a class="headerlink" href="#decimal-constraints" title="Permanent link">&para;</a></h2>
-<p>There are fields that can be used to constrain decimals:</p>
-<ul>
-<li><code>max_digits</code>: Maximum number of digits within the <code>Decimal</code>. It does not include a zero before the decimal point or
-  trailing decimal zeroes.</li>
-<li><code>decimal_places</code>: Maximum number of decimal places allowed. It does not include trailing decimal zeroes.</li>
-</ul>
-<p>Here's an example:</p>
+<p><a href="" id="numeric-constraints"></a></p>
+<!-- markdownlint-disable-next-line no-empty-links -->
+<p><a href="" id="string-constraints"></a></p>
+<!-- markdownlint-disable-next-line no-empty-links -->
+<p><a href="" id="decimal-constraints"></a></p>
+<h2 id="field-constraints">Field constraints<a class="headerlink" href="#field-constraints" title="Permanent link">&para;</a></h2>
+<p>The <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.Field"><code>Field()</code></a> function can also be used to add constraints to specific types:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">decimal</span><span class="w"> </span><span class="kn">import</span> <span class="n">Decimal</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
 
 
-<span class="k">class</span><span class="w"> </span><span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">precise</span><span class="p">:</span> <span class="n">Decimal</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">max_digits</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">decimal_places</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-
-
-<span class="n">foo</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">(</span><span class="n">precise</span><span class="o">=</span><span class="n">Decimal</span><span class="p">(</span><span class="s1">&#39;123.45&#39;</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">foo</span><span class="p">)</span>
-<span class="c1">#&gt; precise=Decimal(&#39;123.45&#39;)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">positive</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">gt</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">short_str</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+    <span class="n">precise_decimal</span><span class="p">:</span> <span class="n">Decimal</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">max_digits</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">decimal_places</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 </code></pre></div>
-<h2 id="dataclass-constraints">Dataclass Constraints<a class="headerlink" href="#dataclass-constraints" title="Permanent link">&para;</a></h2>
-<p>There are fields that can be used to constrain dataclasses:</p>
+<p>The available constraints for each type (and the way they affect the JSON Schema) are described
+in the <a href="../../api/standard_library_types/">standard library types</a> documentation.</p>
+<!-- old anchor added for backwards compatibility -->
+<!-- markdownlint-disable-next-line no-empty-links -->
+<p><a href="" id="strict-mode"></a></p>
+<h2 id="strict-fields">Strict fields<a class="headerlink" href="#strict-fields" title="Permanent link">&para;</a></h2>
+<p>The <code>strict</code> parameter of the <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.Field"><code>Field()</code></a> function specifies whether the field should be validated in
+<a href="../strict_mode/">strict mode</a>.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>  <span class="c1"># (1)!</span>
+
+
+<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;John&#39;</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="s1">&#39;42&#39;</span><span class="p">)</span>  <span class="c1"># (2)!</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
+<span class="c1">#&gt; name=&#39;John&#39; age=42</span>
+</code></pre></div>
+<ol>
+<li>This is the default value.</li>
+<li>The <code>age</code> field is validated in lax mode. Therefore, it can be assigned a string.</li>
+</ol>
+<p>The <a href="../../api/standard_library_types/">standard library types</a> documentation describes the strict behavior for each type.</p>
+<!-- old anchor added for backwards compatibility -->
+<!-- markdownlint-disable-next-line no-empty-links -->
+<p><a href="" id="dataclass-constraints"></a></p>
+<h2 id="dataclass-fields">Dataclass fields<a class="headerlink" href="#dataclass-fields" title="Permanent link">&para;</a></h2>
+<p>Some parameters of the <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.Field"><code>Field()</code></a> function can be used on <a href="../dataclasses/">dataclasses</a>:</p>
 <ul>
-<li><code>init</code>: Whether the field should be included in the <code>__init__</code> of the dataclass.</li>
-<li><code>init_var</code>: Whether the field should be seen as an <a href="https://docs.python.org/3/library/dataclasses.html#init-only-variables">init-only field</a> in the dataclass.</li>
+<li><code>init</code>: Whether the field should be included in the synthesized <code>__init__()</code> method of the dataclass.</li>
+<li><code>init_var</code>: Whether the field should be <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/dataclasses.html#dataclasses-init-only-variables">init-only</a> in the dataclass.</li>
 <li><code>kw_only</code>: Whether the field should be a keyword-only argument in the constructor of the dataclass.</li>
 </ul>
-<p>Here's an example:</p>
+<p>Here is an example:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic.dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
 
@@ -3939,7 +3760,7 @@ you can use <code>Annotated</code>:</p>
 <span class="c1">#&gt; {&#39;foo&#39;: {&#39;bar&#39;: &#39;bar&#39;, &#39;qux&#39;: &#39;qux&#39;}}</span>
 </code></pre></div>
 <ol>
-<li>The <code>baz</code> field is not included in the <code>model_dump()</code> output, since it is an init-only field.</li>
+<li>The <code>baz</code> field is not included in the serialized output, since it is an init-only field.</li>
 </ol>
 <h2 id="field-representation">Field Representation<a class="headerlink" href="#field-representation" title="Permanent link">&para;</a></h2>
 <p>The parameter <code>repr</code> can be used to control whether the field should be included in the string
@@ -4099,27 +3920,6 @@ approach can be useful when the discriminator fields aren't the same for all the
 </div>
 <p>You can also take advantage of <code>Annotated</code> to define your discriminated unions.
 See the <a href="../unions/#discriminated-unions">Discriminated Unions</a> docs for more details.</p>
-<h2 id="strict-mode">Strict Mode<a class="headerlink" href="#strict-mode" title="Permanent link">&para;</a></h2>
-<p>The <code>strict</code> parameter on a <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.Field"><code>Field</code></a> specifies whether the field should be validated in "strict mode".
-In strict mode, Pydantic throws an error during validation instead of coercing data on the field where <code>strict=True</code>.</p>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>  <span class="c1"># (1)!</span>
-
-
-<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;John&#39;</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="s1">&#39;42&#39;</span><span class="p">)</span>  <span class="c1"># (2)!</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
-<span class="c1">#&gt; name=&#39;John&#39; age=42</span>
-</code></pre></div>
-<ol>
-<li>This is the default value.</li>
-<li>The <code>age</code> field is not validated in the strict mode. Therefore, it can be assigned a string.</li>
-</ol>
-<p>See <a href="../strict_mode/">Strict Mode</a> for more details.</p>
-<p>See <a href="../conversion_table/">Conversion Table</a> for more details on how Pydantic converts data in both strict and lax modes.</p>
 <h2 id="immutability">Immutability<a class="headerlink" href="#immutability" title="Permanent link">&para;</a></h2>
 <p>The parameter <code>frozen</code> is used to emulate the frozen dataclass behaviour. It is used to prevent the field from being
 assigned a new value after the model is created (immutability).</p>
@@ -4422,7 +4222,7 @@ are expensive to be computed (and thus, are cached if using <a class="autorefs a
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["https://docs.pydantic.dev/dev/pydantic-2.12.0b1+dev-py3-none-any.whl", "email-validator>=2.0.0", "pydantic-core==2.40.1", "pydantic-extra-types==2.10.0"]
+    window.mkdocs_run_deps = ["https://docs.pydantic.dev/dev/pydantic-2.12.0b1+dev-py3-none-any.whl", "email-validator>=2.0.0", "pydantic-core==2.41.1", "pydantic-extra-types==2.10.0"]
     </script>
 
               </article>

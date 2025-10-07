@@ -1,61 +1,16 @@
-Where possible Pydantic uses [standard library types](../../api/standard_library_types/) to define fields, thus smoothing the learning curve. For many useful applications, however, no standard library type exists, so Pydantic implements many commonly used types.
+Pydantic uses types to define how validation and serialization should be performed. [Built-in and standard library types](../../api/standard_library_types/) (such as int, str, date) can be used as is. [Strictness](../strict_mode/) can be controlled and constraints can be applied on them.
 
-There are also more complex types that can be found in the [Pydantic Extra Types](https://github.com/pydantic/pydantic-extra-types) package.
+On top of these, Pydantic provides extra types, either [directly in the library](../../api/types/) (e.g. SecretStr) or in the [`pydantic-extra-types`](https://github.com/pydantic/pydantic-extra-types) external library. These are implemented using the patterns described in the [custom types](#custom-types) section. Strictness and constraints *can't* be applied on them.
 
-If no existing type suits your purpose you can also implement your [own Pydantic-compatible types](#custom-types) with custom properties and validation.
+The [built-in and standard library types](../../api/standard_library_types/) documentation goes over the supported types: the allowed values, the possible validation constraints, and whether [strictness](../strict_mode/) can be configured.
 
-The following sections describe the types supported by Pydantic.
+See also the [conversion table](../conversion_table/) for a summary of the allowed values for each type.
 
-- [Standard Library Types](../../api/standard_library_types/) — types from the Python standard library.
-- [Strict Types](#strict-types) — types that enable you to prevent coercion from compatible types.
-- [Custom Data Types](#custom-types) — create your own custom data types.
-- [Field Type Conversions](../conversion_table/) — strict and lax conversion between different field types.
-
-## Type conversion
-
-During validation, Pydantic can coerce data into expected types.
-
-There are two modes of coercion: strict and lax. See [Conversion Table](../conversion_table/) for more details on how Pydantic converts data in both strict and lax modes.
-
-See [Strict mode](../strict_mode/) and [Strict Types](#strict-types) for details on enabling strict coercion.
-
-## Strict Types
-
-Pydantic provides the following strict types:
-
-- StrictBool
-- StrictBytes
-- StrictFloat
-- StrictInt
-- StrictStr
-
-These types will only pass validation when the validated value is of the respective type or is a subtype of that type.
-
-### Constrained types
-
-This behavior is also exposed via the `strict` field of the constrained types and can be combined with a multitude of complex validation rules. See the individual type signatures for supported arguments.
-
-- conbytes()
-- condate()
-- condecimal()
-- confloat()
-- confrozenset()
-- conint()
-- conlist()
-- conset()
-- constr()
-
-The following caveats apply:
-
-- `StrictBytes` (and the `strict` option of `conbytes()`) will accept both `bytes`, and `bytearray` types.
-- `StrictInt` (and the `strict` option of `conint()`) will not accept `bool` types, even though `bool` is a subclass of `int` in Python. Other subclasses will work.
-- `StrictFloat` (and the `strict` option of `confloat()`) will not accept `int`.
-
-Besides the above, you can also have a FiniteFloat type that will only accept finite values (i.e. not `inf`, `-inf` or `nan`).
+This page will go over defining your own custom types.
 
 ## Custom Types
 
-You can also define your own custom data types. There are several ways to achieve it.
+There are several ways to define your custom types.
 
 ### Using the annotated pattern
 

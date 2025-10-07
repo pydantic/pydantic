@@ -716,6 +716,35 @@ except ValidationError as exc:
 
 ```
 
+## `default_factory_not_called`
+
+This error is raised when a [default factory taking validated data](../../concepts/fields/#default-factory-validated-data) can't be called, because validation failed on previous fields:
+
+```python
+from pydantic import BaseModel, Field, ValidationError
+
+
+class Model(BaseModel):
+    a: int = Field(gt=10)
+    b: int = Field(default_factory=lambda data: data['a'])
+
+
+try:
+    Model(a=1)
+except ValidationError as exc:
+    print(exc)
+    """
+    2 validation errors for Model
+    a
+      Input should be greater than 10 [type=greater_than, input_value=1, input_type=int]
+    b
+      The default factory uses validated data, but at least one validation error occurred [type=default_factory_not_called]
+    """
+    print(repr(exc.errors()[1]['type']))
+    #> 'default_factory_not_called'
+
+```
+
 ## `dict_type`
 
 This error is raised when the input value's type is not `dict` for a `dict` field:

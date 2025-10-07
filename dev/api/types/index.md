@@ -1049,7 +1049,7 @@ Bases: `GroupedMetadata`
 
 Usage Documentation
 
-[`StringConstraints`](../../concepts/fields/#string-constraints)
+[String types](../standard_library_types/#strings)
 
 A field metadata class to apply constraints to `str` types. Use this class as an annotation via [`Annotated`](https://docs.python.org/3/library/typing.html#typing.Annotated), as seen below.
 
@@ -1074,7 +1074,7 @@ Source code in `pydantic/types.py`
 @_dataclasses.dataclass(frozen=True)
 class StringConstraints(annotated_types.GroupedMetadata):
     """!!! abstract "Usage Documentation"
-        [`StringConstraints`](../concepts/fields.md#string-constraints)
+        [String types](./standard_library_types.md#strings)
 
     A field metadata class to apply constraints to `str` types.
     Use this class as an annotation via [`Annotated`](https://docs.python.org/3/library/typing.html#typing.Annotated), as seen below.

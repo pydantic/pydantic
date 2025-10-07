@@ -1,23 +1,27 @@
-Pydantic supports many common types from the Python standard library. If you need stricter processing see [Strict Types](../../concepts/types/#strict-types), including if you need to constrain the values allowed (e.g. to require a positive `int`).
+This section enumerates the supported built-in and standard library types: the allowed values, the possible constraints, and whether strictness can be configured.
+
+See also the [conversion table](../../concepts/conversion_table/) for a summary of the allowed values for each type.
 
 Note
 
-Pydantic still supports older (3.8-) typing constructs like `typing.List` and `typing.Dict`, but it's best practice to use the newer types like `list` and `dict`.
+Unless specified otherwise, values are serialized as-is, in both Python and JSON modes.
 
 ## Booleans
 
-A standard `bool` field will raise a `ValidationError` if the value is not one of the following:
+Built-in type: bool
 
-- A valid boolean (i.e. `True` or `False`),
-- The integers `0` or `1`,
-- a `str` which when converted to lower case is one of `'0', 'off', 'f', 'false', 'n', 'no', '1', 'on', 't', 'true', 'y', 'yes'`
-- a `bytes` which is valid per the previous rule when decoded to `str`
+### Validation
 
-Note
+- A valid bool instance, i.e. `True` or `False`.
+- The integers `0` or `1`.
+- A string, which when converted to lowercase is one of `'0'`, `'off'`, `'f'`, `'false'`, `'n'`, `'no'`, `'1'`, `'on'` `'t'`, `'true'`, `'y'`, `'yes'`.
+- bytes objects that are valid per the previous rule when decoded to a string.
 
-If you want stricter boolean logic (e.g. a field which only permits `True` and `False`) you can use [`StrictBool`](../types/#pydantic.types.StrictBool).
+### Strictness
 
-Here is a script demonstrating some of these behaviors:
+In [strict mode](../../concepts/strict_mode/), only boolean values are valid. Pydantic provides the StrictBool type as a convenience to [using the `Strict()` metadata class](../../concepts/strict_mode/#using-the-strict-metadata-class).
+
+### Example
 
 ```python
 from pydantic import BaseModel, ValidationError
@@ -45,140 +49,185 @@ except ValidationError as e:
 
 ```
 
-## Datetime Types
+## Strings
 
-Pydantic supports the following [datetime](https://docs.python.org/library/datetime.html#available-types) types:
+Built-in type: str
 
-### datetime.datetime
+### Validation
 
-- `datetime` fields will accept values of type:
-  - `datetime`; an existing `datetime` object
-  - `int` or `float`; assumed as Unix time, i.e. seconds (if >= `-2e10` and \<= `2e10`) or milliseconds (if < `-2e10`or > `2e10`) since 1 January 1970
-  - `str`; the following formats are accepted:
-    - `YYYY-MM-DD[T]HH:MM[:SS[.ffffff]][Z or [±]HH[:]MM]`
-    - `YYYY-MM-DD` is accepted in lax mode, but not in strict mode
-    - `int` or `float` as a string (assumed as Unix time)
-  - datetime.date instances are accepted in lax mode, but not in strict mode
+- Strings are accepted as-is.
+- bytes and bytearray are decoded to UTF-8 strings.
+- Enums are converted using the value attribute, by calling str() on it.
+- If coerce_numbers_to_str is set, any number type (int, float and Decimal) will be coerced to a string and accepted as-is.
+
+### Constraints
+
+Strings support the following constraints:
+
+| Constraint | Description | JSON Schema | | --- | --- | --- | | `pattern` | A regex pattern that the string must match | [`pattern`](https://json-schema.org/understanding-json-schema/reference/string#regexp) keyword (see [note](#pattern-constraint-note) below). | | `min_length` | The minimum length of the string | [`minLength`](https://json-schema.org/understanding-json-schema/reference/string#length) keyword | | `max_length` | The maximum length of the string | [`maxLength`](https://json-schema.org/understanding-json-schema/reference/string#length) keyword | | `strip_whitespace` | Whether to remove leading and trailing whitespace | N/A | | `to_upper` | Whether to convert the string to uppercase | N/A | | `to_lower` | Whether to convert the string to lowercase | N/A |
+
+These constraints can be provided using the StringConstraints metadata type, or using the Field() function (except for `to_upper` and `to_lower`). The `MinLen`, `MaxLen`, `Len`, `LowerCase`, `UpperCase` metadata types from the [`annotated-types`](https://github.com/annotated-types/annotated-types) library can also be used.
+
+`pattern` constraint
+
+By default, Pydantic will use the [`regex`](https://docs.rs/regex) Rust crate to enforce the `pattern` constraint. The regex engine can be controlled using the regex_engine configuration value. If a compiled regular expression object is used for `pattern`, the Python engine will automatically be used.
+
+While the JSON Schema specification [recommends](https://json-schema.org/draft/2020-12/json-schema-core#name-regular-expressions) using patterns valid according to dialect described in [ECMA-262](https://262.ecma-international.org/11.0/index.html#sec-patterns), Pydantic will *not* enforce it.
+
+### Strictness
+
+In [strict mode](../../concepts/strict_mode/), only string values are valid. Pydantic provides the StrictStr type as a convenience to [using the `Strict()` metadata class](../../concepts/strict_mode/#using-the-strict-metadata-class).
+
+### Example
 
 ```python
-from datetime import datetime
+from typing import Annotated
 
-from pydantic import BaseModel
-
-
-class Event(BaseModel):
-    dt: datetime = None
+from pydantic import BaseModel, StringConstraints
 
 
-event = Event(dt='2032-04-23T10:20:30.400+02:30')
+class StringModel(BaseModel):
+    str_value: str = ""
+    constrained_str_value: Annotated[str, StringConstraints(to_lower=True)] = ""
 
-print(event.model_dump())
-"""
-{'dt': datetime.datetime(2032, 4, 23, 10, 20, 30, 400000, tzinfo=TzInfo(9000))}
-"""
+
+print(StringModel(str_value="test").str_value)
+#> test
+print(StringModel(constrained_str_value='TEST').constrained_str_value)
+#> test
 
 ```
 
-### datetime.date
+## Bytes
 
-- `date` fields will accept values of type:
-  - `date`; an existing `date` object
-  - `int` or `float`; handled the same as described for `datetime` above
-  - `str`; the following formats are accepted:
-    - `YYYY-MM-DD`
-    - `int` or `float` as a string (assumed as Unix time)
+Built-in type: bytes.
 
-```python
-from datetime import date
+See also: ByteSize.
 
-from pydantic import BaseModel
+### Validation
 
+- bytes instances are validated as is.
+- Strings and bytearray instances are converted as bytes, following the val_json_bytes configuration value (despite its name, it applies to both Python and JSON modes).
 
-class Birthday(BaseModel):
-    d: date = None
+### Constraints
 
+Strings support the following constraints:
 
-my_birthday = Birthday(d=1679616000.0)
+| Constraint | Description | JSON Schema | | --- | --- | --- | | `min_length` | The minimum length of the bytes | [`minLength`](https://json-schema.org/understanding-json-schema/reference/string#length) keyword | | `max_length` | The maximum length of the bytes | [`maxLength`](https://json-schema.org/understanding-json-schema/reference/string#length) keyword |
 
-print(my_birthday.model_dump())
-#> {'d': datetime.date(2023, 3, 24)}
+The `MinLen` and `MaxLen` metadata types from the [`annotated-types`](https://github.com/annotated-types/annotated-types) library can also be used.
 
-```
+### Strictness
 
-### datetime.time
+In [strict mode](../../concepts/strict_mode/), only bytes instances are valid. Pydantic provides the StrictBytes type as a convenience to [using the `Strict()` metadata class](../../concepts/strict_mode/#using-the-strict-metadata-class).
 
-- `time` fields will accept values of type:
+In JSON mode, strict mode has no effect.
 
-  - `time`; an existing `time` object
-  - `str`; the following formats are accepted:
-    - `HH:MM[:SS[.ffffff]][Z or [±]HH[:]MM]`
-
-```python
-from datetime import time
-
-from pydantic import BaseModel
-
-
-class Meeting(BaseModel):
-    t: time = None
-
-
-m = Meeting(t=time(4, 8, 16))
-
-print(m.model_dump())
-#> {'t': datetime.time(4, 8, 16)}
-
-```
-
-### datetime.timedelta
-
-- `timedelta` fields will accept values of type:
-
-  - `timedelta`; an existing `timedelta` object
-  - `int` or `float`; assumed to be seconds
-  - `str`; the following formats are accepted:
-    - `[-][[DD]D,]HH:MM:SS[.ffffff]`
-      - Ex: `'1d,01:02:03.000004'` or `'1D01:02:03.000004'` or `'01:02:03'`
-    - `[±]P[DD]DT[HH]H[MM]M[SS]S` ([ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) format for timedelta)
-
-```python
-from datetime import timedelta
-
-from pydantic import BaseModel
-
-
-class Model(BaseModel):
-    td: timedelta = None
-
-
-m = Model(td='P3DT12H30M5S')
-
-print(m.model_dump())
-#> {'td': datetime.timedelta(days=3, seconds=45005)}
-
-```
-
-## Number Types
+## Numbers
 
 Pydantic supports the following numeric types from the Python standard library:
 
-### int
+### Integers
 
-- Pydantic uses `int(v)` to coerce types to an `int`; see [Data conversion](../../concepts/models/#data-conversion) for details on loss of information during data conversion.
+Built-in type: int.
 
-### float
+#### Validation
 
-- Pydantic uses `float(v)` to coerce values to floats.
+- Integers are validated as-is.
+- Strings and bytes are attempted to be converted to integers and validated as-is (see the [jiter implementation](https://docs.rs/jiter/latest/jiter/enum.NumberInt.html#impl-TryFrom%3C%26%5Bu8%5D%3E-for-NumberInt) for details).
+- Floats are validated as integers, provided the float input is not infinite or a NaN (not-a-number) and the fractional part is 0.
+- Decimal instances, provided they are finite and the denominator is 1.
+- Fraction instances, provided they are integers.
+- Enums are converted using the value attribute.
 
-### enum.IntEnum
+#### Constraints
 
-- Validation: Pydantic checks that the value is a valid `IntEnum` instance.
-- Validation for subclass of `enum.IntEnum`: checks that the value is a valid member of the integer enum; see [Enums and Choices](#enum) for more details.
+Integers support the following constraints (numbers must be coercible to integers):
 
-### decimal.Decimal
+| Constraint | Description | JSON Schema | | --- | --- | --- | | `le` | The value must be less than or equal to this number | [`maximum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword | | `ge` | The value must be greater than or equal to this number | [`minimum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword | | `lt` | The value must be strictly less than this number | [`exclusiveMaximum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword | | `gt` | The value must be strictly greater than this number | [`exclusiveMinimum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword | | `multiple_of` | The value must be a multiple of this number | [`multipleOf`](https://json-schema.org/understanding-json-schema/reference/numeric#multiples) keyword |
 
-- Validation: Pydantic attempts to convert the value to a string, then passes the string to `Decimal(v)`.
-- Serialization: Pydantic serializes Decimal types as strings. You can use a custom serializer to override this behavior if desired. For example:
+These constraints can be provided using the Field() function. The `Le`, `Ge`, `Lt`, `Gt` and `MultipleOf` metadata types from the [`annotated-types`](https://github.com/annotated-types/annotated-types) library can also be used.
+
+Pydantic also provides the following types to further constrain the allowed integer values:
+
+- PositiveInt: Requires the input to be greater than zero.
+- NegativeInt: Requires the input to be less than zero.
+- NonPositiveInt: Requires the input to be less than or equal to zero.
+- NonNegativeInt: Requires the input to be greater than or equal to zero.
+
+#### Strictness
+
+In [strict mode](../../concepts/strict_mode/), only integer values are valid. Pydantic provides the StrictInt type as a convenience to [using the `Strict()` metadata class](../../concepts/strict_mode/#using-the-strict-metadata-class).
+
+### Floats
+
+Built-in type: float.
+
+#### Validation
+
+- Floats are validated as-is.
+- String and bytes are attempted to be converted to floats and validated as-is. (see the [Rust implementation](https://doc.rust-lang.org/src/core/num/dec2flt/mod.rs.html) for details).
+- If the input has a __float__() method, it will be called to convert the input into a float. If `__float__()` is not defined, it falls back to __index__(). This includes (but not limited to) the Decimal and Fraction types.
+
+#### Constraints
+
+Floats support the following constraints:
+
+| Constraint | Description | JSON Schema | | --- | --- | --- | | `le` | The value must be less than or equal to this number | [`maximum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword | | `ge` | The value must be greater than or equal to this number | [`minimum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword | | `lt` | The value must be strictly less than this number | [`exclusiveMaximum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword | | `gt` | The value must be strictly greater than this number | [`exclusiveMinimum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword | | `multiple_of` | The value must be a multiple of this number | [`multipleOf`](https://json-schema.org/understanding-json-schema/reference/numeric#multiples) keyword | | `allow_inf_nan` | Whether to allow NaN (not-a-number) and infinite values | N/A |
+
+These constraints can be provided using the Field() function. The `Le`, `Ge`, `Lt`, `Gt` and `MultipleOf` metadata types from the [`annotated-types`](https://github.com/annotated-types/annotated-types) library and the AllowInfNan type can also be used.
+
+Pydantic also provides the following types as convenience aliases:
+
+- PositiveFloat: Requires the input to be greater than zero.
+- NegativeFloat: Requires the input to be less than zero.
+- NonPositiveFloat: Requires the input to be less than or equal to zero.
+- NonNegativeFloat: Requires the input to be greater than or equal to zero.
+- FiniteFloat: Prevents NaN (not-a-number) and infinite values.
+
+#### Strictness
+
+In [strict mode](../../concepts/strict_mode/), only float values and inputs having a __float__() or __index__() method are valid. Pydantic provides the StrictFloat type as a convenience to [using the `Strict()` metadata class](../../concepts/strict_mode/#using-the-strict-metadata-class).
+
+### Integer enums
+
+Standard library type: enum.IntEnum.
+
+#### Validation
+
+- If the enum.IntEnum type is used directly, any enum.IntEnum instance is validated as-is
+- Id an enum.IntEnum subclass is used as a type, any enum member or value that correspond to the enum members values is validated as-is.
+
+See [Enums](#enums) for more details.
+
+### Decimals
+
+Standard library type: decimal.Decimal.
+
+#### Validation
+
+- Decimal instances are validated as is.
+- Any value accepted by the Decimal constructor (apart from the three-tuple input) will validate.
+
+#### Constraints
+
+Decimals support the following constraints (numbers must be coercible to decimals):
+
+| Constraint | Description | JSON Schema | | --- | --- | --- | | `le` | The value must be less than or equal to this number | [`maximum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword | | `ge` | The value must be greater than or equal to this number | [`minimum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword | | `lt` | The value must be strictly less than this number | [`exclusiveMaximum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword | | `gt` | The value must be strictly greater than this number | [`exclusiveMinimum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword | | `multiple_of` | The value must be a multiple of this number | [`multipleOf`](https://json-schema.org/understanding-json-schema/reference/numeric#multiples) keyword | | `allow_inf_nan` | Whether to allow NaN (not-a-number) and infinite values | N/A | | `max_digits` | The maximum number of decimal digits allowed. The zero before the decimal point and trailing zeros are not counted. | [`pattern`](https://json-schema.org/understanding-json-schema/reference/string#regexp) keyword, to describe the string pattern | | `decimal_places` | The maximum number of decimal places allowed. Trailing zeros are not counted. | [`pattern`](https://json-schema.org/understanding-json-schema/reference/string#regexp) keyword, to describe the string pattern |
+
+Note that the JSON Schema [`pattern`](https://json-schema.org/understanding-json-schema/reference/string#regexp) keyword will be specified in the JSON Schema to describe the string pattern in all cases (and can vary if `max_digits` and/or `decimal_places` is specified).
+
+These constraints can be provided using the Field() function. The `Le`, `Ge`, `Lt`, `Gt` and `MultipleOf` metadata types from the [`annotated-types`](https://github.com/annotated-types/annotated-types) library and the AllowInfNan type can also be used.
+
+#### Strictness
+
+In [strict mode](../../concepts/strict_mode/), only decimal.Decimal instances are accepted. In JSON mode, strict mode has no effect.
+
+#### Serialization
+
+In [Python mode](../../concepts/serialization/#python-mode), Decimal instances are serialized as is.
+
+In [JSON mode](../../concepts/serialization/#json-mode), they are serialized as strings. A [serializer](../../concepts/serialization/#field-plain-serializer) can be used to override this behavior:
 
 ```python
 from decimal import Decimal
@@ -188,45 +237,303 @@ from pydantic import BaseModel, PlainSerializer
 
 
 class Model(BaseModel):
-    x: Decimal
-    y: Annotated[
-        Decimal,
-        PlainSerializer(
-            lambda x: float(x), return_type=float, when_used='json'
-        ),
-    ]
+    f: Annotated[Decimal, PlainSerializer(float, when_used='json')]
 
 
-my_model = Model(x=Decimal('1.1'), y=Decimal('2.1'))
+my_model = Model(f=Decimal('2.1'))
 
 print(my_model.model_dump())  # (1)!
-#> {'x': Decimal('1.1'), 'y': Decimal('2.1')}
-print(my_model.model_dump(mode='json'))  # (2)!
-#> {'x': '1.1', 'y': 2.1}
-print(my_model.model_dump_json())  # (3)!
-#> {"x":"1.1","y":2.1}
+#> {'f': Decimal('2.1')}
+print(my_model.model_dump_json())  # (2)!
+#> {"f":2.1}
 
 ```
 
-1. Using model_dump, both `x` and `y` remain instances of the `Decimal` type
-1. Using model_dump with `mode='json'`, `x` is serialized as a `string`, and `y` is serialized as a `float` because of the custom serializer applied.
-1. Using model_dump_json, `x` is serialized as a `string`, and `y` is serialized as a `float` because of the custom serializer applied.
+1. In Python mode, `f`remains a Decimal instance.
+1. In JSON mode, `f` is serialized as a float.
 
-### complex
+### Complex numbers
 
-- Validation: Pydantic supports `complex` types or `str` values that can be converted to a `complex` type.
-- Serialization: Pydantic serializes complex types as strings.
+Built-in type: complex.
 
-### fractions.Fraction
+#### Validation
 
-- Validation: Pydantic attempts to convert the value to a `Fraction` using `Fraction(v)`.
-- Serialization: Pydantic serializes Fraction types as strings.
+- complex instances are validated as-is.
+- Strings are validated using the complex() constructor.
+- Numbers (integers and floats) are used as the real part.
+- Objects defining __complex__(), __float__(). or __index__() are currently *not* accepted.
 
-## Enum
+#### Strictness
 
-Pydantic uses Python's standard enum classes to define choices.
+In [strict mode](../../concepts/strict_mode/), only complex instances are accepted. In JSON mode, only strings that are accepted by the complex() constructor are allowed.
 
-`enum.Enum` checks that the value is a valid `Enum` instance. Subclass of `enum.Enum` checks that the value is a valid member of the enum.
+#### Serialization
+
+In [Python mode](../../concepts/serialization/#python-mode), complex instances are serialized as is.
+
+In [JSON mode](../../concepts/serialization/#json-mode), they are serialized as strings.
+
+### Fractions
+
+Standard library type: fractions.Fraction.
+
+#### Validation
+
+- Fraction instances are validated as is.
+- Floats, strings and decimal.Decimal instances are validated using the Fraction() constructor.
+
+#### Strictness
+
+In [strict mode](../../concepts/strict_mode/), only Fraction instances are accepted. In JSON mode, strict mode has no effect.
+
+#### Serialization
+
+Fractions are serialized as strings, both in [Python](../../concepts/serialization/#python-mode) and [JSON](../../concepts/serialization/#json-mode) modes.
+
+## Date and time types
+
+Pydantic supports the following [date and time](https://docs.python.org/library/datetime.html#available-types) types from the datetime standard library:
+
+### Datetimes
+
+Standard library type: datetime.datetime.
+
+#### Validation
+
+- datetime instances are validated as is.
+- Strings and bytes are validated in two ways:
+  - Strings complying to the [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339) format (both datetime and date). See the [speedate](https://docs.rs/speedate/) documentation for more details.
+  - Unix timestamps, both as seconds or milliseconds sinch the [epoch](https://en.wikipedia.org/wiki/Unix_time). See the val_temporal_unit configuration value for more details.
+- Integers and floats (or types that can be coerced as integers or floats) are validated as unix timestamps, following the same semantics as strings.
+- datetime.date instances are accepted, and converted to a datetime instance by setting the hour, minute, second and microsecond attributes to `0`, and the tzinfo attribute to `None`.
+
+Note
+
+Named timezone support (as specified in [RFC 9557](https://datatracker.ietf.org/doc/html/rfc9557.html)) can be tracked in [this issue](https://github.com/pydantic/pydantic/issues/12252).
+
+#### Serialization
+
+In [Python mode](../../concepts/serialization/#python-mode), datetime instances are serialized as is.
+
+In [JSON mode](../../concepts/serialization/#json-mode), they are serialized as strings.
+
+#### Constraints
+
+Datetimes support the following constraints (constraint values must be coercible to a datetime instance):
+
+| Constraint | Description | JSON Schema | | --- | --- | --- | | `le` | The value must be less than or equal to this datetime | N/A | | `ge` | The value must be greater than or equal to this datetime | N/A | | `lt` | The value must be strictly less than this datetime | N/A | | `gt` | The value must be strictly greater than this datetime | N/A |
+
+These constraints can be provided using the Field() function. The `Le`, `Ge`, `Lt` and `Gt` metadata types from the [`annotated-types`](https://github.com/annotated-types/annotated-types) library can also be used.
+
+Pydantic also provides the following types to further constrain the allowed datetime values:
+
+- AwareDatetime: Requires the input to have a timezone.
+- NaiveDatetime: Requires the input to *not* have a timezone.
+- PastDatetime: Requires the input to be in the past when validated.
+- FutureDatetime: Requires the input to be in the future when validated.
+
+#### Strictness
+
+In [strict mode](../../concepts/strict_mode/), only datetime instances are accepted. In JSON mode, only strings complying to the [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339) format (*only* datetime) or as unix timestamps are accepted.
+
+#### Example
+
+```python
+from datetime import datetime
+from typing import Annotated
+
+from pydantic import AwareDatetime, BaseModel, Field
+
+
+class Event(BaseModel):
+    dt: Annotated[AwareDatetime, Field(gt=datetime(2000, 1, 1))]
+
+
+event = Event(dt='2032-04-23T10:20:30.400+02:30')
+
+print(event.model_dump())
+"""
+{'dt': datetime.datetime(2032, 4, 23, 10, 20, 30, 400000, tzinfo=TzInfo(9000))}
+"""
+print(event.model_dump_json())
+#> {"dt":"2032-04-23T10:20:30.400000+02:30"}
+
+```
+
+### Dates
+
+Standard library type: datetime.date.
+
+#### Validation
+
+- date instances are validated as is.
+- Strings and bytes are validated in two ways:
+  - Strings complying to the [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339) date format. See the [speedate](https://docs.rs/speedate/) documentation for more details.
+  - Unix timestamps, both as seconds or milliseconds sinch the [epoch](https://en.wikipedia.org/wiki/Unix_time). See the val_temporal_unit configuration value for more details.
+- If the validation fails, the input can be [validated as a datetime](#datetimes) (including as numbers), provided that the time component is 0 and that it is naive.
+
+#### Serialization
+
+In [Python mode](../../concepts/serialization/#python-mode), date instances are serialized as is.
+
+In [JSON mode](../../concepts/serialization/#json-mode), they are serialized as strings.
+
+#### Constraints
+
+Dates support the following constraints (constraint values must be coercible to a date instance):
+
+| Constraint | Description | JSON Schema | | --- | --- | --- | | `le` | The value must be less than or equal to this date | N/A | | `ge` | The value must be greater than or equal to this date | N/A | | `lt` | The value must be strictly less than this date | N/A | | `gt` | The value must be strictly greater than this date | N/A |
+
+These constraints can be provided using the Field() function. The `Le`, `Ge`, `Lt` and `Gt` metadata types from the [`annotated-types`](https://github.com/annotated-types/annotated-types) library can also be used.
+
+Pydantic also provides the following types to further constrain the allowed date values:
+
+- PastDate: Requires the input to be in the past when validated.
+- FutureDate: Requires the input to be in the future when validated.
+
+#### Strictness
+
+In [strict mode](../../concepts/strict_mode/), only date instances are accepted. In JSON mode, only strings complying to the [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339) format (*only* date) or as unix timestamps are accepted.
+
+#### Example
+
+```python
+from datetime import date
+
+from pydantic import BaseModel
+
+
+class Birthday(BaseModel):
+    d: date
+
+
+my_birthday = Birthday(d=1679616000.0)
+
+print(my_birthday.model_dump())
+#> {'d': datetime.date(2023, 3, 24)}
+print(my_birthday.model_dump_json())
+#> {"d":"2023-03-24"}
+
+```
+
+### Time
+
+Standard library type: datetime.time.
+
+#### Validation
+
+- time instances are validated as is.
+- Strings and bytes are validated according to the [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339) time format.
+- Integers and floats (or values that can be coerced to such numbers) are validated as seconds. The value should not exceed 86 399.
+
+#### Serialization
+
+In [Python mode](../../concepts/serialization/#python-mode), time instances are serialized as is.
+
+In [JSON mode](../../concepts/serialization/#json-mode), they are serialized as strings.
+
+Note
+
+Named timezones from the [IANA time zone database](https://www.iana.org/time-zones) (see the zoneinfo module) are *not* serialized with time objects. This is consistent with the time.isoformat() method.
+
+#### Constraints
+
+Time support the following constraints (constraint values must be coercible to a time instance):
+
+| Constraint | Description | JSON Schema | | --- | --- | --- | | `le` | The value must be less than or equal to this time | N/A | | `ge` | The value must be greater than or equal to this time | N/A | | `lt` | The value must be strictly less than this time | N/A | | `gt` | The value must be strictly greater than this time | N/A |
+
+These constraints can be provided using the Field() function. The `Le`, `Ge`, `Lt` and `Gt` metadata types from the [`annotated-types`](https://github.com/annotated-types/annotated-types) library can also be used.
+
+#### Strictness
+
+In [strict mode](../../concepts/strict_mode/), only time instances are accepted. In JSON mode, only strings complying to the [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339) format are accepted.
+
+#### Example
+
+```python
+from datetime import time
+
+from pydantic import BaseModel
+
+
+class Meeting(BaseModel):
+    t: time
+
+
+m = Meeting(t=time(4, 8, 16))
+
+print(m.model_dump())
+#> {'t': datetime.time(4, 8, 16)}
+print(m.model_dump_json())
+#> {"t":"04:08:16"}
+
+```
+
+### Timedeltas
+
+Standard library type: datetime.timedelta.
+
+#### Validation
+
+- timedelta instances are validated as is.
+- Strings and bytes are validated according to the [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339) time format.
+- Integers and floats (or values that can be coerced to such numbers) are validated as seconds.
+
+#### Constraints
+
+Timedeltas support the following constraints (constraint values must be coercible to a timedata instance):
+
+| Constraint | Description | JSON Schema | | --- | --- | --- | | `le` | The value must be less than or equal to this timedelta | N/A | | `ge` | The value must be greater than or equal to this timedelta | N/A | | `lt` | The value must be strictly less than this timedelta | N/A | | `gt` | The value must be strictly greater than this timedelta | N/A |
+
+These constraints can be provided using the Field() function. The `Le`, `Ge`, `Lt` and `Gt` metadata types from the [`annotated-types`](https://github.com/annotated-types/annotated-types) library can also be used.
+
+#### Serialization
+
+In [Python mode](../../concepts/serialization/#python-mode), timedelta instances are serialized as is.
+
+In [JSON mode](../../concepts/serialization/#json-mode), they are serialized as strings.
+
+#### Strictness
+
+In [strict mode](../../concepts/strict_mode/), only timedelta instances are accepted. In JSON mode, only strings complying to the [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339) format are accepted.
+
+#### Example
+
+```python
+from datetime import timedelta
+
+from pydantic import BaseModel
+
+
+class Model(BaseModel):
+    td: timedelta
+
+
+m = Model(td='P3DT12H30M5S')
+
+print(m.model_dump())
+#> {'td': datetime.timedelta(days=3, seconds=45005)}
+print(m.model_dump_json())
+#> {"td":"P3DT12H30M5S"}
+
+```
+
+## Enums
+
+Standard library type: enum.Enum.
+
+### Validation
+
+- If the enum.Enum type is used directly, any enum.Enum instance is validated as-is.
+- Id an enum.Enum subclass is used as a type, any enum member or value that correspond to the enum members values is validated as-is.
+
+### Serialization
+
+In [Python mode](../../concepts/serialization/#python-mode), enum instances are serialized as is. The use_enum_values configuration value can be set to use the enum value during validation (so that it is also used during serialization).
+
+In [JSON mode](../../concepts/serialization/#json-mode), enum instances are serialized using their value.
+
+### Example
 
 ```python
 from enum import Enum, IntEnum
@@ -235,24 +542,24 @@ from pydantic import BaseModel, ValidationError
 
 
 class FruitEnum(str, Enum):
-    pear = 'pear'
-    banana = 'banana'
+    PEAR = 'pear'
+    BANANA = 'banana'
 
 
 class ToolEnum(IntEnum):
-    spanner = 1
-    wrench = 2
+    SPANNER = 1
+    WRENCH = 2
 
 
 class CookingModel(BaseModel):
-    fruit: FruitEnum = FruitEnum.pear
-    tool: ToolEnum = ToolEnum.spanner
+    fruit: FruitEnum = FruitEnum.PEAR
+    tool: ToolEnum = ToolEnum.SPANNER
 
 
 print(CookingModel())
-#> fruit=<FruitEnum.pear: 'pear'> tool=<ToolEnum.spanner: 1>
+#> fruit=<FruitEnum.PEAR: 'pear'> tool=<ToolEnum.SPANNER: 1>
 print(CookingModel(tool=2, fruit='banana'))
-#> fruit=<FruitEnum.banana: 'banana'> tool=<ToolEnum.wrench: 2>
+#> fruit=<FruitEnum.BANANA: 'banana'> tool=<ToolEnum.WRENCH: 2>
 try:
     CookingModel(fruit='other')
 except ValidationError as e:
@@ -265,53 +572,107 @@ except ValidationError as e:
 
 ```
 
-## Lists and Tuples
+## None types
 
-### list
+Supported types: None, NoneType or `Literal[None]` (they are [equivalent](https://typing.readthedocs.io/en/latest/spec/special-types.html#none)).
 
-Allows list, tuple, set, frozenset, deque, or generators and casts to a list. When a generic parameter is provided, the appropriate validation is applied to all items of the list.
+Allows only `None` as a value.
+
+## Generic collection types
+
+Pydantic supports a wide variety of generic collection types, both built-ins (such as list) and abstract base classes from the collections.abc module (such as Sequence).
+
+In most cases, it is recommended to make use of the built-in types over the abstract ones. Due to [data coercion](../../concepts/models/#data-conversion), using list or tuple will allow most other iterables as input, with better performance.
+
+Strictness on collection types
+
+When applying [strict mode](../../concepts/strict_mode/) on collection types, strictness will *not* apply to the inner types. This may change in the future, see [this issue](https://github.com/pydantic/pydantic/issues/12319).
+
+### Lists
+
+Built-in type: list (deprecated alias: typing.List).
+
+#### Validation
+
+- Allows list, tuple, set and frozenset instances, or any iterable that is *not* a string, bytes, bytearray, dict or mapping. Produces a list instance.
+- If a generic parameter is provided, the appropriate validation is applied to all items of the list.
+
+#### Constraints
+
+Lists support the following constraints:
+
+| Constraint | Description | JSON Schema | | --- | --- | --- | | `min_length` | The list must have at least this many items | [`minItems`](https://json-schema.org/understanding-json-schema/reference/array#length) keyword | | `max_length` | The list must have at most this many items | [`maxItems`](https://json-schema.org/understanding-json-schema/reference/array#length) keyword |
+
+These constraints can be provided using the Field() function. The `MinLen` and `MaxLen` metadata types from the [`annotated-types`](https://github.com/annotated-types/annotated-types) library can also be used.
+
+#### Strictness
+
+In [strict mode](../../concepts/strict_mode/), only list instances are valid. Strict mode does *not* apply to the items of the list. The strict constraint must be applied to the parameter type for this to work.
+
+#### Example
 
 ```python
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class Model(BaseModel):
-    simple_list: Optional[list] = None
-    list_of_ints: Optional[list[int]] = None
+    simple_list: Optional[list[object]] = None
+    list_of_ints: Optional[list[int]] = Field(default=None, strict=True)
 
 
-print(Model(simple_list=['1', '2', '3']).simple_list)
+print(Model(simple_list=('1', '2', '3')).simple_list)
 #> ['1', '2', '3']
-print(Model(list_of_ints=['1', '2', '3']).list_of_ints)
+print(Model(list_of_ints=['1', 2, 3]).list_of_ints)
 #> [1, 2, 3]
 
 ```
 
 ```python
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class Model(BaseModel):
-    simple_list: list | None = None
-    list_of_ints: list[int] | None = None
+    simple_list: list[object] | None = None
+    list_of_ints: list[int] | None = Field(default=None, strict=True)
 
 
-print(Model(simple_list=['1', '2', '3']).simple_list)
+print(Model(simple_list=('1', '2', '3')).simple_list)
 #> ['1', '2', '3']
-print(Model(list_of_ints=['1', '2', '3']).list_of_ints)
+print(Model(list_of_ints=['1', 2, 3]).list_of_ints)
 #> [1, 2, 3]
 
 ```
 
-### tuple
+### Tuples
 
-Allows list, tuple, set, frozenset, deque, or generators and casts to a tuple. When generic parameters are provided, the appropriate validation is applied to the respective items of the tuple
+Built-in type: tuple (deprecated alias: typing.Tuple).
 
-### typing.Tuple
+Note
 
-Handled the same as `tuple` above.
+[Unpacked tuple types](https://typing.python.org/en/latest/spec/generics.html#unpacking-tuple-types) (as specified by [PEP 646](https://peps.python.org/pep-0646/)) are *not* yet supported, and can be tracked in [this issue](https://github.com/pydantic/pydantic/issues/5952).
+
+#### Validation
+
+- Allows tuple, list, set and frozenset instances, or any iterable that is *not* a string, bytes, bytearray, dict or mapping. Produces a tuple instance.
+- Appropriate validation is applied to items of the tuple, if [element types](https://typing.python.org/en/latest/spec/tuples.html#tuple-type-form) are specified.
+
+#### Constraints
+
+Lists support the following constraints:
+
+| Constraint | Description | JSON Schema | | --- | --- | --- | | `min_length` | The tuple must have at least this many items | [`minItems`](https://json-schema.org/understanding-json-schema/reference/array#length) keyword | | `max_length` | The tuple must have at most this many items | [`maxItems`](https://json-schema.org/understanding-json-schema/reference/array#length) keyword |
+
+These constraints can be provided using the Field() function. The `MinLen` and `MaxLen` metadata types from the [`annotated-types`](https://github.com/annotated-types/annotated-types) library can also be used.
+
+Additionally, the [`prefixItems`](https://json-schema.org/understanding-json-schema/reference/array#tupleValidation) JSON Schema keyword may be used depending on the tuple shape.
+
+#### Strictness
+
+In [strict mode](../../concepts/strict_mode/), only tuple instances are valid. Strict mode does *not* apply to the items of the tuple. The strict constraint must be applied to the parameter types for this to work.
+
+#### Example
 
 ```python
 from typing import Optional
@@ -347,16 +708,25 @@ print(Model(tuple_of_different_types=[3, 2, 1]).tuple_of_different_types)
 
 ```
 
-### typing.NamedTuple
+### Named tuples
 
-Subclasses of typing.NamedTuple are similar to `tuple`, but create instances of the given `namedtuple` class.
+Standard library type: typing.NamedTuple (and types created by the collections.namedtuple() factory function – each field will implicitly have the type Any).
 
-Subclasses of collections.namedtuple are similar to subclass of typing.NamedTuple, but since field types are not specified, all fields are treated as having type Any.
+#### Validation
+
+- Allows tuple and list instances. Validate each item according to the field definition.
+- Allows dict instances. Keys must match the named tuple field names, and values are validated according to the field definition.
+
+#### Serialization
+
+In [Python mode](../../concepts/serialization/#python-mode), named tuples are serialized as tuples. In [JSON mode](../../concepts/serialization/#json-mode), they are serialized as arrays.
+
+#### Example
 
 ```python
 from typing import NamedTuple
 
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel
 
 
 class Point(NamedTuple):
@@ -368,85 +738,55 @@ class Model(BaseModel):
     p: Point
 
 
-try:
-    Model(p=('1.3', '2'))
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for Model
-    p.0
-      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='1.3', input_type=str]
-    """
+model = Model(p=('1', 2))
+
+print(model.model_dump())
+#> {'p': (1, 2)}
 
 ```
 
-## Deque
+### Sets
 
-### deque
+Types: set (or collections.abc.MutableSet) and frozenset (or collections.abc.Set) (deprecated aliases: typing.Set and typing.FrozenSet).
 
-Allows list, tuple, set, frozenset, deque, or generators and casts to a deque. When generic parameters are provided, the appropriate validation is applied to the respective items of the `deque`.
+#### Validation
 
-### typing.Deque
+- Allows set, frozenset, tuple and list instances, or any iterable that is *not* a string, bytes, bytearray, dict or mapping. Produces a set or frozenset instance.
+- If a generic parameter is provided, the appropriate validation is applied to all items of the set/frozenset.
 
-Handled the same as `deque` above.
+#### Constraints
 
-```python
-from typing import Deque, Optional
+Sets support the following constraints:
 
-from pydantic import BaseModel
+| Constraint | Description | JSON Schema | | --- | --- | --- | | `min_length` | The set must have at least this many items | [`minItems`](https://json-schema.org/understanding-json-schema/reference/array#length) keyword | | `max_length` | The set must have at most this many items | [`maxItems`](https://json-schema.org/understanding-json-schema/reference/array#length) keyword |
 
+These constraints can be provided using the Field() function. The `MinLen` and `MaxLen` metadata types from the [`annotated-types`](https://github.com/annotated-types/annotated-types) library can also be used.
 
-class Model(BaseModel):
-    deque: Optional[Deque[int]] = None
+#### Strictness
 
+In [strict mode](../../concepts/strict_mode/), only set/frozenset instances are valid. Strict mode does *not* apply to the items of the set. The strict constraint must be applied to the parameter type for this to work.
 
-print(Model(deque=[1, 2, 3]).deque)
-#> deque([1, 2, 3])
+#### Serialization
 
-```
+In [Python mode](../../concepts/serialization/#python-mode), sets are serialized as is. In [JSON mode](../../concepts/serialization/#json-mode), they are serialized as arrays.
 
-```python
-from typing import Deque
-
-from pydantic import BaseModel
-
-
-class Model(BaseModel):
-    deque: Deque[int] | None = None
-
-
-print(Model(deque=[1, 2, 3]).deque)
-#> deque([1, 2, 3])
-
-```
-
-## Sets
-
-### set
-
-Allows list, tuple, set, frozenset, deque, or generators and casts to a set. When a generic parameter is provided, the appropriate validation is applied to all items of the set.
-
-### typing.Set
-
-Handled the same as `set` above.
+#### Example
 
 ```python
-from typing import Optional, Set
+from typing import Optional
 
 from pydantic import BaseModel
 
 
 class Model(BaseModel):
     simple_set: Optional[set] = None
-    set_of_ints: Optional[Set[int]] = None
+    set_of_ints: Optional[frozenset[int]] = None
 
 
-print(Model(simple_set={'1', '2', '3'}).simple_set)
-#> {'1', '2', '3'}
 print(Model(simple_set=['1', '2', '3']).simple_set)
 #> {'1', '2', '3'}
 print(Model(set_of_ints=['1', '2', '3']).set_of_ints)
-#> {1, 2, 3}
+#> frozenset({1, 2, 3})
 
 ```
 
@@ -456,194 +796,137 @@ from pydantic import BaseModel
 
 class Model(BaseModel):
     simple_set: set | None = None
-    set_of_ints: set[int] | None = None
+    set_of_ints: frozenset[int] | None = None
 
 
-print(Model(simple_set={'1', '2', '3'}).simple_set)
-#> {'1', '2', '3'}
 print(Model(simple_set=['1', '2', '3']).simple_set)
 #> {'1', '2', '3'}
 print(Model(set_of_ints=['1', '2', '3']).set_of_ints)
-#> {1, 2, 3}
+#> frozenset({1, 2, 3})
 
 ```
 
-### frozenset
+### Deque
 
-Allows list, tuple, set, frozenset, deque, or generators and casts to a frozenset. When a generic parameter is provided, the appropriate validation is applied to all items of the frozen set.
+Standard library type: collections.deque (deprecated alias: typing.Deque).
 
-### typing.FrozenSet
+#### Validation
 
-Handled the same as `frozenset` above.
+Values are first validated as a [list](#lists), and then passed to the deque constructor.
+
+#### Constraints
+
+Deques support the following constraints:
+
+| Constraint | Description | JSON Schema | | --- | --- | --- | | `min_length` | The deque must have at least this many items | [`minItems`](https://json-schema.org/understanding-json-schema/reference/array#length) keyword | | `max_length` | The deque must have at most this many items | [`maxItems`](https://json-schema.org/understanding-json-schema/reference/array#length) keyword |
+
+These constraints can be provided using the Field() function. The `MinLen` and `MaxLen` metadata types from the [`annotated-types`](https://github.com/annotated-types/annotated-types) library can also be used.
+
+#### Strictness
+
+In [strict mode](../../concepts/strict_mode/), only deque instances are valid. Strict mode does *not* apply to the items of the deque. The strict constraint must be applied to the parameter type for this to work.
+
+#### Serialization
+
+In [Python mode](../../concepts/serialization/#python-mode), deques are serialized as is. In [JSON mode](../../concepts/serialization/#json-mode), they are serialized as arrays.
+
+#### Example
 
 ```python
-from typing import FrozenSet, Optional
+from collections import deque
 
 from pydantic import BaseModel
 
 
 class Model(BaseModel):
-    simple_frozenset: Optional[frozenset] = None
-    frozenset_of_ints: Optional[FrozenSet[int]] = None
+    deque: deque[int]
 
 
-m1 = Model(simple_frozenset=['1', '2', '3'])
-print(type(m1.simple_frozenset))
-#> <class 'frozenset'>
-print(sorted(m1.simple_frozenset))
-#> ['1', '2', '3']
-
-m2 = Model(frozenset_of_ints=['1', '2', '3'])
-print(type(m2.frozenset_of_ints))
-#> <class 'frozenset'>
-print(sorted(m2.frozenset_of_ints))
-#> [1, 2, 3]
+print(Model(deque=[1, 2, 3]).deque)
+#> deque([1, 2, 3])
 
 ```
 
-```python
-from pydantic import BaseModel
+### Sequences
 
+Standard library type: collections.abc.Sequence (deprecated alias: typing.Sequence).
 
-class Model(BaseModel):
-    simple_frozenset: frozenset | None = None
-    frozenset_of_ints: frozenset[int] | None = None
+In most cases, you will want to use the built-in types (such as [list](#lists) or [tuple](#tuples)) as [type coercion](../../concepts/models/#data-conversion) will apply. The Sequence type can be used when you want to preserve the input type during serialization.
 
+#### Validation
 
-m1 = Model(simple_frozenset=['1', '2', '3'])
-print(type(m1.simple_frozenset))
-#> <class 'frozenset'>
-print(sorted(m1.simple_frozenset))
-#> ['1', '2', '3']
+Any collections.abc.Sequence instance (expect strings and bytes) is accepted. It is converted to a list using the list() constructor, and then converted back to the original input type.
 
-m2 = Model(frozenset_of_ints=['1', '2', '3'])
-print(type(m2.frozenset_of_ints))
-#> <class 'frozenset'>
-print(sorted(m2.frozenset_of_ints))
-#> [1, 2, 3]
+Strings aren't treated as sequences
 
-```
+While strings are technically valid sequence instances, this is frequently not intended as is a common source of bugs.
 
-## Other Iterables
+As a result, Pydantic will *not* accept strings and bytes for the Sequence type (see example below).
 
-### typing.Sequence
+#### Constraints
 
-This is intended for use when the provided value should meet the requirements of the `Sequence` ABC, and it is desirable to do eager validation of the values in the container. Note that when validation must be performed on the values of the container, the type of the container may not be preserved since validation may end up replacing values. We guarantee that the validated value will be a valid typing.Sequence, but it may have a different type than was provided (generally, it will become a `list`).
+Sequences support the following constraints:
 
-### typing.Iterable
+| Constraint | Description | JSON Schema | | --- | --- | --- | | `min_length` | The sequence must have at least this many items | [`minItems`](https://json-schema.org/understanding-json-schema/reference/array#length) keyword | | `max_length` | The sequence must have at most this many items | [`maxItems`](https://json-schema.org/understanding-json-schema/reference/array#length) keyword |
 
-This is intended for use when the provided value may be an iterable that shouldn't be consumed. See [Infinite Generators](#infinite-generators) below for more detail on parsing and validation. Similar to typing.Sequence, we guarantee that the validated result will be a valid typing.Iterable, but it may have a different type than was provided. In particular, even if a non-generator type such as a `list` is provided, the post-validation value of a field of type typing.Iterable will be a generator.
+These constraints can be provided using the Field() function. The `MinLen` and `MaxLen` metadata types from the [`annotated-types`](https://github.com/annotated-types/annotated-types) library can also be used.
 
-Here is a simple example using typing.Sequence:
+#### Serialization
+
+In [Python mode](../../concepts/serialization/#python-mode), sequences are serialized as is. In [JSON mode](../../concepts/serialization/#json-mode), they are serialized as arrays.
+
+#### Example
 
 ```python
 from collections.abc import Sequence
-
-from pydantic import BaseModel
-
-
-class Model(BaseModel):
-    sequence_of_ints: Sequence[int]
-
-
-print(Model(sequence_of_ints=[1, 2, 3, 4]).sequence_of_ints)
-#> [1, 2, 3, 4]
-print(Model(sequence_of_ints=(1, 2, 3, 4)).sequence_of_ints)
-#> (1, 2, 3, 4)
-
-```
-
-### Infinite Generators
-
-If you have a generator you want to validate, you can still use `Sequence` as described above. In that case, the generator will be consumed and stored on the model as a list and its values will be validated against the type parameter of the `Sequence` (e.g. `int` in `Sequence[int]`).
-
-However, if you have a generator that you *don't* want to be eagerly consumed (e.g. an infinite generator or a remote data loader), you can use a field of type Iterable:
-
-```python
-from collections.abc import Iterable
-
-from pydantic import BaseModel
-
-
-class Model(BaseModel):
-    infinite: Iterable[int]
-
-
-def infinite_ints():
-    i = 0
-    while True:
-        yield i
-        i += 1
-
-
-m = Model(infinite=infinite_ints())
-print(m)
-"""
-infinite=ValidatorIterator(index=0, schema=Some(Int(IntValidator { strict: false })))
-"""
-
-for i in m.infinite:
-    print(i)
-    #> 0
-    #> 1
-    #> 2
-    #> 3
-    #> 4
-    #> 5
-    #> 6
-    #> 7
-    #> 8
-    #> 9
-    #> 10
-    if i == 10:
-        break
-
-```
-
-Warning
-
-During initial validation, `Iterable` fields only perform a simple check that the provided argument is iterable. To prevent it from being consumed, no validation of the yielded values is performed eagerly.
-
-Though the yielded values are not validated eagerly, they are still validated when yielded, and will raise a `ValidationError` at yield time when appropriate:
-
-```python
-from collections.abc import Iterable
 
 from pydantic import BaseModel, ValidationError
 
 
 class Model(BaseModel):
-    int_iterator: Iterable[int]
+    sequence_of_strs: Sequence[str]
 
 
-def my_iterator():
-    yield 13
-    yield '27'
-    yield 'a'
+print(Model(sequence_of_strs=['a', 'bc']).sequence_of_strs)
+#> ['a', 'bc']
+print(Model(sequence_of_strs=('a', 'bc')).sequence_of_strs)
+#> ('a', 'bc')
 
-
-m = Model(int_iterator=my_iterator())
-print(next(m.int_iterator))
-#> 13
-print(next(m.int_iterator))
-#> 27
 try:
-    next(m.int_iterator)
+    Model(sequence_of_strs='abc')
 except ValidationError as e:
     print(e)
     """
-    1 validation error for ValidatorIterator
-    2
-      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='a', input_type=str]
+    1 validation error for Model
+    sequence_of_strs
+      'str' instances are not allowed as a Sequence value [type=sequence_str, input_value='abc', input_type=str]
     """
 
 ```
 
-## Mapping Types
+### Dictionaries
 
-### dict
+Built-in type: dict.
 
-`dict(v)` is used to attempt to convert a dictionary.
+#### Validation
+
+- dict instances are accepted as is.
+- mappings instances are accepted and coerced to a dict.
+- If generic parameters for keys and values are provided, the appropriate validation is applied.
+
+#### Constraints
+
+Dictionaries support the following constraints:
+
+| Constraint | Description | JSON Schema | | --- | --- | --- | | `min_length` | The dictionary must have at least this many items | [`minItems`](https://json-schema.org/understanding-json-schema/reference/array#length) keyword | | `max_length` | The dictionary must have at most this many items | [`maxItems`](https://json-schema.org/understanding-json-schema/reference/array#length) keyword |
+
+These constraints can be provided using the Field() function. The `MinLen` and `MaxLen` metadata types from the [`annotated-types`](https://github.com/annotated-types/annotated-types) library can also be used.
+
+#### Strictness
+
+In [strict mode](../../concepts/strict_mode/), only dict instances are valid. Strict mode does *not* apply to the keys and values of the dictionaries. The strict constraint must be applied to the parameter types for this to work.
+
+#### Example
 
 ```python
 from pydantic import BaseModel, ValidationError
@@ -658,7 +941,7 @@ print(m.model_dump())
 #> {'x': {'foo': 1}}
 
 try:
-    Model(x={'foo': '1'})
+    Model(x='test')
 except ValidationError as e:
     print(e)
     """
@@ -669,15 +952,23 @@ except ValidationError as e:
 
 ```
 
-### TypedDict
+### Typed dictionaries
+
+Standard library type: typing.TypedDict (see also: the [typing specification](https://typing.python.org/en/latest/spec/typeddict.html)).
 
 Note
 
-This is a new feature of the Python standard library as of Python 3.8. Because of limitations in typing.TypedDict before 3.12, the [typing-extensions](https://pypi.org/project/typing-extensions/) package is required for Python \<3.12. You'll need to import `TypedDict` from `typing_extensions` instead of `typing` and will get a build time error if you don't.
+Because of runtime limitations, Pydantic will require using the TypedDict type from typing_extensions when using Python 3.12 and lower.
 
-TypedDict declares a dictionary type that expects all of its instances to have a certain set of keys, where each key is associated with a value of a consistent type.
+TypedDict declares a dictionary type that expects all of its instances to have a certain set of keys where each key is associated with a value of a consistent type.
 
-It is same as dict but Pydantic will validate the dictionary since keys are annotated.
+This type [supports configuration](../../concepts/config/#configuration-on-other-supported-types).
+
+#### Strictness
+
+In [strict mode](../../concepts/strict_mode/), only dict instances are valid (unlike mappings in lax mode). Strict mode does *not* apply to the values of the typed dictionary. The strict constraint must be applied to the value types for this to work.
+
+#### Example
 
 ```python
 from typing_extensions import TypedDict
@@ -735,222 +1026,49 @@ except ValidationError as e:
 
 ```
 
-You can define `__pydantic_config__` to change the model inherited from TypedDict. See the ConfigDict API reference for more details.
+### Iterables
+
+Standard library type: collections.abc.Iterable (deprecated alias: typing.Iterable).
+
+#### Validation
+
+Iterables are lazily validated, and wrapped in an internal datastructure that can be iterated over (and will validated the items type while doing so). This means that even if you provide a concrete container such as a list, the validated type will *not* be of type list. However, Pydantic will ensure that the input value is iterable by getting an iterator from it (by calling iter() on the value).
+
+It is recommended to use concrete collection types (such as [lists](#lists)) instead, unless you are using an infinite iterator (in which case eagerly validating the input would result in an infinite loop).
+
+#### Example
 
 ```python
-from typing import Optional
+from collections.abc import Iterable
 
-from typing_extensions import TypedDict
-
-from pydantic import ConfigDict, TypeAdapter, ValidationError
+from pydantic import BaseModel, ValidationError
 
 
-# `total=False` means keys are non-required
-class UserIdentity(TypedDict, total=False):
-    name: Optional[str]
-    surname: str
+class Model(BaseModel):
+    f: Iterable[str]
 
 
-class User(TypedDict):
-    __pydantic_config__ = ConfigDict(extra='forbid')
-
-    identity: UserIdentity
-    age: int
-
-
-ta = TypeAdapter(User)
-
-print(
-    ta.validate_python(
-        {'identity': {'name': 'Smith', 'surname': 'John'}, 'age': 37}
-    )
-)
-#> {'identity': {'name': 'Smith', 'surname': 'John'}, 'age': 37}
-
-print(
-    ta.validate_python(
-        {'identity': {'name': None, 'surname': 'John'}, 'age': 37}
-    )
-)
-#> {'identity': {'name': None, 'surname': 'John'}, 'age': 37}
-
-print(ta.validate_python({'identity': {}, 'age': 37}))
-#> {'identity': {}, 'age': 37}
-
+m = Model(f=[1, 2])  # Validates fine
 
 try:
-    ta.validate_python(
-        {'identity': {'name': ['Smith'], 'surname': 'John'}, 'age': 24}
-    )
+    next(m.f)
 except ValidationError as e:
     print(e)
     """
-    1 validation error for User
-    identity.name
-      Input should be a valid string [type=string_type, input_value=['Smith'], input_type=list]
-    """
-
-try:
-    ta.validate_python(
-        {
-            'identity': {'name': 'Smith', 'surname': 'John'},
-            'age': '37',
-            'email': 'john.smith@me.com',
-        }
-    )
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for User
-    email
-      Extra inputs are not permitted [type=extra_forbidden, input_value='john.smith@me.com', input_type=str]
-    """
-
-```
-
-```python
-from typing_extensions import TypedDict
-
-from pydantic import ConfigDict, TypeAdapter, ValidationError
-
-
-# `total=False` means keys are non-required
-class UserIdentity(TypedDict, total=False):
-    name: str | None
-    surname: str
-
-
-class User(TypedDict):
-    __pydantic_config__ = ConfigDict(extra='forbid')
-
-    identity: UserIdentity
-    age: int
-
-
-ta = TypeAdapter(User)
-
-print(
-    ta.validate_python(
-        {'identity': {'name': 'Smith', 'surname': 'John'}, 'age': 37}
-    )
-)
-#> {'identity': {'name': 'Smith', 'surname': 'John'}, 'age': 37}
-
-print(
-    ta.validate_python(
-        {'identity': {'name': None, 'surname': 'John'}, 'age': 37}
-    )
-)
-#> {'identity': {'name': None, 'surname': 'John'}, 'age': 37}
-
-print(ta.validate_python({'identity': {}, 'age': 37}))
-#> {'identity': {}, 'age': 37}
-
-
-try:
-    ta.validate_python(
-        {'identity': {'name': ['Smith'], 'surname': 'John'}, 'age': 24}
-    )
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for User
-    identity.name
-      Input should be a valid string [type=string_type, input_value=['Smith'], input_type=list]
-    """
-
-try:
-    ta.validate_python(
-        {
-            'identity': {'name': 'Smith', 'surname': 'John'},
-            'age': '37',
-            'email': 'john.smith@me.com',
-        }
-    )
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for User
-    email
-      Extra inputs are not permitted [type=extra_forbidden, input_value='john.smith@me.com', input_type=str]
-    """
-
-```
-
-```python
-from typing import TypedDict
-
-from pydantic import ConfigDict, TypeAdapter, ValidationError
-
-
-# `total=False` means keys are non-required
-class UserIdentity(TypedDict, total=False):
-    name: str | None
-    surname: str
-
-
-class User(TypedDict):
-    __pydantic_config__ = ConfigDict(extra='forbid')
-
-    identity: UserIdentity
-    age: int
-
-
-ta = TypeAdapter(User)
-
-print(
-    ta.validate_python(
-        {'identity': {'name': 'Smith', 'surname': 'John'}, 'age': 37}
-    )
-)
-#> {'identity': {'name': 'Smith', 'surname': 'John'}, 'age': 37}
-
-print(
-    ta.validate_python(
-        {'identity': {'name': None, 'surname': 'John'}, 'age': 37}
-    )
-)
-#> {'identity': {'name': None, 'surname': 'John'}, 'age': 37}
-
-print(ta.validate_python({'identity': {}, 'age': 37}))
-#> {'identity': {}, 'age': 37}
-
-
-try:
-    ta.validate_python(
-        {'identity': {'name': ['Smith'], 'surname': 'John'}, 'age': 24}
-    )
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for User
-    identity.name
-      Input should be a valid string [type=string_type, input_value=['Smith'], input_type=list]
-    """
-
-try:
-    ta.validate_python(
-        {
-            'identity': {'name': 'Smith', 'surname': 'John'},
-            'age': '37',
-            'email': 'john.smith@me.com',
-        }
-    )
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for User
-    email
-      Extra inputs are not permitted [type=extra_forbidden, input_value='john.smith@me.com', input_type=str]
+    1 validation error for ValidatorIterator
+    0
+      Input should be a valid string [type=string_type, input_value=1, input_type=int]
     """
 
 ```
 
 ## Callable
 
-See below for more detail on parsing and validation
+Standard library type: collections.abc.Callable (deprecated alias: typing.Callable).
 
-Fields can also be of type Callable:
+### Validation
+
+Pydantic only validates that the input is a callable (using the [`callable()`](https://docs.python.org/3/library/functions.html#callable) function). It does *not* validate the number of parameters or their type, nor the type of the return value.
 
 ```python
 from typing import Callable
@@ -984,39 +1102,97 @@ print(m)
 
 ```
 
-Warning
+### Serialization
 
-Callable fields only perform a simple check that the argument is callable; no validation of arguments, their types, or the return type is performed.
+Callables are serialized as is. Callables can't be serialized in [JSON mode](../../concepts/serialization/#json-mode) (a PydanticSerializationError is raised).
 
-## IP Address Types
+## IP Addresses
 
-- ipaddress.IPv4Address: Uses the type itself for validation by passing the value to `IPv4Address(v)`.
-- ipaddress.IPv4Interface: Uses the type itself for validation by passing the value to `IPv4Address(v)`.
-- ipaddress.IPv4Network: Uses the type itself for validation by passing the value to `IPv4Network(v)`.
-- ipaddress.IPv6Address: Uses the type itself for validation by passing the value to `IPv6Address(v)`.
-- ipaddress.IPv6Interface: Uses the type itself for validation by passing the value to `IPv6Interface(v)`.
-- ipaddress.IPv6Network: Uses the type itself for validation by passing the value to `IPv6Network(v)`.
+Standard library types:
 
-See [Network Types](../networks/) for other custom IP address types.
+- ipaddress.IPv4Address
+- ipaddress.IPv4Interface
+- ipaddress.IPv4Network
+- ipaddress.IPv6Address
+- ipaddress.IPv6Interface
+- ipaddress.IPv6Network
+
+See also: the IPvAnyAddress, IPvAnyInterface and IPvAnyNetwork Pydantic types.
+
+### Validation
+
+- Instances are validated as is.
+- Other input values are passed to the constructor of the relevant address type.
+
+### Strictness
+
+In [strict mode](../../concepts/strict_mode/), only the address types are accepted. In JSON mode, strict mode has no effect.
+
+### Serialization
+
+In [Python mode](../../concepts/serialization/#python-mode), IP addresses are serialized as is. In [JSON mode](../../concepts/serialization/#json-mode), they are serialized as strings.
 
 ## UUID
 
-For UUID, Pydantic tries to use the type itself for validation by passing the value to `UUID(v)`. There's a fallback to `UUID(bytes=v)` for `bytes` and `bytearray`.
+Standard library type: uuid.UUID.
 
-In case you want to constrain the UUID version, you can check the following types:
+### Validation
 
-- UUID1: requires UUID version 1.
-- UUID3: requires UUID version 3.
-- UUID4: requires UUID version 4.
-- UUID5: requires UUID version 5.
+- UUID instances are validated as is.
+- Strings and bytes are validated as UUIDs, and casted to a UUID instance.
 
-## Union
+### Constraints
 
-Pydantic has extensive support for union validation, both typing.Union and Python 3.10's pipe syntax (`A | B`) are supported. Read more in the [`Unions`](../../concepts/unions/) section of the concepts docs.
+The UUID type supports a `version` constraint. The UuidVersion metadata type can be used.
 
-## type
+Pydantic also provides the following types as convenience aliases: UUID1, UUID3, UUID4, UUID5, UUID6, UUID7, UUID8.
 
-Pydantic supports the use of `type[T]` to specify that a field may only accept classes (not instances) that are subclasses of `T`.
+### Strictness
+
+In [strict mode](../../concepts/strict_mode/), only UUID instances are accepted. In JSON mode, strict mode has no effect.
+
+### Serialization
+
+In [Python mode](../../concepts/serialization/#python-mode), UUIDs are serialized as is. In [JSON mode](../../concepts/serialization/#json-mode), they are serialized as strings.
+
+### Example
+
+```python
+from typing import Annotated
+from uuid import UUID
+
+from pydantic import BaseModel
+from pydantic.types import UUID7, UuidVersion
+
+
+class Model(BaseModel):
+    u1: UUID7
+    u2: Annotated[UUID, UuidVersion(4)]
+
+
+print(
+    Model(
+        u1='01999b2c-8353-749b-8dac-859307fae22b',
+        u2=UUID('125725f3-e1b4-44e3-90c3-1a20eab12da5'),
+    )
+)
+"""
+u1=UUID('01999b2c-8353-749b-8dac-859307fae22b') u2=UUID('125725f3-e1b4-44e3-90c3-1a20eab12da5')
+"""
+
+```
+
+## Type
+
+Built-in type: type (deprecated alias: typing.Type).
+
+### Validation
+
+Allows any type that is a subclass of the type argument. For instance, with `type[str]`, allows the str class or any str subclass as an input. If no type argument is provided (i.e. `type` is used as an annotation), allow any class.
+
+### Serialization
+
+Types are serialized as is. Types can't be serialized in [JSON mode](../../concepts/serialization/#json-mode) (a PydanticSerializationError is raised).
 
 ```python
 from pydantic import BaseModel, ValidationError
@@ -1052,173 +1228,15 @@ except ValidationError as e:
 
 ```
 
-You may also use `type` to specify that any class is allowed.
+## Literals
 
-```python
-from pydantic import BaseModel, ValidationError
+Typing construct: typing.Literal (see also: the [typing specification](https://typing.python.org/en/latest/spec/literal.html#literal)).
 
+Literals can be used to only allow specific literal values.
 
-class Foo:
-    pass
+Note that Pydantic applies [strict mode](../../concepts/strict_mode/) behavior when validating literal values (see [this issue](https://github.com/pydantic/pydantic/issues/9991)).
 
-
-class LenientSimpleModel(BaseModel):
-    any_class_goes: type
-
-
-LenientSimpleModel(any_class_goes=int)
-LenientSimpleModel(any_class_goes=Foo)
-try:
-    LenientSimpleModel(any_class_goes=Foo())
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for LenientSimpleModel
-    any_class_goes
-      Input should be a type [type=is_type, input_value=<__main__.Foo object at 0x0123456789ab>, input_type=Foo]
-    """
-
-```
-
-## typing.TypeVar
-
-TypeVar is supported either unconstrained, constrained or with a bound.
-
-```python
-from typing import TypeVar
-
-from pydantic import BaseModel
-
-Foobar = TypeVar('Foobar')
-BoundFloat = TypeVar('BoundFloat', bound=float)
-IntStr = TypeVar('IntStr', int, str)
-
-
-class Model(BaseModel):
-    a: Foobar  # equivalent of ": Any"
-    b: BoundFloat  # equivalent of ": float"
-    c: IntStr  # equivalent of ": Union[int, str]"
-
-
-print(Model(a=[1], b=4.2, c='x'))
-#> a=[1] b=4.2 c='x'
-
-# a may be None
-print(Model(a=None, b=1, c=1))
-#> a=None b=1.0 c=1
-
-```
-
-## None Types
-
-None, `type(None)`, or `Literal[None]` are all equivalent according to [the typing specification](https://typing.readthedocs.io/en/latest/spec/special-types.html#none). Allows only `None` value.
-
-## Strings
-
-- str: Strings are accepted as-is.
-- bytes and bytearray are converted using the decode() method.
-- Enums inheriting from str are converted using the value attribute.
-
-All other types cause an error.
-
-Strings aren't Sequences
-
-While instances of `str` are technically valid instances of the `Sequence[str]` protocol from a type-checker's point of view, this is frequently not intended as is a common source of bugs.
-
-As a result, Pydantic raises a `ValidationError` if you attempt to pass a `str` or `bytes` instance into a field of type `Sequence[str]` or `Sequence[bytes]`:
-
-```python
-from collections.abc import Sequence
-from typing import Optional
-
-from pydantic import BaseModel, ValidationError
-
-
-class Model(BaseModel):
-    sequence_of_strs: Optional[Sequence[str]] = None
-    sequence_of_bytes: Optional[Sequence[bytes]] = None
-
-
-print(Model(sequence_of_strs=['a', 'bc']).sequence_of_strs)
-#> ['a', 'bc']
-print(Model(sequence_of_strs=('a', 'bc')).sequence_of_strs)
-#> ('a', 'bc')
-print(Model(sequence_of_bytes=[b'a', b'bc']).sequence_of_bytes)
-#> [b'a', b'bc']
-print(Model(sequence_of_bytes=(b'a', b'bc')).sequence_of_bytes)
-#> (b'a', b'bc')
-
-
-try:
-    Model(sequence_of_strs='abc')
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for Model
-    sequence_of_strs
-      'str' instances are not allowed as a Sequence value [type=sequence_str, input_value='abc', input_type=str]
-    """
-try:
-    Model(sequence_of_bytes=b'abc')
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for Model
-    sequence_of_bytes
-      'bytes' instances are not allowed as a Sequence value [type=sequence_str, input_value=b'abc', input_type=bytes]
-    """
-
-```
-
-```python
-from collections.abc import Sequence
-
-from pydantic import BaseModel, ValidationError
-
-
-class Model(BaseModel):
-    sequence_of_strs: Sequence[str] | None = None
-    sequence_of_bytes: Sequence[bytes] | None = None
-
-
-print(Model(sequence_of_strs=['a', 'bc']).sequence_of_strs)
-#> ['a', 'bc']
-print(Model(sequence_of_strs=('a', 'bc')).sequence_of_strs)
-#> ('a', 'bc')
-print(Model(sequence_of_bytes=[b'a', b'bc']).sequence_of_bytes)
-#> [b'a', b'bc']
-print(Model(sequence_of_bytes=(b'a', b'bc')).sequence_of_bytes)
-#> (b'a', b'bc')
-
-
-try:
-    Model(sequence_of_strs='abc')
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for Model
-    sequence_of_strs
-      'str' instances are not allowed as a Sequence value [type=sequence_str, input_value='abc', input_type=str]
-    """
-try:
-    Model(sequence_of_bytes=b'abc')
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for Model
-    sequence_of_bytes
-      'bytes' instances are not allowed as a Sequence value [type=sequence_str, input_value=b'abc', input_type=bytes]
-    """
-
-```
-
-## Bytes
-
-bytes are accepted as-is. bytearray is converted using `bytes(v)`. `str` are converted using `v.encode()`. `int`, `float`, and `Decimal` are coerced using `str(v).encode()`. See [ByteSize](../types/#pydantic.types.ByteSize) for more details.
-
-## typing.Literal
-
-Pydantic supports the use of typing.Literal as a lightweight way to specify that a field may accept only specific literal values:
+### Example
 
 ```python
 from typing import Literal
@@ -1228,6 +1246,7 @@ from pydantic import BaseModel, ValidationError
 
 class Pie(BaseModel):
     flavor: Literal['apple', 'pumpkin']
+    quantity: Literal[1, 2] = 1
 
 
 Pie(flavor='apple')
@@ -1242,181 +1261,69 @@ except ValidationError as e:
       Input should be 'apple' or 'pumpkin' [type=literal_error, input_value='cherry', input_type=str]
     """
 
-```
-
-One benefit of this field type is that it can be used to check for equality with one or more specific values without needing to declare custom validators:
-
-```python
-from typing import ClassVar, Literal, Union
-
-from pydantic import BaseModel, ValidationError
-
-
-class Cake(BaseModel):
-    kind: Literal['cake']
-    required_utensils: ClassVar[list[str]] = ['fork', 'knife']
-
-
-class IceCream(BaseModel):
-    kind: Literal['icecream']
-    required_utensils: ClassVar[list[str]] = ['spoon']
-
-
-class Meal(BaseModel):
-    dessert: Union[Cake, IceCream]
-
-
-print(type(Meal(dessert={'kind': 'cake'}).dessert).__name__)
-#> Cake
-print(type(Meal(dessert={'kind': 'icecream'}).dessert).__name__)
-#> IceCream
 try:
-    Meal(dessert={'kind': 'pie'})
+    Pie(flavor='apple', quantity='1')
 except ValidationError as e:
     print(str(e))
     """
-    2 validation errors for Meal
-    dessert.Cake.kind
-      Input should be 'cake' [type=literal_error, input_value='pie', input_type=str]
-    dessert.IceCream.kind
-      Input should be 'icecream' [type=literal_error, input_value='pie', input_type=str]
+    1 validation error for Pie
+    quantity
+      Input should be 1 or 2 [type=literal_error, input_value='1', input_type=str]
     """
 
 ```
 
-```python
-from typing import ClassVar, Literal
+## Any
 
-from pydantic import BaseModel, ValidationError
-
-
-class Cake(BaseModel):
-    kind: Literal['cake']
-    required_utensils: ClassVar[list[str]] = ['fork', 'knife']
-
-
-class IceCream(BaseModel):
-    kind: Literal['icecream']
-    required_utensils: ClassVar[list[str]] = ['spoon']
-
-
-class Meal(BaseModel):
-    dessert: Cake | IceCream
-
-
-print(type(Meal(dessert={'kind': 'cake'}).dessert).__name__)
-#> Cake
-print(type(Meal(dessert={'kind': 'icecream'}).dessert).__name__)
-#> IceCream
-try:
-    Meal(dessert={'kind': 'pie'})
-except ValidationError as e:
-    print(str(e))
-    """
-    2 validation errors for Meal
-    dessert.Cake.kind
-      Input should be 'cake' [type=literal_error, input_value='pie', input_type=str]
-    dessert.IceCream.kind
-      Input should be 'icecream' [type=literal_error, input_value='pie', input_type=str]
-    """
-
-```
-
-With proper ordering in an annotated `Union`, you can use this to parse types of decreasing specificity:
-
-```python
-from typing import Literal, Optional, Union
-
-from pydantic import BaseModel
-
-
-class Dessert(BaseModel):
-    kind: str
-
-
-class Pie(Dessert):
-    kind: Literal['pie']
-    flavor: Optional[str]
-
-
-class ApplePie(Pie):
-    flavor: Literal['apple']
-
-
-class PumpkinPie(Pie):
-    flavor: Literal['pumpkin']
-
-
-class Meal(BaseModel):
-    dessert: Union[ApplePie, PumpkinPie, Pie, Dessert]
-
-
-print(type(Meal(dessert={'kind': 'pie', 'flavor': 'apple'}).dessert).__name__)
-#> ApplePie
-print(type(Meal(dessert={'kind': 'pie', 'flavor': 'pumpkin'}).dessert).__name__)
-#> PumpkinPie
-print(type(Meal(dessert={'kind': 'pie'}).dessert).__name__)
-#> Dessert
-print(type(Meal(dessert={'kind': 'cake'}).dessert).__name__)
-#> Dessert
-
-```
-
-```python
-from typing import Literal
-
-from pydantic import BaseModel
-
-
-class Dessert(BaseModel):
-    kind: str
-
-
-class Pie(Dessert):
-    kind: Literal['pie']
-    flavor: str | None
-
-
-class ApplePie(Pie):
-    flavor: Literal['apple']
-
-
-class PumpkinPie(Pie):
-    flavor: Literal['pumpkin']
-
-
-class Meal(BaseModel):
-    dessert: ApplePie | PumpkinPie | Pie | Dessert
-
-
-print(type(Meal(dessert={'kind': 'pie', 'flavor': 'apple'}).dessert).__name__)
-#> ApplePie
-print(type(Meal(dessert={'kind': 'pie', 'flavor': 'pumpkin'}).dessert).__name__)
-#> PumpkinPie
-print(type(Meal(dessert={'kind': 'pie'}).dessert).__name__)
-#> Dessert
-print(type(Meal(dessert={'kind': 'cake'}).dessert).__name__)
-#> Dessert
-
-```
-
-## typing.Any
+Types: typing.Any or object.
 
 Allows any value, including `None`.
 
-## typing.Hashable
+## Hashables
 
-- From Python, supports any data that passes an `isinstance(v, Hashable)` check.
-- From JSON, first loads the data via an `Any` validator, then checks if the data is hashable with `isinstance(v, Hashable)`.
+Standard library type: collections.abc.Hashable (deprecated alias: typing.Hashable).
 
-## typing.Annotated
+### Validation
 
-Allows wrapping another type with arbitrary metadata, as per [PEP-593](https://www.python.org/dev/peps/pep-0593/). The `Annotated` hint may contain a single call to the [`Field` function](../../concepts/types/#using-the-annotated-pattern), but otherwise the additional metadata is ignored and the root type is used.
+Any value that is hashable (using `isinstance(value, Hashable)`).
 
-## typing.Pattern
+## Regex patterns
 
-Will cause the input value to be passed to `re.compile(v)` to create a regular expression pattern.
+Standard library type: re.Pattern (deprecated alias: typing.Pattern).
 
-## pathlib.Path
+### Validation
 
-Simply uses the type itself for validation by passing the value to `Path(v)`.
+- For Pattern instances, check that the pattern attribute is of the right type (str or bytes depending on the Pattern type parameter).
+- If the type parameter is str or bytes, input values of type str (or bytes respectively) are attempted to be compiled using re.compile().
+
+### Serialization
+
+In [Python mode](../../concepts/serialization/#python-mode), Pattern instances are serialized as is.
+
+In [JSON mode](../../concepts/serialization/#json-mode), they are serialized as strings.
+
+## Paths
+
+Standard library types:
+
+- pathlib.Path.
+- pathlib.PurePath.
+- pathlib.PosixPath.
+- pathlib.PurePosixPath.
+- pathlib.PureWindowsPath.
+- os.PathLike (must be parameterized with str, bytes or Any).
+
+### Validation
+
+- Path instances are validated as is.
+- Strings are accepted and passed to the type constructor. If os.PathLike was used, bytes are accepted if it was parameterized with the bytes type.
+
+### Strictness
+
+In [strict mode](../../concepts/strict_mode/), only Path instances are accepted. In JSON mode, strict mode has no effect.
+
+### Serialization
+
+In [Python mode](../../concepts/serialization/#python-mode), Path instances are serialized as is.
+
+In [JSON mode](../../concepts/serialization/#json-mode), they are serialized as strings.

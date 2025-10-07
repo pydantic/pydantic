@@ -110,7 +110,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#type-conversion" class="md-skip">
+        <a href="#custom-types" class="md-skip">
           Skip to content
         </a>
       
@@ -890,39 +890,6 @@ to help you monitor and understand your
       Page contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#type-conversion" class="md-nav__link">
-    <span class="md-ellipsis">
-      Type conversion
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#strict-types" class="md-nav__link">
-    <span class="md-ellipsis">
-      Strict Types
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Strict Types">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#constrained-types" class="md-nav__link">
-    <span class="md-ellipsis">
-      Constrained types
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
       
         <li class="md-nav__item">
   <a href="#custom-types" class="md-nav__link">
@@ -3180,39 +3147,6 @@ to help you monitor and understand your
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#type-conversion" class="md-nav__link">
-    <span class="md-ellipsis">
-      Type conversion
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#strict-types" class="md-nav__link">
-    <span class="md-ellipsis">
-      Strict Types
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Strict Types">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#constrained-types" class="md-nav__link">
-    <span class="md-ellipsis">
-      Constrained types
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#custom-types" class="md-nav__link">
     <span class="md-ellipsis">
       Custom Types
@@ -3398,57 +3332,21 @@ to help you monitor and understand your
 
   <h1>Types</h1>
 
-<p>Where possible Pydantic uses <a href="../../api/standard_library_types/">standard library types</a> to define fields, thus smoothing
-the learning curve. For many useful applications, however, no standard library type exists,
-so Pydantic implements many commonly used types.</p>
-<p>There are also more complex types that can be found in the
-<a href="https://github.com/pydantic/pydantic-extra-types">Pydantic Extra Types</a> package.</p>
-<p>If no existing type suits your purpose you can also implement your <a href="#custom-types">own Pydantic-compatible types</a> with custom properties and validation.</p>
-<p>The following sections describe the types supported by Pydantic.</p>
-<ul>
-<li><a href="../../api/standard_library_types/">Standard Library Types</a> &mdash; types from the Python standard library.</li>
-<li><a href="#strict-types">Strict Types</a> &mdash; types that enable you to prevent coercion from compatible types.</li>
-<li><a href="#custom-types">Custom Data Types</a> &mdash; create your own custom data types.</li>
-<li><a href="../conversion_table/">Field Type Conversions</a> &mdash; strict and lax conversion between different field types.</li>
-</ul>
-<h2 id="type-conversion">Type conversion<a class="headerlink" href="#type-conversion" title="Permanent link">&para;</a></h2>
-<p>During validation, Pydantic can coerce data into expected types.</p>
-<p>There are two modes of coercion: strict and lax. See <a href="../conversion_table/">Conversion Table</a> for more details on how Pydantic converts data in both strict and lax modes.</p>
-<p>See <a href="../strict_mode/">Strict mode</a> and <a href="#strict-types">Strict Types</a> for details on enabling strict coercion.</p>
-<h2 id="strict-types">Strict Types<a class="headerlink" href="#strict-types" title="Permanent link">&para;</a></h2>
-<p>Pydantic provides the following strict types:</p>
-<ul>
-<li><a class="autorefs autorefs-internal" href="../../api/types/#pydantic.types.StrictBool"><code>StrictBool</code></a></li>
-<li><a class="autorefs autorefs-internal" href="../../api/types/#pydantic.types.StrictBytes"><code>StrictBytes</code></a></li>
-<li><a class="autorefs autorefs-internal" href="../../api/types/#pydantic.types.StrictFloat"><code>StrictFloat</code></a></li>
-<li><a class="autorefs autorefs-internal" href="../../api/types/#pydantic.types.StrictInt"><code>StrictInt</code></a></li>
-<li><a class="autorefs autorefs-internal" href="../../api/types/#pydantic.types.StrictStr"><code>StrictStr</code></a></li>
-</ul>
-<p>These types will only pass validation when the validated value is of the respective type or is a subtype of that type.</p>
-<h3 id="constrained-types">Constrained types<a class="headerlink" href="#constrained-types" title="Permanent link">&para;</a></h3>
-<p>This behavior is also exposed via the <code>strict</code> field of the constrained types and can be combined with a multitude of complex validation rules. See the individual type signatures for supported arguments.</p>
-<ul>
-<li><a class="autorefs autorefs-internal" href="../../api/types/#pydantic.types.conbytes"><code>conbytes()</code></a></li>
-<li><a class="autorefs autorefs-internal" href="../../api/types/#pydantic.types.condate"><code>condate()</code></a></li>
-<li><a class="autorefs autorefs-internal" href="../../api/types/#pydantic.types.condecimal"><code>condecimal()</code></a></li>
-<li><a class="autorefs autorefs-internal" href="../../api/types/#pydantic.types.confloat"><code>confloat()</code></a></li>
-<li><a class="autorefs autorefs-internal" href="../../api/types/#pydantic.types.confrozenset"><code>confrozenset()</code></a></li>
-<li><a class="autorefs autorefs-internal" href="../../api/types/#pydantic.types.conint"><code>conint()</code></a></li>
-<li><a class="autorefs autorefs-internal" href="../../api/types/#pydantic.types.conlist"><code>conlist()</code></a></li>
-<li><a class="autorefs autorefs-internal" href="../../api/types/#pydantic.types.conset"><code>conset()</code></a></li>
-<li><a class="autorefs autorefs-internal" href="../../api/types/#pydantic.types.constr"><code>constr()</code></a></li>
-</ul>
-<p>The following caveats apply:</p>
-<ul>
-<li><code>StrictBytes</code> (and the <code>strict</code> option of <code>conbytes()</code>) will accept both <code>bytes</code>,
-   and <code>bytearray</code> types.</li>
-<li><code>StrictInt</code> (and the <code>strict</code> option of <code>conint()</code>) will not accept <code>bool</code> types,
-    even though <code>bool</code> is a subclass of <code>int</code> in Python. Other subclasses will work.</li>
-<li><code>StrictFloat</code> (and the <code>strict</code> option of <code>confloat()</code>) will not accept <code>int</code>.</li>
-</ul>
-<p>Besides the above, you can also have a <a class="autorefs autorefs-internal" href="../../api/types/#pydantic.types.FiniteFloat"><code>FiniteFloat</code></a> type that will only accept finite values (i.e. not <code>inf</code>, <code>-inf</code> or <code>nan</code>).</p>
+<p>Pydantic uses types to define how validation and serialization should be performed.
+<a href="../../api/standard_library_types/">Built-in and standard library types</a> (such as <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int"><code>int</code></a>,
+<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str"><code>str</code></a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/datetime.html#datetime.date"><code>date</code></a>) can be used as is. <a href="../strict_mode/">Strictness</a>
+can be controlled and constraints can be applied on them.</p>
+<p>On top of these, Pydantic provides extra types, either <a href="../../api/types/">directly in the library</a>
+(e.g. <a class="autorefs autorefs-internal" href="../../api/types/#pydantic.types.SecretStr"><code>SecretStr</code></a>) or in the <a href="https://github.com/pydantic/pydantic-extra-types"><code>pydantic-extra-types</code></a>
+external library. These are implemented using the patterns described in the <a href="#custom-types">custom types</a> section.
+Strictness and constraints <em>can't</em> be applied on them.</p>
+<p>The <a href="../../api/standard_library_types/">built-in and standard library types</a> documentation goes over
+the supported types: the allowed values, the possible validation constraints, and whether <a href="../strict_mode/">strictness</a>
+can be configured.</p>
+<p>See also the <a href="../conversion_table/">conversion table</a> for a summary of the allowed values for each type.</p>
+<p>This page will go over defining your own custom types.</p>
 <h2 id="custom-types">Custom Types<a class="headerlink" href="#custom-types" title="Permanent link">&para;</a></h2>
-<p>You can also define your own custom data types. There are several ways to achieve it.</p>
+<p>There are several ways to define your custom types.</p>
 <h3 id="using-the-annotated-pattern">Using the annotated pattern<a class="headerlink" href="#using-the-annotated-pattern" title="Permanent link">&para;</a></h3>
 <p>The <a href="../fields/#the-annotated-pattern">annotated pattern</a> can be used to make types reusable across your code base.
 For example, to create a type representing a positive integer:</p>
@@ -3656,6 +3554,8 @@ two reasons:</p>
 </div>
 </div>
 </div>
+<!-- markdownlint-disable-next-line no-empty-links -->
+<p><a href="" id="metadata-type-alias-warning"></a></p>
 <div class="admonition warning">
 <p class="admonition-title">When to use named type aliases</p>
 <p>While (named) PEP 695 and implicit type aliases are meant to be equivalent for static type checkers,
@@ -4678,7 +4578,7 @@ and thereby set the field name which will be available from <code>info.field_nam
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["https://docs.pydantic.dev/dev/pydantic-2.12.0b1+dev-py3-none-any.whl", "email-validator>=2.0.0", "pydantic-core==2.40.1", "pydantic-extra-types==2.10.0"]
+    window.mkdocs_run_deps = ["https://docs.pydantic.dev/dev/pydantic-2.12.0b1+dev-py3-none-any.whl", "email-validator>=2.0.0", "pydantic-core==2.41.1", "pydantic-extra-types==2.10.0"]
     </script>
 
               </article>

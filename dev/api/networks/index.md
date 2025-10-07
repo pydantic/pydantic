@@ -19,6 +19,7 @@ UrlConstraints(
     default_host: str | None = None,
     default_port: int | None = None,
     default_path: str | None = None,
+    preserve_empty_path: bool | None = None,
 )
 
 ```
@@ -27,7 +28,7 @@ Url constraints.
 
 Attributes:
 
-| Name | Type | Description | | --- | --- | --- | | `max_length` | `int | None` | The maximum length of the url. Defaults to None. | | `allowed_schemes` | `list[str] | None` | The allowed schemes. Defaults to None. | | `host_required` | `bool | None` | Whether the host is required. Defaults to None. | | `default_host` | `str | None` | The default host. Defaults to None. | | `default_port` | `int | None` | The default port. Defaults to None. | | `default_path` | `str | None` | The default path. Defaults to None. |
+| Name | Type | Description | | --- | --- | --- | | `max_length` | `int | None` | The maximum length of the url. Defaults to None. | | `allowed_schemes` | `list[str] | None` | The allowed schemes. Defaults to None. | | `host_required` | `bool | None` | Whether the host is required. Defaults to None. | | `default_host` | `str | None` | The default host. Defaults to None. | | `default_port` | `int | None` | The default port. Defaults to None. | | `default_path` | `str | None` | The default path. Defaults to None. | | `preserve_empty_path` | `bool | None` | Whether to preserve empty URL paths. Defaults to None. |
 
 ### defined_constraints
 

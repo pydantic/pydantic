@@ -41,11 +41,11 @@ On Pydantic models, configuration can be specified in two ways:
 
 
   class Model(BaseModel, frozen=True):
-      a: str  # (1)!
+      a: str
 
   ```
 
-  1. Unlike the model_config class attribute, static type checkers will recognize the `frozen` argument, and so any instance mutation will be flagged as an type checking error.
+Unlike the model_config class attribute, static type checkers will recognize class arguments. For `frozen`, any instance mutation will be flagged as an type checking error.
 
 ## Configuration on Pydantic dataclasses
 
@@ -76,7 +76,7 @@ except ValidationError as e:
 
 ## Configuration on `TypeAdapter`
 
-[Type adapters](../type_adapter/) (using the TypeAdapter class) support configuration, by providing a `config` argument.
+[Type adapters](../type_adapter/) (using the TypeAdapter class) support configuration, by providing the `config` argument.
 
 ```python
 from pydantic import ConfigDict, TypeAdapter
@@ -111,7 +111,7 @@ If you are using standard library dataclasses or TypedDict classes, the configur
 
   ```
 
-- Using the with_config decorator (this avoids static type checking errors with TypedDict):
+- Using the @with_config decorator (this avoids static type checking errors with TypedDict):
 
   ```python
   from typing_extensions import TypedDict
@@ -124,6 +124,10 @@ If you are using standard library dataclasses or TypedDict classes, the configur
       x: str
 
   ```
+
+## Configuration on the `@validate_call` decorator
+
+The [`@validate_call`](../validation_decorator/) also supports setting custom configuration. See the [dedicated section](../validation_decorator/#custom-configuration) for more details.
 
 ## Change behaviour globally
 

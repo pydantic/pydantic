@@ -5691,6 +5691,9 @@ a <a class="autorefs autorefs-internal" href="../pydantic_core/#pydantic_core.Py
     <span class="o">*</span><span class="p">,</span>
     <span class="n">by_alias</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">ref_template</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.DEFAULT_REF_TEMPLATE" href="../json_schema/#pydantic.json_schema.DEFAULT_REF_TEMPLATE">DEFAULT_REF_TEMPLATE</a></span><span class="p">,</span>
+    <span class="n">union_format</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span>
+        <span class="s2">&quot;any_of&quot;</span><span class="p">,</span> <span class="s2">&quot;primitive_type_array&quot;</span>
+    <span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;any_of&quot;</span><span class="p">,</span>
     <span class="n">schema_generator</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/glossary.html#term-type">type</a></span><span class="p">[</span>
         <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.GenerateJsonSchema" href="../json_schema/#pydantic.json_schema.GenerateJsonSchema">GenerateJsonSchema</a></span>
     <span class="p">]</span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.GenerateJsonSchema" href="../json_schema/#pydantic.json_schema.GenerateJsonSchema">GenerateJsonSchema</a></span><span class="p">,</span>
@@ -5744,6 +5747,63 @@ a <a class="autorefs autorefs-internal" href="../pydantic_core/#pydantic_core.Py
             </td>
             <td>
                   <code><a class="autorefs autorefs-internal" title="pydantic.json_schema.DEFAULT_REF_TEMPLATE" href="../json_schema/#pydantic.json_schema.DEFAULT_REF_TEMPLATE">DEFAULT_REF_TEMPLATE</a></code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>union_format</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a>[&#39;any_of&#39;, &#39;primitive_type_array&#39;]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The format to use when combining schemas from unions together. Can be one of:</p>
+<ul>
+<li><code>'any_of'</code>: Use the <a href="https://json-schema.org/understanding-json-schema/reference/combining#anyOf"><code>anyOf</code></a>
+keyword to combine schemas (the default).</li>
+<li><code>'primitive_type_array'</code>: Use the <a href="https://json-schema.org/understanding-json-schema/reference/type"><code>type</code></a>
+keyword as an array of strings, containing each type of the combination. If any of the schemas is not a primitive
+type (<code>string</code>, <code>boolean</code>, <code>null</code>, <code>integer</code> or <code>number</code>) or contains constraints/metadata, falls back to
+<code>any_of</code>.</li>
+</ul>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;any_of&#39;</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>schema_generator</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/glossary.html#term-type">type</a>[<a class="autorefs autorefs-internal" title="pydantic.json_schema.GenerateJsonSchema" href="../json_schema/#pydantic.json_schema.GenerateJsonSchema">GenerateJsonSchema</a>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>To override the logic used to generate the JSON schema, as a subclass of
+<code>GenerateJsonSchema</code> with your desired modifications</p>
+              </div>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="pydantic.json_schema.GenerateJsonSchema" href="../json_schema/#pydantic.json_schema.GenerateJsonSchema">GenerateJsonSchema</a></code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>mode</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaMode" href="../json_schema/#pydantic.json_schema.JsonSchemaMode">JsonSchemaMode</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The mode in which to generate the schema.</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;validation&#39;</code>
             </td>
           </tr>
           <tr class="doc-section-item">
@@ -5829,11 +5889,26 @@ a <a class="autorefs autorefs-internal" href="../pydantic_core/#pydantic_core.Py
 <span class="normal">710</span>
 <span class="normal">711</span>
 <span class="normal">712</span>
-<span class="normal">713</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">json_schema</span><span class="p">(</span>
+<span class="normal">713</span>
+<span class="normal">714</span>
+<span class="normal">715</span>
+<span class="normal">716</span>
+<span class="normal">717</span>
+<span class="normal">718</span>
+<span class="normal">719</span>
+<span class="normal">720</span>
+<span class="normal">721</span>
+<span class="normal">722</span>
+<span class="normal">723</span>
+<span class="normal">724</span>
+<span class="normal">725</span>
+<span class="normal">726</span>
+<span class="normal">727</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">json_schema</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">by_alias</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">ref_template</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DEFAULT_REF_TEMPLATE</span><span class="p">,</span>
+    <span class="n">union_format</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;any_of&#39;</span><span class="p">,</span> <span class="s1">&#39;primitive_type_array&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;any_of&#39;</span><span class="p">,</span>
     <span class="n">schema_generator</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">GenerateJsonSchema</span><span class="p">]</span> <span class="o">=</span> <span class="n">GenerateJsonSchema</span><span class="p">,</span>
     <span class="n">mode</span><span class="p">:</span> <span class="n">JsonSchemaMode</span> <span class="o">=</span> <span class="s1">&#39;validation&#39;</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
@@ -5842,13 +5917,26 @@ a <a class="autorefs autorefs-internal" href="../pydantic_core/#pydantic_core.Py
 <span class="sd">    Args:</span>
 <span class="sd">        by_alias: Whether to use alias names for field names.</span>
 <span class="sd">        ref_template: The format string used for generating $ref strings.</span>
+<span class="sd">        union_format: The format to use when combining schemas from unions together. Can be one of:</span>
+
+<span class="sd">            - `&#39;any_of&#39;`: Use the [`anyOf`](https://json-schema.org/understanding-json-schema/reference/combining#anyOf)</span>
+<span class="sd">            keyword to combine schemas (the default).</span>
+<span class="sd">            - `&#39;primitive_type_array&#39;`: Use the [`type`](https://json-schema.org/understanding-json-schema/reference/type)</span>
+<span class="sd">            keyword as an array of strings, containing each type of the combination. If any of the schemas is not a primitive</span>
+<span class="sd">            type (`string`, `boolean`, `null`, `integer` or `number`) or contains constraints/metadata, falls back to</span>
+<span class="sd">            `any_of`.</span>
+<span class="sd">        schema_generator: To override the logic used to generate the JSON schema, as a subclass of</span>
+<span class="sd">            `GenerateJsonSchema` with your desired modifications</span>
+<span class="sd">        mode: The mode in which to generate the schema.</span>
 <span class="sd">        schema_generator: The generator class used for creating the schema.</span>
 <span class="sd">        mode: The mode to use for schema generation.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        The JSON schema for the model as a dictionary.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">schema_generator_instance</span> <span class="o">=</span> <span class="n">schema_generator</span><span class="p">(</span><span class="n">by_alias</span><span class="o">=</span><span class="n">by_alias</span><span class="p">,</span> <span class="n">ref_template</span><span class="o">=</span><span class="n">ref_template</span><span class="p">)</span>
+    <span class="n">schema_generator_instance</span> <span class="o">=</span> <span class="n">schema_generator</span><span class="p">(</span>
+        <span class="n">by_alias</span><span class="o">=</span><span class="n">by_alias</span><span class="p">,</span> <span class="n">ref_template</span><span class="o">=</span><span class="n">ref_template</span><span class="p">,</span> <span class="n">union_format</span><span class="o">=</span><span class="n">union_format</span>
+    <span class="p">)</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">core_schema</span><span class="p">,</span> <span class="n">_mock_val_ser</span><span class="o">.</span><span class="n">MockCoreSchema</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">core_schema</span><span class="o">.</span><span class="n">rebuild</span><span class="p">()</span>
         <span class="k">assert</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">core_schema</span><span class="p">,</span> <span class="n">_mock_val_ser</span><span class="o">.</span><span class="n">MockCoreSchema</span><span class="p">),</span> <span class="s1">&#39;this is a bug! please report it&#39;</span>
@@ -5883,6 +5971,9 @@ a <a class="autorefs autorefs-internal" href="../pydantic_core/#pydantic_core.Py
     <span class="n">title</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">description</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">ref_template</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.DEFAULT_REF_TEMPLATE" href="../json_schema/#pydantic.json_schema.DEFAULT_REF_TEMPLATE">DEFAULT_REF_TEMPLATE</a></span><span class="p">,</span>
+    <span class="n">union_format</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span>
+        <span class="s2">&quot;any_of&quot;</span><span class="p">,</span> <span class="s2">&quot;primitive_type_array&quot;</span>
+    <span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;any_of&quot;</span><span class="p">,</span>
     <span class="n">schema_generator</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/glossary.html#term-type">type</a></span><span class="p">[</span>
         <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.GenerateJsonSchema" href="../json_schema/#pydantic.json_schema.GenerateJsonSchema">GenerateJsonSchema</a></span>
     <span class="p">]</span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.GenerateJsonSchema" href="../json_schema/#pydantic.json_schema.GenerateJsonSchema">GenerateJsonSchema</a></span><span class="p">,</span>
@@ -5995,6 +6086,30 @@ definitions in the output JSON schema.</p>
           </tr>
           <tr class="doc-section-item">
             <td>
+                <code>union_format</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a>[&#39;any_of&#39;, &#39;primitive_type_array&#39;]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The format to use when combining schemas from unions together. Can be one of:</p>
+<ul>
+<li><code>'any_of'</code>: Use the <a href="https://json-schema.org/understanding-json-schema/reference/combining#anyOf"><code>anyOf</code></a>
+keyword to combine schemas (the default).</li>
+<li><code>'primitive_type_array'</code>: Use the <a href="https://json-schema.org/understanding-json-schema/reference/type"><code>type</code></a>
+keyword as an array of strings, containing each type of the combination. If any of the schemas is not a primitive
+type (<code>string</code>, <code>boolean</code>, <code>null</code>, <code>integer</code> or <code>number</code>) or contains constraints/metadata, falls back to
+<code>any_of</code>.</li>
+</ul>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;any_of&#39;</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
                 <code>schema_generator</code>
             </td>
             <td>
@@ -6044,21 +6159,7 @@ definitions in the output JSON schema.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">715</span>
-<span class="normal">716</span>
-<span class="normal">717</span>
-<span class="normal">718</span>
-<span class="normal">719</span>
-<span class="normal">720</span>
-<span class="normal">721</span>
-<span class="normal">722</span>
-<span class="normal">723</span>
-<span class="normal">724</span>
-<span class="normal">725</span>
-<span class="normal">726</span>
-<span class="normal">727</span>
-<span class="normal">728</span>
-<span class="normal">729</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">729</span>
 <span class="normal">730</span>
 <span class="normal">731</span>
 <span class="normal">732</span>
@@ -6099,7 +6200,32 @@ definitions in the output JSON schema.</p>
 <span class="normal">767</span>
 <span class="normal">768</span>
 <span class="normal">769</span>
-<span class="normal">770</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="normal">770</span>
+<span class="normal">771</span>
+<span class="normal">772</span>
+<span class="normal">773</span>
+<span class="normal">774</span>
+<span class="normal">775</span>
+<span class="normal">776</span>
+<span class="normal">777</span>
+<span class="normal">778</span>
+<span class="normal">779</span>
+<span class="normal">780</span>
+<span class="normal">781</span>
+<span class="normal">782</span>
+<span class="normal">783</span>
+<span class="normal">784</span>
+<span class="normal">785</span>
+<span class="normal">786</span>
+<span class="normal">787</span>
+<span class="normal">788</span>
+<span class="normal">789</span>
+<span class="normal">790</span>
+<span class="normal">791</span>
+<span class="normal">792</span>
+<span class="normal">793</span>
+<span class="normal">794</span>
+<span class="normal">795</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">json_schemas</span><span class="p">(</span>
     <span class="n">inputs</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">JsonSchemaKeyT</span><span class="p">,</span> <span class="n">JsonSchemaMode</span><span class="p">,</span> <span class="n">TypeAdapter</span><span class="p">[</span><span class="n">Any</span><span class="p">]]],</span>
     <span class="o">/</span><span class="p">,</span>
@@ -6108,6 +6234,7 @@ definitions in the output JSON schema.</p>
     <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">description</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">ref_template</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DEFAULT_REF_TEMPLATE</span><span class="p">,</span>
+    <span class="n">union_format</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;any_of&#39;</span><span class="p">,</span> <span class="s1">&#39;primitive_type_array&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;any_of&#39;</span><span class="p">,</span>
     <span class="n">schema_generator</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">GenerateJsonSchema</span><span class="p">]</span> <span class="o">=</span> <span class="n">GenerateJsonSchema</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">JsonSchemaKeyT</span><span class="p">,</span> <span class="n">JsonSchemaMode</span><span class="p">],</span> <span class="n">JsonSchemaValue</span><span class="p">],</span> <span class="n">JsonSchemaValue</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate a JSON schema including definitions from multiple type adapters.</span>
@@ -6120,6 +6247,14 @@ definitions in the output JSON schema.</p>
 <span class="sd">        title: The title for the schema.</span>
 <span class="sd">        description: The description for the schema.</span>
 <span class="sd">        ref_template: The format string used for generating $ref strings.</span>
+<span class="sd">        union_format: The format to use when combining schemas from unions together. Can be one of:</span>
+
+<span class="sd">            - `&#39;any_of&#39;`: Use the [`anyOf`](https://json-schema.org/understanding-json-schema/reference/combining#anyOf)</span>
+<span class="sd">            keyword to combine schemas (the default).</span>
+<span class="sd">            - `&#39;primitive_type_array&#39;`: Use the [`type`](https://json-schema.org/understanding-json-schema/reference/type)</span>
+<span class="sd">            keyword as an array of strings, containing each type of the combination. If any of the schemas is not a primitive</span>
+<span class="sd">            type (`string`, `boolean`, `null`, `integer` or `number`) or contains constraints/metadata, falls back to</span>
+<span class="sd">            `any_of`.</span>
 <span class="sd">        schema_generator: The generator class used for creating the schema.</span>
 
 <span class="sd">    Returns:</span>
@@ -6132,7 +6267,9 @@ definitions in the output JSON schema.</p>
 <span class="sd">                element, along with the optional title and description keys.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">schema_generator_instance</span> <span class="o">=</span> <span class="n">schema_generator</span><span class="p">(</span><span class="n">by_alias</span><span class="o">=</span><span class="n">by_alias</span><span class="p">,</span> <span class="n">ref_template</span><span class="o">=</span><span class="n">ref_template</span><span class="p">)</span>
+    <span class="n">schema_generator_instance</span> <span class="o">=</span> <span class="n">schema_generator</span><span class="p">(</span>
+        <span class="n">by_alias</span><span class="o">=</span><span class="n">by_alias</span><span class="p">,</span> <span class="n">ref_template</span><span class="o">=</span><span class="n">ref_template</span><span class="p">,</span> <span class="n">union_format</span><span class="o">=</span><span class="n">union_format</span>
+    <span class="p">)</span>
 
     <span class="n">inputs_</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">adapter</span> <span class="ow">in</span> <span class="n">inputs</span><span class="p">:</span>
@@ -6228,7 +6365,7 @@ definitions in the output JSON schema.</p>
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["https://docs.pydantic.dev/dev/pydantic-2.12.0b1+dev-py3-none-any.whl", "email-validator>=2.0.0", "pydantic-core==2.40.1", "pydantic-extra-types==2.10.0"]
+    window.mkdocs_run_deps = ["https://docs.pydantic.dev/dev/pydantic-2.12.0b1+dev-py3-none-any.whl", "email-validator>=2.0.0", "pydantic-core==2.41.1", "pydantic-extra-types==2.10.0"]
     </script>
 
               </article>

@@ -730,6 +730,9 @@ json_schema(
     *,
     by_alias: bool = True,
     ref_template: str = DEFAULT_REF_TEMPLATE,
+    union_format: Literal[
+        "any_of", "primitive_type_array"
+    ] = "any_of",
     schema_generator: type[
         GenerateJsonSchema
     ] = GenerateJsonSchema,
@@ -742,7 +745,7 @@ Generate a JSON schema for the adapted type.
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `by_alias` | `bool` | Whether to use alias names for field names. | `True` | | `ref_template` | `str` | The format string used for generating $ref strings. | `DEFAULT_REF_TEMPLATE` | | `schema_generator` | `type[GenerateJsonSchema]` | The generator class used for creating the schema. | `GenerateJsonSchema` | | `mode` | `JsonSchemaMode` | The mode to use for schema generation. | `'validation'` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `by_alias` | `bool` | Whether to use alias names for field names. | `True` | | `ref_template` | `str` | The format string used for generating $ref strings. | `DEFAULT_REF_TEMPLATE` | | `union_format` | `Literal['any_of', 'primitive_type_array']` | The format to use when combining schemas from unions together. Can be one of: 'any_of': Use the anyOf keyword to combine schemas (the default). 'primitive_type_array': Use the type keyword as an array of strings, containing each type of the combination. If any of the schemas is not a primitive type (string, boolean, null, integer or number) or contains constraints/metadata, falls back to any_of. | `'any_of'` | | `schema_generator` | `type[GenerateJsonSchema]` | To override the logic used to generate the JSON schema, as a subclass of GenerateJsonSchema with your desired modifications | `GenerateJsonSchema` | | `mode` | `JsonSchemaMode` | The mode in which to generate the schema. | `'validation'` | | `schema_generator` | `type[GenerateJsonSchema]` | The generator class used for creating the schema. | `GenerateJsonSchema` | | `mode` | `JsonSchemaMode` | The mode to use for schema generation. | `'validation'` |
 
 Returns:
 
@@ -756,6 +759,7 @@ def json_schema(
     *,
     by_alias: bool = True,
     ref_template: str = DEFAULT_REF_TEMPLATE,
+    union_format: Literal['any_of', 'primitive_type_array'] = 'any_of',
     schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
     mode: JsonSchemaMode = 'validation',
 ) -> dict[str, Any]:
@@ -764,13 +768,26 @@ def json_schema(
     Args:
         by_alias: Whether to use alias names for field names.
         ref_template: The format string used for generating $ref strings.
+        union_format: The format to use when combining schemas from unions together. Can be one of:
+
+            - `'any_of'`: Use the [`anyOf`](https://json-schema.org/understanding-json-schema/reference/combining#anyOf)
+            keyword to combine schemas (the default).
+            - `'primitive_type_array'`: Use the [`type`](https://json-schema.org/understanding-json-schema/reference/type)
+            keyword as an array of strings, containing each type of the combination. If any of the schemas is not a primitive
+            type (`string`, `boolean`, `null`, `integer` or `number`) or contains constraints/metadata, falls back to
+            `any_of`.
+        schema_generator: To override the logic used to generate the JSON schema, as a subclass of
+            `GenerateJsonSchema` with your desired modifications
+        mode: The mode in which to generate the schema.
         schema_generator: The generator class used for creating the schema.
         mode: The mode to use for schema generation.
 
     Returns:
         The JSON schema for the model as a dictionary.
     """
-    schema_generator_instance = schema_generator(by_alias=by_alias, ref_template=ref_template)
+    schema_generator_instance = schema_generator(
+        by_alias=by_alias, ref_template=ref_template, union_format=union_format
+    )
     if isinstance(self.core_schema, _mock_val_ser.MockCoreSchema):
         self.core_schema.rebuild()
         assert not isinstance(self.core_schema, _mock_val_ser.MockCoreSchema), 'this is a bug! please report it'
@@ -793,6 +810,9 @@ json_schemas(
     title: str | None = None,
     description: str | None = None,
     ref_template: str = DEFAULT_REF_TEMPLATE,
+    union_format: Literal[
+        "any_of", "primitive_type_array"
+    ] = "any_of",
     schema_generator: type[
         GenerateJsonSchema
     ] = GenerateJsonSchema,
@@ -810,7 +830,7 @@ Generate a JSON schema including definitions from multiple type adapters.
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `inputs` | `Iterable[tuple[JsonSchemaKeyT, JsonSchemaMode, TypeAdapter[Any]]]` | Inputs to schema generation. The first two items will form the keys of the (first) output mapping; the type adapters will provide the core schemas that get converted into definitions in the output JSON schema. | *required* | | `by_alias` | `bool` | Whether to use alias names. | `True` | | `title` | `str | None` | The title for the schema. | `None` | | `description` | `str | None` | The description for the schema. | `None` | | `ref_template` | `str` | The format string used for generating $ref strings. | `DEFAULT_REF_TEMPLATE` | | `schema_generator` | `type[GenerateJsonSchema]` | The generator class used for creating the schema. | `GenerateJsonSchema` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `inputs` | `Iterable[tuple[JsonSchemaKeyT, JsonSchemaMode, TypeAdapter[Any]]]` | Inputs to schema generation. The first two items will form the keys of the (first) output mapping; the type adapters will provide the core schemas that get converted into definitions in the output JSON schema. | *required* | | `by_alias` | `bool` | Whether to use alias names. | `True` | | `title` | `str | None` | The title for the schema. | `None` | | `description` | `str | None` | The description for the schema. | `None` | | `ref_template` | `str` | The format string used for generating $ref strings. | `DEFAULT_REF_TEMPLATE` | | `union_format` | `Literal['any_of', 'primitive_type_array']` | The format to use when combining schemas from unions together. Can be one of: 'any_of': Use the anyOf keyword to combine schemas (the default). 'primitive_type_array': Use the type keyword as an array of strings, containing each type of the combination. If any of the schemas is not a primitive type (string, boolean, null, integer or number) or contains constraints/metadata, falls back to any_of. | `'any_of'` | | `schema_generator` | `type[GenerateJsonSchema]` | The generator class used for creating the schema. | `GenerateJsonSchema` |
 
 Returns:
 
@@ -828,6 +848,7 @@ def json_schemas(
     title: str | None = None,
     description: str | None = None,
     ref_template: str = DEFAULT_REF_TEMPLATE,
+    union_format: Literal['any_of', 'primitive_type_array'] = 'any_of',
     schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
 ) -> tuple[dict[tuple[JsonSchemaKeyT, JsonSchemaMode], JsonSchemaValue], JsonSchemaValue]:
     """Generate a JSON schema including definitions from multiple type adapters.
@@ -840,6 +861,14 @@ def json_schemas(
         title: The title for the schema.
         description: The description for the schema.
         ref_template: The format string used for generating $ref strings.
+        union_format: The format to use when combining schemas from unions together. Can be one of:
+
+            - `'any_of'`: Use the [`anyOf`](https://json-schema.org/understanding-json-schema/reference/combining#anyOf)
+            keyword to combine schemas (the default).
+            - `'primitive_type_array'`: Use the [`type`](https://json-schema.org/understanding-json-schema/reference/type)
+            keyword as an array of strings, containing each type of the combination. If any of the schemas is not a primitive
+            type (`string`, `boolean`, `null`, `integer` or `number`) or contains constraints/metadata, falls back to
+            `any_of`.
         schema_generator: The generator class used for creating the schema.
 
     Returns:
@@ -852,7 +881,9 @@ def json_schemas(
                 element, along with the optional title and description keys.
 
     """
-    schema_generator_instance = schema_generator(by_alias=by_alias, ref_template=ref_template)
+    schema_generator_instance = schema_generator(
+        by_alias=by_alias, ref_template=ref_template, union_format=union_format
+    )
 
     inputs_ = []
     for key, mode, adapter in inputs:

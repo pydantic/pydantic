@@ -2733,6 +2733,15 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
+  <a href="#default_factory_not_called" class="md-nav__link">
+    <span class="md-ellipsis">
+      default_factory_not_called
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#dict_type" class="md-nav__link">
     <span class="md-ellipsis">
       dict_type
@@ -4161,6 +4170,15 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
+  <a href="#default_factory_not_called" class="md-nav__link">
+    <span class="md-ellipsis">
+      default_factory_not_called
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#dict_type" class="md-nav__link">
     <span class="md-ellipsis">
       dict_type
@@ -5392,6 +5410,31 @@ For a timestamp to parse into a field of type <code>date</code>, the time compon
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">exc</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]))</span>
     <span class="c1">#&gt; &#39;decimal_whole_digits&#39;</span>
+</code></pre></div>
+<h2 id="default_factory_not_called"><code>default_factory_not_called</code><a class="headerlink" href="#default_factory_not_called" title="Permanent link">&para;</a></h2>
+<p>This error is raised when a <a href="../../concepts/fields/#default-factory-validated-data">default factory taking validated data</a>
+can't be called, because validation failed on previous fields:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">a</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">gt</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+    <span class="n">b</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span> <span class="n">data</span><span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">])</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">Model</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    2 validation errors for Model</span>
+<span class="sd">    a</span>
+<span class="sd">      Input should be greater than 10 [type=greater_than, input_value=1, input_type=int]</span>
+<span class="sd">    b</span>
+<span class="sd">      The default factory uses validated data, but at least one validation error occurred [type=default_factory_not_called]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">exc</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]))</span>
+    <span class="c1">#&gt; &#39;default_factory_not_called&#39;</span>
 </code></pre></div>
 <h2 id="dict_type"><code>dict_type</code><a class="headerlink" href="#dict_type" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the input value's type is not <code>dict</code> for a <code>dict</code> field:</p>
@@ -6813,7 +6856,7 @@ argument while calling a function decorated with <code>validate_call</code>:</p>
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["https://docs.pydantic.dev/dev/pydantic-2.12.0b1+dev-py3-none-any.whl", "email-validator>=2.0.0", "pydantic-core==2.40.1", "pydantic-extra-types==2.10.0"]
+    window.mkdocs_run_deps = ["https://docs.pydantic.dev/dev/pydantic-2.12.0b1+dev-py3-none-any.whl", "email-validator>=2.0.0", "pydantic-core==2.41.1", "pydantic-extra-types==2.10.0"]
     </script>
 
               </article>
