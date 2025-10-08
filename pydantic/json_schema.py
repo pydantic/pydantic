@@ -18,7 +18,7 @@ import os
 import re
 import warnings
 from collections import Counter, defaultdict
-from collections.abc import Hashable, Iterable, Sequence
+from collections.abc import Hashable, Iterable, Mapping, Sequence
 from copy import deepcopy
 from enum import Enum
 from re import Pattern
@@ -135,6 +135,14 @@ _PRIMITIVE_JSON_SCHEMA_TYPES = ('string', 'boolean', 'null', 'integer', 'number'
 
 
 @dataclasses.dataclass(**_internal_dataclass.slots_true)
+class UserDefinitionState:
+    schema: JsonSchemaValue | None = None
+    wrappers: dict[JsonRef, JsonSchemaValue] = dataclasses.field(default_factory=dict)
+    user_managed: bool = False
+    pending: bool = False
+
+
+@dataclasses.dataclass(**_internal_dataclass.slots_true)
 class _DefinitionsRemapping:
     defs_remapping: dict[DefsRef, DefsRef]
     json_remapping: dict[JsonRef, JsonRef]
@@ -196,23 +204,40 @@ class _DefinitionsRemapping:
         """
         Recursively update the JSON schema replacing all $refs
         """
-        if isinstance(schema, str):
-            # Note: this may not really be a JsonRef; we rely on having no collisions between JsonRefs and other strings
-            return self.remap_json_ref(JsonRef(schema))
-        elif isinstance(schema, list):
-            return [self.remap_json_schema(item) for item in schema]
-        elif isinstance(schema, dict):
-            for key, value in schema.items():
-                if key == '$ref' and isinstance(value, str):
-                    schema['$ref'] = self.remap_json_ref(JsonRef(value))
-                elif key == '$defs':
-                    schema['$defs'] = {
-                        self.remap_defs_ref(DefsRef(key)): self.remap_json_schema(value)
-                        for key, value in schema['$defs'].items()
-                    }
-                else:
-                    schema[key] = self.remap_json_schema(value)
-        return schema
+
+        seen_containers: set[int] = set()
+
+        def _remap(value: Any) -> Any:
+            if isinstance(value, str):
+                # Note: this may not really be a JsonRef; we rely on having no collisions between JsonRefs and other strings
+                return self.remap_json_ref(JsonRef(value))
+            if isinstance(value, list):
+                container_id = id(value)
+                if container_id in seen_containers:
+                    return value
+                seen_containers.add(container_id)
+                for index, item in enumerate(value):
+                    value[index] = _remap(item)
+                return value
+            if isinstance(value, dict):
+                container_id = id(value)
+                if container_id in seen_containers:
+                    return value
+                seen_containers.add(container_id)
+                for key, item in list(value.items()):
+                    if key == '$ref' and isinstance(item, str):
+                        value['$ref'] = self.remap_json_ref(JsonRef(item))
+                    elif key == '$defs':
+                        value['$defs'] = {
+                            self.remap_defs_ref(DefsRef(defs_key)): _remap(defs_value)
+                            for defs_key, defs_value in item.items()
+                        }
+                    else:
+                        value[key] = _remap(item)
+                return value
+            return value
+
+        return _remap(schema)
 
 
 class GenerateJsonSchema:
@@ -282,6 +307,10 @@ class GenerateJsonSchema:
         self._config_wrapper_stack = _config.ConfigWrapperStack(_config.ConfigWrapper({}))
 
         self._mode: JsonSchemaMode = 'validation'
+        self._user_json_refs: set[JsonRef] = set()
+        self._user_defs_refs: set[DefsRef] = set()
+        self._user_definition_metadata: dict[DefsRef, UserDefinitionState] = {}
+        self._in_js_modify_function = False
 
         # The following includes a mapping of a fully-unique defs ref choice to a list of preferred
         # alternatives, which are generally simpler, such as only including the class name.
@@ -301,9 +330,15 @@ class GenerateJsonSchema:
         # store the error raised and re-throw it if we end up needing that def
         self._core_defs_invalid_for_json_schema: dict[DefsRef, PydanticInvalidForJsonSchema] = {}
 
+        # Store user provided metadata for definitions that are referenced via `$ref`
+        # before the actual definition has been generated. These updates are merged
+        # back into the real definition once it becomes available.
+        self._deferred_definitions_updates: dict[DefsRef, dict[str, Any]] = {}
+
         # This changes to True after generating a schema, to prevent issues caused by accidental reuse
         # of a single instance of a schema generator
         self._used = False
+        self._resolved_json_refs_cache: dict[JsonRef, Any] = {}
 
     @property
     def _config(self) -> _config.ConfigWrapper:
@@ -374,6 +409,7 @@ class GenerateJsonSchema:
                 code='json-schema-already-used',
             )
 
+        self._user_definition_metadata.clear()
         for _, mode, schema in inputs:
             self._mode = mode
             self.generate_inner(schema)
@@ -412,12 +448,30 @@ class GenerateJsonSchema:
                 code='json-schema-already-used',
             )
 
+        self._user_definition_metadata.clear()
+        self._in_js_modify_function = False
         json_schema: JsonSchemaValue = self.generate_inner(schema)
+        wrapper_schema = json_schema
+        ref = wrapper_schema.get('$ref')
+        if isinstance(ref, str):
+            extras = {k: v for k, v in wrapper_schema.items() if k not in {'$ref', '$defs'}}
+            json_ref = JsonRef(ref)
+            if not extras and json_ref not in self._user_json_refs:
+                resolved_schema = self.get_schema_from_definitions(json_ref, root=wrapper_schema)
+                if resolved_schema is not None:
+                    json_schema = deepcopy(resolved_schema)
+                    if '$defs' in wrapper_schema:
+                        json_schema['$defs'] = wrapper_schema['$defs']
         json_ref_counts = self.get_json_ref_counts(json_schema)
 
         ref = cast(JsonRef, json_schema.get('$ref'))
         while ref is not None:  # may need to unpack multiple levels
-            ref_json_schema = self.get_schema_from_definitions(ref)
+            if ref in self._user_json_refs:
+                break
+            defs_ref = self.json_to_defs_refs.get(ref)
+            if defs_ref is not None and defs_ref in self._user_defs_refs:
+                break
+            ref_json_schema = self.get_schema_from_definitions(ref, root=json_schema)
             if json_ref_counts[ref] == 1 and ref_json_schema is not None and len(json_schema) == 1:
                 # "Unpack" the ref since this is the only reference and there are no sibling keys
                 json_schema = ref_json_schema.copy()  # copy to prevent recursive dict reference
@@ -432,6 +486,7 @@ class GenerateJsonSchema:
             json_schema['$defs'] = self.definitions
 
         json_schema = definitions_remapping.remap_json_schema(json_schema)
+        json_schema = self._restore_inline_refs(json_schema)
 
         # For now, we will not set the $schema key. However, if desired, this can be easily added by overriding
         # this method and adding the following line after a call to super().generate(schema):
@@ -439,6 +494,24 @@ class GenerateJsonSchema:
 
         self._used = True
         return self.sort(json_schema)
+
+    def _get_user_definition_state(self, defs_ref: DefsRef) -> UserDefinitionState:
+        state = self._user_definition_metadata.get(defs_ref)
+        if state is None:
+            state = UserDefinitionState()
+            self._user_definition_metadata[defs_ref] = state
+        return state
+
+    def _find_state_for_canonical_schema(self, schema: JsonSchemaValue) -> tuple[DefsRef, UserDefinitionState] | None:
+        for defs_ref, state in self._user_definition_metadata.items():
+            if state.schema is schema:
+                return defs_ref, state
+        for defs_ref, definition in self.definitions.items():
+            if definition is schema:
+                state = self._get_user_definition_state(defs_ref)
+                state.schema = definition
+                return defs_ref, state
+        return None
 
     def generate_inner(self, schema: CoreSchemaOrField) -> JsonSchemaValue:  # noqa: C901
         """Generates a JSON schema for a given core schema.
@@ -463,17 +536,119 @@ class GenerateJsonSchema:
                 return {'$ref': self.core_to_json_refs[core_mode_ref]}
 
         def populate_defs(core_schema: CoreSchema, json_schema: JsonSchemaValue) -> JsonSchemaValue:
+            inline_defs = json_schema.get('$defs')
+            if isinstance(inline_defs, Mapping):
+                self._store_json_schema_defs(inline_defs)
+                json_schema = json_schema.copy()
+                json_schema.pop('$defs', None)
+
+            ref_key: str | None = None
             if 'ref' in core_schema:
-                core_ref = CoreRef(core_schema['ref'])  # type: ignore[typeddict-item]
+                ref_key = 'ref'
+            elif core_schema.get('type') == 'definition-ref':
+                ref_key = 'schema_ref'
+            if ref_key is not None:
+                core_ref = CoreRef(core_schema[ref_key])  # type: ignore[typeddict-item]
                 defs_ref, ref_json_schema = self.get_cache_defs_ref_schema(core_ref)
                 json_ref = JsonRef(ref_json_schema['$ref'])
+                original_ref = json_schema.get('$ref')
+                preserve_wrapper = original_ref == json_ref
+                has_wrapper_ref = '$ref' in json_schema
+                extras = {k: v for k, v in json_schema.items() if k not in {'$ref', '$defs'}}
+                state = self._get_user_definition_state(defs_ref)
+                has_pending_ref = state.pending
+                should_keep_wrapper = preserve_wrapper or (
+                    has_wrapper_ref and self._in_js_modify_function and (not has_pending_ref or bool(extras))
+                )
+
+                def _promote_user_ref() -> None:
+                    state.pending = False
+                    state.user_managed = True
+                    self._user_json_refs.add(json_ref)
+                    self._user_defs_refs.add(defs_ref)
+
+                def _discard_user_ref() -> None:
+                    state.pending = False
+                    state.user_managed = False
+                    self._user_json_refs.discard(json_ref)
+                    self._user_defs_refs.discard(defs_ref)
+
+                existing_definition = self.definitions.get(defs_ref)
+                if existing_definition is not None and state.schema is None:
+                    state.schema = existing_definition
+                if (
+                    should_keep_wrapper
+                    and existing_definition is not None
+                    and state.pending
+                    and state.schema is existing_definition
+                ):
+                    state.user_managed = True
+                    self._user_json_refs.add(json_ref)
+                    self._user_defs_refs.add(defs_ref)
+                defs_updates: dict[str, Any] = {}
+                if extras:
+                    if not should_keep_wrapper:
+                        defs_updates.update(extras)
+                    elif state.pending:
+                        if existing_definition is None:
+                            defs_updates.update(extras)
+                        else:
+                            defs_updates.update(
+                                {key: value for key, value in extras.items() if key not in existing_definition}
+                            )
+
                 # Replace the schema if it's not a reference to itself
                 # What we want to avoid is having the def be just a ref to itself
                 # which is what would happen if we blindly assigned any
                 if json_schema.get('$ref', None) != json_ref:
-                    self.definitions[defs_ref] = json_schema
+                    if defs_ref in self._deferred_definitions_updates and defs_updates:
+                        deferred_updates = self._deferred_definitions_updates.pop(defs_ref)
+                        json_schema = json_schema.copy()
+                        json_schema.update(deferred_updates)
+                    schema_for_definition: JsonSchemaValue = json_schema
+                    if isinstance(inline_defs, Mapping) and '$defs' in schema_for_definition:
+                        schema_for_definition = schema_for_definition.copy()
+                        schema_for_definition.pop('$defs', None)
+                    self.definitions[defs_ref] = schema_for_definition
+                    state.schema = schema_for_definition
                     self._core_defs_invalid_for_json_schema.pop(defs_ref, None)
-                json_schema = ref_json_schema
+                    if state.pending:
+                        if should_keep_wrapper:
+                            _promote_user_ref()
+                        else:
+                            _discard_user_ref()
+                elif defs_updates:
+                    existing_definition = self.definitions.get(defs_ref)
+                    if existing_definition is not None:
+                        existing_definition.update(defs_updates)
+                        state.schema = existing_definition
+                        self._deferred_definitions_updates.pop(defs_ref, None)
+                    else:
+                        deferred_updates = self._deferred_definitions_updates.setdefault(defs_ref, {})
+                        for key, value in defs_updates.items():
+                            deferred_updates[key] = value
+                replace_with_ref_schema = True
+                if ref_key == 'schema_ref':
+                    if original_ref is not None and original_ref != json_ref and not should_keep_wrapper:
+                        replace_with_ref_schema = False
+                elif ref_key == 'ref':
+                    if original_ref is not None and original_ref != json_ref and not should_keep_wrapper:
+                        replace_with_ref_schema = False
+
+                apply_extras = bool(extras) and should_keep_wrapper
+
+                if replace_with_ref_schema:
+                    if should_keep_wrapper:
+                        if apply_extras:
+                            json_schema = json_schema.copy()
+                            json_schema.update(extras)
+                        _promote_user_ref()
+                    else:
+                        json_schema = ref_json_schema
+                        if apply_extras:
+                            json_schema = json_schema.copy()
+                            json_schema.update(extras)
+                        _discard_user_ref()
             return json_schema
 
         def handler_func(schema_or_field: CoreSchemaOrField) -> JsonSchemaValue:
@@ -513,7 +688,11 @@ class GenerateJsonSchema:
                     raise TypeError(f'Unexpected schema type: schema={schema_or_field}')
             return json_schema
 
-        current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(self, handler_func)
+        current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(
+            self,
+            handler_func,
+            mark_user_definition=False,
+        )
 
         metadata = cast(_core_metadata.CoreMetadata, schema.get('metadata', {}))
 
@@ -528,7 +707,11 @@ class GenerateJsonSchema:
                 json_schema = {**current_handler(schema_or_field), **js_updates}
                 return json_schema
 
-            current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(self, js_updates_handler_func)
+            current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(
+                self,
+                js_updates_handler_func,
+                mark_user_definition=False,
+            )
 
         if js_extra := metadata.get('pydantic_js_extra'):
 
@@ -544,41 +727,107 @@ class GenerateJsonSchema:
                     js_extra(json_schema)  # type: ignore
                 return json_schema
 
-            current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(self, js_extra_handler_func)
+            current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(
+                self,
+                js_extra_handler_func,
+                mark_user_definition=False,
+            )
 
-        for js_modify_function in metadata.get('pydantic_js_functions', ()):
-
+        def wrap_js_modify_function(
+            current_handler: GetJsonSchemaHandler,
+            js_modify_function: GetJsonSchemaFunction,
+        ) -> _schema_generation_shared.GenerateJsonSchemaHandler:
             def new_handler_func(
                 schema_or_field: CoreSchemaOrField,
                 current_handler: GetJsonSchemaHandler = current_handler,
                 js_modify_function: GetJsonSchemaFunction = js_modify_function,
             ) -> JsonSchemaValue:
-                json_schema = js_modify_function(schema_or_field, current_handler)
+                handler_for_user = _schema_generation_shared.GenerateJsonSchemaHandler(
+                    self,
+                    current_handler,
+                    mark_user_definition=True,
+                )
+                previous_flag = self._in_js_modify_function
+                self._in_js_modify_function = True
+                try:
+                    json_schema = js_modify_function(schema_or_field, handler_for_user)
+                finally:
+                    self._in_js_modify_function = previous_flag
                 if _core_utils.is_core_schema(schema_or_field):
                     json_schema = populate_defs(schema_or_field, json_schema)
-                original_schema = current_handler.resolve_ref_schema(json_schema)
-                ref = json_schema.pop('$ref', None)
-                if ref and json_schema:
-                    original_schema.update(json_schema)
+                ref = json_schema.get('$ref')
+                extras = {k: v for k, v in json_schema.items() if k not in {'$ref', '$defs'}}
+                if ref and JsonRef(ref) in self._user_json_refs:
+                    if extras:
+                        json_schema = json_schema.copy()
+                        json_schema.update(extras)
+                    return json_schema
+                original_schema: JsonSchemaValue | None = json_schema
+                if ref:
+                    try:
+                        original_schema = current_handler.resolve_ref_schema(json_schema)
+                    except LookupError:
+                        return json_schema
+                    json_ref = JsonRef(ref)
+                    if json_ref in self._user_json_refs:
+                        restored_schema: JsonSchemaValue | None = None
+                        defs_ref = self.json_to_defs_refs.get(json_ref)
+                        if defs_ref is not None:
+                            state = self._user_definition_metadata.get(defs_ref)
+                            if state is not None:
+                                restored_schema = state.wrappers.get(json_ref)
+                        if restored_schema is not None:
+                            restored_schema = deepcopy(restored_schema)
+                            if extras:
+                                restored_schema.update(extras)
+                            return restored_schema
+                if ref:
+                    if extras:
+                        return json_schema
+                    return original_schema
                 return original_schema
 
-            current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(self, new_handler_func)
+            return _schema_generation_shared.GenerateJsonSchemaHandler(
+                self,
+                new_handler_func,
+                mark_user_definition=True,
+            )
 
-        for js_modify_function in metadata.get('pydantic_js_annotation_functions', ()):
+        for js_modify_function in metadata.get('pydantic_js_functions', ()):  # type: ignore[assignment]
+            current_handler = wrap_js_modify_function(current_handler, js_modify_function)
 
-            def new_handler_func(
-                schema_or_field: CoreSchemaOrField,
-                current_handler: GetJsonSchemaHandler = current_handler,
-                js_modify_function: GetJsonSchemaFunction = js_modify_function,
-            ) -> JsonSchemaValue:
-                return js_modify_function(schema_or_field, current_handler)
-
-            current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(self, new_handler_func)
+        for js_modify_function in metadata.get('pydantic_js_annotation_functions', ()):  # type: ignore[assignment]
+            current_handler = wrap_js_modify_function(current_handler, js_modify_function)
 
         json_schema = current_handler(schema)
         if _core_utils.is_core_schema(schema):
             json_schema = populate_defs(schema, json_schema)
         return json_schema
+
+    def _store_json_schema_defs(self, json_schema_defs: Mapping[str, Any]) -> None:
+        for raw_key, definition in json_schema_defs.items():
+            if not isinstance(raw_key, str):
+                continue
+
+            defs_ref = DefsRef(raw_key)
+            definition_copy = deepcopy(definition)
+            self.definitions[defs_ref] = definition_copy
+            state = self._get_user_definition_state(defs_ref)
+            state.schema = definition_copy
+            state.user_managed = True
+            state.pending = False
+            self._prioritized_defsref_choices.setdefault(defs_ref, [defs_ref])
+            self._core_defs_invalid_for_json_schema.pop(defs_ref, None)
+            self._user_defs_refs.add(defs_ref)
+
+            template_json_ref = JsonRef(self.ref_template.format(model=defs_ref))
+            self.json_to_defs_refs[template_json_ref] = defs_ref
+            self._user_json_refs.add(template_json_ref)
+
+            escaped_key = self._escape_json_pointer_token(raw_key)
+            canonical_json_ref = JsonRef(f'#/$defs/{escaped_key}')
+            self.json_to_defs_refs[canonical_json_ref] = defs_ref
+            self._user_json_refs.add(canonical_json_ref)
 
     def sort(self, value: JsonSchemaValue, parent_key: str | None = None) -> JsonSchemaValue:
         """Override this method to customize the sorting of the JSON schema (e.g., don't sort at all, sort all keys unconditionally, etc.)
@@ -586,27 +835,29 @@ class GenerateJsonSchema:
         By default, alphabetically sort the keys in the JSON schema, skipping the 'properties' and 'default' keys to preserve field definition order.
         This sort is recursive, so it will sort all nested dictionaries as well.
         """
-        sorted_dict: dict[str, JsonSchemaValue] = {}
-        keys = value.keys()
-        if parent_key not in ('properties', 'default'):
-            keys = sorted(keys)
-        for key in keys:
-            sorted_dict[key] = self._sort_recursive(value[key], parent_key=key)
-        return sorted_dict
+        seen_containers: set[int] = set()
+        return self._sort_recursive(value, parent_key=parent_key, seen_containers=seen_containers)
 
-    def _sort_recursive(self, value: Any, parent_key: str | None = None) -> Any:
+    def _sort_recursive(self, value: Any, parent_key: str | None = None, *, seen_containers: set[int]) -> Any:
         """Recursively sort a JSON schema value."""
         if isinstance(value, dict):
+            container_id = id(value)
+            if container_id in seen_containers:
+                return value
+            seen_containers.add(container_id)
             sorted_dict: dict[str, JsonSchemaValue] = {}
             keys = value.keys()
             if parent_key not in ('properties', 'default'):
                 keys = sorted(keys)
             for key in keys:
-                sorted_dict[key] = self._sort_recursive(value[key], parent_key=key)
+                sorted_dict[key] = self._sort_recursive(value[key], parent_key=key, seen_containers=seen_containers)
             return sorted_dict
         elif isinstance(value, list):
-            sorted_list: list[JsonSchemaValue] = [self._sort_recursive(item, parent_key) for item in value]
-            return sorted_list
+            container_id = id(value)
+            if container_id in seen_containers:
+                return value
+            seen_containers.add(container_id)
+            return [self._sort_recursive(item, parent_key, seen_containers=seen_containers) for item in value]
         else:
             return value
 
@@ -1690,12 +1941,15 @@ class GenerateJsonSchema:
         Raises:
             RuntimeError: If the schema reference can't be found in definitions.
         """
+        root_schema: JsonSchemaValue | None = json_schema
         while '$ref' in json_schema:
             ref = json_schema['$ref']
-            schema_to_update = self.get_schema_from_definitions(JsonRef(ref))
+            schema_to_update = self.get_schema_from_definitions(JsonRef(ref), root=root_schema)
             if schema_to_update is None:
                 raise RuntimeError(f'Cannot update undefined schema for $ref={ref}')
             json_schema = schema_to_update
+            if isinstance(json_schema, dict):
+                root_schema = json_schema
         return json_schema
 
     def model_fields_schema(self, schema: core_schema.ModelFieldsSchema) -> JsonSchemaValue:
@@ -2283,7 +2537,7 @@ class GenerateJsonSchema:
             # prevent modifications to the input; this copy may be safe to drop if there is significant overhead
             json_schema = json_schema.copy()
 
-            referenced_json_schema = self.get_schema_from_definitions(JsonRef(json_schema['$ref']))
+            referenced_json_schema = self.get_schema_from_definitions(JsonRef(json_schema['$ref']), root=json_schema)
             if referenced_json_schema is None:
                 # This can happen when building schemas for models with not-yet-defined references.
                 # It may be a good idea to do a recursive pass at the end of the generation to remove
@@ -2297,16 +2551,60 @@ class GenerateJsonSchema:
 
         return json_schema
 
-    def get_schema_from_definitions(self, json_ref: JsonRef) -> JsonSchemaValue | None:
-        try:
-            def_ref = self.json_to_defs_refs[json_ref]
+    def get_schema_from_definitions(self, json_ref: JsonRef, *, root: Any | None = None) -> JsonSchemaValue | None:
+        def_ref = self.json_to_defs_refs.get(json_ref)
+        if def_ref is not None:
             if def_ref in self._core_defs_invalid_for_json_schema:
                 raise self._core_defs_invalid_for_json_schema[def_ref]
             return self.definitions.get(def_ref, None)
-        except KeyError:
-            if json_ref.startswith(('http://', 'https://')):
-                return None
-            raise
+
+        if root is not None:
+            resolved_schema = _resolve_json_ref(root, json_ref)
+            if resolved_schema is not None:
+                return resolved_schema
+
+        if isinstance(json_ref, str) and json_ref.startswith(('http://', 'https://')):
+            return None
+
+        raise KeyError(json_ref)
+
+    def _restore_inline_refs(self, json_schema: JsonSchemaValue) -> JsonSchemaValue:
+        ref = json_schema.get('$ref')
+        if not isinstance(ref, str):
+            return json_schema
+
+        tokens = self._json_pointer_tokens(JsonRef(ref))
+        if len(tokens) < 2:
+            return json_schema
+
+        parent_tokens: tuple[str, ...] | None = None
+        for index in range(len(tokens) - 1):
+            if tokens[index] == '$defs':
+                name_index = index + 1
+                if name_index < len(tokens):
+                    parent_tokens = tuple(tokens[: name_index + 1])
+                    break
+        if parent_tokens is None:
+            return json_schema
+
+        parent_ref = self._json_pointer_from_tokens(parent_tokens)
+        defs_ref = self.json_to_defs_refs.get(parent_ref)
+        if defs_ref is None:
+            return json_schema
+        state = self._user_definition_metadata.get(defs_ref)
+        if state is None:
+            return json_schema
+        wrapper = state.wrappers.get(parent_ref)
+        if wrapper is None:
+            return json_schema
+
+        restored_schema = deepcopy(wrapper)
+        extras = {k: v for k, v in json_schema.items() if k not in {'$ref', '$defs'}}
+        if extras:
+            restored_schema.update(extras)
+        if '$defs' in json_schema:
+            restored_schema['$defs'] = json_schema['$defs']
+        return restored_schema
 
     def encode_default(self, dft: Any) -> Any:
         """Encode a default value to a JSON-serializable value.
@@ -2396,40 +2694,137 @@ class GenerateJsonSchema:
             return members[0]
         return {'anyOf': members}
 
+    @staticmethod
+    def _json_pointer_tokens(json_ref: JsonRef) -> tuple[str, ...]:
+        if not isinstance(json_ref, str) or not json_ref.startswith('#'):
+            return ()
+        pointer = json_ref[1:]
+        if pointer == '':
+            return ()
+        if not pointer.startswith('/'):
+            return ()
+        if len(pointer) == 1:
+            return ()
+        return tuple(pointer[1:].split('/'))
+
+    @staticmethod
+    def _json_pointer_from_tokens(tokens: Sequence[str]) -> JsonRef:
+        if not tokens:
+            return JsonRef('#')
+        return JsonRef('#/' + '/'.join(tokens))
+
+    @staticmethod
+    def _escape_json_pointer_token(token: str) -> str:
+        return token.replace('~', '~0').replace('/', '~1')
+
+    def _iter_referenced_schemas(
+        self,
+        json_ref: JsonRef,
+        root: Any | Sequence[Any] | None,
+        container_cache: Mapping[JsonRef, Any] | None = None,
+    ) -> Iterable[Any]:
+        if isinstance(root, Sequence) and not isinstance(root, (str, bytes, bytearray, Mapping)):
+            roots: tuple[Any, ...] = tuple(root)
+        elif root is None:
+            roots = ()
+        else:
+            roots = (root,)
+
+        found_schema = False
+        last_error: Exception | None = None
+
+        try:
+            resolved_schema = self.get_schema_from_definitions(json_ref)
+        except KeyError as exc:
+            last_error = exc
+        else:
+            last_error = None
+            if resolved_schema is not None:
+                found_schema = True
+                yield resolved_schema
+            return
+
+        if container_cache is not None:
+            cached_schema = container_cache.get(json_ref)
+            if cached_schema is not None:
+                found_schema = True
+                last_error = None
+                yield cached_schema
+                return
+
+        for candidate in roots:
+            try:
+                resolved_schema = self.get_schema_from_definitions(json_ref, root=candidate)
+            except KeyError as exc:  # noqa: PERF203
+                last_error = exc
+                continue
+            else:
+                last_error = None
+                if resolved_schema is not None:
+                    found_schema = True
+                    yield resolved_schema
+
+        if not found_schema and last_error is not None:
+            raise last_error
+
     def get_json_ref_counts(self, json_schema: JsonSchemaValue) -> dict[JsonRef, int]:
         """Get all values corresponding to the key '$ref' anywhere in the json_schema."""
         json_refs: dict[JsonRef, int] = Counter()
+        visited_json_refs: set[JsonRef] = set()
+        container_cache: dict[JsonRef, Any] = {}
+        seen_containers: set[int] = set()
 
-        def _add_json_refs(schema: Any) -> None:
+        def _add_json_refs(
+            schema: Any,
+            roots: tuple[Any, ...],
+            pointer_tokens: tuple[str, ...],
+        ) -> None:
             if isinstance(schema, dict):
-                if '$ref' in schema:
-                    json_ref = JsonRef(schema['$ref'])
-                    if not isinstance(json_ref, str):
-                        return  # in this case, '$ref' might have been the name of a property
-                    already_visited = json_ref in json_refs
-                    json_refs[json_ref] += 1
-                    if already_visited:
-                        return  # prevent recursion on a definition that was already visited
-                    try:
-                        defs_ref = self.json_to_defs_refs[json_ref]
-                        if defs_ref in self._core_defs_invalid_for_json_schema:
-                            raise self._core_defs_invalid_for_json_schema[defs_ref]
-                        _add_json_refs(self.definitions[defs_ref])
-                    except KeyError:
-                        if not json_ref.startswith(('http://', 'https://')):
-                            raise
+                json_pointer = self._json_pointer_from_tokens(pointer_tokens)
+                container_cache[json_pointer] = schema
 
-                for k, v in schema.items():
-                    if k == 'examples' and isinstance(v, list):
-                        # Skip examples that may contain arbitrary values and references
-                        # (see the comment in `_get_all_json_refs` for more details).
+                schema_id = id(schema)
+                if schema_id in seen_containers:
+                    return
+                seen_containers.add(schema_id)
+
+                current_roots = roots + (schema,)
+
+                for key, value in schema.items():
+                    if key == '$ref' or (key == 'examples' and isinstance(value, list)):
                         continue
-                    _add_json_refs(v)
-            elif isinstance(schema, list):
-                for v in schema:
-                    _add_json_refs(v)
+                    if isinstance(value, (dict, list)):
+                        key_str = key if isinstance(key, str) else str(key)
+                        escaped_key = self._escape_json_pointer_token(key_str)
+                        next_tokens = pointer_tokens + (escaped_key,)
+                        _add_json_refs(value, current_roots, next_tokens)
 
-        _add_json_refs(json_schema)
+                ref_value = schema.get('$ref')
+                if isinstance(ref_value, str):
+                    json_ref = JsonRef(ref_value)
+                    json_refs[json_ref] += 1
+                    if json_ref not in visited_json_refs:
+                        visited_json_refs.add(json_ref)
+                        for resolved_schema in self._iter_referenced_schemas(json_ref, current_roots, container_cache):
+                            ref_tokens = self._json_pointer_tokens(json_ref)
+                            _add_json_refs(resolved_schema, current_roots, ref_tokens)
+            elif isinstance(schema, list):
+                json_pointer = self._json_pointer_from_tokens(pointer_tokens)
+                container_cache[json_pointer] = schema
+
+                schema_id = id(schema)
+                if schema_id in seen_containers:
+                    return
+                seen_containers.add(schema_id)
+
+                current_roots = roots + (schema,)
+
+                for index, value in enumerate(schema):
+                    if isinstance(value, (dict, list)):
+                        index_tokens = pointer_tokens + (str(index),)
+                        _add_json_refs(value, current_roots, index_tokens)
+
+        _add_json_refs(json_schema, (json_schema,), ())
         return json_refs
 
     def handle_invalid_for_json_schema(self, schema: CoreSchemaOrField, error_info: str) -> JsonSchemaValue:
@@ -2475,20 +2870,52 @@ class GenerateJsonSchema:
 
     def _garbage_collect_definitions(self, schema: JsonSchemaValue) -> None:
         visited_defs_refs: set[DefsRef] = set()
-        unvisited_json_refs = _get_all_json_refs(schema)
+        container_cache: dict[JsonRef, Any] = {}
+        unvisited_json_refs = _get_all_json_refs(schema, container_cache=container_cache)
+        for state in self._user_definition_metadata.values():
+            if state.wrappers:
+                unvisited_json_refs.update(state.wrappers.keys())
+                for wrapper_ref, wrapper_schema in state.wrappers.items():
+                    container_cache.setdefault(wrapper_ref, wrapper_schema)
+        user_supplied_refs: set[JsonRef] = set()
         while unvisited_json_refs:
             next_json_ref = unvisited_json_refs.pop()
+            if next_json_ref in user_supplied_refs:
+                continue
+            user_supplied_refs.add(next_json_ref)
             try:
                 next_defs_ref = self.json_to_defs_refs[next_json_ref]
                 if next_defs_ref in visited_defs_refs:
                     continue
                 visited_defs_refs.add(next_defs_ref)
-                unvisited_json_refs.update(_get_all_json_refs(self.definitions[next_defs_ref]))
+                unvisited_json_refs.update(
+                    _get_all_json_refs(
+                        self.definitions[next_defs_ref],
+                        container_cache=container_cache,
+                        base_tokens=(
+                            '$defs',
+                            self._escape_json_pointer_token(str(next_defs_ref)),
+                        ),
+                    )
+                )
             except KeyError:
-                if not next_json_ref.startswith(('http://', 'https://')):
-                    raise
+                tokens = self._json_pointer_tokens(next_json_ref)
+                for resolved_schema in self._iter_referenced_schemas(next_json_ref, (schema,), container_cache):
+                    unvisited_json_refs.update(
+                        _get_all_json_refs(
+                            resolved_schema,
+                            container_cache=container_cache,
+                            base_tokens=tokens,
+                        )
+                    )
 
+        visited_defs_refs.update(self._user_defs_refs)
         self.definitions = {k: v for k, v in self.definitions.items() if k in visited_defs_refs}
+        self._user_definition_metadata = {
+            defs_ref: state
+            for defs_ref, state in self._user_definition_metadata.items()
+            if defs_ref in visited_defs_refs
+        }
 
 
 # ##### Start JSON Schema Generation Functions #####
@@ -2729,13 +3156,65 @@ class Examples:
         return hash(type(self.mode))
 
 
-def _get_all_json_refs(item: Any) -> set[JsonRef]:
+def _resolve_json_ref(root: Any, json_ref: JsonRef) -> Any | None:
+    """Resolve a JSON reference against a root schema if it uses a local JSON pointer."""
+
+    if not isinstance(json_ref, str) or not json_ref.startswith('#'):
+        return None
+
+    pointer = json_ref[1:]
+    if pointer == '':
+        return root
+    if not pointer.startswith('/'):
+        return None
+
+    tokens = pointer[1:].split('/') if len(pointer) > 1 else []
+    current: Any = root
+    for raw_token in tokens:
+        token = raw_token.replace('~1', '/').replace('~0', '~')
+        if isinstance(current, dict):
+            if token not in current:
+                return None
+            current = current[token]
+        elif isinstance(current, list):
+            if token == '-':
+                return None
+            try:
+                index = int(token)
+            except ValueError:
+                return None
+            if index < 0 or index >= len(current):
+                return None
+            current = current[index]
+        else:
+            return None
+
+    return current
+
+
+def _get_all_json_refs(
+    item: Any,
+    *,
+    container_cache: dict[JsonRef, Any] | None = None,
+    base_tokens: tuple[str, ...] = (),
+) -> set[JsonRef]:
     """Get all the definitions references from a JSON schema."""
+
     refs: set[JsonRef] = set()
-    stack = [item]
+    stack: list[tuple[Any, tuple[str, ...]]] = [(item, base_tokens)]
+    seen_containers: set[int] = set()
 
     while stack:
-        current = stack.pop()
+        current, tokens = stack.pop()
+        if container_cache is not None:
+            json_pointer = GenerateJsonSchema._json_pointer_from_tokens(tokens)
+            container_cache[json_pointer] = current
+
+        current_id = id(current)
+        if current_id in seen_containers:
+            continue
+        seen_containers.add(current_id)
+
         if isinstance(current, dict):
             for key, value in current.items():
                 if key == 'examples' and isinstance(value, list):
@@ -2747,12 +3226,17 @@ def _get_all_json_refs(item: Any) -> set[JsonRef]:
                     continue
                 if key == '$ref' and isinstance(value, str):
                     refs.add(JsonRef(value))
-                elif isinstance(value, dict):
-                    stack.append(value)
+                    continue
+                key_str = key if isinstance(key, str) else str(key)
+                escaped_key = GenerateJsonSchema._escape_json_pointer_token(key_str)
+                if isinstance(value, dict):
+                    stack.append((value, tokens + (escaped_key,)))
                 elif isinstance(value, list):
-                    stack.extend(value)
+                    stack.append((value, tokens + (escaped_key,)))
         elif isinstance(current, list):
-            stack.extend(current)
+            for index, value in enumerate(current):
+                if isinstance(value, (dict, list)):
+                    stack.append((value, tokens + (str(index),)))
 
     return refs
 
