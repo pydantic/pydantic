@@ -967,3 +967,38 @@ def test_default_factory_not_called_union_ok(container_schema_builder) -> None:
     v = SchemaValidator(schema)
     s = SchemaSerializer(schema)
     assert s.to_python(v.validate_python({'a': 1}), mode='json') == {'a': 1, 'b': 2, 'c': 3}
+
+
+def test_default_validate_default_after_validator_field_name() -> None:
+    class Model:
+        pass
+
+    field_name: str | None = None
+
+    def val_func(value, info: core_schema.ValidationInfo):
+        nonlocal field_name
+        field_name = info.field_name
+        return value
+
+    schema = core_schema.model_schema(
+        cls=Model,
+        schema=core_schema.model_fields_schema(
+            fields={
+                'a': core_schema.model_field(
+                    schema=core_schema.with_default_schema(
+                        schema=core_schema.with_info_after_validator_function(
+                            val_func,
+                            schema=core_schema.str_schema(),
+                        ),
+                        default='default',
+                    )
+                )
+            }
+        ),
+        config={'validate_default': True},
+    )
+
+    val = SchemaValidator(schema)
+    val.validate_python({})
+
+    assert field_name == 'a'
