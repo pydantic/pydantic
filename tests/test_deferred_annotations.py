@@ -7,7 +7,15 @@ from typing import Annotated
 import pytest
 from annotated_types import MaxLen
 
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import (
+    BaseModel,
+    Field,
+    ValidationError,
+    field_serializer,
+    field_validator,
+    model_serializer,
+    model_validator,
+)
 from pydantic.dataclasses import dataclass
 
 pytestmark = pytest.mark.skipif(
@@ -80,3 +88,31 @@ def test_deferred_annotations_pydantic_dataclass_pydantic_field() -> None:
     Int = int
 
     assert A(a='1').a == 1
+
+
+def test_deferred_annotations_return_values() -> None:
+    class Model(BaseModel):
+        a: int
+
+        @model_validator(mode='after')
+        def check(self) -> Model:
+            return self
+
+        @model_validator(mode='before')
+        def before(cls, data) -> MyDict:
+            return data
+
+        @model_serializer(mode='plain')
+        def ser(self) -> MyDict:
+            return {'a': self.a}
+
+        @field_validator('a', mode='before')
+        def validate_a(cls, v) -> MyInt:
+            return v
+
+        @field_serializer('a', mode='plain')
+        def serialize_a(self, v) -> MyInt:
+            return v
+
+    MyDict = dict
+    MyInt = int
