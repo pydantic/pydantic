@@ -195,15 +195,15 @@ impl Validator for ModelFieldsValidator {
                     }
                     Err(err) => return Err(err),
                 };
+
+                let state = &mut state.rebind_extra(|extra| extra.field_name = Some(field.name_py.bind(py).clone()));
+
                 if let Some((lookup_path, value)) = op_key_value {
                     if let Some(ref mut used_keys) = used_keys {
                         // key is "used" whether or not validation passes, since we want to skip this key in
                         // extra logic either way
                         used_keys.insert(lookup_path.first_key());
                     }
-
-                    let state =
-                        &mut state.rebind_extra(|extra| extra.field_name = Some(field.name_py.bind(py).clone()));
 
                     match field.validator.validate(py, value.borrow_input(), state) {
                         Ok(value) => {
