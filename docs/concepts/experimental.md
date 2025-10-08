@@ -522,7 +522,7 @@ Configuration.model_json_schema()['properties']['timeout']
 #> {'anyOf': [{'type': 'integer'}, {'type': 'null'}], 'title': 'Timeout'}}
 
 
-# `is` can be used to discrimate between the sentinel and other values:
+# `is` can be used to discriminate between the sentinel and other values:
 timeout = conf.timeout if conf.timeout is not MISSING else defaults['timeout']
 ```
 
