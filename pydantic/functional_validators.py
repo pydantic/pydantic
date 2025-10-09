@@ -73,7 +73,7 @@ class AfterValidator:
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         schema = handler(source_type)
-        info_arg = _inspect_validator(self.func, 'after')
+        info_arg = _inspect_validator(self.func, mode='after', type='field')
         if info_arg:
             func = cast(core_schema.WithInfoValidatorFunction, self.func)
             return core_schema.with_info_after_validator_function(func, schema=schema)
@@ -131,7 +131,7 @@ class BeforeValidator:
             else handler.generate_schema(self.json_schema_input_type)
         )
 
-        info_arg = _inspect_validator(self.func, 'before')
+        info_arg = _inspect_validator(self.func, mode='before', type='field')
         if info_arg:
             func = cast(core_schema.WithInfoValidatorFunction, self.func)
             return core_schema.with_info_before_validator_function(
@@ -229,7 +229,7 @@ class PlainValidator:
 
         input_schema = handler.generate_schema(self.json_schema_input_type)
 
-        info_arg = _inspect_validator(self.func, 'plain')
+        info_arg = _inspect_validator(self.func, mode='plain', type='field')
         if info_arg:
             func = cast(core_schema.WithInfoValidatorFunction, self.func)
             return core_schema.with_info_plain_validator_function(
@@ -304,7 +304,7 @@ class WrapValidator:
             else handler.generate_schema(self.json_schema_input_type)
         )
 
-        info_arg = _inspect_validator(self.func, 'wrap')
+        info_arg = _inspect_validator(self.func, mode='wrap', type='field')
         if info_arg:
             func = cast(core_schema.WithInfoWrapValidatorFunction, self.func)
             return core_schema.with_info_wrap_validator_function(
