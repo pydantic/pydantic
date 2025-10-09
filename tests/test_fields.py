@@ -363,3 +363,9 @@ def test_default_factory_without_validated_data_unsupported() -> None:
             a: int = Field(default_factory=lambda x: x)
 
         [field.get_default(call_default_factory=True) for field in FooBar.model_fields.values()]
+
+def test_default_factory_without_flag() -> None:
+    class FooBar(BaseModel):
+        a: int = Field(default_factory=lambda x: x)
+
+    assert [field.get_default() for field in FooBar.model_fields.values()] == [None]
