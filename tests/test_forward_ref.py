@@ -1524,3 +1524,16 @@ def test_implicit_type_alias_recursive_error_message() -> None:
 
     with pytest.raises(RecursionError, match='.*If you made use of an implicit recursive type alias.*'):
         TypeAdapter(Json)
+
+
+def test_none_converted_as_none_type() -> None:
+    """https://github.com/pydantic/pydantic/issues/12368.
+
+    In Python 3.14, `None` was not converted as `type(None)` by `typing._eval_type()`.
+    """
+
+    class Model(BaseModel):
+        a: 'None' = None
+
+    assert Model.model_fields['a'].annotation is type(None)
+    assert Model(a=None).a is None

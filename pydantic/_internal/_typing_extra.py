@@ -518,7 +518,19 @@ def _eval_type(
     localns: MappingNamespace | None = None,
     type_params: tuple[Any, ...] | None = None,
 ) -> Any:
-    if sys.version_info >= (3, 13):
+    if sys.version_info >= (3, 14):
+        # Starting in 3.14, `_eval_type()` does *not* apply `_type_convert()`
+        # anymore. This means the `None` -> `type(None)` conversion does not apply:
+        evaluated = typing._eval_type(  # type: ignore
+            value,
+            globalns,
+            localns,
+            type_params=type_params,
+        )
+        if evaluated is None:
+            evaluated = type(None)
+        return evaluated
+    elif sys.version_info >= (3, 13):
         return typing._eval_type(  # type: ignore
             value, globalns, localns, type_params=type_params
         )
