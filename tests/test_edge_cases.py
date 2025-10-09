@@ -2969,13 +2969,13 @@ def test_setattr_handler_memo_does_not_inherit() -> None:
 
     m2.a = 11
     assert not Model1.__pydantic_setattr_handlers__
-    assert 'a' in Model2.__pydantic_setattr_handlers__
-    handler2 = Model2.__pydantic_setattr_handlers__['a']
+    assert ('a', False, False) in Model2.__pydantic_setattr_handlers__
+    handler2 = Model2.__pydantic_setattr_handlers__[('a', False, False)]
 
     m1.a = 2
-    assert 'a' in Model1.__pydantic_setattr_handlers__
-    assert Model1.__pydantic_setattr_handlers__['a'] is handler2
-    assert Model2.__pydantic_setattr_handlers__['a'] is handler2
+    assert ('a', False, False) in Model1.__pydantic_setattr_handlers__
+    assert Model1.__pydantic_setattr_handlers__[('a', False, False)] is handler2
+    assert Model2.__pydantic_setattr_handlers__[('a', False, False)] is handler2
     assert m1.a == 2 and m2.a == 11
 
 
@@ -2988,7 +2988,7 @@ def test_setattr_handler_does_not_memoize_unknown_field() -> None:
         m.unknown = 'x'
     assert not Model.__pydantic_setattr_handlers__
     m.a = 2
-    assert 'a' in Model.__pydantic_setattr_handlers__
+    assert ('a', False, False) in Model.__pydantic_setattr_handlers__
 
 
 def test_setattr_handler_does_not_memoize_unknown_private_field() -> None:
@@ -3017,7 +3017,52 @@ def test_setattr_handler_does_not_memoize_on_validate_assignment_field_failure()
         m.a = 'y'
     assert not Model.__pydantic_setattr_handlers__
     m.a = 2
-    assert 'a' in Model.__pydantic_setattr_handlers__
+    assert ('a', False, True) in Model.__pydantic_setattr_handlers__
+
+
+# The following two tests are to ensure that mutating the model_config for `frozen` or `validate_assignment`
+# is supported by the setattr handler caching logic. This isn't a pattern we recommend nor explicitly
+# support, but are here to prevent potential regressions:
+
+
+def test_setattr_frozen_config_mutation() -> None:
+    class Model(BaseModel, frozen=True):
+        a: int = 1
+
+    m = Model(a=1)
+
+    with pytest.raises(ValidationError):
+        m.a = 2
+
+    Model.model_config['frozen'] = False
+
+    m.a = 2
+    assert m.a == 2
+
+    Model.model_config['frozen'] = True
+
+    with pytest.raises(ValidationError):
+        m.a = 1
+
+
+def test_setattr_validate_assignment_config_mutation() -> None:
+    class Model(BaseModel, validate_assignment=True):
+        a: int = 1
+
+    m = Model(a=1)
+
+    with pytest.raises(ValidationError):
+        m.a = 'not_an_int'
+
+    Model.model_config['validate_assignment'] = False
+
+    m.a = 'not_an_int'
+    assert m.a == 'not_an_int'
+
+    Model.model_config['validate_assignment'] = True
+
+    with pytest.raises(ValidationError):
+        m.a = 'not_an_int_again'
 
 
 # The following 3 tests define a `__get_pydantic_core_schema__()` method on Pydantic models.

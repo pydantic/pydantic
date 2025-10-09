@@ -202,8 +202,11 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     This replaces `Model.__fields__` from Pydantic V1.
     """
 
-    __pydantic_setattr_handlers__: ClassVar[Dict[str, Callable[[BaseModel, str, Any], None]]]  # noqa: UP006
-    """`__setattr__` handlers. Memoizing the handlers leads to a dramatic performance improvement in `__setattr__`"""
+    __pydantic_setattr_handlers__: ClassVar[Dict[tuple[str, bool, bool], Callable[[BaseModel, str, Any], None]]]  # noqa: UP006
+    """`__setattr__` handlers. Memoizing the handlers leads to a dramatic performance improvement in `__setattr__`.
+
+    This is a private attribute, not meant to be used outside Pydantic.
+    """
 
     __pydantic_computed_fields__: ClassVar[Dict[str, ComputedFieldInfo]]  # noqa: UP006
     """A dictionary of computed field names and their corresponding [`ComputedFieldInfo`][pydantic.fields.ComputedFieldInfo] objects."""
@@ -1026,12 +1029,21 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                         raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
 
         def __setattr__(self, name: str, value: Any) -> None:
-            if (setattr_handler := self.__pydantic_setattr_handlers__.get(name)) is not None:
+            # While we recommend against doing so, it is technically possible alter these two configuration values
+            # to temporarily enable/disable frozenness/assignment validation. As such, we need to include them
+            # in the cache key:
+            frozen = type(self).model_config.get('frozen', False)
+            validate_assignment = type(self).model_config.get('validate_assignment', False)
+            if (
+                setattr_handler := self.__pydantic_setattr_handlers__.get((name, frozen, validate_assignment))
+            ) is not None:
                 setattr_handler(self, name, value)
             # if None is returned from _setattr_handler, the attribute was set directly
             elif (setattr_handler := self._setattr_handler(name, value)) is not None:
                 setattr_handler(self, name, value)  # call here to not memo on possibly unknown fields
-                self.__pydantic_setattr_handlers__[name] = setattr_handler  # memoize the handler for faster access
+                self.__pydantic_setattr_handlers__[(name, frozen, validate_assignment)] = (
+                    setattr_handler  # memoize the handler for faster access
+                )
 
         def _setattr_handler(self, name: str, value: Any) -> Callable[[BaseModel, str, Any], None] | None:
             """Get a handler for setting an attribute on the model instance.
