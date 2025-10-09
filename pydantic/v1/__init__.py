@@ -1,4 +1,7 @@
 # flake8: noqa
+import sys
+import warnings
+
 from pydantic.v1 import dataclasses
 from pydantic.v1.annotated_types import create_model_from_namedtuple, create_model_from_typeddict
 from pydantic.v1.class_validators import root_validator, validator
@@ -129,3 +132,11 @@ __all__ = [
     'compiled',
     'VERSION',
 ]
+
+
+if sys.version_info >= (3, 14):
+    warnings.warn(
+        "Core Pydantic V1 functionality isn't compatible with Python 3.14 or greater.",
+        UserWarning,
+        stacklevel=2,
+    )

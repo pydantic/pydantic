@@ -12,6 +12,8 @@ This is the final 2.12 release. It features the work of 20 external contributors
 Several minor changes (considered non-breaking changes according to our [versioning policy](https://docs.pydantic.dev/2.12/version-policy/#pydantic-v2))
 are also included in this release. Make sure to look into them before upgrading.
 
+**Note that Pydantic V1 is not compatible with Python 3.14 and greater**.
+
 Changes (see the alpha and beta releases for additional changes since 2.11):
 
 #### Packaging
