@@ -356,16 +356,10 @@ def test_default_factory_validated_data_argument_unsupported() -> None:
 
 
 def test_default_factory_without_validated_data_unsupported() -> None:
-    with pytest.raises(ValueError):
-
-        class FooBar(BaseModel):
-            a: int = Field(default_factory=lambda x: x)
-
-        [field.get_default(call_default_factory=True) for field in FooBar.model_fields.values()]
-
-
-def test_default_factory_without_flag() -> None:
     class FooBar(BaseModel):
         a: int = Field(default_factory=lambda x: x)
-
-    assert [field.get_default() for field in FooBar.model_fields.values()] == [None]
+ 
+    assert FooBar.model_fields['a'].get_default() is None
+          
+    with pytest.raises(ValueError):
+        FooBar.model_fields['a'].get_default(call_default_factory=True)
