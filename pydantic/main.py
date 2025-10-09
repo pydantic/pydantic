@@ -1034,16 +1034,16 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             # in the cache key:
             # frozen = type(self).model_config.get('frozen', False)
             # validate_assignment = type(self).model_config.get('validate_assignment', False)
-            if (
-                setattr_handler := self.__pydantic_setattr_handlers__.get((name, False, False))
-            ) is not None:
-                setattr_handler(self, name, value)
+            # if (
+            #     setattr_handler := self.__pydantic_setattr_handlers__.get((name, False, False))
+            # ) is not None:
+            #     setattr_handler(self, name, value)
             # if None is returned from _setattr_handler, the attribute was set directly
-            elif (setattr_handler := self._setattr_handler(name, value)) is not None:
+            if (setattr_handler := self._setattr_handler(name, value)) is not None:
                 setattr_handler(self, name, value)  # call here to not memo on possibly unknown fields
-                self.__pydantic_setattr_handlers__[(name, False, False)] = (
-                    setattr_handler  # memoize the handler for faster access
-                )
+                # self.__pydantic_setattr_handlers__[(name, False, False)] = (
+                #     setattr_handler  # memoize the handler for faster access
+                # )
 
         def _setattr_handler(self, name: str, value: Any) -> Callable[[BaseModel, str, Any], None] | None:
             """Get a handler for setting an attribute on the model instance.
