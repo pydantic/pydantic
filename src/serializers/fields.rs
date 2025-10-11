@@ -366,9 +366,7 @@ impl TypeSerializer for GeneralFieldsSerializer {
         // If there is no model, we (a TypedDict) are the model
         let model = extra.model.map_or_else(|| Some(value), Some);
 
-        let (main_dict, extra_dict) = if let Some(main_extra_dict) = self.extract_dicts(value) {
-            main_extra_dict
-        } else {
+        let Some((main_dict, extra_dict)) = self.extract_dicts(value) else {
             extra.warnings.on_fallback_py(self.get_name(), value, extra)?;
             return infer_to_python(value, include, exclude, extra);
         };
@@ -412,9 +410,7 @@ impl TypeSerializer for GeneralFieldsSerializer {
         exclude: Option<&Bound<'_, PyAny>>,
         extra: &Extra,
     ) -> Result<S::Ok, S::Error> {
-        let (main_dict, extra_dict) = if let Some(main_extra_dict) = self.extract_dicts(value) {
-            main_extra_dict
-        } else {
+        let Some((main_dict, extra_dict)) = self.extract_dicts(value) else {
             extra.warnings.on_fallback_ser::<S>(self.get_name(), value, extra)?;
             return infer_serialize(value, serializer, include, exclude, extra);
         };
