@@ -357,9 +357,8 @@ impl Validator for TaggedUnionValidator {
                 let dict = input.validate_model_fields(state.strict_or(false), from_attributes)?;
                 // note this methods returns PyResult<Option<(data, data)>>, the outer Err is just for
                 // errors when getting attributes which should be "raised"
-                let tag = match dict.get_item(lookup_key)? {
-                    Some((_, value)) => value,
-                    None => return Err(self.tag_not_found(input)),
+                let Some((_, tag)) = dict.get_item(lookup_key)? else {
+                    return Err(self.tag_not_found(input));
                 };
                 self.find_call_validator(py, &tag.borrow_input().to_object(py)?, input, state)
             }
