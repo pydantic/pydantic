@@ -412,7 +412,7 @@ jobs:
         target: [x86_64, aarch64]
         manylinux: [auto]
         include:
-          # manylinux for various platforms, plus x86_64 pypy
+          # manylinux for various platforms, plus pypy and graalpy on major architectures
           - os: linux
             manylinux: auto
             target: i686
@@ -435,11 +435,7 @@ jobs:
           - os: linux
             manylinux: auto
             target: x86_64
-            interpreter: pypy3.10 pypy3.11
-          - os: linux
-            manylinux: auto
-            target: x86_64
-            interpreter: graalpy3.11 graalpy3.12
+            interpreter: pypy3.10 pypy3.11 graalpy3.11 graalpy3.12
 
           # musllinux
           - os: linux
