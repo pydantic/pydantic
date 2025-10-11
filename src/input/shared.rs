@@ -232,7 +232,7 @@ pub fn fraction_as_int<'py>(input: &Bound<'py, PyAny>) -> ValResult<EitherInt<'p
     #[cfg(Py_3_12)]
     let is_integer = input.call_method0("is_integer")?.extract::<bool>()?;
     #[cfg(not(Py_3_12))]
-    let is_integer = input.getattr("denominator")?.extract::<i64>().map_or(false, |d| d == 1);
+    let is_integer = input.getattr("denominator")?.extract::<i64>().is_ok_and(|d| d == 1);
 
     if is_integer {
         #[cfg(Py_3_11)]

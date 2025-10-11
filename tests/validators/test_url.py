@@ -1318,6 +1318,34 @@ def test_multi_url_build() -> None:
     assert str(url) == 'postgresql://testuser:testpassword@127.0.0.1:5432/database?sslmode=require#test'
 
 
+def test_multi_url_build_encodes_credentials() -> None:
+    url = MultiHostUrl.build(
+        scheme='postgresql',
+        username='user name',
+        password='p@ss/word?#',
+        host='example.com',
+        port=5432,
+    )
+    assert url == MultiHostUrl('postgresql://user%20name:p%40ss%2Fword%3F%23@example.com:5432')
+    assert str(url) == 'postgresql://user%20name:p%40ss%2Fword%3F%23@example.com:5432'
+    assert url.hosts() == [
+        {'username': 'user%20name', 'password': 'p%40ss%2Fword%3F%23', 'host': 'example.com', 'port': 5432}
+    ]
+
+
+def test_multi_url_build_hosts_encodes_credentials() -> None:
+    hosts = [
+        {'host': 'example.com', 'password': 'p@ss/word?#', 'username': 'user name', 'port': 5431},
+        {'host': 'example.org', 'password': 'pa%ss', 'username': 'other', 'port': 5432},
+    ]
+    url = MultiHostUrl.build(scheme='postgresql', hosts=hosts)
+    assert str(url) == 'postgresql://user%20name:p%40ss%2Fword%3F%23@example.com:5431,other:pa%25ss@example.org:5432'
+    assert url.hosts() == [
+        {'username': 'user%20name', 'password': 'p%40ss%2Fword%3F%23', 'host': 'example.com', 'port': 5431},
+        {'username': 'other', 'password': 'pa%25ss', 'host': 'example.org', 'port': 5432},
+    ]
+
+
 @pytest.mark.parametrize('field', ['host', 'password', 'username', 'port'])
 def test_multi_url_build_hosts_set_with_single_value(field) -> None:
     """Hosts can't be provided with any single url values."""

@@ -176,10 +176,7 @@ impl ValidationError {
                 use pyo3::exceptions::PyImportError;
                 match py.import("exceptiongroup") {
                     Ok(py_mod) => match py_mod.getattr("ExceptionGroup") {
-                        Ok(group_cls) => match group_cls.call1((title, user_py_errs)) {
-                            Ok(group_instance) => Some(group_instance),
-                            Err(_) => None,
-                        },
+                        Ok(group_cls) => group_cls.call1((title, user_py_errs)).ok(),
                         Err(_) => None,
                     },
                     Err(_) => return Some(PyImportError::new_err("validation_error_cause flag requires the exceptiongroup module backport to be installed when used on Python <3.11.")),
