@@ -46,6 +46,7 @@ num-traits = "0.2.19"
 uuid = "1.18.1"
 jiter = { version = "0.11.0", features = ["python"] }
 hex = "0.4.3"
+percent-encoding = "2.3.1"
 
 [lib]
 name = "_pydantic_core"
