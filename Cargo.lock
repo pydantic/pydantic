@@ -441,6 +441,7 @@ dependencies = [
  "jiter",
  "num-bigint",
  "num-traits",
+ "percent-encoding",
  "pyo3",
  "pyo3-build-config",
  "regex",
