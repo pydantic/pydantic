@@ -187,9 +187,8 @@ impl TupleSerializer {
         macro_rules! use_serializers {
             ($serializers_iter:expr) => {
                 for (index, serializer) in $serializers_iter.enumerate() {
-                    let element = match py_tuple_iter.next() {
-                        Some(value) => value,
-                        None => break,
+                    let Some(element) = py_tuple_iter.next() else {
+                        break;
                     };
                     let op_next = self.filter.index_filter(index, include, exclude, Some(n_items))?;
                     if let Some((next_include, next_exclude)) = op_next {

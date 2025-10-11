@@ -59,9 +59,8 @@ impl LookupKey {
             }
         } else {
             let list = value.downcast::<PyList>()?;
-            let first = match list.get_item(0) {
-                Ok(v) => v,
-                Err(_) => return py_schema_err!("Lookup paths should have at least one element"),
+            let Ok(first) = list.get_item(0) else {
+                return py_schema_err!("Lookup paths should have at least one element");
             };
             let mut locs: Vec<LookupPath> = if first.downcast::<PyString>().is_ok() {
                 // list of strings rather than list of lists
