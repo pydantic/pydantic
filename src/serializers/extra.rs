@@ -406,7 +406,7 @@ impl CollectWarnings {
             Ok(())
         } else if extra.check.enabled() {
             // note: I think this should never actually happen since we use `to_python(..., mode='json')` during
-            // JSON serialisation to "try" union branches, but it's here for completeness/correctness
+            // JSON serialization to "try" union branches, but it's here for completeness/correctness
             // in particular, in future we could allow errors instead of warnings on fallback
             Err(S::Error::custom(UNEXPECTED_TYPE_SER_MARKER))
         } else {
