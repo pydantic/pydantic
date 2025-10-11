@@ -205,7 +205,7 @@ impl TypeSerializer for ModelSerializer {
         } else if self.allow_value(value, &model_extra)? {
             let inner_value = self.get_inner_value(value, &model_extra)?;
             // There is strong coupling between a model serializer and its child, we should
-            // not fall back to type inference in the midddle.
+            // not fall back to type inference in the middle.
             self.serializer
                 .to_python_no_infer(&inner_value, include, exclude, &model_extra)
         } else {
