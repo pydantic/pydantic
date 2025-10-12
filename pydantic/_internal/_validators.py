@@ -25,6 +25,10 @@ from typing_inspection import typing_objects
 from pydantic._internal._import_utils import import_cached_field_info
 from pydantic.errors import PydanticSchemaGenerationError
 
+# Python <3.10 doesn't register `array.array` as a `collections.abc.Sequence`.
+if not isinstance(array.array('b'), collections.abc.Sequence):
+    collections.abc.Sequence.register(array.array)  # type: ignore[attr-defined]
+
 
 def _rebuild_sequence(
     value_type: type[Any], input_value: Sequence[Any], validated_items: Sequence[Any]
