@@ -10,6 +10,7 @@ import sys
 import typing
 import uuid
 import warnings
+from array import array
 from abc import ABC, abstractmethod
 from collections import Counter, OrderedDict, UserDict, defaultdict, deque
 from collections.abc import Iterable, Mapping, MutableMapping, Sequence
@@ -2343,6 +2344,52 @@ def test_sequence_generator_fails():
             'ctx': {'class': 'Sequence'},
         }
     ]
+
+
+def test_sequence_array_round_trip():
+    class Model(BaseModel):
+        v: Sequence[int]
+
+    data = array('I', [1, 2, 3])
+    model = Model(v=data)
+
+    assert isinstance(model.v, array)
+    assert model.v.typecode == 'I'
+    assert list(model.v) == [1, 2, 3]
+
+
+def test_sequence_deque_preserves_maxlen():
+    class Model(BaseModel):
+        v: Sequence[int]
+
+    src = deque(['1', '2'], maxlen=2)
+    model = Model(v=src)
+
+    assert isinstance(model.v, deque)
+    assert model.v.maxlen == 2
+    assert list(model.v) == [1, 2]
+
+
+def test_sequence_rebuild_fallback_to_list():
+    class NeedsToken(Sequence[int]):
+        def __init__(self, data: Iterable[int], token: str) -> None:
+            self._data = list(data)
+            self._token = token
+
+        def __getitem__(self, idx: int) -> int:
+            return self._data[idx]
+
+        def __len__(self) -> int:
+            return len(self._data)
+
+    class Model(BaseModel):
+        v: Sequence[int]
+
+    src = NeedsToken([1, 2, 3], token='secret')
+    model = Model(v=src)
+
+    assert isinstance(model.v, list)
+    assert model.v == [1, 2, 3]
 
 
 @pytest.mark.parametrize(
