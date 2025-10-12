@@ -5,6 +5,7 @@ Import of this module is deferred since it contains imports of many standard lib
 
 from __future__ import annotations as _annotations
 
+import array
 import collections.abc
 import math
 import re
@@ -25,6 +26,29 @@ from pydantic._internal._import_utils import import_cached_field_info
 from pydantic.errors import PydanticSchemaGenerationError
 
 
+def _rebuild_sequence(value_type: type[Any], input_value: Sequence[Any], validated_items: Sequence[Any]) -> Sequence[Any]:
+    """Attempt to rebuild the validated data using the original sequence type."""
+    if value_type is list:
+        return validated_items
+    elif value_type is tuple:
+        return tuple(validated_items)
+    elif issubclass(value_type, range):
+        # return the list as we probably can't re-create the range
+        return validated_items
+    elif value_type is collections.deque:
+        return collections.deque(validated_items, maxlen=getattr(input_value, 'maxlen', None))
+    elif isinstance(input_value, array.array):
+        typecode = getattr(input_value, 'typecode', None)
+        if typecode is not None:
+            return array.array(typecode, validated_items)
+
+    try:
+        return value_type(validated_items)  # type: ignore[call-arg]
+    except (TypeError, ValueError):
+        # As a last resort, return a list to avoid leaking unexpected exceptions during validation.
+        return list(validated_items)
+
+
 def sequence_validator(
     input_value: Sequence[Any],
     /,
@@ -32,6 +56,7 @@ def sequence_validator(
 ) -> Sequence[Any]:
     """Validator for `Sequence` types, isinstance(v, Sequence) has already been called."""
     value_type = type(input_value)
+    original_value = input_value
 
     # We don't accept any plain string as a sequence
     # Relevant issue: https://github.com/pydantic/pydantic/issues/5595
@@ -53,16 +78,7 @@ def sequence_validator(
     v_list = validator(input_value)
 
     # the rest of the logic is just re-creating the original type from `v_list`
-    if value_type is list:
-        return v_list
-    elif issubclass(value_type, range):
-        # return the list as we probably can't re-create the range
-        return v_list
-    elif value_type is tuple:
-        return tuple(v_list)
-    else:
-        # best guess at how to re-create the original type, more custom construction logic might be required
-        return value_type(v_list)  # type: ignore[call-arg]
+    return _rebuild_sequence(value_type, original_value, v_list)
 
 
 def import_string(value: Any) -> Any:
