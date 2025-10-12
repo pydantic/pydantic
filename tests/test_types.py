@@ -10,8 +10,8 @@ import sys
 import typing
 import uuid
 import warnings
-from array import array
 from abc import ABC, abstractmethod
+from array import array
 from collections import Counter, OrderedDict, UserDict, defaultdict, deque
 from collections.abc import Iterable, Mapping, MutableMapping, Sequence
 from dataclasses import dataclass

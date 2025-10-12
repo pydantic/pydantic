@@ -26,7 +26,9 @@ from pydantic._internal._import_utils import import_cached_field_info
 from pydantic.errors import PydanticSchemaGenerationError
 
 
-def _rebuild_sequence(value_type: type[Any], input_value: Sequence[Any], validated_items: Sequence[Any]) -> Sequence[Any]:
+def _rebuild_sequence(
+    value_type: type[Any], input_value: Sequence[Any], validated_items: Sequence[Any]
+) -> Sequence[Any]:
     """Attempt to rebuild the validated data using the original sequence type."""
     if value_type is list:
         return validated_items
