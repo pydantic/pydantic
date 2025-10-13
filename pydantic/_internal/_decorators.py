@@ -522,7 +522,9 @@ class DecoratorInfos:
             computed_field_dec.info._update_from_config(config_wrapper, name)
 
 
-def inspect_validator(validator: Callable[..., Any], mode: FieldValidatorModes) -> bool:
+def inspect_validator(
+    validator: Callable[..., Any], *, mode: FieldValidatorModes, type: Literal['field', 'model']
+) -> bool:
     """Look at a field or model validator function and determine whether it takes an info argument.
 
     An error is raised if the function has an invalid signature.
@@ -530,6 +532,7 @@ def inspect_validator(validator: Callable[..., Any], mode: FieldValidatorModes) 
     Args:
         validator: The validator function to inspect.
         mode: The proposed validator mode.
+        type: The type of validator, either 'field' or 'model'.
 
     Returns:
         Whether the validator takes an info argument.
@@ -554,7 +557,7 @@ def inspect_validator(validator: Callable[..., Any], mode: FieldValidatorModes) 
             return False
 
     raise PydanticUserError(
-        f'Unrecognized field_validator function signature for {validator} with `mode={mode}`:{sig}',
+        f'Unrecognized {type} validator function signature for {validator} with `mode={mode}`: {sig}',
         code='validator-signature',
     )
 
