@@ -557,7 +557,7 @@ def inspect_validator(
             return False
 
     raise PydanticUserError(
-        f'Unrecognized {type} function signature for {validator} with `mode={mode}`: {sig}',
+        f'Unrecognized {type} validator function signature for {validator} with `mode={mode}`: {sig}',
         code='validator-signature',
     )
 
