@@ -409,17 +409,18 @@ jobs:
       fail-fast: false
       matrix:
         os: [linux, macos, windows]
-        target: [x86_64, aarch64]
+        target: [undefined]
         manylinux: [auto]
         include:
-          # manylinux for various platforms, plus pypy and graalpy on major architectures
+          # manylinux for various platforms
+          # x86_64 and aarch64 are PGO optimized below
           - os: linux
             manylinux: auto
             target: i686
           - os: linux
             manylinux: auto
             target: aarch64
-            interpreter: 3.9 3.10 3.11 3.12 3.13 3.14 pypy3.10 pypy3.11 graalpy3.11 graalpy3.12
+            interpreter: 3.9 3.10 3.11 3.12 3.13 3.14
           - os: linux
             manylinux: auto
             target: armv7
@@ -436,6 +437,16 @@ jobs:
             manylinux: auto
             target: x86_64
             interpreter: pypy3.10 pypy3.11 graalpy3.11 graalpy3.12
+
+            # manylinux pypy and graalpy on major architectures
+          - os: linux
+            manylinux: auto
+            target: x86_64
+            interpreter: graalpy3.11 graalpy3.12
+          - os: linux
+            manylinux: auto
+            target: aarch64
+            interpreter: graalpy3.11 graalpy3.12
 
           # musllinux
           - os: linux
@@ -461,7 +472,7 @@ jobs:
           # windows;
           # x86_64 pypy builds are not PGO optimized
           # i686 not supported by pypy
-          # aarch64 only 3.11 and up, also not PGO optimized
+          # windows 11 arm supports 3.11 and up, not PGO optimized for now
           - os: windows
             target: x86_64
             interpreter: pypy3.10 pypy3.11
@@ -471,14 +482,14 @@ jobs:
             interpreter: 3.9 3.10 3.11 3.12 3.13 3.14
           - os: windows
             target: aarch64
-            interpreter: 3.11 3.12 3.13 3.14
+            runs-on: windows-11-arm
+            interpreter: "3.11 3.12 3.13 3.13t 3.14 3.14t"
 
         exclude:
-          # See above; disabled for now.
-          - os: windows
-            target: aarch64
+          # was just a dummy variable to set a default value for target
+          - target: undefined
 
-    runs-on: ${{ (matrix.os == 'linux' && 'ubuntu') || matrix.os }}-latest
+    runs-on: ${{ matrix.runs-on || format('{0}-latest', matrix.os) }}
     steps:
       - uses: actions/checkout@v5
 
@@ -509,30 +520,28 @@ jobs:
           path: dist
 
   build-pgo:
-    name: build pgo-optimized on ${{ matrix.os }} / ${{ matrix.interpreter }}
+    name: build pgo-optimized on ${{ matrix.platform.os }} / ${{ matrix.interpreter }}
     # only run on push to main and on release
     if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main' || contains(github.event.pull_request.labels.*.name, 'Full Build')
     strategy:
       fail-fast: false
       matrix:
-        os: [linux, windows, macos]
+        platform:
+          [
+            { os: linux, runs-on: ubuntu-latest },
+            { os: linux_aarch64, runs-on: ubuntu-24.04-arm },
+            { os: windows, runs-on: windows-latest },
+            { os: macos, runs-on: macos-latest },
+          ]
         interpreter:
           ["3.9", "3.10", "3.11", "3.12", "3.13", "3.13t", "3.14", "3.14t"]
-        include:
-          # standard runners with override for macos arm
-          - os: linux
-            runs-on: ubuntu-latest
-          - os: windows
-            ls: dir
-            runs-on: windows-latest
-          - os: macos
-            runs-on: macos-latest
         exclude:
           # macos arm only supported from 3.10 and up
-          - os: macos
+          - platform:
+              os: macos
             interpreter: "3.9"
 
-    runs-on: ${{ matrix.runs-on }}
+    runs-on: ${{ matrix.platform.runs-on }}
     steps:
       - uses: actions/checkout@v5
 
@@ -555,11 +564,11 @@ jobs:
           interpreter: ${{ matrix.interpreter }}
           rust-toolchain: ${{ steps.rust-toolchain.outputs.name }}
 
-      - run: ${{ matrix.ls || 'ls -lh' }} dist/
+      - run: ${{ (startsWith(matrix.platform.os, 'windows') && 'dir') || 'ls -lh' }} dist/
 
       - uses: actions/upload-artifact@v4
         with:
-          name: pypi_files_${{ matrix.os }}_${{ matrix.interpreter }}
+          name: pypi_files_${{ matrix.platform.os }}_${{ matrix.interpreter }}
           path: dist
 
   inspect-pypi-assets:
