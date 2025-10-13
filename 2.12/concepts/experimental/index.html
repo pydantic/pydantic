@@ -3823,7 +3823,7 @@ meaning. During serialization, any field with <code>MISSING</code> as a value is
 <span class="c1">#&gt; {&#39;anyOf&#39;: [{&#39;type&#39;: &#39;integer&#39;}, {&#39;type&#39;: &#39;null&#39;}], &#39;title&#39;: &#39;Timeout&#39;}}</span>
 
 
-<span class="c1"># `is` can be used to discrimate between the sentinel and other values:</span>
+<span class="c1"># `is` can be used to discriminate between the sentinel and other values:</span>
 <span class="n">timeout</span> <span class="o">=</span> <span class="n">conf</span><span class="o">.</span><span class="n">timeout</span> <span class="k">if</span> <span class="n">conf</span><span class="o">.</span><span class="n">timeout</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">MISSING</span> <span class="k">else</span> <span class="n">defaults</span><span class="p">[</span><span class="s1">&#39;timeout&#39;</span><span class="p">]</span>
 </code></pre></div>
 </div>
@@ -3850,7 +3850,7 @@ meaning. During serialization, any field with <code>MISSING</code> as a value is
 <span class="c1">#&gt; {&#39;anyOf&#39;: [{&#39;type&#39;: &#39;integer&#39;}, {&#39;type&#39;: &#39;null&#39;}], &#39;title&#39;: &#39;Timeout&#39;}}</span>
 
 
-<span class="c1"># `is` can be used to discrimate between the sentinel and other values:</span>
+<span class="c1"># `is` can be used to discriminate between the sentinel and other values:</span>
 <span class="n">timeout</span> <span class="o">=</span> <span class="n">conf</span><span class="o">.</span><span class="n">timeout</span> <span class="k">if</span> <span class="n">conf</span><span class="o">.</span><span class="n">timeout</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">MISSING</span> <span class="k">else</span> <span class="n">defaults</span><span class="p">[</span><span class="s1">&#39;timeout&#39;</span><span class="p">]</span>
 </code></pre></div>
 </div>
@@ -3925,7 +3925,7 @@ meaning. During serialization, any field with <code>MISSING</code> as a value is
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.12.0", "email-validator>=2.0.0", "pydantic-core==2.41.1", "pydantic-extra-types==2.10.0"]
+    window.mkdocs_run_deps = ["pydantic==2.12.1", "email-validator>=2.0.0", "pydantic-core==2.41.3", "pydantic-extra-types==2.10.0"]
     </script>
 
               </article>
