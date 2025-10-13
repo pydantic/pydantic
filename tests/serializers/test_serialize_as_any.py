@@ -7,39 +7,43 @@ from typing_extensions import TypedDict
 from pydantic_core import SchemaSerializer, SchemaValidator, core_schema
 
 
+class ParentModel:
+    x: int
+
+
+class ChildModel(ParentModel):
+    y: str
+
+
+ParentModel.__pydantic_core_schema__ = core_schema.model_schema(
+    ParentModel,
+    core_schema.model_fields_schema(
+        {
+            'x': core_schema.model_field(core_schema.int_schema()),
+        }
+    ),
+    ref='ParentModel',
+)
+ParentModel.__pydantic_validator__ = SchemaValidator(ParentModel.__pydantic_core_schema__)
+ParentModel.__pydantic_serializer__ = SchemaSerializer(ParentModel.__pydantic_core_schema__)
+
+ChildModel.__pydantic_core_schema__ = core_schema.model_schema(
+    ChildModel,
+    core_schema.model_fields_schema(
+        {
+            'x': core_schema.model_field(core_schema.int_schema()),
+            'y': core_schema.model_field(core_schema.str_schema()),
+        }
+    ),
+)
+ChildModel.__pydantic_validator__ = SchemaValidator(ChildModel.__pydantic_core_schema__)
+ChildModel.__pydantic_serializer__ = SchemaSerializer(ChildModel.__pydantic_core_schema__)
+
+
 def test_serialize_as_any_with_models() -> None:
-    class Parent:
-        x: int
-
-    class Child(Parent):
-        y: str
-
-    Parent.__pydantic_core_schema__ = core_schema.model_schema(
-        Parent,
-        core_schema.model_fields_schema(
-            {
-                'x': core_schema.model_field(core_schema.int_schema()),
-            }
-        ),
-    )
-    Parent.__pydantic_validator__ = SchemaValidator(Parent.__pydantic_core_schema__)
-    Parent.__pydantic_serializer__ = SchemaSerializer(Parent.__pydantic_core_schema__)
-
-    Child.__pydantic_core_schema__ = core_schema.model_schema(
-        Child,
-        core_schema.model_fields_schema(
-            {
-                'x': core_schema.model_field(core_schema.int_schema()),
-                'y': core_schema.model_field(core_schema.str_schema()),
-            }
-        ),
-    )
-    Child.__pydantic_validator__ = SchemaValidator(Child.__pydantic_core_schema__)
-    Child.__pydantic_serializer__ = SchemaSerializer(Child.__pydantic_core_schema__)
-
-    child = Child.__pydantic_validator__.validate_python({'x': 1, 'y': 'hopefully not a secret'})
-    assert Parent.__pydantic_serializer__.to_python(child, serialize_as_any=False) == {'x': 1}
-    assert Parent.__pydantic_serializer__.to_python(child, serialize_as_any=True) == {
+    child = ChildModel.__pydantic_validator__.validate_python({'x': 1, 'y': 'hopefully not a secret'})
+    assert ParentModel.__pydantic_serializer__.to_python(child, serialize_as_any=False) == {'x': 1}
+    assert ParentModel.__pydantic_serializer__.to_python(child, serialize_as_any=True) == {
         'x': 1,
         'y': 'hopefully not a secret',
     }
@@ -274,67 +278,65 @@ def test_serialize_with_recursive_models() -> None:
     }
 
 
+def test_serialize_as_any_with_root_model_and_subclasses() -> None:
+    class RModel:
+        root: ParentModel
+
+    RModel.__pydantic_core_schema__ = core_schema.model_schema(
+        RModel,
+        ParentModel.__pydantic_core_schema__,
+        root_model=True,
+    )
+    RModel.__pydantic_validator__ = SchemaValidator(RModel.__pydantic_core_schema__)
+    RModel.__pydantic_serializer__ = SchemaSerializer(RModel.__pydantic_core_schema__)
+
+    value = RModel.__pydantic_validator__.validate_python({'x': 1})
+    value.root = ChildModel.__pydantic_validator__.validate_python({'x': 1, 'y': 'hopefully not a secret'})
+
+    assert RModel.__pydantic_serializer__.to_python(value, serialize_as_any=False) == {'x': 1}
+
+    assert RModel.__pydantic_serializer__.to_python(value, serialize_as_any=True) == {
+        'x': 1,
+        'y': 'hopefully not a secret',
+    }
+
+    assert RModel.__pydantic_serializer__.to_json(value, serialize_as_any=False) == b'{"x":1}'
+    assert (
+        RModel.__pydantic_serializer__.to_json(value, serialize_as_any=True) == b'{"x":1,"y":"hopefully not a secret"}'
+    )
+
+
 def test_serialize_with_custom_type_and_subclasses():
-    class Node:
-        x: int
-
-    Node.__pydantic_core_schema__ = core_schema.model_schema(
-        Node,
-        core_schema.model_fields_schema(
-            {
-                'x': core_schema.model_field(core_schema.int_schema()),
-            }
-        ),
-        ref='Node',
-    )
-    Node.__pydantic_validator__ = SchemaValidator(Node.__pydantic_core_schema__)
-    Node.__pydantic_serializer__ = SchemaSerializer(Node.__pydantic_core_schema__)
-
-    class NodeSubClass(Node):
-        y: int
-
-    NodeSubClass.__pydantic_core_schema__ = core_schema.model_schema(
-        NodeSubClass,
-        core_schema.model_fields_schema(
-            {
-                'x': core_schema.model_field(core_schema.int_schema()),
-                'y': core_schema.model_field(core_schema.int_schema()),
-            }
-        ),
-    )
-    NodeSubClass.__pydantic_validator__ = SchemaValidator(NodeSubClass.__pydantic_core_schema__)
-    NodeSubClass.__pydantic_serializer__ = SchemaSerializer(NodeSubClass.__pydantic_core_schema__)
-
     class CustomType:
-        values: list[Node]
+        value: ParentModel
 
     CustomType.__pydantic_core_schema__ = core_schema.model_schema(
         CustomType,
-        core_schema.definitions_schema(
-            core_schema.model_fields_schema(
-                {
-                    'values': core_schema.model_field(
-                        core_schema.list_schema(core_schema.definition_reference_schema('Node'))
-                    ),
-                }
-            ),
-            [
-                Node.__pydantic_core_schema__,
-            ],
+        core_schema.model_fields_schema(
+            {
+                'value': core_schema.model_field(ParentModel.__pydantic_core_schema__),
+            }
         ),
     )
+
     CustomType.__pydantic_validator__ = SchemaValidator(CustomType.__pydantic_core_schema__)
     CustomType.__pydantic_serializer__ = SchemaSerializer(CustomType.__pydantic_core_schema__)
 
-    value = CustomType.__pydantic_validator__.validate_python({'values': [{'x': 1}, {'x': 2}]})
-    value.values.append(NodeSubClass.__pydantic_validator__.validate_python({'x': 3, 'y': 4}))
+    value = CustomType.__pydantic_validator__.validate_python({'value': {'x': 1}})
+    value.value = ChildModel.__pydantic_validator__.validate_python({'x': 1, 'y': 'hopefully not a secret'})
 
     assert CustomType.__pydantic_serializer__.to_python(value, serialize_as_any=False) == {
-        'values': [{'x': 1}, {'x': 2}, {'x': 3}],
+        'value': {'x': 1},
     }
     assert CustomType.__pydantic_serializer__.to_python(value, serialize_as_any=True) == {
-        'values': [{'x': 1}, {'x': 2}, {'x': 3, 'y': 4}],
+        'value': {'x': 1, 'y': 'hopefully not a secret'}
     }
+
+    assert CustomType.__pydantic_serializer__.to_json(value, serialize_as_any=False) == b'{"value":{"x":1}}'
+    assert (
+        CustomType.__pydantic_serializer__.to_json(value, serialize_as_any=True)
+        == b'{"value":{"x":1,"y":"hopefully not a secret"}}'
+    )
 
 
 def test_serialize_as_any_wrap_serializer_applied_once() -> None:
@@ -420,3 +422,28 @@ def test_serialize_as_any_with_field_serializer(container_schema_builder) -> Non
     assert s.to_python(v, serialize_as_any=True) == {'value': 246}
     assert s.to_json(v, serialize_as_any=False) == b'{"value":246}'
     assert s.to_json(v, serialize_as_any=True) == b'{"value":246}'
+
+
+def test_serialize_as_any_with_field_serializer_root_model() -> None:
+    """https://github.com/pydantic/pydantic/issues/12379."""
+
+    schema = core_schema.model_schema(
+        type('Test', (), {}),
+        core_schema.int_schema(
+            serialization=core_schema.plain_serializer_function_ser_schema(
+                lambda model, v: v * 2, is_field_serializer=True
+            )
+        ),
+        root_model=True,
+    )
+
+    v = SchemaValidator(schema).validate_python(123)
+    cls = type(v)
+    s = SchemaSerializer(schema)
+    # necessary to ensure that type inference will pick up the serializer
+    cls.__pydantic_serializer__ = s
+
+    assert s.to_python(v, serialize_as_any=False) == 246
+    assert s.to_python(v, serialize_as_any=True) == 246
+    assert s.to_json(v, serialize_as_any=False) == b'246'
+    assert s.to_json(v, serialize_as_any=True) == b'246'

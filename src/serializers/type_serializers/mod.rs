@@ -32,7 +32,7 @@ pub mod with_default;
 
 use super::computed_fields::ComputedFields;
 use super::config::utf8_py_error;
-use super::errors::{py_err_se_err, PydanticSerializationError};
+use super::errors::{py_err_se_err, PydanticSerializationError, WrappedSerError};
 use super::extra::{Extra, ExtraOwned, SerCheck, SerMode};
 use super::fields::{FieldsMode, GeneralFieldsSerializer, SerField};
 use super::filter::{AnyFilter, SchemaFilter};
