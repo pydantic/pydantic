@@ -1008,3 +1008,42 @@ def test_function_after_doesnt_change_mode() -> None:
     assert v.validate_json(b'"2000-01-01"') == datetime.date(2000, 1, 1)
     with pytest.raises(ValidationError):
         v.validate_python(b'"2000-01-01"')
+
+
+def test_field_name_preserved_wrap_validator() -> None:
+    class Model:
+        pass
+
+    field_names: list[tuple[str, str]] = []
+
+    def val1(value, handler, info):
+        nonlocal field_names
+        field_names.append(('val1', info.field_name))
+        return handler(value)
+
+    def val2(value, handler, info):
+        nonlocal field_names
+        field_names.append(('val2', info.field_name))
+        return handler(value)
+
+    schema = core_schema.model_schema(
+        cls=Model,
+        schema=core_schema.model_fields_schema(
+            fields={
+                'f': core_schema.model_field(
+                    schema=core_schema.with_info_wrap_validator_function(
+                        function=val1,
+                        schema=core_schema.with_info_wrap_validator_function(
+                            function=val2, schema=core_schema.int_schema()
+                        ),
+                    )
+                )
+            }
+        ),
+        config={},
+    )
+
+    v = SchemaValidator(schema)
+    v.validate_python({'f': 1})
+
+    assert field_names == [('val1', 'f'), ('val2', 'f')]
