@@ -1832,6 +1832,237 @@ docker service create --name pydantic-with-secrets --secret my_secret_data pydan
 
 ```
 
+## Nested Secrets
+
+The default secrets implementation, `SecretsSettingsSource`, has behaviour that is not always desired or sufficient. For example, the default implementation does not support secret fields in nested submodels.
+
+`NestedSecretsSettingsSource` can be used as a drop-in replacement to `SecretsSettingsSource` to adjust the default behaviour. All differences are summarized in the table below.
+
+| `SecretsSettingsSource` | `NestedSecretsSettingsSourcee` | | --- | --- | | Secret fields must belong to a top level model. | Secrets can be fields of nested models. | | Secret files can be placed in `secrets_dir`s only. | Secret files can be placed in subdirectories for nested models. | | Secret files discovery is based on the same configuration options that are used by `EnvSettingsSource`: `case_sensitive`, `env_nested_delimiter`, `env_prefix`. | Default options are respected, but can be overridden with `secrets_case_sensitive`, `secrets_nested_delimiter`, `secrets_prefix`. | | When `secrets_dir` is missing on the file system, a warning is generated. | Use `secrets_dir_missing` options to choose whether to issue warning, raise error, or silently ignore. |
+
+### Use Case: Plain Directory Layout
+
+```text
+📂 secrets
+├── 📄 app_key
+└── 📄 db_passwd
+
+```
+
+In the example below, secrets nested delimiter `'_'` is different from env nested delimiter `'__'`. Value for `Settings.db.user` can be passed in env variable `MY_DB__USER`.
+
+```py
+from pydantic import BaseModel, SecretStr
+
+from pydantic_settings import (
+    BaseSettings,
+    NestedSecretsSettingsSource,
+    SettingsConfigDict,
+)
+
+
+class AppSettings(BaseModel):
+    key: SecretStr
+
+
+class DbSettings(BaseModel):
+    user: str
+    passwd: SecretStr
+
+
+class Settings(BaseSettings):
+    app: AppSettings
+    db: DbSettings
+
+    model_config = SettingsConfigDict(
+        env_prefix='MY_',
+        env_nested_delimiter='__',
+        secrets_dir='secrets',
+        secrets_nested_delimiter='_',
+    )
+
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls,
+        init_settings,
+        env_settings,
+        dotenv_settings,
+        file_secret_settings,
+    ):
+        return (
+            init_settings,
+            env_settings,
+            dotenv_settings,
+            NestedSecretsSettingsSource(file_secret_settings),
+        )
+
+```
+
+### Use Case: Nested Directory Layout
+
+```text
+📂 secrets
+├── 📂 app
+│   └── 📄 key
+└── 📂 db
+    └── 📄 passwd
+
+```
+
+```py
+from pydantic import BaseModel, SecretStr
+
+from pydantic_settings import (
+    BaseSettings,
+    NestedSecretsSettingsSource,
+    SettingsConfigDict,
+)
+
+
+class AppSettings(BaseModel):
+    key: SecretStr
+
+
+class DbSettings(BaseModel):
+    user: str
+    passwd: SecretStr
+
+
+class Settings(BaseSettings):
+    app: AppSettings
+    db: DbSettings
+
+    model_config = SettingsConfigDict(
+        env_prefix='MY_',
+        env_nested_delimiter='__',
+        secrets_dir='secrets',
+        secrets_nested_subdir=True,
+    )
+
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls,
+        init_settings,
+        env_settings,
+        dotenv_settings,
+        file_secret_settings,
+    ):
+        return (
+            init_settings,
+            env_settings,
+            dotenv_settings,
+            NestedSecretsSettingsSource(file_secret_settings),
+        )
+
+```
+
+### Use Case: Multiple Nested Directories
+
+```text
+📂 secrets
+├── 📂 default
+│   ├── 📂 app
+│   │   └── 📄 key
+│   └── 📂 db
+│       └── 📄 passwd
+└── 📂 override
+    ├── 📂 app
+    │   └── 📄 key
+    └── 📂 db
+        └── 📄 passwd
+
+```
+
+```py
+from pydantic import BaseModel, SecretStr
+
+from pydantic_settings import (
+    BaseSettings,
+    NestedSecretsSettingsSource,
+    SettingsConfigDict,
+)
+
+
+class AppSettings(BaseModel):
+    key: SecretStr
+
+
+class DbSettings(BaseModel):
+    user: str
+    passwd: SecretStr
+
+
+class Settings(BaseSettings):
+    app: AppSettings
+    db: DbSettings
+
+    model_config = SettingsConfigDict(
+        env_prefix='MY_',
+        env_nested_delimiter='__',
+        secrets_dir=['secrets/default', 'secrets/override'],
+        secrets_nested_subdir=True,
+    )
+
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls,
+        init_settings,
+        env_settings,
+        dotenv_settings,
+        file_secret_settings,
+    ):
+        return (
+            init_settings,
+            env_settings,
+            dotenv_settings,
+            NestedSecretsSettingsSource(file_secret_settings),
+        )
+
+```
+
+### Configuration Options
+
+#### secrets_dir
+
+Path to secrets directory, same as `SecretsSettingsSource.secrets_dir`. If `list`, the last match wins. If `secrets_dir` is passed in both source constructor and model config, values are not merged (constructor wins).
+
+#### secrets_dir_missing
+
+If `secrets_dir` does not exist, original `SecretsSettingsSource` issues a warning. However, this may be undesirable, for example if we don't mount Docker Secrets in e.g. dev environment. Use `secrets_dir_missing` to choose:
+
+- `'ok'` — do nothing if `secrets_dir` does not exist
+- `'warn'` (default) — print warning, same as `SecretsSettingsSource`
+- `'error'` — raise `SettingsError`
+
+If multiple `secrets_dir` passed, the same `secrets_dir_missing` action applies to each of them.
+
+#### secrets_dir_max_size
+
+Limit the size of `secrets_dir` for security reasons, defaults to `SECRETS_DIR_MAX_SIZE` equal to 16 MiB.
+
+`NestedSecretsSettingsSource` is a thin wrapper around `EnvSettingsSource`, which loads all potential secrets on initialization. This could lead to `MemoryError` if we mount a large file under `secrets_dir`.
+
+If multiple `secrets_dir` passed, the limit applies to each directory independently.
+
+#### secrets_case_sensitive
+
+Same as `case_sensitive`, but works for secrets only. If not specified, defaults to `case_sensitive`.
+
+#### secrets_nested_delimiter
+
+Same as `env_nested_delimiter`, but works for secrets only. If not specified, defaults to `env_nested_delimiter`. This option is used to implement *nested secrets directory* layout and allows to do even nasty things like `/run/secrets/model/delim/nested1/delim/nested2`.
+
+#### secrets_nested_subdir
+
+Boolean flag to turn on *nested secrets directory* mode, `False` by default. If `True`, sets `secrets_nested_delimiter` to `os.sep`. Raises `SettingsError` if `secrets_nested_delimiter` is already specified.
+
+#### secrets_prefix
+
+Secret path prefix, similar to `env_prefix`, but works for secrets only. Defaults to `env_prefix` if not specified. Works in both plain and nested directory modes, like `'/run/secrets/prefix_model__nested'` and `'/run/secrets/prefix_model/nested'`.
+
 ## AWS Secrets Manager
 
 You must set one parameter:
