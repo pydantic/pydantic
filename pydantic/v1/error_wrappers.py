@@ -1,6 +1,8 @@
 import json
 from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Sequence, Tuple, Type, Union
 
+from typing_extensions import TypeAlias
+
 from pydantic.v1.json import pydantic_encoder
 from pydantic.v1.utils import Representation
 
@@ -42,9 +44,7 @@ class ErrorWrapper(Representation):
         return [('exc', self.exc), ('loc', self.loc_tuple())]
 
 
-# ErrorList is something like Union[List[Union[List[ErrorWrapper], ErrorWrapper]], ErrorWrapper]
-# but recursive, therefore just use:
-ErrorList = Union[Sequence[Any], ErrorWrapper]
+ErrorList: TypeAlias = Union[List["ErrorList"], ErrorWrapper]
 
 
 class ValidationError(Representation, ValueError):
