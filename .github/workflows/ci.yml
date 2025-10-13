@@ -489,7 +489,7 @@ jobs:
           # was just a dummy variable to set a default value for target
           - target: undefined
 
-    runs-on: ${{ matrix.runs-on || format('{0}-latest', matrix.os) }}
+    runs-on: ${{ matrix.runs-on || format('{0}-latest', (matrix.os == 'linux' && 'ubuntu') || matrix.os) }}
     steps:
       - uses: actions/checkout@v5
 
