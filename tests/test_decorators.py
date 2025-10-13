@@ -41,7 +41,7 @@ def _one_pos_required_arg_one_optional(a, b=1):
     ],
 )
 def test_inspect_validator(obj, mode, expected):
-    assert inspect_validator(obj, mode=mode) == expected
+    assert inspect_validator(obj, mode=mode, type='field') == expected
 
 
 def test_inspect_validator_error_wrap():
@@ -52,12 +52,12 @@ def test_inspect_validator_error_wrap():
         pass
 
     with pytest.raises(PydanticUserError) as e:
-        inspect_validator(validator1, mode='wrap')
+        inspect_validator(validator1, mode='wrap', type='field')
 
     assert e.value.code == 'validator-signature'
 
     with pytest.raises(PydanticUserError) as e:
-        inspect_validator(validator4, mode='wrap')
+        inspect_validator(validator4, mode='wrap', type='field')
 
     assert e.value.code == 'validator-signature'
 
@@ -71,12 +71,12 @@ def test_inspect_validator_error(mode):
         pass
 
     with pytest.raises(PydanticUserError) as e:
-        inspect_validator(validator, mode=mode)
+        inspect_validator(validator, mode=mode, type='field')
 
     assert e.value.code == 'validator-signature'
 
     with pytest.raises(PydanticUserError) as e:
-        inspect_validator(validator3, mode=mode)
+        inspect_validator(validator3, mode=mode, type='field')
 
     assert e.value.code == 'validator-signature'
 

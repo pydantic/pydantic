@@ -2508,7 +2508,9 @@ def apply_validators(
         The updated schema.
     """
     for validator in validators:
-        info_arg = inspect_validator(validator.func, validator.info.mode)
+        # Actually, type could be 'field' or 'model', but this is only used for deprecated
+        # decorators, so let's not worry about it.
+        info_arg = inspect_validator(validator.func, mode=validator.info.mode, type='field')
         val_type = 'with-info' if info_arg else 'no-info'
 
         schema = _VALIDATOR_F_MATCH[(validator.info.mode, val_type)](validator.func, schema)
@@ -2565,7 +2567,7 @@ def apply_model_validators(
             continue
         if mode == 'outer' and validator.info.mode == 'before':
             continue
-        info_arg = inspect_validator(validator.func, validator.info.mode)
+        info_arg = inspect_validator(validator.func, mode=validator.info.mode, type='model')
         if validator.info.mode == 'wrap':
             if info_arg:
                 schema = core_schema.with_info_wrap_validator_function(function=validator.func, schema=schema)
