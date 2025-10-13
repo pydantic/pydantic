@@ -81,7 +81,7 @@ pub struct FunctionPlainSerializer {
     // fallback serializer - used when when_used decides that this serializer should not be used
     fallback_serializer: Option<Arc<CombinedSerializer>>,
     when_used: WhenUsed,
-    is_field_serializer: bool,
+    pub(crate) is_field_serializer: bool,
     info_arg: bool,
 }
 
@@ -334,7 +334,7 @@ pub struct FunctionWrapSerializer {
     function_name: String,
     return_serializer: Arc<CombinedSerializer>,
     when_used: WhenUsed,
-    is_field_serializer: bool,
+    pub(crate) is_field_serializer: bool,
     info_arg: bool,
 }
 

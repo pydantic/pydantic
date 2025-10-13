@@ -18,6 +18,7 @@ use crate::build_tools::py_schema_error_type;
 use crate::definitions::DefinitionsBuilder;
 use crate::py_gc::PyGcTraverse;
 use crate::serializers::ser::PythonSerializer;
+use crate::serializers::type_serializers::any::AnySerializer;
 use crate::tools::{py_err, SchemaDict};
 
 use super::errors::se_err_py_err;
@@ -421,6 +422,27 @@ impl<'py> PydanticSerializer<'py> {
     ) -> Self {
         Self {
             value,
+            serializer: if extra.serialize_as_any {
+                AnySerializer::get()
+            } else {
+                serializer
+            },
+            include,
+            exclude,
+            extra,
+        }
+    }
+
+    /// Same as above but will not fall back to type inference when `serialize_as_any` is set
+    pub(crate) fn new_no_infer(
+        value: &'py Bound<'py, PyAny>,
+        serializer: &'py CombinedSerializer,
+        include: Option<&'py Bound<'py, PyAny>>,
+        exclude: Option<&'py Bound<'py, PyAny>>,
+        extra: &'py Extra<'py>,
+    ) -> Self {
+        Self {
+            value,
             serializer,
             include,
             exclude,
@@ -431,8 +453,9 @@ impl<'py> PydanticSerializer<'py> {
 
 impl Serialize for PydanticSerializer<'_> {
     fn serialize<S: serde::ser::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        // inference is handled in the constructor
         self.serializer
-            .serde_serialize(self.value, serializer, self.include, self.exclude, self.extra)
+            .serde_serialize_no_infer(self.value, serializer, self.include, self.exclude, self.extra)
     }
 }
 

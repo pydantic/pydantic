@@ -1,6 +1,7 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Callable, Optional
 
+import pytest
 from typing_extensions import TypedDict
 
 from pydantic_core import SchemaSerializer, SchemaValidator, core_schema
@@ -370,3 +371,52 @@ def test_serialize_as_any_wrap_serializer_applied_once() -> None:
     assert MyModel.__pydantic_serializer__.to_python(instance, serialize_as_any=True) == {
         'a_field_wrapped': {'an_inner_field': 1},
     }
+
+
+@pytest.fixture(params=['model', 'dataclass'])
+def container_schema_builder(
+    request: pytest.FixtureRequest,
+) -> Callable[[dict[str, core_schema.CoreSchema]], core_schema.CoreSchema]:
+    if request.param == 'model':
+        return lambda fields: core_schema.model_schema(
+            cls=type('Test', (), {}),
+            schema=core_schema.model_fields_schema(
+                fields={k: core_schema.model_field(schema=v) for k, v in fields.items()},
+            ),
+        )
+    elif request.param == 'dataclass':
+        return lambda fields: core_schema.dataclass_schema(
+            cls=dataclass(type('Test', (), {})),
+            schema=core_schema.dataclass_args_schema(
+                'Test',
+                fields=[core_schema.dataclass_field(name=k, schema=v) for k, v in fields.items()],
+            ),
+            fields=[k for k in fields.keys()],
+        )
+    else:
+        raise ValueError(f'Unknown container type {request.param}')
+
+
+def test_serialize_as_any_with_field_serializer(container_schema_builder) -> None:
+    # https://github.com/pydantic/pydantic/issues/12379
+
+    schema = container_schema_builder(
+        {
+            'value': core_schema.int_schema(
+                serialization=core_schema.plain_serializer_function_ser_schema(
+                    lambda model, v: v * 2, is_field_serializer=True
+                )
+            )
+        }
+    )
+
+    v = SchemaValidator(schema).validate_python({'value': 123})
+    cls = type(v)
+    s = SchemaSerializer(schema)
+    # necessary to ensure that type inference will pick up the serializer
+    cls.__pydantic_serializer__ = s
+
+    assert s.to_python(v, serialize_as_any=False) == {'value': 246}
+    assert s.to_python(v, serialize_as_any=True) == {'value': 246}
+    assert s.to_json(v, serialize_as_any=False) == b'{"value":246}'
+    assert s.to_json(v, serialize_as_any=True) == b'{"value":246}'
