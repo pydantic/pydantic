@@ -697,6 +697,116 @@ jobs:
     - name: Run pydantic-xml tests
       run: PYTHONPATH="$(pwd):$PYTHONPATH" poetry run pytest tests
 
+  test-redis-om:
+    name: Test Redis OM Python (main branch) on Python ${{ matrix.python-version }}
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
+
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
+    services:
+      redis:
+        image: redis/redis-stack:latest
+        ports:
+          # Maps port 6379 on service container to the host
+          - 6379:6379
+        # Set health checks to wait until redis has started
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      INSTALL_DIR: ${{ github.workspace }}/redis
+    steps:
+    - name: Checkout Redis OM Python
+      uses: actions/checkout@v5
+      with:
+        repository: redis/redis-om-python
+
+    - name: Checkout Pydantic
+      uses: actions/checkout@v5
+      with:
+        path: pydantic-latest
+
+    - name: Setup Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v6
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+        installer-parallel: true
+
+    - name: Make sync version of library (redis_om)
+      run: make sync
+
+    - name: Install Redis OM Python dependencies
+      run: |
+        poetry install --no-interaction --no-root
+        pip uninstall pydantic
+        pip install -e ./pydantic-latest
+
+    - name: Install Redis OM Python library
+      run: poetry install --no-interaction
+
+    - name: List installed dependencies
+      run: pip list
+
+    - name: Run Redis OM Python tests
+      env:
+        REDIS_OM_URL: "redis://localhost:6379?decode_responses=True"
+      run: |
+        make test
+
+  test-django-ninja:
+    name: Test Django Ninja (main branch) on Python ${{ matrix.python-version }}
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
+
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.10', '3.11', '3.12', '3.13']
+    steps:
+    - name: Checkout Django Ninja
+      uses: actions/checkout@v5
+      with:
+        repository: vitalik/django-ninja
+        path: django-ninja
+
+    - name: Checkout Pydantic
+      uses: actions/checkout@v5
+      with:
+        path: pydantic-latest
+
+    - uses: actions/setup-python@v6
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install Django Ninja dependencies
+      working-directory: ./django-ninja
+      run: |
+        pip install django~=5.2.0 pytest pytest-asyncio pytest-django psycopg2-binary -e ../pydantic-latest
+
+    - name: List installed dependencies
+      run: pip list
+
+    - name: Run Django Ninja tests
+      working-directory: ./django-ninja
+      run: python -m pytest
+
   create-issue-on-failure:
     name: Create an issue if tests failed
     runs-on: ubuntu-latest
@@ -714,6 +824,8 @@ jobs:
       - test-dify
       - test-cadwyn
       - test-pydantic-xml
+      - test-redis-om
+      - test-django-ninja
     # Issue report disabled for now due to flakiness:
     if: |
       always() &&
@@ -733,7 +845,9 @@ jobs:
         needs.test-langchain.result == 'failure' ||
         needs.test-dify.result == 'failure' ||
         needs.test-cadwyn.result == 'failure' ||
-        needs.test-pydantic-xml.result == 'failure'
+        needs.test-pydantic-xml.result == 'failure' ||
+        needs.test-redis-om.result == 'failure' ||
+        needs.test-django-ninja.result == 'failure'
       )
     permissions:
       issues: write
