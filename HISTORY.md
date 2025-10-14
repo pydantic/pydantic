@@ -2,6 +2,17 @@
 <!-- markdownlint-disable descriptive-link-text -->
 <!-- markdownlint-disable-next-line first-line-heading -->
 
+## v2.12.2 (2025-10-14)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.12.2)
+
+### What's Changed
+
+#### Fixes
+
+* Release a new `pydantic-core` version, as a corrupted CPython 3.10 `manylinux2014_aarch64` wheel got uploaded ([pydantic-core#1843](https://github.com/pydantic/pydantic-core/pull/1843)).
+* Fix issue with recursive generic models with a parent model class by @Viicos in [#12398](https://github.com/pydantic/pydantic/pull/12398)
+
 ## v2.12.1 (2025-10-13)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.12.1)
