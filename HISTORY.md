@@ -2,6 +2,29 @@
 <!-- markdownlint-disable descriptive-link-text -->
 <!-- markdownlint-disable-next-line first-line-heading -->
 
+## v2.12.1 (2025-10-13)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.12.1)
+
+### What's Changed
+
+This is the first 2.12 patch release, addressing most (but not all yet) regressions from the initial 2.12.0 release.
+
+#### Fixes
+
+* Do not evaluate annotations when inspecting validators and serializers by @Viicos in [#12355](https://github.com/pydantic/pydantic/pull/12355)
+* Make sure `None` is converted as `NoneType` in Python 3.14 by @Viicos in [#12370](https://github.com/pydantic/pydantic/pull/12370)
+* Backport V1 runtime warning when using Python 3.14 by @Viicos in [#12367](https://github.com/pydantic/pydantic/pull/12367)
+* Fix error message for invalid validator signatures by @Viicos in [#12366](https://github.com/pydantic/pydantic/pull/12366)
+* Populate field name in `ValidationInfo` for validation of default value by @Viicos in [pydantic-core#1826](https://github.com/pydantic/pydantic-core/pull/1826)
+* Encode credentials in `MultiHostUrl` builder by @willswire in [pydantic-core#1829](https://github.com/pydantic/pydantic-core/pull/1829)
+* Respect field serializers when using `serialize_as_any` serialization flag by @davidhewitt in [pydantic-core#1829](https://github.com/pydantic/pydantic-core/pull/1829)
+* Fix various `RootModel` serialization issues by @davidhewitt in [pydantic-core#1836](https://github.com/pydantic/pydantic-core/pull/1836)
+
+### New Contributors
+
+* @willswire made their first contribution in [pydantic-core#1829](https://github.com/pydantic/pydantic-core/pull/1829)
+
 ## v2.12.0 (2025-10-07)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.12.0)
