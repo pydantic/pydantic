@@ -333,7 +333,7 @@ jobs:
           - 5432:5432
 
       minio:
-        image: bitnami/minio:2024.5.28
+        image: bitnamilegacy/minio:2024.5.28
         ports:
           - 9000:9000
           - 9001:9001
@@ -386,7 +386,7 @@ jobs:
         path: pydantic-latest
 
     - name: Install uv
-      uses: astral-sh/setup-uv@v6
+      uses: astral-sh/setup-uv@v7
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v6
@@ -520,7 +520,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.9', '3.10', '3.11', '3.12']
+        python-version: ['3.10', '3.11', '3.12', '3.13']
 
     steps:
       - name: Checkout Langchain
@@ -540,21 +540,35 @@ jobs:
 
       - name: Install LangChain dependencies
         run: |
-          uv sync --no-progress --group test
           uv sync --no-progress --directory ./libs/core --group test
+          uv pip uninstall --directory ./libs/core pydantic
+          uv pip install --directory ./libs/core -e ../../pydantic-latest
           uv sync --no-progress --directory ./libs/langchain --group test
-          uv pip uninstall pydantic
-          uv pip install -e ./pydantic-latest
+          uv pip uninstall --directory ./libs/langchain pydantic
+          uv pip install --directory ./libs/langchain -e ../../pydantic-latest
+          uv sync --no-progress --directory ./libs/langchain_v1 --group test
+          uv pip uninstall --directory ./libs/langchain_v1 pydantic
+          uv pip install --directory ./libs/langchain_v1 -e ../../pydantic-latest
 
-      - name: List installed dependencies
-        run: uv pip list
+      - name: List installed core dependencies
+        run: uv pip list --directory ./libs/core
+
+      - name: List installed LangChain v0.x dependencies
+        run: uv pip list --directory ./libs/langchain
+
+      - name: List installed LangChain v1.x dependencies
+        run: uv pip list --directory ./libs/langchain_v1
 
       - name: Run LangChain core tests
         working-directory: ./libs/core
         run: UV_NO_SYNC=1 make test
 
-      - name: Run LangChain main tests
+      - name: Run LangChain v0.x main tests
         working-directory: ./libs/langchain
+        run: UV_NO_SYNC=1 make test
+
+      - name: Run LangChain v1.x main tests
+        working-directory: ./libs/langchain_v1
         run: UV_NO_SYNC=1 make test
 
   test-dify:
