@@ -764,7 +764,7 @@ class GenerateSchema:
                 if cls.__pydantic_fields_complete__ or cls is BaseModel_:
                     fields = getattr(cls, '__pydantic_fields__', {})
                 else:
-                    if not hasattr(cls, '__pydantic_fields__'):
+                    if '__pydantic_fields__' not in cls.__dict__:
                         # This happens when we have a loop in the schema generation:
                         # class Base[T](BaseModel):
                         #     t: T

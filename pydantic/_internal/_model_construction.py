@@ -340,7 +340,7 @@ class ModelMetaclass(ABCMeta):
 
         This is a private attribute, not meant to be used outside Pydantic.
         """
-        if not hasattr(self, '__pydantic_fields__'):
+        if '__pydantic_fields__' not in self.__dict__:
             return False
 
         field_infos = cast('dict[str, FieldInfo]', self.__pydantic_fields__)  # pyright: ignore[reportAttributeAccessIssue]
