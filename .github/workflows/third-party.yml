@@ -26,6 +26,8 @@ permissions:
 env:
   # https://github.com/pytest-dev/pytest/issues/7443#issuecomment-656642591:
   FORCE_COLOR: 1
+  # https://pip.pypa.io/en/stable/cli/pip_install/#cmdoption-progress-bar
+  PIP_PROGRESS_BAR: off
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -780,32 +782,30 @@ jobs:
       matrix:
         python-version: ['3.10', '3.11', '3.12', '3.13']
     steps:
-    - name: Checkout Django Ninja
-      uses: actions/checkout@v5
-      with:
-        repository: vitalik/django-ninja
-        path: django-ninja
+      - name: Checkout Django Ninja
+        uses: actions/checkout@v5
+        with:
+          repository: vitalik/django-ninja
 
-    - name: Checkout Pydantic
-      uses: actions/checkout@v5
-      with:
-        path: pydantic-latest
+      - name: Checkout Pydantic
+        uses: actions/checkout@v5
+        with:
+          path: pydantic-latest
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install Django Ninja dependencies
+        run: pip install pytest pytest-asyncio pytest-django psycopg2-binary 'django~=5.2.7' ./pydantic-latest
 
-    - uses: actions/setup-python@v6
-      with:
-        python-version: ${{ matrix.python-version }}
+      # For some reason, tests can't run properly if the pydantic sources are around:
+      - run: rm -rd ./pydantic-latest
 
-    - name: Install Django Ninja dependencies
-      working-directory: ./django-ninja
-      run: |
-        pip install django~=5.2.0 pytest pytest-asyncio pytest-django psycopg2-binary -e ../pydantic-latest
+      - name: List installed dependencies
+        run: pip list
 
-    - name: List installed dependencies
-      run: pip list
-
-    - name: Run Django Ninja tests
-      working-directory: ./django-ninja
-      run: python -m pytest
+      - name: Run Django Ninja tests
+        run: pytest
 
   create-issue-on-failure:
     name: Create an issue if tests failed
