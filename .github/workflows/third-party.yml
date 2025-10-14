@@ -641,6 +641,47 @@ jobs:
     - name: Run Cadwyn tests
       run: uv run --no-project --no-sync pytest tests docs_src
 
+  test-pydantic-xml:
+    name: Test pydantic-xml (main branch) on Python ${{ matrix.python-version }}
+    # If 'schedule' was the trigger, don't run it on contributors' forks
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
+
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
+    steps:
+    - name: Checkout pydantic-xml
+      uses: actions/checkout@v5
+      with:
+        repository: dapper91/pydantic-xml
+
+    - name: Checkout Pydantic
+      uses: actions/checkout@v5
+      with:
+        path: pydantic-latest
+
+    - uses: actions/setup-python@v6
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install pydantic-xml dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install poetry
+        poetry install --no-root -E lxml
+        pip uninstall pydantic
+        pip install -e ./pydantic-latest
+
+    - name: List installed dependencies
+      run: pip list
+
+    - name: Run pydantic-xml tests
+      run: PYTHONPATH="$(pwd):$PYTHONPATH" poetry run pytest tests
 
   create-issue-on-failure:
     name: Create an issue if tests failed
@@ -658,6 +699,7 @@ jobs:
       - test-langchain
       - test-dify
       - test-cadwyn
+      - test-pydantic-xml
     # Issue report disabled for now due to flakiness:
     if: |
       always() &&
@@ -676,7 +718,8 @@ jobs:
         needs.test-bentoml.result == 'failure' ||
         needs.test-langchain.result == 'failure' ||
         needs.test-dify.result == 'failure' ||
-        needs.test-cadwyn.result == 'failure'
+        needs.test-cadwyn.result == 'failure' ||
+        needs.test-pydantic-xml.result == 'failure'
       )
     permissions:
       issues: write
