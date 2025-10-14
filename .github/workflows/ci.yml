@@ -514,6 +514,9 @@ jobs:
 
       - run: twine check --strict dist/*
 
+      - name: Test wheels integrity
+        run: for whl in dist/*.whl; do unzip -qt "$z"; done
+
       - uses: actions/upload-artifact@v4
         with:
           name: pypi_files_${{ matrix.os }}_${{ matrix.target }}_${{ matrix.interpreter || 'all' }}_${{ matrix.manylinux }}
@@ -714,6 +717,9 @@ jobs:
           pattern: pypi_files_*
           merge-multiple: true
           path: dist
+
+      - name: Test wheels integrity
+        run: for whl in dist/*.whl; do unzip -qt "$z"; done
 
       - run: uv publish --trusted-publishing always
 
