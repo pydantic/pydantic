@@ -515,7 +515,7 @@ jobs:
       - run: twine check --strict dist/*
 
       - name: Test wheels integrity
-        run: for whl in dist/*.whl; do unzip -qt "$z"; done
+        run: for whl in dist/*.whl; do unzip -qt "$whl"; done
 
       - uses: actions/upload-artifact@v4
         with:
@@ -568,6 +568,9 @@ jobs:
           rust-toolchain: ${{ steps.rust-toolchain.outputs.name }}
 
       - run: ${{ (startsWith(matrix.platform.os, 'windows') && 'dir') || 'ls -lh' }} dist/
+
+      - name: Test wheels integrity
+        run: for whl in dist/*.whl; do unzip -qt "$whl"; done
 
       - uses: actions/upload-artifact@v4
         with:
@@ -719,7 +722,7 @@ jobs:
           path: dist
 
       - name: Test wheels integrity
-        run: for whl in dist/*.whl; do unzip -qt "$z"; done
+        run: for whl in dist/*.whl; do unzip -qt "$whl"; done
 
       - run: uv publish --trusted-publishing always
 
