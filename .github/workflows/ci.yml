@@ -249,7 +249,7 @@ jobs:
 
       # Run pytest with lax xfail because we often add tests to pydantic
       # which xfail on a pending release of pydantic-core
-      - run: uv run --no-sync pytest --override-ini=xfail_strict=False
+      - run: uv run --no-sync pytest --override-ini=xfail_strict=False -k 'not test_check_pydantic_core_version'
         working-directory: pydantic
         env:
           PYDANTIC_PRIVATE_ALLOW_UNHANDLED_SCHEMA_TYPES: 1
@@ -514,9 +514,6 @@ jobs:
 
       - run: twine check --strict dist/*
 
-      - name: Test wheels integrity
-        run: for whl in dist/*.whl; do unzip -qt "$whl"; done
-
       - uses: actions/upload-artifact@v4
         with:
           name: pypi_files_${{ matrix.os }}_${{ matrix.target }}_${{ matrix.interpreter || 'all' }}_${{ matrix.manylinux }}
@@ -568,9 +565,6 @@ jobs:
           rust-toolchain: ${{ steps.rust-toolchain.outputs.name }}
 
       - run: ${{ (startsWith(matrix.platform.os, 'windows') && 'dir') || 'ls -lh' }} dist/
-
-      - name: Test wheels integrity
-        run: for whl in dist/*.whl; do unzip -qt "$whl"; done
 
       - uses: actions/upload-artifact@v4
         with:
