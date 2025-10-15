@@ -1,3 +1,4 @@
+import copy
 from typing import Annotated, Any, Final, Union
 
 import pytest
@@ -353,3 +354,78 @@ def test_default_factory_validated_data_argument_unsupported() -> None:
         ),
     ):
         TypeAdapter(Annotated[int, Field(default_factory=lambda v: v['key'])])
+
+
+def test_parent_field_info_not_mutated() -> None:
+    class Parent(BaseModel):
+        a: Annotated[int, Gt(2)]
+
+    # Sub.a's `FieldInfo` is copied from `Parent`.
+    # Up until v2.12.2, it did not make proper use of the
+    # `FieldInfo._copy()` method, resulting in mutations
+    # (although not recommended) leaking to the parent model:
+    class Sub(Parent):
+        pass
+
+    Sub.model_fields['a'].metadata.append(object())
+
+    assert len(Parent.model_fields['a'].metadata) == 1
+
+
+def test_field_info_mutation_create_model() -> None:
+    """
+    https://github.com/pydantic/pydantic/issues/12374.
+
+    This test is meant to prevent regressions, but it does *not* mean
+    it is a supported pattern. Passing a `FieldInfo` instance as `Annotated`
+    metadata isn't supposed to work (and it only does because we made the mistake
+    of having `Field()` returning `FieldInfo` instances -- see
+    https://github.com/pydantic/pydantic/issues/11122).
+    """
+
+    def create_patch_model(cls: type[BaseModel]) -> type[BaseModel]:
+        fields = {}
+        for field_name, field in cls.model_fields.items():
+            field_copy = copy.deepcopy(field)
+            field_copy.default = None
+            fields[field_name] = (field.annotation, field_copy)
+        return create_model(f'Patch{cls.__name__}', **fields)
+
+    class Model(BaseModel):
+        a: Annotated[int, Field(gt=2)]
+        b: Annotated[int, Field(gt=3)]
+
+    PatchModel = create_patch_model(Model)
+
+    p_empty = PatchModel()
+
+    assert p_empty.a is None
+    assert p_empty.b is None
+
+
+def test_optional_model_using_asdict() -> None:
+    def make_fields_optional(model_cls: type[BaseModel]) -> type[BaseModel]:
+        new_fields = {}
+
+        for f_name, f_info in model_cls.model_fields.items():
+            f_dct = f_info.asdict()
+            new_fields[f_name] = (
+                Annotated[(Union[f_dct['annotation'], None], *f_dct['metadata'], Field(**f_dct['attributes']))],  # noqa: F821
+                None,
+            )
+
+        return create_model(
+            f'{type.__name__}Optional',
+            __base__=model_cls,  # (1)!
+            **new_fields,
+        )
+
+    class Model(BaseModel):
+        a: Annotated[int, Field(gt=1)]
+
+    ModelOptional = make_fields_optional(Model)
+
+    assert ModelOptional().a is None
+
+    with pytest.raises(ValidationError):
+        ModelOptional(a=0)
