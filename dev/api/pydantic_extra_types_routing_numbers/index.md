@@ -18,12 +18,14 @@ from pydantic import BaseModel
 
 from pydantic_extra_types.routing_number import ABARoutingNumber
 
+
 class BankAccount(BaseModel):
     routing_number: ABARoutingNumber
 
+
 account = BankAccount(routing_number='122105155')
 print(account)
-#> routing_number='122105155'
+# > routing_number='122105155'
 
 ```
 

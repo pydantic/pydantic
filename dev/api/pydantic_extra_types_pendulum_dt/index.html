@@ -2030,6 +2030,15 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
+  <a href="#pydantic_extra_types.pendulum_dt.Time" class="md-nav__link">
+    <span class="md-ellipsis">
+      Time
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#pydantic_extra_types.pendulum_dt.Date" class="md-nav__link">
     <span class="md-ellipsis">
       Date
@@ -2044,6 +2053,21 @@ to help you monitor and understand your
       Duration
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Duration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pydantic_extra_types.pendulum_dt.Duration.to_iso8601_string" class="md-nav__link">
+    <span class="md-ellipsis">
+      to_iso8601_string
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -3049,6 +3073,15 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
+  <a href="#pydantic_extra_types.pendulum_dt.Time" class="md-nav__link">
+    <span class="md-ellipsis">
+      Time
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#pydantic_extra_types.pendulum_dt.Date" class="md-nav__link">
     <span class="md-ellipsis">
       Date
@@ -3063,6 +3096,21 @@ to help you monitor and understand your
       Duration
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Duration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pydantic_extra_types.pendulum_dt.Duration.to_iso8601_string" class="md-nav__link">
+    <span class="md-ellipsis">
+      to_iso8601_string
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -3134,12 +3182,71 @@ This type exists because Pydantic throws a fit on unknown types.</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_extra_types.pendulum_dt</span><span class="w"> </span><span class="kn">import</span> <span class="n">DateTime</span>
 
+
 <span class="k">class</span><span class="w"> </span><span class="nc">test_model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">dt</span><span class="p">:</span> <span class="n">DateTime</span>
 
+
 <span class="nb">print</span><span class="p">(</span><span class="n">test_model</span><span class="p">(</span><span class="n">dt</span><span class="o">=</span><span class="s1">&#39;2021-01-01T00:00:00+00:00&#39;</span><span class="p">))</span>
 
-<span class="c1">#&gt; test_model(dt=DateTime(2021, 1, 1, 0, 0, 0, tzinfo=FixedTimezone(0, name=&quot;+00:00&quot;)))</span>
+<span class="c1"># &gt; test_model(dt=DateTime(2021, 1, 1, 0, 0, 0, tzinfo=FixedTimezone(0, name=&quot;+00:00&quot;)))</span>
+</code></pre></div>
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="pydantic_extra_types.pendulum_dt.Time" class="doc doc-heading">
+            <span class="doc doc-object-name doc-class-name">Time</span>
+
+
+<a href="#pydantic_extra_types.pendulum_dt.Time" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="pendulum.Time">Time</span></code></p>
+
+
+        <p>A <code>pendulum.Time</code> object. At runtime, this type decomposes into pendulum.Time automatically.
+This type exists because Pydantic throws a fit on unknown types.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_extra_types.pendulum_dt</span><span class="w"> </span><span class="kn">import</span> <span class="n">Time</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">test_model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">dt</span><span class="p">:</span> <span class="n">Time</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">test_model</span><span class="p">(</span><span class="n">dt</span><span class="o">=</span><span class="s1">&#39;00:00:00&#39;</span><span class="p">))</span>
+
+<span class="c1"># &gt; test_model(dt=Time(0, 0, 0))</span>
 </code></pre></div>
 
 
@@ -3189,12 +3296,14 @@ This type exists because Pydantic throws a fit on unknown types.</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_extra_types.pendulum_dt</span><span class="w"> </span><span class="kn">import</span> <span class="n">Date</span>
 
+
 <span class="k">class</span><span class="w"> </span><span class="nc">test_model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">dt</span><span class="p">:</span> <span class="n">Date</span>
 
+
 <span class="nb">print</span><span class="p">(</span><span class="n">test_model</span><span class="p">(</span><span class="n">dt</span><span class="o">=</span><span class="s1">&#39;2021-01-01&#39;</span><span class="p">))</span>
 
-<span class="c1">#&gt; test_model(dt=Date(2021, 1, 1))</span>
+<span class="c1"># &gt; test_model(dt=Date(2021, 1, 1))</span>
 </code></pre></div>
 
 
@@ -3244,12 +3353,14 @@ This type exists because Pydantic throws a fit on unknown types.</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_extra_types.pendulum_dt</span><span class="w"> </span><span class="kn">import</span> <span class="n">Duration</span>
 
+
 <span class="k">class</span><span class="w"> </span><span class="nc">test_model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">delta_t</span><span class="p">:</span> <span class="n">Duration</span>
 
+
 <span class="nb">print</span><span class="p">(</span><span class="n">test_model</span><span class="p">(</span><span class="n">delta_t</span><span class="o">=</span><span class="s1">&#39;P1DT25H&#39;</span><span class="p">))</span>
 
-<span class="c1">#&gt; test_model(delta_t=Duration(days=2, hours=1))</span>
+<span class="c1"># &gt; test_model(delta_t=Duration(days=2, hours=1))</span>
 </code></pre></div>
 
 
@@ -3269,6 +3380,154 @@ This type exists because Pydantic throws a fit on unknown types.</p>
 
 
 
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="pydantic_extra_types.pendulum_dt.Duration.to_iso8601_string" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">to_iso8601_string</span>
+
+
+<a href="#pydantic_extra_types.pendulum_dt.Duration.to_iso8601_string" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">to_iso8601_string</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Convert a Duration object to an ISO 8601 string.</p>
+<p>In addition to the standard ISO 8601 format, this method also supports the representation of fractions of a second and negative durations.</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The ISO 8601 string representation of the duration.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+            <details class="quote">
+              <summary>Source code in <code>pydantic_extra_types/pendulum_dt.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">260</span>
+<span class="normal">261</span>
+<span class="normal">262</span>
+<span class="normal">263</span>
+<span class="normal">264</span>
+<span class="normal">265</span>
+<span class="normal">266</span>
+<span class="normal">267</span>
+<span class="normal">268</span>
+<span class="normal">269</span>
+<span class="normal">270</span>
+<span class="normal">271</span>
+<span class="normal">272</span>
+<span class="normal">273</span>
+<span class="normal">274</span>
+<span class="normal">275</span>
+<span class="normal">276</span>
+<span class="normal">277</span>
+<span class="normal">278</span>
+<span class="normal">279</span>
+<span class="normal">280</span>
+<span class="normal">281</span>
+<span class="normal">282</span>
+<span class="normal">283</span>
+<span class="normal">284</span>
+<span class="normal">285</span>
+<span class="normal">286</span>
+<span class="normal">287</span>
+<span class="normal">288</span>
+<span class="normal">289</span>
+<span class="normal">290</span>
+<span class="normal">291</span>
+<span class="normal">292</span>
+<span class="normal">293</span>
+<span class="normal">294</span>
+<span class="normal">295</span>
+<span class="normal">296</span>
+<span class="normal">297</span>
+<span class="normal">298</span>
+<span class="normal">299</span>
+<span class="normal">300</span>
+<span class="normal">301</span>
+<span class="normal">302</span>
+<span class="normal">303</span>
+<span class="normal">304</span>
+<span class="normal">305</span>
+<span class="normal">306</span>
+<span class="normal">307</span>
+<span class="normal">308</span>
+<span class="normal">309</span>
+<span class="normal">310</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">to_iso8601_string</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convert a Duration object to an ISO 8601 string.</span>
+
+<span class="sd">    In addition to the standard ISO 8601 format, this method also supports the representation of fractions of a second and negative durations.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The ISO 8601 string representation of the duration.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Extracting components from the Duration object</span>
+    <span class="n">years</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">years</span>
+    <span class="n">months</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">months</span>
+    <span class="n">days</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_days</span>
+    <span class="n">hours</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hours</span>
+    <span class="n">minutes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">minutes</span>
+    <span class="n">seconds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">remaining_seconds</span>
+    <span class="n">milliseconds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">microseconds</span> <span class="o">//</span> <span class="mi">1000</span>
+    <span class="n">microseconds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">microseconds</span> <span class="o">%</span> <span class="mi">1000</span>
+
+    <span class="c1"># Constructing the ISO 8601 duration string</span>
+    <span class="n">iso_duration</span> <span class="o">=</span> <span class="s1">&#39;P&#39;</span>
+    <span class="k">if</span> <span class="n">years</span> <span class="ow">or</span> <span class="n">months</span> <span class="ow">or</span> <span class="n">days</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">years</span><span class="p">:</span>
+            <span class="n">iso_duration</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">years</span><span class="si">}</span><span class="s1">Y&#39;</span>
+        <span class="k">if</span> <span class="n">months</span><span class="p">:</span>
+            <span class="n">iso_duration</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">months</span><span class="si">}</span><span class="s1">M&#39;</span>
+        <span class="k">if</span> <span class="n">days</span><span class="p">:</span>
+            <span class="n">iso_duration</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">days</span><span class="si">}</span><span class="s1">D&#39;</span>
+
+    <span class="k">if</span> <span class="n">hours</span> <span class="ow">or</span> <span class="n">minutes</span> <span class="ow">or</span> <span class="n">seconds</span> <span class="ow">or</span> <span class="n">milliseconds</span> <span class="ow">or</span> <span class="n">microseconds</span><span class="p">:</span>
+        <span class="n">iso_duration</span> <span class="o">+=</span> <span class="s1">&#39;T&#39;</span>
+        <span class="k">if</span> <span class="n">hours</span><span class="p">:</span>
+            <span class="n">iso_duration</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">hours</span><span class="si">}</span><span class="s1">H&#39;</span>
+        <span class="k">if</span> <span class="n">minutes</span><span class="p">:</span>
+            <span class="n">iso_duration</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">minutes</span><span class="si">}</span><span class="s1">M&#39;</span>
+        <span class="k">if</span> <span class="n">seconds</span> <span class="ow">or</span> <span class="n">milliseconds</span> <span class="ow">or</span> <span class="n">microseconds</span><span class="p">:</span>
+            <span class="n">iso_duration</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">seconds</span><span class="si">}</span><span class="s1">&#39;</span>
+            <span class="k">if</span> <span class="n">milliseconds</span> <span class="ow">or</span> <span class="n">microseconds</span><span class="p">:</span>
+                <span class="n">iso_duration</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39;.</span><span class="si">{</span><span class="n">milliseconds</span><span class="si">:</span><span class="s1">03d</span><span class="si">}</span><span class="s1">&#39;</span>
+            <span class="k">if</span> <span class="n">microseconds</span><span class="p">:</span>
+                <span class="n">iso_duration</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">microseconds</span><span class="si">:</span><span class="s1">03d</span><span class="si">}</span><span class="s1">&#39;</span>
+            <span class="n">iso_duration</span> <span class="o">+=</span> <span class="s1">&#39;S&#39;</span>
+
+    <span class="c1"># Prefix with &#39;-&#39; if the duration is negative</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">iso_duration</span> <span class="o">=</span> <span class="s1">&#39;-&#39;</span> <span class="o">+</span> <span class="n">iso_duration</span>
+
+    <span class="k">if</span> <span class="n">iso_duration</span> <span class="o">==</span> <span class="s1">&#39;P&#39;</span><span class="p">:</span>
+        <span class="n">iso_duration</span> <span class="o">=</span> <span class="s1">&#39;P0D&#39;</span>
+
+    <span class="k">return</span> <span class="n">iso_duration</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
 
 
 
@@ -3346,7 +3605,7 @@ This type exists because Pydantic throws a fit on unknown types.</p>
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["https://docs.pydantic.dev/dev/pydantic-2.13.0a0+dev-py3-none-any.whl", "email-validator>=2.0.0", "pydantic-core==2.41.4", "pydantic-extra-types==2.10.0"]
+    window.mkdocs_run_deps = ["https://docs.pydantic.dev/dev/pydantic-2.13.0a0+dev-py3-none-any.whl", "email-validator>=2.0.0", "pydantic-core==2.41.4", "pydantic-extra-types==2.10.6"]
     </script>
 
               </article>

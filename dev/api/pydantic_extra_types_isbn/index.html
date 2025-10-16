@@ -3142,8 +3142,8 @@ to help you monitor and understand your
 <a id="pydantic_extra_types.isbn"></a>
     <div class="doc doc-contents first">
 
-        <p>The <code>pydantic_extra_types.isbn</code> module provides functionality to recieve and validate ISBN.</p>
-<p>ISBN (International Standard Book Number) is a numeric commercial book identifier which is intended to be unique. This module provides a ISBN type for Pydantic models.</p>
+        <p>The <code>pydantic_extra_types.isbn</code> module provides functionality to receive and validate ISBN.</p>
+<p>ISBN (International Standard Book Number) is a numeric commercial book identifier which is intended to be unique. This module provides an ISBN type for Pydantic models.</p>
 
 
 
@@ -3186,9 +3186,10 @@ to help you monitor and understand your
 <span class="k">class</span><span class="w"> </span><span class="nc">Book</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">isbn</span><span class="p">:</span> <span class="n">ISBN</span>
 
-<span class="n">book</span> <span class="o">=</span> <span class="n">Book</span><span class="p">(</span><span class="n">isbn</span><span class="o">=</span><span class="s2">&quot;8537809667&quot;</span><span class="p">)</span>
+
+<span class="n">book</span> <span class="o">=</span> <span class="n">Book</span><span class="p">(</span><span class="n">isbn</span><span class="o">=</span><span class="s1">&#39;8537809667&#39;</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">book</span><span class="p">)</span>
-<span class="c1">#&gt; isbn=&#39;9788537809662&#39;</span>
+<span class="c1"># &gt; isbn=&#39;9788537809662&#39;</span>
 </code></pre></div>
 
 
@@ -3284,7 +3285,11 @@ to help you monitor and understand your
 
             <details class="quote">
               <summary>Source code in <code>pydantic_extra_types/isbn.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">104</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
 <span class="normal">105</span>
 <span class="normal">106</span>
 <span class="normal">107</span>
@@ -3309,12 +3314,7 @@ to help you monitor and understand your
 <span class="normal">126</span>
 <span class="normal">127</span>
 <span class="normal">128</span>
-<span class="normal">129</span>
-<span class="normal">130</span>
-<span class="normal">131</span>
-<span class="normal">132</span>
-<span class="normal">133</span>
-<span class="normal">134</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="normal">129</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">validate_isbn_format</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate a ISBN format from the provided str value.</span>
 
@@ -3324,7 +3324,6 @@ to help you monitor and understand your
 <span class="sd">    Raises:</span>
 <span class="sd">        PydanticCustomError: If the ISBN is not valid.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-
     <span class="n">isbn_length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">isbn_length</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">13</span><span class="p">):</span>
@@ -3426,7 +3425,12 @@ to help you monitor and understand your
 
             <details class="quote">
               <summary>Source code in <code>pydantic_extra_types/isbn.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">136</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
 <span class="normal">137</span>
 <span class="normal">138</span>
 <span class="normal">139</span>
@@ -3436,13 +3440,7 @@ to help you monitor and understand your
 <span class="normal">143</span>
 <span class="normal">144</span>
 <span class="normal">145</span>
-<span class="normal">146</span>
-<span class="normal">147</span>
-<span class="normal">148</span>
-<span class="normal">149</span>
-<span class="normal">150</span>
-<span class="normal">151</span>
-<span class="normal">152</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="normal">146</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">convert_isbn10_to_isbn13</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert an ISBN-10 to ISBN-13.</span>
 
@@ -3452,7 +3450,6 @@ to help you monitor and understand your
 <span class="sd">    Returns:</span>
 <span class="sd">        The converted ISBN or the original value if no conversion is necessary.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">==</span> <span class="mi">10</span><span class="p">:</span>
         <span class="n">base_isbn</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;978</span><span class="si">{</span><span class="n">value</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span>
         <span class="n">isbn13_digit</span> <span class="o">=</span> <span class="n">isbn13_digit_calc</span><span class="p">(</span><span class="n">base_isbn</span><span class="p">)</span>
@@ -3487,7 +3484,7 @@ to help you monitor and understand your
 
     <div class="doc doc-contents ">
 
-        <p>Calc a ISBN-10 last digit from the provided str value. More information of validation algorithm on <a href="https://en.wikipedia.org/wiki/ISBN#Check_digits">Wikipedia</a></p>
+        <p>Calculate the ISBN-10 check digit from the provided str value. More information on the validation algorithm on <a href="https://en.wikipedia.org/wiki/ISBN#Check_digits">Wikipedia</a></p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -3557,11 +3554,8 @@ to help you monitor and understand your
 <span class="normal">24</span>
 <span class="normal">25</span>
 <span class="normal">26</span>
-<span class="normal">27</span>
-<span class="normal">28</span>
-<span class="normal">29</span>
-<span class="normal">30</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">isbn10_digit_calc</span><span class="p">(</span><span class="n">isbn</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calc a ISBN-10 last digit from the provided str value. More information of validation algorithm on [Wikipedia](https://en.wikipedia.org/wiki/ISBN#Check_digits)</span>
+<span class="normal">27</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">isbn10_digit_calc</span><span class="p">(</span><span class="n">isbn</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate the ISBN-10 check digit from the provided str value. More information on the validation algorithm on [Wikipedia](https://en.wikipedia.org/wiki/ISBN#Check_digits)</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        isbn: The str value representing the ISBN in 10 digits.</span>
@@ -3570,11 +3564,8 @@ to help you monitor and understand your
 <span class="sd">        The calculated last digit of the ISBN-10 value.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">total</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">digit</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">10</span> <span class="o">-</span> <span class="n">idx</span><span class="p">)</span> <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">digit</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">isbn</span><span class="p">[:</span><span class="mi">9</span><span class="p">]))</span>
-
-    <span class="k">for</span> <span class="n">check_digit</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">11</span><span class="p">):</span>
-        <span class="k">if</span> <span class="p">(</span><span class="n">total</span> <span class="o">+</span> <span class="n">check_digit</span><span class="p">)</span> <span class="o">%</span> <span class="mi">11</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">valid_check_digit</span> <span class="o">=</span> <span class="s1">&#39;X&#39;</span> <span class="k">if</span> <span class="n">check_digit</span> <span class="o">==</span> <span class="mi">10</span> <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="n">check_digit</span><span class="p">)</span>
-
+    <span class="n">diff</span> <span class="o">=</span> <span class="p">(</span><span class="mi">11</span> <span class="o">-</span> <span class="n">total</span><span class="p">)</span> <span class="o">%</span> <span class="mi">11</span>
+    <span class="n">valid_check_digit</span> <span class="o">=</span> <span class="s1">&#39;X&#39;</span> <span class="k">if</span> <span class="n">diff</span> <span class="o">==</span> <span class="mi">10</span> <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="n">diff</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">valid_check_digit</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -3595,7 +3586,7 @@ to help you monitor and understand your
 
     <div class="doc doc-contents ">
 
-        <p>Calc a ISBN-13 last digit from the provided str value. More information of validation algorithm on <a href="https://en.wikipedia.org/wiki/ISBN#Check_digits">Wikipedia</a></p>
+        <p>Calc a ISBN-13 last digit from the provided str value. More information on the validation algorithm on <a href="https://en.wikipedia.org/wiki/ISBN#Check_digits">Wikipedia</a></p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -3653,7 +3644,10 @@ to help you monitor and understand your
 
             <details class="quote">
               <summary>Source code in <code>pydantic_extra_types/isbn.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">33</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">30</span>
+<span class="normal">31</span>
+<span class="normal">32</span>
+<span class="normal">33</span>
 <span class="normal">34</span>
 <span class="normal">35</span>
 <span class="normal">36</span>
@@ -3663,11 +3657,8 @@ to help you monitor and understand your
 <span class="normal">40</span>
 <span class="normal">41</span>
 <span class="normal">42</span>
-<span class="normal">43</span>
-<span class="normal">44</span>
-<span class="normal">45</span>
-<span class="normal">46</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">isbn13_digit_calc</span><span class="p">(</span><span class="n">isbn</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calc a ISBN-13 last digit from the provided str value. More information of validation algorithm on [Wikipedia](https://en.wikipedia.org/wiki/ISBN#Check_digits)</span>
+<span class="normal">43</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">isbn13_digit_calc</span><span class="p">(</span><span class="n">isbn</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calc a ISBN-13 last digit from the provided str value. More information on the validation algorithm on [Wikipedia](https://en.wikipedia.org/wiki/ISBN#Check_digits)</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        isbn: The str value representing the ISBN in 13 digits.</span>
@@ -3675,9 +3666,9 @@ to help you monitor and understand your
 <span class="sd">    Returns:</span>
 <span class="sd">        The calculated last digit of the ISBN-13 value.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">total</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">digit</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="k">if</span> <span class="n">idx</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">3</span><span class="p">)</span> <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">digit</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">isbn</span><span class="p">[:</span><span class="mi">12</span><span class="p">]))</span>
+    <span class="n">total</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">digit</span><span class="p">)</span> <span class="o">*</span> <span class="n">factor</span> <span class="k">for</span> <span class="n">digit</span><span class="p">,</span> <span class="n">factor</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">isbn</span><span class="p">[:</span><span class="mi">12</span><span class="p">],</span> <span class="n">it</span><span class="o">.</span><span class="n">cycle</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">))))</span>
 
-    <span class="n">check_digit</span> <span class="o">=</span> <span class="p">(</span><span class="mi">10</span> <span class="o">-</span> <span class="p">(</span><span class="n">total</span> <span class="o">%</span> <span class="mi">10</span><span class="p">))</span> <span class="o">%</span> <span class="mi">10</span>
+    <span class="n">check_digit</span> <span class="o">=</span> <span class="p">(</span><span class="mi">10</span> <span class="o">-</span> <span class="n">total</span><span class="p">)</span> <span class="o">%</span> <span class="mi">10</span>
 
     <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">check_digit</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
@@ -3753,7 +3744,7 @@ to help you monitor and understand your
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["https://docs.pydantic.dev/dev/pydantic-2.13.0a0+dev-py3-none-any.whl", "email-validator>=2.0.0", "pydantic-core==2.41.4", "pydantic-extra-types==2.10.0"]
+    window.mkdocs_run_deps = ["https://docs.pydantic.dev/dev/pydantic-2.13.0a0+dev-py3-none-any.whl", "email-validator>=2.0.0", "pydantic-core==2.41.4", "pydantic-extra-types==2.10.6"]
     </script>
 
               </article>

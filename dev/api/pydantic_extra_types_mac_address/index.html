@@ -3133,9 +3133,9 @@ formats, such as IEEE 802 MAC-48, EUI-48, EUI-64, or a 20-octet format.</p>
     <span class="n">mac_address</span><span class="p">:</span> <span class="n">MacAddress</span>
 
 
-<span class="n">network</span> <span class="o">=</span> <span class="n">Network</span><span class="p">(</span><span class="n">mac_address</span><span class="o">=</span><span class="s2">&quot;00:00:5e:00:53:01&quot;</span><span class="p">)</span>
+<span class="n">network</span> <span class="o">=</span> <span class="n">Network</span><span class="p">(</span><span class="n">mac_address</span><span class="o">=</span><span class="s1">&#39;00:00:5e:00:53:01&#39;</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">network</span><span class="p">)</span>
-<span class="c1">#&gt; mac_address=&#39;00:00:5e:00:53:01&#39;</span>
+<span class="c1"># &gt; mac_address=&#39;00:00:5e:00:53:01&#39;</span>
 </code></pre></div>
 
 
@@ -3217,85 +3217,47 @@ formats, such as IEEE 802 MAC-48, EUI-48, EUI-64, or a 20-octet format.</p>
 <span class="normal">103</span>
 <span class="normal">104</span>
 <span class="normal">105</span>
-<span class="normal">106</span>
-<span class="normal">107</span>
-<span class="normal">108</span>
-<span class="normal">109</span>
-<span class="normal">110</span>
-<span class="normal">111</span>
-<span class="normal">112</span>
-<span class="normal">113</span>
-<span class="normal">114</span>
-<span class="normal">115</span>
-<span class="normal">116</span>
-<span class="normal">117</span>
-<span class="normal">118</span>
-<span class="normal">119</span>
-<span class="normal">120</span>
-<span class="normal">121</span>
-<span class="normal">122</span>
-<span class="normal">123</span>
-<span class="normal">124</span>
-<span class="normal">125</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="normal">106</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">validate_mac_address</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Validate a MAC Address from the provided byte value.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">14</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate a MAC Address from the provided byte value.&quot;&quot;&quot;</span>
+    <span class="n">raw</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">MINIMUM_LENGTH</span><span class="p">:</span>
         <span class="k">raise</span> <span class="n">PydanticCustomError</span><span class="p">(</span>
             <span class="s1">&#39;mac_address_len&#39;</span><span class="p">,</span>
             <span class="s1">&#39;Length for a </span><span class="si">{mac_address}</span><span class="s1"> MAC address must be </span><span class="si">{required_length}</span><span class="s1">&#39;</span><span class="p">,</span>
-            <span class="p">{</span><span class="s1">&#39;mac_address&#39;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">decode</span><span class="p">(),</span> <span class="s1">&#39;required_length&#39;</span><span class="p">:</span> <span class="mi">14</span><span class="p">},</span>
+            <span class="p">{</span><span class="s1">&#39;mac_address&#39;</span><span class="p">:</span> <span class="n">raw</span><span class="p">,</span> <span class="s1">&#39;required_length&#39;</span><span class="p">:</span> <span class="n">MINIMUM_LENGTH</span><span class="p">},</span>
         <span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">value</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="nb">ord</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">),</span> <span class="nb">ord</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)]:</span>
-        <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="mi">3</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">seperator</span><span class="p">,</span> <span class="n">chunk_len</span> <span class="ow">in</span> <span class="p">((</span><span class="s1">&#39;:&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="mi">4</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="n">seperator</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">raw</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="n">parts</span> <span class="o">=</span> <span class="n">raw</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">seperator</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="o">!=</span> <span class="n">chunk_len</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">parts</span><span class="p">):</span>
             <span class="k">raise</span> <span class="n">PydanticCustomError</span><span class="p">(</span>
-                <span class="s1">&#39;mac_address_format&#39;</span><span class="p">,</span> <span class="s1">&#39;Must have the format xx:xx:xx:xx:xx:xx or xx-xx-xx-xx-xx-xx&#39;</span>
+                <span class="s1">&#39;mac_address_format&#39;</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s1">&#39;Must have the format xx</span><span class="si">{</span><span class="n">seperator</span><span class="si">}</span><span class="s1">xx</span><span class="si">{</span><span class="n">seperator</span><span class="si">}</span><span class="s1">xx</span><span class="si">{</span><span class="n">seperator</span><span class="si">}</span><span class="s1">xx</span><span class="si">{</span><span class="n">seperator</span><span class="si">}</span><span class="s1">xx</span><span class="si">{</span><span class="n">seperator</span><span class="si">}</span><span class="s1">xx&#39;</span><span class="p">,</span>
             <span class="p">)</span>
-        <span class="n">n</span> <span class="o">=</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">//</span> <span class="mi">3</span>
-        <span class="k">if</span> <span class="n">n</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">20</span><span class="p">):</span>
+
+        <span class="n">total_bytes</span> <span class="o">=</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">*</span> <span class="n">chunk_len</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
+        <span class="k">if</span> <span class="n">total_bytes</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ALLOWED_CHUNK_COUNTS</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">PydanticCustomError</span><span class="p">(</span>
                 <span class="s1">&#39;mac_address_format&#39;</span><span class="p">,</span>
                 <span class="s1">&#39;Length for a </span><span class="si">{mac_address}</span><span class="s1"> MAC address must be </span><span class="si">{required_length}</span><span class="s1">&#39;</span><span class="p">,</span>
-                <span class="p">{</span><span class="s1">&#39;mac_address&#39;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">decode</span><span class="p">(),</span> <span class="s1">&#39;required_length&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">20</span><span class="p">)},</span>
+                <span class="p">{</span><span class="s1">&#39;mac_address&#39;</span><span class="p">:</span> <span class="n">raw</span><span class="p">,</span> <span class="s1">&#39;required_length&#39;</span><span class="p">:</span> <span class="n">ALLOWED_CHUNK_COUNTS</span><span class="p">},</span>
             <span class="p">)</span>
-        <span class="n">mac_address</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="n">byte_value</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">[</span><span class="n">x</span> <span class="p">:</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">2</span><span class="p">],</span> <span class="mi">16</span><span class="p">)</span>
-                <span class="n">mac_address</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">byte_value</span>
-                <span class="n">x</span> <span class="o">+=</span> <span class="mi">3</span>
-            <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="n">PydanticCustomError</span><span class="p">(</span><span class="s1">&#39;mac_address_format&#39;</span><span class="p">,</span> <span class="s1">&#39;Unrecognized format&#39;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
 
-    <span class="k">elif</span> <span class="n">value</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">==</span> <span class="nb">ord</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">):</span>
-        <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="mi">5</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">PydanticCustomError</span><span class="p">(</span><span class="s1">&#39;mac_address_format&#39;</span><span class="p">,</span> <span class="s1">&#39;Must have the format xx.xx.xx.xx.xx.xx&#39;</span><span class="p">)</span>
-        <span class="n">n</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">//</span> <span class="mi">5</span>
-        <span class="k">if</span> <span class="n">n</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">20</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="n">PydanticCustomError</span><span class="p">(</span>
-                <span class="s1">&#39;mac_address_format&#39;</span><span class="p">,</span>
-                <span class="s1">&#39;Length for a </span><span class="si">{mac_address}</span><span class="s1"> MAC address must be </span><span class="si">{required_length}</span><span class="s1">&#39;</span><span class="p">,</span>
-                <span class="p">{</span><span class="s1">&#39;mac_address&#39;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">decode</span><span class="p">(),</span> <span class="s1">&#39;required_length&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">20</span><span class="p">)},</span>
-            <span class="p">)</span>
-        <span class="n">mac_address</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="n">byte_value</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">[</span><span class="n">x</span> <span class="p">:</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">2</span><span class="p">],</span> <span class="mi">16</span><span class="p">)</span>
-                <span class="n">mac_address</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">byte_value</span>
-                <span class="n">byte_value</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">[</span><span class="n">x</span> <span class="o">+</span> <span class="mi">2</span> <span class="p">:</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">4</span><span class="p">],</span> <span class="mi">16</span><span class="p">)</span>
-                <span class="n">mac_address</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">byte_value</span>
-                <span class="n">x</span> <span class="o">+=</span> <span class="mi">5</span>
-            <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="n">PydanticCustomError</span><span class="p">(</span><span class="s1">&#39;mac_address_format&#39;</span><span class="p">,</span> <span class="s1">&#39;Unrecognized format&#39;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">mac_bytes</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">parts</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">chunk_len</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
+                    <span class="n">mac_bytes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">part</span><span class="p">[</span><span class="n">i</span> <span class="p">:</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">2</span><span class="p">],</span> <span class="n">base</span><span class="o">=</span><span class="mi">16</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PydanticCustomError</span><span class="p">(</span><span class="s1">&#39;mac_address_format&#39;</span><span class="p">,</span> <span class="s1">&#39;Unrecognized format&#39;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
 
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="n">PydanticCustomError</span><span class="p">(</span><span class="s1">&#39;mac_address_format&#39;</span><span class="p">,</span> <span class="s1">&#39;Unrecognized format&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="s1">&#39;:&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">b</span><span class="si">:</span><span class="s1">02x</span><span class="si">}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">mac_bytes</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="s1">&#39;:&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">b</span><span class="si">:</span><span class="s1">02x</span><span class="si">}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">mac_address</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="n">PydanticCustomError</span><span class="p">(</span><span class="s1">&#39;mac_address_format&#39;</span><span class="p">,</span> <span class="s1">&#39;Unrecognized format&#39;</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3378,7 +3340,7 @@ formats, such as IEEE 802 MAC-48, EUI-48, EUI-64, or a 20-octet format.</p>
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["https://docs.pydantic.dev/dev/pydantic-2.13.0a0+dev-py3-none-any.whl", "email-validator>=2.0.0", "pydantic-core==2.41.4", "pydantic-extra-types==2.10.0"]
+    window.mkdocs_run_deps = ["https://docs.pydantic.dev/dev/pydantic-2.13.0a0+dev-py3-none-any.whl", "email-validator>=2.0.0", "pydantic-core==2.41.4", "pydantic-extra-types==2.10.6"]
     </script>
 
               </article>

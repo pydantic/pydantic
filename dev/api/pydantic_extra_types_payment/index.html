@@ -4052,76 +4052,33 @@ for major brands.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic_extra_types/payment.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">130</span>
-<span class="normal">131</span>
-<span class="normal">132</span>
-<span class="normal">133</span>
-<span class="normal">134</span>
-<span class="normal">135</span>
-<span class="normal">136</span>
-<span class="normal">137</span>
-<span class="normal">138</span>
-<span class="normal">139</span>
-<span class="normal">140</span>
-<span class="normal">141</span>
-<span class="normal">142</span>
-<span class="normal">143</span>
-<span class="normal">144</span>
-<span class="normal">145</span>
-<span class="normal">146</span>
-<span class="normal">147</span>
-<span class="normal">148</span>
-<span class="normal">149</span>
-<span class="normal">150</span>
-<span class="normal">151</span>
-<span class="normal">152</span>
-<span class="normal">153</span>
-<span class="normal">154</span>
-<span class="normal">155</span>
-<span class="normal">156</span>
-<span class="normal">157</span>
-<span class="normal">158</span>
-<span class="normal">159</span>
-<span class="normal">160</span>
-<span class="normal">161</span>
-<span class="normal">162</span>
-<span class="normal">163</span>
-<span class="normal">164</span>
-<span class="normal">165</span>
-<span class="normal">166</span>
-<span class="normal">167</span>
-<span class="normal">168</span>
-<span class="normal">169</span>
-<span class="normal">170</span>
-<span class="normal">171</span>
-<span class="normal">172</span>
-<span class="normal">173</span>
-<span class="normal">174</span>
-<span class="normal">175</span>
-<span class="normal">176</span>
-<span class="normal">177</span>
-<span class="normal">178</span>
-<span class="normal">179</span>
-<span class="normal">180</span>
-<span class="normal">181</span>
-<span class="normal">182</span>
-<span class="normal">183</span>
-<span class="normal">184</span>
-<span class="normal">185</span>
-<span class="normal">186</span>
-<span class="normal">187</span>
-<span class="normal">188</span>
-<span class="normal">189</span>
-<span class="normal">190</span>
-<span class="normal">191</span>
-<span class="normal">192</span>
-<span class="normal">193</span>
-<span class="normal">194</span>
-<span class="normal">195</span>
-<span class="normal">196</span>
-<span class="normal">197</span>
-<span class="normal">198</span>
-<span class="normal">199</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">201</span>
+<span class="normal">202</span>
+<span class="normal">203</span>
+<span class="normal">204</span>
+<span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span>
+<span class="normal">208</span>
+<span class="normal">209</span>
+<span class="normal">210</span>
+<span class="normal">211</span>
+<span class="normal">212</span>
+<span class="normal">213</span>
+<span class="normal">214</span>
+<span class="normal">215</span>
+<span class="normal">216</span>
+<span class="normal">217</span>
+<span class="normal">218</span>
+<span class="normal">219</span>
+<span class="normal">220</span>
+<span class="normal">221</span>
+<span class="normal">222</span>
+<span class="normal">223</span>
+<span class="normal">224</span>
+<span class="normal">225</span>
+<span class="normal">226</span>
+<span class="normal">227</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">validate_brand</span><span class="p">(</span><span class="n">card_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PaymentCardBrand</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate length based on</span>
 <span class="sd">    [BIN](https://en.wikipedia.org/wiki/Payment_card_number#Issuer_identification_number_(IIN))</span>
@@ -4136,50 +4093,7 @@ for major brands.</p>
 <span class="sd">    Raises:</span>
 <span class="sd">        PydanticCustomError: If the card number is not valid.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">brand</span> <span class="o">=</span> <span class="n">PaymentCardBrand</span><span class="o">.</span><span class="n">other</span>
-
-    <span class="k">if</span> <span class="n">card_number</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;4&#39;</span><span class="p">:</span>
-        <span class="n">brand</span> <span class="o">=</span> <span class="n">PaymentCardBrand</span><span class="o">.</span><span class="n">visa</span>
-        <span class="n">required_length</span> <span class="o">=</span> <span class="p">[</span><span class="mi">13</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="mi">19</span><span class="p">]</span>
-    <span class="k">elif</span> <span class="mi">51</span> <span class="o">&lt;=</span> <span class="nb">int</span><span class="p">(</span><span class="n">card_number</span><span class="p">[:</span><span class="mi">2</span><span class="p">])</span> <span class="o">&lt;=</span> <span class="mi">55</span><span class="p">:</span>
-        <span class="n">brand</span> <span class="o">=</span> <span class="n">PaymentCardBrand</span><span class="o">.</span><span class="n">mastercard</span>
-        <span class="n">required_length</span> <span class="o">=</span> <span class="p">[</span><span class="mi">16</span><span class="p">]</span>
-    <span class="k">elif</span> <span class="n">card_number</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span> <span class="ow">in</span> <span class="p">{</span><span class="s1">&#39;34&#39;</span><span class="p">,</span> <span class="s1">&#39;37&#39;</span><span class="p">}:</span>
-        <span class="n">brand</span> <span class="o">=</span> <span class="n">PaymentCardBrand</span><span class="o">.</span><span class="n">amex</span>
-        <span class="n">required_length</span> <span class="o">=</span> <span class="p">[</span><span class="mi">15</span><span class="p">]</span>
-    <span class="k">elif</span> <span class="mi">2200</span> <span class="o">&lt;=</span> <span class="nb">int</span><span class="p">(</span><span class="n">card_number</span><span class="p">[:</span><span class="mi">4</span><span class="p">])</span> <span class="o">&lt;=</span> <span class="mi">2204</span><span class="p">:</span>
-        <span class="n">brand</span> <span class="o">=</span> <span class="n">PaymentCardBrand</span><span class="o">.</span><span class="n">mir</span>
-        <span class="n">required_length</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">20</span><span class="p">))</span>
-    <span class="k">elif</span> <span class="n">card_number</span><span class="p">[:</span><span class="mi">4</span><span class="p">]</span> <span class="ow">in</span> <span class="p">{</span><span class="s1">&#39;5018&#39;</span><span class="p">,</span> <span class="s1">&#39;5020&#39;</span><span class="p">,</span> <span class="s1">&#39;5038&#39;</span><span class="p">,</span> <span class="s1">&#39;5893&#39;</span><span class="p">,</span> <span class="s1">&#39;6304&#39;</span><span class="p">,</span> <span class="s1">&#39;6759&#39;</span><span class="p">,</span> <span class="s1">&#39;6761&#39;</span><span class="p">,</span> <span class="s1">&#39;6762&#39;</span><span class="p">,</span> <span class="s1">&#39;6763&#39;</span><span class="p">}</span> <span class="ow">or</span> <span class="n">card_number</span><span class="p">[</span>
-        <span class="p">:</span><span class="mi">6</span>
-    <span class="p">]</span> <span class="ow">in</span> <span class="p">(</span>
-        <span class="s1">&#39;676770&#39;</span><span class="p">,</span>
-        <span class="s1">&#39;676774&#39;</span><span class="p">,</span>
-    <span class="p">):</span>
-        <span class="n">brand</span> <span class="o">=</span> <span class="n">PaymentCardBrand</span><span class="o">.</span><span class="n">maestro</span>
-        <span class="n">required_length</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">20</span><span class="p">))</span>
-    <span class="k">elif</span> <span class="n">card_number</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;65&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="mi">644</span> <span class="o">&lt;=</span> <span class="nb">int</span><span class="p">(</span><span class="n">card_number</span><span class="p">[:</span><span class="mi">3</span><span class="p">])</span> <span class="o">&lt;=</span> <span class="mi">649</span> <span class="ow">or</span> <span class="n">card_number</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;6011&#39;</span><span class="p">):</span>
-        <span class="n">brand</span> <span class="o">=</span> <span class="n">PaymentCardBrand</span><span class="o">.</span><span class="n">discover</span>
-        <span class="n">required_length</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">20</span><span class="p">))</span>
-    <span class="k">elif</span> <span class="p">(</span>
-        <span class="mi">506099</span> <span class="o">&lt;=</span> <span class="nb">int</span><span class="p">(</span><span class="n">card_number</span><span class="p">[:</span><span class="mi">6</span><span class="p">])</span> <span class="o">&lt;=</span> <span class="mi">506198</span>
-        <span class="ow">or</span> <span class="mi">650002</span> <span class="o">&lt;=</span> <span class="nb">int</span><span class="p">(</span><span class="n">card_number</span><span class="p">[:</span><span class="mi">6</span><span class="p">])</span> <span class="o">&lt;=</span> <span class="mi">650027</span>
-        <span class="ow">or</span> <span class="mi">507865</span> <span class="o">&lt;=</span> <span class="nb">int</span><span class="p">(</span><span class="n">card_number</span><span class="p">[:</span><span class="mi">6</span><span class="p">])</span> <span class="o">&lt;=</span> <span class="mi">507964</span>
-    <span class="p">):</span>
-        <span class="n">brand</span> <span class="o">=</span> <span class="n">PaymentCardBrand</span><span class="o">.</span><span class="n">verve</span>
-        <span class="n">required_length</span> <span class="o">=</span> <span class="p">[</span><span class="mi">16</span><span class="p">,</span> <span class="mi">18</span><span class="p">,</span> <span class="mi">19</span><span class="p">]</span>
-    <span class="k">elif</span> <span class="n">card_number</span><span class="p">[:</span><span class="mi">4</span><span class="p">]</span> <span class="ow">in</span> <span class="p">{</span><span class="s1">&#39;5019&#39;</span><span class="p">,</span> <span class="s1">&#39;4571&#39;</span><span class="p">}:</span>
-        <span class="n">brand</span> <span class="o">=</span> <span class="n">PaymentCardBrand</span><span class="o">.</span><span class="n">dankort</span>
-        <span class="n">required_length</span> <span class="o">=</span> <span class="p">[</span><span class="mi">16</span><span class="p">]</span>
-    <span class="k">elif</span> <span class="n">card_number</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;9792&#39;</span><span class="p">):</span>
-        <span class="n">brand</span> <span class="o">=</span> <span class="n">PaymentCardBrand</span><span class="o">.</span><span class="n">troy</span>
-        <span class="n">required_length</span> <span class="o">=</span> <span class="p">[</span><span class="mi">16</span><span class="p">]</span>
-    <span class="k">elif</span> <span class="n">card_number</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span> <span class="ow">in</span> <span class="p">{</span><span class="s1">&#39;62&#39;</span><span class="p">,</span> <span class="s1">&#39;81&#39;</span><span class="p">}:</span>
-        <span class="n">brand</span> <span class="o">=</span> <span class="n">PaymentCardBrand</span><span class="o">.</span><span class="n">unionpay</span>
-        <span class="n">required_length</span> <span class="o">=</span> <span class="p">[</span><span class="mi">16</span><span class="p">,</span> <span class="mi">19</span><span class="p">]</span>
-    <span class="k">elif</span> <span class="mi">3528</span> <span class="o">&lt;=</span> <span class="nb">int</span><span class="p">(</span><span class="n">card_number</span><span class="p">[:</span><span class="mi">4</span><span class="p">])</span> <span class="o">&lt;=</span> <span class="mi">3589</span><span class="p">:</span>
-        <span class="n">brand</span> <span class="o">=</span> <span class="n">PaymentCardBrand</span><span class="o">.</span><span class="n">jcb</span>
-        <span class="n">required_length</span> <span class="o">=</span> <span class="p">[</span><span class="mi">16</span><span class="p">,</span> <span class="mi">19</span><span class="p">]</span>
+    <span class="n">brand</span><span class="p">,</span> <span class="n">required_length</span> <span class="o">=</span> <span class="n">PaymentCardNumber</span><span class="o">.</span><span class="n">_identify_brand</span><span class="p">(</span><span class="n">card_number</span><span class="p">)</span>
 
     <span class="n">valid</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">card_number</span><span class="p">)</span> <span class="ow">in</span> <span class="n">required_length</span> <span class="k">if</span> <span class="n">brand</span> <span class="o">!=</span> <span class="n">PaymentCardBrand</span><span class="o">.</span><span class="n">other</span> <span class="k">else</span> <span class="kc">True</span>
 
@@ -4273,7 +4187,7 @@ for major brands.</p>
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["https://docs.pydantic.dev/dev/pydantic-2.13.0a0+dev-py3-none-any.whl", "email-validator>=2.0.0", "pydantic-core==2.41.4", "pydantic-extra-types==2.10.0"]
+    window.mkdocs_run_deps = ["https://docs.pydantic.dev/dev/pydantic-2.13.0a0+dev-py3-none-any.whl", "email-validator>=2.0.0", "pydantic-core==2.41.4", "pydantic-extra-types==2.10.6"]
     </script>
 
               </article>

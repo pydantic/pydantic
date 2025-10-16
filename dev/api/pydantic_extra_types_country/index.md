@@ -11,12 +11,14 @@ from pydantic import BaseModel
 
 from pydantic_extra_types.country import CountryAlpha2
 
+
 class Product(BaseModel):
     made_in: CountryAlpha2
 
+
 product = Product(made_in='ES')
 print(product)
-#> made_in='ES'
+# > made_in='ES'
 
 ```
 
@@ -58,12 +60,14 @@ from pydantic import BaseModel
 
 from pydantic_extra_types.country import CountryAlpha3
 
+
 class Product(BaseModel):
     made_in: CountryAlpha3
 
-product = Product(made_in="USA")
+
+product = Product(made_in='USA')
 print(product)
-#> made_in='USA'
+# > made_in='USA'
 
 ```
 
@@ -105,12 +109,14 @@ from pydantic import BaseModel
 
 from pydantic_extra_types.country import CountryNumericCode
 
+
 class Product(BaseModel):
     made_in: CountryNumericCode
 
-product = Product(made_in="840")
+
+product = Product(made_in='840')
 print(product)
-#> made_in='840'
+# > made_in='840'
 
 ```
 
@@ -152,12 +158,14 @@ from pydantic import BaseModel
 
 from pydantic_extra_types.country import CountryShortName
 
+
 class Product(BaseModel):
     made_in: CountryShortName
 
-product = Product(made_in="United States")
+
+product = Product(made_in='United States')
 print(product)
-#> made_in='United States'
+# > made_in='United States'
 
 ```
 
