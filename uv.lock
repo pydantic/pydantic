@@ -1985,7 +1985,7 @@ all = [
     { name = "mkdocstrings-python" },
     { name = "mypy" },
     { name = "packaging" },
-    { name = "pydantic-extra-types", specifier = "==2.10" },
+    { name = "pydantic-extra-types", specifier = ">=2.10.6" },
     { name = "pydantic-settings" },
     { name = "pyrefly" },
     { name = "pyright" },
@@ -2030,7 +2030,7 @@ docs = [
     { name = "mkdocs-material", extras = ["imaging"] },
     { name = "mkdocs-redirects" },
     { name = "mkdocstrings-python" },
-    { name = "pydantic-extra-types", specifier = "==2.10" },
+    { name = "pydantic-extra-types", specifier = ">=2.10.6" },
     { name = "pydantic-settings" },
     { name = "pyupgrade" },
     { name = "requests" },
@@ -2188,15 +2188,15 @@ wheels = [
 
 [[package]]
 name = "pydantic-extra-types"
-version = "2.10.0"
+version = "2.10.6"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pydantic" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/f4/92/8542f406466d11bf348b795d498906034f9bb9016f09e906ff7fee6444be/pydantic_extra_types-2.10.0.tar.gz", hash = "sha256:552c47dd18fe1d00cfed75d9981162a2f3203cf7e77e55a3d3e70936f59587b9", size = 44559, upload-time = "2024-11-04T17:31:08.939Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/3a/10/fb64987804cde41bcc39d9cd757cd5f2bb5d97b389d81aa70238b14b8a7e/pydantic_extra_types-2.10.6.tar.gz", hash = "sha256:c63d70bf684366e6bbe1f4ee3957952ebe6973d41e7802aea0b770d06b116aeb", size = 141858, upload-time = "2025-10-08T13:47:49.483Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/38/41/0b0cc8b59c31a04bdfde2ae71fccbb13c11fadafc8bd41a2af3e76db7e44/pydantic_extra_types-2.10.0-py3-none-any.whl", hash = "sha256:b19943914e6286548254f5079d1da094e9c0583ee91a8e611e9df24bfd07dbcd", size = 34185, upload-time = "2024-11-04T17:31:07.567Z" },
+    { url = "https://files.pythonhosted.org/packages/93/04/5c918669096da8d1c9ec7bb716bd72e755526103a61bc5e76a3e4fb23b53/pydantic_extra_types-2.10.6-py3-none-any.whl", hash = "sha256:6106c448316d30abf721b5b9fecc65e983ef2614399a24142d689c7546cc246a", size = 40949, upload-time = "2025-10-08T13:47:48.268Z" },
 ]
 
 [[package]]
