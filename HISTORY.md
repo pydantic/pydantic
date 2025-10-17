@@ -2,6 +2,35 @@
 <!-- markdownlint-disable descriptive-link-text -->
 <!-- markdownlint-disable-next-line first-line-heading -->
 
+## v2.12.3 (2025-10-17)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.12.3)
+
+### What's Changed
+
+This is the third 2.13 patch release, fixing issues related to the `FieldInfo` class, and reverting a change to the supported
+[*after* model validator](https://docs.pydantic.dev/latest/concepts/validators/#model-validators) function signatures.
+
+* Raise a warning when an invalid after model validator function signature is raised by @Viicos in [#12414](https://github.com/pydantic/pydantic/pull/12414).
+  Starting in 2.12.0, using class methods for *after* model validators raised an error, but the error wasn't raised concistently. We decided
+  to emit a deprecation warning instead.
+* Add [`FieldInfo.asdict()`](https://docs.pydantic.dev/latest/api/fields/#pydantic.fields.FieldInfo.asdict) method, improve documentation around `FieldInfo` by @Viicos in [#12411](https://github.com/pydantic/pydantic/pull/12411).
+  This also add back support for mutations on `FieldInfo` classes, that are reused as `Annotated` metadata. **However**, note that this is still
+  *not* a supported pattern. Instead, please refer to the [added example](https://docs.pydantic.dev/latest/examples/dynamic_models/) in the documentation.
+
+The [blog post](https://pydantic.dev/articles/pydantic-v2-12-release#changes) section on changes was also updated to document the changes related to `serialize_as_any`.
+
+## v2.12.2 (2025-10-14)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.12.2)
+
+### What's Changed
+
+#### Fixes
+
+* Release a new `pydantic-core` version, as a corrupted CPython 3.10 `manylinux2014_aarch64` wheel got uploaded ([pydantic-core#1843](https://github.com/pydantic/pydantic-core/pull/1843)).
+* Fix issue with recursive generic models with a parent model class by @Viicos in [#12398](https://github.com/pydantic/pydantic/pull/12398)
+
 ## v2.12.1 (2025-10-13)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.12.1)
