@@ -838,6 +838,15 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
+  <a href="#inspecting-model-fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      Inspecting model fields
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#default-values" class="md-nav__link">
     <span class="md-ellipsis">
       Default values
@@ -934,9 +943,9 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
-  <a href="#exclude" class="md-nav__link">
+  <a href="#excluding-fields" class="md-nav__link">
     <span class="md-ellipsis">
-      Exclude
+      Excluding fields
     </span>
   </a>
   
@@ -2556,6 +2565,27 @@ to help you monitor and understand your
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/dynamic_models/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Dynamic models
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -3165,6 +3195,15 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
+  <a href="#inspecting-model-fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      Inspecting model fields
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#default-values" class="md-nav__link">
     <span class="md-ellipsis">
       Default values
@@ -3261,9 +3300,9 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
-  <a href="#exclude" class="md-nav__link">
+  <a href="#excluding-fields" class="md-nav__link">
     <span class="md-ellipsis">
-      Exclude
+      Excluding fields
     </span>
   </a>
   
@@ -3437,6 +3476,29 @@ assignment form instead.</p>
 </li>
 </ol>
 </div>
+<h2 id="inspecting-model-fields">Inspecting model fields<a class="headerlink" href="#inspecting-model-fields" title="Permanent link">&para;</a></h2>
+<p>The fields of a model can be inspected using the <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_fields"><code>model_fields</code></a> class attribute
+(or the <code>__pydantic_fields__</code> attribute for <a href="../dataclasses/">Pydantic dataclasses</a>). It is a mapping of field names
+to their definition (represented as <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.FieldInfo"><code>FieldInfo</code></a> instances).</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">WithJsonSchema</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">a</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span>
+        <span class="nb">int</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">gt</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">WithJsonSchema</span><span class="p">({</span><span class="s1">&#39;extra&#39;</span><span class="p">:</span> <span class="s1">&#39;data&#39;</span><span class="p">}),</span> <span class="n">Field</span><span class="p">(</span><span class="n">alias</span><span class="o">=</span><span class="s1">&#39;b&#39;</span><span class="p">)</span>
+    <span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+
+
+<span class="n">field_info</span> <span class="o">=</span> <span class="n">Model</span><span class="o">.</span><span class="n">model_fields</span><span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">field_info</span><span class="o">.</span><span class="n">annotation</span><span class="p">)</span>
+<span class="c1">#&gt; &lt;class &#39;int&#39;&gt;</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">field_info</span><span class="o">.</span><span class="n">alias</span><span class="p">)</span>
+<span class="c1">#&gt; b</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">field_info</span><span class="o">.</span><span class="n">metadata</span><span class="p">)</span>
+<span class="c1">#&gt; [Gt(gt=1), WithJsonSchema(json_schema={&#39;extra&#39;: &#39;data&#39;}, mode=None)]</span>
+</code></pre></div>
 <h2 id="default-values">Default values<a class="headerlink" href="#default-values" title="Permanent link">&para;</a></h2>
 <p>Default values for fields can be provided using the normal assignment syntax or by providing a value
 to the <code>default</code> argument:</p>
@@ -3947,8 +4009,11 @@ assigned a new value after the model is created (immutability).</p>
 <ol>
 <li>Since <code>name</code> field is frozen, the assignment is not allowed.</li>
 </ol>
-<h2 id="exclude">Exclude<a class="headerlink" href="#exclude" title="Permanent link">&para;</a></h2>
-<p>The <code>exclude</code> parameter can be used to control which fields should be excluded from the
+<!-- old anchor added for backwards compatibility -->
+<!-- markdownlint-disable-next-line no-empty-links -->
+<p><a href="" id="exclude"></a></p>
+<h2 id="excluding-fields">Excluding fields<a class="headerlink" href="#excluding-fields" title="Permanent link">&para;</a></h2>
+<p>The <code>exclude</code> and <code>exclude_if</code> parameters can be used to control which fields should be excluded from the
 model when exporting the model.</p>
 <p>See the following example:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
@@ -3964,9 +4029,9 @@ model when exporting the model.</p>
 <span class="c1">#&gt; {&#39;name&#39;: &#39;John&#39;}</span>
 </code></pre></div>
 <ol>
-<li>The <code>age</code> field is not included in the <code>model_dump()</code> output, since it is excluded.</li>
+<li>The <code>age</code> field is not included in the <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_dump"><code>model_dump()</code></a> output, since it is excluded.</li>
 </ol>
-<p>See the [Serialization] section for more details.</p>
+<p>See the dedicated <a href="../serialization/#field-inclusion-and-exclusion">serialization section</a> for more details.</p>
 <h2 id="deprecated-fields">Deprecated fields<a class="headerlink" href="#deprecated-fields" title="Permanent link">&para;</a></h2>
 <p>The <code>deprecated</code> parameter can be used to mark a field as being deprecated. Doing so will result in:</p>
 <ul>

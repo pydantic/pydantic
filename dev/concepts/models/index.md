@@ -1505,6 +1505,8 @@ To pickle a dynamically created model:
 - the model must be defined globally
 - the `__module__` argument must be provided
 
+See also: the [dynamic model example](../../examples/dynamic_models/), providing guidelines to derive an optional model from another one.
+
 ## `RootModel` and custom root types
 
 API Documentation

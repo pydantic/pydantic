@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://docs.pydantic.dev/latest/integrations/llms/">
+        <link rel="canonical" href="https://docs.pydantic.dev/latest/examples/dynamic_models/">
       
       
-        <link rel="prev" href="../logfire/">
+        <link rel="prev" href="../custom_validators/">
       
       
-        <link rel="next" href="../mypy/">
+        <link rel="next" href="../../errors/errors/">
       
       
       <link rel="icon" href="../../favicon.png">
@@ -24,7 +24,7 @@
     
     
       
-        <title>LLMs - Pydantic Validation</title>
+        <title>Dynamic models - Pydantic Validation</title>
       
     
     
@@ -67,11 +67,11 @@
       
         <meta  property="og:type"  content="website" >
       
-        <meta  property="og:title"  content="LLMs - Pydantic Validation" >
+        <meta  property="og:title"  content="Dynamic models - Pydantic Validation" >
       
         <meta  property="og:description"  content="Data validation using Python type hints" >
       
-        <meta  property="og:image"  content="https://docs.pydantic.dev/latest/assets/images/social/integrations/llms.png" >
+        <meta  property="og:image"  content="https://docs.pydantic.dev/latest/assets/images/social/examples/dynamic_models.png" >
       
         <meta  property="og:image:type"  content="image/png" >
       
@@ -79,15 +79,15 @@
       
         <meta  property="og:image:height"  content="630" >
       
-        <meta  property="og:url"  content="https://docs.pydantic.dev/latest/integrations/llms/" >
+        <meta  property="og:url"  content="https://docs.pydantic.dev/latest/examples/dynamic_models/" >
       
         <meta  name="twitter:card"  content="summary_large_image" >
       
-        <meta  name="twitter:title"  content="LLMs - Pydantic Validation" >
+        <meta  name="twitter:title"  content="Dynamic models - Pydantic Validation" >
       
         <meta  name="twitter:description"  content="Data validation using Python type hints" >
       
-        <meta  name="twitter:image"  content="https://docs.pydantic.dev/latest/assets/images/social/integrations/llms.png" >
+        <meta  name="twitter:image"  content="https://docs.pydantic.dev/latest/assets/images/social/examples/dynamic_models.png" >
       
     
     
@@ -165,7 +165,7 @@ to help you monitor and understand your
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              LLMs
+              Dynamic models
             
           </span>
         </div>
@@ -361,11 +361,13 @@ to help you monitor and understand your
         
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../../examples/files/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../files/" class="md-tabs__link">
           
   
   Examples
@@ -397,13 +399,11 @@ to help you monitor and understand your
         
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../logfire/" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../../integrations/logfire/" class="md-tabs__link">
           
   
   Integrations
@@ -2193,25 +2193,30 @@ to help you monitor and understand your
       
   
   
+    
   
   
+  
     
     
     
+      
+        
+        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
         
           
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
             
   
   <span class="md-ellipsis">
@@ -2222,7 +2227,7 @@ to help you monitor and understand your
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             Examples
@@ -2236,7 +2241,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../examples/files/" class="md-nav__link">
+      <a href="../files/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2257,7 +2262,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../examples/requests/" class="md-nav__link">
+      <a href="../requests/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2278,7 +2283,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../examples/queues/" class="md-nav__link">
+      <a href="../queues/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2299,7 +2304,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../examples/orms/" class="md-nav__link">
+      <a href="../orms/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2320,7 +2325,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../examples/custom_validators/" class="md-nav__link">
+      <a href="../custom_validators/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2338,10 +2343,17 @@ to help you monitor and understand your
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../examples/dynamic_models/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -2350,6 +2362,7 @@ to help you monitor and understand your
   
 
       </a>
+      
     </li>
   
 
@@ -2476,30 +2489,25 @@ to help you monitor and understand your
       
   
   
-    
   
   
-  
     
     
     
-      
-        
-        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
         
           
-          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -2510,7 +2518,7 @@ to help you monitor and understand your
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             Integrations
@@ -2524,7 +2532,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../logfire/" class="md-nav__link">
+      <a href="../../integrations/logfire/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2542,17 +2550,10 @@ to help you monitor and understand your
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../integrations/llms/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2561,7 +2562,6 @@ to help you monitor and understand your
   
 
       </a>
-      
     </li>
   
 
@@ -2579,20 +2579,17 @@ to help you monitor and understand your
       
       
         
-          
-          
-        
       
     
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
         <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7_3" >
         
           
-          <label class="md-nav__link" for="__nav_7_3" id="__nav_7_3_label" tabindex="">
+          <label class="md-nav__link" for="__nav_7_3" id="__nav_7_3_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -2617,7 +2614,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../mypy/" class="md-nav__link">
+      <a href="../../integrations/mypy/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2638,7 +2635,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../pyrefly/" class="md-nav__link">
+      <a href="../../integrations/pyrefly/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2659,7 +2656,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../pycharm/" class="md-nav__link">
+      <a href="../../integrations/pycharm/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2680,7 +2677,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../hypothesis/" class="md-nav__link">
+      <a href="../../integrations/hypothesis/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2701,7 +2698,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../visual_studio_code/" class="md-nav__link">
+      <a href="../../integrations/visual_studio_code/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2722,7 +2719,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../datamodel_code_generator/" class="md-nav__link">
+      <a href="../../integrations/datamodel_code_generator/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2743,7 +2740,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../devtools/" class="md-nav__link">
+      <a href="../../integrations/devtools/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2764,7 +2761,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../rich/" class="md-nav__link">
+      <a href="../../integrations/rich/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2785,7 +2782,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../linting/" class="md-nav__link">
+      <a href="../../integrations/linting/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2806,7 +2803,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../documentation/" class="md-nav__link">
+      <a href="../../integrations/documentation/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2840,20 +2837,17 @@ to help you monitor and understand your
       
       
         
-          
-          
-        
       
     
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
         <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7_4" >
         
           
-          <label class="md-nav__link" for="__nav_7_4" id="__nav_7_4_label" tabindex="">
+          <label class="md-nav__link" for="__nav_7_4" id="__nav_7_4_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -2878,7 +2872,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../aws_lambda/" class="md-nav__link">
+      <a href="../../integrations/aws_lambda/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2984,21 +2978,268 @@ to help you monitor and understand your
   
 
 
-  <h1>LLMs</h1>
+  <h1>Dynamic models</h1>
 
-<p>The Pydantic documentation is available in the <a href="https://llmstxt.org/">llms.txt</a> format.
-This format is defined in Markdown and suited for large language models.</p>
-<p>Two formats are available:</p>
+<p>Models can be <a href="../../concepts/models/#dynamic-model-creation">created dynamically</a> using the <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.create_model"><code>create_model()</code></a>
+factory function.</p>
+<p>In this example, we will show how to dynamically derive a model from an existing one, making every field optional. To achieve this,
+we will make use of the <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_fields"><code>model_fields</code></a> model class attribute, and derive new annotations
+from the field definitions to be passed to the <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.create_model"><code>create_model()</code></a> factory. Of course, this example can apply
+to any use case where you need to derive a new model from another (remove default values, add aliases, etc).</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:3"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.9</label><label for="__tabbed_1_2">Python 3.10</label><label for="__tabbed_1_3">Python 3.11 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">create_model</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">make_fields_optional</span><span class="p">(</span><span class="n">model_cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">BaseModel</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">type</span><span class="p">[</span><span class="n">BaseModel</span><span class="p">]:</span>
+    <span class="n">new_fields</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">for</span> <span class="n">f_name</span><span class="p">,</span> <span class="n">f_info</span> <span class="ow">in</span> <span class="n">model_cls</span><span class="o">.</span><span class="n">model_fields</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">f_dct</span> <span class="o">=</span> <span class="n">f_info</span><span class="o">.</span><span class="n">asdict</span><span class="p">()</span>
+        <span class="n">new_fields</span><span class="p">[</span><span class="n">f_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">Annotated</span><span class="p">[(</span><span class="n">Union</span><span class="p">[</span><span class="n">f_dct</span><span class="p">[</span><span class="s1">&#39;annotation&#39;</span><span class="p">],</span> <span class="kc">None</span><span class="p">],</span> <span class="o">*</span><span class="n">f_dct</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">],</span> <span class="n">Field</span><span class="p">(</span><span class="o">**</span><span class="n">f_dct</span><span class="p">[</span><span class="s1">&#39;attributes&#39;</span><span class="p">]))],</span>
+            <span class="kc">None</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">create_model</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">type</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s1">Optional&#39;</span><span class="p">,</span>
+        <span class="n">__base__</span><span class="o">=</span><span class="n">model_cls</span><span class="p">,</span>  <span class="c1"># (1)!</span>
+        <span class="o">**</span><span class="n">new_fields</span><span class="p">,</span>
+    <span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+<ol>
+<li>Using the original model as a base will inherit the <a href="../../concepts/validators/">validators</a>, <a href="../../concepts/fields/#the-computed_field-decorator">computed fields</a>, etc.
+The parent fields are overridden by the ones we define.</li>
+</ol>
+</div>
+<div class="tabbed-block">
+<div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">create_model</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">make_fields_optional</span><span class="p">(</span><span class="n">model_cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">BaseModel</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">type</span><span class="p">[</span><span class="n">BaseModel</span><span class="p">]:</span>
+    <span class="n">new_fields</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">for</span> <span class="n">f_name</span><span class="p">,</span> <span class="n">f_info</span> <span class="ow">in</span> <span class="n">model_cls</span><span class="o">.</span><span class="n">model_fields</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">f_dct</span> <span class="o">=</span> <span class="n">f_info</span><span class="o">.</span><span class="n">asdict</span><span class="p">()</span>
+        <span class="n">new_fields</span><span class="p">[</span><span class="n">f_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">Annotated</span><span class="p">[(</span><span class="n">f_dct</span><span class="p">[</span><span class="s1">&#39;annotation&#39;</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="n">f_dct</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">],</span> <span class="n">Field</span><span class="p">(</span><span class="o">**</span><span class="n">f_dct</span><span class="p">[</span><span class="s1">&#39;attributes&#39;</span><span class="p">]))],</span>
+            <span class="kc">None</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">create_model</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">type</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s1">Optional&#39;</span><span class="p">,</span>
+        <span class="n">__base__</span><span class="o">=</span><span class="n">model_cls</span><span class="p">,</span>  <span class="c1"># (1)!</span>
+        <span class="o">**</span><span class="n">new_fields</span><span class="p">,</span>
+    <span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+<ol>
+<li>Using the original model as a base will inherit the <a href="../../concepts/validators/">validators</a>, <a href="../../concepts/fields/#the-computed_field-decorator">computed fields</a>, etc.
+The parent fields are overridden by the ones we define.</li>
+</ol>
+</div>
+<div class="tabbed-block">
+<div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">create_model</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">make_fields_optional</span><span class="p">(</span><span class="n">model_cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">BaseModel</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">type</span><span class="p">[</span><span class="n">BaseModel</span><span class="p">]:</span>
+    <span class="n">new_fields</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">for</span> <span class="n">f_name</span><span class="p">,</span> <span class="n">f_info</span> <span class="ow">in</span> <span class="n">model_cls</span><span class="o">.</span><span class="n">model_fields</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">f_dct</span> <span class="o">=</span> <span class="n">f_info</span><span class="o">.</span><span class="n">asdict</span><span class="p">()</span>
+        <span class="n">new_fields</span><span class="p">[</span><span class="n">f_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">Annotated</span><span class="p">[</span><span class="n">f_dct</span><span class="p">[</span><span class="s1">&#39;annotation&#39;</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="n">f_dct</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">],</span> <span class="n">Field</span><span class="p">(</span><span class="o">**</span><span class="n">f_dct</span><span class="p">[</span><span class="s1">&#39;attributes&#39;</span><span class="p">])],</span>
+            <span class="kc">None</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">create_model</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">type</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s1">Optional&#39;</span><span class="p">,</span>
+        <span class="n">__base__</span><span class="o">=</span><span class="n">model_cls</span><span class="p">,</span>  <span class="c1"># (1)!</span>
+        <span class="o">**</span><span class="n">new_fields</span><span class="p">,</span>
+    <span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+<ol>
+<li>Using the original model as a base will inherit the <a href="../../concepts/validators/">validators</a>, <a href="../../concepts/fields/#the-computed_field-decorator">computed fields</a>, etc.
+The parent fields are overridden by the ones we define.</li>
+</ol>
+</div>
+</div>
+</div>
+<p>For each field, we generate a dictionary representation of the <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.FieldInfo"><code>FieldInfo</code></a> instance
+using the <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.FieldInfo.asdict"><code>asdict()</code></a> method, containing the annotation, metadata and attributes.</p>
+<p>With the following model:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">f</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">gt</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">WithJsonSchema</span><span class="p">({</span><span class="s1">&#39;extra&#39;</span><span class="p">:</span> <span class="s1">&#39;data&#39;</span><span class="p">}),</span> <span class="n">Field</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;F&#39;</span><span class="p">)]</span> <span class="o">=</span> <span class="mi">1</span>
+</code></pre></div>
+<p>The <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.FieldInfo"><code>FieldInfo</code></a> instance of <code>f</code> will have three items in its dictionary representation:</p>
 <ul>
-<li><a href="https://docs.pydantic.dev/latest/llms.txt">llms.txt</a>: a file containing a brief description
-  of the project, along with links to the different sections of the documentation. The structure
-  of this file is described in details in the <a href="https://llmstxt.org/#format">format documentation</a>.</li>
-<li><a href="https://docs.pydantic.dev/latest/llms-full.txt">llms-full.txt</a>: Similar to the <code>llms.txt</code> file,
-  but every link content is included. Note that this file may be too large for some LLMs.</li>
+<li><code>annotation</code>: <code>int</code>.</li>
+<li><code>metadata</code>: A list containing the type-specific constraints and other metadata: <code>[Gt(1), WithJsonSchema({'extra': 'data'})]</code>.</li>
+<li><code>attributes</code>: The remaining field-specific attributes: <code>{'title': 'F'}</code>.</li>
 </ul>
-<p>As of today, these files <em>cannot</em> be natively leveraged by LLM frameworks or IDEs. Alternatively,
-a <a href="https://modelcontextprotocol.io/">MCP server</a> can be implemented to properly parse the <code>llms.txt</code>
-file.</p>
+<p>With that in mind, we can recreate an annotation that "simulates" the one from the original model:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.9 and above</label><label for="__tabbed_2_2">Python 3.11 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span class="n">new_annotation</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[(</span>
+    <span class="n">f_dct</span><span class="p">[</span><span class="s1">&#39;annotation&#39;</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>  <span class="c1"># (1)!</span>
+    <span class="o">*</span><span class="n">f_dct</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">],</span>  <span class="c1"># (2)!</span>
+    <span class="n">Field</span><span class="p">(</span><span class="o">**</span><span class="n">f_dct</span><span class="p">[</span><span class="s1">&#39;attributes&#39;</span><span class="p">]),</span>  <span class="c1"># (3)!</span>
+<span class="p">)]</span>
+</code></pre></div>
+<ol>
+<li>
+<p>We create a new annotation from the existing one, but adding <code>None</code> as an allowed value
+   (in our previous example, this is equivalent to <code>int | None</code>).</p>
+</li>
+<li>
+<p>We unpack the metadata to be reused (in our previous example, this is equivalent to
+   specifying <code>Field(gt=1)</code> and <code>WithJsonSchema({'extra': 'data'})</code> as <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Annotated"><code>Annotated</code></a>
+   metadata).</p>
+</li>
+<li>
+<p>We specify the field-specific attributes by using the <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.Field"><code>Field()</code></a> function
+   (in our previous example, this is equivalent to <code>Field(title='F')</code>).</p>
+</li>
+</ol>
+</div>
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span class="n">new_annotation</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span>
+    <span class="n">f_dct</span><span class="p">[</span><span class="s1">&#39;annotation&#39;</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>  <span class="c1"># (1)!</span>
+    <span class="o">*</span><span class="n">f_dct</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">],</span>  <span class="c1"># (2)!</span>
+    <span class="n">Field</span><span class="p">(</span><span class="o">**</span><span class="n">f_dct</span><span class="p">[</span><span class="s1">&#39;attributes&#39;</span><span class="p">]),</span>  <span class="c1"># (3)!</span>
+<span class="p">]</span>
+</code></pre></div>
+<ol>
+<li>
+<p>We create a new annotation from the existing one, but adding <code>None</code> as an allowed value
+   (in our previous example, this is equivalent to <code>int | None</code>).</p>
+</li>
+<li>
+<p>We unpack the metadata to be reused (in our previous example, this is equivalent to
+   specifying <code>Field(gt=1)</code> and <code>WithJsonSchema({'extra': 'data'})</code> as <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Annotated"><code>Annotated</code></a>
+   metadata).</p>
+</li>
+<li>
+<p>We specify the field-specific attributes by using the <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.Field"><code>Field()</code></a> function
+   (in our previous example, this is equivalent to <code>Field(title='F')</code>).</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<p>and specify <code>None</code> as a default value (the second element of the tuple for the field definition accepted by <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.create_model"><code>create_model()</code></a>).</p>
+<p>Here is a demonstration of our factory function:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">a</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">gt</span><span class="o">=</span><span class="mi">1</span><span class="p">)]</span>
+
+
+<span class="n">ModelOptional</span> <span class="o">=</span> <span class="n">make_fields_optional</span><span class="p">(</span><span class="n">Model</span><span class="p">)</span>
+
+<span class="n">m</span> <span class="o">=</span> <span class="n">ModelOptional</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">a</span><span class="p">)</span>
+<span class="c1">#&gt; None</span>
+</code></pre></div>
+<p>A couple notes on the implementation:</p>
+<ul>
+<li>
+<p>Our <code>make_fields_optional()</code> function is defined as returning an arbitrary Pydantic model class (<code>-&gt; type[BaseModel]</code>).
+  An alternative solution can be to use a type variable to preserve the input class:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.9 and above</label><label for="__tabbed_3_2">Python 3.12 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span class="n">ModelTypeT</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;ModelTypeT&#39;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="nb">type</span><span class="p">[</span><span class="n">BaseModel</span><span class="p">])</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">make_fields_optional</span><span class="p">(</span><span class="n">model_cls</span><span class="p">:</span> <span class="n">ModelTypeT</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ModelTypeT</span><span class="p">:</span>
+    <span class="o">...</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">make_fields_optional</span><span class="p">[</span><span class="n">ModelTypeT</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">BaseModel</span><span class="p">]](</span><span class="n">model_cls</span><span class="p">:</span> <span class="n">ModelTypeT</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ModelTypeT</span><span class="p">:</span>
+    <span class="o">...</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p>However, note that static type checkers <em>won't</em> be able to understand that all fields are now optional.</p>
+</li>
+<li>
+<p>The experimental <a href="../../concepts/experimental/#missing-sentinel"><code>MISSING</code> sentinel</a> can be used as an alternative to <code>None</code>
+  for the default values. Simply replace <code>None</code> by <code>MISSING</code> in the new annotation and default value.</p>
+</li>
+<li>
+<p>You might be tempted to make a copy of the original <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.FieldInfo"><code>FieldInfo</code></a> instances, add a
+  default and/or perform other mutations, to then reuse it as <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Annotated"><code>Annotated</code></a> metadata. While this
+  may work in some cases, it is <strong>not</strong> a supported pattern, and could break or be deprecated at any point. We strongly
+  encourage using the pattern from this example instead.</p>
+</li>
+</ul>
 
 
 
