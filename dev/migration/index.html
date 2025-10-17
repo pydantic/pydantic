@@ -4097,7 +4097,8 @@ will be merged, and for any settings defined in both, those from <code>Model2</c
 </code></pre></div>
 <ul>
 <li><code>@root_validator</code> has been deprecated, and should be replaced with
-    <a href="../api/functional_validators/#pydantic.functional_validators.model_validator"><code>@model_validator</code></a>, which also provides new features and improvements.<ul>
+    <a href="../api/functional_validators/#pydantic.functional_validators.model_validator"><code>@model_validator</code></a>, which also provides new features and improvements.
+    Be aware that the allowed signatures have changed (see the <a href="../concepts/validators/#model-validators">relevant documentation</a>).<ul>
 <li>Under some circumstances (such as assignment when <code>model_config['validate_assignment'] is True</code>),
     the <code>@model_validator</code> decorator will receive an instance of the model, not a dict of values. You may
     need to be careful to handle this case.</li>
