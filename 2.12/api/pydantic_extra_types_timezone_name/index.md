@@ -48,7 +48,7 @@ print(tz)
 ## get_timezones
 
 ```python
-get_timezones() -> Set[str]
+get_timezones() -> set[str]
 
 ```
 
@@ -57,13 +57,14 @@ Determine the timezone provider and return available timezones.
 Source code in `pydantic_extra_types/timezone_name.py`
 
 ```python
-def get_timezones() -> Set[str]:
+def get_timezones() -> set[str]:
     """Determine the timezone provider and return available timezones."""
-    if _is_available('zoneinfo') and _is_available('tzdata'):  # pragma: no cover
-        return _tz_provider_from_zone_info()
+    if _is_available('zoneinfo'):  # pragma: no cover
+        timezones = _tz_provider_from_zone_info()
+        if len(timezones) == 0:  # pragma: no cover
+            raise ImportError('No timezone provider found. Please install tzdata with "pip install tzdata"')
+        return timezones
     elif _is_available('pytz'):  # pragma: no cover
-        if sys.version_info[:2] > (3, 8):
-            _warn_about_pytz_usage()
         return _tz_provider_from_pytz()
     else:  # pragma: no cover
         if sys.version_info[:2] == (3, 8):

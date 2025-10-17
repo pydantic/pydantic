@@ -2566,6 +2566,27 @@ to help you monitor and understand your
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/dynamic_models/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Dynamic models
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -4455,9 +4476,9 @@ the populated custom type.</p>
 
                   <details class="quote">
                     <summary>Source code in <code>pydantic/functional_validators.py</code></summary>
-                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">874</span>
-<span class="normal">875</span>
-<span class="normal">876</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">from_type</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">_FromTypeT</span><span class="p">],</span> <span class="o">/</span><span class="p">,</span> <span class="n">instantiation_hook</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_FromTypeT</span><span class="p">],</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">884</span>
+<span class="normal">885</span>
+<span class="normal">886</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">from_type</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">_FromTypeT</span><span class="p">],</span> <span class="o">/</span><span class="p">,</span> <span class="n">instantiation_hook</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_FromTypeT</span><span class="p">],</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">from_type</span> <span class="o">=</span> <span class="n">from_type</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">instantiation_hook</span> <span class="o">=</span> <span class="n">instantiation_hook</span>
 </code></pre></div></td></tr></table></div>
@@ -4724,8 +4745,7 @@ when <code>mode</code> is either <code>'before'</code>, <code>'plain'</code> or 
 
             <details class="quote">
               <summary>Source code in <code>pydantic/functional_validators.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">409</span>
-<span class="normal">410</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">410</span>
 <span class="normal">411</span>
 <span class="normal">412</span>
 <span class="normal">413</span>
@@ -4832,7 +4852,8 @@ when <code>mode</code> is either <code>'before'</code>, <code>'plain'</code> or 
 <span class="normal">514</span>
 <span class="normal">515</span>
 <span class="normal">516</span>
-<span class="normal">517</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">field_validator</span><span class="p">(</span>
+<span class="normal">517</span>
+<span class="normal">518</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">field_validator</span><span class="p">(</span>
     <span class="n">field</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="o">/</span><span class="p">,</span>
     <span class="o">*</span><span class="n">fields</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -5068,8 +5089,7 @@ It can be one of the following: 'wrap', 'before', or 'after'.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/functional_validators.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">671</span>
-<span class="normal">672</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">672</span>
 <span class="normal">673</span>
 <span class="normal">674</span>
 <span class="normal">675</span>
@@ -5124,7 +5144,17 @@ It can be one of the following: 'wrap', 'before', or 'after'.</p>
 <span class="normal">724</span>
 <span class="normal">725</span>
 <span class="normal">726</span>
-<span class="normal">727</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">model_validator</span><span class="p">(</span>
+<span class="normal">727</span>
+<span class="normal">728</span>
+<span class="normal">729</span>
+<span class="normal">730</span>
+<span class="normal">731</span>
+<span class="normal">732</span>
+<span class="normal">733</span>
+<span class="normal">734</span>
+<span class="normal">735</span>
+<span class="normal">736</span>
+<span class="normal">737</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">model_validator</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;wrap&#39;</span><span class="p">,</span> <span class="s1">&#39;before&#39;</span><span class="p">,</span> <span class="s1">&#39;after&#39;</span><span class="p">],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
@@ -5174,9 +5204,18 @@ It can be one of the following: 'wrap', 'before', or 'after'.</p>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">dec</span><span class="p">(</span><span class="n">f</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">PydanticDescriptorProxy</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
-        <span class="c1"># auto apply the @classmethod decorator (except for *after* validators, which should be instance methods):</span>
-        <span class="k">if</span> <span class="n">mode</span> <span class="o">!=</span> <span class="s1">&#39;after&#39;</span><span class="p">:</span>
-            <span class="n">f</span> <span class="o">=</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">ensure_classmethod_based_on_signature</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="c1"># auto apply the @classmethod decorator. NOTE: in V3, do not apply the conversion for &#39;after&#39; validators:</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">ensure_classmethod_based_on_signature</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;after&#39;</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="nb">classmethod</span><span class="p">):</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="n">category</span><span class="o">=</span><span class="n">PydanticDeprecatedSince212</span><span class="p">,</span>
+                <span class="n">message</span><span class="o">=</span><span class="p">(</span>
+                    <span class="s2">&quot;Using `@model_validator` with mode=&#39;after&#39; on a classmethod is deprecated. Instead, use an instance method. &quot;</span>
+                    <span class="sa">f</span><span class="s1">&#39;See the documentation at https://docs.pydantic.dev/</span><span class="si">{</span><span class="n">version_short</span><span class="p">()</span><span class="si">}</span><span class="s1">/concepts/validators/#model-after-validator.&#39;</span>
+                <span class="p">),</span>
+                <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+            <span class="p">)</span>
+
         <span class="n">dec_info</span> <span class="o">=</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">ModelValidatorDecoratorInfo</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">PydanticDescriptorProxy</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">dec_info</span><span class="p">)</span>
 
@@ -5254,7 +5293,7 @@ It can be one of the following: 'wrap', 'before', or 'after'.</p>
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.12.2", "email-validator>=2.0.0", "pydantic-core==2.41.4", "pydantic-extra-types==2.10.0"]
+    window.mkdocs_run_deps = ["pydantic==2.12.3", "email-validator>=2.0.0", "pydantic-core==2.41.4", "pydantic-extra-types==2.10.6"]
     </script>
 
               </article>

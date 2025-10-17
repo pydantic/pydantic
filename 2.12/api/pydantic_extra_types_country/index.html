@@ -2572,6 +2572,27 @@ to help you monitor and understand your
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/dynamic_models/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Dynamic models
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -3416,12 +3437,14 @@ format.</p>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_extra_types.country</span><span class="w"> </span><span class="kn">import</span> <span class="n">CountryAlpha2</span>
 
+
 <span class="k">class</span><span class="w"> </span><span class="nc">Product</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">made_in</span><span class="p">:</span> <span class="n">CountryAlpha2</span>
 
+
 <span class="n">product</span> <span class="o">=</span> <span class="n">Product</span><span class="p">(</span><span class="n">made_in</span><span class="o">=</span><span class="s1">&#39;ES&#39;</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">product</span><span class="p">)</span>
-<span class="c1">#&gt; made_in=&#39;ES&#39;</span>
+<span class="c1"># &gt; made_in=&#39;ES&#39;</span>
 </code></pre></div>
 
 
@@ -3541,12 +3564,14 @@ format.</p>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_extra_types.country</span><span class="w"> </span><span class="kn">import</span> <span class="n">CountryAlpha3</span>
 
+
 <span class="k">class</span><span class="w"> </span><span class="nc">Product</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">made_in</span><span class="p">:</span> <span class="n">CountryAlpha3</span>
 
-<span class="n">product</span> <span class="o">=</span> <span class="n">Product</span><span class="p">(</span><span class="n">made_in</span><span class="o">=</span><span class="s2">&quot;USA&quot;</span><span class="p">)</span>
+
+<span class="n">product</span> <span class="o">=</span> <span class="n">Product</span><span class="p">(</span><span class="n">made_in</span><span class="o">=</span><span class="s1">&#39;USA&#39;</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">product</span><span class="p">)</span>
-<span class="c1">#&gt; made_in=&#39;USA&#39;</span>
+<span class="c1"># &gt; made_in=&#39;USA&#39;</span>
 </code></pre></div>
 
 
@@ -3666,12 +3691,14 @@ format.</p>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_extra_types.country</span><span class="w"> </span><span class="kn">import</span> <span class="n">CountryNumericCode</span>
 
+
 <span class="k">class</span><span class="w"> </span><span class="nc">Product</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">made_in</span><span class="p">:</span> <span class="n">CountryNumericCode</span>
 
-<span class="n">product</span> <span class="o">=</span> <span class="n">Product</span><span class="p">(</span><span class="n">made_in</span><span class="o">=</span><span class="s2">&quot;840&quot;</span><span class="p">)</span>
+
+<span class="n">product</span> <span class="o">=</span> <span class="n">Product</span><span class="p">(</span><span class="n">made_in</span><span class="o">=</span><span class="s1">&#39;840&#39;</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">product</span><span class="p">)</span>
-<span class="c1">#&gt; made_in=&#39;840&#39;</span>
+<span class="c1"># &gt; made_in=&#39;840&#39;</span>
 </code></pre></div>
 
 
@@ -3790,12 +3817,14 @@ format.</p>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_extra_types.country</span><span class="w"> </span><span class="kn">import</span> <span class="n">CountryShortName</span>
 
+
 <span class="k">class</span><span class="w"> </span><span class="nc">Product</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">made_in</span><span class="p">:</span> <span class="n">CountryShortName</span>
 
-<span class="n">product</span> <span class="o">=</span> <span class="n">Product</span><span class="p">(</span><span class="n">made_in</span><span class="o">=</span><span class="s2">&quot;United States&quot;</span><span class="p">)</span>
+
+<span class="n">product</span> <span class="o">=</span> <span class="n">Product</span><span class="p">(</span><span class="n">made_in</span><span class="o">=</span><span class="s1">&#39;United States&#39;</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">product</span><span class="p">)</span>
-<span class="c1">#&gt; made_in=&#39;United States&#39;</span>
+<span class="c1"># &gt; made_in=&#39;United States&#39;</span>
 </code></pre></div>
 
 
@@ -3961,7 +3990,7 @@ format.</p>
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.12.2", "email-validator>=2.0.0", "pydantic-core==2.41.4", "pydantic-extra-types==2.10.0"]
+    window.mkdocs_run_deps = ["pydantic==2.12.3", "email-validator>=2.0.0", "pydantic-core==2.41.4", "pydantic-extra-types==2.10.6"]
     </script>
 
               </article>

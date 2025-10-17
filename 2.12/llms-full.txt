@@ -1839,6 +1839,32 @@ class Model(BaseModel):
 1. The Field() function is applied to `int` type, hence the `deprecated` flag won't have any effect. While this may be confusing given that the name of the Field() function would imply it should apply to the field, the API was designed when this function was the only way to provide metadata. You can alternatively make use of the [`annotated_types`](https://github.com/annotated-types/annotated-types) library which is now supported by Pydantic.
 1. The Field() function is applied to the "top-level" union type, hence the `deprecated` flag will be applied to the field.
 
+## Inspecting model fields
+
+The fields of a model can be inspected using the model_fields class attribute (or the `__pydantic_fields__` attribute for [Pydantic dataclasses](../dataclasses/)). It is a mapping of field names to their definition (represented as FieldInfo instances).
+
+```python
+from typing import Annotated
+
+from pydantic import BaseModel, Field, WithJsonSchema
+
+
+class Model(BaseModel):
+    a: Annotated[
+        int, Field(gt=1), WithJsonSchema({'extra': 'data'}), Field(alias='b')
+    ] = 1
+
+
+field_info = Model.model_fields['a']
+print(field_info.annotation)
+#> <class 'int'>
+print(field_info.alias)
+#> b
+print(field_info.metadata)
+#> [Gt(gt=1), WithJsonSchema(json_schema={'extra': 'data'}, mode=None)]
+
+```
+
 ## Default values
 
 Default values for fields can be provided using the normal assignment syntax or by providing a value to the `default` argument:
@@ -2388,9 +2414,9 @@ except ValidationError as e:
 
 1. Since `name` field is frozen, the assignment is not allowed.
 
-## Exclude
+## Excluding fields
 
-The `exclude` parameter can be used to control which fields should be excluded from the model when exporting the model.
+The `exclude` and `exclude_if` parameters can be used to control which fields should be excluded from the model when exporting the model.
 
 See the following example:
 
@@ -2409,9 +2435,9 @@ print(user.model_dump())  # (1)!
 
 ```
 
-1. The `age` field is not included in the `model_dump()` output, since it is excluded.
+1. The `age` field is not included in the model_dump() output, since it is excluded.
 
-See the [Serialization] section for more details.
+See the dedicated [serialization section](../serialization/#field-inclusion-and-exclusion) for more details.
 
 ## Deprecated fields
 
@@ -6330,6 +6356,8 @@ To pickle a dynamically created model:
 - the model must be defined globally
 - the `__module__` argument must be provided
 
+See also: the [dynamic model example](../../examples/dynamic_models/), providing guidelines to derive an optional model from another one.
+
 ## `RootModel` and custom root types
 
 API Documentation
@@ -10226,6 +10254,10 @@ This behavior is different from how things worked in Pydantic V1, where we would
 
 Duck typing serialization is the behavior of serializing a model instance based on the actual field values, rather than the field definitions. This means that for a field annotated with a model-like class, all the fields present in subclasses of such class will be included in the serialized output.
 
+To achieve duck typing serialization, Pydantic can apply *serialize as any* behavior. In this mode, Pydantic does *not* make use of the type annotation (more precisely, the serialization schema derived from the type) to infer how the value should be serialized, but instead inspects the actual type of the value at runtime to do so.
+
+When a subclass of a model is used as a value, Pydantic will *not* serialize it according to the schema of the parent class, but rather use the value itself and preserve all of its fields.
+
 This behavior can be configured at the field level and at runtime, for a specific serialization call:
 
 - Field level: use the SerializeAsAny annotation.
@@ -10307,6 +10339,8 @@ print(outer_model.model_dump(serialize_as_any=False))  # (2)!
 
 1. With `serialize_as_any` set to `True`, the result matches that of V1.
 1. With `serialize_as_any` set to `False` (the V2 default), fields present on the subclass, but not the base class, are not included in serialization.
+
+However, do note that the *serialize as any* behavior will apply to *all* values, not only the values where duck typing is relevant. You may want to prefer using the `SerializeAsAny` annotation when required instead.
 
 ## Field inclusion and exclusion
 
@@ -20651,11 +20685,13 @@ This class holds information about a field.
 
 Warning
 
-You generally shouldn't be creating `FieldInfo` directly, you'll only need to use it when accessing BaseModel `.model_fields` internals.
+The `FieldInfo` class is meant to expose information about a field in a Pydantic model or dataclass. `FieldInfo` instances shouldn't be instantiated directly, nor mutated.
+
+If you need to derive a new model from another one and are willing to alter `FieldInfo` instances, refer to this [dynamic model example](../../examples/dynamic_models/).
 
 Attributes:
 
-| Name | Type | Description | | --- | --- | --- | | `annotation` | `type[Any] | None` | The type annotation of the field. | | `default` | `Any` | The default value of the field. | | `default_factory` | `Callable[[], Any] | Callable[[dict[str, Any]], Any] | None` | A callable to generate the default value. The callable can either take 0 arguments (in which case it is called as is) or a single argument containing the already validated data. | | `alias` | `str | None` | The alias name of the field. | | `alias_priority` | `int | None` | The priority of the field's alias. | | `validation_alias` | `str | AliasPath | AliasChoices | None` | The validation alias of the field. | | `serialization_alias` | `str | None` | The serialization alias of the field. | | `title` | `str | None` | The title of the field. | | `field_title_generator` | `Callable[[str, FieldInfo], str] | None` | A callable that takes a field name and returns title for it. | | `description` | `str | None` | The description of the field. | | `examples` | `list[Any] | None` | List of examples of the field. | | `exclude` | `bool | None` | Whether to exclude the field from the model serialization. | | `exclude_if` | `Callable[[Any], bool] | None` | A callable that determines whether to exclude a field during serialization based on its value. | | `discriminator` | `str | Discriminator | None` | Field name or Discriminator for discriminating the type in a tagged union. | | `deprecated` | `Deprecated | str | bool | None` | A deprecation message, an instance of warnings.deprecated or the typing_extensions.deprecated backport, or a boolean. If True, a default deprecation message will be emitted when accessing the field. | | `json_schema_extra` | `JsonDict | Callable[[JsonDict], None] | None` | A dict or callable to provide extra JSON schema properties. | | `frozen` | `bool | None` | Whether the field is frozen. | | `validate_default` | `bool | None` | Whether to validate the default value of the field. | | `repr` | `bool` | Whether to include the field in representation of the model. | | `init` | `bool | None` | Whether the field should be included in the constructor of the dataclass. | | `init_var` | `bool | None` | Whether the field should only be included in the constructor of the dataclass, and not stored. | | `kw_only` | `bool | None` | Whether the field should be a keyword-only argument in the constructor of the dataclass. | | `metadata` | `list[Any]` | List of metadata constraints. |
+| Name | Type | Description | | --- | --- | --- | | `annotation` | `type[Any] | None` | The type annotation of the field. | | `default` | `Any` | The default value of the field. | | `default_factory` | `Callable[[], Any] | Callable[[dict[str, Any]], Any] | None` | A callable to generate the default value. The callable can either take 0 arguments (in which case it is called as is) or a single argument containing the already validated data. | | `alias` | `str | None` | The alias name of the field. | | `alias_priority` | `int | None` | The priority of the field's alias. | | `validation_alias` | `str | AliasPath | AliasChoices | None` | The validation alias of the field. | | `serialization_alias` | `str | None` | The serialization alias of the field. | | `title` | `str | None` | The title of the field. | | `field_title_generator` | `Callable[[str, FieldInfo], str] | None` | A callable that takes a field name and returns title for it. | | `description` | `str | None` | The description of the field. | | `examples` | `list[Any] | None` | List of examples of the field. | | `exclude` | `bool | None` | Whether to exclude the field from the model serialization. | | `exclude_if` | `Callable[[Any], bool] | None` | A callable that determines whether to exclude a field during serialization based on its value. | | `discriminator` | `str | Discriminator | None` | Field name or Discriminator for discriminating the type in a tagged union. | | `deprecated` | `Deprecated | str | bool | None` | A deprecation message, an instance of warnings.deprecated or the typing_extensions.deprecated backport, or a boolean. If True, a default deprecation message will be emitted when accessing the field. | | `json_schema_extra` | `JsonDict | Callable[[JsonDict], None] | None` | A dict or callable to provide extra JSON schema properties. | | `frozen` | `bool | None` | Whether the field is frozen. | | `validate_default` | `bool | None` | Whether to validate the default value of the field. | | `repr` | `bool` | Whether to include the field in representation of the model. | | `init` | `bool | None` | Whether the field should be included in the constructor of the dataclass. | | `init_var` | `bool | None` | Whether the field should only be included in the constructor of the dataclass, and not stored. | | `kw_only` | `bool | None` | Whether the field should be a keyword-only argument in the constructor of the dataclass. | | `metadata` | `list[Any]` | The metadata list. Contains all the data that isn't expressed as direct FieldInfo attributes, including: Type-specific constraints, such as gt or min_length (these are converted to metadata classes such as annotated_types.Gt). Any other arbitrary object used within Annotated metadata (e.g. custom types handlers or any object not recognized by Pydantic). |
 
 See the signature of `pydantic.fields.Field` for more details about the expected arguments.
 
@@ -20668,10 +20704,14 @@ def __init__(self, **kwargs: Unpack[_FieldInfoInputs]) -> None:
 
     See the signature of `pydantic.fields.Field` for more details about the expected arguments.
     """
+    # Tracking the explicitly set attributes is necessary to correctly merge `Field()` functions
+    # (e.g. with `Annotated[int, Field(alias='a'), Field(alias=None)]`, even though `None` is the default value,
+    # we need to track that `alias=None` was explicitly set):
     self._attributes_set = {k: v for k, v in kwargs.items() if v is not _Unset and k not in self.metadata_lookup}
     kwargs = {k: _DefaultValues.get(k) if v is _Unset else v for k, v in kwargs.items()}  # type: ignore
     self.annotation = kwargs.get('annotation')
 
+    # Note: in theory, the second `pop()` arguments are not required below, as defaults are already set from `_DefaultsValues`.
     default = kwargs.pop('default', PydanticUndefined)
     if default is Ellipsis:
         self.default = PydanticUndefined
@@ -20715,417 +20755,10 @@ def __init__(self, **kwargs: Unpack[_FieldInfoInputs]) -> None:
     self._complete = True
     self._original_annotation: Any = PydanticUndefined
     self._original_assignment: Any = PydanticUndefined
-
-```
-
-### from_field
-
-```python
-from_field(
-    default: Any = PydanticUndefined,
-    **kwargs: Unpack[_FromFieldInfoInputs]
-) -> FieldInfo
-
-```
-
-Create a new `FieldInfo` object with the `Field` function.
-
-Parameters:
-
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `default` | `Any` | The default value for the field. Defaults to Undefined. | `PydanticUndefined` | | `**kwargs` | `Unpack[_FromFieldInfoInputs]` | Additional arguments dictionary. | `{}` |
-
-Raises:
-
-| Type | Description | | --- | --- | | `TypeError` | If 'annotation' is passed as a keyword argument. |
-
-Returns:
-
-| Type | Description | | --- | --- | | `FieldInfo` | A new FieldInfo object with the given parameters. |
-
-Example
-
-This is how you can create a field with default value like this:
-
-```python
-import pydantic
-
-class MyModel(pydantic.BaseModel):
-    foo: int = pydantic.Field(4)
-
-```
-
-Source code in `pydantic/fields.py`
-
-````python
-@staticmethod
-def from_field(default: Any = PydanticUndefined, **kwargs: Unpack[_FromFieldInfoInputs]) -> FieldInfo:
-    """Create a new `FieldInfo` object with the `Field` function.
-
-    Args:
-        default: The default value for the field. Defaults to Undefined.
-        **kwargs: Additional arguments dictionary.
-
-    Raises:
-        TypeError: If 'annotation' is passed as a keyword argument.
-
-    Returns:
-        A new FieldInfo object with the given parameters.
-
-    Example:
-        This is how you can create a field with default value like this:
-
-        ```python
-        import pydantic
-
-        class MyModel(pydantic.BaseModel):
-            foo: int = pydantic.Field(4)
-        ```
-    """
-    if 'annotation' in kwargs:
-        raise TypeError('"annotation" is not permitted as a Field keyword argument')
-    return FieldInfo(default=default, **kwargs)
-
-````
-
-### from_annotation
-
-```python
-from_annotation(
-    annotation: type[Any],
-    *,
-    _source: AnnotationSource = ANY
-) -> FieldInfo
-
-```
-
-Creates a `FieldInfo` instance from a bare annotation.
-
-This function is used internally to create a `FieldInfo` from a bare annotation like this:
-
-```python
-import pydantic
-
-class MyModel(pydantic.BaseModel):
-    foo: int  # <-- like this
-
-```
-
-We also account for the case where the annotation can be an instance of `Annotated` and where one of the (not first) arguments in `Annotated` is an instance of `FieldInfo`, e.g.:
-
-```python
-from typing import Annotated
-
-import annotated_types
-
-import pydantic
-
-class MyModel(pydantic.BaseModel):
-    foo: Annotated[int, annotated_types.Gt(42)]
-    bar: Annotated[int, pydantic.Field(gt=42)]
-
-```
-
-Parameters:
-
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `annotation` | `type[Any]` | An annotation object. | *required* |
-
-Returns:
-
-| Type | Description | | --- | --- | | `FieldInfo` | An instance of the field metadata. |
-
-Source code in `pydantic/fields.py`
-
-````python
-@staticmethod
-def from_annotation(annotation: type[Any], *, _source: AnnotationSource = AnnotationSource.ANY) -> FieldInfo:
-    """Creates a `FieldInfo` instance from a bare annotation.
-
-    This function is used internally to create a `FieldInfo` from a bare annotation like this:
-
-    ```python
-    import pydantic
-
-    class MyModel(pydantic.BaseModel):
-        foo: int  # <-- like this
-    ```
-
-    We also account for the case where the annotation can be an instance of `Annotated` and where
-    one of the (not first) arguments in `Annotated` is an instance of `FieldInfo`, e.g.:
-
-    ```python
-    from typing import Annotated
-
-    import annotated_types
-
-    import pydantic
-
-    class MyModel(pydantic.BaseModel):
-        foo: Annotated[int, annotated_types.Gt(42)]
-        bar: Annotated[int, pydantic.Field(gt=42)]
-    ```
-
-    Args:
-        annotation: An annotation object.
-
-    Returns:
-        An instance of the field metadata.
-    """
-    try:
-        inspected_ann = inspect_annotation(
-            annotation,
-            annotation_source=_source,
-            unpack_type_aliases='skip',
-        )
-    except ForbiddenQualifier as e:
-        raise PydanticForbiddenQualifier(e.qualifier, annotation)
-
-    # TODO check for classvar and error?
-
-    # No assigned value, this happens when using a bare `Final` qualifier (also for other
-    # qualifiers, but they shouldn't appear here). In this case we infer the type as `Any`
-    # because we don't have any assigned value.
-    type_expr: Any = Any if inspected_ann.type is UNKNOWN else inspected_ann.type
-    final = 'final' in inspected_ann.qualifiers
-    metadata = inspected_ann.metadata
-
-    attr_overrides = {'annotation': type_expr}
-    if final:
-        attr_overrides['frozen'] = True
-    field_info = FieldInfo._construct(metadata, **attr_overrides)
-    field_info._qualifiers = inspected_ann.qualifiers
-    return field_info
-
-````
-
-### from_annotated_attribute
-
-```python
-from_annotated_attribute(
-    annotation: type[Any],
-    default: Any,
-    *,
-    _source: AnnotationSource = ANY
-) -> FieldInfo
-
-```
-
-Create `FieldInfo` from an annotation with a default value.
-
-This is used in cases like the following:
-
-```python
-from typing import Annotated
-
-import annotated_types
-
-import pydantic
-
-class MyModel(pydantic.BaseModel):
-    foo: int = 4  # <-- like this
-    bar: Annotated[int, annotated_types.Gt(4)] = 4  # <-- or this
-    spam: Annotated[int, pydantic.Field(gt=4)] = 4  # <-- or this
-
-```
-
-Parameters:
-
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `annotation` | `type[Any]` | The type annotation of the field. | *required* | | `default` | `Any` | The default value of the field. | *required* |
-
-Returns:
-
-| Type | Description | | --- | --- | | `FieldInfo` | A field object with the passed values. |
-
-Source code in `pydantic/fields.py`
-
-````python
-@staticmethod
-def from_annotated_attribute(
-    annotation: type[Any], default: Any, *, _source: AnnotationSource = AnnotationSource.ANY
-) -> FieldInfo:
-    """Create `FieldInfo` from an annotation with a default value.
-
-    This is used in cases like the following:
-
-    ```python
-    from typing import Annotated
-
-    import annotated_types
-
-    import pydantic
-
-    class MyModel(pydantic.BaseModel):
-        foo: int = 4  # <-- like this
-        bar: Annotated[int, annotated_types.Gt(4)] = 4  # <-- or this
-        spam: Annotated[int, pydantic.Field(gt=4)] = 4  # <-- or this
-    ```
-
-    Args:
-        annotation: The type annotation of the field.
-        default: The default value of the field.
-
-    Returns:
-        A field object with the passed values.
-    """
-    if annotation is not MISSING and annotation is default:
-        raise PydanticUserError(
-            'Error when building FieldInfo from annotated attribute. '
-            "Make sure you don't have any field name clashing with a type annotation.",
-            code='unevaluable-type-annotation',
-        )
-
-    try:
-        inspected_ann = inspect_annotation(
-            annotation,
-            annotation_source=_source,
-            unpack_type_aliases='skip',
-        )
-    except ForbiddenQualifier as e:
-        raise PydanticForbiddenQualifier(e.qualifier, annotation)
-
-    # TODO check for classvar and error?
-
-    # TODO infer from the default, this can be done in v3 once we treat final fields with
-    # a default as proper fields and not class variables:
-    type_expr: Any = Any if inspected_ann.type is UNKNOWN else inspected_ann.type
-    final = 'final' in inspected_ann.qualifiers
-    metadata = inspected_ann.metadata
-
-    # HACK 1: the order in which the metadata is merged is inconsistent; we need to prepend
-    # metadata from the assignment at the beginning of the metadata. Changing this is only
-    # possible in v3 (at least). See https://github.com/pydantic/pydantic/issues/10507
-    prepend_metadata: list[Any] | None = None
-    attr_overrides = {'annotation': type_expr}
-    if final:
-        attr_overrides['frozen'] = True
-
-    # HACK 2: FastAPI is subclassing `FieldInfo` and historically expected the actual
-    # instance's type to be preserved when constructing new models with its subclasses as assignments.
-    # This code is never reached by Pydantic itself, and in an ideal world this shouldn't be necessary.
-    if not metadata and isinstance(default, FieldInfo) and type(default) is not FieldInfo:
-        field_info = default._copy()
-        field_info._attributes_set.update(attr_overrides)
-        for k, v in attr_overrides.items():
-            setattr(field_info, k, v)
-        return field_info
-
-    if isinstance(default, FieldInfo):
-        default_copy = default._copy()  # Copy unnecessary when we remove HACK 1.
-        prepend_metadata = default_copy.metadata
-        default_copy.metadata = []
-        metadata = metadata + [default_copy]
-    elif isinstance(default, dataclasses.Field):
-        from_field = FieldInfo._from_dataclass_field(default)
-        prepend_metadata = from_field.metadata  # Unnecessary when we remove HACK 1.
-        from_field.metadata = []
-        metadata = metadata + [from_field]
-        if 'init_var' in inspected_ann.qualifiers:
-            attr_overrides['init_var'] = True
-        if (init := getattr(default, 'init', None)) is not None:
-            attr_overrides['init'] = init
-        if (kw_only := getattr(default, 'kw_only', None)) is not None:
-            attr_overrides['kw_only'] = kw_only
-    else:
-        # `default` is the actual default value
-        attr_overrides['default'] = default
-
-    field_info = FieldInfo._construct(
-        prepend_metadata + metadata if prepend_metadata is not None else metadata, **attr_overrides
-    )
-    field_info._qualifiers = inspected_ann.qualifiers
-    return field_info
-
-````
-
-### merge_field_infos
-
-```python
-merge_field_infos(
-    *field_infos: FieldInfo, **overrides: Any
-) -> FieldInfo
-
-```
-
-Merge `FieldInfo` instances keeping only explicitly set attributes.
-
-Later `FieldInfo` instances override earlier ones.
-
-Returns:
-
-| Name | Type | Description | | --- | --- | --- | | `FieldInfo` | `FieldInfo` | A merged FieldInfo instance. |
-
-Source code in `pydantic/fields.py`
-
-```python
-@staticmethod
-@typing_extensions.deprecated(
-    "The 'merge_field_infos()' method is deprecated and will be removed in a future version. "
-    'If you relied on this method, please open an issue in the Pydantic issue tracker.',
-    category=None,
-)
-def merge_field_infos(*field_infos: FieldInfo, **overrides: Any) -> FieldInfo:
-    """Merge `FieldInfo` instances keeping only explicitly set attributes.
-
-    Later `FieldInfo` instances override earlier ones.
-
-    Returns:
-        FieldInfo: A merged FieldInfo instance.
-    """
-    if len(field_infos) == 1:
-        # No merging necessary, but we still need to make a copy and apply the overrides
-        field_info = field_infos[0]._copy()
-        field_info._attributes_set.update(overrides)
-
-        default_override = overrides.pop('default', PydanticUndefined)
-        if default_override is Ellipsis:
-            default_override = PydanticUndefined
-        if default_override is not PydanticUndefined:
-            field_info.default = default_override
-
-        for k, v in overrides.items():
-            setattr(field_info, k, v)
-        return field_info  # type: ignore
-
-    merged_field_info_kwargs: dict[str, Any] = {}
-    metadata = {}
-    for field_info in field_infos:
-        attributes_set = field_info._attributes_set.copy()
-
-        try:
-            json_schema_extra = attributes_set.pop('json_schema_extra')
-            existing_json_schema_extra = merged_field_info_kwargs.get('json_schema_extra')
-
-            if existing_json_schema_extra is None:
-                merged_field_info_kwargs['json_schema_extra'] = json_schema_extra
-            if isinstance(existing_json_schema_extra, dict):
-                if isinstance(json_schema_extra, dict):
-                    merged_field_info_kwargs['json_schema_extra'] = {
-                        **existing_json_schema_extra,
-                        **json_schema_extra,
-                    }
-                if callable(json_schema_extra):
-                    warn(
-                        'Composing `dict` and `callable` type `json_schema_extra` is not supported.'
-                        'The `callable` type is being ignored.'
-                        "If you'd like support for this behavior, please open an issue on pydantic.",
-                        PydanticJsonSchemaWarning,
-                    )
-            elif callable(json_schema_extra):
-                # if ever there's a case of a callable, we'll just keep the last json schema extra spec
-                merged_field_info_kwargs['json_schema_extra'] = json_schema_extra
-        except KeyError:
-            pass
-
-        # later FieldInfo instances override everything except json_schema_extra from earlier FieldInfo instances
-        merged_field_info_kwargs.update(attributes_set)
-
-        for x in field_info.metadata:
-            if not isinstance(x, FieldInfo):
-                metadata[type(x)] = x
-
-    merged_field_info_kwargs.update(overrides)
-    field_info = FieldInfo(**merged_field_info_kwargs)
-    field_info.metadata = list(metadata.values())
-    return field_info
+    # Used to track whether the `FieldInfo` instance represents the data about a field (and is exposed in `model_fields`/`__pydantic_fields__`),
+    # or if it is the result of the `Field()` function being used as metadata in an `Annotated` type/as an assignment
+    # (not an ideal pattern, see https://github.com/pydantic/pydantic/issues/11122):
+    self._final = False
 
 ```
 
@@ -21249,102 +20882,38 @@ def is_required(self) -> bool:
 
 ```
 
-### rebuild_annotation
+### asdict
 
 ```python
-rebuild_annotation() -> Any
+asdict() -> _FieldInfoAsDict
 
 ```
 
-Attempts to rebuild the original annotation for use in function signatures.
+Return a dictionary representation of the `FieldInfo` instance.
 
-If metadata is present, it adds it to the original annotation using `Annotated`. Otherwise, it returns the original annotation as-is.
+The returned value is a dictionary with three items:
 
-Note that because the metadata has been flattened, the original annotation may not be reconstructed exactly as originally provided, e.g. if the original type had unrecognized annotations, or was annotated with a call to `pydantic.Field`.
-
-Returns:
-
-| Type | Description | | --- | --- | | `Any` | The rebuilt annotation. |
+- `annotation`: The type annotation of the field.
+- `metadata`: The metadata list.
+- `attributes`: A mapping of the remaining `FieldInfo` attributes to their values (e.g. `alias`, `title`).
 
 Source code in `pydantic/fields.py`
 
 ```python
-def rebuild_annotation(self) -> Any:
-    """Attempts to rebuild the original annotation for use in function signatures.
+def asdict(self) -> _FieldInfoAsDict:
+    """Return a dictionary representation of the `FieldInfo` instance.
 
-    If metadata is present, it adds it to the original annotation using
-    `Annotated`. Otherwise, it returns the original annotation as-is.
+    The returned value is a dictionary with three items:
 
-    Note that because the metadata has been flattened, the original annotation
-    may not be reconstructed exactly as originally provided, e.g. if the original
-    type had unrecognized annotations, or was annotated with a call to `pydantic.Field`.
-
-    Returns:
-        The rebuilt annotation.
+    * `annotation`: The type annotation of the field.
+    * `metadata`: The metadata list.
+    * `attributes`: A mapping of the remaining `FieldInfo` attributes to their values (e.g. `alias`, `title`).
     """
-    if not self.metadata:
-        return self.annotation
-    else:
-        # Annotated arguments must be a tuple
-        return Annotated[(self.annotation, *self.metadata)]  # type: ignore
-
-```
-
-### apply_typevars_map
-
-```python
-apply_typevars_map(
-    typevars_map: Mapping[TypeVar, Any] | None,
-    globalns: GlobalsNamespace | None = None,
-    localns: MappingNamespace | None = None,
-) -> None
-
-```
-
-Apply a `typevars_map` to the annotation.
-
-This method is used when analyzing parametrized generic types to replace typevars with their concrete types.
-
-This method applies the `typevars_map` to the annotation in place.
-
-Parameters:
-
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `typevars_map` | `Mapping[TypeVar, Any] | None` | A dictionary mapping type variables to their concrete types. | *required* | | `globalns` | `GlobalsNamespace | None` | The globals namespace to use during type annotation evaluation. | `None` | | `localns` | `MappingNamespace | None` | The locals namespace to use during type annotation evaluation. | `None` |
-
-See Also
-
-pydantic.\_internal.\_generics.replace_types is used for replacing the typevars with their concrete types.
-
-Source code in `pydantic/fields.py`
-
-```python
-def apply_typevars_map(
-    self,
-    typevars_map: Mapping[TypeVar, Any] | None,
-    globalns: GlobalsNamespace | None = None,
-    localns: MappingNamespace | None = None,
-) -> None:
-    """Apply a `typevars_map` to the annotation.
-
-    This method is used when analyzing parametrized generic types to replace typevars with their concrete types.
-
-    This method applies the `typevars_map` to the annotation in place.
-
-    Args:
-        typevars_map: A dictionary mapping type variables to their concrete types.
-        globalns: The globals namespace to use during type annotation evaluation.
-        localns: The locals namespace to use during type annotation evaluation.
-
-    See Also:
-        pydantic._internal._generics.replace_types is used for replacing the typevars with
-            their concrete types.
-    """
-    annotation = _generics.replace_types(self.annotation, typevars_map)
-    annotation, evaluated = _typing_extra.try_eval_type(annotation, globalns, localns)
-    self.annotation = annotation
-    if not evaluated:
-        self._complete = False
-        self._original_annotation = self.annotation
+    return {
+        'annotation': self.annotation,
+        'metadata': self.metadata,
+        'attributes': {attr: getattr(self, attr) for attr in _Attrs},
+    }
 
 ```
 
@@ -21476,6 +21045,52 @@ def __init__(self, default: Any = PydanticUndefined, *, default_factory: Callabl
     else:
         self.default = default
     self.default_factory = default_factory
+
+```
+
+### __getattr__
+
+```python
+__getattr__(item: str) -> Any
+
+```
+
+This function improves compatibility with custom descriptors by ensuring delegation happens as expected when the default value of a private attribute is a descriptor.
+
+Source code in `pydantic/fields.py`
+
+```python
+def __getattr__(self, item: str) -> Any:
+    """This function improves compatibility with custom descriptors by ensuring delegation happens
+    as expected when the default value of a private attribute is a descriptor.
+    """
+    if item in {'__get__', '__set__', '__delete__'}:
+        if hasattr(self.default, item):
+            return getattr(self.default, item)
+    raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+
+```
+
+### __set_name__
+
+```python
+__set_name__(cls: type[Any], name: str) -> None
+
+```
+
+Preserve `__set_name__` protocol defined in https://peps.python.org/pep-0487.
+
+Source code in `pydantic/fields.py`
+
+```python
+def __set_name__(self, cls: type[Any], name: str) -> None:
+    """Preserve `__set_name__` protocol defined in https://peps.python.org/pep-0487."""
+    default = self.default
+    if default is PydanticUndefined:
+        return
+    set_name = getattr(default, '__set_name__', None)
+    if callable(set_name):
+        set_name(cls, name)
 
 ```
 
@@ -23241,9 +22856,18 @@ def model_validator(
     """
 
     def dec(f: Any) -> _decorators.PydanticDescriptorProxy[Any]:
-        # auto apply the @classmethod decorator (except for *after* validators, which should be instance methods):
-        if mode != 'after':
-            f = _decorators.ensure_classmethod_based_on_signature(f)
+        # auto apply the @classmethod decorator. NOTE: in V3, do not apply the conversion for 'after' validators:
+        f = _decorators.ensure_classmethod_based_on_signature(f)
+        if mode == 'after' and isinstance(f, classmethod):
+            warnings.warn(
+                category=PydanticDeprecatedSince212,
+                message=(
+                    "Using `@model_validator` with mode='after' on a classmethod is deprecated. Instead, use an instance method. "
+                    f'See the documentation at https://docs.pydantic.dev/{version_short()}/concepts/validators/#model-after-validator.'
+                ),
+                stacklevel=2,
+            )
+
         dec_info = _decorators.ModelValidatorDecoratorInfo(mode=mode)
         return _decorators.PydanticDescriptorProxy(f, dec_info)
 
@@ -35362,9 +34986,9 @@ def definition_reference_schema(
 
 Color definitions are used as per the CSS3 [CSS Color Module Level 3](http://www.w3.org/TR/css3-color/#svg-color) specification.
 
-A few colors have multiple names referring to the sames colors, eg. `grey` and `gray` or `aqua` and `cyan`.
+A few colors have multiple names referring to the same colors, e.g. `grey` and `gray` or `aqua` and `cyan`.
 
-In these cases the *last* color when sorted alphabetically takes preferences, eg. `Color((0, 255, 255)).as_named() == 'cyan'` because "cyan" comes after "aqua".
+In these cases the *last* color when sorted alphabetically takes precedence. eg. `Color((0, 255, 255)).as_named() == 'cyan'` because "cyan" comes after "aqua".
 
 ## RGBA
 
@@ -35436,9 +35060,7 @@ Source code in `pydantic_extra_types/color.py`
 
 ```python
 def original(self) -> ColorType:
-    """
-    Original value passed to `Color`.
-    """
+    """Original value passed to `Color`."""
     return self._original
 
 ```
@@ -35468,8 +35090,7 @@ Source code in `pydantic_extra_types/color.py`
 
 ```python
 def as_named(self, *, fallback: bool = False) -> str:
-    """
-    Returns the name of the color if it can be found in `COLORS_BY_VALUE` dictionary,
+    """Returns the name of the color if it can be found in `COLORS_BY_VALUE` dictionary,
     otherwise returns the hexadecimal representation of the color or raises `ValueError`.
 
     Args:
@@ -35484,7 +35105,7 @@ def as_named(self, *, fallback: bool = False) -> str:
     """
     if self._rgba.alpha is not None:
         return self.as_hex()
-    rgb = cast(Tuple[int, int, int], self.as_rgb_tuple())
+    rgb = cast('tuple[int, int, int]', self.as_rgb_tuple())
 
     if rgb in COLORS_BY_VALUE:
         return COLORS_BY_VALUE[rgb]
@@ -35547,9 +35168,7 @@ Source code in `pydantic_extra_types/color.py`
 
 ```python
 def as_rgb(self) -> str:
-    """
-    Color as an `rgb(<r>, <g>, <b>)` or `rgba(<r>, <g>, <b>, <a>)` string.
-    """
+    """Color as an `rgb(<r>, <g>, <b>)` or `rgba(<r>, <g>, <b>, <a>)` string."""
     if self._rgba.alpha is None:
         return f'rgb({float_to_255(self._rgba.r)}, {float_to_255(self._rgba.g)}, {float_to_255(self._rgba.b)})'
     else:
@@ -35581,8 +35200,7 @@ Source code in `pydantic_extra_types/color.py`
 
 ```python
 def as_rgb_tuple(self, *, alpha: bool | None = None) -> ColorTuple:
-    """
-    Returns the color as an RGB or RGBA tuple.
+    """Returns the color as an RGB or RGBA tuple.
 
     Args:
         alpha: Whether to include the alpha channel. There are three options for this input:
@@ -35616,9 +35234,7 @@ Source code in `pydantic_extra_types/color.py`
 
 ```python
 def as_hsl(self) -> str:
-    """
-    Color as an `hsl(<h>, <s>, <l>)` or `hsl(<h>, <s>, <l>, <a>)` string.
-    """
+    """Color as an `hsl(<h>, <s>, <l>)` or `hsl(<h>, <s>, <l>, <a>)` string."""
     if self._rgba.alpha is None:
         h, s, li = self.as_hsl_tuple(alpha=False)  # type: ignore
         return f'hsl({h * 360:0.0f}, {s:0.0%}, {li:0.0%})'
@@ -35653,8 +35269,7 @@ Source code in `pydantic_extra_types/color.py`
 
 ```python
 def as_hsl_tuple(self, *, alpha: bool | None = None) -> HslColorTuple:
-    """
-    Returns the color as an HSL or HSLA tuple.
+    """Returns the color as an HSL or HSLA tuple.
 
     Args:
         alpha: Whether to include the alpha channel.
@@ -35761,8 +35376,7 @@ Source code in `pydantic_extra_types/color.py`
 
 ```python
 def parse_str(value: str) -> RGBA:
-    """
-    Parse a string representing a color to an RGBA tuple.
+    """Parse a string representing a color to an RGBA tuple.
 
     Possible formats for the input string include:
 
@@ -35782,7 +35396,6 @@ def parse_str(value: str) -> RGBA:
     Raises:
         ValueError: If the input string cannot be parsed to an RGBA tuple.
     """
-
     value_lower = value.lower()
     if value_lower in COLORS_BY_NAME:
         r, g, b = COLORS_BY_NAME[value_lower]
@@ -35851,8 +35464,7 @@ def ints_to_rgba(
     b: int | str,
     alpha: float | None = None,
 ) -> RGBA:
-    """
-    Converts integer or string values for RGB color and an optional alpha value to an `RGBA` object.
+    """Converts integer or string values for RGB color and an optional alpha value to an `RGBA` object.
 
     Args:
         r: An integer or string representing the red color value.
@@ -35899,8 +35511,7 @@ Source code in `pydantic_extra_types/color.py`
 
 ```python
 def parse_color_value(value: int | str, max_val: int = 255) -> float:
-    """
-    Parse the color value provided and return a number between 0 and 1.
+    """Parse the color value provided and return a number between 0 and 1.
 
     Args:
         value: An integer or string color value.
@@ -35914,7 +35525,7 @@ def parse_color_value(value: int | str, max_val: int = 255) -> float:
     """
     try:
         color = float(value)
-    except ValueError as e:
+    except (ValueError, TypeError) as e:
         raise PydanticCustomError(
             'color_error',
             'value is not a valid color: color values must be a valid number',
@@ -35957,8 +35568,7 @@ Source code in `pydantic_extra_types/color.py`
 
 ```python
 def parse_float_alpha(value: None | str | float | int) -> float | None:
-    """
-    Parse an alpha value checking it's a valid float in the range 0 to 1.
+    """Parse an alpha value checking it's a valid float in the range 0 to 1.
 
     Args:
         value: The input value to parse.
@@ -36021,8 +35631,7 @@ Source code in `pydantic_extra_types/color.py`
 
 ```python
 def parse_hsl(h: str, h_units: str, sat: str, light: str, alpha: float | None = None) -> RGBA:
-    """
-    Parse raw hue, saturation, lightness, and alpha values and convert to RGBA.
+    """Parse raw hue, saturation, lightness, and alpha values and convert to RGBA.
 
     Args:
         h: The hue value.
@@ -36071,8 +35680,7 @@ Source code in `pydantic_extra_types/color.py`
 
 ```python
 def float_to_255(c: float) -> int:
-    """
-    Converts a float value between 0 and 1 (inclusive) to an integer between 0 and 255 (inclusive).
+    """Converts a float value between 0 and 1 (inclusive) to an integer between 0 and 255 (inclusive).
 
     Args:
         c: The float value to be converted. Must be between 0 and 1 (inclusive).
@@ -36092,16 +35700,22 @@ Bases: `float`
 
 Latitude value should be between -90 and 90, inclusive.
 
+Supports both float and Decimal types.
+
 ```py
+from decimal import Decimal
 from pydantic import BaseModel
 from pydantic_extra_types.coordinate import Latitude
+
 
 class Location(BaseModel):
     latitude: Latitude
 
-location = Location(latitude=41.40338)
-print(location)
-#> latitude=41.40338
+
+# Using float
+location1 = Location(latitude=41.40338)
+# Using Decimal
+location2 = Location(latitude=Decimal('41.40338'))
 
 ```
 
@@ -36111,17 +35725,23 @@ Bases: `float`
 
 Longitude value should be between -180 and 180, inclusive.
 
+Supports both float and Decimal types.
+
 ```py
+from decimal import Decimal
 from pydantic import BaseModel
 
 from pydantic_extra_types.coordinate import Longitude
 
+
 class Location(BaseModel):
     longitude: Longitude
 
-location = Location(longitude=2.17403)
-print(location)
-#> longitude=2.17403
+
+# Using float
+location1 = Location(longitude=2.17403)
+# Using Decimal
+location2 = Location(longitude=Decimal('2.17403'))
 
 ```
 
@@ -36138,19 +35758,27 @@ Coordinate parses Latitude and Longitude.
 
 You can use the `Coordinate` data type for storing coordinates. Coordinates can be defined using one of the following formats:
 
-1. Tuple: `(Latitude, Longitude)`. For example: `(41.40338, 2.17403)`.
+1. Tuple: `(Latitude, Longitude)`. For example: `(41.40338, 2.17403)` or `(Decimal('41.40338'), Decimal('2.17403'))`.
 1. `Coordinate` instance: `Coordinate(latitude=Latitude, longitude=Longitude)`.
 
 ```py
+from decimal import Decimal
 from pydantic import BaseModel
 
 from pydantic_extra_types.coordinate import Coordinate
 
+
 class Location(BaseModel):
     coordinate: Coordinate
 
-location = Location(coordinate=(41.40338, 2.17403))
-#> coordinate=Coordinate(latitude=41.40338, longitude=2.17403)
+
+# Using float values
+location1 = Location(coordinate=(41.40338, 2.17403))
+# > coordinate=Coordinate(latitude=41.40338, longitude=2.17403)
+
+# Using Decimal values
+location2 = Location(coordinate=(Decimal('41.40338'), Decimal('2.17403')))
+# > coordinate=Coordinate(latitude=41.40338, longitude=2.17403)
 
 ```
 
@@ -36167,12 +35795,14 @@ from pydantic import BaseModel
 
 from pydantic_extra_types.country import CountryAlpha2
 
+
 class Product(BaseModel):
     made_in: CountryAlpha2
 
+
 product = Product(made_in='ES')
 print(product)
-#> made_in='ES'
+# > made_in='ES'
 
 ```
 
@@ -36214,12 +35844,14 @@ from pydantic import BaseModel
 
 from pydantic_extra_types.country import CountryAlpha3
 
+
 class Product(BaseModel):
     made_in: CountryAlpha3
 
-product = Product(made_in="USA")
+
+product = Product(made_in='USA')
 print(product)
-#> made_in='USA'
+# > made_in='USA'
 
 ```
 
@@ -36261,12 +35893,14 @@ from pydantic import BaseModel
 
 from pydantic_extra_types.country import CountryNumericCode
 
+
 class Product(BaseModel):
     made_in: CountryNumericCode
 
-product = Product(made_in="840")
+
+product = Product(made_in='840')
 print(product)
-#> made_in='840'
+# > made_in='840'
 
 ```
 
@@ -36308,12 +35942,14 @@ from pydantic import BaseModel
 
 from pydantic_extra_types.country import CountryShortName
 
+
 class Product(BaseModel):
     made_in: CountryShortName
 
-product = Product(made_in="United States")
+
+product = Product(made_in='United States')
 print(product)
-#> made_in='United States'
+# > made_in='United States'
 
 ```
 
@@ -36357,8 +35993,10 @@ from pydantic import BaseModel
 
 from pydantic_extra_types.currency_code import ISO4217
 
+
 class Currency(BaseModel):
     alpha_3: ISO4217
+
 
 currency = Currency(alpha_3='AED')
 print(currency)
@@ -36377,8 +36015,10 @@ from pydantic import BaseModel
 
 from pydantic_extra_types.currency_code import Currency
 
+
 class currency(BaseModel):
     alpha_3: Currency
+
 
 cur = currency(alpha_3='AED')
 print(cur)
@@ -36386,9 +36026,9 @@ print(cur)
 
 ```
 
-The `pydantic_extra_types.isbn` module provides functionality to recieve and validate ISBN.
+The `pydantic_extra_types.isbn` module provides functionality to receive and validate ISBN.
 
-ISBN (International Standard Book Number) is a numeric commercial book identifier which is intended to be unique. This module provides a ISBN type for Pydantic models.
+ISBN (International Standard Book Number) is a numeric commercial book identifier which is intended to be unique. This module provides an ISBN type for Pydantic models.
 
 ## ISBN
 
@@ -36405,9 +36045,10 @@ from pydantic_extra_types.isbn import ISBN
 class Book(BaseModel):
     isbn: ISBN
 
-book = Book(isbn="8537809667")
+
+book = Book(isbn='8537809667')
 print(book)
-#> isbn='9788537809662'
+# > isbn='9788537809662'
 
 ```
 
@@ -36441,7 +36082,6 @@ def validate_isbn_format(value: str) -> None:
     Raises:
         PydanticCustomError: If the ISBN is not valid.
     """
-
     isbn_length = len(value)
 
     if isbn_length not in (10, 13):
@@ -36495,7 +36135,6 @@ def convert_isbn10_to_isbn13(value: str) -> str:
     Returns:
         The converted ISBN or the original value if no conversion is necessary.
     """
-
     if len(value) == 10:
         base_isbn = f'978{value[:-1]}'
         isbn13_digit = isbn13_digit_calc(base_isbn)
@@ -36512,7 +36151,7 @@ isbn10_digit_calc(isbn: str) -> str
 
 ```
 
-Calc a ISBN-10 last digit from the provided str value. More information of validation algorithm on [Wikipedia](https://en.wikipedia.org/wiki/ISBN#Check_digits)
+Calculate the ISBN-10 check digit from the provided str value. More information on the validation algorithm on [Wikipedia](https://en.wikipedia.org/wiki/ISBN#Check_digits)
 
 Parameters:
 
@@ -36526,7 +36165,7 @@ Source code in `pydantic_extra_types/isbn.py`
 
 ```python
 def isbn10_digit_calc(isbn: str) -> str:
-    """Calc a ISBN-10 last digit from the provided str value. More information of validation algorithm on [Wikipedia](https://en.wikipedia.org/wiki/ISBN#Check_digits)
+    """Calculate the ISBN-10 check digit from the provided str value. More information on the validation algorithm on [Wikipedia](https://en.wikipedia.org/wiki/ISBN#Check_digits)
 
     Args:
         isbn: The str value representing the ISBN in 10 digits.
@@ -36535,11 +36174,8 @@ def isbn10_digit_calc(isbn: str) -> str:
         The calculated last digit of the ISBN-10 value.
     """
     total = sum(int(digit) * (10 - idx) for idx, digit in enumerate(isbn[:9]))
-
-    for check_digit in range(1, 11):
-        if (total + check_digit) % 11 == 0:
-            valid_check_digit = 'X' if check_digit == 10 else str(check_digit)
-
+    diff = (11 - total) % 11
+    valid_check_digit = 'X' if diff == 10 else str(diff)
     return valid_check_digit
 
 ```
@@ -36551,7 +36187,7 @@ isbn13_digit_calc(isbn: str) -> str
 
 ```
 
-Calc a ISBN-13 last digit from the provided str value. More information of validation algorithm on [Wikipedia](https://en.wikipedia.org/wiki/ISBN#Check_digits)
+Calc a ISBN-13 last digit from the provided str value. More information on the validation algorithm on [Wikipedia](https://en.wikipedia.org/wiki/ISBN#Check_digits)
 
 Parameters:
 
@@ -36565,7 +36201,7 @@ Source code in `pydantic_extra_types/isbn.py`
 
 ```python
 def isbn13_digit_calc(isbn: str) -> str:
-    """Calc a ISBN-13 last digit from the provided str value. More information of validation algorithm on [Wikipedia](https://en.wikipedia.org/wiki/ISBN#Check_digits)
+    """Calc a ISBN-13 last digit from the provided str value. More information on the validation algorithm on [Wikipedia](https://en.wikipedia.org/wiki/ISBN#Check_digits)
 
     Args:
         isbn: The str value representing the ISBN in 13 digits.
@@ -36573,9 +36209,9 @@ def isbn13_digit_calc(isbn: str) -> str:
     Returns:
         The calculated last digit of the ISBN-13 value.
     """
-    total = sum(int(digit) * (1 if idx % 2 == 0 else 3) for idx, digit in enumerate(isbn[:12]))
+    total = sum(int(digit) * factor for digit, factor in zip(isbn[:12], it.cycle((1, 3))))
 
-    check_digit = (10 - (total % 10)) % 10
+    check_digit = (10 - total) % 10
 
     return str(check_digit)
 
@@ -36609,13 +36245,15 @@ from pydantic import BaseModel
 
 from pydantic_extra_types.language_code import LanguageAlpha2
 
+
 class Movie(BaseModel):
     audio_lang: LanguageAlpha2
     subtitles_lang: LanguageAlpha2
 
+
 movie = Movie(audio_lang='de', subtitles_lang='fr')
 print(movie)
-#> audio_lang='de' subtitles_lang='fr'
+# > audio_lang='de' subtitles_lang='fr'
 
 ```
 
@@ -36648,13 +36286,15 @@ from pydantic import BaseModel
 
 from pydantic_extra_types.language_code import LanguageName
 
+
 class Movie(BaseModel):
     audio_lang: LanguageName
     subtitles_lang: LanguageName
 
+
 movie = Movie(audio_lang='Dutch', subtitles_lang='Mandarin Chinese')
 print(movie)
-#> audio_lang='Dutch' subtitles_lang='Mandarin Chinese'
+# > audio_lang='Dutch' subtitles_lang='Mandarin Chinese'
 
 ```
 
@@ -36687,8 +36327,10 @@ from pydantic import BaseModel
 
 from pydantic_extra_types.language_code import ISO639_3
 
+
 class Language(BaseModel):
     alpha_3: ISO639_3
+
 
 lang = Language(alpha_3='ssr')
 print(lang)
@@ -36707,8 +36349,10 @@ from pydantic import BaseModel
 
 from pydantic_extra_types.language_code import ISO639_5
 
+
 class Language(BaseModel):
     alpha_3: ISO639_5
+
 
 lang = Language(alpha_3='gem')
 print(lang)
@@ -36734,9 +36378,9 @@ class Network(BaseModel):
     mac_address: MacAddress
 
 
-network = Network(mac_address="00:00:5e:00:53:01")
+network = Network(mac_address='00:00:5e:00:53:01')
 print(network)
-#> mac_address='00:00:5e:00:53:01'
+# > mac_address='00:00:5e:00:53:01'
 
 ```
 
@@ -36754,64 +36398,45 @@ Source code in `pydantic_extra_types/mac_address.py`
 ```python
 @staticmethod
 def validate_mac_address(value: bytes) -> str:
-    """
-    Validate a MAC Address from the provided byte value.
-    """
-    if len(value) < 14:
+    """Validate a MAC Address from the provided byte value."""
+    raw = value.decode()
+    if len(raw) < MINIMUM_LENGTH:
         raise PydanticCustomError(
             'mac_address_len',
             'Length for a {mac_address} MAC address must be {required_length}',
-            {'mac_address': value.decode(), 'required_length': 14},
+            {'mac_address': raw, 'required_length': MINIMUM_LENGTH},
         )
 
-    if value[2] in [ord(':'), ord('-')]:
-        if (len(value) + 1) % 3 != 0:
+    for seperator, chunk_len in ((':', 2), ('-', 2), ('.', 4)):
+        if seperator not in raw:
+            continue
+
+        parts = raw.split(seperator)
+        if any(len(p) != chunk_len for p in parts):
             raise PydanticCustomError(
-                'mac_address_format', 'Must have the format xx:xx:xx:xx:xx:xx or xx-xx-xx-xx-xx-xx'
+                'mac_address_format',
+                f'Must have the format xx{seperator}xx{seperator}xx{seperator}xx{seperator}xx{seperator}xx',
             )
-        n = (len(value) + 1) // 3
-        if n not in (6, 8, 20):
+
+        total_bytes = (len(parts) * chunk_len) // 2
+        if total_bytes not in ALLOWED_CHUNK_COUNTS:
             raise PydanticCustomError(
                 'mac_address_format',
                 'Length for a {mac_address} MAC address must be {required_length}',
-                {'mac_address': value.decode(), 'required_length': (6, 8, 20)},
+                {'mac_address': raw, 'required_length': ALLOWED_CHUNK_COUNTS},
             )
-        mac_address = bytearray(n)
-        x = 0
-        for i in range(n):
-            try:
-                byte_value = int(value[x : x + 2], 16)
-                mac_address[i] = byte_value
-                x += 3
-            except ValueError as e:
-                raise PydanticCustomError('mac_address_format', 'Unrecognized format') from e
 
-    elif value[4] == ord('.'):
-        if (len(value) + 1) % 5 != 0:
-            raise PydanticCustomError('mac_address_format', 'Must have the format xx.xx.xx.xx.xx.xx')
-        n = 2 * (len(value) + 1) // 5
-        if n not in (6, 8, 20):
-            raise PydanticCustomError(
-                'mac_address_format',
-                'Length for a {mac_address} MAC address must be {required_length}',
-                {'mac_address': value.decode(), 'required_length': (6, 8, 20)},
-            )
-        mac_address = bytearray(n)
-        x = 0
-        for i in range(0, n, 2):
-            try:
-                byte_value = int(value[x : x + 2], 16)
-                mac_address[i] = byte_value
-                byte_value = int(value[x + 2 : x + 4], 16)
-                mac_address[i + 1] = byte_value
-                x += 5
-            except ValueError as e:
-                raise PydanticCustomError('mac_address_format', 'Unrecognized format') from e
+        try:
+            mac_bytes: list[int] = []
+            for part in parts:
+                for i in range(0, chunk_len, 2):
+                    mac_bytes.append(int(part[i : i + 2], base=16))
+        except ValueError as exc:
+            raise PydanticCustomError('mac_address_format', 'Unrecognized format') from exc
 
-    else:
-        raise PydanticCustomError('mac_address_format', 'Unrecognized format')
+        return ':'.join(f'{b:02x}' for b in mac_bytes)
 
-    return ':'.join(f'{b:02x}' for b in mac_address)
+    raise PydanticCustomError('mac_address_format', 'Unrecognized format')
 
 ```
 
@@ -37077,50 +36702,7 @@ def validate_brand(card_number: str) -> PaymentCardBrand:
     Raises:
         PydanticCustomError: If the card number is not valid.
     """
-    brand = PaymentCardBrand.other
-
-    if card_number[0] == '4':
-        brand = PaymentCardBrand.visa
-        required_length = [13, 16, 19]
-    elif 51 <= int(card_number[:2]) <= 55:
-        brand = PaymentCardBrand.mastercard
-        required_length = [16]
-    elif card_number[:2] in {'34', '37'}:
-        brand = PaymentCardBrand.amex
-        required_length = [15]
-    elif 2200 <= int(card_number[:4]) <= 2204:
-        brand = PaymentCardBrand.mir
-        required_length = list(range(16, 20))
-    elif card_number[:4] in {'5018', '5020', '5038', '5893', '6304', '6759', '6761', '6762', '6763'} or card_number[
-        :6
-    ] in (
-        '676770',
-        '676774',
-    ):
-        brand = PaymentCardBrand.maestro
-        required_length = list(range(12, 20))
-    elif card_number.startswith('65') or 644 <= int(card_number[:3]) <= 649 or card_number.startswith('6011'):
-        brand = PaymentCardBrand.discover
-        required_length = list(range(16, 20))
-    elif (
-        506099 <= int(card_number[:6]) <= 506198
-        or 650002 <= int(card_number[:6]) <= 650027
-        or 507865 <= int(card_number[:6]) <= 507964
-    ):
-        brand = PaymentCardBrand.verve
-        required_length = [16, 18, 19]
-    elif card_number[:4] in {'5019', '4571'}:
-        brand = PaymentCardBrand.dankort
-        required_length = [16]
-    elif card_number.startswith('9792'):
-        brand = PaymentCardBrand.troy
-        required_length = [16]
-    elif card_number[:2] in {'62', '81'}:
-        brand = PaymentCardBrand.unionpay
-        required_length = [16, 19]
-    elif 3528 <= int(card_number[:4]) <= 3589:
-        brand = PaymentCardBrand.jcb
-        required_length = [16, 19]
+    brand, required_length = PaymentCardNumber._identify_brand(card_number)
 
     valid = len(card_number) in required_length if brand != PaymentCardBrand.other else True
 
@@ -37147,12 +36729,35 @@ A `pendulum.DateTime` object. At runtime, this type decomposes into pendulum.Dat
 from pydantic import BaseModel
 from pydantic_extra_types.pendulum_dt import DateTime
 
+
 class test_model(BaseModel):
     dt: DateTime
 
+
 print(test_model(dt='2021-01-01T00:00:00+00:00'))
 
-#> test_model(dt=DateTime(2021, 1, 1, 0, 0, 0, tzinfo=FixedTimezone(0, name="+00:00")))
+# > test_model(dt=DateTime(2021, 1, 1, 0, 0, 0, tzinfo=FixedTimezone(0, name="+00:00")))
+
+```
+
+## Time
+
+Bases: `Time`
+
+A `pendulum.Time` object. At runtime, this type decomposes into pendulum.Time automatically. This type exists because Pydantic throws a fit on unknown types.
+
+```python
+from pydantic import BaseModel
+from pydantic_extra_types.pendulum_dt import Time
+
+
+class test_model(BaseModel):
+    dt: Time
+
+
+print(test_model(dt='00:00:00'))
+
+# > test_model(dt=Time(0, 0, 0))
 
 ```
 
@@ -37166,12 +36771,14 @@ A `pendulum.Date` object. At runtime, this type decomposes into pendulum.Date au
 from pydantic import BaseModel
 from pydantic_extra_types.pendulum_dt import Date
 
+
 class test_model(BaseModel):
     dt: Date
 
+
 print(test_model(dt='2021-01-01'))
 
-#> test_model(dt=Date(2021, 1, 1))
+# > test_model(dt=Date(2021, 1, 1))
 
 ```
 
@@ -37185,33 +36792,158 @@ A `pendulum.Duration` object. At runtime, this type decomposes into pendulum.Dur
 from pydantic import BaseModel
 from pydantic_extra_types.pendulum_dt import Duration
 
+
 class test_model(BaseModel):
     delta_t: Duration
 
+
 print(test_model(delta_t='P1DT25H'))
 
-#> test_model(delta_t=Duration(days=2, hours=1))
+# > test_model(delta_t=Duration(days=2, hours=1))
+
+```
+
+### to_iso8601_string
+
+```python
+to_iso8601_string() -> str
+
+```
+
+Convert a Duration object to an ISO 8601 string.
+
+In addition to the standard ISO 8601 format, this method also supports the representation of fractions of a second and negative durations.
+
+Returns:
+
+| Type | Description | | --- | --- | | `str` | The ISO 8601 string representation of the duration. |
+
+Source code in `pydantic_extra_types/pendulum_dt.py`
+
+```python
+def to_iso8601_string(self) -> str:
+    """
+    Convert a Duration object to an ISO 8601 string.
+
+    In addition to the standard ISO 8601 format, this method also supports the representation of fractions of a second and negative durations.
+
+    Returns:
+        The ISO 8601 string representation of the duration.
+    """
+    # Extracting components from the Duration object
+    years = self.years
+    months = self.months
+    days = self._days
+    hours = self.hours
+    minutes = self.minutes
+    seconds = self.remaining_seconds
+    milliseconds = self.microseconds // 1000
+    microseconds = self.microseconds % 1000
+
+    # Constructing the ISO 8601 duration string
+    iso_duration = 'P'
+    if years or months or days:
+        if years:
+            iso_duration += f'{years}Y'
+        if months:
+            iso_duration += f'{months}M'
+        if days:
+            iso_duration += f'{days}D'
+
+    if hours or minutes or seconds or milliseconds or microseconds:
+        iso_duration += 'T'
+        if hours:
+            iso_duration += f'{hours}H'
+        if minutes:
+            iso_duration += f'{minutes}M'
+        if seconds or milliseconds or microseconds:
+            iso_duration += f'{seconds}'
+            if milliseconds or microseconds:
+                iso_duration += f'.{milliseconds:03d}'
+            if microseconds:
+                iso_duration += f'{microseconds:03d}'
+            iso_duration += 'S'
+
+    # Prefix with '-' if the duration is negative
+    if self.total_seconds() < 0:
+        iso_duration = '-' + iso_duration
+
+    if iso_duration == 'P':
+        iso_duration = 'P0D'
+
+    return iso_duration
 
 ```
 
 The `pydantic_extra_types.phone_numbers` module provides the PhoneNumber data type.
 
-This class depends on the [phonenumbers] package, which is a Python port of Google's [libphonenumber].
+This class depends on the [phonenumbers](https://pypi.orgt/phonenumbers/) package, which is a Python port of Google's [libphonenumber](https://github.com/google/libphonenumber/).
 
 ## PhoneNumber
 
 Bases: `str`
 
-A wrapper around [phonenumbers](https://pypi.org/project/phonenumbers/) package, which is a Python port of Google's [libphonenumber](https://github.com/google/libphonenumber/).
+A wrapper around the `phonenumbers.PhoneNumber` object.
 
-### supported_regions
+It provides class-level configuration points you can change by subclassing:
+
+#### Examples
+
+##### Normal usage:
 
 ```python
-supported_regions: list[str] = []
+    from pydantic import BaseModel
+    from pydantic_extra_types.phone_numbers import PhoneNumber
+
+    class Contact(BaseModel):
+        name: str
+        phone: PhoneNumber
+
+    c = Contact(name='Alice', phone='+1 650-253-0000')
+    print(c.phone)
+    >> tel:+1-650-253-0000 (formatted using RFC3966 by default)
 
 ```
 
-The supported regions. If empty, all regions are supported.
+##### Changing defaults by subclassing:
+
+```python
+    from pydantic_extra_types.phone_numbers import PhoneNumber
+
+    class USPhone(PhoneNumber):
+        default_region_code = 'US'
+        supported_regions = ['US']
+        phone_format = 'NATIONAL'
+
+    # Now parsing will accept national numbers for the US
+    p = USPhone('650-253-0000')
+    print(p)
+    >> 650-253-0000
+
+```
+
+##### Changing defaults by using the provided validator annotation:
+
+```python
+    from typing import Annotated, Union
+    import phonenumbers
+    from pydantic import BaseModel
+    from pydantic_extra_types.phone_numbers import PhoneNumberValidator
+
+    E164NumberType = Annotated[
+        Union[str, phonenumbers.PhoneNumber], PhoneNumberValidator(number_format="E164")
+    ]
+
+
+    class Model(BaseModel):
+        phone: E164NumberType
+
+
+    m = Model(phone="+1 650-253-0000")
+    print(m.phone)
+    >> +16502530000
+
+```
 
 ### default_region_code
 
@@ -37221,6 +36953,15 @@ default_region_code: str | None = None
 ```
 
 The default region code to use when parsing phone numbers without an international prefix.
+
+### supported_regions
+
+```python
+supported_regions: list[str] = []
+
+```
+
+The supported regions. If empty, all regions are supported.
 
 ### phone_format
 
@@ -37235,28 +36976,65 @@ The format of the phone number.
 
 ```python
 PhoneNumberValidator(
-    default_region: Optional[str] = None,
+    default_region: str | None = None,
     number_format: str = "RFC3966",
-    supported_regions: Optional[Sequence[str]] = None,
+    supported_regions: Sequence[str] | None = None,
 )
 
 ```
 
-A pydantic before validator for phone numbers using the [phonenumbers](https://pypi.org/project/phonenumbers/) package, a Python port of Google's [libphonenumber](https://github.com/google/libphonenumber/).
-
-Intended to be used to create custom pydantic data types using the `typing.Annotated` type construct.
-
-Parameters:
-
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `default_region` | `str | None` | The default region code to use when parsing phone numbers without an international prefix. If None (default), the region must be supplied in the phone number as an international prefix. | `None` | | `number_format` | `str` | The format of the phone number to return. See phonenumbers.PhoneNumberFormat for valid values. | `'RFC3966'` | | `supported_regions` | `list[str]` | The supported regions. If empty, all regions are supported (default). | `None` |
-
-Returns: str: The formatted phone number.
+An annotation to validate `phonenumbers.PhoneNumber` objects.
 
 Example
 
-MyNumberType = Annotated\[ Union[str, phonenumbers.PhoneNumber], PhoneNumberValidator() \] USNumberType = Annotated\[ Union[str, phonenumbers.PhoneNumber], PhoneNumberValidator(supported_regions=['US'], default_region='US') \]
+```python
+from typing import Annotated, Union
 
-class SomeModel(BaseModel): phone_number: MyNumberType us_number: USNumberType
+import phonenumbers
+from pydantic import BaseModel
+from pydantic_extra_types.phone_numbers import PhoneNumberValidator
+
+MyNumberType = Annotated[Union[str, phonenumbers.PhoneNumber], PhoneNumberValidator()]
+
+USNumberType = Annotated[
+    Union[str, phonenumbers.PhoneNumber], PhoneNumberValidator(supported_regions=['US'], default_region='US')
+]
+
+
+class SomeModel(BaseModel):
+    phone_number: MyNumberType
+    us_number: USNumberType
+
+```
+
+### default_region
+
+```python
+default_region: str | None = None
+
+```
+
+The default region code to use when parsing phone numbers without an international prefix.
+
+If `None` (the default), the region must be supplied in the phone number as an international prefix.
+
+### number_format
+
+```python
+number_format: str = 'RFC3966'
+
+```
+
+The format of the phone number to return. See `phonenumbers.PhoneNumberFormat` for valid values.
+
+### supported_regions
+
+```python
+supported_regions: Sequence[str] | None = None
+
+```
+
+The supported regions. If empty (the default), all regions are supported.
 
 The `pydantic_extra_types.routing_number` module provides the ABARoutingNumber data type.
 
@@ -37278,12 +37056,14 @@ from pydantic import BaseModel
 
 from pydantic_extra_types.routing_number import ABARoutingNumber
 
+
 class BankAccount(BaseModel):
     routing_number: ABARoutingNumber
 
+
 account = BankAccount(routing_number='122105155')
 print(account)
-#> routing_number='122105155'
+# > routing_number='122105155'
 
 ```
 
@@ -37309,8 +37089,10 @@ from pydantic import BaseModel
 
 from pydantic_extra_types.language_code import ISO_15924
 
+
 class Script(BaseModel):
     alpha_4: ISO_15924
+
 
 script = Script(alpha_4='Java')
 print(lang)
@@ -37321,6 +37103,8 @@ print(lang)
 SemanticVersion definition that is based on the Semantiv Versioning Specification [semver](https://semver.org/).
 
 ## SemanticVersion
+
+Bases: `Version`
 
 Semantic version based on the official [semver thread](https://python-semver.readthedocs.io/en/latest/advanced/combine-pydantic-and-semver.html).
 
@@ -37374,7 +37158,7 @@ print(tz)
 ## get_timezones
 
 ```python
-get_timezones() -> Set[str]
+get_timezones() -> set[str]
 
 ```
 
@@ -37383,13 +37167,14 @@ Determine the timezone provider and return available timezones.
 Source code in `pydantic_extra_types/timezone_name.py`
 
 ```python
-def get_timezones() -> Set[str]:
+def get_timezones() -> set[str]:
     """Determine the timezone provider and return available timezones."""
-    if _is_available('zoneinfo') and _is_available('tzdata'):  # pragma: no cover
-        return _tz_provider_from_zone_info()
+    if _is_available('zoneinfo'):  # pragma: no cover
+        timezones = _tz_provider_from_zone_info()
+        if len(timezones) == 0:  # pragma: no cover
+            raise ImportError('No timezone provider found. Please install tzdata with "pip install tzdata"')
+        return timezones
     elif _is_available('pytz'):  # pragma: no cover
-        if sys.version_info[:2] > (3, 8):
-            _warn_about_pytz_usage()
         return _tz_provider_from_pytz()
     else:  # pragma: no cover
         if sys.version_info[:2] == (3, 8):
@@ -52121,6 +51906,176 @@ except ValidationError as e:
 Note that if the context property is not included in `model_validate`, then `info.context` will be `None` and the forbidden passwords list will not get added to the context in the above implementation. As such, `validate_user_passwords` would not carry out the desired password validation.
 
 More details about validation context can be found in the [validators documentation](../../concepts/validators/#validation-context).
+
+Models can be [created dynamically](../../concepts/models/#dynamic-model-creation) using the create_model() factory function.
+
+In this example, we will show how to dynamically derive a model from an existing one, making every field optional. To achieve this, we will make use of the model_fields model class attribute, and derive new annotations from the field definitions to be passed to the create_model() factory. Of course, this example can apply to any use case where you need to derive a new model from another (remove default values, add aliases, etc).
+
+```python
+from typing import Annotated, Union
+
+from pydantic import BaseModel, Field, create_model
+
+
+def make_fields_optional(model_cls: type[BaseModel]) -> type[BaseModel]:
+    new_fields = {}
+
+    for f_name, f_info in model_cls.model_fields.items():
+        f_dct = f_info.asdict()
+        new_fields[f_name] = (
+            Annotated[(Union[f_dct['annotation'], None], *f_dct['metadata'], Field(**f_dct['attributes']))],
+            None,
+        )
+
+    return create_model(
+        f'{type.__name__}Optional',
+        __base__=model_cls,  # (1)!
+        **new_fields,
+    )
+
+```
+
+1. Using the original model as a base will inherit the [validators](../../concepts/validators/), [computed fields](../../concepts/fields/#the-computed_field-decorator), etc. The parent fields are overridden by the ones we define.
+
+```python
+from typing import Annotated
+
+from pydantic import BaseModel, Field, create_model
+
+
+def make_fields_optional(model_cls: type[BaseModel]) -> type[BaseModel]:
+    new_fields = {}
+
+    for f_name, f_info in model_cls.model_fields.items():
+        f_dct = f_info.asdict()
+        new_fields[f_name] = (
+            Annotated[(f_dct['annotation'] | None, *f_dct['metadata'], Field(**f_dct['attributes']))],
+            None,
+        )
+
+    return create_model(
+        f'{type.__name__}Optional',
+        __base__=model_cls,  # (1)!
+        **new_fields,
+    )
+
+```
+
+1. Using the original model as a base will inherit the [validators](../../concepts/validators/), [computed fields](../../concepts/fields/#the-computed_field-decorator), etc. The parent fields are overridden by the ones we define.
+
+```python
+from typing import Annotated
+
+from pydantic import BaseModel, Field, create_model
+
+
+def make_fields_optional(model_cls: type[BaseModel]) -> type[BaseModel]:
+    new_fields = {}
+
+    for f_name, f_info in model_cls.model_fields.items():
+        f_dct = f_info.asdict()
+        new_fields[f_name] = (
+            Annotated[f_dct['annotation'] | None, *f_dct['metadata'], Field(**f_dct['attributes'])],
+            None,
+        )
+
+    return create_model(
+        f'{type.__name__}Optional',
+        __base__=model_cls,  # (1)!
+        **new_fields,
+    )
+
+```
+
+1. Using the original model as a base will inherit the [validators](../../concepts/validators/), [computed fields](../../concepts/fields/#the-computed_field-decorator), etc. The parent fields are overridden by the ones we define.
+
+For each field, we generate a dictionary representation of the FieldInfo instance using the asdict() method, containing the annotation, metadata and attributes.
+
+With the following model:
+
+```python
+class Model(BaseModel):
+    f: Annotated[int, Field(gt=1), WithJsonSchema({'extra': 'data'}), Field(title='F')] = 1
+
+```
+
+The FieldInfo instance of `f` will have three items in its dictionary representation:
+
+- `annotation`: `int`.
+- `metadata`: A list containing the type-specific constraints and other metadata: `[Gt(1), WithJsonSchema({'extra': 'data'})]`.
+- `attributes`: The remaining field-specific attributes: `{'title': 'F'}`.
+
+With that in mind, we can recreate an annotation that "simulates" the one from the original model:
+
+```python
+new_annotation = Annotated[(
+    f_dct['annotation'] | None,  # (1)!
+    *f_dct['metadata'],  # (2)!
+    Field(**f_dct['attributes']),  # (3)!
+)]
+
+```
+
+1. We create a new annotation from the existing one, but adding `None` as an allowed value (in our previous example, this is equivalent to `int | None`).
+1. We unpack the metadata to be reused (in our previous example, this is equivalent to specifying `Field(gt=1)` and `WithJsonSchema({'extra': 'data'})` as Annotated metadata).
+1. We specify the field-specific attributes by using the Field() function (in our previous example, this is equivalent to `Field(title='F')`).
+
+```python
+new_annotation = Annotated[
+    f_dct['annotation'] | None,  # (1)!
+    *f_dct['metadata'],  # (2)!
+    Field(**f_dct['attributes']),  # (3)!
+]
+
+```
+
+1. We create a new annotation from the existing one, but adding `None` as an allowed value (in our previous example, this is equivalent to `int | None`).
+1. We unpack the metadata to be reused (in our previous example, this is equivalent to specifying `Field(gt=1)` and `WithJsonSchema({'extra': 'data'})` as Annotated metadata).
+1. We specify the field-specific attributes by using the Field() function (in our previous example, this is equivalent to `Field(title='F')`).
+
+and specify `None` as a default value (the second element of the tuple for the field definition accepted by create_model()).
+
+Here is a demonstration of our factory function:
+
+```python
+from pydantic import BaseModel, Field
+
+
+class Model(BaseModel):
+    a: Annotated[int, Field(gt=1)]
+
+
+ModelOptional = make_fields_optional(Model)
+
+m = ModelOptional()
+print(m.a)
+#> None
+
+```
+
+A couple notes on the implementation:
+
+- Our `make_fields_optional()` function is defined as returning an arbitrary Pydantic model class (`-> type[BaseModel]`). An alternative solution can be to use a type variable to preserve the input class:
+
+  ```python
+  ModelTypeT = TypeVar('ModelTypeT', bound=type[BaseModel])
+
+  def make_fields_optional(model_cls: ModelTypeT) -> ModelTypeT:
+      ...
+
+  ```
+
+  ```python
+  def make_fields_optional[ModelTypeT: type[BaseModel]](model_cls: ModelTypeT) -> ModelTypeT:
+      ...
+
+  ```
+
+  However, note that static type checkers *won't* be able to understand that all fields are now optional.
+
+- The experimental [`MISSING` sentinel](../../concepts/experimental/#missing-sentinel) can be used as an alternative to `None` for the default values. Simply replace `None` by `MISSING` in the new annotation and default value.
+
+- You might be tempted to make a copy of the original FieldInfo instances, add a default and/or perform other mutations, to then reuse it as Annotated metadata. While this may work in some cases, it is **not** a supported pattern, and could break or be deprecated at any point. We strongly encourage using the pattern from this example instead.
 
 `pydantic` is a great tool for validating data coming from various sources. In this section, we will look at how to validate data from different types of files.
 

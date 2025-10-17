@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://docs.pydantic.dev/latest/api/annotated_handlers/">
+        <link rel="canonical" href="https://docs.pydantic.dev/latest/examples/dynamic_models/">
       
       
-        <link rel="prev" href="../version/">
+        <link rel="prev" href="../custom_validators/">
       
       
-        <link rel="next" href="../experimental/">
+        <link rel="next" href="../../errors/errors/">
       
       
       <link rel="icon" href="../../favicon.png">
@@ -24,7 +24,7 @@
     
     
       
-        <title>Annotated Handlers - Pydantic Validation</title>
+        <title>Dynamic models - Pydantic Validation</title>
       
     
     
@@ -67,11 +67,11 @@
       
         <meta  property="og:type"  content="website" >
       
-        <meta  property="og:title"  content="Annotated Handlers - Pydantic Validation" >
+        <meta  property="og:title"  content="Dynamic models - Pydantic Validation" >
       
         <meta  property="og:description"  content="Data validation using Python type hints" >
       
-        <meta  property="og:image"  content="https://docs.pydantic.dev/latest/assets/images/social/api/annotated_handlers.png" >
+        <meta  property="og:image"  content="https://docs.pydantic.dev/latest/assets/images/social/examples/dynamic_models.png" >
       
         <meta  property="og:image:type"  content="image/png" >
       
@@ -79,15 +79,15 @@
       
         <meta  property="og:image:height"  content="630" >
       
-        <meta  property="og:url"  content="https://docs.pydantic.dev/latest/api/annotated_handlers/" >
+        <meta  property="og:url"  content="https://docs.pydantic.dev/latest/examples/dynamic_models/" >
       
         <meta  name="twitter:card"  content="summary_large_image" >
       
-        <meta  name="twitter:title"  content="Annotated Handlers - Pydantic Validation" >
+        <meta  name="twitter:title"  content="Dynamic models - Pydantic Validation" >
       
         <meta  name="twitter:description"  content="Data validation using Python type hints" >
       
-        <meta  name="twitter:image"  content="https://docs.pydantic.dev/latest/assets/images/social/api/annotated_handlers.png" >
+        <meta  name="twitter:image"  content="https://docs.pydantic.dev/latest/assets/images/social/examples/dynamic_models.png" >
       
     
     
@@ -108,11 +108,6 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
-      
-        
-        <a href="#pydantic.annotated_handlers" class="md-skip">
-          Skip to content
-        </a>
       
     </div>
     <div data-md-component="announce">
@@ -170,7 +165,7 @@ to help you monitor and understand your
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Annotated Handlers
+              Dynamic models
             
           </span>
         </div>
@@ -321,21 +316,17 @@ to help you monitor and understand your
         
   
   
-    
-  
   
     
     
       
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../base_model/" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../../api/base_model/" class="md-tabs__link">
           
   
   API Documentation
@@ -370,11 +361,13 @@ to help you monitor and understand your
         
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../../examples/files/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../files/" class="md-tabs__link">
           
   
   Examples
@@ -1164,30 +1157,25 @@ to help you monitor and understand your
       
   
   
-    
   
   
-  
     
     
     
-      
-        
-        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
         
           
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -1198,7 +1186,7 @@ to help you monitor and understand your
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             API Documentation
@@ -1209,30 +1197,25 @@ to help you monitor and understand your
                 
   
   
-    
   
   
-  
     
     
     
       
       
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_1" >
         
           
-          
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_1" checked>
-        
-          
-          <label class="md-nav__link" for="__nav_3_1" id="__nav_3_1_label" tabindex="">
+          <label class="md-nav__link" for="__nav_3_1" id="__nav_3_1_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -1243,7 +1226,7 @@ to help you monitor and understand your
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_1_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_1_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_3_1">
             <span class="md-nav__icon md-icon"></span>
             Pydantic
@@ -1257,7 +1240,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../base_model/" class="md-nav__link">
+      <a href="../../api/base_model/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1278,7 +1261,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../root_model/" class="md-nav__link">
+      <a href="../../api/root_model/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1299,7 +1282,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../dataclasses/" class="md-nav__link">
+      <a href="../../api/dataclasses/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1320,7 +1303,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../type_adapter/" class="md-nav__link">
+      <a href="../../api/type_adapter/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1341,7 +1324,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../validate_call/" class="md-nav__link">
+      <a href="../../api/validate_call/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1362,7 +1345,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../fields/" class="md-nav__link">
+      <a href="../../api/fields/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1383,7 +1366,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../aliases/" class="md-nav__link">
+      <a href="../../api/aliases/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1404,7 +1387,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../config/" class="md-nav__link">
+      <a href="../../api/config/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1425,7 +1408,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../json_schema/" class="md-nav__link">
+      <a href="../../api/json_schema/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1446,7 +1429,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../errors/" class="md-nav__link">
+      <a href="../../api/errors/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1467,7 +1450,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../functional_validators/" class="md-nav__link">
+      <a href="../../api/functional_validators/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1488,7 +1471,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../functional_serializers/" class="md-nav__link">
+      <a href="../../api/functional_serializers/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1509,7 +1492,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../standard_library_types/" class="md-nav__link">
+      <a href="../../api/standard_library_types/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1530,7 +1513,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../types/" class="md-nav__link">
+      <a href="../../api/types/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1551,7 +1534,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../networks/" class="md-nav__link">
+      <a href="../../api/networks/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1572,7 +1555,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../version/" class="md-nav__link">
+      <a href="../../api/version/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1590,28 +1573,10 @@ to help you monitor and understand your
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    Annotated Handlers
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../api/annotated_handlers/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1620,101 +1585,6 @@ to help you monitor and understand your
   
 
       </a>
-      
-        
-
-  
-
-<nav class="md-nav md-nav--secondary" aria-label="Page contents">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Page contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#pydantic.annotated_handlers" class="md-nav__link">
-    <span class="md-ellipsis">
-      annotated_handlers
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pydantic.annotated_handlers.GetJsonSchemaHandler" class="md-nav__link">
-    <span class="md-ellipsis">
-      GetJsonSchemaHandler
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="GetJsonSchemaHandler">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#pydantic.annotated_handlers.GetJsonSchemaHandler.resolve_ref_schema" class="md-nav__link">
-    <span class="md-ellipsis">
-      resolve_ref_schema
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pydantic.annotated_handlers.GetCoreSchemaHandler" class="md-nav__link">
-    <span class="md-ellipsis">
-      GetCoreSchemaHandler
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="GetCoreSchemaHandler">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#pydantic.annotated_handlers.GetCoreSchemaHandler.field_name" class="md-nav__link">
-    <span class="md-ellipsis">
-      field_name
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#pydantic.annotated_handlers.GetCoreSchemaHandler.generate_schema" class="md-nav__link">
-    <span class="md-ellipsis">
-      generate_schema
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#pydantic.annotated_handlers.GetCoreSchemaHandler.resolve_ref_schema" class="md-nav__link">
-    <span class="md-ellipsis">
-      resolve_ref_schema
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1727,7 +1597,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../experimental/" class="md-nav__link">
+      <a href="../../api/experimental/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1761,20 +1631,17 @@ to help you monitor and understand your
       
       
         
-          
-          
-        
       
     
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
         <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_2" >
         
           
-          <label class="md-nav__link" for="__nav_3_2" id="__nav_3_2_label" tabindex="">
+          <label class="md-nav__link" for="__nav_3_2" id="__nav_3_2_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -1799,7 +1666,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../pydantic_core/" class="md-nav__link">
+      <a href="../../api/pydantic_core/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1820,7 +1687,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../pydantic_core_schema/" class="md-nav__link">
+      <a href="../../api/pydantic_core_schema/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1849,7 +1716,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../pydantic_settings/" class="md-nav__link">
+      <a href="../../api/pydantic_settings/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1875,20 +1742,17 @@ to help you monitor and understand your
       
       
         
-          
-          
-        
       
     
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
         <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_4" >
         
           
-          <label class="md-nav__link" for="__nav_3_4" id="__nav_3_4_label" tabindex="">
+          <label class="md-nav__link" for="__nav_3_4" id="__nav_3_4_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -1913,7 +1777,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../pydantic_extra_types_color/" class="md-nav__link">
+      <a href="../../api/pydantic_extra_types_color/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1934,7 +1798,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../pydantic_extra_types_country/" class="md-nav__link">
+      <a href="../../api/pydantic_extra_types_country/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1955,7 +1819,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../pydantic_extra_types_payment/" class="md-nav__link">
+      <a href="../../api/pydantic_extra_types_payment/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1976,7 +1840,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../pydantic_extra_types_phone_numbers/" class="md-nav__link">
+      <a href="../../api/pydantic_extra_types_phone_numbers/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1997,7 +1861,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../pydantic_extra_types_routing_numbers/" class="md-nav__link">
+      <a href="../../api/pydantic_extra_types_routing_numbers/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2018,7 +1882,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../pydantic_extra_types_coordinate/" class="md-nav__link">
+      <a href="../../api/pydantic_extra_types_coordinate/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2039,7 +1903,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../pydantic_extra_types_mac_address/" class="md-nav__link">
+      <a href="../../api/pydantic_extra_types_mac_address/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2060,7 +1924,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../pydantic_extra_types_isbn/" class="md-nav__link">
+      <a href="../../api/pydantic_extra_types_isbn/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2081,7 +1945,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../pydantic_extra_types_pendulum_dt/" class="md-nav__link">
+      <a href="../../api/pydantic_extra_types_pendulum_dt/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2102,7 +1966,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../pydantic_extra_types_currency_code/" class="md-nav__link">
+      <a href="../../api/pydantic_extra_types_currency_code/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2123,7 +1987,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../pydantic_extra_types_language_code/" class="md-nav__link">
+      <a href="../../api/pydantic_extra_types_language_code/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2144,7 +2008,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../pydantic_extra_types_script_code/" class="md-nav__link">
+      <a href="../../api/pydantic_extra_types_script_code/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2165,7 +2029,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../pydantic_extra_types_semantic_version/" class="md-nav__link">
+      <a href="../../api/pydantic_extra_types_semantic_version/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2186,7 +2050,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../pydantic_extra_types_timezone_name/" class="md-nav__link">
+      <a href="../../api/pydantic_extra_types_timezone_name/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2207,7 +2071,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../pydantic_extra_types_ulid/" class="md-nav__link">
+      <a href="../../api/pydantic_extra_types_ulid/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2329,25 +2193,30 @@ to help you monitor and understand your
       
   
   
+    
   
   
+  
     
     
     
+      
+        
+        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
         
           
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
             
   
   <span class="md-ellipsis">
@@ -2358,7 +2227,7 @@ to help you monitor and understand your
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             Examples
@@ -2372,7 +2241,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../examples/files/" class="md-nav__link">
+      <a href="../files/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2393,7 +2262,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../examples/requests/" class="md-nav__link">
+      <a href="../requests/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2414,7 +2283,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../examples/queues/" class="md-nav__link">
+      <a href="../queues/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2435,7 +2304,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../examples/orms/" class="md-nav__link">
+      <a href="../orms/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2456,7 +2325,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../examples/custom_validators/" class="md-nav__link">
+      <a href="../custom_validators/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2474,10 +2343,17 @@ to help you monitor and understand your
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../examples/dynamic_models/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -2486,6 +2362,7 @@ to help you monitor and understand your
   
 
       </a>
+      
     </li>
   
 
@@ -3084,89 +2961,6 @@ to help you monitor and understand your
   
   
   
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Page contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#pydantic.annotated_handlers" class="md-nav__link">
-    <span class="md-ellipsis">
-      annotated_handlers
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pydantic.annotated_handlers.GetJsonSchemaHandler" class="md-nav__link">
-    <span class="md-ellipsis">
-      GetJsonSchemaHandler
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="GetJsonSchemaHandler">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#pydantic.annotated_handlers.GetJsonSchemaHandler.resolve_ref_schema" class="md-nav__link">
-    <span class="md-ellipsis">
-      resolve_ref_schema
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pydantic.annotated_handlers.GetCoreSchemaHandler" class="md-nav__link">
-    <span class="md-ellipsis">
-      GetCoreSchemaHandler
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="GetCoreSchemaHandler">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#pydantic.annotated_handlers.GetCoreSchemaHandler.field_name" class="md-nav__link">
-    <span class="md-ellipsis">
-      field_name
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#pydantic.annotated_handlers.GetCoreSchemaHandler.generate_schema" class="md-nav__link">
-    <span class="md-ellipsis">
-      generate_schema
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#pydantic.annotated_handlers.GetCoreSchemaHandler.resolve_ref_schema" class="md-nav__link">
-    <span class="md-ellipsis">
-      resolve_ref_schema
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
 </nav>
                   </div>
                 </div>
@@ -3184,547 +2978,268 @@ to help you monitor and understand your
   
 
 
-  <h1>Annotated Handlers</h1>
-
-<div class="doc doc-object doc-module">
-
-
-
-<a id="pydantic.annotated_handlers"></a>
-    <div class="doc doc-contents first">
-
-        <p>Type annotations to use with <code>__get_pydantic_core_schema__</code> and <code>__get_pydantic_json_schema__</code>.</p>
-
-
-
-
-
-
-
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="pydantic.annotated_handlers.GetJsonSchemaHandler" class="doc doc-heading">
-            <span class="doc doc-object-name doc-class-name">GetJsonSchemaHandler</span>
-
-
-<a href="#pydantic.annotated_handlers.GetJsonSchemaHandler" class="headerlink" title="Permanent link">&para;</a></h2>
-
-
-    <div class="doc doc-contents ">
-
-
-        <p>Handler to call into the next JSON schema generation function.</p>
-
-
-<p><span class="doc-section-title">Attributes:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td><code><span title="pydantic.annotated_handlers.GetJsonSchemaHandler.mode">mode</span></code></td>
-            <td>
-                  <code><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaMode" href="../json_schema/#pydantic.json_schema.JsonSchemaMode">JsonSchemaMode</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Json schema mode, can be <code>validation</code> or <code>serialization</code>.</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-
-
-
-
-
-
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="pydantic.annotated_handlers.GetJsonSchemaHandler.resolve_ref_schema" class="doc doc-heading">
-            <span class="doc doc-object-name doc-function-name">resolve_ref_schema</span>
-
-
-<a href="#pydantic.annotated_handlers.GetJsonSchemaHandler.resolve_ref_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">resolve_ref_schema</span><span class="p">(</span>
-    <span class="n">maybe_ref_json_schema</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="../json_schema/#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="../json_schema/#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-        <p>Get the real schema for a <code>{"$ref": ...}</code> schema.
-If the schema given is not a <code>$ref</code> schema, it will be returned as is.
-This means you don't have to check before calling this function.</p>
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>maybe_ref_json_schema</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="../json_schema/#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>A JsonSchemaValue which may be a <code>$ref</code> schema.</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-<p><span class="doc-section-title">Raises:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#LookupError">LookupError</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>If the ref is not found.</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    <p><span class="doc-section-title">Returns:</span></p>
-    <table>
-      <thead>
-        <tr>
-<th>Name</th>          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-<td><code>JsonSchemaValue</code></td>            <td>
-                  <code><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="../json_schema/#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>A JsonSchemaValue that has no <code>$ref</code>.</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-            <details class="quote">
-              <summary>Source code in <code>pydantic/annotated_handlers.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">49</span>
-<span class="normal">50</span>
-<span class="normal">51</span>
-<span class="normal">52</span>
-<span class="normal">53</span>
-<span class="normal">54</span>
-<span class="normal">55</span>
-<span class="normal">56</span>
-<span class="normal">57</span>
-<span class="normal">58</span>
-<span class="normal">59</span>
-<span class="normal">60</span>
-<span class="normal">61</span>
-<span class="normal">62</span>
-<span class="normal">63</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">resolve_ref_schema</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">maybe_ref_json_schema</span><span class="p">:</span> <span class="n">JsonSchemaValue</span><span class="p">,</span> <span class="o">/</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JsonSchemaValue</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the real schema for a `{&quot;$ref&quot;: ...}` schema.</span>
-<span class="sd">    If the schema given is not a `$ref` schema, it will be returned as is.</span>
-<span class="sd">    This means you don&#39;t have to check before calling this function.</span>
-
-<span class="sd">    Args:</span>
-<span class="sd">        maybe_ref_json_schema: A JsonSchemaValue which may be a `$ref` schema.</span>
-
-<span class="sd">    Raises:</span>
-<span class="sd">        LookupError: If the ref is not found.</span>
-
-<span class="sd">    Returns:</span>
-<span class="sd">        JsonSchemaValue: A JsonSchemaValue that has no `$ref`.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+  <h1>Dynamic models</h1>
+
+<p>Models can be <a href="../../concepts/models/#dynamic-model-creation">created dynamically</a> using the <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.create_model"><code>create_model()</code></a>
+factory function.</p>
+<p>In this example, we will show how to dynamically derive a model from an existing one, making every field optional. To achieve this,
+we will make use of the <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_fields"><code>model_fields</code></a> model class attribute, and derive new annotations
+from the field definitions to be passed to the <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.create_model"><code>create_model()</code></a> factory. Of course, this example can apply
+to any use case where you need to derive a new model from another (remove default values, add aliases, etc).</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:3"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.9</label><label for="__tabbed_1_2">Python 3.10</label><label for="__tabbed_1_3">Python 3.11 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">create_model</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">make_fields_optional</span><span class="p">(</span><span class="n">model_cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">BaseModel</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">type</span><span class="p">[</span><span class="n">BaseModel</span><span class="p">]:</span>
+    <span class="n">new_fields</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">for</span> <span class="n">f_name</span><span class="p">,</span> <span class="n">f_info</span> <span class="ow">in</span> <span class="n">model_cls</span><span class="o">.</span><span class="n">model_fields</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">f_dct</span> <span class="o">=</span> <span class="n">f_info</span><span class="o">.</span><span class="n">asdict</span><span class="p">()</span>
+        <span class="n">new_fields</span><span class="p">[</span><span class="n">f_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">Annotated</span><span class="p">[(</span><span class="n">Union</span><span class="p">[</span><span class="n">f_dct</span><span class="p">[</span><span class="s1">&#39;annotation&#39;</span><span class="p">],</span> <span class="kc">None</span><span class="p">],</span> <span class="o">*</span><span class="n">f_dct</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">],</span> <span class="n">Field</span><span class="p">(</span><span class="o">**</span><span class="n">f_dct</span><span class="p">[</span><span class="s1">&#39;attributes&#39;</span><span class="p">]))],</span>
+            <span class="kc">None</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">create_model</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">type</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s1">Optional&#39;</span><span class="p">,</span>
+        <span class="n">__base__</span><span class="o">=</span><span class="n">model_cls</span><span class="p">,</span>  <span class="c1"># (1)!</span>
+        <span class="o">**</span><span class="n">new_fields</span><span class="p">,</span>
+    <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-            </details>
-    </div>
-
+<ol>
+<li>Using the original model as a base will inherit the <a href="../../concepts/validators/">validators</a>, <a href="../../concepts/fields/#the-computed_field-decorator">computed fields</a>, etc.
+The parent fields are overridden by the ones we define.</li>
+</ol>
 </div>
+<div class="tabbed-block">
+<div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">create_model</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">make_fields_optional</span><span class="p">(</span><span class="n">model_cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">BaseModel</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">type</span><span class="p">[</span><span class="n">BaseModel</span><span class="p">]:</span>
+    <span class="n">new_fields</span> <span class="o">=</span> <span class="p">{}</span>
 
-  </div>
+    <span class="k">for</span> <span class="n">f_name</span><span class="p">,</span> <span class="n">f_info</span> <span class="ow">in</span> <span class="n">model_cls</span><span class="o">.</span><span class="n">model_fields</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">f_dct</span> <span class="o">=</span> <span class="n">f_info</span><span class="o">.</span><span class="n">asdict</span><span class="p">()</span>
+        <span class="n">new_fields</span><span class="p">[</span><span class="n">f_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">Annotated</span><span class="p">[(</span><span class="n">f_dct</span><span class="p">[</span><span class="s1">&#39;annotation&#39;</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="n">f_dct</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">],</span> <span class="n">Field</span><span class="p">(</span><span class="o">**</span><span class="n">f_dct</span><span class="p">[</span><span class="s1">&#39;attributes&#39;</span><span class="p">]))],</span>
+            <span class="kc">None</span><span class="p">,</span>
+        <span class="p">)</span>
 
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="pydantic.annotated_handlers.GetCoreSchemaHandler" class="doc doc-heading">
-            <span class="doc doc-object-name doc-class-name">GetCoreSchemaHandler</span>
-
-
-<a href="#pydantic.annotated_handlers.GetCoreSchemaHandler" class="headerlink" title="Permanent link">&para;</a></h2>
-
-
-    <div class="doc doc-contents ">
-
-
-        <p>Handler to call into the next CoreSchema schema generation function.</p>
-
-
-
-
-
-
-
-
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h3 id="pydantic.annotated_handlers.GetCoreSchemaHandler.field_name" class="doc doc-heading">
-            <span class="doc doc-object-name doc-attribute-name">field_name</span>
-
-
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-property"><code>property</code></small>
-  </span>
-
-<a href="#pydantic.annotated_handlers.GetCoreSchemaHandler.field_name" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">field_name</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="kc">None</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-        <p>Get the name of the closest field to this validator.</p>
-    </div>
-
-</div>
-
-
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="pydantic.annotated_handlers.GetCoreSchemaHandler.generate_schema" class="doc doc-heading">
-            <span class="doc doc-object-name doc-function-name">generate_schema</span>
-
-
-<a href="#pydantic.annotated_handlers.GetCoreSchemaHandler.generate_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">generate_schema</span><span class="p">(</span><span class="n">source_type</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pydantic_core.core_schema.CoreSchema">CoreSchema</span></span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-        <p>Generate a schema unrelated to the current context.
-Use this function if e.g. you are handling schema generation for a sequence
-and want to generate a schema for its items.
-Otherwise, you may end up doing something like applying a <code>min_length</code> constraint
-that was intended for the sequence itself to its items!</p>
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>source_type</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>The input type.</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    <p><span class="doc-section-title">Returns:</span></p>
-    <table>
-      <thead>
-        <tr>
-<th>Name</th>          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-<td><code>CoreSchema</code></td>            <td>
-                  <code><span title="pydantic_core.core_schema.CoreSchema">CoreSchema</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>The <code>pydantic-core</code> CoreSchema generated.</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-            <details class="quote">
-              <summary>Source code in <code>pydantic/annotated_handlers.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">84</span>
-<span class="normal">85</span>
-<span class="normal">86</span>
-<span class="normal">87</span>
-<span class="normal">88</span>
-<span class="normal">89</span>
-<span class="normal">90</span>
-<span class="normal">91</span>
-<span class="normal">92</span>
-<span class="normal">93</span>
-<span class="normal">94</span>
-<span class="normal">95</span>
-<span class="normal">96</span>
-<span class="normal">97</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">generate_schema</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_type</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">/</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">CoreSchema</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate a schema unrelated to the current context.</span>
-<span class="sd">    Use this function if e.g. you are handling schema generation for a sequence</span>
-<span class="sd">    and want to generate a schema for its items.</span>
-<span class="sd">    Otherwise, you may end up doing something like applying a `min_length` constraint</span>
-<span class="sd">    that was intended for the sequence itself to its items!</span>
-
-<span class="sd">    Args:</span>
-<span class="sd">        source_type: The input type.</span>
-
-<span class="sd">    Returns:</span>
-<span class="sd">        CoreSchema: The `pydantic-core` CoreSchema generated.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+    <span class="k">return</span> <span class="n">create_model</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">type</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s1">Optional&#39;</span><span class="p">,</span>
+        <span class="n">__base__</span><span class="o">=</span><span class="n">model_cls</span><span class="p">,</span>  <span class="c1"># (1)!</span>
+        <span class="o">**</span><span class="n">new_fields</span><span class="p">,</span>
+    <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-            </details>
-    </div>
-
+<ol>
+<li>Using the original model as a base will inherit the <a href="../../concepts/validators/">validators</a>, <a href="../../concepts/fields/#the-computed_field-decorator">computed fields</a>, etc.
+The parent fields are overridden by the ones we define.</li>
+</ol>
 </div>
+<div class="tabbed-block">
+<div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
 
-<div class="doc doc-object doc-function">
-
-
-<h3 id="pydantic.annotated_handlers.GetCoreSchemaHandler.resolve_ref_schema" class="doc doc-heading">
-            <span class="doc doc-object-name doc-function-name">resolve_ref_schema</span>
-
-
-<a href="#pydantic.annotated_handlers.GetCoreSchemaHandler.resolve_ref_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">resolve_ref_schema</span><span class="p">(</span>
-    <span class="n">maybe_ref_schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.CoreSchema">CoreSchema</span></span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pydantic_core.core_schema.CoreSchema">CoreSchema</span></span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-        <p>Get the real schema for a <code>definition-ref</code> schema.
-If the schema given is not a <code>definition-ref</code> schema, it will be returned as is.
-This means you don't have to check before calling this function.</p>
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>maybe_ref_schema</code>
-            </td>
-            <td>
-                  <code><span title="pydantic_core.core_schema.CoreSchema">CoreSchema</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>A <code>CoreSchema</code>, <code>ref</code>-based or not.</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-      </tbody>
-    </table>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">create_model</span>
 
 
-<p><span class="doc-section-title">Raises:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#LookupError">LookupError</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>If the <code>ref</code> is not found.</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
+<span class="k">def</span><span class="w"> </span><span class="nf">make_fields_optional</span><span class="p">(</span><span class="n">model_cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">BaseModel</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">type</span><span class="p">[</span><span class="n">BaseModel</span><span class="p">]:</span>
+    <span class="n">new_fields</span> <span class="o">=</span> <span class="p">{}</span>
 
+    <span class="k">for</span> <span class="n">f_name</span><span class="p">,</span> <span class="n">f_info</span> <span class="ow">in</span> <span class="n">model_cls</span><span class="o">.</span><span class="n">model_fields</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">f_dct</span> <span class="o">=</span> <span class="n">f_info</span><span class="o">.</span><span class="n">asdict</span><span class="p">()</span>
+        <span class="n">new_fields</span><span class="p">[</span><span class="n">f_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">Annotated</span><span class="p">[</span><span class="n">f_dct</span><span class="p">[</span><span class="s1">&#39;annotation&#39;</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="n">f_dct</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">],</span> <span class="n">Field</span><span class="p">(</span><span class="o">**</span><span class="n">f_dct</span><span class="p">[</span><span class="s1">&#39;attributes&#39;</span><span class="p">])],</span>
+            <span class="kc">None</span><span class="p">,</span>
+        <span class="p">)</span>
 
-    <p><span class="doc-section-title">Returns:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                  <code><span title="pydantic_core.core_schema.CoreSchema">CoreSchema</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>A concrete <code>CoreSchema</code>.</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-            <details class="quote">
-              <summary>Source code in <code>pydantic/annotated_handlers.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 99</span>
-<span class="normal">100</span>
-<span class="normal">101</span>
-<span class="normal">102</span>
-<span class="normal">103</span>
-<span class="normal">104</span>
-<span class="normal">105</span>
-<span class="normal">106</span>
-<span class="normal">107</span>
-<span class="normal">108</span>
-<span class="normal">109</span>
-<span class="normal">110</span>
-<span class="normal">111</span>
-<span class="normal">112</span>
-<span class="normal">113</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">resolve_ref_schema</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">maybe_ref_schema</span><span class="p">:</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">CoreSchema</span><span class="p">,</span> <span class="o">/</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">CoreSchema</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the real schema for a `definition-ref` schema.</span>
-<span class="sd">    If the schema given is not a `definition-ref` schema, it will be returned as is.</span>
-<span class="sd">    This means you don&#39;t have to check before calling this function.</span>
-
-<span class="sd">    Args:</span>
-<span class="sd">        maybe_ref_schema: A `CoreSchema`, `ref`-based or not.</span>
-
-<span class="sd">    Raises:</span>
-<span class="sd">        LookupError: If the `ref` is not found.</span>
-
-<span class="sd">    Returns:</span>
-<span class="sd">        A concrete `CoreSchema`.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+    <span class="k">return</span> <span class="n">create_model</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">type</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s1">Optional&#39;</span><span class="p">,</span>
+        <span class="n">__base__</span><span class="o">=</span><span class="n">model_cls</span><span class="p">,</span>  <span class="c1"># (1)!</span>
+        <span class="o">**</span><span class="n">new_fields</span><span class="p">,</span>
+    <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-            </details>
-    </div>
-
+<ol>
+<li>Using the original model as a base will inherit the <a href="../../concepts/validators/">validators</a>, <a href="../../concepts/fields/#the-computed_field-decorator">computed fields</a>, etc.
+The parent fields are overridden by the ones we define.</li>
+</ol>
 </div>
-
-
-
-  </div>
-
-    </div>
-
 </div>
-
-
-
-
-  </div>
-
-    </div>
-
 </div>
+<p>For each field, we generate a dictionary representation of the <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.FieldInfo"><code>FieldInfo</code></a> instance
+using the <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.FieldInfo.asdict"><code>asdict()</code></a> method, containing the annotation, metadata and attributes.</p>
+<p>With the following model:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">f</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">gt</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">WithJsonSchema</span><span class="p">({</span><span class="s1">&#39;extra&#39;</span><span class="p">:</span> <span class="s1">&#39;data&#39;</span><span class="p">}),</span> <span class="n">Field</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;F&#39;</span><span class="p">)]</span> <span class="o">=</span> <span class="mi">1</span>
+</code></pre></div>
+<p>The <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.FieldInfo"><code>FieldInfo</code></a> instance of <code>f</code> will have three items in its dictionary representation:</p>
+<ul>
+<li><code>annotation</code>: <code>int</code>.</li>
+<li><code>metadata</code>: A list containing the type-specific constraints and other metadata: <code>[Gt(1), WithJsonSchema({'extra': 'data'})]</code>.</li>
+<li><code>attributes</code>: The remaining field-specific attributes: <code>{'title': 'F'}</code>.</li>
+</ul>
+<p>With that in mind, we can recreate an annotation that "simulates" the one from the original model:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.9 and above</label><label for="__tabbed_2_2">Python 3.11 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span class="n">new_annotation</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[(</span>
+    <span class="n">f_dct</span><span class="p">[</span><span class="s1">&#39;annotation&#39;</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>  <span class="c1"># (1)!</span>
+    <span class="o">*</span><span class="n">f_dct</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">],</span>  <span class="c1"># (2)!</span>
+    <span class="n">Field</span><span class="p">(</span><span class="o">**</span><span class="n">f_dct</span><span class="p">[</span><span class="s1">&#39;attributes&#39;</span><span class="p">]),</span>  <span class="c1"># (3)!</span>
+<span class="p">)]</span>
+</code></pre></div>
+<ol>
+<li>
+<p>We create a new annotation from the existing one, but adding <code>None</code> as an allowed value
+   (in our previous example, this is equivalent to <code>int | None</code>).</p>
+</li>
+<li>
+<p>We unpack the metadata to be reused (in our previous example, this is equivalent to
+   specifying <code>Field(gt=1)</code> and <code>WithJsonSchema({'extra': 'data'})</code> as <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Annotated"><code>Annotated</code></a>
+   metadata).</p>
+</li>
+<li>
+<p>We specify the field-specific attributes by using the <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.Field"><code>Field()</code></a> function
+   (in our previous example, this is equivalent to <code>Field(title='F')</code>).</p>
+</li>
+</ol>
+</div>
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span class="n">new_annotation</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span>
+    <span class="n">f_dct</span><span class="p">[</span><span class="s1">&#39;annotation&#39;</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>  <span class="c1"># (1)!</span>
+    <span class="o">*</span><span class="n">f_dct</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">],</span>  <span class="c1"># (2)!</span>
+    <span class="n">Field</span><span class="p">(</span><span class="o">**</span><span class="n">f_dct</span><span class="p">[</span><span class="s1">&#39;attributes&#39;</span><span class="p">]),</span>  <span class="c1"># (3)!</span>
+<span class="p">]</span>
+</code></pre></div>
+<ol>
+<li>
+<p>We create a new annotation from the existing one, but adding <code>None</code> as an allowed value
+   (in our previous example, this is equivalent to <code>int | None</code>).</p>
+</li>
+<li>
+<p>We unpack the metadata to be reused (in our previous example, this is equivalent to
+   specifying <code>Field(gt=1)</code> and <code>WithJsonSchema({'extra': 'data'})</code> as <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Annotated"><code>Annotated</code></a>
+   metadata).</p>
+</li>
+<li>
+<p>We specify the field-specific attributes by using the <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.Field"><code>Field()</code></a> function
+   (in our previous example, this is equivalent to <code>Field(title='F')</code>).</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<p>and specify <code>None</code> as a default value (the second element of the tuple for the field definition accepted by <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.create_model"><code>create_model()</code></a>).</p>
+<p>Here is a demonstration of our factory function:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">a</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">gt</span><span class="o">=</span><span class="mi">1</span><span class="p">)]</span>
+
+
+<span class="n">ModelOptional</span> <span class="o">=</span> <span class="n">make_fields_optional</span><span class="p">(</span><span class="n">Model</span><span class="p">)</span>
+
+<span class="n">m</span> <span class="o">=</span> <span class="n">ModelOptional</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">a</span><span class="p">)</span>
+<span class="c1">#&gt; None</span>
+</code></pre></div>
+<p>A couple notes on the implementation:</p>
+<ul>
+<li>
+<p>Our <code>make_fields_optional()</code> function is defined as returning an arbitrary Pydantic model class (<code>-&gt; type[BaseModel]</code>).
+  An alternative solution can be to use a type variable to preserve the input class:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.9 and above</label><label for="__tabbed_3_2">Python 3.12 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span class="n">ModelTypeT</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;ModelTypeT&#39;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="nb">type</span><span class="p">[</span><span class="n">BaseModel</span><span class="p">])</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">make_fields_optional</span><span class="p">(</span><span class="n">model_cls</span><span class="p">:</span> <span class="n">ModelTypeT</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ModelTypeT</span><span class="p">:</span>
+    <span class="o">...</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">make_fields_optional</span><span class="p">[</span><span class="n">ModelTypeT</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">BaseModel</span><span class="p">]](</span><span class="n">model_cls</span><span class="p">:</span> <span class="n">ModelTypeT</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ModelTypeT</span><span class="p">:</span>
+    <span class="o">...</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p>However, note that static type checkers <em>won't</em> be able to understand that all fields are now optional.</p>
+</li>
+<li>
+<p>The experimental <a href="../../concepts/experimental/#missing-sentinel"><code>MISSING</code> sentinel</a> can be used as an alternative to <code>None</code>
+  for the default values. Simply replace <code>None</code> by <code>MISSING</code> in the new annotation and default value.</p>
+</li>
+<li>
+<p>You might be tempted to make a copy of the original <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.FieldInfo"><code>FieldInfo</code></a> instances, add a
+  default and/or perform other mutations, to then reuse it as <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Annotated"><code>Annotated</code></a> metadata. While this
+  may work in some cases, it is <strong>not</strong> a supported pattern, and could break or be deprecated at any point. We strongly
+  encourage using the pattern from this example instead.</p>
+</li>
+</ul>
 
 
 

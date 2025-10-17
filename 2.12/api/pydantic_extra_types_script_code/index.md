@@ -11,8 +11,10 @@ from pydantic import BaseModel
 
 from pydantic_extra_types.language_code import ISO_15924
 
+
 class Script(BaseModel):
     alpha_4: ISO_15924
+
 
 script = Script(alpha_4='Java')
 print(lang)

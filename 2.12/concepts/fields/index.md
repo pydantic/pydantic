@@ -81,6 +81,32 @@ class Model(BaseModel):
 1. The Field() function is applied to `int` type, hence the `deprecated` flag won't have any effect. While this may be confusing given that the name of the Field() function would imply it should apply to the field, the API was designed when this function was the only way to provide metadata. You can alternatively make use of the [`annotated_types`](https://github.com/annotated-types/annotated-types) library which is now supported by Pydantic.
 1. The Field() function is applied to the "top-level" union type, hence the `deprecated` flag will be applied to the field.
 
+## Inspecting model fields
+
+The fields of a model can be inspected using the model_fields class attribute (or the `__pydantic_fields__` attribute for [Pydantic dataclasses](../dataclasses/)). It is a mapping of field names to their definition (represented as FieldInfo instances).
+
+```python
+from typing import Annotated
+
+from pydantic import BaseModel, Field, WithJsonSchema
+
+
+class Model(BaseModel):
+    a: Annotated[
+        int, Field(gt=1), WithJsonSchema({'extra': 'data'}), Field(alias='b')
+    ] = 1
+
+
+field_info = Model.model_fields['a']
+print(field_info.annotation)
+#> <class 'int'>
+print(field_info.alias)
+#> b
+print(field_info.metadata)
+#> [Gt(gt=1), WithJsonSchema(json_schema={'extra': 'data'}, mode=None)]
+
+```
+
 ## Default values
 
 Default values for fields can be provided using the normal assignment syntax or by providing a value to the `default` argument:
@@ -630,9 +656,9 @@ except ValidationError as e:
 
 1. Since `name` field is frozen, the assignment is not allowed.
 
-## Exclude
+## Excluding fields
 
-The `exclude` parameter can be used to control which fields should be excluded from the model when exporting the model.
+The `exclude` and `exclude_if` parameters can be used to control which fields should be excluded from the model when exporting the model.
 
 See the following example:
 
@@ -651,9 +677,9 @@ print(user.model_dump())  # (1)!
 
 ```
 
-1. The `age` field is not included in the `model_dump()` output, since it is excluded.
+1. The `age` field is not included in the model_dump() output, since it is excluded.
 
-See the [Serialization] section for more details.
+See the dedicated [serialization section](../serialization/#field-inclusion-and-exclusion) for more details.
 
 ## Deprecated fields
 

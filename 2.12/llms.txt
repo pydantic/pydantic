@@ -78,6 +78,7 @@ Define how data should be in pure, canonical Python 3.9+; validate it with Pydan
 - [Usage Errors](https://docs.pydantic.dev/latest/errors/usage_errors/index.md)
 - [Validation Errors](https://docs.pydantic.dev/latest/errors/validation_errors/index.md)
 - [Custom Validators](https://docs.pydantic.dev/latest/examples/custom_validators/index.md)
+- [Dynamic models](https://docs.pydantic.dev/latest/examples/dynamic_models/index.md)
 - [Validating File Data](https://docs.pydantic.dev/latest/examples/files/index.md)
 - [Databases](https://docs.pydantic.dev/latest/examples/orms/index.md)
 - [Queues](https://docs.pydantic.dev/latest/examples/queues/index.md)

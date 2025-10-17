@@ -2413,6 +2413,27 @@ to help you monitor and understand your
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/dynamic_models/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Dynamic models
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -3102,12 +3123,14 @@ Wikipedia article.</p>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_extra_types.routing_number</span><span class="w"> </span><span class="kn">import</span> <span class="n">ABARoutingNumber</span>
 
+
 <span class="k">class</span><span class="w"> </span><span class="nc">BankAccount</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">routing_number</span><span class="p">:</span> <span class="n">ABARoutingNumber</span>
 
+
 <span class="n">account</span> <span class="o">=</span> <span class="n">BankAccount</span><span class="p">(</span><span class="n">routing_number</span><span class="o">=</span><span class="s1">&#39;122105155&#39;</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">account</span><span class="p">)</span>
-<span class="c1">#&gt; routing_number=&#39;122105155&#39;</span>
+<span class="c1"># &gt; routing_number=&#39;122105155&#39;</span>
 </code></pre></div>
 
 
@@ -3117,9 +3140,9 @@ Wikipedia article.</p>
 
                   <details class="quote">
                     <summary>Source code in <code>pydantic_extra_types/routing_number.py</code></summary>
-                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">37</span>
-<span class="normal">38</span>
-<span class="normal">39</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">routing_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">41</span>
+<span class="normal">42</span>
+<span class="normal">43</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">routing_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_validate_digits</span><span class="p">(</span><span class="n">routing_number</span><span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_routing_number</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_routing_number</span><span class="p">(</span><span class="n">routing_number</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
@@ -3213,7 +3236,7 @@ Wikipedia article.</p>
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.12.2", "email-validator>=2.0.0", "pydantic-core==2.41.4", "pydantic-extra-types==2.10.0"]
+    window.mkdocs_run_deps = ["pydantic==2.12.3", "email-validator>=2.0.0", "pydantic-core==2.41.4", "pydantic-extra-types==2.10.6"]
     </script>
 
               </article>

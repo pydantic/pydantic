@@ -620,11 +620,13 @@ This class holds information about a field.
 
 Warning
 
-You generally shouldn't be creating `FieldInfo` directly, you'll only need to use it when accessing BaseModel `.model_fields` internals.
+The `FieldInfo` class is meant to expose information about a field in a Pydantic model or dataclass. `FieldInfo` instances shouldn't be instantiated directly, nor mutated.
+
+If you need to derive a new model from another one and are willing to alter `FieldInfo` instances, refer to this [dynamic model example](../../examples/dynamic_models/).
 
 Attributes:
 
-| Name | Type | Description | | --- | --- | --- | | `annotation` | `type[Any] | None` | The type annotation of the field. | | `default` | `Any` | The default value of the field. | | `default_factory` | `Callable[[], Any] | Callable[[dict[str, Any]], Any] | None` | A callable to generate the default value. The callable can either take 0 arguments (in which case it is called as is) or a single argument containing the already validated data. | | `alias` | `str | None` | The alias name of the field. | | `alias_priority` | `int | None` | The priority of the field's alias. | | `validation_alias` | `str | AliasPath | AliasChoices | None` | The validation alias of the field. | | `serialization_alias` | `str | None` | The serialization alias of the field. | | `title` | `str | None` | The title of the field. | | `field_title_generator` | `Callable[[str, FieldInfo], str] | None` | A callable that takes a field name and returns title for it. | | `description` | `str | None` | The description of the field. | | `examples` | `list[Any] | None` | List of examples of the field. | | `exclude` | `bool | None` | Whether to exclude the field from the model serialization. | | `exclude_if` | `Callable[[Any], bool] | None` | A callable that determines whether to exclude a field during serialization based on its value. | | `discriminator` | `str | Discriminator | None` | Field name or Discriminator for discriminating the type in a tagged union. | | `deprecated` | `Deprecated | str | bool | None` | A deprecation message, an instance of warnings.deprecated or the typing_extensions.deprecated backport, or a boolean. If True, a default deprecation message will be emitted when accessing the field. | | `json_schema_extra` | `JsonDict | Callable[[JsonDict], None] | None` | A dict or callable to provide extra JSON schema properties. | | `frozen` | `bool | None` | Whether the field is frozen. | | `validate_default` | `bool | None` | Whether to validate the default value of the field. | | `repr` | `bool` | Whether to include the field in representation of the model. | | `init` | `bool | None` | Whether the field should be included in the constructor of the dataclass. | | `init_var` | `bool | None` | Whether the field should only be included in the constructor of the dataclass, and not stored. | | `kw_only` | `bool | None` | Whether the field should be a keyword-only argument in the constructor of the dataclass. | | `metadata` | `list[Any]` | List of metadata constraints. |
+| Name | Type | Description | | --- | --- | --- | | `annotation` | `type[Any] | None` | The type annotation of the field. | | `default` | `Any` | The default value of the field. | | `default_factory` | `Callable[[], Any] | Callable[[dict[str, Any]], Any] | None` | A callable to generate the default value. The callable can either take 0 arguments (in which case it is called as is) or a single argument containing the already validated data. | | `alias` | `str | None` | The alias name of the field. | | `alias_priority` | `int | None` | The priority of the field's alias. | | `validation_alias` | `str | AliasPath | AliasChoices | None` | The validation alias of the field. | | `serialization_alias` | `str | None` | The serialization alias of the field. | | `title` | `str | None` | The title of the field. | | `field_title_generator` | `Callable[[str, FieldInfo], str] | None` | A callable that takes a field name and returns title for it. | | `description` | `str | None` | The description of the field. | | `examples` | `list[Any] | None` | List of examples of the field. | | `exclude` | `bool | None` | Whether to exclude the field from the model serialization. | | `exclude_if` | `Callable[[Any], bool] | None` | A callable that determines whether to exclude a field during serialization based on its value. | | `discriminator` | `str | Discriminator | None` | Field name or Discriminator for discriminating the type in a tagged union. | | `deprecated` | `Deprecated | str | bool | None` | A deprecation message, an instance of warnings.deprecated or the typing_extensions.deprecated backport, or a boolean. If True, a default deprecation message will be emitted when accessing the field. | | `json_schema_extra` | `JsonDict | Callable[[JsonDict], None] | None` | A dict or callable to provide extra JSON schema properties. | | `frozen` | `bool | None` | Whether the field is frozen. | | `validate_default` | `bool | None` | Whether to validate the default value of the field. | | `repr` | `bool` | Whether to include the field in representation of the model. | | `init` | `bool | None` | Whether the field should be included in the constructor of the dataclass. | | `init_var` | `bool | None` | Whether the field should only be included in the constructor of the dataclass, and not stored. | | `kw_only` | `bool | None` | Whether the field should be a keyword-only argument in the constructor of the dataclass. | | `metadata` | `list[Any]` | The metadata list. Contains all the data that isn't expressed as direct FieldInfo attributes, including: Type-specific constraints, such as gt or min_length (these are converted to metadata classes such as annotated_types.Gt). Any other arbitrary object used within Annotated metadata (e.g. custom types handlers or any object not recognized by Pydantic). |
 
 See the signature of `pydantic.fields.Field` for more details about the expected arguments.
 
@@ -637,10 +639,14 @@ def __init__(self, **kwargs: Unpack[_FieldInfoInputs]) -> None:
 
     See the signature of `pydantic.fields.Field` for more details about the expected arguments.
     """
+    # Tracking the explicitly set attributes is necessary to correctly merge `Field()` functions
+    # (e.g. with `Annotated[int, Field(alias='a'), Field(alias=None)]`, even though `None` is the default value,
+    # we need to track that `alias=None` was explicitly set):
     self._attributes_set = {k: v for k, v in kwargs.items() if v is not _Unset and k not in self.metadata_lookup}
     kwargs = {k: _DefaultValues.get(k) if v is _Unset else v for k, v in kwargs.items()}  # type: ignore
     self.annotation = kwargs.get('annotation')
 
+    # Note: in theory, the second `pop()` arguments are not required below, as defaults are already set from `_DefaultsValues`.
     default = kwargs.pop('default', PydanticUndefined)
     if default is Ellipsis:
         self.default = PydanticUndefined
@@ -684,417 +690,10 @@ def __init__(self, **kwargs: Unpack[_FieldInfoInputs]) -> None:
     self._complete = True
     self._original_annotation: Any = PydanticUndefined
     self._original_assignment: Any = PydanticUndefined
-
-```
-
-### from_field
-
-```python
-from_field(
-    default: Any = PydanticUndefined,
-    **kwargs: Unpack[_FromFieldInfoInputs]
-) -> FieldInfo
-
-```
-
-Create a new `FieldInfo` object with the `Field` function.
-
-Parameters:
-
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `default` | `Any` | The default value for the field. Defaults to Undefined. | `PydanticUndefined` | | `**kwargs` | `Unpack[_FromFieldInfoInputs]` | Additional arguments dictionary. | `{}` |
-
-Raises:
-
-| Type | Description | | --- | --- | | `TypeError` | If 'annotation' is passed as a keyword argument. |
-
-Returns:
-
-| Type | Description | | --- | --- | | `FieldInfo` | A new FieldInfo object with the given parameters. |
-
-Example
-
-This is how you can create a field with default value like this:
-
-```python
-import pydantic
-
-class MyModel(pydantic.BaseModel):
-    foo: int = pydantic.Field(4)
-
-```
-
-Source code in `pydantic/fields.py`
-
-````python
-@staticmethod
-def from_field(default: Any = PydanticUndefined, **kwargs: Unpack[_FromFieldInfoInputs]) -> FieldInfo:
-    """Create a new `FieldInfo` object with the `Field` function.
-
-    Args:
-        default: The default value for the field. Defaults to Undefined.
-        **kwargs: Additional arguments dictionary.
-
-    Raises:
-        TypeError: If 'annotation' is passed as a keyword argument.
-
-    Returns:
-        A new FieldInfo object with the given parameters.
-
-    Example:
-        This is how you can create a field with default value like this:
-
-        ```python
-        import pydantic
-
-        class MyModel(pydantic.BaseModel):
-            foo: int = pydantic.Field(4)
-        ```
-    """
-    if 'annotation' in kwargs:
-        raise TypeError('"annotation" is not permitted as a Field keyword argument')
-    return FieldInfo(default=default, **kwargs)
-
-````
-
-### from_annotation
-
-```python
-from_annotation(
-    annotation: type[Any],
-    *,
-    _source: AnnotationSource = ANY
-) -> FieldInfo
-
-```
-
-Creates a `FieldInfo` instance from a bare annotation.
-
-This function is used internally to create a `FieldInfo` from a bare annotation like this:
-
-```python
-import pydantic
-
-class MyModel(pydantic.BaseModel):
-    foo: int  # <-- like this
-
-```
-
-We also account for the case where the annotation can be an instance of `Annotated` and where one of the (not first) arguments in `Annotated` is an instance of `FieldInfo`, e.g.:
-
-```python
-from typing import Annotated
-
-import annotated_types
-
-import pydantic
-
-class MyModel(pydantic.BaseModel):
-    foo: Annotated[int, annotated_types.Gt(42)]
-    bar: Annotated[int, pydantic.Field(gt=42)]
-
-```
-
-Parameters:
-
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `annotation` | `type[Any]` | An annotation object. | *required* |
-
-Returns:
-
-| Type | Description | | --- | --- | | `FieldInfo` | An instance of the field metadata. |
-
-Source code in `pydantic/fields.py`
-
-````python
-@staticmethod
-def from_annotation(annotation: type[Any], *, _source: AnnotationSource = AnnotationSource.ANY) -> FieldInfo:
-    """Creates a `FieldInfo` instance from a bare annotation.
-
-    This function is used internally to create a `FieldInfo` from a bare annotation like this:
-
-    ```python
-    import pydantic
-
-    class MyModel(pydantic.BaseModel):
-        foo: int  # <-- like this
-    ```
-
-    We also account for the case where the annotation can be an instance of `Annotated` and where
-    one of the (not first) arguments in `Annotated` is an instance of `FieldInfo`, e.g.:
-
-    ```python
-    from typing import Annotated
-
-    import annotated_types
-
-    import pydantic
-
-    class MyModel(pydantic.BaseModel):
-        foo: Annotated[int, annotated_types.Gt(42)]
-        bar: Annotated[int, pydantic.Field(gt=42)]
-    ```
-
-    Args:
-        annotation: An annotation object.
-
-    Returns:
-        An instance of the field metadata.
-    """
-    try:
-        inspected_ann = inspect_annotation(
-            annotation,
-            annotation_source=_source,
-            unpack_type_aliases='skip',
-        )
-    except ForbiddenQualifier as e:
-        raise PydanticForbiddenQualifier(e.qualifier, annotation)
-
-    # TODO check for classvar and error?
-
-    # No assigned value, this happens when using a bare `Final` qualifier (also for other
-    # qualifiers, but they shouldn't appear here). In this case we infer the type as `Any`
-    # because we don't have any assigned value.
-    type_expr: Any = Any if inspected_ann.type is UNKNOWN else inspected_ann.type
-    final = 'final' in inspected_ann.qualifiers
-    metadata = inspected_ann.metadata
-
-    attr_overrides = {'annotation': type_expr}
-    if final:
-        attr_overrides['frozen'] = True
-    field_info = FieldInfo._construct(metadata, **attr_overrides)
-    field_info._qualifiers = inspected_ann.qualifiers
-    return field_info
-
-````
-
-### from_annotated_attribute
-
-```python
-from_annotated_attribute(
-    annotation: type[Any],
-    default: Any,
-    *,
-    _source: AnnotationSource = ANY
-) -> FieldInfo
-
-```
-
-Create `FieldInfo` from an annotation with a default value.
-
-This is used in cases like the following:
-
-```python
-from typing import Annotated
-
-import annotated_types
-
-import pydantic
-
-class MyModel(pydantic.BaseModel):
-    foo: int = 4  # <-- like this
-    bar: Annotated[int, annotated_types.Gt(4)] = 4  # <-- or this
-    spam: Annotated[int, pydantic.Field(gt=4)] = 4  # <-- or this
-
-```
-
-Parameters:
-
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `annotation` | `type[Any]` | The type annotation of the field. | *required* | | `default` | `Any` | The default value of the field. | *required* |
-
-Returns:
-
-| Type | Description | | --- | --- | | `FieldInfo` | A field object with the passed values. |
-
-Source code in `pydantic/fields.py`
-
-````python
-@staticmethod
-def from_annotated_attribute(
-    annotation: type[Any], default: Any, *, _source: AnnotationSource = AnnotationSource.ANY
-) -> FieldInfo:
-    """Create `FieldInfo` from an annotation with a default value.
-
-    This is used in cases like the following:
-
-    ```python
-    from typing import Annotated
-
-    import annotated_types
-
-    import pydantic
-
-    class MyModel(pydantic.BaseModel):
-        foo: int = 4  # <-- like this
-        bar: Annotated[int, annotated_types.Gt(4)] = 4  # <-- or this
-        spam: Annotated[int, pydantic.Field(gt=4)] = 4  # <-- or this
-    ```
-
-    Args:
-        annotation: The type annotation of the field.
-        default: The default value of the field.
-
-    Returns:
-        A field object with the passed values.
-    """
-    if annotation is not MISSING and annotation is default:
-        raise PydanticUserError(
-            'Error when building FieldInfo from annotated attribute. '
-            "Make sure you don't have any field name clashing with a type annotation.",
-            code='unevaluable-type-annotation',
-        )
-
-    try:
-        inspected_ann = inspect_annotation(
-            annotation,
-            annotation_source=_source,
-            unpack_type_aliases='skip',
-        )
-    except ForbiddenQualifier as e:
-        raise PydanticForbiddenQualifier(e.qualifier, annotation)
-
-    # TODO check for classvar and error?
-
-    # TODO infer from the default, this can be done in v3 once we treat final fields with
-    # a default as proper fields and not class variables:
-    type_expr: Any = Any if inspected_ann.type is UNKNOWN else inspected_ann.type
-    final = 'final' in inspected_ann.qualifiers
-    metadata = inspected_ann.metadata
-
-    # HACK 1: the order in which the metadata is merged is inconsistent; we need to prepend
-    # metadata from the assignment at the beginning of the metadata. Changing this is only
-    # possible in v3 (at least). See https://github.com/pydantic/pydantic/issues/10507
-    prepend_metadata: list[Any] | None = None
-    attr_overrides = {'annotation': type_expr}
-    if final:
-        attr_overrides['frozen'] = True
-
-    # HACK 2: FastAPI is subclassing `FieldInfo` and historically expected the actual
-    # instance's type to be preserved when constructing new models with its subclasses as assignments.
-    # This code is never reached by Pydantic itself, and in an ideal world this shouldn't be necessary.
-    if not metadata and isinstance(default, FieldInfo) and type(default) is not FieldInfo:
-        field_info = default._copy()
-        field_info._attributes_set.update(attr_overrides)
-        for k, v in attr_overrides.items():
-            setattr(field_info, k, v)
-        return field_info
-
-    if isinstance(default, FieldInfo):
-        default_copy = default._copy()  # Copy unnecessary when we remove HACK 1.
-        prepend_metadata = default_copy.metadata
-        default_copy.metadata = []
-        metadata = metadata + [default_copy]
-    elif isinstance(default, dataclasses.Field):
-        from_field = FieldInfo._from_dataclass_field(default)
-        prepend_metadata = from_field.metadata  # Unnecessary when we remove HACK 1.
-        from_field.metadata = []
-        metadata = metadata + [from_field]
-        if 'init_var' in inspected_ann.qualifiers:
-            attr_overrides['init_var'] = True
-        if (init := getattr(default, 'init', None)) is not None:
-            attr_overrides['init'] = init
-        if (kw_only := getattr(default, 'kw_only', None)) is not None:
-            attr_overrides['kw_only'] = kw_only
-    else:
-        # `default` is the actual default value
-        attr_overrides['default'] = default
-
-    field_info = FieldInfo._construct(
-        prepend_metadata + metadata if prepend_metadata is not None else metadata, **attr_overrides
-    )
-    field_info._qualifiers = inspected_ann.qualifiers
-    return field_info
-
-````
-
-### merge_field_infos
-
-```python
-merge_field_infos(
-    *field_infos: FieldInfo, **overrides: Any
-) -> FieldInfo
-
-```
-
-Merge `FieldInfo` instances keeping only explicitly set attributes.
-
-Later `FieldInfo` instances override earlier ones.
-
-Returns:
-
-| Name | Type | Description | | --- | --- | --- | | `FieldInfo` | `FieldInfo` | A merged FieldInfo instance. |
-
-Source code in `pydantic/fields.py`
-
-```python
-@staticmethod
-@typing_extensions.deprecated(
-    "The 'merge_field_infos()' method is deprecated and will be removed in a future version. "
-    'If you relied on this method, please open an issue in the Pydantic issue tracker.',
-    category=None,
-)
-def merge_field_infos(*field_infos: FieldInfo, **overrides: Any) -> FieldInfo:
-    """Merge `FieldInfo` instances keeping only explicitly set attributes.
-
-    Later `FieldInfo` instances override earlier ones.
-
-    Returns:
-        FieldInfo: A merged FieldInfo instance.
-    """
-    if len(field_infos) == 1:
-        # No merging necessary, but we still need to make a copy and apply the overrides
-        field_info = field_infos[0]._copy()
-        field_info._attributes_set.update(overrides)
-
-        default_override = overrides.pop('default', PydanticUndefined)
-        if default_override is Ellipsis:
-            default_override = PydanticUndefined
-        if default_override is not PydanticUndefined:
-            field_info.default = default_override
-
-        for k, v in overrides.items():
-            setattr(field_info, k, v)
-        return field_info  # type: ignore
-
-    merged_field_info_kwargs: dict[str, Any] = {}
-    metadata = {}
-    for field_info in field_infos:
-        attributes_set = field_info._attributes_set.copy()
-
-        try:
-            json_schema_extra = attributes_set.pop('json_schema_extra')
-            existing_json_schema_extra = merged_field_info_kwargs.get('json_schema_extra')
-
-            if existing_json_schema_extra is None:
-                merged_field_info_kwargs['json_schema_extra'] = json_schema_extra
-            if isinstance(existing_json_schema_extra, dict):
-                if isinstance(json_schema_extra, dict):
-                    merged_field_info_kwargs['json_schema_extra'] = {
-                        **existing_json_schema_extra,
-                        **json_schema_extra,
-                    }
-                if callable(json_schema_extra):
-                    warn(
-                        'Composing `dict` and `callable` type `json_schema_extra` is not supported.'
-                        'The `callable` type is being ignored.'
-                        "If you'd like support for this behavior, please open an issue on pydantic.",
-                        PydanticJsonSchemaWarning,
-                    )
-            elif callable(json_schema_extra):
-                # if ever there's a case of a callable, we'll just keep the last json schema extra spec
-                merged_field_info_kwargs['json_schema_extra'] = json_schema_extra
-        except KeyError:
-            pass
-
-        # later FieldInfo instances override everything except json_schema_extra from earlier FieldInfo instances
-        merged_field_info_kwargs.update(attributes_set)
-
-        for x in field_info.metadata:
-            if not isinstance(x, FieldInfo):
-                metadata[type(x)] = x
-
-    merged_field_info_kwargs.update(overrides)
-    field_info = FieldInfo(**merged_field_info_kwargs)
-    field_info.metadata = list(metadata.values())
-    return field_info
+    # Used to track whether the `FieldInfo` instance represents the data about a field (and is exposed in `model_fields`/`__pydantic_fields__`),
+    # or if it is the result of the `Field()` function being used as metadata in an `Annotated` type/as an assignment
+    # (not an ideal pattern, see https://github.com/pydantic/pydantic/issues/11122):
+    self._final = False
 
 ```
 
@@ -1218,102 +817,38 @@ def is_required(self) -> bool:
 
 ```
 
-### rebuild_annotation
+### asdict
 
 ```python
-rebuild_annotation() -> Any
+asdict() -> _FieldInfoAsDict
 
 ```
 
-Attempts to rebuild the original annotation for use in function signatures.
+Return a dictionary representation of the `FieldInfo` instance.
 
-If metadata is present, it adds it to the original annotation using `Annotated`. Otherwise, it returns the original annotation as-is.
+The returned value is a dictionary with three items:
 
-Note that because the metadata has been flattened, the original annotation may not be reconstructed exactly as originally provided, e.g. if the original type had unrecognized annotations, or was annotated with a call to `pydantic.Field`.
-
-Returns:
-
-| Type | Description | | --- | --- | | `Any` | The rebuilt annotation. |
+- `annotation`: The type annotation of the field.
+- `metadata`: The metadata list.
+- `attributes`: A mapping of the remaining `FieldInfo` attributes to their values (e.g. `alias`, `title`).
 
 Source code in `pydantic/fields.py`
 
 ```python
-def rebuild_annotation(self) -> Any:
-    """Attempts to rebuild the original annotation for use in function signatures.
+def asdict(self) -> _FieldInfoAsDict:
+    """Return a dictionary representation of the `FieldInfo` instance.
 
-    If metadata is present, it adds it to the original annotation using
-    `Annotated`. Otherwise, it returns the original annotation as-is.
+    The returned value is a dictionary with three items:
 
-    Note that because the metadata has been flattened, the original annotation
-    may not be reconstructed exactly as originally provided, e.g. if the original
-    type had unrecognized annotations, or was annotated with a call to `pydantic.Field`.
-
-    Returns:
-        The rebuilt annotation.
+    * `annotation`: The type annotation of the field.
+    * `metadata`: The metadata list.
+    * `attributes`: A mapping of the remaining `FieldInfo` attributes to their values (e.g. `alias`, `title`).
     """
-    if not self.metadata:
-        return self.annotation
-    else:
-        # Annotated arguments must be a tuple
-        return Annotated[(self.annotation, *self.metadata)]  # type: ignore
-
-```
-
-### apply_typevars_map
-
-```python
-apply_typevars_map(
-    typevars_map: Mapping[TypeVar, Any] | None,
-    globalns: GlobalsNamespace | None = None,
-    localns: MappingNamespace | None = None,
-) -> None
-
-```
-
-Apply a `typevars_map` to the annotation.
-
-This method is used when analyzing parametrized generic types to replace typevars with their concrete types.
-
-This method applies the `typevars_map` to the annotation in place.
-
-Parameters:
-
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `typevars_map` | `Mapping[TypeVar, Any] | None` | A dictionary mapping type variables to their concrete types. | *required* | | `globalns` | `GlobalsNamespace | None` | The globals namespace to use during type annotation evaluation. | `None` | | `localns` | `MappingNamespace | None` | The locals namespace to use during type annotation evaluation. | `None` |
-
-See Also
-
-pydantic.\_internal.\_generics.replace_types is used for replacing the typevars with their concrete types.
-
-Source code in `pydantic/fields.py`
-
-```python
-def apply_typevars_map(
-    self,
-    typevars_map: Mapping[TypeVar, Any] | None,
-    globalns: GlobalsNamespace | None = None,
-    localns: MappingNamespace | None = None,
-) -> None:
-    """Apply a `typevars_map` to the annotation.
-
-    This method is used when analyzing parametrized generic types to replace typevars with their concrete types.
-
-    This method applies the `typevars_map` to the annotation in place.
-
-    Args:
-        typevars_map: A dictionary mapping type variables to their concrete types.
-        globalns: The globals namespace to use during type annotation evaluation.
-        localns: The locals namespace to use during type annotation evaluation.
-
-    See Also:
-        pydantic._internal._generics.replace_types is used for replacing the typevars with
-            their concrete types.
-    """
-    annotation = _generics.replace_types(self.annotation, typevars_map)
-    annotation, evaluated = _typing_extra.try_eval_type(annotation, globalns, localns)
-    self.annotation = annotation
-    if not evaluated:
-        self._complete = False
-        self._original_annotation = self.annotation
+    return {
+        'annotation': self.annotation,
+        'metadata': self.metadata,
+        'attributes': {attr: getattr(self, attr) for attr in _Attrs},
+    }
 
 ```
 
@@ -1445,6 +980,52 @@ def __init__(self, default: Any = PydanticUndefined, *, default_factory: Callabl
     else:
         self.default = default
     self.default_factory = default_factory
+
+```
+
+### __getattr__
+
+```python
+__getattr__(item: str) -> Any
+
+```
+
+This function improves compatibility with custom descriptors by ensuring delegation happens as expected when the default value of a private attribute is a descriptor.
+
+Source code in `pydantic/fields.py`
+
+```python
+def __getattr__(self, item: str) -> Any:
+    """This function improves compatibility with custom descriptors by ensuring delegation happens
+    as expected when the default value of a private attribute is a descriptor.
+    """
+    if item in {'__get__', '__set__', '__delete__'}:
+        if hasattr(self.default, item):
+            return getattr(self.default, item)
+    raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+
+```
+
+### __set_name__
+
+```python
+__set_name__(cls: type[Any], name: str) -> None
+
+```
+
+Preserve `__set_name__` protocol defined in https://peps.python.org/pep-0487.
+
+Source code in `pydantic/fields.py`
+
+```python
+def __set_name__(self, cls: type[Any], name: str) -> None:
+    """Preserve `__set_name__` protocol defined in https://peps.python.org/pep-0487."""
+    default = self.default
+    if default is PydanticUndefined:
+        return
+    set_name = getattr(default, '__set_name__', None)
+    if callable(set_name):
+        set_name(cls, name)
 
 ```
 

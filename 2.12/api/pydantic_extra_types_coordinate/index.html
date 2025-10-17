@@ -2431,6 +2431,27 @@ to help you monitor and understand your
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/dynamic_models/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Dynamic models
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -3131,15 +3152,20 @@ to help you monitor and understand your
 
 
         <p>Latitude value should be between -90 and 90, inclusive.</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
+<p>Supports both float and Decimal types.</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">decimal</span><span class="w"> </span><span class="kn">import</span> <span class="n">Decimal</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_extra_types.coordinate</span><span class="w"> </span><span class="kn">import</span> <span class="n">Latitude</span>
+
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Location</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">latitude</span><span class="p">:</span> <span class="n">Latitude</span>
 
-<span class="n">location</span> <span class="o">=</span> <span class="n">Location</span><span class="p">(</span><span class="n">latitude</span><span class="o">=</span><span class="mf">41.40338</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">location</span><span class="p">)</span>
-<span class="c1">#&gt; latitude=41.40338</span>
+
+<span class="c1"># Using float</span>
+<span class="n">location1</span> <span class="o">=</span> <span class="n">Location</span><span class="p">(</span><span class="n">latitude</span><span class="o">=</span><span class="mf">41.40338</span><span class="p">)</span>
+<span class="c1"># Using Decimal</span>
+<span class="n">location2</span> <span class="o">=</span> <span class="n">Location</span><span class="p">(</span><span class="n">latitude</span><span class="o">=</span><span class="n">Decimal</span><span class="p">(</span><span class="s1">&#39;41.40338&#39;</span><span class="p">))</span>
 </code></pre></div>
 
 
@@ -3185,16 +3211,21 @@ to help you monitor and understand your
 
 
         <p>Longitude value should be between -180 and 180, inclusive.</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
+<p>Supports both float and Decimal types.</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">decimal</span><span class="w"> </span><span class="kn">import</span> <span class="n">Decimal</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_extra_types.coordinate</span><span class="w"> </span><span class="kn">import</span> <span class="n">Longitude</span>
+
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Location</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">longitude</span><span class="p">:</span> <span class="n">Longitude</span>
 
-<span class="n">location</span> <span class="o">=</span> <span class="n">Location</span><span class="p">(</span><span class="n">longitude</span><span class="o">=</span><span class="mf">2.17403</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">location</span><span class="p">)</span>
-<span class="c1">#&gt; longitude=2.17403</span>
+
+<span class="c1"># Using float</span>
+<span class="n">location1</span> <span class="o">=</span> <span class="n">Location</span><span class="p">(</span><span class="n">longitude</span><span class="o">=</span><span class="mf">2.17403</span><span class="p">)</span>
+<span class="c1"># Using Decimal</span>
+<span class="n">location2</span> <span class="o">=</span> <span class="n">Location</span><span class="p">(</span><span class="n">longitude</span><span class="o">=</span><span class="n">Decimal</span><span class="p">(</span><span class="s1">&#39;2.17403&#39;</span><span class="p">))</span>
 </code></pre></div>
 
 
@@ -3248,18 +3279,26 @@ to help you monitor and understand your
 <p>You can use the <code>Coordinate</code> data type for storing coordinates. Coordinates can be
 defined using one of the following formats:</p>
 <ol>
-<li>Tuple: <code>(Latitude, Longitude)</code>. For example: <code>(41.40338, 2.17403)</code>.</li>
+<li>Tuple: <code>(Latitude, Longitude)</code>. For example: <code>(41.40338, 2.17403)</code> or <code>(Decimal('41.40338'), Decimal('2.17403'))</code>.</li>
 <li><code>Coordinate</code> instance: <code>Coordinate(latitude=Latitude, longitude=Longitude)</code>.</li>
 </ol>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">decimal</span><span class="w"> </span><span class="kn">import</span> <span class="n">Decimal</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_extra_types.coordinate</span><span class="w"> </span><span class="kn">import</span> <span class="n">Coordinate</span>
+
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Location</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">coordinate</span><span class="p">:</span> <span class="n">Coordinate</span>
 
-<span class="n">location</span> <span class="o">=</span> <span class="n">Location</span><span class="p">(</span><span class="n">coordinate</span><span class="o">=</span><span class="p">(</span><span class="mf">41.40338</span><span class="p">,</span> <span class="mf">2.17403</span><span class="p">))</span>
-<span class="c1">#&gt; coordinate=Coordinate(latitude=41.40338, longitude=2.17403)</span>
+
+<span class="c1"># Using float values</span>
+<span class="n">location1</span> <span class="o">=</span> <span class="n">Location</span><span class="p">(</span><span class="n">coordinate</span><span class="o">=</span><span class="p">(</span><span class="mf">41.40338</span><span class="p">,</span> <span class="mf">2.17403</span><span class="p">))</span>
+<span class="c1"># &gt; coordinate=Coordinate(latitude=41.40338, longitude=2.17403)</span>
+
+<span class="c1"># Using Decimal values</span>
+<span class="n">location2</span> <span class="o">=</span> <span class="n">Location</span><span class="p">(</span><span class="n">coordinate</span><span class="o">=</span><span class="p">(</span><span class="n">Decimal</span><span class="p">(</span><span class="s1">&#39;41.40338&#39;</span><span class="p">),</span> <span class="n">Decimal</span><span class="p">(</span><span class="s1">&#39;2.17403&#39;</span><span class="p">)))</span>
+<span class="c1"># &gt; coordinate=Coordinate(latitude=41.40338, longitude=2.17403)</span>
 </code></pre></div>
 
 
@@ -3356,7 +3395,7 @@ defined using one of the following formats:</p>
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.12.2", "email-validator>=2.0.0", "pydantic-core==2.41.4", "pydantic-extra-types==2.10.0"]
+    window.mkdocs_run_deps = ["pydantic==2.12.3", "email-validator>=2.0.0", "pydantic-core==2.41.4", "pydantic-extra-types==2.10.6"]
     </script>
 
               </article>

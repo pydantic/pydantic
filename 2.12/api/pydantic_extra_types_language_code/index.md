@@ -26,13 +26,15 @@ from pydantic import BaseModel
 
 from pydantic_extra_types.language_code import LanguageAlpha2
 
+
 class Movie(BaseModel):
     audio_lang: LanguageAlpha2
     subtitles_lang: LanguageAlpha2
 
+
 movie = Movie(audio_lang='de', subtitles_lang='fr')
 print(movie)
-#> audio_lang='de' subtitles_lang='fr'
+# > audio_lang='de' subtitles_lang='fr'
 
 ```
 
@@ -65,13 +67,15 @@ from pydantic import BaseModel
 
 from pydantic_extra_types.language_code import LanguageName
 
+
 class Movie(BaseModel):
     audio_lang: LanguageName
     subtitles_lang: LanguageName
 
+
 movie = Movie(audio_lang='Dutch', subtitles_lang='Mandarin Chinese')
 print(movie)
-#> audio_lang='Dutch' subtitles_lang='Mandarin Chinese'
+# > audio_lang='Dutch' subtitles_lang='Mandarin Chinese'
 
 ```
 
@@ -104,8 +108,10 @@ from pydantic import BaseModel
 
 from pydantic_extra_types.language_code import ISO639_3
 
+
 class Language(BaseModel):
     alpha_3: ISO639_3
+
 
 lang = Language(alpha_3='ssr')
 print(lang)
@@ -124,8 +130,10 @@ from pydantic import BaseModel
 
 from pydantic_extra_types.language_code import ISO639_5
 
+
 class Language(BaseModel):
     alpha_3: ISO639_5
+
 
 lang = Language(alpha_3='gem')
 print(lang)

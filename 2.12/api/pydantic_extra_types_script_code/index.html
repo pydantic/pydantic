@@ -2413,6 +2413,27 @@ to help you monitor and understand your
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/dynamic_models/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Dynamic models
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -3098,8 +3119,10 @@ format.</p>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_extra_types.language_code</span><span class="w"> </span><span class="kn">import</span> <span class="n">ISO_15924</span>
 
+
 <span class="k">class</span><span class="w"> </span><span class="nc">Script</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">alpha_4</span><span class="p">:</span> <span class="n">ISO_15924</span>
+
 
 <span class="n">script</span> <span class="o">=</span> <span class="n">Script</span><span class="p">(</span><span class="n">alpha_4</span><span class="o">=</span><span class="s1">&#39;Java&#39;</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">lang</span><span class="p">)</span>
@@ -3200,7 +3223,7 @@ format.</p>
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.12.2", "email-validator>=2.0.0", "pydantic-core==2.41.4", "pydantic-extra-types==2.10.0"]
+    window.mkdocs_run_deps = ["pydantic==2.12.3", "email-validator>=2.0.0", "pydantic-core==2.41.4", "pydantic-extra-types==2.10.6"]
     </script>
 
               </article>
