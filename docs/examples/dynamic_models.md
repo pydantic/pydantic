@@ -1,7 +1,7 @@
 Models can be [created dynamically](../concepts/models.md#dynamic-model-creation) using the [`create_model()`][pydantic.create_model]
 factory function.
 
-In this example, we will show how to dynamically derive a model from an existing one, and making every field optional. To achieve this,
+In this example, we will show how to dynamically derive a model from an existing one, making every field optional. To achieve this,
 we will make use of the [`model_fields`][pydantic.main.BaseModel.model_fields] model class attribute, and derive new annotations
 from the field definitions to be passed to the [`create_model()`][pydantic.create_model] factory. Of course, this example can apply
 to any use case where you need to derive a new model from another (remove default values, add aliases, etc).
