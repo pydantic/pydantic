@@ -10,13 +10,13 @@ from collections.abc import Callable, Mapping
 from copy import copy
 from dataclasses import Field as DataclassField
 from functools import cached_property
-from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Literal, TypedDict, TypeVar, cast, final, overload
+from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Literal, TypeVar, cast, final, overload
 from warnings import warn
 
 import annotated_types
 import typing_extensions
 from pydantic_core import MISSING, PydanticUndefined
-from typing_extensions import Self, TypeAlias, Unpack, deprecated
+from typing_extensions import Self, TypeAlias, TypedDict, Unpack, deprecated
 from typing_inspection import typing_objects
 from typing_inspection.introspection import UNKNOWN, AnnotationSource, ForbiddenQualifier, Qualifier, inspect_annotation
 
@@ -95,6 +95,13 @@ class _FieldInfoInputs(_FromFieldInfoInputs, total=False):
     default: Any
 
 
+class _FieldInfoAsDict(TypedDict, closed=True):
+    # TODO PEP 747: use TypeForm:
+    annotation: Any
+    metadata: list[Any]
+    attributes: dict[str, Any]
+
+
 @final
 class FieldInfo(_repr.Representation):
     """This class holds information about a field.
@@ -103,8 +110,11 @@ class FieldInfo(_repr.Representation):
     function is explicitly used.
 
     !!! warning
-        You generally shouldn't be creating `FieldInfo` directly, you'll only need to use it when accessing
-        [`BaseModel`][pydantic.main.BaseModel] `.model_fields` internals.
+        The `FieldInfo` class is meant to expose information about a field in a Pydantic model or dataclass.
+        `FieldInfo` instances shouldn't be instantiated directly, nor mutated.
+
+        If you need to derive a new model from another one and are willing to alter `FieldInfo` instances,
+        refer to this [dynamic model example](../examples/dynamic_models.md).
 
     Attributes:
         annotation: The type annotation of the field.
@@ -131,9 +141,14 @@ class FieldInfo(_repr.Representation):
         init: Whether the field should be included in the constructor of the dataclass.
         init_var: Whether the field should _only_ be included in the constructor of the dataclass, and not stored.
         kw_only: Whether the field should be a keyword-only argument in the constructor of the dataclass.
-        metadata: List of metadata constraints.
+        metadata: The metadata list. Contains all the data that isn't expressed as direct `FieldInfo` attributes, including:
+
+            * Type-specific constraints, such as `gt` or `min_length` (these are converted to metadata classes such as `annotated_types.Gt`).
+            * Any other arbitrary object used within [`Annotated`][typing.Annotated] metadata
+              (e.g. [custom types handlers](../concepts/types.md#as-an-annotation) or any object not recognized by Pydantic).
     """
 
+    # TODO PEP 747: use TypeForm:
     annotation: type[Any] | None
     default: Any
     default_factory: Callable[[], Any] | Callable[[dict[str, Any]], Any] | None
@@ -187,6 +202,7 @@ class FieldInfo(_repr.Representation):
         '_complete',
         '_original_assignment',
         '_original_annotation',
+        '_final',
     )
 
     # used to convert kwargs to metadata/constraints,
@@ -215,10 +231,14 @@ class FieldInfo(_repr.Representation):
 
         See the signature of `pydantic.fields.Field` for more details about the expected arguments.
         """
+        # Tracking the explicitly set attributes is necessary to correctly merge `Field()` functions
+        # (e.g. with `Annotated[int, Field(alias='a'), Field(alias=None)]`, even though `None` is the default value,
+        # we need to track that `alias=None` was explicitly set):
         self._attributes_set = {k: v for k, v in kwargs.items() if v is not _Unset and k not in self.metadata_lookup}
         kwargs = {k: _DefaultValues.get(k) if v is _Unset else v for k, v in kwargs.items()}  # type: ignore
         self.annotation = kwargs.get('annotation')
 
+        # Note: in theory, the second `pop()` arguments are not required below, as defaults are already set from `_DefaultsValues`.
         default = kwargs.pop('default', PydanticUndefined)
         if default is Ellipsis:
             self.default = PydanticUndefined
@@ -262,6 +282,10 @@ class FieldInfo(_repr.Representation):
         self._complete = True
         self._original_annotation: Any = PydanticUndefined
         self._original_assignment: Any = PydanticUndefined
+        # Used to track whether the `FieldInfo` instance represents the data about a field (and is exposed in `model_fields`/`__pydantic_fields__`),
+        # or if it is the result of the `Field()` function being used as metadata in an `Annotated` type/as an assignment
+        # (not an ideal pattern, see https://github.com/pydantic/pydantic/issues/11122):
+        self._final = False
 
     @staticmethod
     def from_field(default: Any = PydanticUndefined, **kwargs: Unpack[_FromFieldInfoInputs]) -> FieldInfo:
@@ -348,6 +372,7 @@ class FieldInfo(_repr.Representation):
             attr_overrides['frozen'] = True
         field_info = FieldInfo._construct(metadata, **attr_overrides)
         field_info._qualifiers = inspected_ann.qualifiers
+        field_info._final = True
         return field_info
 
     @staticmethod
@@ -444,6 +469,7 @@ class FieldInfo(_repr.Representation):
             prepend_metadata + metadata if prepend_metadata is not None else metadata, **attr_overrides
         )
         field_info._qualifiers = inspected_ann.qualifiers
+        field_info._final = True
         return field_info
 
     @classmethod
@@ -507,7 +533,25 @@ class FieldInfo(_repr.Representation):
                             UserWarning,
                         )
 
-                merged_kwargs.update(meta._attributes_set)
+                # HACK: It is common for users to define "make model partial" (or similar) utilities, that
+                # convert all model fields to be optional (i.e. have a default value). To do so, they mutate
+                # each `FieldInfo` instance from `model_fields` to set a `default`, and use `create_model()`
+                # with `Annotated[<orig_type> | None, mutated_field_info]`` as an annotation. However, such
+                # mutations (by doing simple assignments) are only accidentally working, because we also
+                # need to track attributes explicitly set in `_attributes_set` (relying on default values for
+                # each attribute is *not* enough, for instance with `Annotated[int, Field(alias='a'), Field(alias=None)]`
+                # the resulting `FieldInfo` should have `alias=None`).
+                # To mitigate this, we add a special case when a "final" `FieldInfo` instance (that is an instance coming
+                # from `model_fields`) is used in annotated metadata (or assignment). In this case, we assume *all* attributes
+                # were explicitly set, and as such we use all of them (and this will correctly pick up the mutations).
+                # In theory, this shouldn't really be supported, you are only supposed to use the `Field()` function, not
+                # a `FieldInfo` instance directly (granted, `Field()` returns a `FieldInfo`, see
+                # https://github.com/pydantic/pydantic/issues/11122):
+                if meta._final:
+                    merged_kwargs.update({attr: getattr(meta, attr) for attr in _Attrs})
+                else:
+                    merged_kwargs.update(meta._attributes_set)
+
                 if new_js_extra is not None:
                     merged_kwargs['json_schema_extra'] = new_js_extra
             elif typing_objects.is_deprecated(meta):
@@ -759,6 +803,21 @@ class FieldInfo(_repr.Representation):
             self._complete = False
             self._original_annotation = self.annotation
 
+    def asdict(self) -> _FieldInfoAsDict:
+        """Return a dictionary representation of the `FieldInfo` instance.
+
+        The returned value is a dictionary with three items:
+
+        * `annotation`: The type annotation of the field.
+        * `metadata`: The metadata list.
+        * `attributes`: A mapping of the remaining `FieldInfo` attributes to their values (e.g. `alias`, `title`).
+        """
+        return {
+            'annotation': self.annotation,
+            'metadata': self.metadata,
+            'attributes': {attr: getattr(self, attr) for attr in _Attrs},
+        }
+
     def _copy(self) -> Self:
         """Return a copy of the `FieldInfo` instance."""
         # Note: we can't define a custom `__copy__()`, as `FieldInfo` is being subclassed
@@ -786,6 +845,7 @@ class FieldInfo(_repr.Representation):
                 '_complete',
                 '_original_assignment',
                 '_original_annotation',
+                '_final',
             ):
                 continue
             elif s == 'metadata' and not self.metadata:
@@ -812,7 +872,7 @@ class _EmptyKwargs(TypedDict):
     """This class exists solely to ensure that type checking warns about passing `**extra` in `Field`."""
 
 
-_DefaultValues = {
+_Attrs = {
     'default': ...,
     'default_factory': None,
     'alias': None,
@@ -820,17 +880,24 @@ _DefaultValues = {
     'validation_alias': None,
     'serialization_alias': None,
     'title': None,
+    'field_title_generator': None,
     'description': None,
     'examples': None,
     'exclude': None,
     'exclude_if': None,
     'discriminator': None,
+    'deprecated': None,
     'json_schema_extra': None,
     'frozen': None,
     'validate_default': None,
     'repr': True,
     'init': None,
     'init_var': None,
+    'kw_only': None,
+}
+
+_DefaultValues = {
+    **_Attrs,
     'kw_only': None,
     'pattern': None,
     'strict': None,
