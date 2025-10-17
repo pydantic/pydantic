@@ -394,6 +394,7 @@ Model()
 
 * `@root_validator` has been deprecated, and should be replaced with
     [`@model_validator`](api/functional_validators.md#pydantic.functional_validators.model_validator), which also provides new features and improvements.
+    Be aware that the allowed signatures have changed (see the [relevant documentation](./concepts/validators.md#model-validators)).
     * Under some circumstances (such as assignment when `model_config['validate_assignment'] is True`),
         the `@model_validator` decorator will receive an instance of the model, not a dict of values. You may
         need to be careful to handle this case.

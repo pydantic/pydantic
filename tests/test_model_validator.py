@@ -4,7 +4,13 @@ from typing import Any, cast
 
 import pytest
 
-from pydantic import BaseModel, PydanticUserError, ValidationInfo, ValidatorFunctionWrapHandler, model_validator
+from pydantic import (
+    BaseModel,
+    PydanticDeprecatedSince212,
+    ValidationInfo,
+    ValidatorFunctionWrapHandler,
+    model_validator,
+)
 
 
 def test_model_validator_wrap() -> None:
@@ -139,10 +145,51 @@ def test_nested_models() -> None:
 
 
 def test_after_validator_wrong_signature() -> None:
-    with pytest.raises(PydanticUserError):
+    with pytest.warns(PydanticDeprecatedSince212):
 
-        class Model(BaseModel):
+        class Model1(BaseModel):
             @model_validator(mode='after')
-            # This used to be converted into a classmethod, resulting
-            # in this inconsistent signature still accepted:
-            def validator(cls, model, info): ...
+            # This is converted into a class method, but deprecated
+            # as it should be an instance method:
+            def validator(cls, model, info: ValidationInfo):
+                assert isinstance(model, cls)
+                assert info.mode == 'python'
+                return model
+
+    with pytest.warns(PydanticDeprecatedSince212):
+
+        class Model2(BaseModel):
+            @model_validator(mode='after')
+            # This is accepted as a class method, but deprecated
+            # as it should be an instance method:
+            @classmethod
+            def validator(cls, model, info: ValidationInfo):
+                assert isinstance(model, cls)
+                assert info.mode == 'python'
+                return model
+
+    with pytest.warns(PydanticDeprecatedSince212):
+
+        class Model3(BaseModel):
+            @model_validator(mode='after')
+            # This is converted into a class method, but deprecated
+            # as it should be an instance method:
+            def validator(cls, model):
+                assert isinstance(model, cls)
+                return model
+
+    with pytest.warns(PydanticDeprecatedSince212):
+
+        class Model4(BaseModel):
+            @model_validator(mode='after')
+            # This is accepted as a class method, but deprecated
+            # as it should be an instance method:
+            @classmethod
+            def validator(cls, model):
+                assert isinstance(model, cls)
+                return model
+
+    Model1()
+    Model2()
+    Model3()
+    Model4()
