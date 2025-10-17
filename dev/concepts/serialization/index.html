@@ -4144,6 +4144,11 @@ to the next section.</p>
 <p>Duck typing serialization is the behavior of serializing a model instance based on the actual field values, rather
 than the field definitions. This means that for a field annotated with a model-like class, all the fields present
 in subclasses of such class will be included in the serialized output.</p>
+<p>To achieve duck typing serialization, Pydantic can apply <em>serialize as any</em> behavior. In this mode, Pydantic does
+<em>not</em> make use of the type annotation (more precisely, the serialization schema derived from the type) to infer
+how the value should be serialized, but instead inspects the actual type of the value at runtime to do so.</p>
+<p>When a subclass of a model is used as a value, Pydantic will <em>not</em> serialize it according to the schema of the
+parent class, but rather use the value itself and preserve all of its fields.</p>
 <p>This behavior can be configured at the field level and at runtime, for a specific serialization call:</p>
 <ul>
 <li>Field level: use the <a class="autorefs autorefs-internal" href="../../api/functional_serializers/#pydantic.functional_serializers.SerializeAsAny"><code>SerializeAsAny</code></a> annotation.</li>
@@ -4223,6 +4228,8 @@ which is where the name comes from.</p>
 <li>With <code>serialize_as_any</code> set to <code>False</code> (the V2 default), fields present on the subclass,
    but not the base class, are not included in serialization.</li>
 </ol>
+<p>However, do note that the <em>serialize as any</em> behavior will apply to <em>all</em> values, not only the values where duck typing
+is relevant. You may want to prefer using the <code>SerializeAsAny</code> annotation when required instead.</p>
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
 <p><a href="" id="advanced-include-and-exclude"></a></p>
