@@ -165,8 +165,5 @@ reportUnnecessaryTypeIgnoreComment = true
 fix = ["create", "fix"]
 
 [tool.uv]
-# this ensures that `uv run` doesn't actually build the package; a `make`
-# command is needed to build
-package = false
 required-version = '>=0.7.2'
 cache-keys = [{ file = "pyproject.toml" }, { file = "src/**/*.rs" }, { file = "Cargo.toml" }, { file = "Cargo.lock" }]

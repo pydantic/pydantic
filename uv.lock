@@ -1901,10 +1901,10 @@ source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "numpy", version = "2.0.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.10.*'" },
-    { name = "numpy", version = "2.3.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
-    { name = "python-dateutil" },
-    { name = "pytz" },
-    { name = "tzdata" },
+    { name = "numpy", version = "2.3.4", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.11' and python_full_version < '3.13') or (python_full_version >= '3.11' and implementation_name != 'cpython') or (python_full_version >= '3.14' and implementation_name == 'cpython')" },
+    { name = "python-dateutil", marker = "python_full_version != '3.13.*' or implementation_name != 'cpython'" },
+    { name = "pytz", marker = "python_full_version != '3.13.*' or implementation_name != 'cpython'" },
+    { name = "tzdata", marker = "python_full_version != '3.13.*' or implementation_name != 'cpython'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/33/01/d40b85317f86cf08d853a4f495195c73815fdf205eef3993821720274518/pandas-2.3.3.tar.gz", hash = "sha256:e05e1af93b977f7eafa636d043f9f94c7ee3ac81af99c13508215942e64c993b", size = 4495223, upload-time = "2025-09-29T23:34:51.853Z" }
 wheels = [
@@ -2284,7 +2284,7 @@ typechecking = [
 requires-dist = [
     { name = "annotated-types", specifier = ">=0.6.0" },
     { name = "email-validator", marker = "extra == 'email'", specifier = ">=2.0.0" },
-    { name = "pydantic-core", virtual = "pydantic-core" },
+    { name = "pydantic-core", editable = "pydantic-core" },
     { name = "typing-extensions", specifier = ">=4.14.1" },
     { name = "typing-inspection", specifier = ">=0.4.2" },
     { name = "tzdata", marker = "python_full_version >= '3.9' and sys_platform == 'win32' and extra == 'timezone'" },
@@ -2388,7 +2388,7 @@ typechecking = [
 
 [[package]]
 name = "pydantic-core"
-source = { virtual = "pydantic-core" }
+source = { editable = "pydantic-core" }
 dependencies = [
     { name = "typing-extensions" },
 ]

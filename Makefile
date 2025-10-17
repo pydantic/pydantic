@@ -12,10 +12,9 @@ NUM_THREADS?=1
 
 .PHONY: install  ## Install the package, dependencies, and pre-commit for local development
 install: .uv
-	uv sync --frozen --group all --all-extras
+	MATURIN_PEP517_ARGS=--profile=dev uv sync --frozen --group all --all-extras
 	uv pip install pre-commit
 	uv run pre-commit install --install-hooks
-	cd pydantic-core && make build-dev
 
 .PHONY: rebuild-lockfiles  ## Rebuild lockfiles from scratch, updating all dependencies
 rebuild-lockfiles: .uv
