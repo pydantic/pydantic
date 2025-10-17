@@ -1,0 +1,107 @@
+[package]
+name = "pydantic-core"
+version = "2.41.4"
+edition = "2021"
+license = "MIT"
+homepage = "https://github.com/pydantic/pydantic-core"
+repository = "https://github.com/pydantic/pydantic-core.git"
+readme = "README.md"
+include = [
+    "/pyproject.toml",
+    "/README.md",
+    "/LICENSE",
+    "/Makefile",
+    "/build.rs",
+    "/rust-toolchain",
+    "/src",
+    "/python/pydantic_core",
+    "/tests",
+    "/.cargo",
+    "!__pycache__",
+    "!tests/.hypothesis",
+    "!tests/.pytest_cache",
+    "!*.so",
+]
+rust-version = "1.75"
+
+[dependencies]
+# TODO it would be very nice to remove the "py-clone" feature as it can panic,
+# but needs a bit of work to make sure it's not used in the codebase
+pyo3 = { version = "0.26", features = ["generate-import-lib", "num-bigint", "py-clone"] }
+regex = "1.11.3"
+strum = { version = "0.27", features = ["derive"] }
+strum_macros = "0.27"
+serde_json = { version = "1.0.145", features = ["arbitrary_precision"] }
+enum_dispatch = "0.3.13"
+serde = { version = "1.0.219", features = ["derive"] }
+speedate = "0.17.0"
+smallvec = "1.15.1"
+ahash = "0.8.12"
+url = "2.5.4"
+# idna is already required by url, added here to be explicit
+idna = "1.1.0"
+base64 = "0.22.1"
+num-bigint = "0.4.6"
+num-traits = "0.2.19"
+uuid = "1.18.1"
+jiter = { version = "0.11.0", features = ["python"] }
+hex = "0.4.3"
+percent-encoding = "2.3.1"
+
+[lib]
+name = "_pydantic_core"
+crate-type = ["cdylib", "rlib"]
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
+strip = true
+
+[profile.bench]
+debug = true
+strip = false
+
+# This is separate to benchmarks because `bench` ends up building testing
+# harnesses into code, as it's a special cargo profile.
+[profile.profiling]
+inherits = "release"
+debug = true
+strip = false
+
+[dev-dependencies]
+pyo3 = { version = "0.26", features = ["auto-initialize"] }
+
+[build-dependencies]
+version_check = "0.9.5"
+# used where logic has to be version/distribution specific, e.g. pypy
+pyo3-build-config = { version = "0.26" }
+
+[lints.clippy]
+dbg_macro = "warn"
+print_stdout = "warn"
+
+# in general we lint against the pedantic group, but we will whitelist
+# certain lints which we don't want to enforce (for now)
+pedantic = { level = "warn", priority = -1 }
+cast_possible_truncation = "allow"
+cast_possible_wrap = "allow"
+cast_precision_loss = "allow"
+cast_sign_loss = "allow"
+doc_markdown = "allow"
+float_cmp = "allow"
+fn_params_excessive_bools = "allow"
+if_not_else = "allow"
+match_bool = "allow"
+match_same_arms = "allow"
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
+module_name_repetitions = "allow"
+must_use_candidate = "allow"
+needless_pass_by_value = "allow"
+similar_names = "allow"
+single_match_else = "allow"
+struct_excessive_bools = "allow"
+too_many_lines = "allow"
+unnecessary_wraps = "allow"
+unused_self = "allow"
+used_underscore_binding = "allow"
