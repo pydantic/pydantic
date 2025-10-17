@@ -1415,6 +1415,8 @@ except ValidationError as e:
     * the model must be defined globally
     * the `__module__` argument must be provided
 
+See also: the [dynamic model example](../examples/dynamic_models.md), providing guidelines to derive an optional model from another one.
+
 ## `RootModel` and custom root types
 
 ??? api "API Documentation"
