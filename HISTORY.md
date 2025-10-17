@@ -20,11 +20,6 @@ This is the third 2.13 patch release, fixing issues related to the `FieldInfo` c
 
 The [blog post](https://pydantic.dev/articles/pydantic-v2-12-release#changes) section on changes was also updated to document the changes related to `serialize_as_any`.
 
-#### Fixes
-
-* Release a new `pydantic-core` version, as a corrupted CPython 3.10 `manylinux2014_aarch64` wheel got uploaded ([pydantic-core#1843](https://github.com/pydantic/pydantic-core/pull/1843)).
-* Fix issue with recursive generic models with a parent model class by @Viicos in [#12398](https://github.com/pydantic/pydantic/pull/12398)
-
 ## v2.12.2 (2025-10-14)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.12.2)
