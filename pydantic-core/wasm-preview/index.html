@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<!-- NOTE: to view this page go to: https://githubproxy.samuelcolvin.workers.dev/pydantic/pydantic-core/blob/main/wasm-preview/index.html -->
+<html lang="en">
+  <head>
+    <title>pydantic-core unit tests</title>
+    <style>
+      html,
+      body {
+        height: 100%;
+        background: rgb(30, 31, 46);
+        color: white;
+        font-family: monospace;
+        overflow: hidden;
+      }
+      main {
+        max-width: 800px;
+        height: 100%;
+        margin: 10px auto;
+      }
+      section {
+        margin-top: 20px;
+        padding: 10px 15px;
+        height: calc(100% - 160px);
+        overflow-y: scroll;
+        overflow-x: hidden;
+        border: 1px solid #aaa;
+        border-radius: 5px;
+      }
+      pre {
+        margin: 0;
+        padding: 0;
+        white-space: pre-wrap;
+      }
+      a {
+        color: #58a6ff;
+        text-decoration: none;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1><a href="https://github.com/pydantic/pydantic-core/tree/main/wasm-preview">pydantic-core</a> unit tests</h1>
+      <aside>
+        pydantic-core is compiled to webassembly and run in the browser using
+        <a href="https://pyodide.org/en/stable/">pyodide</a>.
+      </aside>
+      <section>
+        <pre id="output">loading...</pre>
+      </section>
+    </main>
+
+    <script src="https://githubproxy.samuelcolvin.workers.dev/samuelcolvin/824b7fe45b0cb36ffdfd7db7a3d4ce87/raw/ansi-to-html.browser.js"></script>
+    <script>
+      const output_el = document.getElementById('output');
+      const decoder = new TextDecoder();
+      const Convert = require('ansi-to-html');
+      const ansi_converter = new Convert();
+      let terminal_output = '';
+
+      output_el.innerText = 'Starting worker...';
+      const query_args = new URLSearchParams(location.search);
+      query_args.set('ts', Date.now());
+      const worker = new Worker(`./worker.js?${query_args.toString()}`);
+      worker.onmessage = ({data}) => {
+        if (typeof data == 'string') {
+          terminal_output += data;
+        } else {
+          for (let chunk of data) {
+            let arr = new Uint8Array(chunk);
+            let extra = decoder.decode(arr);
+            terminal_output += extra;
+          }
+        }
+        output_el.innerHTML = ansi_converter.toHtml(terminal_output);
+        // scrolls to the bottom of the div
+        output_el.scrollIntoView(false);
+      };
+      worker.postMessage(null);
+    </script>
+  </body>
+</html>

@@ -1,0 +1,196 @@
+use std::sync::Arc;
+
+use pyo3::exceptions::PyValueError;
+use pyo3::intern;
+use pyo3::prelude::*;
+use pyo3::types::{PyDict, PyString};
+use speedate::{Date, Time};
+use strum::EnumMessage;
+
+use crate::build_tools::{is_strict, py_schema_error_type};
+use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValResult};
+use crate::input::{EitherDate, Input};
+
+use crate::validators::datetime::{NowConstraint, NowOp};
+
+use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
+use super::{Exactness, TemporalUnitMode};
+
+#[derive(Debug, Clone)]
+pub struct DateValidator {
+    strict: bool,
+    constraints: Option<DateConstraints>,
+    val_temporal_unit: TemporalUnitMode,
+}
+
+impl BuildValidator for DateValidator {
+    const EXPECTED_TYPE: &'static str = "date";
+
+    fn build(
+        schema: &Bound<'_, PyDict>,
+        config: Option<&Bound<'_, PyDict>>,
+        _definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
+    ) -> PyResult<Arc<CombinedValidator>> {
+        Ok(CombinedValidator::Date(Self {
+            strict: is_strict(schema, config)?,
+            constraints: DateConstraints::from_py(schema)?,
+            val_temporal_unit: TemporalUnitMode::from_config(config)?,
+        })
+        .into())
+    }
+}
+
+impl_py_gc_traverse!(DateValidator {});
+
+impl Validator for DateValidator {
+    fn validate<'py>(
+        &self,
+        py: Python<'py>,
+        input: &(impl Input<'py> + ?Sized),
+        state: &mut ValidationState<'_, 'py>,
+    ) -> ValResult<Py<PyAny>> {
+        let strict = state.strict_or(self.strict);
+        let date = match input.validate_date(strict, self.val_temporal_unit) {
+            Ok(val_match) => val_match.unpack(state),
+            // if the error was a parsing error, in lax mode we allow datetimes at midnight
+            Err(line_errors @ ValError::LineErrors(..)) if !strict => {
+                state.floor_exactness(Exactness::Lax);
+                date_from_datetime(input, self.val_temporal_unit)?.ok_or(line_errors)?
+            }
+            Err(otherwise) => return Err(otherwise),
+        };
+        if let Some(constraints) = &self.constraints {
+            let raw_date = date.as_raw()?;
+
+            macro_rules! check_constraint {
+                ($constraint:ident, $error:ident) => {
+                    if let Some(constraint) = &constraints.$constraint {
+                        if !raw_date.$constraint(constraint) {
+                            return Err(ValError::new(
+                                ErrorType::$error {
+                                    $constraint: constraint.to_string().into(),
+                                    context: None,
+                                },
+                                input,
+                            ));
+                        }
+                    }
+                };
+            }
+
+            check_constraint!(le, LessThanEqual);
+            check_constraint!(lt, LessThan);
+            check_constraint!(ge, GreaterThanEqual);
+            check_constraint!(gt, GreaterThan);
+
+            if let Some(ref today_constraint) = constraints.today {
+                let offset = today_constraint.utc_offset(py)?;
+                let today = Date::today(offset).map_err(|e| {
+                    py_schema_error_type!("Date::today() error: {}", e.get_documentation().unwrap_or("unknown"))
+                })?;
+                // `if let Some(c)` to match behaviour of gt/lt/le/ge
+                if let Some(c) = raw_date.partial_cmp(&today) {
+                    let date_compliant = today_constraint.op.compare(c);
+                    if !date_compliant {
+                        let error_type = match today_constraint.op {
+                            NowOp::Past => ErrorTypeDefaults::DatePast,
+                            NowOp::Future => ErrorTypeDefaults::DateFuture,
+                        };
+                        return Err(ValError::new(error_type, input));
+                    }
+                }
+            }
+        }
+        date.try_into_py(py, input)
+    }
+
+    fn get_name(&self) -> &str {
+        Self::EXPECTED_TYPE
+    }
+}
+
+/// In lax mode, if the input is not a date, we try parsing the input as a datetime, then check it is an
+/// "exact date", e.g. has a zero time component.
+///
+/// Ok(None) means that this is not relevant to dates (the input was not a datetime nor a string)
+fn date_from_datetime<'py>(
+    input: &(impl Input<'py> + ?Sized),
+    mode: TemporalUnitMode,
+) -> Result<Option<EitherDate<'py>>, ValError> {
+    let either_dt =
+        match input.validate_datetime(false, speedate::MicrosecondsPrecisionOverflowBehavior::Truncate, mode) {
+            Ok(val_match) => val_match.into_inner(),
+            // if the error was a parsing error, update the error type from DatetimeParsing to DateFromDatetimeParsing
+            // and return it
+            Err(ValError::LineErrors(mut line_errors)) => {
+                if line_errors.iter_mut().fold(false, |has_parsing_error, line_error| {
+                    if let ErrorType::DatetimeParsing { error, .. } = &mut line_error.error_type {
+                        line_error.error_type = ErrorType::DateFromDatetimeParsing {
+                            error: std::mem::take(error),
+                            context: None,
+                        };
+                        true
+                    } else {
+                        has_parsing_error
+                    }
+                }) {
+                    return Err(ValError::LineErrors(line_errors));
+                }
+                return Ok(None);
+            }
+            // for any other error, don't return it
+            Err(_) => return Ok(None),
+        };
+    let dt = either_dt.as_raw()?;
+    let zero_time = Time {
+        hour: 0,
+        minute: 0,
+        second: 0,
+        microsecond: 0,
+        tz_offset: dt.time.tz_offset,
+    };
+    if dt.time == zero_time {
+        Ok(Some(EitherDate::Raw(dt.date)))
+    } else {
+        Err(ValError::new(ErrorTypeDefaults::DateFromDatetimeInexact, input))
+    }
+}
+
+#[derive(Debug, Clone)]
+struct DateConstraints {
+    le: Option<Date>,
+    lt: Option<Date>,
+    ge: Option<Date>,
+    gt: Option<Date>,
+    today: Option<NowConstraint>,
+}
+
+impl DateConstraints {
+    fn from_py(schema: &Bound<'_, PyDict>) -> PyResult<Option<Self>> {
+        let py = schema.py();
+        let c = Self {
+            le: convert_pydate(schema, intern!(py, "le"))?,
+            lt: convert_pydate(schema, intern!(py, "lt"))?,
+            ge: convert_pydate(schema, intern!(py, "ge"))?,
+            gt: convert_pydate(schema, intern!(py, "gt"))?,
+            today: NowConstraint::from_py(schema)?,
+        };
+        if c.le.is_some() || c.lt.is_some() || c.ge.is_some() || c.gt.is_some() || c.today.is_some() {
+            Ok(Some(c))
+        } else {
+            Ok(None)
+        }
+    }
+}
+
+fn convert_pydate(schema: &Bound<'_, PyDict>, key: &Bound<'_, PyString>) -> PyResult<Option<Date>> {
+    match schema.get_item(key)? {
+        Some(value) => match value.validate_date(false, TemporalUnitMode::default()) {
+            Ok(v) => Ok(Some(v.into_inner().as_raw()?)),
+            Err(_) => Err(PyValueError::new_err(format!(
+                "'{key}' must be coercible to a date instance",
+            ))),
+        },
+        None => Ok(None),
+    }
+}
