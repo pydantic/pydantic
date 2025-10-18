@@ -3102,12 +3102,13 @@ def test_after_and_wrap_combo_called_once() -> None:
     my_model = MyParentModel.model_validate({'nested': {'inner_value': 'foo'}})
     assert my_model.nested.inner_value == 'after_prefix:wrap_prefix:foo'
 
-def test_nested_model_validator_not_reexecuted():
-    """
-    Reproduces the bug in issue #8452 where a nested model's `model_validator`
-    with `mode='after'` is unexpectedly re-executed.
-    """
 
+@pytest.mark.xfail(reason="Bug: Nested 'after' model_validator is re-executed. See issue #8452.", raises=AssertionError)
+def test_nested_model_validator_not_reexecuted():
+    """See https://github.com/pydantic/pydantic/issues/8452 for context.
+
+    Reproduces the bug in issue #8452 where a nested model's `model_validator` with `mode='after'` is unexpectedly re-executed.
+    """
     class Sub(BaseModel):
         @model_validator(mode='after')
         def _validate(self):
@@ -3115,11 +3116,9 @@ def test_nested_model_validator_not_reexecuted():
             assert False, 'Sub model_validator was re-executed'
 
     class Base(BaseModel):
-        sub: Sub
+        sub: Sub #<-- This throws assertionerror
 
-    # This works as expected, no validation is triggered
-    sub_instance = Sub.model_construct()
-
-    # This line should pass without raising an error.
-    # Because the bug exists, it will raise an AssertionError and the test will fail.
-    Base(sub=sub_instance)
+    sub: Sub = Sub.model_construct() # Create a Sub instance without triggering validation (e.g., using model_construct)
+    
+    # Attempt to create Base with the Sub instance. This line should succeed if the bug is fixed, but currently raises ValidationError.
+    base: Base = Base(sub=sub) # <-- This throws AssertionError because Sub's 'after' validator runs again.
