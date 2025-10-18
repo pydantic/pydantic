@@ -31,10 +31,14 @@ from pydantic import BaseModel, Field, AliasPath
 class User(BaseModel):
     first_name: str = Field(validation_alias=AliasPath('names', 0))
     last_name: str = Field(validation_alias=AliasPath('names', 1))
+    address: str = Field(validation_alias=AliasPath('contact', 'address'))
 
-user = User.model_validate({'names': ['John', 'Doe']})  # (1)!
+user = User.model_validate({
+    'names': ['John', 'Doe'],
+    'contact': {'address': '221B Baker Street'}
+})  # (1)!
 print(user)
-#> first_name='John' last_name='Doe'
+#> first_name='John' last_name='Doe' address='221B Baker Street'
 ```
 
 1. We are using `model_validate` to validate a dictionary using the field aliases.
