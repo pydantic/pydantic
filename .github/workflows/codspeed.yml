@@ -28,7 +28,7 @@ jobs:
           python-version: ${{ env.UV_PYTHON }}
 
       - name: install deps
-        run: uv sync --group testing-extra --extra email --frozen
+        run: uv sync --all-groups --frozen --no-install-package=pydantic-core
 
       - name: install rust stable
         uses: dtolnay/rust-toolchain@stable
