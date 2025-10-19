@@ -64,7 +64,7 @@ test: .uv
 
 .PHONY: benchmark  ## Run all benchmarks
 benchmark: .uv
-	uv run coverage run -m pytest --durations=10 --benchmark-enable tests/benchmarks
+	uv run coverage run -m pytest --durations=10 --benchmark-enable tests/benchmarks tests/pydantic_core/benchmarks
 
 .PHONY: testcov  ## Run tests and generate a coverage report, skipping the type-checker integration tests
 testcov: test

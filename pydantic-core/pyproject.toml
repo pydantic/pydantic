@@ -97,6 +97,8 @@ all = [
 python-source = "python"
 module-name = "pydantic_core._pydantic_core"
 bindings = 'pyo3'
+# TODO find a nicer way to avoid uv rebuilding in release all the time
+profile = 'dev'
 
 [tool.ruff]
 line-length = 120

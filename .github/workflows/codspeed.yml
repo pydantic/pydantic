@@ -51,4 +51,4 @@ jobs:
         uses: CodSpeedHQ/action@v4
         with:
           mode: instrumentation
-          run: uv run --no-sync pytest ./tests/benchmarks ./pydantic-core/tests/benchmarks/ --codspeed
+          run: uv run --no-sync pytest ./tests/benchmarks ./tests/pydantic_core/benchmarks --codspeed
