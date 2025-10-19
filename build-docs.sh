@@ -14,7 +14,6 @@ source $HOME/.cargo/env
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
 uv sync --python 3.12 --group docs --frozen
-uv tool run maturin develop -m pydantic-core/Cargo.toml
 uv run --no-sync python -c 'import docs.plugins.main'
 
 # Adding local symlinks gets nice source locations like

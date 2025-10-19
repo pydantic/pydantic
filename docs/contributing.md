@@ -52,8 +52,9 @@ You'll need the following prerequisites:
 
 * Any Python version between **Python 3.9 and 3.12**
 * [**uv**](https://docs.astral.sh/uv/getting-started/installation/) or other virtual environment tool
-* **git**
-* **make**
+* [**git**](https://git-scm.com/) - For version control
+* [**make**](https://www.gnu.org/software/make/) - For running development commands (or use `nmake` on Windows)
+* [**Rust**](https://rustup.rs/) - Rust stable (or nightly for coverage)
 
 ### Installation and setup
 

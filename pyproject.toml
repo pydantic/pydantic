@@ -188,6 +188,14 @@ markers = [
 default-groups = ['dev']
 required-version = '>=0.8.4'
 
+[tool.uv.sources]
+pydantic-core = { workspace = true }
+
+[tool.uv.workspace]
+members = [
+    "pydantic-core",
+]
+
 # configuring https://github.com/pydantic/hooky
 [tool.hooky]
 reviewers = ['Viicos']

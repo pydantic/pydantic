@@ -2,13 +2,15 @@
 sources = python/pydantic_core tests wasm-preview/run_tests.py
 
 mypy-stubtest = uv run python -m mypy.stubtest pydantic_core._pydantic_core --allowlist .mypy-stubtest-allowlist
+# using --no-sync to avoid uv automatically rebuilding pydantic-core
+# TODO: it might be nice to use `MATURIN_PEP517_ARGS` to set the profile and
+# then use uv directly, but probably want
+# https://github.com/astral-sh/uv/issues/16359 first
+uv-run-no-sync = uv run --no-sync
 
 # using pip install cargo (via maturin via pip) doesn't get the tty handle
 # so doesn't render color without some help
 export CARGO_TERM_COLOR=$(shell (test -t 0 && echo "always") || echo "auto")
-# maturin develop only makes sense inside a virtual env, is otherwise
-# more or less equivalent to pip install -e just a little nicer
-USE_MATURIN = $(shell [ "$$VIRTUAL_ENV" != "" ] && (which maturin))
 
 .PHONY: .uv  ## Check that uv is installed
 .uv:
@@ -35,39 +37,40 @@ install-pgo:
 .PHONY: build-dev  ## Build the development version of the package
 build-dev:
 	@rm -f python/pydantic_core/*.so
-	uv run maturin develop --uv
+	$(uv-run-no-sync) maturin develop --uv
 
 .PHONY: build-prod  ## Build the production version of the package
 build-prod:
 	@rm -f python/pydantic_core/*.so
-	uv run maturin develop --uv --release
+	$(uv-run-no-sync) maturin develop --uv --release
 
 .PHONY: build-profiling  ## Build the profiling version of the package
 build-profiling:
 	@rm -f python/pydantic_core/*.so
-	uv run maturin develop --uv --profile profiling
+	$(uv-run-no-sync) maturin develop --uv --profile profiling
 
 .PHONY: build-coverage  ## Build the coverage version of the package
 build-coverage:
 	@rm -f python/pydantic_core/*.so
-	RUSTFLAGS='-C instrument-coverage' uv run maturin develop --uv --release
+	RUSTFLAGS='-C instrument-coverage' $(uv-run-no-sync) maturin develop --uv --release
 
 .PHONY: build-pgo  ## Build the PGO version of the package
 build-pgo:
 	@rm -f python/pydantic_core/*.so
 	$(eval PROFDATA := $(shell mktemp -d))
-	RUSTFLAGS='-Cprofile-generate=$(PROFDATA)' uv run maturin develop --uv --release
+	# --no-sync avoids uv automatically rebuilding pydantic-core
+	RUSTFLAGS='-Cprofile-generate=$(PROFDATA)' $(uv-run-no-sync) maturin develop --uv --release
 	pytest tests/benchmarks
 	$(eval LLVM_PROFDATA := $(shell rustup run stable bash -c 'echo $$RUSTUP_HOME/toolchains/$$RUSTUP_TOOLCHAIN/lib/rustlib/$$(rustc -Vv | grep host | cut -d " " -f 2)/bin/llvm-profdata'))
 	$(LLVM_PROFDATA) merge -o $(PROFDATA)/merged.profdata $(PROFDATA)
-	RUSTFLAGS='-Cprofile-use=$(PROFDATA)/merged.profdata' uv run maturin develop --uv --release
+	RUSTFLAGS='-Cprofile-use=$(PROFDATA)/merged.profdata' $(uv-run-no-sync) maturin develop --uv --release
 	@rm -rf $(PROFDATA)
 
 
 .PHONY: build-wasm  ## Build the WebAssembly version of the package
 build-wasm:
 	@echo 'This requires python 3.12, maturin and emsdk to be installed'
-	uv run maturin build --release --target wasm32-unknown-emscripten --out dist -i 3.12
+	uvx maturin build --release --target wasm32-unknown-emscripten --out dist -i 3.12
 	ls -lh dist
 
 .PHONY: format  ## Auto-format rust and python source files
