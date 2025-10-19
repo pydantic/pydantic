@@ -189,6 +189,14 @@ markers = [
 default-groups = ['dev']
 required-version = '>=0.8.4'
 
+[tool.uv.sources]
+pydantic-core = { workspace = true }
+
+[tool.uv.workspace]
+members = [
+    "pydantic-core",
+]
+
 # configuring https://github.com/pydantic/hooky
 [tool.hooky]
 reviewers = ['Viicos', 'DouweM']
@@ -288,7 +296,7 @@ enableExperimentalFeatures = true
 skip = '.git,env*,pydantic/v1/*,uv.lock'
 # `ser` - abbreviation for "ser"ialisation
 # `crate` - a rust crate
-ignore-words-list = 'gir,ser,crate,deques'
+ignore-words-list = 'gir,ser,crate,deques,ans,fo'
 
 [tool.codeflash]
 module-root = "pydantic"

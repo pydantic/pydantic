@@ -12,6 +12,7 @@ env:
   COLUMNS: 150
   UV_FROZEN: true
   FORCE_COLOR: 1
+  MATURIN_PEP517_ARGS: '--profile=dev'
 
 jobs:
   lint:
