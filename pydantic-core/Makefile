@@ -35,39 +35,39 @@ install-pgo:
 .PHONY: build-dev  ## Build the development version of the package
 build-dev:
 	@rm -f python/pydantic_core/*.so
-	uv run maturin develop --uv
+	uvx maturin develop --uv
 
 .PHONY: build-prod  ## Build the production version of the package
 build-prod:
 	@rm -f python/pydantic_core/*.so
-	uv run maturin develop --uv --release
+	uvx maturin develop --uv --release
 
 .PHONY: build-profiling  ## Build the profiling version of the package
 build-profiling:
 	@rm -f python/pydantic_core/*.so
-	uv run maturin develop --uv --profile profiling
+	uvx maturin develop --uv --profile profiling
 
 .PHONY: build-coverage  ## Build the coverage version of the package
 build-coverage:
 	@rm -f python/pydantic_core/*.so
-	RUSTFLAGS='-C instrument-coverage' uv run maturin develop --uv --release
+	RUSTFLAGS='-C instrument-coverage' uvx maturin develop --uv --release
 
 .PHONY: build-pgo  ## Build the PGO version of the package
 build-pgo:
 	@rm -f python/pydantic_core/*.so
 	$(eval PROFDATA := $(shell mktemp -d))
-	RUSTFLAGS='-Cprofile-generate=$(PROFDATA)' uv run maturin develop --uv --release
+	RUSTFLAGS='-Cprofile-generate=$(PROFDATA)' uvx maturin develop --uv --release
 	pytest tests/benchmarks
 	$(eval LLVM_PROFDATA := $(shell rustup run stable bash -c 'echo $$RUSTUP_HOME/toolchains/$$RUSTUP_TOOLCHAIN/lib/rustlib/$$(rustc -Vv | grep host | cut -d " " -f 2)/bin/llvm-profdata'))
 	$(LLVM_PROFDATA) merge -o $(PROFDATA)/merged.profdata $(PROFDATA)
-	RUSTFLAGS='-Cprofile-use=$(PROFDATA)/merged.profdata' uv run maturin develop --uv --release
+	RUSTFLAGS='-Cprofile-use=$(PROFDATA)/merged.profdata' uvx maturin develop --uv --release
 	@rm -rf $(PROFDATA)
 
 
 .PHONY: build-wasm  ## Build the WebAssembly version of the package
 build-wasm:
 	@echo 'This requires python 3.12, maturin and emsdk to be installed'
-	uv run maturin build --release --target wasm32-unknown-emscripten --out dist -i 3.12
+	uvx maturin build --release --target wasm32-unknown-emscripten --out dist -i 3.12
 	ls -lh dist
 
 .PHONY: format  ## Auto-format rust and python source files

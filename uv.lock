@@ -1901,10 +1901,10 @@ source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "numpy", version = "2.0.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.10.*'" },
-    { name = "numpy", version = "2.3.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
-    { name = "python-dateutil" },
-    { name = "pytz" },
-    { name = "tzdata" },
+    { name = "numpy", version = "2.3.4", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.11' and python_full_version < '3.13') or (python_full_version >= '3.11' and implementation_name != 'cpython') or (python_full_version >= '3.14' and implementation_name == 'cpython')" },
+    { name = "python-dateutil", marker = "python_full_version != '3.13.*' or implementation_name != 'cpython'" },
+    { name = "pytz", marker = "python_full_version != '3.13.*' or implementation_name != 'cpython'" },
+    { name = "tzdata", marker = "python_full_version != '3.13.*' or implementation_name != 'cpython'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/33/01/d40b85317f86cf08d853a4f495195c73815fdf205eef3993821720274518/pandas-2.3.3.tar.gz", hash = "sha256:e05e1af93b977f7eafa636d043f9f94c7ee3ac81af99c13508215942e64c993b", size = 4495223, upload-time = "2025-09-29T23:34:51.853Z" }
 wheels = [
@@ -2411,11 +2411,11 @@ all = [
     { name = "pre-commit" },
     { name = "pyright" },
     { name = "pytest" },
+    { name = "pytest-benchmark" },
     { name = "pytest-examples", marker = "implementation_name == 'cpython' and platform_machine == 'x86_64'" },
     { name = "pytest-mock" },
     { name = "pytest-pretty" },
     { name = "pytest-run-parallel" },
-    { name = "pytest-speed" },
     { name = "pytest-timeout" },
     { name = "python-dateutil" },
     { name = "ruff" },
@@ -2449,11 +2449,11 @@ testing = [
     { name = "numpy", version = "2.3.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11' and python_full_version < '3.13' and implementation_name == 'cpython' and platform_machine == 'x86_64'" },
     { name = "pandas", marker = "python_full_version < '3.13' and implementation_name == 'cpython' and platform_machine == 'x86_64'" },
     { name = "pytest" },
+    { name = "pytest-benchmark" },
     { name = "pytest-examples", marker = "implementation_name == 'cpython' and platform_machine == 'x86_64'" },
     { name = "pytest-mock" },
     { name = "pytest-pretty" },
     { name = "pytest-run-parallel" },
-    { name = "pytest-speed" },
     { name = "pytest-timeout" },
     { name = "python-dateutil" },
     { name = "typing-inspection" },
@@ -2482,11 +2482,11 @@ all = [
     { name = "pre-commit" },
     { name = "pyright" },
     { name = "pytest" },
+    { name = "pytest-benchmark" },
     { name = "pytest-examples", marker = "implementation_name == 'cpython' and platform_machine == 'x86_64'" },
     { name = "pytest-mock" },
     { name = "pytest-pretty" },
     { name = "pytest-run-parallel" },
-    { name = "pytest-speed" },
     { name = "pytest-timeout" },
     { name = "python-dateutil" },
     { name = "ruff" },
@@ -2513,11 +2513,11 @@ testing = [
     { name = "numpy", marker = "python_full_version < '3.13' and implementation_name == 'cpython' and platform_machine == 'x86_64'" },
     { name = "pandas", marker = "python_full_version < '3.13' and implementation_name == 'cpython' and platform_machine == 'x86_64'" },
     { name = "pytest" },
+    { name = "pytest-benchmark" },
     { name = "pytest-examples", marker = "implementation_name == 'cpython' and platform_machine == 'x86_64'" },
     { name = "pytest-mock" },
     { name = "pytest-pretty" },
     { name = "pytest-run-parallel" },
-    { name = "pytest-speed" },
     { name = "pytest-timeout" },
     { name = "python-dateutil" },
     { name = "typing-inspection", specifier = ">=0.4.1" },
@@ -2749,20 +2749,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/fe/13/d3bcb2c52f63b774be612cbee51f33a5cf2fa97d2f60fe26264f6720477b/pytest_run_parallel-0.3.1.tar.gz", hash = "sha256:636306d3ed6838898d8d42b3cd379dac7b327ce6d68df1bcc30d55a208d5081e", size = 14142, upload-time = "2025-02-05T20:29:11.504Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/4d/67/4943178bb5dacb2e0b745b4db4ab126112dafab66266f2262896e791dbbe/pytest_run_parallel-0.3.1-py3-none-any.whl", hash = "sha256:0675c9e4c8e843085333c66bc0ce6b8091e3509dc8e6df3429f05c28f5345b17", size = 9468, upload-time = "2025-02-05T20:29:10.406Z" },
-]
-
-[[package]]
-name = "pytest-speed"
-version = "0.3.5"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "click" },
-    { name = "pytest" },
-    { name = "rich" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/61/21/6acc1504e62f5b72ede4a1d10b70dd3e6a2acc14e21f214673fe701c272b/pytest_speed-0.3.5.tar.gz", hash = "sha256:e76208eb37362d0de9ce228488d18b5d96b95ea0dec6b0ad0e0f4ddfa359f3b0", size = 8702, upload-time = "2023-01-22T12:09:19.303Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/59/c5/654fe3dae7d791d3a177f8aea58bec6aa72b9d8fdde1e2f30cd2e0c5fe1a/pytest_speed-0.3.5-py3-none-any.whl", hash = "sha256:ef9f17d6800b158e0a78df81bdbfe662a27ef5ddbf86376ff092fd6673135466", size = 9717, upload-time = "2023-01-22T12:09:17.351Z" },
 ]
 
 [[package]]
