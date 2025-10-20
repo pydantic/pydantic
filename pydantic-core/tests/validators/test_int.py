@@ -1,4 +1,5 @@
 import json
+import os
 import re
 from decimal import Decimal
 from fractions import Fraction
@@ -6,7 +7,6 @@ from typing import Any
 
 import pytest
 from dirty_equals import IsStr
-
 from pydantic_core import SchemaError, SchemaValidator, ValidationError
 from pydantic_core import core_schema as cs
 
@@ -441,8 +441,12 @@ def test_too_long(pydantic_version):
     assert repr(exc_info.value) == (
         '1 validation error for int\n'
         '  Unable to parse input string as an integer, exceeded maximum size '
-        "[type=int_parsing_size, input_value='111111111111111111111111...11111111111111111111111', input_type=str]\n"
-        f'    For further information visit https://errors.pydantic.dev/{pydantic_version}/v/int_parsing_size'
+        "[type=int_parsing_size, input_value='111111111111111111111111...11111111111111111111111', input_type=str]"
+        + (
+            f'\n    For further information visit https://errors.pydantic.dev/{pydantic_version}/v/int_parsing_size'
+            if os.environ.get('PYDANTIC_ERRORS_INCLUDE_URL', '1') != 'false'
+            else ''
+        )
     )
 
 

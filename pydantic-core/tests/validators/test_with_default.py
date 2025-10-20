@@ -1,3 +1,4 @@
+import os
 import platform
 import sys
 import weakref
@@ -6,7 +7,6 @@ from dataclasses import dataclass
 from typing import Any, Callable, Union, cast
 
 import pytest
-
 from pydantic_core import (
     ArgsKwargs,
     PydanticUndefined,
@@ -883,16 +883,30 @@ def test_default_factory_not_called_if_existing_error(container_schema_builder, 
         },
     ]
 
-    assert (
-        str(e.value)
-        == f"""2 validation errors for {v.title}
+    include_urls = os.environ.get('PYDANTIC_ERRORS_INCLUDE_URL', '1') != 'false'
+
+    expected = (
+        f"""2 validation errors for {v.title}
 a
-  Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='not_an_int', input_type=str]
-    For further information visit https://errors.pydantic.dev/{pydantic_version}/v/int_parsing
+  Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='not_an_int', input_type=str]"""
+        + (
+            f"""
+    For further information visit https://errors.pydantic.dev/{pydantic_version}/v/int_parsing"""
+            if include_urls
+            else ''
+        )
+        + """
 b
-  The default factory uses validated data, but at least one validation error occurred [type=default_factory_not_called]
+  The default factory uses validated data, but at least one validation error occurred [type=default_factory_not_called]"""
+        + (
+            f"""
     For further information visit https://errors.pydantic.dev/{pydantic_version}/v/default_factory_not_called"""
+            if include_urls
+            else ''
+        )
     )
+
+    assert str(e.value) == expected
 
     # repeat with the first field being a default which validates incorrectly
 
@@ -925,16 +939,7 @@ b
         },
     ]
 
-    assert (
-        str(e.value)
-        == f"""2 validation errors for {v.title}
-a
-  Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='not_an_int', input_type=str]
-    For further information visit https://errors.pydantic.dev/{pydantic_version}/v/int_parsing
-b
-  The default factory uses validated data, but at least one validation error occurred [type=default_factory_not_called]
-    For further information visit https://errors.pydantic.dev/{pydantic_version}/v/default_factory_not_called"""
-    )
+    assert str(e.value) == expected
 
 
 def test_default_factory_not_called_union_ok(container_schema_builder) -> None:
