@@ -44,7 +44,6 @@ print(user)
 1. We are using [`model_validate()`][pydantic.BaseModel.model_validate] to validate a dictionary using the field aliases.
    Refer to documentation about [validating data](./concepts/models.md#validating-data) for more details.
 
-
 In the `'first_name'` field, we are using the alias `'names'` and the index `0` to specify the path to the first name.
 In the `'last_name'` field, we are using the alias `'names'` and the index `1` to specify the path to the last name.
 
