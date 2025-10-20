@@ -526,6 +526,13 @@ def _eval_type(
             globalns,
             localns,
             type_params=type_params,
+            # This is relevant when evaluating types from `TypedDict` classes, where string annotations
+            # are automatically converted to `ForwardRef` instances with a module set. In this case,
+            # Our `globalns` is irrelevant and we need to indicate `typing._eval_type()` that it should
+            # infer it from the `ForwardRef.__forward_module__` attribute instead (`typing.get_type_hints()`
+            # does the same). Note that this would probably be unnecessary if we properly iterated over the
+            # `__orig_bases__` for TypedDicts in `get_cls_type_hints()`:
+            prefer_fwd_module=True,
         )
         if evaluated is None:
             evaluated = type(None)
