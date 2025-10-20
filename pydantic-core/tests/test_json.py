@@ -1,11 +1,11 @@
 import json
 import platform
 import re
-
-import pytest
-from dirty_equals import IsFloatNan, IsList
+import sys
 
 import pydantic_core
+import pytest
+from dirty_equals import IsFloatNan, IsList
 from pydantic_core import (
     CoreConfig,
     PydanticSerializationError,
@@ -307,6 +307,12 @@ def test_cycle_same():
 @pytest.mark.skipif(
     platform.python_implementation() == 'PyPy' and pydantic_core._pydantic_core.build_profile == 'debug',
     reason='PyPy does not have enough stack space for Rust debug builds to recurse very deep',
+)
+@pytest.mark.skipif(
+    platform.system() == 'Darwin'
+    and sys.version_info[:2] >= (3, 14)
+    and pydantic_core._pydantic_core.build_profile == 'debug',
+    reason='3.14 on macos does not have enough stack space for Rust debug builds to recurse very deep',
 )
 def test_cycle_change():
     def fallback_func_change_id(obj):
