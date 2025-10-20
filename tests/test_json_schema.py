@@ -5117,28 +5117,81 @@ def test_computed_field():
     }
 
 
-def test_serialization_schema_with_exclude():
-    class MyGenerateJsonSchema(GenerateJsonSchema):
+def test_serialization_schema_with_exclude_exclude_if():
+    class JsonSchemaFieldAlwaysPresent(GenerateJsonSchema):
         def field_is_present(self, field) -> bool:
             # Always include fields in the JSON schema, even if excluded from serialization
             return True
 
-    class Model(BaseModel):
-        x: int
-        y: int = Field(exclude=True)
+    class ModelSerDefaultsNotRequired(BaseModel, json_schema_serialization_defaults_required=False):  # The default
+        a: int
+        b: int = 1
+        c: int = Field(exclude=True)
+        d: int = Field(default=1, exclude=True)
+        e: int = Field(exclude_if=lambda v: v)
+        f: int = Field(default=1, exclude_if=lambda v: v)
 
-    assert Model(x=1, y=1).model_dump() == {'x': 1}
-
-    assert Model.model_json_schema(mode='serialization') == {
-        'properties': {'x': {'title': 'X', 'type': 'integer'}},
-        'required': ['x'],
-        'title': 'Model',
+    assert ModelSerDefaultsNotRequired.model_json_schema(mode='serialization') == {
+        'properties': {
+            'a': {'title': 'A', 'type': 'integer'},
+            'b': {'default': 1, 'title': 'B', 'type': 'integer'},
+            'e': {'title': 'E', 'type': 'integer'},
+            'f': {'default': 1, 'title': 'F', 'type': 'integer'},
+        },
+        'required': ['a'],
+        'title': 'ModelSerDefaultsNotRequired',
         'type': 'object',
     }
-    assert Model.model_json_schema(mode='serialization', schema_generator=MyGenerateJsonSchema) == {
-        'properties': {'x': {'title': 'X', 'type': 'integer'}, 'y': {'title': 'Y', 'type': 'integer'}},
-        'required': ['x', 'y'],
-        'title': 'Model',
+
+    assert ModelSerDefaultsNotRequired.model_json_schema(
+        mode='serialization', schema_generator=JsonSchemaFieldAlwaysPresent
+    ) == {
+        'properties': {
+            'a': {'title': 'A', 'type': 'integer'},
+            'b': {'default': 1, 'title': 'B', 'type': 'integer'},
+            'c': {'title': 'C', 'type': 'integer'},
+            'd': {'default': 1, 'title': 'D', 'type': 'integer'},
+            'e': {'title': 'E', 'type': 'integer'},
+            'f': {'default': 1, 'title': 'F', 'type': 'integer'},
+        },
+        'required': ['a', 'c'],
+        'title': 'ModelSerDefaultsNotRequired',
+        'type': 'object',
+    }
+
+    class ModelSerDefaultsRequired(BaseModel, json_schema_serialization_defaults_required=True):
+        a: int
+        b: int = 1
+        c: int = Field(exclude=True)
+        d: int = Field(default=1, exclude=True)
+        e: int = Field(exclude_if=lambda v: v)
+        f: int = Field(default=1, exclude_if=lambda v: v)
+
+    assert ModelSerDefaultsRequired.model_json_schema(mode='serialization') == {
+        'properties': {
+            'a': {'title': 'A', 'type': 'integer'},
+            'b': {'default': 1, 'title': 'B', 'type': 'integer'},
+            'e': {'title': 'E', 'type': 'integer'},
+            'f': {'default': 1, 'title': 'F', 'type': 'integer'},
+        },
+        'required': ['a', 'b'],
+        'title': 'ModelSerDefaultsRequired',
+        'type': 'object',
+    }
+
+    assert ModelSerDefaultsRequired.model_json_schema(
+        mode='serialization', schema_generator=JsonSchemaFieldAlwaysPresent
+    ) == {
+        'properties': {
+            'a': {'title': 'A', 'type': 'integer'},
+            'b': {'default': 1, 'title': 'B', 'type': 'integer'},
+            'c': {'title': 'C', 'type': 'integer'},
+            'd': {'default': 1, 'title': 'D', 'type': 'integer'},
+            'e': {'title': 'E', 'type': 'integer'},
+            'f': {'default': 1, 'title': 'F', 'type': 'integer'},
+        },
+        'required': ['a', 'b', 'c', 'd'],
+        'title': 'ModelSerDefaultsRequired',
         'type': 'object',
     }
 
