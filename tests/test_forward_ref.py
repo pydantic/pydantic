@@ -1537,3 +1537,30 @@ def test_none_converted_as_none_type() -> None:
 
     assert Model.model_fields['a'].annotation is type(None)
     assert Model(a=None).a is None
+
+
+def test_typeddict_parent_from_other_module(create_module) -> None:
+    """https://github.com/pydantic/pydantic/issues/12421."""
+
+    @create_module
+    def mod_1():
+        from typing_extensions import TypedDict
+
+        Int = int
+
+        class Base(TypedDict):
+            f: 'Int'
+
+    mod_2 = create_module(
+        f"""
+from {mod_1.__name__} import Base
+
+
+class Sub(Base):
+    pass
+        """
+    )
+
+    ta = TypeAdapter(mod_2.Sub)
+
+    assert ta.validate_python({'f': '1'}) == {'f': 1}
