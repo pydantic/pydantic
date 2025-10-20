@@ -126,7 +126,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
 
     - name: Install dependencies
-      run: uv sync --extra timezone
+      run: uv sync --all-packages --extra timezone --group testing
 
     - run: 'uv run python -c "import pydantic.version; print(pydantic.version.version_info())"'
 
@@ -150,7 +150,7 @@ jobs:
     - name: Install extra dependencies
       # Skip free threaded, we can't install memray
       if: ${{ !endsWith(matrix.python-version, 't') }}
-      run: uv sync --group testing-extra --all-extras
+      run: uv sync --all-packages --group testing --group testing-extra --all-extras
 
     - name: Test with all extra dependencies
       if: ${{ !endsWith(matrix.python-version, 't') }}
