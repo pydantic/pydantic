@@ -33,10 +33,10 @@ class User(BaseModel):
     last_name: str = Field(validation_alias=AliasPath('names', 1))
     address: str = Field(validation_alias=AliasPath('contact', 'address'))
 
-user = User.model_validate({
+user = User.model_validate({  # (1)!
     'names': ['John', 'Doe'],
     'contact': {'address': '221B Baker Street'}
-})  # (1)!
+})
 print(user)
 #> first_name='John' last_name='Doe' address='221B Baker Street'
 ```
