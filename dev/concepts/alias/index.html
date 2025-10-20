@@ -3352,16 +3352,18 @@ to help you monitor and understand your
 <span class="k">class</span><span class="w"> </span><span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">first_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">validation_alias</span><span class="o">=</span><span class="n">AliasPath</span><span class="p">(</span><span class="s1">&#39;names&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
     <span class="n">last_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">validation_alias</span><span class="o">=</span><span class="n">AliasPath</span><span class="p">(</span><span class="s1">&#39;names&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="n">address</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">validation_alias</span><span class="o">=</span><span class="n">AliasPath</span><span class="p">(</span><span class="s1">&#39;contact&#39;</span><span class="p">,</span> <span class="s1">&#39;address&#39;</span><span class="p">))</span>
 
-<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">model_validate</span><span class="p">({</span><span class="s1">&#39;names&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;John&#39;</span><span class="p">,</span> <span class="s1">&#39;Doe&#39;</span><span class="p">]})</span>  <span class="c1"># (1)!</span>
+<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">model_validate</span><span class="p">({</span>  <span class="c1"># (1)!</span>
+    <span class="s1">&#39;names&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;John&#39;</span><span class="p">,</span> <span class="s1">&#39;Doe&#39;</span><span class="p">],</span>
+    <span class="s1">&#39;contact&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;address&#39;</span><span class="p">:</span> <span class="s1">&#39;221B Baker Street&#39;</span><span class="p">}</span>
+<span class="p">})</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
-<span class="c1">#&gt; first_name=&#39;John&#39; last_name=&#39;Doe&#39;</span>
+<span class="c1">#&gt; first_name=&#39;John&#39; last_name=&#39;Doe&#39; address=&#39;221B Baker Street&#39;</span>
 </code></pre></div>
 <ol>
-<li>
-<p>We are using <code>model_validate</code> to validate a dictionary using the field aliases.</p>
-<p>You can see more details about <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_validate"><code>model_validate</code></a> in the API reference.</p>
-</li>
+<li>We are using <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_validate"><code>model_validate()</code></a> to validate a dictionary using the field aliases.
+   Refer to documentation about <a href="../models/#validating-data">validating data</a> for more details.</li>
 </ol>
 <p>In the <code>'first_name'</code> field, we are using the alias <code>'names'</code> and the index <code>0</code> to specify the path to the first name.
 In the <code>'last_name'</code> field, we are using the alias <code>'names'</code> and the index <code>1</code> to specify the path to the last name.</p>
