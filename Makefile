@@ -12,7 +12,7 @@ NUM_THREADS?=1
 
 .PHONY: install  ## Install the package, dependencies, and pre-commit for local development
 install: .uv
-	MATURIN_PEP517_ARGS=--profile=dev uv sync --frozen --group all --all-extras
+	MATURIN_PEP517_ARGS=--profile=dev uv sync --all-packages --frozen --group all --all-extras
 	uv pip install pre-commit
 	uv run pre-commit install --install-hooks
 
