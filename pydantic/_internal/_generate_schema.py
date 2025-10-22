@@ -1857,9 +1857,7 @@ class GenerateSchema:
                         # of the generic dataclass generic origin (e.g. `apply_typevars_map` below).
                         # Note that we don't apply `deepcopy` on `__pydantic_fields__` because we
                         # don't want to copy the `FieldInfo` attributes:
-                        fields = {
-                            f_name: copy(field_info) for f_name, field_info in all_fields.items()
-                        }
+                        fields = {f_name: copy(field_info) for f_name, field_info in all_fields.items()}
                         if typevars_map:
                             for field in fields.values():
                                 field.apply_typevars_map(typevars_map, *self._types_namespace)
