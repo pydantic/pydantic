@@ -8,7 +8,7 @@
 
 ### What's Changed
 
-This is the third 2.13 patch release, fixing issues related to the `FieldInfo` class, and reverting a change to the supported
+This is the third 2.12 patch release, fixing issues related to the `FieldInfo` class, and reverting a change to the supported
 [*after* model validator](https://docs.pydantic.dev/latest/concepts/validators/#model-validators) function signatures.
 
 * Raise a warning when an invalid after model validator function signature is raised by @Viicos in [#12414](https://github.com/pydantic/pydantic/pull/12414).
