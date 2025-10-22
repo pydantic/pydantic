@@ -78,6 +78,7 @@ def test_init_var_field_various_cases():
 
         foo1: str = Field(init_var=True, alias='bar4')
         foo2: InitVar[str] = Field(alias='bar5')
+        bar5: str = Field(init=False)
 
         baz1: str = Field(default='baz1', init_var=True)
 
@@ -88,9 +89,16 @@ def test_init_var_field_various_cases():
             assert bar4 == 'bar4'
             assert bar5 == 'bar5'
             assert baz1 == 'baz1'
+            self.bar5 = bar5
 
-    Foo2('bar1', 'bar2', 'bar3', 'bar4', 'bar5')
+    inst = Foo2('bar1', 'bar2', 'bar3', 'bar4', 'bar5')
     Foo2(bar1='bar1', bar2='bar2', bar3='bar3', bar4='bar4', bar5='bar5')
+
+    for attr in ('bar1', 'bar2', 'bar3', 'foo1', 'foo2'):
+        assert attr not in inst.__dict__
+    assert 'bar5' in inst.__dict__
+    assert inst.bar5 == 'bar5'
+    assert 'bar4' not in inst.__dict__
 
 
 def test_root_model_arbitrary_field_name_error():
