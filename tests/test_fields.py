@@ -94,8 +94,10 @@ def test_init_var_field_various_cases():
     inst = Foo2('bar1', 'bar2', 'bar3', 'bar4', 'bar5')
     Foo2(bar1='bar1', bar2='bar2', bar3='bar3', bar4='bar4', bar5='bar5')
 
-    for attr in ('bar1', 'bar2', 'bar3', 'foo1', 'foo2'):
+    for attr in ('bar1', 'bar2', 'bar3', 'foo1', 'foo2', 'baz1'):
         assert attr not in inst.__dict__
+        assert attr not in Foo2.__pydantic_fields__
+        assert attr in Foo2.__pydantic_all_fields__
     assert 'bar5' in inst.__dict__
     assert inst.bar5 == 'bar5'
     assert 'bar4' not in inst.__dict__
