@@ -1851,12 +1851,14 @@ class GenerateSchema:
             with self._ns_resolver.push(dataclass), self._config_wrapper_stack.push(config):
                 if is_pydantic_dataclass(dataclass):
                     if dataclass.__pydantic_fields_complete__():
+                        # Prefer the full set of dataclass fields (including init-only fields)
+                        all_fields = getattr(dataclass, '__pydantic_all_fields__', dataclass.__pydantic_fields__)
                         # Copy the field info instances to avoid mutating the `FieldInfo` instances
                         # of the generic dataclass generic origin (e.g. `apply_typevars_map` below).
                         # Note that we don't apply `deepcopy` on `__pydantic_fields__` because we
                         # don't want to copy the `FieldInfo` attributes:
                         fields = {
-                            f_name: copy(field_info) for f_name, field_info in dataclass.__pydantic_fields__.items()
+                            f_name: copy(field_info) for f_name, field_info in all_fields.items()
                         }
                         if typevars_map:
                             for field in fields.values():

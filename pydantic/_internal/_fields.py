@@ -520,9 +520,6 @@ def collect_dataclass_fields(
                                 f'Dataclass field {ann_name} has init=False and init_var=True, but these are mutually exclusive.',
                                 code='clashing-init-and-init-var',
                             )
-
-                        # TODO: same note as above re validate_assignment
-                        continue
                     field_info = FieldInfo_.from_annotated_attribute(
                         ann_type, dataclass_field.default, _source=AnnotationSource.DATACLASS
                     )

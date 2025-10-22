@@ -1,4 +1,5 @@
 import copy
+from dataclasses import InitVar
 from typing import Annotated, Any, Final, Union
 
 import pytest
@@ -57,12 +58,39 @@ def test_init_var_field():
         bar: str
         baz: str = Field(init_var=True)
 
+        def __post_init__(self, baz: str) -> None:
+            assert baz == 'baz'
+
     class Model(BaseModel):
         foo: Foo
 
     model = Model(foo=Foo('bar', baz='baz'))
     assert 'bar' in model.foo.__pydantic_fields__
     assert 'baz' not in model.foo.__pydantic_fields__
+
+
+def test_init_var_field_various_cases():
+    @pydantic.dataclasses.dataclass
+    class Foo2:
+        bar1: str = Field(init_var=True)
+        bar2: InitVar[str] = Field()
+        bar3: InitVar[str] = Field(init_var=True)
+
+        foo1: str = Field(init_var=True, alias='bar4')
+        foo2: InitVar[str] = Field(alias='bar5')
+
+        baz1: str = Field(default='baz1', init_var=True)
+
+        def __post_init__(self, bar1: str, bar2: str, bar3: str, bar4: str, bar5: str, baz1: str) -> None:
+            assert bar1 == 'bar1'
+            assert bar2 == 'bar2'
+            assert bar3 == 'bar3'
+            assert bar4 == 'bar4'
+            assert bar5 == 'bar5'
+            assert baz1 == 'baz1'
+
+    Foo2('bar1', 'bar2', 'bar3', 'bar4', 'bar5')
+    Foo2(bar1='bar1', bar2='bar2', bar3='bar3', bar4='bar4', bar5='bar5')
 
 
 def test_root_model_arbitrary_field_name_error():
