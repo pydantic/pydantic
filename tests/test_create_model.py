@@ -28,6 +28,7 @@ def test_create_model() -> None:
     assert issubclass(FooModel, BaseModel)
     assert FooModel.model_config == BaseModel.model_config
     assert FooModel.__name__ == 'FooModel'
+    assert FooModel.__qualname__ == 'FooModel'
     assert FooModel.model_fields.keys() == {'foo', 'bar', 'baz', 'qux'}
     assert FooModel.model_fields['foo'].is_required()
     assert not FooModel.model_fields['bar'].is_required()
@@ -406,3 +407,9 @@ def test_type_field_in_the_same_module():
     B = create_model('B', a_cls=(type, A))
     b = B()
     assert b.a_cls == A
+
+
+def test_create_model_qualname() -> None:
+    FooModel = create_model('FooModel', __qualname__='test_create_model_qualname.FooModel')
+    assert FooModel.__name__ == 'FooModel'
+    assert FooModel.__qualname__ == 'test_create_model_qualname.FooModel'

@@ -5,7 +5,6 @@ from __future__ import annotations as _annotations
 import dataclasses
 import warnings
 from collections.abc import Mapping
-from copy import copy
 from functools import cache
 from inspect import Parameter, ismethoddescriptor, signature
 from re import Pattern
@@ -329,6 +328,7 @@ def collect_model_fields(  # noqa: C901
                     f'Field name "{ann_name}" in "{cls.__qualname__}" shadows an attribute in parent '
                     f'"{base.__qualname__}"',
                     UserWarning,
+                    stacklevel=4,
                 )
 
         if assigned_value is PydanticUndefined:  # no assignment, just a plain annotation
@@ -347,7 +347,7 @@ def collect_model_fields(  # noqa: C901
             else:
                 # The field was present on one of the (possibly multiple) base classes
                 # copy the field to make sure typevar substitutions don't cause issues with the base classes
-                field_info = copy(parent_fields_lookup[ann_name])
+                field_info = parent_fields_lookup[ann_name]._copy()
 
         else:  # An assigned value is present (either the default value, or a `Field()` function)
             if isinstance(assigned_value, FieldInfo_) and ismethoddescriptor(assigned_value.default):

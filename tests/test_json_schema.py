@@ -4647,8 +4647,10 @@ def test_override_generate_json_schema():
             ref_template: str = DEFAULT_REF_TEMPLATE,
             schema_generator: type[GenerateJsonSchema] = MyGenerateJsonSchema,
             mode='validation',
+            *,
+            union_format: Literal['any_of', 'primitive_type_array'] = 'any_of',
         ) -> dict[str, Any]:
-            return super().model_json_schema(by_alias, ref_template, schema_generator, mode)
+            return super().model_json_schema(by_alias, ref_template, schema_generator, mode, union_format=union_format)
 
     class MyModel(MyBaseModel):
         x: int
@@ -5115,28 +5117,81 @@ def test_computed_field():
     }
 
 
-def test_serialization_schema_with_exclude():
-    class MyGenerateJsonSchema(GenerateJsonSchema):
+def test_serialization_schema_with_exclude_exclude_if():
+    class JsonSchemaFieldAlwaysPresent(GenerateJsonSchema):
         def field_is_present(self, field) -> bool:
             # Always include fields in the JSON schema, even if excluded from serialization
             return True
 
-    class Model(BaseModel):
-        x: int
-        y: int = Field(exclude=True)
+    class ModelSerDefaultsNotRequired(BaseModel, json_schema_serialization_defaults_required=False):  # The default
+        a: int
+        b: int = 1
+        c: int = Field(exclude=True)
+        d: int = Field(default=1, exclude=True)
+        e: int = Field(exclude_if=lambda v: v)
+        f: int = Field(default=1, exclude_if=lambda v: v)
 
-    assert Model(x=1, y=1).model_dump() == {'x': 1}
-
-    assert Model.model_json_schema(mode='serialization') == {
-        'properties': {'x': {'title': 'X', 'type': 'integer'}},
-        'required': ['x'],
-        'title': 'Model',
+    assert ModelSerDefaultsNotRequired.model_json_schema(mode='serialization') == {
+        'properties': {
+            'a': {'title': 'A', 'type': 'integer'},
+            'b': {'default': 1, 'title': 'B', 'type': 'integer'},
+            'e': {'title': 'E', 'type': 'integer'},
+            'f': {'default': 1, 'title': 'F', 'type': 'integer'},
+        },
+        'required': ['a'],
+        'title': 'ModelSerDefaultsNotRequired',
         'type': 'object',
     }
-    assert Model.model_json_schema(mode='serialization', schema_generator=MyGenerateJsonSchema) == {
-        'properties': {'x': {'title': 'X', 'type': 'integer'}, 'y': {'title': 'Y', 'type': 'integer'}},
-        'required': ['x', 'y'],
-        'title': 'Model',
+
+    assert ModelSerDefaultsNotRequired.model_json_schema(
+        mode='serialization', schema_generator=JsonSchemaFieldAlwaysPresent
+    ) == {
+        'properties': {
+            'a': {'title': 'A', 'type': 'integer'},
+            'b': {'default': 1, 'title': 'B', 'type': 'integer'},
+            'c': {'title': 'C', 'type': 'integer'},
+            'd': {'default': 1, 'title': 'D', 'type': 'integer'},
+            'e': {'title': 'E', 'type': 'integer'},
+            'f': {'default': 1, 'title': 'F', 'type': 'integer'},
+        },
+        'required': ['a', 'c'],
+        'title': 'ModelSerDefaultsNotRequired',
+        'type': 'object',
+    }
+
+    class ModelSerDefaultsRequired(BaseModel, json_schema_serialization_defaults_required=True):
+        a: int
+        b: int = 1
+        c: int = Field(exclude=True)
+        d: int = Field(default=1, exclude=True)
+        e: int = Field(exclude_if=lambda v: v)
+        f: int = Field(default=1, exclude_if=lambda v: v)
+
+    assert ModelSerDefaultsRequired.model_json_schema(mode='serialization') == {
+        'properties': {
+            'a': {'title': 'A', 'type': 'integer'},
+            'b': {'default': 1, 'title': 'B', 'type': 'integer'},
+            'e': {'title': 'E', 'type': 'integer'},
+            'f': {'default': 1, 'title': 'F', 'type': 'integer'},
+        },
+        'required': ['a', 'b'],
+        'title': 'ModelSerDefaultsRequired',
+        'type': 'object',
+    }
+
+    assert ModelSerDefaultsRequired.model_json_schema(
+        mode='serialization', schema_generator=JsonSchemaFieldAlwaysPresent
+    ) == {
+        'properties': {
+            'a': {'title': 'A', 'type': 'integer'},
+            'b': {'default': 1, 'title': 'B', 'type': 'integer'},
+            'c': {'title': 'C', 'type': 'integer'},
+            'd': {'default': 1, 'title': 'D', 'type': 'integer'},
+            'e': {'title': 'E', 'type': 'integer'},
+            'f': {'default': 1, 'title': 'F', 'type': 'integer'},
+        },
+        'required': ['a', 'b', 'c', 'd'],
+        'title': 'ModelSerDefaultsRequired',
         'type': 'object',
     }
 
@@ -7072,3 +7127,69 @@ def test_decimal_pattern_reject_invalid_not_numerical_values_with_decimal_places
 ) -> None:
     pattern = get_decimal_pattern()
     assert re.fullmatch(pattern, invalid_decimal) is None
+
+
+def test_union_format_primitive_type_array() -> None:
+    class Sub(BaseModel):
+        pass
+
+    class Model(BaseModel):
+        a: Optional[int]
+        b: Union[int, str, bool]
+        c: Union[Annotated[str, Field(max_length=3)], Annotated[str, Field(min_length=5)]]
+        d: Union[int, str, Annotated[bool, Field(description='test')]]
+        e: Union[int, list[int]]
+        f: Union[int, Sub]
+
+    assert Model.model_json_schema(union_format='primitive_type_array') == {
+        '$defs': {'Sub': {'properties': {}, 'title': 'Sub', 'type': 'object'}},
+        'properties': {
+            'a': {'title': 'A', 'type': ['integer', 'null']},
+            'b': {'title': 'B', 'type': ['integer', 'string', 'boolean']},
+            'c': {
+                'anyOf': [
+                    {'maxLength': 3, 'type': 'string'},
+                    {'minLength': 5, 'type': 'string'},
+                ],
+                'title': 'C',
+            },
+            'd': {
+                'anyOf': [
+                    {'type': 'integer'},
+                    {'type': 'string'},
+                    {'description': 'test', 'type': 'boolean'},
+                ],
+                'title': 'D',
+            },
+            'e': {
+                'anyOf': [
+                    {'type': 'integer'},
+                    {'items': {'type': 'integer'}, 'type': 'array'},
+                ],
+                'title': 'E',
+            },
+            'f': {'anyOf': [{'type': 'integer'}, {'$ref': '#/$defs/Sub'}], 'title': 'F'},
+        },
+        'required': ['a', 'b', 'c', 'd', 'e', 'f'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
+def test_union_format_primitive_type_array_deduplicated() -> None:
+    gen_js = GenerateJsonSchema(union_format='primitive_type_array')
+
+    assert gen_js.union_schema(
+        core_schema.union_schema([core_schema.int_schema(), core_schema.str_schema(), core_schema.int_schema()])
+    ) == {'type': ['integer', 'string']}
+
+    assert gen_js.union_schema(
+        core_schema.union_schema(
+            [
+                core_schema.int_schema(),
+                core_schema.str_schema(),
+                core_schema.str_schema(max_length=1),
+                core_schema.int_schema(),
+            ]
+        )
+    ) == {'anyOf': [{'type': 'integer'}, {'type': 'string'}, {'type': 'string', 'maxLength': 1}]}

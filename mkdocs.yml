@@ -166,6 +166,7 @@ nav:
   - Queues: examples/queues.md
   - Databases: examples/orms.md
   - Custom Validators: examples/custom_validators.md
+  - Dynamic models: examples/dynamic_models.md
 - Error Messages:
   - Error Handling: errors/errors.md
   - Validation Errors: errors/validation_errors.md
@@ -175,6 +176,7 @@ nav:
   - LLMs: integrations/llms.md
   - Dev Tools:
     - Mypy: integrations/mypy.md/.
+    - Pyrefly: integrations/pyrefly.md
     - PyCharm: integrations/pycharm.md
     - Hypothesis: integrations/hypothesis.md
     - Visual Studio Code: integrations/visual_studio_code.md

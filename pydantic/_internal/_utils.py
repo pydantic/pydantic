@@ -28,8 +28,9 @@ from . import _repr, _typing_extra
 from ._import_utils import import_cached_base_model
 
 if TYPE_CHECKING:
-    MappingIntStrAny: TypeAlias = Mapping[int, Any] | Mapping[str, Any]
-    AbstractSetIntStr: TypeAlias = AbstractSet[int] | AbstractSet[str]
+    # TODO remove type error comments when we drop support for Python 3.9
+    MappingIntStrAny: TypeAlias = Mapping[int, Any] | Mapping[str, Any]  # pyright: ignore[reportGeneralTypeIssues]
+    AbstractSetIntStr: TypeAlias = AbstractSet[int] | AbstractSet[str]  # pyright: ignore[reportGeneralTypeIssues]
     from ..main import BaseModel
 
 
@@ -426,7 +427,13 @@ class deprecated_instance_property(Generic[_ModelT, _RT]):
     def __get__(self, instance: _ModelT, objtype: type[_ModelT]) -> _RT: ...
     def __get__(self, instance: _ModelT | None, objtype: type[_ModelT]) -> _RT:
         if instance is not None:
-            attr_name = self.fget.__name__ if sys.version_info >= (3, 10) else self.fget.__func__.__name__
+            # fmt: off
+            attr_name = (
+                self.fget.__name__
+                if sys.version_info >= (3, 10)
+                else self.fget.__func__.__name__  # pyright: ignore[reportFunctionMemberAccess]
+            )
+            # fmt: on
             warnings.warn(
                 f'Accessing the {attr_name!r} attribute on the instance is deprecated. '
                 'Instead, you should access this attribute from the model class.',

@@ -25,7 +25,7 @@ def test_construct_misuse():
     assert m.b == 'foobar'
     with pytest.warns(
         UserWarning,
-        match=r"Expected `int` - serialized value may not be as expected \[input_value='foobar', input_type=str\]",
+        match=r"Expected `int` - serialized value may not be as expected \[field_name='b', input_value='foobar', input_type=str\]",
     ):
         assert m.model_dump() == {'b': 'foobar'}
     with pytest.raises(AttributeError, match="'Model' object has no attribute 'a'"):
@@ -289,7 +289,7 @@ def test_copy_update(ModelTwo, copy_method):
     m_keys = m.model_dump().keys()
     with pytest.warns(
         UserWarning,
-        match=r"Expected `float` - serialized value may not be as expected \[input_value='different', input_type=str\]",
+        match=r"Expected `float` - serialized value may not be as expected \[field_name='a', input_value='different', input_type=str\]",
     ):
         m2_keys = m2.model_dump().keys()
     assert set(m_keys) == set(m2_keys) == {'a', 'b', 'c', 'd'}
@@ -447,7 +447,7 @@ def test_copy_update_exclude():
     assert deprecated_copy(m, exclude={'c'}).model_dump() == {'d': {'a': 'ax', 'b': 'bx'}}
     with pytest.warns(
         UserWarning,
-        match=r'Expected `str` - serialized value may not be as expected \[input_value=42, input_type=int\]',
+        match=r"Expected `str` - serialized value may not be as expected \[field_name='c', input_value=42, input_type=int\]",
     ):
         assert deprecated_copy(m, exclude={'c'}, update={'c': 42}).model_dump() == {
             'c': 42,

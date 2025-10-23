@@ -1367,7 +1367,7 @@ def parse_toml(config_file: str) -> dict[str, Any] | None:
         except ImportError:  # pragma: no cover
             import warnings
 
-            warnings.warn('No TOML parser installed, cannot read configuration from `pyproject.toml`.')
+            warnings.warn('No TOML parser installed, cannot read configuration from `pyproject.toml`.', stacklevel=2)
             return None
 
     with open(config_file, 'rb') as rf:

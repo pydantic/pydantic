@@ -41,12 +41,12 @@ On Pydantic models, configuration can be specified in two ways:
 
 
     class Model(BaseModel, frozen=True):
-        a: str  # (1)!
+        a: str
     ```
 
-    1. Unlike the [`model_config`][pydantic.BaseModel.model_config] class attribute,
-       static type checkers will recognize the `frozen` argument, and so any instance
-       mutation will be flagged as an type checking error.
+  Unlike the [`model_config`][pydantic.BaseModel.model_config] class attribute,
+  static type checkers will recognize class arguments. For `frozen`, any instance
+  mutation will be flagged as an type checking error.
 
 ## Configuration on Pydantic dataclasses
 
@@ -78,7 +78,7 @@ except ValidationError as e:
 ## Configuration on `TypeAdapter`
 
 [Type adapters](./type_adapter.md) (using the [`TypeAdapter`][pydantic.TypeAdapter] class) support configuration,
-by providing a `config` argument.
+by providing the `config` argument.
 
 ```python
 from pydantic import ConfigDict, TypeAdapter
@@ -88,6 +88,10 @@ ta = TypeAdapter(list[str], config=ConfigDict(coerce_numbers_to_str=True))
 print(ta.validate_python([1, 2]))
 #> ['1', '2']
 ```
+
+Configuration can't be provided if the type adapter directly wraps a type that support it, and a
+[usage error](../errors/usage_errors.md) is raised in this case.
+The [configuration propagation](#configuration-propagation) rules also apply.
 
 ## Configuration on other supported types
 
@@ -110,7 +114,7 @@ the configuration can be set in two ways:
         name: str = 'John Doe'
     ```
 
-* Using the [`with_config`][pydantic.config.with_config] decorator (this avoids static type checking errors with
+* Using the [`@with_config`][pydantic.config.with_config] decorator (this avoids static type checking errors with
   [`TypedDict`][typing.TypedDict]):
 
     ```python
@@ -123,6 +127,11 @@ the configuration can be set in two ways:
     class Model(TypedDict):
         x: str
     ```
+
+## Configuration on the `@validate_call` decorator
+
+The [`@validate_call`](./validation_decorator.md) also supports setting custom configuration. See the
+[dedicated section](./validation_decorator.md#custom-configuration) for more details.
 
 ## Change behaviour globally
 

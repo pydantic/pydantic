@@ -608,6 +608,13 @@ Duck typing serialization is the behavior of serializing a model instance based 
 than the field definitions. This means that for a field annotated with a model-like class, all the fields present
 in subclasses of such class will be included in the serialized output.
 
+To achieve duck typing serialization, Pydantic can apply *serialize as any* behavior. In this mode, Pydantic does
+*not* make use of the type annotation (more precisely, the serialization schema derived from the type) to infer
+how the value should be serialized, but instead inspects the actual type of the value at runtime to do so.
+
+When a subclass of a model is used as a value, Pydantic will *not* serialize it according to the schema of the
+parent class, but rather use the value itself and preserve all of its fields.
+
 This behavior can be configured at the field level and at runtime, for a specific serialization call:
 
 * Field level: use the [`SerializeAsAny`][pydantic.functional_serializers.SerializeAsAny] annotation.
@@ -695,6 +702,9 @@ print(outer_model.model_dump(serialize_as_any=False))  # (2)!
 1. With `serialize_as_any` set to `True`, the result matches that of V1.
 2. With `serialize_as_any` set to `False` (the V2 default), fields present on the subclass,
    but not the base class, are not included in serialization.
+
+However, do note that the *serialize as any* behavior will apply to *all* values, not only the values where duck typing
+is relevant. You may want to prefer using the `SerializeAsAny` annotation when required instead.
 
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->

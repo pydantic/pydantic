@@ -76,8 +76,10 @@ class User(BaseModel):
 
 In this example, `User` is a model with two fields:
 
-* `id`, which is an integer and is required
-* `name`, which is a string and is not required (it has a default value).
+* `id`, which is an integer (defined using the [`int`][] type) and is required
+* `name`, which is a string (defined using the [`str`][] type) and is not required (it has a default value).
+
+The documentation on [types](./types.md) expands on the supported types.
 
 Fields can be customized in a number of ways using the [`Field()`][pydantic.Field] function.
 See the [documentation on fields](./fields.md) for more information.
@@ -269,6 +271,9 @@ The configuration can take three values:
 * `'forbid'`: Providing extra data is not permitted.
 * `'allow'`: Providing extra data is allowed and stored in the `__pydantic_extra__` dictionary attribute.
   The `__pydantic_extra__` can explicitly be annotated to provide validation for extra fields.
+
+The validation methods (e.g. [`model_validate()`][pydantic.main.BaseModel.model_validate]) have an optional `extra` argument
+that will override the `extra` configuration value of the model for that validation call.
 
 For more details, refer to the [`extra`][pydantic.ConfigDict.extra] API documentation.
 
@@ -1409,6 +1414,8 @@ except ValidationError as e:
 
     * the model must be defined globally
     * the `__module__` argument must be provided
+
+See also: the [dynamic model example](../examples/dynamic_models.md), providing guidelines to derive an optional model from another one.
 
 ## `RootModel` and custom root types
 

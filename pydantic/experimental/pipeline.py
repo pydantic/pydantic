@@ -17,10 +17,12 @@ from typing import TYPE_CHECKING, Annotated, Any, Callable, Generic, Protocol, T
 import annotated_types
 
 if TYPE_CHECKING:
-    from pydantic_core import core_schema as cs
-
     from pydantic import GetCoreSchemaHandler
 
+from pydantic_core import PydanticCustomError
+from pydantic_core import core_schema as cs
+
+from pydantic import Strict
 from pydantic._internal._internal_dataclass import slots_true as _slots_true
 
 if sys.version_info < (3, 10):
@@ -336,8 +338,6 @@ class _Pipeline(Generic[_InT, _OutT]):
     __and__ = then
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> cs.CoreSchema:
-        from pydantic_core import core_schema as cs
-
         queue = deque(self._steps)
 
         s = None
@@ -361,8 +361,6 @@ transform = _Pipeline[Any, Any]((_ValidateAs(_FieldTypeMarker),)).transform
 def _check_func(
     func: Callable[[Any], bool], predicate_err: str | Callable[[], str], s: cs.CoreSchema | None
 ) -> cs.CoreSchema:
-    from pydantic_core import core_schema as cs
-
     def handler(v: Any) -> Any:
         if func(v):
             return v
@@ -375,8 +373,6 @@ def _check_func(
 
 
 def _apply_step(step: _Step, s: cs.CoreSchema | None, handler: GetCoreSchemaHandler, source_type: Any) -> cs.CoreSchema:
-    from pydantic_core import core_schema as cs
-
     if isinstance(step, _ValidateAs):
         s = _apply_parse(s, step.tp, step.strict, handler, source_type)
     elif isinstance(step, _ValidateAsDefer):
@@ -400,10 +396,6 @@ def _apply_parse(
     handler: GetCoreSchemaHandler,
     source_type: Any,
 ) -> cs.CoreSchema:
-    from pydantic_core import core_schema as cs
-
-    from pydantic import Strict
-
     if tp is _FieldTypeMarker:
         return cs.chain_schema([s, handler(source_type)]) if s else handler(source_type)
 
@@ -419,8 +411,6 @@ def _apply_parse(
 def _apply_transform(
     s: cs.CoreSchema | None, func: Callable[[Any], Any], handler: GetCoreSchemaHandler
 ) -> cs.CoreSchema:
-    from pydantic_core import core_schema as cs
-
     if s is None:
         return cs.no_info_plain_validator_function(func)
 
@@ -585,24 +575,21 @@ def _apply_constraint(  # noqa: C901
         assert s is not None
     elif isinstance(constraint, annotated_types.Predicate):
         func = constraint.func
+        # Same logic as in `_known_annotated_metadata.apply_known_metadata()`:
+        predicate_name = f'{func.__qualname__!r} ' if hasattr(func, '__qualname__') else ''
 
-        if func.__name__ == '<lambda>':
-            # attempt to extract the source code for a lambda function
-            # to use as the function name in error messages
-            # TODO: is there a better way? should we just not do this?
-            import inspect
+        def predicate_func(v: Any) -> Any:
+            if not func(v):
+                raise PydanticCustomError(
+                    'predicate_failed',
+                    f'Predicate {predicate_name}failed',  # pyright: ignore[reportArgumentType]
+                )
+            return v
 
-            try:
-                source = inspect.getsource(func).strip()
-                source = source.removesuffix(')')
-                lambda_source_code = '`' + ''.join(''.join(source.split('lambda ')[1:]).split(':')[1:]).strip() + '`'
-            except OSError:
-                # stringified annotations
-                lambda_source_code = 'lambda'
-
-            s = _check_func(func, lambda_source_code, s)
+        if s is None:
+            s = cs.no_info_plain_validator_function(predicate_func)
         else:
-            s = _check_func(func, func.__name__, s)
+            s = cs.no_info_after_validator_function(predicate_func, s)
     elif isinstance(constraint, _NotEq):
         value = constraint.value
 

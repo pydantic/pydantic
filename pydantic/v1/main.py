@@ -211,7 +211,7 @@ class ModelMetaclass(ABCMeta):
                     if not is_valid_private_name(var_name):
                         raise NameError(
                             f'Private attributes "{var_name}" must not be a valid field name; '
-                            f'Use sunder or dunder names, e.g. "_{var_name}" or "__{var_name}__"'
+                            f'Use sunder or dunder names, e. g. "_{var_name}" or "__{var_name}__"'
                         )
                     private_attributes[var_name] = value
                 elif config.underscore_attrs_are_private and is_valid_private_name(var_name) and can_be_changed:

@@ -56,7 +56,10 @@ class _ModelNamespaceDict(dict):
     def __setitem__(self, k: str, v: object) -> None:
         existing: Any = self.get(k, None)
         if existing and v is not existing and isinstance(existing, PydanticDescriptorProxy):
-            warnings.warn(f'`{k}` overrides an existing Pydantic `{existing.decorator_info.decorator_repr}` decorator')
+            warnings.warn(
+                f'`{k}` overrides an existing Pydantic `{existing.decorator_info.decorator_repr}` decorator',
+                stacklevel=2,
+            )
 
         return super().__setitem__(k, v)
 
@@ -337,7 +340,7 @@ class ModelMetaclass(ABCMeta):
 
         This is a private attribute, not meant to be used outside Pydantic.
         """
-        if not hasattr(self, '__pydantic_fields__'):
+        if '__pydantic_fields__' not in self.__dict__:
             return False
 
         field_infos = cast('dict[str, FieldInfo]', self.__pydantic_fields__)  # pyright: ignore[reportAttributeAccessIssue]
