@@ -183,7 +183,9 @@ def test_config_timedelta(
     assert s.to_python(td) == td
     assert s.to_python(td, mode='json') == expected_to_python
     assert s.to_json(td) == expected_to_json
-    assert s.to_python({td: 'foo'}) == {td: 'foo'}
+
+    with pytest.warns(UserWarning):
+        assert s.to_python({td: 'foo'}) == {td: 'foo'}
     with pytest.warns(UserWarning):
         assert s.to_python({td: 'foo'}, mode='json') == expected_to_python_dict
     with pytest.warns(
@@ -330,8 +332,14 @@ def test_config_timedelta_timedelta_ser_flag_prioritised(
     )
     assert s.to_python(td) == td
     assert s.to_python(td, mode='json') == expected_to_python
-    assert s.to_python({td: 'foo'}) == {td: 'foo'}
-
+    with pytest.warns(
+        UserWarning,
+        match=(
+            r'Expected `timedelta` - serialized value may not be as expected '
+            r"\[input_value=\{datetime\.timedelta\([^)]*\): 'foo'\}, input_type=dict\]"
+        ),
+    ):
+        assert s.to_python({td: 'foo'}) == {td: 'foo'}
     with pytest.warns(
         UserWarning,
         match=(
@@ -348,3 +356,18 @@ def test_config_timedelta_timedelta_ser_flag_prioritised(
         ),
     ):
         assert s.to_json({td: 'foo'}) == expected_to_json_dict
+
+
+def test_union_timedelta_respects_instanceof_check():
+    serialization_schema = core_schema.plain_serializer_function_ser_schema(lambda v: None)
+    json_validation_schema = core_schema.no_info_plain_validator_function(
+        function=lambda v: v, serialization=serialization_schema
+    )
+
+    test_custom_ser_schema = core_schema.json_schema(
+        schema=json_validation_schema,
+        serialization=serialization_schema,
+    )
+
+    s = SchemaSerializer(core_schema.union_schema(choices=[core_schema.timedelta_schema(), test_custom_ser_schema]))
+    assert s.to_python('foo') is None

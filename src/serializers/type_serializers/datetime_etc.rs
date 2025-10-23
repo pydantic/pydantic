@@ -119,15 +119,15 @@ macro_rules! build_temporal_serializer {
                 exclude: Option<&Bound<'_, PyAny>>,
                 extra: &Extra,
             ) -> PyResult<Py<PyAny>> {
-                match extra.mode {
-                    SerMode::Json => match $downcast(value) {
-                        Ok(py_value) => Ok(self.temporal_mode.$to_json(value.py(), py_value)?),
-                        Err(_) => {
-                            extra.warnings.on_fallback_py(self.get_name(), value, extra)?;
-                            infer_to_python(value, include, exclude, extra)
-                        }
+                match $downcast(value) {
+                    Ok(py_value) => match extra.mode {
+                        SerMode::Json => Ok(self.temporal_mode.$to_json(value.py(), py_value)?),
+                        _ => Ok(value.clone().unbind()),
                     },
-                    _ => infer_to_python(value, include, exclude, extra),
+                    _ => {
+                        extra.warnings.on_fallback_py(self.get_name(), value, extra)?;
+                        infer_to_python(value, include, exclude, extra)
+                    }
                 }
             }
 

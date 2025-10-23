@@ -168,7 +168,14 @@ def test_config_datetime(
     assert s.to_python(dt, mode='json') == expected_to_python
     assert s.to_json(dt) == expected_to_json
 
-    assert s.to_python({dt: 'foo'}) == {dt: 'foo'}
+    with pytest.warns(
+        UserWarning,
+        match=(
+            r'Expected `datetime` - serialized value may not be as expected '
+            r"\[input_value=\{datetime\.datetime\([^)]*\): 'foo'\}, input_type=dict\]"
+        ),
+    ):
+        assert s.to_python({dt: 'foo'}) == {dt: 'foo'}
     with pytest.warns(
         UserWarning,
         match=(
@@ -224,7 +231,14 @@ def test_config_date(
     assert s.to_python(dt, mode='json') == expected_to_python
     assert s.to_json(dt) == expected_to_json
 
-    assert s.to_python({dt: 'foo'}) == {dt: 'foo'}
+    with pytest.warns(
+        UserWarning,
+        match=(
+            r'Expected `date` - serialized value may not be as expected '
+            r"\[input_value=\{datetime\.date\([^)]*\): 'foo'\}, input_type=dict\]"
+        ),
+    ):
+        assert s.to_python({dt: 'foo'}) == {dt: 'foo'}
     with pytest.warns(
         UserWarning,
         match=(
@@ -280,7 +294,14 @@ def test_config_time(
     assert s.to_python(t, mode='json') == expected_to_python
     assert s.to_json(t) == expected_to_json
 
-    assert s.to_python({t: 'foo'}) == {t: 'foo'}
+    with pytest.warns(
+        UserWarning,
+        match=(
+            r'Expected `time` - serialized value may not be as expected '
+            r"\[input_value=\{datetime\.time\([^)]*\): 'foo'\}, input_type=dict\]"
+        ),
+    ):
+        assert s.to_python({t: 'foo'}) == {t: 'foo'}
     with pytest.warns(
         UserWarning,
         match=(
@@ -297,3 +318,48 @@ def test_config_time(
         ),
     ):
         assert s.to_json({t: 'foo'}) == expected_to_json_dict
+
+
+def test_union_datetime_downcasts_correctly():
+    serialization_schema = core_schema.plain_serializer_function_ser_schema(lambda v: None)
+    json_validation_schema = core_schema.no_info_plain_validator_function(
+        function=lambda v: v, serialization=serialization_schema
+    )
+
+    test_custom_ser_schema = core_schema.json_schema(
+        schema=json_validation_schema,
+        serialization=serialization_schema,
+    )
+
+    s = SchemaSerializer(core_schema.union_schema(choices=[core_schema.datetime_schema(), test_custom_ser_schema]))
+    assert s.to_python('foo') is None
+
+
+def test_union_date_respects_downcasts_correctly():
+    serialization_schema = core_schema.plain_serializer_function_ser_schema(lambda v: None)
+    json_validation_schema = core_schema.no_info_plain_validator_function(
+        function=lambda v: v, serialization=serialization_schema
+    )
+
+    test_custom_ser_schema = core_schema.json_schema(
+        schema=json_validation_schema,
+        serialization=serialization_schema,
+    )
+
+    s = SchemaSerializer(core_schema.union_schema(choices=[core_schema.date_schema(), test_custom_ser_schema]))
+    assert s.to_python('foo') is None
+
+
+def test_union_time_respects_downcasts_correctly():
+    serialization_schema = core_schema.plain_serializer_function_ser_schema(lambda v: None)
+    json_validation_schema = core_schema.no_info_plain_validator_function(
+        function=lambda v: v, serialization=serialization_schema
+    )
+
+    test_custom_ser_schema = core_schema.json_schema(
+        schema=json_validation_schema,
+        serialization=serialization_schema,
+    )
+
+    s = SchemaSerializer(core_schema.union_schema(choices=[core_schema.time_schema(), test_custom_ser_schema]))
+    assert s.to_python('foo') is None
