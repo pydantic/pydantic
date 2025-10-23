@@ -313,6 +313,7 @@ class GenerateJsonSchema:
         """
         mapping: dict[CoreSchemaOrFieldType, Callable[[CoreSchemaOrField], JsonSchemaValue]] = {}
         core_schema_types: list[CoreSchemaOrFieldType] = list(get_literal_values(CoreSchemaOrFieldType))
+        # import pdb; pdb.set_trace()
         for key in core_schema_types:
             method_name = f'{key.replace("-", "_")}_schema'
             try:
@@ -663,6 +664,33 @@ class GenerateJsonSchema:
         json_schema = {k: v for k, v in json_schema.items() if v not in {math.inf, -math.inf}}
         return json_schema
 
+    def fraction_schema(self, schema: core_schema.FractionSchema) -> JsonSchemaValue:
+        """Generates a JSON schema that matches a fraction value.
+
+        Args:
+            schema: The core schema.
+
+        Returns:
+            The generated JSON schema.
+        """
+        # {'anyOf': [{'type': 'number'}, {'type': 'string', 'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$'}]}
+        import pdb; pdb.set_trace()
+        json_schema = self.str_schema(core_schema.str_schema(pattern=r'^\s*\(\s*-?\d+\s*,\s*-?\d+\s*\)\s*$'))
+        if self.mode == 'validation':
+            json_schema = {
+                'anyOf': [
+                    self.tuple_schema(
+                        core_schema.tuple_schema(
+                            items_schema=[core_schema.int_schema(), core_schema.float_schema()],
+                            max_length=2,
+                            min_length=2,
+                        )
+                    ),
+                    json_schema,
+                ],
+            }
+        return json_schema
+
     def decimal_schema(self, schema: core_schema.DecimalSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a decimal value.
 
@@ -672,6 +700,7 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
+        import pdb; pdb.set_trace()
 
         def get_decimal_pattern(schema: core_schema.DecimalSchema) -> str:
             max_digits = schema.get('max_digits')
