@@ -687,10 +687,9 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        # {'anyOf': [{'type': 'number'}, {'type': 'string', 'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$'}]}
-        # import pdb; pdb.set_trace()
         json_schema = self.str_schema(core_schema.str_schema(pattern=r'^\s*\(\s*-?\d+\s*,\s*-?\d+\s*\)\s*$'))
         if self.mode == 'validation':
+            # todo: handle le, ge, lt, gt in here
             json_schema = {
                 'anyOf': [
                     self.tuple_schema(
