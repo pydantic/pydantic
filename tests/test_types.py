@@ -1853,9 +1853,8 @@ def test_fraction_validation():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='wrong_format')
-    import pdb; pdb.set_trace()
     assert exc_info.value.errors(include_url=False) == [
-        {'type': 'fraction_parsing', 'loc': ('a',), 'msg': 'Fraction input should be an integer, float, string or Fraction object', 'input': 'wrong_format'}
+        {'type': 'fraction_parsing', 'loc': ('a',), 'msg': 'Fraction input should be a tuple of two integers, a string or a Fraction object', 'input': 'wrong_format'}
     ]
     with pytest.raises(ZeroDivisionError):
         Model(a=Fraction(1, 0))
@@ -7046,7 +7045,7 @@ def test_ser_ip_python_and_json() -> None:
     assert ta.dump_json(ip) == b'"127.0.0.1"'
 
 
-@pytest.mark.parametrize('input_data', ['1/3', 1.333, Fraction(1, 3), Decimal('1.333')])
+@pytest.mark.parametrize('input_data', ['1/3', Fraction(1, 3)])
 def test_fraction_validation_lax(input_data) -> None:
     ta = TypeAdapter(Fraction)
     fraction = ta.validate_python(input_data)

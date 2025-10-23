@@ -313,7 +313,6 @@ class GenerateJsonSchema:
         """
         mapping: dict[CoreSchemaOrFieldType, Callable[[CoreSchemaOrField], JsonSchemaValue]] = {}
         core_schema_types: list[CoreSchemaOrFieldType] = list(get_literal_values(CoreSchemaOrFieldType))
-        # import pdb; pdb.set_trace()
         for key in core_schema_types:
             method_name = f'{key.replace("-", "_")}_schema'
             try:
@@ -674,7 +673,7 @@ class GenerateJsonSchema:
             The generated JSON schema.
         """
         # {'anyOf': [{'type': 'number'}, {'type': 'string', 'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$'}]}
-        import pdb; pdb.set_trace()
+        # import pdb; pdb.set_trace()
         json_schema = self.str_schema(core_schema.str_schema(pattern=r'^\s*\(\s*-?\d+\s*,\s*-?\d+\s*\)\s*$'))
         if self.mode == 'validation':
             json_schema = {
@@ -700,8 +699,6 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        import pdb; pdb.set_trace()
-
         def get_decimal_pattern(schema: core_schema.DecimalSchema) -> str:
             max_digits = schema.get('max_digits')
             decimal_places = schema.get('decimal_places')
