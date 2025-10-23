@@ -141,11 +141,6 @@ jobs:
         COVERAGE_FILE: coverage/.coverage.${{ runner.os }}-py${{ matrix.python-version }}-without-deps
         CONTEXT: ${{ runner.os }}-py${{ matrix.python-version }}-without-deps
 
-    # TODO remove when memray supports 3.14:
-    - name: Install memray system dependencies
-      if: ${{ matrix.python-version == '3.14' && matrix.os == 'ubuntu-latest' }}
-      run: sudo apt-get install libunwind-dev libdebuginfod-dev
-
     - name: Install extra dependencies
       # Skip free threaded, we can't install memray
       if: ${{ !endsWith(matrix.python-version, 't') }}
