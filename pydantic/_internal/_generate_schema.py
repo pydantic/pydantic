@@ -1752,7 +1752,7 @@ class GenerateSchema:
         list_schema = core_schema.list_schema(item_type_schema)
 
         json_schema = smart_deepcopy(list_schema)
-        python_schema = core_schema.is_instance_schema(typing.Sequence, cls_repr='Sequence')
+        python_schema = core_schema.is_instance_schema(collections.abc.Sequence, cls_repr='Sequence')
         if not typing_objects.is_any(items_type):
             from ._validators import sequence_validator
 
