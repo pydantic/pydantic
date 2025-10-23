@@ -2682,13 +2682,19 @@ def field_is_required(
     Returns:
         `True` if the field should be marked as required in the generated JSON schema, `False` otherwise.
     """
-    if self.mode == 'serialization' and self._config.json_schema_serialization_defaults_required:
-        return not field.get('serialization_exclude')
+    if field['type'] == 'typed-dict-field':
+        required = field.get('required', total)
     else:
-        if field['type'] == 'typed-dict-field':
-            return field.get('required', total)
+        required = field['schema']['type'] != 'default'
+
+    if self.mode == 'serialization':
+        has_exclude_if = field.get('serialization_exclude_if') is not None
+        if self._config.json_schema_serialization_defaults_required:
+            return not has_exclude_if
         else:
-            return field['schema']['type'] != 'default'
+            return required and not has_exclude_if
+    else:
+        return required
 
 ```
 
