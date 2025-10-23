@@ -1,0 +1,211 @@
+import dataclasses
+import re
+from collections import namedtuple
+from functools import partial
+
+import pytest
+
+from pydantic_core import ArgsKwargs, SchemaValidator, ValidationError
+from pydantic_core import core_schema as cs
+
+from ..conftest import Err, PyAndJson, plain_repr
+
+
+@pytest.mark.parametrize(
+    'input_value,expected',
+    [
+        [(1, 2, 3), 6],
+        [{'a': 1, 'b': 1, 'c': 1}, 3],
+        [ArgsKwargs((1,), {'b': 1, 'c': 1}), 3],
+        [(1, 2, 'x'), Err('2\n  Input should be a valid integer,')],
+        [(3, 3, 4), 10],
+        [(3, 3, 5), Err('return\n  Input should be less than or equal to 10')],
+    ],
+)
+def test_function_call_arguments(py_and_json: PyAndJson, input_value, expected):
+    def my_function(a, b, c):
+        return a + b + c
+
+    v = py_and_json(
+        {
+            'type': 'call',
+            'function': my_function,
+            'arguments_schema': {
+                'type': 'arguments',
+                'arguments_schema': [
+                    {'name': 'a', 'mode': 'positional_or_keyword', 'schema': {'type': 'int'}},
+                    {'name': 'b', 'mode': 'positional_or_keyword', 'schema': {'type': 'int'}},
+                    {'name': 'c', 'mode': 'positional_or_keyword', 'schema': {'type': 'int'}},
+                ],
+            },
+            'return_schema': {'type': 'int', 'le': 10},
+        }
+    )
+
+    if isinstance(expected, Err):
+        with pytest.raises(ValidationError, match=re.escape(expected.message)) as exc_info:
+            v.validate_python(input_value)
+        # debug(exc_info.value.errors(include_url=False))
+        if expected.errors is not None:
+            assert exc_info.value.errors(include_url=False) == expected.errors
+    else:
+        assert v.validate_python(input_value) == expected
+
+
+@pytest.mark.parametrize(
+    'input_value,expected',
+    [
+        [((1, 2, 3), {}), 6],
+        [((1, 2, 3), {}), 6],
+        [{'a': 1, 'b': 1, 'c': 1}, 3],
+        ['x', TypeError('Arguments validator should return a tuple')],
+        # lists are not allowed, input must strictly be a tuple
+        [[(1, 2, 3), {}], TypeError('Arguments validator should return a tuple')],
+        [((1, 2, 3, 4), {}), TypeError('my_function() takes 3 positional arguments but 4 were given')],
+        [{'a': 1, 'b': 1, 'c': 1, 'd': 1}, TypeError("my_function() got an unexpected keyword argument 'd'")],
+    ],
+)
+def test_function_args_any(input_value, expected):
+    def my_function(a, b, c):
+        return a + b + c
+
+    v = SchemaValidator(cs.call_schema(function=my_function, arguments=cs.any_schema(), return_schema=cs.int_schema()))
+
+    if isinstance(expected, Exception):
+        with pytest.raises(type(expected), match=re.escape(str(expected))):
+            v.validate_python(input_value)
+    else:
+        assert v.validate_python(input_value) == expected
+
+
+@pytest.mark.parametrize('input_value,expected', [[((1,), {}), 1], [(('abc',), {}), 'abc']])
+def test_function_return_any(input_value, expected):
+    def my_function(a):
+        return a
+
+    v = SchemaValidator(cs.call_schema(function=my_function, arguments=cs.any_schema()))
+    assert 'name:"call[my_function]"' in plain_repr(v)
+
+    assert v.validate_python(input_value) == expected
+
+
+def test_in_union():
+    def my_function(a):
+        return a
+
+    v = SchemaValidator(
+        cs.union_schema(
+            choices=[
+                cs.call_schema(
+                    function=my_function,
+                    arguments=cs.arguments_schema(
+                        arguments=[{'name': 'a', 'mode': 'positional_or_keyword', 'schema': cs.int_schema()}]
+                    ),
+                ),
+                cs.int_schema(),
+            ]
+        )
+    )
+    assert v.validate_python((1,)) == 1
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python((1, 2))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'unexpected_positional_argument',
+            'loc': ('call[my_function]', 1),
+            'msg': 'Unexpected positional argument',
+            'input': 2,
+        },
+        {'type': 'int_type', 'loc': ('int',), 'msg': 'Input should be a valid integer', 'input': (1, 2)},
+    ]
+
+
+def test_dataclass():
+    @dataclasses.dataclass
+    class my_dataclass:
+        a: int
+        b: str
+
+    v = SchemaValidator(
+        cs.call_schema(
+            function=my_dataclass,
+            arguments=cs.arguments_schema(
+                arguments=[
+                    {'name': 'a', 'mode': 'positional_or_keyword', 'schema': cs.int_schema()},
+                    {'name': 'b', 'mode': 'positional_or_keyword', 'schema': cs.str_schema()},
+                ]
+            ),
+        )
+    )
+    d = v.validate_python(('1', b'2'))
+    assert dataclasses.is_dataclass(d)
+    assert d.a == 1
+    assert d.b == '2'
+    d = v.validate_python({'a': 1, 'b': '2'})
+    assert dataclasses.is_dataclass(d)
+    assert d.a == 1
+    assert d.b == '2'
+    assert 'name:"call[my_dataclass]"' in plain_repr(v)
+
+
+def test_named_tuple():
+    Point = namedtuple('Point', ['x', 'y'])
+
+    v = SchemaValidator(
+        cs.call_schema(
+            function=Point,
+            arguments=cs.arguments_schema(
+                arguments=[
+                    {'name': 'x', 'mode': 'positional_or_keyword', 'schema': cs.float_schema()},
+                    {'name': 'y', 'mode': 'positional_or_keyword', 'schema': cs.float_schema()},
+                ]
+            ),
+        )
+    )
+    d = v.validate_python(('1.1', '2.2'))
+    assert isinstance(d, Point)
+    assert d.x == 1.1
+    assert d.y == 2.2
+
+    d = v.validate_python({'x': 1.1, 'y': 2.2})
+    assert isinstance(d, Point)
+    assert d.x == 1.1
+    assert d.y == 2.2
+
+
+def test_function_call_partial():
+    def my_function(a, b, c):
+        return a + b + c
+
+    v = SchemaValidator(
+        cs.call_schema(
+            function=partial(my_function, c=3),
+            arguments=cs.arguments_schema(
+                arguments=[
+                    {'name': 'a', 'mode': 'positional_or_keyword', 'schema': cs.int_schema()},
+                    {'name': 'b', 'mode': 'positional_or_keyword', 'schema': cs.int_schema()},
+                ]
+            ),
+        )
+    )
+    assert 'name:"call[my_function]"' in plain_repr(v)
+    assert v.validate_python((1, 2)) == 6
+    assert v.validate_python((1, '2')) == 6
+
+
+def test_custom_name():
+    def my_function(a):
+        return a
+
+    v = SchemaValidator(
+        cs.call_schema(
+            function=my_function,
+            function_name='foobar',
+            arguments=cs.arguments_schema(
+                arguments=[{'name': 'a', 'mode': 'positional_or_keyword', 'schema': cs.int_schema()}]
+            ),
+        )
+    )
+    assert 'name:"call[foobar]"' in plain_repr(v)
+    assert v.validate_python((1,)) == 1
+    assert v.validate_python(('2',)) == 2
