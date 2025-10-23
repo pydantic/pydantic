@@ -18,7 +18,6 @@ authors = [
     {name = 'David Hewitt', email = 'mail@davidhewitt.io'},
     {name = 'Alex Hall', email = 'alex.mojaki@gmail.com'},
     {name = 'Victorien Plot', email = 'contact@vctrn.dev'},
-    {name = 'Douwe Maan', email = 'hi@douwe.me'},
 ]
 license = 'MIT'
 license-files = ['LICENSE']
@@ -191,7 +190,7 @@ required-version = '>=0.8.4'
 
 # configuring https://github.com/pydantic/hooky
 [tool.hooky]
-reviewers = ['Viicos', 'DouweM']
+reviewers = ['Viicos']
 require_change_file = false
 unconfirmed_label = 'pending'
 
