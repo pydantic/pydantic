@@ -11,6 +11,7 @@ use pyo3::PyTraverseError;
 use pyo3::types::PyString;
 
 use crate::definitions::DefinitionsBuilder;
+use crate::serializers::SerializationState;
 use crate::tools::SchemaDict;
 use crate::tools::{function_name, py_err, py_error_type};
 use crate::{PydanticOmit, PydanticSerializationUnexpectedValue};
@@ -146,6 +147,7 @@ impl FunctionPlainSerializer {
         value: &Bound<'_, PyAny>,
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
+        _state: &mut SerializationState,
         extra: &Extra,
     ) -> PyResult<(bool, Py<PyAny>)> {
         let py = value.py();
@@ -188,13 +190,19 @@ impl FunctionPlainSerializer {
     }
 }
 
-fn on_error(py: Python, err: PyErr, function_name: &str, extra: &Extra) -> PyResult<()> {
+fn on_error(
+    py: Python,
+    err: PyErr,
+    function_name: &str,
+    state: &mut SerializationState,
+    extra: &Extra,
+) -> PyResult<()> {
     let exception = err.value(py);
     if let Ok(ser_err) = exception.extract::<PydanticSerializationUnexpectedValue>() {
         if extra.check.enabled() {
             Err(err)
         } else {
-            extra.warnings.register_warning(ser_err);
+            state.warnings.register_warning(ser_err);
             Ok(())
         }
     } else if let Ok(err) = exception.extract::<PydanticSerializationError>() {
@@ -216,36 +224,44 @@ macro_rules! function_type_serializer {
                 value: &Bound<'_, PyAny>,
                 include: Option<&Bound<'_, PyAny>>,
                 exclude: Option<&Bound<'_, PyAny>>,
+                state: &mut SerializationState,
                 extra: &Extra,
             ) -> PyResult<Py<PyAny>> {
                 let py = value.py();
-                match self.call(value, include, exclude, extra) {
+                match self.call(value, include, exclude, state, extra) {
                     // None for include/exclude here, as filtering should be done
-                    Ok((true, v)) => self.return_serializer.to_python(v.bind(py), None, None, extra),
+                    Ok((true, v)) => self
+                        .return_serializer
+                        .to_python(v.bind(py), None, None, state, extra),
                     Ok((false, v)) => self
                         .get_fallback_serializer()
-                        .to_python(v.bind(py), None, None, extra),
+                        .to_python(v.bind(py), None, None, state, extra),
                     Err(err) => {
-                        on_error(py, err, &self.function_name, extra)?;
-                        infer_to_python(value, include, exclude, extra)
+                        on_error(py, err, &self.function_name, state, extra)?;
+                        infer_to_python(value, include, exclude, state, extra)
                     }
                 }
             }
 
-            fn json_key<'a>(&self, key: &'a Bound<'_, PyAny>, extra: &Extra) -> PyResult<Cow<'a, str>> {
+            fn json_key<'a>(
+                &self,
+                key: &'a Bound<'_, PyAny>,
+                state: &mut SerializationState,
+                extra: &Extra,
+            ) -> PyResult<Cow<'a, str>> {
                 let py = key.py();
-                match self.call(key, None, None, extra) {
+                match self.call(key, None, None, state, extra) {
                     Ok((true, v)) => self
                         .return_serializer
-                        .json_key(v.bind(py), extra)
+                        .json_key(v.bind(py), state, extra)
                         .map(|cow| Cow::Owned(cow.into_owned())),
                     Ok((false, v)) => self
                         .get_fallback_serializer()
-                        .json_key(v.bind(py), extra)
+                        .json_key(v.bind(py), state, extra)
                         .map(|cow| Cow::Owned(cow.into_owned())),
                     Err(err) => {
-                        on_error(py, err, &self.function_name, extra)?;
-                        infer_json_key(key, extra)
+                        on_error(py, err, &self.function_name, state, extra)?;
+                        infer_json_key(key, state, extra)
                     }
                 }
             }
@@ -256,21 +272,23 @@ macro_rules! function_type_serializer {
                 serializer: S,
                 include: Option<&Bound<'_, PyAny>>,
                 exclude: Option<&Bound<'_, PyAny>>,
+                state: &mut SerializationState,
                 extra: &Extra,
             ) -> Result<S::Ok, S::Error> {
                 let py = value.py();
-                match self.call(value, include, exclude, extra) {
+                match self.call(value, include, exclude, state, extra) {
                     // None for include/exclude here, as filtering should be done
-                    Ok((true, v)) => self
-                        .return_serializer
-                        .serde_serialize(v.bind(py), serializer, None, None, extra),
+                    Ok((true, v)) => {
+                        self.return_serializer
+                            .serde_serialize(v.bind(py), serializer, None, None, state, extra)
+                    }
                     Ok((false, v)) => {
                         self.get_fallback_serializer()
-                            .serde_serialize(v.bind(py), serializer, None, None, extra)
+                            .serde_serialize(v.bind(py), serializer, None, None, state, extra)
                     }
                     Err(err) => {
-                        on_error(py, err, &self.function_name, extra).map_err(py_err_se_err)?;
-                        infer_serialize(value, serializer, include, exclude, extra)
+                        on_error(py, err, &self.function_name, state, extra).map_err(py_err_se_err)?;
+                        infer_serialize(value, serializer, include, exclude, state, extra)
                     }
                 }
             }
@@ -389,11 +407,12 @@ impl FunctionWrapSerializer {
         value: &Bound<'_, PyAny>,
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
+        state: &mut SerializationState,
         extra: &Extra,
     ) -> PyResult<(bool, Py<PyAny>)> {
         let py = value.py();
         if self.when_used.should_use(value, extra) {
-            let serialize = SerializationCallable::new(&self.serializer, include, exclude, extra);
+            let serialize = SerializationCallable::new(&self.serializer, include, exclude, extra, state);
             let v = if self.is_field_serializer {
                 if let Some(model) = extra.model {
                     if self.info_arg {
@@ -450,10 +469,11 @@ impl SerializationCallable {
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
         extra: &Extra,
+        state: &mut SerializationState,
     ) -> Self {
         Self {
             serializer: serializer.clone(),
-            extra_owned: ExtraOwned::new(extra),
+            extra_owned: ExtraOwned::new(extra, state),
             filter: AnyFilter::new(),
             include: include.map(|v| v.clone().unbind()),
             exclude: exclude.map(|v| v.clone().unbind()),
@@ -504,6 +524,7 @@ impl SerializationCallable {
         let include = self.include.as_ref().map(|o| o.bind(py));
         let exclude = self.exclude.as_ref().map(|o| o.bind(py));
         let extra = self.extra_owned.to_extra(py);
+        let state = &mut self.extra_owned.to_state();
 
         if let Some(index_key) = index_key {
             let filter = if let Ok(index) = index_key.extract::<usize>() {
@@ -512,17 +533,23 @@ impl SerializationCallable {
                 self.filter.key_filter(index_key, include, exclude)?
             };
             if let Some((next_include, next_exclude)) = filter {
-                let v =
-                    self.serializer
-                        .to_python_no_infer(value, next_include.as_ref(), next_exclude.as_ref(), &extra)?;
-                extra.warnings.final_check(py)?;
+                let v = self.serializer.to_python_no_infer(
+                    value,
+                    next_include.as_ref(),
+                    next_exclude.as_ref(),
+                    state,
+                    &extra,
+                )?;
+                state.warnings.final_check(py)?;
                 Ok(Some(v))
             } else {
                 Err(PydanticOmit::new_err())
             }
         } else {
-            let v = self.serializer.to_python_no_infer(value, include, exclude, &extra)?;
-            extra.warnings.final_check(py)?;
+            let v = self
+                .serializer
+                .to_python_no_infer(value, include, exclude, state, &extra)?;
+            state.warnings.final_check(py)?;
             Ok(Some(v))
         }
     }

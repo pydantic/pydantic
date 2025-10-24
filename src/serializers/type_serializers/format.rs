@@ -9,6 +9,7 @@ use serde::ser::Error;
 
 use crate::build_tools::py_schema_err;
 use crate::definitions::DefinitionsBuilder;
+use crate::serializers::SerializationState;
 use crate::tools::SchemaDict;
 
 use super::simple::none_json_key;
@@ -113,6 +114,7 @@ impl TypeSerializer for FormatSerializer {
         value: &Bound<'_, PyAny>,
         _include: Option<&Bound<'_, PyAny>>,
         _exclude: Option<&Bound<'_, PyAny>>,
+        _state: &mut SerializationState,
         extra: &Extra,
     ) -> PyResult<Py<PyAny>> {
         if self.when_used.should_use(value, extra) {
@@ -122,7 +124,12 @@ impl TypeSerializer for FormatSerializer {
         }
     }
 
-    fn json_key<'a>(&self, key: &'a Bound<'_, PyAny>, _extra: &Extra) -> PyResult<Cow<'a, str>> {
+    fn json_key<'a>(
+        &self,
+        key: &'a Bound<'_, PyAny>,
+        _state: &mut SerializationState,
+        _extra: &Extra,
+    ) -> PyResult<Cow<'a, str>> {
         if self.when_used.should_use_json(key) {
             let py_str = self
                 .call(key)
@@ -141,6 +148,7 @@ impl TypeSerializer for FormatSerializer {
         serializer: S,
         _include: Option<&Bound<'_, PyAny>>,
         _exclude: Option<&Bound<'_, PyAny>>,
+        _state: &mut SerializationState,
         _extra: &Extra,
     ) -> Result<S::Ok, S::Error> {
         if self.when_used.should_use_json(value) {
@@ -189,6 +197,7 @@ impl TypeSerializer for ToStringSerializer {
         value: &Bound<'_, PyAny>,
         _include: Option<&Bound<'_, PyAny>>,
         _exclude: Option<&Bound<'_, PyAny>>,
+        _state: &mut SerializationState,
         extra: &Extra,
     ) -> PyResult<Py<PyAny>> {
         if self.when_used.should_use(value, extra) {
@@ -198,7 +207,12 @@ impl TypeSerializer for ToStringSerializer {
         }
     }
 
-    fn json_key<'a>(&self, key: &'a Bound<'_, PyAny>, _extra: &Extra) -> PyResult<Cow<'a, str>> {
+    fn json_key<'a>(
+        &self,
+        key: &'a Bound<'_, PyAny>,
+        _state: &mut SerializationState,
+        _extra: &Extra,
+    ) -> PyResult<Cow<'a, str>> {
         if self.when_used.should_use_json(key) {
             Ok(Cow::Owned(key.str()?.to_string_lossy().into_owned()))
         } else {
@@ -212,6 +226,7 @@ impl TypeSerializer for ToStringSerializer {
         serializer: S,
         _include: Option<&Bound<'_, PyAny>>,
         _exclude: Option<&Bound<'_, PyAny>>,
+        _state: &mut SerializationState,
         _extra: &Extra,
     ) -> Result<S::Ok, S::Error> {
         if self.when_used.should_use_json(value) {

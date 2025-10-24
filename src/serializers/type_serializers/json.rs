@@ -10,6 +10,7 @@ use pyo3::types::PyString;
 use serde::ser::Error;
 
 use crate::definitions::DefinitionsBuilder;
+use crate::serializers::SerializationState;
 use crate::tools::SchemaDict;
 
 use super::any::AnySerializer;
@@ -49,26 +50,32 @@ impl TypeSerializer for JsonSerializer {
         value: &Bound<'_, PyAny>,
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
+        state: &mut SerializationState,
         extra: &Extra,
     ) -> PyResult<Py<PyAny>> {
         if extra.round_trip {
-            let bytes = to_json_bytes(value, &self.serializer, include, exclude, extra, None, false, 0)?;
+            let bytes = to_json_bytes(value, &self.serializer, include, exclude, state, extra, None, false, 0)?;
             let py = value.py();
             let s = from_utf8(&bytes).map_err(|e| utf8_py_error(py, e, &bytes))?;
             Ok(PyString::new(py, s).into())
         } else {
-            self.serializer.to_python(value, include, exclude, extra)
+            self.serializer.to_python(value, include, exclude, state, extra)
         }
     }
 
-    fn json_key<'a>(&self, key: &'a Bound<'_, PyAny>, extra: &Extra) -> PyResult<Cow<'a, str>> {
+    fn json_key<'a>(
+        &self,
+        key: &'a Bound<'_, PyAny>,
+        state: &mut SerializationState,
+        extra: &Extra,
+    ) -> PyResult<Cow<'a, str>> {
         if extra.round_trip {
-            let bytes = to_json_bytes(key, &self.serializer, None, None, extra, None, false, 0)?;
+            let bytes = to_json_bytes(key, &self.serializer, None, None, state, extra, None, false, 0)?;
             let py = key.py();
             let s = from_utf8(&bytes).map_err(|e| utf8_py_error(py, e, &bytes))?;
             Ok(Cow::Owned(s.to_string()))
         } else {
-            infer_json_key(key, extra)
+            infer_json_key(key, state, extra)
         }
     }
 
@@ -78,10 +85,11 @@ impl TypeSerializer for JsonSerializer {
         serializer: S,
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
+        state: &mut SerializationState,
         extra: &Extra,
     ) -> Result<S::Ok, S::Error> {
         if extra.round_trip {
-            let bytes = to_json_bytes(value, &self.serializer, include, exclude, extra, None, false, 0)
+            let bytes = to_json_bytes(value, &self.serializer, include, exclude, state, extra, None, false, 0)
                 .map_err(py_err_se_err)?;
             match from_utf8(&bytes) {
                 Ok(s) => serializer.serialize_str(s),
@@ -89,7 +97,7 @@ impl TypeSerializer for JsonSerializer {
             }
         } else {
             self.serializer
-                .serde_serialize(value, serializer, include, exclude, extra)
+                .serde_serialize(value, serializer, include, exclude, state, extra)
         }
     }
 

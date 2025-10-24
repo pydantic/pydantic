@@ -10,6 +10,7 @@ use serde::ser::SerializeSeq;
 use crate::definitions::DefinitionsBuilder;
 use crate::serializers::extra::SerCheck;
 use crate::serializers::type_serializers::any::AnySerializer;
+use crate::serializers::SerializationState;
 use crate::tools::SchemaDict;
 use crate::PydanticSerializationUnexpectedValue;
 
@@ -66,6 +67,7 @@ impl TypeSerializer for TupleSerializer {
         value: &Bound<'_, PyAny>,
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
+        state: &mut SerializationState,
         extra: &Extra,
     ) -> PyResult<Py<PyAny>> {
         match value.downcast::<PyTuple>() {
@@ -75,10 +77,16 @@ impl TypeSerializer for TupleSerializer {
                 let n_items = py_tuple.len();
                 let mut items = Vec::with_capacity(n_items);
 
-                self.for_each_tuple_item_and_serializer(py_tuple, include, exclude, extra, |entry| {
+                self.for_each_tuple_item_and_serializer(py_tuple, include, exclude, state, extra, |entry| {
                     entry
                         .serializer
-                        .to_python(&entry.item, entry.include.as_ref(), entry.exclude.as_ref(), extra)
+                        .to_python(
+                            &entry.item,
+                            entry.include.as_ref(),
+                            entry.exclude.as_ref(),
+                            entry.state,
+                            extra,
+                        )
                         .map(|item| items.push(item))
                 })??;
 
@@ -88,29 +96,34 @@ impl TypeSerializer for TupleSerializer {
                 }
             }
             Err(_) => {
-                extra.warnings.on_fallback_py(&self.name, value, extra)?;
-                infer_to_python(value, include, exclude, extra)
+                state.warnings.on_fallback_py(&self.name, value, extra)?;
+                infer_to_python(value, include, exclude, state, extra)
             }
         }
     }
 
-    fn json_key<'a>(&self, key: &'a Bound<'_, PyAny>, extra: &Extra) -> PyResult<Cow<'a, str>> {
+    fn json_key<'a>(
+        &self,
+        key: &'a Bound<'_, PyAny>,
+        state: &mut SerializationState,
+        extra: &Extra,
+    ) -> PyResult<Cow<'a, str>> {
         match key.downcast::<PyTuple>() {
             Ok(py_tuple) => {
                 let mut key_builder = KeyBuilder::new();
 
-                self.for_each_tuple_item_and_serializer(py_tuple, None, None, extra, |entry| {
+                self.for_each_tuple_item_and_serializer(py_tuple, None, None, state, extra, |entry| {
                     entry
                         .serializer
-                        .json_key(&entry.item, extra)
+                        .json_key(&entry.item, entry.state, extra)
                         .map(|key| key_builder.push(&key))
                 })??;
 
                 Ok(Cow::Owned(key_builder.finish()))
             }
             Err(_) => {
-                extra.warnings.on_fallback_py(&self.name, key, extra)?;
-                infer_json_key(key, extra)
+                state.warnings.on_fallback_py(&self.name, key, extra)?;
+                infer_json_key(key, state, extra)
             }
         }
     }
@@ -121,6 +134,7 @@ impl TypeSerializer for TupleSerializer {
         serializer: S,
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
+        state: &mut SerializationState,
         extra: &Extra,
     ) -> Result<S::Ok, S::Error> {
         match value.downcast::<PyTuple>() {
@@ -130,12 +144,13 @@ impl TypeSerializer for TupleSerializer {
                 let n_items = py_tuple.len();
                 let mut seq = serializer.serialize_seq(Some(n_items))?;
 
-                self.for_each_tuple_item_and_serializer(py_tuple, include, exclude, extra, |entry| {
+                self.for_each_tuple_item_and_serializer(py_tuple, include, exclude, state, extra, |entry| {
                     seq.serialize_element(&PydanticSerializer::new(
                         &entry.item,
                         entry.serializer,
                         entry.include.as_ref(),
                         entry.exclude.as_ref(),
+                        entry.state,
                         extra,
                     ))
                 })
@@ -144,8 +159,8 @@ impl TypeSerializer for TupleSerializer {
                 seq.end()
             }
             Err(_) => {
-                extra.warnings.on_fallback_ser::<S>(&self.name, value, extra)?;
-                infer_serialize(value, serializer, include, exclude, extra)
+                state.warnings.on_fallback_ser::<S>(&self.name, value, extra)?;
+                infer_serialize(value, serializer, include, exclude, state, extra)
             }
         }
     }
@@ -164,6 +179,7 @@ struct TupleSerializerEntry<'a, 'py> {
     include: Option<Bound<'py, PyAny>>,
     exclude: Option<Bound<'py, PyAny>>,
     serializer: &'a CombinedSerializer,
+    state: &'a mut SerializationState,
 }
 
 impl TupleSerializer {
@@ -178,6 +194,7 @@ impl TupleSerializer {
         tuple: &Bound<'_, PyTuple>,
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
+        state: &mut SerializationState,
         extra: &Extra,
         mut f: impl for<'a, 'py> FnMut(TupleSerializerEntry<'a, 'py>) -> Result<(), E>,
     ) -> PyResult<Result<(), E>> {
@@ -197,6 +214,7 @@ impl TupleSerializer {
                             include: next_include,
                             exclude: next_exclude,
                             serializer,
+                            state,
                         }) {
                             return Ok(Err(e));
                         };
@@ -225,7 +243,7 @@ impl TupleSerializer {
             let mut warned = false;
             for (i, element) in py_tuple_iter.enumerate() {
                 if !warned {
-                    extra
+                    state
                         .warnings
                         .register_warning(PydanticSerializationUnexpectedValue::new_from_msg(Some(
                             "Unexpected extra items present in tuple".to_string(),
@@ -241,6 +259,7 @@ impl TupleSerializer {
                         include: next_include,
                         exclude: next_exclude,
                         serializer: &CombinedSerializer::Any(AnySerializer),
+                        state,
                     }) {
                         return Ok(Err(e));
                     }

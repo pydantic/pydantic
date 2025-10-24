@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::cell::RefCell;
 use std::fmt::Debug;
 use std::io::{self, Write};
 use std::sync::Arc;
@@ -22,7 +23,7 @@ use crate::serializers::type_serializers::any::AnySerializer;
 use crate::tools::{py_err, SchemaDict};
 
 use super::errors::se_err_py_err;
-use super::extra::Extra;
+use super::extra::{Extra, SerializationState};
 use super::infer::{infer_json_key, infer_serialize, infer_to_python};
 use super::ob_type::{IsType, ObType};
 
@@ -233,12 +234,13 @@ impl CombinedSerializer {
         value: &Bound<'_, PyAny>,
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
+        state: &mut SerializationState,
         extra: &Extra,
     ) -> PyResult<Py<PyAny>> {
         if extra.serialize_as_any {
-            infer_to_python(value, include, exclude, extra)
+            infer_to_python(value, include, exclude, state, extra)
         } else {
-            self.to_python_no_infer(value, include, exclude, extra)
+            self.to_python_no_infer(value, include, exclude, state, extra)
         }
     }
 
@@ -249,22 +251,33 @@ impl CombinedSerializer {
         value: &Bound<'_, PyAny>,
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
+        state: &mut SerializationState,
         extra: &Extra,
     ) -> PyResult<Py<PyAny>> {
-        TypeSerializer::to_python(self, value, include, exclude, extra)
+        TypeSerializer::to_python(self, value, include, exclude, state, extra)
     }
 
-    pub fn json_key<'a>(&self, key: &'a Bound<'_, PyAny>, extra: &Extra) -> PyResult<Cow<'a, str>> {
+    pub fn json_key<'a>(
+        &self,
+        key: &'a Bound<'_, PyAny>,
+        state: &mut SerializationState,
+        extra: &Extra,
+    ) -> PyResult<Cow<'a, str>> {
         if extra.serialize_as_any {
-            infer_json_key(key, extra)
+            infer_json_key(key, state, extra)
         } else {
-            self.json_key_no_infer(key, extra)
+            self.json_key_no_infer(key, state, extra)
         }
     }
 
     #[inline]
-    pub fn json_key_no_infer<'a>(&self, key: &'a Bound<'_, PyAny>, extra: &Extra) -> PyResult<Cow<'a, str>> {
-        TypeSerializer::json_key(self, key, extra)
+    pub fn json_key_no_infer<'a>(
+        &self,
+        key: &'a Bound<'_, PyAny>,
+        state: &mut SerializationState,
+        extra: &Extra,
+    ) -> PyResult<Cow<'a, str>> {
+        TypeSerializer::json_key(self, key, state, extra)
     }
 
     pub fn serde_serialize<S: serde::ser::Serializer>(
@@ -273,12 +286,13 @@ impl CombinedSerializer {
         serializer: S,
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
+        state: &mut SerializationState,
         extra: &Extra,
     ) -> Result<S::Ok, S::Error> {
         if extra.serialize_as_any {
-            infer_serialize(value, serializer, include, exclude, extra)
+            infer_serialize(value, serializer, include, exclude, state, extra)
         } else {
-            self.serde_serialize_no_infer(value, serializer, include, exclude, extra)
+            self.serde_serialize_no_infer(value, serializer, include, exclude, state, extra)
         }
     }
 
@@ -289,9 +303,10 @@ impl CombinedSerializer {
         serializer: S,
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
+        state: &mut SerializationState,
         extra: &Extra,
     ) -> Result<S::Ok, S::Error> {
-        TypeSerializer::serde_serialize(self, value, serializer, include, exclude, extra)
+        TypeSerializer::serde_serialize(self, value, serializer, include, exclude, state, extra)
     }
 }
 
@@ -363,22 +378,29 @@ pub(crate) trait TypeSerializer: Send + Sync + Debug {
         value: &Bound<'_, PyAny>,
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
+        state: &mut SerializationState,
         extra: &Extra,
     ) -> PyResult<Py<PyAny>>;
 
-    fn json_key<'a>(&self, key: &'a Bound<'_, PyAny>, extra: &Extra) -> PyResult<Cow<'a, str>>;
+    fn json_key<'a>(
+        &self,
+        key: &'a Bound<'_, PyAny>,
+        state: &mut SerializationState,
+        extra: &Extra,
+    ) -> PyResult<Cow<'a, str>>;
 
     fn invalid_as_json_key<'a>(
         &self,
         key: &'a Bound<'_, PyAny>,
+        state: &mut SerializationState,
         extra: &Extra,
         expected_type: &'static str,
     ) -> PyResult<Cow<'a, str>> {
         match extra.ob_type_lookup.is_type(key, ObType::None) {
             IsType::Exact | IsType::Subclass => py_err!(PyTypeError; "`{}` not valid as object key", expected_type),
             IsType::False => {
-                extra.warnings.on_fallback_py(self.get_name(), key, extra)?;
-                infer_json_key(key, extra)
+                state.warnings.on_fallback_py(self.get_name(), key, extra)?;
+                infer_json_key(key, state, extra)
             }
         }
     }
@@ -389,6 +411,7 @@ pub(crate) trait TypeSerializer: Send + Sync + Debug {
         serializer: S,
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
+        state: &mut SerializationState,
         extra: &Extra,
     ) -> Result<S::Ok, S::Error>;
 
@@ -404,20 +427,24 @@ pub(crate) trait TypeSerializer: Send + Sync + Debug {
     }
 }
 
-pub(crate) struct PydanticSerializer<'py> {
+pub(crate) struct PydanticSerializer<'py, 'state> {
     value: &'py Bound<'py, PyAny>,
     serializer: &'py CombinedSerializer,
     include: Option<&'py Bound<'py, PyAny>>,
     exclude: Option<&'py Bound<'py, PyAny>>,
+    /// RefCell to allow mutable access to the state during serialization, we expect it
+    /// to only ever be borrowed mutably once at a time.
+    state: RefCell<&'state mut SerializationState>,
     extra: &'py Extra<'py>,
 }
 
-impl<'py> PydanticSerializer<'py> {
+impl<'py, 'state> PydanticSerializer<'py, 'state> {
     pub(crate) fn new(
         value: &'py Bound<'py, PyAny>,
         serializer: &'py CombinedSerializer,
         include: Option<&'py Bound<'py, PyAny>>,
         exclude: Option<&'py Bound<'py, PyAny>>,
+        state: &'state mut SerializationState,
         extra: &'py Extra<'py>,
     ) -> Self {
         Self {
@@ -429,6 +456,7 @@ impl<'py> PydanticSerializer<'py> {
             },
             include,
             exclude,
+            state: RefCell::new(state),
             extra,
         }
     }
@@ -439,6 +467,7 @@ impl<'py> PydanticSerializer<'py> {
         serializer: &'py CombinedSerializer,
         include: Option<&'py Bound<'py, PyAny>>,
         exclude: Option<&'py Bound<'py, PyAny>>,
+        state: &'state mut SerializationState,
         extra: &'py Extra<'py>,
     ) -> Self {
         Self {
@@ -446,16 +475,23 @@ impl<'py> PydanticSerializer<'py> {
             serializer,
             include,
             exclude,
+            state: RefCell::new(state),
             extra,
         }
     }
 }
 
-impl Serialize for PydanticSerializer<'_> {
+impl Serialize for PydanticSerializer<'_, '_> {
     fn serialize<S: serde::ser::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         // inference is handled in the constructor
-        self.serializer
-            .serde_serialize_no_infer(self.value, serializer, self.include, self.exclude, self.extra)
+        self.serializer.serde_serialize_no_infer(
+            self.value,
+            serializer,
+            self.include,
+            self.exclude,
+            &mut self.state.borrow_mut(),
+            self.extra,
+        )
     }
 }
 
@@ -546,12 +582,13 @@ pub(crate) fn to_json_bytes(
     serializer: &CombinedSerializer,
     include: Option<&Bound<'_, PyAny>>,
     exclude: Option<&Bound<'_, PyAny>>,
+    state: &mut SerializationState,
     extra: &Extra,
     indent: Option<usize>,
     ensure_ascii: bool,
     expected_json_size: usize,
 ) -> PyResult<Vec<u8>> {
-    let serializer = PydanticSerializer::new(value, serializer, include, exclude, extra);
+    let serializer = PydanticSerializer::new(value, serializer, include, exclude, state, extra);
 
     let writer: Vec<u8> = Vec::with_capacity(expected_json_size);
 

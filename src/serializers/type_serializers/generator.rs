@@ -11,6 +11,7 @@ use pyo3::PyTraverseError;
 use serde::ser::SerializeSeq;
 
 use crate::definitions::DefinitionsBuilder;
+use crate::serializers::SerializationState;
 use crate::tools::SchemaDict;
 
 use super::any::AnySerializer;
@@ -54,6 +55,7 @@ impl TypeSerializer for GeneratorSerializer {
         value: &Bound<'_, PyAny>,
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
+        state: &mut SerializationState,
         extra: &Extra,
     ) -> PyResult<Py<PyAny>> {
         match value.downcast::<PyIterator>() {
@@ -75,6 +77,7 @@ impl TypeSerializer for GeneratorSerializer {
                                     &element,
                                     next_include.as_ref(),
                                     next_exclude.as_ref(),
+                                    state,
                                     extra,
                                 )?);
                             }
@@ -88,6 +91,7 @@ impl TypeSerializer for GeneratorSerializer {
                             self.filter.clone(),
                             include,
                             exclude,
+                            state,
                             extra,
                         );
                         iter.into_py_any(py)
@@ -95,14 +99,19 @@ impl TypeSerializer for GeneratorSerializer {
                 }
             }
             Err(_) => {
-                extra.warnings.on_fallback_py(self.get_name(), value, extra)?;
-                infer_to_python(value, include, exclude, extra)
+                state.warnings.on_fallback_py(self.get_name(), value, extra)?;
+                infer_to_python(value, include, exclude, state, extra)
             }
         }
     }
 
-    fn json_key<'a>(&self, key: &'a Bound<'_, PyAny>, extra: &Extra) -> PyResult<Cow<'a, str>> {
-        self.invalid_as_json_key(key, extra, Self::EXPECTED_TYPE)
+    fn json_key<'a>(
+        &self,
+        key: &'a Bound<'_, PyAny>,
+        state: &mut SerializationState,
+        extra: &Extra,
+    ) -> PyResult<Cow<'a, str>> {
+        self.invalid_as_json_key(key, state, extra, Self::EXPECTED_TYPE)
     }
 
     fn serde_serialize<S: serde::ser::Serializer>(
@@ -111,6 +120,7 @@ impl TypeSerializer for GeneratorSerializer {
         serializer: S,
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
+        state: &mut SerializationState,
         extra: &Extra,
     ) -> Result<S::Ok, S::Error> {
         match value.downcast::<PyIterator>() {
@@ -131,6 +141,7 @@ impl TypeSerializer for GeneratorSerializer {
                             item_serializer,
                             next_include.as_ref(),
                             next_exclude.as_ref(),
+                            state,
                             extra,
                         );
                         seq.serialize_element(&item_serialize)?;
@@ -139,8 +150,8 @@ impl TypeSerializer for GeneratorSerializer {
                 seq.end()
             }
             Err(_) => {
-                extra.warnings.on_fallback_ser::<S>(self.get_name(), value, extra)?;
-                infer_serialize(value, serializer, include, exclude, extra)
+                state.warnings.on_fallback_ser::<S>(self.get_name(), value, extra)?;
+                infer_serialize(value, serializer, include, exclude, state, extra)
             }
         }
     }
@@ -170,13 +181,14 @@ impl SerializationIterator {
         filter: SchemaFilter<usize>,
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
+        state: &mut SerializationState,
         extra: &Extra,
     ) -> Self {
         Self {
             iterator: py_iter.clone().into(),
             index: 0,
             item_serializer: item_serializer.clone(),
-            extra_owned: ExtraOwned::new(extra),
+            extra_owned: ExtraOwned::new(extra, state),
             filter,
             include: include.map(|v| v.clone().into()),
             exclude: exclude.map(|v| v.clone().into()),
@@ -222,6 +234,7 @@ impl SerializationIterator {
         let include = self.include.as_ref().map(|o| o.bind(py));
         let exclude = self.exclude.as_ref().map(|o| o.bind(py));
         let extra = self.extra_owned.to_extra(py);
+        let state = &mut self.extra_owned.to_state();
 
         for iter_result in iterator.clone() {
             let element = iter_result?;
@@ -231,8 +244,8 @@ impl SerializationIterator {
                 let v = self
                     .item_serializer
                     // TODO do we need error_on_fallback to be customizable?
-                    .to_python(&element, next_include.as_ref(), next_exclude.as_ref(), &extra)?;
-                extra.warnings.final_check(py)?;
+                    .to_python(&element, next_include.as_ref(), next_exclude.as_ref(), state, &extra)?;
+                state.warnings.final_check(py)?;
                 return Ok(Some(v));
             }
         }

@@ -9,6 +9,7 @@ use pyo3::types::{PyDict, PyList};
 use crate::definitions::DefinitionsBuilder;
 use crate::definitions::{DefinitionRef, RecursionSafeCache};
 
+use crate::serializers::SerializationState;
 use crate::tools::SchemaDict;
 
 use super::{py_err_se_err, BuildSerializer, CombinedSerializer, Extra, TypeSerializer};
@@ -80,17 +81,24 @@ impl TypeSerializer for DefinitionRefSerializer {
         value: &Bound<'_, PyAny>,
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
-        mut extra: &Extra,
+        state: &mut SerializationState,
+        extra: &Extra,
     ) -> PyResult<Py<PyAny>> {
         self.definition.read(|comb_serializer| {
             let comb_serializer = comb_serializer.unwrap();
-            let mut guard = extra.recursion_guard(value, self.definition.id())?;
-            comb_serializer.to_python_no_infer(value, include, exclude, guard.state())
+            let mut guard = state.recursion_guard(value, self.definition.id())?;
+            comb_serializer.to_python_no_infer(value, include, exclude, guard.state(), extra)
         })
     }
 
-    fn json_key<'a>(&self, key: &'a Bound<'_, PyAny>, extra: &Extra) -> PyResult<Cow<'a, str>> {
-        self.definition.read(|s| s.unwrap().json_key_no_infer(key, extra))
+    fn json_key<'a>(
+        &self,
+        key: &'a Bound<'_, PyAny>,
+        state: &mut SerializationState,
+        extra: &Extra,
+    ) -> PyResult<Cow<'a, str>> {
+        self.definition
+            .read(|s| s.unwrap().json_key_no_infer(key, state, extra))
     }
 
     fn serde_serialize<S: serde::ser::Serializer>(
@@ -99,14 +107,15 @@ impl TypeSerializer for DefinitionRefSerializer {
         serializer: S,
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
-        mut extra: &Extra,
+        state: &mut SerializationState,
+        extra: &Extra,
     ) -> Result<S::Ok, S::Error> {
         self.definition.read(|comb_serializer| {
             let comb_serializer = comb_serializer.unwrap();
-            let mut guard = extra
+            let mut guard = state
                 .recursion_guard(value, self.definition.id())
                 .map_err(py_err_se_err)?;
-            comb_serializer.serde_serialize_no_infer(value, serializer, include, exclude, guard.state())
+            comb_serializer.serde_serialize_no_infer(value, serializer, include, exclude, guard.state(), extra)
         })
     }
 

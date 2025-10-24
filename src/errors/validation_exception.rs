@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::cell::RefCell;
 use std::fmt;
 use std::fmt::{Display, Write};
 use std::str::from_utf8;
@@ -18,7 +19,7 @@ use crate::build_tools::py_schema_error_type;
 use crate::errors::LocItem;
 use crate::get_pydantic_version;
 use crate::input::InputType;
-use crate::serializers::{Extra, SerMode, SerializationState};
+use crate::serializers::{Extra, SerMode, SerializationConfig, SerializationState, WarningsMode};
 use crate::tools::{safe_repr, write_truncated_to_limited_bytes, SchemaDict};
 
 use super::line_error::ValLineError;
@@ -337,15 +338,30 @@ impl ValidationError {
         include_context: bool,
         include_input: bool,
     ) -> PyResult<Bound<'py, PyString>> {
-        let state = SerializationState::new("iso8601", "iso8601", "utf8", "constants")?;
-        let extra = state.extra(py, &SerMode::Json, None, false, false, true, None, false, None);
-        let serializer = ValidationErrorSerializer {
+        let config = SerializationConfig::from_args("iso8601", "iso8601", "utf8", "constants")?;
+        let mut state = SerializationState::new(config, WarningsMode::None)?;
+        let extra = Extra::new(
+            py,
+            &SerMode::Json,
+            None,
+            false,
+            false,
+            false,
+            false,
+            false,
+            true,
+            None,
+            false,
+            None,
+        );
+        let mut serializer = ValidationErrorSerializer {
             py,
             line_errors: &self.line_errors,
             url_prefix: get_url_prefix(py, include_url),
             include_context,
             include_input,
             extra: &extra,
+            state: &mut state,
             input_type: &self.input_type,
         };
 
@@ -568,18 +584,19 @@ where
     S::Error::custom(error.to_string())
 }
 
-struct ValidationErrorSerializer<'py> {
+struct ValidationErrorSerializer<'slf, 'py> {
     py: Python<'py>,
     line_errors: &'py [PyLineError],
     url_prefix: Option<&'py str>,
     include_context: bool,
     include_input: bool,
+    state: &'slf mut SerializationState,
     extra: &'py Extra<'py>,
     input_type: &'py InputType,
 }
 
-impl Serialize for ValidationErrorSerializer<'_> {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+impl ValidationErrorSerializer<'_, '_> {
+    fn serialize<S>(&mut self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
@@ -591,6 +608,7 @@ impl Serialize for ValidationErrorSerializer<'_> {
                 url_prefix: self.url_prefix,
                 include_context: self.include_context,
                 include_input: self.include_input,
+                state: RefCell::new(self.state),
                 extra: self.extra,
                 input_type: self.input_type,
             };
@@ -600,17 +618,18 @@ impl Serialize for ValidationErrorSerializer<'_> {
     }
 }
 
-struct PyLineErrorSerializer<'py> {
+struct PyLineErrorSerializer<'slf, 'py> {
     py: Python<'py>,
     line_error: &'py PyLineError,
     url_prefix: Option<&'py str>,
     include_context: bool,
     include_input: bool,
     extra: &'py Extra<'py>,
+    state: RefCell<&'slf mut SerializationState>,
     input_type: &'py InputType,
 }
 
-impl Serialize for PyLineErrorSerializer<'_> {
+impl Serialize for PyLineErrorSerializer<'_, '_> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -621,6 +640,7 @@ impl Serialize for PyLineErrorSerializer<'_> {
             .filter(|b| *b)
             .count();
         let mut map = serializer.serialize_map(Some(size))?;
+        let mut state = self.state.borrow_mut();
 
         map.serialize_entry("type", &self.line_error.error_type.type_string())?;
 
@@ -636,13 +656,15 @@ impl Serialize for PyLineErrorSerializer<'_> {
         if self.include_input {
             map.serialize_entry(
                 "input",
-                &self.extra.serialize_infer(self.line_error.input_value.bind(py)),
+                &self
+                    .extra
+                    .serialize_infer(self.line_error.input_value.bind(py), &mut state),
             )?;
         }
 
         if self.include_context {
             if let Some(context) = self.line_error.error_type.py_dict(py).map_err(py_err_json::<S>)? {
-                map.serialize_entry("ctx", &self.extra.serialize_infer(context.bind(py)))?;
+                map.serialize_entry("ctx", &self.extra.serialize_infer(context.bind(py), &mut state))?;
             }
         }
         if let Some(url_prefix) = self.url_prefix {

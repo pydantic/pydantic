@@ -6,6 +6,7 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
 use crate::definitions::DefinitionsBuilder;
+use crate::serializers::SerializationState;
 use crate::tools::SchemaDict;
 use crate::validators::DefaultType;
 
@@ -43,13 +44,19 @@ impl TypeSerializer for WithDefaultSerializer {
         value: &Bound<'_, PyAny>,
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
+        state: &mut SerializationState,
         extra: &Extra,
     ) -> PyResult<Py<PyAny>> {
-        self.serializer.to_python(value, include, exclude, extra)
+        self.serializer.to_python(value, include, exclude, state, extra)
     }
 
-    fn json_key<'a>(&self, key: &'a Bound<'_, PyAny>, extra: &Extra) -> PyResult<Cow<'a, str>> {
-        self.serializer.json_key(key, extra)
+    fn json_key<'a>(
+        &self,
+        key: &'a Bound<'_, PyAny>,
+        state: &mut SerializationState,
+        extra: &Extra,
+    ) -> PyResult<Cow<'a, str>> {
+        self.serializer.json_key(key, state, extra)
     }
 
     fn serde_serialize<S: serde::ser::Serializer>(
@@ -58,10 +65,11 @@ impl TypeSerializer for WithDefaultSerializer {
         serializer: S,
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
+        state: &mut SerializationState,
         extra: &Extra,
     ) -> Result<S::Ok, S::Error> {
         self.serializer
-            .serde_serialize(value, serializer, include, exclude, extra)
+            .serde_serialize(value, serializer, include, exclude, state, extra)
     }
 
     fn get_name(&self) -> &str {

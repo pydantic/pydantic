@@ -11,6 +11,7 @@ use crate::definitions::DefinitionsBuilder;
 use crate::py_gc::PyGcTraverse;
 use crate::serializers::filter::SchemaFilter;
 use crate::serializers::shared::{BuildSerializer, CombinedSerializer, PydanticSerializer};
+use crate::serializers::SerializationState;
 use crate::tools::SchemaDict;
 
 use super::errors::py_err_se_err;
@@ -41,6 +42,7 @@ impl ComputedFields {
         self.0.len()
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn to_python(
         &self,
         model: &Bound<'_, PyAny>,
@@ -48,6 +50,7 @@ impl ComputedFields {
         filter: &SchemaFilter<isize>,
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
+        state: &mut SerializationState,
         extra: &Extra,
     ) -> PyResult<()> {
         self.serialize_fields(
@@ -68,15 +71,19 @@ impl ComputedFields {
                     true => computed_field.alias_py.bind(model.py()),
                     false => computed_field.property_name_py.bind(model.py()),
                 };
-                let value =
-                    computed_field
-                        .serializer
-                        .to_python(&value, include.as_ref(), exclude.as_ref(), &field_extra)?;
+                let value = computed_field.serializer.to_python(
+                    &value,
+                    include.as_ref(),
+                    exclude.as_ref(),
+                    state,
+                    &field_extra,
+                )?;
                 output_dict.set_item(key, value)
             },
         )
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn serde_serialize<S: serde::ser::Serializer>(
         &self,
         model: &Bound<'_, PyAny>,
@@ -84,6 +91,7 @@ impl ComputedFields {
         filter: &SchemaFilter<isize>,
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
+        state: &mut SerializationState,
         extra: &Extra,
     ) -> Result<(), S::Error> {
         self.serialize_fields(
@@ -109,6 +117,7 @@ impl ComputedFields {
                     &computed_field.serializer,
                     include.as_ref(),
                     exclude.as_ref(),
+                    state,
                     &field_extra,
                 );
                 map.serialize_entry(key, &s)

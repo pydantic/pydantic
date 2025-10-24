@@ -9,6 +9,7 @@ use pyo3::IntoPyObjectExt;
 use serde::ser::SerializeMap;
 
 use crate::definitions::DefinitionsBuilder;
+use crate::serializers::SerializationState;
 use crate::tools::SchemaDict;
 
 use super::any::AnySerializer;
@@ -78,6 +79,7 @@ impl TypeSerializer for DictSerializer {
         value: &Bound<'_, PyAny>,
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
+        state: &mut SerializationState,
         extra: &Extra,
     ) -> PyResult<Py<PyAny>> {
         let py = value.py();
@@ -90,25 +92,35 @@ impl TypeSerializer for DictSerializer {
                     let op_next = self.filter.key_filter(&key, include, exclude)?;
                     if let Some((next_include, next_exclude)) = op_next {
                         let key = match extra.mode {
-                            SerMode::Json => self.key_serializer.json_key(&key, extra)?.into_py_any(py)?,
-                            _ => self.key_serializer.to_python(&key, None, None, extra)?,
+                            SerMode::Json => self.key_serializer.json_key(&key, state, extra)?.into_py_any(py)?,
+                            _ => self.key_serializer.to_python(&key, None, None, state, extra)?,
                         };
-                        let value =
-                            value_serializer.to_python(&value, next_include.as_ref(), next_exclude.as_ref(), extra)?;
+                        let value = value_serializer.to_python(
+                            &value,
+                            next_include.as_ref(),
+                            next_exclude.as_ref(),
+                            state,
+                            extra,
+                        )?;
                         new_dict.set_item(key, value)?;
                     }
                 }
                 Ok(new_dict.into())
             }
             Err(_) => {
-                extra.warnings.on_fallback_py(self.get_name(), value, extra)?;
-                infer_to_python(value, include, exclude, extra)
+                state.warnings.on_fallback_py(self.get_name(), value, extra)?;
+                infer_to_python(value, include, exclude, state, extra)
             }
         }
     }
 
-    fn json_key<'a>(&self, key: &'a Bound<'_, PyAny>, extra: &Extra) -> PyResult<Cow<'a, str>> {
-        self.invalid_as_json_key(key, extra, Self::EXPECTED_TYPE)
+    fn json_key<'a>(
+        &self,
+        key: &'a Bound<'_, PyAny>,
+        state: &mut SerializationState,
+        extra: &Extra,
+    ) -> PyResult<Cow<'a, str>> {
+        self.invalid_as_json_key(key, state, extra, Self::EXPECTED_TYPE)
     }
 
     fn serde_serialize<S: serde::ser::Serializer>(
@@ -117,6 +129,7 @@ impl TypeSerializer for DictSerializer {
         serializer: S,
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
+        state: &mut SerializationState,
         extra: &Extra,
     ) -> Result<S::Ok, S::Error> {
         match value.downcast::<PyDict>() {
@@ -128,12 +141,13 @@ impl TypeSerializer for DictSerializer {
                 for (key, value) in py_dict.iter() {
                     let op_next = self.filter.key_filter(&key, include, exclude).map_err(py_err_se_err)?;
                     if let Some((next_include, next_exclude)) = op_next {
-                        let key = key_serializer.json_key(&key, extra).map_err(py_err_se_err)?;
+                        let key = key_serializer.json_key(&key, state, extra).map_err(py_err_se_err)?;
                         let value_serialize = PydanticSerializer::new(
                             &value,
                             value_serializer,
                             next_include.as_ref(),
                             next_exclude.as_ref(),
+                            state,
                             extra,
                         );
                         map.serialize_entry(&key, &value_serialize)?;
@@ -142,8 +156,8 @@ impl TypeSerializer for DictSerializer {
                 map.end()
             }
             Err(_) => {
-                extra.warnings.on_fallback_ser::<S>(self.get_name(), value, extra)?;
-                infer_serialize(value, serializer, include, exclude, extra)
+                state.warnings.on_fallback_ser::<S>(self.get_name(), value, extra)?;
+                infer_serialize(value, serializer, include, exclude, state, extra)
             }
         }
     }

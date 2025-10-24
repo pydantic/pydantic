@@ -7,6 +7,7 @@ use pyo3::types::PyDict;
 
 use super::{BuildSerializer, CombinedSerializer, Extra, TypeSerializer};
 use crate::definitions::DefinitionsBuilder;
+use crate::serializers::SerializationState;
 use crate::tools::SchemaDict;
 
 #[derive(Debug)]
@@ -49,13 +50,19 @@ impl TypeSerializer for JsonOrPythonSerializer {
         value: &Bound<'_, PyAny>,
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
+        state: &mut SerializationState,
         extra: &Extra,
     ) -> PyResult<Py<PyAny>> {
-        self.python.to_python(value, include, exclude, extra)
+        self.python.to_python(value, include, exclude, state, extra)
     }
 
-    fn json_key<'a>(&self, key: &'a Bound<'_, PyAny>, extra: &Extra) -> PyResult<Cow<'a, str>> {
-        self.json.json_key(key, extra)
+    fn json_key<'a>(
+        &self,
+        key: &'a Bound<'_, PyAny>,
+        state: &mut SerializationState,
+        extra: &Extra,
+    ) -> PyResult<Cow<'a, str>> {
+        self.json.json_key(key, state, extra)
     }
 
     fn serde_serialize<S: serde::ser::Serializer>(
@@ -64,9 +71,11 @@ impl TypeSerializer for JsonOrPythonSerializer {
         serializer: S,
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
+        state: &mut SerializationState,
         extra: &Extra,
     ) -> Result<S::Ok, S::Error> {
-        self.json.serde_serialize(value, serializer, include, exclude, extra)
+        self.json
+            .serde_serialize(value, serializer, include, exclude, state, extra)
     }
 
     fn get_name(&self) -> &str {

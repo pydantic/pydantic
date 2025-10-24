@@ -2,7 +2,6 @@ use std::convert::Infallible;
 use std::ffi::CString;
 use std::fmt;
 use std::string::ToString;
-use std::sync::Mutex;
 
 use pyo3::exceptions::{PyTypeError, PyUserWarning, PyValueError};
 use pyo3::prelude::*;
@@ -23,16 +22,15 @@ use crate::PydanticSerializationError;
 /// this is ugly, would be much better if extra could be stored in `SerializationState`
 /// then `SerializationState` got a `serialize_infer` method, but I couldn't get it to work
 pub(crate) struct SerializationState {
-    warnings: CollectWarnings,
-    rec_guard: SerRecursionState,
-    config: SerializationConfig,
+    pub warnings: CollectWarnings,
+    pub rec_guard: RecursionState,
+    pub config: SerializationConfig,
 }
 
 impl SerializationState {
-    pub fn new(timedelta_mode: &str, temporal_mode: &str, bytes_mode: &str, inf_nan_mode: &str) -> PyResult<Self> {
-        let warnings = CollectWarnings::new(WarningsMode::None);
-        let rec_guard = SerRecursionState::default();
-        let config = SerializationConfig::from_args(timedelta_mode, temporal_mode, bytes_mode, inf_nan_mode)?;
+    pub fn new(config: SerializationConfig, warnings_mode: WarningsMode) -> PyResult<Self> {
+        let warnings = CollectWarnings::new(warnings_mode);
+        let rec_guard = RecursionState::default();
         Ok(Self {
             warnings,
             rec_guard,
@@ -40,36 +38,15 @@ impl SerializationState {
         })
     }
 
-    #[allow(clippy::too_many_arguments)]
-    pub fn extra<'py>(
-        &'py self,
-        py: Python<'py>,
-        mode: &'py SerMode,
-        by_alias: Option<bool>,
-        exclude_none: bool,
-        round_trip: bool,
-        serialize_unknown: bool,
-        fallback: Option<&'py Bound<'_, PyAny>>,
-        serialize_as_any: bool,
-        context: Option<&'py Bound<'_, PyAny>>,
-    ) -> Extra<'py> {
-        Extra::new(
-            py,
-            mode,
-            by_alias,
-            &self.warnings,
-            false,
-            false,
-            exclude_none,
-            false,
-            round_trip,
-            &self.config,
-            &self.rec_guard,
-            serialize_unknown,
-            fallback,
-            serialize_as_any,
-            context,
-        )
+    pub fn recursion_guard(
+        &mut self,
+        value: &Bound<'_, PyAny>,
+        def_ref_id: usize,
+    ) -> PyResult<RecursionGuard<'_, Self>> {
+        RecursionGuard::new(self, value.as_ptr() as usize, def_ref_id).map_err(|e| match e {
+            RecursionError::Depth => PyValueError::new_err("Circular reference detected (depth exceeded)"),
+            RecursionError::Cyclic => PyValueError::new_err("Circular reference detected (id repeated)"),
+        })
     }
 
     pub fn final_check(&self, py: Python) -> PyResult<()> {
@@ -83,15 +60,12 @@ impl SerializationState {
 pub(crate) struct Extra<'a> {
     pub mode: &'a SerMode,
     pub ob_type_lookup: &'a ObTypeLookup,
-    pub warnings: &'a CollectWarnings,
     pub by_alias: Option<bool>,
     pub exclude_unset: bool,
     pub exclude_defaults: bool,
     pub exclude_none: bool,
     pub exclude_computed_fields: bool,
     pub round_trip: bool,
-    pub config: &'a SerializationConfig,
-    pub rec_guard: &'a SerRecursionState,
     // the next two are used for union logic
     pub check: SerCheck,
     // data representing the current model field
@@ -111,14 +85,11 @@ impl<'a> Extra<'a> {
         py: Python<'a>,
         mode: &'a SerMode,
         by_alias: Option<bool>,
-        warnings: &'a CollectWarnings,
         exclude_unset: bool,
         exclude_defaults: bool,
         exclude_none: bool,
         exclude_computed_fields: bool,
         round_trip: bool,
-        config: &'a SerializationConfig,
-        rec_guard: &'a SerRecursionState,
         serialize_unknown: bool,
         fallback: Option<&'a Bound<'a, PyAny>>,
         serialize_as_any: bool,
@@ -127,15 +98,12 @@ impl<'a> Extra<'a> {
         Self {
             mode,
             ob_type_lookup: ObTypeLookup::cached(py),
-            warnings,
             by_alias,
             exclude_unset,
             exclude_defaults,
             exclude_none,
             exclude_computed_fields,
             round_trip,
-            config,
-            rec_guard,
             check: SerCheck::None,
             model: None,
             field_name: None,
@@ -146,24 +114,12 @@ impl<'a> Extra<'a> {
         }
     }
 
-    pub fn recursion_guard<'x, 'y>(
-        // TODO: this double reference is a bit if a hack, but it's necessary because the recursion
-        // guard is not passed around with &mut reference
-        //
-        // See how validation has &mut ValidationState passed around; we should aim to refactor
-        // to match that.
-        self: &'x mut &'y Self,
-        value: &Bound<'_, PyAny>,
-        def_ref_id: usize,
-    ) -> PyResult<RecursionGuard<'x, &'y Self>> {
-        RecursionGuard::new(self, value.as_ptr() as usize, def_ref_id).map_err(|e| match e {
-            RecursionError::Depth => PyValueError::new_err("Circular reference detected (depth exceeded)"),
-            RecursionError::Cyclic => PyValueError::new_err("Circular reference detected (id repeated)"),
-        })
-    }
-
-    pub fn serialize_infer<'py>(&'py self, value: &'py Bound<'py, PyAny>) -> super::infer::SerializeInfer<'py> {
-        super::infer::SerializeInfer::new(value, None, None, self)
+    pub fn serialize_infer<'py, 'state>(
+        &'py self,
+        value: &'py Bound<'py, PyAny>,
+        state: &'state mut super::SerializationState,
+    ) -> super::infer::SerializeInfer<'py, 'state> {
+        super::infer::SerializeInfer::new(value, None, None, state, self)
     }
 
     pub(crate) fn model_type_name(&self) -> Option<Bound<'a, PyString>> {
@@ -204,7 +160,7 @@ pub(crate) struct ExtraOwned {
     exclude_computed_fields: bool,
     round_trip: bool,
     config: SerializationConfig,
-    rec_guard: SerRecursionState,
+    rec_guard: RecursionState,
     check: SerCheck,
     pub model: Option<Py<PyAny>>,
     field_name: Option<String>,
@@ -215,18 +171,18 @@ pub(crate) struct ExtraOwned {
 }
 
 impl ExtraOwned {
-    pub fn new(extra: &Extra) -> Self {
+    pub fn new(extra: &Extra, state: &SerializationState) -> Self {
         Self {
             mode: extra.mode.clone(),
-            warnings: extra.warnings.clone(),
+            warnings: state.warnings.clone(),
             by_alias: extra.by_alias,
             exclude_unset: extra.exclude_unset,
             exclude_defaults: extra.exclude_defaults,
             exclude_none: extra.exclude_none,
             exclude_computed_fields: extra.exclude_computed_fields,
             round_trip: extra.round_trip,
-            config: extra.config.clone(),
-            rec_guard: extra.rec_guard.clone(),
+            config: state.config,
+            rec_guard: state.rec_guard.clone(),
             check: extra.check,
             model: extra.model.map(|model| model.clone().into()),
             field_name: extra.field_name.map(ToString::to_string),
@@ -241,15 +197,12 @@ impl ExtraOwned {
         Extra {
             mode: &self.mode,
             ob_type_lookup: ObTypeLookup::cached(py),
-            warnings: &self.warnings,
             by_alias: self.by_alias,
             exclude_unset: self.exclude_unset,
             exclude_defaults: self.exclude_defaults,
             exclude_none: self.exclude_none,
             exclude_computed_fields: self.exclude_computed_fields,
             round_trip: self.round_trip,
-            config: &self.config,
-            rec_guard: &self.rec_guard,
             check: self.check,
             model: self.model.as_ref().map(|m| m.bind(py)),
             field_name: self.field_name.as_deref(),
@@ -257,6 +210,14 @@ impl ExtraOwned {
             fallback: self.fallback.as_ref().map(|m| m.bind(py)),
             serialize_as_any: self.serialize_as_any,
             context: self.context.as_ref().map(|m| m.bind(py)),
+        }
+    }
+
+    pub fn to_state(&self) -> SerializationState {
+        SerializationState {
+            warnings: self.warnings.clone(),
+            rec_guard: self.rec_guard.clone(),
+            config: self.config,
         }
     }
 }
@@ -349,36 +310,27 @@ impl From<bool> for WarningsMode {
 }
 
 #[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone)]
 pub(crate) struct CollectWarnings {
     mode: WarningsMode,
-    // FIXME: mutex is to satisfy PyO3 0.23, we should be able to refactor this away
-    warnings: Mutex<Vec<PydanticSerializationUnexpectedValue>>,
-}
-
-impl Clone for CollectWarnings {
-    fn clone(&self) -> Self {
-        Self {
-            mode: self.mode,
-            warnings: Mutex::new(self.warnings.lock().expect("lock poisoned").clone()),
-        }
-    }
+    warnings: Vec<PydanticSerializationUnexpectedValue>,
 }
 
 impl CollectWarnings {
     pub(crate) fn new(mode: WarningsMode) -> Self {
         Self {
             mode,
-            warnings: Mutex::new(Vec::new()),
+            warnings: Vec::new(),
         }
     }
 
-    pub fn register_warning(&self, warning: PydanticSerializationUnexpectedValue) {
+    pub fn register_warning(&mut self, warning: PydanticSerializationUnexpectedValue) {
         if self.mode != WarningsMode::None {
-            self.warnings.lock().expect("lock poisoned").push(warning);
+            self.warnings.push(warning);
         }
     }
 
-    pub fn on_fallback_py(&self, field_type: &str, value: &Bound<'_, PyAny>, extra: &Extra) -> PyResult<()> {
+    pub fn on_fallback_py(&mut self, field_type: &str, value: &Bound<'_, PyAny>, extra: &Extra) -> PyResult<()> {
         // special case for None as it's very common e.g. as a default value
         if value.is_none() {
             Ok(())
@@ -396,7 +348,7 @@ impl CollectWarnings {
     }
 
     pub fn on_fallback_ser<S: serde::ser::Serializer>(
-        &self,
+        &mut self,
         field_type: &str,
         value: &Bound<'_, PyAny>,
         extra: &Extra,
@@ -415,7 +367,7 @@ impl CollectWarnings {
         }
     }
 
-    fn fallback_warning(&self, field_name: Option<&str>, field_type: &str, value: &Bound<'_, PyAny>) {
+    fn fallback_warning(&mut self, field_name: Option<&str>, field_type: &str, value: &Bound<'_, PyAny>) {
         if self.mode != WarningsMode::None {
             self.register_warning(PydanticSerializationUnexpectedValue::new_from_parts(
                 field_name.map(ToString::to_string),
@@ -429,13 +381,12 @@ impl CollectWarnings {
         if self.mode == WarningsMode::None {
             return Ok(());
         }
-        let warnings = self.warnings.lock().expect("lock poisoned");
 
-        if warnings.is_empty() {
+        if self.warnings.is_empty() {
             return Ok(());
         }
 
-        let formatted_warnings: Vec<String> = warnings.iter().map(|w| w.__repr__(py).to_string()).collect();
+        let formatted_warnings: Vec<String> = self.warnings.iter().map(|w| w.__repr__(py).to_string()).collect();
 
         let message = format!("Pydantic serializer warnings:\n  {}", formatted_warnings.join("\n  "));
         if self.mode == WarningsMode::Warn {
@@ -447,23 +398,8 @@ impl CollectWarnings {
     }
 }
 
-#[derive(Default)]
-#[cfg_attr(debug_assertions, derive(Debug))]
-pub struct SerRecursionState {
-    // FIXME: mutex is to satisfy PyO3 0.23, we should be able to refactor this away
-    guard: Mutex<RecursionState>,
-}
-
-impl Clone for SerRecursionState {
-    fn clone(&self) -> Self {
-        Self {
-            guard: Mutex::new(self.guard.lock().expect("lock poisoned").clone()),
-        }
-    }
-}
-
-impl ContainsRecursionState for &'_ Extra<'_> {
+impl ContainsRecursionState for SerializationState {
     fn access_recursion_state<R>(&mut self, f: impl FnOnce(&mut RecursionState) -> R) -> R {
-        f(&mut self.rec_guard.guard.lock().expect("lock poisoned"))
+        f(&mut self.rec_guard)
     }
 }

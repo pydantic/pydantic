@@ -18,7 +18,7 @@ use crate::tools::SchemaDict;
 
 use super::errors::py_err_se_err;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 #[allow(clippy::struct_field_names)]
 pub(crate) struct SerializationConfig {
     pub temporal_mode: TemporalMode,

@@ -9,6 +9,7 @@ use pyo3::IntoPyObjectExt;
 use serde::ser::SerializeSeq;
 
 use crate::definitions::DefinitionsBuilder;
+use crate::serializers::SerializationState;
 use crate::tools::SchemaDict;
 
 use super::any::AnySerializer;
@@ -57,6 +58,7 @@ impl TypeSerializer for ListSerializer {
         value: &Bound<'_, PyAny>,
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
+        state: &mut SerializationState,
         extra: &Extra,
     ) -> PyResult<Py<PyAny>> {
         match value.downcast::<PyList>() {
@@ -72,6 +74,7 @@ impl TypeSerializer for ListSerializer {
                             &element,
                             next_include.as_ref(),
                             next_exclude.as_ref(),
+                            state,
                             extra,
                         )?);
                     }
@@ -79,14 +82,19 @@ impl TypeSerializer for ListSerializer {
                 items.into_py_any(py)
             }
             Err(_) => {
-                extra.warnings.on_fallback_py(self.get_name(), value, extra)?;
-                infer_to_python(value, include, exclude, extra)
+                state.warnings.on_fallback_py(self.get_name(), value, extra)?;
+                infer_to_python(value, include, exclude, state, extra)
             }
         }
     }
 
-    fn json_key<'a>(&self, key: &'a Bound<'_, PyAny>, extra: &Extra) -> PyResult<Cow<'a, str>> {
-        self.invalid_as_json_key(key, extra, Self::EXPECTED_TYPE)
+    fn json_key<'a>(
+        &self,
+        key: &'a Bound<'_, PyAny>,
+        state: &mut SerializationState,
+        extra: &Extra,
+    ) -> PyResult<Cow<'a, str>> {
+        self.invalid_as_json_key(key, state, extra, Self::EXPECTED_TYPE)
     }
 
     fn serde_serialize<S: serde::ser::Serializer>(
@@ -95,6 +103,7 @@ impl TypeSerializer for ListSerializer {
         serializer: S,
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
+        state: &mut SerializationState,
         extra: &Extra,
     ) -> Result<S::Ok, S::Error> {
         match value.downcast::<PyList>() {
@@ -113,6 +122,7 @@ impl TypeSerializer for ListSerializer {
                             item_serializer,
                             next_include.as_ref(),
                             next_exclude.as_ref(),
+                            state,
                             extra,
                         );
                         seq.serialize_element(&item_serialize)?;
@@ -121,8 +131,8 @@ impl TypeSerializer for ListSerializer {
                 seq.end()
             }
             Err(_) => {
-                extra.warnings.on_fallback_ser::<S>(self.get_name(), value, extra)?;
-                infer_serialize(value, serializer, include, exclude, extra)
+                state.warnings.on_fallback_ser::<S>(self.get_name(), value, extra)?;
+                infer_serialize(value, serializer, include, exclude, state, extra)
             }
         }
     }

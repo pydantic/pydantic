@@ -13,6 +13,7 @@ use pyo3::types::PyDict;
 use serde::ser::Error;
 
 use crate::definitions::DefinitionsBuilder;
+use crate::serializers::SerializationState;
 use crate::PydanticSerializationUnexpectedValue;
 use crate::{build_tools::LazyLock, common::missing_sentinel::get_missing_sentinel_object};
 
@@ -44,6 +45,7 @@ impl TypeSerializer for MissingSentinelSerializer {
         value: &Bound<'_, PyAny>,
         _include: Option<&Bound<'_, PyAny>>,
         _exclude: Option<&Bound<'_, PyAny>>,
+        _state: &mut SerializationState,
         _extra: &Extra,
     ) -> PyResult<Py<PyAny>> {
         let missing_sentinel = get_missing_sentinel_object(value.py());
@@ -58,8 +60,13 @@ impl TypeSerializer for MissingSentinelSerializer {
         }
     }
 
-    fn json_key<'a>(&self, key: &'a Bound<'_, PyAny>, extra: &Extra) -> PyResult<Cow<'a, str>> {
-        self.invalid_as_json_key(key, extra, Self::EXPECTED_TYPE)
+    fn json_key<'a>(
+        &self,
+        key: &'a Bound<'_, PyAny>,
+        state: &mut SerializationState,
+        extra: &Extra,
+    ) -> PyResult<Cow<'a, str>> {
+        self.invalid_as_json_key(key, state, extra, Self::EXPECTED_TYPE)
     }
 
     fn serde_serialize<S: serde::ser::Serializer>(
@@ -68,6 +75,7 @@ impl TypeSerializer for MissingSentinelSerializer {
         _serializer: S,
         _include: Option<&Bound<'_, PyAny>>,
         _exclude: Option<&Bound<'_, PyAny>>,
+        _state: &mut SerializationState,
         _extra: &Extra,
     ) -> Result<S::Ok, S::Error> {
         Err(Error::custom("'MISSING' can't be serialized to JSON".to_string()))

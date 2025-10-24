@@ -4,6 +4,7 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
 use crate::common::prebuilt::get_prebuilt;
+use crate::serializers::SerializationState;
 use crate::SchemaSerializer;
 
 use super::extra::Extra;
@@ -37,16 +38,25 @@ impl TypeSerializer for PrebuiltSerializer {
         value: &Bound<'_, PyAny>,
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
+        state: &mut SerializationState,
         extra: &Extra,
     ) -> PyResult<Py<PyAny>> {
         self.schema_serializer
             .get()
             .serializer
-            .to_python_no_infer(value, include, exclude, extra)
+            .to_python_no_infer(value, include, exclude, state, extra)
     }
 
-    fn json_key<'a>(&self, key: &'a Bound<'_, PyAny>, extra: &Extra) -> PyResult<Cow<'a, str>> {
-        self.schema_serializer.get().serializer.json_key_no_infer(key, extra)
+    fn json_key<'a>(
+        &self,
+        key: &'a Bound<'_, PyAny>,
+        state: &mut SerializationState,
+        extra: &Extra,
+    ) -> PyResult<Cow<'a, str>> {
+        self.schema_serializer
+            .get()
+            .serializer
+            .json_key_no_infer(key, state, extra)
     }
 
     fn serde_serialize<S: serde::ser::Serializer>(
@@ -55,12 +65,13 @@ impl TypeSerializer for PrebuiltSerializer {
         serializer: S,
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
+        state: &mut SerializationState,
         extra: &Extra,
     ) -> Result<S::Ok, S::Error> {
         self.schema_serializer
             .get()
             .serializer
-            .serde_serialize_no_infer(value, serializer, include, exclude, extra)
+            .serde_serialize_no_infer(value, serializer, include, exclude, state, extra)
     }
 
     fn get_name(&self) -> &str {

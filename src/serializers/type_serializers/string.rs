@@ -6,6 +6,7 @@ use pyo3::{prelude::*, IntoPyObjectExt};
 
 use crate::build_tools::LazyLock;
 use crate::definitions::DefinitionsBuilder;
+use crate::serializers::SerializationState;
 
 use super::{
     infer_json_key, infer_serialize, infer_to_python, py_err_se_err, BuildSerializer, CombinedSerializer, Extra,
@@ -43,6 +44,7 @@ impl TypeSerializer for StrSerializer {
         value: &Bound<'_, PyAny>,
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
+        state: &mut SerializationState,
         extra: &Extra,
     ) -> PyResult<Py<PyAny>> {
         let py = value.py();
@@ -53,19 +55,24 @@ impl TypeSerializer for StrSerializer {
                 _ => Ok(value.clone().unbind()),
             },
             IsType::False => {
-                extra.warnings.on_fallback_py(self.get_name(), value, extra)?;
-                infer_to_python(value, include, exclude, extra)
+                state.warnings.on_fallback_py(self.get_name(), value, extra)?;
+                infer_to_python(value, include, exclude, state, extra)
             }
         }
     }
 
-    fn json_key<'a>(&self, key: &'a Bound<'_, PyAny>, extra: &Extra) -> PyResult<Cow<'a, str>> {
+    fn json_key<'a>(
+        &self,
+        key: &'a Bound<'_, PyAny>,
+        state: &mut SerializationState,
+        extra: &Extra,
+    ) -> PyResult<Cow<'a, str>> {
         if let Ok(py_str) = key.downcast::<PyString>() {
             // FIXME py cow to avoid the copy
             Ok(Cow::Owned(py_str.to_string_lossy().into_owned()))
         } else {
-            extra.warnings.on_fallback_py(self.get_name(), key, extra)?;
-            infer_json_key(key, extra)
+            state.warnings.on_fallback_py(self.get_name(), key, extra)?;
+            infer_json_key(key, state, extra)
         }
     }
 
@@ -75,13 +82,14 @@ impl TypeSerializer for StrSerializer {
         serializer: S,
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
+        state: &mut SerializationState,
         extra: &Extra,
     ) -> Result<S::Ok, S::Error> {
         match value.downcast::<PyString>() {
             Ok(py_str) => serialize_py_str(py_str, serializer),
             Err(_) => {
-                extra.warnings.on_fallback_ser::<S>(self.get_name(), value, extra)?;
-                infer_serialize(value, serializer, include, exclude, extra)
+                state.warnings.on_fallback_ser::<S>(self.get_name(), value, extra)?;
+                infer_serialize(value, serializer, include, exclude, state, extra)
             }
         }
     }

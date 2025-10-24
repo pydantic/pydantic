@@ -9,6 +9,7 @@ use serde::ser::SerializeMap;
 
 use crate::build_tools::{py_schema_error_type, ExtraBehavior};
 use crate::definitions::DefinitionsBuilder;
+use crate::serializers::SerializationState;
 use crate::tools::SchemaDict;
 
 use super::{
@@ -149,6 +150,7 @@ impl TypeSerializer for DataclassSerializer {
         value: &Bound<'_, PyAny>,
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
+        state: &mut SerializationState,
         extra: &Extra,
     ) -> PyResult<Py<PyAny>> {
         let model = Some(value);
@@ -161,27 +163,34 @@ impl TypeSerializer for DataclassSerializer {
                     known_dataclass_iter(&self.fields, value),
                     include,
                     exclude,
+                    state,
                     dc_extra,
                 )?;
 
-                fields_serializer.add_computed_fields_python(model, &output_dict, include, exclude, extra)?;
+                fields_serializer.add_computed_fields_python(model, &output_dict, include, exclude, state, extra)?;
                 Ok(output_dict.into())
             } else {
                 let inner_value = self.get_inner_value(value)?;
-                self.serializer.to_python(&inner_value, include, exclude, &dc_extra)
+                self.serializer
+                    .to_python(&inner_value, include, exclude, state, &dc_extra)
             }
         } else {
-            extra.warnings.on_fallback_py(self.get_name(), value, &dc_extra)?;
-            infer_to_python(value, include, exclude, &dc_extra)
+            state.warnings.on_fallback_py(self.get_name(), value, &dc_extra)?;
+            infer_to_python(value, include, exclude, state, &dc_extra)
         }
     }
 
-    fn json_key<'a>(&self, key: &'a Bound<'_, PyAny>, extra: &Extra) -> PyResult<Cow<'a, str>> {
+    fn json_key<'a>(
+        &self,
+        key: &'a Bound<'_, PyAny>,
+        state: &mut SerializationState,
+        extra: &Extra,
+    ) -> PyResult<Cow<'a, str>> {
         if self.allow_value(key, extra)? {
-            infer_json_key_known(ObType::Dataclass, key, extra)
+            infer_json_key_known(ObType::Dataclass, key, state, extra)
         } else {
-            extra.warnings.on_fallback_py(&self.name, key, extra)?;
-            infer_json_key(key, extra)
+            state.warnings.on_fallback_py(&self.name, key, extra)?;
+            infer_json_key(key, state, extra)
         }
     }
 
@@ -191,6 +200,7 @@ impl TypeSerializer for DataclassSerializer {
         serializer: S,
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
+        state: &mut SerializationState,
         extra: &Extra,
     ) -> Result<S::Ok, S::Error> {
         let model = Some(value);
@@ -204,18 +214,19 @@ impl TypeSerializer for DataclassSerializer {
                     serializer,
                     include,
                     exclude,
+                    state,
                     dc_extra,
                 )?;
-                fields_serializer.add_computed_fields_json::<S>(model, &mut map, include, exclude, extra)?;
+                fields_serializer.add_computed_fields_json::<S>(model, &mut map, include, exclude, state, extra)?;
                 map.end()
             } else {
                 let inner_value = self.get_inner_value(value).map_err(py_err_se_err)?;
                 self.serializer
-                    .serde_serialize(&inner_value, serializer, include, exclude, &dc_extra)
+                    .serde_serialize(&inner_value, serializer, include, exclude, state, &dc_extra)
             }
         } else {
-            extra.warnings.on_fallback_ser::<S>(self.get_name(), value, &dc_extra)?;
-            infer_serialize(value, serializer, include, exclude, &dc_extra)
+            state.warnings.on_fallback_ser::<S>(self.get_name(), value, &dc_extra)?;
+            infer_serialize(value, serializer, include, exclude, state, &dc_extra)
         }
     }
 

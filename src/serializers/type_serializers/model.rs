@@ -19,6 +19,7 @@ use crate::definitions::DefinitionsBuilder;
 use crate::serializers::type_serializers::any::AnySerializer;
 use crate::serializers::type_serializers::function::FunctionPlainSerializer;
 use crate::serializers::type_serializers::function::FunctionWrapSerializer;
+use crate::serializers::SerializationState;
 use crate::tools::SchemaDict;
 
 const ROOT_FIELD: &str = "root";
@@ -247,24 +248,30 @@ impl TypeSerializer for ModelSerializer {
         value: &Bound<'_, PyAny>,
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
+        state: &mut SerializationState,
         extra: &Extra,
     ) -> PyResult<Py<PyAny>> {
         self.serialize(value, extra, |resolved| match resolved {
-            Some((serializer, value, extra)) => serializer.to_python_no_infer(value, include, exclude, extra),
+            Some((serializer, value, extra)) => serializer.to_python_no_infer(value, include, exclude, state, extra),
             None => {
-                extra.warnings.on_fallback_py(self.get_name(), value, extra)?;
-                infer_to_python(value, include, exclude, extra)
+                state.warnings.on_fallback_py(self.get_name(), value, extra)?;
+                infer_to_python(value, include, exclude, state, extra)
             }
         })
     }
 
-    fn json_key<'a>(&self, key: &'a Bound<'_, PyAny>, extra: &Extra) -> PyResult<Cow<'a, str>> {
+    fn json_key<'a>(
+        &self,
+        key: &'a Bound<'_, PyAny>,
+        state: &mut SerializationState,
+        extra: &Extra,
+    ) -> PyResult<Cow<'a, str>> {
         // FIXME: root model in json key position should serialize as inner value?
         if self.allow_value(key, extra.check)? {
-            infer_json_key_known(ObType::PydanticSerializable, key, extra)
+            infer_json_key_known(ObType::PydanticSerializable, key, state, extra)
         } else {
-            extra.warnings.on_fallback_py(&self.name, key, extra)?;
-            infer_json_key(key, extra)
+            state.warnings.on_fallback_py(&self.name, key, extra)?;
+            infer_json_key(key, state, extra)
         }
     }
 
@@ -274,18 +281,19 @@ impl TypeSerializer for ModelSerializer {
         serializer: S,
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
+        state: &mut SerializationState,
         extra: &Extra,
     ) -> Result<S::Ok, S::Error> {
         self.serialize(value, extra, |resolved| match resolved {
             Some((cs, value, extra)) => cs
-                .serde_serialize_no_infer(value, serializer, include, exclude, extra)
+                .serde_serialize_no_infer(value, serializer, include, exclude, state, extra)
                 .map_err(WrappedSerError),
             None => {
-                extra
+                state
                     .warnings
                     .on_fallback_ser::<S>(self.get_name(), value, extra)
                     .map_err(WrappedSerError)?;
-                infer_serialize(value, serializer, include, exclude, extra).map_err(WrappedSerError)
+                infer_serialize(value, serializer, include, exclude, state, extra).map_err(WrappedSerError)
             }
         })
         .map_err(|e| e.0)

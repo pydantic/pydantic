@@ -10,6 +10,7 @@ use crate::build_tools::py_schema_err;
 use crate::common::union::{Discriminator, SMALL_UNION_THRESHOLD};
 use crate::definitions::DefinitionsBuilder;
 use crate::serializers::PydanticSerializationUnexpectedValue;
+use crate::serializers::SerializationState;
 use crate::tools::SchemaDict;
 
 use super::{
@@ -71,7 +72,8 @@ fn union_serialize<S>(
     // if this returns `Ok(Some(v))`, we picked a union variant to serialize,
     // Or `Ok(None)` if we couldn't find a suitable variant to serialize
     // Finally, `Err(err)` if we encountered errors while trying to serialize
-    mut selector: impl FnMut(&CombinedSerializer, &Extra) -> PyResult<S>,
+    mut selector: impl FnMut(&CombinedSerializer, &mut SerializationState, &Extra) -> PyResult<S>,
+    state: &mut SerializationState,
     extra: &Extra,
     choices: &[Arc<CombinedSerializer>],
     retry_with_lax_check: bool,
@@ -83,7 +85,7 @@ fn union_serialize<S>(
     let mut errors: SmallVec<[PyErr; SMALL_UNION_THRESHOLD]> = SmallVec::new();
 
     for comb_serializer in choices {
-        match selector(comb_serializer, &new_extra) {
+        match selector(comb_serializer, state, &new_extra) {
             Ok(v) => return Ok(Some(v)),
             Err(err) => errors.push(err),
         }
@@ -93,7 +95,7 @@ fn union_serialize<S>(
     if extra.check != SerCheck::Strict && retry_with_lax_check {
         new_extra.check = SerCheck::Lax;
         for comb_serializer in choices {
-            if let Ok(v) = selector(comb_serializer, &new_extra) {
+            if let Ok(v) = selector(comb_serializer, state, &new_extra) {
                 return Ok(Some(v));
             }
         }
@@ -104,9 +106,9 @@ fn union_serialize<S>(
         for err in &errors {
             if err.is_instance_of::<PydanticSerializationUnexpectedValue>(py) {
                 let pydantic_err: PydanticSerializationUnexpectedValue = err.value(py).extract()?;
-                extra.warnings.register_warning(pydantic_err);
+                state.warnings.register_warning(pydantic_err);
             } else {
-                extra
+                state
                     .warnings
                     .register_warning(PydanticSerializationUnexpectedValue::new_from_msg(Some(
                         err.to_string(),
@@ -130,27 +132,35 @@ impl TypeSerializer for UnionSerializer {
         value: &Bound<'_, PyAny>,
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
+        state: &mut SerializationState,
         extra: &Extra,
     ) -> PyResult<Py<PyAny>> {
         union_serialize(
-            |comb_serializer, new_extra| comb_serializer.to_python(value, include, exclude, new_extra),
+            |comb_serializer, state, new_extra| comb_serializer.to_python(value, include, exclude, state, new_extra),
+            state,
             extra,
             &self.choices,
             self.retry_with_lax_check(),
             value.py(),
         )?
-        .map_or_else(|| infer_to_python(value, include, exclude, extra), Ok)
+        .map_or_else(|| infer_to_python(value, include, exclude, state, extra), Ok)
     }
 
-    fn json_key<'a>(&self, key: &'a Bound<'_, PyAny>, extra: &Extra) -> PyResult<Cow<'a, str>> {
+    fn json_key<'a>(
+        &self,
+        key: &'a Bound<'_, PyAny>,
+        state: &mut SerializationState,
+        extra: &Extra,
+    ) -> PyResult<Cow<'a, str>> {
         union_serialize(
-            |comb_serializer, new_extra| comb_serializer.json_key(key, new_extra),
+            |comb_serializer, state, new_extra| comb_serializer.json_key(key, state, new_extra),
+            state,
             extra,
             &self.choices,
             self.retry_with_lax_check(),
             key.py(),
         )?
-        .map_or_else(|| infer_json_key(key, extra), Ok)
+        .map_or_else(|| infer_json_key(key, state, extra), Ok)
     }
 
     fn serde_serialize<S: serde::ser::Serializer>(
@@ -159,17 +169,19 @@ impl TypeSerializer for UnionSerializer {
         serializer: S,
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
+        state: &mut SerializationState,
         extra: &Extra,
     ) -> Result<S::Ok, S::Error> {
         match union_serialize(
-            |comb_serializer, new_extra| comb_serializer.to_python(value, include, exclude, new_extra),
+            |comb_serializer, state, new_extra| comb_serializer.to_python(value, include, exclude, state, new_extra),
+            state,
             extra,
             &self.choices,
             self.retry_with_lax_check(),
             value.py(),
         ) {
-            Ok(Some(v)) => infer_serialize(v.bind(value.py()), serializer, None, None, extra),
-            Ok(None) => infer_serialize(value, serializer, include, exclude, extra),
+            Ok(Some(v)) => infer_serialize(v.bind(value.py()), serializer, None, None, state, extra),
+            Ok(None) => infer_serialize(value, serializer, include, exclude, state, extra),
             Err(err) => Err(serde::ser::Error::custom(err.to_string())),
         }
     }
@@ -233,25 +245,31 @@ impl TypeSerializer for TaggedUnionSerializer {
         value: &Bound<'_, PyAny>,
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
+        state: &mut SerializationState,
         extra: &Extra,
     ) -> PyResult<Py<PyAny>> {
         self.tagged_union_serialize(
             value,
-            |comb_serializer: &CombinedSerializer, new_extra: &Extra| {
-                comb_serializer.to_python(value, include, exclude, new_extra)
-            },
+            |comb_serializer, state, new_extra| comb_serializer.to_python(value, include, exclude, state, new_extra),
+            state,
             extra,
         )?
-        .map_or_else(|| infer_to_python(value, include, exclude, extra), Ok)
+        .map_or_else(|| infer_to_python(value, include, exclude, state, extra), Ok)
     }
 
-    fn json_key<'a>(&self, key: &'a Bound<'_, PyAny>, extra: &Extra) -> PyResult<Cow<'a, str>> {
+    fn json_key<'a>(
+        &self,
+        key: &'a Bound<'_, PyAny>,
+        state: &mut SerializationState,
+        extra: &Extra,
+    ) -> PyResult<Cow<'a, str>> {
         self.tagged_union_serialize(
             key,
-            |comb_serializer: &CombinedSerializer, new_extra: &Extra| comb_serializer.json_key(key, new_extra),
+            |comb_serializer, state, new_extra| comb_serializer.json_key(key, state, new_extra),
+            state,
             extra,
         )?
-        .map_or_else(|| infer_json_key(key, extra), Ok)
+        .map_or_else(|| infer_json_key(key, state, extra), Ok)
     }
 
     fn serde_serialize<S: serde::ser::Serializer>(
@@ -260,17 +278,17 @@ impl TypeSerializer for TaggedUnionSerializer {
         serializer: S,
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
+        state: &mut SerializationState,
         extra: &Extra,
     ) -> Result<S::Ok, S::Error> {
         match self.tagged_union_serialize(
             value,
-            |comb_serializer: &CombinedSerializer, new_extra: &Extra| {
-                comb_serializer.to_python(value, include, exclude, new_extra)
-            },
+            |comb_serializer, state, new_extra| comb_serializer.to_python(value, include, exclude, state, new_extra),
+            state,
             extra,
         ) {
-            Ok(Some(v)) => infer_serialize(v.bind(value.py()), serializer, None, None, extra),
-            Ok(None) => infer_serialize(value, serializer, include, exclude, extra),
+            Ok(Some(v)) => infer_serialize(v.bind(value.py()), serializer, None, None, state, extra),
+            Ok(None) => infer_serialize(value, serializer, include, exclude, state, extra),
             Err(err) => Err(serde::ser::Error::custom(err.to_string())),
         }
     }
@@ -308,7 +326,8 @@ impl TaggedUnionSerializer {
         value: &Bound<'_, PyAny>,
         // if this returns `Ok(v)`, we picked a union variant to serialize, where
         // `S` is intermediate state which can be passed on to the finalizer
-        mut selector: impl FnMut(&CombinedSerializer, &Extra) -> PyResult<S>,
+        mut selector: impl FnMut(&CombinedSerializer, &mut SerializationState, &Extra) -> PyResult<S>,
+        state: &mut SerializationState,
         extra: &Extra,
     ) -> PyResult<Option<S>> {
         if let Some(tag) = self.get_discriminator_value(value) {
@@ -319,12 +338,12 @@ impl TaggedUnionSerializer {
             if let Some(&serializer_index) = self.lookup.get(&tag_str) {
                 let selected_serializer = &self.choices[serializer_index];
 
-                match selector(selected_serializer, &new_extra) {
+                match selector(selected_serializer, state, &new_extra) {
                     Ok(v) => return Ok(Some(v)),
                     Err(_) => {
                         if self.retry_with_lax_check() {
                             new_extra.check = SerCheck::Lax;
-                            if let Ok(v) = selector(selected_serializer, &new_extra) {
+                            if let Ok(v) = selector(selected_serializer, state, &new_extra) {
                                 return Ok(Some(v));
                             }
                         }
@@ -334,7 +353,7 @@ impl TaggedUnionSerializer {
         } else if extra.check == SerCheck::None {
             // If extra.check is SerCheck::None, we're in a top-level union. We should thus raise
             // this warning
-            extra.warnings.register_warning(
+            state.warnings.register_warning(
                 PydanticSerializationUnexpectedValue::new(
                     Some("Defaulting to left to right union serialization - failed to get discriminator value for tagged union serialization".to_string()),
                     None,
@@ -347,6 +366,13 @@ impl TaggedUnionSerializer {
         // if we haven't returned at this point, we should fallback to the union serializer
         // which preserves the historical expectation that we do our best with serialization
         // even if that means we resort to inference
-        union_serialize(selector, extra, &self.choices, self.retry_with_lax_check(), value.py())
+        union_serialize(
+            selector,
+            state,
+            extra,
+            &self.choices,
+            self.retry_with_lax_check(),
+            value.py(),
+        )
     }
 }

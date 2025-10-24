@@ -8,6 +8,7 @@ use pyo3::{intern, IntoPyObjectExt};
 use serde::ser::SerializeSeq;
 
 use crate::definitions::DefinitionsBuilder;
+use crate::serializers::SerializationState;
 use crate::tools::SchemaDict;
 
 use super::any::AnySerializer;
@@ -56,6 +57,7 @@ macro_rules! build_serializer {
                 value: &Bound<'_, PyAny>,
                 include: Option<&Bound<'_, PyAny>>,
                 exclude: Option<&Bound<'_, PyAny>>,
+                state: &mut SerializationState,
                 extra: &Extra,
             ) -> PyResult<Py<PyAny>> {
                 let py = value.py();
@@ -65,7 +67,7 @@ macro_rules! build_serializer {
 
                         let mut items = Vec::with_capacity(py_set.len());
                         for element in py_set.iter() {
-                            items.push(item_serializer.to_python(&element, include, exclude, extra)?);
+                            items.push(item_serializer.to_python(&element, include, exclude, state, extra)?);
                         }
                         match extra.mode {
                             SerMode::Json => Ok(PyList::new(py, items)?.into()),
@@ -73,14 +75,19 @@ macro_rules! build_serializer {
                         }
                     }
                     Err(_) => {
-                        extra.warnings.on_fallback_py(self.get_name(), value, extra)?;
-                        infer_to_python(value, include, exclude, extra)
+                        state.warnings.on_fallback_py(self.get_name(), value, extra)?;
+                        infer_to_python(value, include, exclude, state, extra)
                     }
                 }
             }
 
-            fn json_key<'a>(&self, key: &'a Bound<'_, PyAny>, extra: &Extra) -> PyResult<Cow<'a, str>> {
-                self.invalid_as_json_key(key, extra, Self::EXPECTED_TYPE)
+            fn json_key<'a>(
+                &self,
+                key: &'a Bound<'_, PyAny>,
+                state: &mut SerializationState,
+                extra: &Extra,
+            ) -> PyResult<Cow<'a, str>> {
+                self.invalid_as_json_key(key, state, extra, Self::EXPECTED_TYPE)
             }
 
             fn serde_serialize<S: serde::ser::Serializer>(
@@ -89,6 +96,7 @@ macro_rules! build_serializer {
                 serializer: S,
                 include: Option<&Bound<'_, PyAny>>,
                 exclude: Option<&Bound<'_, PyAny>>,
+                state: &mut SerializationState,
                 extra: &Extra,
             ) -> Result<S::Ok, S::Error> {
                 match value.downcast::<$py_type>() {
@@ -98,16 +106,16 @@ macro_rules! build_serializer {
 
                         for value in py_set.iter() {
                             let item_serialize =
-                                PydanticSerializer::new(&value, item_serializer, include, exclude, extra);
+                                PydanticSerializer::new(&value, item_serializer, include, exclude, state, extra);
                             seq.serialize_element(&item_serialize)?;
                         }
                         seq.end()
                     }
                     Err(_) => {
-                        extra
+                        state
                             .warnings
                             .on_fallback_ser::<S>(self.get_name(), value, extra)?;
-                        infer_serialize(value, serializer, include, exclude, extra)
+                        infer_serialize(value, serializer, include, exclude, state, extra)
                     }
                 }
             }
