@@ -11,13 +11,14 @@ use pyo3::types::{PyDict, PyString};
 use pyo3::{intern, PyTraverseError, PyVisit};
 
 use enum_dispatch::enum_dispatch;
-use serde::Serialize;
+use serde::{Serialize, Serializer};
 use serde_json::ser::{Formatter, PrettyFormatter};
 
 use crate::build_tools::py_schema_err;
 use crate::build_tools::py_schema_error_type;
 use crate::definitions::DefinitionsBuilder;
 use crate::py_gc::PyGcTraverse;
+use crate::serializers::errors::WrappedSerError;
 use crate::serializers::ser::PythonSerializer;
 use crate::serializers::type_serializers::any::AnySerializer;
 use crate::tools::{py_err, SchemaDict};
@@ -656,4 +657,108 @@ static DC_FIELD_MARKER: PyOnceLock<Py<PyAny>> = PyOnceLock::new();
 /// needed to match the logic from dataclasses.fields `tuple(f for f in fields.values() if f._field_type is _FIELD)`
 fn get_field_marker(py: Python<'_>) -> PyResult<&Bound<'_, PyAny>> {
     DC_FIELD_MARKER.import(py, "dataclasses", "_FIELD")
+}
+
+/// Common interface for doing serialization
+pub trait DoSerialize<OutputT, ErrorT> {
+    fn serialize_no_infer(
+        self,
+        serializer: &CombinedSerializer,
+        value: &Bound<'_, PyAny>,
+        state: &mut SerializationState,
+        extra: &Extra,
+    ) -> Result<OutputT, ErrorT>;
+
+    fn serialize_fallback(
+        self,
+        name: &str,
+        value: &Bound<'_, PyAny>,
+        state: &mut SerializationState,
+        extra: &Extra,
+    ) -> Result<OutputT, ErrorT>;
+}
+
+/// Helper to create a `SerializeToPython` instance
+pub fn serialize_to_python<'a, 'py>(
+    include: Option<&'a Bound<'py, PyAny>>,
+    exclude: Option<&'a Bound<'py, PyAny>>,
+) -> SerializeToPython<'a, 'py> {
+    SerializeToPython { include, exclude }
+}
+
+/// Helper to create a `SerializeToJson` instance
+pub fn serialize_to_json<'a, 'py, S>(
+    serializer: S,
+    include: Option<&'a Bound<'py, PyAny>>,
+    exclude: Option<&'a Bound<'py, PyAny>>,
+) -> SerializeToJson<'a, 'py, S> {
+    SerializeToJson {
+        serializer,
+        include,
+        exclude,
+    }
+}
+
+pub struct SerializeToPython<'a, 'py> {
+    // TODO: should include / exclude be moved into Extra to avoid the number of fields being
+    // pushed around?
+    include: Option<&'a Bound<'py, PyAny>>,
+    exclude: Option<&'a Bound<'py, PyAny>>,
+}
+
+impl DoSerialize<Py<PyAny>, PyErr> for SerializeToPython<'_, '_> {
+    fn serialize_no_infer(
+        self,
+        serializer: &CombinedSerializer,
+        value: &Bound<'_, PyAny>,
+        state: &mut SerializationState,
+        extra: &Extra,
+    ) -> PyResult<Py<PyAny>> {
+        serializer.to_python_no_infer(value, self.include, self.exclude, state, extra)
+    }
+
+    fn serialize_fallback(
+        self,
+        name: &str,
+        value: &Bound<'_, PyAny>,
+        state: &mut SerializationState,
+        extra: &Extra,
+    ) -> PyResult<Py<PyAny>> {
+        state.warnings.on_fallback_py(name, value, extra)?;
+        infer_to_python(value, self.include, self.exclude, state, extra)
+    }
+}
+
+pub struct SerializeToJson<'a, 'py, S> {
+    serializer: S,
+    include: Option<&'a Bound<'py, PyAny>>,
+    exclude: Option<&'a Bound<'py, PyAny>>,
+}
+
+impl<S: Serializer> DoSerialize<S::Ok, WrappedSerError<S::Error>> for SerializeToJson<'_, '_, S> {
+    fn serialize_no_infer(
+        self,
+        serializer: &CombinedSerializer,
+        value: &Bound<'_, PyAny>,
+        state: &mut SerializationState,
+        extra: &Extra,
+    ) -> Result<S::Ok, WrappedSerError<S::Error>> {
+        serializer
+            .serde_serialize_no_infer(value, self.serializer, self.include, self.exclude, state, extra)
+            .map_err(WrappedSerError)
+    }
+
+    fn serialize_fallback(
+        self,
+        name: &str,
+        value: &Bound<'_, PyAny>,
+        state: &mut SerializationState,
+        extra: &Extra,
+    ) -> Result<S::Ok, WrappedSerError<S::Error>> {
+        state
+            .warnings
+            .on_fallback_ser::<S>(name, value, extra)
+            .map_err(WrappedSerError)?;
+        infer_serialize(value, self.serializer, self.include, self.exclude, state, extra).map_err(WrappedSerError)
+    }
 }

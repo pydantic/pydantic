@@ -53,7 +53,7 @@ pub struct ObTypeLookup {
 
 static TYPE_LOOKUP: PyOnceLock<ObTypeLookup> = PyOnceLock::new();
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum IsType {
     Exact,
     Subclass,

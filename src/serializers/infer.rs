@@ -12,6 +12,9 @@ use pyo3::IntoPyObjectExt;
 use serde::ser::{Error, Serialize, SerializeMap, SerializeSeq, Serializer};
 
 use crate::input::{EitherTimedelta, Int};
+use crate::serializers::shared::serialize_to_json;
+use crate::serializers::shared::serialize_to_python;
+use crate::serializers::shared::DoSerialize;
 use crate::serializers::type_serializers;
 use crate::serializers::SerializationState;
 use crate::tools::{extract_int, py_err, safe_repr};
@@ -103,21 +106,6 @@ pub(crate) fn infer_to_python_known(
         }};
     }
 
-    let serialize_with_serializer = || {
-        let py_serializer = value.getattr(intern!(py, "__pydantic_serializer__"))?;
-        let serializer: PyRef<SchemaSerializer> = py_serializer.extract()?;
-        let mut state = SerializationState {
-            warnings: state.warnings.clone(),
-            rec_guard: state.rec_guard.clone(),
-            config: serializer.config,
-        };
-        // Avoid falling immediately back into inference because we need to use the serializer
-        // to drive the next step of serialization
-        serializer
-            .serializer
-            .to_python_no_infer(value, include, exclude, &mut state, extra)
-    };
-
     let value = match extra.mode {
         SerMode::Json => match ob_type {
             // `bool` and `None` can't be subclasses, `ObType::Int`, `ObType::Float`, `ObType::Str` refer to exact types
@@ -208,7 +196,9 @@ pub(crate) fn infer_to_python_known(
                 let uuid = super::type_serializers::uuid::uuid_to_string(value)?;
                 uuid.into_py_any(py)?
             }
-            ObType::PydanticSerializable => serialize_with_serializer()?,
+            ObType::PydanticSerializable => {
+                call_pydantic_serializer(value, state, extra, serialize_to_python(include, exclude))?
+            }
             ObType::Dataclass => serialize_pairs_python(
                 py,
                 any_dataclass_iter(value)?.0,
@@ -282,7 +272,9 @@ pub(crate) fn infer_to_python_known(
                 let dict = value.downcast::<PyDict>()?;
                 serialize_pairs_python(py, dict.iter().map(Ok), include, exclude, state, extra, |k, _| Ok(k))?
             }
-            ObType::PydanticSerializable => serialize_with_serializer()?,
+            ObType::PydanticSerializable => {
+                call_pydantic_serializer(value, state, extra, serialize_to_python(include, exclude))?
+            }
             ObType::Dataclass => serialize_pairs_python(
                 py,
                 any_dataclass_iter(value)?.0,
@@ -521,21 +513,8 @@ pub(crate) fn infer_serialize_known<S: Serializer>(
             serializer.serialize_str(&py_url.__str__(value.py()))
         }
         ObType::PydanticSerializable => {
-            let py = value.py();
-            let py_serializer = value
-                .getattr(intern!(py, "__pydantic_serializer__"))
-                .map_err(py_err_se_err)?;
-            let extracted_serializer: PyRef<SchemaSerializer> = py_serializer.extract().map_err(py_err_se_err)?;
-            let mut state = SerializationState {
-                warnings: state.warnings.clone(),
-                rec_guard: state.rec_guard.clone(),
-                config: extracted_serializer.config,
-            };
-            // Avoid falling immediately back into inference because we need to use the serializer
-            // to drive the next step of serialization
-            extracted_serializer
-                .serializer
-                .serde_serialize_no_infer(value, serializer, include, exclude, &mut state, extra)
+            call_pydantic_serializer(value, state, extra, serialize_to_json(serializer, include, exclude))
+                .map_err(|e| e.0)
         }
         ObType::Dataclass => {
             let (pairs_iter, fields_dict) = any_dataclass_iter(value).map_err(py_err_se_err)?;
@@ -734,6 +713,29 @@ pub(crate) fn infer_json_key_known<'a>(
             }
         }
     }
+}
+
+/// Serialize `value` as if it had a `__pydantic_serializer__` attribute
+///
+/// `do_serialize` should be a closure which performs serialization without type inference
+pub(crate) fn call_pydantic_serializer<T, E: From<PyErr>>(
+    value: &Bound<'_, PyAny>,
+    state: &mut SerializationState,
+    extra: &Extra,
+    do_serialize: impl DoSerialize<T, E>,
+) -> Result<T, E> {
+    let py = value.py();
+    let py_serializer = value.getattr(intern!(py, "__pydantic_serializer__"))?;
+    let extracted_serializer: PyRef<SchemaSerializer> = py_serializer.extract()?;
+    let mut state = SerializationState {
+        warnings: state.warnings.clone(),
+        rec_guard: state.rec_guard.clone(),
+        config: extracted_serializer.config,
+    };
+
+    // Avoid falling immediately back into inference because we need to use the serializer
+    // to drive the next step of serialization
+    do_serialize.serialize_no_infer(&extracted_serializer.serializer, value, &mut state, extra)
 }
 
 fn serialize_pairs_python<'py>(

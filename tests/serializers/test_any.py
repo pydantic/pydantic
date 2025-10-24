@@ -282,7 +282,7 @@ class FieldsSetModel:
             setattr(self, key, value)
             fields[key] = core_schema.model_field(core_schema.any_schema())
         self.__pydantic_serializer__ = SchemaSerializer(
-            core_schema.model_schema(MyModel, core_schema.model_fields_schema(fields))
+            core_schema.model_schema(FieldsSetModel, core_schema.model_fields_schema(fields))
         )
 
 
