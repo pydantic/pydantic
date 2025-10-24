@@ -54,6 +54,7 @@ if TYPE_CHECKING:
         __pydantic_complete__: ClassVar[bool]
         __pydantic_core_schema__: ClassVar[core_schema.CoreSchema]
         __pydantic_decorators__: ClassVar[_decorators.DecoratorInfos]
+        __pydantic_all_fields__: ClassVar[dict[str, FieldInfo]]
         __pydantic_fields__: ClassVar[dict[str, FieldInfo]]
         __pydantic_serializer__: ClassVar[SchemaSerializer]
         __pydantic_validator__: ClassVar[SchemaValidator | PluggableSchemaValidator]
@@ -75,11 +76,17 @@ def set_dataclass_fields(
         ns_resolver: Namespace resolver to use when getting dataclass annotations.
     """
     typevars_map = get_standard_typevars_map(cls)
+    # collect all dataclass fields, including init-only (`init_var=True`) ones so
+    # the schema generation can include them as init-only parameters passed to
+    # dataclass `__post_init__` without storing them on the instance.
     fields = collect_dataclass_fields(
         cls, ns_resolver=ns_resolver, typevars_map=typevars_map, config_wrapper=config_wrapper
     )
 
-    cls.__pydantic_fields__ = fields  # type: ignore
+    # Keep the full field map on a private attribute so schema generation can use it.
+    # But expose `__pydantic_fields__` to users/tests without init-only fields.
+    cls.__pydantic_all_fields__ = fields  # type: ignore[attr-defined]
+    cls.__pydantic_fields__ = {k: v for k, v in fields.items() if not v.init_var}  # type: ignore
 
 
 def complete_dataclass(
