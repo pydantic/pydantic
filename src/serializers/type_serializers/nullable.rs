@@ -38,8 +38,6 @@ impl TypeSerializer for NullableSerializer {
     fn to_python<'py>(
         &self,
         value: &Bound<'py, PyAny>,
-        include: Option<&Bound<'py, PyAny>>,
-        exclude: Option<&Bound<'py, PyAny>>,
         state: &mut SerializationState<'py>,
         extra: &Extra<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
@@ -47,7 +45,7 @@ impl TypeSerializer for NullableSerializer {
         match extra.ob_type_lookup.is_type(value, ObType::None) {
             IsType::Exact => Ok(py.None()),
             // I don't think subclasses of None can exist
-            _ => self.serializer.to_python(value, include, exclude, state, extra),
+            _ => self.serializer.to_python(value, state, extra),
         }
     }
 
@@ -67,16 +65,12 @@ impl TypeSerializer for NullableSerializer {
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        include: Option<&Bound<'py, PyAny>>,
-        exclude: Option<&Bound<'py, PyAny>>,
         state: &mut SerializationState<'py>,
         extra: &Extra<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
         match extra.ob_type_lookup.is_type(value, ObType::None) {
             IsType::Exact => serializer.serialize_none(),
-            _ => self
-                .serializer
-                .serde_serialize(value, serializer, include, exclude, state, extra),
+            _ => self.serializer.serde_serialize(value, serializer, state, extra),
         }
     }
 

@@ -45,8 +45,6 @@ impl TypeSerializer for NoneSerializer {
     fn to_python<'py>(
         &self,
         value: &Bound<'py, PyAny>,
-        include: Option<&Bound<'py, PyAny>>,
-        exclude: Option<&Bound<'py, PyAny>>,
         state: &mut SerializationState<'py>,
         extra: &Extra<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
@@ -56,7 +54,7 @@ impl TypeSerializer for NoneSerializer {
             // I don't think subclasses of None can exist
             _ => {
                 state.warn_fallback_py(self.get_name(), value, extra)?;
-                infer_to_python(value, include, exclude, state, extra)
+                infer_to_python(value, state, extra)
             }
         }
     }
@@ -80,8 +78,6 @@ impl TypeSerializer for NoneSerializer {
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        include: Option<&Bound<'py, PyAny>>,
-        exclude: Option<&Bound<'py, PyAny>>,
         state: &mut SerializationState<'py>,
         extra: &Extra<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
@@ -89,7 +85,7 @@ impl TypeSerializer for NoneSerializer {
             IsType::Exact => serializer.serialize_none(),
             _ => {
                 state.warn_fallback_ser::<S>(self.get_name(), value, extra)?;
-                infer_serialize(value, serializer, include, exclude, state, extra)
+                infer_serialize(value, serializer, state, extra)
             }
         }
     }
@@ -130,8 +126,6 @@ macro_rules! build_simple_serializer {
             fn to_python<'py>(
                 &self,
                 value: &Bound<'py, PyAny>,
-                include: Option<&Bound<'py, PyAny>>,
-                exclude: Option<&Bound<'py, PyAny>>,
                 state: &mut SerializationState<'py>,
                 extra: &Extra<'_, 'py>,
             ) -> PyResult<Py<PyAny>> {
@@ -142,12 +136,12 @@ macro_rules! build_simple_serializer {
                         SerCheck::Strict => Err(PydanticSerializationUnexpectedValue::new_from_msg(None).to_py_err()),
                         SerCheck::Lax | SerCheck::None => match extra.mode {
                             SerMode::Json => value.extract::<$rust_type>()?.into_py_any(py),
-                            _ => infer_to_python(value, include, exclude, state, extra),
+                            _ => infer_to_python(value, state, extra),
                         },
                     },
                     IsType::False => {
                         state.warn_fallback_py(self.get_name(), value, extra)?;
-                        infer_to_python(value, include, exclude, state, extra)
+                        infer_to_python(value, state, extra)
                     }
                 }
             }
@@ -171,8 +165,6 @@ macro_rules! build_simple_serializer {
                 &self,
                 value: &Bound<'py, PyAny>,
                 serializer: S,
-                include: Option<&Bound<'py, PyAny>>,
-                exclude: Option<&Bound<'py, PyAny>>,
                 state: &mut SerializationState<'py>,
                 extra: &Extra<'_, 'py>,
             ) -> Result<S::Ok, S::Error> {
@@ -180,7 +172,7 @@ macro_rules! build_simple_serializer {
                     Ok(v) => v.serialize(serializer),
                     Err(_) => {
                         state.warn_fallback_ser::<S>(self.get_name(), value, extra)?;
-                        infer_serialize(value, serializer, include, exclude, state, extra)
+                        infer_serialize(value, serializer, state, extra)
                     }
                 }
             }

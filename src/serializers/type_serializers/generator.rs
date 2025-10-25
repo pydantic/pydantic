@@ -53,8 +53,6 @@ impl TypeSerializer for GeneratorSerializer {
     fn to_python<'py>(
         &self,
         value: &Bound<'py, PyAny>,
-        include: Option<&Bound<'py, PyAny>>,
-        exclude: Option<&Bound<'py, PyAny>>,
         state: &mut SerializationState<'py>,
         extra: &Extra<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
@@ -71,15 +69,10 @@ impl TypeSerializer for GeneratorSerializer {
                         };
                         for (index, iter_result) in py_iter.clone().enumerate() {
                             let element = iter_result?;
-                            let op_next = self.filter.index_filter(index, include, exclude, None)?;
+                            let op_next = self.filter.index_filter(index, state, None)?;
                             if let Some((next_include, next_exclude)) = op_next {
-                                items.push(item_serializer.to_python(
-                                    &element,
-                                    next_include.as_ref(),
-                                    next_exclude.as_ref(),
-                                    state,
-                                    extra,
-                                )?);
+                                let state = &mut state.scoped_include_exclude(next_include, next_exclude);
+                                items.push(item_serializer.to_python(&element, state, extra)?);
                             }
                         }
                         items.into_py_any(py)
@@ -89,8 +82,6 @@ impl TypeSerializer for GeneratorSerializer {
                             py_iter,
                             &self.item_serializer,
                             self.filter.clone(),
-                            include,
-                            exclude,
                             state,
                             extra,
                         );
@@ -100,7 +91,7 @@ impl TypeSerializer for GeneratorSerializer {
             }
             Err(_) => {
                 state.warn_fallback_py(self.get_name(), value, extra)?;
-                infer_to_python(value, include, exclude, state, extra)
+                infer_to_python(value, state, extra)
             }
         }
     }
@@ -118,8 +109,6 @@ impl TypeSerializer for GeneratorSerializer {
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        include: Option<&Bound<'py, PyAny>>,
-        exclude: Option<&Bound<'py, PyAny>>,
         state: &mut SerializationState<'py>,
         extra: &Extra<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
@@ -131,19 +120,10 @@ impl TypeSerializer for GeneratorSerializer {
 
                 for (index, iter_result) in py_iter.clone().enumerate() {
                     let element = iter_result.map_err(py_err_se_err)?;
-                    let op_next = self
-                        .filter
-                        .index_filter(index, include, exclude, None)
-                        .map_err(py_err_se_err)?;
+                    let op_next = self.filter.index_filter(index, state, None).map_err(py_err_se_err)?;
                     if let Some((next_include, next_exclude)) = op_next {
-                        let item_serialize = PydanticSerializer::new(
-                            &element,
-                            item_serializer,
-                            next_include.as_ref(),
-                            next_exclude.as_ref(),
-                            state,
-                            extra,
-                        );
+                        let state = &mut state.scoped_include_exclude(next_include, next_exclude);
+                        let item_serialize = PydanticSerializer::new(&element, item_serializer, state, extra);
                         seq.serialize_element(&item_serialize)?;
                     }
                 }
@@ -151,7 +131,7 @@ impl TypeSerializer for GeneratorSerializer {
             }
             Err(_) => {
                 state.warn_fallback_ser::<S>(self.get_name(), value, extra)?;
-                infer_serialize(value, serializer, include, exclude, state, extra)
+                infer_serialize(value, serializer, state, extra)
             }
         }
     }
@@ -170,8 +150,6 @@ pub(crate) struct SerializationIterator {
     item_serializer: Arc<CombinedSerializer>,
     extra_owned: ExtraOwned,
     filter: SchemaFilter<usize>,
-    include: Option<Py<PyAny>>,
-    exclude: Option<Py<PyAny>>,
 }
 
 impl SerializationIterator {
@@ -179,8 +157,6 @@ impl SerializationIterator {
         py_iter: &Bound<'_, PyIterator>,
         item_serializer: &Arc<CombinedSerializer>,
         filter: SchemaFilter<usize>,
-        include: Option<&Bound<'_, PyAny>>,
-        exclude: Option<&Bound<'_, PyAny>>,
         state: &mut SerializationState<'_>,
         extra: &Extra<'_, '_>,
     ) -> Self {
@@ -190,18 +166,10 @@ impl SerializationIterator {
             item_serializer: item_serializer.clone(),
             extra_owned: ExtraOwned::new(extra, state),
             filter,
-            include: include.map(|v| v.clone().into()),
-            exclude: exclude.map(|v| v.clone().into()),
         }
     }
 
     fn __traverse__(&self, visit: PyVisit<'_>) -> Result<(), PyTraverseError> {
-        if let Some(include) = &self.include {
-            visit.call(include)?;
-        }
-        if let Some(exclude) = &self.exclude {
-            visit.call(exclude)?;
-        }
         if let Some(model) = &self.extra_owned.model {
             visit.call(model)?;
         }
@@ -215,8 +183,6 @@ impl SerializationIterator {
     }
 
     fn __clear__(&mut self) {
-        self.include = None;
-        self.exclude = None;
         self.extra_owned.model = None;
         self.extra_owned.fallback = None;
         self.extra_owned.context = None;
@@ -231,20 +197,19 @@ impl SerializationIterator {
 
     fn __next__(&mut self, py: Python) -> PyResult<Option<Py<PyAny>>> {
         let iterator = self.iterator.bind(py);
-        let include = self.include.as_ref().map(|o| o.bind(py));
-        let exclude = self.exclude.as_ref().map(|o| o.bind(py));
         let extra = self.extra_owned.to_extra(py);
         let state = &mut self.extra_owned.to_state(py);
 
         for iter_result in iterator.clone() {
             let element = iter_result?;
-            let filter = self.filter.index_filter(self.index, include, exclude, None)?;
+            let filter = self.filter.index_filter(self.index, state, None)?;
             self.index += 1;
             if let Some((next_include, next_exclude)) = filter {
+                let state = &mut state.scoped_include_exclude(next_include, next_exclude);
                 let v = self
                     .item_serializer
                     // TODO do we need error_on_fallback to be customizable?
-                    .to_python(&element, next_include.as_ref(), next_exclude.as_ref(), state, &extra)?;
+                    .to_python(&element, state, &extra)?;
                 state.warnings.final_check(py)?;
                 return Ok(Some(v));
             }

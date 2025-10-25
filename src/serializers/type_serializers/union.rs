@@ -130,20 +130,18 @@ impl TypeSerializer for UnionSerializer {
     fn to_python<'py>(
         &self,
         value: &Bound<'py, PyAny>,
-        include: Option<&Bound<'py, PyAny>>,
-        exclude: Option<&Bound<'py, PyAny>>,
         state: &mut SerializationState<'py>,
         extra: &Extra<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
         union_serialize(
-            |comb_serializer, state, new_extra| comb_serializer.to_python(value, include, exclude, state, new_extra),
+            |comb_serializer, state, new_extra| comb_serializer.to_python(value, state, new_extra),
             state,
             extra,
             &self.choices,
             self.retry_with_lax_check(),
             value.py(),
         )?
-        .map_or_else(|| infer_to_python(value, include, exclude, state, extra), Ok)
+        .map_or_else(|| infer_to_python(value, state, extra), Ok)
     }
 
     fn json_key<'a, 'py>(
@@ -167,21 +165,22 @@ impl TypeSerializer for UnionSerializer {
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        include: Option<&Bound<'py, PyAny>>,
-        exclude: Option<&Bound<'py, PyAny>>,
         state: &mut SerializationState<'py>,
         extra: &Extra<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
         match union_serialize(
-            |comb_serializer, state, new_extra| comb_serializer.to_python(value, include, exclude, state, new_extra),
+            |comb_serializer, state, new_extra| comb_serializer.to_python(value, state, new_extra),
             state,
             extra,
             &self.choices,
             self.retry_with_lax_check(),
             value.py(),
         ) {
-            Ok(Some(v)) => infer_serialize(v.bind(value.py()), serializer, None, None, state, extra),
-            Ok(None) => infer_serialize(value, serializer, include, exclude, state, extra),
+            Ok(Some(v)) => {
+                let state = &mut state.scoped_include_exclude(None, None);
+                infer_serialize(v.bind(value.py()), serializer, state, extra)
+            }
+            Ok(None) => infer_serialize(value, serializer, state, extra),
             Err(err) => Err(serde::ser::Error::custom(err.to_string())),
         }
     }
@@ -243,18 +242,16 @@ impl TypeSerializer for TaggedUnionSerializer {
     fn to_python<'py>(
         &self,
         value: &Bound<'py, PyAny>,
-        include: Option<&Bound<'py, PyAny>>,
-        exclude: Option<&Bound<'py, PyAny>>,
         state: &mut SerializationState<'py>,
         extra: &Extra<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
         self.tagged_union_serialize(
             value,
-            |comb_serializer, state, new_extra| comb_serializer.to_python(value, include, exclude, state, new_extra),
+            |comb_serializer, state, new_extra| comb_serializer.to_python(value, state, new_extra),
             state,
             extra,
         )?
-        .map_or_else(|| infer_to_python(value, include, exclude, state, extra), Ok)
+        .map_or_else(|| infer_to_python(value, state, extra), Ok)
     }
 
     fn json_key<'a, 'py>(
@@ -276,19 +273,20 @@ impl TypeSerializer for TaggedUnionSerializer {
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        include: Option<&Bound<'py, PyAny>>,
-        exclude: Option<&Bound<'py, PyAny>>,
         state: &mut SerializationState<'py>,
         extra: &Extra<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
         match self.tagged_union_serialize(
             value,
-            |comb_serializer, state, new_extra| comb_serializer.to_python(value, include, exclude, state, new_extra),
+            |comb_serializer, state, new_extra| comb_serializer.to_python(value, state, new_extra),
             state,
             extra,
         ) {
-            Ok(Some(v)) => infer_serialize(v.bind(value.py()), serializer, None, None, state, extra),
-            Ok(None) => infer_serialize(value, serializer, include, exclude, state, extra),
+            Ok(Some(v)) => {
+                let state = &mut state.scoped_include_exclude(None, None);
+                infer_serialize(v.bind(value.py()), serializer, state, extra)
+            }
+            Ok(None) => infer_serialize(value, serializer, state, extra),
             Err(err) => Err(serde::ser::Error::custom(err.to_string())),
         }
     }

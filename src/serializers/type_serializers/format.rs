@@ -112,8 +112,6 @@ impl TypeSerializer for FormatSerializer {
     fn to_python<'py>(
         &self,
         value: &Bound<'_, PyAny>,
-        _include: Option<&Bound<'_, PyAny>>,
-        _exclude: Option<&Bound<'_, PyAny>>,
         _state: &mut SerializationState<'py>,
         extra: &Extra<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
@@ -146,8 +144,6 @@ impl TypeSerializer for FormatSerializer {
         &self,
         value: &Bound<'_, PyAny>,
         serializer: S,
-        _include: Option<&Bound<'_, PyAny>>,
-        _exclude: Option<&Bound<'_, PyAny>>,
         _state: &mut SerializationState<'py>,
         _extra: &Extra<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
@@ -195,8 +191,6 @@ impl TypeSerializer for ToStringSerializer {
     fn to_python<'py>(
         &self,
         value: &Bound<'_, PyAny>,
-        _include: Option<&Bound<'_, PyAny>>,
-        _exclude: Option<&Bound<'_, PyAny>>,
         _state: &mut SerializationState<'py>,
         extra: &Extra<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
@@ -224,8 +218,6 @@ impl TypeSerializer for ToStringSerializer {
         &self,
         value: &Bound<'_, PyAny>,
         serializer: S,
-        _include: Option<&Bound<'_, PyAny>>,
-        _exclude: Option<&Bound<'_, PyAny>>,
         _state: &mut SerializationState<'py>,
         _extra: &Extra<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {

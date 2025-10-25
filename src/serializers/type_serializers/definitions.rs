@@ -79,15 +79,13 @@ impl TypeSerializer for DefinitionRefSerializer {
     fn to_python<'py>(
         &self,
         value: &Bound<'py, PyAny>,
-        include: Option<&Bound<'py, PyAny>>,
-        exclude: Option<&Bound<'py, PyAny>>,
         state: &mut SerializationState<'py>,
         extra: &Extra<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
         self.definition.read(|comb_serializer| {
             let comb_serializer = comb_serializer.unwrap();
             let mut guard = state.recursion_guard(value, self.definition.id())?;
-            comb_serializer.to_python_no_infer(value, include, exclude, guard.state(), extra)
+            comb_serializer.to_python_no_infer(value, guard.state(), extra)
         })
     }
 
@@ -105,8 +103,6 @@ impl TypeSerializer for DefinitionRefSerializer {
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        include: Option<&Bound<'py, PyAny>>,
-        exclude: Option<&Bound<'py, PyAny>>,
         state: &mut SerializationState<'py>,
         extra: &Extra<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
@@ -115,7 +111,7 @@ impl TypeSerializer for DefinitionRefSerializer {
             let mut guard = state
                 .recursion_guard(value, self.definition.id())
                 .map_err(py_err_se_err)?;
-            comb_serializer.serde_serialize_no_infer(value, serializer, include, exclude, guard.state(), extra)
+            comb_serializer.serde_serialize_no_infer(value, serializer, guard.state(), extra)
         })
     }
 

@@ -48,12 +48,10 @@ impl TypeSerializer for JsonOrPythonSerializer {
     fn to_python<'py>(
         &self,
         value: &Bound<'py, PyAny>,
-        include: Option<&Bound<'py, PyAny>>,
-        exclude: Option<&Bound<'py, PyAny>>,
         state: &mut SerializationState<'py>,
         extra: &Extra<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
-        self.python.to_python(value, include, exclude, state, extra)
+        self.python.to_python(value, state, extra)
     }
 
     fn json_key<'a, 'py>(
@@ -69,13 +67,10 @@ impl TypeSerializer for JsonOrPythonSerializer {
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        include: Option<&Bound<'py, PyAny>>,
-        exclude: Option<&Bound<'py, PyAny>>,
         state: &mut SerializationState<'py>,
         extra: &Extra<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
-        self.json
-            .serde_serialize(value, serializer, include, exclude, state, extra)
+        self.json.serde_serialize(value, serializer, state, extra)
     }
 
     fn get_name(&self) -> &str {

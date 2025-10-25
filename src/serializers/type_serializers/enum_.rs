@@ -54,8 +54,6 @@ impl TypeSerializer for EnumSerializer {
     fn to_python<'py>(
         &self,
         value: &Bound<'py, PyAny>,
-        include: Option<&Bound<'py, PyAny>>,
-        exclude: Option<&Bound<'py, PyAny>>,
         state: &mut SerializationState<'py>,
         extra: &Extra<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
@@ -65,8 +63,8 @@ impl TypeSerializer for EnumSerializer {
             if extra.mode.is_json() {
                 let dot_value = value.getattr(intern!(py, "value"))?;
                 match self.serializer {
-                    Some(ref s) => s.to_python(&dot_value, include, exclude, state, extra),
-                    None => infer_to_python(&dot_value, include, exclude, state, extra),
+                    Some(ref s) => s.to_python(&dot_value, state, extra),
+                    None => infer_to_python(&dot_value, state, extra),
                 }
             } else {
                 // if we're not in JSON mode, we assume the value is safe to return directly
@@ -74,7 +72,7 @@ impl TypeSerializer for EnumSerializer {
             }
         } else {
             state.warn_fallback_py(self.get_name(), value, extra)?;
-            infer_to_python(value, include, exclude, state, extra)
+            infer_to_python(value, state, extra)
         }
     }
 
@@ -104,20 +102,18 @@ impl TypeSerializer for EnumSerializer {
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        include: Option<&Bound<'py, PyAny>>,
-        exclude: Option<&Bound<'py, PyAny>>,
         state: &mut SerializationState<'py>,
         extra: &Extra<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
         if value.is_exact_instance(self.class.bind(value.py())) {
             let dot_value = value.getattr(intern!(value.py(), "value")).map_err(py_err_se_err)?;
             match self.serializer {
-                Some(ref s) => s.serde_serialize(&dot_value, serializer, include, exclude, state, extra),
-                None => infer_serialize(&dot_value, serializer, include, exclude, state, extra),
+                Some(ref s) => s.serde_serialize(&dot_value, serializer, state, extra),
+                None => infer_serialize(&dot_value, serializer, state, extra),
             }
         } else {
             state.warn_fallback_ser::<S>(self.get_name(), value, extra)?;
-            infer_serialize(value, serializer, include, exclude, state, extra)
+            infer_serialize(value, serializer, state, extra)
         }
     }
 

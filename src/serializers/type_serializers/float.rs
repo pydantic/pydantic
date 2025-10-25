@@ -93,8 +93,6 @@ impl TypeSerializer for FloatSerializer {
     fn to_python<'py>(
         &self,
         value: &Bound<'py, PyAny>,
-        include: Option<&Bound<'py, PyAny>>,
-        exclude: Option<&Bound<'py, PyAny>>,
         state: &mut SerializationState<'py>,
         extra: &Extra<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
@@ -105,12 +103,12 @@ impl TypeSerializer for FloatSerializer {
                 SerCheck::Strict => Err(PydanticSerializationUnexpectedValue::new_from_msg(None).to_py_err()),
                 SerCheck::Lax | SerCheck::None => match extra.mode {
                     SerMode::Json => value.extract::<f64>()?.into_py_any(py),
-                    _ => infer_to_python(value, include, exclude, state, extra),
+                    _ => infer_to_python(value, state, extra),
                 },
             },
             IsType::False => {
                 state.warn_fallback_py(self.get_name(), value, extra)?;
-                infer_to_python(value, include, exclude, state, extra)
+                infer_to_python(value, state, extra)
             }
         }
     }
@@ -134,8 +132,6 @@ impl TypeSerializer for FloatSerializer {
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        include: Option<&Bound<'py, PyAny>>,
-        exclude: Option<&Bound<'py, PyAny>>,
         state: &mut SerializationState<'py>,
         // TODO: Merge state.config into self.inf_nan_mode?
         extra: &Extra<'_, 'py>,
@@ -144,7 +140,7 @@ impl TypeSerializer for FloatSerializer {
             Ok(v) => serialize_f64(v, serializer, self.inf_nan_mode),
             Err(_) => {
                 state.warn_fallback_ser::<S>(self.get_name(), value, extra)?;
-                infer_serialize(value, serializer, include, exclude, state, extra)
+                infer_serialize(value, serializer, state, extra)
             }
         }
     }

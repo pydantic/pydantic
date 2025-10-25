@@ -27,6 +27,7 @@ pub(crate) struct SerializationState<'py> {
     pub rec_guard: RecursionState,
     pub config: SerializationConfig,
     pub field_name: Option<FieldName<'py>>,
+    pub include_exclude: (Option<Bound<'py, PyAny>>, Option<Bound<'py, PyAny>>),
 }
 
 #[derive(Clone)]
@@ -50,8 +51,13 @@ impl fmt::Display for FieldName<'_> {
     }
 }
 
-impl SerializationState<'_> {
-    pub fn new(config: SerializationConfig, warnings_mode: WarningsMode) -> PyResult<Self> {
+impl<'py> SerializationState<'py> {
+    pub fn new(
+        config: SerializationConfig,
+        warnings_mode: WarningsMode,
+        include: Option<Bound<'py, PyAny>>,
+        exclude: Option<Bound<'py, PyAny>>,
+    ) -> PyResult<Self> {
         let warnings = CollectWarnings::new(warnings_mode);
         let rec_guard = RecursionState::default();
         Ok(Self {
@@ -59,9 +65,12 @@ impl SerializationState<'_> {
             rec_guard,
             config,
             field_name: None,
+            include_exclude: (include, exclude),
         })
     }
+}
 
+impl SerializationState<'_> {
     pub fn recursion_guard(
         &mut self,
         value: &Bound<'_, PyAny>,
@@ -108,6 +117,26 @@ impl<'py> SerializationState<'py> {
             projector,
             value,
         }
+    }
+
+    pub fn scoped_include_exclude<'scope>(
+        &'scope mut self,
+        next_include: Option<Bound<'py, PyAny>>,
+        next_exclude: Option<Bound<'py, PyAny>>,
+    ) -> ScopedIncludeExcludeState<'scope, 'py> {
+        self.scoped_set(SerializationState::include_exclude_mut, (next_include, next_exclude))
+    }
+
+    pub fn include(&self) -> Option<&Bound<'py, PyAny>> {
+        self.include_exclude.0.as_ref()
+    }
+
+    pub fn exclude(&self) -> Option<&Bound<'py, PyAny>> {
+        self.include_exclude.1.as_ref()
+    }
+
+    fn include_exclude_mut(&mut self) -> &mut (Option<Bound<'py, PyAny>>, Option<Bound<'py, PyAny>>) {
+        &mut self.include_exclude
     }
 }
 
@@ -174,7 +203,7 @@ impl<'a, 'py> Extra<'a, 'py> {
         value: &'slf Bound<'py, PyAny>,
         state: &'slf mut SerializationState<'py>,
     ) -> super::infer::SerializeInfer<'slf, 'py> {
-        super::infer::SerializeInfer::new(value, None, None, state, self)
+        super::infer::SerializeInfer::new(value, state, self)
     }
 
     pub(crate) fn model_type_name(&self) -> Option<Bound<'a, PyString>> {
@@ -223,6 +252,8 @@ pub(crate) struct ExtraOwned {
     pub fallback: Option<Py<PyAny>>,
     serialize_as_any: bool,
     pub context: Option<Py<PyAny>>,
+    include: Option<Py<PyAny>>,
+    exclude: Option<Py<PyAny>>,
 }
 
 #[derive(Clone)]
@@ -263,6 +294,8 @@ impl ExtraOwned {
             fallback: extra.fallback.map(|model| model.clone().into()),
             serialize_as_any: extra.serialize_as_any,
             context: extra.context.map(|model| model.clone().into()),
+            include: state.include().map(|m| m.clone().into()),
+            exclude: state.exclude().map(|m| m.clone().into()),
         }
     }
 
@@ -295,6 +328,10 @@ impl ExtraOwned {
                 Some(FieldNameOwned::Regular(b)) => Some(FieldName::Regular(b.bind(py).clone())),
                 None => None,
             },
+            include_exclude: (
+                self.include.as_ref().map(|m| m.bind(py).clone()),
+                self.exclude.as_ref().map(|m| m.bind(py).clone()),
+            ),
         }
     }
 }
@@ -528,3 +565,10 @@ where
         self.state
     }
 }
+
+type ScopedIncludeExcludeState<'scope, 'py> = ScopedSetState<
+    'scope,
+    'py,
+    for<'s> fn(&'s mut SerializationState<'py>) -> &'s mut (Option<Bound<'py, PyAny>>, Option<Bound<'py, PyAny>>),
+    (Option<Bound<'py, PyAny>>, Option<Bound<'py, PyAny>>),
+>;

@@ -172,8 +172,6 @@ impl GeneralFieldsSerializer {
         &self,
         py: Python<'py>,
         main_iter: impl Iterator<Item = PyResult<(Bound<'py, PyAny>, Bound<'py, PyAny>)>>,
-        include: Option<&Bound<'py, PyAny>>,
-        exclude: Option<&Bound<'py, PyAny>>,
         state: &mut SerializationState<'py>,
         extra: &Extra<'_, 'py>,
     ) -> PyResult<Bound<'py, PyDict>> {
@@ -195,7 +193,8 @@ impl GeneralFieldsSerializer {
 
             let field_name = FieldName::from(key.clone().cast_into()?);
             let state = &mut state.scoped_set(|s| &mut s.field_name, Some(field_name));
-            if let Some((next_include, next_exclude)) = self.filter.key_filter(&key, include, exclude)? {
+            if let Some((next_include, next_exclude)) = self.filter.key_filter(&key, state)? {
+                let state = &mut state.scoped_include_exclude(next_include, next_exclude);
                 let (key, serializer) = if let Some(field) = op_field {
                     let serializer = Self::prepare_value(&value, field, extra)?;
 
@@ -229,20 +228,14 @@ impl GeneralFieldsSerializer {
                 };
 
                 // Use `no_infer` here because the `serialize_as_any` logic has been handled in `prepare_value`
-                let value = serializer.to_python_no_infer(
-                    &value,
-                    next_include.as_ref(),
-                    next_exclude.as_ref(),
-                    state,
-                    extra,
-                )?;
+                let value = serializer.to_python_no_infer(&value, state, extra)?;
                 output_dict.set_item(key, value)?;
             }
         }
 
         if extra.check.enabled()
             // If any of these are true we can't count fields
-            && !(extra.exclude_defaults || extra.exclude_unset || extra.exclude_none || extra.exclude_computed_fields || exclude.is_some())
+            && !(extra.exclude_defaults || extra.exclude_unset || extra.exclude_none || extra.exclude_computed_fields || state.exclude().is_some())
             // Check for missing fields, we can't have extra fields here
             && self.required_fields > used_req_fields
         {
@@ -260,14 +253,11 @@ impl GeneralFieldsSerializer {
         }
     }
 
-    #[allow(clippy::too_many_arguments)]
     pub(crate) fn main_serde_serialize<'py, S: serde::ser::Serializer>(
         &self,
         main_iter: impl Iterator<Item = PyResult<(Bound<'py, PyAny>, Bound<'py, PyAny>)>>,
         expected_len: usize,
         serializer: S,
-        include: Option<&Bound<'py, PyAny>>,
-        exclude: Option<&Bound<'py, PyAny>>,
         state: &mut SerializationState<'py>,
         extra: Extra<'_, 'py>,
     ) -> Result<S::SerializeMap, S::Error> {
@@ -289,28 +279,22 @@ impl GeneralFieldsSerializer {
             let field_name = FieldName::from(key.clone().cast_into().map_err(py_err_se_err)?);
             let state = &mut state.scoped_set(|s| &mut s.field_name, Some(field_name));
 
-            let filter = self.filter.key_filter(&key, include, exclude).map_err(py_err_se_err)?;
+            let filter = self.filter.key_filter(&key, state).map_err(py_err_se_err)?;
             if let Some((next_include, next_exclude)) = filter {
+                let state = &mut state.scoped_include_exclude(next_include, next_exclude);
                 if let Some(field) = self.fields.get(key_str) {
                     let Some(serializer) = Self::prepare_value(&value, field, &extra).map_err(py_err_se_err)? else {
                         continue;
                     };
 
                     // Use `no_infer` here because the `serialize_as_any` logic has been handled in `prepare_value`
-                    let s = PydanticSerializer::new_no_infer(
-                        &value,
-                        serializer,
-                        next_include.as_ref(),
-                        next_exclude.as_ref(),
-                        state,
-                        &extra,
-                    );
+                    let s = PydanticSerializer::new_no_infer(&value, serializer, state, &extra);
                     let output_key = field.get_key_json(key_str, &extra);
                     map.serialize_entry(&output_key, &s)?;
                 } else if self.mode == FieldsMode::TypedDictAllow {
                     // FIXME: why is `extra_serializer` not used here when `serialize_as_any` is not set?
                     let output_key = infer_json_key(&key, state, &extra).map_err(py_err_se_err)?;
-                    let s = SerializeInfer::new(&value, next_include.as_ref(), next_exclude.as_ref(), state, &extra);
+                    let s = SerializeInfer::new(&value, state, &extra);
                     map.serialize_entry(&output_key, &s)?;
                 }
                 // no error case here since unions (which need the error case) use `to_python(..., mode='json')`
@@ -366,23 +350,13 @@ impl GeneralFieldsSerializer {
         &self,
         model: Option<&Bound<'py, PyAny>>,
         output_dict: &Bound<'py, PyDict>,
-        include: Option<&Bound<'py, PyAny>>,
-        exclude: Option<&Bound<'py, PyAny>>,
         state: &mut SerializationState<'py>,
         extra: &Extra<'_, 'py>,
     ) -> PyResult<()> {
         if let Some(ref computed_fields) = self.computed_fields {
             if let Some(model_value) = model {
                 let cf_extra = Extra { model, ..*extra };
-                computed_fields.to_python(
-                    model_value,
-                    output_dict,
-                    &self.filter,
-                    include,
-                    exclude,
-                    state,
-                    &cf_extra,
-                )?;
+                computed_fields.to_python(model_value, output_dict, &self.filter, state, &cf_extra)?;
             }
         }
         Ok(())
@@ -392,14 +366,12 @@ impl GeneralFieldsSerializer {
         &self,
         model: Option<&Bound<'py, PyAny>>,
         map: &mut S::SerializeMap,
-        include: Option<&Bound<'py, PyAny>>,
-        exclude: Option<&Bound<'py, PyAny>>,
         state: &mut SerializationState<'py>,
         extra: &Extra<'_, 'py>,
     ) -> Result<(), S::Error> {
         if let Some(ref computed_fields) = self.computed_fields {
             if let Some(model) = model {
-                computed_fields.serde_serialize::<S>(model, map, &self.filter, include, exclude, state, extra)?;
+                computed_fields.serde_serialize::<S>(model, map, &self.filter, state, extra)?;
             }
         }
         Ok(())
@@ -419,8 +391,6 @@ impl TypeSerializer for GeneralFieldsSerializer {
     fn to_python<'py>(
         &self,
         value: &Bound<'py, PyAny>,
-        include: Option<&Bound<'py, PyAny>>,
-        exclude: Option<&Bound<'py, PyAny>>,
         state: &mut SerializationState<'py>,
         extra: &Extra<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
@@ -433,17 +403,9 @@ impl TypeSerializer for GeneralFieldsSerializer {
 
         let Some((main_dict, extra_dict)) = self.extract_dicts(value) else {
             state.warn_fallback_py(self.get_name(), value, extra)?;
-            return infer_to_python(value, include, exclude, state, extra);
+            return infer_to_python(value, state, extra);
         };
-
-        let output_dict = self.main_to_python(
-            py,
-            dict_items(&main_dict),
-            include,
-            exclude,
-            state,
-            &Extra { model, ..*extra },
-        )?;
+        let output_dict = self.main_to_python(py, dict_items(&main_dict), state, &Extra { model, ..*extra })?;
 
         // this is used to include `__pydantic_extra__` in serialization on models
         if let Some(extra_dict) = extra_dict {
@@ -454,18 +416,17 @@ impl TypeSerializer for GeneralFieldsSerializer {
                 if value.is(missing_sentinel) {
                     continue;
                 }
-                if let Some((next_include, next_exclude)) = self.filter.key_filter(&key, include, exclude)? {
+                if let Some((next_include, next_exclude)) = self.filter.key_filter(&key, state)? {
+                    let state = &mut state.scoped_include_exclude(next_include, next_exclude);
                     let value = match &self.extra_serializer {
-                        Some(serializer) => {
-                            serializer.to_python(&value, next_include.as_ref(), next_exclude.as_ref(), state, extra)?
-                        }
-                        _ => infer_to_python(&value, next_include.as_ref(), next_exclude.as_ref(), state, extra)?,
+                        Some(serializer) => serializer.to_python(&value, state, extra)?,
+                        _ => infer_to_python(&value, state, extra)?,
                     };
                     output_dict.set_item(key, value)?;
                 }
             }
         }
-        self.add_computed_fields_python(model, &output_dict, include, exclude, state, extra)?;
+        self.add_computed_fields_python(model, &output_dict, state, extra)?;
         Ok(output_dict.into())
     }
 
@@ -482,14 +443,12 @@ impl TypeSerializer for GeneralFieldsSerializer {
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        include: Option<&Bound<'py, PyAny>>,
-        exclude: Option<&Bound<'py, PyAny>>,
         state: &mut SerializationState<'py>,
         extra: &Extra<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
         let Some((main_dict, extra_dict)) = self.extract_dicts(value) else {
             state.warn_fallback_ser::<S>(self.get_name(), value, extra)?;
-            return infer_serialize(value, serializer, include, exclude, state, extra);
+            return infer_serialize(value, serializer, state, extra);
         };
         let missing_sentinel = get_missing_sentinel_object(value.py());
         // If there is already a model registered (from a dataclass, BaseModel)
@@ -507,8 +466,6 @@ impl TypeSerializer for GeneralFieldsSerializer {
             dict_items(&main_dict),
             expected_len,
             serializer,
-            include,
-            exclude,
             state,
             Extra { model, ..*extra },
         )?;
@@ -522,16 +479,17 @@ impl TypeSerializer for GeneralFieldsSerializer {
                 if value.is(missing_sentinel) {
                     continue;
                 }
-                let filter = self.filter.key_filter(&key, include, exclude).map_err(py_err_se_err)?;
+                let filter = self.filter.key_filter(&key, state).map_err(py_err_se_err)?;
                 if let Some((next_include, next_exclude)) = filter {
+                    let state = &mut state.scoped_include_exclude(next_include, next_exclude);
                     let output_key = infer_json_key(&key, state, extra).map_err(py_err_se_err)?;
-                    let s = SerializeInfer::new(&value, next_include.as_ref(), next_exclude.as_ref(), state, extra);
+                    let s = SerializeInfer::new(&value, state, extra);
                     map.serialize_entry(&output_key, &s)?;
                 }
             }
         }
 
-        self.add_computed_fields_json::<S>(model, &mut map, include, exclude, state, extra)?;
+        self.add_computed_fields_json::<S>(model, &mut map, state, extra)?;
         map.end()
     }
 

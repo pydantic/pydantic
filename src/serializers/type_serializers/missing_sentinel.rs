@@ -43,8 +43,6 @@ impl TypeSerializer for MissingSentinelSerializer {
     fn to_python<'py>(
         &self,
         value: &Bound<'_, PyAny>,
-        _include: Option<&Bound<'_, PyAny>>,
-        _exclude: Option<&Bound<'_, PyAny>>,
         _state: &mut SerializationState<'py>,
         _extra: &Extra<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
@@ -73,8 +71,6 @@ impl TypeSerializer for MissingSentinelSerializer {
         &self,
         _value: &Bound<'_, PyAny>,
         _serializer: S,
-        _include: Option<&Bound<'_, PyAny>>,
-        _exclude: Option<&Bound<'_, PyAny>>,
         _state: &mut SerializationState<'py>,
         _extra: &Extra<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {

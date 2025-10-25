@@ -47,8 +47,6 @@ impl TypeSerializer for TimeDeltaSerializer {
     fn to_python<'py>(
         &self,
         value: &Bound<'py, PyAny>,
-        include: Option<&Bound<'py, PyAny>>,
-        exclude: Option<&Bound<'py, PyAny>>,
         state: &mut SerializationState<'py>,
         extra: &Extra<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
@@ -59,7 +57,7 @@ impl TypeSerializer for TimeDeltaSerializer {
             },
             _ => {
                 state.warn_fallback_py(self.get_name(), value, extra)?;
-                infer_to_python(value, include, exclude, state, extra)
+                infer_to_python(value, state, extra)
             }
         }
     }
@@ -83,8 +81,6 @@ impl TypeSerializer for TimeDeltaSerializer {
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        include: Option<&Bound<'py, PyAny>>,
-        exclude: Option<&Bound<'py, PyAny>>,
         state: &mut SerializationState<'py>,
         extra: &Extra<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
@@ -92,7 +88,7 @@ impl TypeSerializer for TimeDeltaSerializer {
             Ok(either_timedelta) => self.temporal_mode.timedelta_serialize(either_timedelta, serializer),
             Err(_) => {
                 state.warn_fallback_ser::<S>(self.get_name(), value, extra)?;
-                infer_serialize(value, serializer, include, exclude, state, extra)
+                infer_serialize(value, serializer, state, extra)
             }
         }
     }

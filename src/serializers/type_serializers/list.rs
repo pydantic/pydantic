@@ -56,8 +56,6 @@ impl TypeSerializer for ListSerializer {
     fn to_python<'py>(
         &self,
         value: &Bound<'py, PyAny>,
-        include: Option<&Bound<'py, PyAny>>,
-        exclude: Option<&Bound<'py, PyAny>>,
         state: &mut SerializationState<'py>,
         extra: &Extra<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
@@ -68,22 +66,17 @@ impl TypeSerializer for ListSerializer {
 
                 let mut items = Vec::with_capacity(py_list.len());
                 for (index, element) in py_list.iter().enumerate() {
-                    let op_next = self.filter.index_filter(index, include, exclude, value.len().ok())?;
+                    let op_next = self.filter.index_filter(index, state, value.len().ok())?;
                     if let Some((next_include, next_exclude)) = op_next {
-                        items.push(item_serializer.to_python(
-                            &element,
-                            next_include.as_ref(),
-                            next_exclude.as_ref(),
-                            state,
-                            extra,
-                        )?);
+                        let state = &mut state.scoped_include_exclude(next_include, next_exclude);
+                        items.push(item_serializer.to_python(&element, state, extra)?);
                     }
                 }
                 items.into_py_any(py)
             }
             Err(_) => {
                 state.warn_fallback_py(self.get_name(), value, extra)?;
-                infer_to_python(value, include, exclude, state, extra)
+                infer_to_python(value, state, extra)
             }
         }
     }
@@ -101,8 +94,6 @@ impl TypeSerializer for ListSerializer {
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        include: Option<&Bound<'py, PyAny>>,
-        exclude: Option<&Bound<'py, PyAny>>,
         state: &mut SerializationState<'py>,
         extra: &Extra<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
@@ -114,17 +105,11 @@ impl TypeSerializer for ListSerializer {
                 for (index, element) in py_list.iter().enumerate() {
                     let op_next = self
                         .filter
-                        .index_filter(index, include, exclude, Some(py_list.len()))
+                        .index_filter(index, state, Some(py_list.len()))
                         .map_err(py_err_se_err)?;
                     if let Some((next_include, next_exclude)) = op_next {
-                        let item_serialize = PydanticSerializer::new(
-                            &element,
-                            item_serializer,
-                            next_include.as_ref(),
-                            next_exclude.as_ref(),
-                            state,
-                            extra,
-                        );
+                        let state = &mut state.scoped_include_exclude(next_include, next_exclude);
+                        let item_serialize = PydanticSerializer::new(&element, item_serializer, state, extra);
                         seq.serialize_element(&item_serialize)?;
                     }
                 }
@@ -132,7 +117,7 @@ impl TypeSerializer for ListSerializer {
             }
             Err(_) => {
                 state.warn_fallback_ser::<S>(self.get_name(), value, extra)?;
-                infer_serialize(value, serializer, include, exclude, state, extra)
+                infer_serialize(value, serializer, state, extra)
             }
         }
     }

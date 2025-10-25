@@ -65,8 +65,6 @@ impl TypeSerializer for TupleSerializer {
     fn to_python<'py>(
         &self,
         value: &Bound<'py, PyAny>,
-        include: Option<&Bound<'py, PyAny>>,
-        exclude: Option<&Bound<'py, PyAny>>,
         state: &mut SerializationState<'py>,
         extra: &Extra<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
@@ -77,16 +75,10 @@ impl TypeSerializer for TupleSerializer {
                 let n_items = py_tuple.len();
                 let mut items = Vec::with_capacity(n_items);
 
-                self.for_each_tuple_item_and_serializer(py_tuple, include, exclude, state, extra, |entry| {
+                self.for_each_tuple_item_and_serializer(py_tuple, state, extra, |entry| {
                     entry
                         .serializer
-                        .to_python(
-                            &entry.item,
-                            entry.include.as_ref(),
-                            entry.exclude.as_ref(),
-                            entry.state,
-                            extra,
-                        )
+                        .to_python(&entry.item, entry.state, extra)
                         .map(|item| items.push(item))
                 })??;
 
@@ -97,7 +89,7 @@ impl TypeSerializer for TupleSerializer {
             }
             Err(_) => {
                 state.warn_fallback_py(&self.name, value, extra)?;
-                infer_to_python(value, include, exclude, state, extra)
+                infer_to_python(value, state, extra)
             }
         }
     }
@@ -112,7 +104,8 @@ impl TypeSerializer for TupleSerializer {
             Ok(py_tuple) => {
                 let mut key_builder = KeyBuilder::new();
 
-                self.for_each_tuple_item_and_serializer(py_tuple, None, None, state, extra, |entry| {
+                let state = &mut state.scoped_include_exclude(None, None);
+                self.for_each_tuple_item_and_serializer(py_tuple, state, extra, |entry| {
                     entry
                         .serializer
                         .json_key(&entry.item, entry.state, extra)
@@ -132,8 +125,6 @@ impl TypeSerializer for TupleSerializer {
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        include: Option<&Bound<'py, PyAny>>,
-        exclude: Option<&Bound<'py, PyAny>>,
         state: &mut SerializationState<'py>,
         extra: &Extra<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
@@ -144,12 +135,10 @@ impl TypeSerializer for TupleSerializer {
                 let n_items = py_tuple.len();
                 let mut seq = serializer.serialize_seq(Some(n_items))?;
 
-                self.for_each_tuple_item_and_serializer(py_tuple, include, exclude, state, extra, |entry| {
+                self.for_each_tuple_item_and_serializer(py_tuple, state, extra, |entry| {
                     seq.serialize_element(&PydanticSerializer::new(
                         &entry.item,
                         entry.serializer,
-                        entry.include.as_ref(),
-                        entry.exclude.as_ref(),
                         entry.state,
                         extra,
                     ))
@@ -160,7 +149,7 @@ impl TypeSerializer for TupleSerializer {
             }
             Err(_) => {
                 state.warn_fallback_ser::<S>(&self.name, value, extra)?;
-                infer_serialize(value, serializer, include, exclude, state, extra)
+                infer_serialize(value, serializer, state, extra)
             }
         }
     }
@@ -176,8 +165,6 @@ impl TypeSerializer for TupleSerializer {
 
 struct TupleSerializerEntry<'a, 'py> {
     item: Bound<'py, PyAny>,
-    include: Option<Bound<'py, PyAny>>,
-    exclude: Option<Bound<'py, PyAny>>,
     serializer: &'a CombinedSerializer,
     state: &'a mut SerializationState<'py>,
 }
@@ -192,8 +179,6 @@ impl TupleSerializer {
     fn for_each_tuple_item_and_serializer<'py, E>(
         &self,
         tuple: &Bound<'py, PyTuple>,
-        include: Option<&Bound<'py, PyAny>>,
-        exclude: Option<&Bound<'py, PyAny>>,
         state: &mut SerializationState<'py>,
         extra: &Extra<'_, 'py>,
         mut f: impl for<'a> FnMut(TupleSerializerEntry<'a, 'py>) -> Result<(), E>,
@@ -207,12 +192,11 @@ impl TupleSerializer {
                     let Some(element) = py_tuple_iter.next() else {
                         break;
                     };
-                    let op_next = self.filter.index_filter(index, include, exclude, Some(n_items))?;
+                    let op_next = self.filter.index_filter(index, state, Some(n_items))?;
                     if let Some((next_include, next_exclude)) = op_next {
+                        let state = &mut state.scoped_include_exclude(next_include, next_exclude);
                         if let Err(e) = f(TupleSerializerEntry {
                             item: element,
-                            include: next_include,
-                            exclude: next_exclude,
                             serializer,
                             state,
                         }) {
@@ -252,12 +236,11 @@ impl TupleSerializer {
                 }
                 let op_next = self
                     .filter
-                    .index_filter(i + self.serializers.len(), include, exclude, Some(n_items))?;
+                    .index_filter(i + self.serializers.len(), state, Some(n_items))?;
                 if let Some((next_include, next_exclude)) = op_next {
+                    let state = &mut state.scoped_include_exclude(next_include, next_exclude);
                     if let Err(e) = f(TupleSerializerEntry {
                         item: element,
-                        include: next_include,
-                        exclude: next_exclude,
                         serializer: &CombinedSerializer::Any(AnySerializer),
                         state,
                     }) {

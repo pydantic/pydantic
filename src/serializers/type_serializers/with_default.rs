@@ -42,12 +42,10 @@ impl TypeSerializer for WithDefaultSerializer {
     fn to_python<'py>(
         &self,
         value: &Bound<'py, PyAny>,
-        include: Option<&Bound<'py, PyAny>>,
-        exclude: Option<&Bound<'py, PyAny>>,
         state: &mut SerializationState<'py>,
         extra: &Extra<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
-        self.serializer.to_python(value, include, exclude, state, extra)
+        self.serializer.to_python(value, state, extra)
     }
 
     fn json_key<'a, 'py>(
@@ -63,13 +61,10 @@ impl TypeSerializer for WithDefaultSerializer {
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        include: Option<&Bound<'py, PyAny>>,
-        exclude: Option<&Bound<'py, PyAny>>,
         state: &mut SerializationState<'py>,
         extra: &Extra<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
-        self.serializer
-            .serde_serialize(value, serializer, include, exclude, state, extra)
+        self.serializer.serde_serialize(value, serializer, state, extra)
     }
 
     fn get_name(&self) -> &str {

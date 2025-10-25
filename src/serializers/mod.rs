@@ -77,8 +77,8 @@ impl SchemaSerializer {
         py: Python,
         value: &Bound<'_, PyAny>,
         mode: Option<&str>,
-        include: Option<&Bound<'_, PyAny>>,
-        exclude: Option<&Bound<'_, PyAny>>,
+        include: Option<Bound<'_, PyAny>>,
+        exclude: Option<Bound<'_, PyAny>>,
         by_alias: Option<bool>,
         exclude_unset: bool,
         exclude_defaults: bool,
@@ -95,7 +95,7 @@ impl SchemaSerializer {
             WarningsArg::Bool(b) => b.into(),
             WarningsArg::Literal(mode) => mode,
         };
-        let mut state = SerializationState::new(self.config, warnings_mode)?;
+        let mut state = SerializationState::new(self.config, warnings_mode, include, exclude)?;
         let extra = Extra::new(
             py,
             &mode,
@@ -110,7 +110,7 @@ impl SchemaSerializer {
             serialize_as_any,
             context,
         );
-        let v = self.serializer.to_python(value, include, exclude, &mut state, &extra)?;
+        let v = self.serializer.to_python(value, &mut state, &extra)?;
         state.warnings.final_check(py)?;
         Ok(v)
     }
@@ -125,8 +125,8 @@ impl SchemaSerializer {
         value: &Bound<'_, PyAny>,
         indent: Option<usize>,
         ensure_ascii: Option<bool>,
-        include: Option<&Bound<'_, PyAny>>,
-        exclude: Option<&Bound<'_, PyAny>>,
+        include: Option<Bound<'_, PyAny>>,
+        exclude: Option<Bound<'_, PyAny>>,
         by_alias: Option<bool>,
         exclude_unset: bool,
         exclude_defaults: bool,
@@ -142,7 +142,7 @@ impl SchemaSerializer {
             WarningsArg::Bool(b) => b.into(),
             WarningsArg::Literal(mode) => mode,
         };
-        let mut state = SerializationState::new(self.config, warnings_mode)?;
+        let mut state = SerializationState::new(self.config, warnings_mode, include, exclude)?;
         let extra = Extra::new(
             py,
             &SerMode::Json,
@@ -160,8 +160,6 @@ impl SchemaSerializer {
         let bytes = to_json_bytes(
             value,
             &self.serializer,
-            include,
-            exclude,
             &mut state,
             &extra,
             indent,
@@ -210,8 +208,8 @@ pub fn to_json(
     value: &Bound<'_, PyAny>,
     indent: Option<usize>,
     ensure_ascii: Option<bool>,
-    include: Option<&Bound<'_, PyAny>>,
-    exclude: Option<&Bound<'_, PyAny>>,
+    include: Option<Bound<'_, PyAny>>,
+    exclude: Option<Bound<'_, PyAny>>,
     by_alias: bool,
     exclude_none: bool,
     round_trip: bool,
@@ -225,7 +223,7 @@ pub fn to_json(
     context: Option<&Bound<'_, PyAny>>,
 ) -> PyResult<Py<PyAny>> {
     let config = SerializationConfig::from_args(timedelta_mode, temporal_mode, bytes_mode, inf_nan_mode)?;
-    let mut state = SerializationState::new(config, WarningsMode::None)?;
+    let mut state = SerializationState::new(config, WarningsMode::None, include, exclude)?;
     let extra = Extra::new(
         py,
         &SerMode::Json,
@@ -243,8 +241,6 @@ pub fn to_json(
     let bytes = to_json_bytes(
         value,
         AnySerializer::get(),
-        include,
-        exclude,
         &mut state,
         &extra,
         indent,
@@ -264,8 +260,8 @@ pub fn to_json(
 pub fn to_jsonable_python(
     py: Python,
     value: &Bound<'_, PyAny>,
-    include: Option<&Bound<'_, PyAny>>,
-    exclude: Option<&Bound<'_, PyAny>>,
+    include: Option<Bound<'_, PyAny>>,
+    exclude: Option<Bound<'_, PyAny>>,
     by_alias: bool,
     exclude_none: bool,
     round_trip: bool,
@@ -279,7 +275,7 @@ pub fn to_jsonable_python(
     context: Option<&Bound<'_, PyAny>>,
 ) -> PyResult<Py<PyAny>> {
     let config = SerializationConfig::from_args(timedelta_mode, temporal_mode, bytes_mode, inf_nan_mode)?;
-    let mut state = SerializationState::new(config, WarningsMode::None)?;
+    let mut state = SerializationState::new(config, WarningsMode::None, include, exclude)?;
     let extra = Extra::new(
         py,
         &SerMode::Json,
@@ -294,7 +290,7 @@ pub fn to_jsonable_python(
         serialize_as_any,
         context,
     );
-    let v = infer::infer_to_python(value, include, exclude, &mut state, &extra)?;
+    let v = infer::infer_to_python(value, &mut state, &extra)?;
     state.final_check(py)?;
     Ok(v)
 }

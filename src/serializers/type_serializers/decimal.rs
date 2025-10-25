@@ -37,19 +37,15 @@ impl TypeSerializer for DecimalSerializer {
     fn to_python<'py>(
         &self,
         value: &Bound<'py, PyAny>,
-        include: Option<&Bound<'py, PyAny>>,
-        exclude: Option<&Bound<'py, PyAny>>,
         state: &mut SerializationState<'py>,
         extra: &Extra<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
         let _py = value.py();
         match extra.ob_type_lookup.is_type(value, ObType::Decimal) {
-            IsType::Exact | IsType::Subclass => {
-                infer_to_python_known(ObType::Decimal, value, include, exclude, state, extra)
-            }
+            IsType::Exact | IsType::Subclass => infer_to_python_known(ObType::Decimal, value, state, extra),
             IsType::False => {
                 state.warn_fallback_py(self.get_name(), value, extra)?;
-                infer_to_python(value, include, exclude, state, extra)
+                infer_to_python(value, state, extra)
             }
         }
     }
@@ -73,18 +69,14 @@ impl TypeSerializer for DecimalSerializer {
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        include: Option<&Bound<'py, PyAny>>,
-        exclude: Option<&Bound<'py, PyAny>>,
         state: &mut SerializationState<'py>,
         extra: &Extra<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
         match extra.ob_type_lookup.is_type(value, ObType::Decimal) {
-            IsType::Exact | IsType::Subclass => {
-                infer_serialize_known(ObType::Decimal, value, serializer, include, exclude, state, extra)
-            }
+            IsType::Exact | IsType::Subclass => infer_serialize_known(ObType::Decimal, value, serializer, state, extra),
             IsType::False => {
                 state.warn_fallback_ser::<S>(self.get_name(), value, extra)?;
-                infer_serialize(value, serializer, include, exclude, state, extra)
+                infer_serialize(value, serializer, state, extra)
             }
         }
     }

@@ -77,8 +77,6 @@ impl TypeSerializer for DictSerializer {
     fn to_python<'py>(
         &self,
         value: &Bound<'py, PyAny>,
-        include: Option<&Bound<'py, PyAny>>,
-        exclude: Option<&Bound<'py, PyAny>>,
         state: &mut SerializationState<'py>,
         extra: &Extra<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
@@ -89,19 +87,18 @@ impl TypeSerializer for DictSerializer {
 
                 let new_dict = PyDict::new(py);
                 for (key, value) in py_dict.iter() {
-                    let op_next = self.filter.key_filter(&key, include, exclude)?;
+                    let op_next = self.filter.key_filter(&key, state)?;
                     if let Some((next_include, next_exclude)) = op_next {
-                        let key = match extra.mode {
-                            SerMode::Json => self.key_serializer.json_key(&key, state, extra)?.into_py_any(py)?,
-                            _ => self.key_serializer.to_python(&key, None, None, state, extra)?,
+                        let key = {
+                            // disable include/exclude for keys
+                            let state = &mut state.scoped_include_exclude(None, None);
+                            match extra.mode {
+                                SerMode::Json => self.key_serializer.json_key(&key, state, extra)?.into_py_any(py)?,
+                                _ => self.key_serializer.to_python(&key, state, extra)?,
+                            }
                         };
-                        let value = value_serializer.to_python(
-                            &value,
-                            next_include.as_ref(),
-                            next_exclude.as_ref(),
-                            state,
-                            extra,
-                        )?;
+                        let state = &mut state.scoped_include_exclude(next_include, next_exclude);
+                        let value = value_serializer.to_python(&value, state, extra)?;
                         new_dict.set_item(key, value)?;
                     }
                 }
@@ -109,7 +106,7 @@ impl TypeSerializer for DictSerializer {
             }
             Err(_) => {
                 state.warn_fallback_py(self.get_name(), value, extra)?;
-                infer_to_python(value, include, exclude, state, extra)
+                infer_to_python(value, state, extra)
             }
         }
     }
@@ -127,8 +124,6 @@ impl TypeSerializer for DictSerializer {
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        include: Option<&Bound<'py, PyAny>>,
-        exclude: Option<&Bound<'py, PyAny>>,
         state: &mut SerializationState<'py>,
         extra: &Extra<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
@@ -139,17 +134,11 @@ impl TypeSerializer for DictSerializer {
                 let value_serializer = self.value_serializer.as_ref();
 
                 for (key, value) in py_dict.iter() {
-                    let op_next = self.filter.key_filter(&key, include, exclude).map_err(py_err_se_err)?;
+                    let op_next = self.filter.key_filter(&key, state).map_err(py_err_se_err)?;
                     if let Some((next_include, next_exclude)) = op_next {
+                        let state = &mut state.scoped_include_exclude(next_include, next_exclude);
                         let key = key_serializer.json_key(&key, state, extra).map_err(py_err_se_err)?;
-                        let value_serialize = PydanticSerializer::new(
-                            &value,
-                            value_serializer,
-                            next_include.as_ref(),
-                            next_exclude.as_ref(),
-                            state,
-                            extra,
-                        );
+                        let value_serialize = PydanticSerializer::new(&value, value_serializer, state, extra);
                         map.serialize_entry(&key, &value_serialize)?;
                     }
                 }
@@ -157,7 +146,7 @@ impl TypeSerializer for DictSerializer {
             }
             Err(_) => {
                 state.warn_fallback_ser::<S>(self.get_name(), value, extra)?;
-                infer_serialize(value, serializer, include, exclude, state, extra)
+                infer_serialize(value, serializer, state, extra)
             }
         }
     }

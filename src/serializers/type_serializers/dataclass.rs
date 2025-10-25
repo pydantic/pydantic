@@ -148,8 +148,6 @@ impl TypeSerializer for DataclassSerializer {
     fn to_python<'py>(
         &self,
         value: &Bound<'py, PyAny>,
-        include: Option<&Bound<'py, PyAny>>,
-        exclude: Option<&Bound<'py, PyAny>>,
         state: &mut SerializationState<'py>,
         extra: &Extra<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
@@ -161,22 +159,19 @@ impl TypeSerializer for DataclassSerializer {
                 let output_dict: Bound<PyDict> = fields_serializer.main_to_python(
                     py,
                     known_dataclass_iter(&self.fields, value),
-                    include,
-                    exclude,
                     state,
                     &dc_extra,
                 )?;
 
-                fields_serializer.add_computed_fields_python(model, &output_dict, include, exclude, state, extra)?;
+                fields_serializer.add_computed_fields_python(model, &output_dict, state, extra)?;
                 Ok(output_dict.into())
             } else {
                 let inner_value = self.get_inner_value(value)?;
-                self.serializer
-                    .to_python(&inner_value, include, exclude, state, &dc_extra)
+                self.serializer.to_python(&inner_value, state, &dc_extra)
             }
         } else {
             state.warn_fallback_py(self.get_name(), value, &dc_extra)?;
-            infer_to_python(value, include, exclude, state, &dc_extra)
+            infer_to_python(value, state, &dc_extra)
         }
     }
 
@@ -198,8 +193,6 @@ impl TypeSerializer for DataclassSerializer {
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        include: Option<&Bound<'py, PyAny>>,
-        exclude: Option<&Bound<'py, PyAny>>,
         state: &mut SerializationState<'py>,
         extra: &Extra<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
@@ -212,21 +205,19 @@ impl TypeSerializer for DataclassSerializer {
                     known_dataclass_iter(&self.fields, value),
                     expected_len,
                     serializer,
-                    include,
-                    exclude,
                     state,
                     dc_extra,
                 )?;
-                fields_serializer.add_computed_fields_json::<S>(model, &mut map, include, exclude, state, extra)?;
+                fields_serializer.add_computed_fields_json::<S>(model, &mut map, state, extra)?;
                 map.end()
             } else {
                 let inner_value = self.get_inner_value(value).map_err(py_err_se_err)?;
                 self.serializer
-                    .serde_serialize(&inner_value, serializer, include, exclude, state, &dc_extra)
+                    .serde_serialize(&inner_value, serializer, state, &dc_extra)
             }
         } else {
             state.warn_fallback_ser::<S>(self.get_name(), value, &dc_extra)?;
-            infer_serialize(value, serializer, include, exclude, state, &dc_extra)
+            infer_serialize(value, serializer, state, &dc_extra)
         }
     }
 

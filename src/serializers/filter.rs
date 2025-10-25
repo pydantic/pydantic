@@ -7,6 +7,7 @@ use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyBool, PyDict, PySet};
 
+use crate::serializers::SerializationState;
 use crate::tools::SchemaDict;
 
 #[derive(Debug, Clone, Default)]
@@ -94,12 +95,11 @@ impl SchemaFilter<usize> {
     pub fn index_filter<'py>(
         &self,
         index: usize,
-        include: Option<&Bound<'py, PyAny>>,
-        exclude: Option<&Bound<'py, PyAny>>,
+        state: &SerializationState<'py>,
         len: Option<usize>,
     ) -> PyResult<NextFilters<'py>> {
-        let include = include.map(|v| map_negative_indices(v, len)).transpose()?;
-        let exclude = exclude.map(|v| map_negative_indices(v, len)).transpose()?;
+        let include = state.include().map(|v| map_negative_indices(v, len)).transpose()?;
+        let exclude = state.exclude().map(|v| map_negative_indices(v, len)).transpose()?;
         self.filter(index, index, include.as_ref(), exclude.as_ref())
     }
 }
@@ -133,11 +133,10 @@ impl SchemaFilter<isize> {
     pub fn key_filter<'py>(
         &self,
         key: &Bound<'py, PyAny>,
-        include: Option<&Bound<'py, PyAny>>,
-        exclude: Option<&Bound<'py, PyAny>>,
+        state: &SerializationState<'py>,
     ) -> PyResult<NextFilters<'py>> {
         let hash = key.hash()?;
-        self.filter(key, hash, include, exclude)
+        self.filter(key, hash, state.include(), state.exclude())
     }
 }
 
@@ -267,22 +266,20 @@ impl AnyFilter {
     pub fn key_filter<'py>(
         &self,
         key: &Bound<'py, PyAny>,
-        include: Option<&Bound<'py, PyAny>>,
-        exclude: Option<&Bound<'py, PyAny>>,
+        state: &SerializationState<'py>,
     ) -> PyResult<NextFilters<'py>> {
         // just use 0 for the int_key, it's always ignored in the implementation here
-        self.filter(key, 0, include, exclude)
+        self.filter(key, 0, state.include(), state.exclude())
     }
 
     pub fn index_filter<'py>(
         &self,
         index: usize,
-        include: Option<&Bound<'py, PyAny>>,
-        exclude: Option<&Bound<'py, PyAny>>,
+        state: &SerializationState<'py>,
         len: Option<usize>,
     ) -> PyResult<NextFilters<'py>> {
-        let include = include.map(|v| map_negative_indices(v, len)).transpose()?;
-        let exclude = exclude.map(|v| map_negative_indices(v, len)).transpose()?;
+        let include = state.include().map(|v| map_negative_indices(v, len)).transpose()?;
+        let exclude = state.exclude().map(|v| map_negative_indices(v, len)).transpose()?;
         self.filter(index, index, include.as_ref(), exclude.as_ref())
     }
 }

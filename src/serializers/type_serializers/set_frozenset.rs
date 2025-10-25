@@ -55,8 +55,6 @@ macro_rules! build_serializer {
             fn to_python<'py>(
                 &self,
                 value: &Bound<'py, PyAny>,
-                include: Option<&Bound<'py, PyAny>>,
-                exclude: Option<&Bound<'py, PyAny>>,
                 state: &mut SerializationState<'py>,
                 extra: &Extra<'_, 'py>,
             ) -> PyResult<Py<PyAny>> {
@@ -67,7 +65,7 @@ macro_rules! build_serializer {
 
                         let mut items = Vec::with_capacity(py_set.len());
                         for element in py_set.iter() {
-                            items.push(item_serializer.to_python(&element, include, exclude, state, extra)?);
+                            items.push(item_serializer.to_python(&element, state, extra)?);
                         }
                         match extra.mode {
                             SerMode::Json => Ok(PyList::new(py, items)?.into()),
@@ -76,7 +74,7 @@ macro_rules! build_serializer {
                     }
                     Err(_) => {
                         state.warn_fallback_py(self.get_name(), value, extra)?;
-                        infer_to_python(value, include, exclude, state, extra)
+                        infer_to_python(value, state, extra)
                     }
                 }
             }
@@ -94,8 +92,6 @@ macro_rules! build_serializer {
                 &self,
                 value: &Bound<'py, PyAny>,
                 serializer: S,
-                include: Option<&Bound<'py, PyAny>>,
-                exclude: Option<&Bound<'py, PyAny>>,
                 state: &mut SerializationState<'py>,
                 extra: &Extra<'_, 'py>,
             ) -> Result<S::Ok, S::Error> {
@@ -105,15 +101,14 @@ macro_rules! build_serializer {
                         let item_serializer = self.item_serializer.as_ref();
 
                         for value in py_set.iter() {
-                            let item_serialize =
-                                PydanticSerializer::new(&value, item_serializer, include, exclude, state, extra);
+                            let item_serialize = PydanticSerializer::new(&value, item_serializer, state, extra);
                             seq.serialize_element(&item_serialize)?;
                         }
                         seq.end()
                     }
                     Err(_) => {
                         state.warn_fallback_ser::<S>(self.get_name(), value, extra)?;
-                        infer_serialize(value, serializer, include, exclude, state, extra)
+                        infer_serialize(value, serializer, state, extra)
                     }
                 }
             }

@@ -40,8 +40,6 @@ macro_rules! build_serializer {
             fn to_python<'py>(
                 &self,
                 value: &Bound<'py, PyAny>,
-                include: Option<&Bound<'py, PyAny>>,
-                exclude: Option<&Bound<'py, PyAny>>,
                 state: &mut SerializationState<'py>,
                 extra: &Extra<'_, 'py>,
             ) -> PyResult<Py<PyAny>> {
@@ -53,7 +51,7 @@ macro_rules! build_serializer {
                     },
                     Err(_) => {
                         state.warn_fallback_py(self.get_name(), value, extra)?;
-                        infer_to_python(value, include, exclude, state, extra)
+                        infer_to_python(value, state, extra)
                     }
                 }
             }
@@ -77,8 +75,6 @@ macro_rules! build_serializer {
                 &self,
                 value: &Bound<'py, PyAny>,
                 serializer: S,
-                include: Option<&Bound<'py, PyAny>>,
-                exclude: Option<&Bound<'py, PyAny>>,
                 state: &mut SerializationState<'py>,
                 extra: &Extra<'_, 'py>,
             ) -> Result<S::Ok, S::Error> {
@@ -86,7 +82,7 @@ macro_rules! build_serializer {
                     Ok(py_url) => serializer.serialize_str(&py_url.__str__(value.py())),
                     Err(_) => {
                         state.warn_fallback_ser::<S>(self.get_name(), value, extra)?;
-                        infer_serialize(value, serializer, include, exclude, state, extra)
+                        infer_serialize(value, serializer, state, extra)
                     }
                 }
             }

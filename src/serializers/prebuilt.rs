@@ -36,15 +36,13 @@ impl TypeSerializer for PrebuiltSerializer {
     fn to_python<'py>(
         &self,
         value: &Bound<'py, PyAny>,
-        include: Option<&Bound<'py, PyAny>>,
-        exclude: Option<&Bound<'py, PyAny>>,
         state: &mut SerializationState<'py>,
         extra: &Extra<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
         self.schema_serializer
             .get()
             .serializer
-            .to_python_no_infer(value, include, exclude, state, extra)
+            .to_python_no_infer(value, state, extra)
     }
 
     fn json_key<'a, 'py>(
@@ -63,15 +61,13 @@ impl TypeSerializer for PrebuiltSerializer {
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        include: Option<&Bound<'py, PyAny>>,
-        exclude: Option<&Bound<'py, PyAny>>,
         state: &mut SerializationState<'py>,
         extra: &Extra<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
         self.schema_serializer
             .get()
             .serializer
-            .serde_serialize_no_infer(value, serializer, include, exclude, state, extra)
+            .serde_serialize_no_infer(value, serializer, state, extra)
     }
 
     fn get_name(&self) -> &str {

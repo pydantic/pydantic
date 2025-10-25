@@ -339,7 +339,7 @@ impl ValidationError {
         include_input: bool,
     ) -> PyResult<Bound<'py, PyString>> {
         let config = SerializationConfig::from_args("iso8601", "iso8601", "utf8", "constants")?;
-        let mut state = SerializationState::new(config, WarningsMode::None)?;
+        let mut state = SerializationState::new(config, WarningsMode::None, None, None)?;
         let extra = Extra::new(
             py,
             &SerMode::Json,

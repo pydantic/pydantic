@@ -260,12 +260,10 @@ impl TypeSerializer for ModelSerializer {
     fn to_python<'py>(
         &self,
         value: &Bound<'py, PyAny>,
-        include: Option<&Bound<'py, PyAny>>,
-        exclude: Option<&Bound<'py, PyAny>>,
         state: &mut SerializationState<'py>,
         extra: &Extra<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
-        self.serialize(value, state, extra, serialize_to_python(include, exclude))
+        self.serialize(value, state, extra, serialize_to_python())
     }
 
     fn json_key<'a, 'py>(
@@ -287,12 +285,10 @@ impl TypeSerializer for ModelSerializer {
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        include: Option<&Bound<'py, PyAny>>,
-        exclude: Option<&Bound<'py, PyAny>>,
         state: &mut SerializationState<'py>,
         extra: &Extra<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
-        self.serialize(value, state, extra, serialize_to_json(serializer, include, exclude))
+        self.serialize(value, state, extra, serialize_to_json(serializer))
             .map_err(|e| e.0)
     }
 
