@@ -12,7 +12,7 @@ NUM_THREADS?=1
 
 .PHONY: install  ## Install the package, dependencies, and pre-commit for local development
 install: .uv
-	uv sync --frozen --group all --all-extras
+	MATURIN_PEP517_ARGS=--profile=dev uv sync --all-packages --frozen --group all --all-extras
 	uv pip install pre-commit
 	uv run pre-commit install --install-hooks
 
@@ -64,7 +64,7 @@ test: .uv
 
 .PHONY: benchmark  ## Run all benchmarks
 benchmark: .uv
-	uv run coverage run -m pytest --durations=10 --benchmark-enable tests/benchmarks
+	uv run coverage run -m pytest --durations=10 --benchmark-enable tests/benchmarks tests/pydantic_core/benchmarks
 
 .PHONY: testcov  ## Run tests and generate a coverage report, skipping the type-checker integration tests
 testcov: test
