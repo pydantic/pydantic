@@ -590,8 +590,8 @@ struct ValidationErrorSerializer<'slf, 'py> {
     url_prefix: Option<&'py str>,
     include_context: bool,
     include_input: bool,
-    state: &'slf mut SerializationState,
-    extra: &'py Extra<'py>,
+    state: &'slf mut SerializationState<'py>,
+    extra: &'slf Extra<'slf, 'py>,
     input_type: &'py InputType,
 }
 
@@ -624,8 +624,8 @@ struct PyLineErrorSerializer<'slf, 'py> {
     url_prefix: Option<&'py str>,
     include_context: bool,
     include_input: bool,
-    extra: &'py Extra<'py>,
-    state: RefCell<&'slf mut SerializationState>,
+    extra: &'slf Extra<'slf, 'py>,
+    state: RefCell<&'slf mut SerializationState<'py>>,
     input_type: &'py InputType,
 }
 

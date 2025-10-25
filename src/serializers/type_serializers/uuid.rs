@@ -42,13 +42,13 @@ impl BuildSerializer for UuidSerializer {
 }
 
 impl TypeSerializer for UuidSerializer {
-    fn to_python(
+    fn to_python<'py>(
         &self,
-        value: &Bound<'_, PyAny>,
-        include: Option<&Bound<'_, PyAny>>,
-        exclude: Option<&Bound<'_, PyAny>>,
-        state: &mut SerializationState,
-        extra: &Extra,
+        value: &Bound<'py, PyAny>,
+        include: Option<&Bound<'py, PyAny>>,
+        exclude: Option<&Bound<'py, PyAny>>,
+        state: &mut SerializationState<'py>,
+        extra: &Extra<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
         let py = value.py();
         match extra.ob_type_lookup.is_type(value, ObType::Uuid) {
@@ -57,17 +57,17 @@ impl TypeSerializer for UuidSerializer {
                 _ => Ok(value.clone().unbind()),
             },
             IsType::False => {
-                state.warnings.on_fallback_py(self.get_name(), value, extra)?;
+                state.warn_fallback_py(self.get_name(), value, extra)?;
                 infer_to_python(value, include, exclude, state, extra)
             }
         }
     }
 
-    fn json_key<'a>(
+    fn json_key<'a, 'py>(
         &self,
-        key: &'a Bound<'_, PyAny>,
-        state: &mut SerializationState,
-        extra: &Extra,
+        key: &'a Bound<'py, PyAny>,
+        state: &mut SerializationState<'py>,
+        extra: &Extra<'_, 'py>,
     ) -> PyResult<Cow<'a, str>> {
         match extra.ob_type_lookup.is_type(key, ObType::Uuid) {
             IsType::Exact | IsType::Subclass => {
@@ -75,20 +75,20 @@ impl TypeSerializer for UuidSerializer {
                 Ok(Cow::Owned(str))
             }
             IsType::False => {
-                state.warnings.on_fallback_py(self.get_name(), key, extra)?;
+                state.warn_fallback_py(self.get_name(), key, extra)?;
                 infer_json_key(key, state, extra)
             }
         }
     }
 
-    fn serde_serialize<S: serde::ser::Serializer>(
+    fn serde_serialize<'py, S: serde::ser::Serializer>(
         &self,
-        value: &Bound<'_, PyAny>,
+        value: &Bound<'py, PyAny>,
         serializer: S,
-        include: Option<&Bound<'_, PyAny>>,
-        exclude: Option<&Bound<'_, PyAny>>,
-        state: &mut SerializationState,
-        extra: &Extra,
+        include: Option<&Bound<'py, PyAny>>,
+        exclude: Option<&Bound<'py, PyAny>>,
+        state: &mut SerializationState<'py>,
+        extra: &Extra<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
         match extra.ob_type_lookup.is_type(value, ObType::Uuid) {
             IsType::Exact | IsType::Subclass => {
@@ -96,7 +96,7 @@ impl TypeSerializer for UuidSerializer {
                 serializer.serialize_str(&s)
             }
             IsType::False => {
-                state.warnings.on_fallback_ser::<S>(self.get_name(), value, extra)?;
+                state.warn_fallback_ser::<S>(self.get_name(), value, extra)?;
                 infer_serialize(value, serializer, include, exclude, state, extra)
             }
         }

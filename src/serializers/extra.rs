@@ -1,6 +1,7 @@
 use std::convert::Infallible;
 use std::ffi::CString;
 use std::fmt;
+use std::ops::{Deref, DerefMut};
 use std::string::ToString;
 
 use pyo3::exceptions::{PyTypeError, PyUserWarning, PyValueError};
@@ -21,13 +22,35 @@ use crate::PydanticSerializationError;
 
 /// this is ugly, would be much better if extra could be stored in `SerializationState`
 /// then `SerializationState` got a `serialize_infer` method, but I couldn't get it to work
-pub(crate) struct SerializationState {
+pub(crate) struct SerializationState<'py> {
     pub warnings: CollectWarnings,
     pub rec_guard: RecursionState,
     pub config: SerializationConfig,
+    pub field_name: Option<FieldName<'py>>,
 }
 
-impl SerializationState {
+#[derive(Clone)]
+pub enum FieldName<'py> {
+    Root,
+    Regular(Bound<'py, PyString>),
+}
+
+impl<'py> From<Bound<'py, PyString>> for FieldName<'py> {
+    fn from(s: Bound<'py, PyString>) -> Self {
+        FieldName::Regular(s)
+    }
+}
+
+impl fmt::Display for FieldName<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            FieldName::Root => write!(f, "root"),
+            FieldName::Regular(s) => write!(f, "{s}"),
+        }
+    }
+}
+
+impl SerializationState<'_> {
     pub fn new(config: SerializationConfig, warnings_mode: WarningsMode) -> PyResult<Self> {
         let warnings = CollectWarnings::new(warnings_mode);
         let rec_guard = RecursionState::default();
@@ -35,6 +58,7 @@ impl SerializationState {
             warnings,
             rec_guard,
             config,
+            field_name: None,
         })
     }
 
@@ -49,15 +73,48 @@ impl SerializationState {
         })
     }
 
+    pub fn warn_fallback_py(&mut self, field_type: &str, value: &Bound<'_, PyAny>, extra: &Extra) -> PyResult<()> {
+        self.warnings
+            .on_fallback_py(field_type, value, self.field_name.as_ref(), extra)
+    }
+
+    pub fn warn_fallback_ser<'py, S: serde::ser::Serializer>(
+        &mut self,
+        field_type: &str,
+        value: &Bound<'py, PyAny>,
+        extra: &Extra<'_, 'py>,
+    ) -> Result<(), S::Error> {
+        self.warnings
+            .on_fallback_ser::<S>(field_type, value, self.field_name.as_ref(), extra)
+    }
+
     pub fn final_check(&self, py: Python) -> PyResult<()> {
         self.warnings.final_check(py)
+    }
+}
+
+impl<'py> SerializationState<'py> {
+    /// Temporarily rebinds a field of the state by calling `projector` to get a mutable reference to the field,
+    /// and setting that field to `value`.
+    ///
+    /// When `ScopedSetState` drops, the field is restored to its original value.
+    pub fn scoped_set<'state, P, T>(&'state mut self, projector: P, new_value: T) -> ScopedSetState<'state, 'py, P, T>
+    where
+        P: for<'p> Fn(&'p mut SerializationState<'py>) -> &'p mut T,
+    {
+        let value = std::mem::replace((projector)(self), new_value);
+        ScopedSetState {
+            state: self,
+            projector,
+            value,
+        }
     }
 }
 
 /// Useful things which are passed around by type_serializers
 #[derive(Clone)]
 #[cfg_attr(debug_assertions, derive(Debug))]
-pub(crate) struct Extra<'a> {
+pub(crate) struct Extra<'a, 'py> {
     pub mode: &'a SerMode,
     pub ob_type_lookup: &'a ObTypeLookup,
     pub by_alias: Option<bool>,
@@ -71,15 +128,14 @@ pub(crate) struct Extra<'a> {
     // data representing the current model field
     // that is being serialized, if this is a model serializer
     // it will be None otherwise
-    pub model: Option<&'a Bound<'a, PyAny>>,
-    pub field_name: Option<&'a str>,
+    pub model: Option<&'a Bound<'py, PyAny>>,
     pub serialize_unknown: bool,
-    pub fallback: Option<&'a Bound<'a, PyAny>>,
+    pub fallback: Option<&'a Bound<'py, PyAny>>,
     pub serialize_as_any: bool,
-    pub context: Option<&'a Bound<'a, PyAny>>,
+    pub context: Option<&'a Bound<'py, PyAny>>,
 }
 
-impl<'a> Extra<'a> {
+impl<'a, 'py> Extra<'a, 'py> {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         py: Python<'a>,
@@ -91,9 +147,9 @@ impl<'a> Extra<'a> {
         exclude_computed_fields: bool,
         round_trip: bool,
         serialize_unknown: bool,
-        fallback: Option<&'a Bound<'a, PyAny>>,
+        fallback: Option<&'a Bound<'py, PyAny>>,
         serialize_as_any: bool,
-        context: Option<&'a Bound<'a, PyAny>>,
+        context: Option<&'a Bound<'py, PyAny>>,
     ) -> Self {
         Self {
             mode,
@@ -106,7 +162,6 @@ impl<'a> Extra<'a> {
             round_trip,
             check: SerCheck::None,
             model: None,
-            field_name: None,
             serialize_unknown,
             fallback,
             serialize_as_any,
@@ -114,11 +169,11 @@ impl<'a> Extra<'a> {
         }
     }
 
-    pub fn serialize_infer<'py, 'state>(
-        &'py self,
-        value: &'py Bound<'py, PyAny>,
-        state: &'state mut super::SerializationState,
-    ) -> super::infer::SerializeInfer<'py, 'state> {
+    pub fn serialize_infer<'slf>(
+        &'slf self,
+        value: &'slf Bound<'py, PyAny>,
+        state: &'slf mut SerializationState<'py>,
+    ) -> super::infer::SerializeInfer<'slf, 'py> {
         super::infer::SerializeInfer::new(value, None, None, state, self)
     }
 
@@ -163,15 +218,30 @@ pub(crate) struct ExtraOwned {
     rec_guard: RecursionState,
     check: SerCheck,
     pub model: Option<Py<PyAny>>,
-    field_name: Option<String>,
+    field_name: Option<FieldNameOwned>,
     serialize_unknown: bool,
     pub fallback: Option<Py<PyAny>>,
     serialize_as_any: bool,
     pub context: Option<Py<PyAny>>,
 }
 
+#[derive(Clone)]
+enum FieldNameOwned {
+    Root,
+    Regular(Py<PyString>),
+}
+
+impl fmt::Debug for FieldNameOwned {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            FieldNameOwned::Root => write!(f, "root"),
+            FieldNameOwned::Regular(s) => write!(f, "\"{s}\""),
+        }
+    }
+}
+
 impl ExtraOwned {
-    pub fn new(extra: &Extra, state: &SerializationState) -> Self {
+    pub fn new<'py>(extra: &Extra<'_, 'py>, state: &SerializationState<'py>) -> Self {
         Self {
             mode: extra.mode.clone(),
             warnings: state.warnings.clone(),
@@ -185,7 +255,10 @@ impl ExtraOwned {
             rec_guard: state.rec_guard.clone(),
             check: extra.check,
             model: extra.model.map(|model| model.clone().into()),
-            field_name: extra.field_name.map(ToString::to_string),
+            field_name: state.field_name.as_ref().map(|name| match name {
+                FieldName::Root => FieldNameOwned::Root,
+                FieldName::Regular(b) => FieldNameOwned::Regular(b.clone().into()),
+            }),
             serialize_unknown: extra.serialize_unknown,
             fallback: extra.fallback.map(|model| model.clone().into()),
             serialize_as_any: extra.serialize_as_any,
@@ -193,7 +266,7 @@ impl ExtraOwned {
         }
     }
 
-    pub fn to_extra<'py>(&'py self, py: Python<'py>) -> Extra<'py> {
+    pub fn to_extra<'py>(&self, py: Python<'py>) -> Extra<'_, 'py> {
         Extra {
             mode: &self.mode,
             ob_type_lookup: ObTypeLookup::cached(py),
@@ -205,7 +278,6 @@ impl ExtraOwned {
             round_trip: self.round_trip,
             check: self.check,
             model: self.model.as_ref().map(|m| m.bind(py)),
-            field_name: self.field_name.as_deref(),
             serialize_unknown: self.serialize_unknown,
             fallback: self.fallback.as_ref().map(|m| m.bind(py)),
             serialize_as_any: self.serialize_as_any,
@@ -213,11 +285,16 @@ impl ExtraOwned {
         }
     }
 
-    pub fn to_state(&self) -> SerializationState {
+    pub fn to_state<'py>(&self, py: Python<'py>) -> SerializationState<'py> {
         SerializationState {
             warnings: self.warnings.clone(),
             rec_guard: self.rec_guard.clone(),
             config: self.config,
+            field_name: match &self.field_name {
+                Some(FieldNameOwned::Root) => Some(FieldName::Root),
+                Some(FieldNameOwned::Regular(b)) => Some(FieldName::Regular(b.bind(py).clone())),
+                None => None,
+            },
         }
     }
 }
@@ -330,28 +407,35 @@ impl CollectWarnings {
         }
     }
 
-    pub fn on_fallback_py(&mut self, field_type: &str, value: &Bound<'_, PyAny>, extra: &Extra) -> PyResult<()> {
+    pub fn on_fallback_py<'py>(
+        &mut self,
+        field_type: &str,
+        value: &Bound<'py, PyAny>,
+        field_name: Option<&FieldName<'_>>,
+        extra: &Extra<'_, 'py>,
+    ) -> PyResult<()> {
         // special case for None as it's very common e.g. as a default value
         if value.is_none() {
             Ok(())
         } else if extra.check.enabled() {
             Err(PydanticSerializationUnexpectedValue::new_from_parts(
-                extra.field_name.map(ToString::to_string),
+                field_name.map(ToString::to_string),
                 Some(field_type.to_string()),
                 Some(value.clone().unbind()),
             )
             .to_py_err())
         } else {
-            self.fallback_warning(extra.field_name, field_type, value);
+            self.fallback_warning(field_name, field_type, value);
             Ok(())
         }
     }
 
-    pub fn on_fallback_ser<S: serde::ser::Serializer>(
+    pub fn on_fallback_ser<'py, S: serde::ser::Serializer>(
         &mut self,
         field_type: &str,
-        value: &Bound<'_, PyAny>,
-        extra: &Extra,
+        value: &Bound<'py, PyAny>,
+        field_name: Option<&FieldName<'_>>,
+        extra: &Extra<'_, 'py>,
     ) -> Result<(), S::Error> {
         // special case for None as it's very common e.g. as a default value
         if value.is_none() {
@@ -362,12 +446,12 @@ impl CollectWarnings {
             // in particular, in future we could allow errors instead of warnings on fallback
             Err(S::Error::custom(UNEXPECTED_TYPE_SER_MARKER))
         } else {
-            self.fallback_warning(extra.field_name, field_type, value);
+            self.fallback_warning(field_name, field_type, value);
             Ok(())
         }
     }
 
-    fn fallback_warning(&mut self, field_name: Option<&str>, field_type: &str, value: &Bound<'_, PyAny>) {
+    fn fallback_warning(&mut self, field_name: Option<&FieldName<'_>>, field_type: &str, value: &Bound<'_, PyAny>) {
         if self.mode != WarningsMode::None {
             self.register_warning(PydanticSerializationUnexpectedValue::new_from_parts(
                 field_name.map(ToString::to_string),
@@ -398,8 +482,49 @@ impl CollectWarnings {
     }
 }
 
-impl ContainsRecursionState for SerializationState {
+impl ContainsRecursionState for SerializationState<'_> {
     fn access_recursion_state<R>(&mut self, f: impl FnOnce(&mut RecursionState) -> R) -> R {
         f(&mut self.rec_guard)
+    }
+}
+
+pub(crate) struct ScopedSetState<'scope, 'py, P, T>
+where
+    P: for<'p> Fn(&'p mut SerializationState<'py>) -> &'p mut T,
+{
+    /// The state which has been set for the scope.
+    state: &'scope mut SerializationState<'py>,
+    /// A function that projects from the state to the field that has been set.
+    projector: P,
+    /// The previous value of the field that has been set.
+    value: T,
+}
+
+impl<'py, P, T> Drop for ScopedSetState<'_, 'py, P, T>
+where
+    P: for<'drop> Fn(&'drop mut SerializationState<'py>) -> &'drop mut T,
+{
+    fn drop(&mut self) {
+        std::mem::swap((self.projector)(self.state), &mut self.value);
+    }
+}
+
+impl<'py, P, T> Deref for ScopedSetState<'_, 'py, P, T>
+where
+    P: for<'p> Fn(&'p mut SerializationState<'py>) -> &'p mut T,
+{
+    type Target = SerializationState<'py>;
+
+    fn deref(&self) -> &Self::Target {
+        self.state
+    }
+}
+
+impl<'py, P, T> DerefMut for ScopedSetState<'_, 'py, P, T>
+where
+    P: for<'p> Fn(&'p mut SerializationState<'py>) -> &'p mut T,
+{
+    fn deref_mut(&mut self) -> &mut SerializationState<'py> {
+        self.state
     }
 }

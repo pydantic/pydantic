@@ -114,13 +114,13 @@ impl LiteralSerializer {
 impl_py_gc_traverse!(LiteralSerializer { expected_py });
 
 impl TypeSerializer for LiteralSerializer {
-    fn to_python(
+    fn to_python<'py>(
         &self,
-        value: &Bound<'_, PyAny>,
-        include: Option<&Bound<'_, PyAny>>,
-        exclude: Option<&Bound<'_, PyAny>>,
-        state: &mut SerializationState,
-        extra: &Extra,
+        value: &Bound<'py, PyAny>,
+        include: Option<&Bound<'py, PyAny>>,
+        exclude: Option<&Bound<'py, PyAny>>,
+        state: &mut SerializationState<'py>,
+        extra: &Extra<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
         let py = value.py();
         match self.check(value, extra)? {
@@ -134,44 +134,44 @@ impl TypeSerializer for LiteralSerializer {
             },
             OutputValue::Ok => infer_to_python(value, include, exclude, state, extra),
             OutputValue::Fallback => {
-                state.warnings.on_fallback_py(self.get_name(), value, extra)?;
+                state.warn_fallback_py(self.get_name(), value, extra)?;
                 infer_to_python(value, include, exclude, state, extra)
             }
         }
     }
 
-    fn json_key<'a>(
+    fn json_key<'a, 'py>(
         &self,
-        key: &'a Bound<'_, PyAny>,
-        state: &mut SerializationState,
-        extra: &Extra,
+        key: &'a Bound<'py, PyAny>,
+        state: &mut SerializationState<'py>,
+        extra: &Extra<'_, 'py>,
     ) -> PyResult<Cow<'a, str>> {
         match self.check(key, extra)? {
             OutputValue::OkInt(int) => Ok(Cow::Owned(int.to_string())),
             OutputValue::OkStr(s) => Ok(Cow::Owned(s.to_string_lossy().into_owned())),
             OutputValue::Ok => infer_json_key(key, state, extra),
             OutputValue::Fallback => {
-                state.warnings.on_fallback_py(self.get_name(), key, extra)?;
+                state.warn_fallback_py(self.get_name(), key, extra)?;
                 infer_json_key(key, state, extra)
             }
         }
     }
 
-    fn serde_serialize<S: serde::ser::Serializer>(
+    fn serde_serialize<'py, S: serde::ser::Serializer>(
         &self,
-        value: &Bound<'_, PyAny>,
+        value: &Bound<'py, PyAny>,
         serializer: S,
-        include: Option<&Bound<'_, PyAny>>,
-        exclude: Option<&Bound<'_, PyAny>>,
-        state: &mut SerializationState,
-        extra: &Extra,
+        include: Option<&Bound<'py, PyAny>>,
+        exclude: Option<&Bound<'py, PyAny>>,
+        state: &mut SerializationState<'py>,
+        extra: &Extra<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
         match self.check(value, extra).map_err(py_err_se_err)? {
             OutputValue::OkInt(int) => int.serialize(serializer),
             OutputValue::OkStr(s) => s.to_string_lossy().serialize(serializer),
             OutputValue::Ok => infer_serialize(value, serializer, include, exclude, state, extra),
             OutputValue::Fallback => {
-                state.warnings.on_fallback_ser::<S>(self.get_name(), value, extra)?;
+                state.warn_fallback_ser::<S>(self.get_name(), value, extra)?;
                 infer_serialize(value, serializer, include, exclude, state, extra)
             }
         }

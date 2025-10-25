@@ -52,13 +52,13 @@ macro_rules! build_serializer {
         impl_py_gc_traverse!($struct_name { item_serializer });
 
         impl TypeSerializer for $struct_name {
-            fn to_python(
+            fn to_python<'py>(
                 &self,
-                value: &Bound<'_, PyAny>,
-                include: Option<&Bound<'_, PyAny>>,
-                exclude: Option<&Bound<'_, PyAny>>,
-                state: &mut SerializationState,
-                extra: &Extra,
+                value: &Bound<'py, PyAny>,
+                include: Option<&Bound<'py, PyAny>>,
+                exclude: Option<&Bound<'py, PyAny>>,
+                state: &mut SerializationState<'py>,
+                extra: &Extra<'_, 'py>,
             ) -> PyResult<Py<PyAny>> {
                 let py = value.py();
                 match value.downcast::<$py_type>() {
@@ -75,29 +75,29 @@ macro_rules! build_serializer {
                         }
                     }
                     Err(_) => {
-                        state.warnings.on_fallback_py(self.get_name(), value, extra)?;
+                        state.warn_fallback_py(self.get_name(), value, extra)?;
                         infer_to_python(value, include, exclude, state, extra)
                     }
                 }
             }
 
-            fn json_key<'a>(
+            fn json_key<'a, 'py>(
                 &self,
-                key: &'a Bound<'_, PyAny>,
-                state: &mut SerializationState,
-                extra: &Extra,
+                key: &'a Bound<'py, PyAny>,
+                state: &mut SerializationState<'py>,
+                extra: &Extra<'_, 'py>,
             ) -> PyResult<Cow<'a, str>> {
                 self.invalid_as_json_key(key, state, extra, Self::EXPECTED_TYPE)
             }
 
-            fn serde_serialize<S: serde::ser::Serializer>(
+            fn serde_serialize<'py, S: serde::ser::Serializer>(
                 &self,
-                value: &Bound<'_, PyAny>,
+                value: &Bound<'py, PyAny>,
                 serializer: S,
-                include: Option<&Bound<'_, PyAny>>,
-                exclude: Option<&Bound<'_, PyAny>>,
-                state: &mut SerializationState,
-                extra: &Extra,
+                include: Option<&Bound<'py, PyAny>>,
+                exclude: Option<&Bound<'py, PyAny>>,
+                state: &mut SerializationState<'py>,
+                extra: &Extra<'_, 'py>,
             ) -> Result<S::Ok, S::Error> {
                 match value.downcast::<$py_type>() {
                     Ok(py_set) => {
@@ -112,9 +112,7 @@ macro_rules! build_serializer {
                         seq.end()
                     }
                     Err(_) => {
-                        state
-                            .warnings
-                            .on_fallback_ser::<S>(self.get_name(), value, extra)?;
+                        state.warn_fallback_ser::<S>(self.get_name(), value, extra)?;
                         infer_serialize(value, serializer, include, exclude, state, extra)
                     }
                 }

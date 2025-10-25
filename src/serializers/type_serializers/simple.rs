@@ -42,53 +42,53 @@ pub(crate) fn none_json_key() -> PyResult<Cow<'static, str>> {
 impl_py_gc_traverse!(NoneSerializer {});
 
 impl TypeSerializer for NoneSerializer {
-    fn to_python(
+    fn to_python<'py>(
         &self,
-        value: &Bound<'_, PyAny>,
-        include: Option<&Bound<'_, PyAny>>,
-        exclude: Option<&Bound<'_, PyAny>>,
-        state: &mut SerializationState,
-        extra: &Extra,
+        value: &Bound<'py, PyAny>,
+        include: Option<&Bound<'py, PyAny>>,
+        exclude: Option<&Bound<'py, PyAny>>,
+        state: &mut SerializationState<'py>,
+        extra: &Extra<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
         let py = value.py();
         match extra.ob_type_lookup.is_type(value, ObType::None) {
             IsType::Exact => Ok(py.None()),
             // I don't think subclasses of None can exist
             _ => {
-                state.warnings.on_fallback_py(self.get_name(), value, extra)?;
+                state.warn_fallback_py(self.get_name(), value, extra)?;
                 infer_to_python(value, include, exclude, state, extra)
             }
         }
     }
 
-    fn json_key<'a>(
+    fn json_key<'a, 'py>(
         &self,
-        key: &'a Bound<'_, PyAny>,
-        state: &mut SerializationState,
-        extra: &Extra,
+        key: &'a Bound<'py, PyAny>,
+        state: &mut SerializationState<'py>,
+        extra: &Extra<'_, 'py>,
     ) -> PyResult<Cow<'a, str>> {
         match extra.ob_type_lookup.is_type(key, ObType::None) {
             IsType::Exact => none_json_key(),
             _ => {
-                state.warnings.on_fallback_py(self.get_name(), key, extra)?;
+                state.warn_fallback_py(self.get_name(), key, extra)?;
                 infer_json_key(key, state, extra)
             }
         }
     }
 
-    fn serde_serialize<S: serde::ser::Serializer>(
+    fn serde_serialize<'py, S: serde::ser::Serializer>(
         &self,
-        value: &Bound<'_, PyAny>,
+        value: &Bound<'py, PyAny>,
         serializer: S,
-        include: Option<&Bound<'_, PyAny>>,
-        exclude: Option<&Bound<'_, PyAny>>,
-        state: &mut SerializationState,
-        extra: &Extra,
+        include: Option<&Bound<'py, PyAny>>,
+        exclude: Option<&Bound<'py, PyAny>>,
+        state: &mut SerializationState<'py>,
+        extra: &Extra<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
         match extra.ob_type_lookup.is_type(value, ObType::None) {
             IsType::Exact => serializer.serialize_none(),
             _ => {
-                state.warnings.on_fallback_ser::<S>(self.get_name(), value, extra)?;
+                state.warn_fallback_ser::<S>(self.get_name(), value, extra)?;
                 infer_serialize(value, serializer, include, exclude, state, extra)
             }
         }
@@ -127,13 +127,13 @@ macro_rules! build_simple_serializer {
         impl_py_gc_traverse!($struct_name {});
 
         impl TypeSerializer for $struct_name {
-            fn to_python(
+            fn to_python<'py>(
                 &self,
-                value: &Bound<'_, PyAny>,
-                include: Option<&Bound<'_, PyAny>>,
-                exclude: Option<&Bound<'_, PyAny>>,
-                state: &mut SerializationState,
-                extra: &Extra,
+                value: &Bound<'py, PyAny>,
+                include: Option<&Bound<'py, PyAny>>,
+                exclude: Option<&Bound<'py, PyAny>>,
+                state: &mut SerializationState<'py>,
+                extra: &Extra<'_, 'py>,
             ) -> PyResult<Py<PyAny>> {
                 let py = value.py();
                 match extra.ob_type_lookup.is_type(value, $ob_type) {
@@ -146,42 +146,40 @@ macro_rules! build_simple_serializer {
                         },
                     },
                     IsType::False => {
-                        state.warnings.on_fallback_py(self.get_name(), value, extra)?;
+                        state.warn_fallback_py(self.get_name(), value, extra)?;
                         infer_to_python(value, include, exclude, state, extra)
                     }
                 }
             }
 
-            fn json_key<'a>(
+            fn json_key<'a, 'py>(
                 &self,
-                key: &'a Bound<'_, PyAny>,
-                state: &mut SerializationState,
-                extra: &Extra,
+                key: &'a Bound<'py, PyAny>,
+                state: &mut SerializationState<'py>,
+                extra: &Extra<'_, 'py>,
             ) -> PyResult<Cow<'a, str>> {
                 match extra.ob_type_lookup.is_type(key, $ob_type) {
                     IsType::Exact | IsType::Subclass => $key_method(key),
                     IsType::False => {
-                        state.warnings.on_fallback_py(self.get_name(), key, extra)?;
+                        state.warn_fallback_py(self.get_name(), key, extra)?;
                         infer_json_key(key, state, extra)
                     }
                 }
             }
 
-            fn serde_serialize<S: serde::ser::Serializer>(
+            fn serde_serialize<'py, S: serde::ser::Serializer>(
                 &self,
-                value: &Bound<'_, PyAny>,
+                value: &Bound<'py, PyAny>,
                 serializer: S,
-                include: Option<&Bound<'_, PyAny>>,
-                exclude: Option<&Bound<'_, PyAny>>,
-                state: &mut SerializationState,
-                extra: &Extra,
+                include: Option<&Bound<'py, PyAny>>,
+                exclude: Option<&Bound<'py, PyAny>>,
+                state: &mut SerializationState<'py>,
+                extra: &Extra<'_, 'py>,
             ) -> Result<S::Ok, S::Error> {
                 match value.extract::<$rust_type>() {
                     Ok(v) => v.serialize(serializer),
                     Err(_) => {
-                        state
-                            .warnings
-                            .on_fallback_ser::<S>(self.get_name(), value, extra)?;
+                        state.warn_fallback_ser::<S>(self.get_name(), value, extra)?;
                         infer_serialize(value, serializer, include, exclude, state, extra)
                     }
                 }

@@ -39,34 +39,34 @@ impl BuildSerializer for AnySerializer {
 impl_py_gc_traverse!(AnySerializer {});
 
 impl TypeSerializer for AnySerializer {
-    fn to_python(
+    fn to_python<'py>(
         &self,
-        value: &Bound<'_, PyAny>,
-        include: Option<&Bound<'_, PyAny>>,
-        exclude: Option<&Bound<'_, PyAny>>,
-        state: &mut SerializationState,
-        extra: &Extra,
+        value: &Bound<'py, PyAny>,
+        include: Option<&Bound<'py, PyAny>>,
+        exclude: Option<&Bound<'py, PyAny>>,
+        state: &mut SerializationState<'py>,
+        extra: &Extra<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
         infer_to_python(value, include, exclude, state, extra)
     }
 
-    fn json_key<'a>(
+    fn json_key<'a, 'py>(
         &self,
-        key: &'a Bound<'_, PyAny>,
-        state: &mut SerializationState,
-        extra: &Extra,
+        key: &'a Bound<'py, PyAny>,
+        state: &mut SerializationState<'py>,
+        extra: &Extra<'_, 'py>,
     ) -> PyResult<Cow<'a, str>> {
         infer_json_key(key, state, extra)
     }
 
-    fn serde_serialize<S: Serializer>(
+    fn serde_serialize<'py, S: Serializer>(
         &self,
-        value: &Bound<'_, PyAny>,
+        value: &Bound<'py, PyAny>,
         serializer: S,
-        include: Option<&Bound<'_, PyAny>>,
-        exclude: Option<&Bound<'_, PyAny>>,
-        state: &mut SerializationState,
-        extra: &Extra,
+        include: Option<&Bound<'py, PyAny>>,
+        exclude: Option<&Bound<'py, PyAny>>,
+        state: &mut SerializationState<'py>,
+        extra: &Extra<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
         infer_serialize(value, serializer, include, exclude, state, extra)
     }

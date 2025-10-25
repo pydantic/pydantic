@@ -62,13 +62,13 @@ impl BuildSerializer for TupleSerializer {
 impl_py_gc_traverse!(TupleSerializer { serializers });
 
 impl TypeSerializer for TupleSerializer {
-    fn to_python(
+    fn to_python<'py>(
         &self,
-        value: &Bound<'_, PyAny>,
-        include: Option<&Bound<'_, PyAny>>,
-        exclude: Option<&Bound<'_, PyAny>>,
-        state: &mut SerializationState,
-        extra: &Extra,
+        value: &Bound<'py, PyAny>,
+        include: Option<&Bound<'py, PyAny>>,
+        exclude: Option<&Bound<'py, PyAny>>,
+        state: &mut SerializationState<'py>,
+        extra: &Extra<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
         match value.downcast::<PyTuple>() {
             Ok(py_tuple) => {
@@ -96,17 +96,17 @@ impl TypeSerializer for TupleSerializer {
                 }
             }
             Err(_) => {
-                state.warnings.on_fallback_py(&self.name, value, extra)?;
+                state.warn_fallback_py(&self.name, value, extra)?;
                 infer_to_python(value, include, exclude, state, extra)
             }
         }
     }
 
-    fn json_key<'a>(
+    fn json_key<'a, 'py>(
         &self,
-        key: &'a Bound<'_, PyAny>,
-        state: &mut SerializationState,
-        extra: &Extra,
+        key: &'a Bound<'py, PyAny>,
+        state: &mut SerializationState<'py>,
+        extra: &Extra<'_, 'py>,
     ) -> PyResult<Cow<'a, str>> {
         match key.downcast::<PyTuple>() {
             Ok(py_tuple) => {
@@ -122,20 +122,20 @@ impl TypeSerializer for TupleSerializer {
                 Ok(Cow::Owned(key_builder.finish()))
             }
             Err(_) => {
-                state.warnings.on_fallback_py(&self.name, key, extra)?;
+                state.warn_fallback_py(&self.name, key, extra)?;
                 infer_json_key(key, state, extra)
             }
         }
     }
 
-    fn serde_serialize<S: serde::ser::Serializer>(
+    fn serde_serialize<'py, S: serde::ser::Serializer>(
         &self,
-        value: &Bound<'_, PyAny>,
+        value: &Bound<'py, PyAny>,
         serializer: S,
-        include: Option<&Bound<'_, PyAny>>,
-        exclude: Option<&Bound<'_, PyAny>>,
-        state: &mut SerializationState,
-        extra: &Extra,
+        include: Option<&Bound<'py, PyAny>>,
+        exclude: Option<&Bound<'py, PyAny>>,
+        state: &mut SerializationState<'py>,
+        extra: &Extra<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
         match value.downcast::<PyTuple>() {
             Ok(py_tuple) => {
@@ -159,7 +159,7 @@ impl TypeSerializer for TupleSerializer {
                 seq.end()
             }
             Err(_) => {
-                state.warnings.on_fallback_ser::<S>(&self.name, value, extra)?;
+                state.warn_fallback_ser::<S>(&self.name, value, extra)?;
                 infer_serialize(value, serializer, include, exclude, state, extra)
             }
         }
@@ -179,7 +179,7 @@ struct TupleSerializerEntry<'a, 'py> {
     include: Option<Bound<'py, PyAny>>,
     exclude: Option<Bound<'py, PyAny>>,
     serializer: &'a CombinedSerializer,
-    state: &'a mut SerializationState,
+    state: &'a mut SerializationState<'py>,
 }
 
 impl TupleSerializer {
@@ -189,14 +189,14 @@ impl TupleSerializer {
     ///
     /// The error type E is the type of the error returned by the closure, which is why there are two
     /// levels of `Result`.
-    fn for_each_tuple_item_and_serializer<E>(
+    fn for_each_tuple_item_and_serializer<'py, E>(
         &self,
-        tuple: &Bound<'_, PyTuple>,
-        include: Option<&Bound<'_, PyAny>>,
-        exclude: Option<&Bound<'_, PyAny>>,
-        state: &mut SerializationState,
-        extra: &Extra,
-        mut f: impl for<'a, 'py> FnMut(TupleSerializerEntry<'a, 'py>) -> Result<(), E>,
+        tuple: &Bound<'py, PyTuple>,
+        include: Option<&Bound<'py, PyAny>>,
+        exclude: Option<&Bound<'py, PyAny>>,
+        state: &mut SerializationState<'py>,
+        extra: &Extra<'_, 'py>,
+        mut f: impl for<'a> FnMut(TupleSerializerEntry<'a, 'py>) -> Result<(), E>,
     ) -> PyResult<Result<(), E>> {
         let n_items = tuple.len();
         let mut py_tuple_iter = tuple.iter();

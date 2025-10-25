@@ -145,13 +145,13 @@ impl DataclassSerializer {
 impl_py_gc_traverse!(DataclassSerializer { class, serializer });
 
 impl TypeSerializer for DataclassSerializer {
-    fn to_python(
+    fn to_python<'py>(
         &self,
-        value: &Bound<'_, PyAny>,
-        include: Option<&Bound<'_, PyAny>>,
-        exclude: Option<&Bound<'_, PyAny>>,
-        state: &mut SerializationState,
-        extra: &Extra,
+        value: &Bound<'py, PyAny>,
+        include: Option<&Bound<'py, PyAny>>,
+        exclude: Option<&Bound<'py, PyAny>>,
+        state: &mut SerializationState<'py>,
+        extra: &Extra<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
         let model = Some(value);
         let dc_extra = Extra { model, ..*extra };
@@ -164,7 +164,7 @@ impl TypeSerializer for DataclassSerializer {
                     include,
                     exclude,
                     state,
-                    dc_extra,
+                    &dc_extra,
                 )?;
 
                 fields_serializer.add_computed_fields_python(model, &output_dict, include, exclude, state, extra)?;
@@ -175,33 +175,33 @@ impl TypeSerializer for DataclassSerializer {
                     .to_python(&inner_value, include, exclude, state, &dc_extra)
             }
         } else {
-            state.warnings.on_fallback_py(self.get_name(), value, &dc_extra)?;
+            state.warn_fallback_py(self.get_name(), value, &dc_extra)?;
             infer_to_python(value, include, exclude, state, &dc_extra)
         }
     }
 
-    fn json_key<'a>(
+    fn json_key<'a, 'py>(
         &self,
-        key: &'a Bound<'_, PyAny>,
-        state: &mut SerializationState,
-        extra: &Extra,
+        key: &'a Bound<'py, PyAny>,
+        state: &mut SerializationState<'py>,
+        extra: &Extra<'_, 'py>,
     ) -> PyResult<Cow<'a, str>> {
         if self.allow_value(key, extra)? {
             infer_json_key_known(ObType::Dataclass, key, state, extra)
         } else {
-            state.warnings.on_fallback_py(&self.name, key, extra)?;
+            state.warn_fallback_py(&self.name, key, extra)?;
             infer_json_key(key, state, extra)
         }
     }
 
-    fn serde_serialize<S: serde::ser::Serializer>(
+    fn serde_serialize<'py, S: serde::ser::Serializer>(
         &self,
-        value: &Bound<'_, PyAny>,
+        value: &Bound<'py, PyAny>,
         serializer: S,
-        include: Option<&Bound<'_, PyAny>>,
-        exclude: Option<&Bound<'_, PyAny>>,
-        state: &mut SerializationState,
-        extra: &Extra,
+        include: Option<&Bound<'py, PyAny>>,
+        exclude: Option<&Bound<'py, PyAny>>,
+        state: &mut SerializationState<'py>,
+        extra: &Extra<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
         let model = Some(value);
         let dc_extra = Extra { model, ..*extra };
@@ -225,7 +225,7 @@ impl TypeSerializer for DataclassSerializer {
                     .serde_serialize(&inner_value, serializer, include, exclude, state, &dc_extra)
             }
         } else {
-            state.warnings.on_fallback_ser::<S>(self.get_name(), value, &dc_extra)?;
+            state.warn_fallback_ser::<S>(self.get_name(), value, &dc_extra)?;
             infer_serialize(value, serializer, include, exclude, state, &dc_extra)
         }
     }

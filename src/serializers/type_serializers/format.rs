@@ -109,13 +109,13 @@ impl FormatSerializer {
 impl_py_gc_traverse!(FormatSerializer { format_func });
 
 impl TypeSerializer for FormatSerializer {
-    fn to_python(
+    fn to_python<'py>(
         &self,
         value: &Bound<'_, PyAny>,
         _include: Option<&Bound<'_, PyAny>>,
         _exclude: Option<&Bound<'_, PyAny>>,
-        _state: &mut SerializationState,
-        extra: &Extra,
+        _state: &mut SerializationState<'py>,
+        extra: &Extra<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
         if self.when_used.should_use(value, extra) {
             self.call(value).map_err(PydanticSerializationError::new_err)
@@ -124,11 +124,11 @@ impl TypeSerializer for FormatSerializer {
         }
     }
 
-    fn json_key<'a>(
+    fn json_key<'a, 'py>(
         &self,
-        key: &'a Bound<'_, PyAny>,
-        _state: &mut SerializationState,
-        _extra: &Extra,
+        key: &'a Bound<'py, PyAny>,
+        _state: &mut SerializationState<'py>,
+        _extra: &Extra<'_, 'py>,
     ) -> PyResult<Cow<'a, str>> {
         if self.when_used.should_use_json(key) {
             let py_str = self
@@ -142,14 +142,14 @@ impl TypeSerializer for FormatSerializer {
         }
     }
 
-    fn serde_serialize<S: serde::ser::Serializer>(
+    fn serde_serialize<'py, S: serde::ser::Serializer>(
         &self,
         value: &Bound<'_, PyAny>,
         serializer: S,
         _include: Option<&Bound<'_, PyAny>>,
         _exclude: Option<&Bound<'_, PyAny>>,
-        _state: &mut SerializationState,
-        _extra: &Extra,
+        _state: &mut SerializationState<'py>,
+        _extra: &Extra<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
         if self.when_used.should_use_json(value) {
             match self.call(value) {
@@ -192,13 +192,13 @@ impl BuildSerializer for ToStringSerializer {
 impl_py_gc_traverse!(ToStringSerializer {});
 
 impl TypeSerializer for ToStringSerializer {
-    fn to_python(
+    fn to_python<'py>(
         &self,
         value: &Bound<'_, PyAny>,
         _include: Option<&Bound<'_, PyAny>>,
         _exclude: Option<&Bound<'_, PyAny>>,
-        _state: &mut SerializationState,
-        extra: &Extra,
+        _state: &mut SerializationState<'py>,
+        extra: &Extra<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
         if self.when_used.should_use(value, extra) {
             value.str().map(Into::into)
@@ -207,11 +207,11 @@ impl TypeSerializer for ToStringSerializer {
         }
     }
 
-    fn json_key<'a>(
+    fn json_key<'a, 'py>(
         &self,
-        key: &'a Bound<'_, PyAny>,
-        _state: &mut SerializationState,
-        _extra: &Extra,
+        key: &'a Bound<'py, PyAny>,
+        _state: &mut SerializationState<'py>,
+        _extra: &Extra<'_, 'py>,
     ) -> PyResult<Cow<'a, str>> {
         if self.when_used.should_use_json(key) {
             Ok(Cow::Owned(key.str()?.to_string_lossy().into_owned()))
@@ -220,14 +220,14 @@ impl TypeSerializer for ToStringSerializer {
         }
     }
 
-    fn serde_serialize<S: serde::ser::Serializer>(
+    fn serde_serialize<'py, S: serde::ser::Serializer>(
         &self,
         value: &Bound<'_, PyAny>,
         serializer: S,
         _include: Option<&Bound<'_, PyAny>>,
         _exclude: Option<&Bound<'_, PyAny>>,
-        _state: &mut SerializationState,
-        _extra: &Extra,
+        _state: &mut SerializationState<'py>,
+        _extra: &Extra<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
         if self.when_used.should_use_json(value) {
             let s = value.str().map_err(py_err_se_err)?;

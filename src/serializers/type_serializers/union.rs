@@ -68,13 +68,13 @@ impl UnionSerializer {
 
 impl_py_gc_traverse!(UnionSerializer { choices });
 
-fn union_serialize<S>(
+fn union_serialize<'py, S>(
     // if this returns `Ok(Some(v))`, we picked a union variant to serialize,
     // Or `Ok(None)` if we couldn't find a suitable variant to serialize
     // Finally, `Err(err)` if we encountered errors while trying to serialize
-    mut selector: impl FnMut(&CombinedSerializer, &mut SerializationState, &Extra) -> PyResult<S>,
-    state: &mut SerializationState,
-    extra: &Extra,
+    mut selector: impl FnMut(&CombinedSerializer, &mut SerializationState<'py>, &Extra<'_, 'py>) -> PyResult<S>,
+    state: &mut SerializationState<'py>,
+    extra: &Extra<'_, 'py>,
     choices: &[Arc<CombinedSerializer>],
     retry_with_lax_check: bool,
     py: Python<'_>,
@@ -127,13 +127,13 @@ fn union_serialize<S>(
 }
 
 impl TypeSerializer for UnionSerializer {
-    fn to_python(
+    fn to_python<'py>(
         &self,
-        value: &Bound<'_, PyAny>,
-        include: Option<&Bound<'_, PyAny>>,
-        exclude: Option<&Bound<'_, PyAny>>,
-        state: &mut SerializationState,
-        extra: &Extra,
+        value: &Bound<'py, PyAny>,
+        include: Option<&Bound<'py, PyAny>>,
+        exclude: Option<&Bound<'py, PyAny>>,
+        state: &mut SerializationState<'py>,
+        extra: &Extra<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
         union_serialize(
             |comb_serializer, state, new_extra| comb_serializer.to_python(value, include, exclude, state, new_extra),
@@ -146,11 +146,11 @@ impl TypeSerializer for UnionSerializer {
         .map_or_else(|| infer_to_python(value, include, exclude, state, extra), Ok)
     }
 
-    fn json_key<'a>(
+    fn json_key<'a, 'py>(
         &self,
-        key: &'a Bound<'_, PyAny>,
-        state: &mut SerializationState,
-        extra: &Extra,
+        key: &'a Bound<'py, PyAny>,
+        state: &mut SerializationState<'py>,
+        extra: &Extra<'_, 'py>,
     ) -> PyResult<Cow<'a, str>> {
         union_serialize(
             |comb_serializer, state, new_extra| comb_serializer.json_key(key, state, new_extra),
@@ -163,14 +163,14 @@ impl TypeSerializer for UnionSerializer {
         .map_or_else(|| infer_json_key(key, state, extra), Ok)
     }
 
-    fn serde_serialize<S: serde::ser::Serializer>(
+    fn serde_serialize<'py, S: serde::ser::Serializer>(
         &self,
-        value: &Bound<'_, PyAny>,
+        value: &Bound<'py, PyAny>,
         serializer: S,
-        include: Option<&Bound<'_, PyAny>>,
-        exclude: Option<&Bound<'_, PyAny>>,
-        state: &mut SerializationState,
-        extra: &Extra,
+        include: Option<&Bound<'py, PyAny>>,
+        exclude: Option<&Bound<'py, PyAny>>,
+        state: &mut SerializationState<'py>,
+        extra: &Extra<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
         match union_serialize(
             |comb_serializer, state, new_extra| comb_serializer.to_python(value, include, exclude, state, new_extra),
@@ -240,13 +240,13 @@ impl BuildSerializer for TaggedUnionSerializer {
 impl_py_gc_traverse!(TaggedUnionSerializer { discriminator, choices });
 
 impl TypeSerializer for TaggedUnionSerializer {
-    fn to_python(
+    fn to_python<'py>(
         &self,
-        value: &Bound<'_, PyAny>,
-        include: Option<&Bound<'_, PyAny>>,
-        exclude: Option<&Bound<'_, PyAny>>,
-        state: &mut SerializationState,
-        extra: &Extra,
+        value: &Bound<'py, PyAny>,
+        include: Option<&Bound<'py, PyAny>>,
+        exclude: Option<&Bound<'py, PyAny>>,
+        state: &mut SerializationState<'py>,
+        extra: &Extra<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
         self.tagged_union_serialize(
             value,
@@ -257,11 +257,11 @@ impl TypeSerializer for TaggedUnionSerializer {
         .map_or_else(|| infer_to_python(value, include, exclude, state, extra), Ok)
     }
 
-    fn json_key<'a>(
+    fn json_key<'a, 'py>(
         &self,
-        key: &'a Bound<'_, PyAny>,
-        state: &mut SerializationState,
-        extra: &Extra,
+        key: &'a Bound<'py, PyAny>,
+        state: &mut SerializationState<'py>,
+        extra: &Extra<'_, 'py>,
     ) -> PyResult<Cow<'a, str>> {
         self.tagged_union_serialize(
             key,
@@ -272,14 +272,14 @@ impl TypeSerializer for TaggedUnionSerializer {
         .map_or_else(|| infer_json_key(key, state, extra), Ok)
     }
 
-    fn serde_serialize<S: serde::ser::Serializer>(
+    fn serde_serialize<'py, S: serde::ser::Serializer>(
         &self,
-        value: &Bound<'_, PyAny>,
+        value: &Bound<'py, PyAny>,
         serializer: S,
-        include: Option<&Bound<'_, PyAny>>,
-        exclude: Option<&Bound<'_, PyAny>>,
-        state: &mut SerializationState,
-        extra: &Extra,
+        include: Option<&Bound<'py, PyAny>>,
+        exclude: Option<&Bound<'py, PyAny>>,
+        state: &mut SerializationState<'py>,
+        extra: &Extra<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
         match self.tagged_union_serialize(
             value,
@@ -321,14 +321,14 @@ impl TaggedUnionSerializer {
         }
     }
 
-    fn tagged_union_serialize<S>(
+    fn tagged_union_serialize<'py, S>(
         &self,
-        value: &Bound<'_, PyAny>,
+        value: &Bound<'py, PyAny>,
         // if this returns `Ok(v)`, we picked a union variant to serialize, where
         // `S` is intermediate state which can be passed on to the finalizer
-        mut selector: impl FnMut(&CombinedSerializer, &mut SerializationState, &Extra) -> PyResult<S>,
-        state: &mut SerializationState,
-        extra: &Extra,
+        mut selector: impl FnMut(&CombinedSerializer, &mut SerializationState<'py>, &Extra<'_, 'py>) -> PyResult<S>,
+        state: &mut SerializationState<'py>,
+        extra: &Extra<'_, 'py>,
     ) -> PyResult<Option<S>> {
         if let Some(tag) = self.get_discriminator_value(value) {
             let mut new_extra = extra.clone();

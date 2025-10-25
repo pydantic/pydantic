@@ -15,6 +15,7 @@ use super::{
 use crate::build_tools::py_schema_err;
 use crate::build_tools::{py_schema_error_type, ExtraBehavior};
 use crate::definitions::DefinitionsBuilder;
+use crate::serializers::extra::FieldName;
 use crate::serializers::shared::serialize_to_json;
 use crate::serializers::shared::serialize_to_python;
 use crate::serializers::shared::DoSerialize;
@@ -165,15 +166,15 @@ impl ModelSerializer {
     ///
     /// If the value is not applicable, `do_serialize` will be called with `None` to indicate fallback
     /// behaviour should be used.
-    fn serialize<T, E: From<PyErr>>(
+    fn serialize<'py, T, E: From<PyErr>>(
         &self,
-        value: &Bound<'_, PyAny>,
-        state: &mut SerializationState,
-        extra: &Extra,
-        do_serialize: impl DoSerialize<T, E>,
+        value: &Bound<'py, PyAny>,
+        state: &mut SerializationState<'py>,
+        extra: &Extra<'_, 'py>,
+        do_serialize: impl DoSerialize<'py, T, E>,
     ) -> Result<T, E> {
         if self.root_model {
-            return self.serialize_root_model(value, extra, state, do_serialize);
+            return self.serialize_root_model(value, state, extra, do_serialize);
         }
 
         if !self.allow_value(value, extra.check)? {
@@ -188,19 +189,19 @@ impl ModelSerializer {
         do_serialize.serialize_no_infer(&self.serializer, &inner_value, state, &model_extra)
     }
 
-    fn serialize_root_model<T, E: From<PyErr>>(
+    fn serialize_root_model<'py, T, E: From<PyErr>>(
         &self,
-        value: &Bound<'_, PyAny>,
-        extra: &Extra,
-        state: &mut SerializationState,
-        do_serialize: impl DoSerialize<T, E>,
+        value: &Bound<'py, PyAny>,
+        state: &mut SerializationState<'py>,
+        extra: &Extra<'_, 'py>,
+        do_serialize: impl DoSerialize<'py, T, E>,
     ) -> Result<T, E> {
         if !self.allow_value_root_model(value, extra.check)? {
             return do_serialize.serialize_fallback(self.get_name(), value, state, extra);
         }
 
+        let state = &mut state.scoped_set(|s| &mut s.field_name, Some(FieldName::Root));
         let root_extra = Extra {
-            field_name: Some(ROOT_FIELD),
             model: Some(value),
             ..extra.clone()
         };
@@ -256,40 +257,40 @@ impl ModelSerializer {
 impl_py_gc_traverse!(ModelSerializer { class, serializer });
 
 impl TypeSerializer for ModelSerializer {
-    fn to_python(
+    fn to_python<'py>(
         &self,
-        value: &Bound<'_, PyAny>,
-        include: Option<&Bound<'_, PyAny>>,
-        exclude: Option<&Bound<'_, PyAny>>,
-        state: &mut SerializationState,
-        extra: &Extra,
+        value: &Bound<'py, PyAny>,
+        include: Option<&Bound<'py, PyAny>>,
+        exclude: Option<&Bound<'py, PyAny>>,
+        state: &mut SerializationState<'py>,
+        extra: &Extra<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
         self.serialize(value, state, extra, serialize_to_python(include, exclude))
     }
 
-    fn json_key<'a>(
+    fn json_key<'a, 'py>(
         &self,
-        key: &'a Bound<'_, PyAny>,
-        state: &mut SerializationState,
-        extra: &Extra,
+        key: &'a Bound<'py, PyAny>,
+        state: &mut SerializationState<'py>,
+        extra: &Extra<'_, 'py>,
     ) -> PyResult<Cow<'a, str>> {
         // FIXME: root model in json key position should serialize as inner value?
         if self.allow_value(key, extra.check)? {
             infer_json_key_known(ObType::PydanticSerializable, key, state, extra)
         } else {
-            state.warnings.on_fallback_py(&self.name, key, extra)?;
+            state.warn_fallback_py(&self.name, key, extra)?;
             infer_json_key(key, state, extra)
         }
     }
 
-    fn serde_serialize<S: serde::ser::Serializer>(
+    fn serde_serialize<'py, S: serde::ser::Serializer>(
         &self,
-        value: &Bound<'_, PyAny>,
+        value: &Bound<'py, PyAny>,
         serializer: S,
-        include: Option<&Bound<'_, PyAny>>,
-        exclude: Option<&Bound<'_, PyAny>>,
-        state: &mut SerializationState,
-        extra: &Extra,
+        include: Option<&Bound<'py, PyAny>>,
+        exclude: Option<&Bound<'py, PyAny>>,
+        state: &mut SerializationState<'py>,
+        extra: &Extra<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
         self.serialize(value, state, extra, serialize_to_json(serializer, include, exclude))
             .map_err(|e| e.0)

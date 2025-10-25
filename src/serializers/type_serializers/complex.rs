@@ -29,13 +29,13 @@ impl BuildSerializer for ComplexSerializer {
 impl_py_gc_traverse!(ComplexSerializer {});
 
 impl TypeSerializer for ComplexSerializer {
-    fn to_python(
+    fn to_python<'py>(
         &self,
-        value: &Bound<'_, PyAny>,
-        include: Option<&Bound<'_, PyAny>>,
-        exclude: Option<&Bound<'_, PyAny>>,
-        state: &mut SerializationState,
-        extra: &Extra,
+        value: &Bound<'py, PyAny>,
+        include: Option<&Bound<'py, PyAny>>,
+        exclude: Option<&Bound<'py, PyAny>>,
+        state: &mut SerializationState<'py>,
+        extra: &Extra<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
         let py = value.py();
         match value.downcast::<PyComplex>() {
@@ -44,29 +44,29 @@ impl TypeSerializer for ComplexSerializer {
                 _ => Ok(value.clone().unbind()),
             },
             Err(_) => {
-                state.warnings.on_fallback_py(self.get_name(), value, extra)?;
+                state.warn_fallback_py(self.get_name(), value, extra)?;
                 infer_to_python(value, include, exclude, state, extra)
             }
         }
     }
 
-    fn json_key<'a>(
+    fn json_key<'a, 'py>(
         &self,
-        key: &'a Bound<'_, PyAny>,
-        state: &mut SerializationState,
-        extra: &Extra,
+        key: &'a Bound<'py, PyAny>,
+        state: &mut SerializationState<'py>,
+        extra: &Extra<'_, 'py>,
     ) -> PyResult<Cow<'a, str>> {
         self.invalid_as_json_key(key, state, extra, "complex")
     }
 
-    fn serde_serialize<S: serde::ser::Serializer>(
+    fn serde_serialize<'py, S: serde::ser::Serializer>(
         &self,
-        value: &Bound<'_, PyAny>,
+        value: &Bound<'py, PyAny>,
         serializer: S,
-        include: Option<&Bound<'_, PyAny>>,
-        exclude: Option<&Bound<'_, PyAny>>,
-        state: &mut SerializationState,
-        extra: &Extra,
+        include: Option<&Bound<'py, PyAny>>,
+        exclude: Option<&Bound<'py, PyAny>>,
+        state: &mut SerializationState<'py>,
+        extra: &Extra<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
         match value.downcast::<PyComplex>() {
             Ok(py_complex) => {
@@ -74,7 +74,7 @@ impl TypeSerializer for ComplexSerializer {
                 Ok(serializer.collect_str::<String>(&s)?)
             }
             Err(_) => {
-                state.warnings.on_fallback_ser::<S>(self.get_name(), value, extra)?;
+                state.warn_fallback_ser::<S>(self.get_name(), value, extra)?;
                 infer_serialize(value, serializer, include, exclude, state, extra)
             }
         }

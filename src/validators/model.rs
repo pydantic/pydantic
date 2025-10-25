@@ -331,7 +331,7 @@ impl ModelValidator {
         py: Python<'py>,
         instance: Bound<'_, PyAny>,
         input: &(impl Input<'py> + ?Sized),
-        extra: &Extra,
+        extra: &Extra<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
         if let Some(ref post_init) = self.post_init {
             instance

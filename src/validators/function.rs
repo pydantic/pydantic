@@ -537,7 +537,7 @@ pub struct ValidationInfo {
 }
 
 impl ValidationInfo {
-    fn new(py: Python, extra: &Extra, config: &Py<PyAny>, field_name: Option<Py<PyString>>) -> Self {
+    fn new(py: Python, extra: &Extra<'_, '_>, config: &Py<PyAny>, field_name: Option<Py<PyString>>) -> Self {
         Self {
             config: config.clone_ref(py),
             context: extra.context.map(|ctx| ctx.clone().into()),

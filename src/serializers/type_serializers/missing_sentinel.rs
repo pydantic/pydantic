@@ -40,13 +40,13 @@ impl BuildSerializer for MissingSentinelSerializer {
 impl_py_gc_traverse!(MissingSentinelSerializer {});
 
 impl TypeSerializer for MissingSentinelSerializer {
-    fn to_python(
+    fn to_python<'py>(
         &self,
         value: &Bound<'_, PyAny>,
         _include: Option<&Bound<'_, PyAny>>,
         _exclude: Option<&Bound<'_, PyAny>>,
-        _state: &mut SerializationState,
-        _extra: &Extra,
+        _state: &mut SerializationState<'py>,
+        _extra: &Extra<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
         let missing_sentinel = get_missing_sentinel_object(value.py());
 
@@ -60,23 +60,23 @@ impl TypeSerializer for MissingSentinelSerializer {
         }
     }
 
-    fn json_key<'a>(
+    fn json_key<'a, 'py>(
         &self,
-        key: &'a Bound<'_, PyAny>,
-        state: &mut SerializationState,
-        extra: &Extra,
+        key: &'a Bound<'py, PyAny>,
+        state: &mut SerializationState<'py>,
+        extra: &Extra<'_, 'py>,
     ) -> PyResult<Cow<'a, str>> {
         self.invalid_as_json_key(key, state, extra, Self::EXPECTED_TYPE)
     }
 
-    fn serde_serialize<S: serde::ser::Serializer>(
+    fn serde_serialize<'py, S: serde::ser::Serializer>(
         &self,
         _value: &Bound<'_, PyAny>,
         _serializer: S,
         _include: Option<&Bound<'_, PyAny>>,
         _exclude: Option<&Bound<'_, PyAny>>,
-        _state: &mut SerializationState,
-        _extra: &Extra,
+        _state: &mut SerializationState<'py>,
+        _extra: &Extra<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
         Err(Error::custom("'MISSING' can't be serialized to JSON".to_string()))
     }

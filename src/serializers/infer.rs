@@ -29,12 +29,12 @@ use super::ob_type::ObType;
 use super::shared::any_dataclass_iter;
 use super::SchemaSerializer;
 
-pub(crate) fn infer_to_python(
-    value: &Bound<'_, PyAny>,
-    include: Option<&Bound<'_, PyAny>>,
-    exclude: Option<&Bound<'_, PyAny>>,
-    state: &mut super::SerializationState,
-    extra: &Extra,
+pub(crate) fn infer_to_python<'py>(
+    value: &Bound<'py, PyAny>,
+    include: Option<&Bound<'py, PyAny>>,
+    exclude: Option<&Bound<'py, PyAny>>,
+    state: &mut SerializationState<'py>,
+    extra: &Extra<'_, 'py>,
 ) -> PyResult<Py<PyAny>> {
     infer_to_python_known(
         extra.ob_type_lookup.get_type(value),
@@ -50,13 +50,13 @@ pub(crate) fn infer_to_python(
 // We just need them to be different from definition ref slot ids, which start at 0
 const INFER_DEF_REF_ID: usize = usize::MAX;
 
-pub(crate) fn infer_to_python_known(
+pub(crate) fn infer_to_python_known<'py>(
     ob_type: ObType,
-    value: &Bound<'_, PyAny>,
-    include: Option<&Bound<'_, PyAny>>,
-    exclude: Option<&Bound<'_, PyAny>>,
-    state: &mut super::SerializationState,
-    extra: &Extra,
+    value: &Bound<'py, PyAny>,
+    include: Option<&Bound<'py, PyAny>>,
+    exclude: Option<&Bound<'py, PyAny>>,
+    state: &mut SerializationState<'py>,
+    extra: &Extra<'_, 'py>,
 ) -> PyResult<Py<PyAny>> {
     let py = value.py();
 
@@ -314,21 +314,21 @@ pub(crate) fn infer_to_python_known(
     Ok(value)
 }
 
-pub(crate) struct SerializeInfer<'py, 'state> {
-    value: &'py Bound<'py, PyAny>,
-    include: Option<&'py Bound<'py, PyAny>>,
-    exclude: Option<&'py Bound<'py, PyAny>>,
-    state: RefCell<&'state mut SerializationState>,
-    extra: &'py Extra<'py>,
+pub(crate) struct SerializeInfer<'slf, 'py> {
+    value: &'slf Bound<'py, PyAny>,
+    include: Option<&'slf Bound<'py, PyAny>>,
+    exclude: Option<&'slf Bound<'py, PyAny>>,
+    state: RefCell<&'slf mut SerializationState<'py>>,
+    extra: &'slf Extra<'slf, 'py>,
 }
 
-impl<'py, 'state> SerializeInfer<'py, 'state> {
+impl<'slf, 'py> SerializeInfer<'slf, 'py> {
     pub(crate) fn new(
-        value: &'py Bound<'py, PyAny>,
-        include: Option<&'py Bound<'py, PyAny>>,
-        exclude: Option<&'py Bound<'py, PyAny>>,
-        state: &'state mut SerializationState,
-        extra: &'py Extra,
+        value: &'slf Bound<'py, PyAny>,
+        include: Option<&'slf Bound<'py, PyAny>>,
+        exclude: Option<&'slf Bound<'py, PyAny>>,
+        state: &'slf mut SerializationState<'py>,
+        extra: &'slf Extra<'slf, 'py>,
     ) -> Self {
         Self {
             value,
@@ -356,13 +356,13 @@ impl Serialize for SerializeInfer<'_, '_> {
     }
 }
 
-pub(crate) fn infer_serialize<S: Serializer>(
-    value: &Bound<'_, PyAny>,
+pub(crate) fn infer_serialize<'py, S: Serializer>(
+    value: &Bound<'py, PyAny>,
     serializer: S,
-    include: Option<&Bound<'_, PyAny>>,
-    exclude: Option<&Bound<'_, PyAny>>,
-    state: &mut super::SerializationState,
-    extra: &Extra,
+    include: Option<&Bound<'py, PyAny>>,
+    exclude: Option<&Bound<'py, PyAny>>,
+    state: &mut SerializationState<'py>,
+    extra: &Extra<'_, 'py>,
 ) -> Result<S::Ok, S::Error> {
     infer_serialize_known(
         extra.ob_type_lookup.get_type(value),
@@ -375,14 +375,14 @@ pub(crate) fn infer_serialize<S: Serializer>(
     )
 }
 
-pub(crate) fn infer_serialize_known<S: Serializer>(
+pub(crate) fn infer_serialize_known<'py, S: Serializer>(
     ob_type: ObType,
-    value: &Bound<'_, PyAny>,
+    value: &Bound<'py, PyAny>,
     serializer: S,
-    include: Option<&Bound<'_, PyAny>>,
-    exclude: Option<&Bound<'_, PyAny>>,
-    state: &mut super::SerializationState,
-    extra: &Extra,
+    include: Option<&Bound<'py, PyAny>>,
+    exclude: Option<&Bound<'py, PyAny>>,
+    state: &mut SerializationState<'py>,
+    extra: &Extra<'_, 'py>,
 ) -> Result<S::Ok, S::Error> {
     let extra_serialize_unknown = extra.serialize_unknown;
     let mut guard = match state.recursion_guard(value, INFER_DEF_REF_ID) {
@@ -604,20 +604,20 @@ fn serialize_unknown<'py>(value: &Bound<'py, PyAny>) -> Cow<'py, str> {
     }
 }
 
-pub(crate) fn infer_json_key<'a>(
-    key: &'a Bound<'_, PyAny>,
-    state: &mut SerializationState,
-    extra: &Extra,
+pub(crate) fn infer_json_key<'a, 'py>(
+    key: &'a Bound<'py, PyAny>,
+    state: &mut SerializationState<'py>,
+    extra: &Extra<'_, 'py>,
 ) -> PyResult<Cow<'a, str>> {
     let ob_type = extra.ob_type_lookup.get_type(key);
     infer_json_key_known(ob_type, key, state, extra)
 }
 
-pub(crate) fn infer_json_key_known<'a>(
+pub(crate) fn infer_json_key_known<'a, 'py>(
     ob_type: ObType,
-    key: &'a Bound<'_, PyAny>,
-    state: &mut SerializationState,
-    extra: &Extra,
+    key: &'a Bound<'py, PyAny>,
+    state: &mut SerializationState<'py>,
+    extra: &Extra<'_, 'py>,
 ) -> PyResult<Cow<'a, str>> {
     match ob_type {
         ObType::None => super::type_serializers::simple::none_json_key(),
@@ -718,11 +718,11 @@ pub(crate) fn infer_json_key_known<'a>(
 /// Serialize `value` as if it had a `__pydantic_serializer__` attribute
 ///
 /// `do_serialize` should be a closure which performs serialization without type inference
-pub(crate) fn call_pydantic_serializer<T, E: From<PyErr>>(
-    value: &Bound<'_, PyAny>,
-    state: &mut SerializationState,
-    extra: &Extra,
-    do_serialize: impl DoSerialize<T, E>,
+pub(crate) fn call_pydantic_serializer<'py, T, E: From<PyErr>>(
+    value: &Bound<'py, PyAny>,
+    state: &mut SerializationState<'py>,
+    extra: &Extra<'_, 'py>,
+    do_serialize: impl DoSerialize<'py, T, E>,
 ) -> Result<T, E> {
     let py = value.py();
     let py_serializer = value.getattr(intern!(py, "__pydantic_serializer__"))?;
@@ -731,6 +731,7 @@ pub(crate) fn call_pydantic_serializer<T, E: From<PyErr>>(
         warnings: state.warnings.clone(),
         rec_guard: state.rec_guard.clone(),
         config: extracted_serializer.config,
+        field_name: state.field_name.clone(),
     };
 
     // Avoid falling immediately back into inference because we need to use the serializer
@@ -741,11 +742,11 @@ pub(crate) fn call_pydantic_serializer<T, E: From<PyErr>>(
 fn serialize_pairs_python<'py>(
     py: Python,
     pairs_iter: impl Iterator<Item = PyResult<(Bound<'py, PyAny>, Bound<'py, PyAny>)>>,
-    include: Option<&Bound<'_, PyAny>>,
-    exclude: Option<&Bound<'_, PyAny>>,
-    state: &mut SerializationState,
-    extra: &Extra,
-    key_transform: impl Fn(Bound<'py, PyAny>, &mut SerializationState) -> PyResult<Bound<'py, PyAny>>,
+    include: Option<&Bound<'py, PyAny>>,
+    exclude: Option<&Bound<'py, PyAny>>,
+    state: &mut SerializationState<'py>,
+    extra: &Extra<'_, 'py>,
+    key_transform: impl Fn(Bound<'py, PyAny>, &mut SerializationState<'py>) -> PyResult<Bound<'py, PyAny>>,
 ) -> PyResult<Py<PyAny>> {
     let new_dict = PyDict::new(py);
     let filter = AnyFilter::new();
@@ -766,10 +767,10 @@ fn serialize_pairs_json<'py, S: Serializer>(
     pairs_iter: impl Iterator<Item = PyResult<(Bound<'py, PyAny>, Bound<'py, PyAny>)>>,
     iter_size: usize,
     serializer: S,
-    include: Option<&Bound<'_, PyAny>>,
-    exclude: Option<&Bound<'_, PyAny>>,
-    state: &mut SerializationState,
-    extra: &Extra,
+    include: Option<&Bound<'py, PyAny>>,
+    exclude: Option<&Bound<'py, PyAny>>,
+    state: &mut SerializationState<'py>,
+    extra: &Extra<'_, 'py>,
 ) -> Result<S::Ok, S::Error> {
     let mut map = serializer.serialize_map(Some(iter_size))?;
     let filter = AnyFilter::new();
