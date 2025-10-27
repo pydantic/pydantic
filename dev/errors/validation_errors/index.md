@@ -98,7 +98,7 @@ This error is also raised for strict fields when the input value is not an insta
 
 ## `bytes_invalid_encoding`
 
-This error is raised when a `bytes` value is invalid under the configured encoding. In the following example, `b'a'` is invalid hex (odd number of digits).
+This error is raised when a `bytes` value is invalid under the configured encoding. In the following example, `'a'` is invalid hex (odd number of digits).
 
 ```python
 from pydantic import BaseModel, ValidationError
@@ -110,7 +110,7 @@ class Model(BaseModel):
 
 
 try:
-    Model(x=b'a')
+    Model(x='a')
 except ValidationError as exc:
     print(repr(exc.errors()[0]['type']))
     #> 'bytes_invalid_encoding'
