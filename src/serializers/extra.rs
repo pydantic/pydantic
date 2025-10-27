@@ -26,6 +26,9 @@ pub(crate) struct SerializationState<'py> {
     pub warnings: CollectWarnings,
     pub rec_guard: RecursionState,
     pub config: SerializationConfig,
+    /// The model currently being serialized, if any
+    pub model: Option<Bound<'py, PyAny>>,
+    /// The name of the field currently being serialized, if any
     pub field_name: Option<FieldName<'py>>,
     pub include_exclude: (Option<Bound<'py, PyAny>>, Option<Bound<'py, PyAny>>),
 }
@@ -64,6 +67,7 @@ impl<'py> SerializationState<'py> {
             warnings,
             rec_guard,
             config,
+            model: None,
             field_name: None,
             include_exclude: (include, exclude),
         })
@@ -135,6 +139,10 @@ impl<'py> SerializationState<'py> {
         self.include_exclude.1.as_ref()
     }
 
+    pub(crate) fn model_type_name(&self) -> Option<Bound<'py, PyString>> {
+        self.model.as_ref().and_then(|model| model.get_type().name().ok())
+    }
+
     fn include_exclude_mut(&mut self) -> &mut (Option<Bound<'py, PyAny>>, Option<Bound<'py, PyAny>>) {
         &mut self.include_exclude
     }
@@ -154,10 +162,6 @@ pub(crate) struct Extra<'a, 'py> {
     pub round_trip: bool,
     // the next two are used for union logic
     pub check: SerCheck,
-    // data representing the current model field
-    // that is being serialized, if this is a model serializer
-    // it will be None otherwise
-    pub model: Option<&'a Bound<'py, PyAny>>,
     pub serialize_unknown: bool,
     pub fallback: Option<&'a Bound<'py, PyAny>>,
     pub serialize_as_any: bool,
@@ -190,7 +194,6 @@ impl<'a, 'py> Extra<'a, 'py> {
             exclude_computed_fields,
             round_trip,
             check: SerCheck::None,
-            model: None,
             serialize_unknown,
             fallback,
             serialize_as_any,
@@ -204,10 +207,6 @@ impl<'a, 'py> Extra<'a, 'py> {
         state: &'slf mut SerializationState<'py>,
     ) -> super::infer::SerializeInfer<'slf, 'py> {
         super::infer::SerializeInfer::new(value, state, self)
-    }
-
-    pub(crate) fn model_type_name(&self) -> Option<Bound<'a, PyString>> {
-        self.model.and_then(|model| model.get_type().name().ok())
     }
 
     pub fn serialize_by_alias_or(&self, serialize_by_alias: Option<bool>) -> bool {
@@ -285,7 +284,7 @@ impl ExtraOwned {
             config: state.config,
             rec_guard: state.rec_guard.clone(),
             check: extra.check,
-            model: extra.model.map(|model| model.clone().into()),
+            model: state.model.as_ref().map(|model| model.clone().into()),
             field_name: state.field_name.as_ref().map(|name| match name {
                 FieldName::Root => FieldNameOwned::Root,
                 FieldName::Regular(b) => FieldNameOwned::Regular(b.clone().into()),
@@ -310,7 +309,6 @@ impl ExtraOwned {
             exclude_computed_fields: self.exclude_computed_fields,
             round_trip: self.round_trip,
             check: self.check,
-            model: self.model.as_ref().map(|m| m.bind(py)),
             serialize_unknown: self.serialize_unknown,
             fallback: self.fallback.as_ref().map(|m| m.bind(py)),
             serialize_as_any: self.serialize_as_any,
@@ -332,6 +330,7 @@ impl ExtraOwned {
                 self.include.as_ref().map(|m| m.bind(py).clone()),
                 self.exclude.as_ref().map(|m| m.bind(py).clone()),
             ),
+            model: self.model.as_ref().map(|m| m.bind(py).clone()),
         }
     }
 }

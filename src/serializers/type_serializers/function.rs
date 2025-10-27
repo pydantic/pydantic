@@ -151,7 +151,7 @@ impl FunctionPlainSerializer {
         let py = value.py();
         if self.when_used.should_use(value, extra) {
             let v = if self.is_field_serializer {
-                if let Some(model) = extra.model {
+                if let Some(model) = state.model.as_ref() {
                     if self.info_arg {
                         let info = SerializationInfo::new(state, extra, self.is_field_serializer)?;
                         self.func.call1(py, (model, value, info))?
@@ -401,7 +401,7 @@ impl FunctionWrapSerializer {
         if self.when_used.should_use(value, extra) {
             let serialize = SerializationCallable::new(&self.serializer, extra, state);
             let v = if self.is_field_serializer {
-                if let Some(model) = extra.model {
+                if let Some(model) = state.model.as_ref() {
                     if self.info_arg {
                         let info = SerializationInfo::new(state, extra, self.is_field_serializer)?;
                         self.func.call1(py, (model, value, serialize, info))?
@@ -559,7 +559,7 @@ struct SerializationInfo {
 }
 
 impl SerializationInfo {
-    fn new(state: &mut SerializationState<'_>, extra: &Extra<'_, '_>, is_field_serializer: bool) -> PyResult<Self> {
+    fn new(state: &SerializationState<'_>, extra: &Extra<'_, '_>, is_field_serializer: bool) -> PyResult<Self> {
         if is_field_serializer {
             match state.field_name.as_ref() {
                 Some(field_name) => Ok(Self {

@@ -151,27 +151,23 @@ impl TypeSerializer for DataclassSerializer {
         state: &mut SerializationState<'py>,
         extra: &Extra<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
-        let model = Some(value);
-        let dc_extra = Extra { model, ..*extra };
-        if self.allow_value(value, &dc_extra)? {
+        let state = &mut state.scoped_set(|s| &mut s.model, Some(value.clone()));
+        if self.allow_value(value, extra)? {
             let py = value.py();
             if let CombinedSerializer::Fields(ref fields_serializer) = *self.serializer {
-                let output_dict: Bound<PyDict> = fields_serializer.main_to_python(
-                    py,
-                    known_dataclass_iter(&self.fields, value),
-                    state,
-                    &dc_extra,
-                )?;
+                let output_dict: Bound<PyDict> =
+                    fields_serializer.main_to_python(py, known_dataclass_iter(&self.fields, value), state, extra)?;
 
-                fields_serializer.add_computed_fields_python(model, &output_dict, state, extra)?;
+                fields_serializer.add_computed_fields_python(value, &output_dict, state, extra)?;
                 Ok(output_dict.into())
             } else {
                 let inner_value = self.get_inner_value(value)?;
-                self.serializer.to_python(&inner_value, state, &dc_extra)
+                self.serializer.to_python(&inner_value, state, extra)
             }
         } else {
-            state.warn_fallback_py(self.get_name(), value, &dc_extra)?;
-            infer_to_python(value, state, &dc_extra)
+            // FIXME: probably don't want to have state.model set here, should move the scoped_set above?
+            state.warn_fallback_py(self.get_name(), value, extra)?;
+            infer_to_python(value, state, extra)
         }
     }
 
@@ -196,9 +192,8 @@ impl TypeSerializer for DataclassSerializer {
         state: &mut SerializationState<'py>,
         extra: &Extra<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
-        let model = Some(value);
-        let dc_extra = Extra { model, ..*extra };
-        if self.allow_value(value, &dc_extra).map_err(py_err_se_err)? {
+        let state = &mut state.scoped_set(|s| &mut s.model, Some(value.clone()));
+        if self.allow_value(value, extra).map_err(py_err_se_err)? {
             if let CombinedSerializer::Fields(ref fields_serializer) = *self.serializer {
                 let expected_len = self.fields.len() + fields_serializer.computed_field_count();
                 let mut map = fields_serializer.main_serde_serialize(
@@ -206,18 +201,18 @@ impl TypeSerializer for DataclassSerializer {
                     expected_len,
                     serializer,
                     state,
-                    dc_extra,
+                    extra,
                 )?;
-                fields_serializer.add_computed_fields_json::<S>(model, &mut map, state, extra)?;
+                fields_serializer.add_computed_fields_json::<S>(value, &mut map, state, extra)?;
                 map.end()
             } else {
                 let inner_value = self.get_inner_value(value).map_err(py_err_se_err)?;
-                self.serializer
-                    .serde_serialize(&inner_value, serializer, state, &dc_extra)
+                self.serializer.serde_serialize(&inner_value, serializer, state, extra)
             }
         } else {
-            state.warn_fallback_ser::<S>(self.get_name(), value, &dc_extra)?;
-            infer_serialize(value, serializer, state, &dc_extra)
+            // FIXME: probably don't want to have state.model set here, should move the scoped_set above?
+            state.warn_fallback_ser::<S>(self.get_name(), value, extra)?;
+            infer_serialize(value, serializer, state, extra)
         }
     }
 

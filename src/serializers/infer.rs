@@ -645,6 +645,7 @@ pub(crate) fn call_pydantic_serializer<'py, T, E: From<PyErr>>(
         warnings: state.warnings.clone(),
         rec_guard: state.rec_guard.clone(),
         config: extracted_serializer.config,
+        model: state.model.clone(),
         field_name: state.field_name.clone(),
         include_exclude: state.include_exclude.clone(),
     };

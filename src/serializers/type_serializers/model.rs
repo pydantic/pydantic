@@ -181,12 +181,10 @@ impl ModelSerializer {
             return do_serialize.serialize_fallback(self.get_name(), value, state, extra);
         }
 
-        let model_extra = Extra {
-            model: Some(value),
-            ..extra.clone()
-        };
-        let inner_value = self.get_inner_value(value, &model_extra)?;
-        do_serialize.serialize_no_infer(&self.serializer, &inner_value, state, &model_extra)
+        let inner_value = self.get_inner_value(value, extra)?;
+
+        let state = &mut state.scoped_set(|s| &mut s.model, Some(value.clone()));
+        do_serialize.serialize_no_infer(&self.serializer, &inner_value, state, extra)
     }
 
     fn serialize_root_model<'py, T, E: From<PyErr>>(
@@ -200,15 +198,10 @@ impl ModelSerializer {
             return do_serialize.serialize_fallback(self.get_name(), value, state, extra);
         }
 
-        let state = &mut state.scoped_set(|s| &mut s.field_name, Some(FieldName::Root));
-        let root_extra = Extra {
-            model: Some(value),
-            ..extra.clone()
-        };
         let root = value.getattr(intern!(value.py(), ROOT_FIELD))?;
 
         // for root models, `serialize_as_any` may apply unless a `field_serializer` is used
-        let serializer = if root_extra.serialize_as_any
+        let serializer = if extra.serialize_as_any
             && !matches!(
                 self.serializer.as_ref(),
                 CombinedSerializer::Function(FunctionPlainSerializer {
@@ -224,7 +217,9 @@ impl ModelSerializer {
             &self.serializer
         };
 
-        do_serialize.serialize_no_infer(serializer, &root, state, &root_extra)
+        let state = &mut state.scoped_set(|s| &mut s.field_name, Some(FieldName::Root));
+        let state = &mut state.scoped_set(|s| &mut s.model, Some(value.clone()));
+        do_serialize.serialize_no_infer(serializer, &root, state, extra)
     }
 
     fn get_inner_value<'py>(&self, model: &Bound<'py, PyAny>, extra: &Extra) -> PyResult<Bound<'py, PyAny>> {
