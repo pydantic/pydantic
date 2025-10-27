@@ -99,7 +99,7 @@ impl TypeSerializer for FloatSerializer {
         let py = value.py();
         match extra.ob_type_lookup.is_type(value, ObType::Float) {
             IsType::Exact => Ok(value.clone().unbind()),
-            IsType::Subclass => match extra.check {
+            IsType::Subclass => match state.check {
                 SerCheck::Strict => Err(PydanticSerializationUnexpectedValue::new_from_msg(None).to_py_err()),
                 SerCheck::Lax | SerCheck::None => match extra.mode {
                     SerMode::Json => value.extract::<f64>()?.into_py_any(py),
@@ -107,7 +107,7 @@ impl TypeSerializer for FloatSerializer {
                 },
             },
             IsType::False => {
-                state.warn_fallback_py(self.get_name(), value, extra)?;
+                state.warn_fallback_py(self.get_name(), value)?;
                 infer_to_python(value, state, extra)
             }
         }
@@ -122,7 +122,7 @@ impl TypeSerializer for FloatSerializer {
         match extra.ob_type_lookup.is_type(key, ObType::Float) {
             IsType::Exact | IsType::Subclass => to_str_json_key(key),
             IsType::False => {
-                state.warn_fallback_py(self.get_name(), key, extra)?;
+                state.warn_fallback_py(self.get_name(), key)?;
                 infer_json_key(key, state, extra)
             }
         }
@@ -139,7 +139,7 @@ impl TypeSerializer for FloatSerializer {
         match value.extract::<f64>() {
             Ok(v) => serialize_f64(v, serializer, self.inf_nan_mode),
             Err(_) => {
-                state.warn_fallback_ser::<S>(self.get_name(), value, extra)?;
+                state.warn_fallback_ser::<S>(self.get_name(), value)?;
                 infer_serialize(value, serializer, state, extra)
             }
         }

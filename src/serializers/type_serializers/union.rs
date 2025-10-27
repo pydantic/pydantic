@@ -79,30 +79,31 @@ fn union_serialize<'py, S>(
     retry_with_lax_check: bool,
     py: Python<'_>,
 ) -> PyResult<Option<S>> {
-    // try the serializers in left to right order with error_on fallback=true
-    let mut new_extra = extra.clone();
-    new_extra.check = SerCheck::Strict;
+    // try the serializers in left to right order with strict checking
     let mut errors: SmallVec<[PyErr; SMALL_UNION_THRESHOLD]> = SmallVec::new();
 
-    for comb_serializer in choices {
-        match selector(comb_serializer, state, &new_extra) {
-            Ok(v) => return Ok(Some(v)),
-            Err(err) => errors.push(err),
+    {
+        let state = &mut state.scoped_set(|s| &mut s.check, SerCheck::Strict);
+        for comb_serializer in choices {
+            match selector(comb_serializer, state, extra) {
+                Ok(v) => return Ok(Some(v)),
+                Err(err) => errors.push(err),
+            }
         }
     }
 
-    // If extra.check is SerCheck::Strict, we're in a nested union
-    if extra.check != SerCheck::Strict && retry_with_lax_check {
-        new_extra.check = SerCheck::Lax;
+    // If state.check is SerCheck::Strict, we're in a nested union
+    if state.check != SerCheck::Strict && retry_with_lax_check {
+        let state = &mut state.scoped_set(|s| &mut s.check, SerCheck::Lax);
         for comb_serializer in choices {
-            if let Ok(v) = selector(comb_serializer, state, &new_extra) {
+            if let Ok(v) = selector(comb_serializer, state, extra) {
                 return Ok(Some(v));
             }
         }
     }
 
-    // If extra.check is SerCheck::None, we're in a top-level union. We should thus raise the warnings
-    if extra.check == SerCheck::None {
+    // If state.check is SerCheck::None, we're in a top-level union. We should thus raise the warnings
+    if state.check == SerCheck::None {
         for err in &errors {
             if err.is_instance_of::<PydanticSerializationUnexpectedValue>(py) {
                 let pydantic_err: PydanticSerializationUnexpectedValue = err.value(py).extract()?;
@@ -329,27 +330,26 @@ impl TaggedUnionSerializer {
         extra: &Extra<'_, 'py>,
     ) -> PyResult<Option<S>> {
         if let Some(tag) = self.get_discriminator_value(value) {
-            let mut new_extra = extra.clone();
-            new_extra.check = SerCheck::Strict;
+            let state = &mut state.scoped_set(|s| &mut s.check, SerCheck::Strict);
 
             let tag_str = tag.to_string();
             if let Some(&serializer_index) = self.lookup.get(&tag_str) {
                 let selected_serializer = &self.choices[serializer_index];
 
-                match selector(selected_serializer, state, &new_extra) {
+                match selector(selected_serializer, state, extra) {
                     Ok(v) => return Ok(Some(v)),
                     Err(_) => {
                         if self.retry_with_lax_check() {
-                            new_extra.check = SerCheck::Lax;
-                            if let Ok(v) = selector(selected_serializer, state, &new_extra) {
+                            let state = &mut state.scoped_set(|s| &mut s.check, SerCheck::Lax);
+                            if let Ok(v) = selector(selected_serializer, state, extra) {
                                 return Ok(Some(v));
                             }
                         }
                     }
                 }
             }
-        } else if extra.check == SerCheck::None {
-            // If extra.check is SerCheck::None, we're in a top-level union. We should thus raise
+        } else if state.check == SerCheck::None {
+            // If state.check is SerCheck::None, we're in a top-level union. We should thus raise
             // this warning
             state.warnings.register_warning(
                 PydanticSerializationUnexpectedValue::new(

@@ -81,8 +81,8 @@ enum OutputValue<'py> {
 }
 
 impl LiteralSerializer {
-    fn check<'py>(&self, value: &Bound<'py, PyAny>, extra: &Extra) -> PyResult<OutputValue<'py>> {
-        if extra.check.enabled() {
+    fn check<'py>(&self, value: &Bound<'py, PyAny>, state: &SerializationState<'py>) -> PyResult<OutputValue<'py>> {
+        if state.check.enabled() {
             if !self.expected_int.is_empty() && !value.is_instance_of::<PyBool>() {
                 if let Some(int) = extract_i64(value) {
                     if self.expected_int.contains(&int) {
@@ -121,7 +121,7 @@ impl TypeSerializer for LiteralSerializer {
         extra: &Extra<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
         let py = value.py();
-        match self.check(value, extra)? {
+        match self.check(value, state)? {
             OutputValue::OkInt(int) => match extra.mode {
                 SerMode::Json => int.into_py_any(py),
                 _ => Ok(value.clone().unbind()),
@@ -132,7 +132,7 @@ impl TypeSerializer for LiteralSerializer {
             },
             OutputValue::Ok => infer_to_python(value, state, extra),
             OutputValue::Fallback => {
-                state.warn_fallback_py(self.get_name(), value, extra)?;
+                state.warn_fallback_py(self.get_name(), value)?;
                 infer_to_python(value, state, extra)
             }
         }
@@ -144,12 +144,12 @@ impl TypeSerializer for LiteralSerializer {
         state: &mut SerializationState<'py>,
         extra: &Extra<'_, 'py>,
     ) -> PyResult<Cow<'a, str>> {
-        match self.check(key, extra)? {
+        match self.check(key, state)? {
             OutputValue::OkInt(int) => Ok(Cow::Owned(int.to_string())),
             OutputValue::OkStr(s) => Ok(Cow::Owned(s.to_string_lossy().into_owned())),
             OutputValue::Ok => infer_json_key(key, state, extra),
             OutputValue::Fallback => {
-                state.warn_fallback_py(self.get_name(), key, extra)?;
+                state.warn_fallback_py(self.get_name(), key)?;
                 infer_json_key(key, state, extra)
             }
         }
@@ -162,12 +162,12 @@ impl TypeSerializer for LiteralSerializer {
         state: &mut SerializationState<'py>,
         extra: &Extra<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
-        match self.check(value, extra).map_err(py_err_se_err)? {
+        match self.check(value, state).map_err(py_err_se_err)? {
             OutputValue::OkInt(int) => int.serialize(serializer),
             OutputValue::OkStr(s) => s.to_string_lossy().serialize(serializer),
             OutputValue::Ok => infer_serialize(value, serializer, state, extra),
             OutputValue::Fallback => {
-                state.warn_fallback_ser::<S>(self.get_name(), value, extra)?;
+                state.warn_fallback_ser::<S>(self.get_name(), value)?;
                 infer_serialize(value, serializer, state, extra)
             }
         }

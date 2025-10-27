@@ -215,7 +215,7 @@ impl GeneralFieldsSerializer {
                         .filter(|_| !extra.serialize_as_any)
                         .unwrap_or_else(|| AnySerializer::get());
                     (&key, serializer)
-                } else if extra.check == SerCheck::Strict {
+                } else if state.check == SerCheck::Strict {
                     return Err(PydanticSerializationUnexpectedValue::new(
                         Some(format!("Unexpected field `{key}`")),
                         Some(key_str.to_string()),
@@ -233,7 +233,7 @@ impl GeneralFieldsSerializer {
             }
         }
 
-        if extra.check.enabled()
+        if state.check.enabled()
             // If any of these are true we can't count fields
             && !(extra.exclude_defaults || extra.exclude_unset || extra.exclude_none || extra.exclude_computed_fields || state.exclude().is_some())
             // Check for missing fields, we can't have extra fields here
@@ -399,7 +399,7 @@ impl TypeSerializer for GeneralFieldsSerializer {
         let model = state.model.clone().unwrap_or_else(|| value.clone());
 
         let Some((main_dict, extra_dict)) = self.extract_dicts(value) else {
-            state.warn_fallback_py(self.get_name(), value, extra)?;
+            state.warn_fallback_py(self.get_name(), value)?;
             return infer_to_python(value, state, extra);
         };
         let output_dict = self.main_to_python(
@@ -450,7 +450,7 @@ impl TypeSerializer for GeneralFieldsSerializer {
         extra: &Extra<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
         let Some((main_dict, extra_dict)) = self.extract_dicts(value) else {
-            state.warn_fallback_ser::<S>(self.get_name(), value, extra)?;
+            state.warn_fallback_ser::<S>(self.get_name(), value)?;
             return infer_serialize(value, serializer, state, extra);
         };
         let missing_sentinel = get_missing_sentinel_object(value.py());

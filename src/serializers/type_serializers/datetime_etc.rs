@@ -125,7 +125,7 @@ macro_rules! build_temporal_serializer {
                         _ => Ok(value.clone().unbind()),
                     },
                     _ => {
-                        state.warn_fallback_py(self.get_name(), value, extra)?;
+                        state.warn_fallback_py(self.get_name(), value)?;
                         infer_to_python(value, state, extra)
                     }
                 }
@@ -140,7 +140,7 @@ macro_rules! build_temporal_serializer {
                 match $downcast(key) {
                     Ok(py_value) => Ok(self.temporal_mode.$json_key_fn(py_value)?),
                     Err(_) => {
-                        state.warn_fallback_py(self.get_name(), key, extra)?;
+                        state.warn_fallback_py(self.get_name(), key)?;
                         infer_json_key(key, state, extra)
                     }
                 }
@@ -156,7 +156,7 @@ macro_rules! build_temporal_serializer {
                 match $downcast(value) {
                     Ok(py_value) => self.temporal_mode.$serialize_fn(py_value, serializer),
                     Err(_) => {
-                        state.warn_fallback_ser::<S>(self.get_name(), value, extra)?;
+                        state.warn_fallback_ser::<S>(self.get_name(), value)?;
                         infer_serialize(value, serializer, state, extra)
                     }
                 }

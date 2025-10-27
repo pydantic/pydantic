@@ -177,7 +177,7 @@ impl ModelSerializer {
             return self.serialize_root_model(value, state, extra, do_serialize);
         }
 
-        if !self.allow_value(value, extra.check)? {
+        if !self.allow_value(value, state.check)? {
             return do_serialize.serialize_fallback(self.get_name(), value, state, extra);
         }
 
@@ -194,7 +194,7 @@ impl ModelSerializer {
         extra: &Extra<'_, 'py>,
         do_serialize: impl DoSerialize<'py, T, E>,
     ) -> Result<T, E> {
-        if !self.allow_value_root_model(value, extra.check)? {
+        if !self.allow_value_root_model(value, state.check)? {
             return do_serialize.serialize_fallback(self.get_name(), value, state, extra);
         }
 
@@ -268,10 +268,10 @@ impl TypeSerializer for ModelSerializer {
         extra: &Extra<'_, 'py>,
     ) -> PyResult<Cow<'a, str>> {
         // FIXME: root model in json key position should serialize as inner value?
-        if self.allow_value(key, extra.check)? {
+        if self.allow_value(key, state.check)? {
             infer_json_key_known(ObType::PydanticSerializable, key, state, extra)
         } else {
-            state.warn_fallback_py(&self.name, key, extra)?;
+            state.warn_fallback_py(&self.name, key)?;
             infer_json_key(key, state, extra)
         }
     }

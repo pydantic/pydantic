@@ -648,6 +648,7 @@ pub(crate) fn call_pydantic_serializer<'py, T, E: From<PyErr>>(
         model: state.model.clone(),
         field_name: state.field_name.clone(),
         include_exclude: state.include_exclude.clone(),
+        check: state.check,
     };
 
     // Avoid falling immediately back into inference because we need to use the serializer

@@ -75,7 +75,7 @@ impl TypeSerializer for TupleSerializer {
                 let n_items = py_tuple.len();
                 let mut items = Vec::with_capacity(n_items);
 
-                self.for_each_tuple_item_and_serializer(py_tuple, state, extra, |entry| {
+                self.for_each_tuple_item_and_serializer(py_tuple, state, |entry| {
                     entry
                         .serializer
                         .to_python(&entry.item, entry.state, extra)
@@ -88,7 +88,7 @@ impl TypeSerializer for TupleSerializer {
                 }
             }
             Err(_) => {
-                state.warn_fallback_py(&self.name, value, extra)?;
+                state.warn_fallback_py(&self.name, value)?;
                 infer_to_python(value, state, extra)
             }
         }
@@ -105,7 +105,7 @@ impl TypeSerializer for TupleSerializer {
                 let mut key_builder = KeyBuilder::new();
 
                 let state = &mut state.scoped_include_exclude(None, None);
-                self.for_each_tuple_item_and_serializer(py_tuple, state, extra, |entry| {
+                self.for_each_tuple_item_and_serializer(py_tuple, state, |entry| {
                     entry
                         .serializer
                         .json_key(&entry.item, entry.state, extra)
@@ -115,7 +115,7 @@ impl TypeSerializer for TupleSerializer {
                 Ok(Cow::Owned(key_builder.finish()))
             }
             Err(_) => {
-                state.warn_fallback_py(&self.name, key, extra)?;
+                state.warn_fallback_py(&self.name, key)?;
                 infer_json_key(key, state, extra)
             }
         }
@@ -135,7 +135,7 @@ impl TypeSerializer for TupleSerializer {
                 let n_items = py_tuple.len();
                 let mut seq = serializer.serialize_seq(Some(n_items))?;
 
-                self.for_each_tuple_item_and_serializer(py_tuple, state, extra, |entry| {
+                self.for_each_tuple_item_and_serializer(py_tuple, state, |entry| {
                     seq.serialize_element(&PydanticSerializer::new(
                         &entry.item,
                         entry.serializer,
@@ -148,7 +148,7 @@ impl TypeSerializer for TupleSerializer {
                 seq.end()
             }
             Err(_) => {
-                state.warn_fallback_ser::<S>(&self.name, value, extra)?;
+                state.warn_fallback_ser::<S>(&self.name, value)?;
                 infer_serialize(value, serializer, state, extra)
             }
         }
@@ -180,7 +180,6 @@ impl TupleSerializer {
         &self,
         tuple: &Bound<'py, PyTuple>,
         state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
         mut f: impl for<'a> FnMut(TupleSerializerEntry<'a, 'py>) -> Result<(), E>,
     ) -> PyResult<Result<(), E>> {
         let n_items = tuple.len();
@@ -215,7 +214,7 @@ impl TupleSerializer {
                 .chain(iter::repeat(&self.serializers[variadic_item_index]).take(n_variadic_items))
                 .chain(self.serializers[variadic_item_index + 1..].iter());
             use_serializers!(serializers_iter);
-        } else if extra.check == SerCheck::Strict && n_items != self.serializers.len() {
+        } else if state.check == SerCheck::Strict && n_items != self.serializers.len() {
             return Err(PydanticSerializationUnexpectedValue::new_from_msg(Some(format!(
                 "Expected {} items, but got {}",
                 self.serializers.len(),

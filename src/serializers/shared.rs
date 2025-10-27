@@ -390,7 +390,7 @@ pub(crate) trait TypeSerializer: Send + Sync + Debug {
         match extra.ob_type_lookup.is_type(key, ObType::None) {
             IsType::Exact | IsType::Subclass => py_err!(PyTypeError; "`{}` not valid as object key", expected_type),
             IsType::False => {
-                state.warn_fallback_py(self.get_name(), key, extra)?;
+                state.warn_fallback_py(self.get_name(), key)?;
                 infer_json_key(key, state, extra)
             }
         }
@@ -680,7 +680,7 @@ impl<'py> DoSerialize<'py, Py<PyAny>, PyErr> for SerializeToPython {
         state: &mut SerializationState<'py>,
         extra: &Extra<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
-        state.warn_fallback_py(name, value, extra)?;
+        state.warn_fallback_py(name, value)?;
         infer_to_python(value, state, extra)
     }
 }
@@ -709,9 +709,7 @@ impl<'py, S: Serializer> DoSerialize<'py, S::Ok, WrappedSerError<S::Error>> for 
         state: &mut SerializationState<'py>,
         extra: &Extra<'_, 'py>,
     ) -> Result<S::Ok, WrappedSerError<S::Error>> {
-        state
-            .warn_fallback_ser::<S>(name, value, extra)
-            .map_err(WrappedSerError)?;
+        state.warn_fallback_ser::<S>(name, value).map_err(WrappedSerError)?;
         infer_serialize(value, self.serializer, state, extra).map_err(WrappedSerError)
     }
 }

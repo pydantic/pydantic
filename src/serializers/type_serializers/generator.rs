@@ -90,7 +90,7 @@ impl TypeSerializer for GeneratorSerializer {
                 }
             }
             Err(_) => {
-                state.warn_fallback_py(self.get_name(), value, extra)?;
+                state.warn_fallback_py(self.get_name(), value)?;
                 infer_to_python(value, state, extra)
             }
         }
@@ -130,7 +130,7 @@ impl TypeSerializer for GeneratorSerializer {
                 seq.end()
             }
             Err(_) => {
-                state.warn_fallback_ser::<S>(self.get_name(), value, extra)?;
+                state.warn_fallback_ser::<S>(self.get_name(), value)?;
                 infer_serialize(value, serializer, state, extra)
             }
         }

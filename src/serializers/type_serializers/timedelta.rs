@@ -56,7 +56,7 @@ impl TypeSerializer for TimeDeltaSerializer {
                 _ => Ok(value.clone().unbind()),
             },
             _ => {
-                state.warn_fallback_py(self.get_name(), value, extra)?;
+                state.warn_fallback_py(self.get_name(), value)?;
                 infer_to_python(value, state, extra)
             }
         }
@@ -71,7 +71,7 @@ impl TypeSerializer for TimeDeltaSerializer {
         match EitherTimedelta::try_from(key) {
             Ok(either_timedelta) => self.temporal_mode.timedelta_json_key(&either_timedelta),
             Err(_) => {
-                state.warn_fallback_py(self.get_name(), key, extra)?;
+                state.warn_fallback_py(self.get_name(), key)?;
                 infer_json_key(key, state, extra)
             }
         }
@@ -87,7 +87,7 @@ impl TypeSerializer for TimeDeltaSerializer {
         match EitherTimedelta::try_from(value) {
             Ok(either_timedelta) => self.temporal_mode.timedelta_serialize(either_timedelta, serializer),
             Err(_) => {
-                state.warn_fallback_ser::<S>(self.get_name(), value, extra)?;
+                state.warn_fallback_ser::<S>(self.get_name(), value)?;
                 infer_serialize(value, serializer, state, extra)
             }
         }

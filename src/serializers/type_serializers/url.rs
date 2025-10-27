@@ -50,7 +50,7 @@ macro_rules! build_serializer {
                         _ => Ok(value.clone().unbind()),
                     },
                     Err(_) => {
-                        state.warn_fallback_py(self.get_name(), value, extra)?;
+                        state.warn_fallback_py(self.get_name(), value)?;
                         infer_to_python(value, state, extra)
                     }
                 }
@@ -65,7 +65,7 @@ macro_rules! build_serializer {
                 match key.extract::<$extract>() {
                     Ok(py_url) => Ok(Cow::Owned(py_url.__str__(key.py()).to_string())),
                     Err(_) => {
-                        state.warn_fallback_py(self.get_name(), key, extra)?;
+                        state.warn_fallback_py(self.get_name(), key)?;
                         infer_json_key(key, state, extra)
                     }
                 }
@@ -81,7 +81,7 @@ macro_rules! build_serializer {
                 match value.extract::<$extract>() {
                     Ok(py_url) => serializer.serialize_str(&py_url.__str__(value.py())),
                     Err(_) => {
-                        state.warn_fallback_ser::<S>(self.get_name(), value, extra)?;
+                        state.warn_fallback_ser::<S>(self.get_name(), value)?;
                         infer_serialize(value, serializer, state, extra)
                     }
                 }

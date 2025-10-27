@@ -71,7 +71,7 @@ impl TypeSerializer for EnumSerializer {
                 Ok(value.clone().unbind())
             }
         } else {
-            state.warn_fallback_py(self.get_name(), value, extra)?;
+            state.warn_fallback_py(self.get_name(), value)?;
             infer_to_python(value, state, extra)
         }
     }
@@ -93,7 +93,7 @@ impl TypeSerializer for EnumSerializer {
             // owned variant of cow.
             Ok(Cow::Owned(k.into_owned()))
         } else {
-            state.warn_fallback_py(self.get_name(), key, extra)?;
+            state.warn_fallback_py(self.get_name(), key)?;
             infer_json_key(key, state, extra)
         }
     }
@@ -112,7 +112,7 @@ impl TypeSerializer for EnumSerializer {
                 None => infer_serialize(&dot_value, serializer, state, extra),
             }
         } else {
-            state.warn_fallback_ser::<S>(self.get_name(), value, extra)?;
+            state.warn_fallback_ser::<S>(self.get_name(), value)?;
             infer_serialize(value, serializer, state, extra)
         }
     }

@@ -30,6 +30,8 @@ pub(crate) struct SerializationState<'py> {
     pub model: Option<Bound<'py, PyAny>>,
     /// The name of the field currently being serialized, if any
     pub field_name: Option<FieldName<'py>>,
+    /// Inside unions, checks are applied to attempt to select a preferred branch
+    pub check: SerCheck,
     pub include_exclude: (Option<Bound<'py, PyAny>>, Option<Bound<'py, PyAny>>),
 }
 
@@ -69,6 +71,7 @@ impl<'py> SerializationState<'py> {
             config,
             model: None,
             field_name: None,
+            check: SerCheck::None,
             include_exclude: (include, exclude),
         })
     }
@@ -86,19 +89,18 @@ impl SerializationState<'_> {
         })
     }
 
-    pub fn warn_fallback_py(&mut self, field_type: &str, value: &Bound<'_, PyAny>, extra: &Extra) -> PyResult<()> {
+    pub fn warn_fallback_py(&mut self, field_type: &str, value: &Bound<'_, PyAny>) -> PyResult<()> {
         self.warnings
-            .on_fallback_py(field_type, value, self.field_name.as_ref(), extra)
+            .on_fallback_py(field_type, value, self.field_name.as_ref(), self.check)
     }
 
-    pub fn warn_fallback_ser<'py, S: serde::ser::Serializer>(
+    pub fn warn_fallback_ser<S: serde::ser::Serializer>(
         &mut self,
         field_type: &str,
-        value: &Bound<'py, PyAny>,
-        extra: &Extra<'_, 'py>,
+        value: &Bound<'_, PyAny>,
     ) -> Result<(), S::Error> {
         self.warnings
-            .on_fallback_ser::<S>(field_type, value, self.field_name.as_ref(), extra)
+            .on_fallback_ser::<S>(field_type, value, self.field_name.as_ref(), self.check)
     }
 
     pub fn final_check(&self, py: Python) -> PyResult<()> {
@@ -160,8 +162,6 @@ pub(crate) struct Extra<'a, 'py> {
     pub exclude_none: bool,
     pub exclude_computed_fields: bool,
     pub round_trip: bool,
-    // the next two are used for union logic
-    pub check: SerCheck,
     pub serialize_unknown: bool,
     pub fallback: Option<&'a Bound<'py, PyAny>>,
     pub serialize_as_any: bool,
@@ -193,7 +193,6 @@ impl<'a, 'py> Extra<'a, 'py> {
             exclude_none,
             exclude_computed_fields,
             round_trip,
-            check: SerCheck::None,
             serialize_unknown,
             fallback,
             serialize_as_any,
@@ -283,7 +282,7 @@ impl ExtraOwned {
             round_trip: extra.round_trip,
             config: state.config,
             rec_guard: state.rec_guard.clone(),
-            check: extra.check,
+            check: state.check,
             model: state.model.as_ref().map(|model| model.clone().into()),
             field_name: state.field_name.as_ref().map(|name| match name {
                 FieldName::Root => FieldNameOwned::Root,
@@ -308,7 +307,6 @@ impl ExtraOwned {
             exclude_none: self.exclude_none,
             exclude_computed_fields: self.exclude_computed_fields,
             round_trip: self.round_trip,
-            check: self.check,
             serialize_unknown: self.serialize_unknown,
             fallback: self.fallback.as_ref().map(|m| m.bind(py)),
             serialize_as_any: self.serialize_as_any,
@@ -321,16 +319,17 @@ impl ExtraOwned {
             warnings: self.warnings.clone(),
             rec_guard: self.rec_guard.clone(),
             config: self.config,
+            model: self.model.as_ref().map(|m| m.bind(py).clone()),
             field_name: match &self.field_name {
                 Some(FieldNameOwned::Root) => Some(FieldName::Root),
                 Some(FieldNameOwned::Regular(b)) => Some(FieldName::Regular(b.bind(py).clone())),
                 None => None,
             },
+            check: self.check,
             include_exclude: (
                 self.include.as_ref().map(|m| m.bind(py).clone()),
                 self.exclude.as_ref().map(|m| m.bind(py).clone()),
             ),
-            model: self.model.as_ref().map(|m| m.bind(py).clone()),
         }
     }
 }
@@ -443,17 +442,17 @@ impl CollectWarnings {
         }
     }
 
-    pub fn on_fallback_py<'py>(
+    fn on_fallback_py(
         &mut self,
         field_type: &str,
-        value: &Bound<'py, PyAny>,
+        value: &Bound<'_, PyAny>,
         field_name: Option<&FieldName<'_>>,
-        extra: &Extra<'_, 'py>,
+        check: SerCheck,
     ) -> PyResult<()> {
         // special case for None as it's very common e.g. as a default value
         if value.is_none() {
             Ok(())
-        } else if extra.check.enabled() {
+        } else if check.enabled() {
             Err(PydanticSerializationUnexpectedValue::new_from_parts(
                 field_name.map(ToString::to_string),
                 Some(field_type.to_string()),
@@ -466,17 +465,17 @@ impl CollectWarnings {
         }
     }
 
-    pub fn on_fallback_ser<'py, S: serde::ser::Serializer>(
+    pub fn on_fallback_ser<S: serde::ser::Serializer>(
         &mut self,
         field_type: &str,
-        value: &Bound<'py, PyAny>,
+        value: &Bound<'_, PyAny>,
         field_name: Option<&FieldName<'_>>,
-        extra: &Extra<'_, 'py>,
+        check: SerCheck,
     ) -> Result<(), S::Error> {
         // special case for None as it's very common e.g. as a default value
         if value.is_none() {
             Ok(())
-        } else if extra.check.enabled() {
+        } else if check.enabled() {
             // note: I think this should never actually happen since we use `to_python(..., mode='json')` during
             // JSON serialization to "try" union branches, but it's here for completeness/correctness
             // in particular, in future we could allow errors instead of warnings on fallback

@@ -53,7 +53,7 @@ impl TypeSerializer for StrSerializer {
                 _ => Ok(value.clone().unbind()),
             },
             IsType::False => {
-                state.warn_fallback_py(self.get_name(), value, extra)?;
+                state.warn_fallback_py(self.get_name(), value)?;
                 infer_to_python(value, state, extra)
             }
         }
@@ -69,7 +69,7 @@ impl TypeSerializer for StrSerializer {
             // FIXME py cow to avoid the copy
             Ok(Cow::Owned(py_str.to_string_lossy().into_owned()))
         } else {
-            state.warn_fallback_py(self.get_name(), key, extra)?;
+            state.warn_fallback_py(self.get_name(), key)?;
             infer_json_key(key, state, extra)
         }
     }
@@ -84,7 +84,7 @@ impl TypeSerializer for StrSerializer {
         match value.downcast::<PyString>() {
             Ok(py_str) => serialize_py_str(py_str, serializer),
             Err(_) => {
-                state.warn_fallback_ser::<S>(self.get_name(), value, extra)?;
+                state.warn_fallback_ser::<S>(self.get_name(), value)?;
                 infer_serialize(value, serializer, state, extra)
             }
         }

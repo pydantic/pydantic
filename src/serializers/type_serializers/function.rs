@@ -188,16 +188,10 @@ impl FunctionPlainSerializer {
     }
 }
 
-fn on_error(
-    py: Python,
-    err: PyErr,
-    function_name: &str,
-    state: &mut SerializationState<'_>,
-    extra: &Extra<'_, '_>,
-) -> PyResult<()> {
+fn on_error(py: Python, err: PyErr, function_name: &str, state: &mut SerializationState<'_>) -> PyResult<()> {
     let exception = err.value(py);
     if let Ok(ser_err) = exception.extract::<PydanticSerializationUnexpectedValue>() {
-        if extra.check.enabled() {
+        if state.check.enabled() {
             Err(err)
         } else {
             state.warnings.register_warning(ser_err);
@@ -228,7 +222,7 @@ macro_rules! function_type_serializer {
                     Ok((true, v)) => (&*self.return_serializer, v),
                     Ok((false, v)) => (self.get_fallback_serializer(), v),
                     Err(err) => {
-                        on_error(py, err, &self.function_name, state, extra)?;
+                        on_error(py, err, &self.function_name, state)?;
                         return infer_to_python(value, state, extra);
                     }
                 };
@@ -255,7 +249,7 @@ macro_rules! function_type_serializer {
                         .json_key(v.bind(py), state, extra)
                         .map(|cow| Cow::Owned(cow.into_owned())),
                     Err(err) => {
-                        on_error(py, err, &self.function_name, state, extra)?;
+                        on_error(py, err, &self.function_name, state)?;
                         infer_json_key(key, state, extra)
                     }
                 }
@@ -273,7 +267,7 @@ macro_rules! function_type_serializer {
                     Ok((true, v)) => (&*self.return_serializer, v),
                     Ok((false, v)) => (self.get_fallback_serializer(), v),
                     Err(err) => {
-                        on_error(py, err, &self.function_name, state, extra).map_err(py_err_se_err)?;
+                        on_error(py, err, &self.function_name, state).map_err(py_err_se_err)?;
                         return infer_serialize(value, serializer, state, extra);
                     }
                 };
