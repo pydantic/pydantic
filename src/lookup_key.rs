@@ -11,7 +11,7 @@ use jiter::{JsonObject, JsonValue};
 use crate::build_tools::py_schema_err;
 use crate::errors::{py_err_string, ErrorType, LocItem, Location, ToErrorValue, ValError, ValLineError, ValResult};
 use crate::input::StringMapping;
-use crate::tools::{extract_i64, py_err};
+use crate::tools::{extract_i64, mapping_get, py_err};
 
 /// Used for getting items from python dicts, python objects, or JSON objects, in different ways
 #[derive(Debug)]
@@ -89,44 +89,12 @@ impl LookupKey {
     pub fn py_get_dict_item<'py, 's>(
         &'s self,
         dict: &Bound<'py, PyDict>,
-    ) -> ValResult<Option<(&'s LookupPath, Bound<'py, PyAny>)>> {
-        match self {
-            Self::Simple(path) => match dict.get_item(&path.first_item.py_key)? {
-                Some(value) => {
-                    debug_assert!(path.rest.is_empty());
-                    Ok(Some((path, value)))
-                }
-                None => Ok(None),
-            },
-            Self::Choice { path1, path2, .. } => match dict.get_item(&path1.first_item.py_key)? {
-                Some(value) => {
-                    debug_assert!(path1.rest.is_empty());
-                    Ok(Some((path1, value)))
-                }
-                None => match dict.get_item(&path2.first_item.py_key)? {
-                    Some(value) => {
-                        debug_assert!(path2.rest.is_empty());
-                        Ok(Some((path2, value)))
-                    }
-                    None => Ok(None),
-                },
-            },
-            Self::PathChoices(path_choices) => {
-                for path in path_choices {
-                    let Some(first_value) = dict.get_item(&path.first_item.py_key)? else {
-                        continue;
-                    };
-                    // iterate over the path and plug each value into the py_any from the last step,
-                    // this could just be a loop but should be somewhat faster with a functional design
-                    if let Some(v) = path.rest.iter().try_fold(first_value, |d, loc| loc.py_get_item(&d)) {
-                        // Successfully found an item, return it
-                        return Ok(Some((path, v)));
-                    }
-                }
-                // got to the end of path_choices, without a match, return None
-                Ok(None)
-            }
-        }
+    ) -> PyResult<Option<(&'s LookupPath, Bound<'py, PyAny>)>> {
+        self.get_impl(
+            dict,
+            |dict, path| dict.get_item(&path.py_key),
+            |d, loc| Ok(loc.py_get_item(&d)),
+        )
     }
 
     pub fn py_get_string_mapping_item<'py, 's>(
@@ -144,94 +112,23 @@ impl LookupKey {
     pub fn py_get_mapping_item<'py, 's>(
         &'s self,
         dict: &Bound<'py, PyMapping>,
-    ) -> ValResult<Option<(&'s LookupPath, Bound<'py, PyAny>)>> {
-        match self {
-            Self::Simple(path) => match dict.get_item(&path.first_item.py_key) {
-                Ok(value) => {
-                    debug_assert!(path.rest.is_empty());
-                    Ok(Some((path, value)))
-                }
-                _ => Ok(None),
-            },
-            Self::Choice { path1, path2, .. } => match dict.get_item(&path1.first_item.py_key) {
-                Ok(value) => {
-                    debug_assert!(path1.rest.is_empty());
-                    Ok(Some((path1, value)))
-                }
-                _ => match dict.get_item(&path2.first_item.py_key) {
-                    Ok(value) => {
-                        debug_assert!(path2.rest.is_empty());
-                        Ok(Some((path2, value)))
-                    }
-                    _ => Ok(None),
-                },
-            },
-            Self::PathChoices(path_choices) => {
-                for path in path_choices {
-                    let Some(first_value) = dict.get_item(&path.first_item.py_key).ok() else {
-                        continue;
-                    };
-                    // iterate over the path and plug each value into the py_any from the last step,
-                    // this could just be a loop but should be somewhat faster with a functional design
-                    if let Some(v) = path.rest.iter().try_fold(first_value, |d, loc| loc.py_get_item(&d)) {
-                        // Successfully found an item, return it
-                        return Ok(Some((path, v)));
-                    }
-                }
-                // got to the end of path_choices, without a match, return None
-                Ok(None)
-            }
-        }
+    ) -> PyResult<Option<(&'s LookupPath, Bound<'py, PyAny>)>> {
+        self.get_impl(
+            dict,
+            |dict, path| mapping_get(dict, &path.py_key),
+            |d, loc| Ok(loc.py_get_item(&d)),
+        )
     }
 
     pub fn simple_py_get_attr<'py, 's>(
         &'s self,
         obj: &Bound<'py, PyAny>,
     ) -> PyResult<Option<(&'s LookupPath, Bound<'py, PyAny>)>> {
-        match self {
-            Self::Simple(path) => match py_get_attrs(obj, &path.first_item.py_key)? {
-                Some(value) => {
-                    debug_assert!(path.rest.is_empty());
-                    Ok(Some((path, value)))
-                }
-                None => Ok(None),
-            },
-            Self::Choice { path1, path2, .. } => match py_get_attrs(obj, &path1.first_item.py_key)? {
-                Some(value) => {
-                    debug_assert!(path1.rest.is_empty());
-                    Ok(Some((path1, value)))
-                }
-                None => match py_get_attrs(obj, &path2.first_item.py_key)? {
-                    Some(value) => {
-                        debug_assert!(path2.rest.is_empty());
-                        Ok(Some((path2, value)))
-                    }
-                    None => Ok(None),
-                },
-            },
-            Self::PathChoices(path_choices) => {
-                'outer: for path in path_choices {
-                    // similar to above, but using `py_get_attrs`, we can't use try_fold because of the extra Err
-                    // so we have to loop manually
-                    let Some(mut v) = path.first_item.py_get_attrs(obj)? else {
-                        continue;
-                    };
-                    for loc in &path.rest {
-                        v = match loc.py_get_attrs(&v) {
-                            Ok(Some(v)) => v,
-                            Ok(None) => {
-                                continue 'outer;
-                            }
-                            Err(e) => return Err(e),
-                        }
-                    }
-                    // Successfully found an item, return it
-                    return Ok(Some((path, v)));
-                }
-                // got to the end of path_choices, without a match, return None
-                Ok(None)
-            }
-        }
+        self.get_impl(
+            obj,
+            |obj, path| py_get_attrs(obj, &path.py_key),
+            |d, loc| loc.py_get_attrs(&d),
+        )
     }
 
     pub fn py_get_attr<'py, 's>(
@@ -317,6 +214,57 @@ impl LookupKey {
                         // Successfully found an item, return it
                         return Ok(Some((path, v)));
                     }
+                }
+                // got to the end of path_choices, without a match, return None
+                Ok(None)
+            }
+        }
+    }
+
+    fn get_impl<'s, 'a, SourceT, OutputT: 'a>(
+        &'s self,
+        source: &'a SourceT,
+        lookup: impl Fn(&'a SourceT, &'s PathItemString) -> PyResult<Option<OutputT>>,
+        nested_lookup: impl Fn(OutputT, &'s PathItem) -> PyResult<Option<OutputT>>,
+    ) -> PyResult<Option<(&'s LookupPath, OutputT)>> {
+        match self {
+            Self::Simple(path) => match lookup(source, &path.first_item)? {
+                Some(value) => {
+                    debug_assert!(path.rest.is_empty());
+                    Ok(Some((path, value)))
+                }
+                None => Ok(None),
+            },
+            Self::Choice { path1, path2, .. } => match lookup(source, &path1.first_item)? {
+                Some(value) => {
+                    debug_assert!(path1.rest.is_empty());
+                    Ok(Some((path1, value)))
+                }
+                None => match lookup(source, &path2.first_item)? {
+                    Some(value) => {
+                        debug_assert!(path2.rest.is_empty());
+                        Ok(Some((path2, value)))
+                    }
+                    None => Ok(None),
+                },
+            },
+            Self::PathChoices(path_choices) => {
+                'choices: for path in path_choices {
+                    let Some(mut value) = lookup(source, &path.first_item)? else {
+                        continue;
+                    };
+
+                    // iterate over the path and plug each value into the value from the last step
+                    for loc in &path.rest {
+                        value = match nested_lookup(value, loc) {
+                            Ok(Some(v)) => v,
+                            // this choice did not match, try the next one
+                            Ok(None) => continue 'choices,
+                            Err(e) => return Err(e),
+                        }
+                    }
+                    // Successfully found an item, return it
+                    return Ok(Some((path, value)));
                 }
                 // got to the end of path_choices, without a match, return None
                 Ok(None)

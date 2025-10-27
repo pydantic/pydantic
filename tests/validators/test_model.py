@@ -1,5 +1,6 @@
 import re
 import sys
+from collections import defaultdict
 from copy import deepcopy
 from decimal import Decimal
 from typing import Any, Callable, Union
@@ -1359,3 +1360,29 @@ def test_model_with_enum_int_field_validation_should_succeed_for_any_type_equali
     v.validate_assignment(m, 'enum_field', Decimal(1))
     v.validate_assignment(m, 'enum_field_2', Decimal(2))
     v.validate_assignment(m, 'enum_field_3', IntWrappable(3))
+
+
+def test_model_from_defaultdict():
+    # https://github.com/pydantic/pydantic/issues/12376
+
+    class MyModel:
+        def __init__(self, **kwargs: Any) -> None:
+            self.__dict__.update(kwargs)
+
+    schema = core_schema.model_schema(
+        MyModel, core_schema.model_fields_schema({'field_a': core_schema.model_field(core_schema.int_schema())})
+    )
+
+    v = SchemaValidator(schema)
+    with pytest.raises(ValidationError) as exc_info:
+        # the defaultdict should not provide default values for missing fields
+        v.validate_python(defaultdict(int))
+
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'missing',
+            'loc': ('field_a',),
+            'msg': 'Field required',
+            'input': defaultdict(int),
+        }
+    ]

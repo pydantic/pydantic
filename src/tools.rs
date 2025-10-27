@@ -4,10 +4,11 @@ use num_bigint::BigInt;
 
 use pyo3::exceptions::PyKeyError;
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyString};
+use pyo3::types::{PyDict, PyMapping, PyString};
 use pyo3::{intern, FromPyObject};
 
 use crate::input::Int;
+use crate::PydanticUndefinedType;
 use jiter::{cached_py_string, StringCacheMode};
 
 pub trait SchemaDict<'py> {
@@ -189,4 +190,15 @@ pub fn write_truncated_to_limited_bytes<F: fmt::Write>(f: &mut F, val: &str, max
     } else {
         write!(f, "{val}")
     }
+}
+
+/// Implementation of `mapping.get(key, PydanticUndefined)` which returns `None` if the key is not found
+pub fn mapping_get<'py>(
+    mapping: &Bound<'py, PyMapping>,
+    key: impl IntoPyObject<'py>,
+) -> PyResult<Option<Bound<'py, PyAny>>> {
+    let undefined = PydanticUndefinedType::get(mapping.py());
+    mapping
+        .call_method1(intern!(mapping.py(), "get"), (key, undefined))
+        .map(|value| if value.is(undefined) { None } else { Some(value) })
 }

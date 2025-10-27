@@ -60,10 +60,9 @@ impl PydanticUndefinedType {
     }
 
     #[staticmethod]
-    pub fn new(py: Python) -> Py<Self> {
-        UNDEFINED_CELL
-            .get_or_init(py, || Py::new(py, PydanticUndefinedType {}).unwrap())
-            .clone_ref(py)
+    #[pyo3(name = "new")]
+    pub fn get(py: Python<'_>) -> &Py<Self> {
+        UNDEFINED_CELL.get_or_init(py, || Py::new(py, PydanticUndefinedType {}).unwrap())
     }
 
     fn __repr__(&self) -> &'static str {
