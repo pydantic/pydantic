@@ -8,7 +8,7 @@ from collections.abc import Mapping
 from functools import cache
 from inspect import Parameter, ismethoddescriptor, signature
 from re import Pattern
-from typing import TYPE_CHECKING, Any, Callable, TypeVar, Annotated
+from typing import TYPE_CHECKING, Annotated, Any, Callable, TypeVar
 
 from pydantic_core import PydanticUndefined
 from typing_extensions import TypeIs, get_args, get_origin
@@ -67,9 +67,8 @@ def _general_metadata_cls() -> type[BaseMetadata]:
     return _PydanticGeneralMetadata  # type: ignore
 
 
-def _expand_fieldinfo_from_annotated(field: 'FieldInfo', FieldInfo_: type['FieldInfo']) -> None:
-    """
-    Expand Field(...) from Annotated[T, Field(...), ...] and merge attributes into field.
+def _expand_fieldinfo_from_annotated(field: FieldInfo, FieldInfo_: type[FieldInfo]) -> None:
+    """Expand Field(...) from Annotated[T, Field(...), ...] and merge attributes into field.
 
     If field annotated like Annotated[T, Field(...), ...],
     extract Field(...) from Annotated and transfer explicit atrributes to field.
