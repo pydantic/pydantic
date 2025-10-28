@@ -2105,6 +2105,18 @@ def test_generic_annotated():
     SomeGenericModel[str](the_alias='qwe')
 
 
+def test_generic_annotated_fieldinfo_parametrization():
+    T = TypeVar('T')
+
+    class Model(BaseModel, Generic[T]):
+        t: T
+
+    M = Model[Annotated[int, Field(gt=1), Field(gt=0)]]
+    f = M.model_fields['t']
+    assert f.annotation is int
+    assert any(getattr(m, 'gt', None) == 1 for m in (f.metadata or []))
+
+
 def test_generic_subclass():
     T = TypeVar('T')
 

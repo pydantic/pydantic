@@ -8,10 +8,10 @@ from collections.abc import Mapping
 from functools import cache
 from inspect import Parameter, ismethoddescriptor, signature
 from re import Pattern
-from typing import TYPE_CHECKING, Any, Callable, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, TypeVar, Annotated
 
 from pydantic_core import PydanticUndefined
-from typing_extensions import TypeIs
+from typing_extensions import TypeIs, get_args, get_origin
 from typing_inspection.introspection import AnnotationSource
 
 from pydantic import PydanticDeprecatedSince211
@@ -65,6 +65,48 @@ def _general_metadata_cls() -> type[BaseMetadata]:
             self.__dict__ = metadata
 
     return _PydanticGeneralMetadata  # type: ignore
+
+
+def _expand_fieldinfo_from_annotated(field: 'FieldInfo', FieldInfo_: type['FieldInfo']) -> None:
+    """
+    Expand Field(...) from Annotated[T, Field(...), ...] and merge attributes into field.
+
+    If field annotated like Annotated[T, Field(...), ...],
+    extract Field(...) from Annotated and transfer explicit atrributes to field.
+    In the end replace annotation to T (inner type).
+
+    ⚠️ Internal note:
+    This function relies on private implementation details of FieldInfo:
+    - `_attributes_set` (to detect explicitly set attributes)
+    - `metadata` (to collect extra annotations)
+    These internals may change in future versions.
+
+    Mutates:
+        field (FieldInfo): updated in place with attributes and metadata from Annotated.
+    """
+    ann = field.annotation
+    if get_origin(ann) is not Annotated:
+        return
+
+    inner_type, *metadata = get_args(ann)
+    fis = [m for m in metadata if isinstance(m, FieldInfo_)]
+    if not fis:
+        return
+
+    # Later Field(...) overrides earlier ones
+    for fi in fis:
+        for attr in getattr(fi, '_attributes_set', ()):
+            val = getattr(fi, attr, PydanticUndefined)
+            if val is not PydanticUndefined:
+                setattr(field, attr, val)
+
+        # Transfer other metadata from Annotated except of FieldInfo.
+        if getattr(fi, 'metadata', None):
+            extras = [m for m in fi.metadata if not isinstance(m, FieldInfo_)]
+            if extras:
+                field.metadata = list(getattr(field, 'metadata', ())) + extras
+
+    field.annotation = inner_type
 
 
 def _check_protected_namespaces(
@@ -406,6 +448,8 @@ def collect_model_fields(  # noqa: C901
         for field in fields.values():
             if field._complete:
                 field.apply_typevars_map(typevars_map)
+
+            _expand_fieldinfo_from_annotated(field, FieldInfo_)
 
     if config_wrapper.use_attribute_docstrings:
         _update_fields_from_docstrings(cls, fields)
