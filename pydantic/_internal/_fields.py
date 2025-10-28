@@ -71,7 +71,7 @@ def _expand_fieldinfo_from_annotated(field: FieldInfo, FieldInfo_: type[FieldInf
     """Expand Field(...) from Annotated[T, Field(...), ...] and merge attributes into field.
 
     If field annotated like Annotated[T, Field(...), ...],
-    extract Field(...) from Annotated and transfer explicit atrributes to field.
+    extract Field(...) from Annotated and transfer explicit attributes to field.
     In the end replace annotation to T (inner type).
 
     ⚠️ Internal note:
